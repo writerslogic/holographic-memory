@@ -1,0 +1,32 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grad)" />
+  
+  <!-- Neural/Holographic Pattern -->
+  <g stroke="#38bdf8" stroke-width="0.5" opacity="0.3">
+    <circle cx="640" cy="320" r="300" fill="none" />
+    <circle cx="640" cy="320" r="200" fill="none" />
+    <circle cx="640" cy="320" r="100" fill="none" />
+    <line x1="340" y1="320" x2="940" y2="320" />
+    <line x1="640" y1="20" x2="640" y2="620" />
+  </g>
+
+  <!-- HMS Logo/Icon Style -->
+  <path d="M640 220 L720 320 L640 420 L560 320 Z" fill="#38bdf8" filter="url(#glow)" />
+  
+  <text x="640" y="500" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#f8fafc" text-anchor="middle">
+    Holographic Memory System
+  </text>
+  <text x="640" y="550" font-family="Arial, sans-serif" font-size="24" fill="#94a3b8" text-anchor="middle">
+    High-Performance Neuro-Symbolic AI for Node.js
+  </text>
+</svg>
