@@ -44,6 +44,12 @@ fn merge_intersection_count(a: &[u32], b: &[u32]) -> usize {
         }
     }
 
+    #[cfg(target_arch = "aarch64")]
+    {
+        // NEON is part of the baseline aarch64 target.
+        return unsafe { merge_intersection_count_neon(a, b) };
+    }
+
     merge_intersection_count_scalar(a, b)
 }
 
@@ -66,10 +72,15 @@ fn merge_intersection_count_scalar(a: &[u32], b: &[u32]) -> usize {
     count
 }
 
+#[cfg(target_arch = "x86")]
+use std::arch::x86 as x86_simd;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64 as x86_simd;
+
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[target_feature(enable = "avx2")]
 unsafe fn merge_intersection_count_avx2(a: &[u32], b: &[u32]) -> usize {
-    use std::arch::x86_64::{
+    use x86_simd::{
         __m256i, _mm256_castsi256_ps, _mm256_cmpeq_epi32, _mm256_loadu_si256,
         _mm256_movemask_ps, _mm256_set1_epi32,
     };
@@ -104,6 +115,54 @@ unsafe fn merge_intersection_count_avx2(a: &[u32], b: &[u32]) -> usize {
                 j += offset + 1;
             } else if b[j + 7] < av {
                 j += 8;
+            } else {
+                j += 1;
+            }
+        } else {
+            j += 1;
+        }
+    }
+
+    count
+}
+
+#[cfg(target_arch = "aarch64")]
+unsafe fn merge_intersection_count_neon(a: &[u32], b: &[u32]) -> usize {
+    use std::arch::aarch64::{
+        uint32x4_t, vceqq_u32, vdupq_n_u32, vld1q_u32, vmaxvq_u32,
+    };
+
+    let mut count = 0;
+    let mut i = 0;
+    let mut j = 0;
+
+    while i < a.len() && j < b.len() {
+        let av = a[i];
+        let bv = b[j];
+
+        if av == bv {
+            count += 1;
+            i += 1;
+            j += 1;
+        } else if av < bv {
+            if i + 4 <= a.len() && a[i + 3] < bv {
+                i += 4;
+            } else {
+                i += 1;
+            }
+        } else if j + 4 <= b.len() {
+            let needle = vdupq_n_u32(av);
+            let chunk = vld1q_u32(b[j..].as_ptr() as *const u32);
+            let eq: uint32x4_t = vceqq_u32(needle, chunk);
+            if vmaxvq_u32(eq) != 0 {
+                count += 1;
+                while b[j] != av {
+                    j += 1;
+                }
+                i += 1;
+                j += 1;
+            } else if b[j + 3] < av {
+                j += 4;
             } else {
                 j += 1;
             }
@@ -168,6 +227,7 @@ mod tests {
         let a = vec![1, 3, 5, 7, 9];
         let b = vec![2, 3, 6, 7, 10];
         assert_eq!(sparse_intersection_count(&a, &b), 2);
+        assert_eq!(sparse_hamming_distance(&a, &b), 6);
     }
 
     #[test]
