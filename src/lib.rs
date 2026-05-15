@@ -1,0 +1,587 @@
+#![deny(clippy::all)]
+
+#[cfg(feature = "node-api")]
+use napi::bindgen_prelude::*;
+#[cfg(feature = "node-api")]
+use napi_derive::napi;
+#[cfg(feature = "node-api")]
+use std::sync::Arc;
+
+pub mod core;
+pub use crate::core::entangled::EntangledHVec;
+pub use crate::core::types::{ConceptCandidate, RetrievalResult, TextMetrics};
+pub use crate::core::HmsCore;
+
+#[cfg(feature = "node-api")]
+#[napi]
+pub struct HolographicMemorySystem {
+    core: Arc<HmsCore>,
+}
+
+#[cfg(feature = "node-api")]
+fn napi_err(e: anyhow::Error) -> napi::Error {
+    napi::Error::from_reason(e.to_string())
+}
+
+#[cfg(feature = "node-api")]
+async fn run_async<T: Send + 'static, F: FnOnce() -> Result<T> + Send + 'static>(
+    f: F,
+) -> Result<T> {
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?
+        .map_err(napi_err)
+}
+
+#[cfg(feature = "node-api")]
+#[napi]
+impl HolographicMemorySystem {
+    #[napi(constructor)]
+    pub fn new(dimensions: u32, storage_path: Option<String>) -> Result<Self> {
+        let core = HmsCore::new(dimensions, storage_path, None)
+            .map_err(napi_err)?;
+        Ok(Self {
+            core: Arc::new(core),
+        })
+    }
+
+    #[napi]
+    pub async fn analyze_text(&self, text: String) -> Result<TextMetrics> {
+        let core = self.core.clone();
+        run_async(move || Ok(core.analyze_text(&text))).await
+    }
+
+    #[napi]
+    pub async fn calculate_readability(&self, metrics: TextMetrics) -> Result<f64> {
+        let core = self.core.clone();
+        run_async(move || Ok(core.calculate_readability(&metrics))).await
+    }
+
+    #[napi]
+    pub async fn memorize_text(&self, id: String, text: String) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || {
+            let vec = core.encode_text(&text);
+            core.memorize(id, vec)
+                .map_err(napi_err)
+        })
+        .await
+    }
+
+    /// Converts float32→sparse EntangledHVec on JS thread, then stores on background thread.
+    #[napi]
+    pub async fn memorize_vector(&self, id: String, vector: Float32Array) -> Result<()> {
+        let core = self.core.clone();
+        let evec = EntangledHVec::from_dense(&vector, core.dimensions());
+        run_async(move || {
+            core.memorize(id, evec)
+                .map_err(napi_err)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn memorize_scalar(&self, id: String, value: f64, min: f64, max: f64) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || {
+            core.memorize_scalar(id, value, min, max)
+                .map_err(napi_err)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn query(&self, text: String, k: u32) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let q_vec = core.encode_text(&text);
+            let results = core.query(&q_vec, k);
+            Ok(results)
+        })
+        .await
+    }
+
+    /// Converts float32→sparse EntangledHVec on JS thread, then queries on background.
+    #[napi]
+    pub async fn query_vector(&self, vector: Float32Array, k: u32) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        let q_vec = EntangledHVec::from_dense(&vector, core.dimensions());
+        run_async(move || {
+            let results = core.query(&q_vec, k);
+            Ok(results)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn query_scalar(
+        &self,
+        value: f64,
+        min: f64,
+        max: f64,
+        k: u32,
+    ) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let q_vec = EntangledHVec::from_scalar(value, min, max, core.dimensions());
+            let results = core.query(&q_vec, k);
+            Ok(results)
+        })
+        .await
+    }
+
+    /// Process multiple text queries in parallel, returning results for each.
+    #[napi]
+    pub async fn query_batch(
+        &self,
+        texts: Vec<String>,
+        k: u32,
+    ) -> Result<Vec<Vec<RetrievalResult>>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let queries: Vec<EntangledHVec> = texts.iter().map(|t| core.encode_text(t)).collect();
+            Ok(core.query_batch(&queries, k))
+        })
+        .await
+    }
+
+    /// Process multiple float32 vector queries in parallel.
+    #[napi]
+    pub async fn query_vector_batch(
+        &self,
+        vectors: Vec<Float32Array>,
+        k: u32,
+    ) -> Result<Vec<Vec<RetrievalResult>>> {
+        let core = self.core.clone();
+        let queries: Vec<EntangledHVec> = vectors
+            .iter()
+            .map(|v| EntangledHVec::from_dense(v, core.dimensions()))
+            .collect();
+        run_async(move || Ok(core.query_batch(&queries, k))).await
+    }
+
+    #[napi]
+    pub async fn analyze_components(&self, text: String) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let vec = core.encode_text(&text);
+            let results = core.analyze_components(&vec);
+            Ok(results)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn factorize_diffusion(
+        &self,
+        product_text: String,
+        domains: Vec<Vec<String>>,
+        max_iter: u32,
+    ) -> Result<Vec<Option<String>>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let vec = core.encode_text(&product_text);
+            let domain_vecs: Vec<Vec<EntangledHVec>> = domains
+                .iter()
+                .map(|d| d.iter().map(|s| core.encode_text(s)).collect())
+                .collect();
+            let results = core.factorize_diffusion(&vec, &domain_vecs, max_iter as usize);
+
+            // Map EntangledHVec results back to IDs from the domain strings
+            let mapped = results
+                .into_iter()
+                .enumerate()
+                .map(|(i, opt_vec)| {
+                    opt_vec.and_then(|evec| {
+                        domains[i]
+                            .iter()
+                            .zip(domain_vecs[i].iter())
+                            .min_by_key(|(_, enc)| evec.hamming(enc))
+                            .map(|(s, _)| s.clone())
+                    })
+                })
+                .collect();
+            Ok(mapped)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn memorize_triplet(
+        &self,
+        id: String,
+        head: String,
+        relation: String,
+        tail: String,
+    ) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || {
+            core.memorize_triplet(id, head, relation, tail)
+                .map_err(napi_err)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn query_triplet(
+        &self,
+        head: String,
+        relation: String,
+        k: u32,
+    ) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let h = core.encode_text(&head);
+            let r = core.encode_text(&relation);
+            let query_vec = h.bind_into(&r);
+            let results = core.query(&query_vec, k);
+            Ok(results)
+        })
+        .await
+    }
+
+    /// Finds an analogy: A is to B as C is to ?.
+    ///
+    /// NOTE: Currently uses character trigram encoding, which has limited semantic
+    /// understanding. Complex semantic analogies may require higher-level word
+    /// embeddings (slated for future upgrade).
+    #[napi]
+    pub async fn find_analogy(
+        &self,
+        a: String,
+        b: String,
+        c: String,
+    ) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let vec_a = core.encode_text(&a);
+            let vec_b = core.encode_text(&b);
+            let vec_c = core.encode_text(&c);
+            let target_d = vec_a.bind_into(&vec_b).bind_into(&vec_c);
+            let results = core.query(&target_d, 5);
+            Ok(results)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn synthesize_concepts(&self) -> Result<Vec<ConceptCandidate>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let results = core.synthesize_concepts();
+            Ok(results)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn memorize_sequence(&self, id: String, sequence: Vec<String>) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || {
+            core.memorize_sequence(id, &sequence)
+                .map_err(napi_err)
+        })
+        .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::core::engine::HmsCore;
+    use crate::core::entangled::EntangledHVec;
+
+    #[test]
+    fn test_determinism() {
+        let hms = HmsCore::new(1000, None, None).unwrap();
+        let v1 = hms.encode_text("hello world");
+        let v2 = hms.encode_text("hello world");
+        assert!((v1.similarity(&v2) - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_from_dense_produces_sparse() {
+        let dense: Vec<f32> = (0..128).map(|i| (i as f32 - 64.0) / 64.0).collect();
+        let e = EntangledHVec::from_dense(&dense, 1000);
+        assert_eq!(e.dim, 1000);
+        // Should have ~dim/256 active indices
+        let expected = 1000 / 256;
+        assert_eq!(e.indices.len(), expected);
+    }
+
+    // === Diffusion factorizer ===
+
+    #[test]
+    fn test_factorize_returns_factors() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        // Memorize some domain items
+        let colors = vec!["red", "blue", "green"];
+        let shapes = vec!["circle", "square", "triangle"];
+        for c in &colors {
+            let v = hms.encode_text(c);
+            hms.memorize(c.to_string(), v).unwrap();
+        }
+        for s in &shapes {
+            let v = hms.encode_text(s);
+            hms.memorize(s.to_string(), v).unwrap();
+        }
+
+        // Create a composite: red * circle
+        let red_vec = hms.encode_text("red");
+        let circle_vec = hms.encode_text("circle");
+        let product = red_vec.bind(&circle_vec);
+
+        let domains = vec![
+            colors
+                .iter()
+                .map(|s| hms.encode_text(s))
+                .collect::<Vec<EntangledHVec>>(),
+            shapes
+                .iter()
+                .map(|s| hms.encode_text(s))
+                .collect::<Vec<EntangledHVec>>(),
+        ];
+
+        let results = hms.factorize_diffusion(&product, &domains, 20);
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_concept_synthesis() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(1000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        // Create 20 slightly-varied versions of a "base" concept
+        // Use the same seed with small variations to create tight clusters
+        let base = hms.encode_text("base concept");
+        for i in 0..20 {
+            // Create variants by permuting base slightly
+            let variant = if i == 0 {
+                base.clone()
+            } else {
+                // Bind with a "small" perturbation (most indices shared)
+                let perturb = EntangledHVec::new_deterministic(1000, 10000 + i);
+                // Bundle many copies of base with one perturbation to stay close
+                EntangledHVec::bundle(&[
+                    base.clone(),
+                    base.clone(),
+                    base.clone(),
+                    base.clone(),
+                    perturb,
+                ])
+            };
+            hms.memorize(format!("var_{}", i), variant).unwrap();
+        }
+
+        let concepts = hms.synthesize_concepts();
+        // We expect at least one synthesized concept representing the cluster
+        assert!(
+            !concepts.is_empty(),
+            "Should synthesize at least one concept"
+        );
+        assert!(
+            concepts[0].coherence > 0.7,
+            "Synthesized concept should have high coherence, got {}",
+            concepts[0].coherence
+        );
+    }
+
+    // === NSG Integration Tests ===
+
+    #[test]
+    fn test_nsg_train_and_query() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.nsg.max_degree = 8;
+        config.nsg.ef_search = 32;
+        config.nsg.ef_construction = 16;
+
+        let hms = HmsCore::new(
+            1000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..50 {
+            let vec = hms.encode_text(&format!("nsg document {}", i));
+            hms.memorize(format!("nsg_{}", i), vec).unwrap();
+        }
+
+        assert!(!hms.nsg_trained());
+        hms.train_nsg().unwrap();
+        assert!(hms.nsg_trained());
+
+        let q = hms.encode_text("nsg document 0");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "NSG query should return results");
+    }
+
+    #[test]
+    fn test_nsg_auto_train_at_threshold() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.nsg.auto_threshold = 30;
+        config.nsg.max_degree = 8;
+        config.nsg.ef_search = 32;
+        config.nsg.ef_construction = 16;
+
+        let hms = HmsCore::new(
+            1000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..29 {
+            let vec = hms.encode_text(&format!("auto nsg {}", i));
+            hms.memorize(format!("ansg_{}", i), vec).unwrap();
+        }
+        assert!(!hms.nsg_trained());
+
+        let vec = hms.encode_text("auto nsg 29");
+        hms.memorize("ansg_29".to_string(), vec).unwrap();
+        assert!(hms.nsg_trained(), "NSG should auto-train at threshold");
+    }
+
+    // === Phase 4 Integration Tests ===
+
+    #[test]
+    fn test_adaptive_routing_e2e() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.nsg.max_degree = 8;
+        config.nsg.ef_search = 32;
+        config.nsg.ef_construction = 16;
+
+        let hms = HmsCore::new(
+            1000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..50 {
+            let vec = hms.encode_text(&format!("routing item {}", i));
+            hms.memorize(format!("rt_{}", i), vec).unwrap();
+        }
+
+        // Train NSG — queries should now route through NSG
+        hms.train_nsg().unwrap();
+        assert!(hms.nsg_trained());
+
+        let q = hms.encode_text("routing item 0");
+        let results = hms.query(&q, 5);
+        assert!(
+            !results.is_empty(),
+            "Adaptive routing should return results via NSG"
+        );
+    }
+
+    #[test]
+    fn test_shard_manager_integration() {
+        use crate::core::config::{NSGConfig, ShardConfig};
+        use crate::core::nsg::training;
+        use crate::core::shard::{Shard, ShardManager};
+
+        let nsg_cfg = NSGConfig {
+            max_degree: 8,
+            ef_search: 32,
+            ef_construction: 16,
+            auto_threshold: 0,
+            seed: 42,
+        };
+
+        let make_shard = |seed: u64, n: usize| {
+            let vectors: Vec<EntangledHVec> = (0..n)
+                .map(|i| EntangledHVec::new_deterministic(1000, seed + i as u64))
+                .collect();
+            let ids: Vec<String> = (0..n).map(|i| format!("sh{}_v{}", seed, i)).collect();
+            let offsets: Vec<usize> = (0..n).map(|i| i * 100).collect();
+            let index = training::train(&vectors, &ids, &offsets, 1000, &nsg_cfg).unwrap();
+            Box::new(index) as Box<dyn Shard>
+        };
+
+        let mut mgr = ShardManager::new(ShardConfig::default());
+        mgr.add_shard(make_shard(0, 25));
+        mgr.add_shard(make_shard(100, 25));
+
+        assert!(mgr.is_trained());
+        assert_eq!(mgr.shard_count(), 2);
+        assert_eq!(mgr.total_vectors(), 50);
+
+        let query = EntangledHVec::new_deterministic(1000, 0);
+        let results = mgr.query(&query, 5, 32);
+        assert!(!results.is_empty(), "Shard manager should return results");
+    }
+
+    // === IVF Integration Tests ===
+
+    #[test]
+    fn test_manual_ivf_train_and_query() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.ivf.n_clusters = 8;
+        config.ivf.n_landmarks = 64;
+        config.ivf.d_reduced = 16;
+        config.ivf.n_probe = 8;
+
+        let hms = HmsCore::new(
+            10000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..200 {
+            let vec = hms.encode_text(&format!("document number {}", i));
+            hms.memorize(format!("doc_{}", i), vec).unwrap();
+        }
+
+        assert!(!hms.ivf_trained());
+        hms.train_ivf().unwrap();
+        assert!(hms.ivf_trained());
+
+        let q = hms.encode_text("document number 0");
+        let results = hms.query(&q, 10);
+        assert!(!results.is_empty(), "IVF query should return results");
+    }
+
+    #[test]
+    fn test_auto_train_ivf_at_threshold() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.ivf.enabled = true;
+        config.ivf.auto_threshold = 50;
+        config.ivf.n_clusters = 8;
+        config.ivf.n_landmarks = 64;
+        config.ivf.d_reduced = 16;
+        config.ivf.n_probe = 8;
+
+        let hms = HmsCore::new(
+            1000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..49 {
+            let vec = hms.encode_text(&format!("auto item {}", i));
+            hms.memorize(format!("auto_{}", i), vec).unwrap();
+        }
+        assert!(!hms.ivf_trained(), "Should not be trained before threshold");
+
+        // This 50th insert should trigger auto-training
+        let vec = hms.encode_text("auto item 49");
+        hms.memorize("auto_49".to_string(), vec).unwrap();
+        assert!(
+            hms.ivf_trained(),
+            "Should be trained after reaching threshold"
+        );
+    }
+}
+
+#[cfg(test)]
+mod lib_proptest;
