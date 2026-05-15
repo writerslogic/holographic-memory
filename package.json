@@ -1,0 +1,23 @@
+{
+  "name": "@hms/native",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "author": "David Condrey",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "hms-native",
+    "package": {
+      "name": "@hms/native-core"
+    }
+  },
+  "scripts": {
+    "build": "napi build --release",
+    "build:debug": "napi build",
+    "prepublishOnly": "napi prepublish -t npm",
+    "artifacts": "napi artifacts"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.17.0"
+  }
+}
