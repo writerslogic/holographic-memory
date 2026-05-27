@@ -1,8 +1,6 @@
 use std::collections::BinaryHeap;
-use fxhash::FxHashSet;
 
 use rayon::prelude::*;
-
 use super::router::IndexRoute;
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
@@ -49,9 +47,8 @@ impl HmsCore {
         );
         let plan = planner.plan(query_vec, k);
 
-        // NSG/IVF indexes may contain stale entries for deleted IDs.
-        // Filter results against the cached live ID set which is authoritative.
-        let live_ids = self.live_ids.read();
+        // authoritative live set
+        let vectors = self.vectors.read();
 
         match plan.route {
             IndexRoute::NSG => {
@@ -59,7 +56,7 @@ impl HmsCore {
                     let results: Vec<RetrievalResult> = nsg
                         .query(query_vec, k as usize, plan.ef_search)
                         .into_iter()
-                        .filter(|r| live_ids.contains(&r.id))
+                        .filter(|r| vectors.contains_key(&r.id))
                         .collect();
                     if !results.is_empty() {
                         return results;
@@ -79,11 +76,15 @@ impl HmsCore {
                     .into_iter()
                     .filter_map(|r| {
                         let doc_id: u32 = r.id.parse().ok()?;
-                        let (id_str, _) = reg.get(doc_id as usize)?;
-                        Some(RetrievalResult {
-                            id: id_str.clone(),
-                            similarity: r.similarity,
-                        })
+                        let id_str = reg.get(doc_id as usize)?;
+                        if vectors.contains_key(id_str) {
+                            Some(RetrievalResult {
+                                id: id_str.clone(),
+                                similarity: r.similarity,
+                            })
+                        } else {
+                            None
+                        }
                     })
                     .collect();
 
@@ -98,7 +99,7 @@ impl HmsCore {
                         // Re-rank candidates by exact Jaccard so all query paths return
                         // the same similarity metric.
                         let reranked =
-                            self.rerank_by_exact_similarity(query_vec, &candidates, &live_ids);
+                            self.rerank_by_exact_similarity(query_vec, &candidates);
                         if !reranked.is_empty() {
                             return reranked;
                         }
@@ -115,24 +116,20 @@ impl HmsCore {
     }
 
     /// Re-rank IVF candidates by exact Jaccard similarity.
-    /// Uses fast id_to_offset lookup for each candidate.
     fn rerank_by_exact_similarity(
         &self,
         query_vec: &EntangledHVec,
         candidates: &[RetrievalResult],
-        live_ids: &FxHashSet<String>,
     ) -> Vec<RetrievalResult> {
-        let ito = self.id_to_offset.read();
+        let vectors = self.vectors.read();
 
         let mut results: Vec<RetrievalResult> = candidates
             .iter()
-            .filter(|c| live_ids.contains(&c.id))
             .filter_map(|c| {
-                let offset = *ito.get(&c.id)?;
-                let (_, vec) = self.read_entry(offset);
+                let (vec, _) = vectors.get(&c.id)?;
                 Some(RetrievalResult {
                     id: c.id.clone(),
-                    similarity: query_vec.similarity(&vec),
+                    similarity: query_vec.similarity(vec),
                 })
             })
             .collect();
@@ -148,12 +145,11 @@ impl HmsCore {
     /// Linear scan over all stored vectors. Uses a min-heap of size k
     /// to avoid sorting all results when k is small relative to n.
     fn brute_force_scan(&self, query_vec: &EntangledHVec, k: usize) -> Vec<RetrievalResult> {
-        let registry = self.registry.read();
+        let vectors = self.vectors.read();
         let mut heap: BinaryHeap<ScoredEntry> = BinaryHeap::with_capacity(k + 1);
 
-        for (id, offset) in registry.iter() {
-            let (_, vec) = self.read_entry(*offset);
-            let sim = query_vec.similarity(&vec);
+        for (id, (vec, _)) in vectors.iter() {
+            let sim = query_vec.similarity(vec);
 
             if heap.len() < k {
                 heap.push(ScoredEntry {
