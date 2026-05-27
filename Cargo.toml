@@ -1,5 +1,5 @@
 [package]
-name = "hms-core"
+name = "hms-native"
 version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
@@ -27,7 +27,6 @@ lz4_flex = "0.11"
 rayon = "1.8"
 parking_lot = "0.12"
 memmap2 = "0.9"
-redb = "2.0"
 anyhow = "1.0"
 clap = { version = "4.4", features = ["derive"] }
 fxhash = "0.2"

@@ -91,9 +91,6 @@ mod tests {
     use crate::core::config::IVFConfig;
     use crate::core::entangled::EntangledHVec;
     use crate::core::ivf::IVFIndex;
-    use redb::Database;
-    use std::sync::Arc;
-
     #[test]
     fn test_top1_accuracy() {
         let dim = 10000;
@@ -104,9 +101,6 @@ mod tests {
         let offsets: Vec<usize> = (0..n).map(|i| i * 200).collect();
         let ids: Vec<String> = (0..n).map(|i| format!("vec_{}", i)).collect();
 
-        let dir = tempfile::tempdir().unwrap();
-        let db = Arc::new(Database::create(dir.path().join("query_test.redb")).unwrap());
-
         let config = IVFConfig {
             enabled: true,
             n_clusters: 8,
@@ -116,7 +110,7 @@ mod tests {
             auto_threshold: 0,
         };
 
-        let index = IVFIndex::train(&vectors, &offsets, &ids, dim, &config, db).unwrap();
+        let index = IVFIndex::train(&vectors, &offsets, &ids, dim, &config).unwrap();
 
         let results = index.query(&vectors[0], 10, config.n_probe).unwrap();
         assert!(!results.is_empty(), "Should return results");

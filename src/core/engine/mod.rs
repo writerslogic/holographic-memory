@@ -6,8 +6,7 @@ pub(crate) mod router;
 
 use anyhow::{Context, Result};
 use parking_lot::RwLock;
-use redb::{Database, ReadableTable, TableDefinition};
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
 use std::sync::Arc;
@@ -23,13 +22,7 @@ use super::storage::PersistentArena;
 use super::text::TextProcessor;
 use super::types::TextMetrics;
 
-pub(crate) const REGISTRY_TABLE: TableDefinition<&str, u64> = TableDefinition::new("registry");
-pub(crate) const DELETED_IDS_TABLE: TableDefinition<&str, u64> =
-    TableDefinition::new("deleted_ids");
-pub(crate) const NSG_INDEX_TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("nsg_index");
-pub(crate) const IVF_INDEX_TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("ivf_index");
-
-/// Lock ordering: registry -> ivf -> nsg. All code acquiring multiple locks must follow this order.
+/// Lock ordering: vectors -> ivf -> nsg. All code acquiring multiple locks must follow this order.
 pub struct HmsCore {
     /// Global configuration for indexing and sharding.
     config: HmsConfig,
@@ -37,8 +30,8 @@ pub struct HmsCore {
     pub(crate) arena: Arc<PersistentArena>,
     /// Number of dimensions in the hyperdimensional space.
     pub(crate) dimensions: usize,
-    /// Persistent key-value store for registry and index metadata.
-    pub(crate) db: Arc<Database>,
+    /// Path to the storage directory.
+    pub(crate) storage_path: PathBuf,
     /// Inverted File (IVF) index for coarse-grained quantization.
     ivf: Arc<RwLock<Option<IVFIndex>>>,
     /// Navigable Small World (NSG) graph for fast proximity search.
@@ -49,13 +42,10 @@ pub struct HmsCore {
     pub(crate) accumulator: Arc<parking_lot::Mutex<Accumulator>>,
     /// Atomic counter for the total number of non-deleted vectors.
     vector_count: AtomicU64,
-    /// In-memory registry of ID-to-offset mappings (ordered).
-    /// Used for mapping internal doc_id back to String ID.
-    registry: Arc<RwLock<Vec<(String, usize)>>>,
-    /// Fast lookup from String ID to arena offset.
-    id_to_offset: Arc<RwLock<FxHashMap<String, usize>>>,
-    /// Set of non-deleted IDs for authoritative filtering.
-    live_ids: Arc<RwLock<FxHashSet<String>>>,
+    /// Absolute source of truth in RAM: ID -> (Vector, ArenaOffset)
+    pub(crate) vectors: Arc<RwLock<FxHashMap<String, (EntangledHVec, usize)>>>,
+    /// Maps internal doc_id (index) to String ID.
+    pub(crate) registry: Arc<RwLock<Vec<String>>>,
 }
 
 impl HmsCore {
@@ -64,8 +54,6 @@ impl HmsCore {
         storage_path: Option<String>,
         config: Option<HmsConfig>,
     ) -> Result<Self> {
-        // Security: bound dimensions to prevent OOM from malicious input.
-        // 1M dimensions * 4 bytes/index = 4 MB per vector, which is reasonable.
         const MAX_DIMENSIONS: u32 = 1_000_000;
         if dimensions == 0 || dimensions > MAX_DIMENSIONS {
             return Err(anyhow::anyhow!(
@@ -84,19 +72,6 @@ impl HmsCore {
             std::fs::create_dir_all(&base_path)?;
         }
 
-        let db_path = base_path.join("meta.redb");
-        let db = Arc::new(Database::create(db_path)?);
-
-        // Ensure tables exist
-        let write_tx = db.begin_write()?;
-        {
-            let _ = write_tx.open_table(REGISTRY_TABLE)?;
-            let _ = write_tx.open_table(DELETED_IDS_TABLE)?;
-            let _ = write_tx.open_table(NSG_INDEX_TABLE)?;
-            let _ = write_tx.open_table(IVF_INDEX_TABLE)?;
-        }
-        write_tx.commit()?;
-
         let arena = Arc::new(PersistentArena::new(base_path.join("vectors_data.bin"))?);
 
         // Calculate m = D/256
@@ -106,61 +81,69 @@ impl HmsCore {
             config: config.clone(),
             arena,
             dimensions: dim,
-            db: db.clone(),
+            storage_path: base_path,
             ivf: Arc::new(RwLock::new(None)),
             nsg: Arc::new(RwLock::new(None)),
             inverted: Arc::new(RwLock::new(SparseInvertedIndex::new(dim, m))),
             accumulator: Arc::new(parking_lot::Mutex::new(Accumulator::new(1024))),
             vector_count: AtomicU64::new(0),
+            vectors: Arc::new(RwLock::new(FxHashMap::default())),
             registry: Arc::new(RwLock::new(Vec::new())),
-            id_to_offset: Arc::new(RwLock::new(FxHashMap::default())),
-            live_ids: Arc::new(RwLock::new(FxHashSet::default())),
         };
 
-        core.load_registry()?;
-        core.load_indices()?; // Load persisted NSG/IVF
+        core.load_from_log()?;
+        core.load_indices()?; // Load persisted NSG/IVF from bin files
         core.rebuild_inverted_index()?;
 
         Ok(core)
     }
 
     fn rebuild_inverted_index(&self) -> Result<()> {
-        let (ids, vectors, _) = self.load_all_vectors();
+        let vectors = self.vectors.read();
+        let registry = self.registry.read();
         let mut inv = self.inverted.write();
 
         // Reset index
         *inv = SparseInvertedIndex::new(self.dimensions, (self.dimensions / 256).max(1));
 
-        for (i, vec) in vectors.iter().enumerate() {
-            inv.add_doc(i as u32, &vec.indices);
+        for (i, id) in registry.iter().enumerate() {
+            if let Some((vec, _)) = vectors.get(id) {
+                inv.add_doc(i as u32, &vec.indices);
+            }
         }
         inv.finalize();
 
         // Also resize accumulator to match registry size
         let mut acc = self.accumulator.lock();
-        *acc = Accumulator::new(ids.len().max(1024));
+        *acc = Accumulator::new(registry.len().max(1024));
 
         Ok(())
     }
 
     fn load_indices(&self) -> Result<()> {
-        let read_tx = self.db.begin_read()?;
-
         // 1. Load NSG if exists
-        let nsg_table = read_tx.open_table(NSG_INDEX_TABLE)?;
-        if let Some(data) = nsg_table.get("main")? {
-            let nsg: NSGIndex = bincode::deserialize(data.value())?;
+        let nsg_path = self.storage_path.join("nsg_index.bin");
+        if nsg_path.exists() {
+            let data = std::fs::read(&nsg_path)?;
+            let nsg: NSGIndex = bincode::deserialize(&data)?;
             *self.nsg.write() = Some(nsg);
         }
 
         // 2. Load IVF if exists
-        let ivf_table = read_tx.open_table(IVF_INDEX_TABLE)?;
-        if let Some(data) = ivf_table.get("main")? {
-            let mut ivf: IVFIndex = bincode::deserialize(data.value())?;
-            // Re-attach database handle to inverted lists
-            ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new(
-                self.db.clone(),
-            )?);
+        let ivf_path = self.storage_path.join("ivf_index.bin");
+        if ivf_path.exists() {
+            let data = std::fs::read(&ivf_path)?;
+            let mut ivf: IVFIndex = bincode::deserialize(&data)?;
+            // In-memory inverted lists don't need a DB handle
+            ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new());
+            // Re-fill inverted lists from vectors
+            let vectors = self.vectors.read();
+            let registry = self.registry.read();
+            for id in registry.iter() {
+                if let Some((vec, offset)) = vectors.get(id) {
+                    ivf.insert(id, vec, *offset)?;
+                }
+            }
             *self.ivf.write() = Some(ivf);
         }
 
@@ -169,65 +152,100 @@ impl HmsCore {
 
     fn save_nsg(&self, nsg: &NSGIndex) -> Result<()> {
         let data = bincode::serialize(nsg)?;
-        let write_tx = self.db.begin_write()?;
-        {
-            let mut table = write_tx.open_table(NSG_INDEX_TABLE)?;
-            table.insert("main", data.as_slice())?;
-        }
-        write_tx.commit()?;
+        std::fs::write(self.storage_path.join("nsg_index.bin"), data)?;
         Ok(())
     }
 
     fn save_ivf(&self, ivf: &IVFIndex) -> Result<()> {
         let data = bincode::serialize(ivf)?;
-        let write_tx = self.db.begin_write()?;
-        {
-            let mut table = write_tx.open_table(IVF_INDEX_TABLE)?;
-            table.insert("main", data.as_slice())?;
-        }
-        write_tx.commit()?;
+        std::fs::write(self.storage_path.join("ivf_index.bin"), data)?;
         Ok(())
     }
 
-    fn load_registry(&self) -> Result<()> {
-        let read_tx = self.db.begin_read()?;
-        let table = read_tx.open_table(REGISTRY_TABLE)?;
+    fn load_from_log(&self) -> Result<()> {
+        let mut vectors = self.vectors.write();
+        let mut registry = self.registry.write();
 
-        let mut reg = self.registry.write();
-        let mut ito = self.id_to_offset.write();
-        let mut live = self.live_ids.write();
-        let mut count = 0;
-
-        for item in table.iter()? {
-            let (id, offset) = item?;
-            let id_str = id.value().to_string();
-            let off = offset.value() as usize;
-            reg.push((id_str.clone(), off));
-            ito.insert(id_str.clone(), off);
-            live.insert(id_str);
-            count += 1;
+        let mut offset = 0;
+        loop {
+            match self.arena.read_frame(offset) {
+                Ok((payload, _version)) => {
+                    let (id, vector) = self.parse_log_payload(&payload);
+                    if vector.dim == 0 && vector.indices.is_empty() {
+                        // DELETE TOMBSTONE
+                        vectors.remove(&id);
+                    } else {
+                        // INSERT or UPDATE
+                        vectors.insert(id.clone(), (vector, offset));
+                    }
+                    offset = match self.arena.next_offset(offset) {
+                        Ok(next) => next,
+                        Err(_) => break,
+                    };
+                }
+                Err(_) => break,
+            }
         }
 
-        self.vector_count.store(count, AtomicOrdering::SeqCst);
+        // Rebuild registry from live vectors.
+        // For NSG/IVF indices, the order in registry must be stable.
+        let mut live_ids: Vec<String> = vectors.keys().cloned().collect();
+        live_ids.sort(); // Ensure deterministic internal indexing
+        *registry = live_ids;
+        self.vector_count.store(registry.len() as u64, AtomicOrdering::SeqCst);
         Ok(())
     }
 
-    /// Load all vectors and their associated metadata from the registry.
+    fn parse_log_payload(&self, payload: &[u8]) -> (String, EntangledHVec) {
+        if payload.len() < 6 {
+            return (String::new(), EntangledHVec::from_indices(vec![], 0));
+        }
+        let id_len = u16::from_le_bytes([payload[0], payload[1]]) as usize;
+        let id_end = 2 + id_len;
+        if payload.len() < id_end + 4 {
+            return (String::new(), EntangledHVec::from_indices(vec![], 0));
+        }
+        let id = String::from_utf8_lossy(&payload[2..id_end]).to_string();
+        let delta_count = u32::from_le_bytes(match payload[id_end..id_end + 4].try_into() {
+            Ok(b) => b,
+            Err(_) => return (id, EntangledHVec::from_indices(vec![], 0)),
+        }) as usize;
+
+        if delta_count == 0 {
+            // Likely a tombstone
+            return (id, EntangledHVec::from_indices(vec![], 0));
+        }
+
+        let deltas_start = id_end + 4;
+        let deltas_end = deltas_start + delta_count * 4;
+        if payload.len() < deltas_end {
+            return (id, EntangledHVec::from_indices(vec![], 0));
+        }
+        let deltas: Vec<u32> = payload[deltas_start..deltas_end]
+            .chunks_exact(4)
+            .map(|c| u32::from_le_bytes(c.try_into().unwrap()))
+            .collect();
+        (id, EntangledHVec::from_deltas(&deltas, self.dimensions))
+    }
+
+    /// Load all vectors and their associated metadata.
     /// Returns (IDs, Vectors, Offsets).
     fn load_all_vectors(&self) -> (Vec<String>, Vec<EntangledHVec>, Vec<usize>) {
+        let vectors = self.vectors.read();
         let registry = self.registry.read();
         let mut ids = Vec::with_capacity(registry.len());
-        let mut vectors = Vec::with_capacity(registry.len());
+        let mut out_vectors = Vec::with_capacity(registry.len());
         let mut offsets = Vec::with_capacity(registry.len());
 
-        for (id, offset) in registry.iter() {
-            let (_, vec) = self.read_entry(*offset);
-            ids.push(id.clone());
-            vectors.push(vec);
-            offsets.push(*offset);
+        for id in registry.iter() {
+            if let Some((vec, offset)) = vectors.get(id) {
+                ids.push(id.clone());
+                out_vectors.push(vec.clone());
+                offsets.push(*offset);
+            }
         }
 
-        (ids, vectors, offsets)
+        (ids, out_vectors, offsets)
     }
 
     pub fn dimensions(&self) -> usize {
@@ -247,44 +265,30 @@ impl HmsCore {
     }
 
     pub fn delete(&self, id: &str) -> Result<()> {
-        let write_tx = self.db.begin_write()?;
-        {
-            let mut table = write_tx.open_table(DELETED_IDS_TABLE)?;
-            table.insert(id, 1)?;
-            // Also remove from persistent registry so reloads skip it
-            let mut reg_table = write_tx.open_table(REGISTRY_TABLE)?;
-            reg_table.remove(id)?;
-        }
-        write_tx.commit()?;
+        let mut vectors = self.vectors.write();
+        let mut reg = self.registry.write();
 
-        // Remove from in-memory registry immediately so all query paths
-        // (brute-force, NSG result filtering, IVF result filtering) skip it.
-        // Update vector_count under the same write lock to avoid TOCTOU race
-        // with concurrent memorize() calls.
-        {
-            let mut reg = self.registry.write();
-            let mut ito = self.id_to_offset.write();
-            reg.retain(|(eid, _)| eid != id);
-            ito.remove(id);
-            self.live_ids.write().remove(id);
+        if let Some(_) = vectors.remove(id) {
+            reg.retain(|eid| eid != id);
             self.vector_count
                 .store(reg.len() as u64, AtomicOrdering::SeqCst);
+
+            // Log the deletion (tombstone)
+            let mut entry = Vec::with_capacity(2 + id.len() + 4);
+            let id_bytes = id.as_bytes();
+            entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
+            entry.extend_from_slice(id_bytes);
+            entry.extend_from_slice(&0u32.to_le_bytes()); // 0 deltas = tombstone
+            self.arena.write_slice(&entry)?;
         }
 
         self.rebuild_inverted_index()?;
-
         Ok(())
     }
 
     pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
-        // Check if ID is deleted before memorizing
-        {
-            let read_tx = self.db.begin_read()?;
-            let table = read_tx.open_table(DELETED_IDS_TABLE)?;
-            if table.get(id.as_str())?.is_some() {
-                return Err(anyhow::anyhow!("Cannot memorize deleted ID: {}", id));
-            }
-        }
+        let mut vectors = self.vectors.write();
+        let mut reg = self.registry.write();
 
         let id_bytes = id.as_bytes();
         if id_bytes.len() > u16::MAX as usize {
@@ -294,68 +298,40 @@ impl HmsCore {
                 u16::MAX
             ));
         }
-        let len_bytes = (id_bytes.len() as u16).to_le_bytes();
 
         let deltas = vector.to_deltas();
-        let delta_count = (deltas.len() as u32).to_le_bytes();
-
         let mut entry = Vec::with_capacity(2 + id_bytes.len() + 4 + deltas.len() * 4);
-        entry.extend_from_slice(&len_bytes);
+        entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
         entry.extend_from_slice(id_bytes);
-        entry.extend_from_slice(&delta_count);
+        entry.extend_from_slice(&(deltas.len() as u32).to_le_bytes());
         for &d in &deltas {
             entry.extend_from_slice(&d.to_le_bytes());
         }
 
         let offset = self.arena.write_slice(&entry)?;
 
-        // Add to persistent registry
-        {
-            let write_tx = self.db.begin_write()?;
-            {
-                let mut table = write_tx.open_table(REGISTRY_TABLE)?;
-                table.insert(id.as_str(), offset as u64)?;
-            }
-            write_tx.commit()?;
-        }
+        let is_replacement = vectors.contains_key(&id);
+        vectors.insert(id.clone(), (vector.clone(), offset));
 
-        // Add to in-memory registry (deduplicate: remove old entry if same ID exists).
-        // Update vector_count under the same write lock to avoid TOCTOU race
-        // with concurrent delete() calls.
-        let (count, is_replacement) = {
-            let mut reg = self.registry.write();
-            let mut ito = self.id_to_offset.write();
-            let exists = reg.iter().any(|(eid, _)| eid == &id);
-            reg.retain(|(existing_id, _)| existing_id != &id);
-            ito.remove(&id);
-            reg.push((id.clone(), offset));
-            ito.insert(id.clone(), offset);
-            self.live_ids.write().insert(id.clone());
+        if !is_replacement {
+            reg.push(id.clone());
             let count = reg.len() as u64;
             self.vector_count.store(count, AtomicOrdering::SeqCst);
-            (count, exists)
-        };
 
-        if is_replacement {
-            self.rebuild_inverted_index()?;
-        } else {
             let mut inv = self.inverted.write();
-            // count-1 is the index of the newly pushed ID in registry
             inv.add_doc((count - 1) as u32, &vector.indices);
+        } else {
+            self.rebuild_inverted_index()?;
         }
 
-        // Insert into IVF if trained. Note: old entries for the same ID remain in
-        // the index but are filtered out during query via the live registry.
-        // Full reclamation happens during `compact()`.
+        let count = reg.len() as u64;
+
         if let Some(ref mut ivf) = *self.ivf.write() {
-            ivf.insert(&id, &vector, offset)
-                .context("IVF insert failed")?;
+            ivf.insert(&id, &vector, offset)?;
         }
 
-        // Insert into NSG if trained
         if let Some(ref mut nsg) = *self.nsg.write() {
-            nsg.insert(&id, &vector, offset)
-                .context("NSG insert failed")?;
+            nsg.insert(&id, &vector, offset)?;
         }
 
         if self.config.ivf.enabled
@@ -457,7 +433,6 @@ impl HmsCore {
             &ids,
             self.dimensions,
             &self.config.ivf,
-            self.db.clone(),
         )?;
 
         self.save_ivf(&index)?; // PERSIST

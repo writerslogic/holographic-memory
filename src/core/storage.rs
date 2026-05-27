@@ -220,6 +220,19 @@ impl PersistentArena {
         Ok((data, version))
     }
 
+    pub fn next_offset(&self, global_offset: usize) -> Result<usize> {
+        let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
+        if header_bytes.len() < HEADER_SIZE {
+            return Err(anyhow!("Truncated header at offset {}", global_offset));
+        }
+
+        let comp_len = u32::from_le_bytes(header_bytes[8..12].try_into().unwrap()) as usize;
+        if comp_len == 0 {
+            return Err(anyhow!("Empty frame at offset {}", global_offset));
+        }
+        Ok(global_offset + HEADER_SIZE + comp_len)
+    }
+
     pub fn write_slice(&self, data: &[u8]) -> Result<usize> {
         let raw_len = data.len();
         let version = self.version_counter.fetch_add(1, Ordering::SeqCst) as u32;
