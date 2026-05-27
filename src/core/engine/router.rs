@@ -58,9 +58,9 @@ impl QueryPlanner {
 
         // 1. Calculate dynamic parameters based on k and N
         // For NSG, ef_search should generally be >= k. SOTA engines use ef_search = k * multiplier + additive_constant.
-        let ef_search = (k_idx * 2).max(EF_SEARCH_MIN).min(EF_SEARCH_MAX);
+        let ef_search = (k_idx * 2).clamp(EF_SEARCH_MIN, EF_SEARCH_MAX);
         // For IVF, n_probe should increase with k and total collection size.
-        let n_probe = (k_idx / 8).max(N_PROBE_MIN).min(N_PROBE_MAX);
+        let n_probe = (k_idx / 8).clamp(N_PROBE_MIN, N_PROBE_MAX);
 
         // 2. Select Route
 
