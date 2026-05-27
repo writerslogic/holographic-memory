@@ -1,7 +1,5 @@
 use anyhow::Result;
 use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
-use redb::Database;
-use std::sync::Arc;
 
 use super::inverted_list::InvertedLists;
 use super::kmeans::KMeansNystrom;
@@ -19,7 +17,6 @@ impl IVFIndex {
         ids: &[String],
         dim: usize,
         config: &IVFConfig,
-        db: Arc<Database>,
     ) -> Result<Self> {
         let n = vectors.len();
         let n_landmarks = config.n_landmarks.min(n);
@@ -50,7 +47,7 @@ impl IVFIndex {
         let pq = PQEncoder::train(vectors, dim);
 
         // 6. Build inverted lists
-        let lists = InvertedLists::new(db)?;
+        let lists = InvertedLists::new();
         for (i, vec) in vectors.iter().enumerate() {
             let cluster = assignments[i];
             let codes = pq.encode(vec);
@@ -84,9 +81,6 @@ mod tests {
         let offsets: Vec<usize> = (0..n).map(|i| i * 200).collect();
         let ids: Vec<String> = (0..n).map(|i| format!("vec_{}", i)).collect();
 
-        let dir = tempfile::tempdir().unwrap();
-        let db = Arc::new(Database::create(dir.path().join("train_test.redb")).unwrap());
-
         let config = IVFConfig {
             enabled: true,
             n_clusters: 16,
@@ -96,9 +90,8 @@ mod tests {
             auto_threshold: 0,
         };
 
-        let index = IVFIndex::train(&vectors, &offsets, &ids, dim, &config, db).unwrap();
+        let index = IVFIndex::train(&vectors, &offsets, &ids, dim, &config).unwrap();
         assert!(index.is_trained());
-        assert_eq!(index.n_clusters, 16);
         assert_eq!(index.n_clusters, 16);
     }
 }
