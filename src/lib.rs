@@ -983,6 +983,216 @@ mod tests {
         assert!(!results.is_empty(), "Should find results after auto-shard");
     }
 
+    // === Analogy Tests ===
+
+    #[test]
+    fn test_find_analogy() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        // Structural analogy: words sharing suffix patterns
+        for word in &["walking", "talking", "running", "walked", "talked", "runner"] {
+            let v = hms.encode_text(word);
+            hms.memorize(word.to_string(), v).unwrap();
+        }
+
+        // A:B :: C:? (walking:walked :: talking:?)
+        let results = hms.query_triplet(
+            "walking".to_string(),
+            "walked".to_string(),
+            5,
+        ).unwrap();
+        assert!(!results.is_empty(), "Analogy query should return results");
+    }
+
+    // === Query Batch Tests ===
+
+    #[test]
+    fn test_query_batch() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        for i in 0..20 {
+            let v = hms.encode_text(&format!("batch query doc {}", i));
+            hms.memorize(format!("bq_{}", i), v).unwrap();
+        }
+
+        let queries: Vec<EntangledHVec> = (0..3)
+            .map(|i| hms.encode_text(&format!("batch query doc {}", i)))
+            .collect();
+        let batch_results = hms.query_batch(&queries, 3);
+        assert_eq!(batch_results.len(), 3, "Should return one result set per query");
+        for results in &batch_results {
+            assert!(!results.is_empty(), "Each query should return results");
+        }
+    }
+
+    // === Memorize Vector Tests ===
+
+    #[test]
+    fn test_memorize_vector_through_core() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        let dense: Vec<f32> = (0..128).map(|i| (i as f32 - 64.0) / 64.0).collect();
+        hms.memorize_vector("dense_1".to_string(), &dense).unwrap();
+        assert_eq!(hms.vector_count(), 1);
+
+        let q = EntangledHVec::from_dense(&dense, 10_000);
+        let results = hms.query(&q, 1);
+        assert_eq!(results[0].id, "dense_1");
+    }
+
+    // === Readability Integration ===
+
+    #[test]
+    fn test_readability_through_core() {
+        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let metrics = hms.analyze_text("The cat sat on the mat.");
+        assert!(metrics.word_count > 0);
+        let score = hms.calculate_readability(&metrics);
+        assert!(score > 50.0, "Simple sentence should be highly readable (got {:.1})", score);
+    }
+
+    // === Index Persistence Tests ===
+
+    #[test]
+    fn test_nsg_index_persistence() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let mut config = crate::core::config::HmsConfig::default();
+            config.nsg.max_degree = 8;
+            config.nsg.ef_construction = 16;
+
+            let hms = HmsCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
+            for i in 0..50 {
+                let v = hms.encode_text(&format!("persist nsg {}", i));
+                hms.memorize(format!("pn_{}", i), v).unwrap();
+            }
+            hms.train_nsg().unwrap();
+            assert!(hms.nsg_trained());
+        }
+
+        // Re-open and verify NSG was reloaded
+        let mut config = crate::core::config::HmsConfig::default();
+        config.nsg.max_degree = 8;
+        config.nsg.ef_construction = 16;
+        let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
+        assert!(hms.nsg_trained(), "NSG should be loaded from disk on re-open");
+        let q = hms.encode_text("persist nsg 0");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "NSG query should work after reload");
+    }
+
+    // === NSG Accuracy ===
+
+    #[test]
+    fn test_nsg_accuracy_matches_brute_force() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.nsg.max_degree = 8;
+        config.nsg.ef_construction = 16;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        ).unwrap();
+
+        for i in 0..50 {
+            let v = hms.encode_text(&format!("accuracy test {}", i));
+            hms.memorize(format!("acc_{}", i), v).unwrap();
+        }
+
+        // Query before training (brute force)
+        let q = hms.encode_text("accuracy test 0");
+        let brute_results = hms.query(&q, 1);
+
+        hms.train_nsg().unwrap();
+
+        // Query after training (NSG)
+        let nsg_results = hms.query(&q, 1);
+
+        assert_eq!(
+            brute_results[0].id, nsg_results[0].id,
+            "NSG top-1 should match brute-force top-1"
+        );
+    }
+
+    // === Multi-Shard Merge Verification ===
+
+    #[test]
+    fn test_multi_shard_results_from_multiple_shards() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.shard.enabled = true;
+        config.shard.shard_count = 4;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        ).unwrap();
+
+        for i in 0..100 {
+            let v = hms.encode_text(&format!("multi verify {}", i));
+            hms.memorize(format!("mv_{}", i), v).unwrap();
+        }
+
+        let q = hms.encode_text("multi verify");
+        let results = hms.query(&q, 20);
+        assert!(results.len() >= 10, "Should return many results from across shards");
+
+        // Verify results come from at least 2 different shards
+        use fxhash::FxHasher;
+        use std::hash::Hasher;
+        let mut shard_ids: std::collections::HashSet<usize> = std::collections::HashSet::new();
+        for r in &results {
+            let mut hasher = FxHasher::default();
+            hasher.write(r.id.as_bytes());
+            shard_ids.insert((hasher.finish() as usize) % 4);
+        }
+        assert!(
+            shard_ids.len() >= 2,
+            "Results should come from multiple shards (got {} distinct shards)",
+            shard_ids.len()
+        );
+    }
+
+    // === Compact Multi-Shard ===
+
+    #[test]
+    fn test_compact_multi_shard() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.shard.enabled = true;
+        config.shard.shard_count = 2;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        ).unwrap();
+
+        for i in 0..30 {
+            let v = hms.encode_text(&format!("compact shard {}", i));
+            hms.memorize(format!("cs_{}", i), v).unwrap();
+        }
+        for i in 0..15 {
+            hms.delete(&format!("cs_{}", i)).unwrap();
+        }
+        assert_eq!(hms.vector_count(), 15);
+
+        hms.compact().unwrap();
+        assert_eq!(hms.vector_count(), 15);
+
+        let q = hms.encode_text("compact shard 20");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "Should find results after multi-shard compact");
+    }
+
     // === IVF Integration Tests ===
 
     #[test]
