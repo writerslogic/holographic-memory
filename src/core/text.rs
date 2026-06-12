@@ -265,6 +265,27 @@ mod tests {
     }
 
     #[test]
+    fn readability_simple_text() {
+        let metrics = TextProcessor::analyze("The cat sat on the mat.");
+        let score = TextProcessor::calculate_readability(&metrics);
+        // Simple short sentence: high readability (Flesch score > 80)
+        assert!(score > 80.0, "Simple text should score > 80, got {:.1}", score);
+    }
+
+    #[test]
+    fn readability_complex_text() {
+        let metrics = TextProcessor::analyze(
+            "The implementation of sophisticated algorithmic methodologies \
+             necessitates comprehensive understanding of computational complexity. \
+             Furthermore, the juxtaposition of theoretical abstractions with \
+             practical considerations illuminates fundamental architectural decisions."
+        );
+        let score = TextProcessor::calculate_readability(&metrics);
+        // Complex text: lower readability (Flesch score < 40)
+        assert!(score < 40.0, "Complex text should score < 40, got {:.1}", score);
+    }
+
+    #[test]
     fn word_count_across_chunk_boundary() {
         let mut text = String::with_capacity(40000);
         for _ in 0..5461 {

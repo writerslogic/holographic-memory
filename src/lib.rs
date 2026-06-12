@@ -339,6 +339,16 @@ impl HolographicMemorySystem {
     }
 
     #[napi]
+    pub async fn query_sequence(
+        &self,
+        partial: Vec<String>,
+        k: u32,
+    ) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        run_async(move || core.query_sequence(&partial, k)).await
+    }
+
+    #[napi]
     pub async fn delete(&self, id: String) -> Result<bool> {
         let core = self.core.clone();
         run_async(move || core.delete(&id)).await
@@ -543,6 +553,97 @@ mod tests {
         assert!(
             !results.is_empty(),
             "Adaptive routing should return results via NSG"
+        );
+    }
+
+    // === Knowledge Graph Tests ===
+
+    #[test]
+    fn test_triplet_memorize_and_query() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        hms.memorize_triplet("paris_capital".to_string(), "Paris".to_string(), "is_capital_of".to_string(), "France".to_string()).unwrap();
+        hms.memorize_triplet("berlin_capital".to_string(), "Berlin".to_string(), "is_capital_of".to_string(), "Germany".to_string()).unwrap();
+        hms.memorize_triplet("tokyo_capital".to_string(), "Tokyo".to_string(), "is_capital_of".to_string(), "Japan".to_string()).unwrap();
+
+        let results = hms.query_triplet("Paris".to_string(), "is_capital_of".to_string(), 3).unwrap();
+        assert!(!results.is_empty(), "Triplet query should return results");
+        assert!(
+            results.iter().any(|r| r.id == "paris_capital"),
+            "Paris triplet should appear in top-3 results"
+        );
+    }
+
+    // === Sequence Tests ===
+
+    #[test]
+    fn test_sequence_memorize_and_query() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        hms.memorize_sequence("recipe_1".to_string(), &[
+            "preheat oven".to_string(),
+            "mix ingredients".to_string(),
+            "pour into pan".to_string(),
+            "bake for thirty minutes".to_string(),
+        ]).unwrap();
+        hms.memorize_sequence("recipe_2".to_string(), &[
+            "boil water".to_string(),
+            "add pasta".to_string(),
+            "drain and serve".to_string(),
+        ]).unwrap();
+
+        // Query with a partial sequence match
+        let q = hms.encode_text("preheat oven").permute(0);
+        let results = hms.query(&q, 2);
+        assert!(!results.is_empty(), "Sequence query should return results");
+    }
+
+    // === Scalar Query Tests ===
+
+    #[test]
+    fn test_scalar_query_ordering() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        for i in 0..20 {
+            let val = i as f64 * 5.0;
+            hms.memorize_scalar(format!("temp_{}", i), val, 0.0, 100.0).unwrap();
+        }
+
+        // Query near value 50 — should return items closest to 50
+        let q = EntangledHVec::from_scalar(50.0, 0.0, 100.0, 10_000);
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "Scalar query should return results");
+
+        // Top results should cluster around value 50 (idx 10)
+        let top_idx: usize = results[0].id.strip_prefix("temp_").unwrap().parse().unwrap();
+        assert!(
+            (5..=15).contains(&top_idx),
+            "Top scalar result should be near value 50 (idx 10), got idx {}",
+            top_idx
+        );
+    }
+
+    // === Component Analysis Tests ===
+
+    #[test]
+    fn test_analyze_components() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        for i in 0..30 {
+            let vec = hms.encode_text(&format!("component analysis document {}", i));
+            hms.memorize(format!("ca_{}", i), vec).unwrap();
+        }
+
+        let vec = hms.encode_text("component analysis document 0");
+        let results = hms.analyze_components(&vec);
+        assert!(!results.is_empty(), "analyze_components should return results");
+        assert!(
+            results.iter().all(|r| r.similarity > 0.05),
+            "All results should exceed similarity threshold"
         );
     }
 
