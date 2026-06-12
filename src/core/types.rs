@@ -1,9 +1,13 @@
 #[cfg(feature = "node-api")]
 use napi_derive::napi;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
 pub struct TextMetrics {
     pub word_count: u32,
     pub sentence_count: u32,
@@ -14,7 +18,8 @@ pub struct TextMetrics {
 }
 
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
 pub struct RetrievalResult {
     pub id: String,
     pub similarity: f64,
@@ -51,10 +56,21 @@ impl Ord for RetrievalResult {
 }
 
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
 pub struct ConceptCandidate {
     pub centroid_id: String,
     pub member_count: u32,
     pub coherence: f64,
     pub member_ids: Vec<String>,
+}
+
+/// Input item for batch memorization — a single id/text pair.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+pub struct MemorizeBatchItem {
+    pub id: String,
+    pub text: String,
 }

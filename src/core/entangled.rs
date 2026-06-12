@@ -39,7 +39,7 @@ impl EntangledHVec {
     /// Uses entanglement groups when dim is large enough, otherwise direct hash generation.
     /// After dedup, if birthday collisions reduced the count below `active_count`,
     /// deterministic backfill slots are generated until the exact count is reached.
-    pub fn random(dim: usize, seed: u64) -> Self {
+    pub fn new_deterministic(dim: usize, seed: u64) -> Self {
         let active_count = (dim / DEFAULT_RHO_DENOM).max(1);
         let mut indices = Vec::with_capacity(active_count);
 
@@ -81,11 +81,6 @@ impl EntangledHVec {
         }
 
         Self { dim, indices }
-    }
-
-    /// Alias for `random` — already deterministic via FxHash seed mixing.
-    pub fn new_deterministic(dim: usize, seed: u64) -> Self {
-        Self::random(dim, seed)
     }
 
     /// Create directly from a set of active indices.
@@ -200,11 +195,6 @@ impl EntangledHVec {
         &self.indices
     }
 
-    /// Sparsity ratio (should be ~1/256 for random vectors).
-    pub fn sparsity(&self) -> f64 {
-        self.indices.len() as f64 / self.dim as f64
-    }
-
     /// Convert sorted indices to deltas (gaps between consecutive indices).
     /// First element is the absolute value.
     pub fn to_deltas(&self) -> Vec<u32> {
@@ -266,11 +256,6 @@ impl EntangledHVec {
         }
     }
 
-    /// Consuming bind variant.
-    pub fn bind_into(self, other: &Self) -> Self {
-        self.bind(other)
-    }
-
     /// Permute by shifting all indices by `shifts` modulo dim.
     pub fn permute(&self, shifts: usize) -> Self {
         if self.dim == 0 {
@@ -288,11 +273,6 @@ impl EntangledHVec {
             dim: self.dim,
             indices,
         }
-    }
-
-    /// Consuming permute variant.
-    pub fn permute_into(self, shifts: usize) -> Self {
-        self.permute(shifts)
     }
 
     /// Bundle multiple sparse vectors with threshold at rho.
@@ -355,76 +335,6 @@ impl EntangledHVec {
         Self { dim, indices }
     }
 
-    /// Power Bundle: Iteratively refines a bundle to amplify common features
-    /// and suppress noise using similarity-squared weighting.
-    pub fn power_bundle(vectors: &[Self], iterations: usize) -> Self {
-        if vectors.is_empty() {
-            return Self {
-                dim: 0,
-                indices: Vec::new(),
-            };
-        }
-
-        let dim = vectors[0].dim;
-        let target_count = (dim / DEFAULT_RHO_DENOM).max(1);
-        let mut prototype = Self::bundle(vectors);
-
-        for _ in 0..iterations {
-            let mut weights = Vec::with_capacity(vectors.len());
-            for v in vectors {
-                let sim = v.similarity(&prototype);
-                let weight = sim.powi(2);
-                weights.push(weight);
-            }
-
-            let total_weight: f64 = weights.iter().sum();
-            if total_weight < 1e-6 {
-                break;
-            }
-
-            // Collect all indices with weighted votes
-            let mut all_indices: Vec<u32> = vectors
-                .iter()
-                .flat_map(|v| v.indices.iter().copied())
-                .collect();
-            all_indices.sort_unstable();
-            all_indices.dedup();
-
-            let mut scored: Vec<(u32, f64)> = all_indices
-                .into_iter()
-                .map(|idx| {
-                    let vote: f64 = vectors
-                        .iter()
-                        .enumerate()
-                        .map(|(vi, v)| {
-                            let w = weights[vi] / total_weight;
-                            if v.indices.binary_search(&idx).is_ok() {
-                                w
-                            } else {
-                                -w
-                            }
-                        })
-                        .sum();
-                    (idx, vote)
-                })
-                .filter(|&(_, vote)| vote > 0.0)
-                .collect();
-
-            // Keep top target_count by vote
-            if scored.len() > target_count {
-                scored.select_nth_unstable_by(target_count - 1, |a, b| {
-                    b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
-                });
-                scored.truncate(target_count);
-            }
-
-            let mut indices: Vec<u32> = scored.into_iter().map(|(idx, _)| idx).collect();
-            indices.sort_unstable();
-            prototype = Self { dim, indices };
-        }
-
-        prototype
-    }
 }
 
 /// Fast non-crypto hash for seed mixing.
@@ -493,21 +403,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_entangled_random_sparsity() {
-        let dim = 16384;
-        let v = EntangledHVec::random(dim, 42);
-        let sparsity = v.sparsity();
-        // Should be approximately 1/256 = 0.0039
-        assert!(
-            sparsity > 0.001 && sparsity < 0.01,
-            "Sparsity {:.4} should be near 1/256 = 0.0039",
-            sparsity
-        );
-    }
-
-    #[test]
     fn test_entangled_self_similarity() {
-        let v = EntangledHVec::random(16384, 42);
+        let v = EntangledHVec::new_deterministic(16384, 42);
         assert!(
             (v.similarity(&v) - 1.0).abs() < 0.0001,
             "Self-similarity should be 1.0"
@@ -517,8 +414,8 @@ mod tests {
     #[test]
     fn test_entangled_random_pair_distance() {
         // Two random sparse vectors should have near-zero Jaccard overlap
-        let a = EntangledHVec::random(16384, 1);
-        let b = EntangledHVec::random(16384, 2);
+        let a = EntangledHVec::new_deterministic(16384, 1);
+        let b = EntangledHVec::new_deterministic(16384, 2);
         let sim = a.similarity(&b);
         // Jaccard for random sparse pairs: ~64*64/16384 intersect / ~128 union ≈ 0.002
         assert!(
@@ -530,8 +427,8 @@ mod tests {
 
     #[test]
     fn test_entangled_bind_involution() {
-        let a = EntangledHVec::random(16384, 1);
-        let b = EntangledHVec::random(16384, 2);
+        let a = EntangledHVec::new_deterministic(16384, 1);
+        let b = EntangledHVec::new_deterministic(16384, 2);
         let ab = a.bind(&b);
         let recovered = ab.bind(&b);
         // XOR is involutory: (A⊕B)⊕B = A
@@ -541,15 +438,15 @@ mod tests {
     #[test]
     fn test_entangled_bundle_majority() {
         let dim = 16384;
-        let base = EntangledHVec::random(dim, 100);
+        let base = EntangledHVec::new_deterministic(dim, 100);
         // Create 5 copies of base + 2 random noise
         let mut vecs = vec![base.clone(); 5];
-        vecs.push(EntangledHVec::random(dim, 200));
-        vecs.push(EntangledHVec::random(dim, 300));
+        vecs.push(EntangledHVec::new_deterministic(dim, 200));
+        vecs.push(EntangledHVec::new_deterministic(dim, 300));
         let bundled = EntangledHVec::bundle(&vecs);
         // Bundled should be most similar to base (majority)
         let sim_base = bundled.similarity(&base);
-        let sim_random = bundled.similarity(&EntangledHVec::random(dim, 400));
+        let sim_random = bundled.similarity(&EntangledHVec::new_deterministic(dim, 400));
         assert!(
             sim_base > sim_random,
             "Bundle should be closer to majority element"
@@ -597,16 +494,4 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_power_bundle() {
-        let dim = 16384;
-        let base = EntangledHVec::random(dim, 100);
-        let mut vecs = vec![base.clone(); 5];
-        vecs.push(EntangledHVec::random(dim, 200));
-        vecs.push(EntangledHVec::random(dim, 300));
-        let bundled = EntangledHVec::power_bundle(&vecs, 3);
-        let sim = bundled.similarity(&base);
-        // Power bundle should recover base even better than plain bundle
-        assert!(sim > 0.99, "Power bundle should be very close to base");
-    }
 }

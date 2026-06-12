@@ -13,7 +13,6 @@ impl IVFIndex {
     /// Train the full IVF pipeline from a set of EntangledHVec vectors.
     pub fn train(
         vectors: &[EntangledHVec],
-        offsets: &[usize],
         ids: &[String],
         dim: usize,
         config: &IVFConfig,
@@ -51,7 +50,7 @@ impl IVFIndex {
         for (i, vec) in vectors.iter().enumerate() {
             let cluster = assignments[i];
             let codes = pq.encode(vec);
-            lists.append(cluster, &ids[i], &codes, offsets[i])?;
+            lists.append(cluster, &ids[i], &codes)?;
         }
 
         Ok(IVFIndex {
@@ -59,7 +58,6 @@ impl IVFIndex {
             kmeans,
             pq,
             lists: Some(lists),
-            n_clusters,
             dim,
             trained: true,
         })
@@ -78,7 +76,6 @@ mod tests {
         let vectors: Vec<EntangledHVec> = (0..n)
             .map(|s| EntangledHVec::new_deterministic(dim, s as u64))
             .collect();
-        let offsets: Vec<usize> = (0..n).map(|i| i * 200).collect();
         let ids: Vec<String> = (0..n).map(|i| format!("vec_{}", i)).collect();
 
         let config = IVFConfig {
@@ -90,8 +87,7 @@ mod tests {
             auto_threshold: 0,
         };
 
-        let index = IVFIndex::train(&vectors, &offsets, &ids, dim, &config).unwrap();
+        let index = IVFIndex::train(&vectors, &ids, dim, &config).unwrap();
         assert!(index.is_trained());
-        assert_eq!(index.n_clusters, 16);
     }
 }

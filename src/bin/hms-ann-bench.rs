@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
 
             let start = Instant::now();
             for i in 0..*count {
-                let v = EntangledHVec::random(*dim, i as u64);
+                let v = EntangledHVec::new_deterministic(*dim, i as u64);
                 hms.memorize(format!("v_{}", i), v)?;
             }
             let duration = start.elapsed();
@@ -78,7 +78,7 @@ fn main() -> anyhow::Result<()> {
             let mut black_box_sum = 0;
 
             for i in 0..*queries {
-                let q_vec = EntangledHVec::random(*dim, (i + 1000000) as u64);
+                let q_vec = EntangledHVec::new_deterministic(*dim, (i + 1000000) as u64);
                 let start = Instant::now();
                 let results = hms.query(&q_vec, *k);
                 latencies.push(start.elapsed().as_micros() as u64);
