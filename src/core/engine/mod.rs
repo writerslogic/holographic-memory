@@ -2,49 +2,32 @@ pub(crate) mod concepts;
 pub(crate) mod knowledge;
 pub(crate) mod query;
 pub(crate) mod router;
+pub(crate) mod shard;
 
 use anyhow::{Context, Result};
 use parking_lot::RwLock;
-use fxhash::FxHashMap;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
 use std::sync::Arc;
 
 use super::config::HmsConfig;
 use super::diffusion::{DiffusionConfig, DiffusionFactorizer};
 use super::encoding::encode_text_internal;
 use super::entangled::EntangledHVec;
-use super::index::inverted::{Accumulator, SparseInvertedIndex};
 use super::ivf::IVFIndex;
-use super::nsg::NSGIndex;
 use super::storage::PersistentArena;
 use super::text::TextProcessor;
 use super::types::TextMetrics;
 
-/// Lock ordering: vectors -> ivf -> nsg. All code acquiring multiple locks must follow this order.
+use shard::{ShardSet, ShardManager};
+
+/// Lock ordering: ShardSet (read) -> Shard.vectors -> Shard.ivf -> Shard.nsg.
+/// Arena lock is independent (managed internally by PersistentArena).
 pub struct HmsCore {
-    /// Global configuration for indexing and sharding.
     config: HmsConfig,
-    /// Persistent append-only arena for storing raw vectors.
     pub(crate) arena: Arc<PersistentArena>,
-    /// Number of dimensions in the hyperdimensional space.
     pub(crate) dimensions: usize,
-    /// Path to the storage directory.
     pub(crate) storage_path: PathBuf,
-    /// Inverted File (IVF) index for coarse-grained quantization.
-    ivf: Arc<RwLock<Option<IVFIndex>>>,
-    /// Navigable Small World (NSG) graph for fast proximity search.
-    nsg: Arc<RwLock<Option<NSGIndex>>>,
-    /// Sparse Inverted Index for high-sparsity term-based retrieval.
-    pub(crate) inverted: Arc<RwLock<SparseInvertedIndex>>,
-    /// Thread-local accumulator for score aggregation during inverted index queries.
-    pub(crate) accumulator: Arc<parking_lot::Mutex<Accumulator>>,
-    /// Atomic counter for the total number of non-deleted vectors.
-    vector_count: AtomicU64,
-    /// Absolute source of truth in RAM: ID -> Vector
-    pub(crate) vectors: Arc<RwLock<FxHashMap<String, EntangledHVec>>>,
-    /// Maps internal doc_id (index) to String ID.
-    pub(crate) registry: Arc<RwLock<Vec<String>>>,
+    shards: RwLock<ShardSet>,
 }
 
 impl HmsCore {
@@ -73,83 +56,65 @@ impl HmsCore {
 
         let arena = Arc::new(PersistentArena::new(base_path.join("vectors_data.bin"))?);
 
-        // Calculate m = D/256
-        let m = (dim / 256).max(1);
+        let shard_set = if config.shard.enabled && config.shard.shard_count > 1 {
+            ShardSet::Multi(ShardManager::new(config.shard.shard_count, dim))
+        } else {
+            ShardSet::Single(Box::new(shard::Shard::new(dim)))
+        };
 
         let core = Self {
             config: config.clone(),
             arena,
             dimensions: dim,
             storage_path: base_path,
-            ivf: Arc::new(RwLock::new(None)),
-            nsg: Arc::new(RwLock::new(None)),
-            inverted: Arc::new(RwLock::new(SparseInvertedIndex::new(dim, m))),
-            accumulator: Arc::new(parking_lot::Mutex::new(Accumulator::new(1024))),
-            vector_count: AtomicU64::new(0),
-            vectors: Arc::new(RwLock::new(FxHashMap::default())),
-            registry: Arc::new(RwLock::new(Vec::new())),
+            shards: RwLock::new(shard_set),
         };
 
         core.load_from_log()?;
-        core.load_indices()?; // Load persisted NSG/IVF from bin files
-        core.rebuild_inverted_index()?;
+        core.load_indices()?;
+        {
+            let shards = core.shards.read();
+            shards.for_each_shard(|s| { let _ = s.rebuild_inverted_index(dim); });
+        }
 
         Ok(core)
     }
 
-    fn rebuild_inverted_index(&self) -> Result<()> {
-        let vectors = self.vectors.read();
-        let registry = self.registry.read();
-        let mut inv = self.inverted.write();
-
-        // Reset index
-        *inv = SparseInvertedIndex::new(self.dimensions, (self.dimensions / 256).max(1));
-
-        for (i, id) in registry.iter().enumerate() {
-            if let Some(vec) = vectors.get(id) {
-                inv.add_doc(i as u32, &vec.indices);
-            }
-        }
-        inv.finalize();
-
-        // Also resize accumulator to match registry size
-        let mut acc = self.accumulator.lock();
-        *acc = Accumulator::new(registry.len().max(1024));
-
-        Ok(())
-    }
-
     fn load_indices(&self) -> Result<()> {
-        // 1. Load NSG if exists
         let nsg_path = self.storage_path.join("nsg_index.bin");
         if nsg_path.exists() {
             let data = std::fs::read(&nsg_path)?;
-            let nsg: NSGIndex = bincode::deserialize(&data)?;
-            *self.nsg.write() = Some(nsg);
+            let nsg: super::nsg::NSGIndex = bincode::deserialize(&data)?;
+            // Load NSG into the first (or only) shard
+            let shards = self.shards.read();
+            if let ShardSet::Single(ref shard) = *shards {
+                *shard.nsg.write() = Some(nsg);
+            }
         }
 
-        // 2. Load IVF if exists
         let ivf_path = self.storage_path.join("ivf_index.bin");
         if ivf_path.exists() {
             let data = std::fs::read(&ivf_path)?;
             let mut ivf: IVFIndex = bincode::deserialize(&data)?;
-            // In-memory inverted lists don't need a DB handle
             ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new());
-            // Re-fill inverted lists from vectors
-            let vectors = self.vectors.read();
-            let registry = self.registry.read();
-            for id in registry.iter() {
-                if let Some(vec) = vectors.get(id) {
-                    ivf.insert(id, vec)?;
+
+            let shards = self.shards.read();
+            if let ShardSet::Single(ref shard) = *shards {
+                let vectors = shard.vectors.read();
+                let registry = shard.registry.read();
+                for id in registry.iter() {
+                    if let Some(vec) = vectors.get(id) {
+                        ivf.insert(id, vec)?;
+                    }
                 }
+                *shard.ivf.write() = Some(ivf);
             }
-            *self.ivf.write() = Some(ivf);
         }
 
         Ok(())
     }
 
-    fn save_nsg(&self, nsg: &NSGIndex) -> Result<()> {
+    fn save_nsg(&self, nsg: &super::nsg::NSGIndex) -> Result<()> {
         let data = bincode::serialize(nsg)?;
         std::fs::write(self.storage_path.join("nsg_index.bin"), data)?;
         Ok(())
@@ -162,16 +127,15 @@ impl HmsCore {
     }
 
     fn load_from_log(&self) -> Result<()> {
-        let mut vectors = self.vectors.write();
-        let mut registry = self.registry.write();
+        let shards = self.shards.read();
 
         let mut offset = 0;
         while let Ok((payload, _version)) = self.arena.read_frame(offset) {
-            let (id, vector) = self.parse_log_payload(&payload);
+            let (id, vector) = Self::parse_log_payload(self.dimensions, &payload);
             if vector.dim == 0 {
-                vectors.remove(&id);
+                shards.remove(&id, self.dimensions);
             } else {
-                vectors.insert(id.clone(), vector);
+                shards.insert(id, vector, self.dimensions);
             }
             offset = match self.arena.next_offset(offset) {
                 Ok(next) => next,
@@ -179,16 +143,23 @@ impl HmsCore {
             };
         }
 
-        // Rebuild registry from live vectors.
-        // For NSG/IVF indices, the order in registry must be stable.
-        let mut live_ids: Vec<String> = vectors.keys().cloned().collect();
-        live_ids.sort(); // Ensure deterministic internal indexing
-        *registry = live_ids;
-        self.vector_count.store(registry.len() as u64, AtomicOrdering::SeqCst);
+        // Rebuild registries from live vectors (ensure deterministic ordering)
+        shards.for_each_shard(|shard| {
+            let vectors = shard.vectors.read();
+            let mut reg = shard.registry.write();
+            let mut live_ids: Vec<String> = vectors.keys().cloned().collect();
+            live_ids.sort();
+            *reg = live_ids;
+            shard.vector_count.store(
+                reg.len() as u64,
+                std::sync::atomic::Ordering::SeqCst,
+            );
+        });
+
         Ok(())
     }
 
-    fn parse_log_payload(&self, payload: &[u8]) -> (String, EntangledHVec) {
+    fn parse_log_payload(dimensions: usize, payload: &[u8]) -> (String, EntangledHVec) {
         if payload.len() < 6 {
             return (String::new(), EntangledHVec::from_indices(vec![], 0));
         }
@@ -212,7 +183,7 @@ impl HmsCore {
 
         let delta_count = delta_count_raw as usize;
         if delta_count == 0 {
-            return (id, EntangledHVec::from_indices(vec![], self.dimensions));
+            return (id, EntangledHVec::from_indices(vec![], dimensions));
         }
 
         let deltas_start = id_end + 4;
@@ -224,24 +195,7 @@ impl HmsCore {
             .chunks_exact(4)
             .map(|c| u32::from_le_bytes(c.try_into().unwrap()))
             .collect();
-        (id, EntangledHVec::from_deltas(&deltas, self.dimensions))
-    }
-
-    /// Load all vectors and their associated metadata.
-    fn load_all_vectors(&self) -> (Vec<String>, Vec<EntangledHVec>) {
-        let vectors = self.vectors.read();
-        let registry = self.registry.read();
-        let mut ids = Vec::with_capacity(registry.len());
-        let mut out_vectors = Vec::with_capacity(registry.len());
-
-        for id in registry.iter() {
-            if let Some(vec) = vectors.get(id) {
-                ids.push(id.clone());
-                out_vectors.push(vec.clone());
-            }
-        }
-
-        (ids, out_vectors)
+        (id, EntangledHVec::from_deltas(&deltas, dimensions))
     }
 
     pub fn dimensions(&self) -> usize {
@@ -292,40 +246,28 @@ impl HmsCore {
     }
 
     pub fn delete(&self, id: &str) -> Result<bool> {
-        let mut vectors = self.vectors.write();
-        let mut reg = self.registry.write();
-
-        if vectors.remove(id).is_none() {
+        let shards = self.shards.read();
+        if !shards.remove(id, self.dimensions) {
             return Ok(false);
         }
-
-        // Persist tombstone before updating in-memory state further.
-        // If this fails, we've already removed from memory — but the
-        // next load_from_log will still see the original entry. Accept
-        // this minor inconsistency (the entry reappears after crash).
         self.arena.write_slice(&Self::serialize_tombstone(id))?;
-
-        reg.retain(|r| r != id);
-        self.vector_count
-            .store(reg.len() as u64, AtomicOrdering::SeqCst);
-
-        // Drop write locks before rebuilding inverted index
-        drop(reg);
-        drop(vectors);
-
-        self.rebuild_inverted_index()?;
         Ok(true)
     }
 
     pub fn compact(&self) -> Result<()> {
-        // Snapshot live vectors under read lock
         let snapshot: Vec<(String, EntangledHVec)> = {
-            let vectors = self.vectors.read();
-            let registry = self.registry.read();
-            registry
-                .iter()
-                .filter_map(|id| vectors.get(id).map(|v| (id.clone(), v.clone())))
-                .collect()
+            let shards = self.shards.read();
+            let mut all = Vec::new();
+            shards.for_each_shard(|shard| {
+                let vectors = shard.vectors.read();
+                let registry = shard.registry.read();
+                for id in registry.iter() {
+                    if let Some(v) = vectors.get(id) {
+                        all.push((id.clone(), v.clone()));
+                    }
+                }
+            });
+            all
         };
 
         let temp_dir = self.storage_path.join(format!(
@@ -336,72 +278,85 @@ impl HmsCore {
                 .as_micros()
         ));
 
-        // Write all live vectors to a fresh arena
         {
             let temp_arena = PersistentArena::new(&temp_dir)?;
             for (id, vector) in &snapshot {
                 let entry = Self::serialize_log_entry(id, vector)?;
                 temp_arena.write_slice(&entry)?;
             }
-        } // temp_arena dropped here, releasing file handles
+        }
 
-        // Atomically swap arena files
         self.arena.replace_with_compacted(&temp_dir)?;
 
-        // Persist indices to the (now clean) storage path
-        if let Some(ref nsg) = *self.nsg.read() {
-            self.save_nsg(nsg)?;
-        }
-        if let Some(ref ivf) = *self.ivf.read() {
-            self.save_ivf(ivf)?;
+        // Persist indices
+        let shards = self.shards.read();
+        if let ShardSet::Single(ref shard) = *shards {
+            if let Some(ref nsg) = *shard.nsg.read() {
+                self.save_nsg(nsg)?;
+            }
+            if let Some(ref ivf) = *shard.ivf.read() {
+                self.save_ivf(ivf)?;
+            }
         }
 
         Ok(())
     }
 
     pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
-        let mut vectors = self.vectors.write();
-        let mut reg = self.registry.write();
-
         let entry = Self::serialize_log_entry(&id, &vector)?;
         self.arena.write_slice(&entry)?;
 
-        let is_replacement = vectors.contains_key(&id);
-        vectors.insert(id.clone(), vector.clone());
-
-        if !is_replacement {
-            reg.push(id.clone());
-            let count = reg.len() as u64;
-            self.vector_count.store(count, AtomicOrdering::SeqCst);
-
-            let mut inv = self.inverted.write();
-            inv.add_doc((count - 1) as u32, &vector.indices);
-        } else {
-            self.rebuild_inverted_index()?;
-        }
-
-        let count = reg.len() as u64;
-
-        if let Some(ref mut ivf) = *self.ivf.write() {
-            ivf.insert(&id, &vector)?;
-        }
-
-        if let Some(ref mut nsg) = *self.nsg.write() {
-            nsg.insert(&id, &vector)?;
-        }
+        let count = {
+            let shards = self.shards.read();
+            shards.insert(id, vector, self.dimensions);
+            shards.count()
+        };
 
         if self.config.ivf.enabled
             && self.config.ivf.auto_threshold > 0
             && count == self.config.ivf.auto_threshold as u64
         {
             self.train_ivf().context("Auto-train IVF failed")?;
-        }
-
-        if self.config.nsg.auto_threshold > 0 && count == self.config.nsg.auto_threshold as u64 {
+        } else if self.config.nsg.auto_threshold > 0
+            && count == self.config.nsg.auto_threshold as u64
+        {
             self.train_nsg().context("Auto-train NSG failed")?;
+        } else {
+            self.maybe_auto_shard(count);
         }
 
         Ok(())
+    }
+
+    fn maybe_auto_shard(&self, count: u64) {
+        let cfg = &self.config.shard;
+        if !cfg.enabled || cfg.shard_count > 0 || cfg.auto_threshold == 0 {
+            return;
+        }
+        if count < cfg.auto_threshold as u64 {
+            return;
+        }
+
+        // Upgrade from Single to Multi: snapshot vectors, build new shards, swap.
+        let mut shards = self.shards.write();
+        let snapshot: Vec<(String, EntangledHVec)> = {
+            match *shards {
+                ShardSet::Single(ref old_shard) => {
+                    let vectors = old_shard.vectors.read();
+                    vectors.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+                }
+                ShardSet::Multi(_) => return,
+            }
+        };
+
+        let n_shards = (count as usize / cfg.target_shard_size).max(2);
+        let mgr = ShardManager::new(n_shards, self.dimensions);
+        for (id, vec) in snapshot {
+            let target = mgr.shard_for(&id);
+            mgr.shards[target].insert(id, vec, self.dimensions);
+        }
+
+        *shards = ShardSet::Multi(mgr);
     }
 
     pub fn memorize_vector(&self, id: String, dense: &[f32]) -> Result<()> {
@@ -415,56 +370,73 @@ impl HmsCore {
     }
 
     pub fn vector_count(&self) -> u64 {
-        self.vector_count.load(AtomicOrdering::Relaxed)
+        self.shards.read().count()
     }
 
     pub fn ivf_trained(&self) -> bool {
-        self.ivf.read().as_ref().is_some_and(|ivf| ivf.is_trained())
+        self.shards.read().ivf_trained()
     }
 
     pub fn train_ivf(&self) -> Result<()> {
-        let (ids, vectors) = self.load_all_vectors();
-        if ids.is_empty() {
-            return Ok(());
-        }
+        let shards = self.shards.read();
+        shards.for_each_shard(|shard| {
+            let (ids, vectors) = shard.load_all_vectors();
+            if ids.is_empty() {
+                return;
+            }
 
-        // Clear existing inverted lists if any to prevent corruption
-        if let Some(ref mut existing) = *self.ivf.write() {
-            if let Some(ref lists) = existing.lists {
-                lists.clear_all()?;
+            if let Some(ref mut existing) = *shard.ivf.write() {
+                if let Some(ref lists) = existing.lists {
+                    let _ = lists.clear_all();
+                }
+            }
+
+            if let Ok(index) = IVFIndex::train(
+                &vectors,
+                &ids,
+                self.dimensions,
+                &self.config.ivf,
+            ) {
+                *shard.ivf.write() = Some(index);
+            }
+        });
+
+        // Persist from first shard (single-shard case)
+        if let ShardSet::Single(ref shard) = *shards {
+            if let Some(ref ivf) = *shard.ivf.read() {
+                self.save_ivf(ivf)?;
             }
         }
-
-        let index = IVFIndex::train(
-            &vectors,
-            &ids,
-            self.dimensions,
-            &self.config.ivf,
-        )?;
-
-        self.save_ivf(&index)?; // PERSIST
-        *self.ivf.write() = Some(index);
         Ok(())
     }
 
     pub fn nsg_trained(&self) -> bool {
-        self.nsg.read().as_ref().is_some_and(|nsg| nsg.is_trained())
+        self.shards.read().nsg_trained()
     }
 
     pub fn train_nsg(&self) -> Result<()> {
-        let (ids, vectors) = self.load_all_vectors();
-        if ids.is_empty() {
-            return Ok(());
+        let shards = self.shards.read();
+        shards.for_each_shard(|shard| {
+            let (ids, vectors) = shard.load_all_vectors();
+            if ids.is_empty() {
+                return;
+            }
+
+            if let Ok(index) = super::nsg::training::train(
+                &vectors,
+                &ids,
+                &self.config.nsg,
+            ) {
+                *shard.nsg.write() = Some(index);
+            }
+        });
+
+        // Persist from first shard (single-shard case)
+        if let ShardSet::Single(ref shard) = *shards {
+            if let Some(ref nsg) = *shard.nsg.read() {
+                self.save_nsg(nsg)?;
+            }
         }
-
-        let index = super::nsg::training::train(
-            &vectors,
-            &ids,
-            &self.config.nsg,
-        )?;
-
-        self.save_nsg(&index)?; // PERSIST
-        *self.nsg.write() = Some(index);
         Ok(())
     }
 

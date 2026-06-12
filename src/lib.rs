@@ -677,6 +677,89 @@ mod tests {
         assert_eq!(hms.vector_count(), 10);
     }
 
+    // === Shard Tests ===
+
+    #[test]
+    fn test_multi_shard_insert_query() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.shard.enabled = true;
+        config.shard.shard_count = 4;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..100 {
+            let vec = hms.encode_text(&format!("shard document {}", i));
+            hms.memorize(format!("sd_{}", i), vec).unwrap();
+        }
+
+        assert_eq!(hms.vector_count(), 100);
+
+        let q = hms.encode_text("shard document 0");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "Multi-shard query should return results");
+    }
+
+    #[test]
+    fn test_multi_shard_delete() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.shard.enabled = true;
+        config.shard.shard_count = 4;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..20 {
+            let vec = hms.encode_text(&format!("item {}", i));
+            hms.memorize(format!("m_{}", i), vec).unwrap();
+        }
+        assert_eq!(hms.vector_count(), 20);
+
+        for i in 0..10 {
+            assert!(hms.delete(&format!("m_{}", i)).unwrap());
+        }
+        assert_eq!(hms.vector_count(), 10);
+    }
+
+    #[test]
+    fn test_auto_shard_trigger() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.shard.enabled = true;
+        config.shard.shard_count = 0; // auto
+        config.shard.auto_threshold = 50;
+        config.shard.target_shard_size = 25;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        for i in 0..50 {
+            let vec = hms.encode_text(&format!("auto shard {}", i));
+            hms.memorize(format!("as_{}", i), vec).unwrap();
+        }
+
+        assert_eq!(hms.vector_count(), 50);
+
+        // Verify queries still work after auto-sharding
+        let q = hms.encode_text("auto shard 0");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "Should find results after auto-shard");
+    }
+
     // === IVF Integration Tests ===
 
     #[test]
