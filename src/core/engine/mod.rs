@@ -74,7 +74,7 @@ impl HmsCore {
         core.load_indices()?;
         {
             let shards = core.shards.read();
-            shards.for_each_shard(|s| { let _ = s.rebuild_inverted_index(dim); });
+            shards.try_for_each_shard(|s| s.rebuild_inverted_index(dim))?;
         }
 
         Ok(core)
@@ -236,45 +236,56 @@ impl HmsCore {
 
     const TOMBSTONE_MARKER: u32 = u32::MAX;
 
-    fn serialize_tombstone(id: &str) -> Vec<u8> {
+    fn serialize_tombstone(id: &str) -> Result<Vec<u8>> {
         let id_bytes = id.as_bytes();
+        if id_bytes.len() > u16::MAX as usize {
+            return Err(anyhow::anyhow!(
+                "ID too long: {} bytes (max {})",
+                id_bytes.len(),
+                u16::MAX
+            ));
+        }
         let mut entry = Vec::with_capacity(2 + id_bytes.len() + 4);
         entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
         entry.extend_from_slice(id_bytes);
         entry.extend_from_slice(&Self::TOMBSTONE_MARKER.to_le_bytes());
-        entry
+        Ok(entry)
     }
 
     pub fn delete(&self, id: &str) -> Result<bool> {
+        // Persist tombstone first for crash-safety: if we crash after the
+        // arena write but before the memory remove, load_from_log replays
+        // the tombstone and correctly removes the vector.
+        self.arena.write_slice(&Self::serialize_tombstone(id)?)?;
         let shards = self.shards.read();
         if !shards.remove(id, self.dimensions)? {
             return Ok(false);
         }
-        self.arena.write_slice(&Self::serialize_tombstone(id))?;
         Ok(true)
     }
 
     pub fn compact(&self) -> Result<()> {
-        let snapshot: Vec<(String, EntangledHVec)> = {
-            let shards = self.shards.read();
-            let mut all = Vec::new();
-            shards.for_each_shard(|shard| {
-                let vectors = shard.vectors.read();
-                let registry = shard.registry.read();
-                for id in registry.iter() {
-                    if let Some(v) = vectors.get(id) {
-                        all.push((id.clone(), v.clone()));
-                    }
+        // Hold the shards write lock for the entire compaction to block
+        // concurrent memorize/delete. This guarantees the snapshot is
+        // consistent with what gets swapped in.
+        let shards = self.shards.write();
+
+        let mut snapshot = Vec::new();
+        shards.for_each_shard(|shard| {
+            let vectors = shard.vectors.read();
+            let registry = shard.registry.read();
+            for id in registry.iter() {
+                if let Some(v) = vectors.get(id) {
+                    snapshot.push((id.clone(), v.clone()));
                 }
-            });
-            all
-        };
+            }
+        });
 
         let temp_dir = self.storage_path.join(format!(
             ".compact_{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
+                .unwrap_or_default()
                 .as_micros()
         ));
 
@@ -288,8 +299,6 @@ impl HmsCore {
 
         self.arena.replace_with_compacted(&temp_dir)?;
 
-        // Persist indices
-        let shards = self.shards.read();
         if let ShardSet::Single(ref shard) = *shards {
             if let Some(ref nsg) = *shard.nsg.read() {
                 self.save_nsg(nsg)?;
@@ -380,29 +389,28 @@ impl HmsCore {
 
     pub fn train_ivf(&self) -> Result<()> {
         let shards = self.shards.read();
-        shards.for_each_shard(|shard| {
+        shards.try_for_each_shard(|shard| {
             let (ids, vectors) = shard.load_all_vectors();
             if ids.is_empty() {
-                return;
+                return Ok(());
             }
 
             if let Some(ref mut existing) = *shard.ivf.write() {
                 if let Some(ref lists) = existing.lists {
-                    let _ = lists.clear_all();
+                    lists.clear_all()?;
                 }
             }
 
-            if let Ok(index) = IVFIndex::train(
+            let index = IVFIndex::train(
                 &vectors,
                 &ids,
                 self.dimensions,
                 &self.config.ivf,
-            ) {
-                *shard.ivf.write() = Some(index);
-            }
-        });
+            )?;
+            *shard.ivf.write() = Some(index);
+            Ok(())
+        })?;
 
-        // Persist from first shard (single-shard case)
         if let ShardSet::Single(ref shard) = *shards {
             if let Some(ref ivf) = *shard.ivf.read() {
                 self.save_ivf(ivf)?;
@@ -417,22 +425,21 @@ impl HmsCore {
 
     pub fn train_nsg(&self) -> Result<()> {
         let shards = self.shards.read();
-        shards.for_each_shard(|shard| {
+        shards.try_for_each_shard(|shard| {
             let (ids, vectors) = shard.load_all_vectors();
             if ids.is_empty() {
-                return;
+                return Ok(());
             }
 
-            if let Ok(index) = super::nsg::training::train(
+            let index = super::nsg::training::train(
                 &vectors,
                 &ids,
                 &self.config.nsg,
-            ) {
-                *shard.nsg.write() = Some(index);
-            }
-        });
+            )?;
+            *shard.nsg.write() = Some(index);
+            Ok(())
+        })?;
 
-        // Persist from first shard (single-shard case)
         if let ShardSet::Single(ref shard) = *shards {
             if let Some(ref nsg) = *shard.nsg.read() {
                 self.save_nsg(nsg)?;
