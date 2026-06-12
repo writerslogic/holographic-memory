@@ -31,4 +31,17 @@ impl HmsCore {
         let query_vec = vec_h.bind(&vec_r);
         Ok(self.query(&query_vec, k))
     }
+
+    pub fn query_sequence(&self, partial: &[String], k: u32) -> Result<Vec<RetrievalResult>> {
+        if partial.is_empty() {
+            return Ok(vec![]);
+        }
+        let vecs: Vec<EntangledHVec> = partial
+            .iter()
+            .enumerate()
+            .map(|(i, item)| self.encode_text(item).permute(i))
+            .collect();
+        let query_vec = EntangledHVec::bundle(&vecs);
+        Ok(self.query(&query_vec, k))
+    }
 }
