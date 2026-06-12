@@ -41,7 +41,7 @@ impl Shard {
         }
     }
 
-    pub fn insert(&self, id: String, vector: EntangledHVec, dimensions: usize) {
+    pub fn insert(&self, id: String, vector: EntangledHVec, dimensions: usize) -> Result<()> {
         let mut vectors = self.vectors.write();
         let mut reg = self.registry.write();
 
@@ -58,23 +58,24 @@ impl Shard {
         } else {
             drop(reg);
             drop(vectors);
-            let _ = self.rebuild_inverted_index(dimensions);
+            self.rebuild_inverted_index(dimensions)?;
         }
 
         if let Some(ref mut ivf) = *self.ivf.write() {
-            let _ = ivf.insert(&id, &vector);
+            ivf.insert(&id, &vector)?;
         }
         if let Some(ref mut nsg) = *self.nsg.write() {
-            let _ = nsg.insert(&id, &vector);
+            nsg.insert(&id, &vector)?;
         }
+        Ok(())
     }
 
-    pub fn remove(&self, id: &str, dimensions: usize) -> bool {
+    pub fn remove(&self, id: &str, dimensions: usize) -> Result<bool> {
         let mut vectors = self.vectors.write();
         let mut reg = self.registry.write();
 
         if vectors.remove(id).is_none() {
-            return false;
+            return Ok(false);
         }
 
         reg.retain(|r| r != id);
@@ -84,8 +85,8 @@ impl Shard {
         drop(reg);
         drop(vectors);
 
-        let _ = self.rebuild_inverted_index(dimensions);
-        true
+        self.rebuild_inverted_index(dimensions)?;
+        Ok(true)
     }
 
     pub fn rebuild_inverted_index(&self, dimensions: usize) -> Result<()> {
@@ -272,6 +273,7 @@ pub(crate) struct ShardManager {
 
 impl ShardManager {
     pub fn new(shard_count: usize, dimensions: usize) -> Self {
+        assert!(shard_count >= 2, "ShardManager requires at least 2 shards");
         let shards = (0..shard_count).map(|_| Shard::new(dimensions)).collect();
         Self { shards }
     }
@@ -327,14 +329,14 @@ pub(crate) enum ShardSet {
 }
 
 impl ShardSet {
-    pub fn insert(&self, id: String, vector: EntangledHVec, dimensions: usize) {
+    pub fn insert(&self, id: String, vector: EntangledHVec, dimensions: usize) -> Result<()> {
         match self {
             ShardSet::Single(shard) => shard.insert(id, vector, dimensions),
             ShardSet::Multi(mgr) => mgr.shard(&id).insert(id, vector, dimensions),
         }
     }
 
-    pub fn remove(&self, id: &str, dimensions: usize) -> bool {
+    pub fn remove(&self, id: &str, dimensions: usize) -> Result<bool> {
         match self {
             ShardSet::Single(shard) => shard.remove(id, dimensions),
             ShardSet::Multi(mgr) => mgr.shard(id).remove(id, dimensions),
