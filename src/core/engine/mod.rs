@@ -133,9 +133,9 @@ impl HmsCore {
         while let Ok((payload, _version)) = self.arena.read_frame(offset) {
             let (id, vector) = Self::parse_log_payload(self.dimensions, &payload);
             if vector.dim == 0 {
-                shards.remove(&id, self.dimensions);
+                shards.remove(&id, self.dimensions)?;
             } else {
-                shards.insert(id, vector, self.dimensions);
+                shards.insert(id, vector, self.dimensions)?;
             }
             offset = match self.arena.next_offset(offset) {
                 Ok(next) => next,
@@ -247,7 +247,7 @@ impl HmsCore {
 
     pub fn delete(&self, id: &str) -> Result<bool> {
         let shards = self.shards.read();
-        if !shards.remove(id, self.dimensions) {
+        if !shards.remove(id, self.dimensions)? {
             return Ok(false);
         }
         self.arena.write_slice(&Self::serialize_tombstone(id))?;
@@ -308,7 +308,7 @@ impl HmsCore {
 
         let count = {
             let shards = self.shards.read();
-            shards.insert(id, vector, self.dimensions);
+            shards.insert(id, vector, self.dimensions)?;
             shards.count()
         };
 
@@ -353,7 +353,8 @@ impl HmsCore {
         let mgr = ShardManager::new(n_shards, self.dimensions);
         for (id, vec) in snapshot {
             let target = mgr.shard_for(&id);
-            mgr.shards[target].insert(id, vec, self.dimensions);
+            // Insert into new shards cannot fail — fresh empty shards with no indices
+            let _ = mgr.shards[target].insert(id, vec, self.dimensions);
         }
 
         *shards = ShardSet::Multi(mgr);
