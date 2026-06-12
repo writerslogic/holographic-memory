@@ -15,11 +15,13 @@ impl HmsCore {
     }
 
     /// Analyze components of a vector by finding its nearest neighbors.
+    /// Filters by similarity threshold from QueryConfig (default 0.05).
     pub fn analyze_components(&self, vector: &EntangledHVec) -> Vec<RetrievalResult> {
-        let neighbors = self.query(vector, 20);
+        let cfg = &self.config.query;
+        let neighbors = self.query(vector, cfg.component_max_neighbors);
         neighbors
             .into_iter()
-            .filter(|r| r.similarity > 0.05)
+            .filter(|r| r.similarity > cfg.component_similarity_threshold)
             .collect()
     }
 }

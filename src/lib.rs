@@ -37,15 +37,84 @@ async fn run_async<T: Send + 'static, F: FnOnce() -> anyhow::Result<T> + Send + 
 }
 
 #[cfg(feature = "node-api")]
+#[napi(object)]
+pub struct HmsConfigJs {
+    pub nsg_max_degree: Option<u32>,
+    pub nsg_ef_construction: Option<u32>,
+    pub nsg_auto_threshold: Option<u32>,
+    pub ivf_enabled: Option<bool>,
+    pub ivf_n_clusters: Option<u32>,
+    pub ivf_n_landmarks: Option<u32>,
+    pub ivf_d_reduced: Option<u32>,
+    pub ivf_n_probe: Option<u32>,
+    pub ivf_auto_threshold: Option<u32>,
+    pub shard_enabled: Option<bool>,
+    pub shard_count: Option<u32>,
+    pub shard_auto_threshold: Option<u32>,
+    pub shard_target_size: Option<u32>,
+    pub component_similarity_threshold: Option<f64>,
+    pub component_max_neighbors: Option<u32>,
+    pub concept_similarity_threshold: Option<f64>,
+    pub concept_min_cluster_size: Option<u32>,
+}
+
+#[cfg(feature = "node-api")]
+impl HmsConfigJs {
+    fn into_config(self) -> crate::core::config::HmsConfig {
+        use crate::core::config::*;
+        let mut cfg = HmsConfig::default();
+        if let Some(v) = self.nsg_max_degree { cfg.nsg.max_degree = v as usize; }
+        if let Some(v) = self.nsg_ef_construction { cfg.nsg.ef_construction = v as usize; }
+        if let Some(v) = self.nsg_auto_threshold { cfg.nsg.auto_threshold = v as usize; }
+        if let Some(v) = self.ivf_enabled { cfg.ivf.enabled = v; }
+        if let Some(v) = self.ivf_n_clusters { cfg.ivf.n_clusters = v as usize; }
+        if let Some(v) = self.ivf_n_landmarks { cfg.ivf.n_landmarks = v as usize; }
+        if let Some(v) = self.ivf_d_reduced { cfg.ivf.d_reduced = v as usize; }
+        if let Some(v) = self.ivf_n_probe { cfg.ivf.n_probe = v as usize; }
+        if let Some(v) = self.ivf_auto_threshold { cfg.ivf.auto_threshold = v as usize; }
+        if let Some(v) = self.shard_enabled { cfg.shard.enabled = v; }
+        if let Some(v) = self.shard_count { cfg.shard.shard_count = v as usize; }
+        if let Some(v) = self.shard_auto_threshold { cfg.shard.auto_threshold = v as usize; }
+        if let Some(v) = self.shard_target_size { cfg.shard.target_shard_size = v as usize; }
+        if let Some(v) = self.component_similarity_threshold { cfg.query.component_similarity_threshold = v; }
+        if let Some(v) = self.component_max_neighbors { cfg.query.component_max_neighbors = v; }
+        if let Some(v) = self.concept_similarity_threshold { cfg.concepts.similarity_threshold = v; }
+        if let Some(v) = self.concept_min_cluster_size { cfg.concepts.min_cluster_size = v as usize; }
+        cfg
+    }
+}
+
+#[cfg(feature = "node-api")]
 #[napi]
 impl HolographicMemorySystem {
     #[napi(constructor)]
-    pub fn new(dimensions: u32, storage_path: Option<String>) -> Result<Self> {
-        let core = HmsCore::new(dimensions, storage_path, None)
+    pub fn new(dimensions: u32, storage_path: Option<String>, config: Option<HmsConfigJs>) -> Result<Self> {
+        let cfg = config.map(|c| c.into_config());
+        let core = HmsCore::new(dimensions, storage_path, cfg)
             .map_err(napi_err)?;
         Ok(Self {
             core: Arc::new(core),
         })
+    }
+
+    #[napi(getter)]
+    pub fn vector_count(&self) -> u32 {
+        self.core.vector_count() as u32
+    }
+
+    #[napi(getter)]
+    pub fn nsg_trained(&self) -> bool {
+        self.core.nsg_trained()
+    }
+
+    #[napi(getter)]
+    pub fn ivf_trained(&self) -> bool {
+        self.core.ivf_trained()
+    }
+
+    #[napi(getter)]
+    pub fn dimensions(&self) -> u32 {
+        self.core.dimensions() as u32
     }
 
     #[napi]
@@ -382,6 +451,59 @@ mod tests {
         // Should have ~dim/256 active indices
         let expected = 1000 / 256;
         assert_eq!(e.indices.len(), expected);
+    }
+
+    // === Batch Memorization ===
+
+    #[test]
+    fn test_batch_memorize() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        // Simulate what memorize_batch does: parallel encode, sequential insert
+        let items = vec![
+            ("b1", "first batch item"),
+            ("b2", "second batch item"),
+            ("b3", "third batch item"),
+        ];
+        for (id, text) in &items {
+            let vec = hms.encode_text(text);
+            hms.memorize(id.to_string(), vec).unwrap();
+        }
+        assert_eq!(hms.vector_count(), 3);
+
+        let q = hms.encode_text("first batch item");
+        let results = hms.query(&q, 3);
+        assert!(!results.is_empty());
+    }
+
+    // === Custom Config ===
+
+    #[test]
+    fn test_custom_concept_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.concepts.similarity_threshold = 0.5;
+        config.concepts.min_cluster_size = 5;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        ).unwrap();
+
+        // With high threshold and min size, clusters are harder to form
+        for i in 0..10 {
+            let vec = hms.encode_text(&format!("config test document {}", i));
+            hms.memorize(format!("cfg_{}", i), vec).unwrap();
+        }
+
+        let concepts = hms.synthesize_concepts();
+        // With strict thresholds, fewer or no concepts should form
+        // (this validates the config is actually used)
+        for c in &concepts {
+            assert!(c.member_count >= 5, "Min cluster size should be 5, got {}", c.member_count);
+        }
     }
 
     // === Diffusion factorizer ===

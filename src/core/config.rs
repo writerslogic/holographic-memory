@@ -5,6 +5,38 @@ pub struct HmsConfig {
     pub ivf: IVFConfig,
     pub nsg: NSGConfig,
     pub shard: ShardConfig,
+    pub query: QueryConfig,
+    pub concepts: ConceptsConfig,
+}
+
+#[derive(Clone, Debug)]
+pub struct QueryConfig {
+    pub component_similarity_threshold: f64,
+    pub component_max_neighbors: u32,
+}
+
+impl Default for QueryConfig {
+    fn default() -> Self {
+        Self {
+            component_similarity_threshold: 0.05,
+            component_max_neighbors: 20,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ConceptsConfig {
+    pub similarity_threshold: f64,
+    pub min_cluster_size: usize,
+}
+
+impl Default for ConceptsConfig {
+    fn default() -> Self {
+        Self {
+            similarity_threshold: 0.3,
+            min_cluster_size: 3,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

@@ -2,11 +2,9 @@ use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::ConceptCandidate;
 
-const CONCEPT_SIMILARITY_THRESHOLD: f64 = 0.3;
-const MIN_CONCEPT_CLUSTER_SIZE: usize = 3;
-
 impl HmsCore {
     pub fn synthesize_concepts(&self) -> Vec<ConceptCandidate> {
+        let cfg = &self.config.concepts;
         let mut all_ids = Vec::new();
         let mut all_vectors = Vec::new();
 
@@ -17,7 +15,7 @@ impl HmsCore {
             all_vectors.extend(vectors);
         });
 
-        if all_ids.len() < 3 {
+        if all_ids.len() < cfg.min_cluster_size {
             return vec![];
         }
 
@@ -34,11 +32,11 @@ impl HmsCore {
                 if used[j] {
                     continue;
                 }
-                if all_vectors[i].similarity(&all_vectors[j]) > CONCEPT_SIMILARITY_THRESHOLD {
+                if all_vectors[i].similarity(&all_vectors[j]) > cfg.similarity_threshold {
                     cluster.push(j);
                 }
             }
-            if cluster.len() >= MIN_CONCEPT_CLUSTER_SIZE {
+            if cluster.len() >= cfg.min_cluster_size {
                 for &idx in &cluster {
                     used[idx] = true;
                 }
