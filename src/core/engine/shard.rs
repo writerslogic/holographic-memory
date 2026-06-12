@@ -381,4 +381,16 @@ impl ShardSet {
             }
         }
     }
+
+    pub fn try_for_each_shard<F: FnMut(&Shard) -> Result<()>>(&self, mut f: F) -> Result<()> {
+        match self {
+            ShardSet::Single(shard) => f(shard),
+            ShardSet::Multi(mgr) => {
+                for shard in &mgr.shards {
+                    f(shard)?;
+                }
+                Ok(())
+            }
+        }
+    }
 }
