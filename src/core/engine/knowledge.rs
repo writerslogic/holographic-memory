@@ -8,7 +8,7 @@ impl HmsCore {
         let vec_h = self.encode_text(&h);
         let vec_r = self.encode_text(&r);
         let vec_t = self.encode_text(&t);
-        let triplet = vec_h.bind_into(&vec_r).bind_into(&vec_t);
+        let triplet = vec_h.bind(&vec_r).bind(&vec_t);
         self.memorize(id, triplet)
     }
 
@@ -18,7 +18,7 @@ impl HmsCore {
         }
         let mut vecs = Vec::new();
         for (i, item) in sequence.iter().enumerate() {
-            let v = self.encode_text(item).permute_into(i);
+            let v = self.encode_text(item).permute(i);
             vecs.push(v);
         }
         let trajectory = EntangledHVec::bundle(&vecs);
@@ -28,7 +28,7 @@ impl HmsCore {
     pub fn query_triplet(&self, h: String, r: String, k: u32) -> Result<Vec<RetrievalResult>> {
         let vec_h = self.encode_text(&h);
         let vec_r = self.encode_text(&r);
-        let query_vec = vec_h.bind_into(&vec_r);
+        let query_vec = vec_h.bind(&vec_r);
         Ok(self.query(&query_vec, k))
     }
 }

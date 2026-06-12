@@ -15,7 +15,7 @@ const CONVERGENCE_EPSILON: f64 = 0.001;
 ///
 /// The inner loop is parallelized with rayon: each node's candidate scoring
 /// is independent, so we compute all updates in parallel and then apply them.
-pub fn build_knn_graph(vectors: &[EntangledHVec], k_build: usize, seed: u64) -> Vec<Vec<u32>> {
+pub(super) fn build_knn_graph(vectors: &[EntangledHVec], k_build: usize, seed: u64) -> Vec<Vec<u32>> {
     let n = vectors.len();
     let k = k_build.min(n.saturating_sub(1));
     if n == 0 {
@@ -86,7 +86,7 @@ pub fn build_knn_graph(vectors: &[EntangledHVec], k_build: usize, seed: u64) -> 
     graph
 }
 
-pub fn prune_edges(
+pub(super) fn prune_edges(
     vectors: &[EntangledHVec],
     knn_graph: &[Vec<u32>],
     max_degree: usize,
@@ -124,7 +124,7 @@ pub fn prune_edges(
     pruned
 }
 
-pub fn select_navigating_node(vectors: &[EntangledHVec]) -> u32 {
+pub(super) fn select_navigating_node(vectors: &[EntangledHVec]) -> u32 {
     if vectors.is_empty() {
         return 0;
     }
@@ -156,11 +156,10 @@ pub fn select_navigating_node(vectors: &[EntangledHVec]) -> u32 {
     best_idx
 }
 
-pub fn insert_online(
+pub(super) fn insert_online(
     index: &mut NSGIndex,
     id: &str,
     vector: &EntangledHVec,
-    arena_offset: usize,
 ) -> Result<()> {
     if !index.trained {
         return Ok(());
@@ -168,7 +167,7 @@ pub fn insert_online(
 
     let new_idx = index.vectors.len() as u32;
     index.vectors.push(vector.clone());
-    index.id_map.push((id.to_string(), arena_offset));
+    index.id_map.push(id.to_string());
 
     let ef = index.config.ef_construction;
     let candidates = super::search::greedy_search_internal(index, vector, ef);

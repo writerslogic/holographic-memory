@@ -6,10 +6,13 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 #[cfg(feature = "node-api")]
 use std::sync::Arc;
+#[cfg(feature = "node-api")]
+use tracing::info_span;
 
 pub mod core;
 pub use crate::core::entangled::EntangledHVec;
-pub use crate::core::types::{ConceptCandidate, RetrievalResult, TextMetrics};
+pub use crate::core::error::HmsError;
+pub use crate::core::types::{ConceptCandidate, MemorizeBatchItem, RetrievalResult, TextMetrics};
 pub use crate::core::HmsCore;
 
 #[cfg(feature = "node-api")]
@@ -24,7 +27,7 @@ fn napi_err(e: anyhow::Error) -> napi::Error {
 }
 
 #[cfg(feature = "node-api")]
-async fn run_async<T: Send + 'static, F: FnOnce() -> Result<T> + Send + 'static>(
+async fn run_async<T: Send + 'static, F: FnOnce() -> anyhow::Result<T> + Send + 'static>(
     f: F,
 ) -> Result<T> {
     tokio::task::spawn_blocking(f)
@@ -58,24 +61,79 @@ impl HolographicMemorySystem {
     }
 
     #[napi]
-    pub async fn memorize_text(&self, id: String, text: String) -> Result<()> {
+    pub async fn memorize_text(&self, id: String, text: String, trace_id: Option<String>) -> Result<()> {
         let core = self.core.clone();
         run_async(move || {
+            let _span = info_span!("memorize_text", id = %id, trace_id = trace_id.as_deref().unwrap_or("")).entered();
             let vec = core.encode_text(&text);
             core.memorize(id, vec)
-                .map_err(napi_err)
         })
         .await
     }
 
-    /// Converts float32→sparse EntangledHVec on JS thread, then stores on background thread.
+    /// Zero-copy text ingestion from a Node.js Buffer. Avoids the UTF-8 copy
+    /// that occurs with String parameters by reading bytes in-place.
+    #[napi]
+    pub async fn memorize_text_buffer(&self, id: String, text: Buffer, trace_id: Option<String>) -> Result<()> {
+        let core = self.core.clone();
+        let text_str = std::str::from_utf8(&text)
+            .map_err(|e| napi::Error::from_reason(format!("Invalid UTF-8: {}", e)))?
+            .to_owned();
+        run_async(move || {
+            let _span = info_span!("memorize_text_buffer", id = %id, trace_id = trace_id.as_deref().unwrap_or("")).entered();
+            let vec = core.encode_text(&text_str);
+            core.memorize(id, vec)
+        })
+        .await
+    }
+
+    /// Batch memorize multiple id/text pairs in a single native call.
+    /// Uses rayon for parallel encoding, then inserts sequentially.
+    #[napi]
+    pub async fn memorize_batch(&self, items: Vec<MemorizeBatchItem>, trace_id: Option<String>) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || {
+            let _span = info_span!("memorize_batch", count = items.len(), trace_id = trace_id.as_deref().unwrap_or("")).entered();
+            use rayon::prelude::*;
+            let encoded: Vec<(String, EntangledHVec)> = items
+                .into_par_iter()
+                .map(|item| {
+                    let vec = core.encode_text(&item.text);
+                    (item.id, vec)
+                })
+                .collect();
+            for (id, vec) in encoded {
+                core.memorize(id, vec)?;
+            }
+            Ok(())
+        })
+        .await
+    }
+
+    /// Read a file directly from disk via memory-mapping and memorize its content.
+    /// Avoids passing file content through the JS string boundary entirely.
+    #[napi]
+    pub async fn memorize_file(&self, id: String, file_path: String) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || {
+            let file = std::fs::File::open(&file_path)
+                .map_err(|e| anyhow::anyhow!("Failed to open {}: {}", file_path, e))?;
+            let mmap = unsafe { memmap2::Mmap::map(&file) }
+                .map_err(|e| anyhow::anyhow!("Failed to mmap {}: {}", file_path, e))?;
+            let text = std::str::from_utf8(&mmap)
+                .map_err(|e| anyhow::anyhow!("Invalid UTF-8 in {}: {}", file_path, e))?;
+            let vec = core.encode_text(text);
+            core.memorize(id, vec)
+        })
+        .await
+    }
+
     #[napi]
     pub async fn memorize_vector(&self, id: String, vector: Float32Array) -> Result<()> {
         let core = self.core.clone();
-        let evec = EntangledHVec::from_dense(&vector, core.dimensions());
+        let dense: Vec<f32> = vector.to_vec();
         run_async(move || {
-            core.memorize(id, evec)
-                .map_err(napi_err)
+            core.memorize_vector(id, &dense)
         })
         .await
     }
@@ -85,15 +143,15 @@ impl HolographicMemorySystem {
         let core = self.core.clone();
         run_async(move || {
             core.memorize_scalar(id, value, min, max)
-                .map_err(napi_err)
         })
         .await
     }
 
     #[napi]
-    pub async fn query(&self, text: String, k: u32) -> Result<Vec<RetrievalResult>> {
+    pub async fn query(&self, text: String, k: u32, trace_id: Option<String>) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
+            let _span = info_span!("query", k = k, trace_id = trace_id.as_deref().unwrap_or("")).entered();
             let q_vec = core.encode_text(&text);
             let results = core.query(&q_vec, k);
             Ok(results)
@@ -217,7 +275,6 @@ impl HolographicMemorySystem {
         let core = self.core.clone();
         run_async(move || {
             core.memorize_triplet(id, head, relation, tail)
-                .map_err(napi_err)
         })
         .await
     }
@@ -231,11 +288,7 @@ impl HolographicMemorySystem {
     ) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
-            let h = core.encode_text(&head);
-            let r = core.encode_text(&relation);
-            let query_vec = h.bind_into(&r);
-            let results = core.query(&query_vec, k);
-            Ok(results)
+            core.query_triplet(head, relation, k)
         })
         .await
     }
@@ -251,13 +304,15 @@ impl HolographicMemorySystem {
         a: String,
         b: String,
         c: String,
+        trace_id: Option<String>,
     ) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
+            let _span = info_span!("find_analogy", trace_id = trace_id.as_deref().unwrap_or("")).entered();
             let vec_a = core.encode_text(&a);
             let vec_b = core.encode_text(&b);
             let vec_c = core.encode_text(&c);
-            let target_d = vec_a.bind_into(&vec_b).bind_into(&vec_c);
+            let target_d = vec_a.bind(&vec_b).bind(&vec_c);
             let results = core.query(&target_d, 5);
             Ok(results)
         })
@@ -279,9 +334,20 @@ impl HolographicMemorySystem {
         let core = self.core.clone();
         run_async(move || {
             core.memorize_sequence(id, &sequence)
-                .map_err(napi_err)
         })
         .await
+    }
+
+    #[napi]
+    pub async fn delete(&self, id: String) -> Result<bool> {
+        let core = self.core.clone();
+        run_async(move || core.delete(&id)).await
+    }
+
+    #[napi]
+    pub async fn compact(&self) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || core.compact()).await
     }
 }
 
@@ -395,7 +461,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut config = crate::core::config::HmsConfig::default();
         config.nsg.max_degree = 8;
-        config.nsg.ef_search = 32;
+
         config.nsg.ef_construction = 16;
 
         let hms = HmsCore::new(
@@ -425,7 +491,7 @@ mod tests {
         let mut config = crate::core::config::HmsConfig::default();
         config.nsg.auto_threshold = 30;
         config.nsg.max_degree = 8;
-        config.nsg.ef_search = 32;
+
         config.nsg.ef_construction = 16;
 
         let hms = HmsCore::new(
@@ -453,7 +519,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut config = crate::core::config::HmsConfig::default();
         config.nsg.max_degree = 8;
-        config.nsg.ef_search = 32;
+
         config.nsg.ef_construction = 16;
 
         let hms = HmsCore::new(
@@ -480,41 +546,135 @@ mod tests {
         );
     }
 
+    // === Delete Tests ===
+
     #[test]
-    fn test_shard_manager_integration() {
-        use crate::core::config::{NSGConfig, ShardConfig};
-        use crate::core::nsg::training;
-        use crate::core::shard::{Shard, ShardManager};
+    fn test_delete_existing() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-        let nsg_cfg = NSGConfig {
-            max_degree: 8,
-            ef_search: 32,
-            ef_construction: 16,
-            auto_threshold: 0,
-            seed: 42,
-        };
+        let vec = hms.encode_text("hello");
+        hms.memorize("hello".to_string(), vec).unwrap();
+        assert_eq!(hms.vector_count(), 1);
 
-        let make_shard = |seed: u64, n: usize| {
-            let vectors: Vec<EntangledHVec> = (0..n)
-                .map(|i| EntangledHVec::new_deterministic(1000, seed + i as u64))
-                .collect();
-            let ids: Vec<String> = (0..n).map(|i| format!("sh{}_v{}", seed, i)).collect();
-            let offsets: Vec<usize> = (0..n).map(|i| i * 100).collect();
-            let index = training::train(&vectors, &ids, &offsets, 1000, &nsg_cfg).unwrap();
-            Box::new(index) as Box<dyn Shard>
-        };
+        assert!(hms.delete("hello").unwrap());
+        assert_eq!(hms.vector_count(), 0);
 
-        let mut mgr = ShardManager::new(ShardConfig::default());
-        mgr.add_shard(make_shard(0, 25));
-        mgr.add_shard(make_shard(100, 25));
+        let q = hms.encode_text("hello");
+        let results = hms.query(&q, 5);
+        assert!(results.is_empty(), "Deleted vector should not appear in results");
+    }
 
-        assert!(mgr.is_trained());
-        assert_eq!(mgr.shard_count(), 2);
-        assert_eq!(mgr.total_vectors(), 50);
+    #[test]
+    fn test_delete_nonexistent() {
+        let hms = HmsCore::new(10_000, None, None).unwrap();
+        assert!(!hms.delete("no_such_id").unwrap());
+    }
 
-        let query = EntangledHVec::new_deterministic(1000, 0);
-        let results = mgr.query(&query, 5, 32);
-        assert!(!results.is_empty(), "Shard manager should return results");
+    #[test]
+    fn test_basic_persistence() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
+            let v = hms.encode_text("persist me");
+            hms.memorize("p1".to_string(), v).unwrap();
+            assert_eq!(hms.vector_count(), 1);
+        }
+
+        let hms = HmsCore::new(10_000, Some(path), None).unwrap();
+        assert_eq!(hms.vector_count(), 1);
+    }
+
+    #[test]
+    fn test_delete_persistence() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
+            let v1 = hms.encode_text("keep me");
+            let v2 = hms.encode_text("delete me");
+            hms.memorize("keep".to_string(), v1).unwrap();
+            hms.memorize("del".to_string(), v2).unwrap();
+            assert_eq!(hms.vector_count(), 2);
+            hms.delete("del").unwrap();
+            assert_eq!(hms.vector_count(), 1);
+        }
+
+        let hms = HmsCore::new(10_000, Some(path), None).unwrap();
+        assert_eq!(hms.vector_count(), 1);
+        let q = hms.encode_text("keep me");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "Kept vector should survive restart");
+    }
+
+    #[test]
+    fn test_delete_and_rememorize() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        let v1 = hms.encode_text("version 1");
+        hms.memorize("doc".to_string(), v1).unwrap();
+        hms.delete("doc").unwrap();
+
+        let v2 = hms.encode_text("version 2");
+        hms.memorize("doc".to_string(), v2.clone()).unwrap();
+        assert_eq!(hms.vector_count(), 1);
+
+        let q = hms.encode_text("version 2");
+        let results = hms.query(&q, 1);
+        assert_eq!(results[0].id, "doc");
+    }
+
+    // === Compact Tests ===
+
+    #[test]
+    fn test_compact_basic() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
+        for i in 0..50 {
+            let vec = hms.encode_text(&format!("item {}", i));
+            hms.memorize(format!("id_{}", i), vec).unwrap();
+        }
+        // Delete half
+        for i in 0..25 {
+            hms.delete(&format!("id_{}", i)).unwrap();
+        }
+        assert_eq!(hms.vector_count(), 25);
+
+        hms.compact().unwrap();
+
+        // Verify all live vectors still queryable
+        let q = hms.encode_text("item 30");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "Should find results after compaction");
+        assert_eq!(hms.vector_count(), 25);
+    }
+
+    #[test]
+    fn test_compact_persistence() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
+            for i in 0..20 {
+                let vec = hms.encode_text(&format!("doc {}", i));
+                hms.memorize(format!("d_{}", i), vec).unwrap();
+            }
+            for i in 0..10 {
+                hms.delete(&format!("d_{}", i)).unwrap();
+            }
+            hms.compact().unwrap();
+        }
+
+        // Re-open from compacted arena
+        let hms = HmsCore::new(10_000, Some(path), None).unwrap();
+        assert_eq!(hms.vector_count(), 10);
     }
 
     // === IVF Integration Tests ===
@@ -585,3 +745,37 @@ mod tests {
 
 #[cfg(test)]
 mod lib_proptest;
+
+#[cfg(test)]
+mod ts_export_tests {
+    use ts_rs::TS;
+
+    #[test]
+    fn export_ts_bindings() {
+        crate::RetrievalResult::export_all().unwrap();
+        crate::ConceptCandidate::export_all().unwrap();
+        crate::TextMetrics::export_all().unwrap();
+        crate::MemorizeBatchItem::export_all().unwrap();
+        crate::HmsError::export_all().unwrap();
+    }
+
+    #[test]
+    fn export_json_schemas() {
+        use schemars::schema_for;
+        let dir = std::path::Path::new("schemas");
+        std::fs::create_dir_all(dir).unwrap();
+
+        let schemas: Vec<(&str, schemars::schema::RootSchema)> = vec![
+            ("RetrievalResult", schema_for!(crate::RetrievalResult)),
+            ("ConceptCandidate", schema_for!(crate::ConceptCandidate)),
+            ("TextMetrics", schema_for!(crate::TextMetrics)),
+            ("MemorizeBatchItem", schema_for!(crate::MemorizeBatchItem)),
+            ("HmsError", schema_for!(crate::HmsError)),
+        ];
+
+        for (name, schema) in schemas {
+            let json = serde_json::to_string_pretty(&schema).unwrap();
+            std::fs::write(dir.join(format!("{}.json", name)), json).unwrap();
+        }
+    }
+}

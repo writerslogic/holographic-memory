@@ -16,17 +16,17 @@ pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
         let vecs: Vec<EntangledHVec> = chars
             .iter()
             .enumerate()
-            .map(|(i, c)| EntangledHVec::new_deterministic(dim, *c as u64).permute_into(i))
+            .map(|(i, c)| EntangledHVec::new_deterministic(dim, *c as u64).permute(i))
             .collect();
         return EntangledHVec::bundle(&vecs);
     }
     let ngrams: Vec<EntangledHVec> = chars
         .windows(NGRAM_SIZE)
         .map(|window| {
-            let mut chunk = EntangledHVec::new_deterministic(dim, window[0] as u64).permute_into(0);
+            let mut chunk = EntangledHVec::new_deterministic(dim, window[0] as u64).permute(0);
             for (i, c) in window.iter().enumerate().skip(1) {
-                let next = EntangledHVec::new_deterministic(dim, *c as u64).permute_into(i);
-                chunk = chunk.bind_into(&next);
+                let next = EntangledHVec::new_deterministic(dim, *c as u64).permute(i);
+                chunk = chunk.bind(&next);
             }
             chunk
         })

@@ -41,7 +41,7 @@ pub(crate) struct DiffusionFactorizer<'a> {
 }
 
 impl<'a> DiffusionFactorizer<'a> {
-    pub fn new(codebook: &'a [EntangledHVec], config: DiffusionConfig) -> Self {
+    fn new(codebook: &'a [EntangledHVec], config: DiffusionConfig) -> Self {
         Self { codebook, config }
     }
 
@@ -175,7 +175,7 @@ impl<'a> DiffusionFactorizer<'a> {
         EntangledHVec::from_indices(indices, dim)
     }
 
-    pub fn denoise(&self, noisy: &EntangledHVec) -> EntangledHVec {
+    fn denoise(&self, noisy: &EntangledHVec) -> EntangledHVec {
         let schedule = self.noise_schedule();
         let dim = noisy.dim;
         let mut continuous: Vec<(u32, f64)> = noisy.indices.iter().map(|&idx| (idx, 1.0)).collect();
@@ -212,7 +212,7 @@ impl<'a> DiffusionFactorizer<'a> {
                 let mut residual = product.clone();
                 for (j, est) in estimates.iter().enumerate() {
                     if j != i {
-                        residual = residual.bind_into(est);
+                        residual = residual.bind(est);
                     }
                 }
 

@@ -29,10 +29,6 @@ pub struct PersistentArena {
 }
 
 impl PersistentArena {
-    pub fn base_path(&self) -> &Path {
-        &self.base_path
-    }
-
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
@@ -173,6 +169,9 @@ impl PersistentArena {
         let comp_len = u32::from_le_bytes(header_bytes[8..12].try_into().unwrap()) as usize;
         let version = u32::from_le_bytes(header_bytes[12..16].try_into().unwrap());
 
+        if raw_len == 0 {
+            return Err(anyhow!("Empty frame at offset {}", global_offset));
+        }
         if raw_len > MAX_RAW_FRAME_SIZE {
             return Err(anyhow!(
                 "Suspiciously large raw frame length: {} at {}",
@@ -303,6 +302,9 @@ impl PersistentArena {
             // Data at +HEADER_SIZE
             std::ptr::copy_nonoverlapping(write_data.as_ptr(), target.add(HEADER_SIZE), comp_len);
         }
+        active
+            .flush_range(offset, total_frame_len)
+            .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
         let global = self.active_id.load(Ordering::SeqCst) * SEGMENT_SIZE + offset;
         Ok(global)
     }
@@ -336,57 +338,25 @@ impl PersistentArena {
         Ok(())
     }
 
-    /// Reset arena to a fresh state. Useful for compaction.
-    #[allow(dead_code)]
-    pub fn truncate(&self) -> Result<()> {
-        let mut segments = self.read_segments.write();
-        segments.clear();
-
-        let mut active = self.active_segment.write();
-        self.active_id.store(0, Ordering::SeqCst);
-        self.write_offset.store(0, Ordering::SeqCst);
-        self.version_counter.store(0, Ordering::SeqCst);
-
-        // Remove all seg_*.bin files
-        for entry in std::fs::read_dir(&self.base_path)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.extension().is_some_and(|ext| ext == "bin") {
-                std::fs::remove_file(path)?;
-            }
-        }
-
-        // Re-initialize active segment
-        let active_path = self.base_path.join("seg_0.bin");
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&active_path)?;
-        file.set_len(SEGMENT_SIZE as u64)?;
-        *active = unsafe { MmapMut::map_mut(&file)? };
-
-        Ok(())
-    }
-
-    /// Atomically swap the contents of this arena with a newly compacted one.
-    /// This requires the caller to have already populated `temp_base` using a separate `PersistentArena`,
-    /// and that the temporary arena has been dropped (so its files are not locked).
+    /// Atomically replace the arena contents with a compacted version.
+    /// The caller must have already written the compacted data to `temp_base`
+    /// using a separate PersistentArena instance (which must be dropped before
+    /// calling this method so its file handles are released).
     pub fn replace_with_compacted(&self, temp_base: &Path) -> Result<()> {
         let mut segments = self.read_segments.write();
         let mut active = self.active_segment.write();
 
-        // 1. Clear current mmaps so we release file locks (important on Windows)
+        // 1. Release all mmaps by replacing with a dummy
         segments.clear();
-        let temp_file = std::fs::OpenOptions::new()
+        let dummy_path = self.base_path.join(".dummy_mmap");
+        let dummy_file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .truncate(true)
-            .open(self.base_path.join(".dummy_mmap"))?;
-        temp_file.set_len(1)?;
-        *active = unsafe { MmapMut::map_mut(&temp_file)? };
+            .open(&dummy_path)?;
+        dummy_file.set_len(1)?;
+        *active = unsafe { MmapMut::map_mut(&dummy_file)? };
 
         // 2. Delete all current segment files
         for entry in std::fs::read_dir(&self.base_path)? {
@@ -396,9 +366,9 @@ impl PersistentArena {
                 std::fs::remove_file(path)?;
             }
         }
-        std::fs::remove_file(self.base_path.join(".dummy_mmap"))?;
+        let _ = std::fs::remove_file(&dummy_path);
 
-        // 3. Move files from the compacted temp directory to our base path
+        // 3. Move compacted files into base path
         for entry in std::fs::read_dir(temp_base)? {
             let entry = entry?;
             let path = entry.path();
@@ -408,7 +378,7 @@ impl PersistentArena {
             }
         }
 
-        // 4. Re-open everything as if we are booting up
+        // 4. Re-open segments from the compacted files
         let mut id = 0;
         loop {
             let p = self.base_path.join(format!("seg_{}.bin", id));
@@ -422,7 +392,7 @@ impl PersistentArena {
         for i in 0..active_id {
             let p = self.base_path.join(format!("seg_{}.bin", i));
             let file = File::open(&p)?;
-            let mmap = unsafe { memmap2::Mmap::map(&file)? };
+            let mmap = unsafe { Mmap::map(&file)? };
             segments.push(Arc::new(mmap));
         }
 
@@ -434,11 +404,11 @@ impl PersistentArena {
             .truncate(false)
             .open(&active_path)?;
         file.set_len(SEGMENT_SIZE as u64)?;
-        let mut_map = unsafe { MmapMut::map_mut(&file)? };
+        let new_mmap = unsafe { MmapMut::map_mut(&file)? };
 
-        let (recovered_offset, max_version) = Self::discover_offset(&mut_map);
+        let (recovered_offset, max_version) = Self::discover_offset(&new_mmap);
 
-        *active = mut_map;
+        *active = new_mmap;
         self.active_id.store(active_id, Ordering::SeqCst);
         self.write_offset.store(recovered_offset, Ordering::SeqCst);
         self.version_counter.store(
@@ -450,10 +420,16 @@ impl PersistentArena {
             Ordering::SeqCst,
         );
 
-        // 5. Remove the empty temp directory
-        std::fs::remove_dir_all(temp_base)?;
+        // 5. Clean up temp directory
+        let _ = std::fs::remove_dir_all(temp_base);
 
         Ok(())
+    }
+}
+
+impl Drop for PersistentArena {
+    fn drop(&mut self) {
+        let _ = self.active_segment.write().flush();
     }
 }
 
@@ -502,19 +478,4 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_persistent_arena_truncate() -> Result<()> {
-        let dir = tempdir()?;
-        let path = dir.path().to_path_buf();
-
-        let arena = PersistentArena::new(&path)?;
-        arena.write_slice(b"some data")?;
-        arena.truncate()?;
-
-        assert_eq!(arena.write_offset.load(Ordering::SeqCst), 0);
-        let offset = arena.write_slice(b"new data")?;
-        assert_eq!(offset, 0);
-
-        Ok(())
-    }
 }

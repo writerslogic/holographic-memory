@@ -21,7 +21,6 @@ pub(crate) struct IVFIndex {
     pub(crate) pq: PQEncoder,
     #[serde(skip)]
     pub(crate) lists: Option<InvertedLists>,
-    pub(crate) n_clusters: usize,
     pub(crate) dim: usize,
     pub(crate) trained: bool,
 }
@@ -31,7 +30,7 @@ impl IVFIndex {
         self.trained
     }
 
-    pub fn insert(&mut self, id: &str, vector: &EntangledHVec, arena_offset: usize) -> Result<()> {
+    pub fn insert(&mut self, id: &str, vector: &EntangledHVec) -> Result<()> {
         if !self.trained {
             return Ok(());
         }
@@ -41,7 +40,7 @@ impl IVFIndex {
         let pq_codes = self.pq.encode(vector);
 
         if let Some(ref lists) = self.lists {
-            lists.append(cluster, id, &pq_codes, arena_offset)
+            lists.append(cluster, id, &pq_codes)
         } else {
             Err(anyhow::anyhow!("Inverted lists database not connected"))
         }

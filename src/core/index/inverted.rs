@@ -103,10 +103,9 @@ impl SparseInvertedIndex {
             }
         }
 
-        let results = heap.into_sorted_vec();
         // With inverted Ord (smaller similarity = Greater),
         // into_sorted_vec (ascending Ord) returns DESCENDING similarity.
-        results
+        heap.into_sorted_vec()
     }
 }
 

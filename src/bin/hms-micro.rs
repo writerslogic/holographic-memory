@@ -10,8 +10,8 @@ fn main() {
     let iterations = 1_000_000;
 
     // rho = 1/256
-    let v1 = EntangledHVec::random(dim, 1);
-    let v2 = EntangledHVec::random(dim, 2);
+    let v1 = EntangledHVec::new_deterministic(dim, 1);
+    let v2 = EntangledHVec::new_deterministic(dim, 2);
 
     let start = Instant::now();
     let mut total_intersection = 0;
