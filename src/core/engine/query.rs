@@ -1,165 +1,20 @@
-use std::collections::BinaryHeap;
-
 use rayon::prelude::*;
-use super::router::IndexRoute;
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::RetrievalResult;
 
 impl HmsCore {
     /// Query the memory system for the k most similar vectors.
-    /// Routes to NSG or IVF if trained, otherwise falls back to brute-force scan.
     pub fn query(&self, query_vec: &EntangledHVec, k: u32) -> Vec<RetrievalResult> {
-        let n = self.vector_count.load(std::sync::atomic::Ordering::SeqCst) as usize;
-
-        // 1. Plan retrieval strategy based on collection size and query sparsity.
-        let planner = super::router::QueryPlanner::new(
-            self.nsg_trained(),
-            n > 0, // Inverted index always available if items exist
-            self.ivf_trained(),
-            n,
-            self.dimensions,
-        );
-        let plan = planner.plan(query_vec, k);
-
-        // authoritative live set
-        let vectors = self.vectors.read();
-
-        match plan.route {
-            IndexRoute::NSG => {
-                if let Some(ref nsg) = *self.nsg.read() {
-                    let results: Vec<RetrievalResult> = nsg
-                        .query(query_vec, k as usize, plan.ef_search)
-                        .into_iter()
-                        .filter(|r| vectors.contains_key(&r.id))
-                        .collect();
-                    if !results.is_empty() {
-                        return results;
-                    }
-                }
-            }
-            IndexRoute::Inverted => {
-                let mut acc = self.accumulator.lock();
-                let results = self
-                    .inverted
-                    .read()
-                    .query(&query_vec.indices, k as usize, &mut acc);
-
-                // Map u32 doc_id back to String ID using the registry
-                let reg = self.registry.read();
-                let mapped: Vec<RetrievalResult> = results
-                    .into_iter()
-                    .filter_map(|r| {
-                        let doc_id: u32 = r.id.parse().ok()?;
-                        let id_str = reg.get(doc_id as usize)?;
-                        if vectors.contains_key(id_str) {
-                            Some(RetrievalResult {
-                                id: id_str.clone(),
-                                similarity: r.similarity,
-                            })
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
-
-                if !mapped.is_empty() {
-                    return mapped;
-                }
-            }
-            IndexRoute::IVF => {
-                if let Some(ref ivf) = *self.ivf.read() {
-                    if let Ok(candidates) = ivf.query(query_vec, k as usize, plan.n_probe) {
-                        // IVF returns PQ-approximate distances on an incompatible scale.
-                        // Re-rank candidates by exact Jaccard so all query paths return
-                        // the same similarity metric.
-                        let reranked =
-                            self.rerank_by_exact_similarity(query_vec, &candidates);
-                        if !reranked.is_empty() {
-                            return reranked;
-                        }
-                    }
-                }
-            }
-            IndexRoute::BruteForce => {
-                return self.brute_force_scan(query_vec, k as usize);
-            }
-        }
-
-        // Final fallback (should only happen if an index failed or was empty)
-        self.brute_force_scan(query_vec, k as usize)
-    }
-
-    /// Re-rank IVF candidates by exact Jaccard similarity.
-    fn rerank_by_exact_similarity(
-        &self,
-        query_vec: &EntangledHVec,
-        candidates: &[RetrievalResult],
-    ) -> Vec<RetrievalResult> {
-        let vectors = self.vectors.read();
-
-        let mut results: Vec<RetrievalResult> = candidates
-            .iter()
-            .filter_map(|c| {
-                let vec = vectors.get(&c.id)?;
-                Some(RetrievalResult {
-                    id: c.id.clone(),
-                    similarity: query_vec.similarity(vec),
-                })
-            })
-            .collect();
-
-        results.sort_unstable_by(|a, b| {
-            b.similarity
-                .partial_cmp(&a.similarity)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        results
-    }
-
-    /// Linear scan over all stored vectors. Uses a min-heap of size k
-    /// to avoid sorting all results when k is small relative to n.
-    fn brute_force_scan(&self, query_vec: &EntangledHVec, k: usize) -> Vec<RetrievalResult> {
-        let vectors = self.vectors.read();
-        let mut heap: BinaryHeap<RetrievalResult> = BinaryHeap::with_capacity(k + 1);
-
-        for (id, vec) in vectors.iter() {
-            let sim = query_vec.similarity(vec);
-
-            if heap.len() < k {
-                heap.push(RetrievalResult {
-                    similarity: sim,
-                    id: id.clone(),
-                });
-            } else if let Some(top) = heap.peek() {
-                if sim > top.similarity {
-                    heap.pop();
-                    heap.push(RetrievalResult {
-                        similarity: sim,
-                        id: id.clone(),
-                    });
-                }
-            }
-        }
-
-        let mut results = heap.into_sorted_vec();
-        // into_sorted_vec gives ascending order (min-heap); we want descending
-        results.reverse();
-        results
+        self.shards.read().query(query_vec, k, self.dimensions)
     }
 
     /// Process multiple queries in parallel using rayon.
-    /// Returns one result vector per query, in the same order as the input.
     pub fn query_batch(&self, queries: &[EntangledHVec], k: u32) -> Vec<Vec<RetrievalResult>> {
         queries.par_iter().map(|q| self.query(q, k)).collect()
     }
 
     /// Analyze components of a vector by finding its nearest neighbors.
-    /// Returns neighbors with raw Jaccard similarity above a minimum threshold.
-    ///
-    /// Threshold 0.05 is ~25x the null Jaccard expectation for independent sparse
-    /// vectors at rho=1/256: E[J] = rho/(2-rho) ~ 0.002. This filters noise
-    /// while retaining weak but genuine associations.
     pub fn analyze_components(&self, vector: &EntangledHVec) -> Vec<RetrievalResult> {
         let neighbors = self.query(vector, 20);
         neighbors

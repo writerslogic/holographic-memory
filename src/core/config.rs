@@ -4,6 +4,26 @@ use serde::{Deserialize, Serialize};
 pub struct HmsConfig {
     pub ivf: IVFConfig,
     pub nsg: NSGConfig,
+    pub shard: ShardConfig,
+}
+
+#[derive(Clone, Debug)]
+pub struct ShardConfig {
+    pub enabled: bool,
+    pub shard_count: usize,
+    pub auto_threshold: usize,
+    pub target_shard_size: usize,
+}
+
+impl Default for ShardConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            shard_count: 0,
+            auto_threshold: 1_000_000,
+            target_shard_size: 250_000,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
