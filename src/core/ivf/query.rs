@@ -98,7 +98,6 @@ mod tests {
         let vectors: Vec<EntangledHVec> = (0..n)
             .map(|s| EntangledHVec::new_deterministic(dim, s as u64))
             .collect();
-        let offsets: Vec<usize> = (0..n).map(|i| i * 200).collect();
         let ids: Vec<String> = (0..n).map(|i| format!("vec_{}", i)).collect();
 
         let config = IVFConfig {
@@ -110,7 +109,7 @@ mod tests {
             auto_threshold: 0,
         };
 
-        let index = IVFIndex::train(&vectors, &offsets, &ids, dim, &config).unwrap();
+        let index = IVFIndex::train(&vectors, &ids, dim, &config).unwrap();
 
         let results = index.query(&vectors[0], 10, config.n_probe).unwrap();
         assert!(!results.is_empty(), "Should return results");

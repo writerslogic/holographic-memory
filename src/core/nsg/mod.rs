@@ -13,9 +13,8 @@ use crate::core::types::RetrievalResult;
 pub(crate) struct NSGIndex {
     pub(crate) neighbors: Vec<Vec<u32>>,
     pub(crate) vectors: Vec<EntangledHVec>,
-    pub(crate) id_map: Vec<(String, usize)>,
+    pub(crate) id_map: Vec<String>,
     pub(crate) navigating_node: u32,
-    pub(crate) dim: usize,
     pub(crate) trained: bool,
     pub(crate) config: NSGConfig,
 }
@@ -25,8 +24,8 @@ impl NSGIndex {
         self.trained
     }
 
-    pub fn insert(&mut self, id: &str, vector: &EntangledHVec, arena_offset: usize) -> Result<()> {
-        graph::insert_online(self, id, vector, arena_offset)
+    pub fn insert(&mut self, id: &str, vector: &EntangledHVec) -> Result<()> {
+        graph::insert_online(self, id, vector)
     }
 
     pub fn query(&self, query: &EntangledHVec, k: usize, ef_search: usize) -> Vec<RetrievalResult> {

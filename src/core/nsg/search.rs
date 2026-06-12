@@ -83,7 +83,7 @@ pub(crate) fn greedy_search_internal(
     candidates
 }
 
-pub fn greedy_search(
+pub(super) fn greedy_search(
     index: &NSGIndex,
     query: &EntangledHVec,
     k: usize,
@@ -95,7 +95,7 @@ pub fn greedy_search(
         .iter()
         .take(k)
         .map(|&(_dist, idx)| {
-            let (id, _) = &index.id_map[idx as usize];
+            let id = &index.id_map[idx as usize];
             let sim = query.similarity(&index.vectors[idx as usize]);
             RetrievalResult {
                 id: id.clone(),
@@ -116,15 +116,13 @@ mod tests {
             .map(|i| EntangledHVec::new_deterministic(dim, i as u64))
             .collect();
         let ids: Vec<String> = (0..n).map(|i| format!("vec_{}", i)).collect();
-        let offsets: Vec<usize> = (0..n).map(|i| i * 100).collect();
         let config = NSGConfig {
             max_degree: 8,
-            ef_search: 32,
             ef_construction: 32,
             auto_threshold: 0,
             seed: 42,
         };
-        training::train(&vectors, &ids, &offsets, dim, &config).unwrap()
+        training::train(&vectors, &ids, &config).unwrap()
     }
 
     #[test]

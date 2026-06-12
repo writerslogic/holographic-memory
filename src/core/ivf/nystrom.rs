@@ -11,10 +11,6 @@ pub(crate) struct NystromProjector {
     pub(crate) transform: DMatrix<f32>,
     /// Landmark vectors for kernel computation
     pub(crate) landmarks: Vec<EntangledHVec>,
-    /// Stored for serialization compatibility; the transform matrix dimensions
-    /// encode this implicitly so it is not read at runtime.
-    #[allow(dead_code)]
-    pub(crate) d_reduced: usize,
 }
 
 impl NystromProjector {
@@ -76,7 +72,6 @@ impl NystromProjector {
         Ok(Self {
             transform,
             landmarks,
-            d_reduced: d_actual,
         })
     }
 

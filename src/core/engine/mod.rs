@@ -1,6 +1,5 @@
 pub(crate) mod concepts;
 pub(crate) mod knowledge;
-pub(crate) mod maintenance;
 pub(crate) mod query;
 pub(crate) mod router;
 
@@ -42,8 +41,8 @@ pub struct HmsCore {
     pub(crate) accumulator: Arc<parking_lot::Mutex<Accumulator>>,
     /// Atomic counter for the total number of non-deleted vectors.
     vector_count: AtomicU64,
-    /// Absolute source of truth in RAM: ID -> (Vector, ArenaOffset)
-    pub(crate) vectors: Arc<RwLock<FxHashMap<String, (EntangledHVec, usize)>>>,
+    /// Absolute source of truth in RAM: ID -> Vector
+    pub(crate) vectors: Arc<RwLock<FxHashMap<String, EntangledHVec>>>,
     /// Maps internal doc_id (index) to String ID.
     pub(crate) registry: Arc<RwLock<Vec<String>>>,
 }
@@ -107,7 +106,7 @@ impl HmsCore {
         *inv = SparseInvertedIndex::new(self.dimensions, (self.dimensions / 256).max(1));
 
         for (i, id) in registry.iter().enumerate() {
-            if let Some((vec, _)) = vectors.get(id) {
+            if let Some(vec) = vectors.get(id) {
                 inv.add_doc(i as u32, &vec.indices);
             }
         }
@@ -140,8 +139,8 @@ impl HmsCore {
             let vectors = self.vectors.read();
             let registry = self.registry.read();
             for id in registry.iter() {
-                if let Some((vec, offset)) = vectors.get(id) {
-                    ivf.insert(id, vec, *offset)?;
+                if let Some(vec) = vectors.get(id) {
+                    ivf.insert(id, vec)?;
                 }
             }
             *self.ivf.write() = Some(ivf);
@@ -167,24 +166,17 @@ impl HmsCore {
         let mut registry = self.registry.write();
 
         let mut offset = 0;
-        loop {
-            match self.arena.read_frame(offset) {
-                Ok((payload, _version)) => {
-                    let (id, vector) = self.parse_log_payload(&payload);
-                    if vector.dim == 0 && vector.indices.is_empty() {
-                        // DELETE TOMBSTONE
-                        vectors.remove(&id);
-                    } else {
-                        // INSERT or UPDATE
-                        vectors.insert(id.clone(), (vector, offset));
-                    }
-                    offset = match self.arena.next_offset(offset) {
-                        Ok(next) => next,
-                        Err(_) => break,
-                    };
-                }
-                Err(_) => break,
+        while let Ok((payload, _version)) = self.arena.read_frame(offset) {
+            let (id, vector) = self.parse_log_payload(&payload);
+            if vector.dim == 0 {
+                vectors.remove(&id);
+            } else {
+                vectors.insert(id.clone(), vector);
             }
+            offset = match self.arena.next_offset(offset) {
+                Ok(next) => next,
+                Err(_) => break,
+            };
         }
 
         // Rebuild registry from live vectors.
@@ -205,15 +197,22 @@ impl HmsCore {
         if payload.len() < id_end + 4 {
             return (String::new(), EntangledHVec::from_indices(vec![], 0));
         }
-        let id = String::from_utf8_lossy(&payload[2..id_end]).to_string();
-        let delta_count = u32::from_le_bytes(match payload[id_end..id_end + 4].try_into() {
+        let id = match std::str::from_utf8(&payload[2..id_end]) {
+            Ok(s) => s.to_owned(),
+            Err(_) => String::from_utf8_lossy(&payload[2..id_end]).into_owned(),
+        };
+        let delta_count_raw = u32::from_le_bytes(match payload[id_end..id_end + 4].try_into() {
             Ok(b) => b,
             Err(_) => return (id, EntangledHVec::from_indices(vec![], 0)),
-        }) as usize;
+        });
 
-        if delta_count == 0 {
-            // Likely a tombstone
+        if delta_count_raw == Self::TOMBSTONE_MARKER {
             return (id, EntangledHVec::from_indices(vec![], 0));
+        }
+
+        let delta_count = delta_count_raw as usize;
+        if delta_count == 0 {
+            return (id, EntangledHVec::from_indices(vec![], self.dimensions));
         }
 
         let deltas_start = id_end + 4;
@@ -229,23 +228,20 @@ impl HmsCore {
     }
 
     /// Load all vectors and their associated metadata.
-    /// Returns (IDs, Vectors, Offsets).
-    fn load_all_vectors(&self) -> (Vec<String>, Vec<EntangledHVec>, Vec<usize>) {
+    fn load_all_vectors(&self) -> (Vec<String>, Vec<EntangledHVec>) {
         let vectors = self.vectors.read();
         let registry = self.registry.read();
         let mut ids = Vec::with_capacity(registry.len());
         let mut out_vectors = Vec::with_capacity(registry.len());
-        let mut offsets = Vec::with_capacity(registry.len());
 
         for id in registry.iter() {
-            if let Some((vec, offset)) = vectors.get(id) {
+            if let Some(vec) = vectors.get(id) {
                 ids.push(id.clone());
                 out_vectors.push(vec.clone());
-                offsets.push(*offset);
             }
         }
 
-        (ids, out_vectors, offsets)
+        (ids, out_vectors)
     }
 
     pub fn dimensions(&self) -> usize {
@@ -264,32 +260,7 @@ impl HmsCore {
         TextProcessor::calculate_readability(metrics)
     }
 
-    pub fn delete(&self, id: &str) -> Result<()> {
-        let mut vectors = self.vectors.write();
-        let mut reg = self.registry.write();
-
-        if let Some(_) = vectors.remove(id) {
-            reg.retain(|eid| eid != id);
-            self.vector_count
-                .store(reg.len() as u64, AtomicOrdering::SeqCst);
-
-            // Log the deletion (tombstone)
-            let mut entry = Vec::with_capacity(2 + id.len() + 4);
-            let id_bytes = id.as_bytes();
-            entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
-            entry.extend_from_slice(id_bytes);
-            entry.extend_from_slice(&0u32.to_le_bytes()); // 0 deltas = tombstone
-            self.arena.write_slice(&entry)?;
-        }
-
-        self.rebuild_inverted_index()?;
-        Ok(())
-    }
-
-    pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
-        let mut vectors = self.vectors.write();
-        let mut reg = self.registry.write();
-
+    fn serialize_log_entry(id: &str, vector: &EntangledHVec) -> Result<Vec<u8>> {
         let id_bytes = id.as_bytes();
         if id_bytes.len() > u16::MAX as usize {
             return Err(anyhow::anyhow!(
@@ -298,7 +269,6 @@ impl HmsCore {
                 u16::MAX
             ));
         }
-
         let deltas = vector.to_deltas();
         let mut entry = Vec::with_capacity(2 + id_bytes.len() + 4 + deltas.len() * 4);
         entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
@@ -307,11 +277,97 @@ impl HmsCore {
         for &d in &deltas {
             entry.extend_from_slice(&d.to_le_bytes());
         }
+        Ok(entry)
+    }
 
-        let offset = self.arena.write_slice(&entry)?;
+    const TOMBSTONE_MARKER: u32 = u32::MAX;
+
+    fn serialize_tombstone(id: &str) -> Vec<u8> {
+        let id_bytes = id.as_bytes();
+        let mut entry = Vec::with_capacity(2 + id_bytes.len() + 4);
+        entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
+        entry.extend_from_slice(id_bytes);
+        entry.extend_from_slice(&Self::TOMBSTONE_MARKER.to_le_bytes());
+        entry
+    }
+
+    pub fn delete(&self, id: &str) -> Result<bool> {
+        let mut vectors = self.vectors.write();
+        let mut reg = self.registry.write();
+
+        if vectors.remove(id).is_none() {
+            return Ok(false);
+        }
+
+        // Persist tombstone before updating in-memory state further.
+        // If this fails, we've already removed from memory — but the
+        // next load_from_log will still see the original entry. Accept
+        // this minor inconsistency (the entry reappears after crash).
+        self.arena.write_slice(&Self::serialize_tombstone(id))?;
+
+        reg.retain(|r| r != id);
+        self.vector_count
+            .store(reg.len() as u64, AtomicOrdering::SeqCst);
+
+        // Drop write locks before rebuilding inverted index
+        drop(reg);
+        drop(vectors);
+
+        self.rebuild_inverted_index()?;
+        Ok(true)
+    }
+
+    pub fn compact(&self) -> Result<()> {
+        // Snapshot live vectors under read lock
+        let snapshot: Vec<(String, EntangledHVec)> = {
+            let vectors = self.vectors.read();
+            let registry = self.registry.read();
+            registry
+                .iter()
+                .filter_map(|id| vectors.get(id).map(|v| (id.clone(), v.clone())))
+                .collect()
+        };
+
+        let temp_dir = self.storage_path.join(format!(
+            ".compact_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_micros()
+        ));
+
+        // Write all live vectors to a fresh arena
+        {
+            let temp_arena = PersistentArena::new(&temp_dir)?;
+            for (id, vector) in &snapshot {
+                let entry = Self::serialize_log_entry(id, vector)?;
+                temp_arena.write_slice(&entry)?;
+            }
+        } // temp_arena dropped here, releasing file handles
+
+        // Atomically swap arena files
+        self.arena.replace_with_compacted(&temp_dir)?;
+
+        // Persist indices to the (now clean) storage path
+        if let Some(ref nsg) = *self.nsg.read() {
+            self.save_nsg(nsg)?;
+        }
+        if let Some(ref ivf) = *self.ivf.read() {
+            self.save_ivf(ivf)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
+        let mut vectors = self.vectors.write();
+        let mut reg = self.registry.write();
+
+        let entry = Self::serialize_log_entry(&id, &vector)?;
+        self.arena.write_slice(&entry)?;
 
         let is_replacement = vectors.contains_key(&id);
-        vectors.insert(id.clone(), (vector.clone(), offset));
+        vectors.insert(id.clone(), vector.clone());
 
         if !is_replacement {
             reg.push(id.clone());
@@ -327,69 +383,25 @@ impl HmsCore {
         let count = reg.len() as u64;
 
         if let Some(ref mut ivf) = *self.ivf.write() {
-            ivf.insert(&id, &vector, offset)?;
+            ivf.insert(&id, &vector)?;
         }
 
         if let Some(ref mut nsg) = *self.nsg.write() {
-            nsg.insert(&id, &vector, offset)?;
+            nsg.insert(&id, &vector)?;
         }
 
         if self.config.ivf.enabled
             && self.config.ivf.auto_threshold > 0
             && count == self.config.ivf.auto_threshold as u64
         {
-            self.train_ivf_internal().context("Auto-train IVF failed")?;
+            self.train_ivf().context("Auto-train IVF failed")?;
         }
 
         if self.config.nsg.auto_threshold > 0 && count == self.config.nsg.auto_threshold as u64 {
-            self.train_nsg_internal().context("Auto-train NSG failed")?;
+            self.train_nsg().context("Auto-train NSG failed")?;
         }
 
         Ok(())
-    }
-
-    fn read_entry(&self, offset: usize) -> (String, EntangledHVec) {
-        if let Ok((payload, _version)) = self.arena.read_frame(offset) {
-            if payload.len() < 6 {
-                return (
-                    String::new(),
-                    EntangledHVec::from_indices(vec![], self.dimensions),
-                );
-            }
-            let id_len = u16::from_le_bytes([payload[0], payload[1]]) as usize;
-            let id_end = 2 + id_len;
-            if payload.len() < id_end + 4 {
-                return (
-                    String::new(),
-                    EntangledHVec::from_indices(vec![], self.dimensions),
-                );
-            }
-            let id = String::from_utf8_lossy(&payload[2..id_end]).to_string();
-            let delta_count = u32::from_le_bytes(match payload[id_end..id_end + 4].try_into() {
-                Ok(b) => b,
-                Err(_) => {
-                    return (id, EntangledHVec::from_indices(vec![], self.dimensions));
-                }
-            }) as usize;
-            let deltas_start = id_end + 4;
-            let deltas_end = deltas_start + delta_count * 4;
-            if payload.len() < deltas_end {
-                return (id, EntangledHVec::from_indices(vec![], self.dimensions));
-            }
-            let deltas: Vec<u32> = payload[deltas_start..deltas_end]
-                .chunks_exact(4)
-                .map(|c| {
-                    // chunks_exact(4) guarantees exactly 4 bytes per chunk
-                    u32::from_le_bytes(c.try_into().unwrap())
-                })
-                .collect();
-            (id, EntangledHVec::from_deltas(&deltas, self.dimensions))
-        } else {
-            (
-                String::new(),
-                EntangledHVec::from_indices(vec![], self.dimensions),
-            )
-        }
     }
 
     pub fn memorize_vector(&self, id: String, dense: &[f32]) -> Result<()> {
@@ -411,11 +423,7 @@ impl HmsCore {
     }
 
     pub fn train_ivf(&self) -> Result<()> {
-        self.train_ivf_internal()
-    }
-
-    fn train_ivf_internal(&self) -> Result<()> {
-        let (ids, vectors, offsets) = self.load_all_vectors();
+        let (ids, vectors) = self.load_all_vectors();
         if ids.is_empty() {
             return Ok(());
         }
@@ -429,7 +437,6 @@ impl HmsCore {
 
         let index = IVFIndex::train(
             &vectors,
-            &offsets,
             &ids,
             self.dimensions,
             &self.config.ivf,
@@ -445,11 +452,7 @@ impl HmsCore {
     }
 
     pub fn train_nsg(&self) -> Result<()> {
-        self.train_nsg_internal()
-    }
-
-    fn train_nsg_internal(&self) -> Result<()> {
-        let (ids, vectors, offsets) = self.load_all_vectors();
+        let (ids, vectors) = self.load_all_vectors();
         if ids.is_empty() {
             return Ok(());
         }
@@ -457,8 +460,6 @@ impl HmsCore {
         let index = super::nsg::training::train(
             &vectors,
             &ids,
-            &offsets,
-            self.dimensions,
             &self.config.nsg,
         )?;
 

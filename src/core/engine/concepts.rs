@@ -3,14 +3,14 @@ use crate::core::entangled::EntangledHVec;
 use crate::core::types::ConceptCandidate;
 
 /// Minimum Jaccard similarity to merge two vectors into the same concept cluster.
-pub const CONCEPT_SIMILARITY_THRESHOLD: f64 = 0.3;
+const CONCEPT_SIMILARITY_THRESHOLD: f64 = 0.3;
 
 /// Minimum cluster size to emit a concept candidate.
-pub const MIN_CONCEPT_CLUSTER_SIZE: usize = 3;
+const MIN_CONCEPT_CLUSTER_SIZE: usize = 3;
 
 impl HmsCore {
     pub fn synthesize_concepts(&self) -> Vec<ConceptCandidate> {
-        let (ids, vectors, _) = self.load_all_vectors();
+        let (ids, vectors) = self.load_all_vectors();
         if ids.len() < 3 {
             return vec![];
         }

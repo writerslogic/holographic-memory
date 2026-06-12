@@ -6,31 +6,6 @@ use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::RetrievalResult;
 
-/// Wrapper for BinaryHeap min-heap ordering by similarity.
-#[derive(PartialEq)]
-struct ScoredEntry {
-    similarity: f64,
-    id: String,
-}
-
-impl Eq for ScoredEntry {}
-
-impl PartialOrd for ScoredEntry {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ScoredEntry {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        // Reverse ordering: smallest similarity at the top (min-heap)
-        other
-            .similarity
-            .partial_cmp(&self.similarity)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    }
-}
-
 impl HmsCore {
     /// Query the memory system for the k most similar vectors.
     /// Routes to NSG or IVF if trained, otherwise falls back to brute-force scan.
@@ -126,7 +101,7 @@ impl HmsCore {
         let mut results: Vec<RetrievalResult> = candidates
             .iter()
             .filter_map(|c| {
-                let (vec, _) = vectors.get(&c.id)?;
+                let vec = vectors.get(&c.id)?;
                 Some(RetrievalResult {
                     id: c.id.clone(),
                     similarity: query_vec.similarity(vec),
@@ -146,20 +121,20 @@ impl HmsCore {
     /// to avoid sorting all results when k is small relative to n.
     fn brute_force_scan(&self, query_vec: &EntangledHVec, k: usize) -> Vec<RetrievalResult> {
         let vectors = self.vectors.read();
-        let mut heap: BinaryHeap<ScoredEntry> = BinaryHeap::with_capacity(k + 1);
+        let mut heap: BinaryHeap<RetrievalResult> = BinaryHeap::with_capacity(k + 1);
 
-        for (id, (vec, _)) in vectors.iter() {
+        for (id, vec) in vectors.iter() {
             let sim = query_vec.similarity(vec);
 
             if heap.len() < k {
-                heap.push(ScoredEntry {
+                heap.push(RetrievalResult {
                     similarity: sim,
                     id: id.clone(),
                 });
             } else if let Some(top) = heap.peek() {
                 if sim > top.similarity {
                     heap.pop();
-                    heap.push(ScoredEntry {
+                    heap.push(RetrievalResult {
                         similarity: sim,
                         id: id.clone(),
                     });
@@ -167,14 +142,7 @@ impl HmsCore {
             }
         }
 
-        let mut results: Vec<RetrievalResult> = heap
-            .into_sorted_vec()
-            .into_iter()
-            .map(|e| RetrievalResult {
-                id: e.id,
-                similarity: e.similarity,
-            })
-            .collect();
+        let mut results = heap.into_sorted_vec();
         // into_sorted_vec gives ascending order (min-heap); we want descending
         results.reverse();
         results
