@@ -7,6 +7,7 @@ pub struct HmsConfig {
     pub shard: ShardConfig,
     pub query: QueryConfig,
     pub concepts: ConceptsConfig,
+    pub diffusion: DiffusionConfig,
 }
 
 #[derive(Clone, Debug)]
@@ -35,6 +36,27 @@ impl Default for ConceptsConfig {
         Self {
             similarity_threshold: 0.3,
             min_cluster_size: 3,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct DiffusionConfig {
+    pub steps: usize,
+    pub sigma_max: f64,
+    pub sigma_min: f64,
+    pub step_size: f64,
+    pub n_langevin: usize,
+}
+
+impl Default for DiffusionConfig {
+    fn default() -> Self {
+        Self {
+            steps: 10,
+            sigma_max: 0.5,
+            sigma_min: 0.01,
+            step_size: 0.1,
+            n_langevin: 5,
         }
     }
 }

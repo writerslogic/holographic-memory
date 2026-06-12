@@ -454,7 +454,15 @@ impl HmsCore {
         domain_codebooks: &[Vec<EntangledHVec>],
         max_iter: usize,
     ) -> Vec<Option<EntangledHVec>> {
-        let config = DiffusionConfig::default();
-        DiffusionFactorizer::factorize(&config, product, domain_codebooks, max_iter)
+        let cfg = &self.config.diffusion;
+        let internal = DiffusionConfig {
+            steps: cfg.steps,
+            sigma_max: cfg.sigma_max,
+            sigma_min: cfg.sigma_min,
+            step_size: cfg.step_size,
+            n_langevin: cfg.n_langevin,
+            seed: 42,
+        };
+        DiffusionFactorizer::factorize(&internal, product, domain_codebooks, max_iter)
     }
 }

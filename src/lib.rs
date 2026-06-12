@@ -56,6 +56,11 @@ pub struct HmsConfigJs {
     pub component_max_neighbors: Option<u32>,
     pub concept_similarity_threshold: Option<f64>,
     pub concept_min_cluster_size: Option<u32>,
+    pub diffusion_steps: Option<u32>,
+    pub diffusion_sigma_max: Option<f64>,
+    pub diffusion_sigma_min: Option<f64>,
+    pub diffusion_step_size: Option<f64>,
+    pub diffusion_n_langevin: Option<u32>,
 }
 
 #[cfg(feature = "node-api")]
@@ -80,6 +85,11 @@ impl HmsConfigJs {
         if let Some(v) = self.component_max_neighbors { cfg.query.component_max_neighbors = v; }
         if let Some(v) = self.concept_similarity_threshold { cfg.concepts.similarity_threshold = v; }
         if let Some(v) = self.concept_min_cluster_size { cfg.concepts.min_cluster_size = v as usize; }
+        if let Some(v) = self.diffusion_steps { cfg.diffusion.steps = v as usize; }
+        if let Some(v) = self.diffusion_sigma_max { cfg.diffusion.sigma_max = v; }
+        if let Some(v) = self.diffusion_sigma_min { cfg.diffusion.sigma_min = v; }
+        if let Some(v) = self.diffusion_step_size { cfg.diffusion.step_size = v; }
+        if let Some(v) = self.diffusion_n_langevin { cfg.diffusion.n_langevin = v as usize; }
         cfg
     }
 }
