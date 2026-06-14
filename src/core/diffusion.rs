@@ -1,39 +1,9 @@
 use rand::{Rng, SeedableRng};
 
+use crate::core::config::DiffusionConfig;
 use crate::core::entangled::{EntangledHVec, DEFAULT_RHO_DENOM};
 
-pub(crate) struct DiffusionConfig {
-    pub steps: usize,
-    pub sigma_max: f64,
-    pub sigma_min: f64,
-    pub step_size: f64,
-    pub n_langevin: usize,
-    pub seed: u64,
-}
-
-impl Default for DiffusionConfig {
-    /// Defaults follow score-based generative modeling conventions.
-    ///
-    /// - `sigma_max=0.5`: Upper noise scale — half the unit interval keeps
-    ///   the noised distribution overlapping with the data manifold.
-    /// - `sigma_min=0.01`: Lower noise scale — small enough for fine detail
-    ///   but above floating-point noise floor.
-    /// - `step_size=0.1`: Langevin step eta — stability bound is
-    ///   eta < sigma^2/D; with D=64 active indices and sigma=0.5 this gives
-    ///   ~0.004, so 0.1 is aggressive and may not converge in theory.
-    /// - `n_langevin=5`: Inner Langevin iterations per noise level — empirical
-    ///   minimum for mixing in sparse VSA spaces.
-    fn default() -> Self {
-        Self {
-            steps: 10,
-            sigma_max: 0.5,
-            sigma_min: 0.01,
-            step_size: 0.1,
-            n_langevin: 5,
-            seed: 42,
-        }
-    }
-}
+const DIFFUSION_SEED: u64 = 42;
 
 pub(crate) struct DiffusionFactorizer<'a> {
     codebook: &'a [EntangledHVec],
@@ -175,12 +145,12 @@ impl<'a> DiffusionFactorizer<'a> {
         EntangledHVec::from_indices(indices, dim)
     }
 
-    fn denoise(&self, noisy: &EntangledHVec) -> EntangledHVec {
+    fn denoise(&self, noisy: &EntangledHVec, seed_offset: u64) -> EntangledHVec {
         let schedule = self.noise_schedule();
         let dim = noisy.dim;
         let mut continuous: Vec<(u32, f64)> = noisy.indices.iter().map(|&idx| (idx, 1.0)).collect();
 
-        let mut step_counter = self.config.seed;
+        let mut step_counter = DIFFUSION_SEED.wrapping_add(seed_offset);
         for &sigma in &schedule {
             for _ in 0..self.config.n_langevin {
                 let current = Self::binarize_sparse(&continuous, dim);
@@ -203,7 +173,7 @@ impl<'a> DiffusionFactorizer<'a> {
         let num_factors = domain_codebooks.len();
         let mut estimates: Vec<EntangledHVec> = (0..num_factors)
             .map(|i| {
-                EntangledHVec::new_deterministic(product.dim, config.seed.wrapping_add(i as u64))
+                EntangledHVec::new_deterministic(product.dim, DIFFUSION_SEED.wrapping_add(i as u64))
             })
             .collect();
 
@@ -218,16 +188,9 @@ impl<'a> DiffusionFactorizer<'a> {
 
                 let domain_factorizer = DiffusionFactorizer::new(
                     &domain_codebooks[i],
-                    DiffusionConfig {
-                        steps: config.steps,
-                        sigma_max: config.sigma_max,
-                        sigma_min: config.sigma_min,
-                        step_size: config.step_size,
-                        n_langevin: config.n_langevin,
-                        seed: config.seed.wrapping_add(iter as u64),
-                    },
+                    config.clone(),
                 );
-                estimates[i] = domain_factorizer.denoise(&residual);
+                estimates[i] = domain_factorizer.denoise(&residual, iter as u64);
             }
         }
 
@@ -319,7 +282,7 @@ mod tests {
         };
         let codebook = [entry.clone()];
         let factorizer = DiffusionFactorizer::new(&codebook, config);
-        let denoised = factorizer.denoise(&noisy);
+        let denoised = factorizer.denoise(&noisy, 0);
 
         let sim_before = entry.similarity(&noisy);
         let sim_after = entry.similarity(&denoised);

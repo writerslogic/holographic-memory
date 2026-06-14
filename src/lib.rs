@@ -383,16 +383,13 @@ impl HolographicMemorySystem {
         a: String,
         b: String,
         c: String,
+        k: Option<u32>,
         trace_id: Option<String>,
     ) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
             let _span = info_span!("find_analogy", trace_id = trace_id.as_deref().unwrap_or("")).entered();
-            let vec_a = core.encode_text(&a);
-            let vec_b = core.encode_text(&b);
-            let vec_c = core.encode_text(&c);
-            let target_d = vec_a.bind(&vec_b).bind(&vec_c);
-            let results = core.query(&target_d, 5);
+            let results = core.find_analogy(&a, &b, &c, k.unwrap_or(5));
             Ok(results)
         })
         .await
@@ -415,6 +412,18 @@ impl HolographicMemorySystem {
             core.memorize_sequence(id, &sequence)
         })
         .await
+    }
+
+    #[napi]
+    pub async fn train_nsg(&self) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || core.train_nsg()).await
+    }
+
+    #[napi]
+    pub async fn train_ivf(&self) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || core.train_ivf()).await
     }
 
     #[napi]
@@ -1000,19 +1009,48 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-        // Structural analogy: words sharing suffix patterns
         for word in &["walking", "talking", "running", "walked", "talked", "runner"] {
             let v = hms.encode_text(word);
             hms.memorize(word.to_string(), v).unwrap();
         }
 
-        // A:B :: C:? (walking:walked :: talking:?)
-        let results = hms.query_triplet(
-            "walking".to_string(),
-            "walked".to_string(),
-            5,
-        ).unwrap();
-        assert!(!results.is_empty(), "Analogy query should return results");
+        let results = hms.find_analogy("walking", "walked", "talking", 5);
+        assert!(!results.is_empty(), "Analogy should return results");
+    }
+
+    // === IVF Persistence ===
+
+    #[test]
+    fn test_ivf_index_persistence() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let mut config = crate::core::config::HmsConfig::default();
+            config.ivf.n_clusters = 8;
+            config.ivf.n_landmarks = 64;
+            config.ivf.d_reduced = 16;
+            config.ivf.n_probe = 8;
+
+            let hms = HmsCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
+            for i in 0..200 {
+                let v = hms.encode_text(&format!("ivf persist {}", i));
+                hms.memorize(format!("ip_{}", i), v).unwrap();
+            }
+            hms.train_ivf().unwrap();
+            assert!(hms.ivf_trained());
+        }
+
+        let mut config = crate::core::config::HmsConfig::default();
+        config.ivf.n_clusters = 8;
+        config.ivf.n_landmarks = 64;
+        config.ivf.d_reduced = 16;
+        config.ivf.n_probe = 8;
+        let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
+        assert!(hms.ivf_trained(), "IVF should be loaded from disk on re-open");
+        let q = hms.encode_text("ivf persist 0");
+        let results = hms.query(&q, 5);
+        assert!(!results.is_empty(), "IVF query should work after reload");
     }
 
     // === Query Batch Tests ===

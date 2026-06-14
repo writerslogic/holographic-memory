@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::config::HmsConfig;
-use super::diffusion::{DiffusionConfig, DiffusionFactorizer};
+use super::diffusion::DiffusionFactorizer;
 use super::encoding::encode_text_internal;
 use super::entangled::EntangledHVec;
 use super::ivf::IVFIndex;
@@ -454,15 +454,6 @@ impl HmsCore {
         domain_codebooks: &[Vec<EntangledHVec>],
         max_iter: usize,
     ) -> Vec<Option<EntangledHVec>> {
-        let cfg = &self.config.diffusion;
-        let internal = DiffusionConfig {
-            steps: cfg.steps,
-            sigma_max: cfg.sigma_max,
-            sigma_min: cfg.sigma_min,
-            step_size: cfg.step_size,
-            n_langevin: cfg.n_langevin,
-            seed: 42,
-        };
-        DiffusionFactorizer::factorize(&internal, product, domain_codebooks, max_iter)
+        DiffusionFactorizer::factorize(&self.config.diffusion, product, domain_codebooks, max_iter)
     }
 }
