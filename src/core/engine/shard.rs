@@ -42,25 +42,30 @@ impl Shard {
     }
 
     pub fn insert(&self, id: String, vector: EntangledHVec, dimensions: usize) -> Result<()> {
-        let mut vectors = self.vectors.write();
-        let mut reg = self.registry.write();
+        // Phase 1: update vectors and registry (holds vectors -> registry locks)
+        let is_replacement = {
+            let mut vectors = self.vectors.write();
+            let mut reg = self.registry.write();
 
-        let is_replacement = vectors.contains_key(&id);
-        vectors.insert(id.clone(), vector.clone());
+            let is_replacement = vectors.contains_key(&id);
+            vectors.insert(id.clone(), vector.clone());
 
-        if !is_replacement {
-            reg.push(id.clone());
-            let count = reg.len() as u64;
-            self.vector_count.store(count, AtomicOrdering::SeqCst);
+            if !is_replacement {
+                reg.push(id.clone());
+                let count = reg.len() as u64;
+                self.vector_count.store(count, AtomicOrdering::SeqCst);
 
-            let mut inv = self.inverted.write();
-            inv.add_doc((count - 1) as u32, &vector.indices);
-        } else {
-            drop(reg);
-            drop(vectors);
+                let mut inv = self.inverted.write();
+                inv.add_doc((count - 1) as u32, &vector.indices);
+            }
+            is_replacement
+        }; // vectors + registry locks released
+
+        if is_replacement {
             self.rebuild_inverted_index(dimensions)?;
         }
 
+        // Phase 2: update indices (acquires ivf -> nsg in order)
         if let Some(ref mut ivf) = *self.ivf.write() {
             ivf.insert(&id, &vector)?;
         }

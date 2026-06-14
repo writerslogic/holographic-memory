@@ -362,8 +362,14 @@ impl HmsCore {
         let mgr = ShardManager::new(n_shards, self.dimensions);
         for (id, vec) in snapshot {
             let target = mgr.shard_for(&id);
-            // Insert into new shards cannot fail — fresh empty shards with no indices
-            let _ = mgr.shards[target].insert(id, vec, self.dimensions);
+            let shard = &mgr.shards[target];
+            shard.vectors.write().insert(id.clone(), vec.clone());
+            shard.registry.write().push(id);
+        }
+        for shard in &mgr.shards {
+            let count = shard.vectors.read().len() as u64;
+            shard.vector_count.store(count, std::sync::atomic::Ordering::SeqCst);
+            let _ = shard.rebuild_inverted_index(self.dimensions);
         }
 
         *shards = ShardSet::Multi(mgr);

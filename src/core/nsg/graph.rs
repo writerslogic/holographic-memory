@@ -18,8 +18,8 @@ const CONVERGENCE_EPSILON: f64 = 0.001;
 pub(super) fn build_knn_graph(vectors: &[EntangledHVec], k_build: usize, seed: u64) -> Vec<Vec<u32>> {
     let n = vectors.len();
     let k = k_build.min(n.saturating_sub(1));
-    if n == 0 {
-        return Vec::new();
+    if n <= 1 {
+        return vec![vec![]; n];
     }
 
     // 1. Initialize with K random neighbors per node (sample without replacement)
