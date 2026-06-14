@@ -6,6 +6,7 @@ const EF_SEARCH_MIN: usize = 32;
 const EF_SEARCH_MAX: usize = 512;
 const N_PROBE_MIN: usize = 4;
 const N_PROBE_MAX: usize = 64;
+const INVERTED_SPARSITY_DENOM: usize = 32;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(clippy::upper_case_acronyms)]
@@ -100,7 +101,7 @@ impl QueryPlanner {
         }
 
         // Default to Inverted if it's the only thing we have and s isn't too high.
-        if self.inverted_available && s < (self.dimensions / 32) {
+        if self.inverted_available && s < (self.dimensions / INVERTED_SPARSITY_DENOM) {
             return QueryPlan {
                 route: IndexRoute::Inverted,
                 ef_search,

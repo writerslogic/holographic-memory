@@ -32,6 +32,14 @@ impl HmsCore {
         Ok(self.query(&query_vec, k))
     }
 
+    pub fn find_analogy(&self, a: &str, b: &str, c: &str, k: u32) -> Vec<RetrievalResult> {
+        let vec_a = self.encode_text(a);
+        let vec_b = self.encode_text(b);
+        let vec_c = self.encode_text(c);
+        let target = vec_a.bind(&vec_b).bind(&vec_c);
+        self.query(&target, k)
+    }
+
     pub fn query_sequence(&self, partial: &[String], k: u32) -> Result<Vec<RetrievalResult>> {
         if partial.is_empty() {
             return Ok(vec![]);
