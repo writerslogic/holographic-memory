@@ -86,6 +86,26 @@ pub(super) fn build_knn_graph(vectors: &[EntangledHVec], k_build: usize, seed: u
     graph
 }
 
+fn rng_select(
+    sorted_candidates: &[(u32, u32)],
+    vectors: &[EntangledHVec],
+    max_degree: usize,
+) -> Vec<u32> {
+    let mut selected = Vec::with_capacity(max_degree);
+    'outer: for &(dist_ic, c) in sorted_candidates {
+        if selected.len() >= max_degree {
+            break;
+        }
+        for &s in &selected {
+            if vectors[s as usize].hamming(&vectors[c as usize]) < dist_ic {
+                continue 'outer;
+            }
+        }
+        selected.push(c);
+    }
+    selected
+}
+
 pub(super) fn prune_edges(
     vectors: &[EntangledHVec],
     knn_graph: &[Vec<u32>],
@@ -106,20 +126,7 @@ pub(super) fn prune_edges(
             .collect();
         sorted_candidates.sort_unstable();
 
-        let mut selected: Vec<u32> = Vec::new();
-        for &(dist_ic, c) in &sorted_candidates {
-            if selected.len() >= max_degree {
-                break;
-            }
-            let pruned_by_existing = selected.iter().any(|&s| {
-                let dist_sc = vectors[s as usize].hamming(&vectors[c as usize]);
-                dist_sc < dist_ic
-            });
-            if !pruned_by_existing {
-                selected.push(c);
-            }
-        }
-        pruned.push(selected);
+        pruned.push(rng_select(&sorted_candidates, vectors, max_degree));
     }
     pruned
 }
@@ -176,19 +183,7 @@ pub(super) fn insert_online(
     let mut sorted: Vec<(u32, u32)> = candidates;
     sorted.sort_unstable();
 
-    let mut selected: Vec<u32> = Vec::new();
-    for &(dist_ic, c) in &sorted {
-        if selected.len() >= max_degree {
-            break;
-        }
-        let pruned = selected.iter().any(|&s| {
-            let dist_sc = index.vectors[s as usize].hamming(&index.vectors[c as usize]);
-            dist_sc < dist_ic
-        });
-        if !pruned {
-            selected.push(c);
-        }
-    }
+    let selected = rng_select(&sorted, &index.vectors, max_degree);
 
     index.neighbors.push(selected.clone());
     for &neighbor in &selected {
@@ -198,25 +193,12 @@ pub(super) fn insert_online(
             if index.neighbors[n].len() > max_degree {
                 // RNG diversity pruning (same rule as forward edges)
                 let v_n = &index.vectors[n];
-                let mut sorted_candidates: Vec<(u32, u32)> = index.neighbors[n]
+                let mut scored: Vec<(u32, u32)> = index.neighbors[n]
                     .iter()
                     .map(|&j| (v_n.hamming(&index.vectors[j as usize]), j))
                     .collect();
-                sorted_candidates.sort_unstable();
-                let mut pruned: Vec<u32> = Vec::new();
-                for &(dist_nc, c) in &sorted_candidates {
-                    if pruned.len() >= max_degree {
-                        break;
-                    }
-                    let pruned_by_existing = pruned.iter().any(|&s| {
-                        let dist_sc = index.vectors[s as usize].hamming(&index.vectors[c as usize]);
-                        dist_sc < dist_nc
-                    });
-                    if !pruned_by_existing {
-                        pruned.push(c);
-                    }
-                }
-                index.neighbors[n] = pruned;
+                scored.sort_unstable();
+                index.neighbors[n] = rng_select(&scored, &index.vectors, max_degree);
             }
         }
     }

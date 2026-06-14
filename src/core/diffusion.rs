@@ -1,3 +1,4 @@
+use fxhash::FxHashMap;
 use rand::{Rng, SeedableRng};
 
 use crate::core::config::DiffusionConfig;
@@ -58,7 +59,8 @@ impl<'a> DiffusionFactorizer<'a> {
         }
 
         // Sparse gradient: codebook indices attract, unsupported x indices repel
-        let mut score_map = std::collections::HashMap::with_capacity(x.indices.len() * 2);
+        let mut score_map: FxHashMap<u32, f64> = FxHashMap::default();
+        score_map.reserve(x.indices.len() * 2);
 
         for (i, entry) in self.codebook.iter().enumerate() {
             let w = weights[i] / total_weight;
@@ -102,7 +104,7 @@ impl<'a> DiffusionFactorizer<'a> {
         let inclusion_threshold = sigma * INCLUSION_THRESHOLD_FRAC;
         let retention_threshold = sigma * RETENTION_THRESHOLD_FRAC;
 
-        let mut score_map: std::collections::HashMap<u32, f64> = scores.into_iter().collect();
+        let mut score_map: FxHashMap<u32, f64> = scores.into_iter().collect();
         let mut rng = rand::rngs::StdRng::seed_from_u64(step_counter);
 
         for (idx, val) in continuous.iter_mut() {

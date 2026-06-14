@@ -267,7 +267,7 @@ impl Shard {
     }
 
     pub fn count(&self) -> u64 {
-        self.vector_count.load(AtomicOrdering::Relaxed)
+        self.vector_count.load(AtomicOrdering::SeqCst)
     }
 }
 

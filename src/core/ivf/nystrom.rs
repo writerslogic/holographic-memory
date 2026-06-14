@@ -48,9 +48,10 @@ impl NystromProjector {
             .eigenvalues
             .iter()
             .enumerate()
+            .filter(|(_, &v)| v.is_finite() && v > 0.0)
             .map(|(i, &v)| (i, v))
             .collect();
-        indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        indexed.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         // Filter: keep only eigenvalues above lambda_max * 1e-6 (relative threshold)
         let lambda_max = indexed.first().map(|&(_, v)| v).unwrap_or(1.0);

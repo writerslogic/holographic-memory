@@ -3,6 +3,7 @@ use crate::core::entangled::EntangledHVec;
 use crate::core::types::ConceptCandidate;
 
 impl HmsCore {
+    /// Cluster similar vectors and return concept candidates with centroids and coherence scores.
     pub fn synthesize_concepts(&self) -> Vec<ConceptCandidate> {
         let cfg = &self.config.concepts;
         let mut all_ids = Vec::new();
