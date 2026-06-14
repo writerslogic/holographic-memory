@@ -91,7 +91,8 @@ impl SparseInvertedIndex {
         // We only need to check doc_ids that were touched
         for &doc_id in &accumulator.touched {
             let inter = accumulator.get_count(doc_id) as f64;
-            let similarity = inter / (2.0 * m_f - inter);
+            let denom = 2.0 * m_f - inter;
+            let similarity = if denom > f64::EPSILON { inter / denom } else { 1.0 };
 
             heap.push(RetrievalResult {
                 id: doc_id.to_string(), // In practice, we'll map doc_id back to String ID

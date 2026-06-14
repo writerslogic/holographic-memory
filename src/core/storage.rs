@@ -60,6 +60,7 @@ impl PersistentArena {
             .truncate(false)
             .open(&active_path)?;
         file.set_len(SEGMENT_SIZE as u64)?;
+        file.sync_all()?;
         let mut_map = unsafe { MmapMut::map_mut(&file)? };
 
         let (recovered_offset, max_version) = Self::discover_offset(&mut_map);

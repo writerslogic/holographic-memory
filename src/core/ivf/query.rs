@@ -78,7 +78,7 @@ impl IVFIndex {
             .into_iter()
             .map(|e| RetrievalResult {
                 id: e.id,
-                similarity: (1.0 - (e.distance as f64 / max_pq_dist)).max(0.0),
+                similarity: (1.0 - (e.distance as f64 / max_pq_dist)).clamp(0.0, 1.0),
             })
             .collect();
 

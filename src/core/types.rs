@@ -44,6 +44,8 @@ impl Ord for RetrievalResult {
         // BinaryHeap is a MAX-heap. We want it to act like a MIN-heap for Top-K
         // (keeping the K LARGEST similarities, with the SMALLEST of those at the top).
         // So we want A < B (in similarity) to mean A is "Greater" in Ord.
+        debug_assert!(!self.similarity.is_nan(), "NaN similarity for id={}", self.id);
+        debug_assert!(!other.similarity.is_nan(), "NaN similarity for id={}", other.id);
         other
             .similarity
             .partial_cmp(&self.similarity)
