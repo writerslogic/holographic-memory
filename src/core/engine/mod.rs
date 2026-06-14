@@ -31,6 +31,7 @@ pub struct HmsCore {
 }
 
 impl HmsCore {
+    /// Create a new HMS instance. If `storage_path` is None, uses the current directory.
     pub fn new(
         dimensions: u32,
         storage_path: Option<String>,
@@ -198,18 +199,22 @@ impl HmsCore {
         (id, EntangledHVec::from_deltas(&deltas, dimensions))
     }
 
+    /// Returns the dimensionality of the hypervector space.
     pub fn dimensions(&self) -> usize {
         self.dimensions
     }
 
+    /// Encode text into a sparse hypervector using character trigrams.
     pub fn encode_text(&self, text: &str) -> EntangledHVec {
         encode_text_internal(text, self.dimensions)
     }
 
+    /// Compute word, sentence, syllable, and character-class counts for text.
     pub fn analyze_text(&self, text: &str) -> TextMetrics {
         TextProcessor::analyze(text)
     }
 
+    /// Compute Flesch Reading Ease score from text metrics.
     pub fn calculate_readability(&self, metrics: &TextMetrics) -> f64 {
         TextProcessor::calculate_readability(metrics)
     }
@@ -252,6 +257,7 @@ impl HmsCore {
         Ok(entry)
     }
 
+    /// Delete a vector by ID. Returns true if it existed. Crash-safe: tombstone is persisted first.
     pub fn delete(&self, id: &str) -> Result<bool> {
         // Persist tombstone first for crash-safety: if we crash after the
         // arena write but before the memory remove, load_from_log replays
@@ -264,6 +270,7 @@ impl HmsCore {
         Ok(true)
     }
 
+    /// Compact the arena log by rewriting only live vectors. Blocks all writes during compaction.
     pub fn compact(&self) -> Result<()> {
         // Hold the shards write lock for the entire compaction to block
         // concurrent memorize/delete. This guarantees the snapshot is
@@ -311,6 +318,7 @@ impl HmsCore {
         Ok(())
     }
 
+    /// Store a vector with the given ID. Persists to the arena log and updates all indices.
     pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
         let entry = Self::serialize_log_entry(&id, &vector)?;
         self.arena.write_slice(&entry)?;
@@ -375,24 +383,29 @@ impl HmsCore {
         *shards = ShardSet::Multi(mgr);
     }
 
+    /// Convert a dense f32 vector to sparse and memorize it.
     pub fn memorize_vector(&self, id: String, dense: &[f32]) -> Result<()> {
         let vector = EntangledHVec::from_dense(dense, self.dimensions);
         self.memorize(id, vector)
     }
 
+    /// Encode a bounded scalar value as a hypervector and memorize it.
     pub fn memorize_scalar(&self, id: String, value: f64, min: f64, max: f64) -> Result<()> {
         let vector = EntangledHVec::from_scalar(value, min, max, self.dimensions);
         self.memorize(id, vector)
     }
 
+    /// Returns the total number of stored vectors across all shards.
     pub fn vector_count(&self) -> u64 {
         self.shards.read().count()
     }
 
+    /// Returns true if the IVF index has been trained.
     pub fn ivf_trained(&self) -> bool {
         self.shards.read().ivf_trained()
     }
 
+    /// Train the IVF index on current vectors. Persists the index to disk.
     pub fn train_ivf(&self) -> Result<()> {
         let shards = self.shards.read();
         shards.try_for_each_shard(|shard| {
@@ -425,10 +438,12 @@ impl HmsCore {
         Ok(())
     }
 
+    /// Returns true if the NSG graph index has been trained.
     pub fn nsg_trained(&self) -> bool {
         self.shards.read().nsg_trained()
     }
 
+    /// Train the NSG graph index on current vectors. Persists the index to disk.
     pub fn train_nsg(&self) -> Result<()> {
         let shards = self.shards.read();
         shards.try_for_each_shard(|shard| {
@@ -454,6 +469,7 @@ impl HmsCore {
         Ok(())
     }
 
+    /// Decompose a product vector into factors from domain codebooks using diffusion.
     pub fn factorize_diffusion(
         &self,
         product: &EntangledHVec,
