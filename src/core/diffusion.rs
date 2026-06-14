@@ -213,7 +213,7 @@ impl<'a> DiffusionFactorizer<'a> {
 /// Gaussian sample via Box-Muller transform using a seeded PRNG.
 /// Langevin dynamics requires Gaussian noise for the correct stationary distribution.
 fn gaussian_sample(rng: &mut rand::rngs::StdRng) -> f64 {
-    let u1: f64 = 1.0 - rng.gen::<f64>(); // (0, 1] to avoid ln(0)
+    let u1: f64 = rng.gen_range(1e-10..1.0);
     let u2: f64 = rng.gen::<f64>();
     (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
 }

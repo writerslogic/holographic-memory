@@ -54,6 +54,9 @@ impl NystromProjector {
 
         // Filter: keep only eigenvalues above lambda_max * 1e-6 (relative threshold)
         let lambda_max = indexed.first().map(|&(_, v)| v).unwrap_or(1.0);
+        if lambda_max <= 0.0 || lambda_max.is_nan() {
+            return Err(anyhow!("Degenerate kernel matrix: lambda_max={}", lambda_max));
+        }
         let eig_floor = lambda_max * 1e-6;
         indexed.retain(|&(_, v)| v > eig_floor);
         let d_actual = d_reduced.min(indexed.len());
@@ -62,8 +65,9 @@ impl NystromProjector {
 
         // Build transform: U_d * Λ_d^{-1/2}
         let mut transform = DMatrix::<f32>::zeros(m, d_actual);
+        let min_eigenvalue = eig_floor.max(1e-10);
         for (col, &(eig_idx, eig_val)) in top.iter().enumerate() {
-            let scale = 1.0 / eig_val.sqrt();
+            let scale = 1.0 / eig_val.max(min_eigenvalue).sqrt();
             for row in 0..m {
                 transform[(row, col)] = eigen.eigenvectors[(row, eig_idx)] * scale;
             }

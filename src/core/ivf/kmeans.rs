@@ -40,6 +40,9 @@ impl KMeansNystrom {
             .map(|(i, c)| (i, (point - c).norm_squared()))
             .collect();
         let n = n_probe.min(dists.len());
+        if n == 0 {
+            return vec![];
+        }
         dists.select_nth_unstable_by(n.saturating_sub(1), |a, b| {
             a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
         });

@@ -92,6 +92,9 @@ impl PQEncoder {
     }
 
     fn nearest_centroid(&self, sub_idx: usize, sub_indices: &[u32]) -> u8 {
+        if self.codebooks[sub_idx].is_empty() {
+            return 0;
+        }
         self.codebooks[sub_idx]
             .iter()
             .enumerate()

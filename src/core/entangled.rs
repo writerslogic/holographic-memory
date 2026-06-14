@@ -156,7 +156,12 @@ impl EntangledHVec {
     /// - Distant values share few slots → low Jaccard
     /// - Monotonic: similarity decreases with scalar distance
     pub fn from_scalar(value: f64, min_val: f64, max_val: f64, target_dim: usize) -> Self {
-        let normalized = ((value - min_val) / (max_val - min_val)).clamp(0.0, 1.0);
+        let range = max_val - min_val;
+        let normalized = if range.abs() < f64::EPSILON {
+            0.5
+        } else {
+            ((value - min_val) / range).clamp(0.0, 1.0)
+        };
         let active_count = (target_dim / DEFAULT_RHO_DENOM).max(1);
 
         // Map normalized value to a starting offset in the index space.
@@ -218,9 +223,12 @@ impl EntangledHVec {
             };
         }
         let mut indices = Vec::with_capacity(deltas.len());
-        let mut current = 0;
+        let mut current: u32 = 0;
         for &d in deltas {
-            current += d;
+            current = match current.checked_add(d) {
+                Some(v) if (v as usize) < dim => v,
+                _ => break,
+            };
             indices.push(current);
         }
         Self { dim, indices }
