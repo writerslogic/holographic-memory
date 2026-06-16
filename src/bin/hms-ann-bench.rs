@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use clap::{Parser, Subcommand};
 use hms_native::core::engine::HmsCore;
 use hms_native::core::entangled::EntangledHVec;

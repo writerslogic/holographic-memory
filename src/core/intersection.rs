@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 //! Sparse intersection primitives.
 //!
 //! Galloping intersection for skewed sizes, sorted merge for balanced.

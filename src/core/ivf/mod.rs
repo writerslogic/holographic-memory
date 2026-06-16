@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 pub(crate) mod inverted_list;
 pub(crate) mod kmeans;
 pub(crate) mod nystrom;

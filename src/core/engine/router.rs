@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::core::entangled::EntangledHVec;
 
 const BRUTE_FORCE_THRESHOLD: usize = 1000;

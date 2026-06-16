@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 #![deny(clippy::all)]
 
 #[cfg(feature = "node-api")]
@@ -481,6 +484,19 @@ impl HolographicMemorySystem {
                     signed: e.signature != [0u8; 64],
                 })
                 .collect())
+        })
+        .await
+    }
+
+    /// Bundle multiple text items into a single hypervector.
+    /// Respects the PrivacyConfig: when dp_enabled, uses epsilon-DP noise.
+    #[napi]
+    pub async fn bundle_texts(&self, texts: Vec<String>) -> Result<Vec<u32>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let vecs: Vec<EntangledHVec> = texts.iter().map(|t| core.encode_text(t)).collect();
+            let bundled = core.bundle(&vecs);
+            Ok(bundled.indices().to_vec())
         })
         .await
     }
@@ -1403,6 +1419,141 @@ mod tests {
             hms.ivf_trained(),
             "Should be trained after reaching threshold"
         );
+    }
+}
+
+#[cfg(all(test, feature = "security"))]
+mod security_integration_tests {
+    use crate::core::engine::HmsCore;
+    use crate::core::audit::AuditOp;
+    use crate::core::security::SigningManager;
+
+    #[test]
+    fn test_signed_audit_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.security.signing_enabled = true;
+        config.security.audit_enabled = true;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        let v = hms.encode_text("signed audit test");
+        hms.memorize("sig_1".to_string(), v).unwrap();
+        hms.delete("sig_1").unwrap();
+
+        let entries = hms.audit_since(0).unwrap();
+        assert_eq!(entries.len(), 2);
+
+        // All entries should be signed (non-zero signature)
+        for entry in &entries {
+            assert_ne!(entry.signature, [0u8; 64], "Entry should be signed");
+        }
+
+        // Verify signatures using the same key
+        let key_path = dir.path().join("hms_signing.key");
+        let mgr = SigningManager::new(&key_path).unwrap();
+        for entry in &entries {
+            let mut signable = [0u8; 41];
+            signable[0..8].copy_from_slice(&entry.timestamp_ms.to_le_bytes());
+            signable[8] = entry.op as u8;
+            signable[9..41].copy_from_slice(&entry.id_hash);
+            mgr.verify(&signable, &entry.signature)
+                .expect("Signature verification failed");
+        }
+    }
+
+    #[test]
+    fn test_signed_compact_audit() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.security.signing_enabled = true;
+        config.security.audit_enabled = true;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        let v = hms.encode_text("compact signed");
+        hms.memorize("cs_1".to_string(), v).unwrap();
+        hms.compact().unwrap();
+
+        let entries = hms.audit_since(0).unwrap();
+        let compact_entry = entries.iter().find(|e| e.op == AuditOp::Compact).unwrap();
+        assert_ne!(compact_entry.signature, [0u8; 64]);
+
+        let key_path = dir.path().join("hms_signing.key");
+        let mgr = SigningManager::new(&key_path).unwrap();
+        let mut signable = [0u8; 41];
+        signable[0..8].copy_from_slice(&compact_entry.timestamp_ms.to_le_bytes());
+        signable[8] = compact_entry.op as u8;
+        signable[9..41].copy_from_slice(&compact_entry.id_hash);
+        mgr.verify(&signable, &compact_entry.signature)
+            .expect("Compact signature verification failed");
+    }
+
+    #[test]
+    fn test_encrypted_arena_roundtrip() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let mut config = crate::core::config::HmsConfig::default();
+            config.security.encryption_enabled = true;
+            config.security.encryption_passphrase = Some("test-passphrase-123".to_string());
+
+            let hms = HmsCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
+            let v = hms.encode_text("encrypted data");
+            hms.memorize("enc_1".to_string(), v).unwrap();
+            let v2 = hms.encode_text("more encrypted data");
+            hms.memorize("enc_2".to_string(), v2).unwrap();
+            assert_eq!(hms.vector_count(), 2);
+        }
+
+        // Reopen with same passphrase — should decrypt and recover
+        let mut config = crate::core::config::HmsConfig::default();
+        config.security.encryption_enabled = true;
+        config.security.encryption_passphrase = Some("test-passphrase-123".to_string());
+
+        let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
+        assert_eq!(hms.vector_count(), 2);
+
+        let q = hms.encode_text("encrypted data");
+        let results = hms.query(&q, 1);
+        assert_eq!(results[0].id, "enc_1");
+    }
+
+    #[test]
+    fn test_encrypted_compact_roundtrip() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        let mut config = crate::core::config::HmsConfig::default();
+        config.security.encryption_enabled = true;
+        config.security.encryption_passphrase = Some("compact-test".to_string());
+
+        let hms = HmsCore::new(10_000, Some(path.clone()), Some(config.clone())).unwrap();
+        for i in 0..10 {
+            let v = hms.encode_text(&format!("encrypted compact {}", i));
+            hms.memorize(format!("ec_{}", i), v).unwrap();
+        }
+        for i in 0..5 {
+            hms.delete(&format!("ec_{}", i)).unwrap();
+        }
+        hms.compact().unwrap();
+        assert_eq!(hms.vector_count(), 5);
+
+        // Reopen after compaction
+        drop(hms);
+        let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
+        assert_eq!(hms.vector_count(), 5);
     }
 }
 

@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use anyhow::Result;
 use parking_lot::RwLock;
 use std::sync::Arc;

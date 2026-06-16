@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::ConceptCandidate;
@@ -43,7 +46,7 @@ impl HmsCore {
                 }
                 let cluster_vecs: Vec<&EntangledHVec> =
                     cluster.iter().map(|&idx| &all_vectors[idx]).collect();
-                let centroid = EntangledHVec::bundle(&cluster_vecs);
+                let centroid = self.bundle(&cluster_vecs);
                 let coherence: f64 = cluster_vecs
                     .iter()
                     .map(|v| v.similarity(&centroid))

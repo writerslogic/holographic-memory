@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default)]
@@ -13,31 +16,13 @@ pub struct HmsConfig {
 }
 
 #[derive(Clone, Debug)]
+#[derive(Default)]
 pub struct SecurityConfig {
-    /// Enable Ed25519 signing of log entries.
     pub signing_enabled: bool,
-    /// Path to the Ed25519 keypair file. If None, a new keypair is generated
-    /// and stored at `{storage_path}/hms_signing.key`.
     pub key_path: Option<String>,
-    /// Enable AES-256-GCM encryption at rest.
     pub encryption_enabled: bool,
-    /// Passphrase for encryption key derivation via Argon2.
-    /// Required when encryption_enabled is true.
     pub encryption_passphrase: Option<String>,
-    /// Enable append-only audit logging.
     pub audit_enabled: bool,
-}
-
-impl Default for SecurityConfig {
-    fn default() -> Self {
-        Self {
-            signing_enabled: false,
-            key_path: None,
-            encryption_enabled: false,
-            encryption_passphrase: None,
-            audit_enabled: false,
-        }
-    }
 }
 
 #[derive(Clone, Debug)]

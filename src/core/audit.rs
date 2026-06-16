@@ -1,9 +1,15 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use anyhow::{anyhow, Result};
 use parking_lot::Mutex;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 
 use super::security::hash_id;
+
+pub type SignatureBytes = [u8; 64];
+pub type SignFnRef<'a> = Option<&'a dyn Fn(&[u8]) -> SignatureBytes>;
 
 /// Operation types for audit entries.
 #[repr(u8)]
@@ -89,7 +95,7 @@ impl AuditLog {
         &self,
         op: AuditOp,
         id: &str,
-        sign_fn: Option<&dyn Fn(&[u8]) -> [u8; 64]>,
+        sign_fn: SignFnRef<'_>,
     ) -> Result<()> {
         let timestamp_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

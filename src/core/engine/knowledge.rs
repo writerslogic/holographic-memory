@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::RetrievalResult;
@@ -23,7 +26,7 @@ impl HmsCore {
             let v = self.encode_text(item).permute(i);
             vecs.push(v);
         }
-        let trajectory = EntangledHVec::bundle(&vecs);
+        let trajectory = self.bundle(&vecs);
         self.memorize(id, trajectory)
     }
 
@@ -54,7 +57,7 @@ impl HmsCore {
             .enumerate()
             .map(|(i, item)| self.encode_text(item).permute(i))
             .collect();
-        let query_vec = EntangledHVec::bundle(&vecs);
+        let query_vec = self.bundle(&vecs);
         Ok(self.query(&query_vec, k))
     }
 }

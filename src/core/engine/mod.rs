@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 pub(crate) mod concepts;
 pub(crate) mod knowledge;
 pub(crate) mod query;
@@ -20,6 +23,8 @@ use super::text::TextProcessor;
 use super::types::TextMetrics;
 
 use shard::{ShardSet, ShardManager};
+
+type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 
 /// Lock ordering: ShardSet (read) -> Shard.vectors -> Shard.ivf -> Shard.nsg.
 /// Arena lock is independent (managed internally by PersistentArena).
@@ -131,7 +136,8 @@ impl HmsCore {
     fn load_indices(&self) -> Result<()> {
         let nsg_path = self.storage_path.join("nsg_index.bin");
         if nsg_path.exists() {
-            let data = std::fs::read(&nsg_path)?;
+            let raw = std::fs::read(&nsg_path)?;
+            let data = self.maybe_decrypt(&raw)?;
             let nsg: super::nsg::NSGIndex = bincode::deserialize(&data)?;
             // Load NSG into the first (or only) shard
             let shards = self.shards.read();
@@ -142,7 +148,8 @@ impl HmsCore {
 
         let ivf_path = self.storage_path.join("ivf_index.bin");
         if ivf_path.exists() {
-            let data = std::fs::read(&ivf_path)?;
+            let raw = std::fs::read(&ivf_path)?;
+            let data = self.maybe_decrypt(&raw)?;
             let mut ivf: IVFIndex = bincode::deserialize(&data)?;
             ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new());
 
@@ -164,21 +171,47 @@ impl HmsCore {
 
     fn save_nsg(&self, nsg: &super::nsg::NSGIndex) -> Result<()> {
         let data = bincode::serialize(nsg)?;
-        std::fs::write(self.storage_path.join("nsg_index.bin"), data)?;
+        std::fs::write(self.storage_path.join("nsg_index.bin"), self.maybe_encrypt(&data)?)?;
         Ok(())
     }
 
     fn save_ivf(&self, ivf: &IVFIndex) -> Result<()> {
         let data = bincode::serialize(ivf)?;
-        std::fs::write(self.storage_path.join("ivf_index.bin"), data)?;
+        std::fs::write(self.storage_path.join("ivf_index.bin"), self.maybe_encrypt(&data)?)?;
         Ok(())
+    }
+
+    /// Bundle vectors respecting the PrivacyConfig.
+    /// When dp_enabled, uses Laplace noise with the configured epsilon.
+    pub fn bundle<V: std::borrow::Borrow<EntangledHVec>>(&self, vectors: &[V]) -> EntangledHVec {
+        if self.config.privacy.dp_enabled {
+            EntangledHVec::bundle_dp(vectors, self.config.privacy.epsilon)
+        } else {
+            EntangledHVec::bundle(vectors)
+        }
+    }
+
+    fn maybe_encrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
+        #[cfg(feature = "security")]
+        if let Some(ref enc) = self.encryption {
+            return enc.encrypt(data);
+        }
+        Ok(data.to_vec())
+    }
+
+    fn maybe_decrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
+        #[cfg(feature = "security")]
+        if let Some(ref enc) = self.encryption {
+            return enc.decrypt(data);
+        }
+        Ok(data.to_vec())
     }
 
     fn load_from_log(&self) -> Result<()> {
         let shards = self.shards.read();
 
         let mut offset = 0;
-        while let Ok((payload, _version)) = self.arena.read_frame(offset) {
+        while let Ok((payload, _version)) = self.arena_read_frame(offset) {
             let (id, vector) = Self::parse_log_payload(self.dimensions, &payload);
             if vector.dim == 0 {
                 shards.remove(&id, self.dimensions)?;
@@ -309,7 +342,7 @@ impl HmsCore {
         // Persist tombstone first for crash-safety: if we crash after the
         // arena write but before the memory remove, load_from_log replays
         // the tombstone and correctly removes the vector.
-        self.arena.write_slice(&Self::serialize_tombstone(id)?)?;
+        self.arena_write(&Self::serialize_tombstone(id)?)?;
 
         if let Some(ref audit) = self.audit {
             audit.record(AuditOp::Delete, id, self.sign_fn().as_deref())?;
@@ -352,7 +385,8 @@ impl HmsCore {
             let temp_arena = PersistentArena::new(&temp_dir)?;
             for (id, vector) in &snapshot {
                 let entry = Self::serialize_log_entry(id, vector)?;
-                temp_arena.write_slice(&entry)?;
+                let payload = self.maybe_encrypt(&entry)?;
+                temp_arena.write_slice(&payload)?;
             }
         }
 
@@ -377,7 +411,7 @@ impl HmsCore {
     /// Store a vector with the given ID. Persists to the arena log and updates all indices.
     pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
         let entry = Self::serialize_log_entry(&id, &vector)?;
-        self.arena.write_slice(&entry)?;
+        self.arena_write(&entry)?;
 
         if let Some(ref audit) = self.audit {
             audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref())?;
@@ -529,12 +563,23 @@ impl HmsCore {
         Ok(())
     }
 
-    fn sign_fn(&self) -> Option<Box<dyn Fn(&[u8]) -> [u8; 64] + '_>> {
+    fn arena_write(&self, data: &[u8]) -> Result<usize> {
+        let payload = self.maybe_encrypt(data)?;
+        self.arena.write_slice(&payload)
+    }
+
+    fn arena_read_frame(&self, offset: usize) -> Result<(Vec<u8>, u32)> {
+        let (data, version) = self.arena.read_frame(offset)?;
+        let payload = self.maybe_decrypt(&data)?;
+        Ok((payload, version))
+    }
+
+    fn sign_fn(&self) -> Option<SignFn<'_>> {
         #[cfg(feature = "security")]
         {
             self.signing
                 .as_ref()
-                .map(|s| Box::new(move |data: &[u8]| s.sign(data)) as Box<dyn Fn(&[u8]) -> [u8; 64]>)
+                .map(|s| Box::new(move |data: &[u8]| s.sign(data)) as SignFn<'_>)
         }
         #[cfg(not(feature = "security"))]
         {
