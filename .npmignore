@@ -1,0 +1,37 @@
+# Source and build files
+src/
+benches/
+benchmarks/
+target/
+.cargo_home/
+conductor/
+tasks/
+
+# Data files (storage artifacts)
+*.bin
+*.redb
+*.db
+ivf_index.db/
+vectors_data.bin/
+meta.redb
+
+# Build config
+*.rs.tmp
+Cargo.toml
+Cargo.lock
+build.rs
+deny.toml
+.editorconfig
+HMS_INIT_TEST
+
+# CI/CD
+.github/
+
+# Dev assets
+assets/social-preview.jpeg
+assets/social-preview.svg
+*.py
+
+# Misc
+todo.md
+GEMINI.md

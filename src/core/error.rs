@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -28,5 +31,3 @@ pub enum HmsError {
     #[error("Internal error (code {code}): {context}")]
     Internal { code: i32, context: String },
 }
-
-
