@@ -1,0 +1,6 @@
+# Default owners for the HMS repository
+* @writerslogic/core
+
+# Security-sensitive paths require security team review
+src/core/security.rs @writerslogic/security
+src/core/audit.rs @writerslogic/security

@@ -4,11 +4,16 @@
 
 # Holographic Memory System (HMS)
 
+[![CI](https://github.com/writerslogic/hms/actions/workflows/ci.yml/badge.svg)](https://github.com/writerslogic/hms/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![N-API](https://img.shields.io/badge/N--API-v2-blue.svg)](https://nodejs.org/api/n-api.html)
-[![Rust](https://img.shields.io/badge/Rust-2021-orange.svg)](https://www.rust-lang.org/)
+[![crates.io](https://img.shields.io/crates/v/hms-native.svg)](https://crates.io/crates/hms-native)
+[![npm](https://img.shields.io/npm/v/@writerslogic/hms-native.svg)](https://www.npmjs.com/package/@writerslogic/hms-native)
+
+**Privacy-preserving semantic search using hyperdimensional computing.**
 
 A high-performance **Holographic Memory System (HMS)** for Node.js, powered by Rust. This library implements **Vector Symbolic Architectures (VSA)** using **Binary Spatter Code (BSC)** and **Sparse Distributed Representations (SDR)** to enable semantic search, analogical reasoning, and associative memory at scale.
+
+> Developed by [WritersLogic](https://github.com/writerslogic) -- local-first intelligence with no data leaving your machine.
 
 ## 🚀 Features
 
@@ -30,14 +35,14 @@ HMS is available as both a Node.js package and a high-performance Rust crate.
 
 ### Node.js (N-API)
 ```bash
-npm install @hms/native
+npm install @writerslogic/hms-native
 ```
 
 ### Rust (Crates.io)
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-hms-core = "0.2"
+hms-native = "0.2"
 ```
 
 ## 🏗 Core Architecture
@@ -80,7 +85,7 @@ Traditional AI uses deep vectors (weights). HDC uses high-dimensional (e.g., 10,
 ## 🛠 Quick Start
 
 ```javascript
-const { HolographicMemorySystem } = require('@hms/native');
+const { HolographicMemorySystem } = require('@writerslogic/hms-native');
 
 async function main() {
   // Initialize with 10,000 dimensions
@@ -118,11 +123,35 @@ npm run build
 
 ### Testing
 ```bash
-# Run the 67+ unit and integration tests
+# Run the 92+ unit and integration tests
 export CARGO_HOME=$(pwd)/.cargo_home
 export CARGO_TARGET_DIR=/Volumes/C/target
 cargo test --lib
 ```
 
-## 📄 License
+## Ecosystem
+
+### Built with HMS
+
+- **[scrivener-mcp](https://github.com/writerslogic/scrivener-mcp)** -- MCP server for Scrivener writing projects, using HMS for semantic search across manuscripts and research notes.
+
+### Where HMS fits
+
+HMS is a general-purpose vector memory engine. Beyond writing tools, it's well-suited for:
+
+- **Local RAG pipelines** -- privacy-preserving retrieval for LLM applications without sending data to external APIs
+- **MCP tool servers** -- semantic memory backend for any Model Context Protocol integration
+- **Knowledge management** -- personal knowledge bases with analogical reasoning (Obsidian plugins, Zettlekasten tools)
+- **Edge/embedded AI** -- lightweight enough for single-node deployment; no vector database infrastructure needed
+- **Research tools** -- academic paper similarity, citation graph exploration, concept mapping
+- **Content moderation** -- near-duplicate detection using holographic similarity
+
+## Security
+
+HMS is designed with privacy as a core principle. Hyperdimensional vectors are inherently lossy representations; original content cannot be reconstructed from stored vectors.
+
+For security policy and vulnerability reporting, see [SECURITY.md](.github/SECURITY.md).
+
+## License
+
 This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.
