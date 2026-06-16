@@ -343,6 +343,82 @@ impl EntangledHVec {
         Self { dim, indices }
     }
 
+    /// Bundle with epsilon-differential privacy.
+    /// Injects Laplace noise (sensitivity=1, scale=1/epsilon) into per-index
+    /// frequency counts before majority thresholding.
+    pub fn bundle_dp<V: Borrow<Self>>(vectors: &[V], epsilon: f64) -> Self {
+        if vectors.is_empty() || epsilon <= 0.0 {
+            return Self::bundle(vectors);
+        }
+        let dim = vectors[0].borrow().dim;
+        let n = vectors.len();
+
+        let mut all_indices: Vec<u32> = vectors
+            .iter()
+            .flat_map(|v| v.borrow().indices.iter().copied())
+            .collect();
+        all_indices.sort_unstable();
+
+        if all_indices.is_empty() {
+            return Self {
+                dim,
+                indices: Vec::new(),
+            };
+        }
+
+        let threshold = (n as f64) / 2.0;
+        let scale = 1.0 / epsilon;
+
+        // Run-length count with Laplace noise injection.
+        let mut selected: Vec<(u32, f64)> = Vec::new();
+        let mut current = all_indices[0];
+        let mut count: u32 = 1;
+
+        let mut rng = rand::thread_rng();
+
+        for &idx in &all_indices[1..] {
+            if idx == current {
+                count += 1;
+            } else {
+                let noisy = count as f64 + laplace_sample(&mut rng, scale);
+                if noisy >= threshold {
+                    selected.push((current, noisy));
+                }
+                current = idx;
+                count = 1;
+            }
+        }
+        let noisy = count as f64 + laplace_sample(&mut rng, scale);
+        if noisy >= threshold {
+            selected.push((current, noisy));
+        }
+
+        let target_count = (dim / DEFAULT_RHO_DENOM).max(1);
+
+        if selected.len() > target_count {
+            selected.select_nth_unstable_by(target_count - 1, |a, b| {
+                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+            });
+            selected.truncate(target_count);
+        }
+
+        let mut indices: Vec<u32> = selected
+            .into_iter()
+            .map(|(idx, _)| idx)
+            .filter(|&idx| (idx as usize) < dim)
+            .collect();
+        indices.sort_unstable();
+        indices.dedup();
+
+        Self { dim, indices }
+    }
+
+}
+
+/// Sample from Laplace(0, scale) using inverse CDF.
+fn laplace_sample(rng: &mut impl rand::Rng, scale: f64) -> f64 {
+    let u: f64 = rng.gen::<f64>() - 0.5;
+    -scale * u.signum() * (1.0 - 2.0 * u.abs()).ln()
 }
 
 /// Fast non-crypto hash for seed mixing.
@@ -476,6 +552,51 @@ mod tests {
         let e = EntangledHVec::from_scalar(0.5, 0.0, 1.0, 10000);
         assert_eq!(e.dim, 10000);
         assert!(!e.indices.is_empty());
+    }
+
+    #[test]
+    fn test_bundle_dp_produces_valid_output() {
+        let dim = 16384;
+        let base = EntangledHVec::new_deterministic(dim, 100);
+        let vecs = vec![base.clone(); 5];
+        let bundled = EntangledHVec::bundle_dp(&vecs, 1.0);
+        assert_eq!(bundled.dim, dim);
+        assert!(!bundled.indices.is_empty());
+        assert!(bundled.indices.windows(2).all(|w| w[0] < w[1]));
+    }
+
+    #[test]
+    fn test_bundle_dp_high_epsilon_matches_deterministic() {
+        let dim = 16384;
+        let base = EntangledHVec::new_deterministic(dim, 100);
+        let vecs = vec![base.clone(); 7];
+        let det = EntangledHVec::bundle(&vecs);
+        // Very high epsilon = almost no noise
+        let dp = EntangledHVec::bundle_dp(&vecs, 1000.0);
+        let sim = det.similarity(&dp);
+        assert!(
+            sim > 0.8,
+            "High-epsilon DP bundle should closely match deterministic: {:.4}",
+            sim
+        );
+    }
+
+    #[test]
+    fn test_bundle_dp_low_epsilon_adds_noise() {
+        let dim = 16384;
+        let base = EntangledHVec::new_deterministic(dim, 100);
+        let noise = EntangledHVec::new_deterministic(dim, 200);
+        let vecs = vec![base.clone(), base.clone(), base.clone(), noise];
+        let det = EntangledHVec::bundle(&vecs);
+        // Run multiple low-epsilon bundles and check they differ from deterministic
+        let mut diffs = 0;
+        for _ in 0..5 {
+            let dp = EntangledHVec::bundle_dp(&vecs, 0.1);
+            if dp.indices != det.indices {
+                diffs += 1;
+            }
+        }
+        assert!(diffs > 0, "Low-epsilon DP should produce varied outputs");
     }
 
     #[test]

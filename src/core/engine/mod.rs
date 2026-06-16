@@ -9,6 +9,7 @@ use parking_lot::RwLock;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use super::audit::{AuditLog, AuditOp};
 use super::config::HmsConfig;
 use super::diffusion::DiffusionFactorizer;
 use super::encoding::encode_text_internal;
@@ -28,6 +29,12 @@ pub struct HmsCore {
     pub(crate) dimensions: usize,
     pub(crate) storage_path: PathBuf,
     shards: RwLock<ShardSet>,
+    audit: Option<AuditLog>,
+    #[cfg(feature = "security")]
+    signing: Option<super::security::SigningManager>,
+    #[cfg(feature = "security")]
+    #[allow(dead_code)]
+    encryption: Option<super::security::EncryptionManager>,
 }
 
 impl HmsCore {
@@ -57,6 +64,41 @@ impl HmsCore {
 
         let arena = Arc::new(PersistentArena::new(base_path.join("vectors_data.bin"))?);
 
+        let audit = if config.security.audit_enabled {
+            Some(AuditLog::new(&base_path)?)
+        } else {
+            None
+        };
+
+        #[cfg(feature = "security")]
+        let signing = if config.security.signing_enabled {
+            let key_path = config
+                .security
+                .key_path
+                .as_ref()
+                .map(PathBuf::from)
+                .unwrap_or_else(|| base_path.join("hms_signing.key"));
+            Some(super::security::SigningManager::new(&key_path)?)
+        } else {
+            None
+        };
+
+        #[cfg(feature = "security")]
+        let encryption = if config.security.encryption_enabled {
+            let passphrase = config
+                .security
+                .encryption_passphrase
+                .as_deref()
+                .ok_or_else(|| {
+                    anyhow::anyhow!("encryption_passphrase required when encryption is enabled")
+                })?;
+            Some(super::security::EncryptionManager::new(
+                passphrase, &base_path,
+            )?)
+        } else {
+            None
+        };
+
         let shard_set = if config.shard.enabled && config.shard.shard_count > 1 {
             ShardSet::Multi(ShardManager::new(config.shard.shard_count, dim))
         } else {
@@ -69,6 +111,11 @@ impl HmsCore {
             dimensions: dim,
             storage_path: base_path,
             shards: RwLock::new(shard_set),
+            audit,
+            #[cfg(feature = "security")]
+            signing,
+            #[cfg(feature = "security")]
+            encryption,
         };
 
         core.load_from_log()?;
@@ -263,6 +310,11 @@ impl HmsCore {
         // arena write but before the memory remove, load_from_log replays
         // the tombstone and correctly removes the vector.
         self.arena.write_slice(&Self::serialize_tombstone(id)?)?;
+
+        if let Some(ref audit) = self.audit {
+            audit.record(AuditOp::Delete, id, self.sign_fn().as_deref())?;
+        }
+
         let shards = self.shards.read();
         if !shards.remove(id, self.dimensions)? {
             return Ok(false);
@@ -306,6 +358,10 @@ impl HmsCore {
 
         self.arena.replace_with_compacted(&temp_dir)?;
 
+        if let Some(ref audit) = self.audit {
+            audit.record(AuditOp::Compact, "", self.sign_fn().as_deref())?;
+        }
+
         if let ShardSet::Single(ref shard) = *shards {
             if let Some(ref nsg) = *shard.nsg.read() {
                 self.save_nsg(nsg)?;
@@ -322,6 +378,10 @@ impl HmsCore {
     pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
         let entry = Self::serialize_log_entry(&id, &vector)?;
         self.arena.write_slice(&entry)?;
+
+        if let Some(ref audit) = self.audit {
+            audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref())?;
+        }
 
         let count = {
             let shards = self.shards.read();
@@ -467,6 +527,28 @@ impl HmsCore {
             }
         }
         Ok(())
+    }
+
+    fn sign_fn(&self) -> Option<Box<dyn Fn(&[u8]) -> [u8; 64] + '_>> {
+        #[cfg(feature = "security")]
+        {
+            self.signing
+                .as_ref()
+                .map(|s| Box::new(move |data: &[u8]| s.sign(data)) as Box<dyn Fn(&[u8]) -> [u8; 64]>)
+        }
+        #[cfg(not(feature = "security"))]
+        {
+            None
+        }
+    }
+
+    /// Query the audit log for entries since `timestamp_ms`.
+    /// Returns an empty vec if audit logging is disabled.
+    pub fn audit_since(&self, timestamp_ms: u64) -> Result<Vec<super::audit::AuditEntry>> {
+        match self.audit {
+            Some(ref audit) => audit.entries_since(timestamp_ms),
+            None => Ok(Vec::new()),
+        }
     }
 
     /// Decompose a product vector into factors from domain codebooks using diffusion.

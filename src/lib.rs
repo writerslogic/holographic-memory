@@ -61,6 +61,13 @@ pub struct HmsConfigJs {
     pub diffusion_sigma_min: Option<f64>,
     pub diffusion_step_size: Option<f64>,
     pub diffusion_n_langevin: Option<u32>,
+    pub signing_enabled: Option<bool>,
+    pub signing_key_path: Option<String>,
+    pub encryption_enabled: Option<bool>,
+    pub encryption_passphrase: Option<String>,
+    pub audit_enabled: Option<bool>,
+    pub dp_enabled: Option<bool>,
+    pub dp_epsilon: Option<f64>,
 }
 
 #[cfg(feature = "node-api")]
@@ -90,6 +97,13 @@ impl HmsConfigJs {
         if let Some(v) = self.diffusion_sigma_min { cfg.diffusion.sigma_min = v; }
         if let Some(v) = self.diffusion_step_size { cfg.diffusion.step_size = v; }
         if let Some(v) = self.diffusion_n_langevin { cfg.diffusion.n_langevin = v as usize; }
+        if let Some(v) = self.signing_enabled { cfg.security.signing_enabled = v; }
+        if let Some(v) = self.signing_key_path { cfg.security.key_path = Some(v); }
+        if let Some(v) = self.encryption_enabled { cfg.security.encryption_enabled = v; }
+        if let Some(v) = self.encryption_passphrase { cfg.security.encryption_passphrase = Some(v); }
+        if let Some(v) = self.audit_enabled { cfg.security.audit_enabled = v; }
+        if let Some(v) = self.dp_enabled { cfg.privacy.dp_enabled = v; }
+        if let Some(v) = self.dp_epsilon { cfg.privacy.epsilon = v; }
         cfg
     }
 }
@@ -447,6 +461,38 @@ impl HolographicMemorySystem {
         let core = self.core.clone();
         run_async(move || core.compact()).await
     }
+
+    #[napi]
+    pub async fn audit_since(&self, timestamp_ms: f64) -> Result<Vec<AuditEntryJs>> {
+        let core = self.core.clone();
+        let ts = timestamp_ms as u64;
+        run_async(move || {
+            let entries = core.audit_since(ts)?;
+            Ok(entries
+                .into_iter()
+                .map(|e| AuditEntryJs {
+                    timestamp_ms: e.timestamp_ms as f64,
+                    op: match e.op {
+                        crate::core::audit::AuditOp::Memorize => "memorize".to_string(),
+                        crate::core::audit::AuditOp::Delete => "delete".to_string(),
+                        crate::core::audit::AuditOp::Compact => "compact".to_string(),
+                    },
+                    id_hash: e.id_hash.iter().map(|b| format!("{:02x}", b)).collect(),
+                    signed: e.signature != [0u8; 64],
+                })
+                .collect())
+        })
+        .await
+    }
+}
+
+#[cfg(feature = "node-api")]
+#[napi(object)]
+pub struct AuditEntryJs {
+    pub timestamp_ms: f64,
+    pub op: String,
+    pub id_hash: String,
+    pub signed: bool,
 }
 
 #[cfg(test)]
@@ -1000,6 +1046,59 @@ mod tests {
         let q = hms.encode_text("auto shard 0");
         let results = hms.query(&q, 5);
         assert!(!results.is_empty(), "Should find results after auto-shard");
+    }
+
+    // === Audit Integration Tests ===
+
+    #[test]
+    fn test_audit_records_operations() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.security.audit_enabled = true;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        let v = hms.encode_text("audit test");
+        hms.memorize("aud_1".to_string(), v).unwrap();
+        hms.delete("aud_1").unwrap();
+
+        let entries = hms.audit_since(0).unwrap();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].op, crate::core::audit::AuditOp::Memorize);
+        assert_eq!(entries[1].op, crate::core::audit::AuditOp::Delete);
+    }
+
+    #[test]
+    fn test_audit_disabled_returns_empty() {
+        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let entries = hms.audit_since(0).unwrap();
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn test_audit_compact_recorded() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.security.audit_enabled = true;
+
+        let hms = HmsCore::new(
+            10_000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        let v = hms.encode_text("compact audit");
+        hms.memorize("ca_1".to_string(), v).unwrap();
+        hms.compact().unwrap();
+
+        let entries = hms.audit_since(0).unwrap();
+        assert!(entries.iter().any(|e| e.op == crate::core::audit::AuditOp::Compact));
     }
 
     // === Analogy Tests ===

@@ -8,6 +8,54 @@ pub struct HmsConfig {
     pub query: QueryConfig,
     pub concepts: ConceptsConfig,
     pub diffusion: DiffusionConfig,
+    pub security: SecurityConfig,
+    pub privacy: PrivacyConfig,
+}
+
+#[derive(Clone, Debug)]
+pub struct SecurityConfig {
+    /// Enable Ed25519 signing of log entries.
+    pub signing_enabled: bool,
+    /// Path to the Ed25519 keypair file. If None, a new keypair is generated
+    /// and stored at `{storage_path}/hms_signing.key`.
+    pub key_path: Option<String>,
+    /// Enable AES-256-GCM encryption at rest.
+    pub encryption_enabled: bool,
+    /// Passphrase for encryption key derivation via Argon2.
+    /// Required when encryption_enabled is true.
+    pub encryption_passphrase: Option<String>,
+    /// Enable append-only audit logging.
+    pub audit_enabled: bool,
+}
+
+impl Default for SecurityConfig {
+    fn default() -> Self {
+        Self {
+            signing_enabled: false,
+            key_path: None,
+            encryption_enabled: false,
+            encryption_passphrase: None,
+            audit_enabled: false,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PrivacyConfig {
+    /// Enable epsilon-differential privacy in bundle operations.
+    pub dp_enabled: bool,
+    /// Privacy budget epsilon. Smaller = more private, noisier.
+    /// Typical range: 0.1 (strong) to 10.0 (weak).
+    pub epsilon: f64,
+}
+
+impl Default for PrivacyConfig {
+    fn default() -> Self {
+        Self {
+            dp_enabled: false,
+            epsilon: 1.0,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
