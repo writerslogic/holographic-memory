@@ -379,6 +379,13 @@ impl ShardSet {
         }
     }
 
+    pub fn get_vector(&self, id: &str) -> Option<EntangledHVec> {
+        match self {
+            ShardSet::Single(shard) => shard.vectors.read().get(id).cloned(),
+            ShardSet::Multi(mgr) => mgr.shard(id).vectors.read().get(id).cloned(),
+        }
+    }
+
     pub fn for_each_shard<F: FnMut(&Shard)>(&self, mut f: F) {
         match self {
             ShardSet::Single(shard) => f(shard),

@@ -27,6 +27,8 @@ A high-performance **Holographic Memory System (HMS)** for Node.js, powered by R
   - **FxHash Backend**: Ultra-fast non-cryptographic hashing for all retrieval collections.
   - **O(N) Selection**: Linear-time candidate pruning using `select_nth_unstable`.
 - **Persistent Storage**: Integrated `sled` (key-value) and custom `Arena` (binary) for ACID-compliant persistence.
+- **Graph Engine**: Explicit typed relations with multi-hop traversal, transitive/symmetric inference, and temporal filtering.
+- **Federated Queries**: Query across multiple HMS instances in parallel without centralizing data.
 - **Node.js Bindings**: High-efficiency N-API implementation with asynchronous worker thread execution.
 
 ## 🔌 Integrations

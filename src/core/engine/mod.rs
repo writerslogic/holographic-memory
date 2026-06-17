@@ -17,10 +17,11 @@ use super::config::HmsConfig;
 use super::diffusion::DiffusionFactorizer;
 use super::encoding::encode_text_internal;
 use super::entangled::EntangledHVec;
+use super::graph::RelationStore;
 use super::ivf::IVFIndex;
 use super::storage::PersistentArena;
 use super::text::TextProcessor;
-use super::types::TextMetrics;
+use super::types::{GraphPath, Relation, RelationType, TextMetrics};
 
 use shard::{ShardSet, ShardManager};
 
@@ -34,6 +35,7 @@ pub struct HmsCore {
     pub(crate) dimensions: usize,
     pub(crate) storage_path: PathBuf,
     shards: RwLock<ShardSet>,
+    graph: RelationStore,
     audit: Option<AuditLog>,
     #[cfg(feature = "security")]
     signing: Option<super::security::SigningManager>,
@@ -116,6 +118,7 @@ impl HmsCore {
             dimensions: dim,
             storage_path: base_path,
             shards: RwLock::new(shard_set),
+            graph: RelationStore::new(),
             audit,
             #[cfg(feature = "security")]
             signing,
@@ -212,11 +215,15 @@ impl HmsCore {
 
         let mut offset = 0;
         while let Ok((payload, _version)) = self.arena_read_frame(offset) {
-            let (id, vector) = Self::parse_log_payload(self.dimensions, &payload);
-            if vector.dim == 0 {
-                shards.remove(&id, self.dimensions)?;
+            if let Some(rel) = RelationStore::deserialize_relation(&payload) {
+                self.graph.load_relation(&rel);
             } else {
-                shards.insert(id, vector, self.dimensions)?;
+                let (id, vector) = Self::parse_log_payload(self.dimensions, &payload);
+                if vector.dim == 0 {
+                    shards.remove(&id, self.dimensions)?;
+                } else {
+                    shards.insert(id, vector, self.dimensions)?;
+                }
             }
             offset = match self.arena.next_offset(offset) {
                 Ok(next) => next,
@@ -381,10 +388,17 @@ impl HmsCore {
                 .as_micros()
         ));
 
+        let relation_snapshot = self.graph.snapshot();
+
         {
             let temp_arena = PersistentArena::new(&temp_dir)?;
             for (id, vector) in &snapshot {
                 let entry = Self::serialize_log_entry(id, vector)?;
+                let payload = self.maybe_encrypt(&entry)?;
+                temp_arena.write_slice(&payload)?;
+            }
+            for rel in &relation_snapshot {
+                let entry = RelationStore::serialize_relation(rel);
                 let payload = self.maybe_encrypt(&entry)?;
                 temp_arena.write_slice(&payload)?;
             }
@@ -492,6 +506,112 @@ impl HmsCore {
     /// Returns the total number of stored vectors across all shards.
     pub fn vector_count(&self) -> u64 {
         self.shards.read().count()
+    }
+
+    // === Graph API ===
+
+    pub fn add_relation(&self, rel: &Relation) -> Result<()> {
+        let entry = RelationStore::serialize_relation(rel);
+        self.arena_write(&entry)?;
+        self.graph.add(rel);
+        if let Some(ref audit) = self.audit {
+            let label = format!("{}->{}:{}", rel.source_id, rel.target_id, rel.relation_type);
+            audit.record(AuditOp::Memorize, &label, self.sign_fn().as_deref())?;
+        }
+        Ok(())
+    }
+
+    pub fn remove_relation(
+        &self,
+        source_id: &str,
+        relation_type: &str,
+        target_id: &str,
+    ) -> bool {
+        self.graph.remove(source_id, relation_type, target_id)
+    }
+
+    pub fn declare_relation_type(&self, rel_type: RelationType) {
+        self.graph.declare_type(rel_type);
+    }
+
+    pub fn traverse(
+        &self,
+        start_id: &str,
+        relation_type: Option<&str>,
+        max_depth: u32,
+        at_time: f64,
+    ) -> Vec<GraphPath> {
+        let shards = self.shards.read();
+        self.graph.traverse(start_id, relation_type, max_depth, at_time, &|a, b| {
+            let vec_a = shards.get_vector(a);
+            let vec_b = shards.get_vector(b);
+            match (vec_a, vec_b) {
+                (Some(va), Some(vb)) => va.similarity(&vb),
+                _ => 0.0,
+            }
+        })
+    }
+
+    pub fn outgoing_relations(
+        &self,
+        source_id: &str,
+        relation_type: Option<&str>,
+        at_time: f64,
+    ) -> Vec<Relation> {
+        self.graph.outgoing(source_id, relation_type, at_time)
+    }
+
+    pub fn incoming_relations(
+        &self,
+        target_id: &str,
+        relation_type: Option<&str>,
+        at_time: f64,
+    ) -> Vec<Relation> {
+        self.graph.incoming(target_id, relation_type, at_time)
+    }
+
+    pub fn relation_count(&self) -> usize {
+        self.graph.count()
+    }
+
+    // === Federated Query ===
+
+    pub fn federated_query(
+        &self,
+        peer_paths: &[String],
+        query_vec: &EntangledHVec,
+        k: u32,
+    ) -> Result<Vec<super::types::RetrievalResult>> {
+        use rayon::prelude::*;
+
+        // Query local instance
+        let mut all_results = self.query(query_vec, k);
+
+        // Query each peer in parallel
+        let peer_results: Vec<Result<Vec<super::types::RetrievalResult>>> = peer_paths
+            .par_iter()
+            .map(|path| {
+                let peer = HmsCore::new(
+                    self.dimensions as u32,
+                    Some(path.clone()),
+                    Some(self.config.clone()),
+                )?;
+                Ok(peer.query(query_vec, k))
+            })
+            .collect();
+
+        for result in peer_results {
+            all_results.extend(result?);
+        }
+
+        // Sort by similarity descending and take top-k
+        all_results.sort_by(|a, b| {
+            b.similarity
+                .partial_cmp(&a.similarity)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        all_results.truncate(k as usize);
+        Ok(all_results)
     }
 
     /// Returns true if the IVF index has been trained.

@@ -1,6 +1,6 @@
 {
   "name": "@writerslogic/hms-native",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "Apache-2.0",
   "author": "David Condrey",
   "description": "High-performance Holographic Memory System (HMS) — privacy-preserving semantic search using hyperdimensional computing.",
@@ -29,5 +29,11 @@
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.17.0"
+  },
+  "optionalDependencies": {
+    "@writerslogic/hms-native-win32-x64-msvc": "0.3.0",
+    "@writerslogic/hms-native-darwin-x64": "0.3.0",
+    "@writerslogic/hms-native-linux-x64-gnu": "0.3.0",
+    "@writerslogic/hms-native-darwin-arm64": "0.3.0"
   }
 }
