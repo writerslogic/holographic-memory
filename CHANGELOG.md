@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Apache-2.0 SPDX license headers on all source files.
 
 ### Changed
-- Migrated to `@writerslogic/hms-native` npm scope.
+- Migrated to `holographic-memory` npm scope.
 - Updated all repository URLs to `github.com/writerslogic/hms`.
 - CI workflow enhanced with caching, cargo-deny, and separate build stages.
 

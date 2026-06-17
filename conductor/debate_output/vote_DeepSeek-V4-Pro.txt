@@ -1,0 +1,16 @@
+# DeepSeek-V4-Pro — Binding Vote
+
+**Priority 1: AtomMemory — the sharded inverted-index Modern Hopfield attractor for atomic vectors.**
+- Build: A k-sparse cleanup memory with 64 sharded inverted posting lists (RwLock per shard, strict ascending lock ordering), storing only atomic entity/relation vectors with a RoaringTreemap tombstone bitmap.
+- Algorithm: Exact overlap scan (`Σ_{d∈query} posting[d]` histogram), softmax(β·overlaps) over live atoms, weighted dim-score superposition, top-k=64 projection every iteration — monotone descent on `E = -lse(β, overlaps)` over the finite k-sparse state space, converging in 1–3 steps.
+- Test: Insert 100K atoms, query with 0/10/25% bit-flip noise (MiniMax's exact `corrupt` function), assert recall ≥0.95 at 25% noise and convergence in ≤3 iterations.
+
+**Priority 2: CompositeMemory + RoleAlgebra — the fuzzy structural query with per-composite unbind.**
+- Build: A second inverted index storing canonical triples `T = S ⊕ ρ₁(R) ⊕ ρ₂(O)` with cyclic-shift role-binding (odd shifts coprime with D), queried by partial/noisy role patterns and resolved via individual composite unbinding.
+- Algorithm: Build query Q from known roles, overlap-scan CompositeMemory to find the match set, then for each matched composite individually XOR out known roles and inverse-shift to isolate the target filler, cleanup each residual through AtomMemory, aggregate per-entity via `1-(1-mean_conf)^support_count` with noise-aware confidence calibration.
+- Test: Build graph with fan-outs {1,5,10,20,30,40} plus 50K noise triples, query with 25% subject-noise, assert recall ≥0.95 and aggregated noise-hit confidence ≤0.5 on the algebraic path.
+
+**Priority 3: mmap-backed CSR immutable segments with TLB-aware prefetching.**
+- Build: Disk-backed Compressed-Sparse-Row segments (`offsets[16385]`, `pids`, `arena`) written during compaction and loaded via raw libc `mmap`, with a small in-RAM mutable tail, Arc-swap atomic replacement, and a 13-byte-triple zero-copy WAL that re-derives composites deterministically on replay.
+- Algorithm: Sort query dims by posting-list length ascending, issue `_mm_prefetch(T0)` for all list heads to overlap page-fault latency, then accumulate overlaps from cache while the OS resolves faults in the background.
+- Test: Qwen's Cold-Page-Fault Gauntlet — insert 10M triples, compact to disk, force `madvise(MADV_DONTNEED)`, run 1000 cold queries, assert p50 <0.5ms and p99 <2ms.

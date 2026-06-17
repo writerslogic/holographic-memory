@@ -1,0 +1,183 @@
+# Claude-Opus-4.8 — Round 3
+
+Good. The algebra is settled, the peeling debate is resolved (Qwen is right—XOR is not the inverse of majority-vote bundling, that kills MiMo/MiniMax's peeling), and Qwen's inverted index demolishes my own bitset attractor on scaling. Let me concede, then build the thing that's actually load-bearing.
+
+## Concessions first (the prompt demands honesty)
+
+1. **Qwen's inverted index beats my bitset attractor.** 250K increments vs 200M cycles is not close. My L3-resident bitset scan was correct for N≤10K and wrong above it. Steal the posting lists.
+
+2. **Peeling is dead.** Qwen's proof is airtight: `M ⊕ A` destroys shared bits because majority-vote already collapsed the count-2 dimension to a single bit. XOR ≠ subtraction in a thresholded semiring. MiniMax's "clean before peel" doesn't save it because the *bundle* lost information, not the residual.
+
+3. **My frontier-capacity problem was the right problem; Qwen's lazy materialization is the right answer.** I over-engineered the hybrid. RoaringBitmap spill is cleaner.
+
+Now—the thing nobody has specified concretely, and the thing Qwen *demanded*: **the concurrent retrieval index that is also the attractor**. I'll give exact structs, exact complexity, and a test that proves correctness, not compilation.
+
+## The load-bearing structure: `ShardedInvertedAttractor`
+
+This unifies three things everyone treated separately: the item memory, the retrieval index, and the concurrency story. It answers Qwen's demand directly.
+
+### Integration with EntangledHVec
+
+First, the existing representation. EntangledHVec is `sorted Vec<u32>`, ~64 indices, each `< 16384`. I assume:
+
+```rust
+pub struct EntangledHVec {
+    indices: Vec<u32>,   // sorted ascending, unique, len ≈ 64, each < D
+}
+const D: u32 = 16384;
+```
+
+I do **not** touch this. The attractor stores *copies* of indices in a transposed layout. The HVec stays the source of truth; the index is a derived structure.
+
+### The structure
+
+```rust
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+
+/// Number of posting-list shards. Power of two for cheap masking.
+/// Each shard owns a contiguous dimension range [s*SHARD_W, (s+1)*SHARD_W).
+const N_SHARDS: usize = 64;
+const SHARD_W: usize = (D as usize) / N_SHARDS;   // 16384/64 = 256 dims/shard
+
+pub struct ShardedInvertedAttractor {
+    /// One posting list per dimension: posting[d] = pattern IDs with bit d set.
+    /// Wrapped per-shard so writers touching disjoint dim-ranges don't contend.
+    shards: Box<[PostingShard; N_SHARDS]>,
+
+    /// Pattern store, transposed for the cleanup XOR step.
+    /// patterns[pid] is the sorted index list of stored pattern pid.
+    /// Append-only; deletions are tombstones (see `live`).
+    patterns: boxcar::Vec<EntangledHVec>,   // lock-free append-only vec
+
+    /// Liveness bitmap. Tombstone instead of removing from posting lists.
+    live: RoaringBitmapAtomic,
+
+    /// Inverse temperature for softmax attention.
+    beta: f32,
+}
+
+/// One shard guards the posting lists for a contiguous dim range.
+/// RwLock here is fine because a bundle write touches ~64 dims spread
+/// across shards, so it grabs ~64 *different* short-lived locks, never
+/// the whole space. Readers in OTHER shards never block.
+struct PostingShard {
+    lists: parking_lot::RwLock<Vec<Vec<u32>>>,  // len == SHARD_W
+}
+```
+
+**Why this answers Qwen's concurrency demand specifically.** Qwen said "if you propose `RwLock<Vec<Vec<u32>>>`, you fail." Correct—a single global RwLock serializes all writes. My answer: **shard the lock by dimension range.** A bundle insert of a 64-active-bit vector touches on average `64 × (N_SHARDS/D × SHARD_W)` ... let me compute it exactly rather than hand-wave:
+
+- A pattern has 64 active dims, uniformly spread over D=16384.
+- Expected distinct shards touched = `N_SHARDS · (1 − (1 − 1/N_SHARDS)^64)` = `64 · (1 − (63/64)^64)` ≈ `64 · (1 − 0.366)` ≈ **40.5 shards**.
+- Each shard lock is held only long enough to `push` the new pid onto ~1-2 posting lists inside it: a `Vec::push`, amortized O(1).
+
+So a writer holds ~40 short locks; two concurrent writers collide on a shard only if their active dims share a 256-wide window. Collision probability per shard pair is low, and when it happens the critical section is a single `push`. **Readers in the 24 untouched shards never block at all.** This is fine-grained, not lock-free, but lock-free posting lists (Treiber stacks per dim) would cost a CAS-retry loop and pointer-chasing that destroys the cache locality that makes the inverted scan fast. **Fine-grained sharded RwLock is the right call here, and I'll defend it against any "use lock-free" objection: the hot read path (attractor query) takes only *read* locks, which parking_lot RwLock allows to proceed concurrently with other readers.**
+
+### Method signatures (exact)
+
+```rust
+impl ShardedInvertedAttractor {
+
+    pub fn new(beta: f32) -> Self;
+
+    /// Insert a pattern. Returns its pattern id (pid).
+    /// Concurrency: takes read-free append on `patterns`, then per-shard
+    /// write locks only for the touched dimensions.
+    pub fn insert(&self, hv: &EntangledHVec) -> u32 {
+        let pid = self.patterns.push(hv.clone()) as u32;
+        self.live.insert(pid);
+        // Group this pattern's indices by shard so we lock each shard once.
+        let mut by_shard: [Vec<u32>; N_SHARDS] = Default::default();
+        for &d in &hv.indices {
+            by_shard[(d as usize) / SHARD_W].push(d);
+        }
+        for (s, dims) in by_shard.iter().enumerate() {
+            if dims.is_empty() { continue; }
+            let mut lists = self.shards[s].lists.write(); // short critical section
+            for &d in dims {
+                lists[(d as usize) - s * SHARD_W].push(pid);
+            }
+        }
+        pid
+    }
+
+    /// Tombstone a pattern. O(1). Posting lists keep the stale pid;
+    /// the attractor filters via `live` at scan time.
+    pub fn remove(&self, pid: u32) { self.live.remove(pid); }
+
+    /// Compute EXACT overlaps |query ∩ pᵢ| for every live pattern.
+    /// This is the kernel. Returns a dense overlap vector.
+    /// Complexity: O(Σ_{d∈query} len(posting[d])) increments.
+    fn overlaps(&self, query: &[u32], acc: &mut [u32]) {
+        acc.iter_mut().for_each(|x| *x = 0);
+        for &d in query {
+            let s = (d as usize) / SHARD_W;
+            let lists = self.shards[s].lists.read();      // shared read lock
+            for &pid in &lists[(d as usize) - s * SHARD_W] {
+                // unchecked: pid < patterns.len() always
+                unsafe { *acc.get_unchecked_mut(pid as usize) += 1; }
+            }
+        }
+    }
+
+    /// One Modern-Hopfield attractor step on a sparse query.
+    /// Returns a new k-sparse index list (the state stays k-sparse — this
+    /// is the fix DeepSeek demanded of Qwen: project to top-k every step).
+    fn step(&self, query: &[u32], acc: &mut [u32], k: usize) -> Vec<u32>;
+
+    /// Full cleanup: iterate `step` to a fixed point or max_iter.
+    /// Returns (cleaned_indices, matched_pid_if_converged, confidence).
+    pub fn cleanup(&self, query: &[u32], max_iter: usize)
+        -> (Vec<u32>, Option<u32>, f32);
+
+    /// Multi-item set retrieval WITHOUT peeling.
+    /// Returns all live patterns whose normalized overlap exceeds `tau`.
+    /// This is the CORRECT replacement for the dead peeling approach.
+    pub fn set_retrieve(&self, query: &[u32], tau: f32) -> Vec<(u32, f32)>;
+}
+```
+
+### The `step` body — and the fix to the bug DeepSeek caught in Qwen
+
+```rust
+fn step(&self, query: &[u32], acc: &mut [u32], k: usize) -> Vec<u32> {
+    self.overlaps(query, acc);                       // exact |q ∩ pᵢ|
+
+    // softmax(β · overlap) over LIVE patterns only.
+    // Find max for numerical stability.
+    let mut max_o = 0u32;
+    for pid in self.live.iter() { max_o = max_o.max(acc[pid as usize]); }
+
+    // Weighted superposition into dim-score map.
+    // Only patterns with non-negligible attention contribute.
+    let mut dim_score: Vec<f32> = vec![0.0; D as usize];
+    let mut z = 0.0f32;
+    for pid in self.live.iter() {
+        let w = ((acc[pid as usize] as f32 - max_o as f32) * self.beta).exp();
+        if w < 1e-6 { continue; }
+        z += w;
+        for &d in &self.patterns[pid as usize].indices {
+            dim_score[d as usize] += w;
+        }
+    }
+    // Top-k projection — keeps state EXACTLY k-sparse. This preserves
+    // the finite-state-space convergence argument: state space is the
+    // finite set of k-sparse vectors, energy is monotone, so it MUST
+    // reach a fixed point in ≤ N steps.
+    top_k_indices(&dim_score, k)   // partial-select, O(D) via quickselect
+}
+```
+
+This is exactly DeepSeek's correction to Qwen: the **state is always k-sparse**, the bitset/dense form is used only transiently for scoring. I'm adopting it and making it concrete.
+
+## Exact complexity (with the constants, not just Big-O)
+
+Let `L̄ = N·k/D` be the average posting-list length (N patterns, k=64 active each).
+
+**`overlaps`:** `Σ_{d∈query} len(posting[d])` ≈ `k · L̄` = `k · (N·k/D)` = `N·k²/D`.
+
+- N=1M: `1e6 · 4096 / 16384` = **250,000 increments**. At ~1 increment/cycle with good cache behavior on a 4MB `acc` array (1M × u32), and ~1MB of posting traffic, **≈ 0.2–0.4ms**. Qwen's number, confirmed by my arithmetic.
+
+**`step` superposition pass:** iterates live patterns with non-negligible weight. With sparse softmax (β tuned so only the true match and a handful of near-matches survive the 1e-6 cutoff), this is **O(survivors · k)**, typically survivors ≪ 100, so **negligible** (~6K ops). The top-k is one O(D) quickselect = 16384 ops.
+
+**`cleanup` total:** `iters · (overlaps + step)`. For well-separated BSC vectors, **1–3 iterations** (the overlap gap is 64-vs-~0.25, enormous separation, so β can be small and convergence is

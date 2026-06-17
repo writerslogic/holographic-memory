@@ -1,0 +1,16 @@
+# MiMo-V2.5-Pro — Binding Vote
+
+**Priority 1: AtomMemory — a k-sparse Modern Hopfield attractor with sharded inverted-index overlap kernel, storing only atomic entity/relation vectors.**
+- Build: 64 dimension-sharded inverted posting lists with ascending-lock-order insertion, RoaringTreemap tombstones, and a plate-local arena with top-k=64 projection at every attractor step.
+- Algorithm: Exact overlap histogram via `Σ_{d∈query} posting[d]`, softmax(β·overlaps) over live atoms, weighted dim-score superposition, top-k projection each iteration — provably converging over the finite k-sparse state space in 1–3 steps.
+- Test: Insert 100K atoms, query with MiniMax's exact reproducible `corrupt` function at 0/10/25% bit-flip noise, assert recall ≥0.95 and convergence in ≤3 iterations.
+
+**Priority 2: CompositeMemory + RoleAlgebra + per-composite unbind — the fuzzy structural query pipeline with per-individual-composite unbinding (not bundle-threshold, which returns empty for any fan-out ≥2).**
+- Build: A second inverted index storing canonical triple composites `T = S ⊕ ρ₁(R) ⊕ ρ₂(O)` with cyclic-shift role binding (odd shifts coprime with D=16384), queried by partial/noisy role patterns and resolved by individually XOR-unbinding known roles from each matched composite then inverse-shifting to isolate the target filler.
+- Algorithm: Overlap-scan CompositeMemory to find the match set above `signal_floor * 0.7`, then for each matched composite separately XOR out known-role shifts, inverse-shift the residual to atom space, cleanup each through AtomMemory, and aggregate per-entity via MiniMax's calibrated `1 − (1 − mean_conf)^support_count` with noise-aware cleanup capping at `noise_residual > 0.5`.
+- Test: Build a graph with controlled fan-outs {1, 5, 10, 20, 30, 40, 50, 80} plus 50K noise triples, query with 25%-corrupted subject vectors, assert recall ≥0.95 and precision ≥0.95 on the algebraic path (fan-out ≤40) and assert aggregated noise-hit confidence never exceeds 0.5.
+
+**Priority 3: Integration test harness with exact noise model and controlled fan-out sweep — the test that proves the entire pipeline works or exposes exactly where it breaks.**
+- Build: A deterministic test harness using a fixed-seed RNG, MiniMax's exact `corrupt` function (bit-flip on active bits preserving sparsity), and a controlled graph with known ground-truth per subject, parameterized by fan-out and noise fraction.
+- Algorithm: For each (fan-out, noise-fraction) pair, run `fuzzy_structural_query`, collect recall/precision/confidence, and assert the algebraic path dominates for fan-out ≤40 while the materialized fallback activates cleanly for fan-out >40.
+- Test: Run the full grid {fan-out: 1–80} × {noise: 0, 0.10, 0.25, 0.50} on cold-loaded mmap-backed segments (Qwen's `MADV_DONTNEED` eviction), assert p99 latency <2ms and assert that the test *fails* if anyone reintroduces DeepSeek R5's bundle-threshold `unbind_from_bundle` instead of per-composite unbind — this test is the regression guard against the most dangerous silent-corruption bug in the entire design.

@@ -1,0 +1,84 @@
+# Step-3.7-Flash — Round 5: The Implementation-Critical Specs
+
+Three things will break in production if not specified exactly: concurrency deadlocks, threshold mis-calibration, and WAL corruption. I'm giving the exact fix for each, plus the one test that catches all three simultaneously.
+
+---
+
+## 1. Concurrency Protocol: Sharded RwLock with Strict Lock Ordering
+
+Claude proposed sharded RwLock in R3. He did not specify the lock acquisition order. **This will deadlock in production.**
+
+**The rule:** When inserting a pattern (atom or composite), acquire write locks on shards in **strictly ascending order** (shard 0, then 1, then 2, ...). A pattern's active dims map to shards via `dim / 256`. Sort the touched shard IDs before acquiring locks.
+
+```rust
+impl AtomMemory {
+    pub fn insert(&self, atom: &EntangledHVec) -> u32 {
+        let pid = self.arena.push(atom);
+        
+        // Group indices by shard, then acquire locks in ASCENDING order
+        let mut by_shard: [Vec<u32>; 64] = Default::default();
+        for &dim in &atom.indices {
+            by_shard[(dim / 256) as usize].push(dim);
+        }
+        
+        for (shard_id, dims) in by_shard.iter().enumerate() {
+            if dims.is_empty() { continue; }
+            // ASCENDING ORDER: shard 0, then 1, then 2, ...
+            // This is the critical correctness property.
+            // Two threads inserting different atoms will never deadlock
+            // because they both acquire locks in the same global order.
+            let mut lists = self.shards[shard_id].lists.write();
+            let local_offset = shard_id * 256;
+            for &dim in dims {
+                lists[(dim - local_offset) as usize].push(pid);
+            }
+        }
+        
+        pid
+    }
+}
+```
+
+**Why this matters:** Without ordering, Thread A locks shard 5 then shard 10, while Thread B locks shard 10 then shard 5. Circular wait → deadlock. The ascending-order rule eliminates circular wait entirely.
+
+**Enforcement:** In debug builds, assert that locks are acquired in order:
+```rust
+debug_assert!(shard_id >= last_locked_shard, "Lock ordering violation: acquired shard {shard_id} after shard {last_locked_shard}");
+```
+
+**Read path is deadlock-free by construction:** Read locks are shared. Multiple readers can hold the same shard concurrently. No ordering needed.
+
+---
+
+## 2. Threshold Calibration: Beta and min_overlap from First Principles
+
+Nobody derived these from the statistics. Guessing leads to silent recall failures.
+
+**The overlap distribution for BSC (k=64, D=16384):**
+
+- **Signal overlap** (clean query vs. its true match): `μ_signal = k = 64`
+- **Noise overlap** (clean query vs. random unrelated atom): `μ_noise = k²/D = 64²/16384 = 0.25`, `σ_noise ≈ sqrt(0.25) = 0.5`
+- **Noisy query signal** (25% bit-flip noise): `μ_signal_noisy = k * (1 - noise_frac) = 64 * 0.75 = 48`
+
+**Beta selection:** The softmax must assign >99% attention to the true match even under noise.
+```
+exp(beta * μ_signal_noisy) / exp(beta * μ_noise) > 100
+beta * (μ_signal_noisy - μ_noise) > ln(100) ≈ 4.6
+beta > 4.6 / (48 - 0.25) ≈ 0.096
+```
+
+But this is the *minimum*. For robustness against multiple distractors and partial queries, set:
+```
+beta = 8.0  // default for clean atoms
+beta = 3.0  // for 25% noisy queries (reduced sharpness to tolerate signal loss)
+```
+
+**Adaptive beta formula:**
+```rust
+fn adaptive_beta(noise_frac: f32, base_beta: f32) -> f32 {
+    let effective_k = (K_TARGET as f32) * (1.0 - noise_frac);
+    base_beta * (effective_k / K_TARGET as f32)
+}
+```
+
+**min_overlap for composite matching:** For composite query Q with |Q|

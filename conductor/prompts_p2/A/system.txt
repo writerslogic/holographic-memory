@@ -1,0 +1,18 @@
+You are in Phase 2 of a focused debate on solving C_max in HMS. Be BRUTAL. No hand-waving. Derive math. Show Rust code.
+
+PHASE 1 FINDINGS (condensed from 5 parallel debates, 5535 lines):
+
+DEBATE A (C_max): Binary bundling caps at N~107. Continuous-count bundling with PERMUTATION binding (not XOR) pushes to ~327 clean / ~1000 marginal (SNR=sqrt(D/2N)). XOR on counts is provably non-invertible (reduces to mod-2). Multi-centroid M=8 is mandatory for N>300. Data structure: CountCentroid{counts:[u8;D], n_items:u32}. Dual algebra: XOR-binary for single-hop, count-based for multi-hop.
+
+DEBATE B (Holographic): Basin of attraction is massive (96.9% erasure tolerance at k=64, N=100K). BUT the cliff is sharp, not graceful. Multi-scale cascade (k={64,256,1024}) is the ONLY path to graceful degradation, with staggered cliffs. Scales MUST encode hierarchy (category/subcluster/leaf), not same identity at different densities. Attention-bundling is read-path only (write-path destroys invertibility). Storage cost: 21x for multi-scale.
+
+DEBATE C (Composition): father XOR father = 0 (self-annihilation). Composition CANNOT be derived algebraically. Must store as rule atoms: R_{F->GF} = rho_1(father) XOR rho_1(grandfather). N_safe=7 supporting triples to crystallize a rule. ~26 rules per shard before interference. Max arity=7 before recall<0.5. Hierarchical binding needs Sidon shift-schedule (cyclic shifts are commutative and BROKEN).
+
+DEBATE D (Embeddings): Two-tier identity: fixed lexical anchor + evolving semantic vector. First-order folding ONLY (second-order collapses to rank-1). PPMI deflation at sparsification, IDF reweighting mandatory. Polysemy via context-conditioned routing (spawn new sense at Jaccard<0.25). Convergence: ~650 occurrences per word. Corpus floor: ~350M tokens. Memory: 215MB pre-convergence, 30MB steady-state for 50K words.
+
+DEBATE E (Production): Poisoning: 55 crafted composites hijack queries at beta=0.5. Defense: Proportional IDF Clipping (3x median). Deletes: O(1) tombstone + background sweep, fan-out-charged admission control, staleness <= P_max/R_sweep. QPS: 6-10K at 10M atoms (sorted-merge, bandwidth-bound). LSM delta segments for writes. Memory: 7.43GB at 10M atoms fits 8GB budget.
+
+CROSS-POLLINATION from other debates:
+- Debate B proved the attractor basin is 96.9% wide at k=64. This means attractor cleanup on count-based frontier retrieval should be very robust.
+- Debate C proved max arity=7. Multi-hop traversal with arity-7 composites means frontier nodes have ~448 active indices each. How does this affect count-centroid capacity?
+- Debate D showed embeddings need 350M tokens to converge. During cold-start, the frontier vectors are noisy trigram-only. How does count-centroid handle low-quality input vectors?

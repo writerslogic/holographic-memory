@@ -1,0 +1,1 @@
+ROUND 2: Challenge another model. Does hierarchical binding create new ambiguities between tree levels? How many triples for composition -- give a NUMBER or admit guessing. Information-theoretic limit on coexisting composition rules before interference? Derive it.

@@ -1,0 +1,1 @@
+ROUND 5: Prioritize. Given rule atoms work (N_safe=7 triples, 26 rules per shard), is automatic composition discovery worth building AT ALL? Or should we just let users declare rules explicitly and focus engineering effort elsewhere? What is the honest cost/benefit? If we CUT auto-discovery, what do we lose that matters?
