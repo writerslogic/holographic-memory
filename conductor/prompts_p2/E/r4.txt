@@ -1,0 +1,1 @@
+ROUND 4: Revised memory budget. With ALL Phase 1 features: AtomMemory + CompositeMemory + SemanticMemory + count-centroids + multi-scale (if kept) + rule atoms + delta segments + reverse index. What is the TOTAL memory at 10M atoms? Does it fit 8GB? If not, what must be cut or offloaded to disk? Show the line-item budget.

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConceptCandidate",
+  "type": "object",
+  "required": [
+    "centroidId",
+    "coherence",
+    "memberCount",
+    "memberIds"
+  ],
+  "properties": {
+    "centroidId": {
+      "type": "string"
+    },
+    "coherence": {
+      "type": "number",
+      "format": "double"
+    },
+    "memberCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    },
+    "memberIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

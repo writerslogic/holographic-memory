@@ -1,0 +1,1 @@
+ROUND 1: Give your opening position. What is the most promising path to pushing C_max past 1000? Derive the capacity bound. What data structure? What is the EXACT SNR formula for continuous-count attractor vs binary threshold? Can bind/permute operate on count vectors -- prove or disprove with the XOR algebra. Be specific enough to implement in Rust.

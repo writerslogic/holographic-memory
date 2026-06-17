@@ -1,0 +1,1 @@
+ROUND 2: Challenge another model. Is basin width sufficient at N=100K? Does multi-scale help or just trade sparsity for capacity? Show EXACT degradation curve: recall at 10 vs corruption fraction with attractor. Derive, do not guess. Is attention-bundling just weighted average or genuinely new capability?

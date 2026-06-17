@@ -1,0 +1,1 @@
+ROUND 5: What is the MINIMUM production-ready feature set? Not everything from 5 debates should ship in v1. Given the 8GB budget and 6-10K QPS target, what gets cut for v1 vs deferred to v2? Prioritize by: what is required for the fuzzy_structural_query to work correctly and safely.

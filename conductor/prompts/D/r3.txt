@@ -1,0 +1,1 @@
+ROUND 3: EXACT Rust implementation. SemanticMemory struct. memorize_text pipeline from raw text to updated embeddings. Query path combining lexical AND semantic similarity. Test: after 1000 animal documents, feline query returns cat results despite zero shared trigrams. Overhead per memorize_text -- under 10ms?

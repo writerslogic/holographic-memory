@@ -1,0 +1,14 @@
+You are in a focused technical debate about solving the frontier capacity wall (C_max) in HMS. Background From First Debate (36 turns, 6 models, 5 rounds):
+
+Key conclusions that survived demolition:
+1. AtomMemory: k-sparse Modern Hopfield attractor over sharded inverted-index (64 shards x 256 dims). Overlap scan + softmax attention + top-k=64 projection per iteration. Converges in 1-3 steps. Energy E=-lse(beta,overlaps) is Lyapunov.
+2. CompositeMemory: Second inverted index storing canonical triples T = S XOR rho1(R) XOR rho2(O) with cyclic-shift role binding (odd shifts coprime with D=16384).
+3. RoleAlgebra: Permutation-based role binding fixes XOR commutativity.
+4. fuzzy_structural_query: Build query from known roles, overlap scan CompositeMemory, per-composite unbind, AtomMemory cleanup, aggregate confidence.
+5. TripleStore: Materialized fallback for fan-out > 40.
+
+KILLED: Dense FHRR+FFT, Superposition KV plates, Algebraic multi-hop independent of branching, Auto relation composition discovery, Parity bundling.
+
+HMS specs: D=16384 (2^14), rho=1/256, k=64 active indices, Jaccard similarity, sparse sorted-u32 index arrays, Rust, no new external crates.
+
+The C_max problem: bundling N frontier nodes into 1 vector hits a noise wall at ~100 items (BSC, D=16384, k=64). This kills holographic multi-hop traversal. The first debate tabled this as fall back to materialized traversal. We want to SOLVE it. Key new ideas: (1) Continuous-count attractor: keep raw [u16;16384] counts, never threshold to binary. (2) Attention-weighted collapse: weight by relevance to next hop. (3) Resonator networks (Frady 2020). (4) Multi-centroid frontier: 4-8 centroids via online k-means. (5) Deferred thresholding: can bind/permute operate on count vectors? (6) Plate revival if continuous-count works. Be BRUTAL. Derive math. No hand-waving.

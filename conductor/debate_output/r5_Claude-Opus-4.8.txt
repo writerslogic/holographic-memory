@@ -1,0 +1,133 @@
+# Claude-Opus-4.8 — Round 5: The Number Qwen Demanded, and the Capability That Survives It
+
+Qwen asked for N_max. I'm going to give it to him with the actual derivation, because it decides the entire architecture — and the answer is worse than he hoped and better than he feared. Then I'll specify the one capability that this number *enables*, with the exact algorithm and the exact test.
+
+## Part 1: The Number (CompositeMemory capacity, derived honestly)
+
+Qwen's SNR-per-query argument (114 vs 1.5) is correct for **one query against one stored composite in isolation**. But that's not what limits capacity. What limits capacity is the **inverted-index overlap distribution across ALL N stored composites simultaneously** — the false-positive tail, not the true-positive mean.
+
+Setup: D=16384, atom k=64, composite |T| ≈ 3·64 = 192 active bits (assuming negligible XOR collisions; expected collisions = 3·C(3,2)·k²/D ≈ 3·0.75 = 2.2 bits, ignorable). Query Q = S' ⊕ ρ₁(R), |Q| ≈ 128.
+
+**Signal** (overlap of Q with its true composite T): 50 (noisy subject) + 64 (exact relation) = **114**. Fixed, independent of N.
+
+**Noise** (overlap of Q with a random *unrelated* composite T_j): each of Q's 128 bits independently hits one of T_j's 192 active dims with prob 192/D. So overlap_noise ~ Binomial(128, 192/16384), mean μ = 128·192/16384 = **1.5**, variance ≈ 1.5.
+
+The attractor fails when **any** of the N−1 distractor composites produces an overlap that competes with 114 in the softmax. With β tuned, the failure mode is when a distractor's overlap exceeds ~ (114 − margin). But the real concern at scale isn't a single distractor reaching 114 — that's astronomically unlikely (114 is ~92σ above the noise mean). 
+
+**The actual capacity limit is subtler and Qwen missed it: shared-atom collisions.** Distractors are NOT random. In a real graph, many triples share the subject John or the relation `loves`. A composite T_j = John ⊕ ρ₁(loves) ⊕ ρ₂(Bob) shares **114 bits** with our query Q exactly as much as the true target does — because Q only constrains subject and relation, and T_j matches both. 
+
+So the correct statement: **the CompositeMemory does not retrieve "the triple," it retrieves the *equivalence class* of all triples matching the specified roles.** If John loves 5 people, all 5 composites have overlap ≈114 with Q. The softmax splits weight across all 5. This is **correct behavior** (it's the set of answers), but it means:
+
+**N_max is not a global number. It's per-query-selectivity.** The capacity bound is:
+
+> A fuzzy structural query succeeds iff the number of *true matches* m (triples sharing the queried roles) satisfies the **superposition cleanup bound**, because the unbind step `T_matches ⊕ Q` now yields a *bundle* of m object-vectors, not one.
+
+And we already derived that bound across four rounds: **the multi-match unbind produces a superposition of m objects, and the AtomMemory cleanup can separate them only up to the set-retrieval capacity ≈ D·ρ/(2 ln D) ≈ 64/(2·9.7) ≈ 30–60 items** before crosstalk swamps signal.
+
+**So the real number is:**
+
+- **Global N (total triples stored): bounded only by the inverted-index false-positive tail.** With signal 114 and noise N(1.5, 1.5), the probability a *random* distractor exceeds threshold 57 (halfway) is P(Binomial(128, 0.0117) > 57) ≈ **astronomically small (< 10⁻⁸⁰)**. So global N is bounded by **memory and posting-list scan time, not by SNR**: at N=1M composites, avg posting list = N·192/D = 1M·192/16384 ≈ 11,719, and query touches 128 dims → 128·11,719 ≈ **1.5M increments ≈ 1.5ms per overlap scan**. At N=10M it's 15ms. **So N_max ≈ 1M per unsharded segment for the 5ms budget, ~10M at the 50ms ceiling.** Qwen gets his answer: **shard by relation ID above ~1M triples**, not for SNR reasons but for scan-time reasons.
+
+- **Per-query fan-out m (matches per role-query): bounded by ~40** (set-retrieval cleanup capacity). Above that, the answer set must be materialized via the TripleStore, not reconstructed via unbinding.
+
+**This kills Qwen's framing but confirms his architecture.** Store canonical composites (he's right against Claude-R4's atom-only rule). But the composite memory is a **selectivity filter**, not an exact store: it tells you *which equivalence class* and reconstructs the answer set *only when that set is small* (m ≤ 40). For high-fanout queries, it identifies the matching posting-list intersection and you read exact objects from the TripleStore.
+
+## Part 2: The Capability To Build — `fuzzy_structural_query`
+
+This is the one irreducible thing. Specify it exactly.
+
+**Capability:** Given a *partial, noisy* structural pattern (some roles specified, possibly with corrupted vectors; one role unknown), return the ranked set of entities filling the unknown role, reconstructed from a single composite memory.
+
+**Why no other system can do it:** It tolerates *noise in the specified roles* (Neo4j needs exact match keys; Pinecone can't bind roles) AND inverts on *any* role from *one* index (relational DB needs an index per query shape).
+
+### Exact Algorithm
+
+```
+fuzzy_structural_query(known: [(Role, NoisyVec)], target: Role) -> Vec<(EntityId, f32)>:
+
+  # 1. Build query vector (algebraic composition of known roles)
+  Q = ⊕_{(role, vec) in known} ρ_{shift(role)}(vec)           # O(k·|known|)
+
+  # 2. Overlap scan against CompositeMemory inverted index
+  overlaps[pid] = Σ_{d ∈ Q.indices} posting_C[d].contains(pid)  # O(|Q|·L̄_C)
+
+  # 3. Softmax over composites; collect the match set above threshold τ_match
+  #    τ_match = signal_floor = (Σ_known |role_overlap|) - slack
+  matches = { pid : overlaps[pid] > τ_match }                   # the equivalence class
+
+  # 4. BRANCH on fan-out (the capacity boundary from Part 1)
+  if |matches| <= 40:
+      # ALGEBRAIC PATH — the unprecedented one
+      # Unbind target role from the SUPERPOSITION of matched composites
+      M = bundle{ CompositeMemory.arena[pid] : pid in matches }  # re-bundle matches
+      noisy_target = ρ_{shift(target)}^{-1}( M ⊕ Q )             # unbind
+      # noisy_target ≈ superposition of the m target-fillers + crosstalk
+      results = AtomMemory.set_retrieve(noisy_target, τ=0.5)     # k-sparse Hopfield, multi-extract
+      return results                                              # [(entity, confidence)]
+  else:
+      # MATERIALIZED PATH — honest fallback, never worse than Neo4j
+      # matches identifies candidate triple-PIDs; read exact objects from TripleStore
+      return TripleStore.project_objects(matches, target)        # O(|matches|)
+```
+
+**The critical detail nobody specified: step 4's `set_retrieve` on the unbound superposition.** Earlier rounds killed "peeling" (XOR-subtraction is invalid on threshold-bundles — correct). But `set_retrieve` here is NOT peeling. It's **detect-without-removal**: run the AtomMemory overlap scan on `noisy_target`, take ALL atoms whose overlap exceeds the noise floor (not iterative subtraction). Because noisy_target is a bundle of ≤40 sparse k-vectors, the m true atoms each show overlap ≈ k·(threshold-survival-prob), and false atoms show overlap ≈ noise. No removal needed — just threshold the overlap vector once and return all survivors. **O(|noisy_target|·L̄_A) single pass.** This is the correct, mathematically-valid multi-extraction, and it sidesteps the peeling-is-invalid death entirely.
+
+## Part 3: The Exact Test That Proves It (and would FAIL if we're lying)
+
+This is the only test that matters. It must measure the thing that's irreducible: **noise tolerance in specified roles, across the fan-out boundary.**
+
+```rust
+#[test]
+fn test_fuzzy_structural_query_noise_and_fanout() {
+    let mut hms = Hms::new();
+    let n_entities = 100_000;
+    let entities: Vec<EntityId> = (0..n_entities).map(|_| hms.fresh_atom()).collect();
+    let loves = hms.fresh_relation();
+
+    // Build a graph with CONTROLLED fan-out per subject.
+    // subject[i] loves exactly fanout[i] distinct objects.
+    let fanouts = [1usize, 5, 10, 20, 30, 40, 50, 80, 150];
+    let mut ground_truth: HashMap<EntityId, Vec<EntityId>> = HashMap::new();
+    for (gi, &f) in fanouts.iter().enumerate() {
+        let subj = entities[gi];
+        let objs: Vec<_> = (0..f).map(|j| entities[1000 + gi*200 + j]).collect();
+        for &o in &objs { hms.insert_triple(subj, loves, o); }
+        ground_truth.insert(subj, objs);
+    }
+    // Add 1M noise triples so the composite memory is realistically loaded.
+    for _ in 0..1_000_000 {
+        hms.insert_triple(rand_entity(), rand_relation(), rand_entity());
+    }
+
+    // For each fan-out level AND each subject-noise level, measure recall/precision.
+    for (gi, &f) in fanouts.iter().enumerate() {
+        let subj = entities[gi];
+        let truth: HashSet<_> = ground_truth[&subj].iter().copied().collect();
+
+        for &noise_frac in &[0.0, 0.10, 0.25, 0.50, 0.75] {
+            // Corrupt the SUBJECT vector: flip noise_frac of its active bits.
+            let noisy_subj = corrupt(hms.atom_vec(subj), noise_frac);
+
+            let results = hms.fuzzy_structural_query(
+                &[(Role::Subject, &noisy_subj), (Role::Relation, &hms.atom_vec(loves))],
+                Role::Object,
+            );
+            let returned: HashSet<_> = results.iter()
+                .filter(|(_, conf)| *conf > 0.5)
+                .map(|(e, _)| *e).collect();
+
+            let tp = returned.intersection(&truth).count();
+            let recall = tp as f64 / f as f64;
+            let precision = if returned.is_empty() { 1.0 }
+                            else { tp as f64 / returned.len() as f64 };
+
+            println!("fanout={f:3} noise={noise_frac:.2} \
+                      recall={recall:.3} precision={precision:.3} \
+                      path={}", if f <= 40 {"algebraic"} else {"materialized"});
+
+            // THE ASSERTIONS THAT MUST HOLD (or the product is a lie):
+            if f <= 40 {
+                // Algebraic path: this is the irreducible claim.
+                if noise_frac <= 0.25 {
+                    assert!(recall >= 0.95, "algebraic recall collapsed: f={f} noise={noise_frac}");
+                    assert!(prec

@@ -1,0 +1,130 @@
+[MiniMax-M3 Round 2]: # MiniMax-M3 — Round 2
+
+I've now read all four Round 2 positions. The good news: real technical convergence is happening. The bad news: **every single proposal has a fatal missing piece that will prevent HMS from scaling past a few thousand stored patterns**, and nobody has addressed it. I'll get to that, but first I have to challenge specific claims.
+
+## 1. CHALLENGE: MiMo's Sequential Peeling Has a Silent Error Accumulation Problem
+
+MiMo's `set_retrieve` is the right *idea* — blind source separation via iterative detection-and-removal — but the implementation has a critical flaw that will cause it to silently corrupt results as N grows.
+
+Look at the core step:
+
+```rust
+residual_indices = sparse_xor(&residual_indices, &item_memory.patterns[best_idx]);
+```
+
+This XOR is **exact subtraction only when `best_match` is exactly the stored pattern**. In the first iteration, the residual is the noisy unbinding result. You find the best match by maximum overlap, but the "best match" vector you retrieve from `item_memory.patterns[best_idx]` is the *clean* stored pattern. XORing it against the noisy residual:
+
+- **Correctly removes** the bits that were signal from pattern `best_idx` in the residual
+- **Also removes** bits that were noise from *other* patterns but happened to be present in `best_idx` — these were real signal that should have been preserved
+- **Leaves behind** bits that were noise from `best_idx` that don't appear in the clean stored pattern — these accumulate as garbage
+
+The net effect: each peel iteration introduces ~ρ·D = 64 spurious bit errors into the residual. After extracting 10 patterns, you've accumulated ~640 noise bits in a 64-sparse representation — **the residual is now 10× denser than it should be**, and the attractor cleanup can't distinguish signal from accumulated peeling noise.
+
+**The fix is mandatory and nobody proposed it:**
+
+```rust
+pub fn set_retrieve_v2(
+    noisy_vector: &[u32],
+    item_memory: &BitsetAttractorMemory,
+    max_items: usize,
+    confidence_threshold: f32,
+) -> Vec<(Vec<u32>, f32)> {
+    let mut found = Vec::new();
+    let mut residual = noisy_vector.to_vec();
+    
+    for iteration in 0..max_items {
+        // Step 1: ATTRACTOR CLEAN the residual first, not the raw noisy vector
+        // This is the critical fix — clean before peeling, not after
+        let cleaned_residual = item_memory.attractor_single(&residual, 5);
+        
+        // Step 2: Compute overlaps using the CLEANED residual
+        let overlaps = compute_overlaps(&cleaned_residual, &item_memory.patterns);
+        let (best_idx, best_overlap) = overlaps.iter()
+            .enumerate()
+            .max_by_key(|(_, o)| *o)
+            .unwrap();
+        
+        let confidence = best_overlap as f32 / K as f32; // normalize by k
+        if confidence < confidence_threshold { break; }
+        
+        // Step 3: Peel the ATTRACTOR-CLEANED version, not the raw best_idx
+        // cleaned_residual already approximates best_idx, so XOR is near-exact
+        residual = sparse_xor(&cleaned_residual, &item_memory.patterns[best_idx]);
+        
+        found.push((item_memory.patterns[best_idx].clone(), confidence));
+    }
+    found
+}
+```
+
+The key change: **clean before peel, not after**. The attractor snaps the noisy residual to the nearest stored pattern, and *that* cleaned approximation is what you XOR out. Now the XOR is between two clean vectors, so it's exact subtraction. The residual after peeling is genuinely just the remaining N-1 patterns plus fresh noise, not accumulated peeling errors.
+
+**But this still doesn't solve the fundamental problem:** after peeling, the residual is still a bundled superposition of N-1 patterns. The attractor cleanup of that residual will snap to the *single* nearest pattern, not separate the N-1 components. So you're not actually doing blind source separation — you're doing greedy single-pattern extraction. To extract all N patterns, you need to re-bundle the remaining N-1 after each peel, which is exactly the superposition capacity problem we're trying to solve.
+
+**The honest truth:** set retrieval from a BSC superposition plate is fundamentally limited to ~C_max items, where C_max is the cleanup capacity. Sequential peeling doesn't increase C_max; it just lets you extract items one at a time from a bundle that's already at capacity. For frontiers larger than C_max, you need a different approach.
+
+## 2. CHALLENGE: DeepSeek's HierarchicalFrontier Is Unfixable
+
+MiMo already pointed out the centroid problem — you can't compute a meaningful centroid of sparse binary vectors. I want to add a second fatal flaw: **the meta-plate has the same capacity limit, just one level up.**
+
+If base plates hold C_base ≈ 80 items, and the meta-plate bundles centroids, then the meta-plate can hold ~80 centroids before its own SNR collapses. That's 80 × 80 = 6,400 effective items, which DeepSeek claims. But:
+
+1. The centroids aren't real entities — they're synthetic vectors that the attractor has never seen. When you unbind from the meta-plate and try to clean up, the attractor has no fixed point to snap to. **The cleanup step will fail or return garbage.**
+
+2. The meta-plate capacity is itself subject to the same SNR degradation. 80 centroids bundled together have the same noise floor as 80 entities bundled together. You've moved the capacity wall, not removed it.
+
+3. Computing the centroids requires either majority-vote (which is just another superposition plate with its own capacity) or mean-of-bitset (which produces a non-BSC vector incompatible with the rest of the algebra).
+
+**DeepSeek's hierarchy is turtles all the way down.** The fundamental limit is that BSC superposition capacity is bounded by the SNR of majority-vote decoding, and no amount of meta-level bundling changes that bound. The only way to exceed it is to materialize to an explicit set, which loses the algebraic property.
+
+## 3. CHALLENGE: Qwen's `M_adj^k` Is Still Wrong and Nobody Has Fixed It
+
+Claude demolished this in Round 2, but I want to add the final nail. Even if we charitably interpret `M_adj^k` as "iterated unbinding-and-cleanup," the operation doesn't compose because:
+
+- After hop 1, you have a *set* of frontier entities (not a single vector)
+- To do hop 2 algebraically, you need to bind the relation to *each* frontier entity and bundle the results
+- This re-bundling step is exactly the superposition capacity problem
+- If the frontier has > C_max entities, the bundle saturates and cleanup returns garbage
+
+**The "O(k·D) independent of branching" claim is false in any regime where the frontier exceeds C_max.** And in any realistic graph (avg degree > 5, 3+ hops), the frontier exceeds C_max at some hop.
+
+## 4. THE MISSING PIECE: RETRIEVAL INDEX
+
+**Nobody has addressed how the attractor item memory scales to 10,000+ patterns.** This is the single biggest gap in all proposals.
+
+The bitset attractor computes `|q ∩ p|` for all N stored patterns per iteration. With AVX2 popcount and 2048-byte patterns, that's ~200 cycles per pattern. For N=10,000:
+
+- **Time**: 10,000 × 200 cycles = 2,000,000 cycles ≈ **0.5ms per iteration** (single-threaded)
+- **Memory**: 10,000 × 2048 bytes = **20MB** — exceeds L3 cache on most CPUs
+- **The real bottleneck**: DRAM bandwidth at ~20GB/s means 20MB takes **1ms just to stream**, plus 0.5ms compute = 1.5ms per iteration
+
+That's actually within the 50ms budget for 1-3 iterations. But for N=100,000:
+
+- **Memory**: 200MB — definitely DRAM-resident
+- **Time**: 100,000 × 200 cycles = 20M cycles ≈ **5ms compute + 10ms memory = 15ms per iteration**
+- **3 iterations**: 45ms — right at the budget limit
+
+For N=1,000,000 (the regime where HMS competes with Pinecone):
+
+- **Naive approach**: 150ms+ per iteration — **completely fails the budget**
+- **You need a retrieval index** — LSH, HNSW, or equivalent
+
+**This is Pinecone's entire moat.** Their NSG (Navigating Spreading-out Graph) index makes billion-scale vector search fast. HMS needs an equivalent for BSC sparse binary vectors with Jaccard distance.
+
+### Proposed: BSC-Adapted Multi-Probe LSH (MinHash)
+
+The natural index for sparse binary Jaccard similarity is **MinHash** (Broder, 1997):
+
+```rust
+pub struct MinHashIndex {
+    // T hash tables, each with W hash functions
+    tables: Vec<HashMap<u64, Vec<u32>>>,  // hash bucket → pattern indices
+    permutations: Vec<Vec<u32>>,          // random permutations of dimensions
+    num_tables: usize,                    // T, typically 20-50
+    hashes_per_table: usize,              // W, typically 2-4
+}
+
+impl MinHashIndex {
+    pub fn build(patterns: &[Vec<u32>]) -> Self {
+        let t = 32;  // 32 hash tables
+        let w = 3;   // 3 min

@@ -1,0 +1,92 @@
+[MiMo-V2.5-Pro Round 2]: # MiMo-V2.5-Pro — Round 2
+
+I've now read all positions across both rounds carefully. Everyone is converging on some good ideas, but there's a **foundational gap** in every single proposal that will make or break the entire system, and nobody has addressed it. I'll get there, but first I need to challenge specific claims.
+
+## 1. CHALLENGE: DeepSeek's Cyclic Shift Defense Is Half-Right but Incomplete
+
+DeepSeek correctly showed that `ρ¹(ρ¹(x)) = ρ²(x)` preserves composition: `father∘father` maps to `ρ²(father)`, distinct from `ρ¹(father)`. They correctly pushed back on Claude's random permutations. I agree — steal cyclic shifts, kill random permutations.
+
+**But DeepSeek didn't address the real problem with cyclic shifts for composition discovery.** To discover that `father∘father ≈ grandfather`, you need to compare `ρ²(father)` against `ρ¹(grandfather)`. But how does the system *know* that `ρ²(father)` represents a 2-hop composition? You need explicit bookkeeping of *which shift level* each bundled relation occupies. In a system with thousands of relation types and arbitrary composition depths, this means maintaining a registry:
+
+```rust
+struct RelationRegistry {
+    // relation_id → (base_vector, current_max_shift_depth)
+    relations: HashMap<u32, (Vec<u32>, u32)>,
+    // To discover father∘father≈grandfather, you compare:
+    // shift(father, 2) vs shift(grandfather, 1)
+    // This requires exhaustive pairwise comparison across shift levels
+}
+```
+
+For R relation types and max depth K, composition discovery costs O(R² · K) pairwise comparisons, each requiring a Jaccard computation of O(64) operations. This is manageable (~10ms for R=1000, K=10) but DeepSeek presented it as if it were free. It's not. **Steal the shifts, but implement the registry explicitly.**
+
+## 2. CHALLENGE: Claude's Derivation of DeepSeek's Degradation Formula Is Correct but Proves the Wrong Thing
+
+Claude plugged ρ=1/256, p=0.1 into DeepSeek's formula and got Jaccard=0.034, concluding sparse BSC can't degrade gracefully. The math is right. **But Claude is proving a fact about dimension dropout that nobody actually needs.**
+
+No real system drops 10% of its storage dimensions uniformly at random. The real degradation modes are:
+- **Query noise**: some active indices are wrong → Jaccard degrades proportionally to noise fraction (this *is* graceful for sparse vectors)
+- **Query partial**: fewer active indices → Jaccard is `|query∩target|/|query∪target|` which decreases as query gets sparser, but if you have even 20 of 64 indices, Jaccard ≈ 0.25, and the attractor can handle that
+- **Storage corruption**: some stored bits flip → same as query noise
+
+For the *actually relevant* degradation modes, sparse BSC is fine. Claude won a math argument nobody needed. **But Claude is also right that the attractor IS the graceful degradation mechanism**, and this reframe is the most valuable insight in Round 2. Steal it.
+
+## 3. CHALLENGE: DeepSeek's HierarchicalFrontier Is Overengineered and Fragile
+
+DeepSeek proposes a two-level hierarchy with meta-plates and centroids for scaling the frontier. Let me walk through what actually happens when you try to use it:
+
+1. You have a frontier of 200 entities after hop 1
+2. You split into ~3 base plates of ~70 items each
+3. You compute a "centroid" per plate — but **what is a centroid of sparse binary vectors?** You can't average indices. Majority-vote? That's just another superposition plate with its own capacity limit. Mean of the bitset? That gives you a real-valued vector, not BSC.
+4. The meta-plate bundles these centroids and tries to do algebraic unbinding, but the centroids are *synthetic vectors that were never stored in the item memory*, so attractor cleanup doesn't have them as fixed points.
+
+**The hierarchical approach requires the centroids to be recognizable entities, which they're not.** This is a fundamental problem: VSA operations on bundled superpositions produce vectors that aren't in the item memory, so the attractor has nothing to snap to.
+
+**My alternative: sequential peeling.** This is the correct VSA approach for extracting multiple items from a noisy superposition, and nobody has proposed it.
+
+```rust
+/// Extract multiple stored patterns from a noisy superposition
+/// This is the SET retrieval attractor — fundamentally different from
+/// single-pattern retrieval, and required for frontier expansion
+pub fn set_retrieve(
+    noisy_vector: &[u32],
+    item_memory: &BitsetAttractorMemory, 
+    max_items: usize,
+    min_overlap: u32,  // minimum |intersection| to declare a match
+) -> Vec<Vec<u32>> {
+    let mut found = Vec::new();
+    let mut residual_indices = noisy_vector.to_vec();
+    
+    for _ in 0..max_items {
+        // 1. Find the single best-matching stored pattern
+        let overlaps = compute_overlaps(&residual_indices, &item_memory.patterns);
+        let (best_idx, best_overlap) = overlaps.iter()
+            .enumerate()
+            .max_by_key(|(_, o)| *o)
+            .unwrap();
+        
+        if *best_overlap < min_overlap { break; }  // nothing left to extract
+        
+        // 2. "Peel" the best match from the residual via XOR
+        //    residual ← residual ⊕ best_match
+        //    This removes the contribution of the matched pattern
+        residual_indices = sparse_xor(&residual_indices, &item_memory.patterns[best_idx]);
+        
+        // 3. The peeled residual still has noise — clean it up with attractor
+        //    before extracting the next item
+        residual_indices = item_memory.attractor_single(&residual_indices, 3);
+        
+        found.push(item_memory.patterns[best_idx].clone());
+    }
+    found
+}
+```
+
+**This is blind source separation in the VSA domain.** It's the equivalent of ICA/cocktail-party-problem for sparse binary vectors. Each iteration peels one component, then cleans the residual, then peels the next. The critical parameter is `min_overlap` — it acts as a detection threshold that prevents peeling noise.
+
+**Why this solves the frontier problem without hierarchical plates:**
+- Frontier after hop 1: a noisy superposition of ~200 entities
+- `set_retrieve` peels them out one by one into an explicit set
+- For each entity in the set, apply the next-hop relation algebraically
+- Bundle the results back into a new frontier superposition
+- If the new frontier exceeds capacity, `set
