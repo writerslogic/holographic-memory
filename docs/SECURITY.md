@@ -72,6 +72,40 @@ The audit log at `{storage_path}/audit.bin` is an append-only binary file with f
 - **Queryable**: `audit_since(timestamp_ms)` returns all entries after a given time
 - **Tamper evidence**: When signing is enabled, each entry carries an Ed25519 signature over its timestamp, operation, and ID hash
 
+## IDF Clipping Poisoning Defense (Meaning Memory)
+
+### Threat
+
+When meaning memory is enabled, AtomMemory and CompositeMemory use IDF-weighted posting-list overlap scanning to rank candidates during structural queries and Hopfield attractor cleanup. An attacker who can insert vectors with carefully chosen active dimensions could exploit extreme IDF weights to dominate similarity scores, causing the system to return attacker-controlled atoms as query results.
+
+For example, an adversary could insert atoms that activate rarely-used dimensions, inflating those dimensions' IDF weights. Subsequent queries touching those dimensions would disproportionately favor the poisoned atoms.
+
+### Mitigation: Proportional IDF Clipping
+
+The `IdfWeights` module applies proportional clipping to bound all IDF weights at `clip_factor * median(weights)`. This is computed as follows:
+
+1. Collect all positive IDF weights.
+2. Sort them and find the median.
+3. Cap any weight exceeding `clip_factor * median` to that threshold.
+
+The default `idf_clip_factor` is **3.0**, meaning no dimension's IDF weight can exceed 3x the median weight. This limits the maximum influence any single dimension can have on overlap scores, regardless of how many poisoned vectors are inserted.
+
+### Configuration
+
+The clip factor is configurable via `MeaningConfig`:
+
+```rust
+config.meaning.idf_clip_factor = 3.0; // default: cap at 3x median
+```
+
+Lower values provide stronger poisoning resistance at the cost of reduced discrimination between rare and common dimensions. A clip factor of 2.0 is recommended for adversarial environments. Values below 1.5 may degrade retrieval quality for legitimate queries.
+
+### Limitations
+
+- IDF clipping is a statistical defense, not a cryptographic one. It bounds the impact of poisoned dimensions but does not prevent insertion of adversarial vectors.
+- Clipping is applied globally during `recompute()` and is not per-query. A large batch of poisoned inserts between recomputation cycles could temporarily skew results.
+- The defense assumes a well-populated memory. With fewer than ~10 atoms, the median is unstable and clipping may be ineffective.
+
 ## Enabling Security Features
 
 ### Rust
