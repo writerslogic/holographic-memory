@@ -299,8 +299,8 @@ mod tests {
         // Flip 25% of active indices (16 of 64)
         let mut rng = rand::thread_rng();
         use rand::Rng;
-        for i in 0..16 {
-            noisy[i] = rng.gen_range(0..16384u32);
+        for item in noisy.iter_mut().take(16) {
+            *item = rng.gen_range(0..16384u32);
         }
         noisy.sort_unstable();
         noisy.dedup();

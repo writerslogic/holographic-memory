@@ -91,7 +91,7 @@ impl Decomposer {
 
     pub fn decompose(&self, text: &str) -> Vec<MeaningUnit> {
         let mut results = Vec::new();
-        for sentence in text.split(|c: char| c == '.' || c == '!' || c == '?') {
+        for sentence in text.split(['.', '!', '?']) {
             let sentence = sentence.trim();
             if sentence.is_empty() {
                 continue;
