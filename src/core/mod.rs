@@ -1,9 +1,15 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+pub(crate) mod admission;
 pub(crate) mod audit;
 pub(crate) mod config;
 pub(crate) mod graph;
+pub(crate) mod idf;
+pub(crate) mod indexed_memory;
+pub(crate) mod posting;
+pub(crate) mod role;
+pub(crate) mod tombstone;
 pub(crate) mod diffusion;
 pub(crate) mod encoding;
 pub mod engine;

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::{Parser, Subcommand};
-use hms_native::core::engine::HmsCore;
-use hms_native::core::entangled::EntangledHVec;
+use holographic_memory::core::engine::HmsCore;
+use holographic_memory::core::entangled::EntangledHVec;
 use serde_json::json;
 use std::time::Instant;
 

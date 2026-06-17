@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use hms_native::core::entangled::EntangledHVec;
-use hms_native::core::intersection::sparse_intersection_count;
+use holographic_memory::core::entangled::EntangledHVec;
+use holographic_memory::core::intersection::sparse_intersection_count;
 use std::time::Instant;
 
 fn main() {
