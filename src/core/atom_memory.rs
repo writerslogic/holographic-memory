@@ -29,6 +29,13 @@ impl AtomMemory {
         (idx, vec)
     }
 
+    pub fn insert_with_vec(&self, id: &str, vec: &EntangledHVec) -> u32 {
+        if let Some(idx) = self.inner.idx_for(id) {
+            return idx;
+        }
+        self.inner.insert(id.to_string(), vec.clone())
+    }
+
     pub fn get(&self, id: &str) -> Option<EntangledHVec> {
         self.inner.get(id)
     }
