@@ -13,11 +13,13 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   |   +-- shard.rs              ShardSet, ShardManager, Shard
   |   +-- concepts.rs           Concept synthesis (clustering + bundling)
   |   +-- knowledge.rs          Triplets, sequences, analogies
+  |   +-- structural.rs         Fuzzy structural queries (algebraic + materialized)
+  |   +-- multi_hop.rs          Multi-hop reasoning (rule rewrite + chained lookup)
   |
   +-- entangled.rs              EntangledHVec: sparse hypervector type
   +-- encoding.rs               Text -> hypervector (character trigrams)
   +-- storage.rs                PersistentArena: mmap segmented log
-  +-- config.rs                 HmsConfig and sub-configs
+  +-- config.rs                 HmsConfig, MeaningConfig, and sub-configs
   +-- security.rs               SigningManager, EncryptionManager (feature-gated)
   +-- audit.rs                  AuditLog: append-only operation log
   +-- diffusion.rs              DiffusionFactorizer: score-based vector decomposition
@@ -25,6 +27,17 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   +-- types.rs                  Shared types (RetrievalResult, ConceptCandidate, etc.)
   +-- error.rs                  HmsError enum
   +-- intersection.rs           Sparse sorted-merge intersection
+  +-- atom_memory.rs            AtomMemory: concept vector store (meaning memory)
+  +-- composite_memory.rs       CompositeMemory: role-bound composite vectors
+  +-- triple_store.rs           TripleStore: symbolic (S, R, O) index
+  +-- role.rs                   RoleRegistry: role-shift algebra
+  +-- rules.rs                  RuleStore: composition rule definitions
+  +-- admission.rs              AdmissionControl: fan-out gating
+  +-- decompose.rs              Decomposer: vector decomposition
+  +-- indexed_memory.rs         IndexedMemory: posting + IDF substrate
+  +-- posting.rs                PostingShard: per-dimension posting lists
+  +-- idf.rs                    IdfWeights: IDF with proportional clipping
+  +-- tombstone.rs              TombstoneMap: soft-delete tracking
   +-- index/
   |   +-- mod.rs                Index traits
   |   +-- inverted.rs           Sparse inverted index for high-sparsity queries
@@ -41,6 +54,73 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
       +-- training.rs           NSG construction
       +-- search.rs             Greedy graph search
       +-- graph.rs              Graph operations (KNN, pruning, centroid)
+```
+
+## Meaning Memory Module Graph
+
+```
+HmsCore (engine/mod.rs)
+  |
+  +-- atom_memory.rs            AtomMemory: concept vector store
+  |     +-- indexed_memory.rs   IndexedMemory: posting lists + IDF + tombstones
+  |           +-- posting.rs    PostingShard: inverted posting lists per dimension
+  |           +-- idf.rs        IdfWeights: IDF weighting with proportional clipping
+  |           +-- tombstone.rs  TombstoneMap: soft-delete tracking
+  |
+  +-- composite_memory.rs       CompositeMemory: role-bound triple vectors
+  |     +-- indexed_memory.rs   (shared substrate with AtomMemory)
+  |
+  +-- triple_store.rs           TripleStore: symbolic (S, R, O) index
+  |                             Four-way FxHash index: by_subject, by_relation,
+  |                             by_object, by_composite
+  |
+  +-- role.rs                   RoleRegistry: role -> cyclic-shift mapping
+  |                             compose(), unbind(), compose_triple()
+  |
+  +-- rules.rs                  RuleStore: CompositionRule definitions
+  |                             Maps relation chains to derived relations
+  |
+  +-- admission.rs              AdmissionControl: fan-out gating
+  |                             Algebraic vs. MaterializedLookup decision
+  |
+  +-- decompose.rs              Decomposer: vector decomposition
+  |
+  +-- engine/
+      +-- structural.rs         fuzzy_structural_query(): algebraic + materialized paths
+      +-- multi_hop.rs          multi_hop_query(): rule rewrite + chained lookup
+```
+
+### Data Flow: Structural Query
+
+```
+fuzzy_structural_query(known_bindings, target_role)
+  -> RoleRegistry.compose(known)          // build partial query vector
+  -> CompositeMemory.overlap_scan(query)  // IDF-weighted posting intersection
+  -> AdmissionControl.check(fan_out)      // gate on candidate count
+     |
+     +-- Algebraic path (fan_out <= limit):
+     |   -> composite.bind(query)         // XOR-unbind known roles
+     |   -> permute(dim - target_shift)   // inverse cyclic shift
+     |   -> hopfield_cleanup(residual)    // attractor network recovery
+     |      -> overlap_scan + sparse_softmax + iterate
+     |   -> return (entity_id, confidence)
+     |
+     +-- Materialized path (fan_out > limit):
+         -> TripleStore.by_composite_id() // symbolic index lookup
+         -> extract target_role field
+         -> return (entity_id, score)
+```
+
+### Data Flow: Multi-Hop Query
+
+```
+multi_hop_query(start, [rel1, rel2, ...], ctx, rule_store)
+  -> if single relation:
+       single_hop -> fuzzy_structural_query
+  -> if two relations + matching CompositionRule:
+       rule_rewrite -> fuzzy_structural_query(derived_relation)
+  -> else:
+       chained_lookup -> TripleStore walk, hop by hop
 ```
 
 ## Lock Ordering
