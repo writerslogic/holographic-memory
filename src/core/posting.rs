@@ -36,6 +36,7 @@ impl PostingShard {
     }
 
     /// Remove a vector ID from posting lists for each of its active indices.
+    #[allow(dead_code)]
     pub fn remove(&mut self, vec_id: u32, indices: &[u32]) {
         for &idx in indices {
             if (idx as usize) < self.dim {
