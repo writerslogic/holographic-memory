@@ -3,6 +3,7 @@
 
 pub(crate) mod audit;
 pub(crate) mod config;
+pub(crate) mod graph;
 pub(crate) mod diffusion;
 pub(crate) mod encoding;
 pub mod engine;

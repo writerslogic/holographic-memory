@@ -79,3 +79,54 @@ pub struct MemorizeBatchItem {
     pub id: String,
     pub text: String,
 }
+
+/// An explicit directed relation between two entities.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct Relation {
+    pub source_id: String,
+    pub relation_type: String,
+    pub target_id: String,
+    pub properties: Option<String>,
+    /// Milliseconds since epoch. 0 = unbounded.
+    pub valid_from: f64,
+    /// Milliseconds since epoch. 0 = unbounded (still active).
+    pub valid_to: f64,
+}
+
+/// Declares a relation type with inference semantics.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct RelationType {
+    pub name: String,
+    /// If true, A->B and B->C implies A->C.
+    pub transitive: bool,
+    /// If true, A->B implies B->A.
+    pub symmetric: bool,
+}
+
+/// A single hop in a graph traversal path.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct PathHop {
+    pub node_id: String,
+    pub relation_type: String,
+    pub similarity: f64,
+}
+
+/// Result of a graph traversal or path query.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct GraphPath {
+    pub hops: Vec<PathHop>,
+    /// Product of similarities along the path.
+    pub score: f64,
+}
