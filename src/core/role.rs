@@ -10,6 +10,7 @@ use super::entangled::EntangledHVec;
 /// Fixes XOR commutativity: without shifts, S XOR R XOR O = O XOR R XOR S.
 pub struct RoleRegistry {
     shifts: FxHashMap<String, usize>,
+    #[allow(dead_code)]
     dim: usize,
 }
 
@@ -71,6 +72,7 @@ impl RoleRegistry {
     /// Unbind known role-fillers from a composite to isolate the unknown role's filler.
     /// result = composite XOR XOR_i(permute(known_i, shift_i))
     /// Then inverse-permute by the target role's shift.
+    #[allow(dead_code)]
     pub fn unbind(
         &self,
         composite: &EntangledHVec,

@@ -67,6 +67,7 @@ impl TripleStore {
         idx
     }
 
+    #[allow(dead_code)]
     pub fn remove(&self, subject: &str, relation: &str, object: &str) -> bool {
         let triples = self.triples.read();
         let indices = self.by_subject.read();
@@ -133,10 +134,12 @@ impl TripleStore {
         }
     }
 
+    #[allow(dead_code)]
     pub fn all_for_subject(&self, subject: &str) -> Vec<TripleRecord> {
         self.query(Some(subject), None, None)
     }
 
+    #[allow(dead_code)]
     pub fn all_for_relation(&self, relation: &str) -> Vec<TripleRecord> {
         self.query(None, Some(relation), None)
     }

@@ -21,8 +21,10 @@ pub struct IndexedMemory {
 pub struct CleanupResult {
     pub found: bool,
     pub id: String,
+    #[allow(dead_code)]
     pub vector: EntangledHVec,
     pub confidence: f64,
+    #[allow(dead_code)]
     pub iterations: usize,
 }
 

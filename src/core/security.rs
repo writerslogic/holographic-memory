@@ -20,6 +20,7 @@ use aes_gcm::{
 #[cfg(feature = "security")]
 pub struct SigningManager {
     signing_key: SigningKey,
+    #[allow(dead_code)]
     verifying_key: VerifyingKey,
 }
 
@@ -66,6 +67,7 @@ impl SigningManager {
     }
 
     /// Verify a signature against data.
+    #[allow(dead_code)]
     pub fn verify(&self, data: &[u8], signature: &[u8; 64]) -> Result<()> {
         let sig = ed25519_dalek::Signature::from_bytes(signature);
         self.verifying_key
@@ -74,6 +76,7 @@ impl SigningManager {
     }
 
     /// Export the public verifying key (32 bytes).
+    #[allow(dead_code)]
     pub fn verifying_key_bytes(&self) -> [u8; 32] {
         self.verifying_key.to_bytes()
     }

@@ -33,6 +33,7 @@ impl TombstoneMap {
         self.bits.iter().map(|w| w.count_ones() as usize).sum()
     }
 
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.bits.clear();
     }

@@ -27,6 +27,7 @@ impl AdmissionControl {
         }
     }
 
+    #[allow(dead_code)]
     pub fn fanout_limit(&self) -> usize {
         self.fanout_limit
     }
