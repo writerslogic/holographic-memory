@@ -9,6 +9,17 @@ use crate::core::indexed_memory::hopfield_cleanup;
 use crate::core::role::RoleRegistry;
 use crate::core::triple_store::TripleStore;
 
+pub struct MeaningContext<'a> {
+    pub atom_memory: &'a AtomMemory,
+    pub composite_memory: &'a CompositeMemory,
+    pub triple_store: &'a TripleStore,
+    pub roles: &'a RoleRegistry,
+    pub admission: &'a AdmissionControl,
+    pub beta: f64,
+    pub k: usize,
+    pub max_iter: usize,
+}
+
 #[derive(Clone, Debug)]
 pub struct StructuralResult {
     pub entity_id: String,
@@ -23,23 +34,16 @@ pub enum StructuralPath {
 }
 
 pub fn fuzzy_structural_query(
-    atom_memory: &AtomMemory,
-    composite_memory: &CompositeMemory,
-    triple_store: &TripleStore,
-    roles: &RoleRegistry,
+    ctx: &MeaningContext<'_>,
     known: &[(&str, &EntangledHVec)],
     target_role: &str,
-    admission: &AdmissionControl,
-    beta: f64,
-    k: usize,
-    max_iter: usize,
 ) -> Vec<StructuralResult> {
-    let query = match roles.compose(known) {
+    let query = match ctx.roles.compose(known) {
         Ok(q) => q,
         Err(_) => return Vec::new(),
     };
 
-    let matches = composite_memory.overlap_scan(&query);
+    let matches = ctx.composite_memory.overlap_scan(&query);
     if matches.is_empty() {
         return Vec::new();
     }
@@ -52,48 +56,51 @@ pub fn fuzzy_structural_query(
         .collect();
 
     let fan_out = significant.len();
-    match admission.check(fan_out) {
-        AdmissionDecision::Algebraic => {
-            algebraic_path(&significant, &query, composite_memory, atom_memory, roles, target_role, beta, k, max_iter)
-        }
-        AdmissionDecision::MaterializedLookup => {
-            materialized_path(known, target_role, triple_store, composite_memory, &significant)
-        }
+    match ctx.admission.check(fan_out) {
+        AdmissionDecision::Algebraic => algebraic_path(&significant, &query, ctx, target_role),
+        AdmissionDecision::MaterializedLookup => materialized_path(
+            target_role,
+            ctx.triple_store,
+            ctx.composite_memory,
+            &significant,
+        ),
     }
 }
 
 fn algebraic_path(
     matches: &[(u32, f32)],
     query: &EntangledHVec,
-    composite_memory: &CompositeMemory,
-    atom_memory: &AtomMemory,
-    roles: &RoleRegistry,
+    ctx: &MeaningContext<'_>,
     target_role: &str,
-    beta: f64,
-    k: usize,
-    max_iter: usize,
 ) -> Vec<StructuralResult> {
     let mut results: Vec<StructuralResult> = Vec::new();
 
     for &(comp_idx, _) in matches {
-        let (_, composite_vec) = match composite_memory.get_by_idx(comp_idx) {
+        let (_, composite_vec) = match ctx.composite_memory.get_by_idx(comp_idx) {
             Some(v) => v,
             None => continue,
         };
 
         let residual = composite_vec.bind(query);
         let dim = residual.dim;
-        let target_shift = roles.shift_for(target_role).unwrap_or(0);
+        let target_shift = ctx.roles.shift_for(target_role).unwrap_or(0);
         let unshifted = if target_shift == 0 {
             residual
         } else {
             residual.permute(dim - target_shift)
         };
 
-        let cleanup = hopfield_cleanup(&unshifted, atom_memory.inner(), beta, k, max_iter);
+        let cleanup = hopfield_cleanup(
+            &unshifted,
+            ctx.atom_memory.inner(),
+            ctx.beta,
+            ctx.k,
+            ctx.max_iter,
+        );
         if cleanup.found {
             if let Some(existing) = results.iter_mut().find(|r| r.entity_id == cleanup.id) {
-                existing.confidence = 1.0 - (1.0 - existing.confidence) * (1.0 - cleanup.confidence);
+                existing.confidence =
+                    1.0 - (1.0 - existing.confidence) * (1.0 - cleanup.confidence);
             } else {
                 results.push(StructuralResult {
                     entity_id: cleanup.id,
@@ -104,12 +111,15 @@ fn algebraic_path(
         }
     }
 
-    results.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+    results.sort_by(|a, b| {
+        b.confidence
+            .partial_cmp(&a.confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     results
 }
 
 fn materialized_path(
-    known: &[(&str, &EntangledHVec)],
     target_role: &str,
     triple_store: &TripleStore,
     composite_memory: &CompositeMemory,
@@ -130,7 +140,10 @@ fn materialized_path(
                 "object" => &t.object_id,
                 _ => continue,
             };
-            if !results.iter().any(|r: &StructuralResult| r.entity_id == *entity) {
+            if !results
+                .iter()
+                .any(|r: &StructuralResult| r.entity_id == *entity)
+            {
                 results.push(StructuralResult {
                     entity_id: entity.clone(),
                     confidence: score as f64 / 128.0,
@@ -140,13 +153,36 @@ fn materialized_path(
         }
     }
 
-    results.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+    results.sort_by(|a, b| {
+        b.confidence
+            .partial_cmp(&a.confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     results
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn make_ctx<'a>(
+        atom_mem: &'a AtomMemory,
+        comp_mem: &'a CompositeMemory,
+        triple_store: &'a TripleStore,
+        roles: &'a RoleRegistry,
+        admission: &'a AdmissionControl,
+    ) -> MeaningContext<'a> {
+        MeaningContext {
+            atom_memory: atom_mem,
+            composite_memory: comp_mem,
+            triple_store,
+            roles,
+            admission,
+            beta: 24.0,
+            k: 64,
+            max_iter: 3,
+        }
+    }
 
     #[test]
     fn test_structural_query_algebraic() {
@@ -162,16 +198,13 @@ mod tests {
         let (_, o_vec) = atom_mem.get_or_insert("france");
 
         let composite = roles.compose_triple(&s_vec, &r_vec, &o_vec);
-        let comp_id = format!("triple_0");
+        let comp_id = "triple_0".to_string();
         comp_mem.insert(comp_id.clone(), composite);
         triple_store.add("paris", "capital_of", "france", &comp_id);
 
-        let results = fuzzy_structural_query(
-            &atom_mem, &comp_mem, &triple_store, &roles,
-            &[("subject", &s_vec), ("relation", &r_vec)],
-            "object",
-            &admission, 24.0, 64, 3,
-        );
+        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
+        let results =
+            fuzzy_structural_query(&ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object");
 
         assert!(!results.is_empty(), "Should find france");
         assert_eq!(results[0].entity_id, "france");
@@ -196,21 +229,15 @@ mod tests {
         comp_mem.insert(comp_id.clone(), composite);
         triple_store.add("john", "loves", "mary", &comp_id);
 
-        // Query object given subject + relation
-        let r1 = fuzzy_structural_query(
-            &atom_mem, &comp_mem, &triple_store, &roles,
-            &[("subject", &s_vec), ("relation", &r_vec)],
-            "object", &admission, 24.0, 64, 3,
-        );
+        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
+
+        let r1 =
+            fuzzy_structural_query(&ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object");
         assert!(!r1.is_empty());
         assert_eq!(r1[0].entity_id, "mary");
 
-        // Query subject given relation + object
-        let r2 = fuzzy_structural_query(
-            &atom_mem, &comp_mem, &triple_store, &roles,
-            &[("relation", &r_vec), ("object", &o_vec)],
-            "subject", &admission, 24.0, 64, 3,
-        );
+        let r2 =
+            fuzzy_structural_query(&ctx, &[("relation", &r_vec), ("object", &o_vec)], "subject");
         assert!(!r2.is_empty());
         assert_eq!(r2[0].entity_id, "john");
     }

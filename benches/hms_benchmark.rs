@@ -26,7 +26,9 @@ fn benchmark_entangled(c: &mut Criterion) {
     });
 
     // Bundle of 10 sparse vectors
-    let evecs: Vec<EntangledHVec> = (0..10).map(|i| EntangledHVec::new_deterministic(dim, i)).collect();
+    let evecs: Vec<EntangledHVec> = (0..10)
+        .map(|i| EntangledHVec::new_deterministic(dim, i))
+        .collect();
     c.bench_function("EntangledHVec bundle 10", |b| {
         b.iter(|| EntangledHVec::bundle(black_box(&evecs)))
     });

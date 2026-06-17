@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::Result;
+use fxhash::FxHashMap;
 use parking_lot::RwLock;
 use std::sync::Arc;
-use fxhash::FxHashMap;
 
 const PQ_CODE_LEN: usize = 16;
 
@@ -25,12 +25,7 @@ impl InvertedLists {
     }
 
     /// Append an entry to the inverted list for `cluster_id`.
-    pub fn append(
-        &self,
-        cluster_id: usize,
-        id: &str,
-        pq_codes: &[u8; PQ_CODE_LEN],
-    ) -> Result<()> {
+    pub fn append(&self, cluster_id: usize, id: &str, pq_codes: &[u8; PQ_CODE_LEN]) -> Result<()> {
         let mut lists = self.lists.write();
         let entry = InvertedListEntry {
             id: id.to_string(),
@@ -46,10 +41,13 @@ impl InvertedLists {
         if let Some(list) = lists.get(&(cluster_id as u32)) {
             // Return a clone of the entries for safety, though it's less efficient than references.
             // For 1M scale, we might want to return references or use a different structure.
-            let cloned = list.iter().map(|e| InvertedListEntry {
-                id: e.id.clone(),
-                pq_codes: e.pq_codes,
-            }).collect();
+            let cloned = list
+                .iter()
+                .map(|e| InvertedListEntry {
+                    id: e.id.clone(),
+                    pq_codes: e.pq_codes,
+                })
+                .collect();
             Ok(cloned)
         } else {
             Ok(Vec::new())

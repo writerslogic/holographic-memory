@@ -78,35 +78,93 @@ impl HmsConfigJs {
     fn into_config(self) -> crate::core::config::HmsConfig {
         use crate::core::config::*;
         let mut cfg = HmsConfig::default();
-        if let Some(v) = self.nsg_max_degree { cfg.nsg.max_degree = v as usize; }
-        if let Some(v) = self.nsg_ef_construction { cfg.nsg.ef_construction = v as usize; }
-        if let Some(v) = self.nsg_auto_threshold { cfg.nsg.auto_threshold = v as usize; }
-        if let Some(v) = self.ivf_enabled { cfg.ivf.enabled = v; }
-        if let Some(v) = self.ivf_n_clusters { cfg.ivf.n_clusters = v as usize; }
-        if let Some(v) = self.ivf_n_landmarks { cfg.ivf.n_landmarks = v as usize; }
-        if let Some(v) = self.ivf_d_reduced { cfg.ivf.d_reduced = v as usize; }
-        if let Some(v) = self.ivf_n_probe { cfg.ivf.n_probe = v as usize; }
-        if let Some(v) = self.ivf_auto_threshold { cfg.ivf.auto_threshold = v as usize; }
-        if let Some(v) = self.shard_enabled { cfg.shard.enabled = v; }
-        if let Some(v) = self.shard_count { cfg.shard.shard_count = v as usize; }
-        if let Some(v) = self.shard_auto_threshold { cfg.shard.auto_threshold = v as usize; }
-        if let Some(v) = self.shard_target_size { cfg.shard.target_shard_size = v as usize; }
-        if let Some(v) = self.component_similarity_threshold { cfg.query.component_similarity_threshold = v; }
-        if let Some(v) = self.component_max_neighbors { cfg.query.component_max_neighbors = v; }
-        if let Some(v) = self.concept_similarity_threshold { cfg.concepts.similarity_threshold = v; }
-        if let Some(v) = self.concept_min_cluster_size { cfg.concepts.min_cluster_size = v as usize; }
-        if let Some(v) = self.diffusion_steps { cfg.diffusion.steps = v as usize; }
-        if let Some(v) = self.diffusion_sigma_max { cfg.diffusion.sigma_max = v; }
-        if let Some(v) = self.diffusion_sigma_min { cfg.diffusion.sigma_min = v; }
-        if let Some(v) = self.diffusion_step_size { cfg.diffusion.step_size = v; }
-        if let Some(v) = self.diffusion_n_langevin { cfg.diffusion.n_langevin = v as usize; }
-        if let Some(v) = self.signing_enabled { cfg.security.signing_enabled = v; }
-        if let Some(v) = self.signing_key_path { cfg.security.key_path = Some(v); }
-        if let Some(v) = self.encryption_enabled { cfg.security.encryption_enabled = v; }
-        if let Some(v) = self.encryption_passphrase { cfg.security.encryption_passphrase = Some(v); }
-        if let Some(v) = self.audit_enabled { cfg.security.audit_enabled = v; }
-        if let Some(v) = self.dp_enabled { cfg.privacy.dp_enabled = v; }
-        if let Some(v) = self.dp_epsilon { cfg.privacy.epsilon = v; }
+        if let Some(v) = self.nsg_max_degree {
+            cfg.nsg.max_degree = v as usize;
+        }
+        if let Some(v) = self.nsg_ef_construction {
+            cfg.nsg.ef_construction = v as usize;
+        }
+        if let Some(v) = self.nsg_auto_threshold {
+            cfg.nsg.auto_threshold = v as usize;
+        }
+        if let Some(v) = self.ivf_enabled {
+            cfg.ivf.enabled = v;
+        }
+        if let Some(v) = self.ivf_n_clusters {
+            cfg.ivf.n_clusters = v as usize;
+        }
+        if let Some(v) = self.ivf_n_landmarks {
+            cfg.ivf.n_landmarks = v as usize;
+        }
+        if let Some(v) = self.ivf_d_reduced {
+            cfg.ivf.d_reduced = v as usize;
+        }
+        if let Some(v) = self.ivf_n_probe {
+            cfg.ivf.n_probe = v as usize;
+        }
+        if let Some(v) = self.ivf_auto_threshold {
+            cfg.ivf.auto_threshold = v as usize;
+        }
+        if let Some(v) = self.shard_enabled {
+            cfg.shard.enabled = v;
+        }
+        if let Some(v) = self.shard_count {
+            cfg.shard.shard_count = v as usize;
+        }
+        if let Some(v) = self.shard_auto_threshold {
+            cfg.shard.auto_threshold = v as usize;
+        }
+        if let Some(v) = self.shard_target_size {
+            cfg.shard.target_shard_size = v as usize;
+        }
+        if let Some(v) = self.component_similarity_threshold {
+            cfg.query.component_similarity_threshold = v;
+        }
+        if let Some(v) = self.component_max_neighbors {
+            cfg.query.component_max_neighbors = v;
+        }
+        if let Some(v) = self.concept_similarity_threshold {
+            cfg.concepts.similarity_threshold = v;
+        }
+        if let Some(v) = self.concept_min_cluster_size {
+            cfg.concepts.min_cluster_size = v as usize;
+        }
+        if let Some(v) = self.diffusion_steps {
+            cfg.diffusion.steps = v as usize;
+        }
+        if let Some(v) = self.diffusion_sigma_max {
+            cfg.diffusion.sigma_max = v;
+        }
+        if let Some(v) = self.diffusion_sigma_min {
+            cfg.diffusion.sigma_min = v;
+        }
+        if let Some(v) = self.diffusion_step_size {
+            cfg.diffusion.step_size = v;
+        }
+        if let Some(v) = self.diffusion_n_langevin {
+            cfg.diffusion.n_langevin = v as usize;
+        }
+        if let Some(v) = self.signing_enabled {
+            cfg.security.signing_enabled = v;
+        }
+        if let Some(v) = self.signing_key_path {
+            cfg.security.key_path = Some(v);
+        }
+        if let Some(v) = self.encryption_enabled {
+            cfg.security.encryption_enabled = v;
+        }
+        if let Some(v) = self.encryption_passphrase {
+            cfg.security.encryption_passphrase = Some(v);
+        }
+        if let Some(v) = self.audit_enabled {
+            cfg.security.audit_enabled = v;
+        }
+        if let Some(v) = self.dp_enabled {
+            cfg.privacy.dp_enabled = v;
+        }
+        if let Some(v) = self.dp_epsilon {
+            cfg.privacy.epsilon = v;
+        }
         cfg
     }
 }
@@ -115,10 +173,13 @@ impl HmsConfigJs {
 #[napi]
 impl HolographicMemorySystem {
     #[napi(constructor)]
-    pub fn new(dimensions: u32, storage_path: Option<String>, config: Option<HmsConfigJs>) -> Result<Self> {
+    pub fn new(
+        dimensions: u32,
+        storage_path: Option<String>,
+        config: Option<HmsConfigJs>,
+    ) -> Result<Self> {
         let cfg = config.map(|c| c.into_config());
-        let core = HmsCore::new(dimensions, storage_path, cfg)
-            .map_err(napi_err)?;
+        let core = HmsCore::new(dimensions, storage_path, cfg).map_err(napi_err)?;
         Ok(Self {
             core: Arc::new(core),
         })
@@ -157,10 +218,17 @@ impl HolographicMemorySystem {
     }
 
     #[napi]
-    pub async fn memorize_text(&self, id: String, text: String, trace_id: Option<String>) -> Result<()> {
+    pub async fn memorize_text(
+        &self,
+        id: String,
+        text: String,
+        trace_id: Option<String>,
+    ) -> Result<()> {
         let core = self.core.clone();
         run_async(move || {
-            let _span = info_span!("memorize_text", id = %id, trace_id = trace_id.as_deref().unwrap_or("")).entered();
+            let _span =
+                info_span!("memorize_text", id = %id, trace_id = trace_id.as_deref().unwrap_or(""))
+                    .entered();
             let vec = core.encode_text(&text);
             core.memorize(id, vec)
         })
@@ -170,7 +238,12 @@ impl HolographicMemorySystem {
     /// Zero-copy text ingestion from a Node.js Buffer. Avoids the UTF-8 copy
     /// that occurs with String parameters by reading bytes in-place.
     #[napi]
-    pub async fn memorize_text_buffer(&self, id: String, text: Buffer, trace_id: Option<String>) -> Result<()> {
+    pub async fn memorize_text_buffer(
+        &self,
+        id: String,
+        text: Buffer,
+        trace_id: Option<String>,
+    ) -> Result<()> {
         let core = self.core.clone();
         let text_str = std::str::from_utf8(&text)
             .map_err(|e| napi::Error::from_reason(format!("Invalid UTF-8: {}", e)))?
@@ -186,10 +259,19 @@ impl HolographicMemorySystem {
     /// Batch memorize multiple id/text pairs in a single native call.
     /// Uses rayon for parallel encoding, then inserts sequentially.
     #[napi]
-    pub async fn memorize_batch(&self, items: Vec<MemorizeBatchItem>, trace_id: Option<String>) -> Result<()> {
+    pub async fn memorize_batch(
+        &self,
+        items: Vec<MemorizeBatchItem>,
+        trace_id: Option<String>,
+    ) -> Result<()> {
         let core = self.core.clone();
         run_async(move || {
-            let _span = info_span!("memorize_batch", count = items.len(), trace_id = trace_id.as_deref().unwrap_or("")).entered();
+            let _span = info_span!(
+                "memorize_batch",
+                count = items.len(),
+                trace_id = trace_id.as_deref().unwrap_or("")
+            )
+            .entered();
             use rayon::prelude::*;
             let encoded: Vec<(String, EntangledHVec)> = items
                 .into_par_iter()
@@ -228,26 +310,26 @@ impl HolographicMemorySystem {
     pub async fn memorize_vector(&self, id: String, vector: Float32Array) -> Result<()> {
         let core = self.core.clone();
         let dense: Vec<f32> = vector.to_vec();
-        run_async(move || {
-            core.memorize_vector(id, &dense)
-        })
-        .await
+        run_async(move || core.memorize_vector(id, &dense)).await
     }
 
     #[napi]
     pub async fn memorize_scalar(&self, id: String, value: f64, min: f64, max: f64) -> Result<()> {
         let core = self.core.clone();
-        run_async(move || {
-            core.memorize_scalar(id, value, min, max)
-        })
-        .await
+        run_async(move || core.memorize_scalar(id, value, min, max)).await
     }
 
     #[napi]
-    pub async fn query(&self, text: String, k: u32, trace_id: Option<String>) -> Result<Vec<RetrievalResult>> {
+    pub async fn query(
+        &self,
+        text: String,
+        k: u32,
+        trace_id: Option<String>,
+    ) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
-            let _span = info_span!("query", k = k, trace_id = trace_id.as_deref().unwrap_or("")).entered();
+            let _span =
+                info_span!("query", k = k, trace_id = trace_id.as_deref().unwrap_or("")).entered();
             let q_vec = core.encode_text(&text);
             let results = core.query(&q_vec, k);
             Ok(results)
@@ -369,10 +451,7 @@ impl HolographicMemorySystem {
         tail: String,
     ) -> Result<()> {
         let core = self.core.clone();
-        run_async(move || {
-            core.memorize_triplet(id, head, relation, tail)
-        })
-        .await
+        run_async(move || core.memorize_triplet(id, head, relation, tail)).await
     }
 
     #[napi]
@@ -383,10 +462,7 @@ impl HolographicMemorySystem {
         k: u32,
     ) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
-        run_async(move || {
-            core.query_triplet(head, relation, k)
-        })
-        .await
+        run_async(move || core.query_triplet(head, relation, k)).await
     }
 
     /// Finds an analogy: A is to B as C is to ?.
@@ -405,7 +481,8 @@ impl HolographicMemorySystem {
     ) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
-            let _span = info_span!("find_analogy", trace_id = trace_id.as_deref().unwrap_or("")).entered();
+            let _span =
+                info_span!("find_analogy", trace_id = trace_id.as_deref().unwrap_or("")).entered();
             let results = core.find_analogy(&a, &b, &c, k.unwrap_or(5));
             Ok(results)
         })
@@ -425,10 +502,7 @@ impl HolographicMemorySystem {
     #[napi]
     pub async fn memorize_sequence(&self, id: String, sequence: Vec<String>) -> Result<()> {
         let core = self.core.clone();
-        run_async(move || {
-            core.memorize_sequence(id, &sequence)
-        })
-        .await
+        run_async(move || core.memorize_sequence(id, &sequence)).await
     }
 
     #[napi]
@@ -546,11 +620,12 @@ impl HolographicMemorySystem {
         transitive: Option<bool>,
         symmetric: Option<bool>,
     ) {
-        self.core.declare_relation_type(crate::core::types::RelationType {
-            name,
-            transitive: transitive.unwrap_or(false),
-            symmetric: symmetric.unwrap_or(false),
-        });
+        self.core
+            .declare_relation_type(crate::core::types::RelationType {
+                name,
+                transitive: transitive.unwrap_or(false),
+                symmetric: symmetric.unwrap_or(false),
+            });
     }
 
     #[napi]
@@ -667,7 +742,8 @@ mod tests {
     #[test]
     fn test_batch_memorize() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         // Simulate what memorize_batch does: parallel encode, sequential insert
         let items = vec![
@@ -699,7 +775,8 @@ mod tests {
             10_000,
             Some(dir.path().to_string_lossy().to_string()),
             Some(config),
-        ).unwrap();
+        )
+        .unwrap();
 
         // With high threshold and min size, clusters are harder to form
         for i in 0..10 {
@@ -711,7 +788,11 @@ mod tests {
         // With strict thresholds, fewer or no concepts should form
         // (this validates the config is actually used)
         for c in &concepts {
-            assert!(c.member_count >= 5, "Min cluster size should be 5, got {}", c.member_count);
+            assert!(
+                c.member_count >= 5,
+                "Min cluster size should be 5, got {}",
+                c.member_count
+            );
         }
     }
 
@@ -892,13 +973,34 @@ mod tests {
     #[test]
     fn test_triplet_memorize_and_query() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-        hms.memorize_triplet("paris_capital".to_string(), "Paris".to_string(), "is_capital_of".to_string(), "France".to_string()).unwrap();
-        hms.memorize_triplet("berlin_capital".to_string(), "Berlin".to_string(), "is_capital_of".to_string(), "Germany".to_string()).unwrap();
-        hms.memorize_triplet("tokyo_capital".to_string(), "Tokyo".to_string(), "is_capital_of".to_string(), "Japan".to_string()).unwrap();
+        hms.memorize_triplet(
+            "paris_capital".to_string(),
+            "Paris".to_string(),
+            "is_capital_of".to_string(),
+            "France".to_string(),
+        )
+        .unwrap();
+        hms.memorize_triplet(
+            "berlin_capital".to_string(),
+            "Berlin".to_string(),
+            "is_capital_of".to_string(),
+            "Germany".to_string(),
+        )
+        .unwrap();
+        hms.memorize_triplet(
+            "tokyo_capital".to_string(),
+            "Tokyo".to_string(),
+            "is_capital_of".to_string(),
+            "Japan".to_string(),
+        )
+        .unwrap();
 
-        let results = hms.query_triplet("Paris".to_string(), "is_capital_of".to_string(), 3).unwrap();
+        let results = hms
+            .query_triplet("Paris".to_string(), "is_capital_of".to_string(), 3)
+            .unwrap();
         assert!(!results.is_empty(), "Triplet query should return results");
         assert!(
             results.iter().any(|r| r.id == "paris_capital"),
@@ -911,19 +1013,28 @@ mod tests {
     #[test]
     fn test_sequence_memorize_and_query() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-        hms.memorize_sequence("recipe_1".to_string(), &[
-            "preheat oven".to_string(),
-            "mix ingredients".to_string(),
-            "pour into pan".to_string(),
-            "bake for thirty minutes".to_string(),
-        ]).unwrap();
-        hms.memorize_sequence("recipe_2".to_string(), &[
-            "boil water".to_string(),
-            "add pasta".to_string(),
-            "drain and serve".to_string(),
-        ]).unwrap();
+        hms.memorize_sequence(
+            "recipe_1".to_string(),
+            &[
+                "preheat oven".to_string(),
+                "mix ingredients".to_string(),
+                "pour into pan".to_string(),
+                "bake for thirty minutes".to_string(),
+            ],
+        )
+        .unwrap();
+        hms.memorize_sequence(
+            "recipe_2".to_string(),
+            &[
+                "boil water".to_string(),
+                "add pasta".to_string(),
+                "drain and serve".to_string(),
+            ],
+        )
+        .unwrap();
 
         // Query with a partial sequence match
         let q = hms.encode_text("preheat oven").permute(0);
@@ -936,11 +1047,13 @@ mod tests {
     #[test]
     fn test_scalar_query_ordering() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         for i in 0..20 {
             let val = i as f64 * 5.0;
-            hms.memorize_scalar(format!("temp_{}", i), val, 0.0, 100.0).unwrap();
+            hms.memorize_scalar(format!("temp_{}", i), val, 0.0, 100.0)
+                .unwrap();
         }
 
         // Query near value 50 — should return items closest to 50
@@ -949,7 +1062,12 @@ mod tests {
         assert!(!results.is_empty(), "Scalar query should return results");
 
         // Top results should cluster around value 50 (idx 10)
-        let top_idx: usize = results[0].id.strip_prefix("temp_").unwrap().parse().unwrap();
+        let top_idx: usize = results[0]
+            .id
+            .strip_prefix("temp_")
+            .unwrap()
+            .parse()
+            .unwrap();
         assert!(
             (5..=15).contains(&top_idx),
             "Top scalar result should be near value 50 (idx 10), got idx {}",
@@ -962,7 +1080,8 @@ mod tests {
     #[test]
     fn test_analyze_components() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         for i in 0..30 {
             let vec = hms.encode_text(&format!("component analysis document {}", i));
@@ -971,7 +1090,10 @@ mod tests {
 
         let vec = hms.encode_text("component analysis document 0");
         let results = hms.analyze_components(&vec);
-        assert!(!results.is_empty(), "analyze_components should return results");
+        assert!(
+            !results.is_empty(),
+            "analyze_components should return results"
+        );
         assert!(
             results.iter().all(|r| r.similarity > 0.05),
             "All results should exceed similarity threshold"
@@ -983,7 +1105,8 @@ mod tests {
     #[test]
     fn test_delete_existing() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         let vec = hms.encode_text("hello");
         hms.memorize("hello".to_string(), vec).unwrap();
@@ -994,7 +1117,10 @@ mod tests {
 
         let q = hms.encode_text("hello");
         let results = hms.query(&q, 5);
-        assert!(results.is_empty(), "Deleted vector should not appear in results");
+        assert!(
+            results.is_empty(),
+            "Deleted vector should not appear in results"
+        );
     }
 
     #[test]
@@ -1045,7 +1171,8 @@ mod tests {
     #[test]
     fn test_delete_and_rememorize() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         let v1 = hms.encode_text("version 1");
         hms.memorize("doc".to_string(), v1).unwrap();
@@ -1134,7 +1261,10 @@ mod tests {
 
         let q = hms.encode_text("shard document 0");
         let results = hms.query(&q, 5);
-        assert!(!results.is_empty(), "Multi-shard query should return results");
+        assert!(
+            !results.is_empty(),
+            "Multi-shard query should return results"
+        );
     }
 
     #[test]
@@ -1242,7 +1372,9 @@ mod tests {
         hms.compact().unwrap();
 
         let entries = hms.audit_since(0).unwrap();
-        assert!(entries.iter().any(|e| e.op == crate::core::audit::AuditOp::Compact));
+        assert!(entries
+            .iter()
+            .any(|e| e.op == crate::core::audit::AuditOp::Compact));
     }
 
     // === Graph Integration Tests ===
@@ -1250,7 +1382,8 @@ mod tests {
     #[test]
     fn test_graph_add_and_traverse() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         // Memorize some nodes
         for city in &["paris", "france", "europe"] {
@@ -1265,7 +1398,8 @@ mod tests {
             properties: None,
             valid_from: 0.0,
             valid_to: 0.0,
-        }).unwrap();
+        })
+        .unwrap();
         hms.add_relation(&crate::core::types::Relation {
             source_id: "france".into(),
             relation_type: "is_in".into(),
@@ -1273,13 +1407,17 @@ mod tests {
             properties: None,
             valid_from: 0.0,
             valid_to: 0.0,
-        }).unwrap();
+        })
+        .unwrap();
 
         assert_eq!(hms.relation_count(), 2);
 
         let paths = hms.traverse("paris", Some("is_in"), 3, 0.0);
         assert!(!paths.is_empty());
-        let targets: Vec<&str> = paths.iter().flat_map(|p| p.hops.iter().map(|h| h.node_id.as_str())).collect();
+        let targets: Vec<&str> = paths
+            .iter()
+            .flat_map(|p| p.hops.iter().map(|h| h.node_id.as_str()))
+            .collect();
         assert!(targets.contains(&"france"));
         assert!(targets.contains(&"europe"));
     }
@@ -1287,7 +1425,8 @@ mod tests {
     #[test]
     fn test_graph_transitive_inference() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         for name in &["a", "b", "c"] {
             let v = hms.encode_text(name);
@@ -1307,7 +1446,8 @@ mod tests {
             properties: None,
             valid_from: 0.0,
             valid_to: 0.0,
-        }).unwrap();
+        })
+        .unwrap();
         hms.add_relation(&crate::core::types::Relation {
             source_id: "b".into(),
             relation_type: "contains".into(),
@@ -1315,11 +1455,14 @@ mod tests {
             properties: None,
             valid_from: 0.0,
             valid_to: 0.0,
-        }).unwrap();
+        })
+        .unwrap();
 
         let paths = hms.traverse("a", Some("contains"), 3, 0.0);
         // Should have inferred single-hop a->c
-        let inferred = paths.iter().find(|p| p.hops.len() == 1 && p.hops[0].node_id == "c");
+        let inferred = paths
+            .iter()
+            .find(|p| p.hops.len() == 1 && p.hops[0].node_id == "c");
         assert!(inferred.is_some(), "Should infer transitive a->c");
     }
 
@@ -1339,7 +1482,8 @@ mod tests {
                 properties: None,
                 valid_from: 0.0,
                 valid_to: 0.0,
-            }).unwrap();
+            })
+            .unwrap();
         }
 
         let hms = HmsCore::new(10_000, Some(path), None).unwrap();
@@ -1352,7 +1496,8 @@ mod tests {
     #[test]
     fn test_graph_temporal_query() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         hms.add_relation(&crate::core::types::Relation {
             source_id: "alice".into(),
@@ -1361,7 +1506,8 @@ mod tests {
             properties: None,
             valid_from: 1000.0,
             valid_to: 2000.0,
-        }).unwrap();
+        })
+        .unwrap();
         hms.add_relation(&crate::core::types::Relation {
             source_id: "alice".into(),
             relation_type: "works_at".into(),
@@ -1369,7 +1515,8 @@ mod tests {
             properties: None,
             valid_from: 2001.0,
             valid_to: 0.0,
-        }).unwrap();
+        })
+        .unwrap();
 
         let at_1500 = hms.outgoing_relations("alice", Some("works_at"), 1500.0);
         assert_eq!(at_1500.len(), 1);
@@ -1411,7 +1558,8 @@ mod tests {
     #[test]
     fn test_graph_compact_preserves_relations() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         let v = hms.encode_text("compactable");
         hms.memorize("node1".to_string(), v).unwrap();
@@ -1422,7 +1570,8 @@ mod tests {
             properties: None,
             valid_from: 0.0,
             valid_to: 0.0,
-        }).unwrap();
+        })
+        .unwrap();
 
         hms.compact().unwrap();
         assert_eq!(hms.relation_count(), 1);
@@ -1434,9 +1583,12 @@ mod tests {
     #[test]
     fn test_find_analogy() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-        for word in &["walking", "talking", "running", "walked", "talked", "runner"] {
+        for word in &[
+            "walking", "talking", "running", "walked", "talked", "runner",
+        ] {
             let v = hms.encode_text(word);
             hms.memorize(word.to_string(), v).unwrap();
         }
@@ -1474,7 +1626,10 @@ mod tests {
         config.ivf.d_reduced = 16;
         config.ivf.n_probe = 8;
         let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
-        assert!(hms.ivf_trained(), "IVF should be loaded from disk on re-open");
+        assert!(
+            hms.ivf_trained(),
+            "IVF should be loaded from disk on re-open"
+        );
         let q = hms.encode_text("ivf persist 0");
         let results = hms.query(&q, 5);
         assert!(!results.is_empty(), "IVF query should work after reload");
@@ -1485,7 +1640,8 @@ mod tests {
     #[test]
     fn test_query_batch() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         for i in 0..20 {
             let v = hms.encode_text(&format!("batch query doc {}", i));
@@ -1496,7 +1652,11 @@ mod tests {
             .map(|i| hms.encode_text(&format!("batch query doc {}", i)))
             .collect();
         let batch_results = hms.query_batch(&queries, 3);
-        assert_eq!(batch_results.len(), 3, "Should return one result set per query");
+        assert_eq!(
+            batch_results.len(),
+            3,
+            "Should return one result set per query"
+        );
         for results in &batch_results {
             assert!(!results.is_empty(), "Each query should return results");
         }
@@ -1507,7 +1667,8 @@ mod tests {
     #[test]
     fn test_memorize_vector_through_core() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let hms =
+            HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         let dense: Vec<f32> = (0..128).map(|i| (i as f32 - 64.0) / 64.0).collect();
         hms.memorize_vector("dense_1".to_string(), &dense).unwrap();
@@ -1526,7 +1687,11 @@ mod tests {
         let metrics = hms.analyze_text("The cat sat on the mat.");
         assert!(metrics.word_count > 0);
         let score = hms.calculate_readability(&metrics);
-        assert!(score > 50.0, "Simple sentence should be highly readable (got {:.1})", score);
+        assert!(
+            score > 50.0,
+            "Simple sentence should be highly readable (got {:.1})",
+            score
+        );
     }
 
     // === Index Persistence Tests ===
@@ -1555,7 +1720,10 @@ mod tests {
         config.nsg.max_degree = 8;
         config.nsg.ef_construction = 16;
         let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
-        assert!(hms.nsg_trained(), "NSG should be loaded from disk on re-open");
+        assert!(
+            hms.nsg_trained(),
+            "NSG should be loaded from disk on re-open"
+        );
         let q = hms.encode_text("persist nsg 0");
         let results = hms.query(&q, 5);
         assert!(!results.is_empty(), "NSG query should work after reload");
@@ -1574,7 +1742,8 @@ mod tests {
             10_000,
             Some(dir.path().to_string_lossy().to_string()),
             Some(config),
-        ).unwrap();
+        )
+        .unwrap();
 
         for i in 0..50 {
             let v = hms.encode_text(&format!("accuracy test {}", i));
@@ -1609,7 +1778,8 @@ mod tests {
             10_000,
             Some(dir.path().to_string_lossy().to_string()),
             Some(config),
-        ).unwrap();
+        )
+        .unwrap();
 
         for i in 0..100 {
             let v = hms.encode_text(&format!("multi verify {}", i));
@@ -1618,7 +1788,10 @@ mod tests {
 
         let q = hms.encode_text("multi verify");
         let results = hms.query(&q, 20);
-        assert!(results.len() >= 10, "Should return many results from across shards");
+        assert!(
+            results.len() >= 10,
+            "Should return many results from across shards"
+        );
 
         // Verify results come from at least 2 different shards
         use fxhash::FxHasher;
@@ -1649,7 +1822,8 @@ mod tests {
             10_000,
             Some(dir.path().to_string_lossy().to_string()),
             Some(config),
-        ).unwrap();
+        )
+        .unwrap();
 
         for i in 0..30 {
             let v = hms.encode_text(&format!("compact shard {}", i));
@@ -1665,7 +1839,10 @@ mod tests {
 
         let q = hms.encode_text("compact shard 20");
         let results = hms.query(&q, 5);
-        assert!(!results.is_empty(), "Should find results after multi-shard compact");
+        assert!(
+            !results.is_empty(),
+            "Should find results after multi-shard compact"
+        );
     }
 
     // === IVF Integration Tests ===
@@ -1736,8 +1913,8 @@ mod tests {
 
 #[cfg(all(test, feature = "security"))]
 mod security_integration_tests {
-    use crate::core::engine::HmsCore;
     use crate::core::audit::AuditOp;
+    use crate::core::engine::HmsCore;
     use crate::core::security::SigningManager;
 
     #[test]

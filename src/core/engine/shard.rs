@@ -133,16 +133,16 @@ impl Shard {
         (ids, out_vectors)
     }
 
-    pub fn query(&self, query_vec: &EntangledHVec, k: u32, dimensions: usize) -> Vec<RetrievalResult> {
+    pub fn query(
+        &self,
+        query_vec: &EntangledHVec,
+        k: u32,
+        dimensions: usize,
+    ) -> Vec<RetrievalResult> {
         let n = self.vector_count.load(AtomicOrdering::SeqCst) as usize;
 
-        let planner = router::QueryPlanner::new(
-            self.nsg_trained(),
-            n > 0,
-            self.ivf_trained(),
-            n,
-            dimensions,
-        );
+        let planner =
+            router::QueryPlanner::new(self.nsg_trained(), n > 0, self.ivf_trained(), n, dimensions);
         let plan = planner.plan(query_vec, k);
 
         let vectors = self.vectors.read();
@@ -191,7 +191,8 @@ impl Shard {
             router::IndexRoute::IVF => {
                 if let Some(ref ivf) = *self.ivf.read() {
                     if let Ok(candidates) = ivf.query(query_vec, k as usize, plan.n_probe) {
-                        let reranked = Self::rerank_by_exact_similarity(&vectors, query_vec, &candidates);
+                        let reranked =
+                            Self::rerank_by_exact_similarity(&vectors, query_vec, &candidates);
                         if !reranked.is_empty() {
                             return reranked;
                         }
@@ -296,7 +297,12 @@ impl ShardManager {
         &self.shards[self.shard_for(id)]
     }
 
-    pub fn query(&self, query_vec: &EntangledHVec, k: u32, dimensions: usize) -> Vec<RetrievalResult> {
+    pub fn query(
+        &self,
+        query_vec: &EntangledHVec,
+        k: u32,
+        dimensions: usize,
+    ) -> Vec<RetrievalResult> {
         let per_shard: Vec<Vec<RetrievalResult>> = self
             .shards
             .par_iter()
@@ -351,7 +357,12 @@ impl ShardSet {
         }
     }
 
-    pub fn query(&self, query_vec: &EntangledHVec, k: u32, dimensions: usize) -> Vec<RetrievalResult> {
+    pub fn query(
+        &self,
+        query_vec: &EntangledHVec,
+        k: u32,
+        dimensions: usize,
+    ) -> Vec<RetrievalResult> {
         match self {
             ShardSet::Single(shard) => shard.query(query_vec, k, dimensions),
             ShardSet::Multi(mgr) => mgr.query(query_vec, k, dimensions),

@@ -191,10 +191,8 @@ impl<'a> DiffusionFactorizer<'a> {
                     }
                 }
 
-                let domain_factorizer = DiffusionFactorizer::new(
-                    &domain_codebooks[i],
-                    config.clone(),
-                );
+                let domain_factorizer =
+                    DiffusionFactorizer::new(&domain_codebooks[i], config.clone());
                 estimates[i] = domain_factorizer.denoise(&residual, iter as u64);
             }
         }

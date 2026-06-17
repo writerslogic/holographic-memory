@@ -30,7 +30,10 @@ impl RuleStore {
         let idx = rules.len();
         if rule.input_relations.len() == 2 {
             self.by_chain.write().insert(
-                (rule.input_relations[0].clone(), rule.input_relations[1].clone()),
+                (
+                    rule.input_relations[0].clone(),
+                    rule.input_relations[1].clone(),
+                ),
                 idx,
             );
         }

@@ -8,11 +8,7 @@ use super::NSGIndex;
 use crate::core::config::NSGConfig;
 use crate::core::entangled::EntangledHVec;
 
-pub fn train(
-    vectors: &[EntangledHVec],
-    ids: &[String],
-    config: &NSGConfig,
-) -> Result<NSGIndex> {
+pub fn train(vectors: &[EntangledHVec], ids: &[String], config: &NSGConfig) -> Result<NSGIndex> {
     let k_build = config.ef_construction.min(vectors.len().saturating_sub(1));
 
     let knn_graph = graph::build_knn_graph(vectors, k_build, config.seed);

@@ -14,18 +14,25 @@ use parking_lot::RwLock;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use super::admission::AdmissionControl;
+use super::atom_memory::AtomMemory;
 use super::audit::{AuditLog, AuditOp};
+use super::composite_memory::CompositeMemory;
 use super::config::HmsConfig;
+use super::decompose::Decomposer;
 use super::diffusion::DiffusionFactorizer;
 use super::encoding::encode_text_internal;
 use super::entangled::EntangledHVec;
 use super::graph::RelationStore;
 use super::ivf::IVFIndex;
+use super::role::RoleRegistry;
+use super::rules::RuleStore;
 use super::storage::PersistentArena;
 use super::text::TextProcessor;
+use super::triple_store::TripleStore;
 use super::types::{GraphPath, Relation, RelationType, TextMetrics};
 
-use shard::{ShardSet, ShardManager};
+use shard::{ShardManager, ShardSet};
 
 type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 
@@ -38,6 +45,13 @@ pub struct HmsCore {
     pub(crate) storage_path: PathBuf,
     shards: RwLock<ShardSet>,
     graph: RelationStore,
+    atom_memory: Option<AtomMemory>,
+    composite_memory: Option<CompositeMemory>,
+    triple_store: Option<TripleStore>,
+    role_registry: Option<RoleRegistry>,
+    rule_store: Option<RuleStore>,
+    decomposer: Option<Decomposer>,
+    admission: Option<AdmissionControl>,
     audit: Option<AuditLog>,
     #[cfg(feature = "security")]
     signing: Option<super::security::SigningManager>,
@@ -114,6 +128,22 @@ impl HmsCore {
             ShardSet::Single(Box::new(shard::Shard::new(dim)))
         };
 
+        let (atom_mem, comp_mem, tri_store, role_reg, rule_st, decomp, adm) =
+            if config.meaning.enabled {
+                let mc = &config.meaning;
+                (
+                    Some(AtomMemory::new(dim, mc.idf_clip_factor)),
+                    Some(CompositeMemory::new(dim, mc.idf_clip_factor)),
+                    Some(TripleStore::new()),
+                    Some(RoleRegistry::new(dim)),
+                    Some(RuleStore::new()),
+                    Some(Decomposer::new()),
+                    Some(AdmissionControl::new(mc.algebraic_max_fanout)),
+                )
+            } else {
+                (None, None, None, None, None, None, None)
+            };
+
         let core = Self {
             config: config.clone(),
             arena,
@@ -121,6 +151,13 @@ impl HmsCore {
             storage_path: base_path,
             shards: RwLock::new(shard_set),
             graph: RelationStore::new(),
+            atom_memory: atom_mem,
+            composite_memory: comp_mem,
+            triple_store: tri_store,
+            role_registry: role_reg,
+            rule_store: rule_st,
+            decomposer: decomp,
+            admission: adm,
             audit,
             #[cfg(feature = "security")]
             signing,
@@ -176,13 +213,19 @@ impl HmsCore {
 
     fn save_nsg(&self, nsg: &super::nsg::NSGIndex) -> Result<()> {
         let data = bincode::serialize(nsg)?;
-        std::fs::write(self.storage_path.join("nsg_index.bin"), self.maybe_encrypt(&data)?)?;
+        std::fs::write(
+            self.storage_path.join("nsg_index.bin"),
+            self.maybe_encrypt(&data)?,
+        )?;
         Ok(())
     }
 
     fn save_ivf(&self, ivf: &IVFIndex) -> Result<()> {
         let data = bincode::serialize(ivf)?;
-        std::fs::write(self.storage_path.join("ivf_index.bin"), self.maybe_encrypt(&data)?)?;
+        std::fs::write(
+            self.storage_path.join("ivf_index.bin"),
+            self.maybe_encrypt(&data)?,
+        )?;
         Ok(())
     }
 
@@ -240,10 +283,9 @@ impl HmsCore {
             let mut live_ids: Vec<String> = vectors.keys().cloned().collect();
             live_ids.sort();
             *reg = live_ids;
-            shard.vector_count.store(
-                reg.len() as u64,
-                std::sync::atomic::Ordering::SeqCst,
-            );
+            shard
+                .vector_count
+                .store(reg.len() as u64, std::sync::atomic::Ordering::SeqCst);
         });
 
         Ok(())
@@ -357,11 +399,49 @@ impl HmsCore {
             audit.record(AuditOp::Delete, id, self.sign_fn().as_deref())?;
         }
 
+        if let Some(ref atom_mem) = self.atom_memory {
+            atom_mem.delete(id);
+        }
+
         let shards = self.shards.read();
         if !shards.remove(id, self.dimensions)? {
             return Ok(false);
         }
         Ok(true)
+    }
+
+    pub fn memorize_meaning(&self, id: &str, text: &str) -> Result<()> {
+        let vector = self.encode_text(text);
+        self.memorize(id.to_string(), vector)?;
+
+        if let (
+            Some(ref decomposer),
+            Some(ref atom_mem),
+            Some(ref comp_mem),
+            Some(ref tri_store),
+            Some(ref roles),
+        ) = (
+            &self.decomposer,
+            &self.atom_memory,
+            &self.composite_memory,
+            &self.triple_store,
+            &self.role_registry,
+        ) {
+            if self.config.meaning.auto_decompose {
+                let units = decomposer.decompose(text);
+                for unit in &units {
+                    let (_, s_vec) = atom_mem.get_or_insert(&unit.subject);
+                    let (_, r_vec) = atom_mem.get_or_insert(&unit.relation);
+                    let (_, o_vec) = atom_mem.get_or_insert(&unit.object);
+                    let composite = roles.compose_triple(&s_vec, &r_vec, &o_vec);
+                    let comp_id =
+                        format!("{}:{}:{}:{}", id, unit.subject, unit.relation, unit.object);
+                    comp_mem.insert(comp_id.clone(), composite);
+                    tri_store.add(&unit.subject, &unit.relation, &unit.object, &comp_id);
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Compact the arena log by rewriting only live vectors. Blocks all writes during compaction.
@@ -433,6 +513,10 @@ impl HmsCore {
             audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref())?;
         }
 
+        if let Some(ref atom_mem) = self.atom_memory {
+            atom_mem.get_or_insert(&id);
+        }
+
         let count = {
             let shards = self.shards.read();
             shards.insert(id, vector, self.dimensions)?;
@@ -470,7 +554,10 @@ impl HmsCore {
             match *shards {
                 ShardSet::Single(ref old_shard) => {
                     let vectors = old_shard.vectors.read();
-                    vectors.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+                    vectors
+                        .iter()
+                        .map(|(k, v)| (k.clone(), v.clone()))
+                        .collect()
                 }
                 ShardSet::Multi(_) => return,
             }
@@ -486,7 +573,9 @@ impl HmsCore {
         }
         for shard in &mgr.shards {
             let count = shard.vectors.read().len() as u64;
-            shard.vector_count.store(count, std::sync::atomic::Ordering::SeqCst);
+            shard
+                .vector_count
+                .store(count, std::sync::atomic::Ordering::SeqCst);
             let _ = shard.rebuild_inverted_index(self.dimensions);
         }
 
@@ -523,12 +612,7 @@ impl HmsCore {
         Ok(())
     }
 
-    pub fn remove_relation(
-        &self,
-        source_id: &str,
-        relation_type: &str,
-        target_id: &str,
-    ) -> bool {
+    pub fn remove_relation(&self, source_id: &str, relation_type: &str, target_id: &str) -> bool {
         self.graph.remove(source_id, relation_type, target_id)
     }
 
@@ -544,14 +628,15 @@ impl HmsCore {
         at_time: f64,
     ) -> Vec<GraphPath> {
         let shards = self.shards.read();
-        self.graph.traverse(start_id, relation_type, max_depth, at_time, &|a, b| {
-            let vec_a = shards.get_vector(a);
-            let vec_b = shards.get_vector(b);
-            match (vec_a, vec_b) {
-                (Some(va), Some(vb)) => va.similarity(&vb),
-                _ => 0.0,
-            }
-        })
+        self.graph
+            .traverse(start_id, relation_type, max_depth, at_time, &|a, b| {
+                let vec_a = shards.get_vector(a);
+                let vec_b = shards.get_vector(b);
+                match (vec_a, vec_b) {
+                    (Some(va), Some(vb)) => va.similarity(&vb),
+                    _ => 0.0,
+                }
+            })
     }
 
     pub fn outgoing_relations(
@@ -616,6 +701,88 @@ impl HmsCore {
         Ok(all_results)
     }
 
+    // === Meaning Memory API ===
+
+    pub fn structural_query(
+        &self,
+        known: &[(&str, &EntangledHVec)],
+        target_role: &str,
+    ) -> Vec<structural::StructuralResult> {
+        let (atom_mem, comp_mem, tri, roles, adm) = match (
+            &self.atom_memory,
+            &self.composite_memory,
+            &self.triple_store,
+            &self.role_registry,
+            &self.admission,
+        ) {
+            (Some(a), Some(c), Some(t), Some(r), Some(ad)) => (a, c, t, r, ad),
+            _ => return Vec::new(),
+        };
+        let mc = &self.config.meaning;
+        let ctx = structural::MeaningContext {
+            atom_memory: atom_mem,
+            composite_memory: comp_mem,
+            triple_store: tri,
+            roles,
+            admission: adm,
+            beta: mc.beta,
+            k: 64,
+            max_iter: 3,
+        };
+        structural::fuzzy_structural_query(&ctx, known, target_role)
+    }
+
+    pub fn multi_hop(&self, start: &str, relations: &[&str]) -> Vec<multi_hop::MultiHopResult> {
+        let (atom_mem, comp_mem, tri, roles, adm, rules) = match (
+            &self.atom_memory,
+            &self.composite_memory,
+            &self.triple_store,
+            &self.role_registry,
+            &self.admission,
+            &self.rule_store,
+        ) {
+            (Some(a), Some(c), Some(t), Some(r), Some(ad), Some(ru)) => (a, c, t, r, ad, ru),
+            _ => return Vec::new(),
+        };
+        let mc = &self.config.meaning;
+        let ctx = structural::MeaningContext {
+            atom_memory: atom_mem,
+            composite_memory: comp_mem,
+            triple_store: tri,
+            roles,
+            admission: adm,
+            beta: mc.beta,
+            k: 64,
+            max_iter: 3,
+        };
+        multi_hop::multi_hop_query(start, relations, &ctx, rules, mc.max_hop_depth)
+    }
+
+    pub fn meaning_cleanup(&self, noisy: &EntangledHVec) -> Option<(String, f64)> {
+        let atom_mem = self.atom_memory.as_ref()?;
+        let mc = &self.config.meaning;
+        let result = atom_mem.cleanup(noisy, mc.beta, 64, 3);
+        if result.found {
+            Some((result.id, result.confidence))
+        } else {
+            None
+        }
+    }
+
+    pub fn declare_rule(&self, name: &str, input_relations: Vec<String>, output_relation: String) {
+        if let Some(ref rules) = self.rule_store {
+            rules.add_rule(super::rules::CompositionRule {
+                name: name.to_string(),
+                input_relations,
+                output_relation,
+            });
+        }
+    }
+
+    pub fn meaning_enabled(&self) -> bool {
+        self.config.meaning.enabled
+    }
+
     /// Returns true if the IVF index has been trained.
     pub fn ivf_trained(&self) -> bool {
         self.shards.read().ivf_trained()
@@ -636,12 +803,7 @@ impl HmsCore {
                 }
             }
 
-            let index = IVFIndex::train(
-                &vectors,
-                &ids,
-                self.dimensions,
-                &self.config.ivf,
-            )?;
+            let index = IVFIndex::train(&vectors, &ids, self.dimensions, &self.config.ivf)?;
             *shard.ivf.write() = Some(index);
             Ok(())
         })?;
@@ -668,11 +830,7 @@ impl HmsCore {
                 return Ok(());
             }
 
-            let index = super::nsg::training::train(
-                &vectors,
-                &ids,
-                &self.config.nsg,
-            )?;
+            let index = super::nsg::training::train(&vectors, &ids, &self.config.nsg)?;
             *shard.nsg.write() = Some(index);
             Ok(())
         })?;

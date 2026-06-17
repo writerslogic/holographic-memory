@@ -1,10 +1,10 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use rayon::prelude::*;
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::RetrievalResult;
+use rayon::prelude::*;
 
 impl HmsCore {
     /// Query the memory system for the k most similar vectors.

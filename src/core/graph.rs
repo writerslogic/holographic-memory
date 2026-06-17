@@ -323,7 +323,8 @@ impl RelationStore {
         let target = rel.target_id.as_bytes();
         let props = rel.properties.as_deref().unwrap_or("").as_bytes();
 
-        let len = 1 + 2 + source.len() + 2 + rtype.len() + 2 + target.len() + 8 + 8 + 4 + props.len();
+        let len =
+            1 + 2 + source.len() + 2 + rtype.len() + 2 + target.len() + 8 + 8 + 4 + props.len();
         let mut buf = Vec::with_capacity(len);
         buf.push(RELATION_MAGIC);
         buf.extend_from_slice(&(source.len() as u16).to_le_bytes());
@@ -369,7 +370,11 @@ impl RelationStore {
         let props_len = u32::from_le_bytes(data.get(pos..pos + 4)?.try_into().ok()?) as usize;
         pos += 4;
         let properties = if props_len > 0 {
-            Some(std::str::from_utf8(data.get(pos..pos + props_len)?).ok()?.to_string())
+            Some(
+                std::str::from_utf8(data.get(pos..pos + props_len)?)
+                    .ok()?
+                    .to_string(),
+            )
         } else {
             None
         };
@@ -511,15 +516,21 @@ mod tests {
 
         let paths = store.traverse("paris", Some("is_in"), 3, 0.0, &dummy_sim);
         // Should find both direct (paris->france) and transitive (paris->europe)
-        let targets: Vec<&str> = paths.iter().flat_map(|p| p.hops.iter().map(|h| h.node_id.as_str())).collect();
+        let targets: Vec<&str> = paths
+            .iter()
+            .flat_map(|p| p.hops.iter().map(|h| h.node_id.as_str()))
+            .collect();
         assert!(targets.contains(&"france"));
         assert!(targets.contains(&"europe"));
 
         // Transitive inference should produce a 1-hop inferred path to europe
-        let inferred_single_hop = paths.iter().find(|p| {
-            p.hops.len() == 1 && p.hops[0].node_id == "europe"
-        });
-        assert!(inferred_single_hop.is_some(), "Should have inferred single-hop to europe");
+        let inferred_single_hop = paths
+            .iter()
+            .find(|p| p.hops.len() == 1 && p.hops[0].node_id == "europe");
+        assert!(
+            inferred_single_hop.is_some(),
+            "Should have inferred single-hop to europe"
+        );
     }
 
     #[test]

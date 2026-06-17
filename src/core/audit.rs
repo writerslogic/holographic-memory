@@ -91,12 +91,7 @@ impl AuditLog {
     /// Record an operation. The `sign_fn` is called with the entry's
     /// signable bytes (timestamp + op + id_hash = 41 bytes) and should
     /// return a 64-byte signature, or None if signing is disabled.
-    pub fn record(
-        &self,
-        op: AuditOp,
-        id: &str,
-        sign_fn: SignFnRef<'_>,
-    ) -> Result<()> {
+    pub fn record(&self, op: AuditOp, id: &str, sign_fn: SignFnRef<'_>) -> Result<()> {
         let timestamp_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -159,7 +154,6 @@ impl AuditLog {
         }
         Ok(entries)
     }
-
 }
 
 #[cfg(test)]
@@ -224,8 +218,7 @@ mod tests {
 
         {
             let log = AuditLog::new(dir.path()).unwrap();
-            log.record(AuditOp::Memorize, "persist_test", None)
-                .unwrap();
+            log.record(AuditOp::Memorize, "persist_test", None).unwrap();
         }
 
         let log = AuditLog::new(dir.path()).unwrap();
