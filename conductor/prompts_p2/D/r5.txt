@@ -1,0 +1,1 @@
+ROUND 5: Prioritize. Is self-supervised embedding worth building for the primary use case (scrivener-mcp, personal knowledge)? Or should HMS accept from_dense() as the semantic path and focus on making the ALGEBRAIC features (composition, holographic recall, multi-hop) world-class with whatever vectors the user provides? Be honest. If the answer is defer embeddings, say so.

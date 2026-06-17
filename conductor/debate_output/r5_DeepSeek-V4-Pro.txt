@@ -1,0 +1,355 @@
+# DeepSeek-V4-Pro — Round 5: The Final Design Section
+
+I've read every round. The debate is over. Here's what survived, what died, and the ONE new thing I'm adding that nobody else specified.
+
+---
+
+## What This Document Is
+
+This is a section for the final prompt to Claude. It specifies exactly what to build, with exact algorithms, data structures, and tests. No debate. No alternatives. Just the spec.
+
+---
+
+## 1. The Architecture (What Survived Five Rounds)
+
+Three components. Nothing more.
+
+### Component A: AtomMemory
+
+**What it stores:** Atomic entity and relation vectors. `EntangledHVec` instances, k=64 sparse indices, D=16384. Never composites.
+
+**Data structure:**
+```rust
+pub struct AtomMemory {
+    shards: [PostingShard; 64],          // 64 shards × 256 dims each
+    arena: boxcar::Vec<EntangledHVec>,   // lock-free append-only
+    live: roaring::RoaringTreemap,       // tombstone bitmap
+    beta: f32,                           // inverse temperature (~24.0)
+    k_target: usize,                     // 64
+}
+
+struct PostingShard {
+    // RwLock per shard. Read-lock for queries, write-lock for inserts.
+    // Contention is negligible: a query touches ~40 shards with read locks,
+    // an insert touches ~1-2 posting lists per shard with write locks.
+    lists: parking_lot::RwLock<Vec<Vec<u32>>>,  // len 256 per shard
+}
+```
+
+**Key operations:**
+
+```rust
+impl AtomMemory {
+    /// Insert an atomic vector. Returns its atom_id.
+    /// Complexity: O(k). Touches k posting lists across ~40 shards.
+    pub fn insert(&self, atom: &EntangledHVec) -> u32;
+
+    /// Modern Hopfield cleanup: snap noisy query to exact stored atom.
+    /// Algorithm:
+    ///   1. overlaps[pid] = Σ_{d∈query} posting[d].contains(pid)  // inverted index scan
+    ///   2. attention = softmax(beta * overlaps) over LIVE atoms
+    ///   3. dim_score[d] = Σ_i attention[i] * 𝟙[d ∈ arena[i]]
+    ///   4. new_query = top_k(dim_score, k_target)  // project to k-sparse
+    ///   5. Repeat from (1) until convergence or max_iters (typically 1-3).
+    /// Returns (cleaned_atom, confidence) or None.
+    /// Complexity: O(|query| · L̄ + survivors · k + D) per iteration.
+    pub fn cleanup(&self, query: &[u32], max_iters: usize) -> Option<(EntangledHVec, f32)>;
+
+    /// Multi-extract: find ALL atoms with overlap above threshold.
+    /// Single-pass, no iterative subtraction (peeling is dead math).
+    /// Complexity: O(|query| · L̄).
+    pub fn set_retrieve(&self, query: &[u32], min_overlap: f32) -> Vec<(u32, f32)>;
+}
+```
+
+**Why no LSM segments in the final spec:** The mutable tail + Arc-swap compaction (Qwen R3, DeepSeek R3) adds complexity. For the initial build, a single-generation index with tombstones is simpler and the tombstone-decay problem only manifests after significant churn. Ship v1 without LSM. Add it in v2 when you have production churn data. The `RoaringTreemap` tombstone bitmap keeps the read path honest — `overlaps` skips dead PIDs with a single bitmap check per touched PID.
+
+### Component B: CompositeMemory
+
+**What it stores:** Canonical triple composites. `T_i = S_i ⊕ ρ₁(R_i) ⊕ ρ₂(O_i)`. These are NOT in the AtomMemory. They have their own inverted index.
+
+**Data structure:**
+```rust
+pub struct CompositeMemory {
+    shards: [PostingShard; 64],          // same sharding as AtomMemory
+    arena: boxcar::Vec<EntangledHVec>,   // stores the composite vectors
+    triple_refs: boxcar::Vec<(u32, u32, u32)>,  // (s_id, r_id, o_id) per composite
+    beta: f32,                           // possibly different from AtomMemory
+    k_target: usize,                     // ~192 (3×64, minus XOR collisions)
+}
+```
+
+**Why this exists despite Claude R4's objection:** Claude claimed storing composites causes "index blowup" and that atom-only + algebra suffices. This is wrong. As Qwen proved in R4, a fuzzy structural query `Q = S' ⊕ ρ₁(R)` has overlap ~114 with its true composite T and overlap ~1.5 with random composites. The SNR is 76:1. The Modern Hopfield softmax converges to T in one iteration. If composites aren't stored, the attractor snaps to the atom R or S, not the structure. The algebra is neutered.
+
+**But Claude was right about one thing:** composites with shared atoms (e.g., John loves Mary and John loves Bob both match Q) produce a *set* of matches. The unbind step yields a superposition of m objects. The AtomMemory can extract them only up to m ≈ 40 (set-retrieval capacity bound). Above that, materialize from the TripleStore. This is the fan-out boundary from Claude R5.
+
+**Key operations:**
+
+```rust
+impl CompositeMemory {
+    /// Insert a triple composite. Returns its composite_id.
+    pub fn insert(&self, subj: &EntangledHVec, rel: &EntangledHVec, obj: &EntangledHVec) -> u32 {
+        let composite = sparse_xor_three(subj, &shift(rel, 1), &shift(obj, 2));
+        let cid = self.arena.push(composite) as u32;
+        // Insert into inverted index (same sharded structure as AtomMemory)
+        for &dim in &self.arena[cid as usize].indices {
+            let s = (dim as usize) / 256;
+            self.shards[s].lists.write()[(dim as usize) % 256].push(cid);
+        }
+        cid
+    }
+
+    /// Structural query: given known roles (possibly noisy), find matching composites.
+    /// Returns composite_ids with overlap above threshold.
+    /// Complexity: O(|Q| · L̄_C) where L̄_C ≈ N·192/D for N composites.
+    pub fn query_structural(
+        &self,
+        known: &[(Role, &[u32])],  // (role, possibly-noisy indices)
+        min_overlap: f32,
+    ) -> Vec<(u32, f32)>;  // (composite_id, overlap)
+
+    /// Unbind a role from a composite.
+    /// composite ⊕ known_parts → noisy_target, then inverse-shift.
+    pub fn unbind_role(
+        &self,
+        composite_id: u32,
+        role_to_remove: &[(Role, &[u32])],
+        target_role: Role,
+    ) -> Vec<u32>;
+}
+```
+
+### Component C: RoleAlgebra
+
+**What it does:** Permutation-based role binding via cyclic shifts. Shift amounts are odd and coprime with D=16384.
+
+```rust
+pub struct RoleAlgebra {
+    // relation_id → shift amount (odd, < 16384)
+    relation_shifts: FxHashMap<u32, u32>,
+    // role → shift amount for fixed roles (subject=0, object=2, etc.)
+    role_shifts: [u32; 4],  // subject, relation, object, extra
+}
+
+impl RoleAlgebra {
+    pub fn new() -> Self {
+        Self {
+            relation_shifts: FxHashMap::default(),
+            role_shifts: [0, 1, 3, 5],  // coprime with 16384
+        }
+    }
+
+    /// Register a relation with a new shift amount.
+    /// Shift must be odd and < D.
+    pub fn register_relation(&mut self, relation_id: u32, shift: u32);
+
+    /// Apply cyclic shift to a sparse vector.
+    /// shift_apply(v, s)[i] = (v[i] + s) % D, preserving sorted order.
+    pub fn shift_apply(&self, indices: &[u32], shift: u32) -> Vec<u32>;
+
+    /// Inverse shift: shift_apply(v, D - shift).
+    pub fn shift_inverse(&self, indices: &[u32], shift: u32) -> Vec<u32>;
+
+    /// Bind three role-fillers into a composite.
+    pub fn bind_triple(
+        &self, 
+        subj: &[u32], 
+        rel_id: u32, 
+        rel: &[u32], 
+        obj: &[u32]
+    ) -> Vec<u32> {
+        let rel_shift = self.relation_shifts[&rel_id];
+        let shifted_rel = self.shift_apply(rel, rel_shift);
+        let shifted_obj = self.shift_apply(obj, self.role_shifts[2]);
+        sparse_xor_three(subj, &shifted_rel, &shifted_obj)
+    }
+}
+```
+
+---
+
+## 2. The One Capability To Build
+
+**`fuzzy_structural_query`** — the irreducible product.
+
+Given a partial, possibly-noisy structural pattern, return the entities filling an unknown role.
+
+**Signature:**
+```rust
+pub fn fuzzy_structural_query(
+    atom_memory: &AtomMemory,
+    composite_memory: &CompositeMemory,
+    algebra: &RoleAlgebra,
+    known: &[(Role, &[u32])],  // specified roles with possibly-noisy vectors
+    target_role: Role,          // the role to fill
+    triple_store: &TripleStore,  // for high-fanout fallback
+) -> Vec<(u32, f32)>  // (entity_id, confidence)
+```
+
+**Algorithm (exact, implementable):**
+
+```
+1. BUILD QUERY VECTOR Q
+   Q = empty sparse vector
+   for (role, vec) in known:
+       shift = algebra.role_shift(role)
+       Q = sparse_xor(Q, algebra.shift_apply(vec, shift))
+
+2. STRUCTURAL MATCH (CompositeMemory)
+   overlaps = composite_memory.overlap_scan(Q)
+   // overlap for true composite: Σ_{(role,vec)∈known} |vec ∩ true_filler|
+   // For known roles with clean vectors: full k=64 overlap per role
+   // For noisy roles: degraded by noise fraction
+   signal_floor = Σ_{(role,vec)∈known} (k * (1 - noise_frac[role]))
+   min_overlap = signal_floor * 0.7  // 30% slack for XOR collision variance
+   matches = { (cid, overlap) : overlap >= min_overlap }
+
+3. BRANCH ON FAN-OUT
+   m = |matches|
+   
+   IF m == 0:
+       return []  // no matching structure found
+   
+   IF m <= 40:  // ALGEBRAIC PATH (the unprecedented one)
+       // Re-bundle matched composites into a superposition
+       M = empty superposition (flat [u16; 16384] accumulator)
+       for (cid, _) in matches:
+           composite = composite_memory.arena[cid]
+           for dim in composite.indices:
+               M[dim] += 1
+       
+       // Unbind known roles to isolate target
+       // Remove known contributions via XOR against Q
+       noisy_target = unbind_from_bundle(M, Q, m, algebra.role_shift(target_role))
+       // noisy_target is a sparse vector approximating the superposition
+       // of all target-role fillers from the matching triples
+       
+       // Multi-extract from AtomMemory (single-pass, no peeling)
+       results = atom_memory.set_retrieve(
+           &noisy_target, 
+           min_overlap = k * 0.5  // half the bits should match
+       )
+       return results
+   
+   ELSE:  // MATERIALIZED PATH (>40 matches)
+       // Use composite IDs to look up exact objects from TripleStore
+       // This is O(m) with m bounded by total triples sharing the known roles
+       // In practice, for high-fanout queries, this is the correct path
+       return triple_store.project_objects(matches, target_role)
+```
+
+**The `unbind_from_bundle` helper (critical, and new):**
+
+This is the operation nobody specified correctly across five rounds. It unbinds known parts from a bundled superposition of composites, yielding a noisy superposition of the target fillers.
+
+```
+unbind_from_bundle(M, Q, m, target_shift):
+    // M is a [u16; 16384] accumulator of m composites
+    // Q is the query vector (known parts)
+    // We want: for each composite T_i = K_i ⊕ U_i (known ⊕ unknown),
+    //          after removing K_i (via XOR with Q), we get U_i.
+    //          But M is a bundle of m such T_i.
+    //          So: result ≈ bundle of U_i for i in matches.
+    
+    // Step 1: Threshold M to get majority-vote composite set
+    threshold = m / 2
+    bundle_bitset = [false; 16384]
+    for dim in 0..16384:
+        bundle_bitset[dim] = M[dim] > threshold
+    
+    // Step 2: XOR with Q (this removes known parts)
+    for dim in Q.indices:
+        bundle_bitset[dim] ^= true
+    
+    // Step 3: Apply inverse target shift
+    // The target filler was shifted by target_shift during binding.
+    // We inverse-shift to bring it back to the atom space.
+    result = []
+    for dim in 0..16384:
+        if bundle_bitset[dim]:
+            result.push((dim + 16384 - target_shift) % 16384)
+    
+    return result
+```
+
+**Why this works (and peeling doesn't):** This is NOT iterative subtraction. It's a single threshold-XOR-unshift operation on the bundled superposition. The threshold at m/2 preserves dimensions that appear in a majority of the matched composites. Since all m composites share the known-part structure (they matched Q), the known parts' dimensions appear in ALL m composites and survive thresholding. The unknown parts' dimensions appear in ~1 composite each and are below threshold — EXCEPT that after XOR with Q, the known parts are removed, and the *union* of unknown parts becomes the result. The inverse shift brings the target role back to atom space.
+
+**The resulting noisy_target is a superposition of m target-filler vectors** (the objects of all matching triples). The AtomMemory.set_retrieve extracts them via single-pass overlap thresholding.
+
+---
+
+## 3. The Exact Test
+
+```rust
+#[test]
+fn test_fuzzy_structural_query_end_to_end() {
+    let mut hms = Hms::new(16384, 64);  // D=16384, k=64
+    
+    // Create entities
+    let john = hms.atom_memory.insert(&random_sparse_vector());
+    let mary = hms.atom_memory.insert(&random_sparse_vector());
+    let bob = hms.atom_memory.insert(&random_sparse_vector());
+    let alice = hms.atom_memory.insert(&random_sparse_vector());
+    
+    // Create relations
+    let loves = hms.algebra.register_relation(random_sparse_vector(), 1);
+    let hates = hms.algebra.register_relation(random_sparse_vector(), 3);
+    
+    // Insert triples
+    hms.insert_triple(john, loves, mary);
+    hms.insert_triple(john, loves, alice);  // John loves TWO people
+    hms.insert_triple(bob, hates, john);
+    hms.insert_triple(mary, loves, bob);
+    
+    // Add 1000 noise triples to test selectivity
+    for _ in 0..1000 {
+        hms.insert_triple(rand_entity(), rand_relation(), rand_entity());
+    }
+    
+    // TEST 1: Exact structural query
+    // "Who does John love?" → should return {mary, alice}
+    let results = hms.fuzzy_structural_query(
+        &[(Role::Subject, &hms.atom_vector(john)),
+          (Role::Relation, &hms.atom_vector(loves))],
+        Role::Object,
+    );
+    let ids: HashSet<u32> = results.iter().map(|(id, _)| *id).collect();
+    assert!(ids.contains(&mary));
+    assert!(ids.contains(&alice));
+    assert_eq!(ids.len(), 2, "Should return exactly Mary and Alice");
+    
+    // TEST 2: Noisy subject query (THE IRREDUCIBLE TEST)
+    // Corrupt 25% of John's bits
+    let john_noisy = corrupt_vector(&hms.atom_vector(john), 0.25);
+    let results = hms.fuzzy_structural_query(
+        &[(Role::Subject, &john_noisy),
+          (Role::Relation, &hms.atom_vector(loves))],
+        Role::Object,
+    );
+    let ids: HashSet<u32> = results.iter().map(|(id, _)| *id).collect();
+    assert!(ids.contains(&mary), "Failed to recover Mary with 25% noise");
+    assert!(ids.contains(&alice), "Failed to recover Alice with 25% noise");
+    
+    // TEST 3: Inverse query
+    // "Who loves Bob?" → should return {mary}
+    let results = hms.fuzzy_structural_query(
+        &[(Role::Relation, &hms.atom_vector(loves)),
+          (Role::Object, &hms.atom_vector(bob))],
+        Role::Subject,
+    );
+    let ids: HashSet<u32> = results.iter().map(|(id, _)| *id).collect();
+    assert!(ids.contains(&mary));
+    assert_eq!(ids.len(), 1, "Only Mary loves Bob");
+    
+    // TEST 4: No result (no matching structure)
+    // "Who does Alice hate?" → no triple exists
+    let results = hms.fuzzy_structural_query(
+        &[(Role::Subject, &hms.atom_vector(alice)),
+          (Role::Relation, &hms.atom_vector(hates))],
+        Role::Object,
+    );
+    assert!(results.is_empty(), "Alice hates no one");
+    
+    // TEST 5: High fan-out (materialized path)
+    // Create an entity that loves 100 people
+    let popular = hms.atom_memory.insert(&random_sparse_vector());

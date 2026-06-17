@@ -1,13 +1,13 @@
 [package]
-name = "hms-native"
+name = "holographic-memory"
 version = "0.3.0"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["David Condrey"]
 description = "A high-performance Holographic Memory System (HMS) implementing Vector Symbolic Architectures (VSA)."
-repository = "https://github.com/writerslogic/hms"
-homepage = "https://github.com/writerslogic/hms"
-documentation = "https://docs.rs/hms-native"
+repository = "https://github.com/writerslogic/holographic-memory"
+homepage = "https://github.com/writerslogic/holographic-memory"
+documentation = "https://docs.rs/holographic-memory"
 keywords = ["vsa", "hdc", "vector-database", "semantic-search", "neuro-symbolic"]
 categories = ["algorithms", "data-structures", "science"]
 readme = "README.md"

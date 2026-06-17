@@ -1,0 +1,18 @@
+You are in Phase 2 of a focused debate on true holographic properties for HMS. Be rigorous.
+
+PHASE 1 FINDINGS (condensed from 5 parallel debates, 5535 lines):
+
+DEBATE A (C_max): Binary bundling caps at N~107. Continuous-count bundling with PERMUTATION binding (not XOR) pushes to ~327 clean / ~1000 marginal (SNR=sqrt(D/2N)). XOR on counts is provably non-invertible (reduces to mod-2). Multi-centroid M=8 is mandatory for N>300. Data structure: CountCentroid{counts:[u8;D], n_items:u32}. Dual algebra: XOR-binary for single-hop, count-based for multi-hop.
+
+DEBATE B (Holographic): Basin of attraction is massive (96.9% erasure tolerance at k=64, N=100K). BUT the cliff is sharp, not graceful. Multi-scale cascade (k={64,256,1024}) is the ONLY path to graceful degradation, with staggered cliffs. Scales MUST encode hierarchy (category/subcluster/leaf), not same identity at different densities. Attention-bundling is read-path only (write-path destroys invertibility). Storage cost: 21x for multi-scale.
+
+DEBATE C (Composition): father XOR father = 0 (self-annihilation). Composition CANNOT be derived algebraically. Must store as rule atoms: R_{F->GF} = rho_1(father) XOR rho_1(grandfather). N_safe=7 supporting triples to crystallize a rule. ~26 rules per shard before interference. Max arity=7 before recall<0.5. Hierarchical binding needs Sidon shift-schedule (cyclic shifts are commutative and BROKEN).
+
+DEBATE D (Embeddings): Two-tier identity: fixed lexical anchor + evolving semantic vector. First-order folding ONLY (second-order collapses to rank-1). PPMI deflation at sparsification, IDF reweighting mandatory. Polysemy via context-conditioned routing (spawn new sense at Jaccard<0.25). Convergence: ~650 occurrences per word. Corpus floor: ~350M tokens. Memory: 215MB pre-convergence, 30MB steady-state for 50K words.
+
+DEBATE E (Production): Poisoning: 55 crafted composites hijack queries at beta=0.5. Defense: Proportional IDF Clipping (3x median). Deletes: O(1) tombstone + background sweep, fan-out-charged admission control, staleness <= P_max/R_sweep. QPS: 6-10K at 10M atoms (sorted-merge, bandwidth-bound). LSM delta segments for writes. Memory: 7.43GB at 10M atoms fits 8GB budget.
+
+CROSS-POLLINATION:
+- Debate A proved count-based bundling extends capacity to ~1000. Could multi-scale vectors USE count-based representation for the coarser scales?
+- Debate D showed semantic embeddings converge at ~650 occurrences. Pattern completion on semantic vectors (not just trigram vectors) would be far more useful. How do the holographic properties interact with evolving embeddings?
+- Debate C showed arity=7 max. Multi-scale composites (triples at 3 scales) would cost 3x storage but enable hierarchical pattern completion on structured data.

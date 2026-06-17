@@ -1,0 +1,1 @@
+ROUND 2: Challenge another model. How handle polysemy? Stale vectors from incremental updates? Cold-start problem? Memory cost of embeddings for every word? Does feedback loop create self-reinforcing bias? Can this ACTUALLY learn that cat and feline are similar from co-occurrence alone -- what minimum corpus size?

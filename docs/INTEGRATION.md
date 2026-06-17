@@ -9,7 +9,7 @@ Since the project uses a decoupled architecture, you can use HMS as a standard R
 Add it to your `Cargo.toml`:
 ```toml
 [dependencies]
-hms-core = { git = "https://github.com/writerslogic/hms", default-features = false }
+holographic-memory = { git = "https://github.com/writerslogic/holographic-memory", default-features = false }
 ```
 
 Usage in Rust:

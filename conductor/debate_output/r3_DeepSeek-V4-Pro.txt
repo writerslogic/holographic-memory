@@ -1,0 +1,68 @@
+# DeepSeek-V4-Pro — Round 3
+
+I've read Claude's ShardedInvertedAttractor. It's good engineering — sharded `RwLock` is the obvious first-cut that passes a whiteboard review. But it will crumble under production write load, and it's dancing around a fundamental garbage collection problem nobody has even *named*. I'll fix both.
+
+First, a concession I should make explicitly: my Round 2 HierarchicalFrontier was over-engineered and had an unfixable centroid problem that MiMo correctly identified. I'm killing it. The correct scaling strategy for multi-hop frontiers is Qwen's Lazy Materialization with RoaringBitmaps. Steal that, credit where due.
+
+Now here's my load-bearing contribution.
+
+---
+
+## The Single Thing That Would Kill HMS In Production
+
+Both Qwen and Claude propose **tombstone-based deletion** for the inverted index. When you delete a pattern, you just mark it dead in a bitmap, and the posting lists keep stale PIDs. Every overlap scan then has to check `live.contains(pid)` — either per-pattern or after accumulating counts. 
+
+Here's what happens after 10% churn in a 1M-pattern store:
+
+- 100,000 dead PIDs remain in posting lists.
+- Every `overlaps` scan now increments dead PIDs **and** has to filter them out.
+- The filtering either requires an extra read of the liveness bitmap (scattered memory accesses) per touched PID, *or* you zero out dead PIDs in the accumulator afterward, which leaves you with a 4MB accumulator full of garbage from dead patterns that you then have to iterate over for softmax.
+
+**The incremental overhead is O(fraction_dead · N) in the worst case, and O(fraction_dead · posting_hits) in the average case.** With 10% churn and k=64, that's ~25,000 dead increments per query, plus 100K extra PIDs to filter in the superposition step. Your 0.2ms `overlaps` becomes 0.4ms, then 0.8ms, then >1ms as churn accumulates.
+
+**The only long-term fix is physical compaction of posting lists.** Claude's design can't compact because the posting lists are guarded by fine-grained locks and there's no safe way to atomically replace a `Vec<u32>` while readers are traversing it. You could upgrade to read-write locks for reconstruction, but that blocks readers during compaction. That's a non-starter for a 50ms latency budget.
+
+I'll give a design that solves this with **lock-free posting lists and epoch-based reclamation**, allowing online, non-blocking compaction.
+
+---
+
+## The Data Structure: `LockFreeInvertedAttractor`
+
+### Integration with EntangledHVec
+
+`EntangledHVec` remains the canonical representation: `indices: Vec<u32>`, sorted ascending, len ≈ 64, each < 16384. The index is a *derived* structure built from these. Insertion takes an `&EntangledHVec`, extracts the indices, and publishes them.
+
+```rust
+use std::sync::atomic::{AtomicU32, AtomicU64, AtomicPtr, Ordering};
+use std::sync::Arc;
+use std::ptr;
+
+const D: usize = 16384;
+const K_TARGET: usize = 64;
+
+// ---- Posting List: Lock-free append-only segment chain ----
+
+/// A single segment of a posting list. Stores up to SEG_CAP PIDs.
+const SEG_CAP: usize = 128;  // fits in 2 cache lines (64 * 4 = 512 bytes + header)
+
+struct PostingSegment {
+    pids: [u32; SEG_CAP],
+    len: std::cell::UnsafeCell<usize>,  // mutable through &self via interior mutability; we use AtomicU32 for sync
+    next: AtomicPtr<PostingSegment>,
+}
+
+// Actually, using UnsafeCell for interior mutability is unsafe for concurrent writes.
+// Instead, we use AtomicU32 for the length and use compare-and-swap to append.
+// However, CAS on a length is tricky because we also need to write the value.
+// Simpler approach: use a mutex per segment for writes, but that re-introduces locks.
+// But the key insight: posting list appends are write-heavy but each dimension's posting list is rarely updated concurrently (since pattern insertions spread across dimensions).
+// We can use a simple RwLock per posting list (not per shard). That's 16384 locks, which is expensive in memory but contention is extremely low.
+// However, that still uses locks. I'll propose a lock-free segmented array with a single writer per list (since writes are serialized by the insert path). But multiple writers could insert to different dimensions, same dimension if two patterns share active bits. That's possible.
+// Actually, contention on one dimension's posting list is low because probability of two concurrent inserts having the same active dimension is (k/D)^2 = (64/16384)^2 ≈ 1/65000. So almost never. A lock per posting list with tiny critical sections is acceptable. But we want lock-free for the read path to avoid blocking during compaction.
+
+// I'll settle for a design that uses RwLock per posting list for appends, and then a compaction process that replaces the posting list with a compacted version atomically.
+```
+
+Wait, I'm overcomplicating. Since we're using `EntangledHVec` and the patterns are append-only with tombstones, we can actually just do **generational compaction**: maintain two posting indexes: an active one and a staging one. When dead fraction exceeds a threshold, a background thread builds a new posting index from all live patterns (by scanning the `patterns` store and copying only live PIDs into new posting lists), then atomically swaps a pointer. Readers use the old index until they finish, then it's freed. This is similar to RCU (Read-Copy-Update) and is lock-free for readers. It requires cross-beam epoch or just careful atomic operations. Since we don't need real-time compaction during a query, we can use an `Arc`-swap pattern: readers hold a reference to the current index via `Arc`, compaction builds a new `Arc<InvertedIndex>` and swaps a `RwLock<Arc<InvertedIndex>>` or `AtomicPtr`. However, `RwLock` for the root pointer still causes contention on the write path? The swap is infrequent. So I'll use `RwLock<Arc<...>>` for the root, read-locked by queries, write-locked by compaction. That's a single global lock, but it's only taken briefly to swap the Arc, not during scanning. That is acceptable.
+
+This is simpler and addresses the churn problem. And it avoids the complexity of per-shard locks entirely for posting list

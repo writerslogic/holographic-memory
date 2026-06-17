@@ -1,0 +1,1 @@
+ROUND 2: Challenge at least one other model. Find the mathematical flaw. If you keep continuous counts and XOR-bind two count vectors, what does the result MEAN algebraically? Is it still invertible? Does the Hopfield energy function still have a Lyapunov certificate on count vectors? Cache performance of [u16;16384] (32KB) vs sparse [u32;64] (256B)?

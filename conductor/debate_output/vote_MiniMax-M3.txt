@@ -1,0 +1,17 @@
+# MiniMax-M3 — Top 3 Priorities (Binding Vote)
+
+**Priority 1: Fuzzy structural query pipeline (CompositeMemory + RoleAlgebra + AtomMemory cleanup).**
+Build the invertible role-filler retrieval system: store canonical triples `T = S ⊕ ρ₁(R) ⊕ ρ₂(O)` in a second sharded inverted index, then at query time compose a query vector from known roles, overlap-scan to find matched composites, per-composite XOR-unbind known roles + inverse-shift to isolate the target filler, cleanup each residual through the k-sparse Modern Hopfield AtomMemory (top-k=64 projection every step), and aggregate per-entity via `1 − (1 − mean_conf)^support_count` with `noise_residual > 0.5` early-exit.
+Test: fan-out sweep {1, 5, 10, 20, 30, 40} × noise sweep {0, 0.10, 0.25} on 100K-entity graph with 50K noise triples using my exact reproducible `corrupt` (bit-flip on active bits preserving k=64 sparsity); assert recall ≥0.95, precision ≥0.95 on algebraic path, and aggregated noise-hit confidence ≤0.5.
+
+**Priority 2: mmap-backed Compressed-Sparse-Row immutable segments with TLB-aware prefetching.**
+Build disk-backed CSR segments (`offsets[16385]` / `pids` / `arena`) written during background compaction, loaded via raw libc `mmap`, with a small in-RAM mutable tail and Arc-swap atomic replacement — this is what prevents the OOM crash at ~40M triples that kills the in-memory `Vec<Vec<u32>>` design.
+Test: Qwen's Cold-Page-Fault Gauntlet — insert 10M triples, compact to disk, force `madvise(MADV_DONTNEED)` to evict the page cache, run 1000 cold fuzzy structural queries, assert p50 <0.5ms and p99 <2ms (without `_mm_prefetch` the p99 spikes to >10ms).
+
+**Priority 3: Strict ascending lock ordering on sharded posting lists.**
+Build the concurrency protocol: 64 dimension-sharded posting lists, each guarded by `parking_lot::RwLock`, with insert paths grouping touched shards and acquiring write locks in **strictly ascending shard-ID order** — without this rule, two concurrent inserts with overlapping shard sets deadlock, and the system is single-threaded in production.
+Test: spawn 8 writer threads doing 10K random inserts each concurrently with 4 reader threads doing 10K random cleanup queries, assert zero deadlocks, zero posting-list corruption (verified by querying for every inserted atom and checking exact retrieval), and p99 read latency <5ms under maximum write load.
+
+---
+
+**One binding caveat:** Priorities 1 and 2 are the product; Priority 3 is the correctness invariant. If Priority 1's test fails (algebraic recall <0.95 at fan-out ≤40 under 25% noise), **stop and ship Priority 1's AtomMemory + TripleStore alone** as an honest associative memory — do not pretend the holographic algebra works. The confidence-calibration formula and the exact `corrupt` function from this vote are the regression guard; any future change must keep both tests green or it is wrong.

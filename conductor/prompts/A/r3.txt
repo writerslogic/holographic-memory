@@ -1,0 +1,1 @@
+ROUND 3: Show EXACT Rust data structure and algorithm. Struct fields, method signatures, hot loop. Derive complexity. What test PROVES C_max > 1000? How many items bundled, what noise level, what recall threshold. No concrete code = hand-waving.

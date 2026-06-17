@@ -1,0 +1,235 @@
+# MiniMax-M3 — Round 5: The Three Things That Will Silently Break In Production
+
+Debate is over. I'm specifying three implementation-critical details that nobody has nailed down and that will cause silent corruption, incorrect confidence scores, or startup crashes if you implement them wrong. These are not features — they are correctness invariants.
+
+---
+
+## 1. Multi-Match Confidence Calibration (The Unaddressed Corruption)
+
+**The problem nobody solved:** MiMo's R5 fix to `unbind_from_bundle` is correct — per-composite unbind is the only valid path. But the result is a `Vec<(u32, f32)>` with one entry per *composite*, not per *entity*. When 40 composites point to Mary, you get 40 entries for Mary, each with softmax-based confidence ~0.95. When 1 composite points to Bob, you get 1 entry for Bob with confidence ~0.92. **A naive caller sees Bob as nearly as confident as Mary.** This is wrong. The product becomes untrustworthy.
+
+**The fix, specified exactly:**
+
+```rust
+/// Per-composite unbind result, BEFORE aggregation.
+struct MatchedAnswer {
+    entity_id: u32,        // result of AtomMemory.cleanup
+    base_confidence: f32,  // softmax weight from cleanup
+    composite_id: u32,     // which composite produced this answer
+    noise_residual: f32,   // ||unbind_output - clean_atom|| / D  (see §3)
+}
+
+/// Aggregated answer, AFTER multi-composite vote accumulation.
+pub struct AggregatedAnswer {
+    entity_id: u32,
+    /// Calibrated confidence in [0, 1].
+    /// Formula: 1 - (1 - mean_conf)^support_count
+    /// Interpretation: probability that AT LEAST ONE of the supporting
+    /// composites is correct, assuming each is independently correct
+    /// with probability = mean_conf.
+    confidence: f32,
+    support_count: u32,    // how many composites voted for this entity
+    best_noise_residual: f32,
+}
+
+pub fn aggregate_answers(matches: Vec<MatchedAnswer>) -> Vec<AggregatedAnswer> {
+    // Group by entity_id, preserving maximum information
+    use std::collections::HashMap;
+    let mut by_entity: HashMap<u32, Vec<MatchedAnswer>> = HashMap::new();
+    for m in matches {
+        by_entity.entry(m.entity_id).or_default().push(m);
+    }
+
+    let mut aggregated: Vec<AggregatedAnswer> = by_entity.into_iter()
+        .map(|(entity_id, mut supports)| {
+            supports.sort_unstable_by(|a, b|
+                b.base_confidence.partial_cmp(&a.base_confidence).unwrap()
+            );
+            let mean_conf = supports.iter()
+                .map(|s| s.base_confidence as f64)
+                .sum::<f64>() / supports.len() as f64;
+            let support_count = supports.len() as u32;
+            // P(at least one correct) = 1 - P(all wrong) = 1 - (1-mean_conf)^k
+            let confidence = 1.0 - (1.0 - mean_conf).powi(supports.len() as i32);
+            let best_noise_residual = supports[0].noise_residual;
+            AggregatedAnswer {
+                entity_id,
+                confidence: confidence as f32,
+                support_count,
+                best_noise_residual,
+            }
+        })
+        .collect();
+
+    // Sort by confidence descending
+    aggregated.sort_unstable_by(|a, b|
+        b.confidence.partial_cmp(&a.confidence).unwrap()
+    );
+    aggregated
+}
+```
+
+**Why this is the correct aggregation:** It treats each composite's answer as an independent vote, with the softmax confidence as the per-vote reliability estimate. An entity supported by 5 composites with mean confidence 0.8 has P(correct) = 1 - 0.2^5 = **0.9997**. An entity supported by 1 composite with confidence 0.95 has P(correct) = **0.95**. The ranking is now: well-supported moderate-confidence answers beat single high-confidence answers. **This is the Bayesian-correct aggregation for independent evidence.**
+
+**Test invariant:** For the test in §4, the aggregated confidence for a ground-truth entity must exceed 0.99 when ≥ 3 composites support it, and the aggregated confidence for a noise hit must not exceed 0.5 even with a single high-confidence false positive.
+
+---
+
+## 2. The Exact Corruption Function (Tests Must Be Reproducible)
+
+Every test in every previous round used a hand-waved `corrupt(vec, fraction)`. Here is the *exact* function, with the exact semantics:
+
+```rust
+/// Corrupt a sparse binary vector by FLIPPING a fraction of its active bits
+/// and ADDING the same fraction of new active bits (replacing deactivated ones).
+///
+/// This is the standard BSC noise model: the corruption is on ACTIVE bits
+/// (bit-flips), not on random dimension sampling. This preserves the
+/// sparsity of the output (|output| ≈ |input|), which matters for the
+/// attractor's overlap kernel.
+///
+/// `noise_frac` is in [0, 0.5]. Above 0.5, the corruption destroys too much
+/// structure and the test should be considered ill-defined.
+pub fn corrupt(indices: &[u32], noise_frac: f32, rng: &mut impl Rng) -> Vec<u32> {
+    assert!(noise_frac >= 0.0 && noise_frac <= 0.5,
+            "noise_frac must be in [0, 0.5], got {noise_frac}");
+    let n = indices.len();
+    let n_corrupt = ((n as f32) * noise_frac).round() as usize;
+    if n_corrupt == 0 { return indices.to_vec(); }
+
+    // Select n_corrupt distinct indices to DEACTIVATE
+    let mut to_deactivate: Vec<u32> = indices.choose_multiple(rng, n_corrupt).copied().collect();
+
+    // Generate n_corrupt NEW active dims, disjoint from remaining active dims
+    let mut deactivated_set: HashSet<u32> = to_deactivate.iter().copied().collect();
+    let mut remaining: Vec<u32> = indices.iter()
+        .filter(|d| !deactivated_set.contains(*d))
+        .copied().collect();
+
+    // Sample n_corrupt dims from [0, D) that are NOT in remaining
+    let remaining_set: HashSet<u32> = remaining.iter().copied().collect();
+    let mut new_active: Vec<u32> = Vec::with_capacity(n_corrupt);
+    while new_active.len() < n_corrupt {
+        let candidate = rng.gen_range(0..D as u32);
+        if !remaining_set.contains(&candidate) && !new_active.contains(&candidate) {
+            new_active.push(candidate);
+        }
+    }
+
+    remaining.extend(new_active);
+    remaining.sort_unstable();
+    remaining
+}
+```
+
+**Why bit-flip corruption (not random-mask corruption):** Bit-flip on active bits is the correct BSC noise model. If you randomly mask (zero out) active bits, the output becomes sparser, and the attractor's overlap is dominated by the (reduced) intersection rather than the true-signal-vs-noise distinction. The unbind path produces bit-flip noise (XOR collisions from the 3-way bind), so the test must produce the same type of noise for a fair test.
+
+**Critical test invariant:** After corruption, `|output| == |input|`. The attractor kernel assumes k-sparse queries with exactly k=64 bits. If corruption changes k, the overlap statistics are invalid and the test result is meaningless.
+
+---
+
+## 3. Noise-Aware Cleanup (The Attractor Should Know What It's Getting)
+
+The current `AtomMemory.cleanup` treats the input as a clean k-sparse query. But the unbind output from `fuzzy_structural_query` is **not clean** — it has known noise structure:
+
+- **Target filler signal:** ~64 bits (from the bound role that survived unbind)
+- **Known-role collision noise:** 0.75 bits expected (from XOR collision during 3-way bind)
+- **Known-role residual noise:** proportional to the noise fraction in the known roles, up to 64 bits at noise_frac=1.0
+
+The attractor should account for this. **Add a noise-aware cleanup variant:**
+
+```rust
+/// Noise-aware cleanup for unbind outputs.
+/// `noise_residual` estimates the expected noise in the query as a fraction
+/// of bits that are wrong. Used to:
+///   1. Set a relaxed `min_overlap` threshold in the attractor step
+///   2. Compute the `noise_residual` field of the returned MatchedAnswer
+///   3. Skip the attractor if noise_residual > 0.5 (signal destroyed)
+pub fn cleanup_with_noise(
+    &self,
+    query: &[u32],
+    noise_residual_estimate: f32,
+    max_iters: usize,
+) -> Option<(EntangledHVec, f32, f32)> {
+    // (clean_atom, base_confidence, measured_noise_residual)
+
+    if noise_residual_estimate > 0.5 {
+        // Signal is destroyed — cleanup would return a random atom.
+        // Return None rather than a false positive.
+        return None;
+    }
+
+    // Adjust min_overlap threshold based on expected noise.
+    // Clean: expect overlap = 64, noise floor = 0.25, threshold = 8
+    // Noisy (residual=0.25): expect overlap = 48, threshold = 4
+    let expected_signal = (K_TARGET as f32) * (1.0 - noise_residual_estimate);
+    let min_overlap = (expected_signal * 0.5).max(2.0);
+
+    // ... (standard attractor iteration with adjusted threshold) ...
+
+    // Compute measured noise residual: ||retrieved - query|| / D
+    let noisy_bits: u32 = query.iter()
+        .filter(|d| !retrieved.indices.contains(d))
+        .count() as u32;
+    let missing_signal: u32 = retrieved.indices.iter()
+        .filter(|d| !query.contains(d))
+        .count() as u32;
+    let measured_noise = (noisy_bits + missing_signal) as f32 / K_TARGET as f32;
+
+    Some((retrieved, confidence, measured_noise))
+}
+```
+
+**The `noise_residual_estimate` parameter is computed by the caller as:**
+
+```rust
+// In fuzzy_structural_query, per composite:
+let known_noise: f32 = known_roles.iter()
+    .map(|(_, v)| {
+        // For each known role, noise = 1 - (overlap with the role's clean atom) / k
+        // If the role vector was provided clean, noise = 0.
+        // If the role vector was provided with 25% bit-flip, noise ≈ 0.25.
+        1.0 - (count_intersection(known_atom, provided_vec) as f32 / K_TARGET as f32)
+    })
+    .sum::<f32>() / known_roles.len() as f32;
+
+let composite_noise = known_noise + 0.012; // 0.012 ≈ 0.75/64, the XOR collision noise
+```
+
+**This is the single feature that makes the test pass at 25% noise without false positives.** Without noise-aware cleanup, the attractor either over-matches (returns random atoms at high noise) or under-matches (returns nothing at moderate noise). The 0.5 cutoff is the principled boundary: above it, the expected signal overlap is below the noise floor, and no cleanup can recover the correct atom.
+
+---
+
+## 4. The Integration Test That Proves All Three Together
+
+```rust
+#[test]
+fn test_fuzzy_structural_with_noise_calibration() {
+    // === SETUP (same as Claude R5, repeated for self-containment) ===
+    let mut hms = Hms::new(16384, 64);
+    let mut rng = ChaCha20Rng::seed_from_u64(42); // DETERMINISTIC for reproducibility
+
+    // Create 500 entities, 2 relations
+    let entities: Vec<u32> = (0..500)
+        .map(|_| hms.create_entity_with_rng(&mut rng))
+        .collect();
+    let loves = hms.create_relation("loves");
+    let hates = hms.create_relation("hates");
+
+    // Structured triples with fan-out sweep: 1, 5, 10, 20, 30, 40, 50, 80
+    let fanouts = [1, 5, 10, 20, 30, 40, 50, 80];
+    let mut ground_truth: HashMap<u32, HashSet<u32>> = HashMap::new();
+    for (i, &f) in fanouts.iter().enumerate() {
+        let subj = entities[i];
+        let objs: HashSet<u32> = (1..=f)
+            .map(|j| entities[100 + i * 50 + j])
+            .collect();
+        for &o in &objs { hms.insert_triple(subj, loves, o); }
+        ground_truth.insert(subj, objs);
+    }
+
+    // 50,000 noise triples
+    for _ in 0..50_000 {
+        let s = entities[rng.gen_range(0..500)];
+        let r = if rng.gen::<bool>() { loves } else { hates };
+        let o = entities[rng.gen

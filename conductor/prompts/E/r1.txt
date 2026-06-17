@@ -1,0 +1,1 @@
+ROUND 1: Design concrete attractor-poisoning attack. What atoms, how trap basin forms, what query hijacked. Then defense. Cascading delete strategy and worst-case staleness bound. QPS at 10M atoms derived from memory bandwidth, cache sizes, overlap scan cost.

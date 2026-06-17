@@ -1,0 +1,14 @@
+### Priority 1: Fuzzy Structural Query Pipeline
+**Build:** A two-tier attractor system comprising a CompositeMemory for canonical triples and an AtomMemory for clean entities, connected by a cyclic-shift RoleAlgebra to enable invertible, noise-tolerant graph queries.
+**Algorithm:** Overlap-scan the CompositeMemory to find matching triples, individually XOR-unbind known roles and inverse-shift to isolate the target filler, clean the residual via the k-sparse Modern Hopfield AtomMemory, and aggregate per-entity confidence using the Bayesian formula `1-(1-mean_conf)^support_count`.
+**Test:** Execute a fan-out sweep up to 40 with 25% bit-flip corrupted subject vectors against a 50K noise triple background, asserting ≥0.95 recall and precision on the algebraic path while ensuring aggregated noise-hit confidence remains ≤0.5.
+
+### Priority 2: mmap-backed CSR Scaling Substrate
+**Build:** Disk-backed Compressed-Sparse-Row immutable segments for both inverted indexes, loaded via raw libc `mmap` alongside an in-RAM mutable tail, to prevent OOM crashes when scaling past 40M triples.
+**Algorithm:** Sort query dimensions by posting-list length ascending and issue hardware `_mm_prefetch` instructions for all list heads to overlap OS page-fault latency with the CPU overlap accumulation loop.
+**Test:** Insert 10M triples, compact to disk, force page-cache eviction via `madvise(MADV_DONTNEED)`, and run 1000 cold queries to assert p50 latency is under 0.5ms and p99 latency is under 2ms.
+
+### Priority 3: Sharded Concurrency Protocol
+**Build:** A 64-shard inverted index backbone where each 256-dimension shard is guarded by a `parking_lot::RwLock` to allow concurrent lock-free readers and fine-grained writers.
+**Algorithm:** Group touched shards during insert operations and acquire write locks in strictly ascending shard-ID order to mathematically eliminate circular-wait deadlocks without blocking the read path.
+**Test:** Spawn 8 writer threads performing 10K random inserts each alongside 4 reader threads performing 10K random queries, asserting zero deadlocks, zero posting-list corruption, and p99 read latency under 5ms.

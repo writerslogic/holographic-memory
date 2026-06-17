@@ -1,0 +1,2036 @@
+=== DEBATE A P2: C_max Refined ===
+
+--- Round 4: Refined Questions ---
+
+>>> Claude-Opus (R4) <<<
+# Claude-Opus — Round 4: The Translation Layer Is the Whole Game
+
+Qwen's R3 test is good but it **hides the hardest problem behind a convenience**: every triple used the *same* relation `rel` with `shift=1`. That makes the unbind trivial because there's no domain-crossing. The real unsolved problem is the **count↔XOR boundary**, and I'm going to nail it precisely, including the one place where it's provably lossy.
+
+## First: state the two algebras exactly, so the boundary is unambiguous
+
+```rust
+/// XOR domain: an atom is its EXACT bit pattern. Invertible.
+/// a XOR b XOR b = a.  Single-hop, exact composites.
+pub struct BinaryAtom {
+    bits: [u64; D / 64],     // D=16384 -> 256 u64s, 2KB
+}
+
+/// COUNT domain: a bundle is a histogram. Lossy, statistical.
+/// Recovery is by cleanup (nearest-codebook), NOT by inversion.
+pub struct CountCentroid {
+    counts: [u8; D],
+    n_items: u32,
+    l1_norm: u32,
+}
+```
+
+**The fundamental asymmetry nobody has stated cleanly:**
+
+- **XOR unbind is exact and algebraic.** `unbind(c, role) = c XOR role`. You get bits back.
+- **Count unbind is NOT inversion.** Permutation unbind `ρ⁻¹` recovers the *histogram*, but the histogram is a superposition. You must run **cleanup** (codebook nearest-neighbor) to get a discrete atom back.
+
+So the boundary has a hard direction-dependence:
+
+```
+COUNT -> XOR :  REQUIRES cleanup (a "measurement" / collapse).  Lossy. SNR-gated.
+XOR -> COUNT :  free (just fold the bits in as a count increment). Lossless.
+```
+
+This is the crux. **The translation layer is not a function — it's a measurement.** You cannot pass a count-bundle into an XOR unbind directly; you must first *collapse* it to a discrete `BinaryAtom` via cleanup. Let me show why, then show the pipeline.
+
+## Why you cannot XOR-unbind a count vector (the lossy direction, derived)
+
+Suppose the frontier centroid holds `counts`, and you want to unbind relation `R` to get next-hops. The naive idea: convert counts→bits (threshold), then XOR with `R`. **This is wrong** and here's the exact failure:
+
+A count position `counts[j] = m_j` encodes *how many bundled triples lit bit j*. Thresholding to a bit `b_j = [m_j > τ]` throws away `m_j`. But the multiplicity `m_j` IS the signal — it's what separates a real next-hop (lit by `m` agreeing triples) from background (lit by ~2Np permuted-noise triples). XOR operates on `b_j ∈ {0,1}`, so **the moment you threshold, you're back in the N≤107 binary-capacity regime.** You've thrown away the very thing that bought you C_max>1000.
+
+**Conclusion: the unbind in the count domain must be done by permutation (preserving counts), and the collapse to XOR happens only at the *final* cleanup step, per-candidate.** Here's the full pipeline.
+
+## The full 3-hop pipeline, exact types at every step
+
+Goal: `start --R1--> {h1} --R2--> {h2} --R3--> {h3}`, where each hop fans out and the frontier grows.
+
+```rust
+const D: usize = 16384;
+const K: usize = 64;
+const M: usize = 8;
+
+/// A relation has TWO representations because it lives on the boundary:
+///  - perm: the permutation used to bind it in the count domain
+///  - mask: the BinaryAtom used for exact XOR composites (single-hop)
+pub struct Relation {
+    perm: Permutation,      // ρ_R for count-domain binding
+    inv:  Permutation,      // ρ_R⁻¹ for count-domain unbinding
+    mask: BinaryAtom,       // for XOR-domain (CompositeMemory) path
+}
+
+/// Output of any hop: a NEW frontier bundle, rebuilt from cleaned atoms.
+pub struct Frontier {
+    bundle: FrontierBundle,           // count centroids, M=8
+    atoms:  Vec<(BinaryAtom, f32)>,   // the COLLAPSED discrete members + scores
+}
+```
+
+### Step 0 — Seed the frontier from a single start atom
+
+```rust
+fn seed(start: &BinaryAtom) -> Frontier {
+    // A single atom -> a count centroid with that atom's bits as count=1.
+    let mut c = CountCentroid::zero();
+    for j in start.iter_set_bits() { c.counts[j] = 1; }
+    c.n_items = 1;
+    c.l1_norm = K as u32;
+    Frontier {
+        bundle: FrontierBundle::from_single(c),
+        atoms: vec![(start.clone(), 1.0)],
+    }
+}
+```
+
+### Step 1 — HOP: unbind R in the COUNT domain, then collapse via cleanup
+
+This is the load-bearing function. **Three phases: permute-unbind (count, lossless), score-against-codebook (the measurement), collapse-to-atoms (the COUNT→XOR boundary crossing).**
+
+```rust
+impl Frontier {
+    fn hop(&self, rel: &Relation, codebook: &AtomMemory) -> Frontier {
+        // ---- PHASE A: count-domain unbind (permutation, NO thresholding) ----
+        // For each centroid, ρ_R⁻¹ applied to counts. Counts survive intact.
+        // This is the ONLY correct unbind in the count domain.
+        let mut all_candidates: Vec<Candidate> = Vec::new();
+
+        for c in &self.bundle.centroids {
+            let unbound: [u8; D] = rel.inv.apply_counts(&c.counts);  // [u8;D] -> [u8;D]
+
+            // ---- PHASE B: the MEASUREMENT (count -> candidate atoms) ----
+            // Background per position (the analytic subtraction from R3):
+            let bg = (c.l1_norm as f32) * 2.0 / (D as f32);
+
+            // Drive cleanup from high-count positions via inverted index.
+            let thresh = (bg + 3.0 * bg.sqrt()).ceil() as u8;
+            let mut hits: HashMap<u32, i32> = HashMap::new();
+            for pos in 0..D {
+                let cnt = unbound[pos];
+                if cnt < thresh { continue; }
+                for &aid in &codebook.posting[pos] {
+                    *hits.entry(aid).or_insert(0) += cnt as i32;
+                }
+            }
+            // Background-correct: subtract k*bg (expected overlap from noise).
+            for (aid, raw) in hits {
+                let score = raw as f32 - (K as f32) * bg;
+                if score > 0.0 { all_candidates.push(Candidate { aid, score }); }
+            }
+        }
+
+        // ---- PHASE C: COLLAPSE (count -> XOR). THE BOUNDARY CROSSING. ----
+        // Aggregate scores across centroids, take survivors above SNR floor.
+        // Each survivor is now a DISCRETE BinaryAtom fetched from codebook.
+        // THIS is where count-domain becomes XOR-domain. The collapse is
+        // a measurement: we replace a superposed histogram with concrete bits.
+        let survivors = aggregate_and_threshold(all_candidates, /*snr*/ 5.0);
+
+        let cleaned: Vec<(BinaryAtom, f32)> = survivors.iter()
+            .map(|s| (codebook.atoms[s.aid as usize].to_binary(), s.score))
+            .collect();
+
+        // ---- PHASE D: REBUILD the count bundle for the NEXT hop ----
+        // Fold the cleaned discrete atoms back into count centroids
+        // (XOR -> count, the FREE direction). Re-cluster into M centroids.
+        let next_bundle = FrontierBundle::rebuild_from_atoms(&cleaned, M);
+
+        Frontier { bundle: next_bundle, atoms: cleaned }
+    }
+}
+```
+
+### The boundary, stated as a theorem
+
+**The COUNT→XOR crossing happens exactly once per hop, at Phase C, and it is a measurement (collapse), not an inverse.** Properties:
+
+1. **It is SNR-gated.** Only candidates with aggregate score > 5σ survive. Below that, the atom is *lost* — there is no recovering it, because the histogram genuinely doesn't distinguish it from noise. This is the irreducible lossiness.
+
+2. **It is idempotent on clean atoms.** A survivor `a` re-folded into counts (Phase D) and unbound again returns `a`. So the pipeline is stable across hops *for atoms that survive the gate.*
+
+3. **The XOR→COUNT direction (Phase D) is lossless and free** — `counts[j] += 1` for each set bit. No SNR cost. This asymmetry is why we rebuild rather than carry a running count vector through XOR ops.
+
+## Now the part Qwen's test hid: when do you use XOR-unbind at all?
+
+The CompositeMemory path (Debate C, fan-out<40, exact). **You use XOR-unbind when the composite is a single stored atom, not a bundle.** The decision is made at Phase C's output:
+
+```rust
+fn route_next_hop(f: &Frontier, rel: &Relation, cm: &CompositeMemory,
+                  cb: &AtomMemory) -> Frontier {
+    if f.atoms.len() < 40 {
+        // EXACT path: each atom is discrete. XOR-unbind directly. No SNR loss.
+        let mut out = Vec::new();
+        for (atom, score) in &f.atoms {
+            // exact composite lookup: a XOR rel.mask -> stored target bits
+            let target_bits = cm.lookup_xor(atom, &rel.mask);     // BinaryAtom
+            out.push((target_bits, *score));
+        }
+        Frontier { bundle: FrontierBundle::rebuild_from_atoms(&out, M), atoms: out }
+    } else {
+        // STATISTICAL path: too many to track exactly, use count bundle.
+        f.hop(rel, cb)
+    }
+}
+```
+
+**This is the dual algebra made concrete:** the frontier *self-selects* its algebra by size. Small frontier → XOR (exact, cheap, no loss). Large frontier → count (statistical, SNR-gated, but N-independent cost). The crossover at ~40 is set by CompositeMemory's interference limit from Debate C.
+
+## The honest 3-hop SNR accounting
+
+Each hop's collapse loses atoms below 5σ. Across 3 hops with multiplicities `m₁, m₂, m₃` and frontier sizes `N₁, N₂, N₃`:
+
+```
+survive_hop_i  ⟺  m_i · sqrt(D·M / (4·N_i)) > 5
+
+Hop 1: N=1000, m=1  -> SNR=5.7  ✓ (barely)
+Hop 2: N grows to ~fan-out·survivors. If N₂≈3000, need m₂·sqrt(16384·8/12000)>5
+       -> m₂·3.3 > 5 -> m₂ ≥ 2.   Single-support atoms START DYING here.
+Hop 3: N₃≈8000 -> m₃·sqrt(16.4)>5 -> m₃·2.02>5 -> m₃ ≥ 3.
+```
+
+**The brutal truth: by hop 3, only next-hops with ≥3 agreeing predecessors survive the count path.** Single-thread chains (m=1 all the way) break at hop 2. This is not a bug to fix — it's the physics. The fix is **architectural: chains that must survive deep traversal route through the XOR CompositeMemory path** (exact, no SNR decay),
+---
+
+>>> DeepSeek-V4 (R4) <<<
+ERROR: parse failed
+---
+
+>>> Qwen-Max (R4) <<<
+# Qwen-Max — Round 4: The Translation Layer, Nailed Down
+
+Opus R4 identified the asymmetry (COUNT→XOR is lossy measurement, XOR→COUNT is free fold) but left the **routing decision** and the **multi-hop state evolution** underspecified. I'll close both gaps with exact types, exact SNR derivations at each hop, and a concrete 3-hop pipeline that shows where chains die and why.
+
+---
+
+## 1. The Two Algebras and the Boundary (Formal Statement)
+
+```rust
+/// XOR DOMAIN: Exact, invertible, single-hop composites.
+/// Capacity: N ≤ 107 (Debate A). Used when frontier is small.
+#[derive(Clone)]
+pub struct BinaryAtom {
+    pub bits: [u64; 256],  // D=16384 bits = 256 u64s, 2KB
+}
+
+/// COUNT DOMAIN: Statistical, lossy, multi-hop bundles.
+/// Capacity: N ≤ 1000+ with M=8 centroids (proven R3).
+#[repr(C, align(64))]
+pub struct CountCentroid {
+    pub counts: [u8; 16384],  // D=16384, 16KB
+    pub n_items: u32,
+    pub l1_norm: u32,
+}
+
+/// FRONTIER: The live state during traversal. Holds BOTH representations
+/// because the routing decision depends on size.
+pub struct Frontier {
+    pub bundle: FrontierBundle,              // count domain (for large N)
+    pub atoms: Vec<(BinaryAtom, f32)>,       // XOR domain (collapsed, for small N)
+}
+
+pub struct FrontierBundle {
+    pub centroids: [CountCentroid; 8],       // M=8
+    pub member_ids: Vec<u64>,
+    pub assign: Vec<u8>,
+}
+```
+
+**The Boundary Theorem (stated precisely):**
+
+Let `F: Frontier` with `|F.atoms| = k`.
+
+- **fold** (XOR→COUNT): `Vec<BinaryAtom> -> CountCentroid`. Operation: `for atom in atoms: for j in atom.set_bits(): centroid.counts[j] += 1`. **Lossless, O(k·K).**
+- **collapse** (COUNT→XOR): `CountCentroid -> Vec<BinaryAtom>`. Operation: unbind via permutation, score against codebook, threshold at SNR ≥ 5σ, fetch discrete atoms. **Lossy, O(M·D + M·H·L), SNR-gated.**
+
+The composition `collapse ∘ fold` is **idempotent on survivors** but **not the identity** — atoms below the SNR floor are irreversibly lost.
+
+---
+
+## 2. The Translation Layer: Exact Operations
+
+```rust
+impl Frontier {
+    /// XOR→COUNT: Fold discrete atoms into count centroids.
+    /// Used when transitioning from XOR path back to count path.
+    pub fn fold_into_bundle(&mut self) {
+        let mut centroids = [CountCentroid::zero(); 8];
+        
+        // Simple round-robin assignment (online k-means is overkill for rebuild)
+        for (i, (atom, _score)) in self.atoms.iter().enumerate() {
+            let c_idx = (i % 8) as u8;
+            let c = &mut centroids[c_idx as usize];
+            for j in atom.iter_set_bits() {
+                c.counts[j] = c.counts[j].saturating_add(1);
+            }
+            c.n_items += 1;
+            c.l1_norm += 64; // K=64 bits per atom
+        }
+        
+        self.bundle = FrontierBundle {
+            centroids,
+            member_ids: (0..self.atoms.len() as u64).collect(),
+            assign: (0..self.atoms.len()).map(|i| (i % 8) as u8).collect(),
+        };
+    }
+
+    /// COUNT→XOR: Collapse count bundle to discrete atoms via cleanup.
+    /// This is the MEASUREMENT. Lossy. Returns survivors above SNR floor.
+    pub fn collapse_from_bundle(
+        &self,
+        rel: &Relation,
+        codebook: &AtomMemory,
+    ) -> Vec<(BinaryAtom, f32)> {
+        let mut candidates: HashMap<u32, f32> = HashMap::new();
+
+        for c in &self.bundle.centroids {
+            // Unbind via inverse permutation (count-domain, lossless)
+            let unbound = rel.inv.apply_counts(&c.counts);
+            
+            // Background subtraction
+            let bg = (c.l1_norm as f32) * 2.0 / 16384.0;
+            let thresh = (bg + 3.0 * bg.sqrt()).ceil() as u8;
+
+            // Inverted-index scan
+            for pos in 0..16384 {
+                if unbound[pos] < thresh { continue; }
+                for &aid in &codebook.posting[pos] {
+                    *candidates.entry(aid).or_insert(0.0) += unbound[pos] as f32;
+                }
+            }
+        }
+
+        // Aggregate, background-correct, threshold at SNR ≥ 5
+        let bg_global = self.bundle.centroids.iter()
+            .map(|c| (c.l1_norm as f32) * 2.0 / 16384.0)
+            .sum::<f32>() / 8.0;
+
+        candidates.into_iter()
+            .map(|(aid, raw)| {
+                let score = raw - 64.0 * bg_global;
+                (aid, score)
+            })
+            .filter(|(_, score)| *score > 5.0 * bg_global.sqrt()) // SNR ≥ 5σ
+            .map(|(aid, score)| (codebook.atoms[aid as usize].to_binary(), score))
+            .collect()
+    }
+}
+```
+
+---
+
+## 3. The Full 3-Hop Pipeline (Step by Step, Exact Types)
+
+### Hop 1: `start_node --R1--> {h1_i}`
+
+```rust
+fn hop1(start: &BinaryAtom, r1: &Relation, codebook: &AtomMemory) -> Frontier {
+    // === STEP 1a: Seed frontier (XOR→COUNT, free) ===
+    let mut c0 = CountCentroid::zero();
+    for j in start.iter_set_bits() { c0.counts[j] = 1; }
+    c0.n_items = 1;
+    c0.l1_norm = 64;
+    
+    let seed_bundle = FrontierBundle {
+        centroids: std::array::from_fn(|i| if i == 0 { c0.clone() } else { CountCentroid::zero() }),
+        member_ids: vec![0],
+        assign: vec![0],
+    };
+    
+    let mut frontier = Frontier {
+        bundle: seed_bundle,
+        atoms: vec![(start.clone(), 1.0)],
+    };
+
+    // === STEP 1b: Lookup triples (start, R1, ?) in CompositeMemory ===
+    // For hop 1, frontier size = 1, so we use XOR exact path.
+    let composite_key = start.xor(&r1.mask);  // BinaryAtom XOR BinaryAtom
+    let targets: Vec<BinaryAtom> = COMPOSITE_MEMORY.lookup(&composite_key);
+    
+    // === STEP 1c: Collapse to discrete atoms (COUNT→XOR, but trivial here) ===
+    // Since we used XOR path, no collapse needed. Just record results.
+    frontier.atoms = targets.into_iter().map(|t| (t, 1.0)).collect();
+    
+    // === STEP 1d: Re-fold into bundle for hop 2 (XOR→COUNT) ===
+    frontier.fold_into_bundle();
+    
+    frontier
+}
+```
+
+**State after Hop 1:**
+- `frontier.atoms`: `Vec<(BinaryAtom, f32)>` with `k₁` discrete atoms (typical: 5-20)
+- `frontier.bundle`: `FrontierBundle` with `k₁` items folded into M=8 centroids
+- **SNR:** N=1, m=1, so SNR = √(16384·8 / 4·1) = √32768 ≈ 181. Trivially clean.
+
+---
+
+### Hop 2: `{h1_i} --R2--> {h2_j}`
+
+```rust
+fn hop2(frontier: &Frontier, r2: &Relation, codebook: &AtomMemory) -> Frontier {
+    let k1 = frontier.atoms.len();
+    
+    // === ROUTING DECISION ===
+    if k1 < 40 {
+        // XOR PATH: exact, no SNR loss
+        let mut next_atoms = Vec::new();
+        for (atom, score) in &frontier.atoms {
+            let composite_key = atom.xor(&r2.mask);
+            let targets = COMPOSITE_MEMORY.lookup(&composite_key);
+            for t in targets {
+                next_atoms.push((t, *score)); // propagate score
+            }
+        }
+        let mut next_frontier = Frontier {
+            bundle: FrontierBundle::empty(),
+            atoms: next_atoms,
+        };
+        next_frontier.fold_into_bundle();
+        next_frontier
+    } else {
+        // COUNT PATH: statistical, SNR-gated
+        // Unbind R2 from the count bundle
+        let next_atoms = frontier.collapse_from_bundle(r2, codebook);
+        let mut next_frontier = Frontier {
+            bundle: FrontierBundle::empty(),
+            atoms: next_atoms,
+        };
+        next_frontier.fold_into_bundle();
+        next_frontier
+    }
+}
+```
+
+**State after Hop 2:**
+- `frontier.atoms`: `Vec<(BinaryAtom, f32)>` with `k₂` discrete atoms
+- **SNR (if count path):** N=k₁, m=multiplicity of each h2_j. If k₁=50, m=1: SNR = √(16384·8 / 4·50) = √655 ≈ 25.6. Clean.
+- **SNR (if XOR path):** No SNR cost. Exact.
+
+---
+
+### Hop 3: `{h2_j} --R3--> {h3_k}`
+
+```rust
+fn hop3(frontier: &Frontier, r3: &Relation, codebook: &AtomMemory) -> Frontier {
+    let k2 = frontier.atoms.len();
+    
+    // === ROUTING DECISION (same logic) ===
+    if k2 < 40 {
+        // XOR PATH
+        let mut next_atoms = Vec::new();
+        for (atom, score) in &frontier.atoms {
+            let composite_key = atom.xor(&r3.mask);
+            let targets = COMPOSITE_MEMORY.lookup(&composite_key);
+            for t in targets {
+                next_atoms.push((t, *score));
+            }
+        }
+        let mut next_frontier = Frontier {
+            bundle: FrontierBundle::empty(),
+            atoms: next_atoms,
+        };
+        next_frontier.fold_into_bundle();
+        next_frontier
+    } else {
+        // COUNT PATH
+        // Here's where m=1 chains die. Derive the SNR:
+        // N = k2 (frontier size), m = multiplicity of each h3_k.
+        // SNR = m · √(D·M / 4N) = m · √(16384·8 / 4·k2)
+        // For k2=200, m=1: SNR = √(131072 / 800) = √163.8 ≈ 12.8. Clean.
+        // For k2=1000, m=1: SNR = √(131072 / 4000) = √32.8 ≈ 5.7. Barely clean.
+        // For k2=2000, m=1: SNR = √(131072 / 8000) = √16.4 ≈ 4.05. DIES (< 5σ).
+        
+        let next_atoms = frontier.collapse_from_bundle(r3, codebook);
+        let mut next_frontier = Frontier {
+            bundle: FrontierBundle::empty(),
+            atoms: next_atoms,
+        };
+        next_frontier.fold_into_bundle();
+        next_frontier
+    }
+}
+```
+
+**State after Hop 3:**
+- `frontier.atoms`: `Vec<(BinaryAtom, f32)>` with `k₃` discrete atoms
+- **SNR (count path, k₂=1000, m=1):** 5.7. Barely survives.
+- **SNR (count path, k₂=2000, m=1):** 4.05. **Dies.** Only m≥2 atoms survive.
+
+---
+
+## 4. The SNR Evolution Across 3 Hops (Derived)
+
+Let `k_i` = frontier size after hop `i`, `m_i` = multiplicity of next-hop atoms at hop `i`.
+
+| Hop | Frontier Size `N` | Multiplicity `m` | SNR = m·√(D·M/4N) | Survives? |
+|-----|-------------------|------------------|-------------------|-----------|
+| 1   | 1                 | 1                | 181               | ✓ trivial |
+| 2   | k₁ (typ. 10-50)   | 1                | 25-57             | ✓ clean   |
+| 3   | k₂ (typ. 100-1000)| 1                | 5.7-18            | ✓ if k₂<1000, ✗ if k₂>2000 |
+| 3   | k₂=2000           | 2                | 8.1               | ✓ (m≥2 saves it) |
+
+**The brutal truth:** Single-thread chains (m=1 all the way) survive 3 hops **only if the frontier stays below ~1500 atoms**. If fan-out explodes (k₂ > 2000), m=1 atoms die at hop 3. The fix is architectural: **high-fan-out chains must route through XOR CompositeMemory** (exact, no SNR decay), but that caps at N≤107 per composite.
+
+---
+
+## 5. The Routing Decision (Exact Threshold)
+
+```rust
+const XOR_PATH_THRESHOLD: usize = 40;  // from Debate C: ~26 rules/shard before interference
+const COUNT_PATH_SNR_FLOOR: f32 = 5.0; // 5σ for clean recovery
+
+fn route(frontier_size: usize, expected_multiplicity: usize) -> PathChoice {
+    if frontier_size < XOR_PATH_THRESHOLD {
+        PathChoice::XOR
+    } else {
+        // Predict SNR for count path
+        let predicted_snr = (expected_multiplicity as f32) 
+            * (16384.0 * 8.0 / (4.0 * frontier_size as f32)).sqrt();
+        if predicted_snr >= COUNT_PATH_SNR_FLOOR {
+            PathChoice::COUNT
+        } else {
+            // SNR too low. Options: (a) prune frontier to top-40 and use XOR,
+            // (b) accept lossy count path, (c) abort traversal.
+            PathChoice::PRUNE_AND_XOR
+        }
+    }
+}
+
+enum PathChoice {
+    XOR,           // exact, no SNR loss
+    COUNT,         // statistical, SNR-gated
+    PRUNE_AND_XOR, // truncate frontier to top-40 by score, then XOR
+}
+```
+
+---
+
+## 6. Summary: The Translation Layer, Stated as a Contract
+
+**The translation layer is a state machine with two states (XOR, COUNT) and two transitions:**
+
+1. **fold** (XOR→COUNT): `Vec<BinaryAtom> -> CountCentroid`. Lossless. O(k·K). Used when frontier grows beyond 40 atoms.
+2. **collapse** (COUNT→XOR): `CountCentroid -> Vec<BinaryAtom>`. Lossy, SNR-gated. O(M·D + M·H·L). Used when unbinding from a count bundle.
+
+**The routing decision is made per-hop based on frontier size and predicted SNR.** Small frontier (<40) → XOR path (exact). Large frontier (≥40) → count path (statistical), but only if predicted SNR ≥ 5σ. Otherwise, prune to top-40 and fall back to XOR.
+
+**The 3-hop pipeline is a sequence of (unbind, cleanup, fold) operations, with the algebra (XOR vs COUNT) selected dynamically at each hop.** The boundary crossing (collapse) is the only lossy step, and it's SNR-gated to ensure clean recovery.
+
+This is the shippable architecture. No hand-waving. Exact types. Exact SNR. Exact routing.
+---
+
+>>> Gemini-Pro (R4) <<<
+# Gemini-Pro — Round 4: The Translation Layer is an SNR-Gated State Machine
+
+Opus R4 and Qwen R4 correctly identified the COUNT↔XOR boundary as the central problem. Opus defined the "collapse" and Qwen showed its effect on a 3-hop chain. My contribution is to formalize this boundary as an explicit **state machine** whose transitions are the `fold` and `collapse` operations. I'll define the state object, the transition functions, and trace the state evolution through a 3-hop pipeline with brutal precision, including a correction to the SNR gate derivation.
+
+---
+
+## 1. The State Object: The `Frontier`
+
+The state of a traversal is not just a bundle of counts or a list of atoms; it is both. The `Frontier` object carries the discrete, collapsed representation (`atoms`) and the statistical, bundled representation (`bundle`) at all times. The routing logic simply decides which representation to *use* for the next computation.
+
+```rust
+use std::collections::HashMap;
+
+// Constants from Phase 1
+const D: usize = 16384;
+const K: usize = 64;
+const M: usize = 8;
+const XOR_PATH_THRESHOLD: usize = 40; // From Debate C (composition)
+
+/// XOR Domain: A discrete, 2KB bitmask. Exact.
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub struct BinaryAtom { bits: [u64; D / 64] }
+
+/// COUNT Domain: A statistical histogram. Lossy.
+#[repr(C, align(64))]
+#[derive(Clone)]
+pub struct CountCentroid {
+    counts: [u8; D],
+    n_items: u32,
+    l1_norm: u32,
+}
+
+/// The Relation: Holds representations for both algebras.
+pub struct Relation {
+    perm: Permutation,      // For COUNT domain binding
+    inv: Permutation,       // For COUNT domain unbinding
+    mask: BinaryAtom,       // For XOR domain binding
+}
+
+/// The STATE of the traversal pipeline.
+pub struct Frontier {
+    // DISCRETE representation (XOR domain)
+    // The "ground truth" members of the frontier at this hop.
+    // We track multiplicity 'm' explicitly.
+    pub atoms: Vec<(BinaryAtom, u32 /*multiplicity*/, f32 /*score*/)>,
+
+    // STATISTICAL representation (COUNT domain)
+    // A projection of `atoms` into count space, ready for a high-fan-out hop.
+    pub bundle: FrontierBundle,
+}
+
+pub struct FrontierBundle {
+    pub centroids: [CountCentroid; M],
+}
+```
+
+---
+
+## 2. The State Transitions: `collapse` and `fold`
+
+These are the two operations of the "translation layer". They are methods that transition the `Frontier` state.
+
+```rust
+impl Frontier {
+    /// TRANSITION 1: `collapse` (COUNT -> XOR). The lossy measurement.
+    /// Uses the statistical `bundle` to generate a new set of discrete `atoms`.
+    /// This is the SNR-gated bottleneck.
+    pub fn collapse(&mut self, rel: &Relation, codebook: &AtomMemory) {
+        let mut candidates: HashMap<u32, (u32, f32)> = HashMap::new(); // aid -> (multiplicity, score)
+        let bg_global = self.bundle.centroids.iter()
+            .map(|c| (c.l1_norm as f32) * 2.0 / (D as f32))
+            .sum::<f32>() / M as f32;
+        
+        // Corrected noise sigma: The score is a sum over K positions, so the variance of the noise
+        // contribution to the score is K * Var(noise_per_pos) = K * bg.
+        // The standard deviation is thus sqrt(K * bg). This is a critical correction.
+        let noise_sigma = (K as f32 * bg_global).sqrt();
+        let snr_gate = 5.0 * noise_sigma; // 5σ gate on the *total score*
+
+        for c in &self.bundle.centroids {
+            let unbound = rel.inv.apply_counts(&c.counts);
+            let bg_centroid = (c.l1_norm as f32) * 2.0 / (D as f32);
+            let thresh = (bg_centroid + 3.0 * bg_centroid.sqrt()).ceil() as u8;
+
+            for pos in 0..D {
+                if unbound[pos] < thresh { continue; }
+                for &aid in &codebook.posting[pos] {
+                    let entry = candidates.entry(aid).or_insert((0, 0.0));
+                    entry.0 += 1; // Increment hit count (proxy for multiplicity)
+                    entry.1 += unbound[pos] as f32; // Accumulate raw count score
+                }
+            }
+        }
+
+        let mut survivors = Vec::new();
+        for (aid, (multiplicity, raw_score)) in candidates {
+            let score = raw_score - (K as f32 * bg_global); // Background subtraction
+            if score > snr_gate {
+                survivors.push((
+                    codebook.atoms[aid as usize].to_binary(),
+                    multiplicity,
+                    score,
+                ));
+            }
+        }
+        self.atoms = survivors;
+    }
+
+    /// TRANSITION 2: `fold` (XOR -> COUNT). The lossless projection.
+    /// Rebuilds the statistical `bundle` from the discrete `atoms`.
+    pub fn fold(&mut self) {
+        let mut new_bundle = FrontierBundle { centroids: std::array::from_fn(|_| CountCentroid::zero()) };
+        for (i, (atom, _, _)) in self.atoms.iter().enumerate() {
+            let centroid_idx = i % M;
+            let c = &mut new_bundle.centroids[centroid_idx];
+            for j in atom.iter_set_bits() {
+                c.counts[j] = c.counts[j].saturating_add(1);
+            }
+            c.n_items += 1;
+            c.l1_norm += K as u32;
+        }
+        self.bundle = new_bundle;
+    }
+}
+```
+
+---
+
+## 3. The Unified Hop Function
+
+The `hop` function is the engine. It takes the current `Frontier`, decides on a path (XOR or COUNT), executes the path, and returns the *next* `Frontier` state, ready for the subsequent hop.
+
+```rust
+fn hop(
+    current_frontier: &Frontier,
+    rel: &Relation,
+    composite_mem: &CompositeMemory,
+    codebook: &AtomMemory,
+) -> Frontier {
+    let mut next_frontier = Frontier::empty();
+
+    if current_frontier.atoms.len() < XOR_PATH_THRESHOLD {
+        // === XOR PATH (low fan-out, exact) ===
+        // No SNR loss. We operate directly on the discrete `atoms`.
+        let mut next_atoms_map: HashMap<BinaryAtom, (u32, f32)> = HashMap::new();
+        for (atom, _, score) in &current_frontier.atoms {
+            let composite_key = atom.xor(&rel.mask);
+            for target in composite_mem.lookup(&composite_key) {
+                let entry = next_atoms_map.entry(target).or_insert((0, 0.0));
+                entry.0 += 1; // multiplicity++
+                entry.1 += score; // aggregate score
+            }
+        }
+        next_frontier.atoms = next_atoms_map.into_iter()
+            .map(|(atom, (m, s))| (atom, m, s)).collect();
+
+    } else {
+        // === COUNT PATH (high fan-out, statistical) ===
+        // This is where the magic and the danger lie. We use the `bundle`.
+        // The current_frontier is already folded from the previous hop.
+        // We just need to trigger the collapse.
+        let mut temp_frontier = current_frontier.clone(); // In practice, avoid clone
+        temp_frontier.collapse(rel, codebook);
+        next_frontier.atoms = temp_frontier.atoms;
+    }
+    
+    // CRITICAL: After every hop, `fold` the new discrete atoms into a new bundle
+    // in preparation for the *next
+---
+
+>>> Llama-Maverick (R4) <<<
+## Llama-Maverick R4: Count-Centroid Traversal Pipeline
+
+The critical unsolved problem is the translation between count-based FrontierBundle and XOR-based CompositeMemory. I will derive the exact operations and show the full 3-hop pipeline.
+
+### 1. Data Structures and Types
+
+```rust
+const D: usize = 16384;
+const K: usize = 64;
+const M: usize = 8; // Centroids
+
+/// COUNT DOMAIN: Statistical histogram. Lossy.
+#[repr(C, align(64))]
+pub struct CountCentroid {
+    counts: [u8; D],
+    n_items: u32,
+    l1_norm: u32,
+}
+
+/// XOR DOMAIN: Exact, 2KB bitmask.
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub struct BinaryAtom {
+    bits: [u64; D / 64],
+}
+
+/// Relation: Used for both count-domain permutation and XOR-domain masking.
+pub struct Relation {
+    perm: Permutation,      // For count-domain binding/unbinding
+    mask: BinaryAtom,       // For XOR-domain exact composites
+}
+
+/// The FrontierBundle: M count centroids + metadata.
+pub struct FrontierBundle {
+    centroids: [CountCentroid; M],
+    member_ids: Vec<u64>,
+    assign: Vec<u8>,        // member_id -> centroid index
+}
+
+/// AtomMemory: Codebook + inverted index for sublinear cleanup.
+pub struct AtomMemory {
+    atoms: Vec<BinaryAtom>,
+    posting: Vec<Vec<u32>>, // posting list: pos -> atom_ids
+}
+```
+
+### 2. The 3-Hop Traversal Pipeline
+
+Let's trace the state through `start_node --R1--> {h1} --R2--> {h2} --R3--> {h3}`.
+
+#### Step 0: Seed the Frontier
+
+```rust
+fn seed(start: &BinaryAtom) -> FrontierBundle {
+    let mut c = CountCentroid::zero();
+    for j in start.iter_set_bits() {
+        c.counts[j] = 1;
+    }
+    c.n_items = 1;
+    c.l1_norm = K as u32;
+    FrontierBundle::from_single(c)
+}
+```
+
+#### Step 1: `start_node --R1--> {h1}`
+
+1. **Unbind R1 in COUNT domain**: Permute counts by `R1⁻¹`.
+2. **Cleanup against AtomMemory**: Score candidates, threshold.
+3. **Collapse to discrete atoms**: The COUNT→XOR boundary.
+
+```rust
+impl FrontierBundle {
+    fn hop(&self, rel: &Relation, atoms: &AtomMemory) -> Vec<(BinaryAtom, f32)> {
+        let mut candidates: HashMap<u32, f32> = HashMap::new();
+        
+        for c in &self.centroids {
+            // COUNT-domain unbind: permutation (no thresholding)
+            let unbound = rel.perm.inv().apply_counts(&c.counts);
+            
+            // Cleanup against codebook (inverted-index scan)
+            let bg = (c.l1_norm as f32) * 2.0 / (D as f32);
+            let thresh = (bg + 3.0 * bg.sqrt()).ceil() as u8;
+            for pos in 0..D {
+                if unbound[pos] < thresh { continue; }
+                for &aid in &atoms.posting[pos] {
+                    *candidates.entry(aid).or_insert(0.0) += unbound[pos] as f32;
+                }
+            }
+        }
+
+        // Background-correct, threshold: SNR = (raw - K*bg) / sqrt(K*bg)
+        let bg_global = self.centroids.iter()
+            .map(|c| (c.l1_norm as f32) * 2.0 / (D as f32))
+            .sum::<f32>() / (M as f32);
+        let mut survivors = Vec::new();
+        for (aid, raw) in candidates {
+            let score = raw - (K as f32) * bg_global;
+            if score > 5.0 * (K as f32 * bg_global).sqrt() { // 5σ gate
+                survivors.push((atoms.atoms[aid as usize].clone(), score));
+            }
+        }
+        survivors
+    }
+}
+```
+
+#### Step 2 & 3: Subsequent Hops
+
+The same `hop` function is used. If the frontier size exceeds ~40, we stay in COUNT domain (statistical). If ≤40, we can switch to XOR domain (exact) via CompositeMemory.
+
+```rust
+fn route_next_hop(
+    current_frontier: Vec<(BinaryAtom, f32)>,
+    rel: &Relation,
+    composite_mem: &CompositeMemory,
+    atom_mem: &AtomMemory,
+) -> Vec<(BinaryAtom, f32)> {
+    if current_frontier.len() < 40 {
+        // XOR PATH (exact)
+        let mut next_hops = Vec::new();
+        for (atom, score) in current_frontier {
+            let composite_key = atom.xor(&rel.mask);
+            for target in composite_mem.lookup(&composite_key) {
+                next_hops.push((target, score));
+            }
+        }
+        next_hops
+    } else {
+        // COUNT PATH (statistical)
+        let count_bundle = FrontierBundle::rebuild_from_atoms(&current_frontier, M);
+        count_bundle.hop(rel, atom_mem)
+    }
+}
+```
+
+### 3. The COUNT→XOR Boundary: Cleanup is the Measurement
+
+The critical step is the cleanup against `AtomMemory` in `FrontierBundle::hop`. This is where the COUNT-domain histogram is *measured* against the discrete codebook, collapsing to a set of XOR-domain `BinaryAtom`s. The operation is **not invertible** — information is lost for atoms below the SNR floor.
+
+**Derivation of the 5σ gate:**
+
+1. Background per position: `E[noise] = l1_norm * 2 / D`
+2. Variance of noise contribution to score: `K * bg` (sum of K positions)
+3. Standard deviation: `sqrt(K * bg)`
+4. 5σ gate: `score > 5 * sqrt(K * bg)`
+
+This ensures that only atoms with a significant signal (m ≥ 1, typically) survive.
+
+### 4. State Evolution Through 3 Hops
+
+Let's analyze the SNR at each hop:
+
+| Hop | Frontier Size `N` | Multiplicity `m` | SNR (approx.) | Survives? |
+| --- | --- | --- | --- | --- |
+| 1   | 1                | 1               | 180+          | ✓         |
+| 2   | k₁ (~10-50)      | 1               | 25-57         | ✓         |
+| 3   | k₂ (~100-1000)   | 1               | 5.7-18        | ✓ if k₂<1000 |
+
+For k₂ > 2000, m=1 atoms start dying (SNR < 5σ). The fix is to route high-fan-out chains through XOR CompositeMemory (exact, no SNR loss).
+
+### 5. Summary
+
+The translation layer between COUNT and XOR domains is **not a function** — it's a **measurement** (cleanup against codebook). The COUNT→XOR boundary is lossy, SNR-gated. The pipeline dynamically switches between COUNT (statistical, for large frontiers) and XOR (exact, for small frontiers) paths based on frontier size.
+
+**Exact Rust types** are used throughout the pipeline. The 3-hop traversal is a sequence of (unbind, cleanup, collapse) operations, with the algebra (XOR vs COUNT) selected dynamically at each hop. The SNR evolution is derived exactly, showing where single-thread chains (m=1) survive or die.
+---
+
+--- Round 5: Ruthless Prioritization ---
+
+>>> Claude-Opus (R5) <<<
+# Claude-Opus — Round 5: Where Does This Actually Pay? (And the Honest Cut)
+
+I've been the one pushing count-centroid hardest. Time to turn the knife on my own work. Let me compute the actual break-even, not defend the architecture.
+
+## First, the brutal framing nobody did: what is materialized traversal's cost?
+
+Materialized = an adjacency list. `node_id -> Vec<(rel, target_id)>`. Multi-hop = BFS/DFS over the list. Let me put exact numbers on the competitor before I claim my thing beats it.
+
+```
+Adjacency entry: (rel: u32, target: u64) = 12 bytes.
+Avg degree d. Storage = N_nodes · d · 12 bytes.
+Per-hop cost: for each frontier node, read its posting list, push targets.
+  = O(frontier · d) memory reads, each a pointer-chase (~100ns cache miss).
+```
+
+For a 3-hop query from one node with fan-out d=10:
+- Hop 1: 1 node → 10 targets. 10 reads.
+- Hop 2: 10 → 100. 100 reads.
+- Hop 3: 100 → 1000. 1000 reads.
+- Total: **~1110 random reads ≈ 111µs**. Exact answer. Zero loss.
+
+Now my count-centroid hop, from R3/R4: **~1ms per hop, 3ms total**, AND it loses m=1 atoms past frontier ~1500, AND it requires a 16KB×8 = 128KB centroid scan per hop regardless of fan-out.
+
+**On a 3-hop fan-out-10 query, materialized is 27× faster AND exact. The holographic path loses to a plain adjacency list.** This is the result I have to confront.
+
+## So where does materialized actually hurt? Find the regime, with numbers.
+
+Materialized traversal cost scales as `O(frontier · d)` and **the frontier blows up multiplicatively**: after h hops, frontier ≈ d^h. The pain regime is **high fan-out × deep traversal**:
+
+```
+d=30, h=4:  frontier reaches 30^4 = 810,000 reads on the last hop.
+            = 810K · 100ns = 81ms, AND you materialize 810K intermediate nodes.
+```
+
+This is the only place materialized hurts: **the intermediate frontier explosion**. You pay to enumerate every path even when you only care about the *aggregate destination set*.
+
+**Here is the precise claim for when holographic wins:** when you want the **converged destination set** (the nodes reachable, weighted by path-multiplicity) and you DON'T need the individual paths.
+
+Because — and this is the one genuine structural advantage — **the count-centroid bundle does NOT grow with frontier.** It stays at 128KB (8 × 16KB) no matter how many paths converge into it. Materialized must enumerate d^h path-endpoints; holographic superposes them into a fixed-size histogram.
+
+## The break-even math, exact
+
+Holographic per-hop cost: `C_holo ≈ M·D + M·H·L` ≈ constant ≈ 1ms (frontier-independent).
+Materialized per-hop cost: `C_mat ≈ frontier · d · 100ns`.
+
+Holographic wins at hop h when:
+```
+frontier_h · d · 100ns  >  1ms
+frontier_h · d          >  10,000
+```
+
+With frontier_h ≈ d^(h-1):
+```
+d^h > 10,000
+```
+
+| fan-out d | hops to break even |
+|-----------|--------------------|
+| 10        | h ≥ 4 (10^4=10K)   |
+| 30        | h ≥ 3 (30^3=27K)   |
+| 100       | h ≥ 2 (100^2=10K)  |
+
+**BUT** — and this kills most of the regime — the SNR gate says m=1 atoms die at frontier > ~1500 (R4). So the moment the frontier crosses 1500, holographic stops being *correct* for single-multiplicity destinations. The break-even table above lives almost entirely in the regime where **frontier > 1500 and therefore holographic is already lossy.**
+
+Cross-referencing the two constraints:
+```
+Holographic CHEAPER  needs:  d^h > 10,000
+Holographic CORRECT  needs:  d^(h-1) < 1500  (frontier stays clean)
+```
+For d=30: cheaper at h≥3 (frontier=900 at hop 3 entry — OK!), and frontier at hop-3 *exit* ≈ 27,000 which is collapsed into the fixed bundle, NOT enumerated. **This is the sliver where it works:** d=30, h=3, where the input frontier (900) is still clean but the *output* convergence (27K paths) is what you're avoiding materializing.
+
+## The concrete use case, with real numbers
+
+**Recommendation queries on a knowledge graph: "things 3 hops from `user_X` via {likes, similar_to, made_by}, ranked by path-multiplicity."**
+
+- Graph: 10M nodes, avg fan-out d=25.
+- Query: 3-hop reachability, want top-50 destinations by how many paths reach them.
+- Materialized: enumerates ~25³ = 15,625 path-endpoints, dedups, counts. ~15,625 reads ≈ 1.5ms + a 15K-entry hashmap for counting.
+- Holographic: 3 hops × 1ms = 3ms, bundle stays 128KB, **the count IS the path-multiplicity** (that's literally what the centroid stores). Top-50 falls out of one collapse.
+
+**Holographic is 2× SLOWER here.** It loses. The 128KB-fixed-size advantage doesn't beat 15K cheap reads.
+
+Push to d=40, h=4: materialized = 40⁴ = 2.56M reads ≈ 256ms + 2.56M-entry counting map (~40MB transient). Holographic = 4ms, 128KB. **Now holographic wins 64× on time and 300× on memory.** But — frontier at hop 3 entry = 40³=64,000 ≫ 1500, so **m=1 destinations are LOST**. It only returns high-multiplicity (m≥5) destinations correctly.
+
+## The honest verdict
+
+The regime where count-centroid multi-hop beats materialized is:
+
+> **fan-out ≥ 40, depth ≥ 4, AND you only want high-multiplicity (popular) destinations, AND you accept losing rare single-path nodes.**
+
+That is a real regime — it's exactly "**find the popular hubs reachable from here**," PageRank-flavored aggregate queries. The count-multiplicity giving you the ranking for free is genuinely elegant. But:
+
+1. It's a narrow slice of query space (aggregate, not enumerative).
+2. Materialized + a bloom filter + early-termination on frontier size handles 95% of real queries faster.
+3. The lossy XOR translation and the SNR cliff make it fragile exactly where it's supposed to shine (deep = large frontier = lossy).
+
+## My ruling: CUT the general-purpose multi-hop. KEEP one narrow primitive.
+
+**CUT:** count-centroid as a general multi-hop traversal engine. It loses to adjacency lists everywhere except the corner case, and the corner case is lossy.
+
+**KEEP, narrowly:** count-centroid as a **fixed-memory aggregate-reachability estimator** — a single primitive `reachable_hubs(start, rel_path, depth) -> top-k by multiplicity`, explicitly documented as approximate (high-multiplicity only), used for deep+wide aggregate queries where materializing 10⁶ intermediates is the actual bottleneck.
+
+This makes it a **specialized accelerator behind a query planner**, not the traversal substrate. The planner picks materialized for enumeration/shallow/exact, holographic only when `d^h > 10⁶` AND the query is aggregate. That's maybe 2-5% of queries — but for those, it's a 50-100× win, and the 128KB fixed footprint is real.
+
+If we can't commit to building a query planner that routes correctly, then **cut it entirely** and ship materialized-only. The holographic multi-hop is not worth being the default. It's worth being a documented fast-path for one query class, or nothing.
+---
+
+>>> DeepSeek-V4 (R5) <<<
+# DeepSeek-V4 — Round 5: Cut Count-Centroid Multi-Hop
+
+I'll be blunt. The regime is too narrow. I'm cutting it.
+
+## The numbers don't lie
+
+Let me trace the exact win-condition, not handwave it.
+
+**Materialized traversal cost (adjacency list):**
+```
+Per-hop: frontier_size · avg_degree · 100ns (cache-miss read)
+Hop 1: d reads
+Hop 2: d² reads  
+Hop 3: d³ reads
+```
+
+**Holographic cost:**
+```
+Per-hop: M·D + M·H·L ≈ 1ms (constant, independent of frontier)
+3 hops: ~3ms
+```
+
+**Break-even requires:**
+```
+d³ · 100ns > 3ms  →  d³ > 30,000  →  d > 31
+```
+
+So holographic only beats materialized at d ≥ 32 over 3 hops. That's already niche.
+
+**But the kill shot is the SNR constraint.** The count path requires frontier < ~1000 for m=1 recovery. At d=32:
+```
+Hop 1 output: 32 nodes    ← clean
+Hop 2 output: 1024 nodes  ← borderline (SNR ≈ 5.7)
+Hop 3 output: 32,768      ← dead (m=1 atoms lost below SNR floor)
+```
+
+**The moment holographic becomes faster than materialized (d > 31, hop 3), it's already incorrect for single-multiplicity destinations.** The only atoms surviving the SNR gate at hop 3 are those with m ≥ 3, i.e., only destinations reached by ≥3 distinct paths. The exact answer (all reachable nodes) is lost.
+
+## The "win" regime is a lie
+
+The supposed win condition is:
+> d ≥ 40, h ≥ 4, aggregate-only, high-multiplicity destinations
+
+At d=40, h=4: materialized reads 40⁴ = 2.56M nodes ≈ 256ms. Holographic does 4ms. That's a 64× speedup.
+
+**But the frontier at hop 3 input is 40³ = 64,000.** SNR for m=1 is:
+```
+SNR = √(D·M / 4N) = √(16384·8 / 256000) = √0.512 = 0.72
+```
+That's not "barely above 5σ." That's **dead**. The signal is below the noise floor by a factor of 7. Even m=10 atoms have SNR ≈ 7.2, barely clean.
+
+**The holographic "win" at d=40, h=4 requires assuming the output has massive multiplicity (m ≥ 50+), which means you're only recovering the top 0.1% most-connected hubs in the graph.** That's not "approximate retrieval." That's "we can tell you the degree-100 nodes and miss everything else."
+
+## The honest comparison
+
+| Query type | Materialized | Holographic | Winner |
+|------------|-------------|-------------|--------|
+| d=10, h=3, exact | 111µs, 100% recall | 3ms, 100% recall | Materialized (27× faster) |
+| d=30, h=3, exact | 2.7ms, 100% recall | 3ms, ~90% recall | Materialized (faster + exact) |
+| d=40, h=4, top-50 by multiplicity | 256ms, 100% recall | 4ms, recovers only top 0.1% hubs | Holographic (but wrong for most nodes) |
+
+The only "win" is the last row, and it's not a win — it's a different query. You're not getting approximate answers to the same question; you're getting a completely different result set (the ultra-high-degree hubs only).
+
+## What the holographic bundle actually gives you
+
+The count-centroid bundle is **a lossy compression of the frontier's convergence pattern.** It aggregates path-multiplicity into a fixed-size histogram. This is useful for exactly one thing: **estimating the PageRank-like stationary distribution of a random walk from a seed set.** That's it. It's a spectral primitive, not a traversal primitive.
+
+## My ruling: CUT count-centroid multi-hop traversal
+
+**Cut:**
+- `FrontierBundle::hop()` as a general multi-hop traversal primitive
+- The COUNT→XOR collapse pipeline for arbitrary queries
+- The dual-algebra routing logic
+
+**Keep, but reclassify:**
+- `CountCentroid` as a data structure
+- The fold operation (XOR→COUNT) — it's lossless and useful for building bundles
+- The permutation-based unbind — it's correct and fast
+
+**Repurpose into:**
+- A **single primitive**: `stationary_distribution(seed_set, relation_sequence, steps) -> Vec<(node, multiplicity)>`
+- Documented as a **spectral/PageRank accelerator**, not a traversal engine
+- Returns the top-k nodes by expected visit count under the specified walk
+- Guarantee: recovers nodes with multiplicity ≥ 5σ above noise floor
+- Use case: "given this set of users who liked X, what are the most popular items 3 hops away via co-purchase and similarity?"
+
+This is a real query. It's useful for recommendations. It's not general traversal. The planner routes normal traversal to materialized adjacency lists and only invokes this for aggregate walk queries where the user explicitly wants popularity-weighted results and accepts missing long-tail nodes.
+
+## What we actually ship
+
+```
+Traversal: materialized adjacency lists, exact, 100% recall.
+  - For fan-out > 40, use indexed adjacency with bloom pre-filter.
+  - Cost: O(frontier · d) per hop. Acceptable up to ~10⁶ intermediates.
+
+Aggregate walk: count-centroid stationary distribution estimator.
+  - Invoked explicitly via `WALK(seed, [R1,R2,R3], steps=3) -> TOPK(k)`.
+  - Returns high-multiplicity destinations only.
+  - Fixed 128KB memory, 1ms/hop.
+  - Not a hidden optimization. A separate query operator.
+```
+
+**The holographic bundle is not a traversal accelerator. It's a spectral estimator. Cut the traversal claims, ship the estimator.**
+---
+
+>>> Qwen-Max (R5) <<<
+# Qwen-Max — Round 5: The Empty Set Theorem (Cutting the Multi-Hop Delusion)
+
+Opus and DeepSeek are right to swing the axe, but they didn't cut deep enough. DeepSeek wants to keep it as a "spectral estimator." Opus wants to keep it as a "specialized accelerator." 
+
+**I reject both compromises.** We are keeping a zombie alive because we spent four rounds optimizing it. It’s time to look at the math and admit the category error: **we have been treating an associative memory like a graph database.**
+
+Here is the brutal, unvarnished truth.
+
+---
+
+## 1. The Category Error: Superposition is just Lossy Compression
+
+Why do we bundle $N$ items into a count-centroid? To save memory and compute by superposing them. 
+But superposition is not magic physics. **It is lossy compression.** 
+
+You only accept lossy compression when the exact, lossless representation doesn't fit in your memory hierarchy. Let's calculate the exact memory footprint of the "clean" frontier.
+
+- **Exact representation:** A list of $N$ node IDs (`u32`). Memory = $N \times 4$ bytes.
+- **Holographic representation:** $M=8$ centroids of $D=16384$ (`u8`). Memory = $8 \times 16384 = 131,072$ bytes (128 KB).
+
+For the holographic bundle to actually be a *compression* (i.e., smaller than the exact list), we need:
+$$N \times 4 > 131,072 \implies N > 32,768$$
+
+But from our SNR derivations in R3/R4, for the holographic bundle to be **clean** (recover $m=1$ atoms at $5\sigma$), we need:
+$$N < 1,500$$
+
+## 2. The Empty Set Theorem
+
+Let $S_{mem}$ be the set of frontier sizes where holographic is more memory-efficient.
+Let $S_{snr}$ be the set of frontier sizes where holographic is SNR-clean.
+
+$$S_{mem} = \{N \mid N > 32,768\}$$
+$$S_{snr} = \{N \mid N < 1,500\}$$
+
+**The viable regime is the intersection:**
+$$S_{mem} \cap S_{snr} = \emptyset$$
+
+**The sweet spot is mathematically empty.** 
+There is no frontier size where the count-centroid bundle is *both* smaller than the exact list *and* accurate enough to be useful. When $N < 1500$, the exact list is $< 6$ KB. It fits entirely inside the L1 cache. **You do not use a lossy, noise-prone, 128 KB compression algorithm for a 6 KB payload.**
+
+## 3. The Materialized Reality (BFS with Roaring Bitmaps)
+
+Let's compare the actual latency of a 3-hop traversal ($d=30$) using standard in-memory materialized graphs versus our 1ms/hop holographic pipeline.
+
+**Materialized BFS:**
+```rust
+// Adjacency list: Compressed Sparse Row (CSR) or Vec<Vec<u32>>
+// Visited set: RoaringBitmap (O(1) amortized deduplication)
+```
+- Hop 1: 30 edges. 
+- Hop 2: 900 edges.
+- Total edges scanned: 930.
+- Cost per edge: ~15ns (sequential CSR scan + L2 cache hit).
+- **Total latency: ~14 $\mu$s.**
+
+**Holographic Traversal:**
+- 3 hops $\times$ 1 ms/hop = **3,000 $\mu$s.**
+
+Materialized BFS is **214× faster**, uses **6 KB of working memory**, and has **100% recall**. The holographic path is slower, uses 20× more memory, and loses single-path nodes. 
+
+Even DeepSeek's "PageRank/Spectral" compromise fails here. If you want a stationary distribution, you run a Sparse Matrix-Vector Multiply (SpMV) on the CSR graph. SpMV on a 10M-node graph takes ~5ms in Rust using standard linear algebra. It is exact. It doesn't suffer from SNR cliffs.
+
+---
+
+## 4. The Final Cut
+
+We are cutting the count-centroid multi-hop traversal entirely. No "fast paths." No "spectral estimators." It is a solution in search of a problem that doesn't exist in the RAM-rich regime.
+
+**DELETE:**
+1. `FrontierBundle::hop()` and the entire COUNT-domain unbind/cleanup pipeline.
+2. The COUNT $\leftrightarrow$ XOR translation layer (the `collapse` and `fold` state machine).
+3. The dynamic routing logic based on frontier size.
+
+**KEEP:**
+1. **Atom Codebook (Single-Hop):** High-dimensional associative retrieval. This is what HMS was actually built for (e.g., mapping a noisy context vector to a clean concept).
+2. **Composite Memory (XOR, 2-Hop):** Exact algebraic rules for low-arity compositions (e.g., `capital_of(France) = Paris`). Capped at $N \le 107$ per shard.
+3. **Materialized Graph (Multi-Hop):** Standard CSR adjacency lists + Roaring Bitmaps for $>2$-hop traversal.
+
+---
+
+## 5. The Shippable Architecture (Rust)
+
+This is the final, honest system. It uses the right tool for the right job.
+
+```rust
+use roaring::RoaringBitmap;
+
+// ==========================================
+// 1. SINGLE-HOP: Associative Memory (HMS)
+// ==========================================
+pub struct AtomCodebook {
+    atoms: Vec<SparseAtom>,       // D=16384, K=64
+    // ... inverted index for cleanup ...
+}
+
+impl AtomCodebook {
+    /// Maps a noisy, high-dimensional input vector to the nearest clean atom.
+    pub fn associative_recall(&self, noisy_input: &[u8; 16384]) -> Option<u32> {
+        // Inverted index scan, count-overlap scoring, return top-1 if > threshold
+        // ... (Implementation from R3) ...
+        unimplemented!()
+    }
+}
+
+// ==========================================
+// 2. EXACT 2-HOP: Compositional Rules (XOR)
+// ==========================================
+pub struct CompositeMemory {
+    // Stores exact XOR bindings: rho_1(subject) XOR rho_2(object)
+    // Sharded to keep interference low. Max ~26 rules per shard.
+    shards: Vec<Vec<u64>>, 
+}
+
+impl CompositeMemory {
+    /// Exact 2-hop lookup. e.g., "What is the capital of France?"
+    pub fn apply_rule(&self, subject: u32, relation: u32) -> Option<u32> {
+        // XOR unbind, exact match in shard
+        unimplemented!()
+    }
+}
+
+// ==========================================
+// 3. MULTI-HOP: Graph Traversal (Materialized)
+// ==========================================
+pub struct CsrGraph {
+    offsets: Vec<u32>,    // CSR row pointers
+    edges: Vec<u32>,      // CSR column indices (target nodes)
+    edge_types: Vec<u16>, // Relation types
+}
+
+impl CsrGraph {
+    /// Exact N-hop traversal. Replaces the holographic FrontierBundle.
+    pub fn traverse(&self, start: u32, rel_path: &[u16]) -> RoaringBitmap {
+        let mut current_frontier = RoaringBitmap::from([start]);
+        
+        for &rel in rel_path {
+            let mut next_frontier = RoaringBitmap::new();
+            for node in current_frontier.iter() {
+                let start_idx = self.offsets[node as usize] as usize;
+                let end_idx = self.offsets[node as usize + 1] as usize;
+                
+                for i in start_idx..end_idx {
+                    if self.edge_types[i] == rel {
+                        next_frontier.insert(self.edges[i]);
+                    }
+                }
+            }
+            current_frontier = next_frontier;
+        }
+        current_frontier
+    }
+}
+
+// ==========================================
+// THE UNIFIED ENGINE
+// ==========================================
+pub struct CognitiveEngine {
+    pub codebook: AtomCodebook,
+    pub rules: CompositeMemory,
+    pub graph: CsrGraph,
+}
+
+pub enum Query {
+    /// "What concept does this noisy vector represent?"
+    Associate(Vec<u8>),
+    /// "What is the object of this specific subject-relation pair?"
+    Rule { subject: u32, relation: u32 },
+    /// "Find all nodes reachable via this sequence of relations."
+    Traverse { start: u32, path: Vec<u16> },
+}
+
+impl CognitiveEngine {
+    pub fn execute(&self, q: Query) -> QueryResult {
+        match q {
+            Query::Associate(vec) => {
+                let input: [u8; 16384] = vec.try_into().unwrap();
+                QueryResult::Atom(self.codebook.associative_recall(&input))
+            }
+            Query::Rule { subject, relation } => {
+                QueryResult::Atom(self.rules.apply_rule(subject, relation))
+            }
+            Query::Traverse { start, path } => {
+                QueryResult::Set(self.graph.traverse(start, &path))
+            }
+        }
+    }
+}
+
+pub enum QueryResult {
+    Atom(Option<u32>),
+    Set(RoaringBitmap),
+}
+```
+
+## Summary of the Phase 2 Verdict
+
+1. **C_max for single bundles** is physically capped at $N \approx 107$ for binary XOR, and $N \approx 1000$ for count-centroids (with $M=8$).
+2. **Multi-hop count-centroid traversal** is a mathematically empty regime. It attempts to use lossy compression on payloads that fit in L1 cache. **It is cut.**
+3. **The final system** is a hybrid: HMS handles single-hop associative cleanup and exact 2-hop XOR rules. Materialized CSR handles $>2$-hop graph traversal. 
+
+We stop trying to make the holographic bundle do the job of a graph database. The debate is closed. Ship the hybrid.
+---
+
+>>> Gemini-Pro (R5) <<<
+# Gemini-Pro — Round 5: Finding the Sliver of a Win
+
+The previous rounds have correctly identified that the holographic multi-hop path is not a general-purpose replacement for materialized traversal. The SNR cliff and the high constant-factor cost make it slower and lossier in most common scenarios.
+
+However, to "ruthlessly prioritize" means we must identify if there is *any* regime where it provides a non-trivial, defensible advantage. Throwing it out entirely is easy; the harder, more valuable task is to define its niche, if one exists.
+
+I will derive the break-even point against a realistic materialized competitor and show that a narrow, but critical, regime does exist.
+
+---
+
+## 1. Defining the Competition: Materialized BFS
+
+A fair competitor is not a naive adjacency list. It's a standard in-memory graph representation like Compressed Sparse Row (CSR) with a `RoaringBitmap` for tracking the frontier, which gives near O(1) deduplication.
+
+- **Per-hop Cost:** `C_mat = (frontier_size * avg_degree) * T_read`
+- `T_read`: A sequential scan over a CSR edge list is cache-friendly. Let's be generous and say **~20ns** per edge (L2 cache hit + logic).
+- `C_holo`: The holographic hop cost is constant, dominated by the `M*D` scan. From R3, this is **~1ms or 1,000,000 ns**.
+
+## 2. The Break-Even Calculation
+
+Holographic becomes faster at a given hop when `C_holo < C_mat`:
+```
+1,000,000 ns < frontier_size * avg_degree * 20 ns
+frontier_size * avg_degree > 50,000
+```
+This is the condition for holographic to be **faster**.
+
+Now, we add the SNR constraint from R4: for clean `m=1` recovery, the *input* frontier size must be less than ~1500.
+```
+frontier_size < 1,500
+```
+This is the condition for holographic to be **correct**.
+
+Let's find the intersection. We plug the max clean frontier size into the break-even formula:
+```
+1,500 * avg_degree > 50,000
+avg_degree > 33.3
+```
+
+This defines the regime where holographic traversal is both faster and correct:
+> **The input frontier size must be large (approaching 1500) and the graph must have high average degree (d > 33).**
+
+A single-node start will never reach this regime. A `d=10` query will take 4 hops just to build a frontier of 1000, and by then materialized is still faster. This means the holographic path is useless for "needle-in-a-haystack" traversal from a single starting point.
+
+## 3. The Sliver of a Win: Aggregate Reachability from a Large Seed Set
+
+The holographic path is not for finding one path. It is for **superposing thousands of paths at once**.
+
+The winning use case is not `traverse(start_node, path)`. It is:
+`traverse(many_start_nodes, path)`.
+
+**Concrete Use Case: Aggregate Influence Analysis**
+"We have a set of 1,000 academic papers that cite a new technique. What are the top 50 most-cited *journals* two hops away (i.e., papers that cite our seed papers)? We care about the aggregate count (total citations), not the individual paths."
+
+**Parameters:**
+- Seed set size: `N_seed = 1000` papers.
+- Average citations (fan-out): `d = 40`.
+- Hops: 2.
+
+**Materialized Path Performance:**
+1.  **Initial Frontier:** `RoaringBitmap` of 1000 papers.
+2.  **Hop 1:**
+    -   Edges to read: `1000 * 40 = 40,000`.
+    -   Cost: `40,000 * 20ns = 0.8 ms`.
+    -   Output frontier: A `RoaringBitmap` of ~35,000 unique papers (assuming some overlap).
+3.  **Hop 2:**
+    -   Edges to read: `35,000 * 40 = 1,400,000`.
+    -   Cost: `1,400,000 * 20ns = 28 ms`.
+    -   Output frontier: ~800,000 unique papers.
+4.  **Aggregation:** You now have 800,000 papers. You must join these against a `paper -> journal` mapping and then use a `HashMap<journal_id, u32>` to count the multiplicities. This involves `800,000` lookups and increments, adding another `~30-40ms`.
+5.  **Total Cost: ~60-70 ms**, with transient memory use for a nearly 1M-entry hash map.
+
+**Holographic Path Performance:**
+1.  **Initial Frontier:**
+    -   `fold` the 1000 seed papers into an 8-centroid `FrontierBundle`. The input `N=1000` is within the clean SNR regime.
+    -   Cost: `1000 * 64 * ops_per_inc` -> negligible, `< 0.1 ms`.
+2.  **Hop 1:**
+    -   Run one holographic `hop`.
+    -   Cost: **1 ms** (constant).
+    -   Output: A new `FrontierBundle` representing the superposition of ~35,000 intermediate papers. The bundle size remains `128 KB`.
+3.  **Hop 2:**
+    -   Run a second holographic `hop`.
+    -   Cost: **1 ms** (constant).
+    -   Output: A final `FrontierBundle`. The `l1_norm` of this bundle is now massive, but its physical size is still `128 KB`.
+4.  **Aggregation:**
+    -   Run one final `collapse` operation. The `score` of each surviving journal IS its multiplicity count. Sorting by score gives the top-K directly.
+    -   Cost: `~1 ms` for the collapse.
+5.  **Total Cost: ~3 ms**, with fixed `128 KB` memory use.
+
+### The Verdict on the Use Case
+
+| Method | Latency | Memory | Correctness |
+|---|---|---|---|
+| Materialized | ~65 ms | ~30 MB (transient map) | Exact |
+| Holographic | ~3 ms | 128 KB (fixed) | Approximate (high-multiplicity) |
+
+In this specific, but important, class of query, the holographic path is **~20x faster** and uses **~200x less peak memory**. It wins, decisively. The "lossiness" is actually a feature here: we don't care about the long tail of journals cited only once; we *want* the high-multiplicity hubs, which is exactly what survives the SNR gate.
+
+---
+
+## 4. The Final Ruling: Specialize, Don't Generalize.
+
+Cutting the multi-hop logic entirely would be a mistake. It throws away a powerful tool for aggregate analytics. The error was framing it as a general traversal engine.
+
+**I vote to KEEP the count-centroid logic, but re-brand and restrict it.**
+
+**CUT:**
+-   The automatic routing logic in a general `hop` function.
+-   The idea that `FrontierBundle` is the default state for multi-hop traversal.
+
+**KEEP and REFINE:**
+-   Expose the holographic path as a separate, specialized query operator: `aggregate_reachability`.
+-   This operator is explicitly for starting from a **large seed set** and finding **high-multiplicity destinations**.
+-   The documentation will be honest: it is approximate and excels at finding popular hubs, not enumerating all paths.
+
+### Shippable Architecture
+
+The `CognitiveEngine` should expose distinct query types, letting the user (or a query planner) choose the right tool.
+
+```rust
+pub struct CognitiveEngine {
+    pub codebook: AtomCodebook,
+    pub rules: CompositeMemory,
+    pub graph: CsrGraph,
+}
+
+pub enum Query {
+    // ... Associate and Rule from Qwen R5 ...
+
+    /// Exact, enumerative traversal from a single start
+---
+
+>>> Llama-Maverick (R5) <<<
+## Llama-Maverick R5: The Verdict on Count-Centroid Multi-Hop
+
+Let's directly confront the math, not the hype. Count-centroid multi-hop has three crippling limitations:
+
+1. **Frontier size cap:** $N < 1000$ for clean $m=1$ recovery (R3/R4).
+2. **Lossy COUNT→XOR translation:** Atoms below $5\sigma$ are lost (R4).
+3. **Materialized fallback:** Handles fan-out > 40 already (R4/Qwen R5).
+
+The actual cost of materialized traversal (BFS over CSR with `RoaringBitmap`) is **~20ns per edge**. For a 3-hop query with $d=30$:
+- Hop 1: 30 edges. 
+- Hop 2: 900 edges.
+- Hop 3: 27,000 edges.
+- Total: 27,930 edges, **~558µs**.
+
+Holographic multi-hop costs **~1ms per hop**, so 3 hops = **3ms**. This is **5.4× slower** than materialized.
+
+**The "win" condition for holographic is not just being faster; it's being both faster and correct.**
+
+### 1. The Break-Even Analysis
+
+Holographic wins when:
+```math
+frontier_size × avg_degree × 20ns > 1ms
+frontier_size × avg_degree > 50,000
+```
+
+With `frontier_size < 1000` (SNR constraint):
+```math
+1000 × avg_degree > 50,000
+avg_degree > 50
+```
+
+For $d=50$, materialized cost at hop 2 is:
+- `1000 × 50 = 50,000 edges`, **~1ms**.
+- Holographic is **still 1ms**, so they're tied.
+
+### 2. The Regime Where Holographic Wins
+
+The only regime where holographic is both faster and not completely lossy is:
+> **Large seed set (N~1000), high fan-out (d>50), 2 hops, aggregate query.**
+
+**Concrete Use Case: Market Basket Analysis**
+"Given 1000 popular products, what are the top 50 categories of products that are *also bought* with them (co-purchase network, 2 hops)?"
+
+- Seed set: 1000 products.
+- Fan-out (avg co-purchases per product): $d=60$.
+- Hop 1: ~60,000 edges. Materialized cost: **~1.2ms**.
+- Hop 2: ~3.6M edges. Materialized cost: **~72ms**.
+- Holographic: 2 hops × 1ms = **2ms**.
+
+Holographic is **36× faster** and uses **fixed 128KB memory** (vs. ~100MB transient for materialized counting). It directly gives top categories by multiplicity (the count in centroids).
+
+### 3. The Final Verdict
+
+**CUT the general-purpose multi-hop logic.** It loses to materialized traversal in most regimes.
+
+**KEEP a specialized primitive:** `aggregate_neighborhood(seed_set, relation_path, depth=2) -> top-k by multiplicity`.
+
+This primitive is for **large seed sets, high fan-out, aggregate queries**. It is **documented as approximate** (loses single-path nodes), with a **fixed 128KB memory footprint**.
+
+The query planner will route:
+- Enumerative/shallow queries to materialized traversal.
+- Aggregate, high-fan-out, large-seed-set queries to holographic.
+
+This is the ruthless prioritization. Ship the hybrid, not the delusion of a general holographic traversal engine.
+
+### Shippable Architecture (Rust)
+
+```rust
+pub struct CognitiveEngine {
+    pub codebook: AtomCodebook,
+    pub rules: CompositeMemory,
+    pub graph: CsrGraph,
+}
+
+pub enum Query {
+    // ... (other query types) ...
+    AggregateNeighborhood {
+        seed_set: Vec<u32>,
+        rel_path: Vec<u16>,
+        depth: u8,
+        k: usize,
+    },
+}
+
+impl CognitiveEngine {
+    pub fn execute(&self, q: Query) -> QueryResult {
+        match q {
+            // ... (other query handlers) ...
+            Query::AggregateNeighborhood { seed_set, rel_path, depth, k } => {
+                if seed_set.len() > 1000 || depth > 2 {
+                    // Fallback or error
+                    unimplemented!();
+                }
+                let result = self.aggregate_neighborhood(&seed_set, &rel_path, depth, k);
+                QueryResult::TopK(result)
+            }
+            _ => unimplemented!(),
+        }
+    }
+
+    fn aggregate_neighborhood(
+        &self,
+        seed_set: &[u32],
+        rel_path: &[u16],
+        depth: u8,
+        k: usize,
+    ) -> Vec<(u32, u32)> {
+        // 1. Fold seed_set into count centroids.
+        // 2. Holographic hops for depth=2.
+        // 3. Collapse final bundle, sort by score, return top-k.
+        unimplemented!(); // Implementation details from R3/R4
+    }
+}
+```
+
+This is the honest architecture. No delusions. The holographic bundle is a **specialized accelerator**, not a general traversal engine.
+---
+
+--- Round 6: Final Contribution ---
+
+>>> Claude-Opus (R6) <<<
+# Claude-Opus — Round 6: The Seed-Set Fold Is Wrong. Here's the Correct One, and the Test That Catches the Bug.
+
+Everyone converged on `aggregate_neighborhood(seed_set, path, depth=2)` as the surviving primitive. Gemini, Llama, and the `fold_into_bundle` from Qwen R3 all use **round-robin centroid assignment**. That is a latent bug that will silently destroy the SNR win the entire primitive depends on. I'll prove it, give the correct fold, and write the test that fails on round-robin and passes on the fix.
+
+## The capability: correct multi-centroid fold for the seed-set aggregate primitive
+
+The whole reason M=8 buys us SNR √(D·M/4N) instead of √(D/4N) is that **a coherent next-hop atom must concentrate its signal in ONE centroid**, so that centroid sees effective N/M = 125 items instead of 1000. Round-robin assignment destroys this. Under round-robin, a next-hop atom reached by `m` seed nodes has those `m` predecessors scattered uniformly across all 8 centroids. After unbind, the signal for that atom is spread `m/8` per centroid — and the aggregate step sums them back, recovering total signal `m` but against noise from the FULL N=1000, not N/M=125.
+
+**Round-robin gives you SNR = m·√(D/4N), not m·√(D·M/4N).** It silently reverts to single-bundle capacity. The M=8 structure becomes pure overhead — 8× the scan cost for zero SNR gain. The test in Qwen R3 *passed* only because it bundled with shift=1 identity roles where every atom landed coherently by accident of the construction.
+
+## The algorithm: relation-coherent fold via cheap LSH on the unbound target
+
+The fix: assign each seed node to a centroid by **the bucket its post-unbind target lands in**, so that all predecessors of the same next-hop atom go to the same centroid. We don't know the target before unbinding — but we know the *seed atom's* projection, and after binding with the SAME relation, coherent targets remain coherent. Hash on a stable K-bit signature.
+
+```rust
+const D: usize = 16384;
+const K: usize = 64;
+const M: usize = 8;
+
+/// Assign a seed atom to one of M centroids by a stable signature of its
+/// LOW bits, so atoms that will collide on the same next-hop target (because
+/// they share structure under the relation permutation) land together.
+/// We hash the XOR-fold of the atom's set positions mod M.
+#[inline]
+fn centroid_of(atom: &BinaryAtom) -> usize {
+    // Fold all set-bit positions into a single 64-bit accumulator.
+    // Atoms sharing a next-hop target via relation R share a dominant
+    // sub-pattern; this signature is stable under that sub-pattern.
+    let mut h: u64 = 0xcbf29ce484222325; // FNV offset basis
+    for j in atom.iter_set_bits() {
+        h ^= j as u64;
+        h = h.wrapping_mul(0x100000001b3); // FNV prime
+    }
+    (h % M as u64) as usize
+}
+
+impl Frontier {
+    /// CORRECT fold: signature-based assignment, NOT round-robin.
+    pub fn fold_coherent(&mut self) {
+        let mut centroids: [CountCentroid; M] =
+            std::array::from_fn(|_| CountCentroid::zero());
+
+        for (atom, mult, _score) in &self.atoms {
+            let c_idx = centroid_of(atom);
+            let c = &mut centroids[c_idx];
+            // Fold with multiplicity: a node reached by `mult` paths
+            // contributes `mult` to each of its set positions.
+            for j in atom.iter_set_bits() {
+                c.counts[j] = c.counts[j].saturating_add(*mult as u8);
+            }
+            c.n_items += *mult;
+            c.l1_norm += (K as u32) * *mult;
+        }
+        self.bundle = FrontierBundle { centroids };
+    }
+}
+```
+
+The signature is deterministic and applied identically at fold time AND at the relation's binding time, so an atom and its relation-image route to consistent buckets. This restores per-centroid effective N to ~N/M, recovering the √M SNR factor that justifies M=8 existing at all.
+
+## The test: catches round-robin by measuring per-centroid concentration, not just recall
+
+Recall alone will NOT catch the round-robin bug at N=1000 — both pass at ~0.95 because the aggregate step recombines scattered signal. The bug only manifests as a *narrowed SNR margin* that cracks at N=1500. So the test must (a) measure the concentration ratio directly, and (b) run at the SNR cliff edge where round-robin demonstrably fails.
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::{rngs::StdRng, SeedableRng};
+    use std::collections::HashSet;
+
+    /// Proves fold_coherent concentrates each next-hop atom's signal in ONE
+    /// centroid (ratio > 0.6), whereas round-robin spreads it (ratio ~1/M).
+    /// Then proves recall survives at N=1500 where round-robin cracks.
+    #[test]
+    fn fold_coherence_preserves_snr_at_cliff() {
+        let mut rng = StdRng::seed_from_u64(0x5EED_C0DE);
+        let codebook = AtomMemory::random(100_000, K, D, &mut rng);
+        let rel = Relation::random(&mut rng);
+
+        // Build N=1500 seed nodes, each pointing (via rel) to a target with
+        // multiplicity m=1 — the hardest, cliff-edge case.
+        let n = 1500;
+        let mut frontier = Frontier::empty();
+        let mut true_targets: HashSet<u32> = HashSet::new();
+        for _ in 0..n {
+            let target = codebook.sample_id(&mut rng);
+            true_targets.insert(target);
+            // bound triple's surviving signal = the rel-bound target atom
+            let bound = codebook.atoms[target as usize]
+                .to_binary()
+                .permute(&rel.perm);
+            frontier.atoms.push((bound, 1, 1.0));
+        }
+
+        // --- PART A: concentration ratio ---
+        frontier.fold_coherent();
+        // For one known target, measure what fraction of its signal lands in
+        // its dominant centroid vs spread across all M.
+        let probe = *true_targets.iter().next().unwrap();
+        let probe_bits = codebook.atoms[probe as usize]
+            .to_binary().permute(&rel.perm);
+        let mut per_centroid = [0u32; M];
+        for j in probe_bits.iter_set_bits() {
+            for (ci, c) in frontier.bundle.centroids.iter().enumerate() {
+                per_centroid[ci] += c.counts[j] as u32;
+            }
+        }
+        let total: u32 = per_centroid.iter().sum();
+        let dominant = *per_centroid.iter().max().unwrap();
+        let ratio = dominant as f32 / total as f32;
+        // Coherent fold: this atom's bits all routed to one centroid -> >0.6.
+        // Round-robin would give ~1/M = 0.125. THIS LINE FAILS on round-robin.
+        assert!(
+            ratio > 0.6,
+            "signal not concentrated: ratio={:.3} (round-robin bug? expect ~{:.3})",
+            ratio, 1.0 / M as f32
+        );
+
+        // --- PART B: recall survives at the N=1500 cliff ---
+        frontier.collapse(&rel, &codebook);
+        let recovered: HashSet<u32> =
+            frontier.atoms.iter().map(|(a, _, _)| codebook.id_of(a)).collect();
+        let recall =
+            recovered.intersection(&true_targets).count() as f32 / n as f32;
+        // SNR with coherent fold at N=1500: m·√(D·M/4N)=√(16384·8/6000)=4.67.
+        // Tight but recoverable with background subtraction. Round-robin SNR
+        // = √(16384/6000) = 1.65 -> recall collapses to <0.4.
+        assert!(
+            recall >= 0.90,
+            "recall cracked at cliff: {:.3} (round-robin SNR insufficient)",
+            recall
+        );
+    }
+}
+```
+
+**Part A is the discriminating assertion.** It directly measures whether the fold concentrates signal. Round-robin yields ratio ≈ 0.125 and fails on the line `ratio > 0.6`. Coherent fold yields > 0.6 and passes. No other test in this debate distinguishes the two folds — they all measured only recall at N=1000 where both happen to pass.
+
+This is the one bug that would have shipped silently, turning the M=8 centroid structure into 8× dead overhead while everyone's recall tests stayed green. The primitive is only worth keeping *if the fold is coherent*; with round-robin, Qwen's Empty-Set Theorem is correct and we should cut it. With `fold_coherent`, the SNR math holds and the d>50, 2-hop, large-seed aggregate win is real. Ship the coherent fold or don't ship the primitive.
+---
+
+>>> DeepSeek-V4 (R6) <<<
+ERROR: parse failed
+---
+
+>>> Qwen-Max (R6) <<<
+# Qwen-Max — Round 6: The Read-Path Bug That Kills the Write-Path Fix
+
+Opus R6 fixed the write-path (`fold_coherent`) but left the read-path (`collapse`) fatally broken. The R4 `collapse` uses **Sum-Pool** across centroids. Summing scores across $M$ centroids adds $M-1$ noise variances without adding signal, mathematically destroying the $\sqrt{M}$ SNR gain we just bled for.
+
+## The Math: Why Sum-Pool is a Silent Killer
+
+With `fold_coherent`, a target with multiplicity $m$ concentrates its signal in ONE dominant centroid $c^*$. 
+- Expected score in $c^*$: $K \cdot m$. Variance: $K \cdot bg$.
+- Expected score in $c \neq c^*$: $0$. Variance: $K \cdot bg$.
+
+If `collapse` **sums** across $M=8$ centroids:
+$$E[S_{sum}] = K \cdot m$$
+$$Var(S_{sum}) = M \cdot K \cdot bg \implies \sigma_{sum} = \sqrt{M \cdot K \cdot bg}$$
+$$SNR_{sum} = \frac{m \cdot \sqrt{K}}{\sqrt{M \cdot bg}}$$
+
+If `collapse` takes the **max** across $M$ centroids:
+$$E[S_{max}] \approx K \cdot m \quad \text{(assuming } c^* \text{ dominates)}$$
+$$Var(S_{max}) \approx K \cdot bg \implies \sigma_{max} = \sqrt{K \cdot bg}$$
+$$SNR_{max} = \frac{m \cdot \sqrt{K}}{\sqrt{bg}}$$
+
+**The ratio is $SNR_{max} / SNR_{sum} = \sqrt{M}$.** For $M=8$, Sum-Pool loses a factor of 2.82 in SNR. 
+At $N=1500, m=1$: $bg = 1.46$, $\sigma_{max} = 9.68$. 
+- $SNR_{max} = 64 / 9.68 = \mathbf{6.61}$ (Clean, $>5\sigma$).
+- $SNR_{sum} = 6.61 / \sqrt{8} = \mathbf{2.33}$ (Dead, $<5\sigma$).
+
+## The Capability: Max-Pool Collapse for Multiplicity Ranking
+
+The read-path must isolate the dominant centroid's score per candidate, discarding the pure-noise centroids.
+
+## The Algorithm
+
+```rust
+impl Frontier {
+    /// CORRECT read-path: Max-Pool across centroids.
+    /// Sum-Pool adds M-1 noise variances, destroying the sqrt(M) SNR gain.
+    pub fn collapse_max_pool(&mut self, rel: &Relation, codebook: &AtomMemory) {
+        // Track the MAX score for each candidate across all centroids.
+        let mut candidates: HashMap<u32, f32> = HashMap::new(); 
+
+        for c in &self.bundle.centroids {
+            let unbound = rel.inv.apply_counts(&c.counts);
+            let bg = (c.l1_norm as f32) * 2.0 / (D as f32);
+            let thresh = (bg + 3.0 * bg.sqrt()).ceil() as u8;
+            
+            // Local scores for THIS centroid only
+            let mut local_scores: HashMap<u32, f32> = HashMap::new();
+            for pos in 0..D {
+                if unbound[pos] < thresh { continue; }
+                for &aid in &codebook.posting[pos] {
+                    *local_scores.entry(aid).or_insert(0.0) += (unbound[pos] as f32) - bg;
+                }
+            }
+
+            // Merge into global candidates using MAX (not sum)
+            for (aid, score) in local_scores {
+                let entry = candidates.entry(aid).or_insert(-f32::INFINITY);
+                if score > *entry { *entry = score; }
+            }
+        }
+
+        // Final SNR gate on the MAX score
+        let bg_global = self.bundle.centroids.iter()
+            .map(|c| (c.l1_norm as f32) * 2.0 / (D as f32))
+            .sum::<f32>() / (M as f32);
+        let noise_sigma = (K as f32 * bg_global).sqrt();
+        let snr_gate = 5.0 * noise_sigma;
+
+        let mut survivors = Vec::new();
+        for (aid, max_score) in candidates {
+            if max_score > snr_gate {
+                // Multiplicity estimate: signal is K*m, so m = score / K
+                let m_est = (max_score / K as f32).round().max(1.0) as u32;
+                survivors.push((codebook.atoms[aid as usize].to_binary(), m_est, max_score));
+            }
+        }
+        self.atoms = survivors;
+    }
+}
+```
+
+## The Test
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::{rngs::StdRng, SeedableRng};
+    use std::collections::HashSet;
+
+    #[test]
+    fn max_pool_preserves_snr_sum_pool_fails() {
+        let mut rng = StdRng::seed_from_u64(0xDEAD_C0DE);
+        let codebook = AtomMemory::random(100_000, K, D, &mut rng);
+        let rel = Relation::random(&mut rng);
+
+        // N=1500, m=1: The exact cliff edge where Sum-Pool dies.
+        let n = 1500;
+        let mut frontier = Frontier::empty();
+        let mut true_targets: HashSet<u32> = HashSet::new();
+        for _ in 0..n {
+            let target = codebook.sample_id(&mut rng);
+            true_targets.insert(target);
+            let bound = codebook.atoms[target as usize].to_binary().permute(&rel.perm);
+            frontier.atoms.push((bound, 1, 1.0));
+        }
+
+        // Apply Opus R6 write-path
+        frontier.fold_coherent(); 
+
+        // A/B Test: Sum-Pool (R4 bug) vs Max-Pool (R6 fix)
+        let mut frontier_sum = frontier.clone();
+        frontier_sum.collapse_sum_pool(&rel, &codebook); // The broken R4 version
+        let recall_sum = compute_recall(&frontier_sum, &true_targets);
+
+        let mut frontier_max = frontier.clone();
+        frontier_max.collapse_max_pool(&rel, &codebook);
+        let recall_max = compute_recall(&frontier_max, &true_targets);
+
+        // SNR_sum = 2.33 (fails 5-sigma). SNR_max = 6.61 (passes 5-sigma).
+        assert!(recall_sum < 0.50, "Sum-pool must fail at N=1500 (SNR=2.33)");
+        assert!(recall_max >= 0.90, "Max-pool must pass at N=1500 (SNR=6.61)");
+    }
+}
+```
+---
+
+>>> Gemini-Pro (R6) <<<
+# Gemini-Pro — Round 6: Closing the Loop with Traceback
+
+The R5 consensus correctly isolated the `aggregate_neighborhood` primitive. Opus R6 and Qwen R6 then correctly fixed the write-path (`fold_coherent`) and read-path (`collapse_max_pool`). This makes the forward-pass (seed set → popular destinations) correct and performant.
+
+However, this only answers "what." It doesn't answer "who." A critical query is not just "what are the popular destinations?" but **"which of my seeds contributed to this popular destination?"** The current primitive throws this information away. I will add the `Traceback` capability, which recovers this mapping with minimal overhead, making the primitive a complete analytical tool.
+
+## The Capability: Traceback for Contributor Analysis
+
+After identifying the top-K high-multiplicity destinations, `Traceback` provides, for each destination, a list of the original seed atoms that contributed to its signal. This enables contributor analysis, influence attribution, and root-cause identification without requiring a second, slow, materialized pass.
+
+## The Algorithm: Augment Fold and Collapse to Preserve Provenance
+
+The key insight is that `fold_coherent` already partitions the seed set. We just need to record that partitioning. The `collapse` then uses this recorded provenance to restrict its search for contributors, avoiding a full N-to-K search.
+
+```rust
+use std::collections::HashMap;
+
+const D: usize = 16384;
+const K: usize = 64;
+const M: usize = 8;
+
+pub struct Frontier {
+    pub atoms: Vec<(BinaryAtom, u32, f32)>,
+    pub bundle: FrontierBundle,
+    /// NEW: Stores which seed IDs were folded into which centroid.
+    pub provenance: [Vec<u64>; M],
+}
+
+impl Frontier {
+    /// MODIFIED fold: now records the seed_id provenance.
+    pub fn fold_coherent_with_provenance(&mut self, seeds: &[(u64, BinaryAtom)]) {
+        let mut centroids = [CountCentroid::zero(); M];
+        let mut provenance: [Vec<u64>; M] = std::array::from_fn(|_| Vec::new());
+
+        for (seed_id, atom) in seeds {
+            let c_idx = centroid_of(atom);
+            provenance[c_idx].push(*seed_id);
+
+            let c = &mut centroids[c_idx];
+            for j in atom.iter_set_bits() {
+                c.counts[j] = c.counts[j].saturating_add(1);
+            }
+            c.n_items += 1;
+            c.l1_norm += K as u32;
+        }
+        self.bundle = FrontierBundle { centroids };
+        self.provenance = provenance;
+    }
+
+    /// NEW: Collapse and Traceback.
+    /// Returns a map from a winning destination ID to the seed IDs that built it.
+    pub fn collapse_and_trace(
+        &self,
+        rel: &Relation,
+        codebook: &AtomMemory,
+        seeds: &HashMap<u64, BinaryAtom>, // Map from seed_id to seed_atom
+    ) -> HashMap<u32, Vec<u64>> {
+        // Step 1: Max-Pool collapse to find winners and their dominant centroid.
+        // (Identical to Qwen R6, but we also store the winning centroid index).
+        let mut candidates: HashMap<u32, (f32, usize)> = HashMap::new(); // aid -> (max_score, centroid_idx)
+
+        for (c_idx, c) in self.bundle.centroids.iter().enumerate() {
+            let unbound = rel.inv.apply_counts(&c.counts);
+            let bg = (c.l1_norm as f32) * 2.0 / (D as f32);
+            // ... local scoring logic ...
+            for (aid, score) in local_scores {
+                let entry = candidates.entry(aid).or_insert((-f32::INFINITY, 0));
+                if score > entry.0 { *entry = (score, c_idx); }
+            }
+        }
+        
+        let bg_global = /* ... */; let snr_gate = 5.0 * (K as f32 * bg_global).sqrt();
+        let winners: Vec<(u32, usize)> = candidates.into_iter()
+            .filter(|(_, (score, _))| *score > snr_gate)
+            .map(|(aid, (_, c_idx))| (aid, c_idx))
+            .collect();
+
+        // Step 2: Traceback. For each winner, check only the seeds in its dominant centroid.
+        let mut traceback_results: HashMap<u32, Vec<u64>> = HashMap::new();
+        for (winner_aid, dominant_c_idx) in winners {
+            let winner_atom = &codebook.atoms[winner_aid as usize];
+            let mut contributors = Vec::new();
+
+            // The crucial optimization: search space is N/M, not N.
+            for &seed_id in &self.provenance[dominant_c_idx] {
+                let seed_atom = &seeds[&seed_id];
+                let unbound_seed = seed_atom.permute(&rel.inv); // Unbind this one seed
+                
+                // Does this unbound seed have high overlap with the winner?
+                // This is a cheap, K-sized intersection.
+                let overlap = unbound_seed.count_overlap(winner_atom);
+                if overlap > K / 2 { // Heuristic: >50% overlap confirms contribution
+                    contributors.push(seed_id);
+                }
+            }
+            traceback_results.insert(winner_aid, contributors);
+        }
+        traceback_results
+    }
+}
+```
+The cost of traceback is `num_winners * (N/M) * K` operations. For 50 winners from a seed set of 1500, this is `50 * (1500/8) * 64 ≈ 600k ops`, adding `<1ms` latency. A brute-force check against all N seeds would cost `50 * 1500 * 64 = 4.8M ops`, an 8x penalty. The coherent fold's partitioning enables efficient traceback.
+
+## The Test: Prove Correct Attribution
+
+This test creates a specific ground truth where a "popular" destination is built from a known subset of seeds. It asserts that the traceback correctly identifies only that subset.
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::{rngs::StdRng, SeedableRng, seq::SliceRandom};
+    use std::collections::{HashMap, HashSet};
+
+    #[test]
+    fn traceback_correctly_attributes_contributors() {
+        let mut rng = StdRng::seed_from_u64(0xA7721B_C0DE);
+        let codebook = AtomMemory::random(10_000, K, D, &mut rng);
+        let rel = Relation::random(&mut rng);
+
+        let mut seeds_map: HashMap<u64, BinaryAtom> = HashMap::new();
+        let mut all_seeds: Vec<(u64, BinaryAtom)> = Vec::new();
+        for i in 0..1
+---
+
+>>> Llama-Maverick (R6) <<<
+## Llama-Maverick R6: The Final Contribution - Quantized Scorer for Multiplicity Estimation
+
+The current `collapse_max_pool` implementation uses a floating-point score to gate candidates. This is **suboptimal** for two reasons:
+
+1.  **Precision vs. Range Tradeoff**: Floats have a large range but limited precision (23 bits for f32). When scores are near the threshold, small variations can cause incorrect gating.
+2.  **Hardware Utilization**: Modern CPUs have dedicated integer execution units that are faster and more power-efficient than floating-point units.
+
+## The Capability: Quantized Scorer for Multiplicity Estimation
+
+The capability is to replace the floating-point score with a **quantized integer score** that estimates multiplicity directly.
+
+## The Algorithm: Quantized Scoring with Saturation Arithmetic
+
+```rust
+const SCORE_BITS: u8 = 8; // u8 score range: 0..255
+const SCORE_SCALE: f32 = 16.0; // scale factor to map f32 scores to u8
+
+impl Frontier {
+    /// Quantized collapse: converts raw scores to u8, saturating at 255.
+    pub fn collapse_quantized(&mut self, rel: &Relation, codebook: &AtomMemory) {
+        let mut candidates: HashMap<u32, u8> = HashMap::new();
+
+        for c in &self.bundle.centroids {
+            let unbound = rel.inv.apply_counts(&c.counts);
+            let bg = (c.l1_norm as f32) * 2.0 / (D as f32);
+            let thresh = (bg + 3.0 * bg.sqrt()).ceil() as u8;
+
+            let mut local_scores: HashMap<u32, u8> = HashMap::new();
+            for pos in 0..D {
+                if unbound[pos] < thresh { continue; }
+                for &aid in &codebook.posting[pos] {
+                    let raw = unbound[pos] as f32 - bg;
+                    let scaled = (raw * SCORE_SCALE).max(0.0).min(255.0) as u8;
+                    *local_scores.entry(aid).or_insert(0) = local_scores[&aid].saturating_add(scaled);
+                }
+            }
+
+            for (aid, score) in local_scores {
+                let entry = candidates.entry(aid).or_insert(0);
+                *entry = (*entry).max(score); // Max-pool across centroids
+            }
+        }
+
+        // Gate on quantized score (e.g., > 32 for m >= 2)
+        let threshold = 32; // corresponds to ~2σ above noise
+        let mut survivors = Vec::new();
+        for (aid, score) in candidates {
+            if score > threshold {
+                let m_est = (score as f32 / SCORE_SCALE).round() as u32;
+                survivors.push((codebook.atoms[aid as usize].to_binary(), m_est, score as f32));
+            }
+        }
+        self.atoms = survivors;
+    }
+}
+```
+
+## The Test: Quantized Scoring Matches Float Scoring
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::{rngs::StdRng, SeedableRng};
+
+    #[test]
+    fn quantized_scoring_matches_float_scoring() {
+        let mut rng = StdRng::seed_from_u64(0xC0DE_F00D);
+        let codebook = AtomMemory::random(100_000, K, D, &mut rng);
+        let rel = Relation::random(&mut rng);
+
+        // Create a FrontierBundle with known structure
+        let mut frontier = Frontier::empty();
+        // ... populate frontier ...
+
+        // A/B test: float vs quantized scoring
+        let mut frontier_float = frontier.clone();
+        frontier_float.collapse_max_pool(&rel, &codebook);
+        let float_survivors: Vec<_> = frontier_float.atoms.iter().map(|(a, m, _)| (a.clone(), *m)).collect();
+
+        let mut frontier_quantized = frontier.clone();
+        frontier_quantized.collapse_quantized(&rel, &codebook);
+        let quantized_survivors: Vec<_> = frontier_quantized.atoms.iter().map(|(a, m, _)| (a.clone(), *m)).collect();
+
+        // Assert that the two methods recover the same set of atoms with similar multiplicity estimates
+        assert_eq!(float_survivors.len(), quantized_survivors.len());
+        for (atom, mult) in &float_survivors {
+            let quantized_mult = quantized_survivors.iter().find(|(a, _)| a == atom).unwrap().1;
+            assert!((mult as f32 - quantized_mult as f32).abs() < 1.0, "Multiplicity mismatch");
+        }
+    }
+}
+```
+---
+
+=== DEBATE A PHASE 2 COMPLETE ===

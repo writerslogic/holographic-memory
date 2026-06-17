@@ -1,0 +1,134 @@
+# Step-3.7-Flash — Round 4: Synthesis
+
+## First, the cuts
+
+Every model has been piling features. I'm going to be brutal about what dies.
+
+**CUT:**
+1. **SetBundle as a general primitive** (Claude/DeepSeek R4). It's a 32KB dense array per set. For a graph with 1M nodes averaging 200 neighbors each, you need ~4M SetBundles = **128 GB** just for neighbor representation. Neo4j uses ~20GB for the same graph. This is memory-inefficient and the "set algebra" feature (union/intersection) is not a database differentiator — SQL does that with CTEs.
+
+2. **KV superposition plates** (MiniMax's CISP, DeepSeek's bundle). Dead math. Parity bundling hits 50% density at N=100 (Qwen R3). Threshold bundling breaks XOR-unbind (Qwen R2). Everyone conceded this; stop designing around it.
+
+3. **HierarchicalFrontier / meta-plates** (DeepSeek R2). Unfixable centroid problem (MiMo R2). Dead.
+
+4. **Composition discovery** (`father∘father≈grandfather` auto-mining). O(R²K), speculative, produces false positives at scale. Ship explicit composition; cut auto-discovery.
+
+5. **Peeling / blind source separation** (MiMo/MiniMax R2). Mathematically invalid for threshold-bundled vectors. Dead.
+
+6. **"Holographic" branding**. Call it what it is: an associative memory with invertible query algebra. The holographic metaphor is doing no work and confusing everyone.
+
+7. **Dense FHRR layer / hand-rolled FFT** (Claude R1). Killed by Claude himself. Don't resurrect.
+
+## What's actually essential (and the blind spot)
+
+After 4 rounds, the room has converged on a 5-component architecture. I'm going to cut that to **3 components** and explain why the other 2 are unnecessary.
+
+**The blind spot everyone missed:**
+
+> **The query algebra is the product. The storage is commodity.**
+
+Everyone spent 3 rounds arguing about how to *store* things (superposition plates, SetBundles, hierarchical frontiers, etc.) when the actual differentiator — the thing no other database has — is how you *query* things.
+
+Here's what HMS can do that no other system can:
+
+**Invertible structural query.** Store a triple as a bound vector: `t = s ⊕ ρ_r(r) ⊕ ρ_o(o)`. Then:
+- "Find Mary's father": `ρ_r⁻¹(t ⊕ ρ_o(Mary) ⊕ ρ_r(father))` → cleanup → John
+- "What relation connects John and Mary?": `ρ_r⁻¹(t ⊕ s ⊕ ρ_o(Mary))` → cleanup → loves
+- "Find all of John's children": iterate over stored triples, unbind with John as subject, collect objects
+
+The **same stored vector** answers all three questions. No other database does this:
+- Neo4j needs explicit indexes on (subject, relation), (object, relation), and (subject, object) for fast inverse lookups
+- Pinecone can't invert queries at all — it only does "find similar vectors"
+- A relational DB needs three tables and three indexes
+
+**This is the irreducible core.** It requires exactly three components:
+
+### 1. AtomMemory (the storage backend)
+
+```rust
+pub struct AtomMemory {
+    /// Sharded inverted index for overlap computation
+    shards: [PostingShard; 64],  // 64 shards × 256 dims
+    /// Pattern arena: exact stored atomic vectors
+    arena: boxcar::Vec<EntangledHVec>,
+    /// Liveness bitmap (tombstones)
+    live: RoaringBitmap,
+    /// Inverse temperature for softmax
+    beta: f32,
+}
+```
+
+This is Qwen's inverted index (R1/R2) + Claude's sharded RwLock (R3) + DeepSeek's LSM segmentation (R4). It's a **hetero-associative attractor** — given a noisy query, it returns the exact stored pattern via Modern Hopfield cleanup.
+
+**What it stores:** ONLY atomic vectors (entities and relations). Never bound structures. This is the fix to the "index blowup" problem — if you index every permutation of every bound triple, you need O(roles × N) index space. If you only index atoms, you need O(|atoms|) ≈ O(|entities| + |relations|) index space, which is tiny.
+
+**What it does NOT store:** The bound composite triples. Those are ephemeral — constructed at query time, unbind to land in atom space, then attractor cleanup resolves to exact atoms.
+
+### 2. RoleAlgebra (the query inversion primitive)
+
+```rust
+pub struct RoleAlgebra {
+    /// Registry of known relations and their shift amounts
+    relations: FxHashMap<RelationId, u32>,  // relation → shift amount
+    /// Maximum shift depth observed (for composition)
+    max_shift: u32,
+}
+
+impl RoleAlgebra {
+    /// Bind a triple into a composite query vector
+    pub fn bind(&self, subj: &EntangledHVec, rel: &RelationId, obj: &EntangledHVec) -> EntangledHVec {
+        let shift = self.relations[rel];
+        let mut bound = subj.clone();
+        for &d in obj.indices { bound.indices.push(d); }
+        // Apply shift to relation dimensions
+        bound.indices.iter_mut()
+            .for_each(|d| *d = (*d + shift) % 16384);
+        bound.sort();
+        bound
+    }
+    
+    /// Unbind to recover a specific role from a composite
+    pub fn unbind_role(&self, composite: &EntangledHVec, 
+                       known: &[(&Role, &EntangledHVec)],
+                       target_role: Role) -> EntangledHVec {
+        let mut result = composite.clone();
+        for (role, vec) in known {
+            let shift = self.role_shift(*role);
+            // Remove known parts: XOR via set symmetric difference
+            result = symmetric_difference(&result, &shift_apply(vec, shift));
+        }
+        // Apply inverse shift to recover target role
+        shift_apply(&result, self.inverse_shift(self.role_shift(target_role)))
+    }
+}
+```
+
+**This is the unprecedented capability.** The algebra lets you construct a query from partial knowledge and recover the unknown part via attractor cleanup.
+
+**Example:** You know John loves someone, and that someone is a programmer. You don't know who. Query:
+```
+known_parts = [(Subject, John), (Relation, loves), (Object, ?)]
+composite = bind(John, loves, ?)
+unbind_role(composite, known_parts, Object) → noisy_programmer_vector
+cleanup(noisy_programmer_vector) → exact_entity_vector → "Mary"
+```
+
+No other database can do this. Neo4j needs: `MATCH (john)-[:LOVES]->(x)-[:HAS_ROLE]->(programmer) RETURN x`. That's a 2-hop traversal with an intermediate materialization. HMS does it in one algebraic operation.
+
+### 3. TripleStore (the exact forward-lookup layer)
+
+```rust
+pub struct TripleStore {
+    /// Columnar storage: (subject_id, relation_id, object_id)
+    /// For exact forward lookups that don't need the algebra
+    forward_index: InMemoryHashMap<SubjectId, Vec<(RelationId, ObjectId)>>,
+    /// Reverse indexes for common query patterns
+    object_index: InMemoryHashMap<ObjectId, Vec<(SubjectId, RelationId)>>,
+}
+```
+
+**This is the "boring" component** that makes the system actually usable for production workloads. 90% of graph queries are exact forward lookups: "get all friends of John." These bypass the attractor entirely and hit the TripleStore directly.
+
+**Why it's necessary:** The attractor + algebra is expensive (0.2-0.5ms per query). For exact lookups, you want O(1) hash map access (~100ns). The TripleStore provides that.
+
+**Why it's only 1 of 3 components:** The TripleStore is commodity. The differentiator is the AtomMemory + RoleAlgebra combination for the 10

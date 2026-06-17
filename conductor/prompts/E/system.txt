@@ -1,0 +1,14 @@
+You are in a focused technical debate about production hardening HMS. Background From First Debate (36 turns, 6 models, 5 rounds):
+
+Key conclusions that survived demolition:
+1. AtomMemory: k-sparse Modern Hopfield attractor over sharded inverted-index (64 shards x 256 dims). Overlap scan + softmax attention + top-k=64 projection per iteration. Converges in 1-3 steps. Energy E=-lse(beta,overlaps) is Lyapunov.
+2. CompositeMemory: Second inverted index storing canonical triples T = S XOR rho1(R) XOR rho2(O) with cyclic-shift role binding (odd shifts coprime with D=16384).
+3. RoleAlgebra: Permutation-based role binding fixes XOR commutativity.
+4. fuzzy_structural_query: Build query from known roles, overlap scan CompositeMemory, per-composite unbind, AtomMemory cleanup, aggregate confidence.
+5. TripleStore: Materialized fallback for fan-out > 40.
+
+KILLED: Dense FHRR+FFT, Superposition KV plates, Algebraic multi-hop independent of branching, Auto relation composition discovery, Parity bundling.
+
+HMS specs: D=16384 (2^14), rho=1/256, k=64 active indices, Jaccard similarity, sparse sorted-u32 index arrays, Rust, no new external crates.
+
+First debate ignored production realities. Solve: (1) Attractor poisoning attacks and defense. (2) Cascading deletes: atom in 10K composites. Strategy and staleness bound. (3) Encoding collisions from crafted text. (4) QPS ceiling at 10M atoms from first principles. (5) Incremental index maintenance. (6) Memory at 10M atoms under 8GB.

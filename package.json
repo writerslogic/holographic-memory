@@ -1,18 +1,18 @@
 {
-  "name": "@writerslogic/hms-native",
+  "name": "holographic-memory",
   "version": "0.3.0",
   "license": "Apache-2.0",
   "author": "David Condrey",
   "description": "High-performance Holographic Memory System (HMS) — privacy-preserving semantic search using hyperdimensional computing.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/writerslogic/hms"
+    "url": "https://github.com/writerslogic/holographic-memory"
   },
-  "homepage": "https://github.com/writerslogic/hms",
+  "homepage": "https://github.com/writerslogic/holographic-memory",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
-    "name": "hms-native",
+    "name": "holographic-memory",
     "triples": {
       "defaults": true,
       "additional": [
@@ -31,9 +31,9 @@
     "@napi-rs/cli": "^2.17.0"
   },
   "optionalDependencies": {
-    "@writerslogic/hms-native-win32-x64-msvc": "0.3.0",
-    "@writerslogic/hms-native-darwin-x64": "0.3.0",
-    "@writerslogic/hms-native-linux-x64-gnu": "0.3.0",
-    "@writerslogic/hms-native-darwin-arm64": "0.3.0"
+    "holographic-memory-win32-x64-msvc": "0.3.0",
+    "holographic-memory-darwin-x64": "0.3.0",
+    "holographic-memory-linux-x64-gnu": "0.3.0",
+    "holographic-memory-darwin-arm64": "0.3.0"
   }
 }

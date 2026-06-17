@@ -1,0 +1,1 @@
+ROUND 1: What mathematical property must HMS demonstrate to claim holographic memory? Derive basin of attraction width for k-sparse Modern Hopfield as function of N, k, D, beta. Does multi-scale encoding provide provable graceful degradation -- derive the curve. If attention-bundling replaces majority-vote everywhere, what changes?

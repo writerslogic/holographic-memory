@@ -1,0 +1,1 @@
+ROUND 5: Ruthless cut. Is multi-scale worth the 21x cost? Or should we ship single-scale attractor (which already has 96.9% basin) and claim holographic based on the attractor convergence theorem alone? What is the MINIMUM we must implement to legitimately publish a paper claiming holographic properties? Be honest about what survives peer review vs what is marketing.

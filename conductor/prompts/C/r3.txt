@@ -1,0 +1,1 @@
+ROUND 3: Rust implementation. Hierarchical binding struct. Composition discovery algorithm with complexity. Test proving composition works. Test proving arity=6 for events (agent, action, patient, time, location, instrument). Show encoding formula, query formula per role, expected recall.

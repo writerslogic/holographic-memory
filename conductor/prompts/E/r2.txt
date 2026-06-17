@@ -1,0 +1,1 @@
+ROUND 2: Challenge another model. Does poisoning defense reject legitimate atoms? Can adversary trigger unbounded staleness via rapid insert/delete? Is QPS realistic or assumes perfect cache? Concurrent write load -- RwLock contention model?

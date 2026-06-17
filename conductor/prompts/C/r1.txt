@@ -1,0 +1,1 @@
+ROUND 1: Derive maximum practical arity at D=16384, k=64. At what arity does recall drop below 0.5? How does composite active-index count grow with arity? For composition: under what conditions does father XOR father have Jaccard > 0.4 with grandfather? How many supporting triples needed? Can hierarchical binding be correctly unbound -- show the algebra step by step.

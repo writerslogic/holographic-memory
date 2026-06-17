@@ -1,0 +1,1 @@
+ROUND 1: Design complete self-supervised embedding pipeline. What EXACTLY happens in memorize_text beyond trigrams? Word extraction, context window, context bundling, embedding update. Data structure for evolving embeddings? Interaction with AtomMemory? How many memorize calls until stable -- derive convergence rate. Exact Rust structs.

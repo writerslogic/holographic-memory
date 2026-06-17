@@ -1,0 +1,160 @@
+[MiMo-V2.5-Pro Round 5]: # MiMo-V2.5-Pro — Round 5: Final Section
+
+## The Critical Bug in DeepSeek R5's Algorithm That Would Silently Corrupt Results
+
+DeepSeek R5's `unbind_from_bundle` does: threshold the bundled superposition at m/2, then XOR with Q. **This is mathematically wrong for sparse composites, and implementing it would produce silent garbage for any fan-out m > 2.**
+
+Here's the proof:
+
+A composite T_j has ~192 active dimensions. Its unknown filler (the target role) contributes ~64 of those. When m composites are bundled into a flat [u16; 16384] accumulator, each unknown-part dimension appears in exactly ONE composite → accumulator[dim] = 1. Thresholding at m/2 (which is ≥1 for m≥2) **deletes every unknown-part dimension**. The only dimensions surviving threshold are the known-part dimensions (which appear in ALL m composites, accumulating m votes). After XOR with Q, those known-part dimensions are removed. **The result is empty.** The algorithm returns nothing.
+
+This isn't a minor edge case. This is the core retrieval path. DeepSeek's algorithm returns an empty vector for every multi-match query with m ≥ 2. The `set_retrieve` call that follows finds no atoms and returns empty. Every `fuzzy_structural_query` with fan-out ≥ 2 silently returns nothing. The product is broken.
+
+## The Correct Algorithm: Per-Composite Unbind with Direct Atom Lookup
+
+The fix is to abandon the bundled-superposition path entirely and process composites individually. For m ≤ 40, this is cheap:
+
+```rust
+fn unbind_target_filler(
+    composite_memory: &CompositeMemory,
+    atom_memory: &AtomMemory,
+    algebra: &RoleAlgebra,
+    matched_composite_ids: &[u32],
+    known_roles: &[(Role, &[u32])],
+    target_role: Role,
+) -> Vec<(u32, f32)> {
+    let mut results: Vec<(u32, f32)> = Vec::with_capacity(matched_composite_ids.len());
+    let target_shift = algebra.role_shift(target_role);
+
+    for &cid in matched_composite_ids {
+        let composite = &composite_memory.arena[cid as usize];
+
+        // Step 1: XOR out all known roles from the composite
+        let mut residual = composite.indices.clone();
+        for (role, known_vec) in known_roles {
+            let shifted = algebra.shift_apply(known_vec, algebra.role_shift(*role));
+            residual = sorted_symmetric_difference(&residual, &shifted);
+        }
+
+        // Step 2: Inverse-shift to recover target-role space
+        let noisy_filler = algebra.shift_inverse(&residual, target_shift);
+
+        // Step 3: Attractor cleanup against AtomMemory
+        if let Some((clean_atom, confidence)) = atom_memory.cleanup(&noisy_filler, 3) {
+            results.push((clean_atom, confidence));
+        }
+    }
+
+    // Deduplicate: multiple composites may yield the same target entity
+    results.sort_unstable_by_key(|(id, _)| *id);
+    results.dedup_by_key(|(id, _)| *id);
+    results
+}
+```
+
+**Why per-composite unbind is correct when the bundled approach fails:**
+Each composite T_j is a clean vector with ~192 bits. XOR with the known parts removes ~128 bits (2 known roles × 64 bits). The residual has ~64 bits: the target filler plus XOR-collision noise from the binding. XOR collisions between the known parts and the unknown filler: expected = 3·C(2,1)·(64²/16384) = 3·0.25 = 0.75 bits. **The residual is essentially clean — collision noise is sub-1-bit.** The attractor cleanup on AtomMemory handles this trivially.
+
+**Why this is fast enough:** For m=40 composites, each requiring an XOR of ~192 sorted indices against ~128 sorted indices (O(192+128) = O(320) ops), plus a shift (O(64) ops), plus one attractor cleanup (O(|query|·L̄_A + survivors·64 + D) ≈ 30K ops). Total: 40 × 30K = **1.2M ops ≈ 0.3ms**. Well within the 50ms budget.
+
+## The Exact Mathematical Bound: How Many Triples Can CompositeMemory Hold?
+
+Qwen demanded N_max in R4. Claude gave a partial answer in R5 (1M per unsharded segment for scan-time budget). Here's the complete derivation:
+
+**Global capacity (total triples N):**
+The structural query Q = S' ⊕ ρ₁(R) has |Q| ≈ 128 active dims. The overlap with a random unrelated composite T_j:
+
+```
+overlap ~ Binomial(128, ρ_C)  where ρ_C = 192/16384 ≈ 0.0117
+mean = 128 × 0.0117 ≈ 1.50
+variance ≈ 1.50
+stddev ≈ 1.22
+```
+
+The overlap with the true composite T (matching both subject and relation):
+```
+signal = |S' ∩ S| + |ρ₁(R) ∩ ρ₁(R)| = ~50 + 64 = ~114
+(signal minus collision variance: -0.75 ≈ 113)
+```
+
+The attractor fails when any distractor overlap exceeds signal. For N distractors, the maximum noise overlap is approximately:
+
+```
+max_noise ≈ 1.50 + 1.22 × √(2 ln N)
+```
+
+For max_noise < 113 (ensuring the attractor always sees a clear winner):
+
+```
+1.50 + 1.22 × √(2 ln N) < 113
+√(2 ln N) < 91.4
+2 ln N < 8354
+ln N < 4177
+N < e^4177
+```
+
+**N_max is astronomically large for the attractor's SNR.** The attractor never fails due to false-positive collisions. The capacity is bounded only by **scan time**, not by signal-to-noise.
+
+**Scan-time capacity:**
+For query with |Q| = 128 dims and average posting-list length L̄ = N·192/D:
+```
+increments per scan = |Q| × L̄ = 128 × N × 192 / 16384 = 1.5N
+```
+
+At ~1 increment/cycle (cache-resident accumulators for small N):
+| N triples | increments | time (4GHz) |
+|-----------|-----------|-------------|
+| 100K      | 150K      | 0.04ms      |
+| 1M        | 1.5M      | 0.4ms       |
+| 10M       | 15M       | 3.8ms       |
+| 100M      | 150M      | 37.5ms      |
+
+**Answer: ~100M triples without sharding at the 50ms budget.** The scan becomes DRAM-bound around 10M (15M increments × 4 bytes = 60MB posting data exceeds L3 cache), so for production, **shard by relation ID above 10M triples** to keep posting lists L3-resident. Claude's R5 estimate of 1M was off by 100× because he didn't account for the small per-increment cost of sorted-list intersection.
+
+**Per-query fan-out capacity (the real bottleneck):**
+The unbind-after-match path processes each composite individually. For m matches, cost is m × (unbind + cleanup). This is the limit:
+- m ≤ 40: algebraic path, ~0.3ms total
+- m > 40: materialize from TripleStore, O(m) hash lookups
+
+## The Exact Two-Input Test (The Only Test That Matters)
+
+This test proves the product works. It measures exactly the thing that's irreducible — structural query with noise — and would fail if any component is broken.
+
+```rust
+#[test]
+fn test_fuzzy_structural_query_end_to_end() {
+    let mut hms = Hms::new(16384, 64);
+
+    // ===== SETUP =====
+    // 500 entities, 2 relations, known structure
+    let entities: Vec<u32> = (0..500).map(|_| hms.create_entity()).collect();
+    let loves = hms.create_relation("loves");
+    let hates = hms.create_relation("hates");
+
+    // Structured triples with controlled fan-out
+    // Entity 0 loves entities 1..=fanout[0]
+    // Entity 100 loves entities 101..=100+fanout[1]
+    // etc.
+    let fanouts: Vec<usize> = vec![1, 5, 10, 20, 30, 40, 50, 80];
+    let mut ground_truth: HashMap<u32, HashSet<u32>> = HashMap::new();
+
+    for (i, &f) in fanouts.iter().enumerate() {
+        let subj = entities[i];
+        let objs: HashSet<u32> = (1..=f).map(|j| entities[100 + i * 50 + j]).collect();
+        for &o in &objs {
+            hms.insert_triple(subj, loves, o);
+        }
+        ground_truth.insert(subj, objs);
+    }
+
+    // 50,000 noise triples: random subject × random relation × random object
+    for _ in 0..50_000 {
+        let s = entities[rand_idx(500)];
+        let r = if rand::<bool>() { loves } else { hates };
+        let o = entities[rand_idx(500)];
+        hms.insert_triple(s, r, o);
+    }
+
+    // ===== TEST GRID =====
+    // For each fan-out level × each subject-noise level, measure recall & precision
+    for (i, &f) in fan

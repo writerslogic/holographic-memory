@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TextMetrics",
+  "type": "object",
+  "required": [
+    "consonantCount",
+    "punctuationCount",
+    "sentenceCount",
+    "syllableCount",
+    "vowelCount",
+    "wordCount"
+  ],
+  "properties": {
+    "consonantCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    },
+    "punctuationCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    },
+    "sentenceCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    },
+    "syllableCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    },
+    "vowelCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    },
+    "wordCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    }
+  }
+}

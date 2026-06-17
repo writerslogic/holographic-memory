@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/writerslogic/hms/main/assets/logo.svg" width="200" alt="HMS Logo">
+  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.svg" width="200" alt="HMS Logo">
 </p>
 
 # Holographic Memory System (HMS)
 
-[![CI](https://github.com/writerslogic/hms/actions/workflows/ci.yml/badge.svg)](https://github.com/writerslogic/hms/actions/workflows/ci.yml)
+[![CI](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![crates.io](https://img.shields.io/crates/v/hms-native.svg)](https://crates.io/crates/hms-native)
-[![npm](https://img.shields.io/npm/v/@writerslogic/hms-native.svg)](https://www.npmjs.com/package/@writerslogic/hms-native)
+[![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
+[![npm](https://img.shields.io/npm/v/holographic-memory.svg)](https://www.npmjs.com/package/holographic-memory)
 
 **Privacy-preserving semantic search using hyperdimensional computing.**
 
@@ -37,14 +37,14 @@ HMS is available as both a Node.js package and a high-performance Rust crate.
 
 ### Node.js (N-API)
 ```bash
-npm install @writerslogic/hms-native
+npm install holographic-memory
 ```
 
 ### Rust (Crates.io)
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-hms-native = "0.2"
+holographic-memory = "0.2"
 ```
 
 ## 🏗 Core Architecture
@@ -87,7 +87,7 @@ Traditional AI uses deep vectors (weights). HDC uses high-dimensional (e.g., 10,
 ## 🛠 Quick Start
 
 ```javascript
-const { HolographicMemorySystem } = require('@writerslogic/hms-native');
+const { HolographicMemorySystem } = require('holographic-memory');
 
 async function main() {
   // Initialize with 10,000 dimensions

@@ -79,7 +79,7 @@ The audit log at `{storage_path}/audit.bin` is an append-only binary file with f
 ```rust
 // In Cargo.toml
 [dependencies]
-hms-native = { version = "0.2", features = ["security"] }
+holographic-memory = { version = "0.2", features = ["security"] }
 ```
 
 ```rust
