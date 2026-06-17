@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-17
+
+### Added
+- **Meaning Memory layer**: AtomMemory, CompositeMemory, TripleStore, RoleRegistry with cyclic-shift role binding, RuleStore for composition rules, Decomposer for text-to-triple extraction.
+- Hopfield attractor cleanup with 96.9% erasure tolerance.
+- `fuzzy_structural_query` with algebraic and materialized paths.
+- `multi_hop_query` with rule rewriting.
+- N-API methods: `memorize_meaning`, `structural_query`, `multi_hop_query`, `meaning_cleanup`, `declare_composition_rule`.
+- `MeaningConfig` gated behind `meaning.enabled`.
+- Persistence for atoms (0xFD), composites (0xFC), triples (0xFB) via arena magic bytes.
+
+### Changed
+- Renamed package from `@writerslogic/hms-native` to `holographic-memory` (unscoped npm).
+- Renamed crate from `hms-native` to `holographic-memory`.
+- Repository moved to `writerslogic/holographic-memory`.
+
 ## [0.3.0] - 2026-06-16
 
 ### Added
