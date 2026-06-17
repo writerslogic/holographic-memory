@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" width="200" alt="HMS Logo">
+  <img src="https://raw.githubusercontent.com/writerslogic/hms/main/assets/logo.svg" width="200" alt="HMS Logo">
 </p>
 
 # Holographic Memory System (HMS)
