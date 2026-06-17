@@ -3,9 +3,11 @@
 
 pub(crate) mod concepts;
 pub(crate) mod knowledge;
+pub(crate) mod multi_hop;
 pub(crate) mod query;
 pub(crate) mod router;
 pub(crate) mod shard;
+pub(crate) mod structural;
 
 use anyhow::{Context, Result};
 use parking_lot::RwLock;
