@@ -27,6 +27,7 @@ A high-performance **Holographic Memory System (HMS)** for Node.js, powered by R
   - **FxHash Backend**: Ultra-fast non-cryptographic hashing for all retrieval collections.
   - **O(N) Selection**: Linear-time candidate pruning using `select_nth_unstable`.
 - **Persistent Storage**: Integrated `sled` (key-value) and custom `Arena` (binary) for ACID-compliant persistence.
+- **Meaning Memory**: Structured knowledge layer with role-filler algebra, triple stores, multi-hop reasoning, and Hopfield attractor cleanup.
 - **Graph Engine**: Explicit typed relations with multi-hop traversal, transitive/symmetric inference, and temporal filtering.
 - **Federated Queries**: Query across multiple HMS instances in parallel without centralizing data.
 - **Node.js Bindings**: High-efficiency N-API implementation with asynchronous worker thread execution.
@@ -75,6 +76,72 @@ Use the `synthesizeConcepts` method to identify "abstractions" within your memor
 ### 5. Explainable Vector Decomposition
 Hypervectors in HMS are **Distributed Representations**. You can use `analyzeComponents` to decompose a complex bundled vector back into its constituent symbols, providing a "reasoning" trace for why a certain item was retrieved.
 
+## 🧩 Meaning Memory
+
+Meaning Memory is a structured knowledge layer built on top of the holographic vector space. It enables HMS to store, query, and reason over relational knowledge using role-filler algebra rather than flat vector similarity alone.
+
+### Architecture
+
+The system is composed of five cooperating modules:
+
+- **AtomMemory**: Stores individual concept vectors (atoms). Each concept (e.g., "paris", "capital_of") gets a unique high-dimensional vector. Supports deterministic seeding for reproducible embeddings.
+- **CompositeMemory**: Stores composite vectors formed by binding atoms with role assignments. A triple like `(paris, capital_of, france)` is encoded as a single composite vector using role-shifted XOR binding.
+- **TripleStore**: A symbolic index over `(subject, relation, object)` triples with four-way FxHash indexing (by subject, relation, object, and composite ID). Enables fast materialized lookups when algebraic decoding is too expensive.
+- **RoleRegistry**: Assigns cyclic-shift values to named roles (subject=0, relation=1, object=3). The asymmetric shifts break XOR commutativity, ensuring `(A, r, B)` and `(B, r, A)` produce distinct composites. Custom roles can be registered for n-ary relations.
+- **IndexedMemory**: The shared substrate beneath AtomMemory and CompositeMemory, providing posting-list overlap scanning, IDF weighting with proportional clipping, and tombstone-based soft deletion.
+
+### Structural Queries
+
+Structural queries answer relational questions like "What is the capital of France?" by operating on the composite vector space:
+
+1. **Compose** the known bindings into a partial query vector using role algebra.
+2. **Overlap scan** the composite memory for matching composites (IDF-weighted posting intersection).
+3. **Admission gating** decides the decode path based on fan-out:
+   - **Algebraic path** (fan-out <= threshold): XOR-unbind the query from each composite, inverse-permute by the target role's shift, then run Hopfield attractor cleanup to recover the missing atom.
+   - **Materialized path** (fan-out > threshold): Fall back to TripleStore index lookups for exact symbolic matches.
+
+### Multi-Hop Reasoning
+
+Multi-hop queries traverse chains of relations (e.g., "Who is John's grandfather?" via `father -> father`):
+
+- **Rule rewrite**: If a `CompositionRule` maps `[father, father] -> grandfather`, the query is rewritten as a single algebraic lookup against the derived relation.
+- **Chained lookup**: Otherwise, the system iteratively walks the TripleStore, expanding entities hop-by-hop up to a configurable depth limit.
+- **Single algebraic**: For single-relation queries, the system uses a direct structural query.
+
+### Hopfield Attractor Cleanup
+
+After algebraic unbinding, the result vector is noisy. HMS uses a modern Hopfield network with sparse softmax attention to "clean up" the residual vector and snap it to the nearest stored atom:
+
+1. Overlap-scan the noisy vector against AtomMemory's posting lists.
+2. Compute sparse softmax attention weights over the top candidates (temperature controlled by `beta`).
+3. Reconstruct a new vector from the attention-weighted sum of stored atoms.
+4. Iterate until convergence (similarity > 0.999) or max iterations reached.
+
+### Configuration
+
+Enable meaning memory in your config:
+
+```rust
+let mut config = HmsConfig::default();
+config.meaning.enabled = true;
+config.meaning.beta = 24.0;              // Hopfield temperature
+config.meaning.idf_clip_factor = 3.0;    // IDF clipping (poisoning defense)
+config.meaning.algebraic_max_fanout = 40; // Admission control threshold
+config.meaning.max_hop_depth = 10;       // Multi-hop chain limit
+```
+
+```javascript
+const hms = new HolographicMemorySystem(16384, './storage', {
+  meaning: {
+    enabled: true,
+    beta: 24.0,
+    idfClipFactor: 3.0,
+    algebraicMaxFanout: 40,
+    maxHopDepth: 10,
+  },
+});
+```
+
 ## 🧠 Core Concepts
 
 ### Hyperdimensional Computing (HDC)
@@ -85,6 +152,8 @@ Traditional AI uses deep vectors (weights). HDC uses high-dimensional (e.g., 10,
 - **Permutation (Π)**: Represents sequence and structure by shifting bits.
 
 ## 🛠 Quick Start
+
+### Semantic Search
 
 ```javascript
 const { HolographicMemorySystem } = require('holographic-memory');
@@ -104,6 +173,39 @@ async function main() {
   // Analogical Reasoning
   const analogy = await hms.findAnalogy('france', 'paris', 'germany');
   console.log('Result:', analogy[0].id); // 'berlin'
+}
+
+main().catch(console.error);
+```
+
+### Meaning Memory (Structural Queries)
+
+```javascript
+const { HolographicMemorySystem } = require('holographic-memory');
+
+async function main() {
+  const hms = new HolographicMemorySystem(16384, './hms_storage', {
+    meaning: { enabled: true },
+  });
+
+  // Store relational triples
+  await hms.memorizeTriple('paris', 'capital_of', 'france');
+  await hms.memorizeTriple('berlin', 'capital_of', 'germany');
+  await hms.memorizeTriple('john', 'father', 'mark');
+  await hms.memorizeTriple('mark', 'father', 'bob');
+
+  // Structural query: "What is the capital of France?"
+  const result = await hms.structuralQuery(
+    { subject: 'paris', relation: 'capital_of' },
+    'object'
+  );
+  console.log(result[0].entityId);    // 'france'
+  console.log(result[0].confidence);  // 0.98
+
+  // Multi-hop: "Who is John's grandfather?" (father -> father)
+  const grandpa = await hms.multiHopQuery('john', ['father', 'father']);
+  console.log(grandpa[0].entityId);   // 'bob'
+  console.log(grandpa[0].hops.length); // 2
 }
 
 main().catch(console.error);
