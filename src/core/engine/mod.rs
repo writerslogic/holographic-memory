@@ -260,7 +260,32 @@ impl HmsCore {
 
         let mut offset = 0;
         while let Ok((payload, _version)) = self.arena_read_frame(offset) {
-            if let Some(rel) = RelationStore::deserialize_relation(&payload) {
+            if let Some((id, vec)) =
+                super::atom_memory::AtomMemory::deserialize_atom(&payload, self.dimensions)
+            {
+                if let Some(ref atom_mem) = self.atom_memory {
+                    atom_mem.load_atom(id, vec);
+                }
+            } else if let Some((id, vec)) =
+                super::composite_memory::CompositeMemory::deserialize_composite(
+                    &payload,
+                    self.dimensions,
+                )
+            {
+                if let Some(ref comp_mem) = self.composite_memory {
+                    comp_mem.load_composite(id, vec);
+                }
+            } else if let Some(record) =
+                super::triple_store::TripleStore::deserialize_triple(&payload)
+            {
+                if let Some(ref tri_store) = self.triple_store {
+                    tri_store.load_triple(record);
+                }
+            } else if let Some(rule) = super::rules::RuleStore::deserialize_rule(&payload) {
+                if let Some(ref rule_store) = self.rule_store {
+                    rule_store.load_rule(rule);
+                }
+            } else if let Some(rel) = RelationStore::deserialize_relation(&payload) {
                 self.graph.load_relation(&rel);
             } else {
                 let (id, vector) = Self::parse_log_payload(self.dimensions, &payload);
@@ -287,6 +312,13 @@ impl HmsCore {
                 .vector_count
                 .store(reg.len() as u64, std::sync::atomic::Ordering::SeqCst);
         });
+
+        if let Some(ref atom_mem) = self.atom_memory {
+            atom_mem.rebuild_indices();
+        }
+        if let Some(ref comp_mem) = self.composite_memory {
+            comp_mem.rebuild_indices();
+        }
 
         Ok(())
     }
@@ -433,11 +465,41 @@ impl HmsCore {
                     let (_, s_vec) = atom_mem.get_or_insert(&unit.subject);
                     let (_, r_vec) = atom_mem.get_or_insert(&unit.relation);
                     let (_, o_vec) = atom_mem.get_or_insert(&unit.object);
+
+                    self.arena_write(&super::atom_memory::AtomMemory::serialize_atom(
+                        &unit.subject,
+                        &s_vec,
+                    ))?;
+                    self.arena_write(&super::atom_memory::AtomMemory::serialize_atom(
+                        &unit.relation,
+                        &r_vec,
+                    ))?;
+                    self.arena_write(&super::atom_memory::AtomMemory::serialize_atom(
+                        &unit.object,
+                        &o_vec,
+                    ))?;
+
                     let composite = roles.compose_triple(&s_vec, &r_vec, &o_vec);
                     let comp_id =
                         format!("{}:{}:{}:{}", id, unit.subject, unit.relation, unit.object);
-                    comp_mem.insert(comp_id.clone(), composite);
+                    comp_mem.insert(comp_id.clone(), composite.clone());
+
+                    self.arena_write(
+                        &super::composite_memory::CompositeMemory::serialize_composite(
+                            &comp_id, &composite,
+                        ),
+                    )?;
+
                     tri_store.add(&unit.subject, &unit.relation, &unit.object, &comp_id);
+                    self.arena_write(&super::triple_store::TripleStore::serialize_triple(
+                        &super::triple_store::TripleRecord {
+                            subject_id: unit.subject.clone(),
+                            relation_id: unit.relation.clone(),
+                            object_id: unit.object.clone(),
+                            composite_id: comp_id,
+                            deleted: false,
+                        },
+                    ))?;
                 }
             }
         }
@@ -484,6 +546,35 @@ impl HmsCore {
                 let payload = self.maybe_encrypt(&entry)?;
                 temp_arena.write_slice(&payload)?;
             }
+            if let Some(ref atom_mem) = self.atom_memory {
+                for (_, id, vec) in atom_mem.inner().all_vectors() {
+                    let entry = super::atom_memory::AtomMemory::serialize_atom(&id, &vec);
+                    let payload = self.maybe_encrypt(&entry)?;
+                    temp_arena.write_slice(&payload)?;
+                }
+            }
+            if let Some(ref comp_mem) = self.composite_memory {
+                for (_, id, vec) in comp_mem.inner().all_vectors() {
+                    let entry =
+                        super::composite_memory::CompositeMemory::serialize_composite(&id, &vec);
+                    let payload = self.maybe_encrypt(&entry)?;
+                    temp_arena.write_slice(&payload)?;
+                }
+            }
+            if let Some(ref tri_store) = self.triple_store {
+                for record in tri_store.snapshot() {
+                    let entry = super::triple_store::TripleStore::serialize_triple(&record);
+                    let payload = self.maybe_encrypt(&entry)?;
+                    temp_arena.write_slice(&payload)?;
+                }
+            }
+            if let Some(ref rule_store) = self.rule_store {
+                for rule in rule_store.all_rules() {
+                    let entry = super::rules::RuleStore::serialize_rule(&rule);
+                    let payload = self.maybe_encrypt(&entry)?;
+                    temp_arena.write_slice(&payload)?;
+                }
+            }
         }
 
         self.arena.replace_with_compacted(&temp_dir)?;
@@ -514,7 +605,7 @@ impl HmsCore {
         }
 
         if let Some(ref atom_mem) = self.atom_memory {
-            atom_mem.get_or_insert(&id);
+            atom_mem.insert_with_vec(&id, &vector);
         }
 
         let count = {
@@ -781,6 +872,30 @@ impl HmsCore {
 
     pub fn meaning_enabled(&self) -> bool {
         self.config.meaning.enabled
+    }
+
+    pub fn meaning_atom_count(&self) -> usize {
+        self.atom_memory.as_ref().map_or(0, |m| m.count())
+    }
+
+    pub fn meaning_composite_count(&self) -> usize {
+        self.composite_memory.as_ref().map_or(0, |m| m.count())
+    }
+
+    pub fn meaning_triple_count(&self) -> usize {
+        self.triple_store.as_ref().map_or(0, |t| t.count())
+    }
+
+    pub fn meaning_rule_count(&self) -> usize {
+        self.rule_store.as_ref().map_or(0, |r| r.count())
+    }
+
+    pub fn register_role(&mut self, name: &str, shift: usize) -> anyhow::Result<()> {
+        if let Some(ref mut roles) = self.role_registry {
+            roles.register(name, shift)
+        } else {
+            Err(anyhow::anyhow!("meaning memory not enabled"))
+        }
     }
 
     /// Returns true if the IVF index has been trained.

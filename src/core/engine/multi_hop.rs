@@ -116,7 +116,7 @@ fn rule_rewrite(
 fn chained_lookup(
     start_entity: &str,
     relations: &[&str],
-    atom_memory: &AtomMemory,
+    _atom_memory: &AtomMemory,
     triple_store: &TripleStore,
 ) -> Vec<MultiHopResult> {
     let mut current_entities = vec![start_entity.to_string()];
