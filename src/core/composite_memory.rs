@@ -21,6 +21,7 @@ impl CompositeMemory {
         self.inner.insert(id, composite)
     }
 
+    #[allow(dead_code)]
     pub fn get(&self, id: &str) -> Option<EntangledHVec> {
         self.inner.get(id)
     }
@@ -33,6 +34,7 @@ impl CompositeMemory {
         self.inner.overlap_scan(query)
     }
 
+    #[allow(dead_code)]
     pub fn delete(&self, id: &str) -> bool {
         self.inner.delete(id)
     }

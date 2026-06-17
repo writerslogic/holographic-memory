@@ -34,6 +34,7 @@ impl IdfWeights {
     }
 
     /// Decrement total_docs and update weights for the removed dimensions.
+    #[allow(dead_code)]
     pub fn update_remove(&mut self, indices: &[u32], postings: &PostingShard) {
         self.total_docs = self.total_docs.saturating_sub(1);
         for &idx in indices {
@@ -77,6 +78,7 @@ impl IdfWeights {
         self.weights.get(dim_index as usize).copied().unwrap_or(1.0)
     }
 
+    #[allow(dead_code)]
     pub fn total_docs(&self) -> u32 {
         self.total_docs
     }
