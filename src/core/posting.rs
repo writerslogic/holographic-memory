@@ -56,29 +56,31 @@ impl PostingShard {
         }
     }
 
-    /// Compute overlap counts: for each vector ID found across the query's
-    /// active dimensions, count how many dimensions it shares with the query.
+    /// Weighted overlap scan: for each vector ID found across the query's
+    /// active dimensions, accumulate the per-dimension weight.
+    /// Pass uniform weights (e.g., all 1.0) for raw counts.
     /// Filters out tombstoned vectors.
-    /// Returns (vec_id, overlap_count) sorted by overlap descending.
-    pub fn overlap_counts(
+    /// Returns (vec_id, score) sorted by score descending.
+    pub fn weighted_overlap(
         &self,
         query_indices: &[u32],
+        dim_weights: &[f32],
         tombstones: &TombstoneMap,
-    ) -> Vec<(u32, u32)> {
-        let mut counts: FxHashMap<u32, u32> = FxHashMap::default();
-        for &dim in query_indices {
+    ) -> Vec<(u32, f32)> {
+        let mut scores: FxHashMap<u32, f32> = FxHashMap::default();
+        for (i, &dim) in query_indices.iter().enumerate() {
+            let w = dim_weights.get(i).copied().unwrap_or(1.0);
             for &vec_id in self.get_list(dim) {
                 if !tombstones.is_deleted(vec_id) {
-                    *counts.entry(vec_id).or_insert(0) += 1;
+                    *scores.entry(vec_id).or_insert(0.0) += w;
                 }
             }
         }
-        let mut result: Vec<(u32, u32)> = counts.into_iter().collect();
-        result.sort_unstable_by(|a, b| b.1.cmp(&a.1));
+        let mut result: Vec<(u32, f32)> = scores.into_iter().collect();
+        result.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         result
     }
 
-    /// Document frequency: number of vectors containing this dimension.
     pub fn doc_freq(&self, dim_index: u32) -> u32 {
         self.get_list(dim_index).len() as u32
     }
@@ -108,10 +110,14 @@ mod tests {
         shard.insert(3, &[0, 20]);
 
         // Query dims [0, 5, 10]: vec 1 has overlap 3, vec 2 has overlap 2, vec 3 has overlap 1
-        let result = shard.overlap_counts(&[0, 5, 10], &tombstones);
-        assert_eq!(result[0], (1, 3));
-        assert_eq!(result[1], (2, 2));
-        assert_eq!(result[2], (3, 1));
+        let weights = vec![1.0; 3];
+        let result = shard.weighted_overlap(&[0, 5, 10], &weights, &tombstones);
+        assert_eq!(result[0].0, 1);
+        assert!((result[0].1 - 3.0).abs() < 0.001);
+        assert_eq!(result[1].0, 2);
+        assert!((result[1].1 - 2.0).abs() < 0.001);
+        assert_eq!(result[2].0, 3);
+        assert!((result[2].1 - 1.0).abs() < 0.001);
     }
 
     #[test]
@@ -140,7 +146,7 @@ mod tests {
         shard.insert(2, &[5]);
         tombstones.mark_deleted(1);
 
-        let result = shard.overlap_counts(&[5], &tombstones);
+        let result = shard.weighted_overlap(&[5], &[1.0], &tombstones);
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].0, 2);
     }

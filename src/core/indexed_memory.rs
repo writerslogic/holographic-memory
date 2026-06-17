@@ -58,6 +58,10 @@ impl IndexedMemory {
         Some(vecs[idx].1.clone())
     }
 
+    pub fn idx_for(&self, id: &str) -> Option<u32> {
+        self.id_to_idx.read().get(id).map(|&i| i as u32)
+    }
+
     pub fn get_by_idx(&self, idx: u32) -> Option<(String, EntangledHVec)> {
         let vecs = self.vectors.read();
         if (idx as usize) >= vecs.len() || self.tombstones.read().is_deleted(idx) {
@@ -80,22 +84,9 @@ impl IndexedMemory {
     pub fn overlap_scan(&self, query: &EntangledHVec) -> Vec<(u32, f32)> {
         let postings = self.postings.read();
         let tombstones = self.tombstones.read();
-        let raw = postings.overlap_counts(query.indices(), &tombstones);
-
         let idf = self.idf.read();
-        let query_weights = idf.weights_for(query.indices());
-        let mean_weight: f32 = if query_weights.is_empty() {
-            1.0
-        } else {
-            query_weights.iter().sum::<f32>() / query_weights.len() as f32
-        };
-
-        let mut weighted: Vec<(u32, f32)> = raw
-            .into_iter()
-            .map(|(vec_id, count)| (vec_id, count as f32 * mean_weight))
-            .collect();
-        weighted.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-        weighted
+        let weights = idf.weights_for(query.indices());
+        postings.weighted_overlap(query.indices(), &weights, &tombstones)
     }
 
     pub fn count(&self) -> usize {
