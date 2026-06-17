@@ -37,7 +37,13 @@ impl AtomMemory {
         self.inner.get_by_idx(idx)
     }
 
-    pub fn cleanup(&self, noisy: &EntangledHVec, beta: f64, k: usize, max_iter: usize) -> CleanupResult {
+    pub fn cleanup(
+        &self,
+        noisy: &EntangledHVec,
+        beta: f64,
+        k: usize,
+        max_iter: usize,
+    ) -> CleanupResult {
         hopfield_cleanup(noisy, &self.inner, beta, k, max_iter)
     }
 
@@ -82,14 +88,18 @@ impl AtomMemory {
         let mut pos = 1;
         let id_len = u16::from_le_bytes(data.get(pos..pos + 2)?.try_into().ok()?) as usize;
         pos += 2;
-        let id = std::str::from_utf8(data.get(pos..pos + id_len)?).ok()?.to_string();
+        let id = std::str::from_utf8(data.get(pos..pos + id_len)?)
+            .ok()?
+            .to_string();
         pos += id_len;
         let delta_count = u32::from_le_bytes(data.get(pos..pos + 4)?.try_into().ok()?) as usize;
         pos += 4;
         let deltas: Vec<u32> = (0..delta_count)
             .filter_map(|i| {
                 let start = pos + i * 4;
-                Some(u32::from_le_bytes(data.get(start..start + 4)?.try_into().ok()?))
+                Some(u32::from_le_bytes(
+                    data.get(start..start + 4)?.try_into().ok()?,
+                ))
             })
             .collect();
         let vec = EntangledHVec::from_deltas(&deltas, dim);

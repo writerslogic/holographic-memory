@@ -18,14 +18,12 @@ use aes_gcm::{
 };
 
 #[cfg(feature = "security")]
-#[allow(dead_code)]
 pub struct SigningManager {
     signing_key: SigningKey,
     verifying_key: VerifyingKey,
 }
 
 #[cfg(feature = "security")]
-#[allow(dead_code)]
 impl SigningManager {
     /// Load or generate an Ed25519 keypair.
     /// If `key_path` exists, loads from it. Otherwise generates a new keypair
@@ -89,13 +87,11 @@ impl Drop for SigningManager {
 }
 
 #[cfg(feature = "security")]
-#[allow(dead_code)]
 pub struct EncryptionManager {
     cipher: Aes256Gcm,
 }
 
 #[cfg(feature = "security")]
-#[allow(dead_code)]
 impl EncryptionManager {
     /// Derive an AES-256 key from a passphrase using Argon2id and create the cipher.
     /// The salt is stored at `{storage_path}/encryption.salt`. If it doesn't exist,

@@ -30,7 +30,9 @@ impl RoleRegistry {
             if existing != shift {
                 return Err(anyhow!(
                     "role '{}' already registered with shift {}, cannot re-register with {}",
-                    role, existing, shift
+                    role,
+                    existing,
+                    shift
                 ));
             }
             return Ok(());
@@ -52,8 +54,15 @@ impl RoleRegistry {
         let dim = bindings[0].1.dim;
         let mut result = EntangledHVec::from_indices(vec![], dim);
         for &(role, vec) in bindings {
-            let shift = self.shifts.get(role).ok_or_else(|| anyhow!("unknown role: {}", role))?;
-            let shifted = if *shift == 0 { vec.clone() } else { vec.permute(*shift) };
+            let shift = self
+                .shifts
+                .get(role)
+                .ok_or_else(|| anyhow!("unknown role: {}", role))?;
+            let shifted = if *shift == 0 {
+                vec.clone()
+            } else {
+                vec.permute(*shift)
+            };
             result = result.bind(&shifted);
         }
         Ok(result)
@@ -68,13 +77,22 @@ impl RoleRegistry {
         known: &[(&str, &EntangledHVec)],
         target_role: &str,
     ) -> Result<EntangledHVec> {
-        let target_shift = self.shifts.get(target_role)
+        let target_shift = self
+            .shifts
+            .get(target_role)
             .ok_or_else(|| anyhow!("unknown target role: {}", target_role))?;
 
         let mut known_combined = EntangledHVec::from_indices(vec![], composite.dim);
         for &(role, vec) in known {
-            let shift = self.shifts.get(role).ok_or_else(|| anyhow!("unknown role: {}", role))?;
-            let shifted = if *shift == 0 { vec.clone() } else { vec.permute(*shift) };
+            let shift = self
+                .shifts
+                .get(role)
+                .ok_or_else(|| anyhow!("unknown role: {}", role))?;
+            let shifted = if *shift == 0 {
+                vec.clone()
+            } else {
+                vec.permute(*shift)
+            };
             known_combined = known_combined.bind(&shifted);
         }
 

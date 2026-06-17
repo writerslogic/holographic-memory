@@ -52,7 +52,8 @@ impl HmsCore {
                     .map(|v| v.similarity(&centroid))
                     .sum::<f64>()
                     / cluster_vecs.len() as f64;
-                let member_ids: Vec<String> = cluster.iter().map(|&idx| all_ids[idx].clone()).collect();
+                let member_ids: Vec<String> =
+                    cluster.iter().map(|&idx| all_ids[idx].clone()).collect();
 
                 concepts.push(ConceptCandidate {
                     centroid_id: member_ids.first().cloned().unwrap_or_default(),

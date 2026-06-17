@@ -41,8 +41,7 @@ impl Default for MeaningConfig {
     }
 }
 
-#[derive(Clone, Debug)]
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SecurityConfig {
     pub signing_enabled: bool,
     pub key_path: Option<String>,

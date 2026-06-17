@@ -74,10 +74,7 @@ impl IdfWeights {
     }
 
     pub fn weight(&self, dim_index: u32) -> f32 {
-        self.weights
-            .get(dim_index as usize)
-            .copied()
-            .unwrap_or(1.0)
+        self.weights.get(dim_index as usize).copied().unwrap_or(1.0)
     }
 
     pub fn total_docs(&self) -> u32 {
