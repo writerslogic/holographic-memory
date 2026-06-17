@@ -20,6 +20,7 @@ pub struct TripleStore {
     by_subject: RwLock<FxHashMap<String, Vec<usize>>>,
     by_relation: RwLock<FxHashMap<String, Vec<usize>>>,
     by_object: RwLock<FxHashMap<String, Vec<usize>>>,
+    by_composite: RwLock<FxHashMap<String, Vec<usize>>>,
 }
 
 impl TripleStore {
@@ -29,6 +30,7 @@ impl TripleStore {
             by_subject: RwLock::new(FxHashMap::default()),
             by_relation: RwLock::new(FxHashMap::default()),
             by_object: RwLock::new(FxHashMap::default()),
+            by_composite: RwLock::new(FxHashMap::default()),
         }
     }
 
@@ -45,6 +47,7 @@ impl TripleStore {
         self.by_subject.write().entry(subject.to_string()).or_default().push(idx);
         self.by_relation.write().entry(relation.to_string()).or_default().push(idx);
         self.by_object.write().entry(object.to_string()).or_default().push(idx);
+        self.by_composite.write().entry(composite_id.to_string()).or_default().push(idx);
         idx
     }
 
@@ -98,6 +101,19 @@ impl TripleStore {
             })
             .cloned()
             .collect()
+    }
+
+    pub fn by_composite_id(&self, composite_id: &str) -> Vec<TripleRecord> {
+        let triples = self.triples.read();
+        let by_comp = self.by_composite.read();
+        match by_comp.get(composite_id) {
+            Some(idxs) => idxs.iter()
+                .map(|&i| &triples[i])
+                .filter(|t| !t.deleted)
+                .cloned()
+                .collect(),
+            None => Vec::new(),
+        }
     }
 
     pub fn all_for_subject(&self, subject: &str) -> Vec<TripleRecord> {

@@ -13,6 +13,32 @@ pub struct HmsConfig {
     pub diffusion: DiffusionConfig,
     pub security: SecurityConfig,
     pub privacy: PrivacyConfig,
+    pub meaning: MeaningConfig,
+}
+
+#[derive(Clone, Debug)]
+pub struct MeaningConfig {
+    pub enabled: bool,
+    pub beta: f64,
+    pub algebraic_max_fanout: usize,
+    pub auto_decompose: bool,
+    pub max_hop_depth: usize,
+    pub max_rule_depth: usize,
+    pub idf_clip_factor: f64,
+}
+
+impl Default for MeaningConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            beta: 24.0,
+            algebraic_max_fanout: 40,
+            auto_decompose: false,
+            max_hop_depth: 10,
+            max_rule_depth: 10,
+            idf_clip_factor: 3.0,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

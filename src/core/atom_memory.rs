@@ -18,17 +18,13 @@ impl AtomMemory {
     }
 
     pub fn get_or_insert(&self, atom_str: &str) -> (u32, EntangledHVec) {
-        if let Some(vec) = self.inner.get(atom_str) {
-            let idx = self.inner.all_vectors()
-                .iter()
-                .find(|(_, id, _)| id == atom_str)
-                .map(|(i, _, _)| *i)
-                .unwrap_or(0);
-            return (idx, vec);
+        if let Some(idx) = self.inner.idx_for(atom_str) {
+            if let Some((_, vec)) = self.inner.get_by_idx(idx) {
+                return (idx, vec);
+            }
         }
-        let dim = self.inner.dim();
         let seed = fxhash::hash64(atom_str.as_bytes());
-        let vec = EntangledHVec::new_deterministic(dim, seed);
+        let vec = EntangledHVec::new_deterministic(self.inner.dim(), seed);
         let idx = self.inner.insert(atom_str.to_string(), vec.clone());
         (idx, vec)
     }
