@@ -500,6 +500,134 @@ impl HolographicMemorySystem {
         })
         .await
     }
+
+    // === Graph API ===
+
+    #[napi]
+    pub async fn add_relation(
+        &self,
+        source_id: String,
+        relation_type: String,
+        target_id: String,
+        properties: Option<String>,
+        valid_from: Option<f64>,
+        valid_to: Option<f64>,
+    ) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || {
+            let rel = crate::core::types::Relation {
+                source_id,
+                relation_type,
+                target_id,
+                properties,
+                valid_from: valid_from.unwrap_or(0.0),
+                valid_to: valid_to.unwrap_or(0.0),
+            };
+            core.add_relation(&rel)
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn remove_relation(
+        &self,
+        source_id: String,
+        relation_type: String,
+        target_id: String,
+    ) -> Result<bool> {
+        let core = self.core.clone();
+        run_async(move || Ok(core.remove_relation(&source_id, &relation_type, &target_id))).await
+    }
+
+    #[napi]
+    pub fn declare_relation_type(
+        &self,
+        name: String,
+        transitive: Option<bool>,
+        symmetric: Option<bool>,
+    ) {
+        self.core.declare_relation_type(crate::core::types::RelationType {
+            name,
+            transitive: transitive.unwrap_or(false),
+            symmetric: symmetric.unwrap_or(false),
+        });
+    }
+
+    #[napi]
+    pub async fn traverse(
+        &self,
+        start_id: String,
+        relation_type: Option<String>,
+        max_depth: Option<u32>,
+        at_time: Option<f64>,
+    ) -> Result<Vec<crate::core::types::GraphPath>> {
+        let core = self.core.clone();
+        run_async(move || {
+            Ok(core.traverse(
+                &start_id,
+                relation_type.as_deref(),
+                max_depth.unwrap_or(3),
+                at_time.unwrap_or(0.0),
+            ))
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn outgoing_relations(
+        &self,
+        source_id: String,
+        relation_type: Option<String>,
+        at_time: Option<f64>,
+    ) -> Result<Vec<crate::core::types::Relation>> {
+        let core = self.core.clone();
+        run_async(move || {
+            Ok(core.outgoing_relations(
+                &source_id,
+                relation_type.as_deref(),
+                at_time.unwrap_or(0.0),
+            ))
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn incoming_relations(
+        &self,
+        target_id: String,
+        relation_type: Option<String>,
+        at_time: Option<f64>,
+    ) -> Result<Vec<crate::core::types::Relation>> {
+        let core = self.core.clone();
+        run_async(move || {
+            Ok(core.incoming_relations(
+                &target_id,
+                relation_type.as_deref(),
+                at_time.unwrap_or(0.0),
+            ))
+        })
+        .await
+    }
+
+    #[napi(getter)]
+    pub fn relation_count(&self) -> u32 {
+        self.core.relation_count() as u32
+    }
+
+    #[napi]
+    pub async fn federated_query(
+        &self,
+        peer_paths: Vec<String>,
+        text: String,
+        k: u32,
+    ) -> Result<Vec<RetrievalResult>> {
+        let core = self.core.clone();
+        run_async(move || {
+            let q_vec = core.encode_text(&text);
+            core.federated_query(&peer_paths, &q_vec, k)
+        })
+        .await
+    }
 }
 
 #[cfg(feature = "node-api")]
@@ -1115,6 +1243,190 @@ mod tests {
 
         let entries = hms.audit_since(0).unwrap();
         assert!(entries.iter().any(|e| e.op == crate::core::audit::AuditOp::Compact));
+    }
+
+    // === Graph Integration Tests ===
+
+    #[test]
+    fn test_graph_add_and_traverse() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        // Memorize some nodes
+        for city in &["paris", "france", "europe"] {
+            let v = hms.encode_text(city);
+            hms.memorize(city.to_string(), v).unwrap();
+        }
+
+        hms.add_relation(&crate::core::types::Relation {
+            source_id: "paris".into(),
+            relation_type: "is_in".into(),
+            target_id: "france".into(),
+            properties: None,
+            valid_from: 0.0,
+            valid_to: 0.0,
+        }).unwrap();
+        hms.add_relation(&crate::core::types::Relation {
+            source_id: "france".into(),
+            relation_type: "is_in".into(),
+            target_id: "europe".into(),
+            properties: None,
+            valid_from: 0.0,
+            valid_to: 0.0,
+        }).unwrap();
+
+        assert_eq!(hms.relation_count(), 2);
+
+        let paths = hms.traverse("paris", Some("is_in"), 3, 0.0);
+        assert!(!paths.is_empty());
+        let targets: Vec<&str> = paths.iter().flat_map(|p| p.hops.iter().map(|h| h.node_id.as_str())).collect();
+        assert!(targets.contains(&"france"));
+        assert!(targets.contains(&"europe"));
+    }
+
+    #[test]
+    fn test_graph_transitive_inference() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        for name in &["a", "b", "c"] {
+            let v = hms.encode_text(name);
+            hms.memorize(name.to_string(), v).unwrap();
+        }
+
+        hms.declare_relation_type(crate::core::types::RelationType {
+            name: "contains".into(),
+            transitive: true,
+            symmetric: false,
+        });
+
+        hms.add_relation(&crate::core::types::Relation {
+            source_id: "a".into(),
+            relation_type: "contains".into(),
+            target_id: "b".into(),
+            properties: None,
+            valid_from: 0.0,
+            valid_to: 0.0,
+        }).unwrap();
+        hms.add_relation(&crate::core::types::Relation {
+            source_id: "b".into(),
+            relation_type: "contains".into(),
+            target_id: "c".into(),
+            properties: None,
+            valid_from: 0.0,
+            valid_to: 0.0,
+        }).unwrap();
+
+        let paths = hms.traverse("a", Some("contains"), 3, 0.0);
+        // Should have inferred single-hop a->c
+        let inferred = paths.iter().find(|p| p.hops.len() == 1 && p.hops[0].node_id == "c");
+        assert!(inferred.is_some(), "Should infer transitive a->c");
+    }
+
+    #[test]
+    fn test_graph_persistence() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
+            let v = hms.encode_text("node_a");
+            hms.memorize("node_a".to_string(), v).unwrap();
+            hms.add_relation(&crate::core::types::Relation {
+                source_id: "node_a".into(),
+                relation_type: "links_to".into(),
+                target_id: "node_b".into(),
+                properties: None,
+                valid_from: 0.0,
+                valid_to: 0.0,
+            }).unwrap();
+        }
+
+        let hms = HmsCore::new(10_000, Some(path), None).unwrap();
+        assert_eq!(hms.relation_count(), 1);
+        let out = hms.outgoing_relations("node_a", None, 0.0);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].target_id, "node_b");
+    }
+
+    #[test]
+    fn test_graph_temporal_query() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        hms.add_relation(&crate::core::types::Relation {
+            source_id: "alice".into(),
+            relation_type: "works_at".into(),
+            target_id: "acme".into(),
+            properties: None,
+            valid_from: 1000.0,
+            valid_to: 2000.0,
+        }).unwrap();
+        hms.add_relation(&crate::core::types::Relation {
+            source_id: "alice".into(),
+            relation_type: "works_at".into(),
+            target_id: "globex".into(),
+            properties: None,
+            valid_from: 2001.0,
+            valid_to: 0.0,
+        }).unwrap();
+
+        let at_1500 = hms.outgoing_relations("alice", Some("works_at"), 1500.0);
+        assert_eq!(at_1500.len(), 1);
+        assert_eq!(at_1500[0].target_id, "acme");
+
+        let at_3000 = hms.outgoing_relations("alice", Some("works_at"), 3000.0);
+        assert_eq!(at_3000.len(), 1);
+        assert_eq!(at_3000[0].target_id, "globex");
+    }
+
+    #[test]
+    fn test_federated_query() {
+        let dir1 = tempfile::tempdir().unwrap();
+        let dir2 = tempfile::tempdir().unwrap();
+        let path1 = dir1.path().to_string_lossy().to_string();
+        let path2 = dir2.path().to_string_lossy().to_string();
+
+        // Populate two separate instances
+        {
+            let hms1 = HmsCore::new(10_000, Some(path1.clone()), None).unwrap();
+            let v = hms1.encode_text("federated doc alpha");
+            hms1.memorize("alpha".to_string(), v).unwrap();
+        }
+        {
+            let hms2 = HmsCore::new(10_000, Some(path2.clone()), None).unwrap();
+            let v = hms2.encode_text("federated doc beta");
+            hms2.memorize("beta".to_string(), v).unwrap();
+        }
+
+        // Query from instance 1, federating with instance 2
+        let hms1 = HmsCore::new(10_000, Some(path1), None).unwrap();
+        let q = hms1.encode_text("federated doc");
+        let results = hms1.federated_query(&[path2], &q, 5).unwrap();
+        let ids: Vec<&str> = results.iter().map(|r| r.id.as_str()).collect();
+        assert!(ids.contains(&"alpha"), "Should find local result");
+        assert!(ids.contains(&"beta"), "Should find federated result");
+    }
+
+    #[test]
+    fn test_graph_compact_preserves_relations() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        let v = hms.encode_text("compactable");
+        hms.memorize("node1".to_string(), v).unwrap();
+        hms.add_relation(&crate::core::types::Relation {
+            source_id: "node1".into(),
+            relation_type: "related".into(),
+            target_id: "node2".into(),
+            properties: None,
+            valid_from: 0.0,
+            valid_to: 0.0,
+        }).unwrap();
+
+        hms.compact().unwrap();
+        assert_eq!(hms.relation_count(), 1);
+        assert_eq!(hms.vector_count(), 1);
     }
 
     // === Analogy Tests ===
