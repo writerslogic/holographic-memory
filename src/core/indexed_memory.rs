@@ -42,7 +42,9 @@ impl IndexedMemory {
         let mut vecs = self.vectors.write();
         let idx = vecs.len() as u32;
         self.postings.write().insert(idx, vec.indices());
-        self.idf.write().update_insert(vec.indices(), &self.postings.read());
+        self.idf
+            .write()
+            .update_insert(vec.indices(), &self.postings.read());
         self.id_to_idx.write().insert(id.clone(), idx as usize);
         vecs.push((id, vec));
         idx
@@ -103,7 +105,9 @@ impl IndexedMemory {
             .map(|(i, (_, v))| (i as u32, v.indices()))
             .collect();
         self.postings.write().rebuild(&entries);
-        self.idf.write().recompute(&self.postings.read(), vecs.len() as u32);
+        self.idf
+            .write()
+            .recompute(&self.postings.read(), vecs.len() as u32);
     }
 
     pub fn all_vectors(&self) -> Vec<(u32, String, EntangledHVec)> {
@@ -129,7 +133,10 @@ pub fn sparse_softmax(overlaps: &[(u32, f32)], beta: f64) -> Vec<(u32, f64)> {
     if overlaps.is_empty() {
         return Vec::new();
     }
-    let max_val = overlaps.iter().map(|o| o.1).fold(f32::NEG_INFINITY, f32::max) as f64;
+    let max_val = overlaps
+        .iter()
+        .map(|o| o.1)
+        .fold(f32::NEG_INFINITY, f32::max) as f64;
     let exps: Vec<(u32, f64)> = overlaps
         .iter()
         .map(|&(id, score)| (id, (beta * (score as f64 - max_val)).exp()))

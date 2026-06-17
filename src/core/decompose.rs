@@ -18,20 +18,70 @@ pub struct Decomposer {
 impl Decomposer {
     pub fn new() -> Self {
         let preps = [
-            "about", "above", "across", "after", "against", "along", "amid", "among",
-            "around", "as", "at", "before", "behind", "below", "beneath", "beside",
-            "between", "beyond", "by", "concerning", "despite", "down", "during",
-            "except", "for", "from", "in", "inside", "into", "like", "near", "of",
-            "off", "on", "onto", "opposite", "out", "outside", "over", "past", "per",
-            "regarding", "since", "than", "through", "throughout", "till", "to",
-            "toward", "under", "unlike", "until", "up", "upon", "via", "with",
-            "within", "without",
+            "about",
+            "above",
+            "across",
+            "after",
+            "against",
+            "along",
+            "amid",
+            "among",
+            "around",
+            "as",
+            "at",
+            "before",
+            "behind",
+            "below",
+            "beneath",
+            "beside",
+            "between",
+            "beyond",
+            "by",
+            "concerning",
+            "despite",
+            "down",
+            "during",
+            "except",
+            "for",
+            "from",
+            "in",
+            "inside",
+            "into",
+            "like",
+            "near",
+            "of",
+            "off",
+            "on",
+            "onto",
+            "opposite",
+            "out",
+            "outside",
+            "over",
+            "past",
+            "per",
+            "regarding",
+            "since",
+            "than",
+            "through",
+            "throughout",
+            "till",
+            "to",
+            "toward",
+            "under",
+            "unlike",
+            "until",
+            "up",
+            "upon",
+            "via",
+            "with",
+            "within",
+            "without",
         ];
         let verbs = [
-            "is", "are", "was", "were", "has", "have", "had", "makes", "gives",
-            "takes", "gets", "keeps", "puts", "says", "goes", "comes", "knows",
-            "thinks", "sees", "finds", "shows", "means", "becomes", "contains",
-            "includes", "requires", "provides", "creates", "causes", "supports",
+            "is", "are", "was", "were", "has", "have", "had", "makes", "gives", "takes", "gets",
+            "keeps", "puts", "says", "goes", "comes", "knows", "thinks", "sees", "finds", "shows",
+            "means", "becomes", "contains", "includes", "requires", "provides", "creates",
+            "causes", "supports",
         ];
         Self {
             prepositions: preps.iter().map(|s| s.to_string()).collect(),
@@ -60,7 +110,10 @@ impl Decomposer {
         }
 
         // Pattern: NP "is" NP → is_a
-        if let Some(is_pos) = words.iter().position(|&w| w.eq_ignore_ascii_case("is") || w.eq_ignore_ascii_case("are")) {
+        if let Some(is_pos) = words
+            .iter()
+            .position(|&w| w.eq_ignore_ascii_case("is") || w.eq_ignore_ascii_case("are"))
+        {
             if is_pos > 0 && is_pos + 1 < words.len() {
                 let subject = self.extract_np(&words[..is_pos]);
                 let object = self.extract_np(&words[is_pos + 1..]);
@@ -112,7 +165,10 @@ impl Decomposer {
     }
 
     fn extract_np(&self, words: &[&str]) -> String {
-        let determiners = ["the", "a", "an", "this", "that", "these", "those", "my", "your", "his", "her", "its", "our", "their"];
+        let determiners = [
+            "the", "a", "an", "this", "that", "these", "those", "my", "your", "his", "her", "its",
+            "our", "their",
+        ];
         let filtered: Vec<&str> = words
             .iter()
             .filter(|w| !determiners.contains(&w.to_lowercase().as_str()))

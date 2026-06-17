@@ -59,7 +59,10 @@ impl NystromProjector {
         // Filter: keep only eigenvalues above lambda_max * 1e-6 (relative threshold)
         let lambda_max = indexed.first().map(|&(_, v)| v).unwrap_or(1.0);
         if lambda_max <= 0.0 || lambda_max.is_nan() {
-            return Err(anyhow!("Degenerate kernel matrix: lambda_max={}", lambda_max));
+            return Err(anyhow!(
+                "Degenerate kernel matrix: lambda_max={}",
+                lambda_max
+            ));
         }
         let eig_floor = lambda_max * 1e-6;
         indexed.retain(|&(_, v)| v > eig_floor);

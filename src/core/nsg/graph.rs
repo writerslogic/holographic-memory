@@ -18,7 +18,11 @@ const CONVERGENCE_EPSILON: f64 = 0.001;
 ///
 /// The inner loop is parallelized with rayon: each node's candidate scoring
 /// is independent, so we compute all updates in parallel and then apply them.
-pub(super) fn build_knn_graph(vectors: &[EntangledHVec], k_build: usize, seed: u64) -> Vec<Vec<u32>> {
+pub(super) fn build_knn_graph(
+    vectors: &[EntangledHVec],
+    k_build: usize,
+    seed: u64,
+) -> Vec<Vec<u32>> {
     let n = vectors.len();
     let k = k_build.min(n.saturating_sub(1));
     if n <= 1 {
@@ -166,11 +170,7 @@ pub(super) fn select_navigating_node(vectors: &[EntangledHVec]) -> u32 {
     best_idx
 }
 
-pub(super) fn insert_online(
-    index: &mut NSGIndex,
-    id: &str,
-    vector: &EntangledHVec,
-) -> Result<()> {
+pub(super) fn insert_online(index: &mut NSGIndex, id: &str, vector: &EntangledHVec) -> Result<()> {
     if !index.trained {
         return Ok(());
     }

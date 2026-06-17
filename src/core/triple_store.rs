@@ -44,10 +44,26 @@ impl TripleStore {
             composite_id: composite_id.to_string(),
             deleted: false,
         });
-        self.by_subject.write().entry(subject.to_string()).or_default().push(idx);
-        self.by_relation.write().entry(relation.to_string()).or_default().push(idx);
-        self.by_object.write().entry(object.to_string()).or_default().push(idx);
-        self.by_composite.write().entry(composite_id.to_string()).or_default().push(idx);
+        self.by_subject
+            .write()
+            .entry(subject.to_string())
+            .or_default()
+            .push(idx);
+        self.by_relation
+            .write()
+            .entry(relation.to_string())
+            .or_default()
+            .push(idx);
+        self.by_object
+            .write()
+            .entry(object.to_string())
+            .or_default()
+            .push(idx);
+        self.by_composite
+            .write()
+            .entry(composite_id.to_string())
+            .or_default()
+            .push(idx);
         idx
     }
 
@@ -95,9 +111,9 @@ impl TripleStore {
             .into_iter()
             .filter(|t| {
                 !t.deleted
-                    && subject.map_or(true, |s| t.subject_id == s)
-                    && relation.map_or(true, |r| t.relation_id == r)
-                    && object.map_or(true, |o| t.object_id == o)
+                    && subject.is_none_or(|s| t.subject_id == s)
+                    && relation.is_none_or(|r| t.relation_id == r)
+                    && object.is_none_or(|o| t.object_id == o)
             })
             .cloned()
             .collect()
@@ -107,7 +123,8 @@ impl TripleStore {
         let triples = self.triples.read();
         let by_comp = self.by_composite.read();
         match by_comp.get(composite_id) {
-            Some(idxs) => idxs.iter()
+            Some(idxs) => idxs
+                .iter()
                 .map(|&i| &triples[i])
                 .filter(|t| !t.deleted)
                 .cloned()
@@ -129,17 +146,32 @@ impl TripleStore {
     }
 
     pub fn snapshot(&self) -> Vec<TripleRecord> {
-        self.triples.read().iter().filter(|t| !t.deleted).cloned().collect()
+        self.triples
+            .read()
+            .iter()
+            .filter(|t| !t.deleted)
+            .cloned()
+            .collect()
     }
 
     pub fn load_triple(&self, record: TripleRecord) {
-        self.add(&record.subject_id, &record.relation_id, &record.object_id, &record.composite_id);
+        self.add(
+            &record.subject_id,
+            &record.relation_id,
+            &record.object_id,
+            &record.composite_id,
+        );
     }
 
     pub fn serialize_triple(record: &TripleRecord) -> Vec<u8> {
         let mut buf = Vec::new();
         buf.push(TRIPLE_MAGIC);
-        for field in &[&record.subject_id, &record.relation_id, &record.object_id, &record.composite_id] {
+        for field in &[
+            &record.subject_id,
+            &record.relation_id,
+            &record.object_id,
+            &record.composite_id,
+        ] {
             let bytes = field.as_bytes();
             buf.extend_from_slice(&(bytes.len() as u16).to_le_bytes());
             buf.extend_from_slice(bytes);
@@ -156,7 +188,9 @@ impl TripleStore {
         for _ in 0..4 {
             let len = u16::from_le_bytes(data.get(pos..pos + 2)?.try_into().ok()?) as usize;
             pos += 2;
-            let s = std::str::from_utf8(data.get(pos..pos + len)?).ok()?.to_string();
+            let s = std::str::from_utf8(data.get(pos..pos + len)?)
+                .ok()?
+                .to_string();
             pos += len;
             fields.push(s);
         }

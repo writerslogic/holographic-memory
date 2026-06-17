@@ -415,7 +415,6 @@ impl EntangledHVec {
 
         Self { dim, indices }
     }
-
 }
 
 /// Sample from Laplace(0, scale) using inverse CDF.
@@ -625,5 +624,4 @@ mod tests {
             prev_sim = sim;
         }
     }
-
 }
