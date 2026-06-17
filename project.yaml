@@ -1,0 +1,71 @@
+orchestrator_version: "1.0"
+name: "HMS - Holographic Memory System"
+description: "Privacy-preserving semantic search using hyperdimensional computing. Phase 1: Meaning Memory with invertible compositional query algebra."
+language: "rust"
+repo_path: "."
+devplan_dir: "devplan"
+
+llm:
+  provider: "openrouter"
+  model: "anthropic/claude-opus-4-8"
+  api_key_env_var: "OPENROUTER_API_KEY"
+  temperature: 0.1
+
+task_processors:
+  - type: "markdown_planner"
+    settings:
+      status_key: "status"
+      target_files_key: "files_to_modify"
+      test_command_key: "test_command"
+      max_retries_per_task: 3
+
+tools:
+  - name: "Git"
+    type: "git"
+  - name: "Rust Formatter"
+    type: "formatter"
+    command: "cargo fmt"
+  - name: "Rust Test Runner"
+    type: "test_runner"
+    command: "cargo test --lib"
+  - name: "Rust Linter"
+    type: "linter"
+    command: "cargo clippy --all-targets --all-features -- -D warnings"
+
+environment:
+  type: "none"
+  setup_commands:
+    - "export CARGO_HOME=$(pwd)/.cargo_home"
+    - "export CARGO_TARGET_DIR=/Volumes/C/target"
+
+build:
+  max_tasks: 35
+  max_attempts_per_task: 3
+  max_consecutive_failures: 3
+  build_timeout: 300
+  test_timeout: 600
+  lint_timeout: 300
+  parallel_analysis: true
+
+build_command: "cargo check"
+test_command: "cargo test --lib"
+lint_command: "cargo clippy --all-targets --all-features -- -D warnings"
+
+prompt_templates:
+  system: |
+    You are implementing HMS (Holographic Memory System), a Rust library with N-API Node.js bindings.
+    Read DEVPLAN/ARCHITECTURE.md for system design. Read DEVPLAN/CONTEXT.md for existing code to reuse.
+    Read DEVPLAN/MODULES.md for the public API of every new module.
+    DO NOT duplicate existing code — reuse functions from entangled.rs, intersection.rs, storage.rs.
+    Use parking_lot::RwLock (not std), FxHashMap (not HashMap), anyhow::Result for errors.
+    Add SPDX license header to every new file.
+    Run cargo ONLY at group milestones, not per task.
+    {inherited_system_prompt}
+  task_completion_instruction: |
+    Implement: {task.description}
+    Files: {task.target_files}
+    Context:
+    {code_context}
+  error_correction_instruction: |
+    Fix this error:
+    {error_logs}
