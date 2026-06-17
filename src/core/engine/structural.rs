@@ -123,22 +123,19 @@ fn materialized_path(
             None => continue,
         };
 
-        let triples = triple_store.query(None, None, None);
-        for t in &triples {
-            if t.composite_id == comp_id {
-                let entity = match target_role {
-                    "subject" => &t.subject_id,
-                    "relation" => &t.relation_id,
-                    "object" => &t.object_id,
-                    _ => continue,
-                };
-                if !results.iter().any(|r: &StructuralResult| r.entity_id == *entity) {
-                    results.push(StructuralResult {
-                        entity_id: entity.clone(),
-                        confidence: score as f64 / 128.0,
-                        path: StructuralPath::Materialized,
-                    });
-                }
+        for t in triple_store.by_composite_id(&comp_id) {
+            let entity = match target_role {
+                "subject" => &t.subject_id,
+                "relation" => &t.relation_id,
+                "object" => &t.object_id,
+                _ => continue,
+            };
+            if !results.iter().any(|r: &StructuralResult| r.entity_id == *entity) {
+                results.push(StructuralResult {
+                    entity_id: entity.clone(),
+                    confidence: score as f64 / 128.0,
+                    path: StructuralPath::Materialized,
+                });
             }
         }
     }
