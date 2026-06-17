@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use hms_native::{EntangledHVec, HmsCore};
+use holographic_memory::{EntangledHVec, HmsCore};
 
 fn benchmark_entangled(c: &mut Criterion) {
     let dim = 16384;
