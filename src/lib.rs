@@ -693,6 +693,21 @@ impl HolographicMemorySystem {
     }
 
     #[napi]
+    pub async fn cleanup_vector(
+        &self,
+        vector: Float32Array,
+    ) -> Result<Option<CleanupResultJs>> {
+        let core = self.core.clone();
+        let q_vec = EntangledHVec::from_dense(&vector, core.dimensions());
+        run_async(move || {
+            Ok(core
+                .meaning_cleanup(&q_vec)
+                .map(|(id, confidence)| CleanupResultJs { id, confidence }))
+        })
+        .await
+    }
+
+    #[napi]
     pub fn declare_composition_rule(
         &self,
         name: String,
