@@ -1,0 +1,67 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-coverage-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Generate coverage
+      run: |
+        cargo llvm-cov --lib --json --output-path coverage.json
+        COVERAGE=$(cat coverage.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"{d['data'][0]['totals']['lines']['percent']:.1f}\")")
+        echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+        echo "## Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+
+    - name: Generate badge
+      run: |
+        if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+          COLOR="brightgreen"
+        elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+          COLOR="yellow"
+        else
+          COLOR="red"
+        fi
+        mkdir -p .github/badges
+        cat > .github/badges/coverage.json << EOF
+        {
+          "schemaVersion": 1,
+          "label": "coverage",
+          "message": "${COVERAGE}%",
+          "color": "${COLOR}"
+        }
+        EOF
+
+    - name: Commit badge
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add .github/badges/coverage.json
+        git diff --cached --quiet && exit 0
+        git commit -m "ci: update coverage badge [skip ci]"
+        git push
