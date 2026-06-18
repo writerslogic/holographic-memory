@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub(crate) mod admission;
+pub mod agency;
 pub(crate) mod atom_memory;
 pub(crate) mod audit;
 pub mod cognition;
