@@ -17,6 +17,8 @@ use std::sync::Arc;
 use super::admission::AdmissionControl;
 use super::atom_memory::AtomMemory;
 use super::audit::{AuditLog, AuditOp};
+use super::cognition::governor::{GovernanceReport, GovernorConfig, MemoryGovernor};
+use super::cognition::r#loop::{CognitionConfig as CognitionLoopConfig, CognitionLoop, Insight};
 use super::composite_memory::CompositeMemory;
 use super::config::HmsConfig;
 use super::decompose::Decomposer;
@@ -45,13 +47,14 @@ pub struct HmsCore {
     pub(crate) storage_path: PathBuf,
     shards: RwLock<ShardSet>,
     graph: RelationStore,
-    atom_memory: Option<AtomMemory>,
-    composite_memory: Option<CompositeMemory>,
-    triple_store: Option<TripleStore>,
+    atom_memory: Option<Arc<AtomMemory>>,
+    composite_memory: Option<Arc<CompositeMemory>>,
+    triple_store: Option<Arc<TripleStore>>,
     role_registry: Option<RoleRegistry>,
     rule_store: Option<RuleStore>,
     decomposer: Option<Decomposer>,
     admission: Option<AdmissionControl>,
+    cognition_loop: parking_lot::Mutex<Option<CognitionLoop>>,
     audit: Option<AuditLog>,
     #[cfg(feature = "security")]
     signing: Option<super::security::SigningManager>,
@@ -132,9 +135,9 @@ impl HmsCore {
             if config.meaning.enabled {
                 let mc = &config.meaning;
                 (
-                    Some(AtomMemory::new(dim, mc.idf_clip_factor)),
-                    Some(CompositeMemory::new(dim, mc.idf_clip_factor)),
-                    Some(TripleStore::new()),
+                    Some(Arc::new(AtomMemory::new(dim, mc.idf_clip_factor))),
+                    Some(Arc::new(CompositeMemory::new(dim, mc.idf_clip_factor))),
+                    Some(Arc::new(TripleStore::new())),
                     Some(RoleRegistry::new(dim)),
                     Some(RuleStore::new()),
                     Some(Decomposer::new()),
@@ -158,6 +161,7 @@ impl HmsCore {
             rule_store: rule_st,
             decomposer: decomp,
             admission: adm,
+            cognition_loop: parking_lot::Mutex::new(None),
             audit,
             #[cfg(feature = "security")]
             signing,
@@ -896,6 +900,113 @@ impl HmsCore {
         } else {
             Err(anyhow::anyhow!("meaning memory not enabled"))
         }
+    }
+
+    // === Cognition API ===
+
+    pub fn start_cognition(&self) -> Result<()> {
+        let atom_mem = self
+            .atom_memory
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("meaning memory not enabled"))?;
+        let tri_store = self
+            .triple_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("meaning memory not enabled"))?;
+
+        let cc = &self.config.cognition;
+        let loop_config = CognitionLoopConfig {
+            interval: std::time::Duration::from_secs(cc.interval_secs),
+            min_pattern_freq: cc.min_pattern_freq,
+            min_abstraction_members: cc.min_abstraction_members,
+            min_shared_relations: cc.min_shared_relations,
+            min_peer_coverage: cc.min_peer_coverage,
+            hypothesis_beta: cc.hypothesis_beta,
+            min_hypothesis_confidence: cc.min_hypothesis_confidence,
+            min_analogy_relations: cc.min_analogy_relations,
+        };
+
+        let cl = CognitionLoop::start(Arc::clone(atom_mem), Arc::clone(tri_store), loop_config);
+
+        *self.cognition_loop.lock() = Some(cl);
+        Ok(())
+    }
+
+    pub fn stop_cognition(&self) {
+        if let Some(ref mut cl) = *self.cognition_loop.lock() {
+            cl.stop();
+        }
+    }
+
+    pub fn cognition_running(&self) -> bool {
+        self.cognition_loop
+            .lock()
+            .as_ref()
+            .is_some_and(|cl| cl.state().is_running())
+    }
+
+    pub fn cognition_cycle_count(&self) -> u64 {
+        self.cognition_loop
+            .lock()
+            .as_ref()
+            .map_or(0, |cl| cl.state().cycle_count())
+    }
+
+    pub fn take_insights(&self) -> Vec<Insight> {
+        self.cognition_loop
+            .lock()
+            .as_ref()
+            .map_or_else(Vec::new, |cl| cl.state().take_insights())
+    }
+
+    pub fn cognition_insight_count(&self) -> usize {
+        self.cognition_loop
+            .lock()
+            .as_ref()
+            .map_or(0, |cl| cl.state().insight_count())
+    }
+
+    pub fn run_cognition_once(&self) -> Vec<Insight> {
+        let (atom_mem, tri_store) = match (&self.atom_memory, &self.triple_store) {
+            (Some(a), Some(t)) => (a, t),
+            _ => return Vec::new(),
+        };
+        let cc = &self.config.cognition;
+        let loop_config = CognitionLoopConfig {
+            interval: std::time::Duration::from_secs(cc.interval_secs),
+            min_pattern_freq: cc.min_pattern_freq,
+            min_abstraction_members: cc.min_abstraction_members,
+            min_shared_relations: cc.min_shared_relations,
+            min_peer_coverage: cc.min_peer_coverage,
+            hypothesis_beta: cc.hypothesis_beta,
+            min_hypothesis_confidence: cc.min_hypothesis_confidence,
+            min_analogy_relations: cc.min_analogy_relations,
+        };
+        CognitionLoop::run_once(atom_mem, tri_store, &loop_config)
+    }
+
+    pub fn govern_memory(&self) -> GovernanceReport {
+        let (atom_mem, comp_mem, tri_store) = match (
+            &self.atom_memory,
+            &self.composite_memory,
+            &self.triple_store,
+        ) {
+            (Some(a), Some(c), Some(t)) => (a, c, t),
+            _ => return GovernanceReport::default(),
+        };
+        let cc = &self.config.cognition;
+        let gov_config = GovernorConfig {
+            duplicate_threshold: cc.governor_duplicate_threshold,
+            max_scan_size: cc.governor_max_scan_size,
+            forget_unreferenced_atoms: cc.governor_forget_unreferenced,
+            refine_atoms: cc.refine_atoms,
+            ..Default::default()
+        };
+        MemoryGovernor::govern(atom_mem, comp_mem, tri_store, &gov_config)
+    }
+
+    pub fn cognition_enabled(&self) -> bool {
+        self.config.cognition.enabled
     }
 
     /// Returns true if the IVF index has been trained.

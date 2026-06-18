@@ -76,6 +76,11 @@ pub struct HmsConfigJs {
     pub meaning_max_fanout: Option<u32>,
     pub meaning_auto_decompose: Option<bool>,
     pub meaning_max_hop_depth: Option<u32>,
+    pub cognition_enabled: Option<bool>,
+    pub cognition_interval_secs: Option<u32>,
+    pub cognition_min_pattern_freq: Option<u32>,
+    pub cognition_min_abstraction_members: Option<u32>,
+    pub cognition_min_hypothesis_confidence: Option<f64>,
 }
 
 #[cfg(feature = "node-api")]
@@ -184,6 +189,21 @@ impl HmsConfigJs {
         }
         if let Some(v) = self.meaning_max_hop_depth {
             cfg.meaning.max_hop_depth = v as usize;
+        }
+        if let Some(v) = self.cognition_enabled {
+            cfg.cognition.enabled = v;
+        }
+        if let Some(v) = self.cognition_interval_secs {
+            cfg.cognition.interval_secs = v as u64;
+        }
+        if let Some(v) = self.cognition_min_pattern_freq {
+            cfg.cognition.min_pattern_freq = v as usize;
+        }
+        if let Some(v) = self.cognition_min_abstraction_members {
+            cfg.cognition.min_abstraction_members = v as usize;
+        }
+        if let Some(v) = self.cognition_min_hypothesis_confidence {
+            cfg.cognition.min_hypothesis_confidence = v;
         }
         cfg
     }
@@ -688,6 +708,55 @@ impl HolographicMemorySystem {
         self.core.meaning_enabled()
     }
 
+    // === Cognition API ===
+
+    #[napi]
+    pub fn start_cognition(&self) -> Result<()> {
+        self.core.start_cognition().map_err(napi_err)
+    }
+
+    #[napi]
+    pub fn stop_cognition(&self) {
+        self.core.stop_cognition();
+    }
+
+    #[napi(getter)]
+    pub fn cognition_running(&self) -> bool {
+        self.core.cognition_running()
+    }
+
+    #[napi(getter)]
+    pub fn cognition_cycle_count(&self) -> u32 {
+        self.core.cognition_cycle_count() as u32
+    }
+
+    #[napi(getter)]
+    pub fn cognition_insight_count(&self) -> u32 {
+        self.core.cognition_insight_count() as u32
+    }
+
+    #[napi(getter)]
+    pub fn cognition_enabled(&self) -> bool {
+        self.core.cognition_enabled()
+    }
+
+    #[napi]
+    pub fn run_cognition_once(&self) -> u32 {
+        self.core.run_cognition_once().len() as u32
+    }
+
+    #[napi]
+    pub fn govern_memory(&self) -> GovernanceReportJs {
+        let report = self.core.govern_memory();
+        GovernanceReportJs {
+            composites_merged: report.composites_merged as u32,
+            composites_forgotten: report.composites_forgotten as u32,
+            atoms_forgotten: report.atoms_forgotten as u32,
+            idf_refreshed: report.idf_refreshed,
+            atoms_refined: report.refinement.atoms_refined as u32,
+        }
+    }
+
     // === Graph API ===
 
     #[napi]
@@ -848,6 +917,16 @@ pub struct MultiHopResultJs {
 pub struct CleanupResultJs {
     pub id: String,
     pub confidence: f64,
+}
+
+#[cfg(feature = "node-api")]
+#[napi(object)]
+pub struct GovernanceReportJs {
+    pub composites_merged: u32,
+    pub composites_forgotten: u32,
+    pub atoms_forgotten: u32,
+    pub idf_refreshed: bool,
+    pub atoms_refined: u32,
 }
 
 #[cfg(test)]
