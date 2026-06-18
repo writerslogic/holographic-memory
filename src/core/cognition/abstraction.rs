@@ -170,7 +170,10 @@ mod tests {
         assert!(cities.is_some());
         let cities = cities.unwrap();
         assert_eq!(cities.members.len(), 3);
-        assert!(!cities.prototype.indices().is_empty(), "Prototype should have indices via frequency counting");
+        assert!(
+            !cities.prototype.indices().is_empty(),
+            "Prototype should have indices via frequency counting"
+        );
     }
 
     #[test]

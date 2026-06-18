@@ -8,7 +8,7 @@
 //! invocation; nothing runs automatically.
 
 use crate::core::atom_memory::AtomMemory;
-use crate::core::cognition::refiner::{DistributionalRefiner, RefinerConfig, RefinementReport};
+use crate::core::cognition::refiner::{DistributionalRefiner, RefinementReport, RefinerConfig};
 use crate::core::composite_memory::CompositeMemory;
 use crate::core::triple_store::TripleStore;
 
