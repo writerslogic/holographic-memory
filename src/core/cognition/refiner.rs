@@ -133,8 +133,7 @@ impl DistributionalRefiner {
                     None => continue,
                 };
                 // Exclude self, check minimum peer count
-                let other_peers: Vec<&String> =
-                    peers.iter().filter(|p| *p != atom_id).collect();
+                let other_peers: Vec<&String> = peers.iter().filter(|p| *p != atom_id).collect();
                 if other_peers.len() < config.min_peers_per_relation {
                     continue;
                 }
@@ -168,16 +167,14 @@ impl DistributionalRefiner {
             let orig_slots = target_count.saturating_sub(ctx_slots);
 
             // Top context indices by frequency (excluding those already in original)
-            let orig_set: fxhash::FxHashSet<u32> =
-                original.indices().iter().copied().collect();
+            let orig_set: fxhash::FxHashSet<u32> = original.indices().iter().copied().collect();
             let mut ctx_scored: Vec<(u32, f64)> = peer_index_freq
                 .iter()
                 .filter(|(idx, _)| !orig_set.contains(idx))
                 .map(|(&idx, &freq)| (idx, freq))
                 .collect();
             ctx_scored.sort_unstable_by(|a, b| {
-                b.1.partial_cmp(&a.1)
-                    .unwrap_or(std::cmp::Ordering::Equal)
+                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
             });
             ctx_scored.truncate(ctx_slots);
 
@@ -252,7 +249,10 @@ mod tests {
         };
         let report = DistributionalRefiner::refine(&atom_mem, &triple_store, &config);
 
-        assert!(report.atoms_refined > 0, "Should refine at least some atoms");
+        assert!(
+            report.atoms_refined > 0,
+            "Should refine at least some atoms"
+        );
 
         let paris_after = atom_mem.get("paris").unwrap();
         let berlin_after = atom_mem.get("berlin").unwrap();
@@ -363,14 +363,20 @@ mod tests {
             min_peers_per_relation: 2,
         };
 
-        let sim_before = atom_mem.get("a").unwrap().similarity(&atom_mem.get("b").unwrap());
+        let sim_before = atom_mem
+            .get("a")
+            .unwrap()
+            .similarity(&atom_mem.get("b").unwrap());
 
         // Run 3 rounds of refinement
         for _ in 0..3 {
             DistributionalRefiner::refine(&atom_mem, &triple_store, &config);
         }
 
-        let sim_after = atom_mem.get("a").unwrap().similarity(&atom_mem.get("b").unwrap());
+        let sim_after = atom_mem
+            .get("a")
+            .unwrap()
+            .similarity(&atom_mem.get("b").unwrap());
         assert!(
             sim_after > sim_before,
             "Multiple rounds should increase similarity: before={:.4}, after={:.4}",
