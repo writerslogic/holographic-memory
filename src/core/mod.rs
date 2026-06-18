@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 pub(crate) mod admission;
+pub mod agency;
 pub(crate) mod atom_memory;
 pub(crate) mod audit;
 pub mod cognition;

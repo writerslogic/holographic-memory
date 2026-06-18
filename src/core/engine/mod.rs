@@ -15,6 +15,10 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::admission::AdmissionControl;
+use super::agency::goals::GoalStore;
+use super::agency::planner::{Plan, Planner};
+use super::agency::questions::{Question, QuestionGenerator};
+use super::agency::self_modify::{ProposalKind, SelfModifier};
 use super::atom_memory::AtomMemory;
 use super::audit::{AuditLog, AuditOp};
 use super::cognition::governor::{GovernanceReport, GovernorConfig, MemoryGovernor};
@@ -55,6 +59,8 @@ pub struct HmsCore {
     decomposer: Option<Decomposer>,
     admission: Option<AdmissionControl>,
     cognition_loop: parking_lot::Mutex<Option<CognitionLoop>>,
+    goal_store: Option<GoalStore>,
+    self_modifier: Option<SelfModifier>,
     audit: Option<AuditLog>,
     #[cfg(feature = "security")]
     signing: Option<super::security::SigningManager>,
@@ -162,6 +168,16 @@ impl HmsCore {
             decomposer: decomp,
             admission: adm,
             cognition_loop: parking_lot::Mutex::new(None),
+            goal_store: if config.meaning.enabled {
+                Some(GoalStore::new())
+            } else {
+                None
+            },
+            self_modifier: if config.meaning.enabled {
+                Some(SelfModifier::new())
+            } else {
+                None
+            },
             audit,
             #[cfg(feature = "security")]
             signing,
@@ -1007,6 +1023,130 @@ impl HmsCore {
 
     pub fn cognition_enabled(&self) -> bool {
         self.config.cognition.enabled
+    }
+
+    // === Agency API ===
+
+    pub fn add_goal(
+        &self,
+        name: &str,
+        description: &str,
+        relevance: f64,
+        urgency: f64,
+        cost: f64,
+    ) -> Option<usize> {
+        let goal_store = self.goal_store.as_ref()?;
+        let atom_mem = self.atom_memory.as_ref()?;
+        let (_, vec) = atom_mem.get_or_insert(name);
+        Some(goal_store.add(super::agency::goals::Goal {
+            name: name.to_string(),
+            description: description.to_string(),
+            vector: vec,
+            relevance,
+            urgency,
+            cost,
+            active: true,
+        }))
+    }
+
+    pub fn deactivate_goal(&self, name: &str) -> bool {
+        self.goal_store
+            .as_ref()
+            .is_some_and(|gs| gs.deactivate(name))
+    }
+
+    pub fn active_goals(&self) -> Vec<(String, f64)> {
+        self.goal_store.as_ref().map_or_else(Vec::new, |gs| {
+            gs.prioritized()
+                .iter()
+                .map(|g| (g.name.clone(), g.utility()))
+                .collect()
+        })
+    }
+
+    pub fn plan_goal(&self, goal: &str, causal_relations: &[&str], max_depth: usize) -> Plan {
+        let tri = match &self.triple_store {
+            Some(t) => t,
+            None => {
+                return Plan {
+                    goal: goal.to_string(),
+                    actions: Vec::new(),
+                    complete: false,
+                }
+            }
+        };
+        Planner::backward_chain(tri, goal, causal_relations, max_depth)
+    }
+
+    pub fn generate_questions(&self) -> Vec<Question> {
+        let (atom_mem, tri_store, goal_store) =
+            match (&self.atom_memory, &self.triple_store, &self.goal_store) {
+                (Some(a), Some(t), Some(g)) => (a, t, g),
+                _ => return Vec::new(),
+            };
+
+        let cc = &self.config.cognition;
+        let gaps = super::cognition::gaps::GapDetector::detect(
+            tri_store,
+            cc.min_shared_relations,
+            cc.min_peer_coverage,
+        );
+        let hypotheses = super::cognition::hypothesis::HypothesisEngine::propose(
+            &gaps,
+            tri_store,
+            atom_mem,
+            cc.hypothesis_beta,
+            cc.min_hypothesis_confidence,
+        );
+
+        let mut questions = Vec::new();
+        questions.extend(QuestionGenerator::from_gaps(&gaps, atom_mem, goal_store));
+        questions.extend(QuestionGenerator::from_hypotheses(
+            &hypotheses,
+            atom_mem,
+            goal_store,
+        ));
+        QuestionGenerator::prioritize(questions)
+    }
+
+    pub fn propose_rule(
+        &self,
+        name: &str,
+        input_relations: Vec<String>,
+        output_relation: &str,
+        reason: &str,
+    ) -> Option<usize> {
+        let sm = self.self_modifier.as_ref()?;
+        Some(sm.propose(
+            ProposalKind::AddRule {
+                name: name.to_string(),
+                input_relations,
+                output_relation: output_relation.to_string(),
+            },
+            reason.to_string(),
+        ))
+    }
+
+    pub fn approve_proposal(&self, id: usize) -> bool {
+        self.self_modifier.as_ref().is_some_and(|sm| sm.approve(id))
+    }
+
+    pub fn reject_proposal(&self, id: usize) -> bool {
+        self.self_modifier.as_ref().is_some_and(|sm| sm.reject(id))
+    }
+
+    pub fn pending_proposals(&self) -> usize {
+        self.self_modifier
+            .as_ref()
+            .map_or(0, |sm| sm.pending_count())
+    }
+
+    pub fn goal_count(&self) -> usize {
+        self.goal_store.as_ref().map_or(0, |gs| gs.count())
+    }
+
+    pub fn active_goal_count(&self) -> usize {
+        self.goal_store.as_ref().map_or(0, |gs| gs.active_count())
     }
 
     /// Returns true if the IVF index has been trained.
