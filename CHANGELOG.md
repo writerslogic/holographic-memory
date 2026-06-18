@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-06-18
+
+### Added
+- **Cognition layer**: Background discovery engine with 8 modules.
+  - PatternScanner: relation co-occurrence analysis.
+  - AbstractionEngine: prototype concept discovery via frequency counting.
+  - GapDetector: epistemic gap detection against peer profiles.
+  - HypothesisEngine: gap-filler proposals via Hopfield cleanup.
+  - AnalogyDetector: structural isomorphism via connected components.
+  - CognitionLoop: configurable background thread with read-only access.
+  - MemoryGovernor: deduplication, forgetting, IDF refresh.
+  - DistributionalRefiner: self-organizing atom vectors from relational context.
+- `CognitionConfig` with all tuning parameters.
+- N-API: `startCognition`, `stopCognition`, `runCognitionOnce`, `governMemory`.
+- Coverage CI workflow (90.3% line coverage).
+- MSRV set to 1.82.
+
+### Fixed
+- Multi-hop confidence decay: chained lookups now decay by 0.9 per hop.
+- Empty-bundle in small-N abstraction: frequency counting fallback for < 10 members.
+- `deny.toml` updated to cargo-deny v2 schema.
+- Security advisories: updated lz4_flex and rand.
+- Stale `index.d.ts` regenerated with full API surface.
+
+### Changed
+- AtomMemory, CompositeMemory, TripleStore wrapped in Arc for background thread sharing.
+
 ## [0.4.0] - 2026-06-17
 
 ### Added
