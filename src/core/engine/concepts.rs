@@ -1,12 +1,17 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use fxhash::{FxHashMap, FxHashSet};
+
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::ConceptCandidate;
 
 impl HmsCore {
     /// Cluster similar vectors and return concept candidates with centroids and coherence scores.
+    ///
+    /// Uses posting-list candidate generation: only vector pairs sharing at least
+    /// one active index are compared, avoiding O(n²) all-pairs at high sparsity.
     pub fn synthesize_concepts(&self) -> Vec<ConceptCandidate> {
         let cfg = &self.config.concepts;
         let mut all_ids = Vec::new();
@@ -27,17 +32,50 @@ impl HmsCore {
         let mut used = vec![false; n];
         let mut concepts = Vec::new();
 
+        // For large collections, use posting-list candidate generation
+        // to avoid O(n²). For small collections, brute-force is fine.
+        let use_postings = n > 500;
+        let neighbors: Vec<FxHashSet<usize>> = if use_postings {
+            let mut postings: FxHashMap<u32, Vec<usize>> = FxHashMap::default();
+            for (i, vec) in all_vectors.iter().enumerate() {
+                for &idx in vec.indices() {
+                    postings.entry(idx).or_default().push(i);
+                }
+            }
+            let mut nbrs = vec![FxHashSet::default(); n];
+            for list in postings.values() {
+                for (pos, &a) in list.iter().enumerate() {
+                    for &b in &list[pos + 1..] {
+                        nbrs[a].insert(b);
+                        nbrs[b].insert(a);
+                    }
+                }
+            }
+            nbrs
+        } else {
+            Vec::new()
+        };
+
         for i in 0..n {
             if used[i] {
                 continue;
             }
             let mut cluster = vec![i];
-            for j in (i + 1)..n {
-                if used[j] {
-                    continue;
+            if use_postings {
+                for &j in &neighbors[i] {
+                    if !used[j]
+                        && all_vectors[i].similarity(&all_vectors[j]) > cfg.similarity_threshold
+                    {
+                        cluster.push(j);
+                    }
                 }
-                if all_vectors[i].similarity(&all_vectors[j]) > cfg.similarity_threshold {
-                    cluster.push(j);
+            } else {
+                for j in (i + 1)..n {
+                    if !used[j]
+                        && all_vectors[i].similarity(&all_vectors[j]) > cfg.similarity_threshold
+                    {
+                        cluster.push(j);
+                    }
                 }
             }
             if cluster.len() >= cfg.min_cluster_size {
