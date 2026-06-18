@@ -101,14 +101,21 @@ impl MemoryGovernor {
         let all = composite_memory.inner().all_vectors();
         let scan_limit = all.len().min(config.max_scan_size);
         let mut merged = 0;
+        let mut deleted: fxhash::FxHashSet<String> = fxhash::FxHashSet::default();
 
-        // Pairwise comparison within scan window
         for i in 0..scan_limit {
-            let (_, _, ref vec_i) = all[i];
+            let (_, ref id_i, ref vec_i) = all[i];
+            if deleted.contains(id_i) {
+                continue;
+            }
             for entry in all.iter().take(scan_limit).skip(i + 1) {
                 let (_, ref id_j, ref vec_j) = *entry;
+                if deleted.contains(id_j) {
+                    continue;
+                }
                 if vec_i.similarity(vec_j) >= config.duplicate_threshold {
                     composite_memory.delete(id_j);
+                    deleted.insert(id_j.clone());
                     merged += 1;
                 }
             }

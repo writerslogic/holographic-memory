@@ -31,10 +31,14 @@ impl Goal {
     }
 }
 
+struct GoalStoreInner {
+    goals: Vec<Goal>,
+    by_name: FxHashMap<String, usize>,
+}
+
 /// Stores goals separately from the knowledge base.
 pub struct GoalStore {
-    goals: RwLock<Vec<Goal>>,
-    by_name: RwLock<FxHashMap<String, usize>>,
+    inner: RwLock<GoalStoreInner>,
 }
 
 impl Default for GoalStore {
@@ -46,29 +50,31 @@ impl Default for GoalStore {
 impl GoalStore {
     pub fn new() -> Self {
         Self {
-            goals: RwLock::new(Vec::new()),
-            by_name: RwLock::new(FxHashMap::default()),
+            inner: RwLock::new(GoalStoreInner {
+                goals: Vec::new(),
+                by_name: FxHashMap::default(),
+            }),
         }
     }
 
     pub fn add(&self, goal: Goal) -> usize {
-        let mut goals = self.goals.write();
-        let idx = goals.len();
-        self.by_name.write().insert(goal.name.clone(), idx);
-        goals.push(goal);
+        let mut inner = self.inner.write();
+        let idx = inner.goals.len();
+        inner.by_name.insert(goal.name.clone(), idx);
+        inner.goals.push(goal);
         idx
     }
 
     pub fn get(&self, name: &str) -> Option<Goal> {
-        let by_name = self.by_name.read();
-        let idx = *by_name.get(name)?;
-        self.goals.read().get(idx).cloned()
+        let inner = self.inner.read();
+        let idx = *inner.by_name.get(name)?;
+        inner.goals.get(idx).cloned()
     }
 
     pub fn deactivate(&self, name: &str) -> bool {
-        let by_name = self.by_name.read();
-        if let Some(&idx) = by_name.get(name) {
-            self.goals.write()[idx].active = false;
+        let mut inner = self.inner.write();
+        if let Some(&idx) = inner.by_name.get(name) {
+            inner.goals[idx].active = false;
             true
         } else {
             false
@@ -76,8 +82,9 @@ impl GoalStore {
     }
 
     pub fn active_goals(&self) -> Vec<Goal> {
-        self.goals
+        self.inner
             .read()
+            .goals
             .iter()
             .filter(|g| g.active)
             .cloned()
@@ -106,11 +113,11 @@ impl GoalStore {
     }
 
     pub fn count(&self) -> usize {
-        self.goals.read().len()
+        self.inner.read().goals.len()
     }
 
     pub fn active_count(&self) -> usize {
-        self.goals.read().iter().filter(|g| g.active).count()
+        self.inner.read().goals.iter().filter(|g| g.active).count()
     }
 }
 

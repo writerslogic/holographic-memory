@@ -100,7 +100,6 @@ impl HmsCore {
                     member_ids,
                 });
             }
-            used[i] = true;
         }
         concepts
     }
