@@ -14,6 +14,7 @@ pub struct HmsConfig {
     pub security: SecurityConfig,
     pub privacy: PrivacyConfig,
     pub meaning: MeaningConfig,
+    pub cognition: CognitionConfig,
 }
 
 #[derive(Clone, Debug)]
@@ -177,6 +178,43 @@ impl Default for IVFConfig {
             d_reduced: 128,
             n_probe: 8,
             auto_threshold: 10_000,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct CognitionConfig {
+    pub enabled: bool,
+    pub interval_secs: u64,
+    pub min_pattern_freq: usize,
+    pub min_abstraction_members: usize,
+    pub min_shared_relations: usize,
+    pub min_peer_coverage: f64,
+    pub hypothesis_beta: f64,
+    pub min_hypothesis_confidence: f64,
+    pub min_analogy_relations: usize,
+    pub governor_duplicate_threshold: f64,
+    pub governor_max_scan_size: usize,
+    pub governor_forget_unreferenced: bool,
+    pub refine_atoms: bool,
+}
+
+impl Default for CognitionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            interval_secs: 60,
+            min_pattern_freq: 3,
+            min_abstraction_members: 3,
+            min_shared_relations: 2,
+            min_peer_coverage: 0.5,
+            hypothesis_beta: 24.0,
+            min_hypothesis_confidence: 0.3,
+            min_analogy_relations: 2,
+            governor_duplicate_threshold: 0.95,
+            governor_max_scan_size: 1000,
+            governor_forget_unreferenced: false,
+            refine_atoms: false,
         }
     }
 }

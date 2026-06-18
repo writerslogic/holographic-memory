@@ -2,6 +2,7 @@
 name = "holographic-memory"
 version = "0.4.0"
 edition = "2021"
+rust-version = "1.82"
 license = "Apache-2.0"
 authors = ["David Condrey"]
 description = "A high-performance Holographic Memory System (HMS) implementing Vector Symbolic Architectures (VSA)."

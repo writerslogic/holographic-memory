@@ -1,10 +1,20 @@
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
+version = 2
+# "all" means check all crates (workspace + transitive) for unmaintained advisories.
+unmaintained = "all"
 yanked = "warn"
 
+# Ignore advisories for unmaintained crates that have no safe upgrade path.
+# TODO: migrate fxhash -> rustc-hash (RUSTSEC-2025-0057)
+# TODO: migrate bincode 1.x -> bitcode or postcard (RUSTSEC-2025-0141)
+# TODO: paste comes from nalgebra/simba; upgrade path blocked on upstream (RUSTSEC-2024-0436)
+ignore = [
+    { id = "RUSTSEC-2025-0057", reason = "fxhash has no safe upgrade; planned migration to rustc-hash" },
+    { id = "RUSTSEC-2025-0141", reason = "bincode 1.x has no compatible upgrade; planned migration to bitcode" },
+    { id = "RUSTSEC-2024-0436", reason = "paste is a transitive dep via nalgebra/simba; no upstream fix available" },
+]
+
 [licenses]
-unlicensed = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
@@ -24,4 +34,3 @@ wildcards = "allow"
 unknown-registry = "warn"
 unknown-git = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = []

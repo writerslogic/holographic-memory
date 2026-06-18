@@ -5,9 +5,14 @@
 # Holographic Memory System (HMS)
 
 [![CI](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json)](https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml)
 [![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
+[![docs.rs](https://docs.rs/holographic-memory/badge.svg)](https://docs.rs/holographic-memory)
 [![npm](https://img.shields.io/npm/v/holographic-memory.svg)](https://www.npmjs.com/package/holographic-memory)
+[![npm downloads](https://img.shields.io/npm/dm/holographic-memory.svg)](https://www.npmjs.com/package/holographic-memory)
+[![crates.io downloads](https://img.shields.io/crates/d/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
+[![MSRV](https://img.shields.io/badge/MSRV-1.82-blue.svg)](https://blog.rust-lang.org/2024/10/17/Rust-1.82.0.html)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **Privacy-preserving semantic search using hyperdimensional computing.**
 
@@ -15,7 +20,7 @@ A high-performance **Holographic Memory System (HMS)** for Node.js, powered by R
 
 > Developed by [WritersLogic](https://github.com/writerslogic) -- local-first intelligence with no data leaving your machine.
 
-## 🚀 Features
+## Features
 
 - **Hybrid Retrieval Architecture**: 
   - **NSG (Navigable Small World)**: Fast proximity graph for approximate nearest neighbors.
@@ -26,13 +31,14 @@ A high-performance **Holographic Memory System (HMS)** for Node.js, powered by R
   - **O(1) Resolution**: Cached physical location lookups for instant ID retrieval.
   - **FxHash Backend**: Ultra-fast non-cryptographic hashing for all retrieval collections.
   - **O(N) Selection**: Linear-time candidate pruning using `select_nth_unstable`.
-- **Persistent Storage**: Integrated `sled` (key-value) and custom `Arena` (binary) for ACID-compliant persistence.
+- **Persistent Storage**: Custom `PersistentArena` with CRC32 integrity, LZ4 compression, and segmented mmap for crash-safe append-only persistence.
 - **Meaning Memory**: Structured knowledge layer with role-filler algebra, triple stores, multi-hop reasoning, and Hopfield attractor cleanup.
+- **Cognition Engine**: Background discovery of patterns, abstractions, knowledge gaps, hypotheses, and cross-domain analogies from stored triples.
 - **Graph Engine**: Explicit typed relations with multi-hop traversal, transitive/symmetric inference, and temporal filtering.
 - **Federated Queries**: Query across multiple HMS instances in parallel without centralizing data.
 - **Node.js Bindings**: High-efficiency N-API implementation with asynchronous worker thread execution.
 
-## 🔌 Integrations
+## Integrations
 
 HMS is available as both a Node.js package and a high-performance Rust crate.
 
@@ -45,10 +51,10 @@ npm install holographic-memory
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-holographic-memory = "0.2"
+holographic-memory = "0.4"
 ```
 
-## 🏗 Core Architecture
+## Core Architecture
 
 HMS is designed for local-first intelligence, combining advanced research in Hyperdimensional Computing with efficient retrieval algorithms.
 
@@ -57,7 +63,7 @@ HMS is designed for local-first intelligence, combining advanced research in Hyp
 - **Neuro-Symbolic VSA**: A robust implementation of **Binary Spatter Code (BSC)**, enabling relational logic $(A \otimes B)$ combined with the associative matching of high-dimensional vector spaces.
 - **Efficient Data Path**: Engineered with a zero-copy N-API interface, $O(1)$ ID resolution, and hardware-aware optimizations for high single-node throughput.
 
-## 🎯 Use Cases
+## Use Cases
 
 ### 1. Semantic Search & Local RAG
 Store text fragments or documents as hypervectors. While HMS uses high-speed **Deterministic 3-Gram Encoding** for lexical similarity, it also supports **LLM Integration**. Ingest SOTA embeddings from models like GPT-4 or Llama-3 (via `Float32Array`) and use HMS as your high-performance retrieval and reasoning layer.
@@ -76,7 +82,7 @@ Use the `synthesizeConcepts` method to identify "abstractions" within your memor
 ### 5. Explainable Vector Decomposition
 Hypervectors in HMS are **Distributed Representations**. You can use `analyzeComponents` to decompose a complex bundled vector back into its constituent symbols, providing a "reasoning" trace for why a certain item was retrieved.
 
-## 🧩 Meaning Memory
+## Meaning Memory
 
 Meaning Memory is a structured knowledge layer built on top of the holographic vector space. It enables HMS to store, query, and reason over relational knowledge using role-filler algebra rather than flat vector similarity alone.
 
@@ -142,7 +148,32 @@ const hms = new HolographicMemorySystem(16384, './storage', {
 });
 ```
 
-## 🧠 Core Concepts
+## Cognition Layer
+
+The Cognition layer is a background discovery engine that finds implicit knowledge from stored triples. All components operate with read-only access to meaning memory stores; discovered insights require explicit confirmation before becoming stored facts.
+
+### Components
+
+- **PatternScanner**: Groups triples by relation, counts co-occurring subject/object atoms, and surfaces recurring structural regularities.
+- **AbstractionEngine**: When N entities share the same relation pattern, bundles their atom vectors to create a prototype/category concept.
+- **GapDetector**: Compares an entity's relation profile against its peers to find missing relations (e.g., "most cities have a country, but city X doesn't").
+- **HypothesisEngine**: Proposes fillers for detected gaps by bundling peer data and running Hopfield cleanup to find the nearest stored atom.
+- **AnalogyDetector**: Finds structurally isomorphic domains via connected components and greedy bipartite mapping by relation overlap.
+- **CognitionLoop**: Background thread that runs all components on a configurable interval (default 60s). Insights are collected in a separate buffer without write-locking the main stores.
+- **MemoryGovernor**: Consolidates near-duplicate composites, forgets stale entries, and rebuilds IDF weights. Called explicitly, not automatically.
+
+### Configuration
+
+```rust
+let mut config = HmsConfig::default();
+config.meaning.enabled = true;
+config.cognition.enabled = true;
+config.cognition.interval_secs = 60;
+config.cognition.min_pattern_freq = 3;
+config.cognition.min_hypothesis_confidence = 0.3;
+```
+
+## Core Concepts
 
 ### Hyperdimensional Computing (HDC)
 Traditional AI uses deep vectors (weights). HDC uses high-dimensional (e.g., 10,000+), sparse vectors where information is "holographically" distributed across every dimension. 
@@ -151,7 +182,7 @@ Traditional AI uses deep vectors (weights). HDC uses high-dimensional (e.g., 10,
 - **Bundling (⊛)**: Combines multiple vectors into a single vector that retains similarity to all its components.
 - **Permutation (Π)**: Represents sequence and structure by shifting bits.
 
-## 🛠 Quick Start
+## Quick Start
 
 ### Semantic Search
 
@@ -211,7 +242,7 @@ async function main() {
 main().catch(console.error);
 ```
 
-## 🔧 Development
+## Development
 
 ### Build Environment
 To bypass global permission issues and optimize build performance, use the following configuration:
@@ -227,7 +258,7 @@ npm run build
 
 ### Testing
 ```bash
-# Run the 92+ unit and integration tests
+# Run the 197 unit and integration tests
 export CARGO_HOME=$(pwd)/.cargo_home
 export CARGO_TARGET_DIR=/Volumes/C/target
 cargo test --lib

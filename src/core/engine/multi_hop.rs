@@ -113,6 +113,11 @@ fn rule_rewrite(
         .collect()
 }
 
+/// Confidence decay per hop: each materialized hop is an exact match (1.0)
+/// but chain confidence decays by 0.9 per hop to reflect increasing
+/// uncertainty in longer chains.
+const HOP_DECAY: f64 = 0.9;
+
 fn chained_lookup(
     start_entity: &str,
     relations: &[&str],
@@ -121,11 +126,11 @@ fn chained_lookup(
 ) -> Vec<MultiHopResult> {
     let mut current_entities = vec![start_entity.to_string()];
     let mut all_hops: Vec<Vec<HopDetail>> = vec![Vec::new()];
-    let mut confidence = 1.0f64;
 
-    for &relation in relations {
+    for (hop_idx, &relation) in relations.iter().enumerate() {
         let mut next_entities = Vec::new();
         let mut next_hops = Vec::new();
+        let hop_confidence = HOP_DECAY.powi(hop_idx as i32 + 1);
 
         for (i, entity) in current_entities.iter().enumerate() {
             let triples = triple_store.query(Some(entity), Some(relation), None);
@@ -134,7 +139,7 @@ fn chained_lookup(
                     from_entity: entity.clone(),
                     relation: relation.to_string(),
                     to_entity: t.object_id.clone(),
-                    confidence: 1.0,
+                    confidence: hop_confidence,
                 };
                 let mut hops = all_hops.get(i).cloned().unwrap_or_default();
                 hops.push(hop);
@@ -149,17 +154,19 @@ fn chained_lookup(
 
         current_entities = next_entities;
         all_hops = next_hops;
-        confidence *= 1.0;
     }
 
     current_entities
         .into_iter()
         .zip(all_hops)
-        .map(|(entity, hops)| MultiHopResult {
-            entity_id: entity,
-            confidence,
-            method: MultiHopMethod::ChainedLookup,
-            hops,
+        .map(|(entity, hops)| {
+            let chain_confidence = hops.iter().map(|h| h.confidence).product();
+            MultiHopResult {
+                entity_id: entity,
+                confidence: chain_confidence,
+                method: MultiHopMethod::ChainedLookup,
+                hops,
+            }
         })
         .collect()
 }
