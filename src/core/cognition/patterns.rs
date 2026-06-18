@@ -75,7 +75,7 @@ impl PatternScanner {
             });
         }
 
-        patterns.sort_by(|a, b| b.frequency.cmp(&a.frequency));
+        patterns.sort_by_key(|p| std::cmp::Reverse(p.frequency));
         patterns
     }
 
@@ -116,7 +116,7 @@ impl PatternScanner {
             }
         }
 
-        results.sort_by(|a, b| b.count.cmp(&a.count));
+        results.sort_by_key(|r| std::cmp::Reverse(r.count));
         results
     }
 }
