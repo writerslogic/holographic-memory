@@ -127,10 +127,9 @@ fn chained_lookup(
     let mut current_entities = vec![start_entity.to_string()];
     let mut all_hops: Vec<Vec<HopDetail>> = vec![Vec::new()];
 
-    for (hop_idx, &relation) in relations.iter().enumerate() {
+    for &relation in relations {
         let mut next_entities = Vec::new();
         let mut next_hops = Vec::new();
-        let hop_confidence = HOP_DECAY.powi(hop_idx as i32 + 1);
 
         for (i, entity) in current_entities.iter().enumerate() {
             let triples = triple_store.query(Some(entity), Some(relation), None);
@@ -139,7 +138,7 @@ fn chained_lookup(
                     from_entity: entity.clone(),
                     relation: relation.to_string(),
                     to_entity: t.object_id.clone(),
-                    confidence: hop_confidence,
+                    confidence: HOP_DECAY,
                 };
                 let mut hops = all_hops.get(i).cloned().unwrap_or_default();
                 hops.push(hop);

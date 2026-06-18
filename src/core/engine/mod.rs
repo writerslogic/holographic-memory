@@ -921,6 +921,9 @@ impl HmsCore {
     // === Cognition API ===
 
     pub fn start_cognition(&self) -> Result<()> {
+        if self.cognition_running() {
+            return Err(anyhow::anyhow!("cognition loop is already running"));
+        }
         let atom_mem = self
             .atom_memory
             .as_ref()
@@ -930,19 +933,11 @@ impl HmsCore {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("meaning memory not enabled"))?;
 
-        let cc = &self.config.cognition;
-        let loop_config = CognitionLoopConfig {
-            interval: std::time::Duration::from_secs(cc.interval_secs),
-            min_pattern_freq: cc.min_pattern_freq,
-            min_abstraction_members: cc.min_abstraction_members,
-            min_shared_relations: cc.min_shared_relations,
-            min_peer_coverage: cc.min_peer_coverage,
-            hypothesis_beta: cc.hypothesis_beta,
-            min_hypothesis_confidence: cc.min_hypothesis_confidence,
-            min_analogy_relations: cc.min_analogy_relations,
-        };
-
-        let cl = CognitionLoop::start(Arc::clone(atom_mem), Arc::clone(tri_store), loop_config);
+        let cl = CognitionLoop::start(
+            Arc::clone(atom_mem),
+            Arc::clone(tri_store),
+            self.cognition_loop_config(),
+        );
 
         *self.cognition_loop.lock() = Some(cl);
         Ok(())
@@ -982,13 +977,9 @@ impl HmsCore {
             .map_or(0, |cl| cl.state().insight_count())
     }
 
-    pub fn run_cognition_once(&self) -> Vec<Insight> {
-        let (atom_mem, tri_store) = match (&self.atom_memory, &self.triple_store) {
-            (Some(a), Some(t)) => (a, t),
-            _ => return Vec::new(),
-        };
+    fn cognition_loop_config(&self) -> CognitionLoopConfig {
         let cc = &self.config.cognition;
-        let loop_config = CognitionLoopConfig {
+        CognitionLoopConfig {
             interval: std::time::Duration::from_secs(cc.interval_secs),
             min_pattern_freq: cc.min_pattern_freq,
             min_abstraction_members: cc.min_abstraction_members,
@@ -997,8 +988,16 @@ impl HmsCore {
             hypothesis_beta: cc.hypothesis_beta,
             min_hypothesis_confidence: cc.min_hypothesis_confidence,
             min_analogy_relations: cc.min_analogy_relations,
+        }
+    }
+
+    pub fn run_cognition_once(&self) -> Vec<Insight> {
+        let (atom_mem, tri_store) = match (&self.atom_memory, &self.triple_store) {
+            (Some(a), Some(t)) => (a, t),
+            _ => return Vec::new(),
         };
-        CognitionLoop::run_once(atom_mem, tri_store, &loop_config)
+        let cfg = self.cognition_loop_config();
+        CognitionLoop::run_once(atom_mem, tri_store, &cfg)
     }
 
     pub fn govern_memory(&self) -> GovernanceReport {
