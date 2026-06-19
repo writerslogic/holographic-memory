@@ -77,6 +77,8 @@ pub struct ConceptCandidate {
     pub member_count: u32,
     pub coherence: f64,
     pub member_ids: Vec<String>,
+    /// Whether centroid refinement converged (zero reassignments in last pass).
+    pub stable: bool,
 }
 
 /// Input item for batch memorization — a single id/text pair.

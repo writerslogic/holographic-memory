@@ -98,9 +98,112 @@ impl HmsCore {
                     member_count: cluster.len() as u32,
                     coherence,
                     member_ids,
+                    stable: false,
                 });
             }
         }
+
+        // Centroid refinement: k-means-style reassignment (up to 3 iterations).
+        // Recompute centroids and reassign vectors to closest centroid.
+        if concepts.len() >= 2 {
+            let cluster_indices: Vec<usize> = (0..n).filter(|&i| used[i]).collect();
+
+            // Build initial assignment: vector index -> concept index
+            let mut assignment: FxHashMap<usize, usize> = FxHashMap::default();
+            for (ci, concept) in concepts.iter().enumerate() {
+                for mid in &concept.member_ids {
+                    if let Some(pos) = all_ids.iter().position(|id| id == mid) {
+                        assignment.insert(pos, ci);
+                    }
+                }
+            }
+
+            let mut centroids: Vec<EntangledHVec> = concepts
+                .iter()
+                .enumerate()
+                .map(|(ci, _)| {
+                    let members: Vec<&EntangledHVec> = cluster_indices
+                        .iter()
+                        .filter(|&&vi| assignment.get(&vi) == Some(&ci))
+                        .map(|&vi| &all_vectors[vi])
+                        .collect();
+                    self.bundle(&members)
+                })
+                .collect();
+
+            let mut stable = true;
+            for _iter in 0..3 {
+                let mut changed = false;
+                for &vi in &cluster_indices {
+                    let mut best_ci = assignment[&vi];
+                    let mut best_sim = all_vectors[vi].similarity(&centroids[best_ci]);
+                    for (ci, centroid) in centroids.iter().enumerate() {
+                        let sim = all_vectors[vi].similarity(centroid);
+                        if sim > best_sim {
+                            best_sim = sim;
+                            best_ci = ci;
+                        }
+                    }
+                    if best_ci != assignment[&vi] {
+                        assignment.insert(vi, best_ci);
+                        changed = true;
+                    }
+                }
+                if !changed {
+                    stable = true;
+                    break;
+                }
+                stable = false;
+                // Recompute centroids after reassignment
+                for (ci, centroid) in centroids.iter_mut().enumerate() {
+                    let members: Vec<&EntangledHVec> = cluster_indices
+                        .iter()
+                        .filter(|&&vi| assignment.get(&vi) == Some(&ci))
+                        .map(|&vi| &all_vectors[vi])
+                        .collect();
+                    if !members.is_empty() {
+                        *centroid = self.bundle(&members);
+                    }
+                }
+            }
+
+            // Rebuild concepts from refined assignments
+            for (ci, concept) in concepts.iter_mut().enumerate() {
+                let members: Vec<usize> = cluster_indices
+                    .iter()
+                    .filter(|&&vi| assignment.get(&vi) == Some(&ci))
+                    .copied()
+                    .collect();
+                if members.is_empty() {
+                    concept.member_count = 0;
+                    concept.member_ids.clear();
+                    concept.coherence = 0.0;
+                    concept.stable = stable;
+                    continue;
+                }
+                let member_vecs: Vec<&EntangledHVec> =
+                    members.iter().map(|&vi| &all_vectors[vi]).collect();
+                let coherence: f64 = member_vecs
+                    .iter()
+                    .map(|v| v.similarity(&centroids[ci]))
+                    .sum::<f64>()
+                    / member_vecs.len() as f64;
+                concept.member_ids = members.iter().map(|&vi| all_ids[vi].clone()).collect();
+                concept.centroid_id = concept.member_ids.first().cloned().unwrap_or_default();
+                concept.member_count = members.len() as u32;
+                concept.coherence = coherence;
+                concept.stable = stable;
+            }
+
+            // Remove empty concepts
+            concepts.retain(|c| c.member_count > 0);
+        } else {
+            // Single or zero concepts: trivially stable
+            for concept in &mut concepts {
+                concept.stable = true;
+            }
+        }
+
         concepts
     }
 }
