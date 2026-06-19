@@ -820,9 +820,11 @@ impl HolographicMemorySystem {
                     relation: a.relation,
                     object: a.object,
                     depth: a.depth as u32,
+                    cost: a.cost,
                 })
                 .collect(),
             complete: plan.complete,
+            total_cost: plan.total_cost,
         }
     }
 
@@ -1062,6 +1064,7 @@ pub struct PlannedActionJs {
     pub relation: String,
     pub object: String,
     pub depth: u32,
+    pub cost: f64,
 }
 
 #[cfg(feature = "node-api")]
@@ -1070,6 +1073,7 @@ pub struct PlanJs {
     pub goal: String,
     pub actions: Vec<PlannedActionJs>,
     pub complete: bool,
+    pub total_cost: f64,
 }
 
 #[cfg(feature = "node-api")]
@@ -1239,6 +1243,64 @@ mod tests {
             "Synthesized concept should have high coherence, got {}",
             concepts[0].coherence
         );
+    }
+
+    #[test]
+    fn test_concept_refinement_stability() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = crate::core::config::HmsConfig::default();
+        config.concepts.similarity_threshold = 0.3;
+        config.concepts.min_cluster_size = 3;
+        let hms = HmsCore::new(
+            1000,
+            Some(dir.path().to_string_lossy().to_string()),
+            Some(config),
+        )
+        .unwrap();
+
+        // Create two distinct clusters so refinement has work to do
+        let base_a = hms.encode_text("alpha cluster topic");
+        let base_b = hms.encode_text("beta different subject");
+        for i in 0..10 {
+            let perturb = EntangledHVec::new_deterministic(1000, 20000 + i);
+            let va = EntangledHVec::bundle(&[
+                base_a.clone(),
+                base_a.clone(),
+                base_a.clone(),
+                base_a.clone(),
+                perturb.clone(),
+            ]);
+            hms.memorize(format!("a_{}", i), va).unwrap();
+
+            let perturb_b = EntangledHVec::new_deterministic(1000, 30000 + i);
+            let vb = EntangledHVec::bundle(&[
+                base_b.clone(),
+                base_b.clone(),
+                base_b.clone(),
+                base_b.clone(),
+                perturb_b,
+            ]);
+            hms.memorize(format!("b_{}", i), vb).unwrap();
+        }
+
+        let concepts = hms.synthesize_concepts();
+        assert!(
+            !concepts.is_empty(),
+            "Should synthesize at least one concept"
+        );
+        // With tight clusters, refinement should converge (stable = true)
+        for c in &concepts {
+            assert!(
+                c.stable,
+                "Concept with {} members should be stable after refinement",
+                c.member_count
+            );
+            assert!(
+                c.coherence > 0.5,
+                "Coherence should be decent after refinement, got {}",
+                c.coherence
+            );
+        }
     }
 
     // === NSG Integration Tests ===
