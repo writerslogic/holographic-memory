@@ -387,7 +387,7 @@ impl HmsCore {
         self.dimensions
     }
 
-    /// Encode text into a sparse hypervector using character trigrams.
+    /// Encode text into a sparse hypervector using multi-scale n-grams and word tokens.
     pub fn encode_text(&self, text: &str) -> EntangledHVec {
         encode_text_internal(text, self.dimensions)
     }
@@ -774,6 +774,14 @@ impl HmsCore {
 
     // === Federated Query ===
 
+    /// Query across local instance and remote peers in parallel.
+    ///
+    /// Improvements over naive collect-sort-truncate:
+    /// - **BinaryHeap merge**: O(N log k) top-k selection instead of O(N log N) sort.
+    /// - **ID deduplication**: same document appearing in multiple peers is counted once
+    ///   (highest similarity wins).
+    /// - **Partial failure tolerance**: a failed peer logs a warning and is skipped
+    ///   rather than aborting the entire query.
     pub fn federated_query(
         &self,
         peer_paths: &[String],
@@ -781,35 +789,76 @@ impl HmsCore {
         k: u32,
     ) -> Result<Vec<super::types::RetrievalResult>> {
         use rayon::prelude::*;
+        use std::collections::BinaryHeap;
+
+        let k = k as usize;
 
         // Query local instance
-        let mut all_results = self.query(query_vec, k);
+        let local_results = self.query(query_vec, k as u32);
 
-        // Query each peer in parallel
-        let peer_results: Vec<Result<Vec<super::types::RetrievalResult>>> = peer_paths
+        // Query each peer in parallel; collect successes and log failures
+        let peer_outcomes: Vec<(String, Result<Vec<super::types::RetrievalResult>>)> = peer_paths
             .par_iter()
             .map(|path| {
-                let peer = HmsCore::new(
+                let outcome = HmsCore::new(
                     self.dimensions as u32,
                     Some(path.clone()),
                     Some(self.config.clone()),
-                )?;
-                Ok(peer.query(query_vec, k))
+                )
+                .map(|peer| peer.query(query_vec, k as u32));
+                (path.clone(), outcome)
             })
             .collect();
 
-        for result in peer_results {
-            all_results.extend(result?);
+        // Deduplicate by ID, keeping highest similarity per ID.
+        let mut seen: fxhash::FxHashMap<String, f64> =
+            fxhash::FxHashMap::with_capacity_and_hasher(k * 2, Default::default());
+
+        // BinaryHeap with RetrievalResult's Ord (min-heap by similarity):
+        // pop() removes the lowest-similarity item, so we maintain top-k.
+        let mut heap: BinaryHeap<super::types::RetrievalResult> =
+            BinaryHeap::with_capacity(k + 1);
+
+        let mut insert = |r: super::types::RetrievalResult| {
+            // Dedup: skip if we already have this ID with equal-or-higher similarity
+            let dominated = seen
+                .get(&r.id)
+                .is_some_and(|&prev_sim| prev_sim >= r.similarity);
+            if dominated {
+                return;
+            }
+            seen.insert(r.id.clone(), r.similarity);
+            heap.push(r);
+            if heap.len() > k {
+                if let Some(evicted) = heap.pop() {
+                    seen.remove(&evicted.id);
+                }
+            }
+        };
+
+        for r in local_results {
+            insert(r);
         }
 
-        // Sort by similarity descending and take top-k
-        all_results.sort_by(|a, b| {
-            b.similarity
-                .partial_cmp(&a.similarity)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        all_results.truncate(k as usize);
-        Ok(all_results)
+        for (path, outcome) in peer_outcomes {
+            match outcome {
+                Ok(results) => {
+                    for r in results {
+                        insert(r);
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("federated query: peer {:?} failed, skipping: {}", path, e);
+                }
+            }
+        }
+
+        // Drain heap into sorted vec (highest similarity first)
+        let mut results: Vec<super::types::RetrievalResult> = heap.into_sorted_vec();
+        // into_sorted_vec uses the Ord (min-heap), so lowest similarity is first.
+        // Reverse to get descending order.
+        results.reverse();
+        Ok(results)
     }
 
     // === Meaning Memory API ===
