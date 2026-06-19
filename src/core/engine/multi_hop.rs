@@ -113,9 +113,10 @@ fn rule_rewrite(
         .collect()
 }
 
-/// Confidence decay per hop: each materialized hop is an exact match (1.0)
-/// but chain confidence decays by 0.9 per hop to reflect increasing
-/// uncertainty in longer chains.
+/// Evidence-weighted confidence for a single hop.
+/// When an entity has N matches for a relation, each match gets confidence
+/// 1/N — a unique match is high confidence, one of many is low.
+/// Base decay of 0.9 per hop is applied on top.
 const HOP_DECAY: f64 = 0.9;
 
 fn chained_lookup(
@@ -133,12 +134,20 @@ fn chained_lookup(
 
         for (i, entity) in current_entities.iter().enumerate() {
             let triples = triple_store.query(Some(entity), Some(relation), None);
+            let fan_out = triples.len();
+            if fan_out == 0 {
+                continue;
+            }
+            // Evidence-weighted: unique match = high confidence, many matches = lower each
+            let evidence_weight = 1.0 / (fan_out as f64).sqrt();
+            let hop_confidence = HOP_DECAY * evidence_weight.min(1.0);
+
             for t in &triples {
                 let hop = HopDetail {
                     from_entity: entity.clone(),
                     relation: relation.to_string(),
                     to_entity: t.object_id.clone(),
-                    confidence: HOP_DECAY,
+                    confidence: hop_confidence,
                 };
                 let mut hops = all_hops.get(i).cloned().unwrap_or_default();
                 hops.push(hop);
@@ -155,7 +164,7 @@ fn chained_lookup(
         all_hops = next_hops;
     }
 
-    current_entities
+    let mut results: Vec<MultiHopResult> = current_entities
         .into_iter()
         .zip(all_hops)
         .map(|(entity, hops)| {
@@ -167,7 +176,15 @@ fn chained_lookup(
                 hops,
             }
         })
-        .collect()
+        .collect();
+
+    // Rank by confidence descending
+    results.sort_by(|a, b| {
+        b.confidence
+            .partial_cmp(&a.confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    results
 }
 
 #[cfg(test)]
@@ -258,5 +275,77 @@ mod tests {
             results[0].method,
             MultiHopMethod::RuleRewrite { .. }
         ));
+    }
+
+    #[test]
+    fn test_evidence_weighted_confidence() {
+        let dim = 16384;
+        let atom_mem = AtomMemory::new(dim, 3.0);
+        let comp_mem = CompositeMemory::new(dim, 3.0);
+        let triple_store = TripleStore::new();
+        let roles = RoleRegistry::new(dim);
+        let rule_store = RuleStore::new();
+        let admission = AdmissionControl::new(40);
+
+        atom_mem.get_or_insert("a");
+        atom_mem.get_or_insert("b");
+        atom_mem.get_or_insert("c");
+        atom_mem.get_or_insert("d");
+
+        // Unique chain: a -> b (only match) -> c (only match)
+        triple_store.add("a", "r", "b", "c1");
+        triple_store.add("b", "r", "c", "c2");
+
+        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
+        let unique = multi_hop_query("a", &["r", "r"], &ctx, &rule_store, 10);
+        assert!(!unique.is_empty());
+        let unique_conf = unique[0].confidence;
+
+        // Ambiguous chain: a -> {b, d} (2 matches)
+        triple_store.add("a", "r", "d", "c3");
+        let ambig = multi_hop_query("a", &["r", "r"], &ctx, &rule_store, 10);
+        // The path through b should now have lower confidence (fan-out=2 at first hop)
+        let b_path = ambig.iter().find(|r| r.entity_id == "c");
+        assert!(b_path.is_some());
+        assert!(
+            b_path.unwrap().confidence < unique_conf,
+            "Ambiguous path should have lower confidence: ambig={:.4}, unique={:.4}",
+            b_path.unwrap().confidence,
+            unique_conf
+        );
+    }
+
+    #[test]
+    fn test_multi_hop_ranked_by_confidence() {
+        let dim = 16384;
+        let atom_mem = AtomMemory::new(dim, 3.0);
+        let comp_mem = CompositeMemory::new(dim, 3.0);
+        let triple_store = TripleStore::new();
+        let roles = RoleRegistry::new(dim);
+        let rule_store = RuleStore::new();
+        let admission = AdmissionControl::new(40);
+
+        atom_mem.get_or_insert("start");
+        // Two paths: start -> a -> end, start -> b -> end
+        // Path through a: unique at both hops
+        // Path through b: b has 3 outgoing "r2" relations (lower confidence)
+        triple_store.add("start", "r1", "a", "c1");
+        triple_store.add("start", "r1", "b", "c2");
+        triple_store.add("a", "r2", "end", "c3");
+        triple_store.add("b", "r2", "end", "c4");
+        triple_store.add("b", "r2", "noise1", "c5");
+        triple_store.add("b", "r2", "noise2", "c6");
+
+        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
+        let results = multi_hop_query("start", &["r1", "r2"], &ctx, &rule_store, 10);
+
+        // "end" should appear, reached via both paths
+        let ends: Vec<_> = results.iter().filter(|r| r.entity_id == "end").collect();
+        assert!(!ends.is_empty());
+
+        // Results should be sorted by confidence (highest first)
+        for w in results.windows(2) {
+            assert!(w[0].confidence >= w[1].confidence);
+        }
     }
 }
