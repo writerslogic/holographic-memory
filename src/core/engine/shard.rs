@@ -408,6 +408,15 @@ impl ShardSet {
         }
     }
 
+    pub fn collect_all_patterns(&self) -> Vec<(String, EntangledHVec)> {
+        let mut patterns = Vec::new();
+        self.for_each_shard(|shard| {
+            let vectors = shard.vectors.read();
+            patterns.extend(vectors.iter().map(|(id, vec)| (id.clone(), vec.clone())));
+        });
+        patterns
+    }
+
     pub fn try_for_each_shard<F: FnMut(&Shard) -> Result<()>>(&self, mut f: F) -> Result<()> {
         match self {
             ShardSet::Single(shard) => f(shard),
