@@ -7,6 +7,7 @@ pub mod agency;
 pub(crate) mod atom_memory;
 pub(crate) mod audit;
 pub mod cognition;
+pub mod clifford;
 pub(crate) mod composite_memory;
 pub(crate) mod config;
 pub(crate) mod decompose;
