@@ -51,13 +51,22 @@ impl AnalogyDetector {
         // Find connected components via BFS
         let components = find_components(&adj);
 
+        // Pre-build subject -> relations map for O(1) lookup
+        let mut subject_relations: FxHashMap<String, FxHashSet<String>> = FxHashMap::default();
+        for t in &snapshot {
+            subject_relations
+                .entry(t.subject_id.clone())
+                .or_default()
+                .insert(t.relation_id.clone());
+        }
+
         // For each component, compute its relation signature
         let mut comp_signatures: Vec<(FxHashSet<String>, FxHashSet<String>)> = Vec::new();
         for comp_entities in &components {
             let mut relations = FxHashSet::default();
-            for t in &snapshot {
-                if comp_entities.contains(&t.subject_id) {
-                    relations.insert(t.relation_id.clone());
+            for entity in comp_entities {
+                if let Some(rels) = subject_relations.get(entity) {
+                    relations.extend(rels.iter().cloned());
                 }
             }
             comp_signatures.push((comp_entities.clone(), relations));
