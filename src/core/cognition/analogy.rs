@@ -4,8 +4,9 @@
 //! Analogy detection via structural isomorphism.
 //!
 //! Finds pairs of subgraphs that share the same relational structure
-//! but with different entities. Uses connected components and greedy
-//! bipartite mapping by relation overlap.
+//! but with different entities. Uses connected components and ranked
+//! bipartite matching by relation profile similarity, validated by
+//! edge-overlap scoring.
 
 use fxhash::{FxHashMap, FxHashSet};
 
@@ -20,6 +21,9 @@ pub struct Analogy {
     pub shared_relations: Vec<String>,
     /// Quality score: fraction of edges that match under the mapping.
     pub score: f64,
+    /// Edge-overlap quality: fraction of edges in the smaller domain
+    /// that have a corresponding edge in the other domain under the mapping.
+    pub mapping_quality: f64,
 }
 
 /// Detects structural isomorphisms between subgraphs.
@@ -84,8 +88,9 @@ impl AnalogyDetector {
                     continue;
                 }
 
-                // Greedy mapping: match entities by their relation profiles
-                if let Some(analogy) = greedy_map(entities_a, entities_b, &shared, &snapshot) {
+                // Ranked matching: compute all pairwise similarities, then select
+                // best non-conflicting mapping in descending similarity order.
+                if let Some(analogy) = ranked_match(entities_a, entities_b, &shared, &snapshot) {
                     if analogy.score > 0.0 {
                         analogies.push(analogy);
                     }
@@ -132,7 +137,7 @@ fn find_components(adj: &FxHashMap<String, FxHashSet<String>>) -> Vec<FxHashSet<
     components
 }
 
-/// Build a relation profile for an entity: relation -> role (subject/object).
+/// Build a relation profile for an entity: relation -> roles (subject/object).
 fn entity_profile(
     entity: &str,
     triples: &[crate::core::triple_store::TripleRecord],
@@ -159,8 +164,10 @@ fn entity_profile(
     profile
 }
 
-/// Greedy bipartite mapping by relation profile overlap.
-fn greedy_map(
+/// Ranked bipartite matching: compute all pairwise profile similarities,
+/// sort by descending similarity, then greedily assign non-conflicting pairs.
+/// After mapping, compute edge-overlap scoring for structural validation.
+fn ranked_match(
     entities_a: &FxHashSet<String>,
     entities_b: &FxHashSet<String>,
     shared_relations: &[String],
@@ -180,33 +187,35 @@ fn greedy_map(
         return None;
     }
 
-    // Greedy: for each entity in A, find best match in B by profile similarity
+    // Compute all pairwise similarities
+    let mut pairs: Vec<(f64, usize, usize)> =
+        Vec::with_capacity(profiles_a.len() * profiles_b.len());
+    for (i, (_ea, pa)) in profiles_a.iter().enumerate() {
+        for (j, (_eb, pb)) in profiles_b.iter().enumerate() {
+            let sim = profile_similarity(pa, pb);
+            if sim > 0.0 {
+                pairs.push((sim, i, j));
+            }
+        }
+    }
+
+    // Sort by descending similarity
+    pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+
+    // Greedily select best non-conflicting mapping
+    let mut used_a = FxHashSet::default();
     let mut used_b = FxHashSet::default();
     let mut mapping = Vec::new();
     let mut total_score = 0.0;
 
-    for (entity_a, profile_a) in &profiles_a {
-        let mut best_match = None;
-        let mut best_sim = -1.0f64;
-
-        for (entity_b, profile_b) in &profiles_b {
-            if used_b.contains(entity_b) {
-                continue;
-            }
-            let sim = profile_similarity(profile_a, profile_b);
-            if sim > best_sim {
-                best_sim = sim;
-                best_match = Some(entity_b.clone());
-            }
+    for (sim, idx_a, idx_b) in &pairs {
+        if used_a.contains(idx_a) || used_b.contains(idx_b) {
+            continue;
         }
-
-        if let Some(matched) = best_match {
-            if best_sim > 0.0 {
-                used_b.insert(matched.clone());
-                mapping.push((entity_a.clone(), matched));
-                total_score += best_sim;
-            }
-        }
+        used_a.insert(*idx_a);
+        used_b.insert(*idx_b);
+        mapping.push((profiles_a[*idx_a].0.clone(), profiles_b[*idx_b].0.clone()));
+        total_score += sim;
     }
 
     if mapping.is_empty() {
@@ -215,11 +224,114 @@ fn greedy_map(
 
     let score = total_score / mapping.len() as f64;
 
+    // Compute edge-overlap scoring
+    let mapping_quality = compute_edge_overlap(&mapping, shared_relations, triples);
+
     Some(Analogy {
         mapping,
         shared_relations: shared_relations.to_vec(),
         score,
+        mapping_quality,
     })
+}
+
+/// Compute edge-overlap: fraction of triples in the smaller domain that
+/// have a corresponding triple in the other domain under the entity mapping.
+///
+/// A triple (s, r, o) in domain A maps to (map(s), r, map(o)) in domain B.
+/// We check how many such mapped triples actually exist.
+fn compute_edge_overlap(
+    mapping: &[(String, String)],
+    shared_relations: &[String],
+    triples: &[crate::core::triple_store::TripleRecord],
+) -> f64 {
+    // Build forward and reverse mapping lookups
+    let forward: FxHashMap<&str, &str> = mapping
+        .iter()
+        .map(|(a, b)| (a.as_str(), b.as_str()))
+        .collect();
+    let reverse: FxHashMap<&str, &str> = mapping
+        .iter()
+        .map(|(a, b)| (b.as_str(), a.as_str()))
+        .collect();
+
+    let mapped_entities_a: FxHashSet<&str> = mapping.iter().map(|(a, _)| a.as_str()).collect();
+    let mapped_entities_b: FxHashSet<&str> = mapping.iter().map(|(_, b)| b.as_str()).collect();
+
+    let shared_set: FxHashSet<&str> = shared_relations.iter().map(|s| s.as_str()).collect();
+
+    // Build a set of (subject, relation, object) triples in B for fast lookup
+    let triples_b: FxHashSet<(&str, &str, &str)> = triples
+        .iter()
+        .filter(|t| {
+            shared_set.contains(t.relation_id.as_str())
+                && mapped_entities_b.contains(t.subject_id.as_str())
+        })
+        .map(|t| {
+            (
+                t.subject_id.as_str(),
+                t.relation_id.as_str(),
+                t.object_id.as_str(),
+            )
+        })
+        .collect();
+
+    // Build a set of (subject, relation, object) triples in A for fast lookup
+    let triples_a: FxHashSet<(&str, &str, &str)> = triples
+        .iter()
+        .filter(|t| {
+            shared_set.contains(t.relation_id.as_str())
+                && mapped_entities_a.contains(t.subject_id.as_str())
+        })
+        .map(|t| {
+            (
+                t.subject_id.as_str(),
+                t.relation_id.as_str(),
+                t.object_id.as_str(),
+            )
+        })
+        .collect();
+
+    // Count how many A-triples map to existing B-triples
+    let mut matched_a = 0usize;
+    for &(subj, rel, obj) in &triples_a {
+        if let (Some(&mapped_subj), Some(&mapped_obj)) = (forward.get(subj), forward.get(obj)) {
+            if triples_b.contains(&(mapped_subj, rel, mapped_obj)) {
+                matched_a += 1;
+            }
+        }
+    }
+
+    // Count how many B-triples map to existing A-triples
+    let mut matched_b = 0usize;
+    for &(subj, rel, obj) in &triples_b {
+        if let (Some(&mapped_subj), Some(&mapped_obj)) = (reverse.get(subj), reverse.get(obj)) {
+            if triples_a.contains(&(mapped_subj, rel, mapped_obj)) {
+                matched_b += 1;
+            }
+        }
+    }
+
+    // Use the smaller domain's edge count as the denominator
+    let count_a = triples_a.len();
+    let count_b = triples_b.len();
+
+    if count_a == 0 && count_b == 0 {
+        return 0.0;
+    }
+
+    // Fraction of edges in the smaller domain that map correctly
+    if count_a <= count_b {
+        if count_a == 0 {
+            0.0
+        } else {
+            matched_a as f64 / count_a as f64
+        }
+    } else if count_b == 0 {
+        0.0
+    } else {
+        matched_b as f64 / count_b as f64
+    }
 }
 
 /// Jaccard-like similarity between two entity profiles.
@@ -294,5 +406,39 @@ mod tests {
 
         let components = find_components(&adj);
         assert_eq!(components.len(), 2);
+    }
+
+    #[test]
+    fn test_ranked_matching_quality() {
+        let store = TripleStore::new();
+        // Domain A: structured knowledge graph
+        store.add("cat", "is_a", "animal", "c1");
+        store.add("cat", "has_part", "tail", "c2");
+        store.add("animal", "lives_in", "habitat", "c3");
+        // Domain B: parallel structure with different entities
+        store.add("dog", "is_a", "creature", "c4");
+        store.add("dog", "has_part", "paw", "c5");
+        store.add("creature", "lives_in", "den", "c6");
+
+        let analogies = AnalogyDetector::detect(&store, 2);
+        assert!(!analogies.is_empty(), "should detect an analogy");
+
+        let best = &analogies[0];
+        assert!(best.score > 0.0, "score should be positive");
+        assert!(
+            best.mapping_quality > 0.0,
+            "mapping_quality should be positive for structurally isomorphic domains"
+        );
+        // With perfect structural isomorphism, mapping_quality should be 1.0
+        assert!(
+            best.mapping_quality >= 0.5,
+            "mapping_quality should be high for isomorphic domains, got {}",
+            best.mapping_quality
+        );
+        // Verify the mapping covers entities from both domains
+        assert!(
+            best.mapping.len() >= 2,
+            "should map at least 2 entity pairs"
+        );
     }
 }
