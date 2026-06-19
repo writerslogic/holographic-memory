@@ -1071,6 +1071,7 @@ impl HmsCore {
                     goal: goal.to_string(),
                     actions: Vec::new(),
                     complete: false,
+                    total_cost: 0.0,
                 }
             }
         };

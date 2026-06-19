@@ -6,7 +6,8 @@
     "centroidId",
     "coherence",
     "memberCount",
-    "memberIds"
+    "memberIds",
+    "stable"
   ],
   "properties": {
     "centroidId": {
@@ -26,6 +27,10 @@
       "items": {
         "type": "string"
       }
+    },
+    "stable": {
+      "description": "Whether centroid refinement converged (zero reassignments in last pass).",
+      "type": "boolean"
     }
   }
 }
