@@ -89,71 +89,90 @@ impl SelfModifier {
 
     /// Submit a proposal. Returns the proposal ID.
     pub fn propose(&self, kind: ProposalKind, reason: String) -> usize {
-        let mut proposals = self.proposals.write();
-        let id = proposals.len();
-        proposals.push(Proposal {
-            id,
-            kind,
-            reason,
-            status: ProposalStatus::Pending,
-        });
-        self.audit_log.write().push(AuditEntry {
-            proposal_id: id,
-            action: "proposed".to_string(),
-            timestamp_ms: now_ms(),
-        });
+        let id = {
+            let mut proposals = self.proposals.write();
+            let id = proposals.len();
+            proposals.push(Proposal {
+                id,
+                kind,
+                reason,
+                status: ProposalStatus::Pending,
+            });
+            id
+        };
+        self.log_action(id, "proposed");
         id
     }
 
     /// Approve a pending proposal. Returns true if it was pending.
     pub fn approve(&self, id: usize) -> bool {
-        let mut proposals = self.proposals.write();
-        if let Some(p) = proposals.get_mut(id) {
-            if p.status == ProposalStatus::Pending {
-                p.status = ProposalStatus::Approved;
-                self.audit_log.write().push(AuditEntry {
-                    proposal_id: id,
-                    action: "approved".to_string(),
-                    timestamp_ms: now_ms(),
-                });
-                return true;
+        let changed = {
+            let mut proposals = self.proposals.write();
+            if let Some(p) = proposals.get_mut(id) {
+                if p.status == ProposalStatus::Pending {
+                    p.status = ProposalStatus::Approved;
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
             }
+        };
+        if changed {
+            self.log_action(id, "approved");
         }
-        false
+        changed
     }
 
     /// Reject a pending proposal. Returns true if it was pending.
     pub fn reject(&self, id: usize) -> bool {
-        let mut proposals = self.proposals.write();
-        if let Some(p) = proposals.get_mut(id) {
-            if p.status == ProposalStatus::Pending {
-                p.status = ProposalStatus::Rejected;
-                self.audit_log.write().push(AuditEntry {
-                    proposal_id: id,
-                    action: "rejected".to_string(),
-                    timestamp_ms: now_ms(),
-                });
-                return true;
+        let changed = {
+            let mut proposals = self.proposals.write();
+            if let Some(p) = proposals.get_mut(id) {
+                if p.status == ProposalStatus::Pending {
+                    p.status = ProposalStatus::Rejected;
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
             }
+        };
+        if changed {
+            self.log_action(id, "rejected");
         }
-        false
+        changed
     }
 
     /// Mark an approved proposal as applied. Returns true if it was approved.
     pub fn mark_applied(&self, id: usize) -> bool {
-        let mut proposals = self.proposals.write();
-        if let Some(p) = proposals.get_mut(id) {
-            if p.status == ProposalStatus::Approved {
-                p.status = ProposalStatus::Applied;
-                self.audit_log.write().push(AuditEntry {
-                    proposal_id: id,
-                    action: "applied".to_string(),
-                    timestamp_ms: now_ms(),
-                });
-                return true;
+        let changed = {
+            let mut proposals = self.proposals.write();
+            if let Some(p) = proposals.get_mut(id) {
+                if p.status == ProposalStatus::Approved {
+                    p.status = ProposalStatus::Applied;
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
             }
+        };
+        if changed {
+            self.log_action(id, "applied");
         }
-        false
+        changed
+    }
+
+    fn log_action(&self, proposal_id: usize, action: &str) {
+        self.audit_log.write().push(AuditEntry {
+            proposal_id,
+            action: action.to_string(),
+            timestamp_ms: now_ms(),
+        });
     }
 
     pub fn pending_proposals(&self) -> Vec<Proposal> {
