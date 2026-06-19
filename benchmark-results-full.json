@@ -1,0 +1,902 @@
+{
+  "binding_fidelity": {
+    "d_prime": 353.693385923916,
+    "n_pairs": 500,
+    "noise_mean": 0.0030011718095752657,
+    "noise_std": 0.003986416824883133,
+    "signal_mean": 1.0,
+    "signal_std": 0.0
+  },
+  "capacity": [
+    {
+      "d_prime": 310.5546697295228,
+      "density_mean": 0.00390625,
+      "dim": 16384,
+      "k": 1,
+      "noise_mean": 0.0033120859892513434,
+      "noise_std": 0.004538748577424316,
+      "recovery_rate": 1.0,
+      "signal_mean": 1.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": 11.137884521300215,
+      "density_mean": 0.00390625,
+      "dim": 16384,
+      "k": 2,
+      "noise_mean": 0.002047244094488189,
+      "noise_std": 0.0034888779345941118,
+      "recovery_rate": 1.0,
+      "signal_mean": 0.3287807076413325,
+      "signal_std": 0.041339452465968894
+    },
+    {
+      "d_prime": 1.3435944665125037,
+      "density_mean": 0.000054931640625,
+      "dim": 16384,
+      "k": 3,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.56,
+      "signal_mean": 0.010903846153846155,
+      "signal_std": 0.01147695044682996
+    },
+    {
+      "d_prime": 1.2355130110443684,
+      "density_mean": 0.00010009765625,
+      "dim": 16384,
+      "k": 4,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.54,
+      "signal_mean": 0.01362629814215635,
+      "signal_std": 0.015597161232067993
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 5,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 6,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 7,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 8,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 9,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 10,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 15,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 20,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 25,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 30,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 35,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 40,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 45,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 50,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 60,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 70,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 80,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 90,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 100,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 125,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 150,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 175,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 200,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 225,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 250,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 275,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 300,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 325,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 350,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 375,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 400,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 425,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 450,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 475,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 16384,
+      "k": 500,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    }
+  ],
+  "clifford_ablation": {
+    "capacity": [
+      {
+        "d_prime": 214.5849037280895,
+        "k": 1,
+        "noise_mean": 0.0007216879955978384,
+        "signal_mean": 0.8676551188779377
+      },
+      {
+        "d_prime": 8.0138678932003,
+        "k": 3,
+        "noise_mean": 0.0007216879955978384,
+        "signal_mean": 0.29826000154419735
+      },
+      {
+        "d_prime": 4.96487546791615,
+        "k": 5,
+        "noise_mean": 0.0017315349805497424,
+        "signal_mean": 0.17910949539219143
+      },
+      {
+        "d_prime": 3.762649956227754,
+        "k": 10,
+        "noise_mean": 0.0020556033392830873,
+        "signal_mean": 0.10176476332439487
+      },
+      {
+        "d_prime": 2.932971805755299,
+        "k": 20,
+        "noise_mean": 0.0011430381920516121,
+        "signal_mean": 0.06894314430216393
+      },
+      {
+        "d_prime": 1.9928969373402088,
+        "k": 50,
+        "noise_mean": 0.0025720530208995646,
+        "signal_mean": 0.034255078792081776
+      },
+      {
+        "d_prime": 1.3168970512151201,
+        "k": 100,
+        "noise_mean": 0.0019961449275442446,
+        "signal_mean": 0.023232780038744898
+      }
+    ],
+    "latency": {
+      "clifford_bind_ns": 58867.541,
+      "entangled_bind_ns": 159.042,
+      "ratio": 370.1383345279863
+    }
+  },
+  "composition_depth": [
+    {
+      "depth": 1,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 2,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 3,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 4,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 5,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 6,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 7,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 8,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 9,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 10,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 11,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 12,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 13,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 14,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 15,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 16,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 17,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 18,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 19,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 20,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    }
+  ],
+  "encoding": {
+    "perturbation": [
+      {
+        "corruption_pct": 0.0,
+        "similarity_mean": 1.0,
+        "similarity_std": 0.0
+      },
+      {
+        "corruption_pct": 0.05,
+        "similarity_mean": 0.21583333333333332,
+        "similarity_std": 0.3066905880673823
+      },
+      {
+        "corruption_pct": 0.1,
+        "similarity_mean": 0.08196428571428571,
+        "similarity_std": 0.20072756167195455
+      },
+      {
+        "corruption_pct": 0.2,
+        "similarity_mean": 0.03,
+        "similarity_std": 0.16044809049530548
+      },
+      {
+        "corruption_pct": 0.3,
+        "similarity_mean": 0.0,
+        "similarity_std": 0.0
+      },
+      {
+        "corruption_pct": 0.5,
+        "similarity_mean": 0.0007694128787878788,
+        "similarity_std": 0.0033969412684279527
+      },
+      {
+        "corruption_pct": 0.7,
+        "similarity_mean": 0.0,
+        "similarity_std": 0.0
+      }
+    ]
+  },
+  "hopfield": {
+    "capacity": [
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 5
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 5
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 10
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 10
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 20
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 20
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 50
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 50
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 100
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 100
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 200
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 200
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 500
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 500
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 1000
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 1000
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 2000
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 2000
+      }
+    ],
+    "noise_recovery": [
+      {
+        "corruption_pct": 0.0,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.05,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.1,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.15,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.2,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.3,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.4,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.5,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.7,
+        "recovery_rate": 1.0
+      }
+    ]
+  },
+  "meta": {
+    "active_density": "1/256",
+    "primary_dim": 16384,
+    "quick_mode": false,
+    "suite_version": "1.0.0"
+  },
+  "preregistered": {
+    "grade_structure": {
+      "bsc_dim": 16384,
+      "chance_floor": 0.5,
+      "clifford_dim": 16384,
+      "description": "Role-filler discrimination across random (agent, patient) triples",
+      "hrr_dim": 512,
+      "hrr_note": "HRR uses smaller dim due to O(n^2) convolution; stated, not hidden",
+      "kill_condition": "CliffordVec acc <= BSC+permute OR CliffordVec acc <= HRR",
+      "kill_fires": true,
+      "n_triples": 200,
+      "results": {
+        "bsc_permute_accuracy": 1.0,
+        "bsc_xor_accuracy": 0.03,
+        "clifford_accuracy": 0.21,
+        "hrr_accuracy": 0.27
+      },
+      "strong_claim_holds": false,
+      "vocab_size": 50
+    },
+    "sparse_vs_dense_hopfield": {
+      "basin_of_attraction": [
+        {
+          "corruption_pct": 0.0,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.05,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.1,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.15,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.2,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.3,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.4,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.5,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.7,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        }
+      ],
+      "capacity_sweep": [
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 10,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 25,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 50,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 100,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 200,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 500,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 1000,
+          "sparse_exact": 1.0
+        }
+      ],
+      "crosstalk": {
+        "dense_mean": 0.0016160479940007483,
+        "dense_std": 0.0034753547340295216,
+        "sparse_mean": 0.0014973128358955119,
+        "sparse_std": 0.0032972657593822795
+      },
+      "description": "Sparse binary vs dense-projected in Hopfield retrieval",
+      "hopfield_path": {
+        "beta": 100.0,
+        "entmax_alpha": 2.0,
+        "note": "Both pattern types use identical hopfield_query code path",
+        "similarity_kernel": "Jaccard"
+      },
+      "information_content": {
+        "dense_active_mean": 64.0,
+        "note": "Equal-D comparison; information content differs. Confound stated.",
+        "sparse_active_bits": 64,
+        "sparse_info_bits_approx": 604.1519104634385
+      },
+      "kill_condition": "Dense matches or beats sparse on BOTH basin width AND capacity cliff",
+      "kill_fires": true,
+      "sparse_wins_basin_points": 0,
+      "sparse_wins_capacity_points": 0,
+      "strong_claim_holds": false
+    }
+  }
+}

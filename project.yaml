@@ -59,13 +59,43 @@ prompt_templates:
     DO NOT duplicate existing code — reuse functions from entangled.rs, intersection.rs, storage.rs.
     Use parking_lot::RwLock (not std), FxHashMap (not HashMap), anyhow::Result for errors.
     Add SPDX license header to every new file.
-    Run cargo ONLY at group milestones, not per task.
-    {inherited_system_prompt}
+    {sota_invariants}
+    {consensus_context}
   task_completion_instruction: |
-    Implement: {task.description}
-    Files: {task.target_files}
-    Context:
+    ## Task
+    {task.description}
+
+    ## Acceptance Criteria
+    {acceptance_criteria}
+
+    ## Files to Edit
+    {task.target_files}
+
+    ## Interface Contracts (MUST honor exact signatures from completed tasks)
+    {interface_contracts}
+
+    ## Recent Changes to Related Files
+    {recent_changes}
+
+    ## Learnings from Previous Tasks
+    {scratchpad}
+
+    ## Code Context
     {code_context}
+
+    Output your changes as markdown code blocks with file path on the opening fence line (e.g. ```rust:src/core/posting.rs).
+    Every new file must have: SPDX header, use parking_lot::RwLock, use rustc_hash::FxHashMap.
   error_correction_instruction: |
-    Fix this error:
+    ## Previous Attempt Failed
     {error_logs}
+
+    ## Task
+    {task.description}
+
+    ## Interface Contracts
+    {interface_contracts}
+
+    ## Code Context
+    {code_context}
+
+    Fix the error. Output corrected code as markdown code blocks with file paths.
