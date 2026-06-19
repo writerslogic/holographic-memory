@@ -726,8 +726,8 @@ impl Decomposer {
         // -es forms: teaches→teach, goes→go, creates→create
         if word.ends_with("es") && word.len() > 3 {
             // -ies: carries → carry
-            if word.ends_with("ies") {
-                return Some(format!("{}y", &word[..word.len() - 3]));
+            if let Some(stem) = word.strip_suffix("ies") {
+                return Some(format!("{}y", stem));
             }
             // -ches, -shes, -sses, -xes, -zes
             if word.ends_with("ches")

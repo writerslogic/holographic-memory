@@ -23,7 +23,7 @@ impl AtomMemory {
                 return (idx, vec);
             }
         }
-        let seed = fxhash::hash64(atom_str.as_bytes());
+        let seed = super::encoding::hash_str_seed(atom_str, ATOM_MAGIC as u64);
         let vec = EntangledHVec::new_deterministic(self.inner.dim(), seed);
         let idx = self.inner.insert(atom_str.to_string(), vec.clone());
         (idx, vec)

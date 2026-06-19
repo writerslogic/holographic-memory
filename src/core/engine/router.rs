@@ -4,6 +4,7 @@
 use crate::core::entangled::EntangledHVec;
 
 const BRUTE_FORCE_THRESHOLD: usize = 1000;
+const HOPFIELD_MAX_PATTERNS: usize = 10_000;
 const SPARSE_INDEX_THRESHOLD: usize = 4;
 const EF_SEARCH_MIN: usize = 32;
 const EF_SEARCH_MAX: usize = 512;
@@ -17,6 +18,7 @@ pub(crate) enum IndexRoute {
     NSG,
     Inverted,
     IVF,
+    Hopfield,
     BruteForce,
 }
 
@@ -112,6 +114,16 @@ impl QueryPlanner {
             };
         }
 
+        // Hopfield associative retrieval for mid-sized collections without trained indices.
+        // Entmax attention gives better ranking than brute-force similarity scan.
+        if n <= HOPFIELD_MAX_PATTERNS {
+            return QueryPlan {
+                route: IndexRoute::Hopfield,
+                ef_search,
+                n_probe,
+            };
+        }
+
         QueryPlan {
             route: IndexRoute::BruteForce,
             ef_search,
@@ -139,6 +151,22 @@ mod tests {
         let q = EntangledHVec::from_indices(vec![1, 2], 1000);
         let plan = planner.plan(&q, 10);
         assert_eq!(plan.route, IndexRoute::Inverted);
+    }
+
+    #[test]
+    fn plan_mid_collection_no_indices_uses_hopfield() {
+        let planner = QueryPlanner::new(false, false, false, 5000, 1000);
+        let q = EntangledHVec::from_indices((0..10).collect(), 1000);
+        let plan = planner.plan(&q, 10);
+        assert_eq!(plan.route, IndexRoute::Hopfield);
+    }
+
+    #[test]
+    fn plan_large_collection_no_indices_uses_brute_force() {
+        let planner = QueryPlanner::new(false, false, false, 20_000, 1000);
+        let q = EntangledHVec::from_indices((0..10).collect(), 1000);
+        let plan = planner.plan(&q, 10);
+        assert_eq!(plan.route, IndexRoute::BruteForce);
     }
 
     #[test]

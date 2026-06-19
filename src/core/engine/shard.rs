@@ -11,6 +11,7 @@ use rayon::prelude::*;
 use std::hash::Hasher;
 
 use crate::core::entangled::EntangledHVec;
+use crate::core::hopfield::{hopfield_query, HopfieldConfig};
 use crate::core::index::inverted::{Accumulator, SparseInvertedIndex};
 use crate::core::ivf::IVFIndex;
 use crate::core::nsg::NSGIndex;
@@ -197,6 +198,17 @@ impl Shard {
                             return reranked;
                         }
                     }
+                }
+            }
+            router::IndexRoute::Hopfield => {
+                let patterns: Vec<(String, EntangledHVec)> = vectors
+                    .iter()
+                    .map(|(id, vec)| (id.clone(), vec.clone()))
+                    .collect();
+                let config = HopfieldConfig::default();
+                let results = hopfield_query(query_vec, &patterns, &config, k as usize);
+                if !results.is_empty() {
+                    return results;
                 }
             }
             router::IndexRoute::BruteForce => {
