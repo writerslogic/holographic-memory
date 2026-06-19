@@ -58,10 +58,9 @@ impl GapDetector {
                 .insert(t.subject_id.clone());
         }
 
-        let entities: Vec<(String, FxHashSet<String>)> = entity_rels.into_iter().collect();
         let mut gaps = Vec::new();
 
-        for (entity, rels) in &entities {
+        for (entity, rels) in &entity_rels {
             // Find peers: other entities sharing >= min_shared_relations
             let mut peer_candidates: FxHashMap<String, usize> = FxHashMap::default();
             for rel in rels {
@@ -84,11 +83,10 @@ impl GapDetector {
                 continue;
             }
 
-            // Collect all relations that peers have
+            // Collect all relations that peers have (O(1) lookup via entity_rels)
             let mut peer_rel_counts: FxHashMap<String, usize> = FxHashMap::default();
             for peer in &peers {
-                // Find this peer's relations from the entities list
-                if let Some((_, peer_rels)) = entities.iter().find(|(id, _)| id == peer) {
+                if let Some(peer_rels) = entity_rels.get(peer) {
                     for rel in peer_rels {
                         *peer_rel_counts.entry(rel.clone()).or_insert(0) += 1;
                     }
@@ -105,12 +103,7 @@ impl GapDetector {
                 if coverage >= min_peer_coverage {
                     let peers_with: Vec<String> = peers
                         .iter()
-                        .filter(|p| {
-                            entities
-                                .iter()
-                                .find(|(id, _)| id == *p)
-                                .is_some_and(|(_, pr)| pr.contains(rel))
-                        })
+                        .filter(|p| entity_rels.get(*p).is_some_and(|pr| pr.contains(rel)))
                         .cloned()
                         .collect();
 

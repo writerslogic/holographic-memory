@@ -89,6 +89,26 @@ export interface GovernanceReportJs {
   compositesForgotten: number;
   atomsForgotten: number;
   idfRefreshed: boolean;
+  atomsRefined: number;
+}
+export interface GoalJs {
+  name: string;
+  utility: number;
+}
+export interface PlannedActionJs {
+  subject: string;
+  relation: string;
+  object: string;
+  depth: number;
+}
+export interface PlanJs {
+  goal: string;
+  actions: Array<PlannedActionJs>;
+  complete: boolean;
+}
+export interface QuestionJs {
+  text: string;
+  goalRelevance: number;
 }
 export interface GraphPath {
   nodes: Array<string>;
@@ -207,6 +227,7 @@ export declare class HolographicMemorySystem {
     relations: Array<string>,
   ): Promise<Array<MultiHopResultJs>>;
   meaningCleanup(text: string): Promise<CleanupResultJs | null>;
+  cleanupVector(vector: Float32Array): Promise<CleanupResultJs | null>;
   declareCompositionRule(
     name: string,
     inputRelations: Array<string>,
@@ -223,6 +244,34 @@ export declare class HolographicMemorySystem {
   get cognitionEnabled(): boolean;
   runCognitionOnce(): number;
   governMemory(): GovernanceReportJs;
+
+  // Agency API
+  addGoal(
+    name: string,
+    description: string,
+    relevance: number,
+    urgency: number,
+    cost: number,
+  ): number | null;
+  deactivateGoal(name: string): boolean;
+  activeGoals(): Array<GoalJs>;
+  planGoal(
+    goal: string,
+    causalRelations: Array<string>,
+    maxDepth?: number | undefined | null,
+  ): PlanJs;
+  generateQuestions(): Array<QuestionJs>;
+  proposeRule(
+    name: string,
+    inputRelations: Array<string>,
+    outputRelation: string,
+    reason: string,
+  ): number | null;
+  approveProposal(id: number): boolean;
+  rejectProposal(id: number): boolean;
+  get pendingProposals(): number;
+  get goalCount(): number;
+  get activeGoalCount(): number;
 
   // Graph API
   addRelation(
