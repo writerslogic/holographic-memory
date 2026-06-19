@@ -1983,6 +1983,24 @@ mod tests {
     }
 
     #[test]
+    fn test_hopfield_query_e2e() {
+        let hms = HmsCore::new(10_000, None, None).unwrap();
+
+        for i in 0..10 {
+            let v = hms.encode_text(&format!("hopfield test document {}", i));
+            hms.memorize(format!("doc_{}", i), v).unwrap();
+        }
+
+        let q = hms.encode_text("hopfield test document 3");
+        let results = hms.query_hopfield(&q, 10);
+        assert!(!results.is_empty(), "Hopfield query should return results");
+        assert_eq!(
+            results[0].id, "doc_3",
+            "Exact match should be top Hopfield result"
+        );
+    }
+
+    #[test]
     fn test_graph_compact_preserves_relations() {
         let dir = tempfile::tempdir().unwrap();
         let hms =

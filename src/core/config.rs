@@ -15,6 +15,7 @@ pub struct HmsConfig {
     pub privacy: PrivacyConfig,
     pub meaning: MeaningConfig,
     pub cognition: CognitionConfig,
+    pub hopfield: super::hopfield::HopfieldConfig,
 }
 
 #[derive(Clone, Debug)]

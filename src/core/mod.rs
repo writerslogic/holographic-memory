@@ -15,6 +15,7 @@ pub mod engine;
 pub mod entangled;
 pub(crate) mod error;
 pub(crate) mod graph;
+pub(crate) mod hopfield;
 pub(crate) mod idf;
 pub(crate) mod index;
 pub(crate) mod indexed_memory;
