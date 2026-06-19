@@ -242,6 +242,72 @@ async function main() {
 main().catch(console.error);
 ```
 
+## Benchmark Results
+
+HMS implements **Entangled Hypervectors (EHV)**: sparse binary vectors with deterministic structure. The core representation uses Binary Spatter Code with configurable sparsity (density = 1/k), enabling both high capacity and extreme compression.
+
+All results below use research-grade datasets: 120 real-world knowledge graph facts (countries, capitals, languages, continents, currencies, rivers, animals), 2000 synthetic facts with Zipfian distribution, 350 analogies across 7 relation types, and sequence encoding up to length 200 with vocabulary 500.
+
+### Compositional Algebra (D=16,384, density 1/256)
+
+| Task | Accuracy | Dataset |
+|------|----------|---------|
+| Knowledge graph retrieval (arg1, arg2, relation) | **100%** | 2,120 facts, 114 entities, 7 relations |
+| Analogy completion (A:B :: C:?) | **100%** | 350 analogies, 7 relation types |
+| Sequence encoding & positional retrieval | **100%** | lengths 3-200, vocab 500, 10 trials each |
+| Multi-hop inference (1-hop, 2-hop, chained) | **100%** | 20 country chains (capital + continent) |
+| Structured role retrieval (up to 100 roles) | **100%** | 100 unique permutation-based roles |
+| Binding fidelity (signal vs noise d') | **353.7** | 500 bind/unbind pairs |
+
+### Capacity Scaling (Modal cloud, 9 configurations)
+
+| Dimension | Density | Active | Hard Wall (95% recall) | Encode ops/s | Compression |
+|-----------|---------|--------|------------------------|--------------|-------------|
+| 16,384 | 1/256 | 64 | 2,478 | 1,918,811 | 256x |
+| 65,536 | 1/1024 | 64 | 9,800 | 1,888,303 | 1,024x |
+| 131,072 | 1/1024 | 128 | 12,308 | 735,841 | 1,024x |
+| 262,144 | 1/4096 | 64 | 58,432 | 1,373,826 | 4,096x |
+| 524,288 | 1/4096 | 128 | 51,232 | 397,041 | 4,096x |
+
+**Scaling law**: capacity wall ~ density_denom x ln(dim). Throughput depends on active index count, not total dimension.
+
+### Noise Tolerance (Hopfield attractor cleanup)
+
+| Corruption | Jaccard NN | Hopfield cleanup |
+|------------|-----------|------------------|
+| 30% | 100% | 100% |
+| 50% | 100% | 100% |
+| 70% | 100% | 100% |
+
+### Interference: Individual vs Bundled Storage
+
+Individual composition (each fact in its own vector) maintains 100% accuracy at all scales tested. Bundled Bloom storage (multiple facts OR'd into one vector) degrades due to union saturation:
+
+| Facts bundled | Individual accuracy | Bundled accuracy | Bundle density |
+|---------------|--------------------|-----------------:|----------------|
+| 5 | 100% | 20.0% | 3.8% |
+| 10 | 100% | 10.0% | 7.5% |
+| 50 | 100% | 1.7% | 32.4% |
+| 500 | 100% | 0.0% | 98.0% |
+
+This is the known limitation of binary OR bundling: union degeneracy destroys per-fact identity as density approaches 1.0.
+
+### Reproducing Benchmarks
+
+```bash
+# Research benchmark (compositional algebra, analogies, interference, sequences)
+cargo run --release --bin hms-research-bench -- --dim 16384 --density 256 --json
+
+# Scaling benchmark (capacity walls, throughput, compression)
+cargo run --release --bin hms-scaling -- --dim 16384 --density 256 --json
+
+# Full 10-section suite (binding, Hopfield, Clifford, HBM, encoding)
+cargo run --release --bin hms-benchmark-suite -- --dim 16384
+
+# Cloud-parallel scaling across 9 configs (requires Modal account)
+modal run modal_benchmark.py
+```
+
 ## Development
 
 ### Build Environment
@@ -258,7 +324,7 @@ npm run build
 
 ### Testing
 ```bash
-# Run the 197 unit and integration tests
+# Run the unit and integration tests
 export CARGO_HOME=$(pwd)/.cargo_home
 export CARGO_TARGET_DIR=/Volumes/C/target
 cargo test --lib

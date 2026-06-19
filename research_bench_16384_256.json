@@ -1,0 +1,256 @@
+{
+  "analogy": {
+    "accuracy": 1.0,
+    "by_relation": [
+      {
+        "accuracy": 1.0,
+        "n_tests": 50,
+        "relation": "capital_of"
+      },
+      {
+        "accuracy": 1.0,
+        "n_tests": 50,
+        "relation": "language_of"
+      },
+      {
+        "accuracy": 1.0,
+        "n_tests": 50,
+        "relation": "continent_of"
+      },
+      {
+        "accuracy": 1.0,
+        "n_tests": 50,
+        "relation": "currency_of"
+      },
+      {
+        "accuracy": 1.0,
+        "n_tests": 50,
+        "relation": "river_in"
+      },
+      {
+        "accuracy": 1.0,
+        "n_tests": 50,
+        "relation": "class_of"
+      },
+      {
+        "accuracy": 1.0,
+        "n_tests": 50,
+        "relation": "habitat_of"
+      }
+    ],
+    "correct": 350,
+    "total_analogies": 350
+  },
+  "head_to_head_vs_hrr": {
+    "knowledge_graph_retrieval": [
+      {
+        "ehv_accuracy": 1.0,
+        "ehv_dim": 16384,
+        "hrr_accuracy": 0.0,
+        "hrr_dim": 512,
+        "n_facts": 20,
+        "relation": "capital_of"
+      },
+      {
+        "ehv_accuracy": 1.0,
+        "ehv_dim": 16384,
+        "hrr_accuracy": 0.0,
+        "hrr_dim": 512,
+        "n_facts": 19,
+        "relation": "language_of"
+      },
+      {
+        "ehv_accuracy": 1.0,
+        "ehv_dim": 16384,
+        "hrr_accuracy": 0.05,
+        "hrr_dim": 512,
+        "n_facts": 20,
+        "relation": "continent_of"
+      }
+    ],
+    "notes": "EHV: sparse binary, D=16384, 1/256, 64 active. HRR: dense real, D=512, O(n^2) convolve.",
+    "sequence_encoding": [
+      {
+        "ehv_accuracy": 1.0,
+        "hrr_accuracy": 0.03333333333333333,
+        "sequence_length": 3
+      },
+      {
+        "ehv_accuracy": 1.0,
+        "hrr_accuracy": 0.06,
+        "sequence_length": 5
+      },
+      {
+        "ehv_accuracy": 1.0,
+        "hrr_accuracy": 0.0375,
+        "sequence_length": 8
+      },
+      {
+        "ehv_accuracy": 1.0,
+        "hrr_accuracy": 0.008333333333333333,
+        "sequence_length": 12
+      },
+      {
+        "ehv_accuracy": 1.0,
+        "hrr_accuracy": 0.01875,
+        "sequence_length": 16
+      }
+    ]
+  },
+  "interference": {
+    "description": "Individual: each fact stored separately. Bundled: all facts in one Bloom vector.",
+    "n_entities": 500,
+    "results": [
+      {
+        "bundle_density": 0.03838295838357364,
+        "bundled_accuracy": 0.2,
+        "individual_accuracy": 1.0,
+        "n_facts": 5,
+        "shared_entity_appears_in": 4
+      },
+      {
+        "bundle_density": 0.07529266527287215,
+        "bundled_accuracy": 0.1,
+        "individual_accuracy": 1.0,
+        "n_facts": 10,
+        "shared_entity_appears_in": 7
+      },
+      {
+        "bundle_density": 0.14491634510185158,
+        "bundled_accuracy": 0.05,
+        "individual_accuracy": 1.0,
+        "n_facts": 20,
+        "shared_entity_appears_in": 14
+      },
+      {
+        "bundle_density": 0.32388353489045285,
+        "bundled_accuracy": 0.016666666666666666,
+        "individual_accuracy": 1.0,
+        "n_facts": 50,
+        "shared_entity_appears_in": 34
+      },
+      {
+        "bundle_density": 0.5428665256077705,
+        "bundled_accuracy": 0.016666666666666666,
+        "individual_accuracy": 1.0,
+        "n_facts": 100,
+        "shared_entity_appears_in": 67
+      },
+      {
+        "bundle_density": 0.7910289865900888,
+        "bundled_accuracy": 0.016666666666666666,
+        "individual_accuracy": 1.0,
+        "n_facts": 200,
+        "shared_entity_appears_in": 134
+      },
+      {
+        "bundle_density": 0.9800374911305659,
+        "bundled_accuracy": 0.0,
+        "individual_accuracy": 1.0,
+        "n_facts": 500,
+        "shared_entity_appears_in": 334
+      }
+    ]
+  },
+  "knowledge_graph": {
+    "arg1_accuracy": 1.0,
+    "arg2_accuracy": 1.0,
+    "max_entity_frequency": 8,
+    "n_real_entities": 115,
+    "n_real_facts": 120,
+    "n_relations": 7,
+    "n_synthetic_facts": 2000,
+    "overall_accuracy": 1.0,
+    "relation_accuracy": 1.0,
+    "total_facts": 2120,
+    "unique_entities_in_facts": 114,
+    "vocab_size": 122
+  },
+  "meta": {
+    "active_indices": 64,
+    "benchmark": "hms-research-bench",
+    "density_denom": 256,
+    "dim": 16384,
+    "elapsed_seconds": 12.932162917,
+    "quick_mode": false,
+    "version": "1.0.0"
+  },
+  "multihop": {
+    "chain_accuracy": 1.0,
+    "hop1_capital_accuracy": 1.0,
+    "hop2_continent_accuracy": 1.0,
+    "n_chains": 20,
+    "n_countries_tested": 20
+  },
+  "sequence": {
+    "results": [
+      {
+        "accuracy": 1.0,
+        "n_queries": 30,
+        "n_trials": 10,
+        "sequence_length": 3
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 50,
+        "n_trials": 10,
+        "sequence_length": 5
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 100,
+        "n_trials": 10,
+        "sequence_length": 10
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 200,
+        "n_trials": 10,
+        "sequence_length": 20
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 300,
+        "n_trials": 10,
+        "sequence_length": 30
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 500,
+        "n_trials": 10,
+        "sequence_length": 50
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 750,
+        "n_trials": 10,
+        "sequence_length": 75
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 1000,
+        "n_trials": 10,
+        "sequence_length": 100
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 1250,
+        "n_trials": 10,
+        "sequence_length": 125
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 1500,
+        "n_trials": 10,
+        "sequence_length": 150
+      },
+      {
+        "accuracy": 1.0,
+        "n_queries": 2000,
+        "n_trials": 10,
+        "sequence_length": 200
+      }
+    ],
+    "vocab_size": 500
+  }
+}

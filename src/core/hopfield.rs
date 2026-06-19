@@ -18,14 +18,13 @@
 //! - **Exponential capacity**: O(ζ^(D/2)) patterns recoverable for dimension D.
 
 use crate::core::entangled::EntangledHVec;
-use crate::core::intersection::sparse_intersection_count;
 use crate::core::types::RetrievalResult;
 
 /// Hopfield retrieval configuration.
 #[derive(Clone, Debug)]
 pub struct HopfieldConfig {
     /// Inverse temperature. Higher β = sharper retrieval (fewer results).
-    /// Must be > 0. Typical range: 1.0–100.0.
+    /// Must be > 0. Typical range: 10.0–500.0 (scores are Jaccard in [0,1]).
     pub beta: f64,
     /// Tsallis entropy parameter controlling sparsity of attention weights.
     /// α=1: softmax (dense, no exact zeros — equivalent to standard attention).
@@ -40,7 +39,7 @@ pub struct HopfieldConfig {
 impl Default for HopfieldConfig {
     fn default() -> Self {
         Self {
-            beta: 8.0,
+            beta: 100.0,
             alpha: 2.0,
             max_iter: 1,
         }
@@ -62,10 +61,12 @@ pub fn hopfield_query(
         return Vec::new();
     }
 
-    // Step 1: Compute similarity scores (intersection counts scaled by β)
+    // Step 1: Compute similarity scores (Jaccard similarity scaled by β)
+    // Using Jaccard instead of raw intersection count because multi-scale
+    // encoding produces variable-density vectors; raw counts bias toward denser vectors.
     let scores: Vec<f64> = patterns
         .iter()
-        .map(|(_, pat)| config.beta * sparse_intersection_count(&query.indices, &pat.indices) as f64)
+        .map(|(_, pat)| config.beta * query.similarity(pat))
         .collect();
 
     // Step 2: Apply entmax transformation
@@ -116,9 +117,7 @@ pub fn hopfield_query_iterative(
     for _ in 0..config.max_iter - 1 {
         let scores: Vec<f64> = patterns
             .iter()
-            .map(|(_, pat)| {
-                config.beta * sparse_intersection_count(&current_query.indices, &pat.indices) as f64
-            })
+            .map(|(_, pat)| config.beta * current_query.similarity(pat))
             .collect();
 
         let weights = if config.alpha <= 1.0 + f64::EPSILON {
@@ -378,7 +377,7 @@ mod tests {
         ];
 
         let config = HopfieldConfig {
-            beta: 8.0,
+            beta: 100.0,
             alpha: 2.0,
             max_iter: 1,
         };
@@ -402,7 +401,7 @@ mod tests {
             .collect();
 
         let config = HopfieldConfig {
-            beta: 8.0,
+            beta: 100.0,
             alpha: 2.0,
             max_iter: 1,
         };
@@ -434,7 +433,7 @@ mod tests {
         ];
 
         let config = HopfieldConfig {
-            beta: 8.0,
+            beta: 100.0,
             alpha: 2.0,
             max_iter: 3,
         };

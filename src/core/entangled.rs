@@ -1,17 +1,15 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::FxHasher;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
-use std::hash::Hasher;
 
 /// Default sparsity denominator: rho = 1/256 of dimensions are active.
 ///
 /// At D=16384 this yields ~64 active indices. This is an engineering choice
 /// balancing memory (256x smaller than dense) against discrimination; the
 /// cited dense ±1 papers (Laiho 2015, Frady 2021) use different representations.
-pub(crate) const DEFAULT_RHO_DENOM: usize = 256;
+pub const DEFAULT_RHO_DENOM: usize = 256;
 
 /// Number of entanglement groups (hash-seeded, not learned).
 ///
@@ -75,6 +73,32 @@ impl EntangledHVec {
             if backfill_counter as usize >= max_backfill_attempts {
                 break;
             }
+            let idx = (hash_u64(seed.wrapping_add(0xDEAD), backfill_counter) % dim as u64) as u32;
+            backfill_counter += 1;
+            if indices.binary_search(&idx).is_err() {
+                let pos = indices.partition_point(|&x| x < idx);
+                indices.insert(pos, idx);
+            }
+        }
+
+        Self { dim, indices }
+    }
+
+    pub fn new_with_density(dim: usize, density_denom: usize, seed: u64) -> Self {
+        let active_count = (dim / density_denom.max(1)).max(1);
+        let mut indices = Vec::with_capacity(active_count);
+
+        for p in 0..active_count {
+            let idx = hash_u64(seed, p as u64) % dim as u64;
+            indices.push(idx as u32);
+        }
+
+        indices.sort_unstable();
+        indices.dedup();
+
+        let mut backfill_counter = 0u64;
+        while indices.len() < active_count {
+            if backfill_counter as usize >= active_count * 10 { break; }
             let idx = (hash_u64(seed.wrapping_add(0xDEAD), backfill_counter) % dim as u64) as u32;
             backfill_counter += 1;
             if indices.binary_search(&idx).is_err() {
@@ -286,6 +310,33 @@ impl EntangledHVec {
         }
     }
 
+    /// Nonlinear index permutation via keyed hash.
+    ///
+    /// Maps each active index through hash(idx, seed) % dim, producing a
+    /// completely scrambled view. Unlike circular shift (permute), this
+    /// destroys spatial correlation between indices, making containment
+    /// values independent across different seeds.
+    ///
+    /// Nearly density-preserving: hash collisions reduce count by ~0.1%
+    /// at density 1/256.
+    pub fn hash_permute(&self, seed: u64) -> Self {
+        if self.dim == 0 {
+            return self.clone();
+        }
+        let d = self.dim as u64;
+        let mut indices: Vec<u32> = self
+            .indices
+            .iter()
+            .map(|&idx| (hash_u64(idx as u64, seed) % d) as u32)
+            .collect();
+        indices.sort_unstable();
+        indices.dedup();
+        Self {
+            dim: self.dim,
+            indices,
+        }
+    }
+
     /// Bundle multiple sparse vectors with threshold at rho.
     /// Counts per-index frequency, keeps only those above threshold.
     pub fn bundle<V: Borrow<Self>>(vectors: &[V]) -> Self {
@@ -344,6 +395,78 @@ impl EntangledHVec {
         indices.sort_unstable();
 
         Self { dim, indices }
+    }
+
+    /// Bloom-filter bundling: set UNION of all input vectors.
+    ///
+    /// Instead of majority vote (which fails at K≥3 for sparse vectors with
+    /// density 1/256), takes the union of all active indices. The bundle grows
+    /// denser with more items. Use `containment_similarity` to query.
+    ///
+    /// Validated by HyperCam (arxiv 2501.10547): Bloom filter bundling achieves
+    /// 2 orders of magnitude reduction in encoding operations for sparse HDC.
+    pub fn bundle_bloom<V: Borrow<Self>>(vectors: &[V]) -> Self {
+        if vectors.is_empty() {
+            return Self {
+                dim: 0,
+                indices: Vec::new(),
+            };
+        }
+        let dim = vectors[0].borrow().dim;
+
+        let mut all_indices: Vec<u32> = vectors
+            .iter()
+            .flat_map(|v| v.borrow().indices.iter().copied())
+            .collect();
+        all_indices.sort_unstable();
+        all_indices.dedup();
+
+        Self { dim, indices: all_indices }
+    }
+
+    /// Containment similarity: |A∩B| / |A|.
+    ///
+    /// Measures what fraction of `self`'s active indices appear in `other`.
+    /// The correct metric for Bloom-filter bundles: if A was bundled into B,
+    /// containment(A, B) ≈ 1.0 regardless of how many other items are in B.
+    pub fn containment_similarity(&self, other: &Self) -> f64 {
+        if self.indices.is_empty() {
+            return 1.0;
+        }
+        let intersection =
+            super::intersection::sparse_intersection_count(&self.indices, &other.indices);
+        intersection as f64 / self.indices.len() as f64
+    }
+
+    /// Density-corrected containment: (raw - density) / (1 - density).
+    ///
+    /// Subtracts the expected noise floor (bundle density) and normalizes.
+    /// Members: raw=1.0, corrected=1.0. Non-members: raw≈density, corrected≈0.
+    /// This is the correct metric for large Bloom bundles where raw containment
+    /// has a high floor due to bundle density.
+    pub fn corrected_containment(&self, bloom_bundle: &Self) -> f64 {
+        let raw = self.containment_similarity(bloom_bundle);
+        let density = bloom_bundle.indices.len() as f64 / bloom_bundle.dim.max(1) as f64;
+        if density >= 1.0 - 1e-15 {
+            return 0.0;
+        }
+        ((raw - density) / (1.0 - density)).max(0.0)
+    }
+
+    /// Non-commutative binding: permute(self, 1) XOR other.
+    ///
+    /// Captures order: bind_ordered(A, B) ≠ bind_ordered(B, A).
+    /// ~2x cost of plain XOR (one permute + one XOR). Inverse: unbind
+    /// B first (XOR), then inverse-permute to recover A.
+    pub fn bind_ordered(&self, other: &Self) -> Self {
+        self.permute(1).bind(other)
+    }
+
+    /// Inverse of bind_ordered: given C = bind_ordered(A, B), recover A.
+    /// A = permute_inv(C XOR B, 1)
+    pub fn unbind_ordered_left(&self, other: &Self) -> Self {
+        let xored = self.bind(other);
+        xored.permute(self.dim - 1)
     }
 
     /// Bundle with epsilon-differential privacy.
@@ -423,12 +546,14 @@ fn laplace_sample(rng: &mut impl rand::Rng, scale: f64) -> f64 {
     -scale * u.signum() * (1.0 - 2.0 * u.abs()).ln()
 }
 
-/// Fast non-crypto hash for seed mixing.
-fn hash_u64(a: u64, b: u64) -> u64 {
-    let mut h = FxHasher::default();
-    h.write_u64(a);
-    h.write_u64(b);
-    h.finish()
+/// Splitmix64-based mixer with full avalanche. Two inputs are combined via
+/// wrapping arithmetic then passed through the splitmix64 finalizer.
+/// Replaces FxHasher which has poor avalanche for close seeds.
+pub fn hash_u64(a: u64, b: u64) -> u64 {
+    let mut z = a.wrapping_mul(0x9E3779B97F4A7C15).wrapping_add(b);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D049BB133111EB);
+    z ^ (z >> 31)
 }
 
 /// Symmetric difference of two sorted slices (XOR for index sets).
@@ -599,6 +724,58 @@ mod tests {
             }
         }
         assert!(diffs > 0, "Low-epsilon DP should produce varied outputs");
+    }
+
+    #[test]
+    fn test_bloom_bundle_capacity() {
+        let dim = 16384;
+        let vecs: Vec<EntangledHVec> = (0..200)
+            .map(|i| EntangledHVec::new_deterministic(dim, i * 100))
+            .collect();
+        let bundle = EntangledHVec::bundle_bloom(&vecs);
+        assert_eq!(bundle.dim, dim);
+        for (i, v) in vecs.iter().enumerate() {
+            let sim = v.containment_similarity(&bundle);
+            assert!(
+                sim > 0.9,
+                "Item {} containment in bundle of 200 should be >0.9, got {:.4}",
+                i, sim
+            );
+        }
+        let noise = EntangledHVec::new_deterministic(dim, 999999);
+        let noise_sim = noise.containment_similarity(&bundle);
+        assert!(
+            noise_sim < 0.9,
+            "Non-member containment should be low, got {:.4}",
+            noise_sim
+        );
+    }
+
+    #[test]
+    fn test_containment_self() {
+        let v = EntangledHVec::new_deterministic(16384, 42);
+        assert!(
+            (v.containment_similarity(&v) - 1.0).abs() < 0.0001,
+            "Self-containment should be 1.0"
+        );
+    }
+
+    #[test]
+    fn test_bind_ordered_non_commutative() {
+        let a = EntangledHVec::new_deterministic(16384, 1);
+        let b = EntangledHVec::new_deterministic(16384, 2);
+        let ab = a.bind_ordered(&b);
+        let ba = b.bind_ordered(&a);
+        assert_ne!(ab.indices, ba.indices, "bind_ordered must be non-commutative");
+    }
+
+    #[test]
+    fn test_bind_ordered_invertible() {
+        let a = EntangledHVec::new_deterministic(16384, 1);
+        let b = EntangledHVec::new_deterministic(16384, 2);
+        let c = a.bind_ordered(&b);
+        let recovered = c.unbind_ordered_left(&b);
+        assert_eq!(recovered.indices, a.indices, "unbind_ordered_left should recover A");
     }
 
     #[test]

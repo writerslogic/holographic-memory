@@ -25,3 +25,10 @@ GEMINI.md
 todo.md
 tasks/
 devplan/
+
+# Python
+__pycache__/
+.venv/
+
+# Claude Code
+.claude/

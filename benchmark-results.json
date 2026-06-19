@@ -1,0 +1,473 @@
+{
+  "binding_fidelity": {
+    "d_prime": 192.853488238298,
+    "n_pairs": 500,
+    "noise_mean": 0.00264956316168157,
+    "noise_std": 0.007313668666820525,
+    "signal_mean": 1.0,
+    "signal_std": 0.0
+  },
+  "capacity": [
+    {
+      "d_prime": 195.7449871644227,
+      "density_mean": 0.00390625,
+      "dim": 4096,
+      "k": 1,
+      "noise_mean": 0.0016129032258064516,
+      "noise_std": 0.007213122508063838,
+      "recovery_rate": 1.0,
+      "signal_mean": 1.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": 5.345188309258623,
+      "density_mean": 0.00390625,
+      "dim": 4096,
+      "k": 2,
+      "noise_mean": 0.0032258064516129032,
+      "noise_std": 0.009928822762114393,
+      "recovery_rate": 1.0,
+      "signal_mean": 0.3248180482963091,
+      "signal_std": 0.08450459945750609
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 3,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 5,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 7,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 10,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 15,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 20,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 30,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 50,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 75,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    },
+    {
+      "d_prime": null,
+      "density_mean": 0.0,
+      "dim": 4096,
+      "k": 100,
+      "noise_mean": 0.0,
+      "noise_std": 0.0,
+      "recovery_rate": 0.0,
+      "signal_mean": 0.0,
+      "signal_std": 0.0
+    }
+  ],
+  "clifford_ablation": {
+    "capacity": [
+      {
+        "d_prime": 94.34105148185125,
+        "k": 1,
+        "noise_mean": 0.0033407654268296687,
+        "signal_mean": 0.9999999996591157
+      },
+      {
+        "d_prime": 54.898676988942235,
+        "k": 3,
+        "noise_mean": 0.0035719873395670663,
+        "signal_mean": 0.579668065603518
+      },
+      {
+        "d_prime": 7.09225820486657,
+        "k": 5,
+        "noise_mean": 0.007216879955978384,
+        "signal_mean": 0.3599244149628193
+      },
+      {
+        "d_prime": 4.167360805245364,
+        "k": 10,
+        "noise_mean": 0.001804219988994596,
+        "signal_mean": 0.1883819869677085
+      },
+      {
+        "d_prime": 2.3740663672575706,
+        "k": 20,
+        "noise_mean": 0.010886154609001086,
+        "signal_mean": 0.09969284930608345
+      },
+      {
+        "d_prime": 1.6754620772702182,
+        "k": 50,
+        "noise_mean": 0.003967378127939798,
+        "signal_mean": 0.061094550122517376
+      }
+    ],
+    "latency": {
+      "clifford_bind_ns": 4030.666,
+      "entangled_bind_ns": 48.375,
+      "ratio": 83.32126098191215
+    }
+  },
+  "composition_depth": [
+    {
+      "depth": 1,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 2,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 3,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 4,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 5,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 6,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 7,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 8,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 9,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    },
+    {
+      "depth": 10,
+      "fidelity_mean": 1.0,
+      "fidelity_std": 0.0
+    }
+  ],
+  "encoding": {
+    "perturbation": [
+      {
+        "corruption_pct": 0.0,
+        "similarity_mean": 1.0,
+        "similarity_std": 0.0
+      },
+      {
+        "corruption_pct": 0.05,
+        "similarity_mean": 0.4625,
+        "similarity_std": 0.4985556060337627
+      },
+      {
+        "corruption_pct": 0.1,
+        "similarity_mean": 0.3625,
+        "similarity_std": 0.4802176322866272
+      },
+      {
+        "corruption_pct": 0.2,
+        "similarity_mean": 0.375,
+        "similarity_std": 0.4902903378454601
+      },
+      {
+        "corruption_pct": 0.3,
+        "similarity_mean": 0.225,
+        "similarity_std": 0.4229020617662604
+      },
+      {
+        "corruption_pct": 0.5,
+        "similarity_mean": 0.1,
+        "similarity_std": 0.30382181012509973
+      },
+      {
+        "corruption_pct": 0.7,
+        "similarity_mean": 0.075,
+        "similarity_std": 0.2667467828369185
+      }
+    ]
+  },
+  "hopfield": {
+    "capacity": [
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 5
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 5
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 10
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 10
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 20
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 20
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 50
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 50
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 100
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 100
+      },
+      {
+        "entmax_type": "sparsemax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 200
+      },
+      {
+        "entmax_type": "1.5-entmax",
+        "exact_retrieval_rate": 1.0,
+        "n_patterns": 200
+      }
+    ],
+    "noise_recovery": [
+      {
+        "corruption_pct": 0.0,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.1,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.2,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.3,
+        "recovery_rate": 1.0
+      },
+      {
+        "corruption_pct": 0.5,
+        "recovery_rate": 1.0
+      }
+    ]
+  },
+  "meta": {
+    "active_density": "1/256",
+    "primary_dim": 4096,
+    "quick_mode": true,
+    "suite_version": "1.0.0"
+  },
+  "preregistered": {
+    "grade_structure": {
+      "bsc_dim": 4096,
+      "chance_floor": 0.5,
+      "clifford_dim": 4096,
+      "description": "Role-filler discrimination across random (agent, patient) triples",
+      "hrr_dim": 256,
+      "hrr_note": "HRR uses smaller dim due to O(n^2) convolution; stated, not hidden",
+      "kill_condition": "CliffordVec acc <= BSC+permute OR CliffordVec acc <= HRR",
+      "kill_fires": true,
+      "n_triples": 50,
+      "results": {
+        "bsc_permute_accuracy": 1.0,
+        "bsc_xor_accuracy": 0.06,
+        "clifford_accuracy": 0.3,
+        "hrr_accuracy": 0.24
+      },
+      "strong_claim_holds": false,
+      "vocab_size": 20
+    },
+    "sparse_vs_dense_hopfield": {
+      "basin_of_attraction": [
+        {
+          "corruption_pct": 0.0,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.1,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.2,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.3,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        },
+        {
+          "corruption_pct": 0.5,
+          "dense_recovery": 1.0,
+          "sparse_recovery": 1.0
+        }
+      ],
+      "capacity_sweep": [
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 10,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 25,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 50,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 100,
+          "sparse_exact": 1.0
+        },
+        {
+          "dense_exact": 1.0,
+          "n_patterns": 200,
+          "sparse_exact": 1.0
+        }
+      ],
+      "crosstalk": {
+        "dense_mean": 0.0016236559139784946,
+        "dense_std": 0.007843268262240036,
+        "sparse_mean": 0.0016236559139784946,
+        "sparse_std": 0.007843268262240036
+      },
+      "description": "Sparse binary vs dense-projected in Hopfield retrieval",
+      "hopfield_path": {
+        "beta": 100.0,
+        "entmax_alpha": 2.0,
+        "note": "Both pattern types use identical hopfield_query code path",
+        "similarity_kernel": "Jaccard"
+      },
+      "information_content": {
+        "dense_active_mean": 16.0,
+        "note": "Equal-D comparison; information content differs. Confound stated.",
+        "sparse_active_bits": 16,
+        "sparse_info_bits_approx": 151.03797761585963
+      },
+      "kill_condition": "Dense matches or beats sparse on BOTH basin width AND capacity cliff",
+      "kill_fires": true,
+      "sparse_wins_basin_points": 0,
+      "sparse_wins_capacity_points": 0,
+      "strong_claim_holds": false
+    }
+  }
+}

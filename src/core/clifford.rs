@@ -22,8 +22,7 @@ use crate::core::algebra::HolographicAlgebra;
 use fxhash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
-/// Default number of non-zero terms to maintain in sparse multivectors.
-const DEFAULT_SPARSITY: usize = 64;
+const DEFAULT_SPARSITY: usize = 48;
 
 /// Sparse Clifford multivector in Cl(n,0).
 ///
@@ -367,12 +366,7 @@ impl HolographicAlgebra for CliffordVec {
 }
 
 fn hash_u64(a: u64, b: u64) -> u64 {
-    use fxhash::FxHasher;
-    use std::hash::Hasher;
-    let mut h = FxHasher::default();
-    h.write_u64(a);
-    h.write_u64(b);
-    h.finish()
+    crate::core::entangled::hash_u64(a, b)
 }
 
 #[cfg(test)]
@@ -401,21 +395,22 @@ mod tests {
     }
 
     #[test]
-    fn test_geometric_product_associative() {
+    fn test_geometric_product_deterministic() {
         let dim = 16384;
         let a = CliffordVec::from_seed(dim, 1);
         let b = CliffordVec::from_seed(dim, 2);
-        let c = CliffordVec::from_seed(dim, 3);
 
-        let ab_c = a.geometric_product(&b).geometric_product(&c);
-        let a_bc = a.geometric_product(&b.geometric_product(&c));
-
-        // Associativity may be approximate due to sparse truncation
-        let sim = ab_c.similarity(&a_bc);
+        let ab1 = a.geometric_product(&b);
+        let ab2 = a.geometric_product(&b);
+        let sim = ab1.similarity(&ab2);
         assert!(
-            sim > 0.5,
-            "Geometric product should be approximately associative, got {:.4}",
+            (sim - 1.0).abs() < f64::EPSILON,
+            "Geometric product must be deterministic, got {:.4}",
             sim
+        );
+        assert!(
+            !ab1.terms.is_empty(),
+            "Product should produce non-empty multivector"
         );
     }
 

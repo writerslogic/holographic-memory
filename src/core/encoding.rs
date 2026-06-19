@@ -1,9 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use super::entangled::EntangledHVec;
-use fxhash::FxHasher;
-use std::hash::Hasher;
+use super::entangled::{hash_u64, EntangledHVec};
 
 /// Multi-scale text encoding combining character n-grams, word tokens, and
 /// word bigrams into a single sparse hypervector.
@@ -28,7 +26,6 @@ use std::hash::Hasher;
 ///
 /// Breaking change: vectors produced by this encoder are incompatible with
 /// the previous character-trigram-only encoder. Re-encode stored data.
-
 const CHAR_NGRAM_SIZES: [usize; 4] = [2, 3, 4, 5];
 
 /// Level seed offsets prevent cross-level hash collisions.
@@ -82,7 +79,7 @@ pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
             .iter()
             .enumerate()
             .map(|(pos, word)| {
-                let word_hash = hash_str(word, LEVEL_WORD);
+                let word_hash = hash_str_seed(word, LEVEL_WORD);
                 EntangledHVec::new_deterministic(dim, word_hash).permute(pos)
             })
             .collect();
@@ -95,8 +92,8 @@ pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
             .windows(2)
             .enumerate()
             .map(|(pos, pair)| {
-                let h0 = hash_str(pair[0], LEVEL_PHRASE);
-                let h1 = hash_str(pair[1], LEVEL_PHRASE);
+                let h0 = hash_str_seed(pair[0], LEVEL_PHRASE);
+                let h1 = hash_str_seed(pair[1], LEVEL_PHRASE);
                 let v0 = EntangledHVec::new_deterministic(dim, h0).permute(0);
                 let v1 = EntangledHVec::new_deterministic(dim, h1).permute(1);
                 v0.bind(&v1).permute(pos)
@@ -109,34 +106,42 @@ pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
         return EntangledHVec::new_deterministic(dim, seeded(LEVEL_CHAR, 1, chars[0] as u64));
     }
 
-    // Combine levels by union. Majority-vote bundling fails across levels because
-    // different seed spaces produce non-overlapping index sets (threshold is never met).
-    // Union preserves all information; the denser result (~N*64 indices) improves
-    // discrimination and Jaccard similarity handles arbitrary set sizes correctly.
-    let mut all_indices: Vec<u32> = level_bundles
-        .iter()
-        .flat_map(|v| v.indices().iter().copied())
-        .collect();
-    all_indices.sort_unstable();
-    all_indices.dedup();
-    EntangledHVec::from_indices(all_indices, dim)
+    // Combine levels by frequency-weighted selection. Each index gets a count
+    // of how many level bundles contain it; indices with cross-level support
+    // are prioritized. Output is fixed-density (dim/256 active indices) to
+    // ensure consistent Jaccard comparisons across different-length texts.
+    let active_count = (dim / super::entangled::DEFAULT_RHO_DENOM).max(1);
+    let mut freq: fxhash::FxHashMap<u32, u32> =
+        fxhash::FxHashMap::with_capacity_and_hasher(active_count * 4, Default::default());
+    for bundle in &level_bundles {
+        for &idx in bundle.indices() {
+            *freq.entry(idx).or_insert(0) += 1;
+        }
+    }
+
+    let mut scored: Vec<(u32, u32)> = freq.into_iter().collect();
+    if scored.len() > active_count {
+        scored.select_nth_unstable_by(active_count - 1, |a, b| {
+            b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0))
+        });
+        scored.truncate(active_count);
+    }
+
+    let mut indices: Vec<u32> = scored.into_iter().map(|(idx, _)| idx).collect();
+    indices.sort_unstable();
+    EntangledHVec::from_indices(indices, dim)
 }
 
-/// Mix level, scale, and item seeds to prevent cross-level collisions.
 fn seeded(level: u64, scale: u64, item: u64) -> u64 {
-    let mut h = FxHasher::default();
-    h.write_u64(level);
-    h.write_u64(scale);
-    h.write_u64(item);
-    h.finish()
+    hash_u64(hash_u64(level, scale), item)
 }
 
-/// Hash a string with a level prefix for deterministic word encoding.
-fn hash_str(s: &str, level: u64) -> u64 {
-    let mut h = FxHasher::default();
-    h.write_u64(level);
-    h.write(s.as_bytes());
-    h.finish()
+pub(crate) fn hash_str_seed(s: &str, level: u64) -> u64 {
+    let mut h = level;
+    for &byte in s.as_bytes() {
+        h = hash_u64(h, byte as u64);
+    }
+    h
 }
 
 #[cfg(test)]
