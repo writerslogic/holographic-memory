@@ -1,14 +1,15 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-pub mod algebra;
 pub(crate) mod admission;
 pub mod agency;
-pub mod bloom_memory;
+pub mod algebra;
 pub(crate) mod atom_memory;
 pub(crate) mod audit;
+pub mod block_codes;
+pub mod bloom_memory;
+pub mod cls_memory;
 pub mod cognition;
-pub mod clifford;
 pub mod compose;
 pub(crate) mod composite_memory;
 pub(crate) mod config;

@@ -1,8 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use holographic_memory::core::algebra::HolographicAlgebra;
-use holographic_memory::core::clifford::CliffordVec;
 use holographic_memory::core::entangled::EntangledHVec;
 use holographic_memory::HmsCore;
 use std::time::Instant;
@@ -25,7 +23,7 @@ fn main() {
 
     let mut results = Vec::new();
 
-    // --- Micro-benchmarks: EntangledHVec vs CliffordVec ---
+    // --- Micro-benchmarks: EntangledHVec ---
     let micro = run_micro_benchmarks(dim);
     if !json_output {
         print_micro(&micro);
@@ -84,8 +82,6 @@ fn main() {
 struct MicroBenchmark {
     operation: String,
     entangled_ns: f64,
-    clifford_ns: f64,
-    ratio: f64,
 }
 
 fn run_micro_benchmarks(dim: usize) -> Vec<MicroBenchmark> {
@@ -94,90 +90,54 @@ fn run_micro_benchmarks(dim: usize) -> Vec<MicroBenchmark> {
 
     let e1 = EntangledHVec::new_deterministic(dim, 1);
     let e2 = EntangledHVec::new_deterministic(dim, 2);
-    let c1 = CliffordVec::from_seed(dim, 1);
-    let c2 = CliffordVec::from_seed(dim, 2);
 
-    // from_seed / new_deterministic
     let t = time_ns(iterations, || {
         std::hint::black_box(EntangledHVec::new_deterministic(dim, 42));
-    });
-    let tc = time_ns(iterations, || {
-        std::hint::black_box(CliffordVec::from_seed(dim, 42));
     });
     results.push(MicroBenchmark {
         operation: "from_seed".into(),
         entangled_ns: t,
-        clifford_ns: tc,
-        ratio: tc / t,
     });
 
-    // similarity
     let t = time_ns(iterations, || {
         std::hint::black_box(e1.similarity(&e2));
-    });
-    let tc = time_ns(iterations, || {
-        std::hint::black_box(c1.similarity(&c2));
     });
     results.push(MicroBenchmark {
         operation: "similarity".into(),
         entangled_ns: t,
-        clifford_ns: tc,
-        ratio: tc / t,
     });
 
-    // bind
     let t = time_ns(iterations, || {
         std::hint::black_box(e1.bind(&e2));
-    });
-    let tc = time_ns(iterations, || {
-        std::hint::black_box(c1.bind(&c2));
     });
     results.push(MicroBenchmark {
         operation: "bind".into(),
         entangled_ns: t,
-        clifford_ns: tc,
-        ratio: tc / t,
     });
 
-    // bundle 10
     let evecs: Vec<EntangledHVec> = (0..10)
         .map(|i| EntangledHVec::new_deterministic(dim, i))
-        .collect();
-    let cvecs: Vec<CliffordVec> = (0..10)
-        .map(|i| CliffordVec::from_seed(dim, i))
         .collect();
     let t = time_ns(iterations / 10, || {
         std::hint::black_box(EntangledHVec::bundle(&evecs));
     });
-    let tc = time_ns(iterations / 10, || {
-        std::hint::black_box(CliffordVec::bundle(&cvecs));
-    });
     results.push(MicroBenchmark {
         operation: "bundle_10".into(),
         entangled_ns: t,
-        clifford_ns: tc,
-        ratio: tc / t,
     });
 
-    // permute
     let t = time_ns(iterations, || {
         std::hint::black_box(e1.permute(7));
-    });
-    let tc = time_ns(iterations, || {
-        std::hint::black_box(c1.permute(7));
     });
     results.push(MicroBenchmark {
         operation: "permute".into(),
         entangled_ns: t,
-        clifford_ns: tc,
-        ratio: tc / t,
     });
 
     results
 }
 
 fn time_ns(iterations: usize, mut f: impl FnMut()) -> f64 {
-    // Warmup
     for _ in 0..iterations / 10 {
         f();
     }
@@ -202,7 +162,6 @@ struct SimDistribution {
 fn run_similarity_distribution(dim: usize, n_pairs: usize) -> Vec<SimDistribution> {
     let mut results = Vec::new();
 
-    // EntangledHVec
     let mut self_sims = Vec::with_capacity(100);
     let mut pair_sims = Vec::with_capacity(n_pairs);
     for i in 0..100 {
@@ -224,40 +183,7 @@ fn run_similarity_distribution(dim: usize, n_pairs: usize) -> Vec<SimDistributio
         random_pair_mean: mean(&pair_sims),
         random_pair_std: std_dev(&pair_sims),
         random_pair_min: pair_sims.iter().cloned().fold(f64::INFINITY, f64::min),
-        random_pair_max: pair_sims
-            .iter()
-            .cloned()
-            .fold(f64::NEG_INFINITY, f64::max),
-        bind_self_recovery: recovered.similarity(&bind_a),
-    });
-
-    // CliffordVec
-    let mut self_sims = Vec::with_capacity(100);
-    let mut pair_sims = Vec::with_capacity(n_pairs);
-    for i in 0..100 {
-        let v = CliffordVec::from_seed(dim, i);
-        self_sims.push(v.similarity(&v));
-    }
-    for i in 0..n_pairs {
-        let a = CliffordVec::from_seed(dim, i as u64 * 2);
-        let b = CliffordVec::from_seed(dim, i as u64 * 2 + 1);
-        pair_sims.push(a.similarity(&b));
-    }
-    let bind_a = CliffordVec::from_seed(dim, 1000);
-    let bind_b = CliffordVec::from_seed(dim, 2000);
-    let ab = bind_a.bind(&bind_b);
-    let b_rev = bind_b.reverse();
-    let recovered = ab.bind(&b_rev);
-    results.push(SimDistribution {
-        representation: "CliffordVec".into(),
-        self_sim_mean: mean(&self_sims),
-        random_pair_mean: mean(&pair_sims),
-        random_pair_std: std_dev(&pair_sims),
-        random_pair_min: pair_sims.iter().cloned().fold(f64::INFINITY, f64::min),
-        random_pair_max: pair_sims
-            .iter()
-            .cloned()
-            .fold(f64::NEG_INFINITY, f64::max),
+        random_pair_max: pair_sims.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
         bind_self_recovery: recovered.similarity(&bind_a),
     });
 
@@ -278,7 +204,12 @@ struct ScalingResult {
 
 fn run_query_scaling(dim: usize, n: usize) -> ScalingResult {
     let dir = TempDir::new().unwrap();
-    let hms = HmsCore::new(dim as u32, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let hms = HmsCore::new(
+        dim as u32,
+        Some(dir.path().to_string_lossy().to_string()),
+        None,
+    )
+    .unwrap();
 
     let insert_start = Instant::now();
     for i in 0..n {
@@ -338,7 +269,12 @@ struct QualityResult {
 
 fn run_retrieval_quality(dim: usize, n_patterns: usize, n_queries: usize) -> QualityResult {
     let dir = TempDir::new().unwrap();
-    let hms = HmsCore::new(dim as u32, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let hms = HmsCore::new(
+        dim as u32,
+        Some(dir.path().to_string_lossy().to_string()),
+        None,
+    )
+    .unwrap();
 
     for i in 0..n_patterns {
         let text = format!(
@@ -404,22 +340,14 @@ struct CapacityEstimate {
     dim: usize,
     active_bits: usize,
     entangled_theoretical_capacity: f64,
-    clifford_n: usize,
-    clifford_algebra_dim: usize,
-    clifford_terms: usize,
     measured_entangled_crosstalk: Vec<(usize, f64)>,
 }
 
 fn run_capacity_estimation(dim: usize) -> CapacityEstimate {
     let active = dim / 256;
-    let n = ((dim as f64).log2().ceil()) as usize;
 
-    // Theoretical: for sparse binary with rho = 1/256,
-    // capacity ~ C(D, D*rho) / noise_floor
-    // Simplified: patterns recoverable ~ D / (rho * ln(N)) for N patterns
     let theoretical = (dim as f64) / (active as f64).ln();
 
-    // Empirical crosstalk measurement
     let mut crosstalk = Vec::new();
     for &n_pat in &[10, 50, 100, 500, 1000] {
         let patterns: Vec<EntangledHVec> = (0..n_pat)
@@ -441,9 +369,6 @@ fn run_capacity_estimation(dim: usize) -> CapacityEstimate {
         dim,
         active_bits: active,
         entangled_theoretical_capacity: theoretical,
-        clifford_n: n,
-        clifford_algebra_dim: 1 << n,
-        clifford_terms: 64,
         measured_entangled_crosstalk: crosstalk,
     }
 }
@@ -451,22 +376,12 @@ fn run_capacity_estimation(dim: usize) -> CapacityEstimate {
 // --- Printing helpers ---
 
 fn print_micro(benchmarks: &[MicroBenchmark]) {
-    println!("Micro-Benchmarks: EntangledHVec vs CliffordVec");
-    println!("{:-<70}", "");
-    println!(
-        "{:<15} {:>12} {:>12} {:>10}",
-        "Operation", "Entangled", "Clifford", "Ratio"
-    );
-    println!(
-        "{:<15} {:>12} {:>12} {:>10}",
-        "", "(ns)", "(ns)", "(C/E)"
-    );
-    println!("{:-<70}", "");
+    println!("Micro-Benchmarks: EntangledHVec");
+    println!("{:-<50}", "");
+    println!("{:<15} {:>12}", "Operation", "Time (ns)");
+    println!("{:-<50}", "");
     for b in benchmarks {
-        println!(
-            "{:<15} {:>12.1} {:>12.1} {:>10.2}x",
-            b.operation, b.entangled_ns, b.clifford_ns, b.ratio
-        );
+        println!("{:<15} {:>12.1}", b.operation, b.entangled_ns);
     }
     println!();
 }
@@ -511,15 +426,12 @@ fn print_quality(q: &QualityResult) {
         q.n_patterns, q.n_queries
     );
     println!("{:-<70}", "");
-    println!("  Top-1 agreement:     {:.1}%", q.top1_agreement_rate * 100.0);
     println!(
-        "  Top-5 Jaccard:       {:.1}%",
-        q.top5_overlap_rate * 100.0
+        "  Top-1 agreement:     {:.1}%",
+        q.top1_agreement_rate * 100.0
     );
-    println!(
-        "  Hopfield avg results: {:.1}",
-        q.hopfield_avg_results
-    );
+    println!("  Top-5 Jaccard:       {:.1}%", q.top5_overlap_rate * 100.0);
+    println!("  Hopfield avg results: {:.1}", q.hopfield_avg_results);
     println!(
         "  Hopfield sparse rate: {:.1}% (returned < 5)",
         q.hopfield_sparsity_rate * 100.0
@@ -536,9 +448,6 @@ fn print_capacity(c: &CapacityEstimate) {
         "  Theoretical capacity:  {:.0} patterns",
         c.entangled_theoretical_capacity
     );
-    println!("  Clifford n:            {} (Cl({},0))", c.clifford_n, c.clifford_n);
-    println!("  Clifford algebra dim:  {}", c.clifford_algebra_dim);
-    println!("  Clifford sparse terms: {}", c.clifford_terms);
     println!("  Crosstalk by pattern count:");
     for (n, cross) in &c.measured_entangled_crosstalk {
         println!("    N={:<5}  max similarity = {:.6}", n, cross);
@@ -563,18 +472,50 @@ fn std_dev(v: &[f64]) -> f64 {
 }
 
 const TOPICS: &[&str] = &[
-    "science", "history", "art", "music", "math", "physics", "biology",
-    "chemistry", "literature", "philosophy", "engineering", "medicine",
-    "ecology", "astronomy", "geology", "economics", "psychology",
-    "linguistics", "anthropology", "sociology",
+    "science",
+    "history",
+    "art",
+    "music",
+    "math",
+    "physics",
+    "biology",
+    "chemistry",
+    "literature",
+    "philosophy",
+    "engineering",
+    "medicine",
+    "ecology",
+    "astronomy",
+    "geology",
+    "economics",
+    "psychology",
+    "linguistics",
+    "anthropology",
+    "sociology",
 ];
 
 const VERBS: &[&str] = &[
-    "explores", "analyzes", "discusses", "examines", "reveals",
-    "compares", "demonstrates", "investigates", "questions", "describes",
+    "explores",
+    "analyzes",
+    "discusses",
+    "examines",
+    "reveals",
+    "compares",
+    "demonstrates",
+    "investigates",
+    "questions",
+    "describes",
 ];
 
 const OBJECTS: &[&str] = &[
-    "patterns", "structures", "processes", "relationships", "theories",
-    "models", "systems", "networks", "hierarchies", "transformations",
+    "patterns",
+    "structures",
+    "processes",
+    "relationships",
+    "theories",
+    "models",
+    "systems",
+    "networks",
+    "hierarchies",
+    "transformations",
 ];
