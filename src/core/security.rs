@@ -39,7 +39,7 @@ impl SigningManager {
                     key_bytes.len()
                 ));
             }
-            let bytes: [u8; 32] = key_bytes[..32].try_into().unwrap();
+            let bytes: [u8; 32] = key_bytes[..32].try_into().expect("length checked above");
             key_bytes.zeroize();
             let signing_key = SigningKey::from_bytes(&bytes);
             let verifying_key = signing_key.verifying_key();

@@ -122,7 +122,7 @@ fn kmeans_plus_plus_init(data: &[DVector<f32>], k: usize, seed: u64) -> Vec<DVec
     let mut dists = vec![f32::MAX; n];
 
     for _ in 1..k {
-        let last = centroids.last().unwrap();
+        let last = centroids.last().expect("non-empty after initial push");
         for (i, point) in data.iter().enumerate() {
             let d = (point - last).norm_squared();
             if d < dists[i] {

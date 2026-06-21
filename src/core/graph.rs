@@ -291,7 +291,7 @@ impl RelationStore {
                     let mut inferred = Vec::new();
                     for path in &results {
                         if path.hops.len() >= 2 {
-                            let final_node = &path.hops.last().unwrap().node_id;
+                            let final_node = &path.hops.last().expect("len >= 2").node_id;
                             let sim = similarity_fn(start_id, final_node);
                             inferred.push(GraphPath {
                                 hops: vec![PathHop {

@@ -377,7 +377,7 @@ impl HmsCore {
         }
         let deltas: Vec<u32> = payload[deltas_start..deltas_end]
             .chunks_exact(4)
-            .map(|c| u32::from_le_bytes(c.try_into().unwrap()))
+            .map(|c| u32::from_le_bytes(c.try_into().expect("chunks_exact(4)")))
             .collect();
         (id, EntangledHVec::from_deltas(&deltas, dimensions))
     }
@@ -816,8 +816,7 @@ impl HmsCore {
 
         // BinaryHeap with RetrievalResult's Ord (min-heap by similarity):
         // pop() removes the lowest-similarity item, so we maintain top-k.
-        let mut heap: BinaryHeap<super::types::RetrievalResult> =
-            BinaryHeap::with_capacity(k + 1);
+        let mut heap: BinaryHeap<super::types::RetrievalResult> = BinaryHeap::with_capacity(k + 1);
 
         let mut insert = |r: super::types::RetrievalResult| {
             // Dedup: skip if we already have this ID with equal-or-higher similarity

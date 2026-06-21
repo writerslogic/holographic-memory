@@ -91,11 +91,21 @@ impl PersistentArena {
         while offset + HEADER_SIZE <= data.len() {
             // Unwraps are safe: the loop guard ensures at least HEADER_SIZE (16) bytes
             // remain, so each 4-byte slice is within bounds.
-            let raw_len =
-                u32::from_le_bytes(data[offset + 4..offset + 8].try_into().unwrap()) as usize;
-            let comp_len =
-                u32::from_le_bytes(data[offset + 8..offset + 12].try_into().unwrap()) as usize;
-            let version = u32::from_le_bytes(data[offset + 12..offset + 16].try_into().unwrap());
+            let raw_len = u32::from_le_bytes(
+                data[offset + 4..offset + 8]
+                    .try_into()
+                    .expect("4-byte slice"),
+            ) as usize;
+            let comp_len = u32::from_le_bytes(
+                data[offset + 8..offset + 12]
+                    .try_into()
+                    .expect("4-byte slice"),
+            ) as usize;
+            let version = u32::from_le_bytes(
+                data[offset + 12..offset + 16]
+                    .try_into()
+                    .expect("4-byte slice"),
+            );
 
             // Zero header means no more frames
             if raw_len == 0 && comp_len == 0 {
@@ -112,7 +122,8 @@ impl PersistentArena {
             }
 
             // Verify CRC to make sure this is a valid frame
-            let expected_crc = u32::from_le_bytes(data[offset..offset + 4].try_into().unwrap());
+            let expected_crc =
+                u32::from_le_bytes(data[offset..offset + 4].try_into().expect("4-byte slice"));
             let payload = &data[offset + HEADER_SIZE..offset + frame_size];
             let decompressed = if comp_len < raw_len {
                 match lz4_flex::decompress(payload, raw_len) {
@@ -168,10 +179,12 @@ impl PersistentArena {
             return Err(anyhow!("Truncated header at offset {}", global_offset));
         }
 
-        let expected_crc = u32::from_le_bytes(header_bytes[0..4].try_into().unwrap());
-        let raw_len = u32::from_le_bytes(header_bytes[4..8].try_into().unwrap()) as usize;
-        let comp_len = u32::from_le_bytes(header_bytes[8..12].try_into().unwrap()) as usize;
-        let version = u32::from_le_bytes(header_bytes[12..16].try_into().unwrap());
+        let expected_crc = u32::from_le_bytes(header_bytes[0..4].try_into().expect("4-byte slice"));
+        let raw_len =
+            u32::from_le_bytes(header_bytes[4..8].try_into().expect("4-byte slice")) as usize;
+        let comp_len =
+            u32::from_le_bytes(header_bytes[8..12].try_into().expect("4-byte slice")) as usize;
+        let version = u32::from_le_bytes(header_bytes[12..16].try_into().expect("4-byte slice"));
 
         if raw_len == 0 {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
@@ -229,7 +242,8 @@ impl PersistentArena {
             return Err(anyhow!("Truncated header at offset {}", global_offset));
         }
 
-        let comp_len = u32::from_le_bytes(header_bytes[8..12].try_into().unwrap()) as usize;
+        let comp_len =
+            u32::from_le_bytes(header_bytes[8..12].try_into().expect("4-byte slice")) as usize;
         if comp_len == 0 {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
         }
