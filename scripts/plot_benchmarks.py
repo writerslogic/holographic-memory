@@ -17,20 +17,20 @@ Output:
 """
 
 import json
+import logging
 import math
 import os
+from collections import defaultdict
 from pathlib import Path
-import logging
-
-log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 import matplotlib
 matplotlib.use("Agg")
 
-import matplotlib.pyplot as plt  # noqa: E402 (must follow matplotlib.use)
+import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -63,29 +63,27 @@ plt.rcParams.update({
     "legend.frameon": True,
     "legend.framealpha": 0.9,
     "legend.edgecolor": "#cccccc",
-    "grid.alpha": 0.0,       # no grid by default
+    "grid.alpha": 0.0,
     "savefig.dpi": 300,
     "savefig.bbox": "tight",
     "savefig.pad_inches": 0.15,
 })
 
-# Consistent color palette (8 distinct colors)
 COLORS = [
-    "#2D7DD2",  # blue
-    "#F45B69",  # red/coral
-    "#97CC04",  # lime green
-    "#EEC643",  # gold
-    "#8B5CF6",  # violet
-    "#14B8A6",  # teal
-    "#F97316",  # orange
-    "#EC4899",  # pink
-    "#6366F1",  # indigo
+    "#2D7DD2",
+    "#F45B69",
+    "#97CC04",
+    "#EEC643",
+    "#8B5CF6",
+    "#14B8A6",
+    "#F97316",
+    "#EC4899",
+    "#6366F1",
 ]
 
-# Marker shapes
 MARKERS = ["o", "s", "D", "^", "v", "P", "X", "h", "*"]
 
-# Dimension display strings
+
 def dim_str(d):
     if d >= 1024:
         return f"{d // 1024}K"
@@ -110,7 +108,6 @@ configs = scaling_data["scaling_benchmark"]
 def fig_capacity_wall():
     fig, ax = plt.subplots(figsize=(8, 5.5))
 
-    # Group by dimension
     dim_groups = {}
     for c in configs:
         dim_groups.setdefault(c["dim"], []).append(c)
@@ -119,7 +116,6 @@ def fig_capacity_wall():
     color_map = {d: COLORS[i] for i, d in enumerate(dims_sorted)}
     marker_map = {d: MARKERS[i] for i, d in enumerate(dims_sorted)}
 
-    # Collect all points for theory line
     all_denom = []
     all_wall = []
     all_dims_for_theory = []
@@ -144,8 +140,6 @@ def fig_capacity_wall():
         all_wall.extend(walls)
         all_dims_for_theory.extend([dim_val] * len(denoms))
 
-    # Theoretical prediction: wall ~ density_denom * ln(dim)
-    # Fit: wall = alpha * density_denom * ln(dim)
     all_denom = np.array(all_denom, dtype=float)
     all_wall = np.array(all_wall, dtype=float)
     all_dims_arr = np.array(all_dims_for_theory, dtype=float)
@@ -153,10 +147,8 @@ def fig_capacity_wall():
     predictor = all_denom * np.log(all_dims_arr)
     alpha = np.sum(all_wall * predictor) / np.sum(predictor ** 2)
 
-    # Draw theory lines per dimension
     for dim_val in dims_sorted:
         denom_range = np.array(sorted(set(c["density_denom"] for c in dim_groups[dim_val])))
-        # Extend range for smooth line
         d_min = min(denom_range) * 0.8
         d_max = max(denom_range) * 1.2
         d_line = np.linspace(d_min, d_max, 100)
@@ -175,7 +167,6 @@ def fig_capacity_wall():
     ax.set_ylabel("Capacity Wall (items at 95% recall)")
     ax.set_title("Capacity Wall vs Sparsity")
 
-    # Add theory annotation
     ax.annotate(
         f"Theory: wall = {alpha:.2f} $\\times$ denom $\\times$ ln(dim)",
         xy=(0.03, 0.95), xycoords="axes fraction",
@@ -204,7 +195,6 @@ def fig_throughput_scaling():
     dims = [c["dim"] for c in configs]
     denoms = [c["density_denom"] for c in configs]
 
-    # Color by dimension
     dim_set = sorted(set(dims))
     color_map = {d: COLORS[i] for i, d in enumerate(dim_set)}
 
@@ -219,7 +209,6 @@ def fig_throughput_scaling():
             linewidth=0.6,
             marker=MARKERS[dim_set.index(c["dim"])],
         )
-        # Label with (dim, denom)
         label_text = f"({dim_str(dims[i])}, 1/{denoms[i]})"
         ax.annotate(
             label_text,
@@ -230,7 +219,6 @@ def fig_throughput_scaling():
             color="#555555",
         )
 
-    # Add dimension legend
     legend_handles = []
     for d in dim_set:
         h = ax.scatter([], [], c=color_map[d], marker=MARKERS[dim_set.index(d)],
@@ -242,9 +230,6 @@ def fig_throughput_scaling():
     ax.set_title("Encode Throughput vs Active Index Count")
     ax.set_yscale("log")
 
-    # Highlight that same active count -> similar throughput regardless of dim
-    # Group by active_indices to show this
-    from collections import defaultdict
     active_groups = defaultdict(list)
     for i, c in enumerate(configs):
         active_groups[c["active_indices"]].append(encode_ops[i])
@@ -274,7 +259,6 @@ def fig_throughput_scaling():
 def fig_noise_tolerance():
     corruption_levels = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-    # Build config labels and matrices
     labels = []
     jaccard_matrix = []
     hopfield_matrix = []
@@ -296,8 +280,7 @@ def fig_noise_tolerance():
 
     corr_labels = [f"{int(c*100)}%" for c in corruption_levels]
 
-    # Jaccard
-    im1 = ax1.imshow(jaccard_matrix, cmap="Greens", vmin=0.0, vmax=1.0, aspect="auto")
+    ax1.imshow(jaccard_matrix, cmap="Greens", vmin=0.0, vmax=1.0, aspect="auto")
     ax1.set_xticks(range(len(corr_labels)))
     ax1.set_xticklabels(corr_labels, fontsize=8)
     ax1.set_yticks(range(len(labels)))
@@ -305,7 +288,6 @@ def fig_noise_tolerance():
     ax1.set_xlabel("Corruption Level")
     ax1.set_title("Jaccard Retrieval Accuracy")
 
-    # Annotate cells
     for i in range(len(labels)):
         for j in range(len(corr_labels)):
             val = jaccard_matrix[i, j]
@@ -313,8 +295,7 @@ def fig_noise_tolerance():
                      fontsize=7, color="white" if val > 0.5 else "#333333",
                      fontweight="bold")
 
-    # Hopfield
-    im2 = ax2.imshow(hopfield_matrix, cmap="Greens", vmin=0.0, vmax=1.0, aspect="auto")
+    ax2.imshow(hopfield_matrix, cmap="Greens", vmin=0.0, vmax=1.0, aspect="auto")
     ax2.set_xticks(range(len(corr_labels)))
     ax2.set_xticklabels(corr_labels, fontsize=8)
     ax2.set_xlabel("Corruption Level")
@@ -368,7 +349,6 @@ def fig_interference():
     ax.set_ylim(-0.05, 1.15)
     ax.set_xscale("log")
 
-    # Shade the regions
     ax.axhspan(0.95, 1.05, color=COLORS[0], alpha=0.06, zorder=0)
     ax.fill_between(n_facts, bundled_acc, alpha=0.10, color=COLORS[1], zorder=0)
 
@@ -414,7 +394,6 @@ def fig_sequence_encoding():
         label=f"EHV (D=16K, vocab={vocab_size})",
     )
 
-    # Also add HRR head-to-head data for comparison
     h2h_seq = research_data["head_to_head_vs_hrr"]["sequence_encoding"]
     hrr_lengths = [r["sequence_length"] for r in h2h_seq]
     hrr_acc = [r["hrr_accuracy"] for r in h2h_seq]
@@ -433,7 +412,6 @@ def fig_sequence_encoding():
     ax.set_ylim(-0.05, 1.15)
     ax.set_xlim(0, 210)
 
-    # Mark the 100% line
     ax.axhline(y=1.0, color="#cccccc", linestyle=":", linewidth=1, zorder=0)
 
     ax.annotate(
@@ -472,12 +450,12 @@ def fig_compression():
     x = np.arange(len(labels))
     width = 0.35
 
-    bars_dense = ax.bar(x - width/2, dense_bytes, width,
-                        label="Dense float32", color=COLORS[1], alpha=0.85,
-                        edgecolor="white", linewidth=0.5)
-    bars_sparse = ax.bar(x + width/2, sparse_bytes, width,
-                         label="Sparse binary", color=COLORS[0], alpha=0.85,
-                         edgecolor="white", linewidth=0.5)
+    ax.bar(x - width/2, dense_bytes, width,
+           label="Dense float32", color=COLORS[1], alpha=0.85,
+           edgecolor="white", linewidth=0.5)
+    ax.bar(x + width/2, sparse_bytes, width,
+           label="Sparse binary", color=COLORS[0], alpha=0.85,
+           edgecolor="white", linewidth=0.5)
 
     ax.set_yscale("log")
     ax.set_ylabel("Bytes per Item")
@@ -487,7 +465,6 @@ def fig_compression():
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=8)
 
-    # Add compression ratio annotations
     for i, ratio in enumerate(compression_ratios):
         ypos = max(dense_bytes[i], sparse_bytes[i]) * 1.4
         ax.text(x[i], ypos, f"{ratio:.0f}x",
@@ -512,10 +489,11 @@ def fig_compression():
 # Main
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
     log.info("HMS Benchmark Visualization")
     log.info("  Scaling data: %d configurations", len(configs))
     log.info("  Output directory: %s", FIG_DIR)
-    log.info("")
 
     log.info("Generating figures:")
     fig_capacity_wall()
@@ -525,5 +503,4 @@ if __name__ == "__main__":
     fig_sequence_encoding()
     fig_compression()
 
-    log.info("")
     log.info("Done. All figures saved to figures/")

@@ -427,10 +427,7 @@ mod tests {
         let noise = make_pattern(dim, 999);
         let noisy_query = p1.bind(&noise);
 
-        let patterns = vec![
-            ("p1".to_string(), p1.clone()),
-            ("p2".to_string(), p2),
-        ];
+        let patterns = vec![("p1".to_string(), p1.clone()), ("p2".to_string(), p2)];
 
         let config = HopfieldConfig {
             beta: 100.0,

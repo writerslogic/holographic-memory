@@ -22,13 +22,65 @@ pub struct Decomposer {
 impl Decomposer {
     pub fn new() -> Self {
         let prepositions: FxHashSet<&'static str> = [
-            "about", "above", "across", "after", "against", "along", "amid", "among", "around",
-            "as", "at", "before", "behind", "below", "beneath", "beside", "between", "beyond",
-            "by", "concerning", "despite", "down", "during", "except", "for", "from", "in",
-            "inside", "into", "like", "near", "of", "off", "on", "onto", "opposite", "out",
-            "outside", "over", "past", "per", "regarding", "since", "than", "through",
-            "throughout", "till", "to", "toward", "towards", "under", "unlike", "until", "up",
-            "upon", "via", "with", "within", "without",
+            "about",
+            "above",
+            "across",
+            "after",
+            "against",
+            "along",
+            "amid",
+            "among",
+            "around",
+            "as",
+            "at",
+            "before",
+            "behind",
+            "below",
+            "beneath",
+            "beside",
+            "between",
+            "beyond",
+            "by",
+            "concerning",
+            "despite",
+            "down",
+            "during",
+            "except",
+            "for",
+            "from",
+            "in",
+            "inside",
+            "into",
+            "like",
+            "near",
+            "of",
+            "off",
+            "on",
+            "onto",
+            "opposite",
+            "out",
+            "outside",
+            "over",
+            "past",
+            "per",
+            "regarding",
+            "since",
+            "than",
+            "through",
+            "throughout",
+            "till",
+            "to",
+            "toward",
+            "towards",
+            "under",
+            "unlike",
+            "until",
+            "up",
+            "upon",
+            "via",
+            "with",
+            "within",
+            "without",
         ]
         .into_iter()
         .collect();
@@ -394,8 +446,8 @@ impl Decomposer {
         .collect();
 
         let auxiliaries: FxHashSet<&'static str> = [
-            "is", "are", "was", "were", "am", "has", "have", "had", "been", "being", "gets",
-            "got", "gotten",
+            "is", "are", "was", "were", "am", "has", "have", "had", "been", "being", "gets", "got",
+            "gotten",
         ]
         .into_iter()
         .collect();
@@ -411,12 +463,47 @@ impl Decomposer {
             ["and", "or", "but", "nor"].into_iter().collect();
 
         let adverbs: FxHashSet<&'static str> = [
-            "very", "really", "quite", "always", "never", "often", "sometimes", "usually",
-            "also", "just", "still", "already", "only", "even", "quickly", "slowly",
-            "carefully", "easily", "strongly", "highly", "deeply", "widely", "nearly",
-            "recently", "currently", "generally", "simply", "actually", "probably",
-            "certainly", "clearly", "directly", "exactly", "finally", "however",
-            "perhaps", "possibly", "rapidly", "suddenly", "truly", "mostly",
+            "very",
+            "really",
+            "quite",
+            "always",
+            "never",
+            "often",
+            "sometimes",
+            "usually",
+            "also",
+            "just",
+            "still",
+            "already",
+            "only",
+            "even",
+            "quickly",
+            "slowly",
+            "carefully",
+            "easily",
+            "strongly",
+            "highly",
+            "deeply",
+            "widely",
+            "nearly",
+            "recently",
+            "currently",
+            "generally",
+            "simply",
+            "actually",
+            "probably",
+            "certainly",
+            "clearly",
+            "directly",
+            "exactly",
+            "finally",
+            "however",
+            "perhaps",
+            "possibly",
+            "rapidly",
+            "suddenly",
+            "truly",
+            "mostly",
         ]
         .into_iter()
         .collect();
@@ -553,7 +640,11 @@ impl Decomposer {
 
             // Look for past participle after auxiliary (possibly with adverb between)
             let mut pp_idx = i + 1;
-            while pp_idx < tokens.len() && self.adverbs.contains(tokens[pp_idx].to_lowercase().as_str()) {
+            while pp_idx < tokens.len()
+                && self
+                    .adverbs
+                    .contains(tokens[pp_idx].to_lowercase().as_str())
+            {
                 pp_idx += 1;
             }
             if pp_idx >= tokens.len() {
@@ -564,8 +655,8 @@ impl Decomposer {
             let lemma = self.lemmatize_verb(&pp_lower)?;
 
             // Look for "by" after the participle
-            let by_idx = (pp_idx + 1..tokens.len())
-                .find(|&j| tokens[j].eq_ignore_ascii_case("by"))?;
+            let by_idx =
+                (pp_idx + 1..tokens.len()).find(|&j| tokens[j].eq_ignore_ascii_case("by"))?;
 
             if by_idx + 1 >= tokens.len() {
                 continue;
@@ -753,13 +844,53 @@ impl Decomposer {
     fn is_irregular_participle(&self, word: &str) -> bool {
         matches!(
             word,
-            "been" | "done" | "gone" | "seen" | "known" | "given" | "taken"
-                | "made" | "found" | "told" | "left" | "kept" | "begun" | "shown"
-                | "heard" | "held" | "brought" | "written" | "sat" | "stood" | "lost"
-                | "met" | "led" | "grown" | "built" | "sent" | "fallen" | "bought"
-                | "felt" | "spoken" | "spent" | "won" | "taught" | "eaten" | "drunk"
-                | "driven" | "broken" | "caught" | "drawn" | "flown" | "meant"
-                | "thought" | "paid" | "run" | "put" | "set" | "read"
+            "been"
+                | "done"
+                | "gone"
+                | "seen"
+                | "known"
+                | "given"
+                | "taken"
+                | "made"
+                | "found"
+                | "told"
+                | "left"
+                | "kept"
+                | "begun"
+                | "shown"
+                | "heard"
+                | "held"
+                | "brought"
+                | "written"
+                | "sat"
+                | "stood"
+                | "lost"
+                | "met"
+                | "led"
+                | "grown"
+                | "built"
+                | "sent"
+                | "fallen"
+                | "bought"
+                | "felt"
+                | "spoken"
+                | "spent"
+                | "won"
+                | "taught"
+                | "eaten"
+                | "drunk"
+                | "driven"
+                | "broken"
+                | "caught"
+                | "drawn"
+                | "flown"
+                | "meant"
+                | "thought"
+                | "paid"
+                | "run"
+                | "put"
+                | "set"
+                | "read"
         )
     }
 
@@ -769,8 +900,7 @@ impl Decomposer {
             .map(|t| t.as_str())
             .filter(|w| {
                 let lower = w.to_lowercase();
-                !self.determiners.contains(lower.as_str())
-                    && !self.adverbs.contains(lower.as_str())
+                !self.determiners.contains(lower.as_str()) && !self.adverbs.contains(lower.as_str())
             })
             .collect();
         if filtered.is_empty() {

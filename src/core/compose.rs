@@ -98,12 +98,11 @@ fn cleanup(
     }
     let results = hopfield_query(query, patterns, config, 1);
     match results.first() {
-        Some(r) => {
-            patterns.iter()
-                .find(|(id, _)| *id == r.id)
-                .map(|(_, v)| v.clone())
-                .unwrap_or_else(|| query.clone())
-        }
+        Some(r) => patterns
+            .iter()
+            .find(|(id, _)| *id == r.id)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_else(|| query.clone()),
         None => query.clone(),
     }
 }
@@ -116,7 +115,12 @@ mod tests {
     fn test_cleanup_preserves_identity() {
         let dim = 16384;
         let patterns: Vec<(String, EntangledHVec)> = (0..20)
-            .map(|i| (format!("p{}", i), EntangledHVec::new_deterministic(dim, i * 100)))
+            .map(|i| {
+                (
+                    format!("p{}", i),
+                    EntangledHVec::new_deterministic(dim, i * 100),
+                )
+            })
             .collect();
 
         let target = &patterns[5].1;
@@ -129,7 +133,12 @@ mod tests {
     fn test_deep_roundtrip_with_cleanup() {
         let dim = 16384;
         let patterns: Vec<(String, EntangledHVec)> = (0..50)
-            .map(|i| (format!("p{}", i), EntangledHVec::new_deterministic(dim, i * 100)))
+            .map(|i| {
+                (
+                    format!("p{}", i),
+                    EntangledHVec::new_deterministic(dim, i * 100),
+                )
+            })
             .collect();
 
         let target = &patterns[10].1;
@@ -142,15 +151,24 @@ mod tests {
         let recovered = roundtrip_with_cleanup(target, &keys, &patterns, &config);
 
         let sim_with = recovered.similarity(target);
-        assert!(sim_with > 0.5,
-            "Cleanup roundtrip at depth {} should recover target, got sim={:.4}", depth, sim_with);
+        assert!(
+            sim_with > 0.5,
+            "Cleanup roundtrip at depth {} should recover target, got sim={:.4}",
+            depth,
+            sim_with
+        );
     }
 
     #[test]
     fn test_cleanup_beats_raw_at_depth() {
         let dim = 16384;
         let patterns: Vec<(String, EntangledHVec)> = (0..50)
-            .map(|i| (format!("p{}", i), EntangledHVec::new_deterministic(dim, i * 100)))
+            .map(|i| {
+                (
+                    format!("p{}", i),
+                    EntangledHVec::new_deterministic(dim, i * 100),
+                )
+            })
             .collect();
 
         let target = &patterns[3].1;
@@ -161,8 +179,12 @@ mod tests {
 
         // Raw roundtrip (no cleanup)
         let mut raw = target.clone();
-        for k in &keys { raw = raw.bind(k); }
-        for k in keys.iter().rev() { raw = raw.bind(k); }
+        for k in &keys {
+            raw = raw.bind(k);
+        }
+        for k in keys.iter().rev() {
+            raw = raw.bind(k);
+        }
         let raw_sim = raw.similarity(target);
 
         // With cleanup
@@ -170,8 +192,12 @@ mod tests {
         let cleaned = roundtrip_with_cleanup(target, &keys, &patterns, &config);
         let clean_sim = cleaned.similarity(target);
 
-        assert!(clean_sim >= raw_sim,
+        assert!(
+            clean_sim >= raw_sim,
             "Cleanup ({:.4}) should beat or match raw ({:.4}) at depth {}",
-            clean_sim, raw_sim, depth);
+            clean_sim,
+            raw_sim,
+            depth
+        );
     }
 }

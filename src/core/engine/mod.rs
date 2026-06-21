@@ -67,6 +67,8 @@ pub struct HmsCore {
     #[cfg(feature = "security")]
     #[allow(dead_code)]
     encryption: Option<super::security::EncryptionManager>,
+    #[cfg(feature = "provenance")]
+    provenance: Option<super::provenance::ProvenanceManager>,
 }
 
 impl HmsCore {
@@ -131,6 +133,26 @@ impl HmsCore {
             None
         };
 
+        #[cfg(feature = "provenance")]
+        let provenance = if config.provenance.enabled {
+            let key_path = config
+                .provenance
+                .key_path
+                .as_ref()
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| base_path.join("hms_provenance.key"));
+            let mgr = super::provenance::ProvenanceManager::new(&key_path, Some(&base_path))?;
+            #[cfg(feature = "provenance-scitt")]
+            let mgr = if let Some(ref endpoint) = config.provenance.scitt_endpoint {
+                mgr.with_scitt_endpoint(endpoint.clone())
+            } else {
+                mgr
+            };
+            Some(mgr)
+        } else {
+            None
+        };
+
         let shard_set = if config.shard.enabled && config.shard.shard_count > 1 {
             ShardSet::Multi(ShardManager::new(config.shard.shard_count, dim))
         } else {
@@ -183,6 +205,8 @@ impl HmsCore {
             signing,
             #[cfg(feature = "security")]
             encryption,
+            #[cfg(feature = "provenance")]
+            provenance,
         };
 
         core.load_from_log()?;
@@ -442,13 +466,27 @@ impl HmsCore {
 
     /// Delete a vector by ID. Returns true if it existed. Crash-safe: tombstone is persisted first.
     pub fn delete(&self, id: &str) -> Result<bool> {
-        // Persist tombstone first for crash-safety: if we crash after the
-        // arena write but before the memory remove, load_from_log replays
-        // the tombstone and correctly removes the vector.
+        self.delete_with_reason(id, None)
+    }
+
+    pub fn delete_with_reason(
+        &self,
+        id: &str,
+        #[allow(unused_variables)] reason: Option<&str>,
+    ) -> Result<bool> {
         self.arena_write(&Self::serialize_tombstone(id)?)?;
 
         if let Some(ref audit) = self.audit {
             audit.record(AuditOp::Delete, id, self.sign_fn().as_deref())?;
+        }
+
+        #[cfg(feature = "provenance")]
+        if let Some(ref mgr) = self.provenance {
+            if self.config.provenance.auto_sign {
+                if let Err(e) = mgr.record_deletion(id, reason) {
+                    tracing::warn!("provenance deletion record failed for {id}: {e}");
+                }
+            }
         }
 
         if let Some(ref atom_mem) = self.atom_memory {
@@ -463,8 +501,26 @@ impl HmsCore {
     }
 
     pub fn memorize_meaning(&self, id: &str, text: &str) -> Result<()> {
+        self.memorize_meaning_with_source(id, text, None)
+    }
+
+    pub fn memorize_meaning_with_source(
+        &self,
+        id: &str,
+        text: &str,
+        #[allow(unused_variables)] source_uri: Option<&str>,
+    ) -> Result<()> {
         let vector = self.encode_text(text);
         self.memorize(id.to_string(), vector)?;
+
+        #[cfg(feature = "provenance")]
+        if let Some(ref mgr) = self.provenance {
+            if self.config.provenance.auto_sign {
+                if let Err(e) = mgr.create_fact_provenance(id, text.as_bytes(), source_uri) {
+                    tracing::warn!("provenance signing failed for {id}: {e}");
+                }
+            }
+        }
 
         if let (
             Some(ref decomposer),
@@ -516,10 +572,29 @@ impl HmsCore {
                             subject_id: unit.subject.clone(),
                             relation_id: unit.relation.clone(),
                             object_id: unit.object.clone(),
-                            composite_id: comp_id,
+                            composite_id: comp_id.clone(),
                             deleted: false,
                         },
                     ))?;
+
+                    #[cfg(feature = "provenance")]
+                    if let Some(ref mgr) = self.provenance {
+                        if self.config.provenance.auto_sign {
+                            if let Err(e) = mgr.create_triple_provenance(
+                                &super::provenance::TripleProvenanceParams {
+                                    fact_id: &comp_id,
+                                    content: text.as_bytes(),
+                                    dimensions: self.dimensions as u32,
+                                    subject: &unit.subject,
+                                    relation: &unit.relation,
+                                    object: &unit.object,
+                                    source_uri,
+                                },
+                            ) {
+                                tracing::warn!("provenance signing failed for {comp_id}: {e}");
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1288,6 +1363,212 @@ impl HmsCore {
             Some(ref audit) => audit.entries_since(timestamp_ms),
             None => Ok(Vec::new()),
         }
+    }
+
+    // === Provenance API ===
+
+    #[cfg(feature = "provenance")]
+    pub fn provenance_enabled(&self) -> bool {
+        self.provenance.is_some()
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn create_fact_provenance(
+        &self,
+        fact_id: &str,
+        content: &[u8],
+        source_uri: Option<&str>,
+    ) -> Result<super::provenance::types::ProvenanceRecord> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.create_fact_provenance(fact_id, content, source_uri)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn create_triple_provenance(
+        &self,
+        params: &super::provenance::TripleProvenanceParams<'_>,
+    ) -> Result<super::provenance::types::ProvenanceRecord> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.create_triple_provenance(params)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn create_store_manifest(
+        &self,
+        store_id: &str,
+        store_data: &[u8],
+        fact_count: usize,
+        dimensions: u32,
+        title: Option<&str>,
+    ) -> Result<super::provenance::types::StoreManifest> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.create_store_manifest(store_id, store_data, fact_count, dimensions, title)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn verify_fact_provenance(
+        &self,
+        record: &super::provenance::types::ProvenanceRecord,
+    ) -> Result<super::provenance::types::VerificationResult> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.verify_fact_provenance(record)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn verify_store_manifest(
+        &self,
+        manifest: &super::provenance::types::StoreManifest,
+        store_data: Option<&[u8]>,
+    ) -> Result<super::provenance::types::VerificationResult> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.verify_store_manifest(manifest, store_data)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn issuer_did(&self) -> Option<&str> {
+        self.provenance.as_ref().map(|mgr| mgr.issuer_did())
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn get_provenance(
+        &self,
+        fact_id: &str,
+    ) -> Option<super::provenance::types::ProvenanceRecord> {
+        self.provenance.as_ref()?.get_record(fact_id)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn provenance_count(&self) -> usize {
+        self.provenance.as_ref().map_or(0, |mgr| mgr.record_count())
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn create_self_manifest(
+        &self,
+        title: Option<&str>,
+    ) -> Result<super::provenance::types::StoreManifest> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let store_data =
+            std::fs::read(self.storage_path.join("vectors_data.bin")).unwrap_or_default();
+        let store_id = self
+            .storage_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("default");
+        mgr.create_store_manifest(
+            store_id,
+            &store_data,
+            self.vector_count() as usize,
+            self.dimensions as u32,
+            title,
+        )
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn revoke_credential(&self, status_index: u64) -> Result<()> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.revoke_credential(status_index)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn is_credential_revoked(&self, status_index: u64) -> bool {
+        self.provenance
+            .as_ref()
+            .is_some_and(|mgr| mgr.is_revoked(status_index))
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn verify_provenance_log(&self) -> Result<bool> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.verify_log_integrity()
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn create_batch_provenance(
+        &self,
+        items: &[(&str, &[u8], Option<&str>)],
+    ) -> Result<Vec<super::provenance::types::ProvenanceRecord>> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.create_batch_provenance(items)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn create_sigstore_bundle(
+        &self,
+        content: &[u8],
+        identity: Option<&str>,
+    ) -> Result<super::provenance::sigstore::SigstoreBundle> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.create_sigstore_bundle(content, identity)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn verify_sigstore_bundle(
+        &self,
+        bundle: &super::provenance::sigstore::SigstoreBundle,
+        content: &[u8],
+    ) -> Result<()> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.verify_sigstore_bundle(bundle, content)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn create_cawg_assertion(
+        &self,
+        referenced_assertions: Vec<super::provenance::cawg::HashedUri>,
+        display_name: Option<&str>,
+        provider: Option<&str>,
+    ) -> Result<super::provenance::cawg::IdentityAssertion> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.create_cawg_assertion(referenced_assertions, display_name, provider)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn verify_cawg_assertion(
+        &self,
+        assertion: &super::provenance::cawg::IdentityAssertion,
+    ) -> Result<()> {
+        let mgr = self
+            .provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        mgr.verify_cawg_assertion(assertion)
     }
 
     /// Decompose a product vector into factors from domain codebooks using diffusion.

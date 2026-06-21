@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.svg" width="200" alt="HMS Logo">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-spin-dark.gif">
+    <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-spin.gif" width="200" alt="Holographic Memory System">
+  </picture>
 </p>
 
 # Holographic Memory System (HMS)
@@ -51,7 +54,7 @@ npm install holographic-memory
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-holographic-memory = "0.5"
+holographic-memory = "0.6"
 ```
 
 ## Core Architecture
@@ -344,6 +347,72 @@ HMS is a general-purpose vector memory engine. Beyond writing tools, it's well-s
 - **Edge/embedded AI** -- lightweight enough for single-node deployment; no vector database infrastructure needed
 - **Research tools** -- academic paper similarity, citation graph exploration, concept mapping
 - **Content moderation** -- near-duplicate detection using holographic similarity
+
+## Provenance & Content Credentials
+
+HMS includes a comprehensive provenance system for tamper-evident knowledge stores, built on open standards. All provenance features are local-first with no external service dependencies.
+
+Enable provenance in your `Cargo.toml`:
+```toml
+[dependencies]
+holographic-memory = { version = "0.6", features = ["provenance"] }
+```
+
+### Standards Support
+
+| Standard | Spec | Implementation |
+|----------|------|----------------|
+| **COSE Sign1** | RFC 9052 | Ed25519 signature envelopes for all provenance records |
+| **W3C Verifiable Credentials** | VC Data Model 2.0 | `eddsa-jcs-2022` Data Integrity proofs (RFC 8785 JCS) |
+| **DID:key** | W3C DID Core | Ed25519 multicodec identifiers (`0xed01`, base58btc) |
+| **DID:web** | W3C DID Core | Domain-based identifiers with DID document generation |
+| **C2PA** | C2PA 2.1 | Content Credentials manifests with assertion labels |
+| **JUMBF** | ISO 19566-5 | Binary box container encoding for C2PA manifests |
+| **CAWG** | Identity Assertion 1.1 | Creator identity binding to manifests |
+| **Sigstore** | Bundle v0.3 | Local keyful signing bundles (optional Rekor via `provenance-scitt`) |
+| **KERI** | draft-ssmith-keri | Persistent Key Event Log with inception, rotation, interaction |
+| **SCITT** | draft-ietf-scitt-architecture | Signed statements with optional transparency log submission |
+| **BitstringStatusList** | W3C | Credential revocation via bitstring indexing |
+
+### Provenance Features
+
+- **Hash chain log**: Append-only JSONL log with SHA-256 chaining and COSE-signed head anchor for tamper detection.
+- **Lamport logical clock**: Monotonic sequence numbers for causal ordering across restarts.
+- **Merkle batch signing**: Bulk import with per-record inclusion proofs under a single COSE root signature.
+- **Key rotation**: Chain-logged rotation events with KERI Key Event Log persistence.
+- **Credential revocation**: BitstringStatusList with per-credential status indexing.
+- **JUMBF manifests**: Store manifests encoded as ISO 19566-5 binary with C2PA assertion structure.
+
+### Example
+
+```rust
+use holographic_memory::HmsCore;
+
+let hms = HmsCore::new(16384, Some("./storage".into()), None)?;
+
+// Create provenance for a fact
+let record = hms.create_fact_provenance("fact-001", b"Paris is the capital of France", None)?;
+assert!(record.cose_envelope.is_some());
+assert!(record.vc_json.is_some());
+
+// Verify the provenance chain
+let result = hms.verify_fact_provenance(&record)?;
+assert!(result.valid);
+
+// Create a signed store manifest (includes JUMBF binary)
+let manifest = hms.create_self_manifest(Some("My Knowledge Store"))?;
+assert!(manifest.jumbf_manifest.is_some());
+
+// Sigstore bundle
+let bundle = hms.create_sigstore_bundle(b"content to sign", Some("user@example.com"))?;
+hms.verify_sigstore_bundle(&bundle, b"content to sign")?;
+
+// CAWG identity assertion
+use holographic_memory::core::provenance::cawg;
+let refs = vec![cawg::hash_assertion("c2pa.hash.data", b"content")];
+let assertion = hms.create_cawg_assertion(refs, Some("Alice"), None)?;
+hms.verify_cawg_assertion(&assertion)?;
+```
 
 ## Security
 

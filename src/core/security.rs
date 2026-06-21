@@ -80,12 +80,10 @@ impl SigningManager {
     pub fn verifying_key_bytes(&self) -> [u8; 32] {
         self.verifying_key.to_bytes()
     }
-}
 
-#[cfg(feature = "security")]
-impl Drop for SigningManager {
-    fn drop(&mut self) {
-        // SigningKey implements Zeroize via ed25519-dalek's zeroize feature
+    /// Clone the signing key for use by other managers.
+    pub fn into_signing_key(self) -> SigningKey {
+        self.signing_key.clone()
     }
 }
 

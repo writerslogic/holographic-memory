@@ -12,6 +12,7 @@ pub struct HmsConfig {
     pub concepts: ConceptsConfig,
     pub diffusion: DiffusionConfig,
     pub security: SecurityConfig,
+    pub provenance: ProvenanceConfig,
     pub privacy: PrivacyConfig,
     pub meaning: MeaningConfig,
     pub cognition: CognitionConfig,
@@ -50,6 +51,15 @@ pub struct SecurityConfig {
     pub encryption_enabled: bool,
     pub encryption_passphrase: Option<String>,
     pub audit_enabled: bool,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ProvenanceConfig {
+    pub enabled: bool,
+    pub key_path: Option<String>,
+    pub auto_sign: bool,
+    #[cfg(feature = "provenance-scitt")]
+    pub scitt_endpoint: Option<String>,
 }
 
 #[derive(Clone, Debug)]

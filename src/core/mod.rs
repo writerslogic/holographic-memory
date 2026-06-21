@@ -28,6 +28,8 @@ pub mod intersection;
 pub(crate) mod ivf;
 pub(crate) mod nsg;
 pub(crate) mod posting;
+#[cfg(feature = "provenance")]
+pub mod provenance;
 pub mod resonator;
 pub(crate) mod role;
 pub(crate) mod rules;

@@ -1,0 +1,143 @@
+{
+  "capacity_estimation": {
+    "active_bits": 64,
+    "clifford_algebra_dim": 16384,
+    "clifford_n": 14,
+    "clifford_terms": 64,
+    "dim": 16384,
+    "entangled_theoretical_capacity": 3939.5192583207963,
+    "measured_entangled_crosstalk": [
+      [
+        10,
+        0.0
+      ],
+      [
+        50,
+        0.0
+      ],
+      [
+        100,
+        0.47126436781609193
+      ],
+      [
+        500,
+        0.47126436781609193
+      ],
+      [
+        1000,
+        0.47126436781609193
+      ]
+    ]
+  },
+  "config": {
+    "dim": 16384,
+    "scales": [
+      100,
+      500,
+      1000,
+      5000
+    ]
+  },
+  "micro_benchmarks": [
+    {
+      "clifford_ns": 339.4834,
+      "entangled_ns": 236.05,
+      "operation": "from_seed",
+      "ratio": 1.4381842829908917
+    },
+    {
+      "clifford_ns": 453.7834,
+      "entangled_ns": 94.0875,
+      "operation": "similarity",
+      "ratio": 4.822993490102298
+    },
+    {
+      "clifford_ns": 41490.0583,
+      "entangled_ns": 161.8208,
+      "operation": "bind",
+      "ratio": 256.3950882704819
+    },
+    {
+      "clifford_ns": 7429.666,
+      "entangled_ns": 3639.25,
+      "operation": "bundle_10",
+      "ratio": 2.041537679466923
+    },
+    {
+      "clifford_ns": 279.0208,
+      "entangled_ns": 59.975,
+      "operation": "permute",
+      "ratio": 4.6522851187995
+    }
+  ],
+  "query_scaling": [
+    {
+      "brute_force_query_us": 245.71125,
+      "brute_top1_id": "doc_7",
+      "hopfield_query_us": 5.222090000000001,
+      "hopfield_slowdown": 0.02125295443330332,
+      "hopfield_top1_id": "doc_33",
+      "insert_total_ms": 129.876625,
+      "n_patterns": 100,
+      "top1_agreement": false
+    },
+    {
+      "brute_force_query_us": 1.32917,
+      "brute_top1_id": "doc_58",
+      "hopfield_query_us": 17.980839999999997,
+      "hopfield_slowdown": 13.527870776499618,
+      "hopfield_top1_id": "doc_452",
+      "insert_total_ms": 607.212416,
+      "n_patterns": 500,
+      "top1_agreement": false
+    },
+    {
+      "brute_force_query_us": 2.58125,
+      "brute_top1_id": "doc_929",
+      "hopfield_query_us": 36.43625,
+      "hopfield_slowdown": 14.115738498789348,
+      "hopfield_top1_id": "doc_929",
+      "insert_total_ms": 1197.769708,
+      "n_patterns": 1000,
+      "top1_agreement": true
+    },
+    {
+      "brute_force_query_us": 12.92292,
+      "brute_top1_id": "doc_929",
+      "hopfield_query_us": 195.61333,
+      "hopfield_slowdown": 15.136929579382988,
+      "hopfield_top1_id": "doc_1027",
+      "insert_total_ms": 6071.237583,
+      "n_patterns": 5000,
+      "top1_agreement": false
+    }
+  ],
+  "retrieval_quality": {
+    "hopfield_avg_results": 5.0,
+    "hopfield_sparsity_rate": 0.0,
+    "n_patterns": 500,
+    "n_queries": 50,
+    "top1_agreement_rate": 0.0,
+    "top5_overlap_rate": 1.0
+  },
+  "similarity_distribution": [
+    {
+      "bind_self_recovery": 1.0,
+      "random_pair_max": 0.0,
+      "random_pair_mean": 0.0,
+      "random_pair_min": 0.0,
+      "random_pair_std": 0.0,
+      "representation": "EntangledHVec",
+      "self_sim_mean": 1.0
+    },
+    {
+      "bind_self_recovery": 0.753167270046106,
+      "random_pair_max": 0.0,
+      "random_pair_mean": 0.0,
+      "random_pair_min": 0.0,
+      "random_pair_std": 0.0,
+      "representation": "CliffordVec",
+      "self_sim_mean": 1.0
+    }
+  ]
+}
