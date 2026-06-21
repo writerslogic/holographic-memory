@@ -4,13 +4,7 @@
 //! Trait boundary for holographic vector algebra.
 //!
 //! Defines the algebraic operations that any vector representation must support.
-//! Currently implemented by `EntangledHVec` (sparse binary). Future implementations
-//! include a geometric algebra type using the Clifford geometric product.
-//!
-//! Call sites are NOT yet generic over this trait — they use `EntangledHVec`
-//! directly. The trait exists as a contract: any future representation must
-//! implement these operations to be a drop-in replacement. Migration to
-//! trait-generic code happens incrementally when the second implementation lands.
+//! Currently implemented by `EntangledHVec` (sparse binary) and `TernaryHVec`.
 
 use std::fmt::Debug;
 
@@ -25,29 +19,20 @@ use std::fmt::Debug;
 ///
 /// These map to different algebra depending on representation:
 /// - Sparse binary (EntangledHVec): XOR, majority vote, Jaccard
-/// - HRR (future): circular convolution, addition, cosine
-/// - Clifford (future): geometric product, addition, grade-0 projection
+/// - Ternary (TernaryHVec): XOR, majority vote, Hamming
 pub trait HolographicAlgebra: Clone + Debug + Send + Sync {
     /// Dimensionality of the vector space.
     fn dim(&self) -> usize;
 
     /// Bind two vectors (compositional association).
-    /// For sparse binary: symmetric difference (XOR).
-    /// For HRR: circular convolution.
-    /// For Clifford: geometric product.
     fn bind(&self, other: &Self) -> Self;
 
     /// Bundle multiple vectors into a superposition.
-    /// For sparse binary: majority vote with threshold.
-    /// For HRR/Clifford: element-wise addition + normalization.
     fn bundle(vectors: &[Self]) -> Self
     where
         Self: Sized;
 
     /// Similarity between two vectors. Range: [0, 1] where 1 = identical.
-    /// For sparse binary: Jaccard index.
-    /// For HRR: cosine similarity.
-    /// For Clifford: normalized grade-0 inner product.
     fn similarity(&self, other: &Self) -> f64;
 
     /// Positional permutation (shift indices by `shifts` modulo dim).
