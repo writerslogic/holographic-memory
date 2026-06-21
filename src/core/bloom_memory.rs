@@ -45,15 +45,25 @@ impl HolographicBloomMemory {
         item.corrected_containment(&self.bundle)
     }
 
-    pub fn query_candidates(&self, candidates: &[EntangledHVec], threshold: f64) -> Vec<(usize, f64)> {
-        candidates.iter().enumerate()
+    pub fn query_candidates(
+        &self,
+        candidates: &[EntangledHVec],
+        threshold: f64,
+    ) -> Vec<(usize, f64)> {
+        candidates
+            .iter()
+            .enumerate()
             .map(|(i, item)| (i, self.contains(item)))
             .filter(|&(_, score)| score >= threshold)
             .collect()
     }
 
-    pub fn item_count(&self) -> usize { self.item_count }
-    pub fn dim(&self) -> usize { self.dim }
+    pub fn item_count(&self) -> usize {
+        self.item_count
+    }
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
 
     pub fn density(&self) -> f64 {
         self.bundle.indices().len() as f64 / self.dim as f64
@@ -77,7 +87,9 @@ mod tests {
             let score = mem.contains(item);
             assert!(
                 (score - 1.0).abs() < 1e-10,
-                "Member {} should have score 1.0, got {:.6}", i, score
+                "Member {} should have score 1.0, got {:.6}",
+                i,
+                score
             );
         }
     }
@@ -97,10 +109,14 @@ mod tests {
             non_member_scores.push(mem.contains(&non_member));
         }
 
-        let max_score = non_member_scores.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let max_score = non_member_scores
+            .iter()
+            .cloned()
+            .fold(f64::NEG_INFINITY, f64::max);
         assert!(
             max_score < 0.5,
-            "Non-member max score should be <0.5, got {:.4}", max_score
+            "Non-member max score should be <0.5, got {:.4}",
+            max_score
         );
     }
 
@@ -115,18 +131,23 @@ mod tests {
 
         let mut members_found = 0;
         for item in &items {
-            if mem.contains(item) > 0.5 { members_found += 1; }
+            if mem.contains(item) > 0.5 {
+                members_found += 1;
+            }
         }
         assert_eq!(members_found, 200, "All 200 members should be found");
 
         let mut false_positives = 0;
         for i in 0..200 {
             let nm = EntangledHVec::new_deterministic(dim, 777000 + i as u64);
-            if mem.contains(&nm) > 0.5 { false_positives += 1; }
+            if mem.contains(&nm) > 0.5 {
+                false_positives += 1;
+            }
         }
         assert!(
             false_positives < 5,
-            "False positives at 200 items should be <5, got {}", false_positives
+            "False positives at 200 items should be <5, got {}",
+            false_positives
         );
     }
 
@@ -141,12 +162,15 @@ mod tests {
 
         let mut members_found = 0;
         for item in &items {
-            if mem.contains(item) > 0.3 { members_found += 1; }
+            if mem.contains(item) > 0.3 {
+                members_found += 1;
+            }
         }
         let recall = members_found as f64 / 500.0;
         assert!(
             recall > 0.95,
-            "Recall at 500 items should be >0.95, got {:.4}", recall
+            "Recall at 500 items should be >0.95, got {:.4}",
+            recall
         );
     }
 }

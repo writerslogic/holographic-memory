@@ -64,7 +64,9 @@ pub fn resonator_factorize(
             let mut other_product = codebooks[0][estimates[0]].clone();
             let mut started = false;
             for (g, cb) in codebooks.iter().enumerate() {
-                if g == f { continue; }
+                if g == f {
+                    continue;
+                }
                 if !started {
                     other_product = cb[estimates[g]].clone();
                     started = true;
@@ -96,23 +98,27 @@ pub fn resonator_factorize(
         converged = estimates == prev_estimates;
     }
 
-    estimates.iter().enumerate().map(|(f, &entry_idx)| {
-        let other_product = compute_other_product(codebooks, &estimates, f);
-        let isolated = if n_factors == 1 {
-            composite.clone()
-        } else {
-            composite.bind(&other_product)
-        };
-        let sim = isolated.similarity(&codebooks[f][entry_idx]);
+    estimates
+        .iter()
+        .enumerate()
+        .map(|(f, &entry_idx)| {
+            let other_product = compute_other_product(codebooks, &estimates, f);
+            let isolated = if n_factors == 1 {
+                composite.clone()
+            } else {
+                composite.bind(&other_product)
+            };
+            let sim = isolated.similarity(&codebooks[f][entry_idx]);
 
-        FactorResult {
-            factor_idx: f,
-            codebook_entry: entry_idx,
-            similarity: sim,
-            converged,
-            iterations: iter,
-        }
-    }).collect()
+            FactorResult {
+                factor_idx: f,
+                codebook_entry: entry_idx,
+                similarity: sim,
+                converged,
+                iterations: iter,
+            }
+        })
+        .collect()
 }
 
 /// Factorize a bundle of multiple bound composites.
@@ -134,10 +140,15 @@ pub fn resonator_unbundle(
 
     for _ in 0..n_items {
         let factors = resonator_factorize(&residual, codebooks, config);
-        if factors.is_empty() { break; }
+        if factors.is_empty() {
+            break;
+        }
 
-        let best_sim: f64 = factors.iter().map(|f| f.similarity).sum::<f64>() / factors.len() as f64;
-        if best_sim < 0.01 { break; }
+        let best_sim: f64 =
+            factors.iter().map(|f| f.similarity).sum::<f64>() / factors.len() as f64;
+        if best_sim < 0.01 {
+            break;
+        }
 
         // Reconstruct the recovered composite and subtract from residual
         let mut recovered = codebooks[0][factors[0].codebook_entry].clone();
@@ -162,7 +173,9 @@ fn compute_other_product(
 ) -> EntangledHVec {
     let mut product: Option<EntangledHVec> = None;
     for (g, cb) in codebooks.iter().enumerate() {
-        if g == exclude { continue; }
+        if g == exclude {
+            continue;
+        }
         match product {
             None => product = Some(cb[estimates[g]].clone()),
             Some(ref p) => product = Some(p.bind(&cb[estimates[g]])),
@@ -208,15 +221,27 @@ mod tests {
 
         let results = resonator_factorize(&composite, &[cb_a, cb_b], &config);
         assert_eq!(results.len(), 2);
-        assert_eq!(results[0].codebook_entry, a_idx, "Factor 0 should recover index {}", a_idx);
-        assert_eq!(results[1].codebook_entry, b_idx, "Factor 1 should recover index {}", b_idx);
+        assert_eq!(
+            results[0].codebook_entry, a_idx,
+            "Factor 0 should recover index {}",
+            a_idx
+        );
+        assert_eq!(
+            results[1].codebook_entry, b_idx,
+            "Factor 1 should recover index {}",
+            b_idx
+        );
     }
 
     #[test]
     fn test_three_factor_recovery() {
         let dim = 16384;
         let codebooks: Vec<Vec<EntangledHVec>> = (0..3)
-            .map(|f| (0..8).map(|i| EntangledHVec::new_deterministic(dim, f * 1000 + i * 100 + 3)).collect())
+            .map(|f| {
+                (0..8)
+                    .map(|i| EntangledHVec::new_deterministic(dim, f * 1000 + i * 100 + 3))
+                    .collect()
+            })
             .collect();
 
         let targets = [1, 4, 6];
@@ -228,8 +253,11 @@ mod tests {
         let results = resonator_factorize(&composite, &codebooks, &config);
         assert_eq!(results.len(), 3);
         for (f, &target) in targets.iter().enumerate() {
-            assert_eq!(results[f].codebook_entry, target,
-                "Factor {} should recover index {}, got {}", f, target, results[f].codebook_entry);
+            assert_eq!(
+                results[f].codebook_entry, target,
+                "Factor {} should recover index {}, got {}",
+                f, target, results[f].codebook_entry
+            );
         }
     }
 }

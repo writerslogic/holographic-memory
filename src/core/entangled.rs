@@ -98,7 +98,9 @@ impl EntangledHVec {
 
         let mut backfill_counter = 0u64;
         while indices.len() < active_count {
-            if backfill_counter as usize >= active_count * 10 { break; }
+            if backfill_counter as usize >= active_count * 10 {
+                break;
+            }
             let idx = (hash_u64(seed.wrapping_add(0xDEAD), backfill_counter) % dim as u64) as u32;
             backfill_counter += 1;
             if indices.binary_search(&idx).is_err() {
@@ -421,7 +423,10 @@ impl EntangledHVec {
         all_indices.sort_unstable();
         all_indices.dedup();
 
-        Self { dim, indices: all_indices }
+        Self {
+            dim,
+            indices: all_indices,
+        }
     }
 
     /// Containment similarity: |A∩B| / |A|.
@@ -739,7 +744,8 @@ mod tests {
             assert!(
                 sim > 0.9,
                 "Item {} containment in bundle of 200 should be >0.9, got {:.4}",
-                i, sim
+                i,
+                sim
             );
         }
         let noise = EntangledHVec::new_deterministic(dim, 999999);
@@ -766,7 +772,10 @@ mod tests {
         let b = EntangledHVec::new_deterministic(16384, 2);
         let ab = a.bind_ordered(&b);
         let ba = b.bind_ordered(&a);
-        assert_ne!(ab.indices, ba.indices, "bind_ordered must be non-commutative");
+        assert_ne!(
+            ab.indices, ba.indices,
+            "bind_ordered must be non-commutative"
+        );
     }
 
     #[test]
@@ -775,7 +784,10 @@ mod tests {
         let b = EntangledHVec::new_deterministic(16384, 2);
         let c = a.bind_ordered(&b);
         let recovered = c.unbind_ordered_left(&b);
-        assert_eq!(recovered.indices, a.indices, "unbind_ordered_left should recover A");
+        assert_eq!(
+            recovered.indices, a.indices,
+            "unbind_ordered_left should recover A"
+        );
     }
 
     #[test]
