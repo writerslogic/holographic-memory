@@ -113,7 +113,7 @@ Lower values provide stronger poisoning resistance at the cost of reduced discri
 ```rust
 // In Cargo.toml
 [dependencies]
-holographic-memory = { version = "0.2", features = ["security"] }
+holographic-memory = { version = "0.5", features = ["security"] }
 ```
 
 ```rust

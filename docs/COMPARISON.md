@@ -21,13 +21,13 @@ While the default N-gram encoder is structural, HMS supports **Semantic Projecti
 ### 2. Transparent Reasoning
 Unlike "Black Box" embeddings, HMS allows you to perform **Vector Arithmetic**. You can literally subtract one concept from another or find an analogy (A is to B as C is to D) using simple XOR operations.
 
-### 2. Extreme Speed
+### 3. Extreme Speed
 Because similarity is calculated via **Hamming Distance** (XOR + Popcount), it can be several orders of magnitude faster than floating-point cosine similarity on modern CPUs with AVX-512 or NEON instructions.
 
-### 3. Edge-First Design
+### 4. Edge-First Design
 The binary nature of the memory makes it ideal for IoT and mobile devices where memory and battery are limited. A 10,000-dimension vector takes only **1.25 KB**.
 
-### 4. No "Catastrophic Forgetting"
+### 5. No "Catastrophic Forgetting"
 HDC systems are inherently robust to noise. Because the information is distributed "holographically," losing 10% of the dimensions still results in ~90% accuracy.
 
 ## When NOT to use HMS

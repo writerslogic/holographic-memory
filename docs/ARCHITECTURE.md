@@ -16,10 +16,39 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   |   +-- structural.rs         Fuzzy structural queries (algebraic + materialized)
   |   +-- multi_hop.rs          Multi-hop reasoning (rule rewrite + chained lookup)
   |
-  +-- entangled.rs              EntangledHVec: sparse hypervector type
+  +-- cognition/
+  |   +-- mod.rs                CognitionLoop: background discovery engine
+  |   +-- patterns.rs           PatternScanner: relation co-occurrence analysis
+  |   +-- abstraction.rs        AbstractionEngine: prototype concept discovery
+  |   +-- gaps.rs               GapDetector: epistemic gap detection
+  |   +-- hypothesis.rs         HypothesisEngine: gap-filler proposals
+  |   +-- analogy.rs            AnalogyDetector: structural isomorphism
+  |   +-- governor.rs           MemoryGovernor: dedup, forgetting, IDF refresh
+  |   +-- refiner.rs            DistributionalRefiner: self-organizing atom vectors
+  |   +-- loop.rs               Background thread lifecycle
+  |
+  +-- agency/
+  |   +-- mod.rs                Goal-directed reasoning layer
+  |   +-- goals.rs              Goal definition and lifecycle
+  |   +-- planner.rs            Plan generation from goals
+  |   +-- questions.rs          Question generation for knowledge gaps
+  |   +-- self_modify.rs        Self-modification proposals
+  |
+  +-- entangled.rs              EntangledHVec: sparse binary hypervector type
+  +-- ternary.rs                TernaryHVec: ternary {-1, 0, +1} hypervector type
+  +-- algebra.rs                HolographicAlgebra trait (EntangledHVec, TernaryHVec)
   +-- encoding.rs               Text -> hypervector (character trigrams)
+  +-- block_codes.rs            BlockCodeVec: structured block-code bundles
+  +-- bloom_memory.rs           BloomMemory: Bloom-filter-based bundled storage
+  +-- cls_memory.rs             CLSMemory: concept-level sparse memory
+  +-- hopfield.rs               Modern Hopfield network with sparse softmax
+  +-- resonator.rs              Resonator network for symbolic factorization
+  +-- compose.rs                Vector composition utilities
+  +-- decompose.rs              Decomposer: vector decomposition
+  +-- sparse_autoencoder.rs     Sparse autoencoder for representation learning
+  +-- graph.rs                  Graph engine: typed relations, multi-hop BFS, temporal
   +-- storage.rs                PersistentArena: mmap segmented log
-  +-- config.rs                 HmsConfig, MeaningConfig, and sub-configs
+  +-- config.rs                 HmsConfig, MeaningConfig, CognitionConfig, and sub-configs
   +-- security.rs               SigningManager, EncryptionManager (feature-gated)
   +-- audit.rs                  AuditLog: append-only operation log
   +-- diffusion.rs              DiffusionFactorizer: score-based vector decomposition
@@ -33,7 +62,6 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   +-- role.rs                   RoleRegistry: role-shift algebra
   +-- rules.rs                  RuleStore: composition rule definitions
   +-- admission.rs              AdmissionControl: fan-out gating
-  +-- decompose.rs              Decomposer: vector decomposition
   +-- indexed_memory.rs         IndexedMemory: posting + IDF substrate
   +-- posting.rs                PostingShard: per-dimension posting lists
   +-- idf.rs                    IdfWeights: IDF with proportional clipping

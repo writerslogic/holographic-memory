@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- **CliffordVec**: Removed Clifford algebra multivector type and all associated code.
+  Linear readout on additive bundles reads statistics not structure; unitary HRR matches
+  or beats CliffordVec at O(D log D) on all axes at matched D. Removed: `clifford.rs`
+  module, `clifford-interference-test` binary, HRR/FFT comparison infrastructure from
+  benchmark suite, CliffordVec paths from stress test.
+
+### Fixed
+- Replaced 20 bare `unwrap()` calls in production code with descriptive `expect()` or
+  `total_cmp()` to prevent opaque panics. Affected: `storage.rs`, `block_codes.rs`,
+  `graph.rs`, `audit.rs`, `security.rs`, `engine/mod.rs`, `ivf/kmeans.rs`.
+- Fixed 9 clippy warnings across research binaries (`score-diag`, `codebook-recovery-test`,
+  `multibundle-experiments`, `hms-research-bench`).
+- Removed dead code from `hms-benchmark-suite` (HrrVec, FFT infrastructure, grade
+  structure experiments). Suite reduced from 10 to 8 sections, version bumped to 4.0.0.
+
 ## [0.5.0] - 2026-06-18
 
 ### Added
