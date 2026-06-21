@@ -9,12 +9,12 @@ Since the project uses a decoupled architecture, you can use HMS as a standard R
 Add it to your `Cargo.toml`:
 ```toml
 [dependencies]
-holographic-memory = { git = "https://github.com/writerslogic/holographic-memory", default-features = false }
+holographic-memory = "0.5"
 ```
 
 Usage in Rust:
 ```rust
-use hms_core::{HmsCore, EntangledHVec};
+use holographic_memory::{HmsCore, EntangledHVec};
 
 fn main() {
     let hms = HmsCore::new(10000, None, None).unwrap();

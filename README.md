@@ -51,7 +51,7 @@ npm install holographic-memory
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-holographic-memory = "0.4"
+holographic-memory = "0.5"
 ```
 
 ## Core Architecture
@@ -138,13 +138,10 @@ config.meaning.max_hop_depth = 10;       // Multi-hop chain limit
 
 ```javascript
 const hms = new HolographicMemorySystem(16384, './storage', {
-  meaning: {
-    enabled: true,
-    beta: 24.0,
-    idfClipFactor: 3.0,
-    algebraicMaxFanout: 40,
-    maxHopDepth: 10,
-  },
+  meaningEnabled: true,
+  meaningBeta: 24.0,
+  meaningMaxFanout: 40,
+  meaningMaxHopDepth: 10,
 });
 ```
 
@@ -216,19 +213,20 @@ const { HolographicMemorySystem } = require('holographic-memory');
 
 async function main() {
   const hms = new HolographicMemorySystem(16384, './hms_storage', {
-    meaning: { enabled: true },
+    meaningEnabled: true,
   });
 
-  // Store relational triples
-  await hms.memorizeTriple('paris', 'capital_of', 'france');
-  await hms.memorizeTriple('berlin', 'capital_of', 'germany');
-  await hms.memorizeTriple('john', 'father', 'mark');
-  await hms.memorizeTriple('mark', 'father', 'bob');
+  // Store relational triples (id, head/subject, relation, tail/object)
+  await hms.memorizeTriplet('t1', 'paris', 'capital_of', 'france');
+  await hms.memorizeTriplet('t2', 'berlin', 'capital_of', 'germany');
+  await hms.memorizeTriplet('t3', 'john', 'father', 'mark');
+  await hms.memorizeTriplet('t4', 'mark', 'father', 'bob');
 
   // Structural query: "What is the capital of France?"
   const result = await hms.structuralQuery(
-    { subject: 'paris', relation: 'capital_of' },
-    'object'
+    ['paris'],           // known subjects
+    ['capital_of'],      // known relations
+    'object'             // target role
   );
   console.log(result[0].entityId);    // 'france'
   console.log(result[0].confidence);  // 0.98
@@ -301,7 +299,7 @@ cargo run --release --bin hms-research-bench -- --dim 16384 --density 256 --json
 # Scaling benchmark (capacity walls, throughput, compression)
 cargo run --release --bin hms-scaling -- --dim 16384 --density 256 --json
 
-# Full 10-section suite (binding, Hopfield, Clifford, HBM, encoding)
+# Full 8-section suite (binding, Hopfield, HBM, encoding, capacity)
 cargo run --release --bin hms-benchmark-suite -- --dim 16384
 
 # Cloud-parallel scaling across 9 configs (requires Modal account)
