@@ -2,13 +2,29 @@
   "name": "holographic-memory",
   "version": "0.5.0",
   "license": "Apache-2.0",
-  "author": "David Condrey",
+  "author": "David Condrey <david@writerslogic.com>",
   "description": "High-performance Holographic Memory System (HMS) — privacy-preserving semantic search using hyperdimensional computing.",
   "repository": {
     "type": "git",
     "url": "https://github.com/writerslogic/holographic-memory"
   },
-  "homepage": "https://github.com/writerslogic/holographic-memory",
+  "homepage": "https://writerslogic.com/holographic-memory",
+  "keywords": [
+    "vector-database",
+    "semantic-search",
+    "embeddings",
+    "knowledge-graph",
+    "rag",
+    "local-first",
+    "privacy",
+    "hyperdimensional-computing",
+    "associative-memory",
+    "rust",
+    "napi",
+    "analogical-reasoning",
+    "hopfield-network",
+    "neuro-symbolic"
+  ],
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
