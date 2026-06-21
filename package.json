@@ -1,6 +1,6 @@
 {
   "name": "holographic-memory",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "Apache-2.0",
   "author": "David Condrey <david@writerslogic.com>",
   "description": "High-performance Holographic Memory System (HMS) — privacy-preserving semantic search using hyperdimensional computing.",
@@ -47,9 +47,9 @@
     "@napi-rs/cli": "^2.17.0"
   },
   "optionalDependencies": {
-    "holographic-memory-win32-x64-msvc": "0.5.0",
-    "holographic-memory-darwin-x64": "0.5.0",
-    "holographic-memory-linux-x64-gnu": "0.5.0",
-    "holographic-memory-darwin-arm64": "0.5.0"
+    "holographic-memory-win32-x64-msvc": "0.6.0",
+    "holographic-memory-darwin-x64": "0.6.0",
+    "holographic-memory-linux-x64-gnu": "0.6.0",
+    "holographic-memory-darwin-arm64": "0.6.0"
   }
 }

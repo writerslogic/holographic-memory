@@ -168,7 +168,10 @@ mod tests {
     #[test]
     fn test_single_char() {
         let v = encode_text_internal("x", 16384);
-        assert!(!v.indices().is_empty(), "Single char should produce a vector");
+        assert!(
+            !v.indices().is_empty(),
+            "Single char should produce a vector"
+        );
     }
 
     #[test]

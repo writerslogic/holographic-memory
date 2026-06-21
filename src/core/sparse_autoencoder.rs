@@ -20,9 +20,17 @@ pub struct SparseAutoencoder {
 impl SparseAutoencoder {
     pub fn new(weights: Vec<Vec<f32>>, bias: Vec<f32>, output_dim: usize) -> Self {
         assert!(!weights.is_empty(), "weights must be non-empty");
-        assert_eq!(weights[0].len(), output_dim, "weight columns must match output_dim");
+        assert_eq!(
+            weights[0].len(),
+            output_dim,
+            "weight columns must match output_dim"
+        );
         assert_eq!(bias.len(), output_dim, "bias length must match output_dim");
-        Self { weights, bias, output_dim }
+        Self {
+            weights,
+            bias,
+            output_dim,
+        }
     }
 
     /// Random projection encoder (no training needed).
@@ -44,7 +52,11 @@ impl SparseAutoencoder {
             weights.push(row);
         }
         let bias = vec![0.0f32; output_dim];
-        Self { weights, bias, output_dim }
+        Self {
+            weights,
+            bias,
+            output_dim,
+        }
     }
 
     /// Encode a dense vector into a sparse HMS vector.
@@ -82,8 +94,12 @@ impl SparseAutoencoder {
         inputs.iter().map(|inp| self.encode(inp)).collect()
     }
 
-    pub fn input_dim(&self) -> usize { self.weights.len() }
-    pub fn output_dim(&self) -> usize { self.output_dim }
+    pub fn input_dim(&self) -> usize {
+        self.weights.len()
+    }
+    pub fn output_dim(&self) -> usize {
+        self.output_dim
+    }
 }
 
 #[cfg(test)]
@@ -96,8 +112,13 @@ mod tests {
         let input: Vec<f32> = (0..128).map(|i| (i as f32 - 64.0) / 64.0).collect();
         let encoded = sae.encode(&input);
         let expected = 16384 / DEFAULT_RHO_DENOM;
-        assert_eq!(encoded.indices().len(), expected,
-            "Should have {} active indices, got {}", expected, encoded.indices().len());
+        assert_eq!(
+            encoded.indices().len(),
+            expected,
+            "Should have {} active indices, got {}",
+            expected,
+            encoded.indices().len()
+        );
     }
 
     #[test]
@@ -111,7 +132,11 @@ mod tests {
         let ea = sae.encode(&a);
         let eb = sae.encode(&b);
         let sim = ea.similarity(&eb);
-        assert!(sim > 0.5, "Similar inputs should produce similar outputs, got {:.4}", sim);
+        assert!(
+            sim > 0.5,
+            "Similar inputs should produce similar outputs, got {:.4}",
+            sim
+        );
     }
 
     #[test]
@@ -123,6 +148,10 @@ mod tests {
         let ea = sae.encode(&a);
         let eb = sae.encode(&b);
         let sim = ea.similarity(&eb);
-        assert!(sim < 0.3, "Different inputs should produce different outputs, got {:.4}", sim);
+        assert!(
+            sim < 0.3,
+            "Different inputs should produce different outputs, got {:.4}",
+            sim
+        );
     }
 }

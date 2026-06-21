@@ -7,21 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-21
+
+### Added
+- **Provenance system** (behind `provenance` feature flag):
+  - COSE Sign1 (RFC 9052) envelopes with Ed25519 for all provenance records.
+  - W3C Verifiable Credentials (VC Data Model 2.0) with `eddsa-jcs-2022` Data Integrity
+    proofs using two-step hash (RFC 8785 JCS canonicalization).
+  - DID:key (Ed25519 multicodec `0xed01`, base58btc) and DID:web identifiers with
+    DID document generation and key extraction.
+  - C2PA Content Credentials manifests with assertion labels (CreativeWork, actions,
+    hash.data, AI disclosure, store metadata) and ingredient chain support.
+  - JUMBF (ISO 19566-5) binary box encoding/decoding for C2PA manifests with
+    superbox/leaf-box hierarchy. Store manifests now include JUMBF binary.
+  - CAWG Identity Assertion (Creator Assertions Working Group 1.1) binding DIDs to
+    manifests with signed claims and HashedUri references.
+  - Sigstore bundle v0.3 format with local Ed25519 keyful signing, digest verification,
+    and bundle serialization roundtrip.
+  - KERI (Key Event Receipt Infrastructure) Key Event Log with inception, rotation, and
+    interaction events, self-addressing digests, chain verification, and disk persistence.
+  - SCITT (draft-ietf-scitt-architecture) signed statements with CBOR payload
+    (optional transparency log submission behind `provenance-scitt` feature).
+  - BitstringStatusList credential revocation with per-credential status indexing.
+  - Hash chain provenance log: append-only JSONL with SHA-256 chaining and COSE-signed
+    head anchor for tamper detection.
+  - Lamport logical clock for causal ordering, resilient across restarts and deletions.
+  - Merkle tree batch signing for bulk import with per-record inclusion proofs.
+  - Key rotation with chain-logged events and KERI integration.
+  - HmsCore public API: `create_fact_provenance`, `create_triple_provenance`,
+    `create_batch_provenance`, `create_self_manifest`, `verify_fact_provenance`,
+    `verify_store_manifest`, `verify_provenance_log`, `revoke_credential`,
+    `is_credential_revoked`, `create_sigstore_bundle`, `verify_sigstore_bundle`,
+    `create_cawg_assertion`, `verify_cawg_assertion`.
+- **Hopfield-Fenchel-Young**: Energy-based associative retrieval module.
+- **Multi-scale encoding**: Morphological decomposer and fault-tolerant federation.
+- **Agency layer**: GoalStore, Planner, QuestionGenerator, SelfModifier.
+- **Research benchmarks**: Scaling analysis and visualization suite.
+
 ### Removed
 - **CliffordVec**: Removed Clifford algebra multivector type and all associated code.
   Linear readout on additive bundles reads statistics not structure; unitary HRR matches
-  or beats CliffordVec at O(D log D) on all axes at matched D. Removed: `clifford.rs`
-  module, `clifford-interference-test` binary, HRR/FFT comparison infrastructure from
-  benchmark suite, CliffordVec paths from stress test.
+  or beats CliffordVec at O(D log D) on all axes at matched D.
 
 ### Fixed
 - Replaced 20 bare `unwrap()` calls in production code with descriptive `expect()` or
-  `total_cmp()` to prevent opaque panics. Affected: `storage.rs`, `block_codes.rs`,
-  `graph.rs`, `audit.rs`, `security.rs`, `engine/mod.rs`, `ivf/kmeans.rs`.
-- Fixed 9 clippy warnings across research binaries (`score-diag`, `codebook-recovery-test`,
-  `multibundle-experiments`, `hms-research-bench`).
-- Removed dead code from `hms-benchmark-suite` (HrrVec, FFT infrastructure, grade
-  structure experiments). Suite reduced from 10 to 8 sections, version bumped to 4.0.0.
+  `total_cmp()` to prevent opaque panics.
+- Fixed 4 silent `let _ =` error swallowing patterns in provenance log writes to use
+  `tracing::warn`.
+- Fixed logical clock sequence collision on restart after deletions (now uses max
+  sequence + 1 instead of record count).
+- Fixed eddsa-jcs-2022 signing to use two-step hash (proofOptionsHash + documentHash)
+  per W3C Data Integrity spec.
+- Fixed SCITT content type from envelope type to payload media type.
 
 ## [0.5.0] - 2026-06-18
 

@@ -18,6 +18,13 @@ pub use crate::core::error::HmsError;
 pub use crate::core::types::{ConceptCandidate, MemorizeBatchItem, RetrievalResult, TextMetrics};
 pub use crate::core::HmsCore;
 
+#[cfg(feature = "provenance")]
+pub use crate::core::provenance::types::{
+    DeletionRecord, ProvenanceRecord, StoreManifest, VerificationDetail, VerificationResult,
+};
+#[cfg(feature = "provenance")]
+pub use crate::core::provenance::TripleProvenanceParams;
+
 #[cfg(feature = "node-api")]
 #[napi]
 pub struct HolographicMemorySystem {
