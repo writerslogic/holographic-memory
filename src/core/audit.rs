@@ -55,7 +55,7 @@ impl AuditEntry {
     }
 
     fn from_bytes(buf: &[u8; ENTRY_SIZE]) -> Option<Self> {
-        let timestamp_ms = u64::from_le_bytes(buf[0..8].try_into().unwrap());
+        let timestamp_ms = u64::from_le_bytes(buf[0..8].try_into().expect("8-byte slice"));
         let op = AuditOp::from_u8(buf[8])?;
         let mut id_hash = [0u8; 32];
         id_hash.copy_from_slice(&buf[9..41]);
