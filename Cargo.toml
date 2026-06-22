@@ -47,6 +47,7 @@ ciborium = { version = "0.2", optional = true }
 bs58 = { version = "0.5", optional = true }
 ureq = { version = "3", optional = true }
 multibase = { version = "0.9", optional = true }
+base64 = { version = "0.22", optional = true }
 tempfile = "3"
 
 [build-dependencies]
@@ -65,7 +66,7 @@ harness = false
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
 security = ["ed25519-dalek", "zeroize", "aes-gcm", "argon2", "sha2"]
-provenance = ["security", "coset", "ciborium", "bs58", "multibase"]
+provenance = ["security", "coset", "ciborium", "bs58", "multibase", "base64"]
 provenance-scitt = ["provenance", "ureq"]
 
 [profile.release]

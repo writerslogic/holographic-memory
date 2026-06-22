@@ -6,6 +6,7 @@ use ed25519_dalek::SigningKey;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use super::cawg;
 use super::did::did_key_from_ed25519;
 
 /// HMS knowledge store manifest using C2PA assertion labels for semantic interop.
@@ -194,6 +195,165 @@ pub fn validate_store_hash(manifest: &HmsManifest, store_data: &[u8]) -> Result<
     Ok(actual_hex == expected_hex)
 }
 
+/// Every provenance layer for an AI-agent-produced asset.
+pub struct AgentProvenanceParams<'a> {
+    pub asset: &'a [u8],
+    pub agent_credential: &'a serde_json::Value,
+    pub memory_provenance: &'a [u8],
+    /// `c2pa.process-proof` — CPoE proof-of-effort (SWF/VDF + Merkle + jitter).
+    pub process_proof: Option<&'a serde_json::Value>,
+    /// `c2pa.attestation` evidence for the signing environment (e.g. a RATS EAT).
+    pub attestation: Option<&'a serde_json::Value>,
+    /// `cawg.training-and-data-mining` usage policy.
+    pub training_policy: Option<&'a serde_json::Value>,
+}
+
+/// Create a complete C2PA manifest for AI-agent-produced content, embedding every
+/// provenance layer: the default HMS assertions, a CAWG identity assertion naming the
+/// AI agent (did:key / COSE), cogmem memory provenance, an optional `c2pa.process-proof`
+/// (CPoE), a `c2pa.soft_binding` fingerprint for durability, an optional
+/// `cawg.training-and-data-mining` policy, and an optional `c2pa.attestation` bound to
+/// the partial-claim hash. The claim is signed by `claim_key`; the agent identity
+/// assertion by `agent_key`.
+pub fn create_agent_provenance_manifest(
+    claim_key: &SigningKey,
+    agent_key: &SigningKey,
+    params: &AgentProvenanceParams<'_>,
+) -> Result<(HmsManifest, Vec<u8>)> {
+    let store_hash: [u8; 32] = Sha256::digest(params.asset).into();
+    let mp = ManifestParams {
+        store_id: "agent-content",
+        fact_count: 0,
+        dimensions: 0,
+        store_hash: &store_hash,
+        title: Some("AI-agent-produced content"),
+        ingredients: Vec::new(),
+    };
+    let mut manifest = create_manifest(claim_key, &mp)?;
+
+    let hard = manifest
+        .assertions
+        .iter()
+        .find(|a| a.label == "c2pa.hash.data")
+        .ok_or_else(|| anyhow!("manifest missing hard binding"))?;
+    let hard_hash: [u8; 32] = Sha256::digest(serde_json::to_vec(&hard.data)?).into();
+    let referenced = vec![(
+        "self#jumbf=c2pa.assertions/c2pa.hash.data".to_string(),
+        "sha256".to_string(),
+        hard_hash.to_vec(),
+    )];
+
+    let agent_assertion =
+        cawg::create_identity_assertion_ica(agent_key, &referenced, "cogmem agent")?;
+    manifest.assertions.push(Assertion {
+        label: "cawg.identity".to_string(),
+        data: agent_assertion,
+    });
+
+    let mem_hex: String = params
+        .memory_provenance
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    manifest.assertions.push(Assertion {
+        label: "cogmem.memory.provenance".to_string(),
+        data: serde_json::json!({ "alg": "EdDSA", "coseHex": mem_hex }),
+    });
+
+    if let Some(pp) = params.process_proof {
+        manifest.assertions.push(Assertion {
+            label: "c2pa.process-proof".to_string(),
+            data: pp.clone(),
+        });
+    }
+
+    // PLACEHOLDER soft binding. This is a SHA-256 digest, NOT a perceptual fingerprint:
+    // it will not survive any edit, so it provides no durability yet. A real durable
+    // soft binding requires an approved perceptual/watermark algorithm (unimplemented).
+    let digest: String = Sha256::digest(params.asset)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    manifest.assertions.push(Assertion {
+        label: "c2pa.soft_binding".to_string(),
+        data: serde_json::json!({
+            "alg": "sha256-placeholder",
+            "durable": false,
+            "blocks": [{ "value": digest }]
+        }),
+    });
+
+    if let Some(tp) = params.training_policy {
+        manifest.assertions.push(Assertion {
+            label: "cawg.training-and-data-mining".to_string(),
+            data: tp.clone(),
+        });
+    }
+
+    // Attestation binds to the hash of the partial claim (every assertion signed so far).
+    if let Some(att) = params.attestation {
+        let partial_hash: String = Sha256::digest(serde_json::to_vec(&manifest.assertions)?)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        manifest.assertions.push(Assertion {
+            label: "c2pa.attestation".to_string(),
+            data: serde_json::json!({
+                "attType": "c2pa.RATS",
+                "alg": "sha256",
+                "partialClaimHash": partial_hash,
+                "evidence": att.clone(),
+            }),
+        });
+    }
+
+    let signed = sign_manifest(claim_key, &manifest)?;
+    Ok((manifest, signed))
+}
+
+/// Verify the claim signature AND the embedded CAWG agent identity assertion.
+pub fn verify_agent_provenance_manifest(
+    claim_vk: &ed25519_dalek::VerifyingKey,
+    signed_bytes: &[u8],
+) -> Result<HmsManifest> {
+    let manifest = verify_manifest(claim_vk, signed_bytes)?;
+    let agent = manifest
+        .assertions
+        .iter()
+        .find(|a| a.label == "cawg.identity")
+        .ok_or_else(|| anyhow!("manifest has no cawg.identity assertion"))?;
+    let embedded = cawg::ica_embedded_bytes(&agent.data)?;
+    cawg::verify_cawg_ica(&embedded)?;
+
+    // If an attestation is present, confirm it binds to the partial claim.
+    if let Some(att) = manifest
+        .assertions
+        .iter()
+        .find(|a| a.label == "c2pa.attestation")
+    {
+        let claimed = att
+            .data
+            .get("partialClaimHash")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("attestation missing partialClaimHash"))?;
+        let partial: Vec<&Assertion> = manifest
+            .assertions
+            .iter()
+            .filter(|a| a.label != "c2pa.attestation")
+            .collect();
+        let recomputed: String = Sha256::digest(serde_json::to_vec(&partial)?)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        if recomputed != claimed {
+            return Err(anyhow!(
+                "attestation does not bind to the manifest's partial claim"
+            ));
+        }
+    }
+    Ok(manifest)
+}
+
 fn iso8601_now() -> String {
     let dur = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -254,6 +414,57 @@ mod tests {
         let signed = sign_manifest(&key, &manifest).unwrap();
         let recovered = verify_manifest(&key.verifying_key(), &signed).unwrap();
         assert_eq!(recovered.title, "Test Knowledge Store");
+    }
+
+    #[test]
+    fn agent_provenance_manifest_roundtrip() {
+        let claim_key = test_keypair();
+        let agent_key = test_keypair();
+        let vc = serde_json::json!({
+            "type": ["VerifiableCredential", "AgentIdentityCredential"],
+            "credentialSubject": { "actorType": "ai-agent" }
+        });
+        let process_proof = serde_json::json!({
+            "merkleRoot": "abcd", "input": "seed", "durationMs": 1500, "iterations": 100000
+        });
+        let attestation = serde_json::json!({ "eat": "<EAT-token>", "platform": "cogmem-runtime" });
+        let training =
+            serde_json::json!({ "entries": [{ "use": "aiTraining", "constraint": "notAllowed" }] });
+        let params = AgentProvenanceParams {
+            asset: b"agent-made content",
+            agent_credential: &vc,
+            memory_provenance: b"fake-cose-memory-statement",
+            process_proof: Some(&process_proof),
+            attestation: Some(&attestation),
+            training_policy: Some(&training),
+        };
+        let (manifest, signed) =
+            create_agent_provenance_manifest(&claim_key, &agent_key, &params).unwrap();
+        for label in [
+            "cawg.identity",
+            "cogmem.memory.provenance",
+            "c2pa.process-proof",
+            "c2pa.soft_binding",
+            "cawg.training-and-data-mining",
+            "c2pa.attestation",
+        ] {
+            assert!(
+                manifest.assertions.iter().any(|a| a.label == label),
+                "missing assertion: {label}"
+            );
+        }
+        let m = verify_agent_provenance_manifest(&claim_key.verifying_key(), &signed).unwrap();
+        assert_eq!(m.title, "AI-agent-produced content");
+
+        // Tampering with the attestation's partial-claim binding must be rejected.
+        let mut tampered = manifest.clone();
+        for a in tampered.assertions.iter_mut() {
+            if a.label == "c2pa.attestation" {
+                a.data["partialClaimHash"] = serde_json::json!("deadbeef");
+            }
+        }
+        let bad = sign_manifest(&claim_key, &tampered).unwrap();
+        assert!(verify_agent_provenance_manifest(&claim_key.verifying_key(), &bad).is_err());
     }
 
     #[test]

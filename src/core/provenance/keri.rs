@@ -46,6 +46,7 @@ pub struct KeyEvent {
 }
 
 /// A local Key Event Log for tracking key lifecycle.
+#[derive(Default)]
 pub struct KeyEventLog {
     events: Vec<KeyEvent>,
     path: Option<std::path::PathBuf>,
@@ -249,15 +250,6 @@ impl KeyEventLog {
         }
 
         Ok(())
-    }
-}
-
-impl Default for KeyEventLog {
-    fn default() -> Self {
-        Self {
-            events: Vec::new(),
-            path: None,
-        }
     }
 }
 
