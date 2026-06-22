@@ -17,7 +17,7 @@ readme = "README.md"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-napi = { version = "2.14", features = ["async", "serde-json"], optional = true }
+napi = { version = "3.9", features = ["async", "serde-json"], optional = true }
 napi-derive = { version = "2.14", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
 serde = { version = "1.0", features = ["derive"] }
