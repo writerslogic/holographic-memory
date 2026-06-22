@@ -36,6 +36,8 @@ HMS is one of four WritersLogic projects that compose a single verifiable agent-
 
 All four share one substrate — COSE_Sign1 / SCITT signed statements (Ed25519) and W3C DID identity — specified in [UNIFIED-PROVENANCE.md](https://github.com/writerslogic/cogmem/blob/main/UNIFIED-PROVENANCE.md). A cogmem agent validates in c2patool as `cawg.ica.credential_valid`, binding the agent identity to both its memory (cogmem) and reasoning (crosstalk), each independently cross-verifiable by holographic-memory.
 
+**Verify it yourself:** `cargo run --features provenance --example verify_cogmem_sample` re-verifies the exact COSE/SCITT cognition statements lifted from cogmem's public C2PA sample under this crate's own, independent implementation — identical bytes, different verifier. That is the cross-implementation conformance claim, made runnable.
+
 ## Features
 
 - **Hybrid Retrieval Architecture**: 
