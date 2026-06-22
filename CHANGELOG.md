@@ -9,6 +9,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Update changelog [skip ci]
 - Add agent-provenance stack cross-reference to README
 - Update changelog [skip ci]
 ## [0.6.0] - 2026-06-21
