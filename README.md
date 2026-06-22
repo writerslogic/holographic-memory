@@ -23,6 +23,19 @@ A high-performance **Holographic Memory System (HMS)** for Node.js, powered by R
 
 > Developed by [WritersLogic](https://github.com/writerslogic) -- local-first intelligence with no data leaving your machine.
 
+## Part of the agent-provenance stack
+
+HMS is one of four WritersLogic projects that compose a single verifiable agent-provenance pipeline — an AI agent's identity, the memory that steered it, the reasoning that produced it, and the signed output, all cryptographically bound and cross-verifiable, culminating in a C2PA Content Credential.
+
+| Project | Role |
+|---|---|
+| [cogmem](https://github.com/writerslogic/cogmem) | Agent identity (CAWG Identity Claims Aggregation credential) + verifiable, tamper-evident memory (COSE/SCITT signed statements) |
+| [crosstalk](https://github.com/writerslogic/crosstalk) | Multi-model orchestrator; signs each turn's reasoning/orchestration audit on the shared substrate |
+| **holographic-memory (this repo)** | Durable holographic memory store; cross-verifies the signed statements and the C2PA agent identity |
+| WritersProof | The C2PA producer: binds identity + memory + reasoning to the signed asset and hosts the agent's did:web |
+
+All four share one substrate — COSE_Sign1 / SCITT signed statements (Ed25519) and W3C DID identity — specified in [UNIFIED-PROVENANCE.md](https://github.com/writerslogic/cogmem/blob/main/UNIFIED-PROVENANCE.md). A cogmem agent validates in c2patool as `cawg.ica.credential_valid`, binding the agent identity to both its memory (cogmem) and reasoning (crosstalk), each independently cross-verifiable by holographic-memory.
+
 ## Features
 
 - **Hybrid Retrieval Architecture**: 
