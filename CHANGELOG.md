@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
 ## [Unreleased]
 
+### Changed
+- Migrate HMS agent identity from did.cose to CAWG ICA
+
+### Documentation
+- Add agent-provenance stack cross-reference to README
+- Update changelog [skip ci]
+## [0.6.0] - 2026-06-21
+
 ### Added
 - Add provenance system with COSE, VCs, C2PA, JUMBF, Sigstore, KERI, CAWG
 - Add research-grade benchmarks, scaling analysis, and visualizations
