@@ -5,10 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
 ## [Unreleased]
 
+### Added
+- Runnable cross-verification of the cogmem C2PA sample
+
 ### Changed
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Add agent-provenance stack cross-reference to README
 - Update changelog [skip ci]
