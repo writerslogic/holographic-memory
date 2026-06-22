@@ -735,22 +735,23 @@ impl ProvenanceManager {
         sigstore::verify_bundle(bundle, content)
     }
 
+    /// Create a CAWG ICA identity assertion. `referenced` is `(url, alg, raw_hash)` and
+    /// MUST include the hard binding. Returns the `cawg.identity` assertion JSON.
     pub fn create_cawg_assertion(
         &self,
-        referenced_assertions: Vec<cawg::HashedUri>,
-        display_name: Option<&str>,
-        provider: Option<&str>,
-    ) -> Result<cawg::IdentityAssertion> {
-        cawg::create_identity_assertion(
-            &self.signing_key,
-            referenced_assertions,
-            display_name,
-            provider,
-        )
+        referenced: &[(String, String, Vec<u8>)],
+        display_name: &str,
+    ) -> Result<serde_json::Value> {
+        cawg::create_identity_assertion_ica(&self.signing_key, referenced, display_name)
     }
 
-    pub fn verify_cawg_assertion(&self, assertion: &cawg::IdentityAssertion) -> Result<()> {
-        cawg::verify_identity_assertion(assertion)
+    /// Verify a `cawg.identity` ICA assertion JSON, returning the embedded VC.
+    pub fn verify_cawg_assertion(
+        &self,
+        assertion: &serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let embedded = cawg::ica_embedded_bytes(assertion)?;
+        cawg::verify_cawg_ica(&embedded)
     }
 
     pub fn keri_event_log(&self) -> &RwLock<keri::KeyEventLog> {
@@ -764,7 +765,7 @@ impl ProvenanceManager {
         self.kel
             .write()
             .interaction(&self.signing_key, anchors)
-            .map(|e| e.clone())
+            .cloned()
     }
 
     pub fn verify_keri_log(&self) -> Result<()> {

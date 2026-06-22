@@ -1548,22 +1548,21 @@ impl HmsCore {
     #[cfg(feature = "provenance")]
     pub fn create_cawg_assertion(
         &self,
-        referenced_assertions: Vec<super::provenance::cawg::HashedUri>,
-        display_name: Option<&str>,
-        provider: Option<&str>,
-    ) -> Result<super::provenance::cawg::IdentityAssertion> {
+        referenced: &[(String, String, Vec<u8>)],
+        display_name: &str,
+    ) -> Result<serde_json::Value> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.create_cawg_assertion(referenced_assertions, display_name, provider)
+        mgr.create_cawg_assertion(referenced, display_name)
     }
 
     #[cfg(feature = "provenance")]
     pub fn verify_cawg_assertion(
         &self,
-        assertion: &super::provenance::cawg::IdentityAssertion,
-    ) -> Result<()> {
+        assertion: &serde_json::Value,
+    ) -> Result<serde_json::Value> {
         let mgr = self
             .provenance
             .as_ref()
