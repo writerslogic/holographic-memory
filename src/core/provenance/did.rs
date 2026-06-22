@@ -2,8 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{anyhow, Result};
+use base64::engine::{general_purpose::GeneralPurpose, DecodePaddingMode, GeneralPurposeConfig};
+use base64::{alphabet, Engine};
 
 const ED25519_MULTICODEC: [u8; 2] = [0xed, 0x01];
+
+/// base64url engine matching c2pa-rs: URL-safe alphabet, padding ignored on decode.
+const B64URL: GeneralPurpose = GeneralPurpose::new(
+    &alphabet::URL_SAFE,
+    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+);
 
 /// Generate a did:key URI from an Ed25519 public key (32 bytes).
 pub fn did_key_from_ed25519(public_key: &[u8; 32]) -> String {
@@ -29,6 +37,57 @@ pub fn ed25519_from_did_key(did: &str) -> Result<[u8; 32]> {
     }
     let mut key = [0u8; 32];
     key.copy_from_slice(&decoded[2..34]);
+    Ok(key)
+}
+
+/// Build a did:jwk URI from an Ed25519 public key (32 bytes), the inverse of
+/// [`ed25519_from_did_jwk`]. The JWK JSON is compact with SORTED keys
+/// (`{"crv":"Ed25519","kty":"OKP","x":"<base64url-nopad pubkey>"}`); the method id is
+/// that JSON base64url-encoded WITH canonical '=' padding, matching cogmem's
+/// `agent_did_jwk` so the two emit byte-identical issuer DIDs.
+pub fn did_jwk_from_ed25519(public_key: &[u8; 32]) -> String {
+    // base64url, no padding, for the JWK `x` parameter.
+    let b64url_nopad = GeneralPurpose::new(
+        &alphabet::URL_SAFE,
+        GeneralPurposeConfig::new().with_encode_padding(false),
+    );
+    let x = b64url_nopad.encode(public_key);
+    // Compact JWK with sorted keys: crv, kty, x.
+    let jwk_json = format!("{{\"crv\":\"Ed25519\",\"kty\":\"OKP\",\"x\":\"{x}\"}}");
+    // Canonical '=' padding on the method-specific id (c2pa-rs / cogmem requirement).
+    let b64url_pad = GeneralPurpose::new(&alphabet::URL_SAFE, GeneralPurposeConfig::new());
+    let enc = b64url_pad.encode(jwk_json.as_bytes());
+    format!("did:jwk:{enc}")
+}
+
+/// Extract the Ed25519 public key bytes from a did:jwk URI. The method id is a
+/// base64url-encoded JWK; decoding tolerates the canonical padding c2pa-rs emits.
+pub fn ed25519_from_did_jwk(did: &str) -> Result<[u8; 32]> {
+    let encoded = did
+        .strip_prefix("did:jwk:")
+        .ok_or_else(|| anyhow!("not a did:jwk URI"))?;
+    let json = B64URL
+        .decode(encoded)
+        .map_err(|e| anyhow!("did:jwk base64url decode failed: {e}"))?;
+    let jwk: serde_json::Value =
+        serde_json::from_slice(&json).map_err(|e| anyhow!("did:jwk JWK parse failed: {e}"))?;
+    if jwk.get("kty").and_then(|v| v.as_str()) != Some("OKP") {
+        return Err(anyhow!("did:jwk is not an OKP key"));
+    }
+    if jwk.get("crv").and_then(|v| v.as_str()) != Some("Ed25519") {
+        return Err(anyhow!("did:jwk is not an Ed25519 key"));
+    }
+    let x = jwk
+        .get("x")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| anyhow!("did:jwk JWK has no x parameter"))?;
+    let key_bytes = B64URL
+        .decode(x)
+        .map_err(|e| anyhow!("did:jwk x base64url decode failed: {e}"))?;
+    let key: [u8; 32] = key_bytes
+        .as_slice()
+        .try_into()
+        .map_err(|_| anyhow!("did:jwk x is not a 32-byte Ed25519 key"))?;
     Ok(key)
 }
 
@@ -134,6 +193,24 @@ mod tests {
     #[test]
     fn reject_bad_prefix() {
         assert!(ed25519_from_did_key("did:web:example.com").is_err());
+    }
+
+    #[test]
+    fn did_jwk_from_ed25519_roundtrips() {
+        let pk = [0x42u8; 32];
+        let did = did_jwk_from_ed25519(&pk);
+        assert!(did.starts_with("did:jwk:"));
+        let recovered = ed25519_from_did_jwk(&did).unwrap();
+        assert_eq!(recovered, pk);
+    }
+
+    #[test]
+    fn did_jwk_resolves_vector_issuer() {
+        let issuer = "did:jwk:eyJjcnYiOiJFZDI1NTE5Iiwia3R5IjoiT0tQIiwieCI6IkE2RUh2X1BPRUw0ZGNOMFk1MHZBbVdmazFqQ2JwUTFmSGR5R1pCSlZNYmcifQ==";
+        let expected = "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8";
+        let key = ed25519_from_did_jwk(issuer).unwrap();
+        let hex: String = key.iter().map(|b| format!("{b:02x}")).collect();
+        assert_eq!(hex, expected);
     }
 
     #[test]
