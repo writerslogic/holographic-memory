@@ -12,6 +12,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Rewrite README — fix logo for npmjs, restructure with quick start first, improve clarity
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
