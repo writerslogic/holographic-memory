@@ -2,19 +2,35 @@
   <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-spin.gif" width="200" alt="Holographic Memory System">
 </p>
 
-# Holographic Memory System (HMS)
+<h1 align="center">Holographic Memory System (HMS)</h1>
 
-[![CI](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json)](https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml)
-[![npm](https://img.shields.io/npm/v/holographic-memory.svg)](https://www.npmjs.com/package/holographic-memory)
-[![npm downloads](https://img.shields.io/npm/dm/holographic-memory.svg)](https://www.npmjs.com/package/holographic-memory)
-[![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
-[![crates.io downloads](https://img.shields.io/crates/d/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
-[![docs.rs](https://docs.rs/holographic-memory/badge.svg)](https://docs.rs/holographic-memory)
-[![MSRV](https://img.shields.io/badge/MSRV-1.82-blue.svg)](https://blog.rust-lang.org/2024/10/17/Rust-1.82.0.html)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+<p align="center">
+  <strong>Privacy-preserving semantic search and associative memory — runs entirely on your machine.</strong>
+</p>
 
-**Privacy-preserving semantic search and associative memory — runs entirely on your machine.**
+<p align="center">
+  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json" alt="coverage"></a>
+  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/v/holographic-memory.svg" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/dm/holographic-memory.svg" alt="npm downloads"></a>
+  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory.svg" alt="crates.io"></a>
+  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/d/holographic-memory.svg" alt="crates.io downloads"></a>
+  <a href="https://docs.rs/holographic-memory"><img src="https://docs.rs/holographic-memory/badge.svg" alt="docs.rs"></a>
+  <a href="https://blog.rust-lang.org/2024/10/17/Rust-1.82.0.html"><img src="https://img.shields.io/badge/MSRV-1.82-blue.svg" alt="MSRV"></a>
+  <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="License"></a>
+</p>
+
+<p align="center">
+  <a href="#installation">Install</a> &middot;
+  <a href="#quick-start">Quick Start</a> &middot;
+  <a href="#why-hms">Why HMS?</a> &middot;
+  <a href="#features">Features</a> &middot;
+  <a href="#performance">Performance</a> &middot;
+  <a href="#architecture">Architecture</a> &middot;
+  <a href="#provenance--content-credentials">Provenance</a>
+</p>
+
+---
 
 HMS is a high-performance vector memory engine for Node.js, powered by Rust via N-API. It implements **Vector Symbolic Architectures (VSA)** using **Binary Spatter Code (BSC)** to deliver semantic search, analogical reasoning, relational knowledge graphs, and associative memory at scale — with no external API calls, no cloud dependencies, and no data leaving your device.
 
@@ -89,7 +105,8 @@ console.log(grandpa[0].entityId);  // 'bob'
 | Compression | Up to 4,096x | None |
 | Language | Rust (N-API) | Python/Go |
 
-## Features
+<details>
+<summary><strong>Features</strong> -- hybrid retrieval, symbolic operations, meaning memory, cognition engine</summary>
 
 - **Hybrid Retrieval**: NSG (Navigable Small World) + IVF (Inverted File) + Sparse Inverted Index, routing dynamically by dataset statistics.
 - **Symbolic Operations**: Binding (XOR), Bundling (Majority Rule), Permutation (Cyclic Shift) — native bitwise VSA operations.
@@ -100,7 +117,10 @@ console.log(grandpa[0].entityId);  // 'bob'
 - **Federated Queries**: Query across multiple HMS instances in parallel without centralizing data.
 - **Performance**: Zero-copy N-API, O(1) ID resolution, FxHash backend, O(N) selection via `select_nth_unstable`.
 
-## Use Cases
+</details>
+
+<details>
+<summary><strong>Use Cases</strong> -- RAG, knowledge graphs, sequence matching, MCP tool servers</summary>
 
 ### Local RAG (Retrieval-Augmented Generation)
 Store document chunks as hypervectors. Ingest external embeddings from any LLM (`Float32Array`) and use HMS as a local retrieval layer — no vector database infrastructure required.
@@ -114,7 +134,10 @@ Use Cyclic Permutations to represent order. Query a sequence as fast as querying
 ### MCP Tool Servers
 HMS ships as the semantic memory backend for [scrivener-mcp](https://github.com/writerslogic/scrivener-mcp) and is designed for any Model Context Protocol integration that needs local semantic search.
 
-## Performance
+</details>
+
+<details>
+<summary><strong>Performance</strong> -- compositional algebra, capacity scaling, noise tolerance benchmarks</summary>
 
 All results use research-grade datasets: 120 real-world knowledge graph facts, 2,000 synthetic facts (Zipfian), 350 analogies across 7 relation types, sequences up to length 200.
 
@@ -159,7 +182,10 @@ cargo run --release --bin hms-scaling -- --dim 16384 --density 256 --json
 cargo run --release --bin hms-benchmark-suite -- --dim 16384
 ```
 
-## Architecture
+</details>
+
+<details>
+<summary><strong>Architecture</strong> -- core retrieval, meaning memory, cognition engine, configuration</summary>
 
 ### Core Retrieval
 
@@ -208,7 +234,10 @@ config.meaning.beta = 24.0;
 config.meaning.algebraic_max_fanout = 40;
 ```
 
-## Provenance & Content Credentials
+</details>
+
+<details>
+<summary><strong>Provenance and Content Credentials</strong> -- COSE Sign1, W3C VC, C2PA, SCITT, KERI, Sigstore</summary>
 
 HMS includes tamper-evident provenance built on open standards — entirely local, no external services.
 
@@ -242,6 +271,14 @@ let manifest = hms.create_self_manifest(Some("My Knowledge Store"))?;
 assert!(manifest.jumbf_manifest.is_some());
 ```
 
+**Verify it yourself:**
+```bash
+cargo run --features provenance --example verify_cogmem_sample
+```
+Re-verifies the exact COSE/SCITT statements from cogmem's public C2PA sample under this crate's independent implementation — identical bytes, different verifier.
+
+</details>
+
 ## Part of the Agent-Provenance Stack
 
 HMS is one component of the WritersLogic verifiable agent-provenance pipeline — agent identity, memory, reasoning, and signed output, cryptographically bound end to end.
@@ -254,12 +291,6 @@ HMS is one component of the WritersLogic verifiable agent-provenance pipeline �
 | WritersProof | C2PA producer: binds identity + memory + reasoning to the signed asset |
 
 All four share one substrate — COSE_Sign1 / SCITT (Ed25519) and W3C DID — specified in [UNIFIED-PROVENANCE.md](https://github.com/writerslogic/cogmem/blob/main/UNIFIED-PROVENANCE.md).
-
-**Verify it yourself:**
-```bash
-cargo run --features provenance --example verify_cogmem_sample
-```
-Re-verifies the exact COSE/SCITT statements from cogmem's public C2PA sample under this crate's independent implementation — identical bytes, different verifier.
 
 ## Development
 
