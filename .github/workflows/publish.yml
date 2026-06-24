@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -72,6 +73,11 @@ jobs:
 
     - name: Move artifacts
       run: npx napi artifacts --dir artifacts
+
+    - name: Generate Generic Attestations
+      uses: actions/attest@v4.1.0
+      with:
+        subject-path: '*.node'
 
     - name: Publish
       run: npm publish --provenance --access public
