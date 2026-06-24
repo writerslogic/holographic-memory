@@ -14,8 +14,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ### Documentation
 - Update changelog [skip ci]
 - Update changelog [skip ci]
+- Update changelog [skip ci]
 - Add agent-provenance stack cross-reference to README
 - Update changelog [skip ci]
+
+### Fixed
+- Allow CDLA-Permissive-2.0 license from webpki-roots via ureq
 ## [0.6.0] - 2026-06-21
 
 ### Added
