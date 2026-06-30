@@ -62,6 +62,10 @@ tempfile = "3"
 name = "hms_benchmark"
 harness = false
 
+[[example]]
+name = "verify_cogmem_sample"
+required-features = ["provenance"]
+
 [features]
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
