@@ -29,11 +29,15 @@ fn main() {
             (524288, 4096),
         ]
     } else {
-        let dim = args.iter().position(|a| a == "--dim")
+        let dim = args
+            .iter()
+            .position(|a| a == "--dim")
             .and_then(|i| args.get(i + 1))
             .and_then(|s| s.parse().ok())
             .unwrap_or(16384);
-        let density = args.iter().position(|a| a == "--density")
+        let density = args
+            .iter()
+            .position(|a| a == "--density")
             .and_then(|i| args.get(i + 1))
             .and_then(|s| s.parse().ok())
             .unwrap_or(DEFAULT_RHO_DENOM);
@@ -61,16 +65,24 @@ fn run_scaling_suite(dim: usize, density_denom: usize, json_output: bool) -> ser
     let active = dim / density_denom;
     let t_start = Instant::now();
 
-    if !json_output { eprintln!("  capacity wall..."); }
+    if !json_output {
+        eprintln!("  capacity wall...");
+    }
     let capacity_wall = find_capacity_wall(dim, density_denom);
 
-    if !json_output { eprintln!("  structured retrieval stress..."); }
+    if !json_output {
+        eprintln!("  structured retrieval stress...");
+    }
     let struct_stress = structured_stress(dim, density_denom);
 
-    if !json_output { eprintln!("  noise tolerance..."); }
+    if !json_output {
+        eprintln!("  noise tolerance...");
+    }
     let noise_curve = noise_tolerance(dim, density_denom);
 
-    if !json_output { eprintln!("  throughput..."); }
+    if !json_output {
+        eprintln!("  throughput...");
+    }
     let throughput = measure_throughput(dim, density_denom);
 
     let bytes_per_item = active * 4;
@@ -94,7 +106,12 @@ fn run_scaling_suite(dim: usize, density_denom: usize, json_output: bool) -> ser
     })
 }
 
-fn measure_at_n(dim: usize, density_denom: usize, n_items: usize, probe_size: usize) -> serde_json::Value {
+fn measure_at_n(
+    dim: usize,
+    density_denom: usize,
+    n_items: usize,
+    probe_size: usize,
+) -> serde_json::Value {
     let items: Vec<EntangledHVec> = (0..n_items)
         .map(|i| EntangledHVec::new_with_density(dim, density_denom, i as u64 * 137 + 7))
         .collect();
@@ -118,10 +135,15 @@ fn measure_at_n(dim: usize, density_denom: usize, n_items: usize, probe_size: us
     let recall = member_scores.iter().filter(|&&s| s >= 0.5).count() as f64 / probe_n as f64;
     let fpr = non_member_scores.iter().filter(|&&s| s >= 0.5).count() as f64 / probe_size as f64;
     let member_min = member_scores.iter().cloned().fold(f64::INFINITY, f64::min);
-    let non_member_max = non_member_scores.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    let non_member_max = non_member_scores
+        .iter()
+        .cloned()
+        .fold(f64::NEG_INFINITY, f64::max);
     let d_prime = d_prime_val(
-        mean(&member_scores), std_dev(&member_scores),
-        mean(&non_member_scores), std_dev(&non_member_scores),
+        mean(&member_scores),
+        std_dev(&member_scores),
+        mean(&non_member_scores),
+        std_dev(&non_member_scores),
     );
     let member_mean = mean(&member_scores);
     let non_member_mean = mean(&non_member_scores);
@@ -169,10 +191,13 @@ fn find_capacity_wall(dim: usize, density_denom: usize) -> serde_json::Value {
             n_items += 5000 * base;
         }
 
-        if n_items > 200000 { break; }
+        if n_items > 200000 {
+            break;
+        }
     }
 
-    let first_fail = results.last()
+    let first_fail = results
+        .last()
         .and_then(|r| r["n_items"].as_u64())
         .unwrap_or(0) as usize;
     if last_pass > 0 && first_fail > last_pass && (first_fail - last_pass) > base {
@@ -182,7 +207,9 @@ fn find_capacity_wall(dim: usize, density_denom: usize) -> serde_json::Value {
         while hi - lo > min_step {
             let mid = (lo + hi) / 2;
             let mid_aligned = (mid / min_step) * min_step;
-            if mid_aligned <= lo || mid_aligned >= hi { break; }
+            if mid_aligned <= lo || mid_aligned >= hi {
+                break;
+            }
             let measurement = measure_at_n(dim, density_denom, mid_aligned, probe_size);
             let recall = measurement["recall"].as_f64().unwrap_or(0.0);
             results.push(measurement);
@@ -195,17 +222,23 @@ fn find_capacity_wall(dim: usize, density_denom: usize) -> serde_json::Value {
         results.sort_by_key(|r| r["n_items"].as_u64().unwrap_or(0));
     }
 
-    let wall = results.iter().rev()
+    let wall = results
+        .iter()
+        .rev()
         .find(|r| r["recall"].as_f64().unwrap_or(0.0) >= 0.95)
         .map(|r| r["n_items"].as_u64().unwrap_or(0))
         .unwrap_or(0);
 
-    let soft_wall = results.iter().rev()
+    let soft_wall = results
+        .iter()
+        .rev()
         .find(|r| r["d_prime"].as_f64().unwrap_or(0.0) >= 2.0)
         .map(|r| r["n_items"].as_u64().unwrap_or(0))
         .unwrap_or(0);
 
-    let gap_wall = results.iter().rev()
+    let gap_wall = results
+        .iter()
+        .rev()
         .find(|r| r["gap"].as_f64().unwrap_or(0.0) > 0.0)
         .map(|r| r["n_items"].as_u64().unwrap_or(0))
         .unwrap_or(0);
@@ -231,7 +264,9 @@ fn structured_stress(dim: usize, density_denom: usize) -> serde_json::Value {
     for &n_roles in &role_counts {
         let active = dim / density_denom;
         let comp_density_est = 1.0 - (1.0 - active as f64 / dim as f64).powi(n_roles);
-        if comp_density_est > 0.98 { break; }
+        if comp_density_est > 0.98 {
+            break;
+        }
 
         let mut facts: Vec<Vec<usize>> = Vec::new();
         let mut comps = Vec::new();
@@ -241,7 +276,9 @@ fn structured_stress(dim: usize, density_denom: usize) -> serde_json::Value {
                 let idx = hash_u64(0x7000 + r as u64, t as u64) as usize % vocab_size;
                 fillers.push(idx);
             }
-            let bindings: Vec<EntangledHVec> = fillers.iter().enumerate()
+            let bindings: Vec<EntangledHVec> = fillers
+                .iter()
+                .enumerate()
                 .map(|(r, &idx)| entities[idx].permute(r + 1))
                 .collect();
             comps.push(EntangledHVec::bundle_bloom(&bindings));
@@ -257,9 +294,14 @@ fn structured_stress(dim: usize, density_denom: usize) -> serde_json::Value {
                 let mut best_s = f64::NEG_INFINITY;
                 for (e, ent) in entities.iter().enumerate() {
                     let s = ent.permute(r + 1).containment_similarity(comp);
-                    if s > best_s { best_s = s; best = e; }
+                    if s > best_s {
+                        best_s = s;
+                        best = e;
+                    }
                 }
-                if best == true_idx { correct += 1; }
+                if best == true_idx {
+                    correct += 1;
+                }
             }
         }
 
@@ -271,7 +313,9 @@ fn structured_stress(dim: usize, density_denom: usize) -> serde_json::Value {
             "total_queries": total,
         }));
 
-        if accuracy < 0.5 { break; }
+        if accuracy < 0.5 {
+            break;
+        }
     }
 
     serde_json::json!(results)
@@ -286,10 +330,16 @@ fn noise_tolerance(dim: usize, density_denom: usize) -> serde_json::Value {
         .map(|i| EntangledHVec::new_with_density(dim, density_denom, 0xBF00 + i as u64))
         .collect();
 
-    let patterns: Vec<(String, EntangledHVec)> = items.iter().enumerate()
+    let patterns: Vec<(String, EntangledHVec)> = items
+        .iter()
+        .enumerate()
         .map(|(i, v)| (format!("{}", i), v.clone()))
         .collect();
-    let hop_config = HopfieldConfig { beta: 100.0, alpha: 2.0, max_iter: 3 };
+    let hop_config = HopfieldConfig {
+        beta: 100.0,
+        alpha: 2.0,
+        max_iter: 3,
+    };
 
     let mut results = Vec::new();
     for &corruption in &corruptions {
@@ -298,15 +348,32 @@ fn noise_tolerance(dim: usize, density_denom: usize) -> serde_json::Value {
 
         for i in 0..n_probes {
             let target_idx = hash_u64(0xCC00, i as u64) as usize % n_items;
-            let noisy = corrupt_vector(&items[target_idx], dim, density_denom, corruption, 0xDD00 + i as u64);
+            let noisy = corrupt_vector(
+                &items[target_idx],
+                dim,
+                density_denom,
+                corruption,
+                0xDD00 + i as u64,
+            );
 
-            let jaccard_best = items.iter().enumerate()
-                .max_by(|(_, a), (_, b)| a.similarity(&noisy).partial_cmp(&b.similarity(&noisy)).unwrap())
-                .unwrap().0;
-            if jaccard_best == target_idx { jaccard_correct += 1; }
+            let jaccard_best = items
+                .iter()
+                .enumerate()
+                .max_by(|(_, a), (_, b)| {
+                    a.similarity(&noisy)
+                        .partial_cmp(&b.similarity(&noisy))
+                        .unwrap()
+                })
+                .unwrap()
+                .0;
+            if jaccard_best == target_idx {
+                jaccard_correct += 1;
+            }
 
             let hop_results = hopfield_query(&noisy, &patterns, &hop_config, 1);
-            if !hop_results.is_empty() && hop_results[0].id.parse::<usize>().ok() == Some(target_idx) {
+            if !hop_results.is_empty()
+                && hop_results[0].id.parse::<usize>().ok() == Some(target_idx)
+            {
                 hopfield_correct += 1;
             }
         }
@@ -344,7 +411,9 @@ fn measure_throughput(dim: usize, density_denom: usize) -> serde_json::Value {
     let bundle_batch = 10;
     let bundle_iters = n_ops / bundle_batch;
     for i in 0..bundle_iters {
-        let batch: Vec<&EntangledHVec> = (0..bundle_batch).map(|j| &vecs[i * bundle_batch + j]).collect();
+        let batch: Vec<&EntangledHVec> = (0..bundle_batch)
+            .map(|j| &vecs[i * bundle_batch + j])
+            .collect();
         let _ = EntangledHVec::bundle_bloom(&batch);
     }
     let bundle_ns = t0.elapsed().as_nanos() as f64 / bundle_iters as f64;
@@ -392,7 +461,13 @@ fn measure_throughput(dim: usize, density_denom: usize) -> serde_json::Value {
     })
 }
 
-fn corrupt_vector(v: &EntangledHVec, dim: usize, density_denom: usize, pct: f64, seed: u64) -> EntangledHVec {
+fn corrupt_vector(
+    v: &EntangledHVec,
+    dim: usize,
+    density_denom: usize,
+    pct: f64,
+    seed: u64,
+) -> EntangledHVec {
     let indices = v.indices();
     let n_flip = (indices.len() as f64 * pct) as usize;
     let mut new_indices: Vec<u32> = indices.to_vec();
@@ -415,12 +490,16 @@ fn corrupt_vector(v: &EntangledHVec, dim: usize, density_denom: usize, pct: f64,
 }
 
 fn mean(vals: &[f64]) -> f64 {
-    if vals.is_empty() { return 0.0; }
+    if vals.is_empty() {
+        return 0.0;
+    }
     vals.iter().sum::<f64>() / vals.len() as f64
 }
 
 fn std_dev(vals: &[f64]) -> f64 {
-    if vals.len() < 2 { return 0.0; }
+    if vals.len() < 2 {
+        return 0.0;
+    }
     let m = mean(vals);
     let var = vals.iter().map(|v| (v - m) * (v - m)).sum::<f64>() / (vals.len() - 1) as f64;
     var.sqrt()
@@ -428,6 +507,12 @@ fn std_dev(vals: &[f64]) -> f64 {
 
 fn d_prime_val(mean_a: f64, std_a: f64, mean_b: f64, std_b: f64) -> f64 {
     let pooled = ((std_a * std_a + std_b * std_b) / 2.0).sqrt();
-    if pooled < 1e-15 { return if (mean_a - mean_b).abs() < 1e-15 { 0.0 } else { f64::INFINITY }; }
+    if pooled < 1e-15 {
+        return if (mean_a - mean_b).abs() < 1e-15 {
+            0.0
+        } else {
+            f64::INFINITY
+        };
+    }
     (mean_a - mean_b) / pooled
 }
