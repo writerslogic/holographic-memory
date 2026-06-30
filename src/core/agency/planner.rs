@@ -165,7 +165,7 @@ impl Planner {
         }
 
         // Sort actions by depth descending so leaf actions come first (execution order).
-        actions.sort_by(|a, b| b.depth.cmp(&a.depth));
+        actions.sort_by_key(|b| std::cmp::Reverse(b.depth));
 
         let total_cost: f64 = actions.iter().map(|a| a.cost).sum();
 
