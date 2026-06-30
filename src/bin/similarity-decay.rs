@@ -1,5 +1,5 @@
+use holographic_memory::core::block_codes::{BlockCodeBundle, BlockCodeConfig, BlockCodeVec};
 use holographic_memory::core::entangled::EntangledHVec;
-use holographic_memory::core::block_codes::{BlockCodeConfig, BlockCodeVec, BlockCodeBundle};
 
 fn measure_bloom(dim: usize, density_denom: usize, max_items: usize, n_probes: usize) {
     println!("# BLOOM dim={} denom={}", dim, density_denom);
@@ -9,7 +9,9 @@ fn measure_bloom(dim: usize, density_denom: usize, max_items: usize, n_probes: u
         .map(|i| EntangledHVec::new_with_density(dim, density_denom, i as u64 * 37 + 1))
         .collect();
     let non_members: Vec<EntangledHVec> = (0..n_probes)
-        .map(|i| EntangledHVec::new_with_density(dim, density_denom, (max_items + i) as u64 * 37 + 9999))
+        .map(|i| {
+            EntangledHVec::new_with_density(dim, density_denom, (max_items + i) as u64 * 37 + 9999)
+        })
         .collect();
 
     for &n_items in &load_points(max_items) {
@@ -30,18 +32,31 @@ fn measure_bloom(dim: usize, density_denom: usize, max_items: usize, n_probes: u
         let nonmember_mean = mean(&nonmember_sims);
         let nonmember_max = fmax(&nonmember_sims);
 
-        println!("bloom\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
-                 n_items, member_mean, member_min, nonmember_mean, nonmember_max,
-                 member_min - nonmember_max);
+        println!(
+            "bloom\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
+            n_items,
+            member_mean,
+            member_min,
+            nonmember_mean,
+            nonmember_max,
+            member_min - nonmember_max
+        );
 
-        if density > 0.995 { break; }
+        if density > 0.995 {
+            break;
+        }
     }
     println!();
 }
 
 fn measure_sbc(n_blocks: usize, block_len: usize, max_items: usize, n_probes: usize) {
     let cfg = BlockCodeConfig::new(n_blocks, block_len);
-    println!("# SBC dim={} blocks={} block_len={}", cfg.dim(), n_blocks, block_len);
+    println!(
+        "# SBC dim={} blocks={} block_len={}",
+        cfg.dim(),
+        n_blocks,
+        block_len
+    );
     println!("scheme\tn_items\tmember_mean\tmember_min\tnonmember_mean\tnonmember_max\tgap");
 
     let items: Vec<BlockCodeVec> = (0..max_items)
@@ -73,9 +88,15 @@ fn measure_sbc(n_blocks: usize, block_len: usize, max_items: usize, n_probes: us
         let nonmember_mean = mean(&nonmember_scores) - expected_nonmember;
         let nonmember_max = fmax(&nonmember_scores) - expected_nonmember;
 
-        println!("sbc\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
-                 n_items, member_mean, member_min, nonmember_mean, nonmember_max,
-                 member_min - nonmember_max);
+        println!(
+            "sbc\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
+            n_items,
+            member_mean,
+            member_min,
+            nonmember_mean,
+            nonmember_max,
+            member_min - nonmember_max
+        );
     }
     println!();
 }
@@ -85,11 +106,17 @@ fn load_points(max_items: usize) -> Vec<usize> {
     let mut n = 1;
     while n <= max_items {
         points.push(n);
-        if n < 10 { n += 1; }
-        else if n < 100 { n += 10; }
-        else if n < 1000 { n += 100; }
-        else if n < 10000 { n += 1000; }
-        else { n += 5000; }
+        if n < 10 {
+            n += 1;
+        } else if n < 100 {
+            n += 10;
+        } else if n < 1000 {
+            n += 100;
+        } else if n < 10000 {
+            n += 1000;
+        } else {
+            n += 5000;
+        }
     }
     if *points.last().unwrap_or(&0) != max_items {
         points.push(max_items);
@@ -97,9 +124,15 @@ fn load_points(max_items: usize) -> Vec<usize> {
     points
 }
 
-fn mean(vals: &[f64]) -> f64 { vals.iter().sum::<f64>() / vals.len() as f64 }
-fn fmin(vals: &[f64]) -> f64 { vals.iter().cloned().fold(f64::INFINITY, f64::min) }
-fn fmax(vals: &[f64]) -> f64 { vals.iter().cloned().fold(f64::NEG_INFINITY, f64::max) }
+fn mean(vals: &[f64]) -> f64 {
+    vals.iter().sum::<f64>() / vals.len() as f64
+}
+fn fmin(vals: &[f64]) -> f64 {
+    vals.iter().cloned().fold(f64::INFINITY, f64::min)
+}
+fn fmax(vals: &[f64]) -> f64 {
+    vals.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
+}
 
 fn main() {
     println!("# Similarity decay: Bloom vs SBC at D=16384");
