@@ -22,7 +22,9 @@ use holographic_memory::core::entangled::EntangledHVec;
 // ---------------------------------------------------------------------------
 
 fn mean(v: &[f64]) -> f64 {
-    if v.is_empty() { return 0.0; }
+    if v.is_empty() {
+        return 0.0;
+    }
     v.iter().sum::<f64>() / v.len() as f64
 }
 fn fmin(v: &[f64]) -> f64 {
@@ -35,7 +37,9 @@ fn fmax(v: &[f64]) -> f64 {
 /// Simple deterministic PRNG (splitmix64).
 struct Rng(u64);
 impl Rng {
-    fn new(seed: u64) -> Self { Self(seed) }
+    fn new(seed: u64) -> Self {
+        Self(seed)
+    }
     fn next(&mut self) -> u64 {
         self.0 = self.0.wrapping_add(0x9E3779B97F4A7C15);
         let mut z = self.0;
@@ -69,7 +73,9 @@ impl Codebook {
     fn make_fact(&self, rng: &mut Rng) -> (EntangledHVec, usize, usize) {
         let a = rng.next_usize(self.concepts.len());
         let mut b = rng.next_usize(self.concepts.len() - 1);
-        if b >= a { b += 1; }
+        if b >= a {
+            b += 1;
+        }
         let fact = self.concepts[a].bind(&self.concepts[b]);
         (fact, a, b)
     }
@@ -82,10 +88,14 @@ impl Codebook {
         for i in 0..self.concepts.len() {
             let residual = fact.bind(&self.concepts[i]);
             for j in 0..self.concepts.len() {
-                if j == i { continue; }
+                if j == i {
+                    continue;
+                }
                 let sim = self.concepts[j].similarity(&residual);
                 best = best.max(sim);
-                if best > 0.9 { return best; } // early exit
+                if best > 0.9 {
+                    return best;
+                } // early exit
             }
         }
         best
@@ -101,7 +111,9 @@ impl Codebook {
         for i in 0..self.concepts.len() {
             let residual = fact.bind(&self.concepts[i]);
             for j in 0..self.concepts.len() {
-                if j == i { continue; }
+                if j == i {
+                    continue;
+                }
                 let sim = self.concepts[j].similarity(&residual);
                 if sim > 0.8 {
                     pairs.push((i, j));
@@ -229,15 +241,21 @@ impl StructuredCls {
         };
 
         // Heart2: exact similarity search (max Jaccard across individual items)
-        let h2_score = self.heart2_items.iter()
+        let h2_score = self
+            .heart2_items
+            .iter()
             .map(|h2| item.similarity(h2))
             .fold(0.0_f64, f64::max);
 
         h1_score.max(h2_score)
     }
 
-    fn heart1_count(&self) -> usize { self.heart1_items.len() }
-    fn heart2_count(&self) -> usize { self.heart2_items.len() }
+    fn heart1_count(&self) -> usize {
+        self.heart1_items.len()
+    }
+    fn heart2_count(&self) -> usize {
+        self.heart2_items.len()
+    }
 
     fn heart1_density(&self) -> f64 {
         match &self.heart1_bundle {
@@ -261,13 +279,25 @@ struct Stats {
 
 fn measure_flat_bloom(items: &[EntangledHVec], probes: &[EntangledHVec]) -> Stats {
     let bundle = EntangledHVec::bundle_bloom(items);
-    let ms: Vec<f64> = items.iter().map(|i| i.corrected_containment(&bundle)).collect();
-    let ns: Vec<f64> = probes.iter().map(|i| i.corrected_containment(&bundle)).collect();
+    let ms: Vec<f64> = items
+        .iter()
+        .map(|i| i.corrected_containment(&bundle))
+        .collect();
+    let ns: Vec<f64> = probes
+        .iter()
+        .map(|i| i.corrected_containment(&bundle))
+        .collect();
     let mm = mean(&ms);
     let mi = fmin(&ms);
     let nm = mean(&ns);
     let nx = fmax(&ns);
-    Stats { member_mean: mm, member_min: mi, nonmember_mean: nm, nonmember_max: nx, gap: mi - nx }
+    Stats {
+        member_mean: mm,
+        member_min: mi,
+        nonmember_mean: nm,
+        nonmember_max: nx,
+        gap: mi - nx,
+    }
 }
 
 fn measure_cls(cls: &StructuredCls, items: &[EntangledHVec], probes: &[EntangledHVec]) -> Stats {
@@ -277,7 +307,13 @@ fn measure_cls(cls: &StructuredCls, items: &[EntangledHVec], probes: &[Entangled
     let mi = fmin(&ms);
     let nm = mean(&ns);
     let nx = fmax(&ns);
-    Stats { member_mean: mm, member_min: mi, nonmember_mean: nm, nonmember_max: nx, gap: mi - nx }
+    Stats {
+        member_mean: mm,
+        member_min: mi,
+        nonmember_mean: nm,
+        nonmember_max: nx,
+        gap: mi - nx,
+    }
 }
 
 fn bloom_density(items: &[EntangledHVec], dim: usize) -> f64 {
@@ -303,35 +339,51 @@ fn run_structural_analysis() {
     // Pairwise Jaccard among codebook concepts
     let mut concept_sims: Vec<f64> = Vec::new();
     for i in 0..n_concepts.min(50) {
-        for j in (i+1)..n_concepts.min(50) {
+        for j in (i + 1)..n_concepts.min(50) {
             concept_sims.push(codebook.concepts[i].similarity(&codebook.concepts[j]));
         }
     }
     println!("Codebook concept pairwise Jaccard (50 concepts sampled):");
-    println!("  mean={:.6}  min={:.6}  max={:.6}",
-             mean(&concept_sims), fmin(&concept_sims), fmax(&concept_sims));
+    println!(
+        "  mean={:.6}  min={:.6}  max={:.6}",
+        mean(&concept_sims),
+        fmin(&concept_sims),
+        fmax(&concept_sims)
+    );
     println!();
 
     // Bind involution: (A^B)^B = A
     let fact_01 = codebook.concepts[0].bind(&codebook.concepts[1]);
     let recovered = fact_01.bind(&codebook.concepts[1]);
     println!("Bind involution: (C0^C1)^C1 vs C0");
-    println!("  similarity = {:.6} (expected 1.0)", recovered.similarity(&codebook.concepts[0]));
+    println!(
+        "  similarity = {:.6} (expected 1.0)",
+        recovered.similarity(&codebook.concepts[0])
+    );
     println!();
 
     // Facts sharing a concept vs not
     let fact_02 = codebook.concepts[0].bind(&codebook.concepts[2]);
     let fact_34 = codebook.concepts[3].bind(&codebook.concepts[4]);
     println!("Facts sharing concept 0:");
-    println!("  (C0^C1) vs (C0^C2) Jaccard = {:.6}", fact_01.similarity(&fact_02));
+    println!(
+        "  (C0^C1) vs (C0^C2) Jaccard = {:.6}",
+        fact_01.similarity(&fact_02)
+    );
     println!("Facts with no shared concept:");
-    println!("  (C0^C1) vs (C3^C4) Jaccard = {:.6}", fact_01.similarity(&fact_34));
+    println!(
+        "  (C0^C1) vs (C3^C4) Jaccard = {:.6}",
+        fact_01.similarity(&fact_34)
+    );
     println!();
 
     // Unbinding test: (A^B)^A should recover B
     let residual = fact_01.bind(&codebook.concepts[0]);
     println!("Unbinding: (C0^C1)^C0 should recover C1");
-    println!("  similarity to C1 = {:.6} (expected 1.0)", residual.similarity(&codebook.concepts[1]));
+    println!(
+        "  similarity to C1 = {:.6} (expected 1.0)",
+        residual.similarity(&codebook.concepts[1])
+    );
     println!();
 
     // Structure detection via codebook decomposition
@@ -351,10 +403,14 @@ fn run_structural_analysis() {
     for _ in 0..n_test {
         let (fact, _, _) = codebook.make_fact(&mut rng);
         let max_sim = codebook.detect_structure(&fact);
-        if max_sim > 0.8 { detected += 1; }
+        if max_sim > 0.8 {
+            detected += 1;
+        }
     }
-    println!("Structure detection rate: {}/{} facts detected (threshold=0.8)",
-             detected, n_test);
+    println!(
+        "Structure detection rate: {}/{} facts detected (threshold=0.8)",
+        detected, n_test
+    );
     println!();
 }
 
@@ -372,7 +428,10 @@ fn run_structured_vs_iid() {
     println!("================================================================");
     println!("Part 2: Structured vs IID in Flat Bloom");
     println!("================================================================");
-    println!("dim={}  density=1/{}  items={}  probes={}", dim, density_denom, n_items, n_probes);
+    println!(
+        "dim={}  density=1/{}  items={}  probes={}",
+        dim, density_denom, n_items, n_probes
+    );
     println!();
 
     let codebook = Codebook::new(n_concepts, dim, density_denom, 42);
@@ -380,7 +439,10 @@ fn run_structured_vs_iid() {
 
     // Structured facts (codebook-composed)
     let structured: Vec<EntangledHVec> = (0..n_items)
-        .map(|_| { let (f, _, _) = codebook.make_fact(&mut rng); f })
+        .map(|_| {
+            let (f, _, _) = codebook.make_fact(&mut rng);
+            f
+        })
         .collect();
 
     // IID random facts (no codebook structure)
@@ -395,11 +457,15 @@ fn run_structured_vs_iid() {
 
     let load_points: Vec<usize> = vec![50, 100, 200, 500, 1000, 1500, 2000, 3000, 4000, 5000];
 
-    println!("{:<12} {:>6} {:>10} {:>10} {:>10} {:>10} {:>8} {:>8}",
-             "data_type", "n", "mem_mean", "mem_min", "nm_mean", "nm_max", "gap", "density");
+    println!(
+        "{:<12} {:>6} {:>10} {:>10} {:>10} {:>10} {:>8} {:>8}",
+        "data_type", "n", "mem_mean", "mem_min", "nm_mean", "nm_max", "gap", "density"
+    );
 
     for &n in &load_points {
-        if n > n_items { break; }
+        if n > n_items {
+            break;
+        }
 
         let s_struct = measure_flat_bloom(&structured[..n], &probes);
         let struct_density = bloom_density(&structured[..n], dim);
@@ -407,15 +473,33 @@ fn run_structured_vs_iid() {
         let s_iid = measure_flat_bloom(&iid[..n], &probes);
         let iid_density = bloom_density(&iid[..n], dim);
 
-        println!("{:<12} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
-                 "structured", n, s_struct.member_mean, s_struct.member_min,
-                 s_struct.nonmember_mean, s_struct.nonmember_max, s_struct.gap, struct_density);
-        println!("{:<12} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
-                 "iid_random", n, s_iid.member_mean, s_iid.member_min,
-                 s_iid.nonmember_mean, s_iid.nonmember_max, s_iid.gap, iid_density);
+        println!(
+            "{:<12} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
+            "structured",
+            n,
+            s_struct.member_mean,
+            s_struct.member_min,
+            s_struct.nonmember_mean,
+            s_struct.nonmember_max,
+            s_struct.gap,
+            struct_density
+        );
+        println!(
+            "{:<12} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
+            "iid_random",
+            n,
+            s_iid.member_mean,
+            s_iid.member_min,
+            s_iid.nonmember_mean,
+            s_iid.nonmember_max,
+            s_iid.gap,
+            iid_density
+        );
         println!();
 
-        if struct_density > 0.995 && iid_density > 0.995 { break; }
+        if struct_density > 0.995 && iid_density > 0.995 {
+            break;
+        }
     }
 }
 
@@ -435,18 +519,22 @@ fn run_cls_structured() {
     println!("================================================================");
     println!("Part 3: CLS with Structure-Aware Consolidation");
     println!("================================================================");
-    println!("dim={}  density=1/{}  concepts={}  facts={}  probes={}",
-             dim, density_denom, n_concepts, n_facts, n_probes);
-    println!("heart1_cap={}  consolidation_interval={}", heart1_cap, consol_interval);
+    println!(
+        "dim={}  density=1/{}  concepts={}  facts={}  probes={}",
+        dim, density_denom, n_concepts, n_facts, n_probes
+    );
+    println!(
+        "heart1_cap={}  consolidation_interval={}",
+        heart1_cap, consol_interval
+    );
     println!();
 
     let codebook = Codebook::new(n_concepts, dim, density_denom, 42);
     let mut rng = Rng::new(12345);
 
     // Generate structured facts, tracking concept indices for analysis
-    let facts: Vec<(EntangledHVec, usize, usize)> = (0..n_facts)
-        .map(|_| codebook.make_fact(&mut rng))
-        .collect();
+    let facts: Vec<(EntangledHVec, usize, usize)> =
+        (0..n_facts).map(|_| codebook.make_fact(&mut rng)).collect();
     let fact_vecs: Vec<EntangledHVec> = facts.iter().map(|(f, _, _)| f.clone()).collect();
 
     // Non-member probes: random vectors (no codebook structure)
@@ -458,22 +546,39 @@ fn run_cls_structured() {
 
     // --- Flat Bloom baseline ---
     println!("--- Flat Bloom Baseline ---");
-    println!("{:<8} {:>6} {:>10} {:>10} {:>10} {:>10} {:>8} {:>8}",
-             "scheme", "n", "mem_mean", "mem_min", "nm_mean", "nm_max", "gap", "density");
+    println!(
+        "{:<8} {:>6} {:>10} {:>10} {:>10} {:>10} {:>8} {:>8}",
+        "scheme", "n", "mem_mean", "mem_min", "nm_mean", "nm_max", "gap", "density"
+    );
     for &n in &load_points {
-        if n > fact_vecs.len() { break; }
+        if n > fact_vecs.len() {
+            break;
+        }
         let s = measure_flat_bloom(&fact_vecs[..n], &probes);
         let density = bloom_density(&fact_vecs[..n], dim);
-        println!("{:<8} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
-                 "flat", n, s.member_mean, s.member_min, s.nonmember_mean, s.nonmember_max, s.gap, density);
-        if density > 0.995 { break; }
+        println!(
+            "{:<8} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
+            "flat",
+            n,
+            s.member_mean,
+            s.member_min,
+            s.nonmember_mean,
+            s.nonmember_max,
+            s.gap,
+            density
+        );
+        if density > 0.995 {
+            break;
+        }
     }
     println!();
 
     // --- CLS ---
     println!("--- CLS with Structure-Aware Consolidation ---");
-    println!("{:<8} {:>6} {:>6} {:>6} {:>10} {:>10} {:>10} {:>10} {:>8} {:>8}",
-             "scheme", "n", "h1_n", "h2_n", "mem_mean", "mem_min", "nm_mean", "nm_max", "gap", "h1_dens");
+    println!(
+        "{:<8} {:>6} {:>6} {:>6} {:>10} {:>10} {:>10} {:>10} {:>8} {:>8}",
+        "scheme", "n", "h1_n", "h2_n", "mem_mean", "mem_min", "nm_mean", "nm_max", "gap", "h1_dens"
+    );
 
     let mut cls = StructuredCls::new(dim, heart1_cap, consol_interval);
     let mut next_lp = 0;
@@ -485,10 +590,19 @@ fn run_cls_structured() {
         if next_lp < load_points.len() && n == load_points[next_lp] {
             next_lp += 1;
             let s = measure_cls(&cls, &fact_vecs[..n], &probes);
-            println!("{:<8} {:>6} {:>6} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
-                     "cls", n, cls.heart1_count(), cls.heart2_count(),
-                     s.member_mean, s.member_min, s.nonmember_mean, s.nonmember_max, s.gap,
-                     cls.heart1_density());
+            println!(
+                "{:<8} {:>6} {:>6} {:>6} {:>10.6} {:>10.6} {:>10.6} {:>10.6} {:>8.4} {:>8.4}",
+                "cls",
+                n,
+                cls.heart1_count(),
+                cls.heart2_count(),
+                s.member_mean,
+                s.member_min,
+                s.nonmember_mean,
+                s.nonmember_max,
+                s.gap,
+                cls.heart1_density()
+            );
         }
     }
     println!();
@@ -496,7 +610,10 @@ fn run_cls_structured() {
     // --- Early fact retrieval ---
     let early_count = 100;
     println!("--- Early Fact Retrieval (first {} facts) ---", early_count);
-    println!("Fraction of first {} facts still retrievable at each load point.", early_count);
+    println!(
+        "Fraction of first {} facts still retrievable at each load point.",
+        early_count
+    );
     println!("Retrieval = query score > 0.05 (minimal signal above noise).");
     println!();
 
@@ -507,7 +624,10 @@ fn run_cls_structured() {
     let mut cls2 = StructuredCls::new(dim, heart1_cap, consol_interval);
     let mut next_rp = 0;
 
-    println!("{:<10} {:>6} {:>12} {:>12}", "metric", "n", "cls_frac", "flat_frac");
+    println!(
+        "{:<10} {:>6} {:>12} {:>12}",
+        "metric", "n", "cls_frac", "flat_frac"
+    );
 
     for i in 0..fact_vecs.len() {
         cls2.add(fact_vecs[i].clone(), &codebook);
@@ -529,21 +649,29 @@ fn run_cls_structured() {
             let flat_density = flat_bundle.indices().len() as f64 / dim as f64;
             let flat_retrieved = if flat_density < 0.995 {
                 (0..check_n)
-                    .filter(|&j| fact_vecs[j].corrected_containment(&flat_bundle) > retrieval_threshold)
+                    .filter(|&j| {
+                        fact_vecs[j].corrected_containment(&flat_bundle) > retrieval_threshold
+                    })
                     .count()
             } else {
                 0
             };
             let flat_frac = flat_retrieved as f64 / check_n as f64;
 
-            println!("{:<10} {:>6} {:>12.4} {:>12.4}", "early_ret", n, cls_frac, flat_frac);
+            println!(
+                "{:<10} {:>6} {:>12.4} {:>12.4}",
+                "early_ret", n, cls_frac, flat_frac
+            );
         }
     }
     println!();
 
     // --- Capacity summary ---
     println!("--- Capacity Summary ---");
-    println!("CLS total consolidated to heart2: {}", cls.total_consolidated);
+    println!(
+        "CLS total consolidated to heart2: {}",
+        cls.total_consolidated
+    );
     println!("CLS heart1 final count: {}", cls.heart1_count());
     println!("CLS heart2 final count: {}", cls.heart2_count());
     println!();
@@ -551,7 +679,9 @@ fn run_cls_structured() {
     // Find the load point where flat Bloom gap drops below 0
     let mut flat_capacity = 0;
     for &n in &load_points {
-        if n > fact_vecs.len() { break; }
+        if n > fact_vecs.len() {
+            break;
+        }
         let s = measure_flat_bloom(&fact_vecs[..n], &probes);
         if s.gap <= 0.0 {
             flat_capacity = n;
@@ -575,18 +705,29 @@ fn run_cls_structured() {
     if flat_capacity > 0 {
         println!("Flat Bloom gap hits 0 at n={}", flat_capacity);
     } else {
-        println!("Flat Bloom gap positive through n={}", load_points.last().unwrap_or(&0));
+        println!(
+            "Flat Bloom gap positive through n={}",
+            load_points.last().unwrap_or(&0)
+        );
     }
     if cls_capacity > 0 {
         println!("CLS gap hits 0 at n={}", cls_capacity);
     } else {
-        println!("CLS gap positive through n={}", load_points.last().unwrap_or(&0));
+        println!(
+            "CLS gap positive through n={}",
+            load_points.last().unwrap_or(&0)
+        );
     }
     if flat_capacity > 0 && cls_capacity > 0 {
-        println!("Capacity ratio (CLS/flat): {:.1}x", cls_capacity as f64 / flat_capacity as f64);
+        println!(
+            "Capacity ratio (CLS/flat): {:.1}x",
+            cls_capacity as f64 / flat_capacity as f64
+        );
     } else if flat_capacity > 0 && cls_capacity == 0 {
-        println!("CLS still has positive gap at max load -- capacity > {:.1}x flat",
-                 *load_points.last().unwrap_or(&1) as f64 / flat_capacity as f64);
+        println!(
+            "CLS still has positive gap at max load -- capacity > {:.1}x flat",
+            *load_points.last().unwrap_or(&1) as f64 / flat_capacity as f64
+        );
     }
 }
 

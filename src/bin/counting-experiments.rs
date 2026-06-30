@@ -52,8 +52,7 @@ impl CountingBloom {
             .map(|&idx| self.counts[idx as usize] as u64)
             .sum();
         let raw = sum as f64 / self.n_blocks as f64;
-        let expected = self.n_items as f64 * self.n_blocks as f64
-            / self.counts.len() as f64;
+        let expected = self.n_items as f64 * self.n_blocks as f64 / self.counts.len() as f64;
         raw - expected
     }
 }
@@ -169,8 +168,7 @@ impl NormalizedCountingBloom {
         // so E[cos] = n_blocks * (sum_counts / dim) / (sqrt(n_blocks) * c_norm)
         //           = sqrt(n_blocks) * sum_counts / (dim * c_norm)
         let sum_counts: u64 = self.counts.iter().map(|&c| c as u64).sum();
-        let expected = q_norm * sum_counts as f64
-            / (self.counts.len() as f64 * c_norm);
+        let expected = q_norm * sum_counts as f64 / (self.counts.len() as f64 * c_norm);
 
         cosine - expected
     }
@@ -194,11 +192,7 @@ fn fmax(vals: &[f64]) -> f64 {
     vals.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
 }
 
-fn measure_bloom(
-    items: &[EntangledHVec],
-    non_members: &[EntangledHVec],
-    dim: usize,
-) {
+fn measure_bloom(items: &[EntangledHVec], non_members: &[EntangledHVec], dim: usize) {
     println!("# BLOOM BASELINE dim={}", dim);
 
     for &n_items in LOAD_POINTS {
@@ -224,7 +218,11 @@ fn measure_bloom(
 
         println!(
             "bloom\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
-            n_items, member_mean, member_min, nonmember_mean, nonmember_max,
+            n_items,
+            member_mean,
+            member_min,
+            nonmember_mean,
+            nonmember_max,
             member_min - nonmember_max
         );
 
@@ -256,10 +254,8 @@ fn measure_counting(
                 .iter()
                 .map(|item| bundle.score(item))
                 .collect();
-            let nonmember_scores: Vec<f64> = non_members
-                .iter()
-                .map(|item| bundle.score(item))
-                .collect();
+            let nonmember_scores: Vec<f64> =
+                non_members.iter().map(|item| bundle.score(item)).collect();
 
             let member_mean = mean(&member_scores);
             let member_min = fmin(&member_scores);
@@ -268,7 +264,11 @@ fn measure_counting(
 
             println!(
                 "counting\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
-                n_items, member_mean, member_min, nonmember_mean, nonmember_max,
+                n_items,
+                member_mean,
+                member_min,
+                nonmember_mean,
+                nonmember_max,
                 member_min - nonmember_max
             );
 
@@ -290,8 +290,7 @@ fn measure_decay_counting(
         dim, decay_factor, consolidation_interval
     );
 
-    let mut bundle =
-        DecayCountingBloom::new(dim, n_blocks, decay_factor, consolidation_interval);
+    let mut bundle = DecayCountingBloom::new(dim, n_blocks, decay_factor, consolidation_interval);
     let mut next_point = 0;
 
     for i in 0..items.len() {
@@ -304,10 +303,8 @@ fn measure_decay_counting(
                 .iter()
                 .map(|item| bundle.score(item))
                 .collect();
-            let nonmember_scores: Vec<f64> = non_members
-                .iter()
-                .map(|item| bundle.score(item))
-                .collect();
+            let nonmember_scores: Vec<f64> =
+                non_members.iter().map(|item| bundle.score(item)).collect();
 
             let member_mean = mean(&member_scores);
             let member_min = fmin(&member_scores);
@@ -316,7 +313,11 @@ fn measure_decay_counting(
 
             println!(
                 "decay\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
-                n_items, member_mean, member_min, nonmember_mean, nonmember_max,
+                n_items,
+                member_mean,
+                member_min,
+                nonmember_mean,
+                nonmember_max,
                 member_min - nonmember_max
             );
 
@@ -346,10 +347,8 @@ fn measure_normalized(
                 .iter()
                 .map(|item| bundle.score(item))
                 .collect();
-            let nonmember_scores: Vec<f64> = non_members
-                .iter()
-                .map(|item| bundle.score(item))
-                .collect();
+            let nonmember_scores: Vec<f64> =
+                non_members.iter().map(|item| bundle.score(item)).collect();
 
             let member_mean = mean(&member_scores);
             let member_min = fmin(&member_scores);
@@ -358,7 +357,11 @@ fn measure_normalized(
 
             println!(
                 "normalized\t{}\t{:.6}\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
-                n_items, member_mean, member_min, nonmember_mean, nonmember_max,
+                n_items,
+                member_mean,
+                member_min,
+                nonmember_mean,
+                nonmember_max,
                 member_min - nonmember_max
             );
 
@@ -374,8 +377,14 @@ fn main() {
     let max_items = 50000;
     let n_probes = 200;
 
-    println!("# Counting experiments: D={} denom={} n_blocks={}", dim, density_denom, n_blocks);
-    println!("# Generating {} items + {} non-member probes...", max_items, n_probes);
+    println!(
+        "# Counting experiments: D={} denom={} n_blocks={}",
+        dim, density_denom, n_blocks
+    );
+    println!(
+        "# Generating {} items + {} non-member probes...",
+        max_items, n_probes
+    );
     println!("# gap = member_min - nonmember_max (>0 = perfect separation)");
     println!();
 
@@ -385,11 +394,7 @@ fn main() {
         .collect();
     let non_members: Vec<EntangledHVec> = (0..n_probes)
         .map(|i| {
-            EntangledHVec::new_with_density(
-                dim,
-                density_denom,
-                (max_items + i) as u64 * 37 + 9999,
-            )
+            EntangledHVec::new_with_density(dim, density_denom, (max_items + i) as u64 * 37 + 9999)
         })
         .collect();
 
@@ -419,16 +424,11 @@ fn main() {
     // Re-run each to find crossing points
     let bloom_cross = find_crossing_bloom(&items, &non_members, dim);
     let counting_cross = find_crossing_counting(&items, &non_members, dim, n_blocks);
-    let decay_cross =
-        find_crossing_decay(&items, &non_members, dim, n_blocks, 0.9, 100);
+    let decay_cross = find_crossing_decay(&items, &non_members, dim, n_blocks, 0.9, 100);
     let norm_cross = find_crossing_normalized(&items, &non_members, dim, n_blocks);
 
     println!("Scheme\t\t\tCrossing_n\tMultiplier_vs_Bloom");
-    println!(
-        "bloom\t\t\t{}\t\t{:.1}x",
-        bloom_cross,
-        1.0
-    );
+    println!("bloom\t\t\t{}\t\t{:.1}x", bloom_cross, 1.0);
     println!(
         "counting\t\t{}\t\t{:.1}x",
         counting_cross,
@@ -534,8 +534,7 @@ fn find_crossing_decay(
     decay_factor: f64,
     consolidation_interval: usize,
 ) -> usize {
-    let mut bundle =
-        DecayCountingBloom::new(dim, n_blocks, decay_factor, consolidation_interval);
+    let mut bundle = DecayCountingBloom::new(dim, n_blocks, decay_factor, consolidation_interval);
     let mut next_point = 0;
 
     for i in 0..items.len() {
