@@ -64,4 +64,8 @@ jobs:
         git add .github/badges/coverage.json
         git diff --cached --quiet && exit 0
         git commit -m "ci: update coverage badge [skip ci]"
-        git push
+        for i in 1 2 3 4 5; do
+          git push && break
+          echo "push rejected, rebasing onto origin/main (attempt $i)"
+          git pull --rebase --autostash origin main
+        done
