@@ -12,6 +12,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Update changelog [skip ci]
 - Replace logo with continuous-rotation animation
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -27,6 +28,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Use sort_by_key to satisfy clippy 1.96 unnecessary_sort_by
 - Repair --all-features build (port SCITT to ureq 3 API, drop dead CliffordVec bench, gate provenance example)
 - Allow CDLA-Permissive-2.0 license from webpki-roots via ureq
 
