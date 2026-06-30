@@ -12,6 +12,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Replace logo with continuous-rotation animation
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Restructure README with collapsible sections
 - Update changelog [skip ci]
@@ -25,7 +27,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Repair --all-features build (port SCITT to ureq 3 API, drop dead CliffordVec bench, gate provenance example)
 - Allow CDLA-Permissive-2.0 license from webpki-roots via ureq
+
+### Style
+- Apply rustfmt to experiment binaries
 ## [0.6.0] - 2026-06-21
 
 ### Added
