@@ -1,6 +1,4 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use holographic_memory::core::algebra::HolographicAlgebra;
-use holographic_memory::core::clifford::CliffordVec;
 use holographic_memory::{EntangledHVec, HmsCore};
 
 fn benchmark_entangled(c: &mut Criterion) {
@@ -35,69 +33,19 @@ fn benchmark_entangled(c: &mut Criterion) {
     });
 }
 
-fn benchmark_clifford(c: &mut Criterion) {
-    let dim = 16384;
-
-    c.bench_function("CliffordVec from_seed D=16384", |b| {
-        b.iter(|| CliffordVec::from_seed(black_box(dim), black_box(42)))
-    });
-
-    let c1 = CliffordVec::from_seed(dim, 1);
-    let c2 = CliffordVec::from_seed(dim, 2);
-
-    c.bench_function("CliffordVec similarity", |b| {
-        b.iter(|| c1.similarity(black_box(&c2)))
-    });
-
-    c.bench_function("CliffordVec bind (geometric product)", |b| {
-        b.iter(|| c1.bind(black_box(&c2)))
-    });
-
-    c.bench_function("CliffordVec reverse", |b| {
-        b.iter(|| c1.reverse())
-    });
-
-    c.bench_function("CliffordVec permute", |b| {
-        b.iter(|| c1.permute(black_box(7)))
-    });
-
-    let cvecs: Vec<CliffordVec> = (0..10)
-        .map(|i| CliffordVec::from_seed(dim, i))
-        .collect();
-    c.bench_function("CliffordVec bundle 10", |b| {
-        b.iter(|| CliffordVec::bundle(black_box(&cvecs)))
-    });
-
-    let e1 = EntangledHVec::new_deterministic(dim, 1);
-    c.bench_function("CliffordVec from_entangled", |b| {
-        b.iter(|| CliffordVec::from_entangled(black_box(&e1)))
-    });
-
-    let cf = CliffordVec::from_entangled(&e1);
-    c.bench_function("CliffordVec to_entangled", |b| {
-        b.iter(|| cf.to_entangled(black_box(dim)))
-    });
-}
-
 fn benchmark_comparison(c: &mut Criterion) {
     let dim = 16384;
 
     let mut group = c.benchmark_group("bind");
     let e1 = EntangledHVec::new_deterministic(dim, 1);
     let e2 = EntangledHVec::new_deterministic(dim, 2);
-    let c1 = CliffordVec::from_seed(dim, 1);
-    let c2 = CliffordVec::from_seed(dim, 2);
 
     group.bench_function("EntangledHVec XOR", |b| b.iter(|| e1.bind(black_box(&e2))));
-    group.bench_function("CliffordVec GP", |b| b.iter(|| c1.bind(black_box(&c2))));
     group.finish();
 
     let mut group = c.benchmark_group("similarity");
     group.bench_function("EntangledHVec Jaccard", |b| {
         b.iter(|| e1.similarity(black_box(&e2)))
-    });
-    group.bench_function("CliffordVec reverse-inner", |b| {
-        b.iter(|| c1.similarity(black_box(&c2)))
     });
     group.finish();
 
@@ -105,14 +53,8 @@ fn benchmark_comparison(c: &mut Criterion) {
     let evecs: Vec<EntangledHVec> = (0..10)
         .map(|i| EntangledHVec::new_deterministic(dim, i))
         .collect();
-    let cvecs: Vec<CliffordVec> = (0..10)
-        .map(|i| CliffordVec::from_seed(dim, i))
-        .collect();
     group.bench_function("EntangledHVec", |b| {
         b.iter(|| EntangledHVec::bundle(black_box(&evecs)))
-    });
-    group.bench_function("CliffordVec", |b| {
-        b.iter(|| CliffordVec::bundle(black_box(&cvecs)))
     });
     group.finish();
 }
@@ -187,7 +129,6 @@ fn benchmark_hms_scaling(c: &mut Criterion) {
 criterion_group!(
     benches,
     benchmark_entangled,
-    benchmark_clifford,
     benchmark_comparison,
     benchmark_hms,
     benchmark_hms_scaling,

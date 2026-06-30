@@ -99,17 +99,22 @@ pub fn submit_statement(
 
     let response = ureq::post(&url)
         .header("Content-Type", SCITT_CONTENT_TYPE)
-        .send_bytes(&statement.cose_bytes)
+        .send(&statement.cose_bytes)
         .map_err(|e| anyhow!("SCITT submission failed: {e}"))?;
 
-    let status = response.status();
+    let status = response.status().as_u16();
     if status != 201 && status != 200 {
         let body = response.into_body().read_to_string().unwrap_or_default();
         return Err(anyhow!("SCITT service returned {status}: {body}"));
     }
 
     if status == 201 {
-        let location = response.header("Location").unwrap_or("").to_string();
+        let location = response
+            .headers()
+            .get("Location")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_string();
         let operation_url = if location.starts_with("http") {
             location
         } else {
@@ -139,11 +144,13 @@ fn poll_for_receipt(endpoint: &str, operation_url: &str) -> Result<TransparencyR
             .call()
             .map_err(|e| anyhow!("polling failed: {e}"))?;
 
-        if resp.status() == 200 {
-            let body: serde_json::Value = resp
+        if resp.status().as_u16() == 200 {
+            let body_str = resp
                 .into_body()
-                .read_json()
-                .map_err(|e| anyhow!("JSON parse failed: {e}"))?;
+                .read_to_string()
+                .map_err(|e| anyhow!("response read failed: {e}"))?;
+            let body: serde_json::Value =
+                serde_json::from_str(&body_str).map_err(|e| anyhow!("JSON parse failed: {e}"))?;
 
             if body.get("status").and_then(|s| s.as_str()) == Some("succeeded") {
                 let entry_id = body
@@ -250,7 +257,6 @@ fn parse_fact_claim(val: &ciborium::Value) -> Result<FactClaim> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ed25519_dalek::Verifier;
 
     fn test_keypair() -> SigningKey {
         SigningKey::generate(&mut rand::thread_rng())
