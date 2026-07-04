@@ -72,6 +72,46 @@ node-api = ["napi", "napi-derive", "tokio", "napi-build"]
 security = ["ed25519-dalek", "zeroize", "aes-gcm", "argon2", "sha2"]
 provenance = ["security", "coset", "ciborium", "bs58", "multibase", "base64"]
 provenance-scitt = ["provenance", "ureq"]
+# Experimental VSA research modules (block_codes, bloom_memory, cls_memory,
+# algebra, ternary, compose, resonator, sparse_autoencoder) and the experiment
+# binaries that exercise them. Off by default so they are not part of the
+# published public API.
+experimental = []
+
+# Experiment harnesses that depend on `experimental` modules. Declared
+# explicitly so they only build with `--features experimental`; the remaining
+# binaries under src/bin are still auto-discovered.
+[[bin]]
+name = "hms-benchmark-suite"
+required-features = ["experimental"]
+
+[[bin]]
+name = "hms-scaling"
+required-features = ["experimental"]
+
+[[bin]]
+name = "cls-decay"
+required-features = ["experimental"]
+
+[[bin]]
+name = "cls-structured"
+required-features = ["experimental"]
+
+[[bin]]
+name = "codebook-recovery-test"
+required-features = ["experimental"]
+
+[[bin]]
+name = "block-recovery-test"
+required-features = ["experimental"]
+
+[[bin]]
+name = "diag-recovery"
+required-features = ["experimental"]
+
+[[bin]]
+name = "similarity-decay"
+required-features = ["experimental"]
 
 [profile.release]
 lto = true
