@@ -203,7 +203,20 @@ fn encode_description_box(desc: &DescriptionBox, buf: &mut Vec<u8>) -> Result<()
     Ok(())
 }
 
+/// Maximum JUMBF box nesting depth. Bounds recursion in `decode_box` so a
+/// crafted deeply-nested superbox (a few KB) cannot overflow the stack.
+const MAX_JUMBF_DEPTH: usize = 64;
+
 fn decode_box(data: &[u8]) -> Result<(JumbfBox, usize)> {
+    decode_box_depth(data, 0)
+}
+
+fn decode_box_depth(data: &[u8], depth: usize) -> Result<(JumbfBox, usize)> {
+    if depth > MAX_JUMBF_DEPTH {
+        return Err(anyhow!(
+            "JUMBF nesting exceeds maximum depth of {MAX_JUMBF_DEPTH}"
+        ));
+    }
     if data.len() < 8 {
         return Err(anyhow!("insufficient data for box header"));
     }
@@ -253,7 +266,7 @@ fn decode_box(data: &[u8]) -> Result<(JumbfBox, usize)> {
                 content = Some(BoxContent::Cbor(inner_data.to_vec()));
             }
             JUMBF_BOX_TYPE => {
-                let (child, _) = decode_box(&box_data[offset..])?;
+                let (child, _) = decode_box_depth(&box_data[offset..], depth + 1)?;
                 children.push(child);
             }
             _ => {
