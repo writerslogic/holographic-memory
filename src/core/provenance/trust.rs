@@ -48,6 +48,14 @@ impl TrustStore {
         Ok(self)
     }
 
+    /// Trust the holder of a `did:jwk` identifier (used by CAWG ICA issuers).
+    /// Errors if the DID is not a valid Ed25519 `did:jwk`.
+    pub fn trust_did_jwk(&mut self, did_jwk: &str) -> Result<&mut Self> {
+        let pk = did::ed25519_from_did_jwk(did_jwk)?;
+        self.keys.insert(pk);
+        Ok(self)
+    }
+
     /// Convenience constructor: a store trusting a single verifying key.
     pub fn trusting_key(key: &VerifyingKey) -> Self {
         let mut s = Self::new();

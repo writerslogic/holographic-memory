@@ -1624,12 +1624,13 @@ impl HmsCore {
     pub fn verify_cawg_assertion(
         &self,
         assertion: &serde_json::Value,
+        trust: &super::provenance::trust::TrustStore,
     ) -> Result<serde_json::Value> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_cawg_assertion(assertion)
+        mgr.verify_cawg_assertion(assertion, trust)
     }
 
     /// Decompose a product vector into factors from domain codebooks using diffusion.
