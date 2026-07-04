@@ -797,13 +797,29 @@ impl ProvenanceManager {
         cawg::create_identity_assertion_ica(&self.signing_key, referenced, display_name)
     }
 
-    /// Verify a `cawg.identity` ICA assertion JSON, returning the embedded VC.
+    /// Verify a `cawg.identity` ICA assertion JSON and require its issuer to be
+    /// trusted, returning the embedded VC. `verify_cawg_ica` only proves the
+    /// assertion is self-consistent (signed by the key its own VC names); the
+    /// `trust` anchor establishes that the issuing agent is one the caller
+    /// accepts. Rejects an assertion whose issuer DID is not in `trust`.
     pub fn verify_cawg_assertion(
         &self,
         assertion: &serde_json::Value,
+        trust: &TrustStore,
     ) -> Result<serde_json::Value> {
         let embedded = cawg::ica_embedded_bytes(assertion)?;
-        cawg::verify_cawg_ica(&embedded)
+        let vc = cawg::verify_cawg_ica(&embedded)?;
+        let issuer = vc
+            .get("issuer")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow::anyhow!("CAWG assertion VC has no issuer"))?;
+        let key_bytes = did::ed25519_from_did_jwk(issuer)?;
+        let key = ed25519_dalek::VerifyingKey::from_bytes(&key_bytes)
+            .map_err(|e| anyhow::anyhow!("invalid CAWG issuer key: {e}"))?;
+        if !trust.is_trusted(&key) {
+            return Err(anyhow::anyhow!("CAWG issuer is not trusted: {issuer}"));
+        }
+        Ok(vc)
     }
 
     pub fn keri_event_log(&self) -> &RwLock<keri::KeyEventLog> {
@@ -934,10 +950,11 @@ impl ProvenanceManager {
 
 /// Verify a provenance record without a ProvenanceManager instance.
 ///
-/// Resolves the verifying key from the record's COSE key_id, verifies the
-/// signatures against it, and requires that key to be present in `trust`. As
-/// with [`ProvenanceManager::verify_fact_provenance`], a record whose embedded
-/// key is not trusted verifies as `valid == false`.
+/// Verifies the record's signatures and requires its signing identity —
+/// resolved from the COSE key_id, or the record's issuer DID for a vc-only
+/// record — to be present in `trust`. As with
+/// [`ProvenanceManager::verify_fact_provenance`], a record whose signing key is
+/// not trusted verifies as `valid == false`.
 pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<VerificationResult> {
     let mut details = Vec::new();
 
@@ -961,16 +978,6 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
                 message: Some(e.to_string()),
             }),
         }
-        let trusted = trust.is_trusted(&verifying_key);
-        details.push(VerificationDetail {
-            check: "trust_anchor".to_string(),
-            passed: trusted,
-            message: if trusted {
-                None
-            } else {
-                Some("signing key is not in the trust store".to_string())
-            },
-        });
     }
 
     if let Some(ref vc_json) = record.vc_json {
@@ -993,6 +1000,36 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
                 message: Some(e.to_string()),
             }),
         }
+    }
+
+    // Trust anchoring applies to the whole record, not just its COSE envelope:
+    // resolve the signing identity from the COSE key_id, falling back to the
+    // record's issuer DID (so a vc-only record is anchored too), and require it
+    // to be trusted. Without the fallback, a record carrying only a self-signed
+    // VC would bypass the trust check entirely.
+    if !details.is_empty() {
+        let signer_key = record
+            .cose_envelope
+            .as_ref()
+            .and_then(|e| cose::extract_key_id(e).ok())
+            .and_then(|kid| <[u8; 32]>::try_from(kid.as_slice()).ok())
+            .or_else(|| {
+                record
+                    .issuer_did
+                    .as_deref()
+                    .and_then(|d| did::ed25519_from_did_key(d).ok())
+            })
+            .and_then(|pk| ed25519_dalek::VerifyingKey::from_bytes(&pk).ok());
+        let trusted = signer_key.as_ref().is_some_and(|k| trust.is_trusted(k));
+        details.push(VerificationDetail {
+            check: "trust_anchor".to_string(),
+            passed: trusted,
+            message: if trusted {
+                None
+            } else {
+                Some("signing key is not in the trust store".to_string())
+            },
+        });
     }
 
     let all_passed = details.iter().all(|d| d.passed);
@@ -1322,5 +1359,60 @@ mod tests {
             .verify_fact_provenance_self_consistency(&record)
             .unwrap();
         assert!(self_consistent.valid);
+    }
+
+    #[test]
+    fn vc_only_record_requires_trust() {
+        // A record carrying only a self-signed VC (no COSE envelope) must still
+        // be trust-anchored via its issuer DID, not treated as authentic just
+        // because the VC verifies against its own embedded issuer.
+        let dir = tempdir().unwrap();
+        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let record = mgr
+            .create_fact_provenance("vc-only", b"content", None)
+            .unwrap();
+
+        let mut vc_only = record.clone();
+        vc_only.cose_envelope = None;
+
+        let ok = verify_record(&vc_only, &mgr.self_trust()).unwrap();
+        assert!(ok.valid);
+        assert!(ok
+            .details
+            .iter()
+            .any(|d| d.check == "trust_anchor" && d.passed));
+
+        let stranger = SigningKey::generate(&mut rand::thread_rng());
+        let foreign = trust::TrustStore::trusting_key(&stranger.verifying_key());
+        let rejected = verify_record(&vc_only, &foreign).unwrap();
+        assert!(!rejected.valid);
+        assert!(rejected
+            .details
+            .iter()
+            .any(|d| d.check == "trust_anchor" && !d.passed));
+    }
+
+    #[test]
+    fn cawg_untrusted_issuer_rejected() {
+        let dir = tempdir().unwrap();
+        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+
+        let referenced = vec![(
+            "self#jumbf=c2pa.assertions/c2pa.hash.data".to_string(),
+            "sha256".to_string(),
+            vec![0x11u8; 32],
+        )];
+        let assertion = mgr.create_cawg_assertion(&referenced, "hms agent").unwrap();
+
+        // The manager's own CAWG issuer (did:jwk of its key) is trusted by self_trust.
+        assert!(mgr
+            .verify_cawg_assertion(&assertion, &mgr.self_trust())
+            .is_ok());
+
+        // A trust store that does not contain the issuer must reject it, even
+        // though the assertion is internally self-consistent.
+        let stranger = SigningKey::generate(&mut rand::thread_rng());
+        let foreign = trust::TrustStore::trusting_key(&stranger.verifying_key());
+        assert!(mgr.verify_cawg_assertion(&assertion, &foreign).is_err());
     }
 }
