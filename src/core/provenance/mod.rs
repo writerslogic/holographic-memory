@@ -9,6 +9,7 @@ pub mod jumbf;
 pub mod keri;
 pub mod scitt;
 pub mod sigstore;
+pub mod trust;
 pub mod types;
 pub mod vc;
 
@@ -18,6 +19,7 @@ use parking_lot::RwLock;
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
+use trust::TrustStore;
 
 use types::{
     DeletionRecord, ProvenanceRecord, StoreManifest, VerificationDetail, VerificationResult,
@@ -647,7 +649,42 @@ impl ProvenanceManager {
         *fallback
     }
 
-    pub fn verify_fact_provenance(&self, record: &ProvenanceRecord) -> Result<VerificationResult> {
+    /// Authenticity check: verifies the record's signatures **and** requires the
+    /// key that produced them to be present in `trust`. A record whose embedded
+    /// key is not trusted verifies as `valid == false` even if its signature is
+    /// internally consistent. Use [`ProvenanceManager::self_trust`] to trust
+    /// only this manager's own key.
+    pub fn verify_fact_provenance(
+        &self,
+        record: &ProvenanceRecord,
+        trust: &TrustStore,
+    ) -> Result<VerificationResult> {
+        let mut result = self.verify_fact_provenance_self_consistency(record)?;
+        let fallback = self.signing_key.verifying_key();
+        let key = Self::resolve_cose_verifying_key(record, &fallback);
+        let trusted = trust.is_trusted(&key);
+        result.details.push(VerificationDetail {
+            check: "trust_anchor".to_string(),
+            passed: trusted,
+            message: if trusted {
+                None
+            } else {
+                Some("signing key is not in the trust store".to_string())
+            },
+        });
+        result.valid = result.details.iter().all(|d| d.passed) && !result.details.is_empty();
+        Ok(result)
+    }
+
+    /// Integrity-only check: verifies the record's signatures against the key
+    /// **embedded in the record itself**. This proves the record has not been
+    /// altered since signing, but says nothing about *who* signed it — a record
+    /// signed by any key passes. For authenticity use
+    /// [`ProvenanceManager::verify_fact_provenance`] with a trust anchor.
+    pub fn verify_fact_provenance_self_consistency(
+        &self,
+        record: &ProvenanceRecord,
+    ) -> Result<VerificationResult> {
         let mut details = Vec::new();
         let fallback = self.signing_key.verifying_key();
         let verifying_key = Self::resolve_cose_verifying_key(record, &fallback);
@@ -719,6 +756,17 @@ impl ProvenanceManager {
         &self.signing_key
     }
 
+    /// This manager's current verifying (public) key.
+    pub fn verifying_key(&self) -> ed25519_dalek::VerifyingKey {
+        self.signing_key.verifying_key()
+    }
+
+    /// A trust store containing only this manager's own key. Pass it to the
+    /// verify methods to authenticate records this manager signed.
+    pub fn self_trust(&self) -> TrustStore {
+        TrustStore::trusting_key(&self.signing_key.verifying_key())
+    }
+
     pub fn create_sigstore_bundle(
         &self,
         content: &[u8],
@@ -727,12 +775,16 @@ impl ProvenanceManager {
         sigstore::create_local_bundle(&self.signing_key, content, identity)
     }
 
+    /// Verify a Sigstore bundle against a caller-supplied trusted key. The key
+    /// embedded in the bundle is ignored: authenticity comes from `trusted_key`,
+    /// not from the bundle itself.
     pub fn verify_sigstore_bundle(
         &self,
         bundle: &sigstore::SigstoreBundle,
         content: &[u8],
+        trusted_key: &ed25519_dalek::VerifyingKey,
     ) -> Result<()> {
-        sigstore::verify_bundle(bundle, content)
+        sigstore::verify_bundle_with_key(bundle, content, trusted_key)
     }
 
     /// Create a CAWG ICA identity assertion. `referenced` is `(url, alg, raw_hash)` and
@@ -796,7 +848,36 @@ impl ProvenanceManager {
         *fallback
     }
 
+    /// Authenticity check for a store manifest: verifies its COSE signature and
+    /// optional store hash, and requires the signing key to be present in
+    /// `trust`. See [`ProvenanceManager::verify_fact_provenance`] for the
+    /// self-consistency vs. authenticity distinction.
     pub fn verify_store_manifest(
+        &self,
+        manifest: &StoreManifest,
+        store_data: Option<&[u8]>,
+        trust: &TrustStore,
+    ) -> Result<VerificationResult> {
+        let mut result = self.verify_store_manifest_self_consistency(manifest, store_data)?;
+        let fallback = self.signing_key.verifying_key();
+        let key = Self::resolve_manifest_verifying_key(manifest, &fallback);
+        let trusted = trust.is_trusted(&key);
+        result.details.push(VerificationDetail {
+            check: "trust_anchor".to_string(),
+            passed: trusted,
+            message: if trusted {
+                None
+            } else {
+                Some("signing key is not in the trust store".to_string())
+            },
+        });
+        result.valid = result.details.iter().all(|d| d.passed) && !result.details.is_empty();
+        Ok(result)
+    }
+
+    /// Integrity-only check for a store manifest: verifies signatures against
+    /// the key embedded in the manifest. Does not establish authenticity.
+    pub fn verify_store_manifest_self_consistency(
         &self,
         manifest: &StoreManifest,
         store_data: Option<&[u8]>,
@@ -852,8 +933,12 @@ impl ProvenanceManager {
 }
 
 /// Verify a provenance record without a ProvenanceManager instance.
-/// Resolves the verifying key from the COSE key_id or issuer DID in the record.
-pub fn verify_record(record: &ProvenanceRecord) -> Result<VerificationResult> {
+///
+/// Resolves the verifying key from the record's COSE key_id, verifies the
+/// signatures against it, and requires that key to be present in `trust`. As
+/// with [`ProvenanceManager::verify_fact_provenance`], a record whose embedded
+/// key is not trusted verifies as `valid == false`.
+pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<VerificationResult> {
     let mut details = Vec::new();
 
     if let Some(ref envelope) = record.cose_envelope {
@@ -876,6 +961,16 @@ pub fn verify_record(record: &ProvenanceRecord) -> Result<VerificationResult> {
                 message: Some(e.to_string()),
             }),
         }
+        let trusted = trust.is_trusted(&verifying_key);
+        details.push(VerificationDetail {
+            check: "trust_anchor".to_string(),
+            passed: trusted,
+            message: if trusted {
+                None
+            } else {
+                Some("signing key is not in the trust store".to_string())
+            },
+        });
     }
 
     if let Some(ref vc_json) = record.vc_json {
@@ -951,9 +1046,11 @@ mod tests {
         assert!(record.issuer_did.is_some());
         assert!(record.issuer_did.as_ref().unwrap().starts_with("did:key:z"));
 
-        let verification = mgr.verify_fact_provenance(&record).unwrap();
+        let verification = mgr
+            .verify_fact_provenance(&record, &mgr.self_trust())
+            .unwrap();
         assert!(verification.valid);
-        assert_eq!(verification.details.len(), 3);
+        assert_eq!(verification.details.len(), 4);
 
         assert!(mgr.get_record("fact-001").is_some());
         assert_eq!(mgr.record_count(), 1);
@@ -980,7 +1077,9 @@ mod tests {
             serde_json::from_str(record.vc_json.as_ref().unwrap()).unwrap();
         assert_eq!(vc.credential_subject.subject_id.as_deref(), Some("paris"));
 
-        let verification = mgr.verify_fact_provenance(&record).unwrap();
+        let verification = mgr
+            .verify_fact_provenance(&record, &mgr.self_trust())
+            .unwrap();
         assert!(verification.valid);
         assert!(mgr.get_record("triple-001").is_some());
     }
@@ -998,7 +1097,7 @@ mod tests {
         assert!(manifest.cose_envelope.is_some());
 
         let verification = mgr
-            .verify_store_manifest(&manifest, Some(store_data))
+            .verify_store_manifest(&manifest, Some(store_data), &mgr.self_trust())
             .unwrap();
         assert!(verification.valid);
         assert!(verification
@@ -1007,7 +1106,7 @@ mod tests {
             .any(|d| d.check == "store_hash" && d.passed));
 
         let bad_verification = mgr
-            .verify_store_manifest(&manifest, Some(b"wrong"))
+            .verify_store_manifest(&manifest, Some(b"wrong"), &mgr.self_trust())
             .unwrap();
         assert!(!bad_verification.valid);
     }
@@ -1048,11 +1147,13 @@ mod tests {
         let record = mgr
             .create_fact_provenance("standalone-001", b"verify without manager", None)
             .unwrap();
+        let issuer = record.issuer_did.clone().unwrap();
         drop(mgr);
 
-        let result = verify_record(&record).unwrap();
+        let trust = trust::TrustStore::trusting_did(&issuer).unwrap();
+        let result = verify_record(&record, &trust).unwrap();
         assert!(result.valid);
-        assert_eq!(result.details.len(), 2);
+        assert_eq!(result.details.len(), 3);
     }
 
     #[test]
@@ -1104,10 +1205,14 @@ mod tests {
             .unwrap();
         assert_eq!(post_record.issuer_did.as_deref(), Some(new_did.as_str()));
 
-        let old_result = verify_record(&record).unwrap();
+        let mut trust = trust::TrustStore::new();
+        trust.trust_did(&old_did).unwrap();
+        trust.trust_did(&new_did).unwrap();
+
+        let old_result = verify_record(&record, &trust).unwrap();
         assert!(old_result.valid);
 
-        let new_result = verify_record(&post_record).unwrap();
+        let new_result = verify_record(&post_record, &trust).unwrap();
         assert!(new_result.valid);
 
         assert!(mgr.verify_log_integrity().unwrap());
@@ -1136,8 +1241,9 @@ mod tests {
             assert!(r.vc_json.is_some());
         }
 
+        let trust = mgr.self_trust();
         for r in &records {
-            let result = verify_record(r).unwrap();
+            let result = verify_record(r, &trust).unwrap();
             assert!(result
                 .details
                 .iter()
@@ -1154,7 +1260,9 @@ mod tests {
             .create_fact_provenance("fact-rev", b"revocable content", None)
             .unwrap();
 
-        let verification = mgr.verify_fact_provenance(&record).unwrap();
+        let verification = mgr
+            .verify_fact_provenance(&record, &mgr.self_trust())
+            .unwrap();
         assert!(verification.valid);
         assert!(verification
             .details
@@ -1173,11 +1281,46 @@ mod tests {
         mgr.revoke_credential(status_index).unwrap();
         assert!(mgr.is_revoked(status_index));
 
-        let verification = mgr.verify_fact_provenance(&record).unwrap();
+        let verification = mgr
+            .verify_fact_provenance(&record, &mgr.self_trust())
+            .unwrap();
         assert!(!verification.valid);
         assert!(verification
             .details
             .iter()
             .any(|d| d.check == "revocation_status" && !d.passed));
+    }
+
+    #[test]
+    fn untrusted_key_rejected() {
+        let dir = tempdir().unwrap();
+        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let record = mgr
+            .create_fact_provenance("fact-trust", b"authentic content", None)
+            .unwrap();
+
+        // Signed by the manager and trusting the manager: authentic.
+        let ok = mgr
+            .verify_fact_provenance(&record, &mgr.self_trust())
+            .unwrap();
+        assert!(ok.valid);
+
+        // The record's signature is internally valid, but a trust store that
+        // does not contain the signing key must reject it as non-authentic,
+        // even though every signature check passes.
+        let stranger = SigningKey::generate(&mut rand::thread_rng());
+        let foreign_trust = trust::TrustStore::trusting_key(&stranger.verifying_key());
+        let rejected = mgr.verify_fact_provenance(&record, &foreign_trust).unwrap();
+        assert!(!rejected.valid);
+        assert!(rejected
+            .details
+            .iter()
+            .any(|d| d.check == "trust_anchor" && !d.passed));
+
+        // Self-consistency, by contrast, still passes: the record is intact.
+        let self_consistent = mgr
+            .verify_fact_provenance_self_consistency(&record)
+            .unwrap();
+        assert!(self_consistent.valid);
     }
 }
