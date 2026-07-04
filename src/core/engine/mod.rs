@@ -155,6 +155,10 @@ impl HmsCore {
 
         let shard_set = if config.shard.enabled && config.shard.shard_count > 1 {
             ShardSet::Multi(ShardManager::new(config.shard.shard_count, dim))
+        } else if let Some(n) = Self::load_shard_meta(&base_path).filter(|&n| n > 1) {
+            // A store that auto-sharded in a previous run persists its shard
+            // count so the topology (and per-shard indices) reload correctly.
+            ShardSet::Multi(ShardManager::new(n, dim))
         } else {
             ShardSet::Single(Box::new(shard::Shard::new(dim)))
         };
@@ -219,28 +223,63 @@ impl HmsCore {
         Ok(core)
     }
 
+    fn shard_meta_path(base: &Path) -> PathBuf {
+        base.join("shard_meta.json")
+    }
+
+    /// Read the persisted shard count written by a prior auto-shard, if any.
+    fn load_shard_meta(base: &Path) -> Option<usize> {
+        let data = std::fs::read_to_string(Self::shard_meta_path(base)).ok()?;
+        let value: serde_json::Value = serde_json::from_str(&data).ok()?;
+        value.get("shard_count")?.as_u64().map(|n| n as usize)
+    }
+
+    fn save_shard_meta(&self, shard_count: usize) -> Result<()> {
+        let json = serde_json::json!({ "shard_count": shard_count });
+        std::fs::write(
+            Self::shard_meta_path(&self.storage_path),
+            serde_json::to_vec(&json)?,
+        )?;
+        Ok(())
+    }
+
+    /// Per-shard NSG index path. Single-shard stores keep the legacy filename so
+    /// existing on-disk indices continue to load.
+    fn nsg_index_path(&self, shard_idx: usize, multi: bool) -> PathBuf {
+        if multi {
+            self.storage_path.join(format!("nsg_index_{shard_idx}.bin"))
+        } else {
+            self.storage_path.join("nsg_index.bin")
+        }
+    }
+
+    fn ivf_index_path(&self, shard_idx: usize, multi: bool) -> PathBuf {
+        if multi {
+            self.storage_path.join(format!("ivf_index_{shard_idx}.bin"))
+        } else {
+            self.storage_path.join("ivf_index.bin")
+        }
+    }
+
     fn load_indices(&self) -> Result<()> {
-        let nsg_path = self.storage_path.join("nsg_index.bin");
-        if nsg_path.exists() {
-            let raw = std::fs::read(&nsg_path)?;
-            let data = self.maybe_decrypt(&raw)?;
-            let nsg: super::nsg::NSGIndex = bincode::deserialize(&data)?;
-            // Load NSG into the first (or only) shard
-            let shards = self.shards.read();
-            if let ShardSet::Single(ref shard) = *shards {
+        let shards = self.shards.read();
+        let multi = shards.shard_count() > 1;
+        shards.try_for_each_shard_indexed(|i, shard| {
+            let nsg_path = self.nsg_index_path(i, multi);
+            if nsg_path.exists() {
+                let raw = std::fs::read(&nsg_path)?;
+                let data = self.maybe_decrypt(&raw)?;
+                let nsg: super::nsg::NSGIndex = bincode::deserialize(&data)?;
                 *shard.nsg.write() = Some(nsg);
             }
-        }
 
-        let ivf_path = self.storage_path.join("ivf_index.bin");
-        if ivf_path.exists() {
-            let raw = std::fs::read(&ivf_path)?;
-            let data = self.maybe_decrypt(&raw)?;
-            let mut ivf: IVFIndex = bincode::deserialize(&data)?;
-            ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new());
+            let ivf_path = self.ivf_index_path(i, multi);
+            if ivf_path.exists() {
+                let raw = std::fs::read(&ivf_path)?;
+                let data = self.maybe_decrypt(&raw)?;
+                let mut ivf: IVFIndex = bincode::deserialize(&data)?;
+                ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new());
 
-            let shards = self.shards.read();
-            if let ShardSet::Single(ref shard) = *shards {
                 let vectors = shard.vectors.read();
                 let registry = shard.registry.read();
                 for id in registry.iter() {
@@ -250,27 +289,26 @@ impl HmsCore {
                 }
                 *shard.ivf.write() = Some(ivf);
             }
-        }
-
-        Ok(())
+            Ok(())
+        })
     }
 
-    fn save_nsg(&self, nsg: &super::nsg::NSGIndex) -> Result<()> {
-        let data = bincode::serialize(nsg)?;
-        std::fs::write(
-            self.storage_path.join("nsg_index.bin"),
-            self.maybe_encrypt(&data)?,
-        )?;
-        Ok(())
-    }
-
-    fn save_ivf(&self, ivf: &IVFIndex) -> Result<()> {
-        let data = bincode::serialize(ivf)?;
-        std::fs::write(
-            self.storage_path.join("ivf_index.bin"),
-            self.maybe_encrypt(&data)?,
-        )?;
-        Ok(())
+    /// Persist every shard's trained NSG/IVF index to disk. Applies to both
+    /// single- and multi-shard stores; multi-shard indices are written to
+    /// per-shard files so they reload after a restart.
+    fn persist_indices(&self, shards: &ShardSet) -> Result<()> {
+        let multi = shards.shard_count() > 1;
+        shards.try_for_each_shard_indexed(|i, shard| {
+            if let Some(ref nsg) = *shard.nsg.read() {
+                let data = bincode::serialize(nsg)?;
+                std::fs::write(self.nsg_index_path(i, multi), self.maybe_encrypt(&data)?)?;
+            }
+            if let Some(ref ivf) = *shard.ivf.read() {
+                let data = bincode::serialize(ivf)?;
+                std::fs::write(self.ivf_index_path(i, multi), self.maybe_encrypt(&data)?)?;
+            }
+            Ok(())
+        })
     }
 
     /// Bundle vectors respecting the PrivacyConfig.
@@ -678,14 +716,7 @@ impl HmsCore {
             audit.record(AuditOp::Compact, "", self.sign_fn().as_deref())?;
         }
 
-        if let ShardSet::Single(ref shard) = *shards {
-            if let Some(ref nsg) = *shard.nsg.read() {
-                self.save_nsg(nsg)?;
-            }
-            if let Some(ref ivf) = *shard.ivf.read() {
-                self.save_ivf(ivf)?;
-            }
-        }
+        self.persist_indices(&shards)?;
 
         Ok(())
     }
@@ -736,14 +767,15 @@ impl HmsCore {
 
         // Upgrade from Single to Multi: snapshot vectors, build new shards, swap.
         let mut shards = self.shards.write();
-        let snapshot: Vec<(String, EntangledHVec)> = {
+        let (snapshot, had_nsg, had_ivf): (Vec<(String, EntangledHVec)>, bool, bool) = {
             match *shards {
                 ShardSet::Single(ref old_shard) => {
                     let vectors = old_shard.vectors.read();
-                    vectors
+                    let snap = vectors
                         .iter()
                         .map(|(k, v)| (k.clone(), v.clone()))
-                        .collect()
+                        .collect();
+                    (snap, old_shard.nsg_trained(), old_shard.ivf_trained())
                 }
                 ShardSet::Multi(_) => return,
             }
@@ -763,9 +795,37 @@ impl HmsCore {
                 .vector_count
                 .store(count, std::sync::atomic::Ordering::SeqCst);
             let _ = shard.rebuild_inverted_index(self.dimensions);
+
+            // Preserve whatever ANN acceleration was active before sharding.
+            // Without this, crossing the shard threshold would silently drop the
+            // NSG/IVF indices and fall back to the sparse inverted index alone.
+            if had_ivf || had_nsg {
+                let (ids, vectors) = shard.load_all_vectors();
+                if !ids.is_empty() {
+                    if had_ivf {
+                        if let Ok(index) =
+                            IVFIndex::train(&vectors, &ids, self.dimensions, &self.config.ivf)
+                        {
+                            *shard.ivf.write() = Some(index);
+                        }
+                    }
+                    if had_nsg {
+                        if let Ok(index) =
+                            super::nsg::training::train(&vectors, &ids, &self.config.nsg)
+                        {
+                            *shard.nsg.write() = Some(index);
+                        }
+                    }
+                }
+            }
         }
 
-        *shards = ShardSet::Multi(mgr);
+        let new_set = ShardSet::Multi(mgr);
+        let _ = self.persist_indices(&new_set);
+        let shard_count = new_set.shard_count();
+        *shards = new_set;
+        drop(shards);
+        let _ = self.save_shard_meta(shard_count);
     }
 
     /// Convert a dense f32 vector to sparse and memorize it.
@@ -1297,11 +1357,7 @@ impl HmsCore {
             Ok(())
         })?;
 
-        if let ShardSet::Single(ref shard) = *shards {
-            if let Some(ref ivf) = *shard.ivf.read() {
-                self.save_ivf(ivf)?;
-            }
-        }
+        self.persist_indices(&shards)?;
         Ok(())
     }
 
@@ -1324,11 +1380,7 @@ impl HmsCore {
             Ok(())
         })?;
 
-        if let ShardSet::Single(ref shard) = *shards {
-            if let Some(ref nsg) = *shard.nsg.read() {
-                self.save_nsg(nsg)?;
-            }
-        }
+        self.persist_indices(&shards)?;
         Ok(())
     }
 
@@ -1418,12 +1470,20 @@ impl HmsCore {
     pub fn verify_fact_provenance(
         &self,
         record: &super::provenance::types::ProvenanceRecord,
+        trust: &super::provenance::trust::TrustStore,
     ) -> Result<super::provenance::types::VerificationResult> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_fact_provenance(record)
+        mgr.verify_fact_provenance(record, trust)
+    }
+
+    /// A trust store containing this instance's own provenance key, for
+    /// authenticating records it signed. `None` if provenance is disabled.
+    #[cfg(feature = "provenance")]
+    pub fn provenance_self_trust(&self) -> Option<super::provenance::trust::TrustStore> {
+        self.provenance.as_ref().map(|mgr| mgr.self_trust())
     }
 
     #[cfg(feature = "provenance")]
@@ -1431,12 +1491,13 @@ impl HmsCore {
         &self,
         manifest: &super::provenance::types::StoreManifest,
         store_data: Option<&[u8]>,
+        trust: &super::provenance::trust::TrustStore,
     ) -> Result<super::provenance::types::VerificationResult> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_store_manifest(manifest, store_data)
+        mgr.verify_store_manifest(manifest, store_data, trust)
     }
 
     #[cfg(feature = "provenance")]
@@ -1537,12 +1598,13 @@ impl HmsCore {
         &self,
         bundle: &super::provenance::sigstore::SigstoreBundle,
         content: &[u8],
+        trusted_key: &ed25519_dalek::VerifyingKey,
     ) -> Result<()> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_sigstore_bundle(bundle, content)
+        mgr.verify_sigstore_bundle(bundle, content, trusted_key)
     }
 
     #[cfg(feature = "provenance")]
