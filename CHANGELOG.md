@@ -6,12 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Trust-anchored provenance verification and sharded ANN persistence
 - Runnable cross-verification of the cogmem C2PA sample
 
 ### Changed
+- Gate experimental VSA modules behind experimental feature
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Pre-register non-self-inverse binding + nonlinear readout experiment
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Replace logo with continuous-rotation animation
 - Update changelog [skip ci]
@@ -28,9 +32,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Close remaining provenance trust-anchor gaps (cawg, vc-only records)
 - Use sort_by_key to satisfy clippy 1.96 unnecessary_sort_by
 - Repair --all-features build (port SCITT to ureq 3 API, drop dead CliffordVec bench, gate provenance example)
 - Allow CDLA-Permissive-2.0 license from webpki-roots via ureq
+
+### Security
+- Harden signing-key file perms, zeroize copies, bound JUMBF recursion
+
+### Research
+- #2 hardening RETRACTS the sparse-wins claim (AUC artifact)
+- #2 strong baselines HRR + MAP vs sparse permutation
+- #2 involution control disconfirms the self-inverse framing
+- #2 density-matched control rules out the confound
+- #2 step-1 binding discriminator harness + result
 
 ### Style
 - Apply rustfmt to experiment binaries
