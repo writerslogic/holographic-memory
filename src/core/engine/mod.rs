@@ -1741,6 +1741,15 @@ impl HmsCore {
             .as_ref()
             .and_then(|g| g.retrieve_subject(relation, object).map(String::from))
     }
+
+    /// Multi-hop reasoning over the phasor memory: follow `relations` from
+    /// `start`, retrieving at each hop, returning the final entity.
+    #[cfg(feature = "experimental")]
+    pub fn phase_retrieve_path(&self, start: &str, relations: &[&str]) -> Option<String> {
+        self.phase_graph_lazy()
+            .as_ref()
+            .and_then(|g| g.retrieve_path(start, relations))
+    }
 }
 
 #[cfg(all(test, feature = "experimental"))]
