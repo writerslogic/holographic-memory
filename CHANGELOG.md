@@ -14,6 +14,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Update changelog [skip ci]
 - Pre-register non-self-inverse binding + nonlinear readout experiment
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -41,6 +42,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Harden signing-key file perms, zeroize copies, bound JUMBF recursion
 
 ### Research
+- Living-connection-graph slice -- plasticity beats saturation, verifiably
 - #2 hardening RETRACTS the sparse-wins claim (AUC artifact)
 - #2 strong baselines HRR + MAP vs sparse permutation
 - #2 involution control disconfirms the self-inverse framing
