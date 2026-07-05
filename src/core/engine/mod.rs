@@ -72,6 +72,9 @@ pub struct HmsCore {
     /// Experimental opt-in plastic relation store (lazily created on first use).
     #[cfg(feature = "experimental")]
     connection_graph: parking_lot::Mutex<Option<super::connection_graph::ConnectionGraph>>,
+    /// Experimental opt-in phasor relational memory (lazily created on first use).
+    #[cfg(feature = "experimental")]
+    phase_graph: parking_lot::Mutex<Option<super::phase_graph::PhaseGraph>>,
 }
 
 impl HmsCore {
@@ -216,6 +219,8 @@ impl HmsCore {
             provenance,
             #[cfg(feature = "experimental")]
             connection_graph: parking_lot::Mutex::new(None),
+            #[cfg(feature = "experimental")]
+            phase_graph: parking_lot::Mutex::new(None),
         };
 
         core.load_from_log()?;
@@ -1694,6 +1699,48 @@ impl HmsCore {
             .as_mut()
             .map_or(0.0, |g| g.query(subject, relation, object))
     }
+
+    /// Dimension and phase-quantization of the experimental phasor memory. A
+    /// modest dim keeps the (dim * n_phases) histogram small; retrieval works
+    /// well past this substrate's load in the validation experiments.
+    #[cfg(feature = "experimental")]
+    fn phase_graph_lazy(
+        &self,
+    ) -> parking_lot::MutexGuard<'_, Option<super::phase_graph::PhaseGraph>> {
+        let mut guard = self.phase_graph.lock();
+        if guard.is_none() {
+            *guard = Some(super::phase_graph::PhaseGraph::new(2048, 256));
+        }
+        guard
+    }
+
+    /// Assert `(subject, relation, object)` into the experimental phasor memory,
+    /// which supports relation algebra (rotation binding) and associative
+    /// retrieval the sparse-binary store cannot. Opt-in and additive.
+    #[cfg(feature = "experimental")]
+    pub fn relate_phase(&self, subject: &str, relation: &str, object: &str) {
+        self.phase_graph_lazy()
+            .as_mut()
+            .expect("lazily initialized")
+            .relate(subject, relation, object);
+    }
+
+    /// Recover the object of `(subject, relation)` from the phasor memory.
+    #[cfg(feature = "experimental")]
+    pub fn phase_retrieve_object(&self, subject: &str, relation: &str) -> Option<String> {
+        self.phase_graph_lazy()
+            .as_ref()
+            .and_then(|g| g.retrieve_object(subject, relation).map(String::from))
+    }
+
+    /// Recover the subject of `(relation, object)` — the inverse query — from the
+    /// phasor memory.
+    #[cfg(feature = "experimental")]
+    pub fn phase_retrieve_subject(&self, relation: &str, object: &str) -> Option<String> {
+        self.phase_graph_lazy()
+            .as_ref()
+            .and_then(|g| g.retrieve_subject(relation, object).map(String::from))
+    }
 }
 
 #[cfg(all(test, feature = "experimental"))]
@@ -1734,6 +1781,24 @@ mod connection_graph_tests {
         assert!(
             present > absent,
             "relation must survive restart: reloaded ({present}) !> absent ({absent})"
+        );
+    }
+
+    #[test]
+    fn phase_graph_relate_and_retrieve() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        hms.relate_phase("paris", "capital_of", "france");
+        hms.relate_phase("berlin", "capital_of", "germany");
+        // forward retrieval and inverse (subject) retrieval from the same field.
+        assert_eq!(
+            hms.phase_retrieve_object("paris", "capital_of").as_deref(),
+            Some("france")
+        );
+        assert_eq!(
+            hms.phase_retrieve_subject("capital_of", "germany")
+                .as_deref(),
+            Some("berlin")
         );
     }
 }

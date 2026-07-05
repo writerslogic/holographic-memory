@@ -53,7 +53,7 @@ fn phase_vec(id: u64, seed: u64) -> Vec<u32> {
 }
 fn rotation(rel: u64, seed: u64) -> Vec<u32> {
     (0..D)
-        .map(|d| (mix(rel ^ (d as u64) ^ 0x0107_A70, seed) % N as u64) as u32)
+        .map(|d| (mix(rel ^ (d as u64) ^ 0x0010_7A70, seed) % N as u64) as u32)
         .collect()
 }
 fn rotate(phi: &[u32], theta: &[u32]) -> Vec<u32> {
