@@ -189,3 +189,37 @@ XOR control, more seeds near the knee (N in 40..160), and ROC/AUC alongside d'.
 Step 2 requires implementing HRR (dense circular convolution) and MAP (bipolar)
 off the sparse index-set substrate — a design choice to be surfaced before
 building, per the experiment-code rule.
+
+## 11. Density-matched control (run 2026-07-04)
+
+The chosen cheapest disconfirming follow-up: rule out the density confound. A new
+column `B0thin` gives XOR *X's exact stack* — each XOR-bound pair thinned to k
+active indices (matching permutation density), bloom bundle, corrected-
+containment readout — so the ONLY difference from X is the bind operator, at
+matched density AND matched readout. `B0nat` is XOR at its own native best.
+
+d', mean over 8 seeds:
+
+| N   | B0nat XOR | B0thin XOR | X perm | X / B0thin |
+|-----|-----------|------------|--------|------------|
+| 40  | 0.86      | 1.07       | 15.2   | 14x        |
+| 80  | 0.70      | 0.87       | 6.1    | 7x         |
+| 160 | 0.60      | 0.69       | 3.7    | 5.3x       |
+| 320 | 0.46      | 0.50       | 2.3    | 4.5x       |
+| 640 | 0.34      | 0.34       | 1.19   | 3.5x       |
+
+**Density/readout confound ruled out.** At matched density and matched readout,
+permutation still beats XOR 3.5x-14x. Density-matched XOR (B0thin) tracks native
+XOR (~d' 0.3-1.4) — thinning neither helps nor hurts it — so XOR is intrinsically
+weak at compositional discrimination on this substrate, independent of density
+and readout. The advantage is the binding operator.
+
+Still open (unchanged): (a) the citable comparison is X vs the STRONG baselines
+HRR/MAP, not vs XOR; beating XOR only re-confirms "BSC is weak on sparse". (b) A
+sharper mechanistic control — an *involution* (self-inverse) permutation vs the
+non-involution permutation — would isolate whether the driver is "non-self-
+inverse-ness" per se or "role-specific relocation" (permutation) vs "raw-index
+union" (XOR); under a containment readout these may be indistinguishable, which
+would reframe the claim away from "self-inverse is the bottleneck" toward "XOR's
+index-union leaks; any role-relocation fixes it". (c) low-N X d' stays sentinel-
+inflated; rely on N>=40.
