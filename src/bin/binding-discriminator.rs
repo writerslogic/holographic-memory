@@ -69,6 +69,20 @@ fn mix(x: u64, k: u64) -> u64 {
     h
 }
 
+/// Deterministic thinning to `k` active indices by pseudo-random hash rank.
+/// Pure in (hv, k), so a stored pair and its query thin to the same set. Used to
+/// density-match XOR-bound pairs (~2k active) down to the permutation density k.
+fn thin(hv: &EntangledHVec, k: usize) -> EntangledHVec {
+    let mut idx: Vec<u32> = hv.indices().to_vec();
+    if idx.len() <= k {
+        return hv.clone();
+    }
+    idx.sort_by_key(|&i| mix(i as u64, 0x7417_5A17));
+    idx.truncate(k);
+    idx.sort_unstable();
+    EntangledHVec::from_indices(idx, DIM)
+}
+
 fn dprime(correct: &[f64], misbound: &[f64]) -> f64 {
     let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
     let var = |v: &[f64], m: f64| v.iter().map(|x| (x - m).powi(2)).sum::<f64>() / v.len() as f64;
@@ -87,17 +101,12 @@ fn dprime(correct: &[f64], misbound: &[f64]) -> f64 {
     (mc - mm) / pooled.sqrt()
 }
 
-struct Outcome {
-    dprime: f64,
-    bundle_active: f64,
-}
-
 /// One seed of the XOR-bind (B0) system at load n, using XOR's NATIVE stack:
 /// majority-vote bundling + XOR-unbind + Jaccard readout. This is the fair
 /// incumbent -- querying by unbinding the role from the bundle and comparing the
 /// residue to the candidate filler, not by set containment (which suits
 /// permutation, not XOR).
-fn run_b0(n: usize, seed: u64, codebook: &[EntangledHVec]) -> Outcome {
+fn run_b0(n: usize, seed: u64, codebook: &[EntangledHVec]) -> f64 {
     let role1 = EntangledHVec::new_with_density(DIM, DENSITY_DENOM, ROLE1_XOR_SEED ^ seed);
     let role2 = EntangledHVec::new_with_density(DIM, DENSITY_DENOM, ROLE2_XOR_SEED ^ seed);
     let facts = build_facts(n, seed);
@@ -118,14 +127,39 @@ fn run_b0(n: usize, seed: u64, codebook: &[EntangledHVec]) -> Outcome {
         correct.push(residue.similarity(&codebook[f.a]));
         misbound.push(residue.similarity(&codebook[f.b]));
     }
-    Outcome {
-        dprime: dprime(&correct, &misbound),
-        bundle_active: bundle.indices().len() as f64,
+    dprime(&correct, &misbound)
+}
+
+/// Density-matched XOR control: XOR bind run through X's EXACT stack -- each
+/// XOR-bound pair thinned to k active indices (matching permutation density),
+/// bloom bundle, corrected-containment readout. The ONLY difference from `run_x`
+/// is the bind operator (XOR-thinned vs permutation), at matched density and
+/// matched readout. If X still clears this, the advantage is the bind operator,
+/// not the density edge or the readout choice.
+fn run_b0_thin(n: usize, seed: u64, codebook: &[EntangledHVec]) -> f64 {
+    let role1 = EntangledHVec::new_with_density(DIM, DENSITY_DENOM, ROLE1_XOR_SEED ^ seed);
+    let role2 = EntangledHVec::new_with_density(DIM, DENSITY_DENOM, ROLE2_XOR_SEED ^ seed);
+    let facts = build_facts(n, seed);
+    let k = DIM / DENSITY_DENOM;
+
+    let mut pairs = Vec::with_capacity(2 * n);
+    for f in &facts {
+        pairs.push(thin(&role1.bind(&codebook[f.a]), k));
+        pairs.push(thin(&role2.bind(&codebook[f.b]), k));
     }
+    let bundle = EntangledHVec::bundle_bloom(&pairs);
+
+    let mut correct = Vec::with_capacity(n);
+    let mut misbound = Vec::with_capacity(n);
+    for f in &facts {
+        correct.push(thin(&role1.bind(&codebook[f.a]), k).corrected_containment(&bundle));
+        misbound.push(thin(&role1.bind(&codebook[f.b]), k).corrected_containment(&bundle));
+    }
+    dprime(&correct, &misbound)
 }
 
 /// One seed of the permutation-bind (X) system at load n.
-fn run_x(n: usize, seed: u64, codebook: &[EntangledHVec]) -> Outcome {
+fn run_x(n: usize, seed: u64, codebook: &[EntangledHVec]) -> f64 {
     let r1 = ROLE1_PERM_SEED ^ seed;
     let r2 = ROLE2_PERM_SEED ^ seed;
     let facts = build_facts(n, seed);
@@ -151,10 +185,7 @@ fn run_x(n: usize, seed: u64, codebook: &[EntangledHVec]) -> Outcome {
                 .corrected_containment(&bundle),
         );
     }
-    Outcome {
-        dprime: dprime(&correct, &misbound),
-        bundle_active: bundle.indices().len() as f64,
-    }
+    dprime(&correct, &misbound)
 }
 
 fn mean_sd(v: &[f64]) -> (f64, f64) {
@@ -167,45 +198,41 @@ fn main() {
     println!(
         "binding-discriminator | D={DIM} density=1/{DENSITY_DENOM} symbols={N_SYMBOLS} seeds={SEEDS}"
     );
-    println!("d' = discrimination of correct-binding vs mis-binding (chance floor 0).\n");
+    println!("d' = discrimination of correct-binding vs mis-binding (chance floor 0).");
+    println!("B0nat = XOR native stack (majority+unbind). B0thin = XOR thinned to k through");
+    println!("X's bloom+containment stack (density- and readout-matched to X).\n");
     println!(
-        "{:>5}  {:>18}  {:>18}  {:>10}  {:>10}",
-        "N", "B0 XOR  d'(sd)", "X perm  d'(sd)", "B0 act", "X act"
+        "{:>5}  {:>16}  {:>16}  {:>16}",
+        "N", "B0nat XOR d'(sd)", "B0thin XOR d'(sd)", "X perm  d'(sd)"
     );
 
     for &n in LOADS {
         // The codebook is shared across systems and seeds within a load so the
-        // only difference between B0 and X is the binding operator.
+        // only difference between systems is the binding operator (and, for
+        // B0nat, its native readout).
         let mut b0_d = Vec::with_capacity(SEEDS as usize);
+        let mut b0t_d = Vec::with_capacity(SEEDS as usize);
         let mut x_d = Vec::with_capacity(SEEDS as usize);
-        let mut b0_act = Vec::with_capacity(SEEDS as usize);
-        let mut x_act = Vec::with_capacity(SEEDS as usize);
 
         for seed in 0..SEEDS {
             let codebook: Vec<EntangledHVec> = (0..N_SYMBOLS)
                 .map(|i| EntangledHVec::new_with_density(DIM, DENSITY_DENOM, mix(i as u64, seed)))
                 .collect();
-            let b0 = run_b0(n, seed, &codebook);
-            let x = run_x(n, seed, &codebook);
-            b0_d.push(b0.dprime);
-            x_d.push(x.dprime);
-            b0_act.push(b0.bundle_active);
-            x_act.push(x.bundle_active);
+            b0_d.push(run_b0(n, seed, &codebook));
+            b0t_d.push(run_b0_thin(n, seed, &codebook));
+            x_d.push(run_x(n, seed, &codebook));
         }
 
         let (b0m, b0s) = mean_sd(&b0_d);
+        let (b0tm, b0ts) = mean_sd(&b0t_d);
         let (xm, xs) = mean_sd(&x_d);
-        let (b0a, _) = mean_sd(&b0_act);
-        let (xa, _) = mean_sd(&x_act);
         println!(
-            "{n:>5}  {:>11.2} ({:>4.2})  {:>11.2} ({:>4.2})  {b0a:>10.0}  {xa:>10.0}",
-            b0m, b0s, xm, xs
+            "{n:>5}  {:>10.2} ({:>4.2})  {:>10.2} ({:>4.2})  {:>10.2} ({:>4.2})",
+            b0m, b0s, b0tm, b0ts, xm, xs
         );
     }
 
-    println!("\nKill-condition (step 1): if X perm d' does not clear B0 XOR d' near the");
-    println!("knee (where d' collapses toward the chance floor), the self-inverse-XOR");
-    println!("hypothesis is disconfirmed on this substrate -- pivot before building the");
-    println!("HRR/MAP harness. Note X keeps its density-preservation advantage here, so a");
-    println!("loss is decisive; a win needs the density-matched control in step 2.");
+    println!("\nDensity-matched control: B0thin gives XOR X's exact density (k active/pair)");
+    println!("and readout (bloom+containment). If X clears B0thin, the advantage is the bind");
+    println!("operator itself, not density or readout. B0nat is XOR at its own native best.");
 }
