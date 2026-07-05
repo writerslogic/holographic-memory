@@ -159,6 +159,21 @@ impl PhaseGraph {
         best
     }
 
+    /// Multi-hop reasoning: follow a relation path from `start`, retrieving the
+    /// object at each hop and feeding it to the next. Returns the final entity, or
+    /// `None` if a hop finds nothing. This is chained associative retrieval, not a
+    /// single composed rotation: for a general (non-learned) store the entities
+    /// do not satisfy `object == rotate(subject, r)`, so one-shot composition is
+    /// unavailable. Per-hop retrieval error therefore compounds — longer paths
+    /// degrade faster under load.
+    pub fn retrieve_path(&self, start: &str, relations: &[&str]) -> Option<String> {
+        let mut current = start.to_string();
+        for r in relations {
+            current = self.retrieve_object(&current, r)?.to_string();
+        }
+        Some(current)
+    }
+
     /// The tamper-evident chain digest over all events so far.
     pub fn chain_digest(&self) -> u64 {
         self.chain
@@ -238,6 +253,29 @@ mod tests {
         // A sampled fact must still round-trip after 400 superposed facts.
         assert_eq!(g.retrieve_object("s137", "rel"), Some("o137"));
         assert_eq!(g.retrieve_subject("rel", "o42"), Some("s42"));
+    }
+
+    #[test]
+    fn multi_hop_path_reasoning() {
+        let mut g = PhaseGraph::new(1024, 256);
+        // alice --friend--> bob --employer--> acme --located_in--> paris
+        g.relate("alice", "friend", "bob");
+        g.relate("bob", "employer", "acme");
+        g.relate("acme", "located_in", "paris");
+        // add distractors so ranking is non-trivial
+        for i in 0..200 {
+            g.relate(&format!("x{i}"), "friend", &format!("y{i}"));
+        }
+        assert_eq!(
+            g.retrieve_path("alice", &["friend", "employer", "located_in"])
+                .as_deref(),
+            Some("paris")
+        );
+        // single hop still works
+        assert_eq!(
+            g.retrieve_path("alice", &["friend"]).as_deref(),
+            Some("bob")
+        );
     }
 
     #[test]
