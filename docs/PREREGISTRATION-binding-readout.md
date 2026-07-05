@@ -143,3 +143,49 @@ reason to keep tuning X until it wins.
 - That HRR/MAP beating XOR is a contribution. (Settled prior art; validation
   only.)
 - Any capacity number. (None exists until the sweep is run and seeded.)
+
+## 10. Step-1 result (run 2026-07-04)
+
+Harness: `src/bin/binding-discriminator.rs`. D=16384, density 1/256, shared
+codebook of 2048 symbols, R=2 roles, 8 seeds. Each binding uses its NATIVE stack
+(the fair comparison — on this sparse substrate the binding and readout are
+coupled):
+- B0 (incumbent): XOR bind, majority-vote bundle, query = XOR-unbind(role) then
+  Jaccard vs candidate filler.
+- X (candidate): permutation bind (`hash_permute(role)`), bloom-union bundle,
+  query = density-corrected containment.
+
+d' (correct-binding vs mis-binding), mean over 8 seeds:
+
+| N   | B0 XOR d' | X perm d' | X/B0 |
+|-----|-----------|-----------|------|
+| 40  | 0.86      | 15.2      | 18x  |
+| 80  | 0.70      | 6.1       | 8.8x |
+| 160 | 0.60      | 3.7       | 6.1x |
+| 320 | 0.46      | 2.3       | 4.9x |
+| 640 | 0.34      | 1.19      | 3.5x |
+
+**The step-1 kill-condition did NOT fire.** X clears B0 by 3.5x-18x across the
+load sweep, with both at their native readout.
+
+Caveats carried forward (this is a promising signal, not a validated finding):
+- **Sentinel-inflated low N.** X d' at N=5,10,20 (115, 45, 29) sit in the
+  near-zero-variance regime where the d' estimator is unstable; only N>=40 is
+  trustworthy. The conclusion rests on the N>=40 rows.
+- **Weak incumbent, not the strong baseline.** Beating XOR only confirms the
+  settled "BSC is weak on sparse" prior art. The contribution question — does X
+  beat HRR/MAP? — is untested. Not citable on this result alone.
+- **Density confound.** X's bloom stack is density-preserving; B0's XOR doubles
+  active-count. X's advantage is not yet separated from its density edge.
+- **Stack-vs-stack, not binding-in-isolation.** Binding and readout are coupled
+  on this substrate, so this compares whole stacks, not the bind operator alone.
+- **First readout was a strawman, then fixed.** An initial run gave both bindings
+  a containment readout and reported B0 d'=0.00; that under-served XOR (its native
+  query is unbind, not containment). The table above uses XOR's native stack.
+
+Consequence per the pre-registration: step 1 survives, so proceed to step 2 —
+add HRR and MAP baselines with their proper unbind readouts, a density-matched
+XOR control, more seeds near the knee (N in 40..160), and ROC/AUC alongside d'.
+Step 2 requires implementing HRR (dense circular convolution) and MAP (bipolar)
+off the sparse index-set substrate — a design choice to be surfaced before
+building, per the experiment-code rule.
