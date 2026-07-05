@@ -38,8 +38,10 @@ const ROLE1_XOR_SEED: u64 = 0x1111_1111;
 const ROLE2_XOR_SEED: u64 = 0x2222_2222;
 const ROLE1_PERM_SEED: u64 = 0xA5A5_A5A5;
 const ROLE2_PERM_SEED: u64 = 0x5A5A_5A5A;
+const ROLE1_INV_SEED: u64 = 0xC0DE_1111;
+const ROLE2_INV_SEED: u64 = 0xC0DE_2222;
 const SEEDS: u64 = 8;
-const LOADS: &[usize] = &[5, 10, 20, 40, 80, 160, 320, 640];
+const LOADS: &[usize] = &[40, 80, 160, 320, 640, 1280];
 
 /// A fact is two role-filler pairs over the SHARED codebook: (role1, a), (role2, b).
 struct Fact {
@@ -89,16 +91,11 @@ fn dprime(correct: &[f64], misbound: &[f64]) -> f64 {
     let mc = mean(correct);
     let mm = mean(misbound);
     let pooled = 0.5 * (var(correct, mc) + var(misbound, mm));
-    if pooled <= f64::EPSILON {
-        // Degenerate: identical-variance separation. Report a large but finite
-        // sentinel rather than infinity so averages stay meaningful.
-        return if (mc - mm).abs() <= f64::EPSILON {
-            0.0
-        } else {
-            (mc - mm) / 1e-6
-        };
-    }
-    (mc - mm) / pooled.sqrt()
+    // Floor the pooled SD so near-zero-variance separation does not blow the
+    // estimate up to meaningless magnitudes, and cap d' at 50 (any larger is
+    // "perfect separation" with no useful precision).
+    let sd = pooled.sqrt().max(1e-3);
+    ((mc - mm) / sd).clamp(0.0, 50.0)
 }
 
 /// One seed of the XOR-bind (B0) system at load n, using XOR's NATIVE stack:
@@ -158,6 +155,40 @@ fn run_b0_thin(n: usize, seed: u64, codebook: &[EntangledHVec]) -> f64 {
     dprime(&correct, &misbound)
 }
 
+/// Involution (self-inverse) permutation control: bind by XOR-ing each filler
+/// index with a role mask (`idx ^ mask`, a self-inverse bijection on the 2^14
+/// index space -- applying it twice is the identity). Density-preserving, run
+/// through X's exact bloom+containment stack. Differs from `run_x` ONLY in that
+/// the permutation is self-inverse. Isolates whether non-self-inverse-ness per se
+/// is the driver, or whether any role-specific relocation (self-inverse or not)
+/// suffices -- which would reframe the hypothesis away from "self-inverse XOR is
+/// the bottleneck".
+fn run_inv(n: usize, seed: u64, codebook: &[EntangledHVec]) -> f64 {
+    let mask1 = ((mix(seed, ROLE1_INV_SEED) % DIM as u64) as u32).max(1);
+    let mask2 = ((mix(seed, ROLE2_INV_SEED) % DIM as u64) as u32).max(1);
+    let facts = build_facts(n, seed);
+    let inv = |hv: &EntangledHVec, mask: u32| -> EntangledHVec {
+        let mut idx: Vec<u32> = hv.indices().iter().map(|&i| i ^ mask).collect();
+        idx.sort_unstable();
+        EntangledHVec::from_indices(idx, DIM)
+    };
+
+    let mut pairs = Vec::with_capacity(2 * n);
+    for f in &facts {
+        pairs.push(inv(&codebook[f.a], mask1));
+        pairs.push(inv(&codebook[f.b], mask2));
+    }
+    let bundle = EntangledHVec::bundle_bloom(&pairs);
+
+    let mut correct = Vec::with_capacity(n);
+    let mut misbound = Vec::with_capacity(n);
+    for f in &facts {
+        correct.push(inv(&codebook[f.a], mask1).corrected_containment(&bundle));
+        misbound.push(inv(&codebook[f.b], mask1).corrected_containment(&bundle));
+    }
+    dprime(&correct, &misbound)
+}
+
 /// One seed of the permutation-bind (X) system at load n.
 fn run_x(n: usize, seed: u64, codebook: &[EntangledHVec]) -> f64 {
     let r1 = ROLE1_PERM_SEED ^ seed;
@@ -201,9 +232,12 @@ fn main() {
     println!("d' = discrimination of correct-binding vs mis-binding (chance floor 0).");
     println!("B0nat = XOR native stack (majority+unbind). B0thin = XOR thinned to k through");
     println!("X's bloom+containment stack (density- and readout-matched to X).\n");
+    println!("Inv = self-inverse involution permutation (idx^mask) through X's stack; same as");
+    println!("X but self-inverse. Inv vs X isolates non-self-inverse-ness; B0thin vs Inv");
+    println!("isolates index-union vs role-relocation.\n");
     println!(
-        "{:>5}  {:>16}  {:>16}  {:>16}",
-        "N", "B0nat XOR d'(sd)", "B0thin XOR d'(sd)", "X perm  d'(sd)"
+        "{:>5}  {:>15}  {:>15}  {:>15}  {:>15}",
+        "N", "B0nat XOR d'", "B0thin XOR d'", "Inv perm d'", "X perm d'"
     );
 
     for &n in LOADS {
@@ -212,6 +246,7 @@ fn main() {
         // B0nat, its native readout).
         let mut b0_d = Vec::with_capacity(SEEDS as usize);
         let mut b0t_d = Vec::with_capacity(SEEDS as usize);
+        let mut inv_d = Vec::with_capacity(SEEDS as usize);
         let mut x_d = Vec::with_capacity(SEEDS as usize);
 
         for seed in 0..SEEDS {
@@ -220,19 +255,21 @@ fn main() {
                 .collect();
             b0_d.push(run_b0(n, seed, &codebook));
             b0t_d.push(run_b0_thin(n, seed, &codebook));
+            inv_d.push(run_inv(n, seed, &codebook));
             x_d.push(run_x(n, seed, &codebook));
         }
 
         let (b0m, b0s) = mean_sd(&b0_d);
         let (b0tm, b0ts) = mean_sd(&b0t_d);
+        let (invm, invs) = mean_sd(&inv_d);
         let (xm, xs) = mean_sd(&x_d);
         println!(
-            "{n:>5}  {:>10.2} ({:>4.2})  {:>10.2} ({:>4.2})  {:>10.2} ({:>4.2})",
-            b0m, b0s, b0tm, b0ts, xm, xs
+            "{n:>5}  {:>8.2} ({:>4.2})  {:>8.2} ({:>4.2})  {:>8.2} ({:>4.2})  {:>8.2} ({:>4.2})",
+            b0m, b0s, b0tm, b0ts, invm, invs, xm, xs
         );
     }
 
-    println!("\nDensity-matched control: B0thin gives XOR X's exact density (k active/pair)");
-    println!("and readout (bloom+containment). If X clears B0thin, the advantage is the bind");
-    println!("operator itself, not density or readout. B0nat is XOR at its own native best.");
+    println!("\nB0thin = XOR at X's density+readout (isolates bind vs density/readout).");
+    println!("Inv = self-inverse relocation; X = non-self-inverse relocation. Inv~X would mean");
+    println!("the driver is role-relocation, NOT non-self-inverse-ness (reframes hypothesis).");
 }

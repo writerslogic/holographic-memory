@@ -223,3 +223,46 @@ union" (XOR); under a containment readout these may be indistinguishable, which
 would reframe the claim away from "self-inverse is the bottleneck" toward "XOR's
 index-union leaks; any role-relocation fixes it". (c) low-N X d' stays sentinel-
 inflated; rely on N>=40.
+
+## 12. Involution control — the framing was wrong (run 2026-07-04)
+
+Ran control (b). Added `Inv`: a self-inverse involution permutation (`idx ^ mask`,
+which applied twice is the identity) through X's exact bloom+containment stack —
+identical to X except the permutation is self-inverse. All four systems, d' over
+8 seeds, N=40..1280 (d' floored/capped at 50; the sentinel-inflated low-N rows
+from sections 10-11 are superseded by this cleaner estimator):
+
+| N    | B0nat XOR | B0thin XOR | Inv perm | X perm |
+|------|-----------|------------|----------|--------|
+| 40   | 0.86      | 1.07       | 32.9     | 15.2   |
+| 80   | 0.70      | 0.87       | 7.6      | 6.1    |
+| 160  | 0.60      | 0.69       | 4.55     | 3.67   |
+| 320  | 0.46      | 0.50       | 2.86     | 2.26   |
+| 640  | 0.34      | 0.34       | 1.19     | 1.19   |
+| 1280 | 0.24      | 0.22       | 0.20     | 0.45   |
+
+(At N=1280 every system sits at the chance floor — the sparse bloom bundle is
+saturated; the informative band is N=40..640.)
+
+**The original "self-inverse XOR is the bottleneck" framing is DISCONFIRMED as a
+causal claim.** `Inv` (self-inverse) matches or beats `X` (non-self-inverse); the
+self-inverse property is not the axis. The real axis is **role-relocation vs
+index-union**: HMS's bind is set symmetric-difference, which merges role and
+filler indices into a bag where the pairing leaks (any (role, filler) whose parts
+appear anywhere scores high); ANY position-permutation bind — self-inverse or not
+— relocates each filler into a role-specific slot that does not leak. Relocation
+beats union 3.5x-30x across N=40..640; density and readout were already ruled out
+in section 11.
+
+Honest positioning of this result:
+- This is most likely a **validation of settled VSA knowledge** (permutation /
+  convolution binding outperforms set-XOR/BSC binding), re-derived on the HMS
+  substrate — NOT a novel discovery, and not independently citable.
+- It is nonetheless **practically actionable**: HMS's current bind is the weak
+  set-XOR kind; switching to a position-permutation bind (`permute` /
+  `hash_permute` already exist in `entangled.rs`) recovers 3.5x-30x mis-binding
+  discrimination at the same O(D) cost. An *exact* permutation (`Inv`'s idx^mask,
+  or `permute`) beat the collision-prone `hash_permute` at low-mid load — prefer
+  an exact bijection.
+- The only path to a NOVEL contribution remains X-stack vs strong baselines
+  HRR/MAP with matched resources (untested; the expensive step).
