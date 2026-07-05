@@ -69,6 +69,9 @@ pub struct HmsCore {
     encryption: Option<super::security::EncryptionManager>,
     #[cfg(feature = "provenance")]
     provenance: Option<super::provenance::ProvenanceManager>,
+    /// Experimental opt-in plastic relation store (lazily created on first use).
+    #[cfg(feature = "experimental")]
+    connection_graph: parking_lot::Mutex<Option<super::connection_graph::ConnectionGraph>>,
 }
 
 impl HmsCore {
@@ -211,6 +214,8 @@ impl HmsCore {
             encryption,
             #[cfg(feature = "provenance")]
             provenance,
+            #[cfg(feature = "experimental")]
+            connection_graph: parking_lot::Mutex::new(None),
         };
 
         core.load_from_log()?;
@@ -1641,5 +1646,52 @@ impl HmsCore {
         max_iter: usize,
     ) -> Vec<Option<EntangledHVec>> {
         DiffusionFactorizer::factorize(&self.config.diffusion, product, domain_codebooks, max_iter)
+    }
+
+    /// Assert a `(subject, relation, object)` edge into the experimental plastic
+    /// connection graph (lazily created on first use, over the engine's
+    /// dimensionality). Opt-in and additive: independent of the sparse-binary
+    /// store and its persistence.
+    #[cfg(feature = "experimental")]
+    pub fn relate(&self, subject: &str, relation: &str, object: &str) {
+        let mut guard = self.connection_graph.lock();
+        guard
+            .get_or_insert_with(|| super::connection_graph::ConnectionGraph::new(self.dimensions))
+            .store(subject, relation, object);
+    }
+
+    /// Query a relation in the plastic connection graph, returning its presence
+    /// score. This is a *mutating* read (the observer effect): it reinforces the
+    /// queried relation and lets the untouched background decay, all recorded as
+    /// verifiable events. Returns 0.0 if the graph has not been used yet.
+    #[cfg(feature = "experimental")]
+    pub fn query_relation(&self, subject: &str, relation: &str, object: &str) -> f64 {
+        let mut guard = self.connection_graph.lock();
+        match guard.as_mut() {
+            Some(g) => g.query(subject, relation, object),
+            None => 0.0,
+        }
+    }
+}
+
+#[cfg(all(test, feature = "experimental"))]
+mod connection_graph_tests {
+    use super::*;
+
+    #[test]
+    fn relate_and_query_through_engine() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        // Query before any relation exists -> graph unused -> 0.0.
+        assert_eq!(hms.query_relation("paris", "capital_of", "france"), 0.0);
+
+        hms.relate("paris", "capital_of", "france");
+        let present = hms.query_relation("paris", "capital_of", "france");
+        let absent = hms.query_relation("berlin", "capital_of", "spain");
+        assert!(
+            present > absent,
+            "asserted relation ({present}) must score above an absent one ({absent})"
+        );
     }
 }
