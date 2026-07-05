@@ -15,6 +15,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 
 ### Documentation
 - Update changelog [skip ci]
+- Update changelog [skip ci]
 - Pre-register non-self-inverse binding + nonlinear readout experiment
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -42,6 +43,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Harden signing-key file perms, zeroize copies, bound JUMBF recursion
 
 ### Research
+- Path-plasticity -- holographic generalization a cache can't do
 - Living-connection-graph slice -- plasticity beats saturation, verifiably
 - #2 hardening RETRACTS the sparse-wins claim (AUC artifact)
 - #2 strong baselines HRR + MAP vs sparse permutation
