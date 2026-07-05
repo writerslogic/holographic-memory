@@ -20,8 +20,12 @@ pub mod cls_memory;
 pub mod cognition;
 #[cfg(feature = "experimental")]
 pub mod compose;
+// Living connection-graph: plastic, event-sourced holographic relation store.
+// Experimental and opt-in; does not touch the sparse-binary core.
 pub(crate) mod composite_memory;
 pub(crate) mod config;
+#[cfg(feature = "experimental")]
+pub mod connection_graph;
 pub(crate) mod decompose;
 pub(crate) mod diffusion;
 pub mod encoding;
