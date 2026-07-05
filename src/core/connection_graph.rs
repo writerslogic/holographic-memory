@@ -234,13 +234,39 @@ impl ConnectionGraph {
         self.field.iter().sum::<i64>() as f64 / self.field.len() as f64
     }
 
-    /// Query a relation. Returns its score and, per config, applies the observer
-    /// effect: reinforce the queried relation and periodically decay the field.
-    /// Every mutation is recorded as an event.
+    /// Integer presence gate: does the edge's mean amplitude exceed the field
+    /// mean by at least half a store-weight? An absent relation samples the
+    /// background, so its edge-mean sits *at* the field mean with only sampling
+    /// noise (~0.1); a stored relation carries +`W_STORE` on every one of its
+    /// indices, so its edge-mean is ~1 above background. The half-store margin
+    /// cleanly separates the two and suppresses coincidental-overlap fabrication.
+    /// Cross-multiplied in i128 so the decision is exact and platform-independent
+    /// (keeps replay bit-exact).
+    ///
+    /// Condition: `edge_mean - field_mean >= W_STORE/2`, i.e.
+    /// `2*(edge_sum*field_len - field_total*edge_len) >= W_STORE*edge_len*field_len`.
+    fn is_present(&self, idx: &[u32]) -> bool {
+        if idx.is_empty() {
+            return false;
+        }
+        let edge_sum = idx.iter().map(|&i| self.field[i as usize]).sum::<i64>() as i128;
+        let field_total = self.field.iter().sum::<i64>() as i128;
+        let edge_len = idx.len() as i128;
+        let field_len = self.field.len() as i128;
+        2 * (edge_sum * field_len - field_total * edge_len)
+            >= (W_STORE as i128) * edge_len * field_len
+    }
+
+    /// Query a relation. Returns its presence score. This is a *mutating* read
+    /// (the observer effect), but **presence-gated**: it reinforces the queried
+    /// relation only if it is actually present (above the field mean), so
+    /// querying an absent relation does not fabricate it. When it does reinforce,
+    /// it periodically decays the untouched background. Only mutations are
+    /// recorded as events — a miss is free (no write, no read-amplification).
     pub fn query(&mut self, subject: &str, relation: &str, object: &str) -> f64 {
         let idx = self.edge_indices(subject, relation, object);
         let s = self.score_indices(&idx);
-        if self.cfg.strengthen_on_read {
+        if self.cfg.strengthen_on_read && self.is_present(&idx) {
             self.fold_edge(&idx, W_STRENGTHEN);
             self.record(Event::Strengthen(
                 subject.to_string(),
@@ -469,22 +495,55 @@ mod tests {
 
     #[test]
     fn forgetting_is_real() {
-        // Honest cost: a relation that is never queried decays. Its score after
-        // a stream of decays must drop below its freshly-stored score. Plasticity
-        // buys hot-set sharpness by forgetting the cold tail.
+        // Honest cost: a relation that is never queried decays out. We store and
+        // repeatedly query a HOT set (present -> reinforced -> decay fires) while
+        // "cold" is stored but never touched. Its score must drop below fresh.
         let dim = 8192;
         let mut g = ConnectionGraph::new(dim);
         g.store("cold", "rel", "thing");
         let fresh = g.score("cold", "rel", "thing");
-        // Query OTHER relations so "cold" is never reinforced but decay fires.
-        for i in 0..400 {
-            let s = format!("hot{i}");
-            g.query(&s, "rel", "x");
+        for i in 0..20 {
+            g.store(&format!("hot{i}"), "rel", "x");
+        }
+        for _ in 0..40 {
+            for i in 0..20 {
+                g.query(&format!("hot{i}"), "rel", "x");
+            }
         }
         let after = g.score("cold", "rel", "thing");
         assert!(
             after < fresh,
             "un-queried relation must decay: after {after} !< fresh {fresh}"
+        );
+    }
+
+    #[test]
+    fn absent_query_does_not_confabulate() {
+        // The presence-gating decision: querying an absent, unrelated relation
+        // must NOT reinforce it (no fabrication) and must emit no event (no
+        // read-amplification). Only genuinely-present relations are reinforced.
+        let dim = 8192;
+        let mut g = ConnectionGraph::new(dim);
+        g.store("paris", "capital_of", "france");
+        let events_before = g.events().len();
+        for _ in 0..50 {
+            g.query("zzz", "unrelated_rel", "qqq");
+        }
+        assert_eq!(
+            g.events().len(),
+            events_before,
+            "absent queries must not mutate the store"
+        );
+        assert!(
+            g.score("zzz", "unrelated_rel", "qqq") < g.score("paris", "capital_of", "france"),
+            "the absent relation must stay absent after being queried"
+        );
+
+        // A present relation, by contrast, IS reinforced on query (emits events).
+        g.query("paris", "capital_of", "france");
+        assert!(
+            g.events().len() > events_before,
+            "present query must reinforce"
         );
     }
 }
