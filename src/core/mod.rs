@@ -27,6 +27,8 @@ pub(crate) mod config;
 #[cfg(feature = "experimental")]
 pub mod connection_graph;
 pub(crate) mod decompose;
+// Phasor relational memory: rotation-typed relations over a quantized-phase
+// histogram field -- relation algebra + retrieval the sparse core cannot do.
 pub(crate) mod diffusion;
 pub mod encoding;
 pub mod engine;
@@ -40,6 +42,8 @@ pub(crate) mod indexed_memory;
 pub mod intersection;
 pub(crate) mod ivf;
 pub(crate) mod nsg;
+#[cfg(feature = "experimental")]
+pub mod phase_graph;
 pub(crate) mod posting;
 #[cfg(feature = "provenance")]
 pub mod provenance;
