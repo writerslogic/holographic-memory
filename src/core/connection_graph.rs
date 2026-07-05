@@ -245,6 +245,17 @@ impl ConnectionGraph {
     ///
     /// Condition: `edge_mean - field_mean >= W_STORE/2`, i.e.
     /// `2*(edge_sum*field_len - field_total*edge_len) >= W_STORE*edge_len*field_len`.
+    ///
+    /// Why an *absolute* margin and not a scale-invariant `k·σ` (SNR) gate: an SNR
+    /// gate is scale-invariant under decay, but it cannot BOOTSTRAP — a
+    /// freshly-stored relation adds only +W_STORE per index, which is well under a
+    /// few σ against a dense multi-relation background, so it is never recognized
+    /// as present, never reinforced, and plasticity-under-load dies. Tried it; it
+    /// broke `plasticity_holds_discrimination_under_load`. The absolute margin's
+    /// tradeoff is the opposite (its threshold's meaning drifts as the field
+    /// decays), but that manifests as a *coherent forgetting policy* — a relation
+    /// decayed below half a store-weight has genuinely gone cold — which is the
+    /// behavior we want. A gate that bootstraps AND tracks decay is open work.
     fn is_present(&self, idx: &[u32]) -> bool {
         if idx.is_empty() {
             return false;
