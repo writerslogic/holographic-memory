@@ -32,6 +32,12 @@
 //! surface relations that were never asserted. It helps under load and is
 //! neutral-to-slightly-negative without it. Use accordingly.
 
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Read, Write};
+use std::path::{Path, PathBuf};
+
+use serde::{Deserialize, Serialize};
+
 use crate::core::entangled::{hash_u64, EntangledHVec};
 
 /// Default multiplicative decay applied to the whole field per decay step: 7/8.
@@ -44,7 +50,7 @@ const W_STRENGTHEN: i64 = 2;
 
 /// An ordered, replayable state-change event. Relations are referenced by their
 /// string ids so a verifier can recompute the affected indices from scratch.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Event {
     /// Assert a relation `(subject, relation, object)`.
     Store(String, String, String),
@@ -84,16 +90,21 @@ pub struct ConnectionGraph {
     chain: u64,
     cfg: GraphConfig,
     queries_since_decay: usize,
+    /// Durable append-only event log. `Some` when opened with a path; every
+    /// mutation is appended so the state survives restart (the event log IS the
+    /// state). Best-effort: an IO failure logs a warning and leaves the in-memory
+    /// state intact rather than aborting the operation.
+    persist: Option<BufWriter<File>>,
 }
 
 impl ConnectionGraph {
-    /// Create an empty graph over a `dim`-dimensional interference field.
+    /// Create an empty in-memory graph over a `dim`-dimensional field.
     /// Panics if `dim` is 0.
     pub fn new(dim: usize) -> Self {
         Self::with_config(dim, GraphConfig::default())
     }
 
-    /// Create an empty graph with explicit plastic dynamics.
+    /// Create an empty in-memory graph with explicit plastic dynamics.
     pub fn with_config(dim: usize, cfg: GraphConfig) -> Self {
         assert!(dim > 0, "connection graph dim must be non-zero");
         Self {
@@ -103,7 +114,29 @@ impl ConnectionGraph {
             chain: 0,
             cfg,
             queries_since_decay: 0,
+            persist: None,
         }
+    }
+
+    /// Open a durable graph backed by an append-only event log at `path`. If the
+    /// file exists, its events are replayed to reconstruct the exact prior state;
+    /// subsequent mutations are appended. This is the persistence path: because
+    /// the field is a deterministic fold of the log, restoring == replaying.
+    pub fn open<P: AsRef<Path>>(dim: usize, cfg: GraphConfig, path: P) -> std::io::Result<Self> {
+        assert!(dim > 0, "connection graph dim must be non-zero");
+        let path: PathBuf = path.as_ref().to_path_buf();
+        let mut g = Self::with_config(dim, cfg);
+        if path.exists() {
+            let events = read_events(&path)?;
+            for ev in &events {
+                g.apply(ev);
+                g.chain = chain_step(g.chain, ev);
+            }
+            g.events = events;
+        }
+        let file = OpenOptions::new().create(true).append(true).open(&path)?;
+        g.persist = Some(BufWriter::new(file));
+        Ok(g)
     }
 
     /// Deterministic sparse vector for an entity id (no codebook stored).
@@ -144,8 +177,29 @@ impl ConnectionGraph {
         }
     }
 
+    /// Fold a single event into the field (no recording/persistence). Shared by
+    /// live mutation, replay, and open.
+    fn apply(&mut self, ev: &Event) {
+        match ev {
+            Event::Store(s, r, o) => {
+                let idx = self.edge_indices(s, r, o);
+                self.fold_edge(&idx, W_STORE);
+            }
+            Event::Strengthen(s, r, o) => {
+                let idx = self.edge_indices(s, r, o);
+                self.fold_edge(&idx, W_STRENGTHEN);
+            }
+            Event::Decay => self.apply_decay(),
+        }
+    }
+
     fn record(&mut self, ev: Event) {
         self.chain = chain_step(self.chain, &ev);
+        if let Some(writer) = self.persist.as_mut() {
+            if let Err(e) = append_event(writer, &ev) {
+                tracing::warn!("connection graph persist append failed: {e}");
+            }
+        }
         self.events.push(ev);
     }
 
@@ -220,17 +274,7 @@ impl ConnectionGraph {
     pub fn replay(dim: usize, cfg: GraphConfig, events: &[Event]) -> (Vec<i64>, u64) {
         let mut g = Self::with_config(dim, cfg);
         for ev in events {
-            match ev {
-                Event::Store(s, r, o) => {
-                    let idx = g.edge_indices(s, r, o);
-                    g.fold_edge(&idx, W_STORE);
-                }
-                Event::Strengthen(s, r, o) => {
-                    let idx = g.edge_indices(s, r, o);
-                    g.fold_edge(&idx, W_STRENGTHEN);
-                }
-                Event::Decay => g.apply_decay(),
-            }
+            g.apply(ev);
             g.chain = chain_step(g.chain, ev);
         }
         (g.field, g.chain)
@@ -269,6 +313,38 @@ fn chain_step(prev: u64, ev: &Event) -> u64 {
     hash_u64(prev ^ tag, payload)
 }
 
+/// Append one length-framed, bincode-encoded event to the durable log.
+fn append_event(writer: &mut BufWriter<File>, ev: &Event) -> std::io::Result<()> {
+    let bytes = bincode::serialize(ev)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    writer.write_all(&(bytes.len() as u32).to_le_bytes())?;
+    writer.write_all(&bytes)?;
+    writer.flush()
+}
+
+/// Read all length-framed events from a durable log. A torn or corrupt final
+/// record (e.g. a crash mid-append) stops replay at the last complete event
+/// rather than failing, so a partial write never loses committed history.
+fn read_events(path: &Path) -> std::io::Result<Vec<Event>> {
+    let mut buf = Vec::new();
+    File::open(path)?.read_to_end(&mut buf)?;
+    let mut events = Vec::new();
+    let mut off = 0;
+    while off + 4 <= buf.len() {
+        let len = u32::from_le_bytes([buf[off], buf[off + 1], buf[off + 2], buf[off + 3]]) as usize;
+        off += 4;
+        if off + len > buf.len() {
+            break; // truncated tail from an interrupted append
+        }
+        match bincode::deserialize::<Event>(&buf[off..off + len]) {
+            Ok(ev) => events.push(ev),
+            Err(_) => break, // corrupt record: stop at last good event
+        }
+        off += len;
+    }
+    Ok(events)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -288,6 +364,32 @@ mod tests {
         let present = g.score("paris", "capital_of", "france");
         let absent = g.score("berlin", "capital_of", "spain");
         assert!(present > absent, "present {present} !> absent {absent}");
+    }
+
+    #[test]
+    fn persists_and_reloads_across_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("cg.log");
+
+        {
+            let mut g = ConnectionGraph::open(4096, no_plasticity(), &path).unwrap();
+            g.store("paris", "capital_of", "france");
+            g.store("berlin", "capital_of", "germany");
+            // BufWriter flushes on drop.
+        }
+
+        // Reopen: the durable event log must reconstruct the exact prior state.
+        let g = ConnectionGraph::open(4096, no_plasticity(), &path).unwrap();
+        assert!(
+            g.verify(),
+            "reopened graph must equal the replay of its log"
+        );
+        let present = g.score("paris", "capital_of", "france");
+        let absent = g.score("tokyo", "capital_of", "spain");
+        assert!(
+            present > absent,
+            "reloaded relation ({present}) must outscore an absent one ({absent})"
+        );
     }
 
     #[test]

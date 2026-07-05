@@ -1648,29 +1648,51 @@ impl HmsCore {
         DiffusionFactorizer::factorize(&self.config.diffusion, product, domain_codebooks, max_iter)
     }
 
+    /// Lock the connection graph, lazily opening it over its durable append-only
+    /// event log at `{storage}/connection_graph.log` on first use so plastic
+    /// state survives restart. Falls back to in-memory if the log is unopenable.
+    #[cfg(feature = "experimental")]
+    fn connection_graph_lazy(
+        &self,
+    ) -> parking_lot::MutexGuard<'_, Option<super::connection_graph::ConnectionGraph>> {
+        let mut guard = self.connection_graph.lock();
+        if guard.is_none() {
+            let path = self.storage_path.join("connection_graph.log");
+            let graph = super::connection_graph::ConnectionGraph::open(
+                self.dimensions,
+                super::connection_graph::GraphConfig::default(),
+                &path,
+            )
+            .unwrap_or_else(|e| {
+                tracing::warn!("connection graph persistence unavailable ({e}); in-memory only");
+                super::connection_graph::ConnectionGraph::new(self.dimensions)
+            });
+            *guard = Some(graph);
+        }
+        guard
+    }
+
     /// Assert a `(subject, relation, object)` edge into the experimental plastic
-    /// connection graph (lazily created on first use, over the engine's
-    /// dimensionality). Opt-in and additive: independent of the sparse-binary
-    /// store and its persistence.
+    /// connection graph. Opt-in and additive: independent of the sparse-binary
+    /// store. Durable — the edge is appended to the graph's event log.
     #[cfg(feature = "experimental")]
     pub fn relate(&self, subject: &str, relation: &str, object: &str) {
-        let mut guard = self.connection_graph.lock();
-        guard
-            .get_or_insert_with(|| super::connection_graph::ConnectionGraph::new(self.dimensions))
-            .store(subject, relation, object);
+        let mut guard = self.connection_graph_lazy();
+        if let Some(g) = guard.as_mut() {
+            g.store(subject, relation, object);
+        }
     }
 
     /// Query a relation in the plastic connection graph, returning its presence
     /// score. This is a *mutating* read (the observer effect): it reinforces the
     /// queried relation and lets the untouched background decay, all recorded as
-    /// verifiable events. Returns 0.0 if the graph has not been used yet.
+    /// verifiable, durable events.
     #[cfg(feature = "experimental")]
     pub fn query_relation(&self, subject: &str, relation: &str, object: &str) -> f64 {
-        let mut guard = self.connection_graph.lock();
-        match guard.as_mut() {
-            Some(g) => g.query(subject, relation, object),
-            None => 0.0,
-        }
+        let mut guard = self.connection_graph_lazy();
+        guard
+            .as_mut()
+            .map_or(0.0, |g| g.query(subject, relation, object))
     }
 }
 
@@ -1692,6 +1714,26 @@ mod connection_graph_tests {
         assert!(
             present > absent,
             "asserted relation ({present}) must score above an absent one ({absent})"
+        );
+    }
+
+    #[test]
+    fn connection_graph_survives_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let hms = HmsCore::new(4096, Some(path.clone()), None).unwrap();
+            hms.relate("paris", "capital_of", "france");
+        } // engine dropped -> connection graph's BufWriter flushed on drop
+
+        // New engine over the same storage: the relation must reload from the log.
+        let hms2 = HmsCore::new(4096, Some(path), None).unwrap();
+        let present = hms2.query_relation("paris", "capital_of", "france");
+        let absent = hms2.query_relation("madrid", "capital_of", "italy");
+        assert!(
+            present > absent,
+            "relation must survive restart: reloaded ({present}) !> absent ({absent})"
         );
     }
 }
