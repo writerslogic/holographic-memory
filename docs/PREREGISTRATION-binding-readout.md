@@ -266,3 +266,55 @@ Honest positioning of this result:
   an exact bijection.
 - The only path to a NOVEL contribution remains X-stack vs strong baselines
   HRR/MAP with matched resources (untested; the expensive step).
+
+## 13. Strong baselines: HRR + MAP (run 2026-07-04)
+
+Harness: `src/bin/binding-baselines.rs`. Matched D=2048, shared 1024-symbol
+codebook, 8 seeds. All three systems run the SAME discriminator with the SAME
+query TYPE — membership: compose the (role, filler) pair and score it against the
+bundle (correct pair is a member, mis-bound is not). Faithful strong baselines:
+- HRR: real dense N(0,1/D), circular-convolution bind (validated radix-2 FFT),
+  cosine-to-bundle.
+- MAP: bipolar dense {-1,+1}, elementwise-product bind, cosine-to-bundle.
+- P: sparse permutation bind (idx^mask), bloom bundle, corrected containment.
+
+d' (correct vs mis-binding), mean over 8 seeds:
+
+| N   | HRR  | MAP  | P sparse |
+|-----|------|------|----------|
+| 40  | 3.47 | 4.00 | 8.05     |
+| 80  | 2.18 | 2.41 | 3.58     |
+| 160 | 1.43 | 1.64 | 2.39     |
+| 320 | 1.03 | 1.17 | 1.35     |
+
+**P (sparse) matches or beats HRR and MAP at every load**, at ~8 active indices
+vs 2048 dense components (matched-D deliberately flatters the dense systems on
+storage, and P still wins). Verified real, not a bug: at low load the sparse
+bundle is near-empty so a non-member's indices are cleanly absent (near-binary
+containment, high separability); dense bundles carry continuous crosstalk from
+the first item. MAP membership is algebraically identical to MAP retrieval for
+bipolar roles, so the readout swap is not what drives P's edge.
+
+Honest scope — this is NOT "sparse VSA beats HRR/MAP", it is much narrower:
+- **Verification only.** The task is membership verification (is this pair
+  bound?). HRR and MAP additionally support **retrieval** (unbind -> reconstruct
+  the filler) and cleanup/analogy; P's containment does none of these. The claim
+  is scoped to the one axis P can win — verification — exactly the axis the honest
+  positioning rules say to benchmark, with the retrieval axis disclosed as P's
+  loss, not hidden.
+- **Stack-vs-stack, not binding-isolated.** P differs from HRR/MAP on substrate
+  (sparse vs dense), bind (permutation vs convolution/product), AND readout
+  (containment vs cosine) simultaneously. The win is the whole sparse stack's, not
+  attributable to the bind operator alone.
+- **Mechanism, not magic.** P's edge is the near-binary separability of sparse
+  membership before bundle saturation; it collapses to the dense systems' level
+  as load approaches the saturation knee (converging by N~320). It is a
+  low-storage efficiency result for verification, likely an incremental/known
+  property of sparse HDC (cf. HyperCam, already cited in `entangled.rs`), not a
+  new capability.
+
+Net: the citable-strength claim would be "sparse permutation + bloom membership
+verifies role-filler bindings at higher d' than dense HRR/MAP at matched D and
+~256x lower storage, on the verification axis; it does not provide retrieval."
+Before that is paper-grade it needs: a retrieval-axis table (to bound the scope
+quantitatively), ROC/AUC, a D-sweep, and >=20 seeds near the knee.
