@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Persist ConnectionGraph via its event log; survives restart
 - ConnectionGraph -- plastic event-sourced relation store, wired into engine
 - Trust-anchored provenance verification and sharded ANN persistence
 - Runnable cross-verification of the cogmem C2PA sample
@@ -15,6 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
