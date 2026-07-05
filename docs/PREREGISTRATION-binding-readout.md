@@ -318,3 +318,43 @@ verifies role-filler bindings at higher d' than dense HRR/MAP at matched D and
 ~256x lower storage, on the verification axis; it does not provide retrieval."
 Before that is paper-grade it needs: a retrieval-axis table (to bound the scope
 quantitatively), ROC/AUC, a D-sweep, and >=20 seeds near the knee.
+
+## 14. Hardening RETRACTS the §13 claim (run 2026-07-04)
+
+Ran the paper-grade hardening from the §13 to-do list (ROC/AUC, retrieval,
+D-sweep, 20 seeds). **It overturns §13.** The "P beats HRR/MAP" result was a d'
+artifact.
+
+Verification, D=2048 (d' | AUC), 20 seeds:
+
+| N   | HRR d'|AUC   | MAP d'|AUC   | P d'|AUC     |
+|-----|-------------|-------------|--------------|
+| 20  | 4.10 | 0.977 | 4.51 | 0.973 | 9.57 | 0.977 |
+| 80  | 1.94 | 0.911 | 2.09 | 0.924 | 3.01 | 0.923 |
+| 320 | 0.87 | 0.734 | 0.96 | 0.758 | 1.15 | 0.701 |
+
+P's d' is highest at every load, but its **AUC ties at low load and is the LOWEST
+at high load** (0.701 vs HRR 0.734 / MAP 0.758 at N=320; same story at D=512 and
+D=8192, where P's AUC is consistently at or below the dense systems by N=320).
+d' rewards P's near-binary, low-variance containment scores (large mean gap /
+small spread), but the score distributions actually **overlap more in the tails**,
+which the distribution-free AUC exposes. d' assumed Gaussianity that P violates.
+
+Retrieval (rank-1 over 512 symbols, D=2048): all three are poor and P is
+consistently worst (~0.05/0.025/0.014/0.007 vs HRR/MAP ~0.075/0.045/0.028/0.02
+for N=20/40/80/160). NOTE the per-fact retrieval query is partly ill-posed on a
+flat bundle (unbinding a role returns the superposition of ALL that role's
+fillers, so "fact i's filler" has no unique target) — treat these as directional
+(dense > sparse) only; a well-posed retrieval test needs per-fact addressing and
+is future work.
+
+**Corrected conclusion.** The sparse permutation stack does NOT beat HRR/MAP. By
+the honest metric (AUC) it is comparable at low load and inferior at high load,
+and it is worse at retrieval. Its one genuine advantage is storage (~256x fewer
+components at matched D) while reaching low-load verification AUC parity. So the
+defensible claim shrinks to: "sparse permutation + bloom membership reaches
+HRR/MAP verification AUC at low load with ~256x less storage, degrading below
+them as load rises; it does not match them on retrieval." A storage-efficiency
+tradeoff for verification-heavy workloads, not a capability win — and NOT the d'
+headline of §13, which is retracted. This is the discipline working: the
+flattering metric was caught by the pre-registered stronger one.
