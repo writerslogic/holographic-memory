@@ -18,6 +18,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 
 ### Documentation
 - Update changelog [skip ci]
+- Update changelog [skip ci]
 - Record why presence gate uses an absolute margin, not SNR
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -52,6 +53,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Harden signing-key file perms, zeroize copies, bound JUMBF recursion
 
 ### Research
+- Phase memory retrieves under load where sparse collapses
 - Rotation binding gives relation algebra the current substrate lacks
 - Path-plasticity -- holographic generalization a cache can't do
 - Living-connection-graph slice -- plasticity beats saturation, verifiably
