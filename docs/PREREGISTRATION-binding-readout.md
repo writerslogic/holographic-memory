@@ -594,3 +594,57 @@ W=16 at load 1000, 71 vs 68), so "tune W to resolution" carries a load-dependent
 correction. Substrate design for the `PhaseVectorMemory` module is now settled:
 tune kernel bandwidth to value resolution, size D to expected fact count, shard
 beyond the knee.
+
+## 19. Counting readout vs the binary Bloom membership wall (pre-registered 2026-07-05)
+
+**Question.** The Bloom membership store (`core::bloom_memory`) bundles items by OR
+set-union and reads them out with density-corrected containment. Members score
+EXACTLY 1.0 (all k active indices are in the union by construction), so the
+discrimination collapse is entirely NON-members' scores rising toward 1.0 as the
+union saturates — a false-positive rate ≈ d^k that explodes as density d→1. OR-union
+discards COUNT information (how many items hit each index). Does a counting bundle +
+statistical readout push the membership wall substantially past the binary one?
+
+**Method (self-contained `src/bin/bloom-wall.rs`, not the untested harness).**
+D=16384, k=64 active indices/item (denom 256), items = deterministic random
+k-subsets. Two readouts on the SAME inserted set:
+  - binary: OR-union presence; score = corrected containment
+    (|q∩union|/k − d)/(1−d), d = |union|/D. (the incumbent, `bloom_memory`.)
+  - counting: per-index integer hit count; score = Σ_{i∈q active}(count_i − λ)/√λ,
+    the Poisson z-sum under the non-member null λ = n·k/D.
+Sweep n ∈ {100,200,400,700,1000,1500,2000,3000}, 20 seeds. Metric = **AUC**
+(Mann-Whitney, 200 members vs 200 non-members, distribution-free — NOT d', which
+§14 showed flatters near-binary score distributions). Report the wall = smallest n
+where AUC drops below 0.99 and below 0.95, for each readout.
+
+**Strong outcome.** Counting's AUC<0.95 wall is ≥1.5× the binary wall (e.g. binary
+walls ~700, counting holds past ~1400). **Kill.** Counting wall ≤ binary wall (no
+better than 1.2×) → counts don't help; the ceiling is field saturation itself, not
+the readout, and the fix is more D / sharding, not a smarter readout.
+
+**Result (run 2026-07-05) — counting QUADRUPLES the membership wall.** AUC (member
+vs non-member, 20 seeds), D=16384, k=64:
+
+| n    | binary AUC | counting AUC |
+|------|------------|--------------|
+| 700  | 0.994      | 0.9997       |
+| 1000 | 0.865      | 0.998        |
+| 1500 | 0.578      | 0.990        |
+| 2000 | 0.514      | 0.978        |
+| 3000 | 0.500      | 0.951        |
+| 4000 | 0.500      | 0.922        |
+| 6000 | 0.500      | 0.878        |
+| 8000 | 0.500      | 0.841        |
+
+Binary walls at <0.95 @ 1000 and is DEAD (chance) by 2000. Counting walls at <0.95
+@ 4000 and is still 0.84 at 8000. That is a ~4x capacity gain, and counting
+degrades gracefully where binary cliff-collapses. Kill did not fire.
+
+**Conclusion.** The Bloom membership ceiling was READOUT-driven, not saturation:
+OR-union discards the per-index count, which is exactly the signal (a member adds
++1 to each of its k indices; the Poisson z-sum recovers that shift long after the
+union has saturated to all-ones). Preserving counts quadruples usable capacity at
+matched D — cost is one u32 field vs one bit field (trades Bloom's 1-bit
+compactness for capacity), still a deterministic integer fold (replay-verifiable).
+A direct, actionable win for `core::bloom_memory`; the next step is a production
+counting-membership store behind the `experimental` gate.
