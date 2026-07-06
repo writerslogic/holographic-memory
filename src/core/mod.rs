@@ -46,6 +46,10 @@ pub(crate) mod ivf;
 pub(crate) mod nsg;
 #[cfg(feature = "experimental")]
 pub mod phase_graph;
+#[cfg(feature = "experimental")]
+pub mod phase_hvec;
+#[cfg(feature = "experimental")]
+pub mod phase_resonator;
 pub(crate) mod posting;
 #[cfg(feature = "provenance")]
 pub mod provenance;
