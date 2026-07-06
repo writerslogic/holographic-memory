@@ -767,3 +767,60 @@ cite these as effect sizes. A firm claim needs the pre-registered ≥20-seed run
 an unloaded machine (or a smaller D / fewer factors to cut cost). Directional
 validation of the design only; the statistics are thin. The productization
 (`phase_resonator::unbundle`) should wait for the full-power confirmation.
+
+## 22. Does the holographic layer beat exact hash on noisy queries? (pre-reg 2026-07-06)
+
+**Motivation.** A multi-model fusion pass on the "0.5·D verifiable retrieval" hard
+problem converged on: 0.5·D well-posed retrieval from a single dense superposition
+is information-theoretically impossible (~D·log2 N bit ceiling), so capacity MUST
+come from sharding — which HMS already does. For EXACT (S,R) queries a plain
+hash-to-shard KV store suffices; the VSA/attention layer earns its keep ONLY for
+NOISY/partial-cue queries. So the sharpest test of HMS's whole premise (Claude's
+"hash-router ablation"): does VSA similarity retrieval beat exact hash once the
+query key is corrupted? If not, HMS ≈ a sharded KV store and the holographic
+machinery is decorative.
+
+**Method (`src/bin/noisy-retrieval.rs`).** D=1024. Each fact = a random key phasor
+bound to an object from a codebook of O=64 random phasors; M facts superposed into
+one fixed-point complex field (re/im i64, integer LUT — deterministic). Query =
+the true key with a fraction ρ of its D phase components replaced by uniform random
+phases (partial-cue corruption). Recover the object by argmax over the codebook of
+⟨field, bind(q, obj_o)⟩. Baseline = exact hash-KV: recall 1.0 at ρ=0, 0 for any
+ρ>0 (any component change → different hash). Sweep load M/D ∈ {0.05,0.1,0.2,0.3} ×
+ρ ∈ {0,0.1,0.2,0.4}, N ∈ {256,16}, seeds. Metric: top-1 object recall; chance = 1/O
+≈ 1.6%.
+
+**Strong outcome.** VSA recall stays well above chance over a broad (load, ρ)
+region where exact hash is 0 — quantifying the noise-tolerance envelope the
+holographic layer buys over a hash-sharded store. **Kill.** If VSA recall collapses
+to ~chance at ρ=0.2 at reasonable load (M/D≤0.2), the noise tolerance is negligible
+→ the holographic layer adds nothing over exact hash and HMS's honest positioning
+is "a sharded KV store," not a robust associative memory. Either way it turns the
+fusion's reasoning into a measured envelope.
+
+**Result (run 2026-07-06) — kill did NOT fire; the holographic layer earns its
+keep on noisy queries.** Top-1 object recall (%), chance 1.6%, 6 seeds:
+
+N=256 (rows load M/D, cols corruption ρ):
+
+| load | ρ=0.0 | 0.1 | 0.2 | 0.4 |
+|------|-------|-----|-----|-----|
+| 0.05 | 100   | 100 | 99  | 92  |
+| 0.10 | 97    | 93  | 87  | 65  |
+| 0.20 | 80    | 65  | 56  | 38  |
+| 0.30 | 65    | 55  | 46  | 26  |
+
+N=16 essentially identical (56→62% at ρ=0.2/load 0.2). Exact hash-KV = 100% at ρ=0,
+**0% at every ρ>0**.
+
+**Conclusion.** For EXACT queries the ρ=0 column shows VSA merely matches hash (which
+is cheaper/exact) — the fusion was right that hash suffices there. But on NOISY /
+partial-cue queries the holographic layer holds far above chance where hash is dead:
+usable recall (>50%) out to ρ=0.2 at load≤0.2 and ρ=0.4 at load≤0.1. Kill needed
+~chance (1.6%) at ρ=0.2/load≤0.2; it measured 56–62%. So HMS is a genuine
+noise-robust associative memory, not a decorative wrapper on a sharded KV store —
+and 4-bit phase is free again. Honest label: this VALIDATES known VSA noise-
+robustness on the qFHRR substrate (expected from theory), not a novel capacity
+result; the 0.5·D single-superposition claim stays killed. It settles HMS's real
+value axis (noisy-query robustness) with a measured envelope, and confirms the
+positioning: capacity via sharding, value via noise tolerance.
