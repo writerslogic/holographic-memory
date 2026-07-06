@@ -184,6 +184,27 @@ impl PhaseGraph {
         &self.events
     }
 
+    /// A genuine cryptographic commitment to the event log: SHA-256 over a
+    /// canonical, length-prefixed serialization of every event in order. Unlike
+    /// [`chain_digest`](Self::chain_digest) (a fast, non-cryptographic 64-bit
+    /// integrity check), this is collision-resistant, so it is the digest to sign
+    /// (Ed25519) or publish as a checkpoint for verifiable, tamper-evident
+    /// mutation. Reordering or altering any event changes it.
+    #[cfg(feature = "security")]
+    pub fn sha256_digest(&self) -> [u8; 32] {
+        use sha2::{Digest, Sha256};
+        let mut h = Sha256::new();
+        for ev in &self.events {
+            let Event::Store(s, r, o) = ev;
+            h.update([0x53]); // 'S'
+            for field in [s.as_str(), r.as_str(), o.as_str()] {
+                h.update((field.len() as u32).to_le_bytes());
+                h.update(field.as_bytes());
+            }
+        }
+        h.finalize().into()
+    }
+
     /// Verify that the current field and chain digest are exactly the
     /// deterministic replay of the event log.
     pub fn verify(&self) -> bool {
@@ -293,5 +314,26 @@ mod tests {
             h.relate(s, r, o);
         }
         assert_ne!(h.chain_digest(), g.chain_digest());
+    }
+
+    #[cfg(feature = "security")]
+    #[test]
+    fn sha256_digest_is_deterministic_and_tamper_evident() {
+        let mut g = PhaseGraph::new(256, 256);
+        g.relate("a", "r", "b");
+        g.relate("c", "r", "d");
+        let digest = g.sha256_digest();
+
+        // Same events reproduce the same commitment.
+        let mut same = PhaseGraph::new(256, 256);
+        same.relate("a", "r", "b");
+        same.relate("c", "r", "d");
+        assert_eq!(same.sha256_digest(), digest);
+
+        // Altering an assertion changes the commitment.
+        let mut tampered = PhaseGraph::new(256, 256);
+        tampered.relate("a", "r", "b");
+        tampered.relate("c", "r", "EVIL");
+        assert_ne!(tampered.sha256_digest(), digest);
     }
 }
