@@ -358,3 +358,57 @@ them as load rises; it does not match them on retrieval." A storage-efficiency
 tradeoff for verification-heavy workloads, not a capability win — and NOT the d'
 headline of §13, which is retracted. This is the discipline working: the
 flattering metric was caught by the pre-registered stronger one.
+
+## 15. Fixed-point complex substrate for continuous memory (run 2026-07-05)
+
+**Question (lane 1, continuous/graceful memory).** The fractional-power encoding
+(FPE) similarity kernel is smooth in |x-y| but needs a COSINE (inner-product)
+readout. The integer phase-histogram substrate is exact-match only, so it cannot
+host that kernel — an earlier "nearest" test on the histogram passed only by
+coincidence (§ FPE-in-histogram, retracted). Cosine is a float op, which would
+break the bit-exact-replay verifiability the store depends on. Open question: can
+a FIXED-POINT complex substrate (phase → integer (cos,sin) lookup tables, integer
+inner-product similarity, integer superposition) give graceful similarity AND stay
+deterministic? This is FHRR quantized to Z_N. Baseline = the histogram exact-match
+readout at matched D. Kill = fixed-point cosine does not beat exact-match on
+graceful nearest.
+
+**Setup.** N=256 phases, D=1024, SCALE=4096 fixed-point unit, 5 seeds. FPE base
+frequencies low (-4..4). Stored grid = {0,10,...,120}; queries = {7,23,38,51,64,
+77,92,108} land strictly BETWEEN grid points so exact-match cannot win.
+`src/bin/fixed-point-holographic.rs`.
+
+Part 1 — nearest-value recall (readout comparison):
+
+| readout                     | nearest-recall |
+|-----------------------------|----------------|
+| fixed-point cosine          | 100%           |
+| exact-match (histogram)     | 0%             |
+
+Decisive: the histogram scores 0% on between-grid queries (confirms exact-match
+cannot host a continuous kernel); fixed-point cosine recovers the true nearest
+grid point every time, with no float.
+
+Part 2 — graceful associative retrieval under superposition. Store continuous-key
+→ symbol facts (bind = phase-add) bundled into ONE integer complex field; query a
+between-grid key, recover the NEAREST stored key's symbol, as distractor facts are
+added. Chance ≈ 1/13 ≈ 7.7%.
+
+| distractors | recall |
+|-------------|--------|
+| 0           | 85%    |
+| 25          | 68%    |
+| 100         | 50%    |
+| 400         | 45%    |
+
+**Conclusion.** The fixed-point complex substrate delivers the continuous
+capability the histogram cannot: a graceful similarity kernel that recovers the
+nearest value, entirely in integer arithmetic (cos/sin tables + i64/i128 sums), so
+the field stays a bit-exact fold of its inserts — replay-verifiable like the
+histogram. The kill condition did NOT fire. Honest caveats: (a) even at zero
+distractors single-pass associative recall is 85%, not 100% — the 13 grid keys
+interfere with each other in the shared bundle; (b) recall degrades to ~45% at 400
+distractors (still ~6x chance). Both are single-pass numbers with no cleanup; a
+resonator/iterative-cleanup readout is the obvious next lever and is future work.
+The substrate is validated; the module (a continuous-key `PhaseVectorMemory`) is
+the product step.
