@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.gif" width="200" alt="Holographic Memory System">
+  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.png" width="200" alt="Holographic Memory System">
 </p>
 
 <h1 align="center">Holographic Memory System (HMS)</h1>
