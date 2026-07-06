@@ -476,3 +476,70 @@ unknown); they are the wrong tool when one factor is a known continuous probe.
 Honest negative, not buried: it redirects the module design (ship single-pass, size
 D to the fact count) and saves an iterative readout that would have cost latency
 for less accuracy.
+
+## 17. What limits the zero-load 85%: kernel width vs capacity (pre-registered 2026-07-05)
+
+**Question.** §15 recovers the nearest symbol 85% of the time at just 13 facts,
+zero distractors, D=1024. That is the diagnostic anomaly: 13 facts is FAR below the
+capacity knee (Plate C_eff≈0.10·D ⇒ M_50≈100 at D=1024, consistent with §15's own
+45% at ~413 facts), so 13 facts should recall ~100%. Three competing explanations,
+each with a different fix:
+  (H1 confound) The low-frequency FPE base (multipliers in ±1..4) makes the
+    similarity kernel κ(|x−y|) too WIDE relative to grid spacing 10, so a
+    between-grid query's nearest grid key is confusable with its neighbors. Fix =
+    narrow the kernel (wider base-frequency spread). Cheap, additive.
+  (H2 capacity) The 85% is genuine interference; raising D lifts it. Fix = scale D
+    / decorrelate bases (the capacity sweep, §-future).
+  (H3 binding) Phase-add binding is intrinsically limited at this grid spacing;
+    neither knob helps. Fix = a different bind (HRR circular convolution),
+    reframing the substrate.
+
+**Method (one experiment discriminates all three).** Reuse the §15 fixed-point
+complex substrate. Two independent knobs at ZERO distractor load (13 grid facts,
+8 between-grid queries, 20 seeds):
+  - base-frequency spread W: multipliers drawn from ±(1..=W)\{0}. W ∈ {2,4,8,16,
+    32,64} plus a fully-random base (multipliers uniform 0..N ⇒ maximally narrow,
+    non-graceful control). Larger W = narrower kernel.
+  - dimension D ∈ {512, 1024, 2048, 4096}.
+Report between-grid nearest-recall for each (W, D). Secondary column: exact-at-grid
+recall (query sits ON a grid key) to expose the width tradeoff — too-narrow kernels
+should keep exact-recall high while between-grid recall collapses.
+
+**Discrimination.**
+  - Narrowing W lifts between-grid recall AND raising D does not → H1 (confound).
+  - Raising D lifts it AND W does not → H2 (capacity).
+  - Neither knob reaches ~100% between-grid → H3 (binding); a non-trivial kernel
+    sweet spot that beats 85% but caps below ~95% still favors H1-with-a-tradeoff.
+
+**Kill for H1.** If no W beats the low-freq baseline's ~85% between-grid recall at
+D=1024 (within seed variance), the confound hypothesis is dead and the ceiling is
+capacity or binding — pivot to the D-sweep. `src/bin/kernel-capacity-sweep.rs`.
+
+**Result (run 2026-07-05) — H1 CONFIRMED, H2 and H3 rejected.** Between-grid
+recall (%), 20 seeds, 13 facts, zero load:
+
+|            | D=512 | D=1024 | D=2048 | D=4096 |
+|------------|-------|--------|--------|--------|
+| W=4 (§15)  | 73    | 83     | 92     | 98     |
+| W=8        | 94    | 98     | 99     | 100    |
+| W=16       | 100   | 100    | 100    | 100    |
+| W=32       | 84    | 88     | 89     | 88     |
+| W=64       | 16    | 16     | 16     | 16     |
+| random     | 6     | 6      | 4      | 12     |
+
+W=4 at D=1024 reproduces the §15 85% (83%, harness matches). Widening to W=16 lifts
+it to 100% at EVERY D — W=16 @ D=512 (100%) beats W=4 @ D=4096 (98%) at 8x less
+memory, so kernel width dominates dimension. Classic bandwidth tuning: too wide
+(W≤4) confuses grid neighbors (spacing 10); too narrow (W≥32) drops between-grid
+queries outside the kernel → collapse to chance (W=64: 16%, random: 6%). The
+exact-on-grid control confirms the mechanism: narrow kernels perfectly separate
+exact keys (100% for W≥8) but only W=8–16 also INTERPOLATES between them.
+
+**Conclusion.** The §15 zero-load ceiling was a mis-tuned FPE kernel bandwidth, not
+capacity (D is nearly irrelevant here) and not binding (phase-add reaches 100%).
+The fix is free and additive: the substrate must tune base frequency to the value
+RESOLUTION (kernel width ≈ grid spacing), not hardcode low frequencies. Design
+principle, not a magic constant: W too small under-resolves, W too large loses
+gracefulness; the sweet spot is where the kernel's half-width ≈ half the smallest
+distinguishable value gap. Caveat: this is ZERO load; §18 tests whether the tuned
+kernel lifts the full distractor-load curve or only the zero-load point.
