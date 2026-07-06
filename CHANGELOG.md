@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Real SHA-256 commitment for verifiable phasor mutation (lane 3)
 - Multi-hop reasoning over the phasor memory (retrieve_path)
 - PhaseGraph -- phasor relational memory with relation algebra + retrieval
 - Presence-gate the observer effect (no confabulation-on-query)
@@ -19,6 +20,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
