@@ -830,3 +830,63 @@ impossible (the counting ceiling ~1.33·D at V=64 sits well above it, and the 0.
 Plate limit is a readout artifact, not a wall). Closing the 0.1·D→ceiling gap with
 better codes (sparse block codes, ECC, structured binding) is the open frontier —
 sharding is one path to capacity, not the only one.
+
+## 23. Capacity campaign: how far past 0.1·D can a single bundle go? (pre-reg 2026-07-06)
+
+**Question.** The naive random-superposition + linear-cleanup readout tops out near
+the Plate SNR limit; the counting ceiling (V=64, N=256, D=1024) is ~1.33·D. That gap
+is OPEN. Test a MULTITUDE of readout/code mechanisms on the SAME single-bundle
+retrieval task (no sharding) and measure where each one's recall-vs-load knee lands.
+
+**Task.** Recover object given exact key from ONE bundle of M facts (random key ⊗
+object, O=64 codebook). Metric: top-1 recall vs load M/D ∈ {0.1,0.2,0.3,0.5,0.75,
+1.0}; report the KNEE (max M/D at recall ≥90% and ≥50%). Fixed D=1024, N=256, O=64,
+exact queries (isolate capacity from the §22 noise axis), ≥5 seeds. Chance 1.6%.
+
+**Arms (`src/bin/capacity-campaign.rs`):**
+- base — dense phasors, one-shot linear score argmax (the incumbent ~0.1–0.2·D).
+- whiten — per-dim field magnitude normalization before scoring (equalize dims).
+- hopfield-lo / hopfield-hi — iterative modern-Hopfield softmax cleanup on the
+  unbound value (β low/high, T iters) — nonlinearity-before-readout.
+- ens2 / ens4 — split D into K independent sub-bundles (D/K each), sum per-candidate
+  scores (repetition/voting at matched total D).
+Plus a base-vs-best check at N=16.
+
+**Strong outcome.** ≥1 arm pushes the 50%-recall knee materially past base (e.g.
+base ~0.25·D → best ≥0.5·D). **Kill.** No arm beats base's knee by >0.05·D → on the
+dense phase substrate, readout tricks don't unlock capacity and the lever is a
+different SUBSTRATE (sparse block codes on `EntangledHVec`; ECC output codes) — name
+that as the next campaign. Cheapest disconfirming: run base vs hopfield-hi at loads
+{0.2,0.5} first; if hopfield doesn't beat base at 0.5, the iterative-cleanup arm is
+out. This is a readout/code sweep on ONE substrate; sparse-substrate and ECC codes
+are the explicitly-noted follow-on batch, not tested here.
+
+**Result (run 2026-07-06) — KILL FIRED. Nothing beats naive base.** Top-1 recall
+(%) vs load M/D, V=64, N=256, 5 seeds:
+
+| arm         | 0.1 | 0.2 | 0.3 | 0.5 | 0.75 | 1.0 | knee@50 |
+|-------------|-----|-----|-----|-----|------|-----|---------|
+| base        | 98  | 79  | 56  | 45  | 27   | 18  | 0.30    |
+| whiten      | 94  | 68  | 46  | 37  | 22   | 11  | 0.20    |
+| hopfield-lo | 98  | 79  | 56  | 45  | 27   | 18  | 0.30    |
+| hopfield-hi | 98  | 79  | 56  | 45  | 27   | 18  | 0.30    |
+| ens2        | 36  | 23  | 17  | 12  | 8    | 7   | <0.10   |
+| ens4        | 11  | 6   | 6   | 4   | 4    | 4   | <0.10   |
+| sparse.5    | 96  | 78  | 60  | 40  | 25   | 18  | 0.30    |
+| sparse.25   | 96  | 80  | 60  | 37  | 31   | 21  | 0.30    |
+| sparse.1    | 96  | 80  | 65  | 38  | 29   | 21  | 0.30    |
+
+**Conclusion.** (1) Readout is not the lever: `whiten` discards magnitude signal
+(worse); iterative Hopfield EXACTLY equals base (one-shot matched-filter argmax is
+already optimal for single-object retrieval — iteration can only confirm the top
+score; the initial hopfield=chance was a beta-scaling bug, fixed to beta/sqrt(dim),
+after which it converges to base); `ensemble` doubles per-subspace load (worse).
+(2) Phase-sparse codes tie base — random sparse SUPPORT on a phasor is NOT a
+structured sparse-block code; the Frady/Kleyko gain is a property of the
+sparse-BINARY substrate (block-wise one-hot), unreachable by masking phase dims.
+(3) Byproduct: naive dense already reaches 0.30·D @ 50% recall (V=64) — 3x the
+"0.1·D Plate" folklore, reconfirming 0.1·D is not a wall (90%-reliable is still
+~0.1·D; counting ceiling ~1.33·D). The gap to the ceiling is real and none of these
+9 close it. The lever is a structurally different CODE on a different SUBSTRATE:
+sparse-block codes on `EntangledHVec` (`block_codes` / "block code floor") or ECC
+output codes — the well-motivated next campaign (§24).
