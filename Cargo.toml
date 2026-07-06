@@ -66,6 +66,10 @@ harness = false
 name = "verify_cogmem_sample"
 required-features = ["provenance"]
 
+[[example]]
+name = "story_memory"
+required-features = ["experimental"]
+
 [features]
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
