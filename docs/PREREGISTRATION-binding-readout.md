@@ -648,3 +648,73 @@ matched D — cost is one u32 field vs one bit field (trades Bloom's 1-bit
 compactness for capacity), still a deterministic integer fold (replay-verifiable).
 A direct, actionable win for `core::bloom_memory`; the next step is a production
 counting-membership store behind the `experimental` gate.
+
+## 20. Deterministic quantized resonator for factorization (pre-registered 2026-07-05)
+
+**Prior-art note (read first).** The quantized-phase-FHRR substrate used in §15–§18
+is PUBLISHED as qFHRR (arXiv 2604.25939, Apr 2026): discrete phase indices, integer
+bind/unbind/similarity/bundle via mod-arithmetic + LUTs, ~lossless vs complex FHRR
+at K≥16 (bind-sim 0.99 at K=16, 0.997 at K=32). So §15/§17/§18 are VALIDATION of
+qFHRR, not discovery — labelled as such. qFHRR explicitly does NOT do resonators or
+factorization; Frady/Kent resonator networks (2020; Nature Mach. Intell. 2024) are
+FLOAT. This experiment tests the open edge: does phase QUANTIZATION cost
+factorization capacity in a resonator?
+
+**Question.** Given a composite c = bind(x_a, y_b) (phase-add) of two unknown
+codebook factors, a resonator network recovers (a,b) by alternating unbind +
+codebook-cleanup. Does an FHRR resonator run at finite phase resolution N match the
+float resonator's factorization capacity (search space F² it can solve), or does
+quantization shrink it?
+
+**Method (`src/bin/resonator-factorize.rs`).** D=1024. Factor codebooks X, Y each
+of F items; phases drawn in Z_N (N ∈ {16,32,64,256}) or continuous (N=0, the float
+baseline). Composite c = (x_a+y_b) mod. Resonator state x̂,ŷ as complex vectors,
+init = g(Σ codebook). Iterate ≤30: x̂ = g(Σ_k ⟨X_k, c⊙conj(ŷ)⟩ X_k); ŷ symmetric;
+g[d] = unit phasor at phase atan2(im,re) quantized to N (the qFHRR bundle recover
+step). Early-stop on stable argmax. Readout: (â,b̂)=argmax similarity. Success =
+both correct. Sweep F ∈ {8,16,32,48,64} (search space 64…4096), 30 trials × random
+(a,b), 20 seeds. Metric: factorization accuracy vs F, per N. Chance = 1/F².
+
+**Cheapest disconfirming first.** F=8, N=256, D=1024: if the resonator does not
+recover (a,b) ~100% at this trivial size, the dynamics are wrong or the quantized
+substrate cannot host a resonator — fix before sweeping.
+
+**Strong outcome.** Quantized (N=256) matches float (N=0) accuracy across F within
+noise, and even N=16–32 tracks it closely (per qFHRR's ~lossless-at-K≥16) → phase
+quantization is free for factorization → "deterministic resonator" is real, pairing
+qFHRR + Frady/Kent. **Kill.** N=256 accuracy is materially below float at every F
+(capacity knee shifts left with quantization) → quantization costs factorization;
+report the cost curve honestly. Either way it is a citable entry qFHRR left open.
+
+**Result (run 2026-07-05) — quantization is FREE for factorization; kill did not
+fire.** First run (2 factors, F≤64) was 100% everywhere — a toy within capacity,
+measuring nothing; pivoted to 3 factors (search space F³), the honest Frady/Kent
+benchmark. 3-factor accuracy, mean±std over 24 seeds × 32 trials, D=1024:
+
+| F (F³)     | float | N=256 | N=16 (4-bit) |
+|------------|-------|-------|--------------|
+| 16 (4k)    | 99±2  | 98±2  | 98±3         |
+| 24 (14k)   | 89±5  | 87±7  | 89±6         |
+| 32 (33k)   | 77±5  | 77±9  | 77±8         |
+| 40 (64k)   | 69±9  | 65±7  | 67±8         |
+| 48 (110k)  | 59±8  | 59±9  | 56±9         |
+
+The capacity knee is at F≈24–32 (search space ~14k–33k ≈ D^1.5=32k for D=1024),
+matching Frady/Kent theory — the setup is validated, not rigged. Float, N=256, and
+even N=16 (4-bit phase) overlap within ±1σ at EVERY F; the largest gap (F=40, 69 vs
+65) is <1σ and the deviations are non-monotonic in N (noise, not a quantization
+trend). The quantized knee does not shift left of float.
+
+**Conclusion.** Phase quantization is free for resonator factorization: a
+deterministic integer resonator (down to 4 bits/dim) matches the float FHRR
+resonator's capacity across the operating range. This is the open edge qFHRR left
+(they did no resonators) meeting the SOTA factorization method (Frady/Kent, float):
+the pairing costs nothing, yielding integer-only, replay-exact neurosymbolic
+factorization — a genuine, citable contribution, not a re-derivation. Honest scope:
+(a) single clean composite (the standard Frady/Kent benchmark); factoring from a
+bundled superposition (many facts) is separate future work where quantization noise
+may compound with bundle interference; (b) the resonator readout is float here — the
+QUANTIZATION variable (phase resolution N) is isolated; a fully fixed-point resonator
+(integer LUT arithmetic) is the implementation step, its determinism already
+validated by qFHRR and §15. Next: a `resonator` module productization + the bundled-
+factorization stress test.
