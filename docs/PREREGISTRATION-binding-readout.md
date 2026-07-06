@@ -718,3 +718,52 @@ QUANTIZATION variable (phase resolution N) is isolated; a fully fixed-point reso
 (integer LUT arithmetic) is the implementation step, its determinism already
 validated by qFHRR and §15. Next: a `resonator` module productization + the bundled-
 factorization stress test.
+
+## 21. Bundled factorization: resonator + explaining-away under load (pre-registered 2026-07-05)
+
+**Question.** §20 factored a SINGLE clean composite. A memory holds MANY facts
+superposed. Can the deterministic resonator recover facts from a BUNDLE of B bound
+products (Σ bind(x,y,z)) by explaining-away (factor → subtract → repeat), and does
+phase quantization cost MORE here — where quantization noise compounds with bundle
+interference — than in the single-composite case (§20, where it cost nothing)?
+
+**Method (`src/bin/resonator-bundle.rs`).** D=1024, 3 factors, codebook size F=24.
+Store B facts, each = product of one random entry per axis; superpose into one
+complex field (float working state; codebooks quantized to N). Peel B times:
+resonator-factorize the residual field, record the recovered triple, subtract its
+unit-phasor product from the field. Sweep B ∈ {1,4,8,12,16,24} × N ∈ {float, 256,
+16}, 12 seeds × 8 trials. Metric: set-recovery = |recovered ∩ stored| / B.
+
+**Strong outcome.** Quantized (N=256, N=16) tracks float recovery across B — i.e.
+quantization stays free even under bundle load, so deterministic bundled
+factorization is real (the productization target for `phase_resonator::unbundle`).
+**Kill.** Quantized recovery falls materially below float as B grows → bundling is
+where quantization finally costs; report the crossover and gate the prod unbundle
+to the regime where it holds. Either way, quantify the bundle-capacity curve
+(recovery vs B) the single-composite §20 could not show.
+
+**Result (run 2026-07-06) — directional, UNDERPOWERED.** Bundled 3-factor
+set-recovery via explaining-away, D=1024, F=16, but only 3 seeds × 2 trials =
+6/cell: the pre-registered 20-seed run was intractable on a heavily-loaded host (a
+47-min and a 3-hr run were killed; the resonator inner loop is O(B·iters·F·D) per
+peel and the box delivered ~50M flop/s under contention from ~15 concurrent
+processes; the bin was rewritten allocation-free but the box, not allocation, was
+the limit).
+
+| B facts | float | N=256 | N=16 (4-bit) |
+|---------|-------|-------|--------------|
+| 1       | 100   | 100   | 100          |
+| 4       | 83    | 100   | 100          |
+| 8       | 83    | 83    | 100          |
+| 16      | 77    | 68    | 89           |
+
+Bundled factorization WORKS: the resonator peels facts from a superposition and
+degrades gracefully (100% at B=1 → ~70–90% at B=16). Quantized tracks float within
+noise — indeed float sits BELOW quantized at several cells (83 vs 100), which is
+impossible as a real effect (quantization cannot ADD information) and simply
+confirms the noise floor is wide at 6 trials/cell. So: no evidence quantization
+costs under bundling (kill did not fire), but the test is UNDERPOWERED — do NOT
+cite these as effect sizes. A firm claim needs the pre-registered ≥20-seed run on
+an unloaded machine (or a smaller D / fewer factors to cut cost). Directional
+validation of the design only; the statistics are thin. The productization
+(`phase_resonator::unbundle`) should wait for the full-power confirmation.
