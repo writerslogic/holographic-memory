@@ -412,3 +412,67 @@ distractors (still ~6x chance). Both are single-pass numbers with no cleanup; a
 resonator/iterative-cleanup readout is the obvious next lever and is future work.
 The substrate is validated; the module (a continuous-key `PhaseVectorMemory`) is
 the product step.
+
+## 16. Resonator cleanup for continuous associative recall (pre-registered 2026-07-05)
+
+**Question.** §15 Part 2 leaves single-pass associative recall at 85% (zero load)
+→ 45% (400 distractors). The field superposes `bind(key_i, symbol_i)` facts; a
+continuous query fixes the key at `encode(q)`, which is NOT a stored key, so the
+one-shot symbol readout carries interference from neighboring facts. Does a
+two-factor **resonator network** (Frady/Kent/Sommer 2020 style) lift recall by
+alternating hard cleanup between the two codebooks?
+
+**Method.** Two codebooks: K = {encode(k) : k ∈ grid} (stored keys), S =
+{symbol_phase(i)} (symbols). Field = Σ_i bind(K_i, S_i), same fixed-point complex
+accumulator as §15. Per query q (between grid points):
+- init key estimate = encode(q) (the continuous query, not a codebook entry);
+- iterate T=4: (a) symbol step — score each S_j by ⟨field, bind(key_est, S_j)⟩,
+  hard-snap symbol_est to argmax; (b) key step — score each K_j by ⟨field,
+  bind(K_j, symbol_est)⟩, hard-snap key_est to that stored key. Early-stop when
+  key index is stable.
+- answer = final symbol index.
+
+Using the stored-key codebook for cleanup is legitimate: a real store knows its
+own keys. Kill can genuinely fire — a wrong key-snap propagates and can make the
+resonator WORSE than single-pass.
+
+**Baseline** = §15 single-pass (key fixed at encode(q), one symbol readout),
+re-run in the same harness for a matched comparison.
+
+**Metric.** Symbol recall at loads {0, 25, 100, 400}, 5 seeds, chance ≈ 7.7%.
+Also report key-recovery (final key index = true nearest grid key).
+
+**Strong outcome.** Resonator recall > single-pass at every load, gap widening
+under load. **Kill.** Resonator ≤ single-pass at the load levels → the alternating
+cleanup buys nothing here; report the flat result and ship the module single-pass.
+`src/bin/resonator-cleanup.rs`.
+
+**Result (run 2026-07-05) — KILL FIRED.** Symbol recall, single-pass vs resonator:
+
+| distractors | single-pass | resonator | key-recovery |
+|-------------|-------------|-----------|--------------|
+| 0           | 85%         | 85%       | 85%          |
+| 25          | 68%         | 62%       | 62%          |
+| 100         | 50%         | 40%       | 42%          |
+| 400         | 45%         | 38%       | 48%          |
+
+The resonator ties at zero load and is strictly WORSE under load. Why: single-pass
+is already near-optimal for THIS query shape. With unique symbols, the one-shot
+score of symbol s_j is ≈ κ(k_j − q), the FPE kernel of the query's distance to
+grid key k_j, so argmax already picks the nearest key's symbol — the continuous
+query q carries the "between-ness" the kernel needs. The resonator's HARD key-snap
+throws that away: it projects the continuous key estimate onto a (sometimes wrong)
+grid key, and a wrong snap propagates into the symbol readout. Key-recovery
+(48% at load 400) confirms the snap is itself unreliable. Hard cleanup destroys
+the graceful information rather than sharpening it.
+
+**Corrected conclusion.** For continuous single-factor recall with unique fillers,
+single-pass fixed-point cosine is the readout to ship; the two-factor resonator is
+a net negative. The real lever for the 85%-at-zero-load ceiling is NOT cleanup but
+CAPACITY — that ceiling is 13 facts interfering in one D=1024 bundle, independent
+of distractors, so raising D (or sharding) is what lifts it. Resonators remain the
+right tool for genuine MULTI-factor products (bind of ≥2 codebook factors both
+unknown); they are the wrong tool when one factor is a known continuous probe.
+Honest negative, not buried: it redirects the module design (ship single-pass, size
+D to the fact count) and saves an iterative readout that would have cost latency
+for less accuracy.
