@@ -890,3 +890,35 @@ sparse-BINARY substrate (block-wise one-hot), unreachable by masking phase dims.
 9 close it. The lever is a structurally different CODE on a different SUBSTRATE:
 sparse-block codes on `EntangledHVec` (`block_codes` / "block code floor") or ECC
 output codes — the well-motivated next campaign (§24).
+
+## 24. Block codes also floor: the retrieval-vs-information capacity gap (2026-07-06)
+
+**Result (existing `block-recovery-test`, re-run 2026-07-06).** The genuine sparse
+block-code substrate (`BlockCodeVec`, block-wise one-hot) on (s,r,o) triple
+retrieval, D=16384, 125 symbols:
+
+| facts | M/D    | top-1 | crosstalk | confound |
+|-------|--------|-------|-----------|----------|
+| 200   | 0.012  | 1.000 | 0         | 0        |
+| 500   | 0.031  | 0.994 | 3         | 0        |
+| 1000  | 0.061  | 0.893 | 107       | 0        |
+| 1500  | 0.092  | 0.711 | 433       | 0        |
+
+D-scaling (500 facts, 125 symbols): 55.8%@D=4096, 88.2%@8192, 99.4%@16384,
+100%@32768. **confound=0 throughout** — retrieval is well-posed; every failure is
+pure crosstalk (interference), not a wrong-but-valid filler.
+
+**Complete synthesis (closes §17–§24 capacity thread).** Both HMS substrates floor
+at a small constant fraction of D for well-posed per-fact retrieval: dense phase
+(§23: ~0.1·D @ 98%, ~0.3·D @ 50%, V=64) and sparse block codes (~0.03–0.06·D at
+high reliability, V=125). Neither approaches the ~1.33·D counting ceiling. This is
+the KNOWN gap between information capacity (~D·log2 N bits, Shannon) and RETRIEVAL
+capacity (associative memory) of distributed representations — the same phenomenon
+as classical Hopfield's ~0.14·N. §23 showed readout tricks don't move it; §24 shows
+the sparse-block-code substrate doesn't either. Conclusion: **0.5·D well-posed
+retrieval is NOT information-theoretically impossible (retracted in §22/§23) but is
+beyond what any known SUPERPOSITION code achieves — it's an OPEN gap, not a wall.**
+Modern-Hopfield exponential capacity requires SEPARATE storage (→ sharding/codebook,
+§22), not superposition. Pushing past the floor needs a genuinely novel superposition
+code (hard, open, publishable if solved); otherwise the validated path is sharding
+for capacity + the noisy-query robustness envelope (§22) for value.
