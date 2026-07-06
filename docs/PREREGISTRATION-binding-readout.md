@@ -771,9 +771,12 @@ validation of the design only; the statistics are thin. The productization
 ## 22. Does the holographic layer beat exact hash on noisy queries? (pre-reg 2026-07-06)
 
 **Motivation.** A multi-model fusion pass on the "0.5·D verifiable retrieval" hard
-problem converged on: 0.5·D well-posed retrieval from a single dense superposition
-is information-theoretically impossible (~D·log2 N bit ceiling), so capacity MUST
-come from sharding — which HMS already does. For EXACT (S,R) queries a plain
+problem claimed 0.5·D from a single dense superposition is "information-theoretically
+impossible" — that framing is WRONG (retracted). The real counting bound is
+vocab-dependent (M ≤ D·log2 N / log2 V; ~1.33·D at V=64, so 0.5·D is well under it),
+and the 0.1·D "Plate law" is a readout artifact of naive superposition + linear
+cleanup, NOT a fundamental wall — closing the gap to the ceiling with better codes
+is OPEN. Sharding is one capacity path (what the models defaulted to), not forced. For EXACT (S,R) queries a plain
 hash-to-shard KV store suffices; the VSA/attention layer earns its keep ONLY for
 NOISY/partial-cue queries. So the sharpest test of HMS's whole premise (Claude's
 "hash-router ablation"): does VSA similarity retrieval beat exact hash once the
@@ -821,6 +824,9 @@ usable recall (>50%) out to ρ=0.2 at load≤0.2 and ρ=0.4 at load≤0.1. Kill 
 noise-robust associative memory, not a decorative wrapper on a sharded KV store —
 and 4-bit phase is free again. Honest label: this VALIDATES known VSA noise-
 robustness on the qFHRR substrate (expected from theory), not a novel capacity
-result; the 0.5·D single-superposition claim stays killed. It settles HMS's real
-value axis (noisy-query robustness) with a measured envelope, and confirms the
-positioning: capacity via sharding, value via noise tolerance.
+result. It settles HMS's value axis (noisy-query robustness) with a measured
+envelope. It does NOT settle capacity: 0.5·D is NOT information-theoretically
+impossible (the counting ceiling ~1.33·D at V=64 sits well above it, and the 0.1·D
+Plate limit is a readout artifact, not a wall). Closing the 0.1·D→ceiling gap with
+better codes (sparse block codes, ECC, structured binding) is the open frontier —
+sharding is one path to capacity, not the only one.
