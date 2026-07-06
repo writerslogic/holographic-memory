@@ -23,6 +23,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
+- Update changelog [skip ci]
 - Record why presence gate uses an absolute margin, not SNR
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -55,6 +56,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 
 ### Security
 - Harden signing-key file perms, zeroize copies, bound JUMBF recursion
+
+### Example
+- Story_memory -- HMS reasoning memory serving a writer (scrivener-mcp)
 
 ### Research
 - Phase memory retrieves under load where sparse collapses
