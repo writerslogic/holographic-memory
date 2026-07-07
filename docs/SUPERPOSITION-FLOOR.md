@@ -41,21 +41,24 @@ transition, not a small-D artifact):
 | 0.40 | 0.25 | 0.30 | 0.14 |
 
 **(2) The gap is computational.** Initialise a hard Gauss-Seidel solver *at* the true
-support (a "genie") and it stays there all the way to `M/D = 0.75`; best-of-8 random
-restarts never find it:
+support (a "genie") and it stays there — and no random restart ever finds a competing
+exact fit — all the way to `M/D = 1.5` (the largest load tested):
 
-| M/D | genie-init stays | random best-of-8 |
-|-----|------------------|------------------|
-| 0.30 | 1.000 | 0.17 |
-| 0.50 | 1.000 | 0.09 |
-| 0.75 | 1.000 | 0.05 |
+| M/D | genie-init stays | truth residual | random best-of-8 residual |
+|-----|------------------|----------------|---------------------------|
+| 0.50 | 1.000 | 0.0000 | 3.46 |
+| 0.75 | 1.000 | 0.0000 | 3.17 |
+| 1.00 | 1.000 | 0.0000 | 3.11 |
+| 1.50 | 1.000 | 0.0000 | 3.04 |
 
-So the true solution is locally identifiable and verifiable (residual → 0) to `≥0.75·D`,
-while every blind method is trapped in spurious minima (the spatial-coupling probe found
-20/20 random restarts converge to distinct wrong fixed points, each with large residual
-~3.4 vs truth's 0.0). **Verifiable ≠ findable.** This refutes a strict "info-theoretically
-impossible past ~0.5·D" reading and matches the known SPARC/CDMA hard-phase picture
-(algorithmic threshold ≈0.27 well below the information threshold ≈0.75).
+So the true solution is a stable, exactly-fitting, verifiable fixed point to **≥1.5·D**,
+while every blind method is trapped in spurious minima (residual ~3 vs truth's 0). In
+noiseless exact arithmetic the information is plainly there — 256 real numbers carry the
+~2300 bits of `M·log₂L` easily — so the barrier is **entirely computational**:
+*verifiable ≠ findable.* This refutes a strict "info-theoretically impossible past
+~0.5·D" reading and matches the known SPARC/CDMA hard-phase picture (a low algorithmic
+threshold ≈0.27 far below the information threshold). The **practical** capacity limit
+is instead set by quantization/noise — which is exactly why deterministic HMS shards.
 
 Soft/graceful readout is preserved throughout: the AMP posterior on the true entry
 degrades continuously across the transition (no cliff) — the property an exact code
@@ -81,6 +84,36 @@ computational-gap crux (rows 1–2's numbers) were independently reproduced.
 The convergence is the result: eight decoders (including the naive baseline), one floor,
 each failing for a *different, tested* reason, all consistent with a single
 computational hard phase.
+
+## Attacking the assumptions: does any stronger solver break 0.27?
+
+The "0.27 is fundamental" claim rests on two *assumptions*, not proven theorems: that
+AMP is optimal, and that the statistical-to-computational hard phase is real. The shared
+codebook actually **violates** AMP's iid state-evolution premise, so AMP need not be
+optimal here. Six solvers, each validated at M/D=0.10 (all 1.000), pushed past the
+floor (`scripts/superposition_floor_probes.py`, D=256, 5 seeds):
+
+| M/D | naive | AMP | AMP+refine | multistart×32 | AMP-anneal | **VAMP** |
+|-----|-------|-----|------------|---------------|------------|----------|
+| 0.25 | 0.41 | 0.875 | 0.86 | 0.86 | 0.89 | **1.000** |
+| 0.30 | 0.31 | 0.39 | 0.29 | 0.26 | 0.39 | **0.41** |
+| 0.40 | 0.23 | 0.28 | 0.17 | 0.16 | 0.28 | **0.29** |
+| 0.50 | 0.21 | 0.21 | 0.12 | 0.08 | 0.21 | **0.21** |
+
+Two findings, both honest:
+
+- **Assumption #1 was partially false — and it didn't matter.** VAMP/OAMP (built for
+  correlated designs) *is* strictly better than AMP: it holds 100% at M/D=0.25 where AMP
+  has already frayed to 0.875, confirming the shared-codebook correlation was hurting
+  AMP. But it only nudges the reliable knee ~0.25→0.27; at M/D=0.30 it collapses with
+  everything else. The best available solver confirms the floor rather than breaking it.
+- **Local search *hurts* past the floor** (AMP+refine, multistart both fall *below* plain
+  AMP at M/D≥0.30). Refining a blind estimate drives it *into* a spurious minimum — a
+  direct, positive signature of the trap-dominated landscape the hard-phase predicts.
+
+So the assumption-attack strengthens the conclusion: the floor survived VAMP, annealing,
+local-search refinement, and 32-restart search, and the one place AMP was genuinely
+suboptimal (the correlation) buys only ~0.02 in M/D.
 
 ## What it means for HMS
 
