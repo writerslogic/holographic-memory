@@ -70,6 +70,26 @@ All five queue items committed (+1 self-caught correction). Verification:
   Full default-features `cargo clippy --workspace -- -D warnings` now GREEN across all
   38 bins (0 warnings). No logic/outcome change to the §21 experiment.
 
+### §29 bits/dim head-to-head (pre-registered, on user request)
+- Pre-registered §29 (footprint vs float Frady/Kent) with a firing kill; added optional
+  seed-base to resonator-sweep for a fresh-seed confirmation. Ran seeds 100..130 (unseen):
+  REPRO CHECK still matches §20; kill did NOT fire — 4-bit equals/exceeds float within
+  ±1σ at every F and D (D=1024: 97/90/78/70/60 vs 97/88/77/67/58). Claim confirmed:
+  4 bits/dim matches float factorization accuracy → 8x (f32)/16x (f64) smaller stored
+  state. Folded into DETERMINISTIC-RESONATOR.md. Accuracy matched, not beaten.
+
+### Superposition-floor cold exploration (on user request — attended)
+- Launched parallel cold explorations (zero-bias, test-the-bound). Early findings:
+  - CS/AMP: blind AMP reaches M/D≈0.25–0.27 (2–3x naive) WITH soft readout; BUT
+    genie-init hard decode holds 100% to M/D≈0.75 and self-corrects from a corrupted
+    start → floor is COMPUTATIONAL (finding the solution), not information-theoretic
+    (it exists + is verifiable to ≥0.75D). Refutes strict "0.5D impossible"; lever =
+    initialization (spatial coupling / stored hint). NEEDS INDEPENDENT VERIFICATION.
+  - Modern-Hopfield readout: clean negative on capacity (reduces to nearest-neighbor,
+    SNR-bound), real positive on output fidelity. Not a capacity lever.
+  - Nonlinear/higher-order lift: clean negative at matched storage (data-processing
+    bound, tested); matrix-memory "win" is a storage illusion.
+
 ### Post-queue (on "continue")
 - Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
   output cell-for-cell (no hand-copy error). Both D=1024 and the D-sweep cells match.
