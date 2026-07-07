@@ -120,7 +120,7 @@ fn resonate(fr: &[f64], fi: &[f64], books: &[Book], n: u32, s: &mut Scratch) -> 
     let mut prev = vec![usize::MAX; FACTORS];
     let mut stable = 0;
     for _ in 0..ITERS {
-        for f in 0..FACTORS {
+        for (f, cb) in books.iter().enumerate() {
             s.ubr.copy_from_slice(fr);
             s.ubi.copy_from_slice(fi);
             for (j, (er, ei)) in s.est.iter().enumerate() {
@@ -129,13 +129,13 @@ fn resonate(fr: &[f64], fi: &[f64], books: &[Book], n: u32, s: &mut Scratch) -> 
                 }
             }
             // cleanup: est[f] = snap(Σ_k <cb_k, ub> cb_k)
-            for (k, c) in books[f].iter().enumerate() {
+            for (k, c) in cb.iter().enumerate() {
                 s.sims[k] = dot(&c.0, &c.1, &s.ubr, &s.ubi);
             }
             let (er, ei) = &mut s.est[f];
             er.iter_mut().for_each(|x| *x = 0.0);
             ei.iter_mut().for_each(|x| *x = 0.0);
-            for (k, c) in books[f].iter().enumerate() {
+            for (k, c) in cb.iter().enumerate() {
                 let w = s.sims[k];
                 for d in 0..D {
                     er[d] += w * c.0[d];
