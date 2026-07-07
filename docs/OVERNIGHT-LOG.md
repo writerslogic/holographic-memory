@@ -125,6 +125,15 @@ All five queue items committed (+1 self-caught correction). Verification:
   (2) CLEAN-SIGNAL only — noisy query collapses the advantage back to the floor, so it
   raises clean capacity (~+33-50% facts/real), not HMS's robust/noisy capacity. Folded into
   docs/SUPERPOSITION-FLOOR.md. Lattice OGP-evader agent still pending (to collect).
+- **Lattice OGP-evader RESOLVED (negative).** Collected + ran the head-to-head myself:
+  at matched (D,L), LLL is STRICTLY WORSE than AMP (D=48,L=8,M/D=0.5: amp 0.94 vs lat
+  0.13; L=16,0.3: amp 1.0 vs lat 0.09). Embedding valid (100% at low load), so real
+  negative — LLL approx factor is exp in lattice dim (D+M+N), collapses below the AMP
+  threshold; the earlier "100% at 0.5" was an L=4 confound (easy for AMP too). Last
+  poly-ALGORITHM candidate closed. Only verified crossing = encoder co-design (SC).
+  EXHAUSTIVE VERDICT: ~13 decoder methods / 8 families floor on the random code; exact
+  solvers = identifiability at exp cost; lattice(OGP-evader) worse than AMP; the floor
+  falls ONLY to encoder co-design (spatially-coupled), clean-signal only.
 
 ### Post-queue (on "continue")
 - Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
