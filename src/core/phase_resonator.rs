@@ -20,6 +20,11 @@
 //! float FHRR resonator, down to 4-bit phase -- i.e. deterministic, replay-exact
 //! factorization at no capacity cost. The factorization itself is a float query;
 //! the stored substrate stays integer/replay-verifiable.
+//!
+//! Entry points: [`PhaseResonator`] builds a reusable index over a fixed set of
+//! factor codebooks (phasors precomputed once, then decode many composites) and is
+//! the ergonomic path for retrieval; [`phase_resonator_factorize`] is the one-shot
+//! free function for a single query.
 
 use super::phase_hvec::PhaseHVec;
 use super::resonator::{FactorResult, ResonatorConfig};
@@ -100,25 +105,14 @@ fn argmax(codebook: &[Cx], v: &Cx) -> (usize, f64) {
         .unwrap_or((0, 0.0))
 }
 
-/// Factorize `composite` into one entry per factor codebook via the phase resonator.
-/// Returns the recovered index, similarity, convergence flag, and iteration count
-/// for each factor.
-pub fn phase_resonator_factorize(
-    composite: &PhaseHVec,
-    codebooks: &[Vec<PhaseHVec>],
-    config: &ResonatorConfig,
-) -> Vec<FactorResult> {
-    let k = codebooks.len();
+/// Core resonator dynamics over codebooks already converted to unit phasors.
+/// Shared by the free [`phase_resonator_factorize`] and the reusable
+/// [`PhaseResonator`] index; `n` is the shared phase resolution used at each snap.
+fn resonate(books: &[Vec<Cx>], n: u32, comp: &Cx, config: &ResonatorConfig) -> Vec<FactorResult> {
+    let k = books.len();
     if k == 0 {
         return Vec::new();
     }
-    let n = composite.n();
-    let comp = Cx::from_phases(composite);
-    // Convert each codebook to unit phasors once.
-    let books: Vec<Vec<Cx>> = codebooks
-        .iter()
-        .map(|cb| cb.iter().map(Cx::from_phases).collect())
-        .collect();
 
     // Initialize each estimate to the (snapped) superposition of its codebook.
     let mut est: Vec<Cx> = books
@@ -187,6 +181,105 @@ pub fn phase_resonator_factorize(
         .collect()
 }
 
+/// Factorize `composite` into one entry per factor codebook via the phase resonator.
+/// Returns the recovered index, similarity, convergence flag, and iteration count
+/// for each factor. Converts the codebooks to phasors on every call; for repeated
+/// queries against a fixed set of codebooks, build a [`PhaseResonator`] once instead.
+pub fn phase_resonator_factorize(
+    composite: &PhaseHVec,
+    codebooks: &[Vec<PhaseHVec>],
+    config: &ResonatorConfig,
+) -> Vec<FactorResult> {
+    let books: Vec<Vec<Cx>> = codebooks
+        .iter()
+        .map(|cb| cb.iter().map(Cx::from_phases).collect())
+        .collect();
+    let comp = Cx::from_phases(composite);
+    resonate(&books, composite.n(), &comp, config)
+}
+
+/// A reusable resonator index over a fixed set of factor codebooks.
+///
+/// Build it once from the per-factor codebooks (the codebook phasors are
+/// precomputed at construction), then call [`PhaseResonator::factorize`] for each
+/// bound composite you want to decode. This is the shape of a real retrieval
+/// workload: register the factor alphabets once, then recover which entries went
+/// into any composite `bind(f1, ..., fk)` from the composite alone.
+///
+/// ```
+/// use holographic_memory::core::phase_hvec::PhaseHVec;
+/// use holographic_memory::core::PhaseResonator;
+///
+/// // Three factor codebooks (e.g. subject / relation / object alphabets),
+/// // each 6 entries at 8-bit phase resolution in D = 1024.
+/// let (dim, n) = (1024, 256);
+/// let axis = |base: u64| -> Vec<PhaseHVec> {
+///     (0..6).map(|i| PhaseHVec::new_random(dim, n, base + i)).collect()
+/// };
+/// let codebooks = [axis(100), axis(200), axis(300)];
+///
+/// // Bind one entry from each axis into a single composite hypervector ...
+/// let composite = codebooks[0][4]
+///     .bind(&codebooks[1][1])
+///     .bind(&codebooks[2][5]);
+///
+/// // ... and recover all three indices from the composite alone.
+/// let resonator = PhaseResonator::new(&codebooks);
+/// let recovered = resonator.factorize(&composite);
+/// assert_eq!(recovered[0].codebook_entry, 4);
+/// assert_eq!(recovered[1].codebook_entry, 1);
+/// assert_eq!(recovered[2].codebook_entry, 5);
+/// ```
+pub struct PhaseResonator {
+    books: Vec<Vec<Cx>>,
+    n: u32,
+    config: ResonatorConfig,
+}
+
+impl PhaseResonator {
+    /// Build a resonator over `codebooks` (one codebook per factor) with the
+    /// default [`ResonatorConfig`]. The phase resolution is taken from the
+    /// codebook entries.
+    pub fn new(codebooks: &[Vec<PhaseHVec>]) -> Self {
+        Self::with_config(codebooks, ResonatorConfig::default())
+    }
+
+    /// Build a resonator over `codebooks` with an explicit iteration `config`.
+    pub fn with_config(codebooks: &[Vec<PhaseHVec>], config: ResonatorConfig) -> Self {
+        let n = codebooks
+            .iter()
+            .flatten()
+            .next()
+            .map(PhaseHVec::n)
+            .unwrap_or(2);
+        let books = codebooks
+            .iter()
+            .map(|cb| cb.iter().map(Cx::from_phases).collect())
+            .collect();
+        Self { books, n, config }
+    }
+
+    /// Number of factors (codebooks) this resonator decodes.
+    pub fn factor_count(&self) -> usize {
+        self.books.len()
+    }
+
+    /// Recover one entry per factor from `composite`. `composite` must share the
+    /// codebooks' phase resolution.
+    pub fn factorize(&self, composite: &PhaseHVec) -> Vec<FactorResult> {
+        if self.books.is_empty() {
+            return Vec::new();
+        }
+        assert_eq!(
+            composite.n(),
+            self.n,
+            "composite phase resolution must match the codebooks'"
+        );
+        let comp = Cx::from_phases(composite);
+        resonate(&self.books, self.n, &comp, &self.config)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -217,6 +310,26 @@ mod tests {
         let res = phase_resonator_factorize(&compose(&cbs, &target), &cbs, &cfg);
         assert_eq!(res[0].codebook_entry, target[0]);
         assert_eq!(res[1].codebook_entry, target[1]);
+    }
+
+    #[test]
+    fn reusable_index_matches_free_function() {
+        // The precomputed PhaseResonator must return the same factorization as the
+        // one-shot free function for the same codebooks and composite.
+        let cbs = codebooks(3, 8, 256, 1024, 0xC0DE);
+        let cfg = ResonatorConfig::default();
+        let target = [4usize, 1, 5];
+        let composite = compose(&cbs, &target);
+
+        let idx = PhaseResonator::new(&cbs);
+        assert_eq!(idx.factor_count(), 3);
+        let via_struct = idx.factorize(&composite);
+        let via_free = phase_resonator_factorize(&composite, &cbs, &cfg);
+
+        for a in 0..3 {
+            assert_eq!(via_struct[a].codebook_entry, target[a]);
+            assert_eq!(via_struct[a].codebook_entry, via_free[a].codebook_entry);
+        }
     }
 
     #[test]
