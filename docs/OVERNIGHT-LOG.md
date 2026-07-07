@@ -89,6 +89,18 @@ All five queue items committed (+1 self-caught correction). Verification:
     SNR-bound), real positive on output fidelity. Not a capacity lever.
   - Nonlinear/higher-order lift: clean negative at matched storage (data-processing
     bound, tested); matrix-memory "win" is a storage illusion.
+- **SYNTHESIS (7 mechanisms, converged).** Also ran SIC/peeling, low-coherence
+  codebooks, spatial-coupling+hint, learned/unrolled decoder — all floor at M/D≈0.27
+  blind, each for a distinct TESTED reason (error propagation; coherence is the wrong
+  predictor; noiseless substrate kills threshold-saturation; learning converges to the
+  AMP fixed point). Independently REPRODUCED the crux (scripts/superposition_floor.py):
+  AMP 100%→M/D=0.25 then floors; genie-init stays 1.0 to 0.75 while random-init
+  collapses. Verdict: the floor is a COMPUTATIONAL hard phase, not an information wall —
+  solution verifiable/stable to ≥0.75D but unfindable blindly. CORRECTION to my earlier
+  gloss: 0.75 is the genie STABILITY radius (start at truth), NOT an algorithmically
+  reachable threshold; no tested poly method crosses 0.27. We did NOT beat the floor for
+  soft superposition; §25/§26's M≈D was exact CODED stores (hard cliff, no soft recall).
+  Written up as docs/SUPERPOSITION-FLOOR.md (honest negative; reinforces capacity=sharding).
 
 ### Post-queue (on "continue")
 - Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
