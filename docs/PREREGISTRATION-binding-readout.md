@@ -1058,3 +1058,38 @@ residual = exact; corrupted key → residual misses but the robust base still re
 the value. That is the real "both layers at once", and it must be tested in the §22
 readout (value codebook + argmax + partial-corruption), NOT the scalar setup here.
 [next: §28 base+residual]
+
+## 28. Base+residual "fusion" — CONFOUNDED, but it reveals the real answer (2026-07-06)
+
+**Experiment (`src/bin/base-residual.rs`, D=256, V=64).** Three matched-D stores;
+exact-key recall / partial-cue recall (ρ=0.3 components randomized):
+
+| store            | exact @M/D 0.1..1.0 | cue @M/D 0.1..1.0 |
+|------------------|---------------------|-------------------|
+| pure-coded       | 100/100/100/100/81  | 5/1/3/2/2         |
+| pure-holographic | 100/100/100/100/100 | 100/100/100/99/98 |
+| fused(128+128)   | 100/100/82/2/2      | 100/97/92/81/69   |
+
+**CONFOUND — do not read this as a clean fusion win.** The "holographic base" is a
+Hebbian D×D MATRIX (W = Σ obj⊗key, D²=65536 numbers), while the "coded residual" is a
+D-VECTOR (256 numbers). NOT matched storage — the matrix base has ~256× the room. So
+"pure-holographic 100%/98%" is the LINEAR ASSOCIATOR (matrix), NOT the one-D-vector
+holographic bundle of §17-§26 (which genuinely floors at ~0.1-0.3·D). The comparison
+is apples-to-oranges on storage budget.
+
+**The real, honest answer to "can we combine both layers".** Two regimes:
+1. If storage may be a D×D MATRIX (bounded, but D² not D): the classic linear
+   associator / Hebbian matrix (Kohonen OLAM, modern-Hopfield) gives EVERYTHING at
+   once — exact retrieval to M=D, partial-cue robustness (98%), AND graceful
+   similarity — as the pure-holographic row shows. That IS the fusion; cost = D²
+   storage. This is what modern Hopfield / attention do.
+2. Within the strict ONE-D-VECTOR budget (HMS's holographic bundle substrate): exact
+   (coded, M≈D) vs robust (bundle, ~0.1-0.3·D) is a genuine TRADEOFF — base+residual
+   splits the vector, no free lunch, because robustness (redundancy) and exact
+   capacity both spend the same D bits. The fused row's exact caps at 0.5·D (its
+   coded half) precisely because of the split.
+
+So: YES you can combine both — the clean way is an associative D×D matrix instead of
+a D-vector (a real design choice for HMS, not a wall). Under the strict single-vector
+constraint, combining is an allocation tradeoff. (Discipline note: the confound —
+matrix base vs vector residual — was caught and named, not shipped as a win.)
