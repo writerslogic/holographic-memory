@@ -1093,3 +1093,49 @@ So: YES you can combine both — the clean way is an associative D×D matrix ins
 a D-vector (a real design choice for HMS, not a wall). Under the strict single-vector
 constraint, combining is an allocation tradeoff. (Discipline note: the confound —
 matrix base vs vector residual — was caught and named, not shipped as a win.)
+
+## 29. Bits-per-dimension at matched factorization accuracy: footprint win vs float Frady/Kent (pre-registered 2026-07-07)
+
+**Positioning (the missing entry).** §20 established that phase quantization is free
+for resonator factorization down to 4-bit. The competitive corollary has never been
+stated as a head-to-head: the deterministic quantized resonator matches the SOTA
+FLOAT Frady/Kent resonator's factorization accuracy at a fraction of the stored-state
+footprint. qFHRR left resonators unaddressed; Frady/Kent resonators are float; the
+accuracy-vs-bits/dim tradeoff is unmeasured. This is a citable entry IF it survives a
+firing kill on unseen seeds.
+
+**Question.** On the identical task (3-factor factorization, search space F³), at
+matched D, F, seeds, and dynamics: what is the minimum stored-phase resolution
+(bits/dim) at which the quantized resonator matches the float resonator's accuracy
+within ±1σ, and what stored-state footprint reduction does that yield vs 32-bit float
+FHRR?
+
+**Baselines.** STRONG incumbent = float FHRR Frady/Kent resonator (N=0, continuous
+phase), identical dynamics — this is the SOTA factorization method, not a strawman.
+Arms = quantized at N ∈ {256, 64, 16, 8, 4} = {8, 6, 4, 3, 2} bits/dim.
+
+**Metric.** All-factors-correct accuracy, mean ± std over seeds, per (F, bits/dim),
+at D ∈ {512, 1024, 2048}. Chance = 1/F³ (<0.03%). Headline = the smallest bits/dim
+that matches float within ±1σ at every F for the reference D=1024; footprint ratio =
+32 / (that bits/dim) for f32 storage (64 / it for f64).
+
+**Fresh-seed confirmation (anti-forking-path).** The §20 hardening used seeds 0..30 —
+already inspected. The pre-registered evidence is a FRESH, unseen seed block
+(seeds 100..130) via `cargo run --release --bin resonator-sweep 100`. The built-in
+REPRO CHECK (seeds 0..24) must still reproduce the §20 table (guards the code path);
+the claim rests on the fresh block, not the seeds I have already seen.
+
+**Strong outcome.** On the fresh seeds, quantized matches float within ±1σ down to
+≤4 bits/dim at every F and D → ≥8× (f32) / ≥16× (f64) stored-state reduction at
+matched factorization capability → a footprint win over the float incumbent.
+
+**Kill condition (can fire).** On the fresh seeds, N=16 (4-bit) accuracy is >1σ below
+float at ANY F for D=1024 → 4-bit is not free on unseen seeds → no 8× win at matched
+accuracy. Fall back to the smallest N that does track and report its smaller ratio; if
+nothing ≤8-bit tracks float, the footprint claim fails and is reported as a negative.
+
+**Honest scope.** (a) The claim is stored-STATE footprint; the resonator's inner
+products are float at query time — compute is not quantized (same isolation as §20).
+(b) This is the factorization axis (Frady/Kent ~D^1.5), SEPARATE from the bundle-
+superposition capacity floor of §22–§26. (c) Accuracy is *matched*, not beaten — the
+win is a tradeoff-free footprint reduction, reported as such, never as an accuracy win.

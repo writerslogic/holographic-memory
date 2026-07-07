@@ -128,9 +128,9 @@ fn superpose_init(cb: &[Cx], n: u32, dim: usize) -> Cx {
 /// Mean and standard deviation (%) of per-seed 3-factor factorization accuracy over
 /// `seeds` seeds. Identical dynamics to resonator-factorize; `dim` and `n` are the
 /// swept parameters.
-fn accuracy(f: usize, n: u32, dim: usize, seeds: u64) -> (f64, f64) {
+fn accuracy(f: usize, n: u32, dim: usize, seed_base: u64, seeds: u64) -> (f64, f64) {
     let mut per_seed = Vec::with_capacity(seeds as usize);
-    for seed in 0..seeds {
+    for seed in seed_base..seed_base + seeds {
         let books: Vec<Vec<Cx>> = (0..FACTORS)
             .map(|axis| (0..f).map(|i| phase_vec(i, axis, seed, n, dim)).collect())
             .collect();
@@ -181,7 +181,7 @@ fn accuracy(f: usize, n: u32, dim: usize, seeds: u64) -> (f64, f64) {
 }
 
 /// Print one accuracy table (rows = F, cols = the given N set) at fixed D and seeds.
-fn table(fs: &[usize], ns: &[(u32, &str)], dim: usize, seeds: u64) {
+fn table(fs: &[usize], ns: &[(u32, &str)], dim: usize, seed_base: u64, seeds: u64) {
     print!("{:>12}", "F(F^3)");
     for (_, label) in ns {
         print!("  {label:>11}");
@@ -190,7 +190,7 @@ fn table(fs: &[usize], ns: &[(u32, &str)], dim: usize, seeds: u64) {
     for &f in fs {
         print!("{:>12}", format!("{f}({})", f * f * f));
         for &(n, _) in ns {
-            let (m, sd) = accuracy(f, n, dim, seeds);
+            let (m, sd) = accuracy(f, n, dim, seed_base, seeds);
             print!("  {:>7.0}±{:<3.0}", m, sd);
         }
         println!();
@@ -200,11 +200,20 @@ fn table(fs: &[usize], ns: &[(u32, &str)], dim: usize, seeds: u64) {
 fn main() {
     let fs = [16usize, 24, 32, 40, 48];
 
+    // Optional first CLI arg = seed base for the hardening sweep (default 0). Lets the
+    // sweep run on a fresh, unseen seed block (e.g. `resonator-sweep 100`) for the §29
+    // pre-registered bits/dim confirmation without disturbing the default output. The
+    // REPRO CHECK below is always pinned to seeds 0..24 so it keeps matching §20.
+    let seed_base: u64 = std::env::args()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+
     // --- Integrity gate: reproduce the frozen resonator-factorize table exactly. ---
     println!("REPRO CHECK | D=1024 seeds=24 trials={TRIALS} factors={FACTORS}");
     println!("Must match docs/DETERMINISTIC-RESONATOR.md (float/N=256/N=16 columns).\n");
     let repro_ns: [(u32, &str); 3] = [(0, "float"), (256, "N=256"), (16, "N=16")];
-    table(&fs, &repro_ns, 1024, 24);
+    table(&fs, &repro_ns, 1024, 0, 24);
 
     // --- Hardening sweep: phase bits {float,8,6,4,3,2} x D {512,1024,2048}, 30 seeds. ---
     let seeds = 30u64;
@@ -218,9 +227,10 @@ fn main() {
     ];
     for dim in [512usize, 1024, 2048] {
         println!(
-            "\n=== D={dim} | seeds={seeds} trials={TRIALS} factors={FACTORS} | chance=1/F^3 ==="
+            "\n=== D={dim} | seeds={seed_base}..{} trials={TRIALS} factors={FACTORS} | chance=1/F^3 ===",
+            seed_base + seeds
         );
-        table(&fs, &ns, dim, seeds);
+        table(&fs, &ns, dim, seed_base, seeds);
     }
     println!("\nRead: within each D, do the phase-bit columns overlap float within +-1 sigma");
     println!("across F? If yes at D=1024 (and it holds at 512/2048), the '4-bit is free'");
