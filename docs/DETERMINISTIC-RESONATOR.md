@@ -123,6 +123,26 @@ Every cell above sits orders of magnitude over the `1/F³` chance floor (< 0.03%
 Reproduce with `cargo run --release --bin resonator-sweep` (std-only, deterministic;
 seeds `0..24` for the repro block, `0..30` for the sweep).
 
+## Head-to-head vs float incumbent (§29, pre-registered, confirmed on unseen seeds)
+
+Pre-registered in `PREREGISTRATION-binding-readout.md` §29 as a footprint comparison
+against the SOTA float Frady/Kent resonator, with a kill that could fire. Evidence is
+a **fresh seed block (100..130), unseen at design time** (`resonator-sweep 100`); the
+built-in REPRO CHECK still reproduced the §20 table, confirming the code path.
+
+**Kill did not fire.** At the reference D=1024, 4-bit (N=16) equals or exceeds float at
+every F within ±1σ: 97/90/78/70/60 vs float 97/88/77/67/58 (F=16..48). It holds at
+D=512 and D=2048, and 3-bit (N=8) also tracks float; only 2-bit (N=4) shows the small
+knee deficit. So the minimum stored-phase resolution that matches the float resonator's
+factorization accuracy is **4 bits/dim** (3-bit also matches).
+
+**Result:** at matched factorization accuracy, the deterministic quantized resonator
+stores its state in 4 bits/dim vs 32-bit float — an **8× (vs f32) / 16× (vs f64)
+stored-state footprint reduction over the float incumbent**, confirmed on seeds the
+metric never saw. Accuracy is *matched, not beaten*; the win is a tradeoff-free
+footprint reduction. (Scope caveat from §29: this is stored-state footprint; the
+resonator's inner products are float at query time.)
+
 ## Interpretation and honest scope
 
 Phase quantization is free for resonator factorization: a deterministic integer
