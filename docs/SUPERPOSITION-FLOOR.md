@@ -6,14 +6,21 @@
 some decoder push blind recovery toward `M/D ≈ 1` **while keeping soft/graceful
 readout** (i.e. not by switching to an exact coded store with a hard cliff)?
 
-**Answer.** Across **seven independent decoder families explored cold**, none crossed
-`M/D ≈ 0.27` for blind single-bundle recovery. But the floor is **not** an information
-wall: the true solution is a stable, verifiable fixed point far past it. The barrier is
-a **statistical-to-computational gap** — the solution *exists and is checkable* to at
-least `M/D ≈ 0.75`, but no polynomial-time method tested can *find* it blindly past
-`~0.27`. This is an honest negative that sharpens HMS's positioning, not a defeat: it
-tells you exactly why capacity beyond the floor must come from sharding (side
-information) or from an exact code (giving up soft recall).
+**Answer (two parts).** With the standard **random** code, no blind decoder crosses
+`M/D ≈ 0.27` — thirteen methods across eight families floor there (see below), because
+it is a statistical-to-computational hard phase of the random ensemble (the solution
+*exists and is verifiable* to ≥1.5·D, but no poly method *finds* it blindly). **But
+the floor is a property of the random code, not a wall:** co-designing the encoder as a
+**spatially-coupled (SC-SPARC) code** — the standard capacity-achieving construction —
+crosses it with a *polynomial* decoder at *matched storage* and preserves soft readout.
+Verified independently here: at `M/D = 0.29`, the random code recovers 0.43 while the
+coupled code recovers **0.92**, with the decoding wave propagating through fully-
+interfering middle blocks (not sharding). The one catch: the crossing is a **clean-
+signal** phenomenon — under a noisy/corrupted query the coupled advantage collapses back
+to the random floor, so it raises *clean* capacity, not the *noisy-query* capacity that
+is HMS's robustness value. So: capacity beyond the floor comes from **code design** (a
+real ~+33–50% clean-capacity gain, established coding theory), from sharding (robust),
+or from an exact code (giving up soft recall) — the floor itself is not fundamental.
 
 This corrects a loose earlier reading. §25/§26 of `PREREGISTRATION-binding-readout.md`
 reached `M ≈ D` — but only with **exact coded key-value stores** (pinv / Reed-Solomon /
@@ -115,12 +122,48 @@ So the assumption-attack strengthens the conclusion: the floor survived VAMP, an
 local-search refinement, and 32-restart search, and the one place AMP was genuinely
 suboptimal (the correlation) buys only ~0.02 in M/D.
 
+## Crossing it: co-design the encoder (spatially-coupled code)
+
+The decoder sweeps all fix the *encoder* to a random bundle. But the hard phase is a
+property of the random ensemble — and coding theory's central result is that *designed*
+codes (LDPC, polar, spatial coupling) reach capacity with polynomial belief-propagation
+decoders by engineering the hard phase away (threshold saturation). Applied here
+(`scripts/superposition_floor_coded.py`, verified independently):
+
+| M/D | random code (block-AMP) | spatially-coupled (same poly decoder) |
+|-----|-------------------------|----------------------------------------|
+| 0.25 | 1.00 | 1.00 |
+| 0.29 | **0.43** | **0.92** |
+| 0.30 | 0.41 | 1.00 (C=32) |
+
+Same storage (both store `s ∈ R^D`, same M facts, same D), same polynomial decoder
+(block section-AMP, which reduces to the harness AMP and reproduces the floor on the
+random code — the correctness guard). The coupled code's reliable knee rises from ~0.27
+to ~0.34 (C=16) → ~0.40 (C=32), climbing toward the MAP/identifiability threshold as the
+chain lengthens. **Per-block accuracy confirms it is real threshold saturation, not
+sharding:** the decoding wave nucleates at the lightly-loaded seed block and propagates
+through *fully-interfering middle blocks* (local density = the aggregate rate), decoding
+them to ~1.0. Soft readout is preserved (continuous degradation, no cliff).
+
+**What this is and isn't.** It *is* a genuine crossing of the floor with a poly decoder
+at matched storage — the floor is not fundamental. It *is* established coding theory
+(SC-SPARC threshold saturation; Donoho–Javanmard–Montanari 2013, Rush–Venkataramanan)
+transplanted onto the VSA-memory floor — validation, not a new algorithm. And it comes
+with a sharp, application-critical caveat: **the crossing is clean-signal only.** Under
+a corrupted/noisy query the coupled advantage collapses to the random floor, because
+threshold saturation needs a near-perfect boundary seed to nucleate the wave. So it
+moves *clean* capacity (~+33–50% facts/real), not the *noisy-query* capacity that is the
+holographic layer's actual value.
+
 ## What it means for HMS
 
-- **Capacity beyond the floor is sharding, confirmed the hard way.** The only thing that
-  reaches past `0.27·D` is a genie / side-information init — i.e. already knowing most of
-  the answer, which is storage. This is the `capacity_is_sharding` position, now backed
-  by a measured statistical-to-computational gap rather than an assumed bound.
+- **Robust (noisy-query) capacity beyond the floor is sharding; clean capacity can also
+  come from code design.** No blind decoder beats the random floor, and under noise even
+  the coupled code reverts to it — so for HMS's robustness-first value, capacity past the
+  floor is sharding, now backed by a measured statistical-to-computational gap. But in
+  the *clean* regime a spatially-coupled encoder buys a real ~+33–50% facts/real with a
+  poly decoder and soft readout — a genuine, if noise-fragile, lever the random bundle
+  leaves on the table.
 - **The two escapes each cost something concrete.** Exact coded store → `M ≈ D` but hard
   cliff, no soft recall (§26). Side information → past the floor but at the bit-cost of
   the side information (sharding). Soft superposition recovery → floored at `~0.27·D`.
@@ -141,4 +184,6 @@ suboptimal (the correlation) buys only ~0.02 in M/D.
 - The exploration prototypes live under `/tmp/floor/` (ephemeral); the durable,
   independently-reproduced crux is `scripts/superposition_floor.py`.
 
-**Reproduce the crux:** `uv run python scripts/superposition_floor.py`
+**Reproduce:** the floor + computational gap — `uv run python scripts/superposition_floor.py`;
+the stronger-solver attack — `uv run python scripts/superposition_floor_probes.py`;
+the spatially-coupled crossing — `uv run python scripts/superposition_floor_coded.py`.
