@@ -101,6 +101,16 @@ All five queue items committed (+1 self-caught correction). Verification:
   reachable threshold; no tested poly method crosses 0.27. We did NOT beat the floor for
   soft superposition; §25/§26's M≈D was exact CODED stores (hard cliff, no soft recall).
   Written up as docs/SUPERPOSITION-FLOOR.md (honest negative; reinforces capacity=sharding).
+- **ASSUMPTION ATTACK (on user request — test the theorems, run the suggestion).**
+  Inventoried theorem-based assumptions; ran the suggested VAMP/OAMP + power-ladder/
+  local-search solvers (scripts/superposition_floor_probes.py). Findings: (1) AMP-
+  optimality assumption partially FALSE — VAMP holds 1.0 at M/D=0.25 where AMP frayed to
+  0.875 (shared-codebook correlation hurt AMP), but it only nudges the knee ~0.25→0.27;
+  nothing crosses 0.30. (2) Local-search refine + 32-restart are WORSE past the floor
+  (fall into spurious minima) — positive hard-phase signature. (3) Identifiability
+  ceiling probe: genie stable + no competing exact fit to M/D=1.5 (was only tested to
+  0.75) → in noiseless arithmetic the barrier is ENTIRELY computational; the practical
+  wall is quantization/noise → sharding. Floor at ~0.27 survives all six solvers.
 
 ### Post-queue (on "continue")
 - Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
