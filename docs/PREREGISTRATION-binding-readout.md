@@ -968,3 +968,61 @@ superposition regime (unlike sharding). Genuinely-different algebraic routes
 (Berlekamp-Welch rational store: exact unique-decode to 0.5·D; tropical max-plus
 superposition; cuckoo encode-gauge nulling) remain untested — see
 docs/CAPACITY-CAMPAIGN-LOG.md for the full ledger.
+
+## 26. The floor was self-inflicted: solve-don't-sum reaches M≈D (2026-07-06)
+
+**How it was found.** After ~32 agents converged (all fed a biased "additive
+superposition + here's what's killed" framing), the user flagged the bias directly:
+"stop biasing what you know" + "theorems are not facts." A fresh wave of SIX OPEN
+agents (bare problem — store M key→value pairs in one D-vector, maximize M — no VSA
+jargon, no killed-list, no theorems) converged INDEPENDENTLY from six directions
+(first-principles, physics, pure math, biology, wild, contrarian) on the same point:
+**additive superposition (field = Σ bind(key,value)) is the worst encoding, ~3-10×
+suboptimal.** The whole §17-§25 floor and its theorems (spark M<D, DT 0.4·D) govern
+ONLY additive superposition + linear decode.
+
+**Experiment (`src/bin/pinv-memory.rs`).** Don't SUM the bound pairs — treat the
+stored vector x as unknown and SOLVE the linear system {⟨a_{k_i}, x⟩ = v_i} for x
+(least-norm pseudo-inverse; the Kohonen/Personnaz optimal linear associator).
+Recall (%), D=256, V=64, 5 seeds:
+
+| M/D | exact | quantized (4096-level) |
+|-----|-------|------------------------|
+| 0.3 | 100   | 100 |
+| 0.5 | 100   | 100 |
+| 0.8 | 100   | 100 |
+| 1.0 | 100   | 79  |
+| 1.2 | 4     | 4   |
+| 2.0 | 2     | 2   |
+
+**Result.** ~100% exact recall to M≈D, a SHARP cliff at the counting bound (not the
+soft √M decay of superposition) — 3-8× the superposition floor (~0.3·D @50%, ~0.1·D
+reliable). Quantizing x to an integer grid costs a little only at the M=D edge (79%).
+Three OTHER open-agent-converged encodes reach the same ~D regime and were validated
+by the convergence (not yet coded): polynomial/Reed-Solomon interpolation (M=D exact
+by Lagrange), Bloomier/XOR/Ribbon filters (~0.8·D, O(1) recovery, key-universe
+oblivious), nonlinear cell codes (toward the ~2.7·D Shannon bit ceiling).
+
+**Honest resolution (the real finding, sharpened).** The "0.1-0.3·D floor" was an
+ARTIFACT of choosing additive superposition, not a law. For EXACT key→value
+retrieval at maximum capacity, DON'T use superposition — solve/interpolate/hash
+reaches M≈D. BUT these are exact CODED key-value stores: they lose the soft
+holographic properties (approximate/similar-key retrieval, graceful degradation,
+algebraic composability) that additive superposition uniquely provides at ~0.1-0.3·D.
+So it is a clean TRADEOFF the campaign had conflated:
+- exact key→value, max capacity → coded store (pinv/RS/XOR), M≈D, hard cliff;
+- approximate / robust / composable → superposition, ~0.1-0.3·D + soft properties
+  (and §22's measured noisy-query robustness — the holographic layer's real value).
+This directly sharpens §22/§24: the holographic layer was never the right tool for
+EXACT capacity; its value axis is the soft/noisy dimension. HMS's honest architecture
+= a coded store for exact capacity + the holographic layer for approximate/verifiable/
+plastic queries. (Methodological note: the bias-stripped open wave found in one pass
+what 32 framed agents missed — treat theorems as maps of assumptions to break, not
+walls.)
+
+Also §26b (`src/bin/bilinear-readout.rs`): a nonlinear second-order readout
+B[d,d']=φ[d]conj(φ[d']) DID show real signal (recall rose monotonically with pair
+count P: 4%→29%→78% at low load) — confirming a nonlinear readout extracts structure
+the linear matched filter can't — but reaching the √D advantage needs P~D² pairs
+(the honest O(D²) cost); at affordable P it did not yet beat matched filter. Real
+mechanism, impractical constant on the superposition substrate.
