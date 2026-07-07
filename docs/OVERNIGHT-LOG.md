@@ -42,3 +42,25 @@ Gate per unit: `cargo test --lib --features experimental` + `cargo clippy
   (N=4) is the first resolution with a consistent small deficit near the knee (F=24:
   80±7 vs 89±5). CONFIRMS + bounds §20; does not contradict/beat it → no quarantine.
   Dimension axis: pattern holds at all D, capacity scales ~D^1.5 (Frady/Kent).
+
+## Closeout (queue exhausted ~03:2x)
+
+All five queue items committed (+1 self-caught correction). Verification:
+- Full lib suite `cargo test --workspace --lib --features experimental`: **337 passed,
+  0 failed** — no crate-wide regression from the mod.rs re-exports or argmax change.
+- Every file I authored passed scoped clippy (`--lib --features experimental`, and each
+  new bin individually). Item 1 doctest green.
+- Python-binding work (Cargo.toml/lib.rs/python.rs/pyproject.toml/publish-pypi.yml)
+  left untouched and uncommitted throughout. Nothing pushed.
+
+### NEEDS REVIEW (pre-existing, NOT introduced this session — not fixed)
+- `cargo clippy --workspace -- -D warnings` (default features, no `--features
+  experimental`) fails with ONE error: `needless_range_loop` in
+  `src/bin/resonator-bundle.rs:123` (`for f in 0..FACTORS`). This bin is the §21
+  bundled-factorization artifact; last touched in commit 61eb870 (2026-07-06, before
+  this loop) and NOT in this session's diff — the lint predates my work and surfaces
+  only because the bin is auto-discovered under default features. Left unfixed by
+  design: §21 is the "do NOT ship / underpowered" path, it is experiment code (research
+  carve-out: no unprompted edits), and it is outside the queue scope. Trivial mechanical
+  fix (`for (f, _) in ...enumerate()`) if the user wants the default-features workspace
+  clippy green; flagged for a decision rather than touched unattended.
