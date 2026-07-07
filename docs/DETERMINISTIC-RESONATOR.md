@@ -76,6 +76,53 @@ Float, 8-bit, and 4-bit phase overlap within ±1σ at every `F`; the largest gap
 not a quantization trend. Every cell is orders of magnitude above the `1/F³` chance
 floor even past the knee.
 
+## Validation hardening (wider seeds, phase-bit and dimension sweeps)
+
+To tighten confidence in the headline, `src/bin/resonator-sweep.rs` extends the *same*
+fixed design (identical dynamics, verified below) along two controlling parameters:
+phase resolution across float/8/6/4/3/2 bits (`N ∈ {0,256,64,16,8,4}`) and dimension
+`D ∈ {512, 1024, 2048}`, at **30 seeds × 32 trials**. This adds no new mechanism — it
+sweeps parameters of the §20 experiment to see how far "quantization is free" holds.
+
+**Integrity check (the run reproduces §20 exactly).** The sweep first re-runs the
+frozen configuration — `D = 1024`, 24 seeds, `N ∈ {0, 256, 16}` — and reproduces the
+Results table above cell-for-cell (99±2 / 98±2 / 98±3 at `F = 16` … 59±8 / 59±9 / 56±9
+at `F = 48`). The reimplemented dynamics are therefore faithful, so the extended
+numbers below are trustworthy.
+
+**Phase-bit robustness at `D = 1024` (30 seeds).** float / 8-bit / 6-bit / 4-bit /
+3-bit / 2-bit:
+
+| F        | float | 8-bit | 6-bit | 4-bit | 3-bit | 2-bit |
+|----------|-------|-------|-------|-------|-------|-------|
+| 16       | 98±3  | 98±2  | 98±3  | 98±3  | 98±3  | 95±4  |
+| 24       | 89±5  | 87±7  | 89±5  | 90±6  | 87±6  | 80±7  |
+| 32       | 76±6  | 78±9  | 78±7  | 78±7  | 75±8  | 72±9  |
+| 40       | 69±8  | 65±8  | 66±8  | 67±8  | 63±7  | 61±9  |
+| 48       | 58±8  | 58±9  | 58±8  | 56±9  | 56±9  | 51±10 |
+
+Float through **4-bit** overlaps within ±1σ at every `F` — the §20 "4-bit is free"
+claim survives the wider seed set. **3-bit** also tracks float within noise. **2-bit**
+(`N = 4`) is the first resolution with a consistent deficit, largest near the knee
+(`F = 24`: 80±7 vs 89±5, ≈1.5σ). So "free" holds down to ~3–4 bits/dimension and
+begins to cost at 2 bits — the headline is confirmed, and its lower boundary is now
+measured, not assumed.
+
+**Dimension robustness (30 seeds).** The free-quantization pattern holds at every `D`;
+absolute capacity scales with `D` as Frady/Kent predict (~`D^1.5`), so the knee moves
+right with larger `D`, but the quantized columns track float within ±1σ at each `D`
+(down to 3-bit). Selected float / 4-bit / 2-bit cells:
+
+| D    | F=16 (fl/4b/2b) | F=32 (fl/4b/2b) | F=48 (fl/4b/2b) |
+|------|-----------------|-----------------|-----------------|
+| 512  | 89±5 / 90±7 / 81±8 | 58±8 / 60±8 / 54±8 | 35±8 / 35±7 / 37±8 |
+| 1024 | 98±3 / 98±3 / 95±4 | 76±6 / 78±7 / 72±9 | 58±8 / 56±9 / 51±10 |
+| 2048 | 100±1 / 100±0 / 99±2 | 93±4 / 91±6 / 83±6 | 76±8 / 75±5 / 64±12 |
+
+Every cell above sits orders of magnitude over the `1/F³` chance floor (< 0.03%).
+Reproduce with `cargo run --release --bin resonator-sweep` (std-only, deterministic;
+seeds `0..24` for the repro block, `0..30` for the sweep).
+
 ## Interpretation and honest scope
 
 Phase quantization is free for resonator factorization: a deterministic integer
