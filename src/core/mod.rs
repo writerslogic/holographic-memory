@@ -70,3 +70,9 @@ pub(crate) mod types;
 
 pub use config::HmsConfig;
 pub use engine::HmsCore;
+#[cfg(feature = "experimental")]
+pub use phase_hvec::PhaseHVec;
+#[cfg(feature = "experimental")]
+pub use phase_resonator::{phase_resonator_factorize, PhaseResonator};
+#[cfg(feature = "experimental")]
+pub use resonator::{FactorResult, ResonatorConfig};
