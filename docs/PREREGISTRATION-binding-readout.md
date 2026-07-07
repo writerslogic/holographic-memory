@@ -1026,3 +1026,35 @@ count P: 4%→29%→78% at low load) — confirming a nonlinear readout extracts
 the linear matched filter can't — but reaching the √D advantage needs P~D² pairs
 (the honest O(D²) cost); at affordable P it did not yet beat matched filter. Real
 mechanism, impractical constant on the superposition substrate.
+
+## 27. Fusing the two layers via ridge regression — HALF confirmed (2026-07-06)
+
+**Hypothesis.** The exact coded store (§26) and the holographic superposition store
+are two ends of ONE spectrum — regularized least squares x=argmin‖Ax−v‖²+λ‖x‖². λ→0 =
+exact pinv (coded, M≈D); large λ → Hebbian/superposition (graceful, lower capacity).
+Claim: one knob λ trades exact capacity for noise tolerance.
+
+**Result (`src/bin/ridge-memory.rs`, D=256, V=64).** Exact-key recall: λ=0 → 100% to
+M=D; raising λ trades capacity away exactly (λ=0.01: 82%@0.5D, 22%@0.8D; λ=0.1: dead).
+That HALF is confirmed — λ spans the capacity axis. BUT noisy-key recall (additive
+Gaussian, cosine~0.9) stayed at CHANCE for EVERY λ, including the Hebbian end. So the
+"one knob spans both" claim is NOT supported — over-claimed.
+
+**Honest diagnosis (two conflations I made).** (1) The noise side failed because
+recovering 1-of-64 (6 bits) precisely from a cosine-0.9 key via a SCALAR LINEAR
+readout is too hard — additive noise exceeds the 1/64 resolution regardless of λ (an
+affine scale+offset calibration fixed the earlier scale bug but not this). (2) I
+conflated two "soft" behaviors: PARTIAL-CUE robustness (§22 — query a stored key with
+corrupted components; works via redundant code + VALUE CODEBOOK + argmax, not scalar
+readout) vs SIMILARITY generalization (novel similar key → similar value; needs
+STRUCTURED data, impossible on random pairs). The ridge test used scalar readout +
+additive noise + random data — the setup where neither soft behavior can appear.
+
+**Conclusion.** Ridge-λ demonstrably spans the CAPACITY axis but I have NOT shown it
+spans the ROBUSTNESS axis. The fusion that combines both BY CONSTRUCTION (not relying
+on ridge to bridge) is base+residual: a holographic superposition base (partial-cue
+robust, codebook+argmax, §22) + an exact coded residual patch. Exact key → base+
+residual = exact; corrupted key → residual misses but the robust base still returns
+the value. That is the real "both layers at once", and it must be tested in the §22
+readout (value codebook + argmax + partial-corruption), NOT the scalar setup here.
+[next: §28 base+residual]
