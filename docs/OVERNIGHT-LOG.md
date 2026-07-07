@@ -112,6 +112,20 @@ All five queue items committed (+1 self-caught correction). Verification:
   0.75) → in noiseless arithmetic the barrier is ENTIRELY computational; the practical
   wall is quantization/noise → sharding. Floor at ~0.27 survives all six solvers.
 
+### Encoder co-design CROSSES the floor (on user push: "question the encoder, quadruple effort")
+- Wave 2 questioned the fixed-random-encoder assumption. Exact solvers (ILP/Grobner/DFS)
+  confirmed identifiability past 0.27 at EXP cost; survey propagation, spectral/tensor,
+  evolutionary, hybrid-syndrome all floored (each with a tested mechanism). BUT a
+  co-designed SPATIALLY-COUPLED (SC-SPARC) encoder CROSSES: independently verified
+  (scripts/superposition_floor_coded.py) — at M/D=0.29 random=0.43 vs coupled=0.92, matched
+  D/M/storage, poly block-AMP decoder, soft readout preserved. Per-block profile shows the
+  decoding wave propagates through fully-interfering MIDDLE blocks → real threshold
+  saturation, NOT sharding. Guard: block-AMP reproduces the floor on the random code.
+  HONEST CAVEATS: (1) known coding theory (SC-SPARC threshold saturation), not a new algo;
+  (2) CLEAN-SIGNAL only — noisy query collapses the advantage back to the floor, so it
+  raises clean capacity (~+33-50% facts/real), not HMS's robust/noisy capacity. Folded into
+  docs/SUPERPOSITION-FLOOR.md. Lattice OGP-evader agent still pending (to collect).
+
 ### Post-queue (on "continue")
 - Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
   output cell-for-cell (no hand-copy error). Both D=1024 and the D-sweep cells match.
