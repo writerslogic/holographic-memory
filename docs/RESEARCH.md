@@ -62,3 +62,15 @@ For hypervectors with fixed sparsity $m = D/256$, retrieval is mathematically eq
 
 ### Impact on Factorization
 The Sparse-Native engine provides a "candidate shortlist" (e.g., Top-1000) for unbinding tasks. This allows the Resonator Network to operate on a constrained hypothesis space, reducing the unbinding problem from a global search to a local ranking task, significantly improving both latency and convergence stability.
+
+## Deterministic Quantized Substrate (validated)
+
+The resonator dynamics above run on HMS's quantized-phase substrate (`core::PhaseHVec`), where each dimension is a discrete phase index in $\mathbb{Z}_N$ and binding is phase-addition mod $N$. The stored state is therefore an exact, replay-verifiable integer fold of its inputs, not a lossy float embedding.
+
+A pre-registered experiment (`docs/PREREGISTRATION-binding-readout.md` §20) asked the open question **qFHRR left**: does phase *quantization* cost factorization capacity in a resonator? The measured answer is **no** — phase quantization is free for resonator factorization down to 4 bits/dimension, matching the float FHRR resonator's capacity across the operating range. A 30-seed hardening sweep confirms this holds at 4- and 3-bit resolution and across $D \in \{512, 1024, 2048\}$; 2-bit is the first resolution with a measurable cost near the capacity knee.
+
+This is **validation of an established mechanism**, not a new theory: it pairs the published qFHRR substrate (arXiv 2604.25939) with the Frady/Kent resonator network (Frady, Kent, Olshausen & Sommer, *Neural Computation* 32(12), 2020 — the primary source for the dynamics sketched above). The contribution is the combination measured to cost nothing: an integer-only, replay-exact neurosymbolic factorizer.
+
+* **Numbers, method, chance floor, and exact reproduction command:** `docs/DETERMINISTIC-RESONATOR.md`.
+* **API:** `core::PhaseResonator` (reusable index over fixed factor codebooks) and `core::phase_resonator_factorize` (one-shot), over `core::PhaseHVec`. Gated behind the `experimental` feature.
+* **Reproduce the sweeps:** `cargo run --release --bin resonator-factorize` (the §20 table) and `cargo run --release --bin resonator-sweep` (the phase-bit × dimension hardening).
