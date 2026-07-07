@@ -112,3 +112,56 @@ These do NOT reduce to AMP/matched-filter; they change the algebra or encode geo
 - NEXT (untested): spatial-coupled/power-allocated SPARC (→ ~D, theory-backed);
   Berlekamp-Welch (exact 0.5·D, algebraic); tropical semiring; cuckoo gauge-nulling.
 (see docs/PREREGISTRATION-binding-readout.md §§17–25 for full measurements)
+
+## DEFINITIVE SYNTHESIS (after ~32 agents across every math domain — CONVERGED)
+The exploration saturated: every new lens either re-confirms one of FOUR leads or dies
+by one of THREE theorems. Do not re-explore; consolidate/build the leads.
+
+**THREE theorems that kill everything else:**
+1. Donoho-Tanner UNIVERSALITY (PNAS Monajemi 2013): any DESIGNED LINEAR codebook
+   (ETF, Grassmannian, Paley, learned) lands on the SAME DT curve → ~0.4·D. Kills:
+   ETF/geometry, learned codes, "better keys."
+2. Rotational-invariance / Plancherel ISOMETRY: any ORTHOGONAL decomposition = unitary
+   basis change = state-evolution-invariant = sharding. Kills: subalgebra/idempotents,
+   non-abelian group binding, invariant-subspaces, Wedderburn.
+3. Retrievability = capacity DUALITY: non-additive escapes make retrieval intractable
+   (braids = conjugacy-search, crypto-hard) OR collapse to ring-additive √M (Clifford,
+   non-associative/quasigroup, exterior sum-of-blades). Kills: topology, non-assoc,
+   exterior, chaotic, origami (isometry), CDT (thinning destroys info), BDD (Θ(M) LUT).
+
+**FOUR real leads (cross-validated, in ascending certainty of gain):**
+1. BILINEAR / quadratic nonlinear readout — SNR ∝ D/M (√D better); the one true
+   nonlinear-measurement escape. [testing §26]
+2. VAMP — the ~0.4·D wall is AMP's mis-specification for the STRUCTURED circulant
+   binding matrix; VAMP (true SVD, FFT-cheap here) reaches the higher replica
+   threshold; structured provably beats i.i.d.
+3. Spatial-coupled + power-allocated SPARC — provably → ~D; and low object entropy
+   (6 bits) makes the info limit N·log2 V ≤ D·½log2(1+SNR), well past 0.4·D.
+4. Coding-gain = commutative-algebra store (Berlekamp-Welch / Prony / moment-ideal =
+   Berlekamp-Massey = Gröbner normal form): reaches EXACTLY M<D/2 = 0.5·D for
+   arbitrary (key,value), integer-EXACT/deterministic, no crosstalk (root-finding not
+   projection). This is a CONCRETE 0.5·D solution — the counting bound reached, not a
+   decoder heuristic. Past 0.5·D needs value redundancy (RS/AG, list-decode + key).
+
+**RESOLUTION of the open problem:** 0.5·D well-posed retrieval from ONE D-vector is
+NOT impossible and NOT merely unsolved — it is ACHIEVED by ≥1 concrete route
+(Berlekamp-Welch, exact algebra) and approached by others (SC-SPARC → ~D). The
+"0.1·D floor" was a lazy matched-filter artifact. True linear cap = M<D (spark),
+tighter than the loose 1.33·D counting bound. Beyond D requires a nonlinear ENCODE.
+
+## THE FRAME WAS THE BUG (open unbiased wave, 2026-07-06 — user forced the reframe)
+The 32 framed agents were ALL fed "additive superposition + killed-list + theorems",
+which biased them to confirm collapse. A wave of SIX OPEN agents (bare problem, no
+jargon/killed-list/theorems) converged INDEPENDENTLY on: **additive superposition is
+the WORST encoding (~3-10× suboptimal); the entire floor + all theorems govern only
+that encode.** Confirmed empirically (§26, pinv-memory.rs): SOLVE the system {⟨a_k,x⟩
+= v} for x (Kohonen OLAM) → ~100% exact recall to M≈D, sharp cliff at the counting
+bound — 3-8× the superposition floor. Same M≈D reached by polynomial/RS interpolation
+(exact), Bloomier/XOR/Ribbon (~0.8·D, O(1) recovery), nonlinear cell codes (→~2.7·D
+bit ceiling). **These are exact CODED KV stores — they trade away the soft
+holographic properties (approximate/similar-key retrieval, graceful degradation,
+composability) that superposition uniquely gives at ~0.1-0.3·D.** So the honest
+answer: exact key→value → coded store (M≈D); approximate/robust/composable →
+superposition (0.1-0.3·D + soft, + §22 noisy-query robustness). HMS = coded store for
+exact capacity + holographic layer for the soft/verifiable/plastic axis. LESSON:
+theorems are maps of assumptions-to-break, not walls; a biased frame hides the answer.
