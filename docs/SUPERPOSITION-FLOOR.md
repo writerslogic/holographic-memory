@@ -122,6 +122,21 @@ So the assumption-attack strengthens the conclusion: the floor survived VAMP, an
 local-search refinement, and 32-restart search, and the one place AMP was genuinely
 suboptimal (the correlation) buys only ~0.02 in M/D.
 
+## The OGP-evader (lattice reduction) also fails
+
+The Overlap Gap Property obstructs *stable/local* algorithms, but **lattice reduction**
+(LLL/BKZ) is a global algebraic method and the textbook OGP *evader* — the one poly
+candidate with a theoretical reason to cross. It was tested with a correct CVP embedding
+(the true assignment is the unique closest vector; validated at 100% recovery at low
+load). Verdict, head-to-head at matched (D, L): **LLL is strictly worse than AMP.** At
+D=48, L=8, M/D=0.50, AMP=0.94 vs LLL=0.13; at L=16, M/D=0.30, AMP=1.00 vs LLL=0.09. LLL
+collapses at or *below* the AMP threshold, and worsens as N=M·L grows — because its
+approximation factor is exponential in the lattice dimension (D+M+N), so Babai rounding
+on the reduced basis fails long before the information limit. (An earlier raw sweep
+showed LLL at 100% past M/D=0.5 *for L=4* — a confound: small L is easy for every
+method, AMP included. Matched comparison removes it.) So the last poly-time *algorithm*
+candidate is closed too; the crossing below comes from the *encoder*, not the decoder.
+
 ## Crossing it: co-design the encoder (spatially-coupled code)
 
 The decoder sweeps all fix the *encoder* to a random bundle. But the hard phase is a
