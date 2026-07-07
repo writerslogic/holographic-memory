@@ -18,3 +18,7 @@ Gate per unit: `cargo test --lib --features experimental` + `cargo clippy
   (F=16: 99±2/98±2/98±3 float/N256/N16 ... F=48: 59±8/59±9/56±9). No surprise, no
   quarantine. Doc labels it validation of qFHRR + Frady/Kent, cites both, gives repro
   command + chance floor (1/F³). All numbers carry seed count + std.
+- **Item 3 done**: `resonator-factorize.rs` reproducibility header — documents the
+  fixed seed set (0..24), pure-function determinism (no RNG/clock/threads), integer-
+  rounded stable output, and the CORRECT repro command (was missing the required
+  `--features experimental`). Comment-only; experiment logic and output unchanged.
