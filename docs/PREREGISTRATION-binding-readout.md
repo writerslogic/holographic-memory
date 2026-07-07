@@ -1139,3 +1139,53 @@ products are float at query time — compute is not quantized (same isolation as
 (b) This is the factorization axis (Frady/Kent ~D^1.5), SEPARATE from the bundle-
 superposition capacity floor of §22–§26. (c) Accuracy is *matched*, not beaten — the
 win is a tradeoff-free footprint reduction, reported as such, never as an accuracy win.
+
+## 30. Noise-robust super-floor code: the open prize (pre-registered 2026-07-07)
+
+**Positioning.** `docs/SUPERPOSITION-FLOOR.md` established two things: (i) no poly
+*decoder* beats the random-bundle floor (~0.27·D at L=64), including the OGP-evader
+(lattice); (ii) a spatially-coupled (SC-SPARC) *encoder* crosses it with a poly decoder
+at matched storage — BUT clean-signal only: under query noise the coupled advantage
+collapses to the floor. The random bundle is the opposite corner: floored capacity, but
+graceful/robust (each fact spread holographically over all D dims). The open, publishable
+target is a code that occupies NEITHER corner: **> 0.27·D capacity with a poly decoder
+AND graceful degradation under query noise/dropout comparable to the bundle.**
+
+**Question.** Is there an encoder + poly decoder whose (capacity, robustness) Pareto
+frontier STRICTLY DOMINATES the random bundle — more facts/dim at matched noise
+tolerance, or more noise tolerance at matched capacity? Or is the capacity/robustness
+tension (spreading→robust vs structure→capacity) empirically fundamental for
+compact O(D) codes?
+
+**Noise models.** (a) AWGN on the stored/queried vector, σ relative to signal std;
+(b) dimension dropout — erase a fraction f of dims (the canonical holographic-robustness
+test). Both at query time; storage stays exact.
+
+**Candidates (cheapest disconfirming FIRST).**
+1. FRAME: measure the (capacity, noise) frontier for {random bundle, SC-noiseless} —
+   quantify the tension and whether SC has ANY positive noise margin. [run first]
+2. Noise-margin SC + DISTRIBUTED/redundant seeds (SC-LDPC has a positive noise threshold
+   by design; the fragile version was rate-maximised with a single boundary seed).
+3. SPREAD⊗COUPLE interpolation: give each fact a partial holographic spread AND a coupling
+   role; sweep the interpolation for a sweet spot beating the bundle under noise.
+4. Two-layer capacity split (robust bundle layer + SC increment on shared dims, joint
+   decode) — test whether the layers interfere or compose.
+5. Protograph/irregular SC optimised for the noisy operating point.
+
+**Metric.** Capacity at ≥90% recovery as a function of σ (AWGN) and f (dropout), matched
+storage (all store s∈R^D). Frontier plot per code. Seeds ≥4, report spread.
+
+**Strong outcome.** A code whose capacity-vs-noise curve lies strictly above
+max(bundle, SC-clean) over a useful noise range → noise-robust super-floor capacity =
+the target.
+
+**Kill condition (can fire).** Every candidate is dominated: for every noise level σ>0,
+no code exceeds the random bundle's capacity at matched recovery → the capacity/robustness
+tension is empirically fundamental for compact codes. Report as a negative + a conjecture
+(itself publishable: "holographic robustness and super-floor capacity are exclusive for
+O(D) VSA codes").
+
+**Honest guard.** Matched storage always (a code that spends extra dims/redundancy must
+be compared at matched total bits). No claim before the frontier curve. Verify any
+dominating code independently (per-block profile + noise sweep) before reporting — a
+noise-robust crossing is exactly the kind of too-good result that demands audit.
