@@ -103,11 +103,12 @@ Scope this claim does **not** exceed:
 ## Reproduction
 
 ```
-cargo run --release --features experimental --bin resonator-factorize
+cargo run --release --bin resonator-factorize
 ```
 
-Deterministic: seeds `0..24` are fixed in the binary, so the table above reproduces
-exactly. The library-level capability is exercised by:
+The bin is self-contained (std only; it reimplements the phase dynamics), so no
+cargo features are needed. Deterministic: seeds `0..24` are fixed in the binary, so
+the table above reproduces exactly. The library-level capability is exercised by:
 
 ```
 cargo test --lib --features experimental phase_resonator
