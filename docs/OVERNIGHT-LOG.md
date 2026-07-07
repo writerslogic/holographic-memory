@@ -135,6 +135,20 @@ All five queue items committed (+1 self-caught correction). Verification:
   solvers = identifiability at exp cost; lattice(OGP-evader) worse than AMP; the floor
   falls ONLY to encoder co-design (spatially-coupled), clean-signal only.
 
+### §30 noise-robust super-floor code — TARGET SUBSTANTIALLY MET (on user request)
+- Pre-registered §30 (a code with >0.27 capacity, poly decode, AND graceful noise/dropout
+  robustness — the open publishable target). Measured the (capacity, noise) frontier myself
+  (scripts/superposition_floor_robust.py): the SC crossing is NOT clean-signal-only — earlier
+  claim was too pessimistic (an artifact of the narrowest coupling w=3). Coupling-width sweep
+  found w≈8 optimal (each fact spread over ~24% of dims, dropout-robust, wave still nucleates).
+  CONFIRMED (6 seeds, M/D=0.284, w=8): coupled STRICTLY DOMINATES the bundle across the
+  practical range — clean 1.00 vs 0.67, 10%AWGN 1.00 vs 0.58, 10%dropout 0.82 vs 0.41 (~2x),
+  20% both still ahead; converges to parity at ~30% dropout; only at extreme AWGN (σ=0.4) does
+  wide-w dip below bundle. So capacity/robustness are NOT exclusive: a co-designed spatially-
+  coupled code beats the random bundle on BOTH capacity and robustness at matched storage in
+  the useful regime. Corrected the overstated "clean-signal only" claims in SUPERPOSITION-FLOOR.md.
+  Honest scope: known SC-SPARC coding theory applied to VSA; practical-regime win, not universal.
+
 ### Post-queue (on "continue")
 - Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
   output cell-for-cell (no hand-copy error). Both D=1024 and the D-sweep cells match.
