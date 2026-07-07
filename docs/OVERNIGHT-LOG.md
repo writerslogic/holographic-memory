@@ -34,3 +34,11 @@ Gate per unit: `cargo test --lib --features experimental` + `cargo clippy
   similarity, N=2 min & N=65536 max resolution, empty codebooks, single factor/entry,
   N=2 factorization, and a mismatched-resolution panic test. 25 phase tests pass;
   clippy clean. §20 tests untouched.
+- **Item 4 done**: `resonator-sweep.rs` hardening artifact + folded results into
+  DETERMINISTIC-RESONATOR.md. 30 seeds × 32 trials; phase bits float/8/6/4/3/2
+  (N∈{0,256,64,16,8,4}) × D∈{512,1024,2048}. Built-in REPRO CHECK (D=1024, 24 seeds,
+  N∈{0,256,16}) reproduces the frozen §20 table CELL-FOR-CELL → reimplementation
+  faithful. Result: 4-bit confirmed free under wider seeds; 3-bit also ~free; 2-bit
+  (N=4) is the first resolution with a consistent small deficit near the knee (F=24:
+  80±7 vs 89±5). CONFIRMS + bounds §20; does not contradict/beat it → no quarantine.
+  Dimension axis: pattern holds at all D, capacity scales ~D^1.5 (Frady/Kent).
