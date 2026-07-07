@@ -81,12 +81,16 @@ impl PhaseHVec {
         }
     }
 
+    /// Number of dimensions (phase components).
     pub fn dim(&self) -> usize {
         self.dim
     }
+    /// Phase resolution: the number of discrete phase levels `N` (each phase is in
+    /// `0..n`).
     pub fn n(&self) -> u32 {
         self.n
     }
+    /// The raw phase indices, one per dimension, each in `0..n`.
     pub fn phases(&self) -> &[u16] {
         &self.phases
     }
@@ -250,5 +254,49 @@ mod tests {
             ba.phases(),
             "bundle must be order-independent and deterministic"
         );
+    }
+
+    #[test]
+    fn bundle_empty_is_zero_dim() {
+        let empty: Vec<PhaseHVec> = Vec::new();
+        let b = PhaseHVec::bundle(&empty);
+        assert_eq!(b.dim(), 0);
+        assert!(b.phases().is_empty());
+    }
+
+    #[test]
+    fn bundle_single_element_is_identity() {
+        let a = PhaseHVec::new_random(512, 256, 42);
+        let b = PhaseHVec::bundle(std::slice::from_ref(&a));
+        assert_eq!(
+            b.phases(),
+            a.phases(),
+            "bundling one vector must return its own phases"
+        );
+    }
+
+    #[test]
+    fn zero_dim_similarity_is_one() {
+        // Empty vectors are vacuously identical (guarded in `similarity`).
+        let a = PhaseHVec::from_phases(Vec::new(), 2);
+        let b = PhaseHVec::from_phases(Vec::new(), 2);
+        assert_eq!(a.dim(), 0);
+        assert!((a.similarity(&b) - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn minimum_resolution_roundtrip() {
+        // N=2 (1-bit phase) is the substrate minimum; bind/unbind must stay exact.
+        let a = PhaseHVec::new_random(256, 2, 3);
+        let b = PhaseHVec::new_random(256, 2, 4);
+        assert_eq!(a.bind(&b).unbind(&b).phases(), a.phases());
+    }
+
+    #[test]
+    fn maximum_resolution_constructs() {
+        // N at the upper bound (65536) must construct and self-match.
+        let a = PhaseHVec::new_random(128, 65536, 7);
+        assert_eq!(a.n(), 65536);
+        assert!((a.similarity(&a) - 1.0).abs() < 1e-9);
     }
 }

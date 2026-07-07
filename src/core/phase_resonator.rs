@@ -101,7 +101,9 @@ fn argmax(codebook: &[Cx], v: &Cx) -> (usize, f64) {
     let dim = v.re.len().max(1) as f64;
     (0..codebook.len())
         .map(|k| (k, dot(&codebook[k], v) / dim))
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+        // Similarities are finite here; fall back to Equal rather than panic if a
+        // NaN ever reaches the comparator (empty codebook yields the (0, 0.0) below).
+        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
         .unwrap_or((0, 0.0))
 }
 
@@ -330,6 +332,65 @@ mod tests {
             assert_eq!(via_struct[a].codebook_entry, target[a]);
             assert_eq!(via_struct[a].codebook_entry, via_free[a].codebook_entry);
         }
+    }
+
+    #[test]
+    fn empty_codebooks_yield_no_factors() {
+        // Zero factors: both entry points return an empty result, no panic.
+        let cfg = ResonatorConfig::default();
+        let composite = PhaseHVec::new_random(64, 256, 1);
+        assert!(phase_resonator_factorize(&composite, &[], &cfg).is_empty());
+
+        let idx = PhaseResonator::new(&[]);
+        assert_eq!(idx.factor_count(), 0);
+        assert!(idx.factorize(&composite).is_empty());
+    }
+
+    #[test]
+    fn single_factor_and_single_entry_boundaries() {
+        // One factor axis with one entry: the only candidate must be recovered.
+        let cbs = codebooks(1, 1, 256, 512, 0x11);
+        let composite = compose(&cbs, &[0]);
+        let res = PhaseResonator::new(&cbs).factorize(&composite);
+        assert_eq!(res.len(), 1);
+        assert_eq!(res[0].codebook_entry, 0);
+
+        // One factor axis, several entries: a pure cleanup problem, must be exact.
+        let cbs = codebooks(1, 8, 256, 512, 0x22);
+        let composite = compose(&cbs, &[5]);
+        let res = phase_resonator_factorize(&composite, &cbs, &ResonatorConfig::default());
+        assert_eq!(res[0].codebook_entry, 5);
+    }
+
+    #[test]
+    fn factors_at_minimum_phase_resolution() {
+        // N=2 (1-bit phase) is the substrate minimum; the resonator must still run and
+        // recover a small two-factor product without panicking.
+        let cbs = codebooks(2, 4, 2, 1024, 0x33);
+        let target = [1usize, 3];
+        let res =
+            phase_resonator_factorize(&compose(&cbs, &target), &cbs, &ResonatorConfig::default());
+        assert_eq!(res.len(), 2);
+    }
+
+    #[test]
+    fn reusable_index_derives_resolution_from_codebooks() {
+        // Precomputed index must adopt the codebooks' N; a mismatched composite is a
+        // programming error and is rejected loudly.
+        let cbs = codebooks(2, 6, 64, 256, 0x44);
+        let idx = PhaseResonator::new(&cbs);
+        let composite = compose(&cbs, &[2, 4]);
+        assert_eq!(idx.factorize(&composite).len(), 2);
+    }
+
+    #[test]
+    #[should_panic(expected = "phase resolution")]
+    fn mismatched_resolution_panics() {
+        let cbs = codebooks(2, 6, 64, 256, 0x55);
+        let idx = PhaseResonator::new(&cbs);
+        // Composite at a different N than the codebooks.
+        let wrong = PhaseHVec::new_random(256, 256, 9);
+        let _ = idx.factorize(&wrong);
     }
 
     #[test]
