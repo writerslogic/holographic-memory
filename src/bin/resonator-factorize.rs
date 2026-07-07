@@ -14,7 +14,17 @@
 // even N=16-32) tracks float across the capacity knee, a DETERMINISTIC resonator is
 // real -- integer-only, replay-exact factorization.
 //
-// Run: cargo run --release --bin resonator-factorize
+// Reproducibility. This is a fixed, seeded artifact. Seeds are the fixed set 0..SEEDS
+// (SEEDS=24); each seed builds independent codebooks and TRIALS=32 random factor
+// tuples via the splitmix `mix` hash, so the whole sweep is a pure function of the
+// constants below -- no RNG state, no wall-clock, no threads. Reported mean/std are
+// rounded to whole percent, so the output table is stable across runs and machines.
+// The numbers this prints are the ones cited in docs/DETERMINISTIC-RESONATOR.md.
+// Bump SEEDS/TRIALS or extend the F/N sweeps to tighten error bars; do not change the
+// dynamics if you want the documented table to keep reproducing.
+//
+// Run (the bin requires the `experimental` feature):
+//   cargo run --release --features experimental --bin resonator-factorize
 
 use std::f64::consts::TAU;
 
