@@ -139,6 +139,29 @@ showed LLL at 100% past M/D=0.5 *for L=4* — a confound: small L is easy for ev
 method, AMP included. Matched comparison removes it.) So the last poly-time *algorithm*
 candidate is closed too; the crossing below comes from the *encoder*, not the decoder.
 
+## The bigger lever: the floor is the value *prior*, not superposition
+
+The whole floor sweep fixed the value model to "one of L codebook vectors" (block-one-hot).
+That choice is what makes recovery combinatorial — N = M·L unknowns — and sets the ~0.27·D
+AMP threshold. Change the value model to a **continuous amplitude** (one of L PAM levels on
+a per-key vector) and recovery becomes the *linear* solve `s = K a` (N = M unknowns), whose
+only limit is identifiability at **M/D = 1.0**. Verified (`scripts/superposition_floor_priors.py`):
+100% recovery to M/D=0.95, collapsing at 1.0 — a **poly decoder (least-squares) with graceful
+soft readout, ~3.7× the one-hot floor, at the same log₂L bits/fact**. Small-alphabet PAM-AMP
+pushes past 1.0.
+
+This **corrects an earlier claim in this doc** that reaching M≈D requires a "hard cliff, no
+soft recall": the continuous high-capacity route is graceful; the cliff was an artifact of
+exact coded (Reed–Solomon/XOR) stores, not of high capacity.
+
+The honest catch: continuous amplitudes are SNR-hungry (L levels packed into amplitude → small
+minimum distance), so under even 5% noise the one-hot code is *more* robust at low load. Total
+information per dimension is roughly conserved (~1.6–1.9 bits/dim across schemes). So the deep
+structure is not a wall but a **capacity/robustness tradeoff on the value-encoding axis**: the
+0.27·D "floor" is simply where the *robust* (one-hot) encoding sits; spend the budget on fragile
+amplitudes → M/D→1.0 clean, or on a coupled code → ~0.5 noise-robust. There is no capacity wall,
+only a budget and where you spend it.
+
 ## Crossing it: co-design the encoder (spatially-coupled code)
 
 The decoder sweeps all fix the *encoder* to a random bundle. But the hard phase is a
