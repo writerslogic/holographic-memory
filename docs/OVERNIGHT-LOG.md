@@ -64,6 +64,11 @@ All five queue items committed (+1 self-caught correction). Verification:
   carve-out: no unprompted edits), and it is outside the queue scope. Trivial mechanical
   fix (`for (f, _) in ...enumerate()`) if the user wants the default-features workspace
   clippy green; flagged for a decision rather than touched unattended.
+  **RESOLVED (on user request to review):** applied the outcome-neutral enumerate
+  rewrite (`for (f, cb) in books.iter().enumerate()` + `cb.iter()`; `cb === &books[f]`,
+  books has exactly FACTORS entries). Left the argmax-closure `books[f]` site alone.
+  Full default-features `cargo clippy --workspace -- -D warnings` now GREEN across all
+  38 bins (0 warnings). No logic/outcome change to the §21 experiment.
 
 ### Post-queue (on "continue")
 - Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
