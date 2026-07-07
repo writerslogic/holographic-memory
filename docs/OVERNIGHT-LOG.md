@@ -22,3 +22,9 @@ Gate per unit: `cargo test --lib --features experimental` + `cargo clippy
   fixed seed set (0..24), pure-function determinism (no RNG/clock/threads), integer-
   rounded stable output, and the CORRECT repro command (was missing the required
   `--features experimental`). Comment-only; experiment logic and output unchanged.
+- **Correction**: item 3 wrongly claimed the bin "requires the experimental feature".
+  It does not — `resonator-factorize` is std-only (auto-discovered, no required-
+  features), verified it builds+runs with plain `cargo run --release --bin
+  resonator-factorize`. Fixed the header and the doc repro command to drop the
+  misleading `--features experimental`. Lib/doctest commands (which DO need the
+  feature) are unchanged.

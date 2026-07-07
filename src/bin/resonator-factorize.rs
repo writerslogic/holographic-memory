@@ -23,8 +23,10 @@
 // Bump SEEDS/TRIALS or extend the F/N sweeps to tighten error bars; do not change the
 // dynamics if you want the documented table to keep reproducing.
 //
-// Run (the bin requires the `experimental` feature):
-//   cargo run --release --features experimental --bin resonator-factorize
+// This bin is self-contained (std only -- it reimplements the phase dynamics rather
+// than importing the crate), so no cargo features are needed.
+//
+// Run: cargo run --release --bin resonator-factorize
 
 use std::f64::consts::TAU;
 
