@@ -28,3 +28,9 @@ Gate per unit: `cargo test --lib --features experimental` + `cargo clippy
   resonator-factorize`. Fixed the header and the doc repro command to drop the
   misleading `--features experimental`. Lib/doctest commands (which DO need the
   feature) are unchanged.
+- **Item 5 done**: prod-code quality on phase_hvec.rs + phase_resonator.rs. Accessor
+  doc comments; hardened `argmax` comparator against a NaN panic (finite-value
+  behavior unchanged); added boundary tests — empty/single-element bundle, zero-dim
+  similarity, N=2 min & N=65536 max resolution, empty codebooks, single factor/entry,
+  N=2 factorization, and a mismatched-resolution panic test. 25 phase tests pass;
+  clippy clean. §20 tests untouched.
