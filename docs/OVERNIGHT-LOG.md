@@ -64,3 +64,12 @@ All five queue items committed (+1 self-caught correction). Verification:
   carve-out: no unprompted edits), and it is outside the queue scope. Trivial mechanical
   fix (`for (f, _) in ...enumerate()`) if the user wants the default-features workspace
   clippy green; flagged for a decision rather than touched unattended.
+
+### Post-queue (on "continue")
+- Verified the shipped DETERMINISTIC-RESONATOR.md tables transcribe the raw sweep
+  output cell-for-cell (no hand-copy error). Both D=1024 and the D-sweep cells match.
+- Discoverability/citability: added a "Deterministic Quantized Substrate (validated)"
+  section to docs/RESEARCH.md pointing to DETERMINISTIC-RESONATOR.md, naming the
+  `PhaseResonator`/`phase_resonator_factorize` API, and correcting the resonator
+  attribution by addition (Frady/Kent/Sommer 2020 is the primary source; the existing
+  "Kanerva 2022" line left intact). Docs-only; API names + repro commands verified.
