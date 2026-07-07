@@ -157,3 +157,17 @@ All five queue items committed (+1 self-caught correction). Verification:
   `PhaseResonator`/`phase_resonator_factorize` API, and correcting the resonator
   attribution by addition (Frady/Kent/Sommer 2020 is the primary source; the existing
   "Kanerva 2022" line left intact). Docs-only; API names + repro commands verified.
+
+### THE FLOOR IS THE ONE-HOT PRIOR (user: "you're biasing, we can do better" — correct)
+- Named my own bias: capped capacity sweeps at M/D=0.325 (coupled still 1.0!) and C=32,
+  never pushed to failure; the reframe agent that questioned the problem def had died and
+  I never relaunched it. Relaunched the high-ceiling directions. KEY RESULT (verified myself):
+  the 0.27 floor is an artifact of the ONE-HOT value prior. Continuous-amplitude values turn
+  recovery into a linear solve (N=M not M*L unknowns) → 100% to M/D=0.95 (poly lstsq, graceful
+  readout), 3.7x the floor, same bits/fact. Collapses at identifiability M/D=1.0. CORRECTS the
+  doc's "M~=D needs a hard cliff" claim (continuous route is graceful). Catch: SNR-hungry, so
+  one-hot wins under >5% noise. Synthesis: capacity/robustness is a conserved-budget tradeoff
+  on the value-encoding axis (~1.6-1.9 bits/dim), NOT a wall. Other agents: resonator-recast =
+  clean negative (D^1.5 is search-space not storage); smooth-window SC pushes knee 0.40→0.48
+  (toward MAP low-end); group/commuting-key priors = same wall relabeled.
+  Artifacts: scripts/superposition_floor_priors.py + SUPERPOSITION-FLOOR.md reframe.
