@@ -263,11 +263,9 @@ impl EntangledHVec {
         Self { dim, indices }
     }
 
-    /// Hamming distance via sorted-merge intersection count on sparse index sets.
+    /// Hamming distance via the adaptive sparse distance kernel.
     pub fn hamming(&self, other: &Self) -> u32 {
-        let intersection =
-            super::intersection::sparse_intersection_count(&self.indices, &other.indices);
-        (self.indices.len() + other.indices.len() - 2 * intersection) as u32
+        super::intersection::sparse_hamming_distance(&self.indices, &other.indices)
     }
 
     /// Jaccard similarity: |A∩B| / |A∪B|.
