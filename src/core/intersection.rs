@@ -3,14 +3,25 @@
 
 //! Sparse intersection primitives.
 //!
-//! Galloping intersection for skewed sizes, sorted merge for balanced.
+//! Galloping intersection for skewed sizes, SIMD-assisted sorted merge for balanced.
+
+/// Hamming distance between two sorted sparse bit-index slices.
+///
+/// Uses the adaptive intersection kernel underneath, so callers get the best
+/// available path without duplicating the symmetric-difference arithmetic.
+#[inline]
+pub fn sparse_hamming_distance(a: &[u32], b: &[u32]) -> u32 {
+    let intersection = sparse_intersection_count(a, b);
+    (a.len() + b.len() - 2 * intersection) as u32
+}
 
 /// Count common elements in two sorted u32 slices.
 ///
 /// Adaptively picks the best algorithm:
 /// - When one slice is much smaller (|a| * 8 < |b|), uses galloping search
 ///   which is O(|small| * log(|large|)) and beats O(|a| + |b|) merge.
-/// - Otherwise uses the standard sorted merge at O(|a| + |b|).
+/// - Otherwise uses a sorted merge at O(|a| + |b|), with runtime SIMD
+///   dispatch on x86/x86_64 when AVX2 is available.
 #[inline]
 pub fn sparse_intersection_count(a: &[u32], b: &[u32]) -> usize {
     if a.is_empty() || b.is_empty() {
@@ -28,6 +39,19 @@ pub fn sparse_intersection_count(a: &[u32], b: &[u32]) -> usize {
 /// Sorted merge intersection count: O(|a| + |b|).
 #[inline]
 fn merge_intersection_count(a: &[u32], b: &[u32]) -> usize {
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: guarded by runtime AVX2 feature detection above.
+            return unsafe { merge_intersection_count_avx2(a, b) };
+        }
+    }
+
+    merge_intersection_count_scalar(a, b)
+}
+
+#[inline]
+fn merge_intersection_count_scalar(a: &[u32], b: &[u32]) -> usize {
     let mut count = 0;
     let mut i = 0;
     let mut j = 0;
@@ -42,6 +66,55 @@ fn merge_intersection_count(a: &[u32], b: &[u32]) -> usize {
             }
         }
     }
+    count
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[target_feature(enable = "avx2")]
+unsafe fn merge_intersection_count_avx2(a: &[u32], b: &[u32]) -> usize {
+    use std::arch::x86_64::{
+        __m256i, _mm256_castsi256_ps, _mm256_cmpeq_epi32, _mm256_loadu_si256,
+        _mm256_movemask_ps, _mm256_set1_epi32,
+    };
+
+    let mut count = 0;
+    let mut i = 0;
+    let mut j = 0;
+
+    while i < a.len() && j < b.len() {
+        let av = a[i];
+        let bv = b[j];
+
+        if av == bv {
+            count += 1;
+            i += 1;
+            j += 1;
+        } else if av < bv {
+            if i + 8 <= a.len() && a[i + 7] < bv {
+                i += 8;
+            } else {
+                i += 1;
+            }
+        } else if j + 8 <= b.len() {
+            let needle = _mm256_set1_epi32(av as i32);
+            let chunk = _mm256_loadu_si256(b[j..].as_ptr() as *const __m256i);
+            let eq = _mm256_cmpeq_epi32(needle, chunk);
+            let mask = _mm256_movemask_ps(_mm256_castsi256_ps(eq));
+            if mask != 0 {
+                count += 1;
+                let offset = mask.trailing_zeros() as usize;
+                i += 1;
+                j += offset + 1;
+            } else if b[j + 7] < av {
+                j += 8;
+            } else {
+                j += 1;
+            }
+        } else {
+            j += 1;
+        }
+    }
+
     count
 }
 
@@ -135,6 +208,13 @@ mod tests {
         let b: Vec<u32> = (0..100).step_by(3).collect(); // multiples of 3
         let expected = (0..100u32).filter(|x| x % 2 == 0 && x % 3 == 0).count();
         assert_eq!(sparse_intersection_count(&a, &b), expected);
+        assert_eq!(merge_intersection_count_scalar(&a, &b), expected);
+
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: guarded by runtime AVX2 feature detection above.
+            assert_eq!(unsafe { merge_intersection_count_avx2(&a, &b) }, expected);
+        }
     }
 
     #[test]
