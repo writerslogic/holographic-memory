@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
 ## [Unreleased]
 
+### Documentation
+- Update changelog [skip ci]
+## [py-v0.6.0] - 2026-07-13
+
 ### Added
 - Python bindings + PyPI packaging for holographic-vsa (maturin/pyo3)
 - PhaseResonator reusable-index API + clean re-export + doctest (§20 capability)
