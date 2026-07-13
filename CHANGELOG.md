@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Python bindings + PyPI packaging for holographic-vsa (maturin/pyo3)
+- PhaseResonator reusable-index API + clean re-export + doctest (§20 capability)
+- PhaseHVec core type + real Frady/Kent resonator on quantized-phase substrate
+- Counting membership store with Poisson z-score readout (4x Bloom capacity)
 - Real SHA-256 commitment for verifiable phasor mutation (lane 3)
 - Multi-hop reasoning over the phasor memory (retrieve_path)
 - PhaseGraph -- phasor relational memory with relation algebra + retrieval
@@ -20,6 +24,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- §29 confirmed on unseen seeds — 4-bit matches float, 8-16x footprint win; log floor-exploration findings
+- Wire deterministic-resonator capability into RESEARCH.md (discoverability + correct citation)
+- Overnight closeout — queue exhausted, 337 tests green, flag pre-existing §21 bin lint
+- Correct resonator-factorize repro command — bin is std-only, no experimental feature
+- Reproducibility header for resonator-factorize (fixed seeds, correct repro command)
+- DETERMINISTIC-RESONATOR.md — §20 validation write-up from in-loop 24-seed run
+- Block codes also floor (§24); capacity gap is retrieval-vs-information, open not impossible
+- Retract 'info-theoretically impossible' framing; 0.1D Plate is a readout artifact, closing gap to ceiling is open (§22)
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -52,6 +65,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Clippy needless_range_loop in resonator-bundle (§21 bin) — enumerate rewrite, outcome-neutral
 - Close remaining provenance trust-anchor gaps (cawg, vc-only records)
 - Use sort_by_key to satisfy clippy 1.96 unnecessary_sort_by
 - Repair --all-features build (port SCITT to ureq 3 API, drop dead CliffordVec bench, gate provenance example)
@@ -59,6 +73,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 
 ### Security
 - Harden signing-key file perms, zeroize copies, bound JUMBF recursion
+
+### Assets
+- Static transparent logo from first frame, text removed
+- Simplify logo — strip floating decorative specks, keep the connected graph mark
+- Replace logo with self-contrasting node-graph mark (animated gif + static svg), drop garbled-text variants
 
 ### Example
 - Story_memory -- HMS reasoning memory serving a writer (scrivener-mcp)
