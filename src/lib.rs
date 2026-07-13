@@ -13,6 +13,12 @@ use std::sync::Arc;
 use tracing::info_span;
 
 pub mod core;
+
+// Python bindings (pyo3). The `#[pymodule]` entry point is compiled into the
+// cdylib when the `python` feature is on; built into wheels by maturin.
+#[cfg(feature = "python")]
+mod python;
+
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::HmsError;
 pub use crate::core::types::{ConceptCandidate, MemorizeBatchItem, RetrievalResult, TextMetrics};

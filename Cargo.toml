@@ -19,6 +19,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 napi = { version = "2.14", features = ["async", "serde-json"], optional = true }
 napi-derive = { version = "2.14", optional = true }
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py39"], optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
 serde = { version = "1.0", features = ["derive"] }
 ts-rs = { version = "10", features = ["serde-compat"] }
@@ -73,6 +74,10 @@ required-features = ["experimental"]
 [features]
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
+# Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
+# wheels with `maturin build --features python`; publishing is wired in
+# .github/workflows/publish-pypi.yml and dormant until a `py-v*` tag is pushed.
+python = ["pyo3", "experimental"]
 security = ["ed25519-dalek", "zeroize", "aes-gcm", "argon2", "sha2"]
 provenance = ["security", "coset", "ciborium", "bs58", "multibase", "base64"]
 provenance-scitt = ["provenance", "ureq"]
