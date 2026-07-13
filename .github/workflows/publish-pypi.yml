@@ -23,7 +23,9 @@ jobs:
           - { runner: ubuntu-latest,  target: x86_64 }
           - { runner: ubuntu-latest,  target: aarch64 }
           - { runner: macos-latest,   target: aarch64 }
-          - { runner: macos-13,       target: x86_64 }
+          # Intel-Mac wheel is cross-compiled on the Apple-Silicon runner to avoid
+          # the scarce/slow macos-13 Intel runner queue (x86_64-apple-darwin target).
+          - { runner: macos-latest,   target: x86_64 }
           - { runner: windows-latest, target: x64 }
     steps:
       - uses: actions/checkout@v4
