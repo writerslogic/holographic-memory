@@ -299,10 +299,10 @@ mod tests {
         let indices = original.indices().to_vec();
         let mut noisy = indices.clone();
         // Flip 25% of active indices (16 of 64)
-        let mut rng = rand::thread_rng();
-        use rand::Rng;
+        let mut rng = rand::rng();
+        use rand::RngExt;
         for item in noisy.iter_mut().take(16) {
-            *item = rng.gen_range(0..16384u32);
+            *item = rng.random_range(0..16384u32);
         }
         noisy.sort_unstable();
         noisy.dedup();
