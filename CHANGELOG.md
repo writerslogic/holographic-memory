@@ -28,6 +28,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Migrate HMS agent identity from did.cose to CAWG ICA
 
 ### Documentation
+- Update changelog [skip ci]
 - §29 confirmed on unseen seeds — 4-bit matches float, 8-16x footprint win; log floor-exploration findings
 - Wire deterministic-resonator capability into RESEARCH.md (discoverability + correct citation)
 - Overnight closeout — queue exhausted, 337 tests green, flag pre-existing §21 bin lint
