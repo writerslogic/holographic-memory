@@ -5,7 +5,7 @@ use super::wire;
 use fxhash::FxHashMap;
 use parking_lot::RwLock;
 
-const TRIPLE_MAGIC: u8 = 0xFB;
+const TRIPLE_MAGIC: u8 = wire::magic::TRIPLE;
 
 #[derive(Clone, Debug)]
 pub struct TripleRecord {

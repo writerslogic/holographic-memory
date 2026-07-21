@@ -9,6 +9,29 @@
 //! replaces; do not change any layout here without a backward-compatible
 //! migration.
 
+/// Frame magic bytes discriminating arena/log record types.
+///
+/// Every persisted frame begins with one of these. They are centralized here so
+/// collisions are visible at a glance; adding a record type means adding a byte
+/// that is distinct from all others below. Values are load-bearing on-disk
+/// constants and must never change once shipped.
+pub(crate) mod magic {
+    /// Atom (indexed hypervector) frame.
+    pub(crate) const ATOM: u8 = 0xFD;
+    /// Composite (bundled hypervector) frame.
+    pub(crate) const COMPOSITE: u8 = 0xFC;
+    /// Triple record frame.
+    pub(crate) const TRIPLE: u8 = 0xFB;
+    /// Composition-rule frame.
+    pub(crate) const RULE: u8 = 0xFE;
+    /// Relation frame (current write magic). Distinct from [`RULE`] to avoid the
+    /// historical collision where relations shared `0xFE` with rules.
+    pub(crate) const RELATION: u8 = 0xFA;
+    /// Legacy relation magic. Older logs wrote relations under [`RULE`]'s byte;
+    /// readers still accept it so existing logs load. Never written anymore.
+    pub(crate) const RELATION_LEGACY: u8 = 0xFE;
+}
+
 /// Append a length-prefixed string: `[len:u16 LE][utf8 bytes]`.
 ///
 /// Callers are responsible for ensuring `s` is at most `u16::MAX` bytes.

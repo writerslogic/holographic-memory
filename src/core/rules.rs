@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use super::wire;
 use fxhash::FxHashMap;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
@@ -62,14 +63,14 @@ impl RuleStore {
     pub fn serialize_rule(rule: &CompositionRule) -> Vec<u8> {
         let json = serde_json::to_vec(rule).unwrap_or_default();
         let mut buf = Vec::with_capacity(1 + 4 + json.len());
-        buf.push(0xFE);
+        buf.push(wire::magic::RULE);
         buf.extend_from_slice(&(json.len() as u32).to_le_bytes());
         buf.extend_from_slice(&json);
         buf
     }
 
     pub fn deserialize_rule(data: &[u8]) -> Option<CompositionRule> {
-        if data.len() < 5 || data[0] != 0xFE {
+        if data.len() < 5 || data[0] != wire::magic::RULE {
             return None;
         }
         let len = u32::from_le_bytes(data[1..5].try_into().ok()?) as usize;

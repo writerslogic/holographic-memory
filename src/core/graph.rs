@@ -12,7 +12,12 @@ use super::wire;
 /// Serialized relation for arena persistence.
 /// Format: [MAGIC:u8][source_len:u16][source][type_len:u16][type][target_len:u16][target]
 ///         [valid_from:u64][valid_to:u64][props_len:u32][props_bytes]
-const RELATION_MAGIC: u8 = 0xFE;
+///
+/// Written under [`wire::magic::RELATION`]. Historically relations shared
+/// `0xFE` with composition rules; readers still accept that legacy magic
+/// ([`wire::magic::RELATION_LEGACY`]) so pre-migration logs continue to load.
+const RELATION_MAGIC: u8 = wire::magic::RELATION;
+const RELATION_MAGIC_LEGACY: u8 = wire::magic::RELATION_LEGACY;
 
 /// In-memory graph index over explicit relations.
 pub struct RelationStore {
@@ -346,8 +351,9 @@ impl RelationStore {
 
     /// Deserialize a relation from arena bytes. Returns None if not a relation frame.
     pub fn deserialize_relation(data: &[u8]) -> Option<Relation> {
-        if data.is_empty() || data[0] != RELATION_MAGIC {
-            return None;
+        match data.first() {
+            Some(&m) if m == RELATION_MAGIC || m == RELATION_MAGIC_LEGACY => {}
+            _ => return None,
         }
         let mut pos = 1;
 
@@ -617,6 +623,36 @@ mod tests {
         assert_eq!(parsed.properties.as_deref(), Some("{\"pop\":2_000_000}"));
         assert_eq!(parsed.valid_from, 1000.0);
         assert_eq!(parsed.valid_to, 0.0);
+    }
+
+    #[test]
+    fn test_relation_magic_migration() {
+        let rel = Relation {
+            source_id: "paris".into(),
+            relation_type: "capital_of".into(),
+            target_id: "france".into(),
+            properties: None,
+            valid_from: 0.0,
+            valid_to: 0.0,
+        };
+
+        // New writes use the distinct relation magic (0xFA), not the rule byte.
+        let mut bytes = RelationStore::serialize_relation(&rel);
+        assert_eq!(bytes[0], wire::magic::RELATION);
+        assert_eq!(bytes[0], 0xFA);
+        assert_ne!(bytes[0], wire::magic::RULE);
+        let parsed = RelationStore::deserialize_relation(&bytes).unwrap();
+        assert_eq!(parsed.source_id, "paris");
+        assert_eq!(parsed.target_id, "france");
+
+        // A hand-crafted legacy-0xFE relation (as older logs wrote it) still
+        // deserializes so existing arenas load.
+        bytes[0] = wire::magic::RELATION_LEGACY;
+        assert_eq!(bytes[0], 0xFE);
+        let legacy = RelationStore::deserialize_relation(&bytes).unwrap();
+        assert_eq!(legacy.source_id, "paris");
+        assert_eq!(legacy.relation_type, "capital_of");
+        assert_eq!(legacy.target_id, "france");
     }
 
     #[test]
