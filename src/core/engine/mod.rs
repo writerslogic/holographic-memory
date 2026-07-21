@@ -1009,11 +1009,9 @@ impl HmsCore {
 
     // === Meaning Memory API ===
 
-    pub fn structural_query(
-        &self,
-        known: &[(&str, &EntangledHVec)],
-        target_role: &str,
-    ) -> Vec<structural::StructuralResult> {
+    /// Build the shared meaning-memory context, if all required subsystems are
+    /// present. Returns `None` when meaning memory is not fully initialized.
+    fn meaning_ctx(&self) -> Option<structural::MeaningContext<'_>> {
         let (atom_mem, comp_mem, tri, roles, adm) = match (
             &self.atom_memory,
             &self.composite_memory,
@@ -1022,10 +1020,10 @@ impl HmsCore {
             &self.admission,
         ) {
             (Some(a), Some(c), Some(t), Some(r), Some(ad)) => (a, c, t, r, ad),
-            _ => return Vec::new(),
+            _ => return None,
         };
         let mc = &self.config.meaning;
-        let ctx = structural::MeaningContext {
+        Some(structural::MeaningContext {
             atom_memory: atom_mem,
             composite_memory: comp_mem,
             triple_store: tri,
@@ -1034,33 +1032,27 @@ impl HmsCore {
             beta: mc.beta,
             k: 64,
             max_iter: 3,
+        })
+    }
+
+    pub fn structural_query(
+        &self,
+        known: &[(&str, &EntangledHVec)],
+        target_role: &str,
+    ) -> Vec<structural::StructuralResult> {
+        let ctx = match self.meaning_ctx() {
+            Some(ctx) => ctx,
+            None => return Vec::new(),
         };
         structural::fuzzy_structural_query(&ctx, known, target_role)
     }
 
     pub fn multi_hop(&self, start: &str, relations: &[&str]) -> Vec<multi_hop::MultiHopResult> {
-        let (atom_mem, comp_mem, tri, roles, adm, rules) = match (
-            &self.atom_memory,
-            &self.composite_memory,
-            &self.triple_store,
-            &self.role_registry,
-            &self.admission,
-            &self.rule_store,
-        ) {
-            (Some(a), Some(c), Some(t), Some(r), Some(ad), Some(ru)) => (a, c, t, r, ad, ru),
+        let (ctx, rules) = match (self.meaning_ctx(), &self.rule_store) {
+            (Some(ctx), Some(rules)) => (ctx, rules),
             _ => return Vec::new(),
         };
         let mc = &self.config.meaning;
-        let ctx = structural::MeaningContext {
-            atom_memory: atom_mem,
-            composite_memory: comp_mem,
-            triple_store: tri,
-            roles,
-            admission: adm,
-            beta: mc.beta,
-            k: 64,
-            max_iter: 3,
-        };
         multi_hop::multi_hop_query(start, relations, &ctx, rules, mc.max_hop_depth)
     }
 
