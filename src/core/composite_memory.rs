@@ -5,7 +5,7 @@ use super::entangled::EntangledHVec;
 use super::indexed_memory::IndexedMemory;
 use super::wire;
 
-const COMPOSITE_MAGIC: u8 = 0xFC;
+const COMPOSITE_MAGIC: u8 = wire::magic::COMPOSITE;
 
 pub struct CompositeMemory {
     inner: IndexedMemory,
