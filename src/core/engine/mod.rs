@@ -37,6 +37,7 @@ use super::storage::PersistentArena;
 use super::text::TextProcessor;
 use super::triple_store::TripleStore;
 use super::types::{GraphPath, Relation, RelationType, TextMetrics};
+use super::wire;
 
 use shard::{ShardManager, ShardSet};
 
@@ -487,12 +488,8 @@ impl HmsCore {
         }
         let deltas = vector.to_deltas();
         let mut entry = Vec::with_capacity(2 + id_bytes.len() + 4 + deltas.len() * 4);
-        entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
-        entry.extend_from_slice(id_bytes);
-        entry.extend_from_slice(&(deltas.len() as u32).to_le_bytes());
-        for &d in &deltas {
-            entry.extend_from_slice(&d.to_le_bytes());
-        }
+        wire::write_lp_str(&mut entry, id);
+        wire::write_deltas(&mut entry, &deltas);
         Ok(entry)
     }
 
@@ -508,8 +505,7 @@ impl HmsCore {
             ));
         }
         let mut entry = Vec::with_capacity(2 + id_bytes.len() + 4);
-        entry.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
-        entry.extend_from_slice(id_bytes);
+        wire::write_lp_str(&mut entry, id);
         entry.extend_from_slice(&Self::TOMBSTONE_MARKER.to_le_bytes());
         Ok(entry)
     }

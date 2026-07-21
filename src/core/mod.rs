@@ -67,6 +67,7 @@ pub(crate) mod text;
 pub(crate) mod tombstone;
 pub(crate) mod triple_store;
 pub(crate) mod types;
+pub(crate) mod wire;
 
 pub use config::HmsConfig;
 pub use engine::HmsCore;

@@ -3,6 +3,7 @@
 
 use super::entangled::EntangledHVec;
 use super::indexed_memory::IndexedMemory;
+use super::wire;
 
 const COMPOSITE_MAGIC: u8 = 0xFC;
 
@@ -56,16 +57,11 @@ impl CompositeMemory {
     }
 
     pub fn serialize_composite(id: &str, vec: &EntangledHVec) -> Vec<u8> {
-        let id_bytes = id.as_bytes();
         let deltas = vec.to_deltas();
-        let mut buf = Vec::with_capacity(1 + 2 + id_bytes.len() + 4 + deltas.len() * 4);
+        let mut buf = Vec::with_capacity(1 + 2 + id.len() + 4 + deltas.len() * 4);
         buf.push(COMPOSITE_MAGIC);
-        buf.extend_from_slice(&(id_bytes.len() as u16).to_le_bytes());
-        buf.extend_from_slice(id_bytes);
-        buf.extend_from_slice(&(deltas.len() as u32).to_le_bytes());
-        for &d in &deltas {
-            buf.extend_from_slice(&d.to_le_bytes());
-        }
+        wire::write_lp_str(&mut buf, id);
+        wire::write_deltas(&mut buf, &deltas);
         buf
     }
 
@@ -73,23 +69,8 @@ impl CompositeMemory {
         if data.is_empty() || data[0] != COMPOSITE_MAGIC {
             return None;
         }
-        let mut pos = 1;
-        let id_len = u16::from_le_bytes(data.get(pos..pos + 2)?.try_into().ok()?) as usize;
-        pos += 2;
-        let id = std::str::from_utf8(data.get(pos..pos + id_len)?)
-            .ok()?
-            .to_string();
-        pos += id_len;
-        let delta_count = u32::from_le_bytes(data.get(pos..pos + 4)?.try_into().ok()?) as usize;
-        pos += 4;
-        let deltas: Vec<u32> = (0..delta_count)
-            .filter_map(|i| {
-                let start = pos + i * 4;
-                Some(u32::from_le_bytes(
-                    data.get(start..start + 4)?.try_into().ok()?,
-                ))
-            })
-            .collect();
+        let (id, pos) = wire::read_lp_str(data, 1)?;
+        let (deltas, _) = wire::read_deltas(data, pos)?;
         let vec = EntangledHVec::from_deltas(&deltas, dim);
         Some((id, vec))
     }

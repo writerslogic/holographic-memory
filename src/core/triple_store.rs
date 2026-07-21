@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use super::wire;
 use fxhash::FxHashMap;
 use parking_lot::RwLock;
 
@@ -175,9 +176,7 @@ impl TripleStore {
             &record.object_id,
             &record.composite_id,
         ] {
-            let bytes = field.as_bytes();
-            buf.extend_from_slice(&(bytes.len() as u16).to_le_bytes());
-            buf.extend_from_slice(bytes);
+            wire::write_lp_str(&mut buf, field);
         }
         buf
     }
@@ -189,12 +188,8 @@ impl TripleStore {
         let mut pos = 1;
         let mut fields = Vec::with_capacity(4);
         for _ in 0..4 {
-            let len = u16::from_le_bytes(data.get(pos..pos + 2)?.try_into().ok()?) as usize;
-            pos += 2;
-            let s = std::str::from_utf8(data.get(pos..pos + len)?)
-                .ok()?
-                .to_string();
-            pos += len;
+            let (s, next) = wire::read_lp_str(data, pos)?;
+            pos = next;
             fields.push(s);
         }
         Some(TripleRecord {
