@@ -1,176 +1,156 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "HmsError",
   "oneOf": [
     {
       "type": "object",
-      "required": [
-        "message",
-        "type"
-      ],
       "properties": {
         "message": {
           "type": "object",
-          "required": [
-            "details"
-          ],
           "properties": {
             "details": {
               "type": "string"
             }
-          }
+          },
+          "required": [
+            "details"
+          ]
         },
         "type": {
           "type": "string",
-          "enum": [
-            "InvalidParam"
-          ]
+          "const": "InvalidParam"
         }
-      }
+      },
+      "required": [
+        "type",
+        "message"
+      ]
     },
     {
       "type": "object",
-      "required": [
-        "message",
-        "type"
-      ],
       "properties": {
         "message": {
           "type": "object",
-          "required": [
-            "context"
-          ],
           "properties": {
             "context": {
               "type": "string"
             }
-          }
+          },
+          "required": [
+            "context"
+          ]
         },
         "type": {
           "type": "string",
-          "enum": [
-            "StorageFailure"
-          ]
+          "const": "StorageFailure"
         }
-      }
+      },
+      "required": [
+        "type",
+        "message"
+      ]
     },
     {
       "type": "object",
-      "required": [
-        "message",
-        "type"
-      ],
       "properties": {
         "message": {
           "type": "object",
-          "required": [
-            "context"
-          ],
           "properties": {
             "context": {
               "type": "string"
             }
-          }
+          },
+          "required": [
+            "context"
+          ]
         },
         "type": {
           "type": "string",
-          "enum": [
-            "EncodingFailure"
-          ]
+          "const": "EncodingFailure"
         }
-      }
+      },
+      "required": [
+        "type",
+        "message"
+      ]
     },
     {
       "type": "object",
-      "required": [
-        "message",
-        "type"
-      ],
       "properties": {
         "message": {
           "type": "object",
-          "required": [
-            "context"
-          ],
           "properties": {
             "context": {
               "type": "string"
             }
-          }
+          },
+          "required": [
+            "context"
+          ]
         },
         "type": {
           "type": "string",
-          "enum": [
-            "QueryFailure"
-          ]
+          "const": "QueryFailure"
         }
-      }
+      },
+      "required": [
+        "type",
+        "message"
+      ]
     },
     {
       "type": "object",
-      "required": [
-        "message",
-        "type"
-      ],
       "properties": {
         "message": {
           "type": "object",
-          "required": [
-            "index_type"
-          ],
           "properties": {
             "index_type": {
               "type": "string"
             }
-          }
+          },
+          "required": [
+            "index_type"
+          ]
         },
         "type": {
           "type": "string",
-          "enum": [
-            "IndexNotTrained"
-          ]
+          "const": "IndexNotTrained"
         }
-      }
+      },
+      "required": [
+        "type",
+        "message"
+      ]
     },
     {
       "type": "object",
-      "required": [
-        "message",
-        "type"
-      ],
       "properties": {
         "message": {
           "type": "object",
-          "required": [
-            "limit"
-          ],
           "properties": {
             "limit": {
               "type": "string"
             }
-          }
+          },
+          "required": [
+            "limit"
+          ]
         },
         "type": {
           "type": "string",
-          "enum": [
-            "CapacityExceeded"
-          ]
+          "const": "CapacityExceeded"
         }
-      }
+      },
+      "required": [
+        "type",
+        "message"
+      ]
     },
     {
       "type": "object",
-      "required": [
-        "message",
-        "type"
-      ],
       "properties": {
         "message": {
           "type": "object",
-          "required": [
-            "code",
-            "context"
-          ],
           "properties": {
             "code": {
               "type": "integer",
@@ -179,15 +159,21 @@
             "context": {
               "type": "string"
             }
-          }
+          },
+          "required": [
+            "code",
+            "context"
+          ]
         },
         "type": {
           "type": "string",
-          "enum": [
-            "Internal"
-          ]
+          "const": "Internal"
         }
-      }
+      },
+      "required": [
+        "type",
+        "message"
+      ]
     }
   ]
 }

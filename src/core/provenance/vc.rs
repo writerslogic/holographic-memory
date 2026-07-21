@@ -263,9 +263,9 @@ fn days_to_ymd(days_since_epoch: u64) -> (u64, u64, u64) {
 }
 
 fn simple_uuid() -> String {
-    use rand::RngCore;
+    use rand::Rng;
     let mut bytes = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
     format!(
@@ -291,7 +291,7 @@ mod tests {
     use super::*;
 
     fn test_keypair() -> SigningKey {
-        SigningKey::generate(&mut rand::thread_rng())
+        SigningKey::from_bytes(&rand::random())
     }
 
     #[test]

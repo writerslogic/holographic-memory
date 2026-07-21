@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use nalgebra::DVector;
-use rand::{rngs::StdRng, Rng, SeedableRng};
+use rand::{rngs::StdRng, RngExt, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 const MAX_ITERS: usize = 50;
@@ -117,7 +117,7 @@ fn kmeans_plus_plus_init(data: &[DVector<f32>], k: usize, seed: u64) -> Vec<DVec
     }
 
     let mut centroids = Vec::with_capacity(k);
-    centroids.push(data[rng.gen_range(0..n)].clone());
+    centroids.push(data[rng.random_range(0..n)].clone());
 
     let mut dists = vec![f32::MAX; n];
 
@@ -132,11 +132,11 @@ fn kmeans_plus_plus_init(data: &[DVector<f32>], k: usize, seed: u64) -> Vec<DVec
 
         let total: f64 = dists.iter().map(|&d| d as f64).sum();
         if total < 1e-12 {
-            centroids.push(data[rng.gen_range(0..n)].clone());
+            centroids.push(data[rng.random_range(0..n)].clone());
             continue;
         }
 
-        let threshold = rng.gen::<f64>() * total;
+        let threshold = rng.random::<f64>() * total;
         let mut cumulative = 0.0;
         let mut chosen = 0;
         for (i, &d) in dists.iter().enumerate() {
@@ -166,7 +166,7 @@ mod tests {
             DVector::from_vec(vec![0.0, 0.0, 10.0, 10.0]),
         ] {
             for _ in 0..50 {
-                let noise = DVector::from_fn(4, |_, _| rng.gen::<f32>() * 0.5);
+                let noise = DVector::from_fn(4, |_, _| rng.random::<f32>() * 0.5);
                 data.push(center + noise);
             }
         }

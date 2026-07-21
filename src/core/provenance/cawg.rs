@@ -289,7 +289,7 @@ mod tests {
     use super::*;
 
     fn test_keypair() -> SigningKey {
-        SigningKey::generate(&mut rand::thread_rng())
+        SigningKey::from_bytes(&rand::random())
     }
 
     fn ica_refs() -> Vec<(String, String, Vec<u8>)> {

@@ -1345,7 +1345,7 @@ mod tests {
         // The record's signature is internally valid, but a trust store that
         // does not contain the signing key must reject it as non-authentic,
         // even though every signature check passes.
-        let stranger = SigningKey::generate(&mut rand::thread_rng());
+        let stranger = SigningKey::from_bytes(&rand::random());
         let foreign_trust = trust::TrustStore::trusting_key(&stranger.verifying_key());
         let rejected = mgr.verify_fact_provenance(&record, &foreign_trust).unwrap();
         assert!(!rejected.valid);
@@ -1382,7 +1382,7 @@ mod tests {
             .iter()
             .any(|d| d.check == "trust_anchor" && d.passed));
 
-        let stranger = SigningKey::generate(&mut rand::thread_rng());
+        let stranger = SigningKey::from_bytes(&rand::random());
         let foreign = trust::TrustStore::trusting_key(&stranger.verifying_key());
         let rejected = verify_record(&vc_only, &foreign).unwrap();
         assert!(!rejected.valid);
@@ -1411,7 +1411,7 @@ mod tests {
 
         // A trust store that does not contain the issuer must reject it, even
         // though the assertion is internally self-consistent.
-        let stranger = SigningKey::generate(&mut rand::thread_rng());
+        let stranger = SigningKey::from_bytes(&rand::random());
         let foreign = trust::TrustStore::trusting_key(&stranger.verifying_key());
         assert!(mgr.verify_cawg_assertion(&assertion, &foreign).is_err());
     }
