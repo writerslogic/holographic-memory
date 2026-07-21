@@ -505,7 +505,7 @@ impl EntangledHVec {
         let mut current = all_indices[0];
         let mut count: u32 = 1;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for &idx in &all_indices[1..] {
             if idx == current {
@@ -546,8 +546,8 @@ impl EntangledHVec {
 }
 
 /// Sample from Laplace(0, scale) using inverse CDF.
-fn laplace_sample(rng: &mut impl rand::Rng, scale: f64) -> f64 {
-    let u: f64 = rng.gen::<f64>() - 0.5;
+fn laplace_sample(rng: &mut impl rand::RngExt, scale: f64) -> f64 {
+    let u: f64 = rng.random::<f64>() - 0.5;
     -scale * u.signum() * (1.0 - 2.0 * u.abs()).ln()
 }
 

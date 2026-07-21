@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::Result;
-use rand::Rng;
+use rand::RngExt;
 use rayon::prelude::*;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -36,7 +36,7 @@ pub(super) fn build_knn_graph(
         .map(|i| {
             let mut neighbors = HashSet::with_capacity(k);
             while neighbors.len() < k {
-                let j = rng.gen_range(0..n);
+                let j = rng.random_range(0..n);
                 if j != i {
                     neighbors.insert(j as u32);
                 }

@@ -28,28 +28,28 @@
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
-    "name": "holographic-memory",
-    "triples": {
-      "defaults": true,
-      "additional": [
-        "aarch64-apple-darwin"
-      ]
-    }
+    "binaryName": "holographic-memory",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc"
+    ]
   },
   "scripts": {
-    "build": "napi build --release",
-    "build:debug": "napi build",
+    "build": "napi build --release --features node-api",
+    "build:debug": "napi build --features node-api",
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^2.17.0"
+    "@napi-rs/cli": "^3.7.4"
   },
   "optionalDependencies": {
-    "holographic-memory-win32-x64-msvc": "0.6.0",
+    "holographic-memory-darwin-arm64": "0.6.0",
     "holographic-memory-darwin-x64": "0.6.0",
     "holographic-memory-linux-x64-gnu": "0.6.0",
-    "holographic-memory-darwin-arm64": "0.6.0"
+    "holographic-memory-win32-x64-msvc": "0.6.0"
   }
 }

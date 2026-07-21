@@ -2552,10 +2552,10 @@ mod meaning_tests {
             let original =
                 crate::core::entangled::EntangledHVec::new_deterministic(16384, probe_seed);
             let mut noisy_indices = original.indices().to_vec();
-            let mut rng = rand::thread_rng();
-            use rand::Rng;
+            let mut rng = rand::rng();
+            use rand::RngExt;
             for idx in noisy_indices.iter_mut().take(16) {
-                *idx = rng.gen_range(0..16384u32);
+                *idx = rng.random_range(0..16384u32);
             }
             noisy_indices.sort_unstable();
             noisy_indices.dedup();
@@ -2942,11 +2942,12 @@ mod ts_export_tests {
 
     #[test]
     fn export_ts_bindings() {
-        crate::RetrievalResult::export_all().unwrap();
-        crate::ConceptCandidate::export_all().unwrap();
-        crate::TextMetrics::export_all().unwrap();
-        crate::MemorizeBatchItem::export_all().unwrap();
-        crate::HmsError::export_all().unwrap();
+        let cfg = ts_rs::Config::default();
+        crate::RetrievalResult::export_all(&cfg).unwrap();
+        crate::ConceptCandidate::export_all(&cfg).unwrap();
+        crate::TextMetrics::export_all(&cfg).unwrap();
+        crate::MemorizeBatchItem::export_all(&cfg).unwrap();
+        crate::HmsError::export_all(&cfg).unwrap();
     }
 
     #[test]
@@ -2955,7 +2956,7 @@ mod ts_export_tests {
         let dir = std::path::Path::new("schemas");
         std::fs::create_dir_all(dir).unwrap();
 
-        let schemas: Vec<(&str, schemars::schema::RootSchema)> = vec![
+        let schemas: Vec<(&str, schemars::Schema)> = vec![
             ("RetrievalResult", schema_for!(crate::RetrievalResult)),
             ("ConceptCandidate", schema_for!(crate::ConceptCandidate)),
             ("TextMetrics", schema_for!(crate::TextMetrics)),

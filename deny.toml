@@ -6,11 +6,12 @@ yanked = "warn"
 
 # Ignore advisories for unmaintained crates that have no safe upgrade path.
 # TODO: migrate fxhash -> rustc-hash (RUSTSEC-2025-0057)
-# TODO: migrate bincode 1.x -> bitcode or postcard (RUSTSEC-2025-0141)
+# bincode is unmaintained at every version (team ceased development); 2.x is the
+# latest release and there is no maintained successor (RUSTSEC-2025-0141).
 # TODO: paste comes from nalgebra/simba; upgrade path blocked on upstream (RUSTSEC-2024-0436)
 ignore = [
     { id = "RUSTSEC-2025-0057", reason = "fxhash has no safe upgrade; planned migration to rustc-hash" },
-    { id = "RUSTSEC-2025-0141", reason = "bincode 1.x has no compatible upgrade; planned migration to bitcode" },
+    { id = "RUSTSEC-2025-0141", reason = "bincode is unmaintained at all versions; on latest 2.x, no maintained successor" },
     { id = "RUSTSEC-2024-0436", reason = "paste is a transitive dep via nalgebra/simba; no upstream fix available" },
 ]
 

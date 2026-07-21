@@ -49,7 +49,7 @@ impl SigningManager {
                 verifying_key,
             })
         } else {
-            let signing_key = SigningKey::generate(&mut rand::thread_rng());
+            let signing_key = SigningKey::from_bytes(&rand::random());
             let verifying_key = signing_key.verifying_key();
             if let Some(parent) = key_path.parent() {
                 std::fs::create_dir_all(parent)?;
@@ -136,8 +136,8 @@ impl EncryptionManager {
             s
         } else {
             let mut s = vec![0u8; 16];
-            use rand::RngCore;
-            rand::thread_rng().fill_bytes(&mut s);
+            use rand::Rng;
+            rand::rng().fill_bytes(&mut s);
             std::fs::write(&salt_path, &s)?;
             s
         };
@@ -157,8 +157,8 @@ impl EncryptionManager {
     /// Encrypt data. Returns `[nonce:12][ciphertext+tag]`.
     pub fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>> {
         let mut nonce_bytes = [0u8; 12];
-        use rand::RngCore;
-        rand::thread_rng().fill_bytes(&mut nonce_bytes);
+        use rand::Rng;
+        rand::rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         let ciphertext = self
