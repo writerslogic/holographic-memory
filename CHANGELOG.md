@@ -5,7 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
 ## [Unreleased]
 
+### Changed
+- Remove dead self-inverse resonator; move ResonatorConfig to phase_resonator
+- Extract shared wire codec (write/read_lp_str, write/read_deltas)
+- Extract meaning_ctx() helper shared by structural_query and multi_hop
+
 ### Documentation
+- Update changelog [skip ci]
 - Standardize badges (add OpenSSF Scorecard; consistent order/format)
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -14,6 +20,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
+
+### Fixed
+- Give relations a distinct magic byte (0xFA), accept legacy 0xFE on read
 
 ### Deps
 - Land 10 Dependabot major bumps with API fixes (#26)
