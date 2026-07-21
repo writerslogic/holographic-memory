@@ -2,7 +2,7 @@
   "name": "holographic-memory",
   "version": "0.6.0",
   "license": "Apache-2.0",
-  "author": "David Condrey <david@writerslogic.com>",
+  "author": "WritersLogic, Inc. <david@writerslogic.com>",
   "description": "High-performance Holographic Memory System (HMS) — privacy-preserving semantic search using hyperdimensional computing.",
   "repository": {
     "type": "git",
