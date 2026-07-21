@@ -7,7 +7,7 @@ name = "holographic-vsa"
 description = "Deterministic, verifiable vector-symbolic (VSA) memory on a quantized-phase substrate."
 requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
-authors = [{ name = "David Condrey", email = "david@writerslogic.com" }]
+authors = [{ name = "WritersLogic, Inc.", email = "david@writerslogic.com" }]
 readme = "README.md"
 keywords = ["vsa", "hdc", "hyperdimensional", "vector-symbolic", "holographic-memory", "resonator"]
 classifiers = [
