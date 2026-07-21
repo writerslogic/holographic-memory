@@ -14,8 +14,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use crate::core::phase_hvec::PhaseHVec;
-use crate::core::phase_resonator::phase_resonator_factorize;
-use crate::core::resonator::ResonatorConfig;
+use crate::core::phase_resonator::{phase_resonator_factorize, ResonatorConfig};
 
 /// A quantized-phase hypervector: `dim` phases in `Z_N`. Binding is phase-add mod N
 /// (not self-inverse), bundling is a deterministic integer fold, similarity is the
