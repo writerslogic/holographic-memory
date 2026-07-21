@@ -12,8 +12,8 @@
 //! alternating search, giving capacity that scales with dimension rather than
 //! collapsing at small codebooks.
 //!
-//! Unlike [`super::resonator`] (greedy hard-index alternation on the self-inverse
-//! sparse-binary substrate, which only holds for tiny codebooks), this runs the
+//! Unlike a greedy hard-index alternation resonator on the self-inverse
+//! sparse-binary substrate (which only holds for tiny codebooks), this runs the
 //! real resonator on a non-self-inverse phase substrate. §20 of
 //! `docs/PREREGISTRATION-binding-readout.md` shows it factors 3-way products across
 //! the capacity knee (search spaces to ~110k at D=1024) at the SAME accuracy as a
@@ -27,8 +27,31 @@
 //! free function for a single query.
 
 use super::phase_hvec::PhaseHVec;
-use super::resonator::{FactorResult, ResonatorConfig};
 use std::f64::consts::TAU;
+
+/// Iteration parameters for resonator factorization.
+pub struct ResonatorConfig {
+    pub max_iter: usize,
+    pub convergence_threshold: f64,
+}
+
+impl Default for ResonatorConfig {
+    fn default() -> Self {
+        Self {
+            max_iter: 50,
+            convergence_threshold: 0.999,
+        }
+    }
+}
+
+/// One recovered factor: which codebook entry matched and how confidently.
+pub struct FactorResult {
+    pub factor_idx: usize,
+    pub codebook_entry: usize,
+    pub similarity: f64,
+    pub converged: bool,
+    pub iterations: usize,
+}
 
 /// Complex vector as parallel real/imaginary parts.
 struct Cx {

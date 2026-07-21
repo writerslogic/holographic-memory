@@ -53,8 +53,6 @@ pub mod phase_resonator;
 pub(crate) mod posting;
 #[cfg(feature = "provenance")]
 pub mod provenance;
-#[cfg(feature = "experimental")]
-pub mod resonator;
 pub(crate) mod role;
 pub(crate) mod rules;
 pub(crate) mod security;
@@ -74,6 +72,6 @@ pub use engine::HmsCore;
 #[cfg(feature = "experimental")]
 pub use phase_hvec::PhaseHVec;
 #[cfg(feature = "experimental")]
-pub use phase_resonator::{phase_resonator_factorize, PhaseResonator};
-#[cfg(feature = "experimental")]
-pub use resonator::{FactorResult, ResonatorConfig};
+pub use phase_resonator::{
+    phase_resonator_factorize, FactorResult, PhaseResonator, ResonatorConfig,
+};
