@@ -352,7 +352,7 @@ fn chain_step(prev: u64, ev: &Event) -> u64 {
 
 /// Append one length-framed, bincode-encoded event to the durable log.
 fn append_event(writer: &mut BufWriter<File>, ev: &Event) -> std::io::Result<()> {
-    let bytes = bincode::serialize(ev)
+    let bytes = bincode::serde::encode_to_vec(ev, bincode::config::standard())
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
     writer.write_all(&(bytes.len() as u32).to_le_bytes())?;
     writer.write_all(&bytes)?;
@@ -373,8 +373,11 @@ fn read_events(path: &Path) -> std::io::Result<Vec<Event>> {
         if off + len > buf.len() {
             break; // truncated tail from an interrupted append
         }
-        match bincode::deserialize::<Event>(&buf[off..off + len]) {
-            Ok(ev) => events.push(ev),
+        match bincode::serde::decode_from_slice::<Event, _>(
+            &buf[off..off + len],
+            bincode::config::standard(),
+        ) {
+            Ok((ev, _)) => events.push(ev),
             Err(_) => break, // corrupt record: stop at last good event
         }
         off += len;

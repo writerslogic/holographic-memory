@@ -409,9 +409,7 @@ mod tests {
         let mut ok = 0;
         let trials = 20;
         for t in 0..trials {
-            let idx: Vec<usize> = (0..3)
-                .map(|axis| ((t * 7 + axis * 3) % f) as usize)
-                .collect();
+            let idx: Vec<usize> = (0..3).map(|axis| (t * 7 + axis * 3) % f).collect();
             let res = phase_resonator_factorize(&compose(&cbs, &idx), &cbs, &cfg);
             if (0..3).all(|a| res[a].codebook_entry == idx[a]) {
                 ok += 1;
