@@ -5,7 +5,7 @@ use super::entangled::EntangledHVec;
 use super::indexed_memory::{hopfield_cleanup, CleanupResult, IndexedMemory};
 use super::wire;
 
-const ATOM_MAGIC: u8 = 0xFD;
+const ATOM_MAGIC: u8 = wire::magic::ATOM;
 
 pub struct AtomMemory {
     inner: IndexedMemory,
