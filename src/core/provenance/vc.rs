@@ -185,6 +185,23 @@ pub fn verify_credential(credential: &FactCredential) -> Result<()> {
         .split('#')
         .next()
         .ok_or_else(|| anyhow!("invalid verification method"))?;
+
+    // Bind the signing key to the claimed issuer: the proof's verification
+    // method DID must match `credential.issuer`. Without this, an attacker can
+    // tamper a credential, re-sign it with their own key, point the
+    // verification method at that key, and have it verify under the original
+    // issuer's name.
+    let issuer_did = credential
+        .issuer
+        .split('#')
+        .next()
+        .unwrap_or(&credential.issuer);
+    if did_part != issuer_did {
+        return Err(anyhow!(
+            "verification method DID ({did_part}) does not match credential issuer ({issuer_did})"
+        ));
+    }
+
     let pk_bytes = super::did::ed25519_from_did_key(did_part)?;
     let verifying_key =
         VerifyingKey::from_bytes(&pk_bytes).map_err(|e| anyhow!("invalid public key: {e}"))?;
@@ -315,6 +332,22 @@ mod tests {
 
         let signed = sign_credential(&key, vc).unwrap();
         verify_credential(&signed).unwrap();
+    }
+
+    #[test]
+    fn issuer_mismatch_rejected() {
+        // A victim's credential re-signed by an attacker: the signature is valid
+        // for the attacker's key, but the claimed issuer is the victim. Binding
+        // the verification method to the issuer must reject this forgery.
+        let victim = test_keypair();
+        let attacker = test_keypair();
+        let victim_did = did_key_from_ed25519(&victim.verifying_key().to_bytes());
+        let hash = [0x11u8; 32];
+
+        let vc = create_fact_credential(&victim_did, "forge-001", &hash, 16384, None, None, 0);
+        let signed = sign_credential(&attacker, vc).unwrap();
+
+        assert!(verify_credential(&signed).is_err());
     }
 
     #[test]

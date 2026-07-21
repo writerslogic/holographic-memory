@@ -38,13 +38,7 @@ fn generate_items() -> (Vec<EntangledHVec>, Vec<EntangledHVec>) {
         .map(|i| EntangledHVec::new_with_density(DIM, DENOM, i as u64 * 37 + 1))
         .collect();
     let non_members: Vec<EntangledHVec> = (0..N_PROBES)
-        .map(|i| {
-            EntangledHVec::new_with_density(
-                DIM,
-                DENOM,
-                (MAX_ITEMS + i) as u64 * 37 + 9999,
-            )
-        })
+        .map(|i| EntangledHVec::new_with_density(DIM, DENOM, (MAX_ITEMS + i) as u64 * 37 + 9999))
         .collect();
     (items, non_members)
 }
@@ -229,12 +223,7 @@ fn run_reservoir(items: &[EntangledHVec], non_members: &[EntangledHVec], reservo
 // Approach 4: Tiered Window
 // ---------------------------------------------------------------------------
 
-fn run_tiered_window(
-    items: &[EntangledHVec],
-    non_members: &[EntangledHVec],
-    w1: usize,
-    w2: usize,
-) {
+fn run_tiered_window(items: &[EntangledHVec], non_members: &[EntangledHVec], w1: usize, w2: usize) {
     let scheme = format!("tiered_{}_{}", w1, w2);
 
     for &n in &load_points() {
@@ -276,10 +265,7 @@ fn run_tiered_window(
         let mm = mean(&member_sims);
         let mmin = fmin(&member_sims);
 
-        let nonmember_sims: Vec<f64> = non_members
-            .iter()
-            .map(&combined_score)
-            .collect();
+        let nonmember_sims: Vec<f64> = non_members.iter().map(&combined_score).collect();
         let nmm = mean(&nonmember_sims);
         let nmmax = fmax(&nonmember_sims);
         let gap = mmin - nmmax;
@@ -333,9 +319,7 @@ fn main() {
         DIM, DENOM, MAX_ITEMS, N_PROBES
     );
     println!("# gap = member_min - nonmember_max (>0 means perfect separation)");
-    println!(
-        "# first100_recall = fraction of first 100 items retrievable at each load point"
-    );
+    println!("# first100_recall = fraction of first 100 items retrievable at each load point");
     println!();
 
     let (items, non_members) = generate_items();
@@ -380,12 +364,8 @@ fn main() {
     // Summary
     println!("# SUMMARY");
     println!("# flat_bloom: unbounded growth, gap hits 0 around n=700");
-    println!(
-        "# sliding_wN: bounded at N items, gap stays positive, old items forgotten (FIFO)"
-    );
+    println!("# sliding_wN: bounded at N items, gap stays positive, old items forgotten (FIFO)");
     println!("# majority: threshold vote, sparse output, limited capacity");
-    println!(
-        "# reservoir_rN: bounded at N items, gap stays positive, uniform forgetting"
-    );
+    println!("# reservoir_rN: bounded at N items, gap stays positive, uniform forgetting");
     println!("# tiered: two-tier temporal priority, wider effective window");
 }

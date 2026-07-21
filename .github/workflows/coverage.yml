@@ -14,7 +14,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -23,7 +23,7 @@ jobs:
       uses: taiki-e/install-action@cargo-llvm-cov
 
     - name: Cache cargo
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/registry
@@ -64,4 +64,8 @@ jobs:
         git add .github/badges/coverage.json
         git diff --cached --quiet && exit 0
         git commit -m "ci: update coverage badge [skip ci]"
-        git push
+        for i in 1 2 3 4 5; do
+          git push && break
+          echo "push rejected, rebasing onto origin/main (attempt $i)"
+          git pull --rebase --autostash origin main
+        done

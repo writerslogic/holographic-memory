@@ -39,9 +39,10 @@ impl SigningManager {
                     key_bytes.len()
                 ));
             }
-            let bytes: [u8; 32] = key_bytes[..32].try_into().expect("length checked above");
+            let mut bytes: [u8; 32] = key_bytes[..32].try_into().expect("length checked above");
             key_bytes.zeroize();
             let signing_key = SigningKey::from_bytes(&bytes);
+            bytes.zeroize();
             let verifying_key = signing_key.verifying_key();
             Ok(Self {
                 signing_key,
@@ -53,7 +54,7 @@ impl SigningManager {
             if let Some(parent) = key_path.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            std::fs::write(key_path, signing_key.to_bytes())?;
+            write_private_key(key_path, &signing_key)?;
             Ok(Self {
                 signing_key,
                 verifying_key,
@@ -81,10 +82,33 @@ impl SigningManager {
         self.verifying_key.to_bytes()
     }
 
-    /// Clone the signing key for use by other managers.
+    /// Move the signing key out for use by other managers. Only consumed by the
+    /// provenance layer today, so it is dead under `security`-without-`provenance`.
+    #[allow(dead_code)]
     pub fn into_signing_key(self) -> SigningKey {
-        self.signing_key.clone()
+        self.signing_key
     }
+}
+
+/// Write an Ed25519 private key to disk. On unix the file is created with
+/// owner-only permissions (0600) so it is not world-readable on shared hosts;
+/// the serialized key bytes are zeroized immediately after writing.
+#[cfg(feature = "security")]
+fn write_private_key(key_path: &Path, signing_key: &SigningKey) -> Result<()> {
+    use std::io::Write;
+
+    let mut opts = std::fs::OpenOptions::new();
+    opts.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+    let mut file = opts.open(key_path)?;
+    let mut bytes = signing_key.to_bytes();
+    let result = file.write_all(&bytes);
+    bytes.zeroize();
+    result.map_err(|e| anyhow!("failed to write signing key: {e}"))
 }
 
 #[cfg(feature = "security")]

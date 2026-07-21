@@ -69,6 +69,12 @@ pub struct HmsCore {
     encryption: Option<super::security::EncryptionManager>,
     #[cfg(feature = "provenance")]
     provenance: Option<super::provenance::ProvenanceManager>,
+    /// Experimental opt-in plastic relation store (lazily created on first use).
+    #[cfg(feature = "experimental")]
+    connection_graph: parking_lot::Mutex<Option<super::connection_graph::ConnectionGraph>>,
+    /// Experimental opt-in phasor relational memory (lazily created on first use).
+    #[cfg(feature = "experimental")]
+    phase_graph: parking_lot::Mutex<Option<super::phase_graph::PhaseGraph>>,
 }
 
 impl HmsCore {
@@ -155,6 +161,10 @@ impl HmsCore {
 
         let shard_set = if config.shard.enabled && config.shard.shard_count > 1 {
             ShardSet::Multi(ShardManager::new(config.shard.shard_count, dim))
+        } else if let Some(n) = Self::load_shard_meta(&base_path).filter(|&n| n > 1) {
+            // A store that auto-sharded in a previous run persists its shard
+            // count so the topology (and per-shard indices) reload correctly.
+            ShardSet::Multi(ShardManager::new(n, dim))
         } else {
             ShardSet::Single(Box::new(shard::Shard::new(dim)))
         };
@@ -207,6 +217,10 @@ impl HmsCore {
             encryption,
             #[cfg(feature = "provenance")]
             provenance,
+            #[cfg(feature = "experimental")]
+            connection_graph: parking_lot::Mutex::new(None),
+            #[cfg(feature = "experimental")]
+            phase_graph: parking_lot::Mutex::new(None),
         };
 
         core.load_from_log()?;
@@ -219,28 +233,63 @@ impl HmsCore {
         Ok(core)
     }
 
+    fn shard_meta_path(base: &Path) -> PathBuf {
+        base.join("shard_meta.json")
+    }
+
+    /// Read the persisted shard count written by a prior auto-shard, if any.
+    fn load_shard_meta(base: &Path) -> Option<usize> {
+        let data = std::fs::read_to_string(Self::shard_meta_path(base)).ok()?;
+        let value: serde_json::Value = serde_json::from_str(&data).ok()?;
+        value.get("shard_count")?.as_u64().map(|n| n as usize)
+    }
+
+    fn save_shard_meta(&self, shard_count: usize) -> Result<()> {
+        let json = serde_json::json!({ "shard_count": shard_count });
+        std::fs::write(
+            Self::shard_meta_path(&self.storage_path),
+            serde_json::to_vec(&json)?,
+        )?;
+        Ok(())
+    }
+
+    /// Per-shard NSG index path. Single-shard stores keep the legacy filename so
+    /// existing on-disk indices continue to load.
+    fn nsg_index_path(&self, shard_idx: usize, multi: bool) -> PathBuf {
+        if multi {
+            self.storage_path.join(format!("nsg_index_{shard_idx}.bin"))
+        } else {
+            self.storage_path.join("nsg_index.bin")
+        }
+    }
+
+    fn ivf_index_path(&self, shard_idx: usize, multi: bool) -> PathBuf {
+        if multi {
+            self.storage_path.join(format!("ivf_index_{shard_idx}.bin"))
+        } else {
+            self.storage_path.join("ivf_index.bin")
+        }
+    }
+
     fn load_indices(&self) -> Result<()> {
-        let nsg_path = self.storage_path.join("nsg_index.bin");
-        if nsg_path.exists() {
-            let raw = std::fs::read(&nsg_path)?;
-            let data = self.maybe_decrypt(&raw)?;
-            let nsg: super::nsg::NSGIndex = bincode::deserialize(&data)?;
-            // Load NSG into the first (or only) shard
-            let shards = self.shards.read();
-            if let ShardSet::Single(ref shard) = *shards {
+        let shards = self.shards.read();
+        let multi = shards.shard_count() > 1;
+        shards.try_for_each_shard_indexed(|i, shard| {
+            let nsg_path = self.nsg_index_path(i, multi);
+            if nsg_path.exists() {
+                let raw = std::fs::read(&nsg_path)?;
+                let data = self.maybe_decrypt(&raw)?;
+                let nsg: super::nsg::NSGIndex = bincode::deserialize(&data)?;
                 *shard.nsg.write() = Some(nsg);
             }
-        }
 
-        let ivf_path = self.storage_path.join("ivf_index.bin");
-        if ivf_path.exists() {
-            let raw = std::fs::read(&ivf_path)?;
-            let data = self.maybe_decrypt(&raw)?;
-            let mut ivf: IVFIndex = bincode::deserialize(&data)?;
-            ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new());
+            let ivf_path = self.ivf_index_path(i, multi);
+            if ivf_path.exists() {
+                let raw = std::fs::read(&ivf_path)?;
+                let data = self.maybe_decrypt(&raw)?;
+                let mut ivf: IVFIndex = bincode::deserialize(&data)?;
+                ivf.lists = Some(super::ivf::inverted_list::InvertedLists::new());
 
-            let shards = self.shards.read();
-            if let ShardSet::Single(ref shard) = *shards {
                 let vectors = shard.vectors.read();
                 let registry = shard.registry.read();
                 for id in registry.iter() {
@@ -250,27 +299,26 @@ impl HmsCore {
                 }
                 *shard.ivf.write() = Some(ivf);
             }
-        }
-
-        Ok(())
+            Ok(())
+        })
     }
 
-    fn save_nsg(&self, nsg: &super::nsg::NSGIndex) -> Result<()> {
-        let data = bincode::serialize(nsg)?;
-        std::fs::write(
-            self.storage_path.join("nsg_index.bin"),
-            self.maybe_encrypt(&data)?,
-        )?;
-        Ok(())
-    }
-
-    fn save_ivf(&self, ivf: &IVFIndex) -> Result<()> {
-        let data = bincode::serialize(ivf)?;
-        std::fs::write(
-            self.storage_path.join("ivf_index.bin"),
-            self.maybe_encrypt(&data)?,
-        )?;
-        Ok(())
+    /// Persist every shard's trained NSG/IVF index to disk. Applies to both
+    /// single- and multi-shard stores; multi-shard indices are written to
+    /// per-shard files so they reload after a restart.
+    fn persist_indices(&self, shards: &ShardSet) -> Result<()> {
+        let multi = shards.shard_count() > 1;
+        shards.try_for_each_shard_indexed(|i, shard| {
+            if let Some(ref nsg) = *shard.nsg.read() {
+                let data = bincode::serialize(nsg)?;
+                std::fs::write(self.nsg_index_path(i, multi), self.maybe_encrypt(&data)?)?;
+            }
+            if let Some(ref ivf) = *shard.ivf.read() {
+                let data = bincode::serialize(ivf)?;
+                std::fs::write(self.ivf_index_path(i, multi), self.maybe_encrypt(&data)?)?;
+            }
+            Ok(())
+        })
     }
 
     /// Bundle vectors respecting the PrivacyConfig.
@@ -678,14 +726,7 @@ impl HmsCore {
             audit.record(AuditOp::Compact, "", self.sign_fn().as_deref())?;
         }
 
-        if let ShardSet::Single(ref shard) = *shards {
-            if let Some(ref nsg) = *shard.nsg.read() {
-                self.save_nsg(nsg)?;
-            }
-            if let Some(ref ivf) = *shard.ivf.read() {
-                self.save_ivf(ivf)?;
-            }
-        }
+        self.persist_indices(&shards)?;
 
         Ok(())
     }
@@ -736,14 +777,15 @@ impl HmsCore {
 
         // Upgrade from Single to Multi: snapshot vectors, build new shards, swap.
         let mut shards = self.shards.write();
-        let snapshot: Vec<(String, EntangledHVec)> = {
+        let (snapshot, had_nsg, had_ivf): (Vec<(String, EntangledHVec)>, bool, bool) = {
             match *shards {
                 ShardSet::Single(ref old_shard) => {
                     let vectors = old_shard.vectors.read();
-                    vectors
+                    let snap = vectors
                         .iter()
                         .map(|(k, v)| (k.clone(), v.clone()))
-                        .collect()
+                        .collect();
+                    (snap, old_shard.nsg_trained(), old_shard.ivf_trained())
                 }
                 ShardSet::Multi(_) => return,
             }
@@ -763,9 +805,37 @@ impl HmsCore {
                 .vector_count
                 .store(count, std::sync::atomic::Ordering::SeqCst);
             let _ = shard.rebuild_inverted_index(self.dimensions);
+
+            // Preserve whatever ANN acceleration was active before sharding.
+            // Without this, crossing the shard threshold would silently drop the
+            // NSG/IVF indices and fall back to the sparse inverted index alone.
+            if had_ivf || had_nsg {
+                let (ids, vectors) = shard.load_all_vectors();
+                if !ids.is_empty() {
+                    if had_ivf {
+                        if let Ok(index) =
+                            IVFIndex::train(&vectors, &ids, self.dimensions, &self.config.ivf)
+                        {
+                            *shard.ivf.write() = Some(index);
+                        }
+                    }
+                    if had_nsg {
+                        if let Ok(index) =
+                            super::nsg::training::train(&vectors, &ids, &self.config.nsg)
+                        {
+                            *shard.nsg.write() = Some(index);
+                        }
+                    }
+                }
+            }
         }
 
-        *shards = ShardSet::Multi(mgr);
+        let new_set = ShardSet::Multi(mgr);
+        let _ = self.persist_indices(&new_set);
+        let shard_count = new_set.shard_count();
+        *shards = new_set;
+        drop(shards);
+        let _ = self.save_shard_meta(shard_count);
     }
 
     /// Convert a dense f32 vector to sparse and memorize it.
@@ -1297,11 +1367,7 @@ impl HmsCore {
             Ok(())
         })?;
 
-        if let ShardSet::Single(ref shard) = *shards {
-            if let Some(ref ivf) = *shard.ivf.read() {
-                self.save_ivf(ivf)?;
-            }
-        }
+        self.persist_indices(&shards)?;
         Ok(())
     }
 
@@ -1324,11 +1390,7 @@ impl HmsCore {
             Ok(())
         })?;
 
-        if let ShardSet::Single(ref shard) = *shards {
-            if let Some(ref nsg) = *shard.nsg.read() {
-                self.save_nsg(nsg)?;
-            }
-        }
+        self.persist_indices(&shards)?;
         Ok(())
     }
 
@@ -1418,12 +1480,20 @@ impl HmsCore {
     pub fn verify_fact_provenance(
         &self,
         record: &super::provenance::types::ProvenanceRecord,
+        trust: &super::provenance::trust::TrustStore,
     ) -> Result<super::provenance::types::VerificationResult> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_fact_provenance(record)
+        mgr.verify_fact_provenance(record, trust)
+    }
+
+    /// A trust store containing this instance's own provenance key, for
+    /// authenticating records it signed. `None` if provenance is disabled.
+    #[cfg(feature = "provenance")]
+    pub fn provenance_self_trust(&self) -> Option<super::provenance::trust::TrustStore> {
+        self.provenance.as_ref().map(|mgr| mgr.self_trust())
     }
 
     #[cfg(feature = "provenance")]
@@ -1431,12 +1501,13 @@ impl HmsCore {
         &self,
         manifest: &super::provenance::types::StoreManifest,
         store_data: Option<&[u8]>,
+        trust: &super::provenance::trust::TrustStore,
     ) -> Result<super::provenance::types::VerificationResult> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_store_manifest(manifest, store_data)
+        mgr.verify_store_manifest(manifest, store_data, trust)
     }
 
     #[cfg(feature = "provenance")]
@@ -1537,38 +1608,39 @@ impl HmsCore {
         &self,
         bundle: &super::provenance::sigstore::SigstoreBundle,
         content: &[u8],
+        trusted_key: &ed25519_dalek::VerifyingKey,
     ) -> Result<()> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_sigstore_bundle(bundle, content)
+        mgr.verify_sigstore_bundle(bundle, content, trusted_key)
     }
 
     #[cfg(feature = "provenance")]
     pub fn create_cawg_assertion(
         &self,
-        referenced_assertions: Vec<super::provenance::cawg::HashedUri>,
-        display_name: Option<&str>,
-        provider: Option<&str>,
-    ) -> Result<super::provenance::cawg::IdentityAssertion> {
+        referenced: &[(String, String, Vec<u8>)],
+        display_name: &str,
+    ) -> Result<serde_json::Value> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.create_cawg_assertion(referenced_assertions, display_name, provider)
+        mgr.create_cawg_assertion(referenced, display_name)
     }
 
     #[cfg(feature = "provenance")]
     pub fn verify_cawg_assertion(
         &self,
-        assertion: &super::provenance::cawg::IdentityAssertion,
-    ) -> Result<()> {
+        assertion: &serde_json::Value,
+        trust: &super::provenance::trust::TrustStore,
+    ) -> Result<serde_json::Value> {
         let mgr = self
             .provenance
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
-        mgr.verify_cawg_assertion(assertion)
+        mgr.verify_cawg_assertion(assertion, trust)
     }
 
     /// Decompose a product vector into factors from domain codebooks using diffusion.
@@ -1579,5 +1651,163 @@ impl HmsCore {
         max_iter: usize,
     ) -> Vec<Option<EntangledHVec>> {
         DiffusionFactorizer::factorize(&self.config.diffusion, product, domain_codebooks, max_iter)
+    }
+
+    /// Lock the connection graph, lazily opening it over its durable append-only
+    /// event log at `{storage}/connection_graph.log` on first use so plastic
+    /// state survives restart. Falls back to in-memory if the log is unopenable.
+    #[cfg(feature = "experimental")]
+    fn connection_graph_lazy(
+        &self,
+    ) -> parking_lot::MutexGuard<'_, Option<super::connection_graph::ConnectionGraph>> {
+        let mut guard = self.connection_graph.lock();
+        if guard.is_none() {
+            let path = self.storage_path.join("connection_graph.log");
+            let graph = super::connection_graph::ConnectionGraph::open(
+                self.dimensions,
+                super::connection_graph::GraphConfig::default(),
+                &path,
+            )
+            .unwrap_or_else(|e| {
+                tracing::warn!("connection graph persistence unavailable ({e}); in-memory only");
+                super::connection_graph::ConnectionGraph::new(self.dimensions)
+            });
+            *guard = Some(graph);
+        }
+        guard
+    }
+
+    /// Assert a `(subject, relation, object)` edge into the experimental plastic
+    /// connection graph. Opt-in and additive: independent of the sparse-binary
+    /// store. Durable — the edge is appended to the graph's event log.
+    #[cfg(feature = "experimental")]
+    pub fn relate(&self, subject: &str, relation: &str, object: &str) {
+        let mut guard = self.connection_graph_lazy();
+        if let Some(g) = guard.as_mut() {
+            g.store(subject, relation, object);
+        }
+    }
+
+    /// Query a relation in the plastic connection graph, returning its presence
+    /// score. This is a *mutating* read (the observer effect): it reinforces the
+    /// queried relation and lets the untouched background decay, all recorded as
+    /// verifiable, durable events.
+    #[cfg(feature = "experimental")]
+    pub fn query_relation(&self, subject: &str, relation: &str, object: &str) -> f64 {
+        let mut guard = self.connection_graph_lazy();
+        guard
+            .as_mut()
+            .map_or(0.0, |g| g.query(subject, relation, object))
+    }
+
+    /// Dimension and phase-quantization of the experimental phasor memory. A
+    /// modest dim keeps the (dim * n_phases) histogram small; retrieval works
+    /// well past this substrate's load in the validation experiments.
+    #[cfg(feature = "experimental")]
+    fn phase_graph_lazy(
+        &self,
+    ) -> parking_lot::MutexGuard<'_, Option<super::phase_graph::PhaseGraph>> {
+        let mut guard = self.phase_graph.lock();
+        if guard.is_none() {
+            *guard = Some(super::phase_graph::PhaseGraph::new(2048, 256));
+        }
+        guard
+    }
+
+    /// Assert `(subject, relation, object)` into the experimental phasor memory,
+    /// which supports relation algebra (rotation binding) and associative
+    /// retrieval the sparse-binary store cannot. Opt-in and additive.
+    #[cfg(feature = "experimental")]
+    pub fn relate_phase(&self, subject: &str, relation: &str, object: &str) {
+        self.phase_graph_lazy()
+            .as_mut()
+            .expect("lazily initialized")
+            .relate(subject, relation, object);
+    }
+
+    /// Recover the object of `(subject, relation)` from the phasor memory.
+    #[cfg(feature = "experimental")]
+    pub fn phase_retrieve_object(&self, subject: &str, relation: &str) -> Option<String> {
+        self.phase_graph_lazy()
+            .as_ref()
+            .and_then(|g| g.retrieve_object(subject, relation).map(String::from))
+    }
+
+    /// Recover the subject of `(relation, object)` — the inverse query — from the
+    /// phasor memory.
+    #[cfg(feature = "experimental")]
+    pub fn phase_retrieve_subject(&self, relation: &str, object: &str) -> Option<String> {
+        self.phase_graph_lazy()
+            .as_ref()
+            .and_then(|g| g.retrieve_subject(relation, object).map(String::from))
+    }
+
+    /// Multi-hop reasoning over the phasor memory: follow `relations` from
+    /// `start`, retrieving at each hop, returning the final entity.
+    #[cfg(feature = "experimental")]
+    pub fn phase_retrieve_path(&self, start: &str, relations: &[&str]) -> Option<String> {
+        self.phase_graph_lazy()
+            .as_ref()
+            .and_then(|g| g.retrieve_path(start, relations))
+    }
+}
+
+#[cfg(all(test, feature = "experimental"))]
+mod connection_graph_tests {
+    use super::*;
+
+    #[test]
+    fn relate_and_query_through_engine() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+
+        // Query before any relation exists -> graph unused -> 0.0.
+        assert_eq!(hms.query_relation("paris", "capital_of", "france"), 0.0);
+
+        hms.relate("paris", "capital_of", "france");
+        let present = hms.query_relation("paris", "capital_of", "france");
+        let absent = hms.query_relation("berlin", "capital_of", "spain");
+        assert!(
+            present > absent,
+            "asserted relation ({present}) must score above an absent one ({absent})"
+        );
+    }
+
+    #[test]
+    fn connection_graph_survives_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_string_lossy().to_string();
+
+        {
+            let hms = HmsCore::new(4096, Some(path.clone()), None).unwrap();
+            hms.relate("paris", "capital_of", "france");
+        } // engine dropped -> connection graph's BufWriter flushed on drop
+
+        // New engine over the same storage: the relation must reload from the log.
+        let hms2 = HmsCore::new(4096, Some(path), None).unwrap();
+        let present = hms2.query_relation("paris", "capital_of", "france");
+        let absent = hms2.query_relation("madrid", "capital_of", "italy");
+        assert!(
+            present > absent,
+            "relation must survive restart: reloaded ({present}) !> absent ({absent})"
+        );
+    }
+
+    #[test]
+    fn phase_graph_relate_and_retrieve() {
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        hms.relate_phase("paris", "capital_of", "france");
+        hms.relate_phase("berlin", "capital_of", "germany");
+        // forward retrieval and inverse (subject) retrieval from the same field.
+        assert_eq!(
+            hms.phase_retrieve_object("paris", "capital_of").as_deref(),
+            Some("france")
+        );
+        assert_eq!(
+            hms.phase_retrieve_subject("capital_of", "germany")
+                .as_deref(),
+            Some("berlin")
+        );
     }
 }

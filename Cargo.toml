@@ -19,6 +19,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 napi = { version = "2.14", features = ["async", "serde-json"], optional = true }
 napi-derive = { version = "2.14", optional = true }
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py39"], optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
 serde = { version = "1.0", features = ["derive"] }
 ts-rs = { version = "10", features = ["serde-compat"] }
@@ -47,6 +48,7 @@ ciborium = { version = "0.2", optional = true }
 bs58 = { version = "0.5", optional = true }
 ureq = { version = "3", optional = true }
 multibase = { version = "0.9", optional = true }
+base64 = { version = "0.22", optional = true }
 tempfile = "3"
 
 [build-dependencies]
@@ -61,12 +63,64 @@ tempfile = "3"
 name = "hms_benchmark"
 harness = false
 
+[[example]]
+name = "verify_cogmem_sample"
+required-features = ["provenance"]
+
+[[example]]
+name = "story_memory"
+required-features = ["experimental"]
+
 [features]
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
+# Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
+# wheels with `maturin build --features python`; publishing is wired in
+# .github/workflows/publish-pypi.yml and dormant until a `py-v*` tag is pushed.
+python = ["pyo3", "experimental"]
 security = ["ed25519-dalek", "zeroize", "aes-gcm", "argon2", "sha2"]
-provenance = ["security", "coset", "ciborium", "bs58", "multibase"]
+provenance = ["security", "coset", "ciborium", "bs58", "multibase", "base64"]
 provenance-scitt = ["provenance", "ureq"]
+# Experimental VSA research modules (block_codes, bloom_memory, cls_memory,
+# algebra, ternary, compose, resonator, sparse_autoencoder) and the experiment
+# binaries that exercise them. Off by default so they are not part of the
+# published public API.
+experimental = []
+
+# Experiment harnesses that depend on `experimental` modules. Declared
+# explicitly so they only build with `--features experimental`; the remaining
+# binaries under src/bin are still auto-discovered.
+[[bin]]
+name = "hms-benchmark-suite"
+required-features = ["experimental"]
+
+[[bin]]
+name = "hms-scaling"
+required-features = ["experimental"]
+
+[[bin]]
+name = "cls-decay"
+required-features = ["experimental"]
+
+[[bin]]
+name = "cls-structured"
+required-features = ["experimental"]
+
+[[bin]]
+name = "codebook-recovery-test"
+required-features = ["experimental"]
+
+[[bin]]
+name = "block-recovery-test"
+required-features = ["experimental"]
+
+[[bin]]
+name = "diag-recovery"
+required-features = ["experimental"]
+
+[[bin]]
+name = "similarity-decay"
+required-features = ["experimental"]
 
 [profile.release]
 lto = true

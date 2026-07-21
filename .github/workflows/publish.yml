@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -25,7 +26,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -33,7 +34,7 @@ jobs:
         targets: ${{ matrix.target }}
 
     - name: Install Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: '20'
 
@@ -54,10 +55,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: '20'
         registry-url: 'https://registry.npmjs.org'
@@ -66,12 +67,17 @@ jobs:
       run: npm install
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         path: artifacts
 
     - name: Move artifacts
       run: npx napi artifacts --dir artifacts
+
+    - name: Generate Generic Attestations
+      uses: actions/attest@v4.1.0
+      with:
+        subject-path: '*.node'
 
     - name: Publish
       run: npm publish --provenance --access public

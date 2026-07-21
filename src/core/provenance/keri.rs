@@ -46,6 +46,7 @@ pub struct KeyEvent {
 }
 
 /// A local Key Event Log for tracking key lifecycle.
+#[derive(Default)]
 pub struct KeyEventLog {
     events: Vec<KeyEvent>,
     path: Option<std::path::PathBuf>,
@@ -223,6 +224,16 @@ impl KeyEventLog {
                 ));
             }
 
+            // A KeyEvent carries a single signature, so it cannot represent an
+            // m-of-n multisig. Reject kt>1 rather than silently accepting one
+            // signature as satisfying a multisig threshold.
+            if event.key_threshold > 1 {
+                return Err(anyhow!(
+                    "multisig key threshold ({}) not supported at event {i}",
+                    event.key_threshold
+                ));
+            }
+
             let computed = self_addressing_digest(event)?;
             if computed != event.digest {
                 return Err(anyhow!("digest mismatch at event {i}"));
@@ -236,6 +247,21 @@ impl KeyEventLog {
                     .is_none_or(|d| d != &prior.digest)
                 {
                     return Err(anyhow!("chain break at event {i}"));
+                }
+
+                // Pre-rotation: a rotation may only install keys the prior event
+                // committed to via its next-key digest. This is KERI's core
+                // security property — a compromised current key cannot rotate to
+                // an attacker-chosen key.
+                if event.event_type == EventType::Rotation {
+                    let committed = prior.next_keys_digest.as_ref().ok_or_else(|| {
+                        anyhow!("rotation at event {i} but prior event pre-committed no next key")
+                    })?;
+                    if &next_keys_digest(&event.keys)? != committed {
+                        return Err(anyhow!(
+                            "rotation at event {i} installs keys not matching the prior commitment"
+                        ));
+                    }
                 }
             }
 
@@ -252,13 +278,18 @@ impl KeyEventLog {
     }
 }
 
-impl Default for KeyEventLog {
-    fn default() -> Self {
-        Self {
-            events: Vec::new(),
-            path: None,
-        }
+/// Canonical digest committing to a next authorized key set: SHA-256 over the
+/// concatenated raw Ed25519 public keys decoded from each `did:key`, hex-encoded.
+/// For a single key this equals SHA-256(pk_bytes), matching how callers derive
+/// the pre-rotation commitment passed to `inception`/`rotation`.
+fn next_keys_digest(keys: &[String]) -> Result<String> {
+    let mut hasher = Sha256::new();
+    for key_did in keys {
+        let pk = did::ed25519_from_did_key(key_did)?;
+        hasher.update(pk);
     }
+    let hash = hasher.finalize();
+    Ok(hash.iter().map(|b| format!("{b:02x}")).collect())
 }
 
 fn self_addressing_digest(event: &KeyEvent) -> Result<String> {
@@ -371,6 +402,45 @@ mod tests {
         kel.interaction(&key, Vec::new()).unwrap();
 
         kel.events[1].anchors = vec![serde_json::json!({"tampered": true})];
+        assert!(kel.verify().is_err());
+    }
+
+    #[test]
+    fn rotation_to_uncommitted_key_rejected() {
+        // Inception pre-commits to key2, but the holder rotates to key3 instead.
+        // Pre-rotation enforcement must reject the chain even though the
+        // rotation event is validly signed by the current key.
+        let key1 = test_keypair();
+        let key2 = test_keypair();
+        let key3 = test_keypair();
+        let mut kel = KeyEventLog::new();
+
+        kel.inception(&key1, Some(&next_key_digest(&key2))).unwrap();
+        kel.rotation(&key1, &key3, None).unwrap();
+
+        assert!(kel.verify().is_err());
+    }
+
+    #[test]
+    fn rotation_without_precommitment_rejected() {
+        // Inception commits no next key, so any rotation is unauthorized.
+        let key1 = test_keypair();
+        let key2 = test_keypair();
+        let mut kel = KeyEventLog::new();
+
+        kel.inception(&key1, None).unwrap();
+        kel.rotation(&key1, &key2, None).unwrap();
+
+        assert!(kel.verify().is_err());
+    }
+
+    #[test]
+    fn multisig_threshold_rejected() {
+        let key = test_keypair();
+        let mut kel = KeyEventLog::new();
+        kel.inception(&key, None).unwrap();
+        kel.events[0].key_threshold = 2;
+
         assert!(kel.verify().is_err());
     }
 

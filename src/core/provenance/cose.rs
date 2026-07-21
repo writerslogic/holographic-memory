@@ -156,4 +156,24 @@ mod tests {
             panic!("expected CBOR map");
         }
     }
+
+    fn unhex(s: &str) -> Vec<u8> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn verifies_cogmem_cross_conformance_vector() {
+        // Cross-implementation conformance: a COSE_Sign1 EdDSA signed statement produced
+        // by cogmem (Python / cbor2). HMS must verify it and recover the payload, proving
+        // the two projects emit byte-compatible signed statements. See tests/vectors/.
+        let pk = unhex("4b5f52db17ebdeb555101922e89beac9b43e864086b02e4529951d7f491f0cfa");
+        let cose = unhex("845838a3012703706170706c69636174696f6e2f63626f720458204b5f52db17ebdeb555101922e89beac9b43e864086b02e4529951d7f491f0cfaa05887a6636973736c6469643a6b65793a74657374686d656d6f7279496468766563746f722d316a6d656d6f7279547970656472756c65656576656e7467637265617465646d73746174656d656e74486173685820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f6b74696d657374616d704d731b0000019070bdb80058402fc837df236fa9d4d3a8bad98148ea020b4ea7bbb717d57819675eaee65264b280f5ec8d22f21dc9531f91fe4571305f84f05396cfde33ac897eac52a4937e09");
+        let expected = unhex("a6636973736c6469643a6b65793a74657374686d656d6f7279496468766563746f722d316a6d656d6f7279547970656472756c65656576656e7467637265617465646d73746174656d656e74486173685820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f6b74696d657374616d704d731b0000019070bdb800");
+        let vk = VerifyingKey::from_bytes(&pk.try_into().unwrap()).unwrap();
+        let payload = verify_and_extract(&vk, &cose).unwrap();
+        assert_eq!(payload, expected);
+    }
 }

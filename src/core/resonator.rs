@@ -7,6 +7,15 @@
 //! and codebooks for each factor, iteratively recovers the individual
 //! factors. Capacity scales exponentially with the number of factors
 //! (Frady et al., 2020), far exceeding majority-vote unbundling.
+//!
+//! NOTE: this variant runs on the self-inverse sparse-binary substrate
+//! ([`super::entangled::EntangledHVec`]) with GREEDY hard-index alternation --
+//! adequate only for small codebooks (it lacks the superposition state that lets a
+//! true resonator escape local minima, so its capacity collapses well before the
+//! knee). For the real Frady/Kent superposition-cleanup resonator on the
+//! non-self-inverse quantized-phase substrate -- which §20 of the preregistration
+//! shows factors at float-FHRR capacity down to 4-bit phase -- see
+//! [`super::phase_resonator`].
 
 use crate::core::entangled::EntangledHVec;
 

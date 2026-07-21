@@ -25,7 +25,9 @@ const N_PROBES: usize = 200;
 // ---------------------------------------------------------------------------
 
 fn load_points() -> Vec<usize> {
-    vec![10, 50, 100, 200, 500, 700, 1000, 2000, 5000, 10000, 20000, 50000]
+    vec![
+        10, 50, 100, 200, 500, 700, 1000, 2000, 5000, 10000, 20000, 50000,
+    ]
 }
 
 fn mean(vals: &[f64]) -> f64 {
@@ -44,13 +46,7 @@ fn generate_vectors() -> (Vec<EntangledHVec>, Vec<EntangledHVec>) {
         .map(|i| EntangledHVec::new_with_density(DIM, DENOM, i as u64 * 37 + 1))
         .collect();
     let non_members: Vec<EntangledHVec> = (0..N_PROBES)
-        .map(|i| {
-            EntangledHVec::new_with_density(
-                DIM,
-                DENOM,
-                (MAX_ITEMS + i) as u64 * 37 + 9999,
-            )
-        })
+        .map(|i| EntangledHVec::new_with_density(DIM, DENOM, (MAX_ITEMS + i) as u64 * 37 + 9999))
         .collect();
     (items, non_members)
 }
@@ -144,8 +140,7 @@ impl SaturationBundle {
         }
 
         // Empirical mean and variance of saturated counts across all positions
-        let global_mean: f64 =
-            self.counts.iter().map(|&c| c as f64).sum::<f64>() / DIM as f64;
+        let global_mean: f64 = self.counts.iter().map(|&c| c as f64).sum::<f64>() / DIM as f64;
         let global_var: f64 = self
             .counts
             .iter()
@@ -387,10 +382,7 @@ fn run_counting(items: &[EntangledHVec], non_members: &[EntangledHVec]) -> Vec<(
             item_idx += 1;
         }
 
-        let member_scores: Vec<f64> = items[..n]
-            .iter()
-            .map(|item| bundle.z_score(item))
-            .collect();
+        let member_scores: Vec<f64> = items[..n].iter().map(|item| bundle.z_score(item)).collect();
         let nonmember_scores: Vec<f64> = non_members
             .iter()
             .map(|item| bundle.z_score(item))
@@ -433,10 +425,7 @@ fn run_saturation(
             item_idx += 1;
         }
 
-        let member_scores: Vec<f64> = items[..n]
-            .iter()
-            .map(|item| bundle.z_score(item))
-            .collect();
+        let member_scores: Vec<f64> = items[..n].iter().map(|item| bundle.z_score(item)).collect();
         let nonmember_scores: Vec<f64> = non_members
             .iter()
             .map(|item| bundle.z_score(item))
@@ -475,10 +464,7 @@ fn run_inhibition(items: &[EntangledHVec], non_members: &[EntangledHVec]) -> Vec
             item_idx += 1;
         }
 
-        let member_scores: Vec<f64> = items[..n]
-            .iter()
-            .map(|item| bundle.z_score(item))
-            .collect();
+        let member_scores: Vec<f64> = items[..n].iter().map(|item| bundle.z_score(item)).collect();
         let nonmember_scores: Vec<f64> = non_members
             .iter()
             .map(|item| bundle.z_score(item))
@@ -569,7 +555,10 @@ fn find_capacity_wall(scheme: &str, gaps: &[(usize, f64)]) {
             let last_gap = gaps.last().map(|(_, g)| *g).unwrap_or(0.0);
             eprintln!(
                 "  {:<12} gap STILL POSITIVE at n={} (gap={:.4})  (>{:.0}x over Bloom ~700)",
-                scheme, last_n, last_gap, last_n as f64 / 700.0
+                scheme,
+                last_n,
+                last_gap,
+                last_n as f64 / 700.0
             );
         }
     }
@@ -589,9 +578,7 @@ fn main() {
 
     println!("# Nonlinear Bundling Experiments");
     println!("# D={}, denom={}, probes={}", DIM, DENOM, N_PROBES);
-    println!(
-        "# gap = member_min - nonmember_max (>0 = perfect separation)"
-    );
+    println!("# gap = member_min - nonmember_max (>0 = perfect separation)");
     println!();
 
     // --- Bloom baseline ---

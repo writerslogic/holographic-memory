@@ -440,4 +440,29 @@ impl ShardSet {
             }
         }
     }
+
+    /// Number of shards backing this set (1 for the single-shard case).
+    pub fn shard_count(&self) -> usize {
+        match self {
+            ShardSet::Single(_) => 1,
+            ShardSet::Multi(mgr) => mgr.shards.len(),
+        }
+    }
+
+    /// Like `try_for_each_shard`, but also passes each shard's index so callers
+    /// can address per-shard on-disk artifacts.
+    pub fn try_for_each_shard_indexed<F: FnMut(usize, &Shard) -> Result<()>>(
+        &self,
+        mut f: F,
+    ) -> Result<()> {
+        match self {
+            ShardSet::Single(shard) => f(0, shard),
+            ShardSet::Multi(mgr) => {
+                for (i, shard) in mgr.shards.iter().enumerate() {
+                    f(i, shard)?;
+                }
+                Ok(())
+            }
+        }
+    }
 }

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "holographic-vsa"
+description = "Deterministic, verifiable vector-symbolic (VSA) memory on a quantized-phase substrate."
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "David Condrey", email = "david@writerslogic.com" }]
+readme = "README.md"
+keywords = ["vsa", "hdc", "hyperdimensional", "vector-symbolic", "holographic-memory", "resonator"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Intended Audience :: Science/Research",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/writerslogic/holographic-memory"
+Documentation = "https://docs.rs/holographic-memory"
+
+[tool.maturin]
+# The import name is `holographic_memory` (matches the #[pymodule] in src/python.rs);
+# the PyPI distribution name is `holographic-vsa` (the crate name is taken on PyPI).
+module-name = "holographic_memory"
+features = ["python"]
+# Version is read from Cargo.toml (dynamic).
