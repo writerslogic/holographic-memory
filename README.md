@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img src="https://api.securityscorecards.dev/projects/github.com/writerslogic/holographic-memory/badge" alt="OpenSSF Scorecard"></a>
   <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json" alt="coverage"></a>
   <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/v/holographic-memory.svg" alt="npm"></a>
   <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/dm/holographic-memory.svg" alt="npm downloads"></a>
