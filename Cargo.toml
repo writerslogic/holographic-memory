@@ -37,7 +37,7 @@ thiserror = "2.0"
 tracing = "0.1"
 clap = { version = "4.4", features = ["derive"] }
 fxhash = "0.2"
-nalgebra = { version = "0.33", features = ["serde-serialize"] }
+nalgebra = { version = "0.35", features = ["serde-serialize"] }
 ed25519-dalek = { version = "2", features = ["rand_core"], optional = true }
 zeroize = { version = "1", features = ["derive"], optional = true }
 aes-gcm = { version = "0.10", optional = true }
