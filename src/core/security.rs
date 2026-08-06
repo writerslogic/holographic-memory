@@ -159,11 +159,12 @@ impl EncryptionManager {
         let mut nonce_bytes = [0u8; 12];
         use rand::Rng;
         rand::rng().fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let nonce = Nonce::try_from(nonce_bytes.as_slice())
+            .map_err(|_| anyhow!("AES-256-GCM nonce construction failed"))?;
 
         let ciphertext = self
             .cipher
-            .encrypt(nonce, plaintext)
+            .encrypt(&nonce, plaintext)
             .map_err(|e| anyhow!("Encryption failed: {}", e))?;
 
         let mut output = Vec::with_capacity(12 + ciphertext.len());
@@ -180,11 +181,12 @@ impl EncryptionManager {
                 encrypted.len()
             ));
         }
-        let nonce = Nonce::from_slice(&encrypted[..12]);
+        let nonce = Nonce::try_from(&encrypted[..12])
+            .map_err(|_| anyhow!("AES-256-GCM nonce construction failed"))?;
         let ciphertext = &encrypted[12..];
 
         self.cipher
-            .decrypt(nonce, ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|e| anyhow!("Decryption failed: {}", e))
     }
 }
