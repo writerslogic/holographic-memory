@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+pub mod admin;
 pub(crate) mod admission;
 pub mod agency;
 // Experimental VSA research modules. Reachable only from the `src/bin/*`
@@ -58,6 +59,7 @@ pub(crate) mod security;
 #[cfg(feature = "experimental")]
 pub mod sparse_autoencoder;
 pub(crate) mod storage;
+pub(crate) mod store_lock;
 #[cfg(feature = "experimental")]
 pub mod ternary;
 pub(crate) mod text;

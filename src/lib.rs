@@ -1143,10 +1143,24 @@ mod tests {
 
     #[test]
     fn test_determinism() {
-        let hms = HmsCore::new(1000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(1000, Some(dir.path().display().to_string()), None).unwrap();
         let v1 = hms.encode_text("hello world");
         let v2 = hms.encode_text("hello world");
         assert!((v1.similarity(&v2) - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_store_rejects_concurrent_engines_and_reopens_after_drop() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().display().to_string();
+        let first = HmsCore::new(1000, Some(path.clone()), None).unwrap();
+        let error = HmsCore::new(1000, Some(path.clone()), None)
+            .err()
+            .expect("a second writable engine must be rejected");
+        assert!(error.to_string().contains("already open"));
+        drop(first);
+        HmsCore::new(1000, Some(path), None).expect("store lock must release after teardown");
     }
 
     #[test]
@@ -1605,7 +1619,8 @@ mod tests {
 
     #[test]
     fn test_delete_nonexistent() {
-        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
         assert!(!hms.delete("no_such_id").unwrap());
     }
 
@@ -1829,7 +1844,8 @@ mod tests {
 
     #[test]
     fn test_audit_disabled_returns_empty() {
-        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
         let entries = hms.audit_since(0).unwrap();
         assert!(entries.is_empty());
     }
@@ -2197,7 +2213,8 @@ mod tests {
 
     #[test]
     fn test_readability_through_core() {
-        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
         let metrics = hms.analyze_text("The cat sat on the mat.");
         assert!(metrics.word_count > 0);
         let score = hms.calculate_readability(&metrics);

@@ -34,6 +34,7 @@ use super::ivf::IVFIndex;
 use super::role::RoleRegistry;
 use super::rules::RuleStore;
 use super::storage::PersistentArena;
+use super::store_lock::StoreLock;
 use super::text::TextProcessor;
 use super::triple_store::TripleStore;
 use super::types::{GraphPath, Relation, RelationType, TextMetrics};
@@ -76,6 +77,9 @@ pub struct HmsCore {
     /// Experimental opt-in phasor relational memory (lazily created on first use).
     #[cfg(feature = "experimental")]
     phase_graph: parking_lot::Mutex<Option<super::phase_graph::PhaseGraph>>,
+    // Declared last so it is dropped after every mmap, index, and store
+    // component. No subsequent instance can enter while teardown is flushing.
+    _store_lock: StoreLock,
 }
 
 impl HmsCore {
@@ -104,6 +108,8 @@ impl HmsCore {
         if !base_path.exists() {
             std::fs::create_dir_all(&base_path)?;
         }
+
+        let store_lock = StoreLock::acquire(&base_path)?;
 
         let arena = Arc::new(PersistentArena::new(base_path.join("vectors_data.bin"))?);
 
@@ -234,6 +240,7 @@ impl HmsCore {
             connection_graph: parking_lot::Mutex::new(None),
             #[cfg(feature = "experimental")]
             phase_graph: parking_lot::Mutex::new(None),
+            _store_lock: store_lock,
         };
 
         core.load_from_log()?;

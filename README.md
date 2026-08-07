@@ -193,6 +193,20 @@ evaluation on your application data. See the
 [production-readiness guide](docs/production-readiness.md) for capacity planning and selection
 criteria versus conventional vector databases.
 
+### Store Administration
+
+```bash
+# Read metadata or verify every frame
+cargo run --release --bin hms-admin -- inspect ./store
+cargo run --release --bin hms-admin -- verify ./store
+
+# Create a locked, verified, atomically published copy
+cargo run --release --bin hms-admin -- migrate ./store ./store-copy
+```
+
+Writable stores are protected by an exclusive process lock. The production-readiness guide
+documents the exact locking and migration behavior.
+
 </details>
 
 <details>

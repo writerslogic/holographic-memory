@@ -10,23 +10,23 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-const FORMAT_MANIFEST: &str = "format.json";
-const FORMAT_MAGIC: &str = "HMS_ARENA";
+pub(crate) const FORMAT_MANIFEST: &str = "format.json";
+pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
 pub const STORAGE_FORMAT_VERSION: u32 = 1;
 
 /// Fixed segment size for mmap arena (1 GB).
-const SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
+pub(crate) const SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
 /// Frame header: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32]
-const HEADER_SIZE: usize = 16;
+pub(crate) const HEADER_SIZE: usize = 16;
 /// Maximum decompressed frame payload (50 MB). Used consistently in
 /// `discover_offset` and `read_frame` to reject corrupt/malicious data.
-const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
+pub(crate) const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-struct FormatManifest {
-    magic: String,
-    version: u32,
-    segment_size: usize,
+pub(crate) struct FormatManifest {
+    pub magic: String,
+    pub version: u32,
+    pub segment_size: usize,
 }
 
 #[derive(Debug, Clone, Copy)]

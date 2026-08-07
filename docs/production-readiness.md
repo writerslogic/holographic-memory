@@ -15,6 +15,26 @@ format. Back up a store before changing major HMS versions or running compaction
 Call `flush()` before a controlled shutdown. Use `storageHealth()` to monitor format,
 segment count, allocated capacity, and used bytes.
 
+Every `HmsCore` instance takes an exclusive `.hms.lock` for its lifetime. A second instance or
+process cannot open the same store because HMS has no read-only engine mode. This makes accidental
+multi-writer corruption fail immediately and explicitly.
+
+## Store administration and migration
+
+The `hms-admin` binary emits machine-readable JSON. Inspection is read-only; verification scans
+every frame, decompresses it when needed, and validates its CRC32 checksum.
+
+```sh
+cargo run --release --bin hms-admin -- inspect ./store
+cargo run --release --bin hms-admin -- verify ./store
+cargo run --release --bin hms-admin -- migrate ./store ./store-copy
+```
+
+Migration currently creates a verified current-format copy; no other storage format exists yet.
+It exclusively locks the source, refuses existing destinations, rejects links and special files,
+verifies the copied arena, and publishes the destination with one atomic rename. On failure, the
+temporary copy is removed and the requested destination remains absent.
+
 ## Index lifecycle
 
 `indexStatus()` reports trained indices and threshold-based recommendations.
