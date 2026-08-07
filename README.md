@@ -17,7 +17,7 @@
   <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory.svg" alt="crates.io"></a>
   <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/d/holographic-memory.svg" alt="crates.io downloads"></a>
   <a href="https://docs.rs/holographic-memory"><img src="https://docs.rs/holographic-memory/badge.svg" alt="docs.rs"></a>
-  <a href="https://blog.rust-lang.org/2024/10/17/Rust-1.82.0.html"><img src="https://img.shields.io/badge/MSRV-1.82-blue.svg" alt="MSRV"></a>
+  <a href="https://blog.rust-lang.org/2025/08/07/Rust-1.89.0.html"><img src="https://img.shields.io/badge/MSRV-1.89-blue.svg" alt="MSRV"></a>
   <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="License"></a>
 </p>
 

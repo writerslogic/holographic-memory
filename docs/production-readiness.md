@@ -5,6 +5,7 @@
 - `HmsCore`, the Node.js `HolographicMemorySystem`, and quantized-phase Python APIs are supported surfaces.
 - Modules behind the `experimental` Cargo feature may change between minor releases.
 - Research binaries under `src/bin` are reproducibility tools, not service interfaces.
+- The current minimum supported Rust version is 1.89; the CI MSRV job checks it explicitly.
 
 ## Persistence compatibility
 
