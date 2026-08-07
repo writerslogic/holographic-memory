@@ -95,6 +95,8 @@ impl HmsCore {
         }
         let dim = dimensions as usize;
         let config = config.unwrap_or_default();
+        #[cfg(feature = "security")]
+        let mut config = config;
 
         let base_path = storage_path
             .map(PathBuf::from)
@@ -126,16 +128,26 @@ impl HmsCore {
 
         #[cfg(feature = "security")]
         let encryption = if config.security.encryption_enabled {
-            let passphrase = config
+            use zeroize::Zeroize;
+            let mut passphrase = config
                 .security
                 .encryption_passphrase
-                .as_deref()
+                .take()
+                .or_else(|| {
+                    config
+                        .security
+                        .encryption_passphrase_env
+                        .as_deref()
+                        .and_then(|name| std::env::var(name).ok())
+                })
                 .ok_or_else(|| {
-                    anyhow::anyhow!("encryption_passphrase required when encryption is enabled")
+                    anyhow::anyhow!(
+                        "encryption requires encryption_passphrase or encryption_passphrase_env"
+                    )
                 })?;
-            Some(super::security::EncryptionManager::new(
-                passphrase, &base_path,
-            )?)
+            let manager = super::security::EncryptionManager::new(&passphrase, &base_path);
+            passphrase.zeroize();
+            Some(manager?)
         } else {
             None
         };

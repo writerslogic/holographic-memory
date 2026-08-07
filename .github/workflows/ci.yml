@@ -52,6 +52,23 @@ jobs:
       with:
         command: check advisories bans licenses sources
 
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+      with:
+        toolchain: '1.89'
+    - run: cargo check --no-default-features
+
+  retrieval-quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+    - name: Enforce deterministic recall floor
+      run: cargo run --release --bin hms-eval -- --vectors 1200 --queries 50 --dimensions 4096 --assert-min-recall 0.90
+
   build-napi:
     runs-on: ubuntu-latest
     needs: check

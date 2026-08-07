@@ -6,7 +6,9 @@ use crate::core::entangled::EntangledHVec;
 const BRUTE_FORCE_THRESHOLD: usize = 1000;
 const HOPFIELD_MAX_PATTERNS: usize = 10_000;
 const SPARSE_INDEX_THRESHOLD: usize = 4;
-const EF_SEARCH_MIN: usize = 32;
+// A floor of 128 materially improves self-recall on the seeded quality corpus
+// 1,200-vector quality corpus while remaining bounded for interactive queries.
+const EF_SEARCH_MIN: usize = 128;
 const EF_SEARCH_MAX: usize = 512;
 const N_PROBE_MIN: usize = 4;
 const N_PROBE_MAX: usize = 64;
@@ -27,6 +29,19 @@ pub(crate) struct QueryPlan {
     pub route: IndexRoute,
     pub ef_search: usize,
     pub n_probe: usize,
+    pub rationale: &'static str,
+}
+
+impl IndexRoute {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NSG => "nsg",
+            Self::Inverted => "inverted",
+            Self::IVF => "ivf",
+            Self::Hopfield => "hopfield",
+            Self::BruteForce => "brute_force",
+        }
+    }
 }
 
 /// Adaptive Query Planner that selects the optimal retrieval strategy
@@ -76,6 +91,7 @@ impl QueryPlanner {
                 route: IndexRoute::BruteForce,
                 ef_search,
                 n_probe,
+                rationale: "small collections are faster with an exact scan",
             };
         }
 
@@ -85,6 +101,7 @@ impl QueryPlanner {
                 route: IndexRoute::Inverted,
                 ef_search,
                 n_probe,
+                rationale: "very sparse queries favor the inverted index",
             };
         }
 
@@ -94,6 +111,7 @@ impl QueryPlanner {
                 route: IndexRoute::NSG,
                 ef_search,
                 n_probe,
+                rationale: "a trained NSG index is preferred for approximate retrieval",
             };
         }
 
@@ -102,6 +120,7 @@ impl QueryPlanner {
                 route: IndexRoute::IVF,
                 ef_search,
                 n_probe,
+                rationale: "a trained IVF index is available",
             };
         }
 
@@ -111,6 +130,7 @@ impl QueryPlanner {
                 route: IndexRoute::Inverted,
                 ef_search,
                 n_probe,
+                rationale: "the inverted index is the only applicable trained index",
             };
         }
 
@@ -121,6 +141,7 @@ impl QueryPlanner {
                 route: IndexRoute::Hopfield,
                 ef_search,
                 n_probe,
+                rationale: "mid-sized unindexed collections use associative retrieval",
             };
         }
 
@@ -128,6 +149,7 @@ impl QueryPlanner {
             route: IndexRoute::BruteForce,
             ef_search,
             n_probe,
+            rationale: "no trained index is available, so HMS falls back to exact search",
         }
     }
 }

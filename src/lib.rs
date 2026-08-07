@@ -21,7 +21,10 @@ mod python;
 
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::HmsError;
-pub use crate::core::types::{ConceptCandidate, MemorizeBatchItem, RetrievalResult, TextMetrics};
+pub use crate::core::types::{
+    ConceptCandidate, HardwareCapabilities, IndexStatus, MemorizeBatchItem, QueryExplanation,
+    RetrievalResult, StorageHealth, TextMetrics,
+};
 pub use crate::core::HmsCore;
 
 #[cfg(feature = "provenance")]
@@ -81,6 +84,7 @@ pub struct HmsConfigJs {
     pub signing_key_path: Option<String>,
     pub encryption_enabled: Option<bool>,
     pub encryption_passphrase: Option<String>,
+    pub encryption_passphrase_env: Option<String>,
     pub audit_enabled: Option<bool>,
     pub dp_enabled: Option<bool>,
     pub dp_epsilon: Option<f64>,
@@ -179,6 +183,9 @@ impl HmsConfigJs {
         if let Some(v) = self.encryption_passphrase {
             cfg.security.encryption_passphrase = Some(v);
         }
+        if let Some(v) = self.encryption_passphrase_env {
+            cfg.security.encryption_passphrase_env = Some(v);
+        }
         if let Some(v) = self.audit_enabled {
             cfg.security.audit_enabled = v;
         }
@@ -256,6 +263,39 @@ impl HolographicMemorySystem {
     #[napi(getter)]
     pub fn dimensions(&self) -> u32 {
         self.core.dimensions() as u32
+    }
+
+    #[napi]
+    pub fn index_status(&self) -> IndexStatus {
+        self.core.index_status()
+    }
+
+    #[napi]
+    pub fn storage_health(&self) -> StorageHealth {
+        self.core.storage_health()
+    }
+
+    #[napi]
+    pub fn hardware_capabilities(&self) -> HardwareCapabilities {
+        crate::core::hardware::capabilities()
+    }
+
+    #[napi]
+    pub fn explain_query(&self, text: String, k: u32) -> QueryExplanation {
+        let query = self.core.encode_text(&text);
+        self.core.explain_query(&query, k)
+    }
+
+    #[napi]
+    pub async fn maintain_indices(&self) -> Result<IndexStatus> {
+        let core = self.core.clone();
+        run_async(move || core.maintain_indices()).await
+    }
+
+    #[napi]
+    pub async fn flush(&self) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || core.flush()).await
     }
 
     #[napi]
@@ -2947,6 +2987,10 @@ mod ts_export_tests {
         crate::ConceptCandidate::export_all(&cfg).unwrap();
         crate::TextMetrics::export_all(&cfg).unwrap();
         crate::MemorizeBatchItem::export_all(&cfg).unwrap();
+        crate::QueryExplanation::export_all(&cfg).unwrap();
+        crate::IndexStatus::export_all(&cfg).unwrap();
+        crate::StorageHealth::export_all(&cfg).unwrap();
+        crate::HardwareCapabilities::export_all(&cfg).unwrap();
         crate::HmsError::export_all(&cfg).unwrap();
     }
 
@@ -2962,6 +3006,13 @@ mod ts_export_tests {
             ("TextMetrics", schema_for!(crate::TextMetrics)),
             ("MemorizeBatchItem", schema_for!(crate::MemorizeBatchItem)),
             ("HmsError", schema_for!(crate::HmsError)),
+            ("QueryExplanation", schema_for!(crate::QueryExplanation)),
+            ("IndexStatus", schema_for!(crate::IndexStatus)),
+            ("StorageHealth", schema_for!(crate::StorageHealth)),
+            (
+                "HardwareCapabilities",
+                schema_for!(crate::HardwareCapabilities),
+            ),
         ];
 
         for (name, schema) in schemas {

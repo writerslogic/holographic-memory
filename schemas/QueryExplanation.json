@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QueryExplanation",
+  "description": "Explains which retrieval strategy HMS would use for a query.",
+  "type": "object",
+  "properties": {
+    "efSearch": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "ivfAvailable": {
+      "type": "boolean"
+    },
+    "nProbe": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "nsgAvailable": {
+      "type": "boolean"
+    },
+    "queryNonzeroDimensions": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "requestedResults": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "route": {
+      "type": "string"
+    },
+    "vectorCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "route",
+    "vectorCount",
+    "queryNonzeroDimensions",
+    "requestedResults",
+    "efSearch",
+    "nProbe",
+    "nsgAvailable",
+    "ivfAvailable",
+    "rationale"
+  ]
+}

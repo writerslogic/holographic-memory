@@ -28,7 +28,8 @@
   <a href="#features">Features</a> &middot;
   <a href="#performance">Performance</a> &middot;
   <a href="#architecture">Architecture</a> &middot;
-  <a href="#provenance--content-credentials">Provenance</a>
+  <a href="#provenance--content-credentials">Provenance</a> &middot;
+  <a href="docs/production-readiness.md">Production Readiness</a>
 </p>
 
 ---
@@ -181,7 +182,16 @@ cargo run --release --bin hms-scaling -- --dim 16384 --density 256 --json
 
 # Full 8-section suite
 cargo run --release --bin hms-benchmark-suite -- --dim 16384
+
+# Machine-readable recall and latency regression report
+cargo run --release --bin hms-eval -- \
+  --vectors 1500 --queries 100 --dimensions 16384 --assert-min-recall 0.90
 ```
+
+Synthetic results characterize controlled HMS workloads; they are not a substitute for
+evaluation on your application data. See the
+[production-readiness guide](docs/production-readiness.md) for capacity planning and selection
+criteria versus conventional vector databases.
 
 </details>
 

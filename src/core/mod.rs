@@ -37,6 +37,7 @@ pub mod engine;
 pub mod entangled;
 pub(crate) mod error;
 pub(crate) mod graph;
+pub mod hardware;
 pub mod hopfield;
 pub(crate) mod idf;
 pub(crate) mod index;
@@ -46,9 +47,7 @@ pub(crate) mod ivf;
 pub(crate) mod nsg;
 #[cfg(feature = "experimental")]
 pub mod phase_graph;
-#[cfg(feature = "experimental")]
 pub mod phase_hvec;
-#[cfg(feature = "experimental")]
 pub mod phase_resonator;
 pub(crate) mod posting;
 #[cfg(feature = "provenance")]
@@ -69,9 +68,7 @@ pub(crate) mod wire;
 
 pub use config::HmsConfig;
 pub use engine::HmsCore;
-#[cfg(feature = "experimental")]
 pub use phase_hvec::PhaseHVec;
-#[cfg(feature = "experimental")]
 pub use phase_resonator::{
     phase_resonator_factorize, FactorResult, PhaseResonator, ResonatorConfig,
 };

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StorageHealth",
+  "description": "Persistence health information suitable for diagnostics and monitoring.",
+  "type": "object",
+  "properties": {
+    "capacityBytes": {
+      "type": "number",
+      "format": "double"
+    },
+    "formatVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "segmentCount": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "usedBytes": {
+      "type": "number",
+      "format": "double"
+    }
+  },
+  "required": [
+    "formatVersion",
+    "segmentCount",
+    "usedBytes",
+    "capacityBytes"
+  ]
+}
