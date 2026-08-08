@@ -39,7 +39,7 @@ jobs:
         node-version: '20'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci --omit=optional
 
     - name: Build
       run: npm run build -- --target ${{ matrix.target }}
@@ -64,7 +64,7 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci --omit=optional
 
     - name: Download all artifacts
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
