@@ -28,6 +28,62 @@ pub struct RetrievalResult {
     pub similarity: f64,
 }
 
+/// Explains which retrieval strategy HMS would use for a query.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct QueryExplanation {
+    pub route: String,
+    pub vector_count: u32,
+    pub query_nonzero_dimensions: u32,
+    pub requested_results: u32,
+    pub ef_search: u32,
+    pub n_probe: u32,
+    pub nsg_available: bool,
+    pub ivf_available: bool,
+    pub rationale: String,
+}
+
+/// Current index lifecycle state and the next recommended maintenance action.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct IndexStatus {
+    pub vector_count: u32,
+    pub nsg_trained: bool,
+    pub ivf_trained: bool,
+    pub nsg_training_recommended: bool,
+    pub ivf_training_recommended: bool,
+    pub recommendation: String,
+}
+
+/// Persistence health information suitable for diagnostics and monitoring.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct StorageHealth {
+    pub format_version: u32,
+    pub segment_count: u32,
+    pub used_bytes: f64,
+    pub capacity_bytes: f64,
+}
+
+/// Runtime CPU capabilities relevant to future dense and sparse kernels.
+#[cfg_attr(feature = "node-api", napi(object))]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
+#[ts(export, export_to = "bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct HardwareCapabilities {
+    pub architecture: String,
+    pub avx2: bool,
+    pub avx512f: bool,
+    pub neon: bool,
+    pub sparse_intersection_kernel: String,
+}
+
 impl PartialEq for RetrievalResult {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id && (self.similarity - other.similarity).abs() < f64::EPSILON

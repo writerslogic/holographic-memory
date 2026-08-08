@@ -4,3 +4,6 @@
 # Security-sensitive paths require security team review
 src/core/security.rs @writerslogic/security
 src/core/audit.rs @writerslogic/security
+src/core/storage.rs @writerslogic/core @writerslogic/security
+src/core/wire.rs @writerslogic/core @writerslogic/security
+fuzz/ @writerslogic/security

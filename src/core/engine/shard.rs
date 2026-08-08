@@ -15,7 +15,7 @@ use crate::core::hopfield::{hopfield_query, HopfieldConfig};
 use crate::core::index::inverted::{Accumulator, SparseInvertedIndex};
 use crate::core::ivf::IVFIndex;
 use crate::core::nsg::NSGIndex;
-use crate::core::types::RetrievalResult;
+use crate::core::types::{QueryExplanation, RetrievalResult};
 
 use super::router;
 
@@ -378,6 +378,30 @@ impl ShardSet {
         match self {
             ShardSet::Single(shard) => shard.query(query_vec, k, dimensions),
             ShardSet::Multi(mgr) => mgr.query(query_vec, k, dimensions),
+        }
+    }
+
+    pub fn explain_query(
+        &self,
+        query_vec: &EntangledHVec,
+        k: u32,
+        dimensions: usize,
+    ) -> QueryExplanation {
+        let count = self.count() as usize;
+        let nsg = self.nsg_trained();
+        let ivf = self.ivf_trained();
+        let plan =
+            router::QueryPlanner::new(nsg, count > 0, ivf, count, dimensions).plan(query_vec, k);
+        QueryExplanation {
+            route: plan.route.as_str().to_string(),
+            vector_count: count.min(u32::MAX as usize) as u32,
+            query_nonzero_dimensions: query_vec.indices.len().min(u32::MAX as usize) as u32,
+            requested_results: k,
+            ef_search: plan.ef_search as u32,
+            n_probe: plan.n_probe as u32,
+            nsg_available: nsg,
+            ivf_available: ivf,
+            rationale: plan.rationale.to_string(),
         }
     }
 
