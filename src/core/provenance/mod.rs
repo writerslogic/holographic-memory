@@ -551,7 +551,11 @@ impl ProvenanceManager {
         let mut level: Vec<[u8; 32]> = leaves.to_vec();
         let mut idx = index;
         while level.len() > 1 {
-            let sibling_idx = if idx % 2 == 0 { idx + 1 } else { idx - 1 };
+            let sibling_idx = if idx.is_multiple_of(2) {
+                idx + 1
+            } else {
+                idx - 1
+            };
             if sibling_idx < level.len() {
                 proof.push((idx % 2 == 1, level[sibling_idx]));
             }

@@ -34,6 +34,7 @@ use super::ivf::IVFIndex;
 use super::role::RoleRegistry;
 use super::rules::RuleStore;
 use super::storage::PersistentArena;
+use super::store_lock::StoreLock;
 use super::text::TextProcessor;
 use super::triple_store::TripleStore;
 use super::types::{GraphPath, Relation, RelationType, TextMetrics};
@@ -76,6 +77,9 @@ pub struct HmsCore {
     /// Experimental opt-in phasor relational memory (lazily created on first use).
     #[cfg(feature = "experimental")]
     phase_graph: parking_lot::Mutex<Option<super::phase_graph::PhaseGraph>>,
+    // Declared last so it is dropped after every mmap, index, and store
+    // component. No subsequent instance can enter while teardown is flushing.
+    _store_lock: StoreLock,
 }
 
 impl HmsCore {
@@ -95,6 +99,8 @@ impl HmsCore {
         }
         let dim = dimensions as usize;
         let config = config.unwrap_or_default();
+        #[cfg(feature = "security")]
+        let mut config = config;
 
         let base_path = storage_path
             .map(PathBuf::from)
@@ -102,6 +108,8 @@ impl HmsCore {
         if !base_path.exists() {
             std::fs::create_dir_all(&base_path)?;
         }
+
+        let store_lock = StoreLock::acquire(&base_path)?;
 
         let arena = Arc::new(PersistentArena::new(base_path.join("vectors_data.bin"))?);
 
@@ -126,16 +134,26 @@ impl HmsCore {
 
         #[cfg(feature = "security")]
         let encryption = if config.security.encryption_enabled {
-            let passphrase = config
+            use zeroize::Zeroize;
+            let mut passphrase = config
                 .security
                 .encryption_passphrase
-                .as_deref()
+                .take()
+                .or_else(|| {
+                    config
+                        .security
+                        .encryption_passphrase_env
+                        .as_deref()
+                        .and_then(|name| std::env::var(name).ok())
+                })
                 .ok_or_else(|| {
-                    anyhow::anyhow!("encryption_passphrase required when encryption is enabled")
+                    anyhow::anyhow!(
+                        "encryption requires encryption_passphrase or encryption_passphrase_env"
+                    )
                 })?;
-            Some(super::security::EncryptionManager::new(
-                passphrase, &base_path,
-            )?)
+            let manager = super::security::EncryptionManager::new(&passphrase, &base_path);
+            passphrase.zeroize();
+            Some(manager?)
         } else {
             None
         };
@@ -222,6 +240,7 @@ impl HmsCore {
             connection_graph: parking_lot::Mutex::new(None),
             #[cfg(feature = "experimental")]
             phase_graph: parking_lot::Mutex::new(None),
+            _store_lock: store_lock,
         };
 
         core.load_from_log()?;

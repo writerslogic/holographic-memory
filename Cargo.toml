@@ -2,7 +2,7 @@
 name = "holographic-memory"
 version = "0.6.0"
 edition = "2021"
-rust-version = "1.82"
+rust-version = "1.89"
 license = "Apache-2.0"
 authors = ["WritersLogic, Inc. <david@writerslogic.com>"]
 description = "A high-performance Holographic Memory System (HMS) implementing Vector Symbolic Architectures (VSA)."
@@ -37,6 +37,7 @@ thiserror = "2.0"
 tracing = "0.1"
 clap = { version = "4.4", features = ["derive"] }
 fxhash = "0.2"
+fs2 = "0.4"
 nalgebra = { version = "0.35", features = ["serde-serialize"] }
 ed25519-dalek = { version = "3", features = ["rand_core"], optional = true }
 zeroize = { version = "1", features = ["derive"], optional = true }
@@ -77,7 +78,7 @@ node-api = ["napi", "napi-derive", "tokio", "napi-build"]
 # Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
 # wheels with `maturin build --features python`; publishing is wired in
 # .github/workflows/publish-pypi.yml and dormant until a `py-v*` tag is pushed.
-python = ["pyo3", "experimental"]
+python = ["pyo3"]
 security = ["ed25519-dalek", "zeroize", "aes-gcm", "argon2", "sha2"]
 provenance = ["security", "coset", "ciborium", "bs58", "multibase", "base64"]
 provenance-scitt = ["provenance", "ureq"]
@@ -86,6 +87,14 @@ provenance-scitt = ["provenance", "ureq"]
 # binaries that exercise them. Off by default so they are not part of the
 # published public API.
 experimental = []
+
+[[bin]]
+name = "hms-eval"
+path = "src/bin/hms-eval.rs"
+
+[[bin]]
+name = "hms-admin"
+path = "src/bin/hms-admin.rs"
 
 # Experiment harnesses that depend on `experimental` modules. Declared
 # explicitly so they only build with `--features experimental`; the remaining

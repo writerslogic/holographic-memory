@@ -1,6 +1,6 @@
 # Integration Guide
 
-HMS is designed to be highly portable. While this crate provides high-performance Node.js bindings, the core logic is accessible to other systems through several paths.
+HMS is designed to be highly portable. The crate provides high-performance Node.js bindings and a curated Python binding for the quantized-phase substrate. The core Rust engine remains available directly for Rust applications.
 
 ## 1. Rust Integration (Library)
 
@@ -9,7 +9,7 @@ Since the project uses a decoupled architecture, you can use HMS as a standard R
 Add it to your `Cargo.toml`:
 ```toml
 [dependencies]
-holographic-memory = "0.5"
+holographic-memory = "0.6"
 ```
 
 Usage in Rust:
@@ -42,6 +42,23 @@ You can compile the `core` module to Wasm using `wasm-pack` for use in browser-b
 wasm-pack build -- --no-default-features
 ```
 
-## 4. REST API / Microservice
+## 4. Python integration
+
+The Python package currently exposes `PhaseHVec` and `PhaseResonator` through the `python`
+feature. It is intentionally not a full mirror of the Rust or Node engine API yet:
+
+```bash
+maturin develop --features python
+```
+
+```python
+from holographic_memory import PhaseHVec
+
+a = PhaseHVec.random(1024, 8, 1)
+b = PhaseHVec.random(1024, 8, 2)
+assert -1.0 <= a.similarity(b) <= 1.0
+```
+
+## 5. REST API / Microservice
 
 The recommended way to integrate with non-Rust/Node environments (Python, Go, Ruby) is to wrap this crate in a small Express or Fastify service and communicate over JSON-RPC or REST.

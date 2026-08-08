@@ -48,7 +48,10 @@ impl ClsMemory {
         self.rebuild_heart1();
         self.total_added += 1;
 
-        if self.total_added % self.cfg.consolidation_interval == 0 {
+        if self
+            .total_added
+            .is_multiple_of(self.cfg.consolidation_interval)
+        {
             self.consolidate();
         }
     }

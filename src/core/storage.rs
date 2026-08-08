@@ -10,13 +10,32 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
+pub(crate) const FORMAT_MANIFEST: &str = "format.json";
+pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
+pub const STORAGE_FORMAT_VERSION: u32 = 1;
+
 /// Fixed segment size for mmap arena (1 GB).
-const SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
+pub(crate) const SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
 /// Frame header: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32]
-const HEADER_SIZE: usize = 16;
+pub(crate) const HEADER_SIZE: usize = 16;
 /// Maximum decompressed frame payload (50 MB). Used consistently in
 /// `discover_offset` and `read_frame` to reject corrupt/malicious data.
-const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
+pub(crate) const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub(crate) struct FormatManifest {
+    pub magic: String,
+    pub version: u32,
+    pub segment_size: usize,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ArenaStats {
+    pub format_version: u32,
+    pub segment_count: usize,
+    pub used_bytes: usize,
+    pub capacity_bytes: usize,
+}
 
 /// RwLock-guarded segmented mmap arena with LZ4 compression and CRC32 framing.
 /// Writers acquire a write lock; readers acquire a read lock.
@@ -35,6 +54,7 @@ impl PersistentArena {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
+        Self::validate_or_create_manifest(&base)?;
 
         let mut id = 0;
         loop {
@@ -64,9 +84,16 @@ impl PersistentArena {
             .open(&active_path)?;
         file.set_len(SEGMENT_SIZE as u64)?;
         file.sync_all()?;
-        let mut_map = unsafe { MmapMut::map_mut(&file)? };
+        let mut mut_map = unsafe { MmapMut::map_mut(&file)? };
 
         let (recovered_offset, max_version) = Self::discover_offset(&mut_map);
+        // A corrupt or partially written tail may contain bytes from an older frame.
+        // Persist a zero-header sentinel at the recovered boundary so future restarts
+        // never interpret stale tail bytes as a valid frame.
+        if recovered_offset + HEADER_SIZE <= mut_map.len() {
+            mut_map[recovered_offset..recovered_offset + HEADER_SIZE].fill(0);
+            mut_map.flush_range(recovered_offset, HEADER_SIZE)?;
+        }
 
         Ok(Self {
             base_path: base,
@@ -80,6 +107,68 @@ impl PersistentArena {
                 0
             }),
         })
+    }
+
+    fn validate_or_create_manifest(base: &Path) -> Result<()> {
+        let path = base.join(FORMAT_MANIFEST);
+        if path.exists() {
+            let bytes = std::fs::read(&path)?;
+            let manifest: FormatManifest = serde_json::from_slice(&bytes)
+                .map_err(|e| anyhow!("Invalid HMS storage manifest {}: {}", path.display(), e))?;
+            if manifest.magic != FORMAT_MAGIC {
+                return Err(anyhow!(
+                    "Storage manifest has unknown magic: {}",
+                    manifest.magic
+                ));
+            }
+            if manifest.version > STORAGE_FORMAT_VERSION {
+                return Err(anyhow!(
+                    "Storage format {} is newer than supported format {}",
+                    manifest.version,
+                    STORAGE_FORMAT_VERSION
+                ));
+            }
+            if manifest.segment_size != SEGMENT_SIZE {
+                return Err(anyhow!(
+                    "Storage segment size mismatch: manifest={}, runtime={}",
+                    manifest.segment_size,
+                    SEGMENT_SIZE
+                ));
+            }
+            return Ok(());
+        }
+
+        // Pre-manifest stores are format v1. Creating the manifest is a backward-compatible
+        // migration and does not rewrite their framed data.
+        let manifest = FormatManifest {
+            magic: FORMAT_MAGIC.to_string(),
+            version: STORAGE_FORMAT_VERSION,
+            segment_size: SEGMENT_SIZE,
+        };
+        let temp = base.join("format.json.tmp");
+        std::fs::write(&temp, serde_json::to_vec_pretty(&manifest)?)?;
+        std::fs::rename(temp, path)?;
+        Ok(())
+    }
+
+    pub fn stats(&self) -> ArenaStats {
+        let segment_count = self.active_id.load(Ordering::Acquire) + 1;
+        let used_bytes = self.active_id.load(Ordering::Acquire) * SEGMENT_SIZE
+            + self.write_offset.load(Ordering::Acquire);
+        ArenaStats {
+            format_version: STORAGE_FORMAT_VERSION,
+            segment_count,
+            used_bytes,
+            capacity_bytes: segment_count * SEGMENT_SIZE,
+        }
+    }
+
+    /// Durably flush all pending writes in the active segment.
+    pub fn flush(&self) -> Result<()> {
+        self.active_segment
+            .write()
+            .flush()
+            .map_err(|e| anyhow!("mmap flush failed: {}", e))
     }
 
     /// Walk CRC32-framed entries in the active segment to find the first free offset
@@ -320,8 +409,15 @@ impl PersistentArena {
             // Data at +HEADER_SIZE
             std::ptr::copy_nonoverlapping(write_data.as_ptr(), target.add(HEADER_SIZE), comp_len);
         }
+        let frame_end = offset + total_frame_len;
+        let sentinel_len = if frame_end + HEADER_SIZE <= active.len() {
+            active[frame_end..frame_end + HEADER_SIZE].fill(0);
+            HEADER_SIZE
+        } else {
+            0
+        };
         active
-            .flush_range(offset, total_frame_len)
+            .flush_range(offset, total_frame_len + sentinel_len)
             .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
         let global = self.active_id.load(Ordering::SeqCst) * SEGMENT_SIZE + offset;
         Ok(global)
@@ -493,6 +589,52 @@ mod tests {
             assert_eq!(version3, 2); // 0 (hello world), 1 (foo bar), 2 (baz)
         }
 
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_future_storage_format() -> Result<()> {
+        let dir = tempdir()?;
+        let manifest = FormatManifest {
+            magic: FORMAT_MAGIC.to_string(),
+            version: STORAGE_FORMAT_VERSION + 1,
+            segment_size: SEGMENT_SIZE,
+        };
+        std::fs::write(
+            dir.path().join(FORMAT_MANIFEST),
+            serde_json::to_vec(&manifest)?,
+        )?;
+        let error = PersistentArena::new(dir.path()).err().expect("must reject");
+        assert!(error.to_string().contains("newer than supported"));
+        Ok(())
+    }
+
+    #[test]
+    fn recovers_from_a_corrupt_tail_and_reuses_its_offset() -> Result<()> {
+        use std::io::{Seek, SeekFrom, Write};
+
+        let dir = tempdir()?;
+        let second_offset;
+        {
+            let arena = PersistentArena::new(dir.path())?;
+            arena.write_slice(b"valid frame")?;
+            second_offset = arena.write_slice(b"frame that will be corrupted")?;
+        }
+
+        let segment = dir.path().join("seg_0.bin");
+        let mut file = OpenOptions::new().write(true).open(segment)?;
+        file.seek(SeekFrom::Start((second_offset + HEADER_SIZE) as u64))?;
+        file.write_all(&[0xff])?;
+        file.sync_all()?;
+
+        {
+            let arena = PersistentArena::new(dir.path())?;
+            assert_eq!(arena.stats().used_bytes, second_offset);
+            let replacement = arena.write_slice(b"replacement")?;
+            assert_eq!(replacement, second_offset);
+        }
+        let arena = PersistentArena::new(dir.path())?;
+        assert_eq!(arena.read_frame(second_offset)?.0, b"replacement");
         Ok(())
     }
 }

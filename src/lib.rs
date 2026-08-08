@@ -21,7 +21,10 @@ mod python;
 
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::HmsError;
-pub use crate::core::types::{ConceptCandidate, MemorizeBatchItem, RetrievalResult, TextMetrics};
+pub use crate::core::types::{
+    ConceptCandidate, HardwareCapabilities, IndexStatus, MemorizeBatchItem, QueryExplanation,
+    RetrievalResult, StorageHealth, TextMetrics,
+};
 pub use crate::core::HmsCore;
 
 #[cfg(feature = "provenance")]
@@ -81,6 +84,7 @@ pub struct HmsConfigJs {
     pub signing_key_path: Option<String>,
     pub encryption_enabled: Option<bool>,
     pub encryption_passphrase: Option<String>,
+    pub encryption_passphrase_env: Option<String>,
     pub audit_enabled: Option<bool>,
     pub dp_enabled: Option<bool>,
     pub dp_epsilon: Option<f64>,
@@ -179,6 +183,9 @@ impl HmsConfigJs {
         if let Some(v) = self.encryption_passphrase {
             cfg.security.encryption_passphrase = Some(v);
         }
+        if let Some(v) = self.encryption_passphrase_env {
+            cfg.security.encryption_passphrase_env = Some(v);
+        }
         if let Some(v) = self.audit_enabled {
             cfg.security.audit_enabled = v;
         }
@@ -256,6 +263,39 @@ impl HolographicMemorySystem {
     #[napi(getter)]
     pub fn dimensions(&self) -> u32 {
         self.core.dimensions() as u32
+    }
+
+    #[napi]
+    pub fn index_status(&self) -> IndexStatus {
+        self.core.index_status()
+    }
+
+    #[napi]
+    pub fn storage_health(&self) -> StorageHealth {
+        self.core.storage_health()
+    }
+
+    #[napi]
+    pub fn hardware_capabilities(&self) -> HardwareCapabilities {
+        crate::core::hardware::capabilities()
+    }
+
+    #[napi]
+    pub fn explain_query(&self, text: String, k: u32) -> QueryExplanation {
+        let query = self.core.encode_text(&text);
+        self.core.explain_query(&query, k)
+    }
+
+    #[napi]
+    pub async fn maintain_indices(&self) -> Result<IndexStatus> {
+        let core = self.core.clone();
+        run_async(move || core.maintain_indices()).await
+    }
+
+    #[napi]
+    pub async fn flush(&self) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || core.flush()).await
     }
 
     #[napi]
@@ -1103,10 +1143,24 @@ mod tests {
 
     #[test]
     fn test_determinism() {
-        let hms = HmsCore::new(1000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(1000, Some(dir.path().display().to_string()), None).unwrap();
         let v1 = hms.encode_text("hello world");
         let v2 = hms.encode_text("hello world");
         assert!((v1.similarity(&v2) - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_store_rejects_concurrent_engines_and_reopens_after_drop() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().display().to_string();
+        let first = HmsCore::new(1000, Some(path.clone()), None).unwrap();
+        let error = HmsCore::new(1000, Some(path.clone()), None)
+            .err()
+            .expect("a second writable engine must be rejected");
+        assert!(error.to_string().contains("already open"));
+        drop(first);
+        HmsCore::new(1000, Some(path), None).expect("store lock must release after teardown");
     }
 
     #[test]
@@ -1565,7 +1619,8 @@ mod tests {
 
     #[test]
     fn test_delete_nonexistent() {
-        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
         assert!(!hms.delete("no_such_id").unwrap());
     }
 
@@ -1789,7 +1844,8 @@ mod tests {
 
     #[test]
     fn test_audit_disabled_returns_empty() {
-        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
         let entries = hms.audit_since(0).unwrap();
         assert!(entries.is_empty());
     }
@@ -2157,7 +2213,8 @@ mod tests {
 
     #[test]
     fn test_readability_through_core() {
-        let hms = HmsCore::new(10_000, None, None).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
         let metrics = hms.analyze_text("The cat sat on the mat.");
         assert!(metrics.word_count > 0);
         let score = hms.calculate_readability(&metrics);
@@ -2947,6 +3004,10 @@ mod ts_export_tests {
         crate::ConceptCandidate::export_all(&cfg).unwrap();
         crate::TextMetrics::export_all(&cfg).unwrap();
         crate::MemorizeBatchItem::export_all(&cfg).unwrap();
+        crate::QueryExplanation::export_all(&cfg).unwrap();
+        crate::IndexStatus::export_all(&cfg).unwrap();
+        crate::StorageHealth::export_all(&cfg).unwrap();
+        crate::HardwareCapabilities::export_all(&cfg).unwrap();
         crate::HmsError::export_all(&cfg).unwrap();
     }
 
@@ -2962,6 +3023,13 @@ mod ts_export_tests {
             ("TextMetrics", schema_for!(crate::TextMetrics)),
             ("MemorizeBatchItem", schema_for!(crate::MemorizeBatchItem)),
             ("HmsError", schema_for!(crate::HmsError)),
+            ("QueryExplanation", schema_for!(crate::QueryExplanation)),
+            ("IndexStatus", schema_for!(crate::IndexStatus)),
+            ("StorageHealth", schema_for!(crate::StorageHealth)),
+            (
+                "HardwareCapabilities",
+                schema_for!(crate::HardwareCapabilities),
+            ),
         ];
 
         for (name, schema) in schemas {

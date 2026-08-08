@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+pub mod admin;
 pub(crate) mod admission;
 pub mod agency;
 // Experimental VSA research modules. Reachable only from the `src/bin/*`
@@ -37,6 +38,7 @@ pub mod engine;
 pub mod entangled;
 pub(crate) mod error;
 pub(crate) mod graph;
+pub mod hardware;
 pub mod hopfield;
 pub(crate) mod idf;
 pub(crate) mod index;
@@ -46,9 +48,7 @@ pub(crate) mod ivf;
 pub(crate) mod nsg;
 #[cfg(feature = "experimental")]
 pub mod phase_graph;
-#[cfg(feature = "experimental")]
 pub mod phase_hvec;
-#[cfg(feature = "experimental")]
 pub mod phase_resonator;
 pub(crate) mod posting;
 #[cfg(feature = "provenance")]
@@ -59,6 +59,7 @@ pub(crate) mod security;
 #[cfg(feature = "experimental")]
 pub mod sparse_autoencoder;
 pub(crate) mod storage;
+pub(crate) mod store_lock;
 #[cfg(feature = "experimental")]
 pub mod ternary;
 pub(crate) mod text;
@@ -69,9 +70,7 @@ pub(crate) mod wire;
 
 pub use config::HmsConfig;
 pub use engine::HmsCore;
-#[cfg(feature = "experimental")]
 pub use phase_hvec::PhaseHVec;
-#[cfg(feature = "experimental")]
 pub use phase_resonator::{
     phase_resonator_factorize, FactorResult, PhaseResonator, ResonatorConfig,
 };

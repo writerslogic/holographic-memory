@@ -50,6 +50,9 @@ pub struct SecurityConfig {
     pub key_path: Option<String>,
     pub encryption_enabled: bool,
     pub encryption_passphrase: Option<String>,
+    /// Name of an environment variable containing the encryption passphrase.
+    /// Prefer this over embedding a secret in application configuration.
+    pub encryption_passphrase_env: Option<String>,
     pub audit_enabled: bool,
 }
 

@@ -163,7 +163,7 @@ impl StructuredCls {
         self.rebuild_heart1();
         self.total_added += 1;
 
-        if self.total_added % self.consolidation_interval == 0 {
+        if self.total_added.is_multiple_of(self.consolidation_interval) {
             self.consolidate(codebook);
         }
     }

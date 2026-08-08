@@ -17,7 +17,7 @@
   <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory.svg" alt="crates.io"></a>
   <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/d/holographic-memory.svg" alt="crates.io downloads"></a>
   <a href="https://docs.rs/holographic-memory"><img src="https://docs.rs/holographic-memory/badge.svg" alt="docs.rs"></a>
-  <a href="https://blog.rust-lang.org/2024/10/17/Rust-1.82.0.html"><img src="https://img.shields.io/badge/MSRV-1.82-blue.svg" alt="MSRV"></a>
+  <a href="https://blog.rust-lang.org/2025/08/07/Rust-1.89.0.html"><img src="https://img.shields.io/badge/MSRV-1.89-blue.svg" alt="MSRV"></a>
   <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="License"></a>
 </p>
 
@@ -28,7 +28,8 @@
   <a href="#features">Features</a> &middot;
   <a href="#performance">Performance</a> &middot;
   <a href="#architecture">Architecture</a> &middot;
-  <a href="#provenance--content-credentials">Provenance</a>
+  <a href="#provenance--content-credentials">Provenance</a> &middot;
+  <a href="docs/production-readiness.md">Production Readiness</a>
 </p>
 
 ---
@@ -181,7 +182,30 @@ cargo run --release --bin hms-scaling -- --dim 16384 --density 256 --json
 
 # Full 8-section suite
 cargo run --release --bin hms-benchmark-suite -- --dim 16384
+
+# Machine-readable recall and latency regression report
+cargo run --release --bin hms-eval -- \
+  --vectors 1500 --queries 100 --dimensions 16384 --assert-min-recall 0.90
 ```
+
+Synthetic results characterize controlled HMS workloads; they are not a substitute for
+evaluation on your application data. See the
+[production-readiness guide](docs/production-readiness.md) for capacity planning and selection
+criteria versus conventional vector databases.
+
+### Store Administration
+
+```bash
+# Read metadata or verify every frame
+cargo run --release --bin hms-admin -- inspect ./store
+cargo run --release --bin hms-admin -- verify ./store
+
+# Create a locked, verified, atomically published copy
+cargo run --release --bin hms-admin -- migrate ./store ./store-copy
+```
+
+Writable stores are protected by an exclusive process lock. The production-readiness guide
+documents the exact locking and migration behavior.
 
 </details>
 

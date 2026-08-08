@@ -6,7 +6,7 @@ Cargo.lock
 /node_modules
 package-lock.json
 *.node
-index.js
+!index.js
 index.d.ts
 
 # OS
