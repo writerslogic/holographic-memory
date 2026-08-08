@@ -11,6 +11,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Extract meaning_ctx() helper shared by structural_query and multi_hop
 
 ### Documentation
+- Align guidance and track deferred production work (#52)
+- Update changelog [skip ci]
 - Update changelog [skip ci]
 - Standardize badges (add OpenSSF Scorecard; consistent order/format)
 - Update changelog [skip ci]
@@ -22,7 +24,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Resolve workflow code scanning alerts (#53)
 - Give relations a distinct magic byte (0xFA), accept legacy 0xFE on read
+
+### Security
+- Remediate repository alerts and dependencies (#38)
 
 ### Deps
 - Land 10 Dependabot major bumps with API fixes (#26)
