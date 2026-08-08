@@ -10,8 +10,6 @@ permissions:
 jobs:
   changelog:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -23,27 +21,7 @@ jobs:
           args: --verbose
         env:
           OUTPUT: CHANGELOG.md
-      - name: Commit updated changelog
+      - name: Verify changelog is up to date
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- CHANGELOG.md; then
-            git add CHANGELOG.md
-            git commit -m "docs: update changelog [skip ci]"
-            pushed=false
-            for i in 1 2 3 4 5; do
-              if git push; then
-                pushed=true
-                break
-              fi
-              echo "push rejected, rebasing onto origin/main (attempt $i)"
-              git pull --rebase --autostash origin main
-            done
-            if [[ "$pushed" != true ]]; then
-              echo "unable to push changelog after 5 attempts" >&2
-              exit 1
-            fi
-          else
-            echo "changelog already up to date"
-          fi
+          git diff --exit-code -- CHANGELOG.md
