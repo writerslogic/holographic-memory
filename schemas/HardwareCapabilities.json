@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HardwareCapabilities",
+  "description": "Runtime CPU capabilities relevant to future dense and sparse kernels.",
+  "type": "object",
+  "properties": {
+    "architecture": {
+      "type": "string"
+    },
+    "avx2": {
+      "type": "boolean"
+    },
+    "avx512f": {
+      "type": "boolean"
+    },
+    "neon": {
+      "type": "boolean"
+    },
+    "sparseIntersectionKernel": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "architecture",
+    "avx2",
+    "avx512f",
+    "neon",
+    "sparseIntersectionKernel"
+  ]
+}

@@ -25,7 +25,7 @@ impl TernaryHVec {
 
         for i in 0..active_count {
             let idx = (hash_u64(seed, i as u64) % dim as u64) as u32;
-            let sign = if hash_u64(seed.wrapping_add(0xCAFE), i as u64) % 2 == 0 {
+            let sign = if hash_u64(seed.wrapping_add(0xCAFE), i as u64).is_multiple_of(2) {
                 1i8
             } else {
                 -1
@@ -51,7 +51,7 @@ impl TernaryHVec {
                 break;
             }
             let idx = (hash_u64(seed.wrapping_add(0xDEAD), counter) % dim as u64) as u32;
-            let sign = if hash_u64(seed.wrapping_add(0xBEEF), counter) % 2 == 0 {
+            let sign = if hash_u64(seed.wrapping_add(0xBEEF), counter).is_multiple_of(2) {
                 1i8
             } else {
                 -1
@@ -261,7 +261,7 @@ impl TernaryHVec {
             .iter()
             .enumerate()
             .map(|(i, _)| {
-                if hash_u64(seed, i as u64) % 2 == 0 {
+                if hash_u64(seed, i as u64).is_multiple_of(2) {
                     1i8
                 } else {
                     -1
