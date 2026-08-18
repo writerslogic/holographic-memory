@@ -336,3 +336,8 @@ Hyperdimensional vectors are inherently lossy; original content cannot be recons
 ## License
 
 Apache License, Version 2.0 — see [LICENSE](LICENSE).
+
+
+## Evaluation: Expand retrieval regression coverage
+
+Documentation reference and guidelines for #41.
