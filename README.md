@@ -1,24 +1,26 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.png" width="200" alt="Holographic Memory System">
-</p>
+<img src="./assets/logo.png" width="120" alt="Holographic Memory System" align="left">
 
-<h1 align="center">Holographic Memory System (HMS)</h1>
+<h1>Holographic Memory System (HMS)</h1>
+<p><strong>Privacy-preserving semantic search and associative memory — runs entirely on your machine.</strong></p>
+
+<br clear="left">
+
+<!-- Badge palette: dynamic health; metadata #007ec6; standards #6a4c93; label #20232a; platform brand colors. -->
 
 <p align="center">
-  <strong>Privacy-preserving semantic search and associative memory — runs entirely on your machine.</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img src="https://api.securityscorecards.dev/projects/github.com/writerslogic/holographic-memory/badge" alt="OpenSSF Scorecard"></a>
-  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json" alt="coverage"></a>
-  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/v/holographic-memory.svg" alt="npm"></a>
-  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/dm/holographic-memory.svg" alt="npm downloads"></a>
-  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory.svg" alt="crates.io"></a>
-  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/d/holographic-memory.svg" alt="crates.io downloads"></a>
-  <a href="https://docs.rs/holographic-memory"><img src="https://docs.rs/holographic-memory/badge.svg" alt="docs.rs"></a>
-  <a href="https://blog.rust-lang.org/2025/08/07/Rust-1.89.0.html"><img src="https://img.shields.io/badge/MSRV-1.89-blue.svg" alt="MSRV"></a>
-  <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="License"></a>
+  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&amp;style=flat-square&amp;label=CI&amp;labelColor=20232a" alt="CI"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img src="https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory?style=flat-square&amp;labelColor=20232a" alt="OpenSSF Scorecard"></a>
+  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json&amp;style=flat-square&amp;labelColor=20232a" alt="Coverage"></a>
+  <a href="https://www.bestpractices.dev/projects/13977"><img src="https://www.bestpractices.dev/projects/13977/badge" alt="OpenSSF Best Practices"></a>
+  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/v/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/dm/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=npm" alt="npm downloads"></a>
+  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=rust" alt="crates.io version"></a>
+  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/d/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=rust" alt="crates.io downloads"></a>
+  <a href="https://docs.rs/holographic-memory"><img src="https://img.shields.io/docsrs/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=docs.rs" alt="docs.rs"></a>
+  <a href="https://blog.rust-lang.org/2025/08/07/Rust-1.89.0.html"><img src="https://img.shields.io/badge/MSRV-1.89-007ec6?style=flat-square&amp;labelColor=20232a&amp;logo=rust" alt="MSRV 1.89"></a>
+  <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/license-Apache--2.0-007ec6?style=flat-square&amp;labelColor=20232a" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/local--first-yes-007ec6?style=flat-square&amp;labelColor=20232a" alt="Local-first">
+  <a href="https://github.com/sponsors/dcondrey"><img src="https://img.shields.io/badge/sponsor-dcondrey-EA4AAA?style=flat-square&amp;labelColor=20232a&amp;logo=githubsponsors&amp;logoColor=white" alt="Sponsor dcondrey"></a>
 </p>
 
 <p align="center">
