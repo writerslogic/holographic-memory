@@ -26,6 +26,9 @@ First off, thank you for considering contributing to HMS! It's people like you t
 3. Build the native module: `npm run build`.
 4. Run tests: `cargo test --workspace --lib`.
 
+## Testing Policy
+New functionality, bug fixes, and security-relevant changes must include an automated test (`cargo test` for Rust, the relevant suite for bindings). Pull requests that add logic without a corresponding test are expected to explain why one isn't feasible.
+
 ## Style Guidelines
 - **Rust**: Follow `cargo fmt` and `cargo clippy --workspace -- -D warnings` (zero warnings required).
 - **JavaScript**: Use 2-space indentation and camelCase.
