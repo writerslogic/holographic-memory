@@ -470,8 +470,10 @@ impl HmsCore {
             return (id, EntangledHVec::from_indices(vec![], 0));
         }
         let deltas: Vec<u32> = payload[deltas_start..deltas_end]
-            .chunks_exact(4)
-            .map(|c| u32::from_le_bytes(c.try_into().expect("chunks_exact(4)")))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|c| u32::from_le_bytes(*c))
             .collect();
         (id, EntangledHVec::from_deltas(&deltas, dimensions))
     }
