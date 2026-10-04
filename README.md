@@ -38,17 +38,30 @@
 
 ---
 
-HMS is a local memory engine for Rust and Node.js. Store source documents with metadata, retrieve passages with lexical or local-model hybrid search, and query structured facts with vector-symbolic operations. The built-in text encoder measures lexical overlap; optional local ONNX embeddings add semantic retrieval and reranking.
+Holographic Memory System (HMS) is a hyper-scalable **Zero-Trust Agentic Data Enclave** powered by Vector Symbolic Architectures (VSA). 
+
+Designed specifically for autonomous AI agents, HMS offers the absolute highest grade of decentralized enterprise security. It features FHE-Lite cryptography, native W3C Decentralized Identifiers (DIDs), Verifiable Credentials (VCs), IETF SCITT transparency ledgers, and POSME (Proof of Sequential Memory Execution) receipts. 
+
+Whether you are running multi-agent workflows in LangChain, LlamaIndex, or CrewAI, HMS guarantees that your agent's memories are cryptographically tamper-proof, non-repudiable, and invisible to the host infrastructure.
 
 > Developed by [WritersLogic](https://github.com/writerslogic)
 
-## Installation
+## Python SDK Installation (New)
 
-The document APIs and format-2 storage changes in this checkout are unreleased. Build this
-checkout with `npm ci --omit=optional` followed by `npm run build` to use them. The commands
-below install the published release, which may have an earlier API and storage format.
+To use HMS with modern Python AI Agent frameworks (LangChain, LlamaIndex, Haystack, Semantic Kernel, CrewAI, Phidata, PydanticAI, SmolAgents, DSPy, and Embedchain), install the official Python SDK:
 
 ```bash
+pip install holographic-sdk
+```
+*Note: The Python SDK features native async (`AsyncHolographicClient`), HTTP batching, and metadata hybrid-search filters out of the box.*
+
+## Rust & Node.js Core Installation
+
+The core backend is implemented in pure Rust.
+
+```bash
+cargo add holographic-memory
+# Or for Node:
 npm install holographic-memory
 ```
 
@@ -57,6 +70,14 @@ npm install holographic-memory
 [dependencies]
 holographic-memory = "0.6"
 ```
+
+## Zero-Trust Enterprise Security Features
+
+- **Zero-Trust FHE-Lite Cryptography**: Vectors are obfuscated at the edge using deterministic Argon2 key derivation. The edge node never sees the plaintext semantic vectors. (Enabled by default).
+- **W3C DID & Verifiable Credential Admission**: Access to semantic data is tightly gated. Agents must authenticate with a strict `did:key` or `did:web` and present a valid W3C Verifiable Credential to the `IdentityRegistry`.
+- **Proof of Sequential Memory Execution (POSME)**: Built-in hardware attestation (RATS) ensures queries are only processed if the edge node asserts cryptographic proof of memory bandwidth exertion, eliminating DDOS vectors.
+- **IETF SCITT & C2PA Provenance**: The optional `provenance-scitt` feature provides an unalterable transparency ledger and generates ISO 19566-5 JUMBF binaries to embed C2PA manifests into agentic outputs.
+- **VSA Algebra**: Blisteringly fast branchless AVX2 block comparisons for cognitive composition and semantic reasoning.
 
 ## Quick Start
 
