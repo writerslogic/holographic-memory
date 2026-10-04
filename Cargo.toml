@@ -78,7 +78,7 @@ name = "zero_trust_demo"
 required-features = ["experimental"]
 
 [features]
-default = []
+default = ["security"]
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
 # Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
 # wheels with `maturin build --features python`; publishing is wired in
