@@ -75,6 +75,8 @@ pub struct HmsCore {
     #[cfg(feature = "security")]
     #[allow(dead_code)]
     encryption: Option<super::security::EncryptionManager>,
+    #[cfg(feature = "security")]
+    pub identity_registry: parking_lot::RwLock<super::security::identity::IdentityRegistry>,
     #[cfg(feature = "provenance")]
     provenance: Option<super::provenance::ProvenanceManager>,
     /// Experimental opt-in plastic relation store (lazily created on first use).
@@ -261,6 +263,8 @@ impl HmsCore {
             signing,
             #[cfg(feature = "security")]
             encryption,
+            #[cfg(feature = "security")]
+            identity_registry: parking_lot::RwLock::new(super::security::identity::IdentityRegistry::new()),
             #[cfg(feature = "provenance")]
             provenance,
             #[cfg(feature = "experimental")]

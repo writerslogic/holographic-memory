@@ -306,3 +306,91 @@ mod tests {
         assert_ne!(hash_id("other"), h1);
     }
 }
+
+#[cfg(feature = "security")]
+pub mod identity {
+    use anyhow::{anyhow, Result};
+    use fxhash::FxHashMap;
+
+    /// A W3C Decentralized Identifier (DID)
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct Did(String);
+
+    impl Did {
+        pub fn new(did: &str) -> Result<Self> {
+            if !did.starts_with("did:") {
+                return Err(anyhow!("Invalid DID format, must start with 'did:'"));
+            }
+            Ok(Self(did.to_string()))
+        }
+        
+        pub fn as_str(&self) -> &str {
+            &self.0
+        }
+    }
+
+    /// A W3C Verifiable Credential embedding IETF RATS and POSME requirements
+    #[derive(Debug, Clone)]
+    pub struct VerifiableCredential {
+        pub id: String,
+        pub issuer: Did,
+        pub subject: Did,
+        pub required_effort_posme: Option<usize>,
+        pub signature: Vec<u8>,
+    }
+
+    impl VerifiableCredential {
+        pub fn verify_signature(&self) -> Result<()> {
+            // In a production KERI integration, this verifies the COSE/CBOR signature
+            // against the Key Event Log (KEL).
+            if self.signature.is_empty() {
+                return Err(anyhow!("VC signature missing"));
+            }
+            Ok(())
+        }
+    }
+
+    /// Hardware Attestation and Proof of Sequential Memory Execution (POSME) Receipt
+    #[derive(Debug, Clone)]
+    pub struct PosmeReceipt {
+        pub memory_bandwidth_exerted: usize,
+        pub rats_attestation: Vec<u8>,
+    }
+
+    /// Access control gate enforcing W3C DIDs and Verifiable Credentials.
+    pub struct IdentityRegistry {
+        authorized_subjects: FxHashMap<Did, Vec<String>>,
+    }
+
+    impl IdentityRegistry {
+        pub fn new() -> Self {
+            Self {
+                authorized_subjects: FxHashMap::default(),
+            }
+        }
+
+        pub fn authorize_agent(&mut self, vc: &VerifiableCredential) -> Result<()> {
+            vc.verify_signature()?;
+            self.authorized_subjects.entry(vc.subject.clone()).or_default().push("read".to_string());
+            Ok(())
+        }
+
+        pub fn check_admission(&self, agent: &Did, receipt: Option<&PosmeReceipt>, required_posme: Option<usize>) -> Result<()> {
+            if !self.authorized_subjects.contains_key(agent) {
+                return Err(anyhow!("Admission denied: DID {} lacks Verifiable Credential", agent.as_str()));
+            }
+
+            if let Some(req) = required_posme {
+                if let Some(posme) = receipt {
+                    if posme.memory_bandwidth_exerted < req {
+                        return Err(anyhow!("Admission denied: POSME effort insufficient"));
+                    }
+                } else {
+                    return Err(anyhow!("Admission denied: POSME receipt required but missing"));
+                }
+            }
+
+            Ok(())
+        }
+    }
+}

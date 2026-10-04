@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 /// Fan-out gating for structural queries.
+/// (Note: This is for Structural Query Routing, not Security Identity Admission. For W3C DIDs and VCs, see `src/core/security.rs`).
 /// Decides whether to use the algebraic path (unbind + cleanup)
 /// or the materialized path (TripleStore lookup).
 pub struct AdmissionControl {

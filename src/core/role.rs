@@ -7,6 +7,7 @@ use fxhash::FxHashMap;
 use super::entangled::EntangledHVec;
 
 /// Maps role names to cyclic-shift values for role-based binding.
+/// (Note: This is strictly for Semantic VSA Roles, not Security Identity Access Control. For W3C DIDs and VCs, see `src/core/security.rs`).
 /// Fixes XOR commutativity: without shifts, S XOR R XOR O = O XOR R XOR S.
 pub struct RoleRegistry {
     shifts: FxHashMap<String, usize>,
