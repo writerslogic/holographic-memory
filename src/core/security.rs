@@ -142,7 +142,7 @@ impl EncryptionManager {
             s
         };
 
-        let mut key = [0u8; 32];
+        let mut key = [0u8; 32]; // codeql[rust/hard-coded-cryptographic-value] False positive: buffer is overwritten by Argon2
         Argon2::default()
             .hash_password_into(passphrase.as_bytes(), &salt, &mut key)
             .map_err(|e| anyhow!("Argon2 key derivation failed: {}", e))?;

@@ -60,7 +60,9 @@
 
         function log(msg) {
             const l = document.getElementById('logBox');
-            l.innerHTML += `> ${msg}<br>`;
+            const msgDiv = document.createElement('div');
+            msgDiv.textContent = `> ${msg}`;
+            l.appendChild(msgDiv);
             l.scrollTop = l.scrollHeight;
         }
 
