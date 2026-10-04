@@ -269,28 +269,53 @@ impl Shard {
         query_vec: &EntangledHVec,
         k: usize,
     ) -> Vec<RetrievalResult> {
-        let mut heap: BinaryHeap<RetrievalResult> = BinaryHeap::with_capacity(k + 1);
+        #[derive(PartialEq)]
+        struct Candidate<'a> {
+            similarity: f64,
+            id: &'a str,
+        }
+        impl<'a> Eq for Candidate<'a> {}
+        impl<'a> PartialOrd for Candidate<'a> {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                // We want a min-heap, so we reverse the comparison on similarity
+                other.similarity.partial_cmp(&self.similarity)
+            }
+        }
+        impl<'a> Ord for Candidate<'a> {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                self.partial_cmp(other).unwrap_or(std::cmp::Ordering::Equal)
+            }
+        }
+
+        let mut heap: BinaryHeap<Candidate<'_>> = BinaryHeap::with_capacity(k + 1);
 
         for (id, vec) in vectors.iter() {
             let sim = query_vec.similarity(vec);
 
             if heap.len() < k {
-                heap.push(RetrievalResult {
+                heap.push(Candidate {
                     similarity: sim,
-                    id: id.clone(),
+                    id: id.as_str(),
                 });
             } else if let Some(top) = heap.peek() {
                 if sim > top.similarity {
                     heap.pop();
-                    heap.push(RetrievalResult {
+                    heap.push(Candidate {
                         similarity: sim,
-                        id: id.clone(),
+                        id: id.as_str(),
                     });
                 }
             }
         }
 
-        let mut results = heap.into_sorted_vec();
+        let mut results: Vec<RetrievalResult> = heap
+            .into_sorted_vec()
+            .into_iter()
+            .map(|c| RetrievalResult {
+                similarity: c.similarity,
+                id: c.id.to_string(),
+            })
+            .collect();
         results.reverse();
         results
     }

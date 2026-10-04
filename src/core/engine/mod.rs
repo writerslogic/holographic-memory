@@ -49,6 +49,7 @@ type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 /// Persistent operations take mutation_gate before ShardSet and component locks.
 pub struct HmsCore {
     config: HmsConfig,
+    cached_zt_key: Option<EntangledHVec>,
     mutation_gate: RwLock<()>,
     revision: std::sync::atomic::AtomicU64,
     pub(crate) arena: Arc<PersistentArena>,
@@ -215,7 +216,18 @@ impl HmsCore {
                 (None, None, None, None, None, None, None)
             };
 
+
+        let cached_zt_key = config.privacy.zero_trust_key.as_ref().map(|zt_key| {
+            let seed = fxhash::hash64(zt_key);
+            let mut master_key = EntangledHVec::new_deterministic(dim, seed);
+            for i in 1..25 {
+                master_key = master_key.bind(&EntangledHVec::new_deterministic(dim, seed + i));
+            }
+            master_key
+        });
+
         let core = Self {
+            cached_zt_key,
             config: config.clone(),
             mutation_gate: RwLock::new(()),
             revision: std::sync::atomic::AtomicU64::new(0),

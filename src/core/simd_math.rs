@@ -32,13 +32,6 @@ unsafe fn avx2_intersection_count(a: &[u32], b: &[u32]) -> usize {
     
     // Process blocks of 8 u32s
     while i + 8 <= a.len() && j + 8 <= b.len() {
-        let va = _mm256_loadu_si256(a[i..].as_ptr() as *const __m256i);
-        let vb = _mm256_loadu_si256(b[j..].as_ptr() as *const __m256i);
-        
-        // This is a simplified block-compare. In a true AVX2 sorted-intersection,
-        // we use a shuffle/compare network or simply rely on LLVM auto-vectorization
-        // of a branchless scalar loop. For VSA density, LLVM loop unrolling is extremely effective.
-        // We will increment the pointers based on the max elements in the 256-bit vectors.
         let max_a = a[i + 7];
         let max_b = b[j + 7];
 
@@ -47,17 +40,16 @@ unsafe fn avx2_intersection_count(a: &[u32], b: &[u32]) -> usize {
         } else if max_b < a[i] {
             j += 8;
         } else {
-            // Overlap detected in this 8x8 block.
-            // Fallback to scalar for this block, then advance.
-            let mut sub_i = 0;
-            let mut sub_j = 0;
-            while sub_i < 8 && sub_j < 8 {
-                let val_a = a[i + sub_i];
-                let val_b = b[j + sub_j];
-                if val_a < val_b { sub_i += 1; }
-                else if val_a > val_b { sub_j += 1; }
-                else { count += 1; sub_i += 1; sub_j += 1; }
+            let va = _mm256_loadu_si256(a[i..].as_ptr() as *const __m256i);
+            let mut v_match = _mm256_setzero_si256();
+            for k in 0..8 {
+                let vb_elem = _mm256_set1_epi32(b[j + k] as i32);
+                let cmp = _mm256_cmpeq_epi32(va, vb_elem);
+                v_match = _mm256_or_si256(v_match, cmp);
             }
+            let mask = _mm256_movemask_ps(_mm256_castsi256_ps(v_match));
+            count += mask.count_ones() as usize;
+
             if max_a <= max_b { i += 8; }
             if max_b <= max_a { j += 8; }
         }

@@ -17,13 +17,8 @@ impl HmsCore {
         let mut search_vec = query_vec.clone();
         
         // --- FHE-Lite / Zero-Trust Encryption ---
-        if let Some(ref zt_key) = self.config.privacy.zero_trust_key {
-            let seed = fxhash::hash64(zt_key);
-            let mut master_key = EntangledHVec::new_deterministic(self.dimensions, seed);
-            for i in 1..25 {
-                master_key = master_key.bind(&EntangledHVec::new_deterministic(self.dimensions, seed + i));
-            }
-            search_vec = search_vec.bind(&master_key);
+        if let Some(ref master_key) = self.cached_zt_key {
+            search_vec = search_vec.bind(master_key);
         }
 
         let _transaction = self.mutation_gate.read();
