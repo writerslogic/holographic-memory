@@ -6,6 +6,8 @@ authors = [
     {name = "WritersLogic", email = "david@writerslogic.com"},
 ]
 dependencies = [
+    "httpx>=0.27.0",
+
     "numpy>=1.24.0",
     "requests>=2.31.0"
 ]
