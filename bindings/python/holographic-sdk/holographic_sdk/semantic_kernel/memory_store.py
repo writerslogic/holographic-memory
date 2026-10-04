@@ -1,8 +1,7 @@
 from typing import Any, List, Optional, Tuple
-import requests
-import hashlib
 from semantic_kernel.memory.memory_store_base import MemoryStoreBase
 from semantic_kernel.memory.memory_record import MemoryRecord
+from holographic_sdk.client import HolographicClient
 
 class HolographicMemoryStore(MemoryStoreBase):
     def __init__(
@@ -11,27 +10,15 @@ class HolographicMemoryStore(MemoryStoreBase):
         zero_trust_key: str = "",
         api_key: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        timeout: int = 30,
     ):
-        self.url = url
-        self.zero_trust_key = zero_trust_key
-        self.api_key = api_key
-        self.tenant_id = tenant_id
-
-    def _encrypt_vector(self, embedding: List[float]) -> List[float]:
-        if not self.zero_trust_key or not embedding:
-            return embedding
-        seed = int(hashlib.sha256(self.zero_trust_key.encode()).hexdigest()[:8], 16)
-        import random
-        rng = random.Random(seed)
-        return [val * (1.0 if rng.random() > 0.5 else -1.0) for val in embedding]
-
-    def _get_headers(self) -> dict:
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-        if self.tenant_id:
-            headers["X-Tenant-ID"] = self.tenant_id
-        return headers
+        self._client = HolographicClient(
+            url=url,
+            zero_trust_key=zero_trust_key,
+            api_key=api_key,
+            tenant_id=tenant_id,
+            timeout=timeout
+        )
 
     async def create_collection_async(self, collection_name: str) -> None:
         pass
@@ -46,16 +33,13 @@ class HolographicMemoryStore(MemoryStoreBase):
         return True
 
     async def upsert_async(self, collection_name: str, record: MemoryRecord) -> str:
-        headers = self._get_headers()
-        vector = self._encrypt_vector(record.embedding.tolist() if record.embedding is not None else [])
-        payload = {
+        doc = {
             "id": record._id,
             "text": record._text,
-            "vector": vector,
+            "vector": record.embedding.tolist() if record.embedding is not None else [],
             "metadata": {"collection": collection_name}
         }
-        res = requests.post(f"{self.url}/api/v1/documents", json=payload, headers=headers)
-        res.raise_for_status()
+        self._client.add_documents([doc])
         return record._id
 
     async def upsert_batch_async(self, collection_name: str, records: List[MemoryRecord]) -> List[str]:
@@ -68,9 +52,7 @@ class HolographicMemoryStore(MemoryStoreBase):
         raise NotImplementedError
 
     async def remove_async(self, collection_name: str, key: str) -> None:
-        headers = self._get_headers()
-        res = requests.delete(f"{self.url}/api/v1/documents/{key}", headers=headers)
-        res.raise_for_status()
+        self._client.delete_document(key)
 
     async def remove_batch_async(self, collection_name: str, keys: List[str]) -> None:
         for k in keys:
@@ -84,17 +66,10 @@ class HolographicMemoryStore(MemoryStoreBase):
         min_relevance_score: float = 0.0,
         with_embeddings: bool = False,
     ) -> List[Tuple[MemoryRecord, float]]:
-        headers = self._get_headers()
-        encrypted_query = self._encrypt_vector(embedding.tolist())
-        payload = {
-            "query_vector": encrypted_query,
-            "top_k": limit
-        }
-        res = requests.post(f"{self.url}/api/v1/query", json=payload, headers=headers)
-        res.raise_for_status()
+        res = self._client.query(query_vector=embedding.tolist(), top_k=limit)
         
         matches = []
-        for doc in res.json().get("matches", []):
+        for doc in res.get("matches", []):
             if doc.get("score", 0.0) >= min_relevance_score:
                 record = MemoryRecord(
                     id=doc.get("id"),

@@ -1,7 +1,6 @@
 from typing import Any, List, Optional, Union
-import requests
-import hashlib
 import dspy
+from holographic_sdk.client import HolographicClient
 
 class HolographicRM(dspy.Retrieve):
     def __init__(
@@ -10,31 +9,19 @@ class HolographicRM(dspy.Retrieve):
         zero_trust_key: str = "",
         api_key: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        timeout: int = 30,
         k: int = 3,
         embedder: Any = None
     ):
         super().__init__(k=k)
-        self.url = url
-        self.zero_trust_key = zero_trust_key
-        self.api_key = api_key
-        self.tenant_id = tenant_id
+        self._client = HolographicClient(
+            url=url,
+            zero_trust_key=zero_trust_key,
+            api_key=api_key,
+            tenant_id=tenant_id,
+            timeout=timeout
+        )
         self.embedder = embedder
-
-    def _encrypt_vector(self, embedding: List[float]) -> List[float]:
-        if not self.zero_trust_key or not embedding:
-            return embedding
-        seed = int(hashlib.sha256(self.zero_trust_key.encode()).hexdigest()[:8], 16)
-        import random
-        rng = random.Random(seed)
-        return [val * (1.0 if rng.random() > 0.5 else -1.0) for val in embedding]
-
-    def _get_headers(self) -> dict:
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-        if self.tenant_id:
-            headers["X-Tenant-ID"] = self.tenant_id
-        return headers
 
     def forward(self, query_or_queries: Union[str, List[str]], k: Optional[int] = None) -> dspy.Prediction:
         k = k if k is not None else self.k
@@ -46,17 +33,9 @@ class HolographicRM(dspy.Retrieve):
                 raise ValueError("An embedder must be provided to HolographicRM")
             
             embedding = self.embedder(query)
-            encrypted_query = self._encrypt_vector(embedding)
+            res = self._client.query(query_vector=embedding, top_k=k)
             
-            headers = self._get_headers()
-            payload = {
-                "query_vector": encrypted_query,
-                "top_k": k
-            }
-            res = requests.post(f"{self.url}/api/v1/query", json=payload, headers=headers)
-            res.raise_for_status()
-            
-            for doc in res.json().get("matches", []):
+            for doc in res.get("matches", []):
                 passages.append(doc.get("text", ""))
                 
         return dspy.Prediction(passages=passages)

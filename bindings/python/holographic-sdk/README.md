@@ -31,4 +31,10 @@ from holographic_sdk.semantic_kernel import HolographicMemoryStore
 
 # DSPy
 from holographic_sdk.dspy import HolographicRM
+
+# CrewAI
+from holographic_sdk.crewai import HolographicSearchTool
+
+# Embedchain
+from holographic_sdk.embedchain import HolographicDB
 ```
