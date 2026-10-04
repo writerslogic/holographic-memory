@@ -73,6 +73,10 @@ required-features = ["provenance"]
 name = "story_memory"
 required-features = ["experimental"]
 
+[[example]]
+name = "zero_trust_demo"
+required-features = ["experimental"]
+
 [features]
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
@@ -137,6 +141,3 @@ lto = true
 strip = true
 opt-level = 3
 
-[[example]]
-name = "zero_trust_demo"
-required-features = ["experimental"]
