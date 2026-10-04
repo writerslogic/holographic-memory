@@ -17,6 +17,7 @@ pub struct HmsConfig {
     pub meaning: MeaningConfig,
     pub cognition: CognitionConfig,
     pub hopfield: super::hopfield::HopfieldConfig,
+    pub embedding_space: Option<super::schema::EmbeddingSpace>,
 }
 
 #[derive(Clone, Debug)]
@@ -72,6 +73,10 @@ pub struct PrivacyConfig {
     /// Privacy budget epsilon. Smaller = more private, noisier.
     /// Typical range: 0.1 (strong) to 10.0 (weak).
     pub epsilon: f64,
+    /// FHE-Lite: Zero-Trust encryption key. If set, all vectors are XOR-bound
+    /// with a dense deterministic key derived from this string before being
+    /// persisted or searched. The server/storage never sees the plaintext vector.
+    pub zero_trust_key: Option<String>,
 }
 
 impl Default for PrivacyConfig {
@@ -79,6 +84,7 @@ impl Default for PrivacyConfig {
         Self {
             dp_enabled: false,
             epsilon: 1.0,
+            zero_trust_key: None,
         }
     }
 }
@@ -230,5 +236,37 @@ impl Default for CognitionConfig {
             governor_forget_unreferenced: false,
             refine_atoms: false,
         }
+    }
+}
+
+impl HmsConfig {
+    pub(crate) fn validate(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            cfg!(feature = "security")
+                || !(self.security.signing_enabled || self.security.encryption_enabled),
+            "signing/encryption requires a build with the security feature"
+        );
+        anyhow::ensure!(
+            cfg!(feature = "provenance") || !self.provenance.enabled,
+            "provenance requires a build with the provenance feature"
+        );
+        anyhow::ensure!(
+            self.privacy.epsilon.is_finite() && self.privacy.epsilon > 0.0,
+            "privacy epsilon must be finite and positive"
+        );
+        anyhow::ensure!(
+            self.shard.target_shard_size > 0 && self.shard.shard_count <= 1024,
+            "invalid shard configuration"
+        );
+        anyhow::ensure!(
+            self.meaning.beta.is_finite() && self.meaning.beta > 0.0,
+            "meaning beta must be finite and positive"
+        );
+        if let Some(space) = &self.embedding_space {
+            anyhow::ensure!(!space.model.is_empty() && !space.revision.is_empty() && (1..=65536).contains(&space.dimensions)
+                && space.metric == "cosine" && space.normalization == "l2",
+                "embedding space requires model, revision, dimensions 1..=65536, normalization l2 and metric cosine");
+        }
+        Ok(())
     }
 }

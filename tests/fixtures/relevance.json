@@ -1,0 +1,31 @@
+{
+  "description": "Curated HMS user questions and independently worded source passages. Queries are not stored as documents. Embedding fields may be added by scripts/evaluate-local-model.mjs.",
+  "documents": [
+    {"id":"backup","text":"Keep backups of the memory store on a separate disk. Verify each backup before using it to restore lost records.","sourceUri":"operations.md#backup"},
+    {"id":"encryption","text":"Encryption protects stored documents against unauthorized disk access. Supply the encryption passphrase through an environment variable.","sourceUri":"security.md#encryption"},
+    {"id":"filtering","text":"Metadata filtering limits retrieval to documents in a selected project. A filter checks document attributes before choosing the best matches.","sourceUri":"search.md#filters"},
+    {"id":"chunking","text":"Divide long documents into overlapping chunks. Each passage retains its source URI and byte offsets so an answer can cite the relevant section.","sourceUri":"documents.md#chunks"},
+    {"id":"maintenance","text":"Index maintenance trains a search index using a consistent snapshot. Schedule maintenance outside the ingestion path to avoid slow writes.","sourceUri":"operations.md#indexes"},
+    {"id":"migration","text":"Re-encode original source documents when changing the embedding model. Create a separate destination store and keep the existing data until verification finishes.","sourceUri":"operations.md#migration"},
+    {"id":"triplets","text":"Structured facts contain a subject, a relation, and an object. Two linked father relations allow a multi-hop query to find a grandfather.","sourceUri":"knowledge.md#triplets"},
+    {"id":"local","text":"Local models run on your own computer. Loading model files from disk permits semantic retrieval without sending documents to a remote service.","sourceUri":"search.md#offline"},
+    {"id":"reranking","text":"A reranker compares each candidate passage with the question. It reorders the retrieved candidates using a more expensive relevance model.","sourceUri":"search.md#reranking"},
+    {"id":"deletion","text":"Deleting a document removes all of its chunks. The deletion is recorded durably so removed content stays absent after restarting the application.","sourceUri":"documents.md#deletion"},
+    {"id":"batching","text":"Batch ingestion groups several records into one transaction. All records are validated before committing, and the batch has a fixed size limit.","sourceUri":"operations.md#batching"},
+    {"id":"privacy","text":"Differential privacy adds calibrated random noise to a clipped histogram. Repeated releases consume a cumulative privacy budget.","sourceUri":"security.md#privacy"}
+  ],
+  "queries": [
+    {"text":"How should I restore lost records?","relevantIds":["backup"]},
+    {"text":"Where should the encryption passphrase come from?","relevantIds":["encryption"]},
+    {"text":"How can I search within one selected project?","relevantIds":["filtering"]},
+    {"text":"How do overlapping passages retain citations?","relevantIds":["chunking"]},
+    {"text":"How can I keep index training from slowing writes?","relevantIds":["maintenance"]},
+    {"text":"What should happen when changing the embedding model?","relevantIds":["migration"]},
+    {"text":"How can linked father facts answer a grandfather question?","relevantIds":["triplets"]},
+    {"text":"Can retrieval work without a remote service?","relevantIds":["local"]},
+    {"text":"What reorders candidate passages by relevance?","relevantIds":["reranking"]},
+    {"text":"Will removed chunks remain absent after restarting?","relevantIds":["deletion"]},
+    {"text":"How do I commit several validated records together?","relevantIds":["batching"]},
+    {"text":"Why do repeated private releases consume a budget?","relevantIds":["privacy"]}
+  ]
+}

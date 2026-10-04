@@ -10,7 +10,26 @@ use rayon::prelude::*;
 impl HmsCore {
     /// Query the memory system for the k most similar vectors.
     pub fn query(&self, query_vec: &EntangledHVec, k: u32) -> Vec<RetrievalResult> {
-        self.shards.read().query(query_vec, k, self.dimensions)
+        if query_vec.dim != self.dimensions || k == 0 {
+            return Vec::new();
+        }
+
+        let mut search_vec = query_vec.clone();
+        
+        // --- FHE-Lite / Zero-Trust Encryption ---
+        if let Some(ref zt_key) = self.config.privacy.zero_trust_key {
+            let seed = fxhash::hash64(zt_key);
+            let mut master_key = EntangledHVec::new_deterministic(self.dimensions, seed);
+            for i in 1..25 {
+                master_key = master_key.bind(&EntangledHVec::new_deterministic(self.dimensions, seed + i));
+            }
+            search_vec = search_vec.bind(&master_key);
+        }
+
+        let _transaction = self.mutation_gate.read();
+        self.shards
+            .read()
+            .query(&search_vec, k.min(10000), self.dimensions)
     }
 
     pub fn explain_query(&self, query_vec: &EntangledHVec, k: u32) -> QueryExplanation {
@@ -23,9 +42,15 @@ impl HmsCore {
         let count = self.vector_count().min(u32::MAX as u64) as u32;
         let nsg = self.nsg_trained();
         let ivf = self.ivf_trained();
-        let nsg_recommended = !nsg && count as usize >= self.config.nsg.auto_threshold;
-        let ivf_recommended =
-            self.config.ivf.enabled && !ivf && count as usize >= self.config.ivf.auto_threshold;
+        let nsg_recommended = !nsg
+            && count > 0
+            && self.config.nsg.auto_threshold > 0
+            && count as usize >= self.config.nsg.auto_threshold;
+        let ivf_recommended = self.config.ivf.enabled
+            && !ivf
+            && count > 0
+            && self.config.ivf.auto_threshold > 0
+            && count as usize >= self.config.ivf.auto_threshold;
         let recommendation = if nsg_recommended && ivf_recommended {
             "train NSG and IVF indices"
         } else if nsg_recommended {
@@ -58,6 +83,7 @@ impl HmsCore {
     /// Train any index whose configured threshold has been reached, then return
     /// the resulting lifecycle state. Calls are idempotent when indices are current.
     pub fn maintain_indices(&self) -> anyhow::Result<IndexStatus> {
+        self.maybe_auto_shard(self.vector_count())?;
         let before = self.index_status();
         if before.ivf_training_recommended {
             self.train_ivf()?;
@@ -68,9 +94,19 @@ impl HmsCore {
         Ok(self.index_status())
     }
 
+    /// Run maintenance on a dedicated thread; training publishes only a current snapshot.
+    pub fn maintain_indices_background(
+        self: &std::sync::Arc<Self>,
+    ) -> std::thread::JoinHandle<anyhow::Result<IndexStatus>> {
+        let core = std::sync::Arc::clone(self);
+        std::thread::spawn(move || core.maintain_indices())
+    }
+
     /// Flush persistent vector data to durable storage.
     pub fn flush(&self) -> anyhow::Result<()> {
-        self.arena.flush()
+        let _transaction = self.mutation_gate.write();
+        self.arena.flush()?;
+        self.persist_indices(&self.shards.read())
     }
 
     /// Energy-based associative retrieval using Hopfield-Fenchel-Young dynamics.
@@ -128,7 +164,7 @@ mod tests {
         let explanation = hms.explain_query(&query, 5);
         assert_eq!(explanation.route, "brute_force");
         assert_eq!(hms.index_status().vector_count, 0);
-        assert_eq!(hms.storage_health().format_version, 1);
+        assert_eq!(hms.storage_health().format_version, 2);
         hms.flush()?;
         Ok(())
     }

@@ -24,6 +24,8 @@ use super::router;
 pub(crate) struct Shard {
     pub vectors: RwLock<FxHashMap<String, EntangledHVec>>,
     pub registry: RwLock<Vec<String>>,
+    slots: RwLock<FxHashMap<String, u32>>,
+    free_slots: parking_lot::Mutex<Vec<u32>>,
     pub inverted: RwLock<SparseInvertedIndex>,
     pub accumulator: parking_lot::Mutex<Accumulator>,
     pub nsg: RwLock<Option<NSGIndex>>,
@@ -37,6 +39,8 @@ impl Shard {
         Self {
             vectors: RwLock::new(FxHashMap::default()),
             registry: RwLock::new(Vec::new()),
+            slots: RwLock::new(FxHashMap::default()),
+            free_slots: parking_lot::Mutex::new(Vec::new()),
             inverted: RwLock::new(SparseInvertedIndex::new(dimensions, m)),
             accumulator: parking_lot::Mutex::new(Accumulator::new(1024)),
             nsg: RwLock::new(None),
@@ -45,68 +49,85 @@ impl Shard {
         }
     }
 
-    pub fn insert(&self, id: String, vector: EntangledHVec, dimensions: usize) -> Result<()> {
-        // Phase 1: update vectors and registry (holds vectors -> registry locks)
-        let is_replacement = {
-            let mut vectors = self.vectors.write();
-            let mut reg = self.registry.write();
-
-            let is_replacement = vectors.contains_key(&id);
-            vectors.insert(id.clone(), vector.clone());
-
-            if !is_replacement {
-                reg.push(id.clone());
-                let count = reg.len() as u64;
-                self.vector_count.store(count, AtomicOrdering::SeqCst);
-
-                let mut inv = self.inverted.write();
-                inv.add_doc((count - 1) as u32, &vector.indices);
+    pub fn insert(&self, id: String, vector: EntangledHVec, _dimensions: usize) -> Result<()> {
+        let mut vectors = self.vectors.write();
+        let mut registry = self.registry.write();
+        let mut slots = self.slots.write();
+        let mut inverted = self.inverted.write();
+        let old = vectors.insert(id.clone(), vector.clone());
+        let slot = if let Some(&slot) = slots.get(&id) {
+            if let Some(old) = &old {
+                inverted.remove_doc(slot, old.indices());
             }
-            is_replacement
-        }; // vectors + registry locks released
-
-        if is_replacement {
-            self.rebuild_inverted_index(dimensions)?;
-        }
-
-        // Phase 2: update indices (acquires ivf -> nsg in order)
-        if let Some(ref mut ivf) = *self.ivf.write() {
-            ivf.insert(&id, &vector)?;
-        }
-        if let Some(ref mut nsg) = *self.nsg.write() {
-            nsg.insert(&id, &vector)?;
+            slot
+        } else if let Some(slot) = self.free_slots.lock().pop() {
+            registry[slot as usize] = id.clone();
+            slot
+        } else {
+            registry.push(id.clone());
+            (registry.len() - 1) as u32
+        };
+        slots.insert(id.clone(), slot);
+        inverted.add_doc(slot, vector.indices());
+        self.vector_count
+            .store(vectors.len() as u64, AtomicOrdering::Release);
+        drop(inverted);
+        drop(slots);
+        drop(registry);
+        drop(vectors);
+        if old.is_some() {
+            *self.ivf.write() = None;
+            *self.nsg.write() = None;
+        } else {
+            let mut ivf = self.ivf.write();
+            if let Some(index) = ivf.as_mut() {
+                if let Err(error) = index.insert(&id, &vector) {
+                    tracing::warn!(%error, "IVF invalidated after failed online insertion");
+                    *ivf = None;
+                }
+            }
+            let mut nsg = self.nsg.write();
+            if let Some(index) = nsg.as_mut() {
+                if let Err(error) = index.insert(&id, &vector) {
+                    tracing::warn!(%error, "NSG invalidated after failed online insertion");
+                    *nsg = None;
+                }
+            }
         }
         Ok(())
     }
 
-    pub fn remove(&self, id: &str, dimensions: usize) -> Result<bool> {
+    pub fn remove(&self, id: &str, _dimensions: usize) -> Result<bool> {
         let mut vectors = self.vectors.write();
-        let mut reg = self.registry.write();
-
-        if vectors.remove(id).is_none() {
+        let Some(old) = vectors.remove(id) else {
             return Ok(false);
+        };
+        let mut registry = self.registry.write();
+        if let Some(slot) = self.slots.write().remove(id) {
+            self.inverted.write().remove_doc(slot, old.indices());
+            registry[slot as usize].clear();
+            self.free_slots.lock().push(slot);
         }
-
-        reg.retain(|r| r != id);
         self.vector_count
-            .store(reg.len() as u64, AtomicOrdering::SeqCst);
-
-        drop(reg);
-        drop(vectors);
-
-        self.rebuild_inverted_index(dimensions)?;
+            .store(vectors.len() as u64, AtomicOrdering::Release);
+        *self.ivf.write() = None;
+        *self.nsg.write() = None;
         Ok(true)
     }
 
     pub fn rebuild_inverted_index(&self, dimensions: usize) -> Result<()> {
         let vectors = self.vectors.read();
         let registry = self.registry.read();
+        let mut slots = self.slots.write();
+        slots.clear();
+        self.free_slots.lock().clear();
         let mut inv = self.inverted.write();
 
         *inv = SparseInvertedIndex::new(dimensions, (dimensions / 256).max(1));
 
         for (i, id) in registry.iter().enumerate() {
             if let Some(vec) = vectors.get(id) {
+                slots.insert(id.clone(), i as u32);
                 inv.add_doc(i as u32, &vec.indices);
             }
         }

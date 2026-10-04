@@ -1,0 +1,48 @@
+{
+  "dataset_sha256": "3ea9d44fee5248116792236a0151aa4312eb764f1297940543627d80edbd68c7",
+  "model": {
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "revision": "751bff37182d3f1213fa05d7196b954e230abad9+hms-a2839617e45b6f43",
+    "dimensions": 384,
+    "normalization": "l2",
+    "metric": "cosine"
+  },
+  "documents": 10,
+  "queries": 10,
+  "model_artifact_revision": "751bff37182d3f1213fa05d7196b954e230abad9",
+  "dtype": "q8",
+  "architecture": "arm64",
+  "platform": "darwin",
+  "node": "v26.8.1",
+  "reranker": {
+    "model": "Xenova/ms-marco-MiniLM-L-6-v2",
+    "revision": "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
+  },
+  "metrics": {
+    "lexical": {
+      "hit_rate_at_1": 0.3,
+      "hit_rate_at_5": 0.7,
+      "mrr_at_5": 0.4333333333333333,
+      "p95_latency_ms": 0.09845799999999372
+    },
+    "hybrid": {
+      "hit_rate_at_1": 0.5,
+      "hit_rate_at_5": 1,
+      "mrr_at_5": 0.6900000000000001,
+      "p95_latency_ms": 1.7830830000000049
+    },
+    "hybrid_reranked": {
+      "hit_rate_at_1": 1,
+      "hit_rate_at_5": 1,
+      "mrr_at_5": 1,
+      "p95_latency_ms": 38.758207999999996
+    }
+  },
+  "projection": {
+    "dimensions": 16384,
+    "encoder": "signed-projection-v2",
+    "k": 5,
+    "dense_neighbor_recall_at_k": 0.5999999999999999
+  },
+  "scope": "Small curated regression set; not evidence of general retrieval quality or capacity."
+}

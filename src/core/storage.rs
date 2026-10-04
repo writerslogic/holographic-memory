@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 pub(crate) const FORMAT_MANIFEST: &str = "format.json";
 pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
-pub const STORAGE_FORMAT_VERSION: u32 = 1;
+pub const STORAGE_FORMAT_VERSION: u32 = 2;
 
 /// Fixed segment size for mmap arena (1 GB).
 pub(crate) const SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
@@ -43,6 +43,7 @@ pub struct ArenaStats {
 /// Every entry is framed: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32][Data: bytes]
 pub struct PersistentArena {
     base_path: PathBuf,
+    data_path: RwLock<PathBuf>,
     read_segments: RwLock<Vec<Arc<Mmap>>>,
     active_segment: Arc<RwLock<MmapMut>>,
     active_id: AtomicUsize,
@@ -55,10 +56,11 @@ impl PersistentArena {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
         Self::validate_or_create_manifest(&base)?;
+        let data_path = super::durable_file::arena_generation(&base)?;
 
         let mut id = 0;
         loop {
-            let p = base.join(format!("seg_{}.bin", id));
+            let p = data_path.join(format!("seg_{}.bin", id));
             if !p.exists() {
                 break;
             }
@@ -69,13 +71,13 @@ impl PersistentArena {
         let mut segments = Vec::new();
 
         for i in 0..active_id {
-            let p = base.join(format!("seg_{}.bin", i));
+            let p = data_path.join(format!("seg_{}.bin", i));
             let file = File::open(&p)?;
             let mmap = unsafe { Mmap::map(&file)? };
             segments.push(Arc::new(mmap));
         }
 
-        let active_path = base.join(format!("seg_{}.bin", active_id));
+        let active_path = data_path.join(format!("seg_{}.bin", active_id));
         let file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -97,6 +99,7 @@ impl PersistentArena {
 
         Ok(Self {
             base_path: base,
+            data_path: RwLock::new(data_path),
             read_segments: RwLock::new(segments),
             active_segment: Arc::new(RwLock::new(mut_map)),
             active_id: AtomicUsize::new(active_id),
@@ -145,9 +148,7 @@ impl PersistentArena {
             version: STORAGE_FORMAT_VERSION,
             segment_size: SEGMENT_SIZE,
         };
-        let temp = base.join("format.json.tmp");
-        std::fs::write(&temp, serde_json::to_vec_pretty(&manifest)?)?;
-        std::fs::rename(temp, path)?;
+        super::durable_file::atomic_write(&path, &serde_json::to_vec_pretty(&manifest)?)?;
         Ok(())
     }
 
@@ -239,6 +240,9 @@ impl PersistentArena {
 
     pub fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
         let seg_idx = global_offset / SEGMENT_SIZE;
+        if seg_idx > self.active_id.load(Ordering::Acquire) {
+            return Err(anyhow!("read beyond final arena segment"));
+        }
         let local_offset = global_offset % SEGMENT_SIZE;
 
         let reader = self.read_segments.read();
@@ -336,11 +340,27 @@ impl PersistentArena {
         if comp_len == 0 {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
         }
-        Ok(global_offset + HEADER_SIZE + comp_len)
+        let next = global_offset + HEADER_SIZE + comp_len;
+        let segment = global_offset / SEGMENT_SIZE;
+        if segment < self.active_id.load(Ordering::Acquire) {
+            if next % SEGMENT_SIZE + HEADER_SIZE > SEGMENT_SIZE {
+                return Ok((segment + 1) * SEGMENT_SIZE);
+            }
+            let header = self.read_slice(next, HEADER_SIZE)?;
+            if header.iter().all(|&b| b == 0) {
+                return Ok((segment + 1) * SEGMENT_SIZE);
+            }
+        }
+        Ok(next)
     }
 
     pub fn write_slice(&self, data: &[u8]) -> Result<usize> {
         let raw_len = data.len();
+        if raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE {
+            return Err(anyhow!(
+                "arena payload must contain 1..={MAX_RAW_FRAME_SIZE} bytes"
+            ));
+        }
         let version = self.version_counter.fetch_add(1, Ordering::SeqCst) as u32;
 
         let mut hasher = Hasher::new();
@@ -430,13 +450,17 @@ impl PersistentArena {
         active: &mut parking_lot::RwLockWriteGuard<'_, MmapMut>,
     ) -> Result<()> {
         let current_id = self.active_id.load(Ordering::SeqCst);
-        let path = self.base_path.join(format!("seg_{}.bin", current_id));
+        let path = self
+            .data_path
+            .read()
+            .join(format!("seg_{}.bin", current_id));
         let file = File::open(&path)?;
+        active.flush()?;
         let mmap = unsafe { Mmap::map(&file)? };
         self.read_segments.write().push(Arc::new(mmap));
 
         let next_id = current_id + 1;
-        let next_path = self.base_path.join(format!("seg_{}.bin", next_id));
+        let next_path = self.data_path.read().join(format!("seg_{}.bin", next_id));
         let next_file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -444,6 +468,8 @@ impl PersistentArena {
             .truncate(false)
             .open(&next_path)?;
         next_file.set_len(SEGMENT_SIZE as u64)?;
+        next_file.sync_all()?;
+        super::durable_file::sync_directory(&self.data_path.read())?;
         let next_map = unsafe { MmapMut::map_mut(&next_file)? };
 
         **active = next_map;
@@ -452,92 +478,95 @@ impl PersistentArena {
         Ok(())
     }
 
-    /// Atomically replace the arena contents with a compacted version.
-    /// The caller must have already written the compacted data to `temp_base`
-    /// using a separate PersistentArena instance (which must be dropped before
-    /// calling this method so its file handles are released).
     pub fn replace_with_compacted(&self, temp_base: &Path) -> Result<()> {
-        let mut segments = self.read_segments.write();
-        let mut active = self.active_segment.write();
-
-        // 1. Release all mmaps by replacing with a dummy
-        segments.clear();
-        let dummy_path = self.base_path.join(".dummy_mmap");
-        let dummy_file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&dummy_path)?;
-        dummy_file.set_len(1)?;
-        *active = unsafe { MmapMut::map_mut(&dummy_file)? };
-
-        // 2. Delete all current segment files
-        for entry in std::fs::read_dir(&self.base_path)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.extension().is_some_and(|ext| ext == "bin") {
-                std::fs::remove_file(path)?;
-            }
+        let staged = Self::new(temp_base)?;
+        for i in 0..staged.stats().segment_count {
+            let path = temp_base.join(format!("seg_{i}.bin"));
+            let file = File::open(&path)?;
+            // SAFETY: the staged arena has no concurrent writer.
+            let map = unsafe { Mmap::map(&file)? };
+            super::admin::inspect_segment(&map, &path, true)?;
         }
-        let _ = std::fs::remove_file(&dummy_path);
-
-        // 3. Move compacted files into base path
-        for entry in std::fs::read_dir(temp_base)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.extension().is_some_and(|ext| ext == "bin") {
-                let dest = self.base_path.join(entry.file_name());
-                std::fs::rename(&path, &dest)?;
-            }
-        }
-
-        // 4. Re-open segments from the compacted files
-        let mut id = 0;
-        loop {
-            let p = self.base_path.join(format!("seg_{}.bin", id));
-            if !p.exists() {
-                break;
-            }
-            id += 1;
-        }
-
-        let active_id = if id > 0 { id - 1 } else { 0 };
-        for i in 0..active_id {
-            let p = self.base_path.join(format!("seg_{}.bin", i));
-            let file = File::open(&p)?;
-            let mmap = unsafe { Mmap::map(&file)? };
-            segments.push(Arc::new(mmap));
-        }
-
-        let active_path = self.base_path.join(format!("seg_{}.bin", active_id));
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(false)
-            .open(&active_path)?;
-        file.set_len(SEGMENT_SIZE as u64)?;
-        let new_mmap = unsafe { MmapMut::map_mut(&file)? };
-
-        let (recovered_offset, max_version) = Self::discover_offset(&new_mmap);
-
-        *active = new_mmap;
-        self.active_id.store(active_id, Ordering::SeqCst);
-        self.write_offset.store(recovered_offset, Ordering::SeqCst);
-        self.version_counter.store(
-            if recovered_offset > 0 {
-                max_version as usize + 1
-            } else {
-                0
-            },
-            Ordering::SeqCst,
+        staged.flush()?;
+        super::durable_file::sync_directory(temp_base)?;
+        drop(staged);
+        let generation = format!(
+            "gen-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)?
+                .as_nanos()
         );
-
-        // 5. Clean up temp directory
-        let _ = std::fs::remove_dir_all(temp_base);
-
+        let new_path = self.base_path.join(&generation);
+        std::fs::rename(temp_base, &new_path)?;
+        super::durable_file::sync_directory(&self.base_path)?;
+        let replacement = Self::new(&new_path)?;
+        #[cfg(test)]
+        compaction_crash_point("staged");
+        let mut active = self.active_segment.write();
+        let mut segments = self.read_segments.write();
+        let mut data_path = self.data_path.write();
+        active.flush()?;
+        // IMPORTANT: old mappings/files stay valid until the durable pointer commits.
+        let publication = super::durable_file::atomic_write(
+            &self.base_path.join("CURRENT"),
+            generation.as_bytes(),
+        );
+        if publication.is_err()
+            && super::durable_file::arena_generation(&self.base_path)? != new_path
+        {
+            return publication;
+        }
+        #[cfg(test)]
+        compaction_crash_point("published");
+        std::mem::swap(&mut *active, &mut *replacement.active_segment.write());
+        std::mem::swap(&mut *segments, &mut *replacement.read_segments.write());
+        let old_path = std::mem::replace(&mut *data_path, new_path);
+        self.active_id.store(
+            replacement.active_id.load(Ordering::Acquire),
+            Ordering::Release,
+        );
+        self.write_offset.store(
+            replacement.write_offset.load(Ordering::Acquire),
+            Ordering::Release,
+        );
+        self.version_counter.store(
+            replacement.version_counter.load(Ordering::Acquire),
+            Ordering::Release,
+        );
+        drop(replacement);
+        #[cfg(test)]
+        compaction_crash_point("mapped");
+        publication?;
+        if old_path != self.base_path {
+            if let Err(error) = std::fs::remove_dir_all(old_path) {
+                tracing::warn!(%error, "old arena generation could not be removed");
+            }
+        } else {
+            for entry in std::fs::read_dir(&self.base_path)? {
+                let entry = entry?;
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                if name.starts_with("seg_") && name.ends_with(".bin") {
+                    if let Err(error) = std::fs::remove_file(entry.path()) {
+                        tracing::warn!(%error, "legacy arena segment cleanup failed");
+                    }
+                }
+            }
+        }
         Ok(())
+    }
+
+    pub(crate) fn checkpoint(&self) -> (String, usize) {
+        (
+            self.data_path
+                .read()
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned(),
+            self.stats().used_bytes,
+        )
     }
 }
 
@@ -548,9 +577,53 @@ impl Drop for PersistentArena {
 }
 
 #[cfg(test)]
+fn compaction_crash_point(phase: &str) {
+    if std::env::var("HMS_TEST_COMPACTION_PHASE").as_deref() == Ok(phase) {
+        std::process::exit(73);
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn compaction_crash_child() -> Result<()> {
+        let Ok(root) = std::env::var("HMS_TEST_COMPACTION_ROOT") else {
+            return Ok(());
+        };
+        let root = PathBuf::from(root);
+        let arena = PersistentArena::new(root.join("arena"))?;
+        arena.write_slice(b"old generation")?;
+        let staged = PersistentArena::new(root.join("stage"))?;
+        staged.write_slice(b"new generation")?;
+        drop(staged);
+        arena.replace_with_compacted(&root.join("stage"))?;
+        Ok(())
+    }
+
+    #[test]
+    fn interrupted_compaction_recovers_a_complete_generation() -> Result<()> {
+        for phase in ["staged", "published", "mapped"] {
+            let root = tempdir()?;
+            let output = std::process::Command::new(std::env::current_exe()?)
+                .args(["--exact", "core::storage::tests::compaction_crash_child"])
+                .env("HMS_TEST_COMPACTION_ROOT", root.path())
+                .env("HMS_TEST_COMPACTION_PHASE", phase)
+                .output()?;
+            assert_eq!(output.status.code(), Some(73));
+            let arena = PersistentArena::new(root.path().join("arena"))?;
+            let expected: &[u8] = if phase == "staged" {
+                b"old generation"
+            } else {
+                b"new generation"
+            };
+            assert_eq!(arena.read_frame(0)?.0, expected);
+            arena.write_slice(b"after recovery")?;
+        }
+        Ok(())
+    }
 
     #[test]
     fn test_persistent_arena_persistence() -> Result<()> {

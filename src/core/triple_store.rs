@@ -1,13 +1,10 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use super::wire;
 use fxhash::FxHashMap;
 use parking_lot::RwLock;
 
-const TRIPLE_MAGIC: u8 = wire::magic::TRIPLE;
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TripleRecord {
     pub subject_id: String,
     pub relation_id: String,
@@ -84,6 +81,15 @@ impl TripleStore {
             }
         }
         false
+    }
+
+    pub fn remove_composite(&self, id: &str) {
+        let mut triples = self.triples.write();
+        if let Some(indices) = self.by_composite.read().get(id) {
+            for &i in indices {
+                triples[i].deleted = true;
+            }
+        }
     }
 
     pub fn query(
@@ -166,40 +172,6 @@ impl TripleStore {
             &record.composite_id,
         );
     }
-
-    pub fn serialize_triple(record: &TripleRecord) -> Vec<u8> {
-        let mut buf = Vec::new();
-        buf.push(TRIPLE_MAGIC);
-        for field in &[
-            &record.subject_id,
-            &record.relation_id,
-            &record.object_id,
-            &record.composite_id,
-        ] {
-            wire::write_lp_str(&mut buf, field);
-        }
-        buf
-    }
-
-    pub fn deserialize_triple(data: &[u8]) -> Option<TripleRecord> {
-        if data.is_empty() || data[0] != TRIPLE_MAGIC {
-            return None;
-        }
-        let mut pos = 1;
-        let mut fields = Vec::with_capacity(4);
-        for _ in 0..4 {
-            let (s, next) = wire::read_lp_str(data, pos)?;
-            pos = next;
-            fields.push(s);
-        }
-        Some(TripleRecord {
-            subject_id: fields.remove(0),
-            relation_id: fields.remove(0),
-            object_id: fields.remove(0),
-            composite_id: fields.remove(0),
-            deleted: false,
-        })
-    }
 }
 
 #[cfg(test)]
@@ -232,22 +204,5 @@ mod tests {
         assert!(store.remove("a", "r", "b"));
         assert_eq!(store.count(), 0);
         assert!(!store.remove("a", "r", "b"));
-    }
-
-    #[test]
-    fn test_triple_serialize_roundtrip() {
-        let record = TripleRecord {
-            subject_id: "paris".to_string(),
-            relation_id: "capital_of".to_string(),
-            object_id: "france".to_string(),
-            composite_id: "comp_1".to_string(),
-            deleted: false,
-        };
-        let data = TripleStore::serialize_triple(&record);
-        let parsed = TripleStore::deserialize_triple(&data).unwrap();
-        assert_eq!(parsed.subject_id, "paris");
-        assert_eq!(parsed.relation_id, "capital_of");
-        assert_eq!(parsed.object_id, "france");
-        assert_eq!(parsed.composite_id, "comp_1");
     }
 }

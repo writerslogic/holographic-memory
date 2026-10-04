@@ -14,31 +14,31 @@
 | Threat | Mitigation | Feature Flag |
 |--------|-----------|-------------|
 | Unauthorized read of stored data | AES-256-GCM encryption at rest | `security` |
-| Tampering with arena log | CRC32 integrity (default) + Ed25519 signatures (security) | default / `security` |
+| Tampering with arena log | CRC32 for accidental corruption; AES-GCM authentication when encrypted | default / `security` |
 | Repudiation of operations | Signed append-only audit trail | `security` |
 | Key extraction from disk | Ed25519 private key stored as raw 32 bytes; protect via OS file permissions | `security` |
-| Inference of original content from vectors | Hypervectors are lossy; see [PRIVACY.md](PRIVACY.md) | default |
+| Inference of original content from vectors | No inherent protection; see [PRIVACY.md](PRIVACY.md) | — |
 | Side-channel on signing | ed25519-dalek uses constant-time operations | `security` |
 
 ### Trust Boundaries
 
-- **System boundary**: All data entering via `memorize()`, `memorize_text()`, or `memorize_vector()` is encoded into lossy hypervectors before storage. Original content is not retained.
-- **Storage boundary**: Arena segments, index files, and audit logs reside on local disk. Encryption at rest protects against offline access.
+- **System boundary**: Vector APIs retain representations; document APIs retain source passages by default, plus terms, metadata, source identifiers, and optional dense embeddings. Lossy encoding does not prevent inference.
+- **Storage boundary**: Arena payloads and index files can be encrypted. Schema metadata, filesystem structure, audit/provenance sidecars, and signing keys have separate policies; encryption does not conceal every file or access pattern.
 - **N-API boundary**: Node.js callers interact via typed N-API bindings. Input validation occurs at the Rust boundary (ID length checks, dimension bounds, passphrase presence).
 
 ## Cryptographic Choices
 
 ### Ed25519 Signing
 
-- **Library**: `ed25519-dalek` v2 (pure Rust, constant-time)
-- **Key generation**: `rand::thread_rng()` (OS CSPRNG via `getrandom`)
+- **Library**: `ed25519-dalek` v3 (pure Rust, constant-time)
+- **Key generation**: `rand::rng()` (OS CSPRNG via `getrandom`)
 - **Key storage**: Raw 32-byte secret key at `{storage_path}/hms_signing.key`
 - **What is signed**: Each audit entry's signable prefix: `[timestamp_ms: u64][op: u8][id_hash: 32]` = 41 bytes
 - **Verification**: Public key derived from stored secret key on load
 
 ### AES-256-GCM Encryption
 
-- **Library**: `aes-gcm` v0.10 (AES-NI hardware acceleration where available)
+- **Library**: `aes-gcm` v0.11 (AES-NI hardware acceleration where available)
 - **Key derivation**: Argon2id (default parameters) from user passphrase + 16-byte random salt
 - **Salt storage**: `{storage_path}/encryption.salt` (generated once, persisted)
 - **Nonce**: 12-byte random per encryption operation (prepended to ciphertext)
@@ -56,7 +56,7 @@
 2. **No access control**: HMS has no user/role model. Access control must be enforced by the calling application.
 3. **Passphrase in config**: The encryption passphrase is passed via `SecurityConfig`. The calling application is responsible for secure passphrase management (environment variables, secret managers).
 4. **CRC32 is not cryptographic**: Without the `security` feature, arena integrity relies on CRC32, which detects accidental corruption but not adversarial tampering.
-5. **No forward secrecy**: A compromised signing key allows forging future entries (but not altering past entries already written to disk).
+5. **No forward secrecy or externally anchored history**: A compromised signing key can forge entries. Per-entry signatures do not detect deletion, truncation, or reordering of otherwise valid records without an independently retained history.
 6. **Salt reuse across sessions**: The Argon2 salt is generated once per storage path. This is acceptable for single-user local storage but not for multi-tenant deployments.
 
 ## Audit Trail
@@ -98,7 +98,7 @@ The clip factor is configurable via `MeaningConfig`:
 config.meaning.idf_clip_factor = 3.0; // default: cap at 3x median
 ```
 
-Lower values provide stronger poisoning resistance at the cost of reduced discrimination between rare and common dimensions. A clip factor of 2.0 is recommended for adversarial environments. Values below 1.5 may degrade retrieval quality for legitimate queries.
+Lower values provide stronger poisoning resistance at the cost of reduced discrimination between rare and common dimensions. Evaluate the effect on your own retrieval and adversarial fixtures; no clipping value provides a general poisoning-resistance guarantee.
 
 ### Limitations
 
@@ -132,10 +132,12 @@ let hms = HmsCore::new(16384, Some("./storage".to_string()), Some(config))?;
 const hms = new HolographicMemorySystem(16384, './storage', {
   signingEnabled: true,
   encryptionEnabled: true,
-  encryptionPassphrase: process.env.HMS_PASSPHRASE,
+  encryptionPassphraseEnv: 'HMS_PASSPHRASE',
   auditEnabled: true,
 });
 
 // Query audit trail
 const entries = await hms.auditSince(Date.now() - 86400000); // last 24h
 ```
+
+Custom builds fail if requested encryption/signing support is unavailable. The standard npm build includes `security`; use `securityStatus()` to confirm active configuration. Audit/provenance sidecar failures can occur after the main arena mutation commits. See [production-readiness.md](production-readiness.md) for transaction and failure boundaries.

@@ -53,12 +53,6 @@ impl InvertedLists {
             Ok(Vec::new())
         }
     }
-
-    /// Clear all inverted lists. Critical for correct re-training.
-    pub fn clear_all(&self) -> Result<()> {
-        self.lists.write().clear();
-        Ok(())
-    }
 }
 
 #[cfg(test)]

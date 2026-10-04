@@ -8,6 +8,8 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   core/
   +-- engine/
   |   +-- mod.rs                HmsCore: main orchestrator
+  |   +-- mutation.rs           Validated, logged transactions and replay
+  |   +-- document_api.rs       Document lifecycle and bounded batches
   |   +-- query.rs              Query routing and execution
   |   +-- router.rs             Adaptive retrieval strategy selection
   |   +-- shard.rs              ShardSet, ShardManager, Shard
@@ -37,7 +39,7 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   +-- entangled.rs              EntangledHVec: sparse binary hypervector type
   +-- ternary.rs                TernaryHVec: ternary {-1, 0, +1} hypervector type
   +-- algebra.rs                HolographicAlgebra trait (EntangledHVec, TernaryHVec)
-  +-- encoding.rs               Text -> hypervector (character trigrams)
+  +-- encoding.rs               Text -> sparse vector (multiscale words and character n-grams)
   +-- block_codes.rs            BlockCodeVec: structured block-code bundles
   +-- bloom_memory.rs           BloomMemory: Bloom-filter-based bundled storage
   +-- cls_memory.rs             CLSMemory: concept-level sparse memory
@@ -47,7 +49,10 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   +-- decompose.rs              Decomposer: vector decomposition
   +-- sparse_autoencoder.rs     Sparse autoencoder for representation learning
   +-- graph.rs                  Graph engine: typed relations, multi-hop BFS, temporal
-  +-- storage.rs                PersistentArena: mmap segmented log
+  +-- documents.rs              Chunking, metadata filters, BM25/cosine rank fusion
+  +-- schema.rs                 Store and embedding-space compatibility
+  +-- durable_file.rs           Flushed atomic file publication
+  +-- storage.rs                PersistentArena: mmap segmented log and generations
   +-- config.rs                 HmsConfig, MeaningConfig, CognitionConfig, and sub-configs
   +-- security.rs               SigningManager, EncryptionManager (feature-gated)
   +-- audit.rs                  AuditLog: append-only operation log
@@ -151,94 +156,75 @@ multi_hop_query(start, [rel1, rel2, ...], ctx, rule_store)
        chained_lookup -> TripleStore walk, hop by hop
 ```
 
-## Lock Ordering
+## Transactions and lock ordering
 
-Strict ordering prevents deadlocks:
+Persistent vector, document, graph, triple, and rule mutations take `mutation_gate.write()`
+before the shard/component locks. Main vector/document/structural/graph queries take its read
+lock. A mutation validates its complete operation list, logs one framed transaction, then
+applies every operation to memory. This gate also serializes compaction and index publication.
+Audit and provenance sidecars are separate operations after the main transaction.
 
-```
-ShardSet (read/write) -> Shard.vectors -> Shard.ivf -> Shard.nsg
-```
+Within a shard, vector/registry/posting changes and cache invalidation follow the shard's lock
+order. Index training copies a consistent snapshot, releases the gate while training, then
+checks the revision before publishing. A stale training run returns an explicit retry error.
 
-The Arena lock is independent (managed internally by `PersistentArena`). Arena writes acquire an exclusive write lock on `active_segment`; reads acquire a shared read lock.
+## Write and recovery paths
 
-The AuditLog uses its own `Mutex<File>` independent of all other locks.
-
-## Data Flow
-
-### Write Path (memorize)
-
-```
-memorize(id, vector)
-  -> serialize_log_entry(id, vector)     // [id_len:u16][id][delta_count:u32][deltas:u32*]
-  -> maybe_encrypt(entry)                // AES-256-GCM if enabled
-  -> arena.write_slice(payload)          // LZ4 compress, CRC32, write to mmap
-  -> audit.record(Memorize, id)          // append to audit.bin (optional)
-  -> shards.insert(id, vector)           // update in-memory index
-  -> auto-train check                    // IVF/NSG/auto-shard thresholds
-```
-
-### Read Path (query)
-
-```
-query(query_vec, k)
-  -> router.plan(collection_stats)       // choose strategy: brute/NSG/IVF/inverted
-  -> shards.for_each_shard(|shard| {
-       execute_plan(shard, query_vec, k) // parallel per-shard query
-     })
-  -> merge and sort by similarity        // top-k across all shards
+```text
+public mutation
+  -> validate dimensions, identifiers, limits, and complete operation list
+  -> acquire transaction write gate and shard write lock
+  -> serialize HMS-TXN-2 + typed mutations as one record
+  -> optional authenticated encryption
+  -> CRC-framed append and mmap flush
+  -> apply vectors, postings, documents, triples, relations, and rule changes
+  -> increment data revision
 ```
 
-### Recovery Path (load_from_log)
+Recovery validates the schema before opening data, resolves the active `CURRENT` generation,
+validates arena frames, decrypts authenticated payloads when configured, and replays typed
+transactions in order. Main-data decryption/replay failures are errors. ANN caches are optional:
+only checksummed files with matching shard topology and arena checkpoints are loaded. Invalid
+or stale caches are discarded; inverted indices are reconstructed from live vectors.
 
-```
-HmsCore::new()
-  -> PersistentArena::new()
-     -> discover_offset()                // walk frames, validate CRC32, find write head
-  -> load_from_log()
-     -> for each frame:
-        arena_read_frame(offset)         // read + maybe_decrypt
-        parse_log_payload()              // extract id + vector (or tombstone)
-        shards.insert/remove()           // rebuild in-memory state
-  -> load_indices()                      // load NSG/IVF from disk (maybe_decrypt)
-  -> rebuild_inverted_index()            // reconstruct sparse inverted index
-```
+## Compaction
 
-## Persistence Guarantees
+Compaction excludes persistent mutations and main queries. It snapshots live vectors, documents,
+atoms, composites, triples, relation types, relations, rules, and derived-fact ownership into a
+new arena. It flushes and verifies the arena, installs a generation directory, then publishes
+`CURRENT` with an atomic file replacement. Old files are cleaned up only after publication.
+A process interruption therefore selects either the complete old or complete new generation.
+Directory publication is synced on Unix; platform/filesystem durability limits are documented
+in [production-readiness.md](production-readiness.md).
 
-### Arena Log
+Document and meaning-derived chunk IDs have reserved prefixes. Updating or deleting a document
+removes its owned chunks. Replacing or deleting a meaning source removes its owned inferred
+triples; the ownership mapping survives compaction and recovery. Explicit triplet replacement
+removes the prior structural record before inserting the new one.
 
-- **Append-only**: New entries are appended to the active mmap segment. No in-place mutation.
-- **CRC32 framing**: Each frame has a CRC32 checksum over decompressed data. Corrupt frames are rejected on recovery.
-- **Crash safety**: `mmap::flush_range()` after each write. Partial writes are detected by CRC32 failure during `discover_offset()`.
-- **Segment rotation**: When a segment fills (1 GB), a new segment is created. Old segments become read-only.
+## Retrieval paths
 
-### Compaction
+Sparse vector queries use the adaptive router to select brute-force, inverted, NSG, or IVF
+retrieval. Replacements and deletions update postings incrementally, reuse slots, and invalidate
+incompatible ANN caches. No training is hidden inside ingestion. `indexStatus` reports
+recommendations; the application schedules `maintainIndices`.
 
-- **Snapshot isolation**: Acquires exclusive `shards` write lock, snapshots all live vectors.
-- **Atomic swap**: Writes snapshot to temp directory, then atomically replaces arena files via `replace_with_compacted()`.
-- **Index preservation**: NSG and IVF indices are re-saved after compaction.
+Document queries first filter metadata/source/document IDs, then compute BM25 over lexical
+terms and optional exact cosine over normalized stored dense embeddings. Weighted reciprocal
+rank fusion combines the rankings. The optional JavaScript adapter embeds queries locally and
+reranks candidate passages with a local ONNX cross-encoder. This document path currently scans
+eligible chunks; it does not use the sparse ANN graph as a dense-vector approximation.
 
-### Delete Semantics
+`semantic.js` batches model inference and provides a bounded operation queue. Async iterable
+ingestion awaits each document, preventing unbounded pending native/model work. Model identity,
+artifact revision, preprocessing fingerprint, dimensions, normalization, and metric must match
+the store's embedding space.
 
-- **Tombstone-first**: Tombstone (delta_count = 0xFFFFFFFF) is written to arena before in-memory removal.
-- **Crash recovery**: If crash occurs after tombstone write but before memory removal, `load_from_log` replays the tombstone and correctly removes the vector.
+## Validation
 
-## Concurrency Model
-
-- **Readers**: Multiple concurrent readers via `RwLock<ShardSet>` read lock.
-- **Writers**: `memorize()` acquires shard read lock (concurrent with other memorizes). Arena writes are serialized by `PersistentArena`'s internal write lock.
-- **Compact**: Acquires exclusive shard write lock, blocking all concurrent reads and writes.
-- **Auto-train**: NSG/IVF training acquires shard read lock and index write lock within a single shard.
-
-## Retrieval Strategies
-
-The `router` module selects strategy based on collection statistics:
-
-| Condition | Strategy | Complexity |
-|-----------|----------|-----------|
-| < 1000 vectors | Brute force | O(n) |
-| NSG trained | Graph search (greedy) | O(log n) |
-| IVF trained | Inverted file + PQ | O(n/k) per probe |
-| High query sparsity | Sparse inverted index | O(active_indices) |
-
-Strategy selection is automatic per-query based on the `QueryPlan` generated by `router::plan()`.
+`tests/reliability.rs` covers signed projections, structural answers, durable deletes, ANN
+restart/corruption handling, and concurrent writes/compaction. `tests/documents.rs` covers source
+offsets, filters, versions, semantic candidates, bounded ingestion, and atomic source migration.
+Storage unit tests inject child-process exits around compaction publication. Native Node tests
+exercise actual CJS/ESM bindings, encryption failure, file ingestion, and queue backpressure.
+A packed-install smoke test loads the distributable native module and document adapter.

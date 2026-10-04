@@ -3,9 +3,6 @@
 
 use super::entangled::EntangledHVec;
 use super::indexed_memory::IndexedMemory;
-use super::wire;
-
-const COMPOSITE_MAGIC: u8 = wire::magic::COMPOSITE;
 
 pub struct CompositeMemory {
     inner: IndexedMemory,
@@ -48,31 +45,8 @@ impl CompositeMemory {
         self.inner.rebuild_indices();
     }
 
-    pub fn load_composite(&self, id: String, vec: EntangledHVec) {
-        self.inner.insert(id, vec);
-    }
-
     pub fn inner(&self) -> &IndexedMemory {
         &self.inner
-    }
-
-    pub fn serialize_composite(id: &str, vec: &EntangledHVec) -> Vec<u8> {
-        let deltas = vec.to_deltas();
-        let mut buf = Vec::with_capacity(1 + 2 + id.len() + 4 + deltas.len() * 4);
-        buf.push(COMPOSITE_MAGIC);
-        wire::write_lp_str(&mut buf, id);
-        wire::write_deltas(&mut buf, &deltas);
-        buf
-    }
-
-    pub fn deserialize_composite(data: &[u8], dim: usize) -> Option<(String, EntangledHVec)> {
-        if data.is_empty() || data[0] != COMPOSITE_MAGIC {
-            return None;
-        }
-        let (id, pos) = wire::read_lp_str(data, 1)?;
-        let (deltas, _) = wire::read_deltas(data, pos)?;
-        let vec = EntangledHVec::from_deltas(&deltas, dim);
-        Some((id, vec))
     }
 }
 
@@ -91,14 +65,5 @@ mod tests {
         let results = mem.overlap_scan(&v1);
         assert!(!results.is_empty());
         assert_eq!(results[0].0, 0);
-    }
-
-    #[test]
-    fn test_composite_serialize_roundtrip() {
-        let vec = EntangledHVec::new_deterministic(16384, 42);
-        let data = CompositeMemory::serialize_composite("triple_1", &vec);
-        let (id, parsed) = CompositeMemory::deserialize_composite(&data, 16384).unwrap();
-        assert_eq!(id, "triple_1");
-        assert!((parsed.similarity(&vec) - 1.0).abs() < 0.0001);
     }
 }

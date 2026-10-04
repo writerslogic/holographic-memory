@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "vectors": 1200,
+  "queries": 50,
+  "dimensions": 4096,
+  "recall_at_1": 0.94,
+  "mean_latency_us": 116.23756000000002,
+  "p95_latency_us": 174.417,
+  "route": "nsg"
+}

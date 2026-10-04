@@ -19,6 +19,7 @@ pub struct SparseInvertedIndex {
     pub doc_count: usize,
     /// Document frequencies (count of docs per dimension).
     pub df: Vec<u32>,
+    lengths: Vec<usize>,
 }
 
 impl SparseInvertedIndex {
@@ -29,6 +30,7 @@ impl SparseInvertedIndex {
             dimensions,
             doc_count: 0,
             df: vec![0; dimensions],
+            lengths: Vec::new(),
         }
     }
 
@@ -36,11 +38,31 @@ impl SparseInvertedIndex {
     pub fn add_doc(&mut self, doc_id: u32, dims: &[u32]) {
         for &dim in dims {
             if (dim as usize) < self.dimensions {
-                self.postings[dim as usize].push(doc_id);
+                let list = &mut self.postings[dim as usize];
+                let at = list.partition_point(|&id| id < doc_id);
+                list.insert(at, doc_id);
                 self.df[dim as usize] += 1;
             }
         }
+        self.lengths
+            .resize(self.lengths.len().max(doc_id as usize + 1), 0);
+        self.lengths[doc_id as usize] = dims.len();
         self.doc_count += 1;
+    }
+
+    pub fn remove_doc(&mut self, doc_id: u32, dims: &[u32]) {
+        for &dim in dims {
+            if let Some(list) = self.postings.get_mut(dim as usize) {
+                if let Ok(i) = list.binary_search(&doc_id) {
+                    list.remove(i);
+                    self.df[dim as usize] -= 1;
+                }
+            }
+        }
+        self.doc_count = self.doc_count.saturating_sub(1);
+        if let Some(len) = self.lengths.get_mut(doc_id as usize) {
+            *len = 0;
+        }
     }
 
     /// Ensure all posting lists are sorted (if not added monotonically).
@@ -88,13 +110,12 @@ impl SparseInvertedIndex {
         // 4. Compute Jaccard and extract Top-K
         // Jaccard = inter / (m_q + m_d - inter).
         // With fixed sparsity m_q = m_d = self.m.
-        let m_f = self.m as f64;
         let mut heap = BinaryHeap::with_capacity(k + 1);
 
         // We only need to check doc_ids that were touched
         for &doc_id in &accumulator.touched {
             let inter = accumulator.get_count(doc_id) as f64;
-            let denom = 2.0 * m_f - inter;
+            let denom = query_dims.len() as f64 + self.lengths[doc_id as usize] as f64 - inter;
             let similarity = if denom > f64::EPSILON {
                 inter / denom
             } else {
@@ -119,7 +140,7 @@ impl SparseInvertedIndex {
 
 /// Thread-local or reusable accumulator to avoid allocations.
 pub struct Accumulator {
-    counts: Vec<u16>,
+    counts: Vec<u32>,
     seen: Vec<u32>,
     epoch: u32,
     touched: Vec<u32>,
@@ -137,7 +158,7 @@ impl Accumulator {
 
     /// Prepare for a new query.
     pub fn next_epoch(&mut self) {
-        self.epoch += 1;
+        self.epoch = self.epoch.wrapping_add(1);
         self.touched.clear();
         // If epoch wraps, we must zero the 'seen' array.
         if self.epoch == 0 {
@@ -166,7 +187,7 @@ impl Accumulator {
     }
 
     #[inline(always)]
-    pub fn get_count(&self, doc_id: u32) -> u16 {
+    pub fn get_count(&self, doc_id: u32) -> u32 {
         let idx = doc_id as usize;
         if idx < self.seen.len() && self.seen[idx] == self.epoch {
             self.counts[idx]
@@ -195,10 +216,10 @@ mod tests {
         assert_eq!(results.len(), 3);
         assert_eq!(results[0].id, "0");
         // inter=3, m=4. J = 3 / (4 + 4 - 3) = 3/5 = 0.6
-        assert!((results[0].similarity - 0.6).abs() < 1e-6);
+        assert!((results[0].similarity - 0.75).abs() < 1e-6);
 
         assert_eq!(results[1].id, "2");
         // inter=2, m=4. J = 2 / (4 + 4 - 2) = 2/6 = 0.333
-        assert!((results[1].similarity - 0.333333).abs() < 1e-5);
+        assert!((results[1].similarity - 0.4).abs() < 1e-5);
     }
 }

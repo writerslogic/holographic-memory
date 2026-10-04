@@ -1,55 +1,44 @@
-# Integration Guide
+# Integration guide
 
-HMS is designed to be highly portable. The crate provides high-performance Node.js bindings and a curated Python binding for the quantized-phase substrate. The core Rust engine remains available directly for Rust applications.
+## Rust
 
-## 1. Rust Integration (Library)
+Use `HmsCore` for vectors, documents, and structural knowledge. The default feature set is
+empty; enable `security` for encryption/signing and `provenance` for provenance APIs. Optional
+experimental modules have separate compatibility guarantees. Rust 1.89 or newer is required.
 
-Since the project uses a decoupled architecture, you can use HMS as a standard Rust library in other Rust projects.
-
-Add it to your `Cargo.toml`:
-```toml
-[dependencies]
-holographic-memory = "0.6"
-```
-
-Usage in Rust:
 ```rust
-use holographic_memory::{HmsCore, EntangledHVec};
+use holographic_memory::HmsCore;
 
-fn main() {
-    let hms = HmsCore::new(10000, None, None).unwrap();
-    let vec = hms.encode_text("hello world");
-    hms.memorize("id1".to_string(), vec).unwrap();
+fn main() -> anyhow::Result<()> {
+    let memory = HmsCore::new(16384, Some("./memory".into()), None)?;
+    memory.memorize("greeting".into(), memory.encode_text("hello world"))?;
+    memory.flush()?;
+    Ok(())
 }
 ```
 
-## 2. Cross-Language Principles
+## Node.js
 
-If you are implementing HMS in a language not supported by Rust's FFI, you can implement the **Binary Spatter Code (BSC)** principles:
+CommonJS and ESM both export `HolographicMemorySystem`. Native operations return promises when
+work is scheduled off the event loop. For documents, import `DocumentMemory` from
+`holographic-memory/semantic`; it serializes model work, bounds its queue, and supports async
+iterable ingestion. The default document search is lexical BM25. Add an embedder for cosine
+semantic candidates and optional reranking. See [the example](../examples/local-documents.mjs)
+and the README for the complete setup.
 
-### Encoding
-1. **N-Grams**: Break text into chunks of 3 characters.
-2. **Deterministic Hashing**: Use a seeded PRNG (like `StdRng` with character code as seed) to generate a high-dimensional bit vector for each character.
-3. **Permutation**: Apply a cyclic shift (rotate bits) based on the character's position in the N-gram.
-4. **Binding**: XOR the character vectors within the N-gram.
-5. **Bundling**: Apply a majority rule (bit-count) across all N-gram vectors to produce the final document vector.
+Install `@huggingface/transformers` separately to use the local ONNX factories. Supply an
+existing model directory and explicit model/revision identity. The store schema must match
+the adapter's embedding space. Keep models alive while operations are pending and dispose
+of them after ingestion/search finishes. No model is downloaded by these factories.
 
-## 3. WebAssembly (Wasm)
+`memorizeFile` now ingests a bounded UTF-8 file as chunks. Use `searchDocuments` to retrieve
+passages and `deleteDocument` to remove it. The earlier whole-file vector behavior can be
+expressed explicitly with `memorizeText` for bounded inputs if needed.
 
-You can compile the `core` module to Wasm using `wasm-pack` for use in browser-based environments or Edge workers.
+## Python
 
-```bash
-wasm-pack build -- --no-default-features
-```
-
-## 4. Python integration
-
-The Python package currently exposes `PhaseHVec` and `PhaseResonator` through the `python`
-feature. It is intentionally not a full mirror of the Rust or Node engine API yet:
-
-```bash
-maturin develop --features python
-```
+The Python wheel exposes `PhaseHVec` and `PhaseResonator`, not the persistent document/search
+engine. Build with `maturin develop --features python`:
 
 ```python
 from holographic_memory import PhaseHVec
@@ -59,6 +48,13 @@ b = PhaseHVec.random(1024, 8, 2)
 assert -1.0 <= a.similarity(b) <= 1.0
 ```
 
-## 5. REST API / Microservice
+## Portability
 
-The recommended way to integrate with non-Rust/Node environments (Python, Go, Ruby) is to wrap this crate in a small Express or Fastify service and communicate over JSON-RPC or REST.
+Use the Rust or native Node APIs for interoperable encodings. The current text encoder is
+versioned as `multiscale-words-v1`; a generic character-trigram implementation does not produce
+compatible vectors. Dense projection version 2 preserves sign, and old vectors must be
+re-encoded from their original inputs. See [migration](production-readiness.md).
+
+The persistent engine depends on native file locking and mmap. This repository does not
+provide a supported browser/Wasm binding. Applications in other languages can expose their
+own service around the native engine with authentication and limits appropriate to their use.

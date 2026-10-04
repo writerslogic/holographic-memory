@@ -41,20 +41,32 @@ impl IndexedMemory {
     }
 
     pub fn insert(&self, id: String, vec: EntangledHVec) -> u32 {
-        let mut vecs = self.vectors.write();
-        let idx = vecs.len() as u32;
-        self.postings.write().insert(idx, vec.indices());
-        self.idf
-            .write()
-            .update_insert(vec.indices(), &self.postings.read());
-        self.id_to_idx.write().insert(id.clone(), idx as usize);
-        vecs.push((id, vec));
-        idx
+        let mut vectors = self.vectors.write();
+        let mut ids = self.id_to_idx.write();
+        let mut postings = self.postings.write();
+        let mut tombstones = self.tombstones.write();
+        let mut idf = self.idf.write();
+        let index = if let Some(&index) = ids.get(&id) {
+            if !tombstones.is_deleted(index as u32) {
+                postings.remove(index as u32, vectors[index].1.indices());
+                idf.update_remove(vectors[index].1.indices(), &postings);
+            }
+            tombstones.restore(index as u32);
+            vectors[index].1 = vec.clone();
+            index as u32
+        } else {
+            let index = vectors.len();
+            ids.insert(id.clone(), index);
+            vectors.push((id, vec.clone()));
+            index as u32
+        };
+        postings.insert(index, vec.indices());
+        idf.update_insert(vec.indices(), &postings);
+        index
     }
 
     pub fn get(&self, id: &str) -> Option<EntangledHVec> {
-        let map = self.id_to_idx.read();
-        let idx = *map.get(id)?;
+        let idx = *self.id_to_idx.read().get(id)?;
         let vecs = self.vectors.read();
         if self.tombstones.read().is_deleted(idx as u32) {
             return None;
@@ -76,13 +88,22 @@ impl IndexedMemory {
     }
 
     pub fn delete(&self, id: &str) -> bool {
-        let map = self.id_to_idx.read();
-        if let Some(&idx) = map.get(id) {
-            self.tombstones.write().mark_deleted(idx as u32);
-            true
-        } else {
-            false
+        let vectors = self.vectors.read();
+        let ids = self.id_to_idx.read();
+        let Some(&index) = ids.get(id) else {
+            return false;
+        };
+        let mut postings = self.postings.write();
+        let mut tombstones = self.tombstones.write();
+        if tombstones.is_deleted(index as u32) {
+            return false;
         }
+        postings.remove(index as u32, vectors[index].1.indices());
+        tombstones.mark_deleted(index as u32);
+        self.idf
+            .write()
+            .update_remove(vectors[index].1.indices(), &postings);
+        true
     }
 
     pub fn overlap_scan(&self, query: &EntangledHVec) -> Vec<(u32, f32)> {

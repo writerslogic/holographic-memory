@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-14",
+  "status": "unreleased working tree",
+  "cpu": "Apple M4",
+  "platform": "macOS arm64",
+  "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+  "node": "v26.8.1",
+  "default_rust_tests_passed": 310,
+  "all_features_rust_tests_passed": 437,
+  "checks_passed": [
+    "cargo fmt --check",
+    "clippy all targets and features, warnings denied",
+    "Rust 1.89 MSRV check",
+    "cargo bench --no-run --no-default-features",
+    "release native build",
+    "native Node API/restart/security/queue tests",
+    "strict TypeScript consumer test",
+    "packed CJS/ESM/native/document API install",
+    "cargo deny advisories/bans/licenses/sources",
+    "npm audit: zero reported vulnerabilities",
+    "document relevance floor",
+    "synthetic recall floor",
+    "real local embedding and reranker evaluation"
+  ],
+  "ci_configured": [
+    "Linux native and packed tests",
+    "macOS native and packed tests",
+    "Windows native and packed tests"
+  ],
+  "notes": [
+    "CI platform jobs have not been run remotely for this working tree.",
+    "cargo-deny passed with warnings for a yanked dependency and an obsolete advisory exception.",
+    "Performance reports are short local runs, not capacity or throughput guarantees."
+  ]
+}

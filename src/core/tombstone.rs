@@ -20,6 +20,12 @@ impl TombstoneMap {
         self.bits[word] |= 1u64 << bit;
     }
 
+    pub fn restore(&mut self, vec_id: u32) {
+        if let Some(word) = self.bits.get_mut(vec_id as usize / 64) {
+            *word &= !(1u64 << (vec_id as usize % 64));
+        }
+    }
+
     pub fn is_deleted(&self, vec_id: u32) -> bool {
         let word = vec_id as usize / 64;
         let bit = vec_id as usize % 64;

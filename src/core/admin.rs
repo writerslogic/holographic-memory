@@ -58,6 +58,7 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
         );
     }
 
+    let arena_path = super::durable_file::arena_generation(&arena_path)?;
     let mut segment_count = 0usize;
     let mut frame_count = 0usize;
     let mut logical_bytes = 0u64;
@@ -110,7 +111,11 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
     })
 }
 
-fn inspect_segment(data: &[u8], path: &Path, verify_checksums: bool) -> Result<(usize, usize)> {
+pub(crate) fn inspect_segment(
+    data: &[u8],
+    path: &Path,
+    verify_checksums: bool,
+) -> Result<(usize, usize)> {
     let mut offset = 0usize;
     let mut frames = 0usize;
     while offset + HEADER_SIZE <= data.len() {
@@ -227,6 +232,67 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Re-encode original JSONL source documents into a new, atomically published store.
+pub fn reencode_documents(
+    input: impl AsRef<Path>,
+    destination: impl AsRef<Path>,
+    dimensions: u32,
+    config: super::HmsConfig,
+) -> Result<StoreInspection> {
+    use std::io::{BufRead, BufReader, Read};
+    let destination = destination.as_ref();
+    if destination.exists() {
+        bail!("re-encoding destination already exists");
+    }
+    let parent = destination
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    std::fs::create_dir_all(parent)?;
+    let temporary = tempfile::Builder::new()
+        .prefix(".hms-reencode-")
+        .tempdir_in(parent)?;
+    let mut source = BufReader::new(File::open(input.as_ref())?);
+    {
+        let hms = super::HmsCore::new(
+            dimensions,
+            Some(temporary.path().display().to_string()),
+            Some(config),
+        )?;
+        let mut line_number = 0;
+        loop {
+            let mut line = String::new();
+            let bytes = source
+                .by_ref()
+                .take(16 * 1024 * 1024 + 1)
+                .read_line(&mut line)?;
+            if bytes == 0 {
+                break;
+            }
+            line_number += 1;
+            if bytes > 16 * 1024 * 1024 {
+                bail!("JSONL line {line_number} exceeds 16 MiB");
+            }
+            if line.trim().is_empty() {
+                continue;
+            }
+            let document: super::documents::DocumentInput = serde_json::from_str(&line)
+                .with_context(|| format!("invalid source document on line {line_number}"))?;
+            hms.memorize_document(document)
+                .with_context(|| format!("cannot re-encode line {line_number}"))?;
+        }
+        hms.flush()?;
+    }
+    let inspection = inspect_store(temporary.path(), true)?;
+    super::durable_file::sync_directory(temporary.path())?;
+    std::fs::rename(temporary.path(), destination)?;
+    super::durable_file::sync_directory(parent)?;
+    Ok(StoreInspection {
+        store_path: destination.display().to_string(),
+        ..inspection
+    })
 }
 
 #[cfg(test)]

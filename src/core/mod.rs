@@ -4,6 +4,8 @@
 pub mod admin;
 pub(crate) mod admission;
 pub mod agency;
+pub(crate) mod durable_file;
+pub(crate) mod schema;
 // Experimental VSA research modules. Reachable only from the `src/bin/*`
 // experiment harnesses (or fully orphaned) and not used by `HmsCore`. Gated
 // behind the `experimental` feature so they are not part of the crate's
@@ -33,8 +35,11 @@ pub(crate) mod decompose;
 // Phasor relational memory: rotation-typed relations over a quantized-phase
 // histogram field -- relation algebra + retrieval the sparse core cannot do.
 pub(crate) mod diffusion;
+pub mod documents;
 pub mod encoding;
 pub mod engine;
+pub mod cloud;
+pub mod simd_math;
 pub mod entangled;
 pub(crate) mod error;
 pub(crate) mod graph;
@@ -66,7 +71,6 @@ pub(crate) mod text;
 pub(crate) mod tombstone;
 pub(crate) mod triple_store;
 pub(crate) mod types;
-pub(crate) mod wire;
 
 pub use config::HmsConfig;
 pub use engine::HmsCore;
@@ -74,3 +78,4 @@ pub use phase_hvec::PhaseHVec;
 pub use phase_resonator::{
     phase_resonator_factorize, FactorResult, PhaseResonator, ResonatorConfig,
 };
+pub use schema::EmbeddingSpace;
