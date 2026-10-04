@@ -136,3 +136,7 @@ required-features = ["experimental"]
 lto = true
 strip = true
 opt-level = 3
+
+[[example]]
+name = "zero_trust_demo"
+required-features = ["experimental"]

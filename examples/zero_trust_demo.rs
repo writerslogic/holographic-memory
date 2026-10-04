@@ -1,4 +1,5 @@
 use holographic_memory::core::algebra::HolographicAlgebra;
+
 use holographic_memory::core::entangled::EntangledHVec;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
