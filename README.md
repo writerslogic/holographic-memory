@@ -1,6 +1,10 @@
-<img src="./assets/logo.png" width="120" alt="Holographic Memory System" align="left">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./assets/logo-black.svg">
+  <img src="./assets/logo-black.svg" width="120" alt="Holographic Memory System" align="left">
+</picture>
 
-<h1>Holographic Memory System (HMS)</h1>
+<h3>Holographic Memory System (HMS)</h3>
 <p><strong>Privacy-preserving semantic search and associative memory — runs entirely on your machine.</strong></p>
 
 <br clear="left">
