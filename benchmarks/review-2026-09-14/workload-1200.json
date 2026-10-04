@@ -1,0 +1,14 @@
+{
+  "architecture": "aarch64",
+  "dimensions": 4096,
+  "elapsed_seconds": 0.008910166,
+  "hms_version": "0.6.0",
+  "live_vectors": 1200,
+  "operations_per_thread": 300,
+  "os": "macos",
+  "query_p95_ms": 0.049249999999999995,
+  "query_p99_ms": 0.769375,
+  "update_p95_ms": 0.041208999999999996,
+  "update_p99_ms": 0.059459,
+  "vectors": 1200
+}

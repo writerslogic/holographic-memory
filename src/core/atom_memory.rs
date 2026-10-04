@@ -3,9 +3,6 @@
 
 use super::entangled::EntangledHVec;
 use super::indexed_memory::{hopfield_cleanup, CleanupResult, IndexedMemory};
-use super::wire;
-
-const ATOM_MAGIC: u8 = wire::magic::ATOM;
 
 pub struct AtomMemory {
     inner: IndexedMemory,
@@ -24,16 +21,12 @@ impl AtomMemory {
                 return (idx, vec);
             }
         }
-        let seed = super::encoding::hash_str_seed(atom_str, ATOM_MAGIC as u64);
-        let vec = EntangledHVec::new_deterministic(self.inner.dim(), seed);
+        let vec = super::encoding::encode_text_internal(atom_str, self.inner.dim());
         let idx = self.inner.insert(atom_str.to_string(), vec.clone());
         (idx, vec)
     }
 
     pub fn insert_with_vec(&self, id: &str, vec: &EntangledHVec) -> u32 {
-        if let Some(idx) = self.inner.idx_for(id) {
-            return idx;
-        }
         self.inner.insert(id.to_string(), vec.clone())
     }
 
@@ -75,25 +68,6 @@ impl AtomMemory {
     pub fn inner(&self) -> &IndexedMemory {
         &self.inner
     }
-
-    pub fn serialize_atom(id: &str, vec: &EntangledHVec) -> Vec<u8> {
-        let deltas = vec.to_deltas();
-        let mut buf = Vec::with_capacity(1 + 2 + id.len() + 4 + deltas.len() * 4);
-        buf.push(ATOM_MAGIC);
-        wire::write_lp_str(&mut buf, id);
-        wire::write_deltas(&mut buf, &deltas);
-        buf
-    }
-
-    pub fn deserialize_atom(data: &[u8], dim: usize) -> Option<(String, EntangledHVec)> {
-        if data.is_empty() || data[0] != ATOM_MAGIC {
-            return None;
-        }
-        let (id, pos) = wire::read_lp_str(data, 1)?;
-        let (deltas, _) = wire::read_deltas(data, pos)?;
-        let vec = EntangledHVec::from_deltas(&deltas, dim);
-        Some((id, vec))
-    }
 }
 
 #[cfg(test)]
@@ -119,15 +93,5 @@ mod tests {
         let result = mem.cleanup(&original, 24.0, 64, 3);
         assert!(result.found);
         assert_eq!(result.id, "atom_25");
-    }
-
-    #[test]
-    fn test_atom_serialize_roundtrip() {
-        let id = "test_atom";
-        let vec = EntangledHVec::new_deterministic(16384, 42);
-        let data = AtomMemory::serialize_atom(id, &vec);
-        let (parsed_id, parsed_vec) = AtomMemory::deserialize_atom(&data, 16384).unwrap();
-        assert_eq!(parsed_id, id);
-        assert!((parsed_vec.similarity(&vec) - 1.0).abs() < 0.0001);
     }
 }

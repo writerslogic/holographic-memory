@@ -8,6 +8,7 @@
 <!-- Badge palette: dynamic health; metadata #007ec6; standards #6a4c93; label #20232a; platform brand colors. -->
 
 <p align="center">
+<<<<<<< Updated upstream
   <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&amp;style=flat-square&amp;label=CI&amp;labelColor=20232a" alt="CI"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img src="https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory?style=flat-square&amp;labelColor=20232a" alt="OpenSSF Scorecard"></a>
   <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json&amp;style=flat-square&amp;labelColor=20232a" alt="Coverage"></a>
@@ -21,6 +22,22 @@
   <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/license-AGPL--3.0-007ec6?style=flat-square&amp;labelColor=20232a" alt="AGPL-3.0 license"></a>
   <img src="https://img.shields.io/badge/local--first-yes-007ec6?style=flat-square&amp;labelColor=20232a" alt="Local-first">
   <a href="https://github.com/sponsors/dcondrey"><img src="https://img.shields.io/badge/sponsor-dcondrey-EA4AAA?style=flat-square&amp;labelColor=20232a&amp;logo=githubsponsors&amp;logoColor=white" alt="Sponsor dcondrey"></a>
+=======
+  <strong>Local document search, vector memory, and structured knowledge — powered by Rust.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img src="https://api.securityscorecards.dev/projects/github.com/writerslogic/holographic-memory/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json" alt="coverage"></a>
+  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/v/holographic-memory.svg" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/dm/holographic-memory.svg" alt="npm downloads"></a>
+  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory.svg" alt="crates.io"></a>
+  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/d/holographic-memory.svg" alt="crates.io downloads"></a>
+  <a href="https://docs.rs/holographic-memory"><img src="https://docs.rs/holographic-memory/badge.svg" alt="docs.rs"></a>
+  <a href="https://blog.rust-lang.org/2025/08/07/Rust-1.89.0.html"><img src="https://img.shields.io/badge/MSRV-1.89-blue.svg" alt="MSRV"></a>
+  <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License"></a>
+>>>>>>> Stashed changes
 </p>
 
 <p align="center">
@@ -36,11 +53,15 @@
 
 ---
 
-HMS is a high-performance vector memory engine for Node.js, powered by Rust via N-API. It implements **Vector Symbolic Architectures (VSA)** using **Binary Spatter Code (BSC)** to deliver semantic search, analogical reasoning, relational knowledge graphs, and associative memory at scale — with no external API calls, no cloud dependencies, and no data leaving your device.
+HMS is a local memory engine for Rust and Node.js. Store source documents with metadata, retrieve passages with lexical or local-model hybrid search, and query structured facts with vector-symbolic operations. The built-in text encoder measures lexical overlap; optional local ONNX embeddings add semantic retrieval and reranking.
 
 > Developed by [WritersLogic](https://github.com/writerslogic)
 
 ## Installation
+
+The document APIs and format-2 storage changes in this checkout are unreleased. Build this
+checkout with `npm ci --omit=optional` followed by `npm run build` to use them. The commands
+below install the published release, which may have an earlier API and storage format.
 
 ```bash
 npm install holographic-memory
@@ -54,31 +75,67 @@ holographic-memory = "0.6"
 
 ## Quick Start
 
-### Semantic Search
+### Document Search
 
 ```javascript
 const { HolographicMemorySystem } = require('holographic-memory');
+const { DocumentMemory } = require('holographic-memory/semantic');
 
 async function main() {
-  const hms = new HolographicMemorySystem(10000, './hms_storage');
-
-  await hms.memorizeText('paris', 'capital of france');
-  await hms.memorizeText('berlin', 'capital of germany');
-
-  const results = await hms.query('What is the capital of germany?', 1);
-  console.log(results[0]); // { id: 'berlin', similarity: 0.85 }
-
-  const analogy = await hms.findAnalogy('france', 'paris', 'germany');
-  console.log(analogy[0].id); // 'berlin'
+  const hms = new HolographicMemorySystem(16384, './documents-v2');
+  const memory = new DocumentMemory(hms);
+  await memory.memorize({
+    id: 'backups', text: 'Restore deleted documents from verified backups.',
+    sourceUri: 'operations.md', version: '1', metadata: { project: 'alpha' },
+  });
+  const [hit] = await memory.search('restore backups', { filter: { project: 'alpha' } });
+  console.log(hit.documentId, hit.sourceUri, hit.text);
+  await memory.flush();
 }
-
 main().catch(console.error);
 ```
+
+Writing the same document ID replaces its chunks atomically. Results include source byte
+offsets; `memory.delete(id)` removes every chunk. See [resource limits and migration](docs/production-readiness.md).
+**Existing stores without the new embedding schema require re-encoding from original sources.**
+
+### Local Embeddings and Reranking
+
+Install `@huggingface/transformers` and obtain compatible ONNX model files in local directories.
+The factories below never download models. Use actual artifact revisions and configure the
+store from the returned embedding space; it also fingerprints pooling, prefixes, and dtype.
+
+```javascript
+const { createLocalEmbedder, createLocalReranker, DocumentMemory } = require('holographic-memory/semantic');
+
+const embedder = await createLocalEmbedder({
+  modelPath: process.env.HMS_EMBEDDING_DIR,
+  modelId: 'Xenova/all-MiniLM-L6-v2',
+  revision: process.env.HMS_EMBEDDING_REVISION,
+  dtype: 'q8',
+});
+const rerank = await createLocalReranker({ modelPath: process.env.HMS_RERANKER_DIR, dtype: 'q8' });
+const hms = new HolographicMemorySystem(16384, './semantic-v2', {
+  embeddingModel: embedder.space.model,
+  embeddingRevision: embedder.space.revision,
+  embeddingDimensions: embedder.space.dimensions,
+});
+const memory = new DocumentMemory(hms, { embedder, rerank });
+await memory.memorize({ id: 'vehicle', text: 'The automobile needs a mechanic.', sourceUri: 'notes.md' });
+console.log(await memory.search('Where can I get my car repaired?', { k: 3 }));
+await memory.flush();
+await rerank.dispose();
+await embedder.dispose();
+```
+
+Run the complete [document example](examples/local-documents.mjs) or the reproducible
+[quality and latency evaluation](docs/evaluation.md). Exact dense cosine and BM25 scan eligible
+chunks before optional reranking; benchmark your corpus before assuming a deployment capacity.
 
 ### Relational Knowledge (Meaning Memory)
 
 ```javascript
-const hms = new HolographicMemorySystem(16384, './hms_storage', {
+const hms = new HolographicMemorySystem(16384, './knowledge-v2', {
   meaningEnabled: true,
 });
 
@@ -87,32 +144,28 @@ await hms.memorizeTriplet('t2', 'berlin', 'capital_of', 'germany');
 await hms.memorizeTriplet('t3', 'john',   'father',     'mark');
 await hms.memorizeTriplet('t4', 'mark',   'father',     'bob');
 
-// "What is the capital of France?"
+// "Paris is the capital of which country?"
 const result = await hms.structuralQuery(['paris'], ['capital_of'], 'object');
 console.log(result[0].entityId);   // 'france'
-console.log(result[0].confidence); // 0.98
+console.log(result[0].confidence); // confidence depends on the stored knowledge
 
-// "Who is John's grandfather?" (father → father)
-const grandpa = await hms.multiHopQuery('john', ['father', 'father']);
-console.log(grandpa[0].entityId);  // 'bob'
+// Follow two outgoing father relations: john → mark → bob.
+const descendants = await hms.multiHopQuery('john', ['father', 'father']);
+console.log(descendants[0].entityId);  // 'bob'
 ```
 
 ## Why HMS?
 
-| Capability | HMS | Traditional vector DB |
-|---|---|---|
-| Runs locally | Yes | Usually cloud/daemon |
-| External API calls | None | Often required |
-| Analogical reasoning | Native | Not supported |
-| Relational queries | Yes (role-filler algebra) | No |
-| Multi-hop inference | Yes | No |
-| Compression | Up to 4,096x | None |
-| Language | Rust (N-API) | Python/Go |
+- Local lexical and semantic document retrieval with passages, versions, and metadata filters.
+- Vector-symbolic composition and structured multi-hop queries in one native engine.
+- Transactional mutations, verified compaction generations, and explicit index maintenance.
+- Optional encryption, audit, and provenance features with runtime capability reporting.
 
 <details>
 <summary><strong>Features</strong> -- hybrid retrieval, symbolic operations, meaning memory, cognition engine</summary>
 
-- **Hybrid Retrieval**: NSG (Navigable Small World) + IVF (Inverted File) + Sparse Inverted Index, routing dynamically by dataset statistics.
+- **Documents**: BM25 + supplied dense cosine embeddings + optional local cross-encoder reranking.
+- **Vector Retrieval**: NSG (Navigable Small World) + IVF (Inverted File) + Sparse Inverted Index, routing dynamically by dataset statistics.
 - **Symbolic Operations**: Binding (XOR), Bundling (Majority Rule), Permutation (Cyclic Shift) — native bitwise VSA operations.
 - **Meaning Memory**: Structured relational layer with role-filler algebra, triple stores, multi-hop reasoning, and Hopfield attractor cleanup.
 - **Cognition Engine**: Background discovery of patterns, abstractions, knowledge gaps, hypotheses, and cross-domain analogies from stored triples.
@@ -143,7 +196,7 @@ HMS ships as the semantic memory backend for [scrivener-mcp](https://github.com/
 <details>
 <summary><strong>Performance</strong> -- compositional algebra, capacity scaling, noise tolerance benchmarks</summary>
 
-All results use research-grade datasets: 120 real-world knowledge graph facts, 2,000 synthetic facts (Zipfian), 350 analogies across 7 relation types, sequences up to length 200.
+The following historical results describe isolated algebra/research workloads, not the new document pipeline or current end-to-end latency. Their datasets include: 120 real-world knowledge graph facts, 2,000 synthetic facts (Zipfian), 350 analogies across 7 relation types, sequences up to length 200.
 
 ### Compositional Algebra (D=16,384, density 1/256)
 
@@ -163,7 +216,7 @@ All results use research-grade datasets: 120 real-world knowledge graph facts, 2
 | 65,536 | 1/1024 | 9,800 | 1,888,303 | 1,024x |
 | 262,144 | 1/4096 | 58,432 | 1,373,826 | 4,096x |
 
-Scaling law: capacity wall ~ `density_denom × ln(dim)`.
+The tested points are research observations; they do not establish an application capacity guarantee.
 
 ### Noise Tolerance (Hopfield cleanup)
 
@@ -177,13 +230,13 @@ Scaling law: capacity wall ~ `density_denom × ln(dim)`.
 
 ```bash
 # Compositional algebra, analogies, interference, sequences
-cargo run --release --bin hms-research-bench -- --dim 16384 --density 256 --json
+cargo run --release --features experimental --bin hms-research-bench -- --dim 16384 --density 256 --json
 
 # Capacity walls, throughput, compression
-cargo run --release --bin hms-scaling -- --dim 16384 --density 256 --json
+cargo run --release --features experimental --bin hms-scaling -- --dim 16384 --density 256 --json
 
 # Full 8-section suite
-cargo run --release --bin hms-benchmark-suite -- --dim 16384
+cargo run --release --features experimental --bin hms-benchmark-suite -- --dim 16384
 
 # Machine-readable recall and latency regression report
 cargo run --release --bin hms-eval -- \
@@ -333,8 +386,13 @@ cargo test --lib
 
 ## Security
 
-Hyperdimensional vectors are inherently lossy; original content cannot be reconstructed from stored vectors. For vulnerability reporting see [SECURITY.md](.github/SECURITY.md).
+Lossy vectors are not encryption or anonymization. Document ingestion stores source passages by default. Enable encryption when required, inspect `securityStatus()`, and read [PRIVACY.md](docs/PRIVACY.md) for precise guarantees and limitations. For vulnerability reporting see [SECURITY.md](.github/SECURITY.md).
 
-## License
+## Licensing (Dual-License Model)
 
-GNU Affero General Public License v3.0 — see [LICENSE](LICENSE).
+Holographic Memory System (HMS) uses a **Dual-Licensing** model:
+
+1. **Open Source (AGPL-3.0):** The core engine is free to use and modify for open-source projects, personal use, or internal evaluation, provided you comply with the [GNU Affero General Public License v3.0](LICENSE). Note that using HMS as a backend for a proprietary service over a network requires you to open-source your service under AGPL, or purchase a commercial license.
+2. **Commercial License (WritersLogic Enterprise):** For companies building closed-source, proprietary software, or those requiring the **Zero-Trust FHE-Lite SDK** and **Multi-Tenant Cloudflare Edge** plugins, you must purchase a Commercial License. This bypasses the AGPL restrictions and provides production SLA support.
+
+Contact licensing@writerslogic.com for enterprise inquiries.

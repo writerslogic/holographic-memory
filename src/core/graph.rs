@@ -7,17 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
 use super::types::{GraphPath, PathHop, Relation, RelationType};
-use super::wire;
-
-/// Serialized relation for arena persistence.
-/// Format: [MAGIC:u8][source_len:u16][source][type_len:u16][type][target_len:u16][target]
-///         [valid_from:u64][valid_to:u64][props_len:u32][props_bytes]
-///
-/// Written under [`wire::magic::RELATION`]. Historically relations shared
-/// `0xFE` with composition rules; readers still accept that legacy magic
-/// ([`wire::magic::RELATION_LEGACY`]) so pre-migration logs continue to load.
-const RELATION_MAGIC: u8 = wire::magic::RELATION;
-const RELATION_MAGIC_LEGACY: u8 = wire::magic::RELATION_LEGACY;
 
 /// In-memory graph index over explicit relations.
 pub struct RelationStore {
@@ -81,6 +70,10 @@ impl RelationStore {
     }
 
     /// Declare a relation type with inference semantics.
+    pub fn type_snapshot(&self) -> Vec<RelationType> {
+        self.types.read().values().cloned().collect()
+    }
+
     pub fn declare_type(&self, rel_type: RelationType) {
         self.types.write().insert(rel_type.name.clone(), rel_type);
     }
@@ -322,85 +315,9 @@ impl RelationStore {
         results
     }
 
-    /// Serialize a relation for arena persistence.
-    pub fn serialize_relation(rel: &Relation) -> Vec<u8> {
-        let props = rel.properties.as_deref().unwrap_or("").as_bytes();
-
-        let len = 1
-            + 2
-            + rel.source_id.len()
-            + 2
-            + rel.relation_type.len()
-            + 2
-            + rel.target_id.len()
-            + 8
-            + 8
-            + 4
-            + props.len();
-        let mut buf = Vec::with_capacity(len);
-        buf.push(RELATION_MAGIC);
-        wire::write_lp_str(&mut buf, &rel.source_id);
-        wire::write_lp_str(&mut buf, &rel.relation_type);
-        wire::write_lp_str(&mut buf, &rel.target_id);
-        buf.extend_from_slice(&(rel.valid_from as u64).to_le_bytes());
-        buf.extend_from_slice(&(rel.valid_to as u64).to_le_bytes());
-        buf.extend_from_slice(&(props.len() as u32).to_le_bytes());
-        buf.extend_from_slice(props);
-        buf
-    }
-
-    /// Deserialize a relation from arena bytes. Returns None if not a relation frame.
-    pub fn deserialize_relation(data: &[u8]) -> Option<Relation> {
-        match data.first() {
-            Some(&m) if m == RELATION_MAGIC || m == RELATION_MAGIC_LEGACY => {}
-            _ => return None,
-        }
-        let mut pos = 1;
-
-        let (source, next) = wire::read_lp_str(data, pos)?;
-        pos = next;
-
-        let (rtype, next) = wire::read_lp_str(data, pos)?;
-        pos = next;
-
-        let (target, next) = wire::read_lp_str(data, pos)?;
-        pos = next;
-
-        let valid_from = u64::from_le_bytes(data.get(pos..pos + 8)?.try_into().ok()?) as f64;
-        pos += 8;
-        let valid_to = u64::from_le_bytes(data.get(pos..pos + 8)?.try_into().ok()?) as f64;
-        pos += 8;
-
-        let props_len = u32::from_le_bytes(data.get(pos..pos + 4)?.try_into().ok()?) as usize;
-        pos += 4;
-        let properties = if props_len > 0 {
-            Some(
-                std::str::from_utf8(data.get(pos..pos + props_len)?)
-                    .ok()?
-                    .to_string(),
-            )
-        } else {
-            None
-        };
-
-        Some(Relation {
-            source_id: source,
-            relation_type: rtype,
-            target_id: target,
-            properties,
-            valid_from,
-            valid_to,
-        })
-    }
-
     /// Total number of live (non-deleted) relations.
     pub fn count(&self) -> usize {
         self.relations.read().iter().filter(|r| !r.deleted).count()
-    }
-
-    /// Load a relation from deserialized arena data (called during log replay).
-    pub fn load_relation(&self, rel: &Relation) {
-        self.add(rel);
     }
 
     /// Snapshot all live relations for compaction.
@@ -603,56 +520,6 @@ mod tests {
         let at_2500 = store.outgoing("a", None, 2500.0);
         assert_eq!(at_2500.len(), 1);
         assert_eq!(at_2500[0].target_id, "c");
-    }
-
-    #[test]
-    fn test_serialize_deserialize_relation() {
-        let rel = Relation {
-            source_id: "paris".into(),
-            relation_type: "capital_of".into(),
-            target_id: "france".into(),
-            properties: Some("{\"pop\":2_000_000}".into()),
-            valid_from: 1000.0,
-            valid_to: 0.0,
-        };
-        let bytes = RelationStore::serialize_relation(&rel);
-        let parsed = RelationStore::deserialize_relation(&bytes).unwrap();
-        assert_eq!(parsed.source_id, "paris");
-        assert_eq!(parsed.relation_type, "capital_of");
-        assert_eq!(parsed.target_id, "france");
-        assert_eq!(parsed.properties.as_deref(), Some("{\"pop\":2_000_000}"));
-        assert_eq!(parsed.valid_from, 1000.0);
-        assert_eq!(parsed.valid_to, 0.0);
-    }
-
-    #[test]
-    fn test_relation_magic_migration() {
-        let rel = Relation {
-            source_id: "paris".into(),
-            relation_type: "capital_of".into(),
-            target_id: "france".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        };
-
-        // New writes use the distinct relation magic (0xFA), not the rule byte.
-        let mut bytes = RelationStore::serialize_relation(&rel);
-        assert_eq!(bytes[0], wire::magic::RELATION);
-        assert_eq!(bytes[0], 0xFA);
-        assert_ne!(bytes[0], wire::magic::RULE);
-        let parsed = RelationStore::deserialize_relation(&bytes).unwrap();
-        assert_eq!(parsed.source_id, "paris");
-        assert_eq!(parsed.target_id, "france");
-
-        // A hand-crafted legacy-0xFE relation (as older logs wrote it) still
-        // deserializes so existing arenas load.
-        bytes[0] = wire::magic::RELATION_LEGACY;
-        assert_eq!(bytes[0], 0xFE);
-        let legacy = RelationStore::deserialize_relation(&bytes).unwrap();
-        assert_eq!(legacy.source_id, "paris");
-        assert_eq!(legacy.relation_type, "capital_of");
-        assert_eq!(legacy.target_id, "france");
     }
 
     #[test]

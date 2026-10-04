@@ -1,0 +1,27 @@
+{
+  "description": "Small, manually labeled paraphrase regression set. Corpus sentences and query paraphrases are distinct; this is not a representative public retrieval benchmark.",
+  "documents": [
+    {"id":"car","text":"An automobile is parked beside the curb."},
+    {"id":"doctor","text":"The physician prescribed medication for the patient."},
+    {"id":"sleep","text":"An exhausted child fell asleep on the sofa."},
+    {"id":"dinner","text":"The chef prepared a delicious supper."},
+    {"id":"bicycle","text":"A cyclist repaired the punctured tire."},
+    {"id":"lawyer","text":"An attorney advised her client about the contract."},
+    {"id":"cold","text":"The temperature dropped below zero overnight."},
+    {"id":"dog","text":"A canine chased a ball across the lawn."},
+    {"id":"plane","text":"The aircraft departed from the runway."},
+    {"id":"music","text":"A musician performed a melody on the piano."}
+  ],
+  "queries": [
+    {"text":"Where did the driver leave the car?","relevantIds":["car"]},
+    {"text":"Which treatment did the doctor recommend?","relevantIds":["doctor"]},
+    {"text":"A tired youngster is napping on a couch.","relevantIds":["sleep"]},
+    {"text":"Someone cooked a tasty evening meal.","relevantIds":["dinner"]},
+    {"text":"The rider fixed a flat wheel on the bicycle.","relevantIds":["bicycle"]},
+    {"text":"A lawyer explained the agreement to a customer.","relevantIds":["lawyer"]},
+    {"text":"It was freezing last night.","relevantIds":["cold"]},
+    {"text":"The dog ran after a toy in the garden.","relevantIds":["dog"]},
+    {"text":"A plane took off from the airport.","relevantIds":["plane"]},
+    {"text":"Someone played a tune on a keyboard.","relevantIds":["music"]}
+  ]
+}

@@ -3,6 +3,9 @@
 
 //! Reproducible retrieval-quality and latency regression harness.
 
+#[path = "hms-eval/relevance.rs"]
+mod relevance;
+
 use anyhow::{bail, Context, Result};
 use holographic_memory::{EntangledHVec, HmsCore};
 use serde::Serialize;
@@ -53,6 +56,15 @@ fn main() -> Result<()> {
     let queries = value(&args, "--queries", 100)?.min(vectors);
     let dimensions = value(&args, "--dimensions", 16_384)?;
     let minimum_recall = float_value(&args, "--assert-min-recall", 0.0)?;
+    if let Some(index) = args.iter().position(|a| a == "--dataset") {
+        let path = args.get(index + 1).context("missing --dataset path")?;
+        return relevance::run(
+            std::path::Path::new(path),
+            dimensions.try_into()?,
+            value(&args, "--k", 10)?,
+            minimum_recall,
+        );
+    }
     if vectors == 0 || dimensions == 0 {
         bail!("vectors and dimensions must be non-zero");
     }

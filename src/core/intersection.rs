@@ -16,6 +16,15 @@ pub fn sparse_intersection_count(a: &[u32], b: &[u32]) -> usize {
     if a.is_empty() || b.is_empty() {
         return 0;
     }
+    
+    // Attempt SIMD hardware acceleration path first if available and applicable
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") && a.len() >= 8 && b.len() >= 8 {
+            return crate::core::simd_math::simd_intersection_count(a, b);
+        }
+    }
+
     // Ensure a is the smaller slice for the skew check.
     let (small, large) = if a.len() <= b.len() { (a, b) } else { (b, a) };
     if small.len() * 8 < large.len() {

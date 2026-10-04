@@ -1,0 +1,17 @@
+{
+  "architecture": "aarch64",
+  "dataset": "tests/fixtures/relevance.json",
+  "dataset_crc32": "52ee6830",
+  "documents": 12,
+  "evaluation": "document_relevance",
+  "hms_version": "0.6.0",
+  "k": 3,
+  "mean_latency_us": 13.184249999999999,
+  "mrr_at_k": 1.0,
+  "ndcg_at_k": 1.0,
+  "os": "macos",
+  "p95_latency_us": 17.917,
+  "queries": 12,
+  "recall_at_k": 1.0,
+  "schema_version": 2
+}

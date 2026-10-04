@@ -77,8 +77,13 @@
   "test_policy_justification": "CONTRIBUTING.md 'Development Setup' instructs contributors to run tests before submitting, and CI (.github/workflows/ci.yml) gates every PR on `cargo test --verbose` passing; project convention (visible in commit history, e.g. multiple 'test:' commits) is to add tests with new functionality.",
   "tests_are_added_status": "Met",
   "tests_are_added_justification": "Recent commit history shows tests added alongside functional changes, e.g. src/lib_proptest.rs and 70 files with #[cfg(test)] modules covering core.entangled, security, provenance, nsg::graph; `git log` shows dedicated 'test:' commits accompanying feature work.",
+<<<<<<< Updated upstream
   "tests_documented_added_status": "Met",
   "tests_documented_added_justification": "CONTRIBUTING.md's Testing Policy section states explicitly: new functionality, bug fixes, and security-relevant changes must include an automated test, and a PR without one is expected to explain why.",
+=======
+  "tests_documented_added_status": "Unmet",
+  "tests_documented_added_justification": "CONTRIBUTING.md documents how to run tests but does not explicitly state a policy that new functionality must include tests; no explicit contribution requirement to that effect found in CONTRIBUTING.md.",
+>>>>>>> Stashed changes
   "warnings_status": "Met",
   "warnings_justification": "Clippy (Rust's standard FLOSS linter) is enabled: .github/workflows/ci.yml runs `cargo clippy --all-targets --all-features -- -D warnings`, and CONTRIBUTING.md requires 'cargo clippy --workspace -- -D warnings (zero warnings required)'.",
   "warnings_fixed_status": "Met",

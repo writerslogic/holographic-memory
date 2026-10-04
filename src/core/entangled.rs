@@ -143,7 +143,7 @@ impl EntangledHVec {
         // Preserves JL distances with 3x fewer multiplications.
         // Uses FxHash per (dim, input_pos) pair for deterministic ternary values
         // instead of StdRng per dimension (avoids target_dim RNG inits).
-        let mut projections: Vec<(u32, f64)> = (0..target_dim)
+        let mut projections: Vec<(u32, f64)> = (0..target_dim.div_ceil(2))
             .map(|i| {
                 let mut dot_product = 0.0f64;
                 for (j, &val) in dense.iter().enumerate() {
@@ -154,7 +154,11 @@ impl EntangledHVec {
                         dot_product -= val as f64;
                     }
                 }
-                (i as u32, dot_product.abs())
+                let index = i * 2 + usize::from(dot_product < 0.0);
+                (
+                    index.min(target_dim.saturating_sub(1)) as u32,
+                    dot_product.abs(),
+                )
             })
             .collect();
 
@@ -474,80 +478,67 @@ impl EntangledHVec {
         xored.permute(self.dim - 1)
     }
 
-    /// Bundle with epsilon-differential privacy.
-    /// Injects Laplace noise (sensitivity=1, scale=1/epsilon) into per-index
-    /// frequency counts before majority thresholding.
+    /// Fixed-domain, contribution-clipped histogram followed by noisy top-k.
+    /// The dimension must be public; prefer HmsCore::bundle for empty datasets.
     pub fn bundle_dp<V: Borrow<Self>>(vectors: &[V], epsilon: f64) -> Self {
-        if vectors.is_empty() || epsilon <= 0.0 {
-            return Self::bundle(vectors);
+        let dim = vectors.first().map_or(0, |v| v.borrow().dim);
+        Self::bundle_dp_in_space(vectors, epsilon, dim)
+    }
+
+    pub(crate) fn bundle_dp_in_space<V: Borrow<Self>>(
+        vectors: &[V],
+        epsilon: f64,
+        dim: usize,
+    ) -> Self {
+        assert!(
+            epsilon.is_finite() && epsilon > 0.0,
+            "epsilon must be finite and positive"
+        );
+        assert!(
+            vectors.iter().all(|v| v.borrow().dim == dim),
+            "bundle dimensions must match"
+        );
+        if dim == 0 {
+            return Self::from_indices(Vec::new(), 0);
         }
-        let dim = vectors[0].borrow().dim;
-        let n = vectors.len();
-
-        let mut all_indices: Vec<u32> = vectors
-            .iter()
-            .flat_map(|v| v.borrow().indices.iter().copied())
-            .collect();
-        all_indices.sort_unstable();
-
-        if all_indices.is_empty() {
-            return Self {
-                dim,
-                indices: Vec::new(),
-            };
-        }
-
-        let threshold = (n as f64) / 2.0;
-        let scale = 1.0 / epsilon;
-
-        // Run-length count with Laplace noise injection.
-        let mut selected: Vec<(u32, f64)> = Vec::new();
-        let mut current = all_indices[0];
-        let mut count: u32 = 1;
-
-        let mut rng = rand::rng();
-
-        for &idx in &all_indices[1..] {
-            if idx == current {
-                count += 1;
-            } else {
-                let noisy = count as f64 + laplace_sample(&mut rng, scale);
-                if noisy >= threshold {
-                    selected.push((current, noisy));
-                }
-                current = idx;
-                count = 1;
+        let contribution_limit = (dim / DEFAULT_RHO_DENOM).max(1);
+        let mut counts = vec![0.0; dim];
+        for vector in vectors {
+            for &index in vector.borrow().indices.iter().take(contribution_limit) {
+                counts[index as usize] += 1.0;
             }
         }
-        let noisy = count as f64 + laplace_sample(&mut rng, scale);
-        if noisy >= threshold {
-            selected.push((current, noisy));
-        }
-
-        let target_count = (dim / DEFAULT_RHO_DENOM).max(1);
-
-        if selected.len() > target_count {
-            selected.select_nth_unstable_by(target_count - 1, |a, b| {
-                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
-            });
-            selected.truncate(target_count);
-        }
-
-        let mut indices: Vec<u32> = selected
+        // IMPORTANT: add/remove adjacency has L1 sensitivity contribution_limit.
+        // Every public-domain bin receives noise, including unobserved bins.
+        let scale = contribution_limit as f64 / epsilon;
+        assert!(
+            scale.is_finite() && scale > 0.0,
+            "epsilon is outside the supported numeric range"
+        );
+        let mut rng = rand::rng();
+        let mut scores: Vec<(u32, f64)> = counts
             .into_iter()
-            .map(|(idx, _)| idx)
-            .filter(|&idx| (idx as usize) < dim)
+            .enumerate()
+            .map(|(i, count)| (i as u32, count + laplace_sample(&mut rng, scale)))
             .collect();
+        scores.select_nth_unstable_by(contribution_limit - 1, |a, b| {
+            b.1.total_cmp(&a.1).then(a.0.cmp(&b.0))
+        });
+        scores.truncate(contribution_limit);
+        let mut indices: Vec<u32> = scores.into_iter().map(|(index, _)| index).collect();
         indices.sort_unstable();
-        indices.dedup();
-
-        Self { dim, indices }
+        Self::from_indices(indices, dim)
     }
 }
 
 /// Sample from Laplace(0, scale) using inverse CDF.
 fn laplace_sample(rng: &mut impl rand::RngExt, scale: f64) -> f64 {
-    let u: f64 = rng.random::<f64>() - 0.5;
+    let u = loop {
+        let sample = rng.random::<f64>() - 0.5;
+        if sample.abs() < 0.5 {
+            break sample;
+        }
+    };
     -scale * u.signum() * (1.0 - 2.0 * u.abs()).ln()
 }
 

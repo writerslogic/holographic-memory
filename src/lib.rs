@@ -19,12 +19,16 @@ pub mod core;
 #[cfg(feature = "python")]
 mod python;
 
+pub use crate::core::documents::{
+    chunk_document, DocumentChunk, DocumentInput, DocumentResult, SearchOptions,
+};
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::HmsError;
 pub use crate::core::types::{
     ConceptCandidate, HardwareCapabilities, IndexStatus, MemorizeBatchItem, QueryExplanation,
     RetrievalResult, StorageHealth, TextMetrics,
 };
+pub use crate::core::EmbeddingSpace;
 pub use crate::core::HmsCore;
 
 #[cfg(feature = "provenance")]
@@ -58,6 +62,9 @@ async fn run_async<T: Send + 'static, F: FnOnce() -> anyhow::Result<T> + Send + 
 #[cfg(feature = "node-api")]
 #[napi(object)]
 pub struct HmsConfigJs {
+    pub embedding_model: Option<String>,
+    pub embedding_revision: Option<String>,
+    pub embedding_dimensions: Option<u32>,
     pub nsg_max_degree: Option<u32>,
     pub nsg_ef_construction: Option<u32>,
     pub nsg_auto_threshold: Option<u32>,
@@ -105,6 +112,18 @@ impl HmsConfigJs {
     fn into_config(self) -> crate::core::config::HmsConfig {
         use crate::core::config::*;
         let mut cfg = HmsConfig::default();
+        if self.embedding_model.is_some()
+            || self.embedding_revision.is_some()
+            || self.embedding_dimensions.is_some()
+        {
+            cfg.embedding_space = Some(EmbeddingSpace {
+                model: self.embedding_model.unwrap_or_default(),
+                revision: self.embedding_revision.unwrap_or_default(),
+                dimensions: self.embedding_dimensions.unwrap_or_default() as usize,
+                normalization: "l2".into(),
+                metric: "cosine".into(),
+            });
+        }
         if let Some(v) = self.nsg_max_degree {
             cfg.nsg.max_degree = v as usize;
         }
@@ -245,6 +264,38 @@ impl HolographicMemorySystem {
         })
     }
 
+    #[napi]
+    pub async fn memorize_document(&self, input: DocumentInput) -> Result<u32> {
+        let core = self.core.clone();
+        run_async(move || core.memorize_document(input)).await
+    }
+
+    #[napi]
+    pub async fn chunk_document(&self, input: DocumentInput) -> Result<Vec<DocumentChunk>> {
+        run_async(move || chunk_document(&input)).await
+    }
+
+    #[napi]
+    pub async fn search_documents(
+        &self,
+        text: String,
+        options: Option<SearchOptions>,
+    ) -> Result<Vec<DocumentResult>> {
+        let core = self.core.clone();
+        run_async(move || core.search_documents(&text, &options.unwrap_or_default())).await
+    }
+
+    #[napi]
+    pub async fn delete_document(&self, id: String) -> Result<bool> {
+        let core = self.core.clone();
+        run_async(move || core.delete_document(&id)).await
+    }
+
+    #[napi]
+    pub fn security_status(&self) -> serde_json::Value {
+        self.core.security_status()
+    }
+
     #[napi(getter)]
     pub fn vector_count(&self) -> u32 {
         self.core.vector_count() as u32
@@ -365,36 +416,44 @@ impl HolographicMemorySystem {
                 trace_id = trace_id.as_deref().unwrap_or("")
             )
             .entered();
-            use rayon::prelude::*;
-            let encoded: Vec<(String, EntangledHVec)> = items
-                .into_par_iter()
-                .map(|item| {
-                    let vec = core.encode_text(&item.text);
-                    (item.id, vec)
-                })
-                .collect();
-            for (id, vec) in encoded {
-                core.memorize(id, vec)?;
-            }
-            Ok(())
+            core.memorize_batch(&items)
         })
         .await
     }
 
-    /// Read a file directly from disk via memory-mapping and memorize its content.
-    /// Avoids passing file content through the JS string boundary entirely.
+    /// Ingest a UTF-8 file (up to 8 MiB) as a chunked document with source offsets.
+    /// Retrieve passages with searchDocuments and remove them with deleteDocument.
     #[napi]
     pub async fn memorize_file(&self, id: String, file_path: String) -> Result<()> {
         let core = self.core.clone();
         run_async(move || {
+            use std::io::Read;
             let file = std::fs::File::open(&file_path)
                 .map_err(|e| anyhow::anyhow!("Failed to open {}: {}", file_path, e))?;
-            let mmap = unsafe { memmap2::Mmap::map(&file) }
-                .map_err(|e| anyhow::anyhow!("Failed to mmap {}: {}", file_path, e))?;
-            let text = std::str::from_utf8(&mmap)
-                .map_err(|e| anyhow::anyhow!("Invalid UTF-8 in {}: {}", file_path, e))?;
-            let vec = core.encode_text(text);
-            core.memorize(id, vec)
+            anyhow::ensure!(
+                file.metadata()?.is_file(),
+                "filePath must name a regular file"
+            );
+            let mut bytes = Vec::new();
+            file.take(core::documents::MAX_DOCUMENT_BYTES as u64 + 1)
+                .read_to_end(&mut bytes)?;
+            anyhow::ensure!(
+                bytes.len() <= core::documents::MAX_DOCUMENT_BYTES,
+                "file exceeds 8 MiB"
+            );
+            let text = String::from_utf8(bytes)?;
+            core.memorize_document(DocumentInput {
+                id,
+                text,
+                source_uri: Some(file_path),
+                version: None,
+                metadata: None,
+                chunk_words: None,
+                overlap_words: None,
+                store_text: None,
+                embeddings: None,
+            })?;
+            Ok(())
         })
         .await
     }
@@ -434,12 +493,8 @@ impl HolographicMemorySystem {
     #[napi]
     pub async fn query_vector(&self, vector: Float32Array, k: u32) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
-        let q_vec = EntangledHVec::from_dense(&vector, core.dimensions());
-        run_async(move || {
-            let results = core.query(&q_vec, k);
-            Ok(results)
-        })
-        .await
+        let dense = vector.to_vec();
+        run_async(move || core.query_vector(&dense, k)).await
     }
 
     #[napi]
@@ -482,11 +537,13 @@ impl HolographicMemorySystem {
         k: u32,
     ) -> Result<Vec<Vec<RetrievalResult>>> {
         let core = self.core.clone();
-        let queries: Vec<EntangledHVec> = vectors
-            .iter()
-            .map(|v| EntangledHVec::from_dense(v, core.dimensions()))
-            .collect();
-        run_async(move || Ok(core.query_batch(&queries, k))).await
+        let dense: Vec<Vec<f32>> = vectors.iter().map(|v| v.to_vec()).collect();
+        run_async(move || {
+            anyhow::ensure!(dense.len() <= 4096, "query batch exceeds 4096 vectors");
+            use rayon::prelude::*;
+            dense.par_iter().map(|v| core.query_vector(v, k)).collect()
+        })
+        .await
     }
 
     #[napi]
@@ -763,9 +820,10 @@ impl HolographicMemorySystem {
         name: String,
         input_relations: Vec<String>,
         output_relation: String,
-    ) {
+    ) -> Result<()> {
         self.core
-            .declare_rule(&name, input_relations, output_relation);
+            .declare_rule(&name, input_relations, output_relation)
+            .map_err(napi_err)
     }
 
     #[napi(getter)]
@@ -966,7 +1024,7 @@ impl HolographicMemorySystem {
         target_id: String,
     ) -> Result<bool> {
         let core = self.core.clone();
-        run_async(move || Ok(core.remove_relation(&source_id, &relation_type, &target_id))).await
+        run_async(move || core.remove_relation(&source_id, &relation_type, &target_id)).await
     }
 
     #[napi]
@@ -975,13 +1033,14 @@ impl HolographicMemorySystem {
         name: String,
         transitive: Option<bool>,
         symmetric: Option<bool>,
-    ) {
+    ) -> Result<()> {
         self.core
             .declare_relation_type(crate::core::types::RelationType {
                 name,
                 transitive: transitive.unwrap_or(false),
                 symmetric: symmetric.unwrap_or(false),
-            });
+            })
+            .map_err(napi_err)
     }
 
     #[napi]
@@ -1402,7 +1461,7 @@ mod tests {
     }
 
     #[test]
-    fn test_nsg_auto_train_at_threshold() {
+    fn test_nsg_maintenance_at_threshold() {
         let dir = tempfile::tempdir().unwrap();
         let mut config = crate::core::config::HmsConfig::default();
         config.nsg.auto_threshold = 30;
@@ -1425,7 +1484,10 @@ mod tests {
 
         let vec = hms.encode_text("auto nsg 29");
         hms.memorize("ansg_29".to_string(), vec).unwrap();
-        assert!(hms.nsg_trained(), "NSG should auto-train at threshold");
+        assert!(!hms.nsg_trained(), "ingestion must not synchronously train");
+        assert!(hms.index_status().nsg_training_recommended);
+        hms.maintain_indices().unwrap();
+        assert!(hms.nsg_trained());
     }
 
     // === Phase 4 Integration Tests ===
@@ -1811,6 +1873,12 @@ mod tests {
 
         assert_eq!(hms.vector_count(), 50);
 
+        hms.maintain_indices().unwrap();
+        let metadata: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(dir.path().join("shard_meta.json")).unwrap())
+                .unwrap();
+        assert_eq!(metadata["shard_count"], 2);
+
         // Verify queries still work after auto-sharding
         let q = hms.encode_text("auto shard 0");
         let results = hms.query(&q, 5);
@@ -1933,7 +2001,8 @@ mod tests {
             name: "contains".into(),
             transitive: true,
             symmetric: false,
-        });
+        })
+        .unwrap();
 
         hms.add_relation(&crate::core::types::Relation {
             source_id: "a".into(),
@@ -2409,7 +2478,7 @@ mod tests {
     }
 
     #[test]
-    fn test_auto_train_ivf_at_threshold() {
+    fn test_ivf_maintenance_at_threshold() {
         let dir = tempfile::tempdir().unwrap();
         let mut config = crate::core::config::HmsConfig::default();
         config.ivf.enabled = true;
@@ -2432,13 +2501,13 @@ mod tests {
         }
         assert!(!hms.ivf_trained(), "Should not be trained before threshold");
 
-        // This 50th insert should trigger auto-training
+        // Reaching the threshold requests maintenance outside ingestion.
         let vec = hms.encode_text("auto item 49");
         hms.memorize("auto_49".to_string(), vec).unwrap();
-        assert!(
-            hms.ivf_trained(),
-            "Should be trained after reaching threshold"
-        );
+        assert!(!hms.ivf_trained());
+        assert!(hms.index_status().ivf_training_recommended);
+        hms.maintain_indices().unwrap();
+        assert!(hms.ivf_trained());
     }
 }
 
@@ -2634,38 +2703,32 @@ mod meaning_tests {
     #[test]
     fn test_structural_query_e2e() {
         let hms = meaning_hms(16384);
-        hms.memorize_meaning("doc1", "Paris is capital_of France")
-            .unwrap();
-
+        hms.memorize_meaning("doc1", "Paris is a city").unwrap();
         let s = hms.encode_text("Paris");
         let r = hms.encode_text("is_a");
-
-        let _results = hms.structural_query(&[("subject", &s), ("relation", &r)], "object");
-        // Auto-decompose should have created a composite from "Paris is capital_of France"
-        // and structural_query should find it
-        // Note: this tests the full pipeline end-to-end
-        assert!(hms.meaning_enabled());
+        let results = hms.structural_query(&[("subject", &s), ("relation", &r)], "object");
+        assert_eq!(results.first().map(|r| r.entity_id.as_str()), Some("city"));
     }
 
     #[test]
     fn test_multi_hop_chained() {
         let hms = meaning_hms(16384);
-        hms.memorize_meaning("t1", "John has father Mark").unwrap();
-        hms.memorize_meaning("t2", "Mark has father Bob").unwrap();
-
-        // Chained lookup via TripleStore (populated by auto_decompose)
-        let _results = hms.multi_hop("John", &["has_father", "has_father"]);
-        // Multi-hop depends on decomposer extracting the right triples
-        // Even if decompose doesn't perfectly extract, the pipeline should not crash
-        assert!(hms.meaning_enabled());
+        hms.memorize_triplet("t1".into(), "john".into(), "father".into(), "mark".into())
+            .unwrap();
+        hms.memorize_triplet("t2".into(), "mark".into(), "father".into(), "bob".into())
+            .unwrap();
+        assert_eq!(
+            hms.multi_hop("john", &["father", "father"])[0].entity_id,
+            "bob"
+        );
     }
 
     #[test]
     fn test_meaning_decompose_e2e() {
         let hms = meaning_hms(16384);
         hms.memorize_meaning("doc1", "Paris is a city").unwrap();
-        // Verify decomposer ran by checking atom_memory has entries
-        assert!(hms.meaning_enabled());
+        assert_eq!(hms.meaning_triple_count(), 1);
+        assert_eq!(hms.meaning_composite_count(), 1);
     }
 
     #[test]

@@ -38,8 +38,11 @@ jobs:
     - name: Lint (Clippy)
       run: cargo clippy --all-targets --all-features -- -D warnings
 
+    - name: Test default feature set
+      run: cargo test --locked --no-default-features
+
     - name: Run Tests
-      run: cargo test --all-features --verbose
+      run: cargo test --locked --all-features --verbose
 
     - name: Run Benchmarks (Check only)
       run: cargo bench --no-run --no-default-features
@@ -69,8 +72,14 @@ jobs:
     - name: Enforce deterministic recall floor
       run: cargo run --release --bin hms-eval -- --vectors 1200 --queries 50 --dimensions 4096 --assert-min-recall 0.90
 
+    - name: Enforce document relevance floor
+      run: cargo run --release --bin hms-eval -- --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
+
   build-napi:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     needs: check
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -81,10 +90,19 @@ jobs:
     - name: Install Node.js
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
-        node-version: '20'
+        node-version: '22'
 
     - name: Install dependencies
       run: npm ci --omit=optional
 
     - name: Build Release
       run: npm run build
+
+    - name: Test public APIs
+      run: npm test
+
+    - name: Test TypeScript declarations
+      run: npm run test:types
+
+    - name: Test packed distribution
+      run: npm run test:package

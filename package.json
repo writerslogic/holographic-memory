@@ -31,6 +31,11 @@
       "types": "./index.d.ts",
       "import": "./index.mjs",
       "require": "./index.js"
+    },
+    "./semantic": {
+      "types": "./semantic.d.ts",
+      "require": "./semantic.js",
+      "import": "./semantic.js"
     }
   },
   "types": "index.d.ts",
@@ -44,19 +49,46 @@
     ]
   },
   "scripts": {
-    "build": "napi build --release --features node-api",
-    "build:debug": "napi build --features node-api",
+    "build": "napi build --release --features node-api,security",
+    "build:debug": "napi build --features node-api,security",
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
-    "version": "napi version"
+    "version": "napi version",
+    "test": "node --test tests/node/*.test.cjs",
+    "test:package": "node scripts/test-package.cjs",
+    "test:types": "tsc --noEmit --strict --target es2022 --module nodenext --moduleResolution nodenext --types node tests/node/types.test.mts"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^3.7.4"
+    "@napi-rs/cli": "^3.7.4",
+    "@types/node": "^22.20.2",
+    "typescript": "^6.0.3"
   },
   "optionalDependencies": {
     "holographic-memory-darwin-arm64": "0.6.0",
     "holographic-memory-darwin-x64": "0.6.0",
     "holographic-memory-linux-x64-gnu": "0.6.0",
     "holographic-memory-win32-x64-msvc": "0.6.0"
-  }
+  },
+  "peerDependencies": {
+    "@huggingface/transformers": "^3.8.1 || ^4.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@huggingface/transformers": {
+      "optional": true
+    }
+  },
+  "files": [
+    "index.js",
+    "index.mjs",
+    "index.d.ts",
+    "semantic.js",
+    "semantic.d.ts",
+    "*.node",
+    "README.md",
+    "LICENSE",
+    "docs/production-readiness.md",
+    "docs/PRIVACY.md",
+    "docs/INTEGRATION.md",
+    "docs/evaluation.md"
+  ]
 }

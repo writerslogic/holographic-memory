@@ -9,11 +9,20 @@ use anyhow::Result;
 impl HmsCore {
     /// Encode a (head, relation, tail) triplet as `h XOR r XOR t` and memorize it.
     pub fn memorize_triplet(&self, id: String, h: String, r: String, t: String) -> Result<()> {
-        let vec_h = self.encode_text(&h);
-        let vec_r = self.encode_text(&r);
-        let vec_t = self.encode_text(&t);
-        let triplet = vec_h.bind(&vec_r).bind(&vec_t);
-        self.memorize(id, triplet)
+        super::mutation::validate_public_id(&id)?;
+        if !self.meaning_enabled() {
+            let triplet = self
+                .encode_text(&h)
+                .bind(&self.encode_text(&r))
+                .bind(&self.encode_text(&t));
+            return self.memorize(id, triplet);
+        }
+        self.commit(&[super::mutation::Mutation::Triplet {
+            id,
+            subject: h,
+            relation: r,
+            object: t,
+        }])
     }
 
     /// Encode an ordered sequence using position-based permutation and memorize it.
