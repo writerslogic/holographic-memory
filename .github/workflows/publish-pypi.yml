@@ -1,9 +1,5 @@
 name: publish-pypi
 
-# Dormant until a `py-v*` tag is pushed. `workflow_dispatch` builds wheels + sdist
-# for verification WITHOUT publishing (the publish job is gated on the tag ref).
-# Publishing uses PyPI Trusted Publishing (OIDC) — no API token required.
-#   project: holographic-vsa | env: pypi | owner: writerslogic | repo: holographic-memory
 on:
   push:
     tags: ['py-v*']
@@ -23,8 +19,6 @@ jobs:
           - { runner: ubuntu-latest,  target: x86_64 }
           - { runner: ubuntu-latest,  target: aarch64 }
           - { runner: macos-latest,   target: aarch64 }
-          # Intel-Mac wheel is cross-compiled on the Apple-Silicon runner to avoid
-          # the scarce/slow macos-13 Intel runner queue (x86_64-apple-darwin target).
           - { runner: macos-latest,   target: x86_64 }
           - { runner: windows-latest, target: x64 }
     steps:
@@ -65,50 +59,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
-      id-token: write   # OIDC token for Trusted Publishing
-    steps:
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          path: dist
-          pattern: wheels-*
-          merge-multiple: true
-      - name: Publish to PyPI (Trusted Publishing)
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
-        with:
-          packages-dir: dist
-          skip-existing: true
-
-  langchain-build:
-    name: Build LangChain SDK
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "0.4.x"
-      - name: Build SDK
-        run: |
-          cd bindings/python/langchain-holographic
-          uv build
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: langchain-dist
-          path: bindings/python/langchain-holographic/dist
-
-  langchain-publish:
-    name: Publish LangChain SDK to PyPI
-    if: startsWith(github.ref, 'refs/tags/py-v') || github.event_name == 'workflow_dispatch'
-    needs: [langchain-build]
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
       id-token: write
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: dist
-          pattern: langchain-dist
+          pattern: wheels-*
           merge-multiple: true
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
@@ -116,8 +72,8 @@ jobs:
           packages-dir: dist
           skip-existing: true
 
-  llamaindex-build:
-    name: Build LlamaIndex SDK
+  holographic-sdk-build:
+    name: Build Holographic SDK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -127,17 +83,17 @@ jobs:
           version: "0.4.x"
       - name: Build SDK
         run: |
-          cd bindings/python/llamaindex-holographic
+          cd bindings/python/holographic-sdk
           uv build
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: llamaindex-dist
-          path: bindings/python/llamaindex-holographic/dist
+          name: sdk-dist
+          path: bindings/python/holographic-sdk/dist
 
-  llamaindex-publish:
-    name: Publish LlamaIndex SDK to PyPI
+  holographic-sdk-publish:
+    name: Publish Holographic SDK to PyPI
     if: startsWith(github.ref, 'refs/tags/py-v') || github.event_name == 'workflow_dispatch'
-    needs: [llamaindex-build]
+    needs: [holographic-sdk-build]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -146,7 +102,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: dist
-          pattern: llamaindex-dist
+          pattern: sdk-dist
           merge-multiple: true
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
