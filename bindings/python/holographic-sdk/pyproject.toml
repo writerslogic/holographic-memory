@@ -17,10 +17,14 @@ license = {text = "AGPL-3.0-or-later"}
 langchain = ["langchain-core>=0.1.0"]
 llamaindex = ["llama-index-core>=0.10.0"]
 haystack = ["haystack-ai>=2.0.0"]
+semantic-kernel = ["semantic-kernel>=1.0.0"]
+dspy = ["dspy-ai>=2.4.0"]
 all = [
     "langchain-core>=0.1.0",
     "llama-index-core>=0.10.0",
-    "haystack-ai>=2.0.0"
+    "haystack-ai>=2.0.0",
+    "semantic-kernel>=1.0.0",
+    "dspy-ai>=2.4.0"
 ]
 
 [build-system]

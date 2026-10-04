@@ -11,12 +11,10 @@ pip install holographic-sdk
 
 Or install with specific framework integrations:
 ```bash
-pip install "holographic-sdk[langchain]"
-pip install "holographic-sdk[llamaindex]"
-pip install "holographic-sdk[haystack]"
+pip install "holographic-sdk[all]"
 ```
 
-## Integrations
+## Supported Integrations
 
 ```python
 # LangChain
@@ -27,4 +25,10 @@ from holographic_sdk.llamaindex import HolographicVectorStore
 
 # Haystack
 from holographic_sdk.haystack import HolographicDocumentStore
+
+# Microsoft Semantic Kernel
+from holographic_sdk.semantic_kernel import HolographicMemoryStore
+
+# DSPy
+from holographic_sdk.dspy import HolographicRM
 ```
