@@ -1,7 +1,14 @@
 use holographic_memory::core::algebra::HolographicAlgebra;
 use holographic_memory::core::entangled::EntangledHVec;
-use holographic_memory::core::text::encode_text_internal;
-use fxhash::FxHashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+// A simple deterministic encoder for the demo
+fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
+    let mut hasher = DefaultHasher::new();
+    text.hash(&mut hasher);
+    EntangledHVec::new_deterministic(dim, hasher.finish())
+}
 
 fn main() {
     println!("=== FHE-Lite: Zero-Trust Holographic Vector Search Demo ===\n");

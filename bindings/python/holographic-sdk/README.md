@@ -38,3 +38,6 @@ from holographic_sdk.crewai import HolographicSearchTool
 # Embedchain
 from holographic_sdk.embedchain import HolographicDB
 ```
+
+# Phidata
+from holographic_sdk.phidata import HolographicVectorDb

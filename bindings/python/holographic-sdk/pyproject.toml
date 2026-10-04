@@ -20,7 +20,10 @@ haystack = ["haystack-ai>=2.0.0"]
 semantic-kernel = ["semantic-kernel>=1.0.0"]
 dspy = ["dspy-ai>=2.4.0"]
 crewai = ["crewai>=0.28.0"]
-embedchain = ["embedchain>=0.1.114"]
+embedchain = ["embedchain>=0.1.114",
+    "phidata>=2.4.0"]
+phidata = ["phidata>=2.4.0"]
+
 all = [
     "langchain-core>=0.1.0",
     "llama-index-core>=0.10.0",
@@ -28,7 +31,8 @@ all = [
     "semantic-kernel>=1.0.0",
     "dspy-ai>=2.4.0",
     "crewai>=0.28.0",
-    "embedchain>=0.1.114"
+    "embedchain>=0.1.114",
+    "phidata>=2.4.0"
 ]
 
 [build-system]
