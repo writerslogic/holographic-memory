@@ -1,0 +1,19 @@
+[project]
+name = "langchain-holographic"
+version = "0.1.0"
+description = "Zero-Trust FHE-Lite wrapper for Holographic Memory System in LangChain"
+authors = [
+    {name = "WritersLogic", email = "david@writerslogic.com"},
+]
+dependencies = [
+    "langchain-core>=0.1.0",
+    "numpy>=1.24.0",
+    "requests>=2.31.0"
+]
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "AGPL-3.0-or-later"}
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
