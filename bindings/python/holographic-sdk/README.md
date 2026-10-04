@@ -41,3 +41,9 @@ from holographic_sdk.embedchain import HolographicDB
 
 # Phidata
 from holographic_sdk.phidata import HolographicVectorDb
+
+# Pydantic AI
+from holographic_sdk.pydantic_ai import get_holographic_tool
+
+# SmolAgents
+from holographic_sdk.smolagents import HolographicSearchTool

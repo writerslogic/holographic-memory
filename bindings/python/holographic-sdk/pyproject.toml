@@ -21,8 +21,15 @@ semantic-kernel = ["semantic-kernel>=1.0.0"]
 dspy = ["dspy-ai>=2.4.0"]
 crewai = ["crewai>=0.28.0"]
 embedchain = ["embedchain>=0.1.114",
-    "phidata>=2.4.0"]
-phidata = ["phidata>=2.4.0"]
+    "phidata>=2.4.0",
+    "pydantic-ai>=0.0.14",
+    "smolagents>=1.0.0"]
+phidata = ["phidata>=2.4.0",
+    "pydantic-ai>=0.0.14",
+    "smolagents>=1.0.0"]
+pydantic-ai = ["pydantic-ai>=0.0.14"]
+smolagents = ["smolagents>=1.0.0"]
+
 
 all = [
     "langchain-core>=0.1.0",
@@ -32,7 +39,9 @@ all = [
     "dspy-ai>=2.4.0",
     "crewai>=0.28.0",
     "embedchain>=0.1.114",
-    "phidata>=2.4.0"
+    "phidata>=2.4.0",
+    "pydantic-ai>=0.0.14",
+    "smolagents>=1.0.0"
 ]
 
 [build-system]
