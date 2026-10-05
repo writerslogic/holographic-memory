@@ -143,16 +143,24 @@ impl EntangledHVec {
         // Preserves JL distances with 3x fewer multiplications.
         // Uses FxHash per (dim, input_pos) pair for deterministic ternary values
         // instead of StdRng per dimension (avoids target_dim RNG inits).
+        //
+        // The hash pass is branchless: surviving terms are compacted into
+        // `terms` (hash outcomes are unpredictable, so branching mispredicts),
+        // then summed in ascending-j order, which keeps the f64 accumulation
+        // sequence identical to adding each surviving term in index order.
+        let vals: Vec<f64> = dense.iter().map(|&v| f64::from(v)).collect();
+        let mut terms = vec![0.0f64; vals.len()];
         let mut projections: Vec<(u32, f64)> = (0..target_dim.div_ceil(2))
             .map(|i| {
-                let mut dot_product = 0.0f64;
-                for (j, &val) in dense.iter().enumerate() {
+                let mut kept = 0usize;
+                for (j, &val) in vals.iter().enumerate() {
                     let r = hash_u64(i as u64, j as u64) % 6;
-                    if r == 0 {
-                        dot_product += val as f64;
-                    } else if r == 5 {
-                        dot_product -= val as f64;
-                    }
+                    terms[kept] = if r == 5 { -val } else { val };
+                    kept += usize::from((r == 0) | (r == 5));
+                }
+                let mut dot_product = 0.0f64;
+                for &t in &terms[..kept] {
+                    dot_product += t;
                 }
                 let index = i * 2 + usize::from(dot_product < 0.0);
                 (
@@ -803,5 +811,92 @@ mod tests {
             );
             prev_sim = sim;
         }
+    }
+
+    /// Verbatim pre-optimisation `from_dense` (encoder "signed-projection-v2").
+    fn from_dense_reference(dense: &[f32], target_dim: usize) -> EntangledHVec {
+        let active_count = (target_dim / DEFAULT_RHO_DENOM).max(1);
+        if dense.is_empty() {
+            return EntangledHVec {
+                dim: target_dim,
+                indices: Vec::new(),
+            };
+        }
+        let mut projections: Vec<(u32, f64)> = (0..target_dim.div_ceil(2))
+            .map(|i| {
+                let mut dot_product = 0.0f64;
+                for (j, &val) in dense.iter().enumerate() {
+                    let r = hash_u64(i as u64, j as u64) % 6;
+                    if r == 0 {
+                        dot_product += val as f64;
+                    } else if r == 5 {
+                        dot_product -= val as f64;
+                    }
+                }
+                let index = i * 2 + usize::from(dot_product < 0.0);
+                (
+                    index.min(target_dim.saturating_sub(1)) as u32,
+                    dot_product.abs(),
+                )
+            })
+            .collect();
+        if projections.len() > active_count {
+            projections.select_nth_unstable_by(active_count - 1, |a, b| {
+                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+            });
+            projections.truncate(active_count);
+        }
+        let mut indices: Vec<u32> = projections.into_iter().map(|(idx, _)| idx).collect();
+        indices.sort_unstable();
+        EntangledHVec {
+            dim: target_dim,
+            indices,
+        }
+    }
+
+    #[test]
+    fn from_dense_matches_reference() {
+        let mut state = 0x1234_5678_9ABC_DEF0u64;
+        let mut next = move || {
+            state = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+            hash_u64(state, 0)
+        };
+        let unit = |x: u64| (x >> 11) as f64 / (1u64 << 53) as f64;
+        let mut cases = 0usize;
+        for emb in [64usize, 384, 768, 1536] {
+            for (d, n) in [(4096usize, 100usize), (16384, 30), (65536, 3)] {
+                for k in 0..n {
+                    let v: Vec<f32> = (0..emb)
+                        .map(|_| {
+                            let r = next();
+                            match k % 6 {
+                                // continuous
+                                0 | 1 => (unit(r) * 2.0 - 1.0) as f32,
+                                // all zero
+                                2 if k < 6 => 0.0,
+                                // heavy ties: few distinct values
+                                2 | 3 => (r % 3) as f32 - 1.0,
+                                // constant
+                                4 => 0.5,
+                                // extremes and subnormals, finite only
+                                _ => match r % 5 {
+                                    0 => f32::MAX,
+                                    1 => f32::MIN,
+                                    2 => f32::MIN_POSITIVE / 4.0,
+                                    3 => -0.0,
+                                    _ => 0.0,
+                                },
+                            }
+                        })
+                        .collect();
+                    let got = EntangledHVec::from_dense(&v, d);
+                    let want = from_dense_reference(&v, d);
+                    assert_eq!(got.dim, want.dim);
+                    assert_eq!(got.indices, want.indices, "emb={emb} D={d} case={k}");
+                    cases += 1;
+                }
+            }
+        }
+        assert!(cases >= 500);
     }
 }

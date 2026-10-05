@@ -152,3 +152,7 @@ opt-level = 3
 [[bench]]
 name = "intersection_kernels"
 harness = false
+
+[[bin]]
+name = "encoder-eval"
+path = "src/bin/encoder-eval.rs"
