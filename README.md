@@ -38,7 +38,7 @@
 
 ---
 
-HMS is a high-performance vector memory engine for Rust and Node.js. It implements **Vector Symbolic Architectures (VSA)** using **Binary Spatter Code (BSC)** to deliver semantic search, analogical reasoning, relational knowledge graphs, and associative memory — with no external API calls, no cloud dependencies, and no data leaving your device. Optional features add encrypted storage, signed audit logs, credential-gated agent access, and COSE/SCITT/C2PA provenance.
+HMS is a high-performance vector memory engine for Rust and Node.js. Document search combines BM25 with exact cosine over embeddings you supply. Alongside it, HMS implements **Vector Symbolic Architectures (VSA)** using **Binary Spatter Code (BSC)** for analogical reasoning, relational knowledge graphs, and associative memory — with no external API calls, no cloud dependencies, and no data leaving your device. Optional features add encrypted storage, signed audit logs, credential-gated agent access, and COSE/SCITT/C2PA provenance.
 
 > Developed by [WritersLogic](https://github.com/writerslogic)
 
@@ -165,7 +165,7 @@ console.log(descendants[0].entityId);  // 'bob'
 <summary><strong>Features</strong> -- hybrid retrieval, symbolic operations, meaning memory, cognition engine</summary>
 
 - **Documents**: BM25 + supplied dense cosine embeddings + optional local cross-encoder reranking.
-- **Vector Retrieval**: NSG (Navigable Small World) + IVF (Inverted File) + Sparse Inverted Index, routing dynamically by dataset statistics.
+- **Sparse Vector Retrieval**: exact sparse inverted index over hypervector codes (NSG and IVF remain available). Dense vectors converted to sparse codes lose neighbour recall; see [public benchmarks](docs/PUBLIC-BENCHMARKS.md).
 - **Symbolic Operations**: Binding (XOR), Bundling (Majority Rule), Permutation (Cyclic Shift) — native bitwise VSA operations.
 - **Meaning Memory**: Structured relational layer with role-filler algebra, triple stores, multi-hop reasoning, and Hopfield attractor cleanup.
 - **Cognition Engine**: Background discovery of patterns, abstractions, knowledge gaps, hypotheses, and cross-domain analogies from stored triples.

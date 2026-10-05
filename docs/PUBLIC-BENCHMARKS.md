@@ -21,12 +21,12 @@ at revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`, L2-normalized, computed 
 | HMS dense (document API, exact cosine) | 0.645 | 0.925 | 0.317 | 0.311 |
 | HMS sparse vector path (`from_dense` + inverted index, D=16384) | 0.470 | 0.779 | 0.209 | 0.207 |
 | Reference: exact cosine in NumPy, same embeddings | 0.645 | 0.925 | 0.316 | 0.312 |
-| Reference: BM25 as published in the BEIR paper (Thakur et al. 2021, Table 2) | 0.665 | | 0.325 | |
+| Reference: BM25 as published in the BEIR paper (Thakur et al. 2021, main nDCG@10 results) | 0.665 | | 0.325 | |
 
 - HMS's dense search matches the independent NumPy reference. This is a correctness check of the
   document API; it says nothing new about the embedding model.
 - HMS's built-in BM25 is within 0.003 of the published BM25 on SciFact and 0.018 below it on
-  NFCorpus (different tokenization; no stemming).
+  NFCorpus (HMS lowercases and splits on non-alphanumeric characters, with no stemming or stopword removal).
 - Hybrid search is the best configuration on both sets: +0.038 / +0.027 nDCG@10 over dense alone.
 - The sparse vector path loses about 27% (SciFact) and 34% (NFCorpus) of nDCG@10 relative to exact
   cosine on the same embeddings. It is not suitable as the primary semantic retrieval path; the

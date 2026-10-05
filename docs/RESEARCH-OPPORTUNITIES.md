@@ -155,8 +155,10 @@ indicative only; recall, capacity and correctness figures are unaffected by load
 6. **Encoder (2.6), measured on synthetic data.** `from_dense` is 2-3.5x faster with bit-identical
    output. Recall@10 of sparse top-10 against dense cosine top-10 is 0.13 / 0.23 / 0.36 at
    D = 4096 / 16384 / 65536, but the true top-10 is inside the sparse top-100 at 0.76 / 0.96 /
-   1.00 (clusters of 100): the codes find the neighbourhood but cannot order near-ties.
-   Synthetic data; a real-embedding benchmark is the next step.
+   1.00 (clusters of 100). That did not hold on real data: on the public benchmarks
+   (`docs/PUBLIC-BENCHMARKS.md`) the true top-10 is inside the sparse top-100 for only 54% of
+   results on nytimes and glove, and the sparse path loses 27-34% of nDCG@10 on BEIR. The
+   encoder, not the index, limits the sparse path; a new versioned encoder is the open problem.
 7. **Private search (3), prototype.** `private-search` feature and `docs/PRIVATE-SEARCH.md`:
    SimplePIR-style scoring that hides the query from an honest-but-curious server. 0.88 ms server
    time per query at N = 1e5, with a 410 MB one-time client hint. The database stays visible to

@@ -3,7 +3,7 @@
   "version": "0.6.0",
   "license": "AGPL-3.0-or-later",
   "author": "WritersLogic, Inc. <david@writerslogic.com>",
-  "description": "High-performance Holographic Memory System (HMS) — privacy-preserving semantic search using hyperdimensional computing.",
+  "description": "Holographic Memory System (HMS): local document search (BM25 + embedding cosine) and vector-symbolic associative memory.",
   "repository": {
     "type": "git",
     "url": "https://github.com/writerslogic/holographic-memory"
