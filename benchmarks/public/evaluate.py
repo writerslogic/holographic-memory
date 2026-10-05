@@ -182,7 +182,7 @@ def lme_eval_utils():
     return mod, hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run_longmemeval(variant: str, hms_file: str) -> dict:
+def run_longmemeval(variant: str, hms_file: str, part: set[str] | None = None) -> dict:
     ev, ev_sha = lme_eval_utils()
     d = data_dir(f"longmemeval_{variant}")
     meta = json.loads((d / "meta.json").read_text())
@@ -203,6 +203,7 @@ def run_longmemeval(variant: str, hms_file: str) -> dict:
     scored = [
         i for i, q in enumerate(questions)
         if "_abs" not in q["id"] and any("answer" in cid for cid, _ in items["turn"][i])
+        and (part is None or q["id"] in part)
     ]
     types = sorted({questions[i]["type"] for i in scored})
 
@@ -277,8 +278,12 @@ def main() -> None:
     ap.add_argument("kind", choices=["ann", "beir", "longmemeval"])
     ap.add_argument("name")
     ap.add_argument("hms", nargs="+")
+    ap.add_argument("--split", choices=["dev"], help="longmemeval: score only this part of longmemeval_split.json")
     args = ap.parse_args()
-    if args.kind == "longmemeval":
+    if args.kind == "longmemeval" and args.split:
+        ids = set(json.loads((Path(__file__).with_name("longmemeval_split.json")).read_text())[args.split])
+        report, out_name = run_longmemeval(args.name, args.hms[0], ids), f"longmemeval_{args.split}_minilm_baseline.json"
+    elif args.kind == "longmemeval":
         report, out_name = run_longmemeval(args.name, args.hms[0]), f"public_longmemeval_{args.name}.json"
     else:
         report = run_ann(args.name, args.hms) if args.kind == "ann" else run_beir(args.name, args.hms[0])

@@ -1,0 +1,38 @@
+{
+ "turn": {
+  "kinds": {
+   "turn": 1.0,
+   "session": 1.0
+  },
+  "variants": {
+   "orig": 1.0
+  },
+  "w_lex": 1.0,
+  "w_sem": 1.0,
+  "fuse": "rrf",
+  "agg": "max",
+  "k0": 60.0,
+  "sess_prior": 0.0,
+  "time_w": 0.0,
+  "rerank_w": 0.0,
+  "rerank_n": 20
+ },
+ "session": {
+  "kinds": {
+   "turn": 1.0,
+   "session": 1.0
+  },
+  "variants": {
+   "orig": 1.0
+  },
+  "w_lex": 1.0,
+  "w_sem": 1.0,
+  "fuse": "rrf",
+  "agg": "max",
+  "k0": 60.0,
+  "sess_prior": 0.0,
+  "time_w": 0.0,
+  "rerank_w": 0.0,
+  "rerank_n": 20
+ }
+}

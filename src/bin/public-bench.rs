@@ -13,6 +13,10 @@
 //! `longmemeval`: LongMemEval_S with precomputed embeddings. Every question gets a fresh store
 //!         holding only its own haystack; writes full ranked runs per granularity (turn,
 //!         session) for the document API (lexical, dense, hybrid).
+//! `lme-scores`: per-question scoring for benchmarks/public/longmemeval_pipeline.py. One fresh
+//!         store per question holds that question's keys; each query variant runs one hybrid
+//!         search over the whole store, and the engine's BM25 and exact-cosine scores of every key
+//!         are written out for fusion.
 
 use std::collections::HashMap;
 use std::fs;
@@ -63,6 +67,25 @@ enum Mode {
         /// Only the first N questions (all by default).
         #[arg(long)]
         questions: Option<usize>,
+        #[arg(long)]
+        out: PathBuf,
+    },
+    LmeScores {
+        /// JSONL keys: {"q": question id, "id": key id, "text", "e": row in --item-emb}.
+        #[arg(long)]
+        items: PathBuf,
+        #[arg(long)]
+        item_emb: PathBuf,
+        /// JSONL query variants: {"q": question id, "v": variant, "text", "e": row in --query-emb}.
+        #[arg(long)]
+        queries: PathBuf,
+        #[arg(long)]
+        query_emb: PathBuf,
+        /// Embedding dimension of both .f32 files.
+        #[arg(long)]
+        emb_dim: usize,
+        #[arg(long, default_value_t = 16384)]
+        dim: u32,
         #[arg(long)]
         out: PathBuf,
     },
@@ -532,6 +555,127 @@ fn longmemeval(data: &Path, dim: u32, questions: Option<usize>, out: &Path) -> R
     Ok(())
 }
 
+struct LmeQuery {
+    variant: String,
+    text: String,
+    emb: usize,
+}
+
+/// JSONL rows grouped by their "q" field, in first-seen order.
+fn group_jsonl<T>(
+    path: &Path,
+    mut parse: impl FnMut(&Value) -> Result<T>,
+) -> Result<Vec<(String, Vec<T>)>> {
+    let mut groups: Vec<(String, Vec<T>)> = Vec::new();
+    let mut index: HashMap<String, usize> = HashMap::new();
+    for line in fs::read_to_string(path)
+        .with_context(|| path.display().to_string())?
+        .lines()
+    {
+        let v: Value = serde_json::from_str(line)?;
+        let q = v["q"].as_str().context("q")?.to_string();
+        let slot = *index.entry(q.clone()).or_insert_with(|| {
+            groups.push((q, Vec::new()));
+            groups.len() - 1
+        });
+        groups[slot].1.push(parse(&v)?);
+    }
+    Ok(groups)
+}
+
+/// BM25 and exact-cosine scores of every key for every query variant, one store per question.
+fn lme_scores(
+    items: &Path,
+    item_emb: &Path,
+    queries: &Path,
+    query_emb: &Path,
+    emb_dim: usize,
+    dim: u32,
+    out: &Path,
+) -> Result<()> {
+    let keys = group_jsonl(items, |v| {
+        Ok(LmeItem {
+            id: v["id"].as_str().context("id")?.to_string(),
+            text: v["text"].as_str().unwrap_or_default().to_string(),
+            emb: v["e"].as_u64().context("e")? as usize,
+        })
+    })?;
+    let variants: HashMap<String, Vec<LmeQuery>> = group_jsonl(queries, |v| {
+        Ok(LmeQuery {
+            variant: v["v"].as_str().context("v")?.to_string(),
+            text: v["text"].as_str().unwrap_or_default().to_string(),
+            emb: v["e"].as_u64().context("e")? as usize,
+        })
+    })?
+    .into_iter()
+    .collect();
+    let key_emb = read_f32(item_emb, emb_dim)?;
+    let q_emb = read_f32(query_emb, emb_dim)?;
+    ensure!(
+        keys.iter()
+            .flat_map(|(_, k)| k)
+            .all(|k| k.emb < key_emb.len()),
+        "key embedding row out of range"
+    );
+    ensure!(
+        variants.values().flatten().all(|v| v.emb < q_emb.len()),
+        "query embedding row out of range"
+    );
+    let t = Instant::now();
+    let scored: Vec<(String, Value)> = keys
+        .par_iter()
+        .enumerate()
+        .map(|(n, (qid, items))| {
+            let store = TempStore::new(&format!("lme-scores-{n}"))?;
+            let core = HmsCore::new(dim, Some(store.0.display().to_string()), None)?;
+            for item in items {
+                core.memorize_document(DocumentInput {
+                    id: item.id.clone(),
+                    text: one_chunk(&item.text),
+                    source_uri: None,
+                    version: None,
+                    metadata: None,
+                    chunk_words: Some(4096),
+                    overlap_words: Some(0),
+                    store_text: Some(false),
+                    embeddings: Some(vec![key_emb[item.emb]
+                        .iter()
+                        .map(|&x| f64::from(x))
+                        .collect()]),
+                })?;
+            }
+            let k = u32::try_from(items.len().max(1))?;
+            let mut per_variant = serde_json::Map::new();
+            for query in variants.get(qid).map_or(&[][..], Vec::as_slice) {
+                let options = SearchOptions {
+                    k: Some(k),
+                    candidate_limit: Some(k),
+                    embedding: Some(q_emb[query.emb].iter().map(|&x| f64::from(x)).collect()),
+                    lexical_weight: Some(1.0),
+                    semantic_weight: Some(1.0),
+                    min_semantic_score: Some(-1.0),
+                    ..SearchOptions::default()
+                };
+                let rows: Vec<Value> = core
+                    .search_documents(&query.text, &options)?
+                    .into_iter()
+                    .map(|h| json!([h.document_id, h.lexical_score, h.semantic_score]))
+                    .collect();
+                per_variant.insert(query.variant.clone(), Value::Array(rows));
+            }
+            Ok((qid.clone(), Value::Object(per_variant)))
+        })
+        .collect::<Result<_>>()?;
+    let report = json!({
+        "environment": environment(),
+        "sparse_dim": dim,
+        "wall_secs": t.elapsed().as_secs_f64(),
+        "scores": scored.into_iter().collect::<serde_json::Map<_, _>>(),
+    });
+    fs::write(out, serde_json::to_string(&report)?)?;
+    Ok(())
+}
+
 fn main() -> Result<()> {
     match Cli::parse().mode {
         Mode::Ann {
@@ -547,5 +691,14 @@ fn main() -> Result<()> {
             questions,
             out,
         } => longmemeval(&data, dim, questions, &out),
+        Mode::LmeScores {
+            items,
+            item_emb,
+            queries,
+            query_emb,
+            emb_dim,
+            dim,
+            out,
+        } => lme_scores(&items, &item_emb, &queries, &query_emb, emb_dim, dim, &out),
     }
 }

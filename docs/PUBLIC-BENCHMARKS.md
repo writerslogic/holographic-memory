@@ -140,6 +140,27 @@ about 48 in S, the embedding model is a 1.5B-parameter model against a 22M-param
 dataset release differs, and the paper's recall variant and level mapping were not re-derived
 here. No ranking against the paper is implied.
 
+## LongMemEval retrieval pipeline (dev split, in progress)
+
+Protocol: `benchmarks/public/longmemeval_split.json` freezes 100 dev / 400 held-out question ids
+(seed 20261005, stratified by question type and abstention; S and M share the same 500 ids). Only
+dev is used for tuning; 84 dev questions survive the official scoring filter, so one question moves
+a recall by 0.012. Held-out is scored once, in the final M run.
+
+Pipeline: `longmemeval_pipeline.py` (keys, fusion, official scoring), `longmemeval_modal.py` (GPU
+stages on Modal with content-hash caches in the `hms-lme` volume and a hard cost cap; HMS BM25 and
+exact cosine from `public-bench lme-scores`), `longmemeval_sweep.py` (dev ablation and tuning,
+writes `longmemeval_config.json` and `benchmarks/results/longmemeval_dev_ablation.json`).
+
+Dev baseline (MiniLM hybrid, the harness above restricted to dev,
+`benchmarks/results/longmemeval_dev_minilm_baseline.json`): session run R@5 0.893, R@10 0.952,
+nDCG@5 0.899, nDCG@10 0.911; round run, turn level R@5 0.607, R@10 0.786, nDCG@5 0.649,
+nDCG@10 0.687.
+
+A date-range filter in the document API is not needed for this benchmark: every question's store is
+ranked exhaustively, so a date filter or boost applied to the full ranking gives the same result as
+an engine-side filter.
+
 ## What this means
 
 - For semantic search over text, use the document API: exact cosine reproduces the embedding
