@@ -277,6 +277,128 @@ Not yet verified, because the large-model path has never run:
 - HMS ingestion at about 4,000 keys per question;
 - the `--part all` metrics path.
 
+## Holographic fact memory prototype (S dev split, numpy)
+
+`benchmarks/public/holographic_memory_proto.py`, results in `benchmarks/results/holographic_dev.json`.
+Dev split only; held-out untouched. Representation: binary spatter codes (XOR binding, majority
+superposition), D = 16,384; component and atom codes are sign codes of Qwen3-Embedding-0.6B
+embeddings under one fixed Gaussian projection, after centering (see capacity). Time is a
+month-bucket code with graded overlap between adjacent months; session and turn codes are random.
+LLM stages (Qwen3-4B-Instruct-2507 on an L4, cached by content under tag `holo-struct-dev`): one
+structuring pass over the cached free-text facts into (entity, attribute, value, when), one query
+parse into (entity, attribute, latest/earliest/in-range), and the answer judge. Modal spend for all
+of it: $0.76 on the ledger plus one preempted L4 shard (about $0.12) that was lost before its ledger
+write. The answer judge is the same model and prompt for every system.
+
+**Capacity (facts per trace before cleanup accuracy drops below 0.95; codebook of 4,000 real
+values, attributes distinct within a trace).** Uncentered sign codes fail at 8 facts whatever D:
+the raw embeddings share a common direction (mean pairwise cosine 0.43), so their sign codes agree
+on 64% of bits and every superposition collapses onto that component. Centered sign codes:
+
+| Facts per trace | 64 | 128 | 256 | 512 |
+|---|---|---|---|---|
+| BSC, random codes, D = 8,192 / 16,384 / 32,768 / 65,536 | 1.0 / 1.0 / 1.0 / 1.0 | 0.98 / 1.0 / 1.0 / 1.0 | 0.81 / 0.99 / 1.0 / 1.0 | 0.37 / 0.77 / 1.0 / 1.0 |
+| BSC, centered sign codes, same D | 1.0 / 1.0 / 1.0 / 1.0 | 0.95 / 0.98 / 0.98 / 1.0 | 0.55 / 0.57 / 0.21 / 0.90 | 0.10 / 0.12 / 0.16 / 0.11 |
+| HRR (circular convolution), sign codes, D = 8,192 / 16,384 | 1.0 / 1.0 | 1.0 / 1.0 | 0.77 / 0.96 | 0.25 / 0.52 |
+| BSC two-level (sessions of 8, then superposed), sign codes, D = 16,384 / 65,536 | 0.95 / 1.0 | 0.19 / 0.68 | 0.0 / 0.05 | 0.0 / 0.0 |
+
+Random codes scale with D as Plate's analysis predicts; semantic codes saturate at about 128 to 256
+facts per trace and more D does not buy more, because the crosstalk is structured (near-synonymous
+attributes and values share bits by design). A second level of superposition halves the usable
+load again. HRR is slightly better than BSC at equal D but needs real-valued traces; BSC was kept
+because the sign codes are already binary and XOR is its own inverse. D = 16,384 was chosen as the
+smallest D at which the mean per-entity load on dev (156 records for `user`, max 239) is at the
+0.95 point for single-level traces.
+
+**EAV fact memory (the §5.7 design): a negative result.** Structuring produced 17,867 records from
+13,351 cached facts (83% about `user`); each question's store has 189 records over 48 sessions.
+Answer accuracy (judge; 94 non-abstention dev questions):
+
+| Question type (n) | Holographic flat | Hierarchical (user trace, then session traces) | Compositional (top-5 sessions by binding) | Retrieval top-1 turn | Retrieval top-5 turns | Either (flat or top-1) |
+|---|---|---|---|---|---|---|
+| knowledge-update (15) | 0.267 | 0.267 | 0.333 | 0.733 | 1.0 | 0.733 |
+| multi-session (24) | 0.042 | 0.042 | 0.292 | 0.208 | 0.417 | 0.25 |
+| single-session-assistant (11) | 0.0 | 0.0 | 0.0 | 0.455 | 0.364 | 0.455 |
+| single-session-preference (6) | 0.0 | 0.0 | 0.0 | 0.5 | 0.833 | 0.5 |
+| single-session-user (13) | 0.231 | 0.308 | 0.308 | 0.923 | 1.0 | 0.923 |
+| temporal-reasoning (25) | 0.12 | 0.2 | 0.16 | 0.36 | 0.76 | 0.4 |
+| overall (94) | 0.117 | 0.149 | 0.213 | 0.479 | 0.702 | 0.5 |
+
+Controls over the same fact sentences (dense sign-code index 0.277, sparse 64-of-16,384 index
+0.255) show most of the gap is the extraction ceiling, not the hologram: the gold answer string
+appears in some structured value for 27 of 81 short-answer questions and in some fact sentence for
+33 (none for single-session-assistant, whose answers are in assistant turns the extractor never
+sees). Time binding changed no answer (with and without time: 0.117; knowledge-update 0.267 both
+ways) because the month code only separates values when two records of the same attribute exist in
+different months and the cleanup already preferred one of them. Where it loses: aggregation
+questions (26 parsed as needing several records; a single-value lookup cannot answer them, the
+compositional list helps multi-session, 0.292 against top-1's 0.208, but stays below top-5's
+0.417); extraction and structuring (the breed in "a collar suitable for a Golden Retriever" became
+the record `plan = get new collar with name tag`); cleanup crosstalk (correct answers score 0.20 to
+0.26 agreement, incorrect ones median 0.23, so no abstention threshold separates them; the six
+abstention questions score 0.20 to 0.32). Session recall from the user trace alone: R_any@5 0.548,
+R_all@5 0.155 (fact index 0.857 / 0.679; tuned pipeline 0.976 / 0.964). Query cost: flat trace
+292 D-bit ops (one cleanup per month bucket), hierarchical 4,380, fact-index scan 138.
+
+Robustness of the EAV variant: with 5/10/20/30/40/50% of trace bits flipped the flat answer stays
+at 0.117 / 0.117 / 0.138 / 0.128 / 0.106 / 0.011 (same answer as the clean trace 97 / 94 / 85 / 77
+/ 56 / 1%), the sparse-code index drops 0.255 to 0.234 / 0.191 / 0.117 / 0.053 / 0.043 / 0.0 and
+the dense-code index holds 0.277 to 0.245 until 40% then 0.011 at 50%. Eight shards of each entity
+trace (every record in a random half of them) answer 0.117 after deleting 10 / 25 / 50% of shards;
+the fact index with the same fraction of items deleted goes 0.277 to 0.223 / 0.266 / 0.202.
+
+**Turn-atom memory (no extraction), official metrics.** Atoms are the sign codes of raw user turns
+and of the cached fact sentences (385 per haystack, 8 per session); each atom is bound with a random
+turn code, its session code and the session's month code; session traces, window traces (W
+consecutive sessions) and the user trace are majorities. A content query is not a factor of any
+trace, so the maintainer's "unbind with the query" step is replaced by its defined form: a trace is
+unbound with an atom's key and compared with the query code, one Hamming per atom and no codebook
+(the cleanup codebook of all turns is therefore unused). Official `eval_utils.py` (pinned commit),
+84 scored dev questions, D = 16,384, same codes for the flat Hamming scan:
+
+| Coarse trace (atoms per trace) | Session R_all@5 | Session nDCG@10 | Turn R_all@5 (from session traces) | Turn nDCG@10 |
+|---|---|---|---|---|
+| user trace (385) | 0.143 | 0.310 | 0.738 | 0.800 |
+| window of 16 sessions (130) | 0.560 | 0.683 | | |
+| window of 4 sessions (32) | 0.833 | 0.849 | | |
+| one trace per session (8) | 0.940 | 0.924 | | |
+| flat Hamming scan over the atoms (no traces) | 0.976 | 0.977 | 0.786 | 0.838 |
+| tuned pipeline (dense + BM25 + facts + re-ranker, `longmemeval_dev_final.json`) | 0.964 | 0.958 | 0.821 | 0.823 |
+
+The session traces hold their 8 atoms almost losslessly: turns resolved from them reach R_all@5
+0.738 / nDCG@10 0.800 against 0.786 / 0.838 for the flat scan over the same codes, with the store
+reduced from 385 atom codes to 48 session codes, and the LLM rewrite as the query did not help
+(0.155 session R_all@5 from the user trace). The user trace is over capacity, in line with the
+curve above: session recall from one trace per haystack is 0.143, and recovers only when a trace
+holds at most about 32 atoms (window of 4 sessions, 0.833). Per type, turns from session traces
+match the flat scan on single-session-user (1.0), single-session-assistant (1.0) and
+knowledge-update (0.80), beat it on multi-session (0.67 against 0.62) and preference (0.67 against 0.50), and lose on temporal-reasoning (0.64 against 0.88). Query cost: 864 D-bit
+ops hierarchical (coarse over the user trace plus fine over every session trace) against 385 for
+the flat scan; with window traces the coarse stage is n_sessions times the window's atoms.
+
+Robustness of the turn-atom variant (window-4 coarse, session-trace fine; turns ordered globally by
+score): flipping 5 / 10 / 20 / 30 / 40 / 50% of every trace's bits gives session R_all@5 0.845 /
+0.714 / 0.607 / 0.440 / 0.143 / 0.036 and turn R_all@5 0.726 / 0.762 / 0.714 / 0.679 / 0.440 /
+0.012 (clean: 0.833 / 0.738). Storing each session trace as 8 shards (every atom in a random half)
+and deleting 10 / 25 / 50% of the shards: session R_all@5 0.905 / 0.905 / 0.929, turn 0.583 /
+0.571 / 0.631; the flat index with the same fraction of atoms deleted outright: session 0.964 /
+0.952 / 0.917, turn 0.750 / 0.690 / 0.488. At 50% loss the sharded traces keep turn recall 0.631
+against the index's 0.488, but the shards cost 0.74 of the fine-stage recall at zero loss (0.583
+against 0.738, averaging agreements over half-full shards adds noise), so the "cut the hologram in
+half" property is real and paid for up front; a replicated index of the same byte budget was not
+measured.
+
+**Plain statement.** On dev, no holographic variant answers questions better than the tuned
+chunk-retrieval pipeline: the EAV design loses on every question type (0.117 against 0.479 top-1)
+and its ceiling is extraction, not the algebra; the extraction-free turn-atom design gets within
+0.05 of a flat scan over the same codes at the turn level while storing one vector per session, and
+loses at the session level unless traces are kept at about 32 atoms. The properties the name
+implies hold in the measured form: answers and rankings degrade gradually up to 30 to 40% bit
+flips where the sparse index fails by 20%, and shard loss costs little; the cost is capacity, which
+semantic codes cap at a few hundred items per trace regardless of D. Not verified: a replicated
+index at equal bytes as the shard control, time codes bound into the query, re-ranking on top of
+the holographic candidates, and anything on the held-out split or on M. No Rust was written.
+
 ## What this means
 
 - For semantic search over text, use the document API: exact cosine reproduces the embedding

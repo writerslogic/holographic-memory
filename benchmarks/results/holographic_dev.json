@@ -1,0 +1,4891 @@
+{
+ "protocol": "LongMemEval_S frozen dev split only (benchmarks/public/longmemeval_split.json); held-out untouched. Script: benchmarks/public/holographic_memory_proto.py. Models: Qwen3-Embedding-0.6B codes; Qwen3-4B-Instruct-2507 for structuring, query parse and judge on Modal (tag holo-struct-dev).",
+ "representation": "binary spatter codes (XOR binding, majority superposition), D=16384; component and atom codes = sign codes of mean-centered embeddings under one fixed Gaussian projection",
+ "capacity": {
+  "codebook_values": 4000,
+  "attributes": 12897,
+  "queries_per_K": 160,
+  "K": [
+   1,
+   2,
+   4,
+   8,
+   16,
+   32,
+   64,
+   128,
+   256,
+   512,
+   1024
+  ],
+  "curves": {
+   "bsc_sign_D8192": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.945,
+    0.547,
+    0.102,
+    0.023
+   ],
+   "bsc_random_D8192": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.984,
+    0.809,
+    0.367,
+    0.088
+   ],
+   "hrr_sign_D8192": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.773,
+    0.252,
+    0.057
+   ],
+   "bsc_sign_D16384": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.984,
+    0.574,
+    0.121,
+    0.034
+   ],
+   "bsc_sign_two_level_D16384": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.945,
+    0.188,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bsc_random_D16384": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.992,
+    0.77,
+    0.345
+   ],
+   "bsc_sign_uncentered_D16384": [
+    1.0,
+    1.0,
+    1.0,
+    0.969,
+    0.438,
+    0.006,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "hrr_sign_D16384": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.957,
+    0.523,
+    0.121
+   ],
+   "bsc_sign_D32768": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.977,
+    0.211,
+    0.158,
+    0.026
+   ],
+   "bsc_random_D32768": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.996,
+    0.804
+   ],
+   "bsc_sign_D65536": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.898,
+    0.111,
+    0.039
+   ],
+   "bsc_sign_two_level_D65536": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.68,
+    0.047,
+    0.002,
+    0.0
+   ],
+   "bsc_random_D65536": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.996
+   ]
+  },
+  "note": "accuracy = cleanup picks the stored value among the codebook; attributes sampled without replacement, values with replacement; two-level = facts in sessions of 8, session traces superposed"
+ },
+ "eav_fact_memory": {
+  "protocol": "LongMemEval_S dev split (benchmarks/public/longmemeval_split.json), 100 questions; the 6 abstention questions are reported separately; answers judged by the same LLM for every system",
+  "representation": {
+   "kind": "binary spatter codes: XOR binding, majority superposition",
+   "D": 16384,
+   "component_codes": "sign codes of Qwen/Qwen3-Embedding-0.6B embeddings under one fixed Gaussian projection",
+   "time": "month-bucket codes with graded overlap, 23 buckets from 2022-02-01",
+   "session_codes": "random",
+   "margin": 0.02,
+   "fine_m": 5,
+   "shards": 8
+  },
+  "n_questions": {
+   "knowledge-update": 15,
+   "multi-session": 24,
+   "single-session-assistant": 11,
+   "single-session-preference": 6,
+   "single-session-user": 13,
+   "temporal-reasoning": 25,
+   "overall": 94
+  },
+  "accuracy": {
+   "holographic_flat": {
+    "overall": 0.117,
+    "knowledge-update": 0.267,
+    "multi-session": 0.042,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.0,
+    "single-session-user": 0.231,
+    "temporal-reasoning": 0.12
+   },
+   "holographic_flat_no_time": {
+    "overall": 0.117,
+    "knowledge-update": 0.267,
+    "multi-session": 0.042,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.0,
+    "single-session-user": 0.231,
+    "temporal-reasoning": 0.12
+   },
+   "holographic_hierarchical": {
+    "overall": 0.149,
+    "knowledge-update": 0.267,
+    "multi-session": 0.042,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.0,
+    "single-session-user": 0.308,
+    "temporal-reasoning": 0.2
+   },
+   "holographic_compositional_top5_sessions": {
+    "overall": 0.213,
+    "knowledge-update": 0.333,
+    "multi-session": 0.292,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.0,
+    "single-session-user": 0.308,
+    "temporal-reasoning": 0.16
+   },
+   "retrieval_top1_turn": {
+    "overall": 0.479,
+    "knowledge-update": 0.733,
+    "multi-session": 0.208,
+    "single-session-assistant": 0.455,
+    "single-session-preference": 0.5,
+    "single-session-user": 0.923,
+    "temporal-reasoning": 0.36
+   },
+   "retrieval_top5_turns": {
+    "overall": 0.702,
+    "knowledge-update": 1.0,
+    "multi-session": 0.417,
+    "single-session-assistant": 0.364,
+    "single-session-preference": 0.833,
+    "single-session-user": 1.0,
+    "temporal-reasoning": 0.76
+   },
+   "either_flat_or_top1": {
+    "overall": 0.5,
+    "knowledge-update": 0.733,
+    "multi-session": 0.25,
+    "single-session-assistant": 0.455,
+    "single-session-preference": 0.5,
+    "single-session-user": 0.923,
+    "temporal-reasoning": 0.4
+   },
+   "either_any_holographic_or_top1": {
+    "overall": 0.585,
+    "knowledge-update": 0.733,
+    "multi-session": 0.5,
+    "single-session-assistant": 0.455,
+    "single-session-preference": 0.5,
+    "single-session-user": 0.923,
+    "temporal-reasoning": 0.48
+   },
+   "control_sparse_fact_index": {
+    "overall": 0.255,
+    "knowledge-update": 0.533,
+    "multi-session": 0.083,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.0,
+    "single-session-user": 0.615,
+    "temporal-reasoning": 0.24
+   },
+   "control_dense_fact_index": {
+    "overall": 0.277,
+    "knowledge-update": 0.467,
+    "multi-session": 0.083,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.0,
+    "single-session-user": 0.692,
+    "temporal-reasoning": 0.32
+   }
+  },
+  "session_recall": {
+   "note": "scored questions with gold sessions; user trace alone = coarse stage, no index",
+   "user_trace_alone": {
+    "any@5": 0.548,
+    "all@5": 0.155,
+    "any@10": 0.679,
+    "all@10": 0.369
+   },
+   "dense_fact_index": {
+    "any@5": 0.857,
+    "all@5": 0.679,
+    "any@10": 0.857,
+    "all@10": 0.679
+   },
+   "tuned_pipeline": {
+    "any@5": 0.976,
+    "all@5": 0.964,
+    "any@10": 1.0,
+    "all@10": 0.988
+   }
+  },
+  "query_cost_vector_ops": {
+   "note": "D-bit XOR / Hamming operations per question (mean); cleanup against |values| counts |values| ops",
+   "flat_time": 292.021,
+   "flat_no_time": 180.872,
+   "hierarchical_coarse_to_fine": 4379.915,
+   "dense_fact_index_scan": 138.223,
+   "values_per_store_mean": 179.872,
+   "sessions_per_store_mean": 47.564
+  },
+  "degradation_bit_flips": {
+   "0.0": {
+    "holographic_flat": 0.117,
+    "holographic_same_answer_as_clean": 1.0,
+    "control_sparse": 0.255,
+    "control_dense": 0.277
+   },
+   "0.05": {
+    "holographic_flat": 0.117,
+    "holographic_same_answer_as_clean": 0.968,
+    "control_sparse": 0.234,
+    "control_dense": 0.266
+   },
+   "0.1": {
+    "holographic_flat": 0.117,
+    "holographic_same_answer_as_clean": 0.936,
+    "control_sparse": 0.191,
+    "control_dense": 0.287
+   },
+   "0.2": {
+    "holographic_flat": 0.138,
+    "holographic_same_answer_as_clean": 0.851,
+    "control_sparse": 0.117,
+    "control_dense": 0.277
+   },
+   "0.3": {
+    "holographic_flat": 0.128,
+    "holographic_same_answer_as_clean": 0.766,
+    "control_sparse": 0.053,
+    "control_dense": 0.255
+   },
+   "0.4": {
+    "holographic_flat": 0.106,
+    "holographic_same_answer_as_clean": 0.564,
+    "control_sparse": 0.043,
+    "control_dense": 0.245
+   },
+   "0.5": {
+    "holographic_flat": 0.011,
+    "holographic_same_answer_as_clean": 0.011,
+    "control_sparse": 0.0,
+    "control_dense": 0.011
+   }
+  },
+  "storage_deletion": {
+   "0.0": {
+    "holographic_shards_answer": 0.117,
+    "holographic_shards_session_recall": {
+     "any@5": 0.548,
+     "all@5": 0.214,
+     "any@10": 0.69,
+     "all@10": 0.321
+    },
+    "index_answer": 0.277,
+    "index_session_recall": {
+     "any@5": 0.857,
+     "all@5": 0.679,
+     "any@10": 0.857,
+     "all@10": 0.679
+    }
+   },
+   "0.1": {
+    "holographic_shards_answer": 0.117,
+    "holographic_shards_session_recall": {
+     "any@5": 0.536,
+     "all@5": 0.167,
+     "any@10": 0.702,
+     "all@10": 0.321
+    },
+    "index_answer": 0.223,
+    "index_session_recall": {
+     "any@5": 0.845,
+     "all@5": 0.667,
+     "any@10": 0.857,
+     "all@10": 0.667
+    }
+   },
+   "0.25": {
+    "holographic_shards_answer": 0.117,
+    "holographic_shards_session_recall": {
+     "any@5": 0.476,
+     "all@5": 0.167,
+     "any@10": 0.702,
+     "all@10": 0.345
+    },
+    "index_answer": 0.266,
+    "index_session_recall": {
+     "any@5": 0.833,
+     "all@5": 0.643,
+     "any@10": 0.845,
+     "all@10": 0.655
+    }
+   },
+   "0.5": {
+    "holographic_shards_answer": 0.117,
+    "holographic_shards_session_recall": {
+     "any@5": 0.512,
+     "all@5": 0.167,
+     "any@10": 0.655,
+     "all@10": 0.333
+    },
+    "index_answer": 0.202,
+    "index_session_recall": {
+     "any@5": 0.81,
+     "all@5": 0.595,
+     "any@10": 0.821,
+     "all@10": 0.619
+    }
+   }
+  },
+  "temporal": {
+   "knowledge-update": {
+    "n": 15,
+    "flat_with_time": 0.267,
+    "flat_without_time": 0.267,
+    "hierarchical": 0.267,
+    "retrieval_top1": 0.733
+   },
+   "temporal-reasoning": {
+    "n": 25,
+    "flat_with_time": 0.12,
+    "flat_without_time": 0.12,
+    "hierarchical": 0.2,
+    "retrieval_top1": 0.36
+   }
+  },
+  "compositional": {
+   "multi-session": {
+    "n": 24,
+    "query_by_binding_top5_sessions": 0.292,
+    "query_by_binding_single_value": 0.042,
+    "retrieval_top1": 0.208,
+    "retrieval_top5": 0.417
+   },
+   "temporal-reasoning": {
+    "n": 25,
+    "query_by_binding_top5_sessions": 0.16,
+    "query_by_binding_single_value": 0.2,
+    "retrieval_top1": 0.36,
+    "retrieval_top5": 0.76
+   },
+   "knowledge-update": {
+    "n": 15,
+    "query_by_binding_top5_sessions": 0.333,
+    "query_by_binding_single_value": 0.267,
+    "retrieval_top1": 0.733,
+    "retrieval_top5": 1.0
+   }
+  },
+  "store_size": {
+   "records_per_question_mean": 189.18,
+   "entities_per_question_mean": 19.95,
+   "queried_entity_load_mean": 155.85,
+   "queried_entity_load_max": 239,
+   "queried_entity_sessions_mean": 18.78
+  },
+  "judge": {
+   "model": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+   "unparsed_verdicts": 0
+  },
+  "cost_usd": {
+   "export_stage": 0.6179,
+   "cumulative_tag_ledger": 0.7483
+  },
+  "abstention": {
+   "n": 6,
+   "holographic_scores": {
+    "0862e8bf_abs": 0.2313,
+    "80ec1f4f_abs": 0.2986,
+    "edced276_abs": 0.3225,
+    "e5ba910e_abs": 0.2627,
+    "gpt4_70e84552_abs": 0.2001,
+    "2698e78f_abs": 0.2771
+   },
+   "note": "no abstention threshold is applied; compare with score_distribution"
+  },
+  "score_distribution": {
+   "correct": [
+    0.1962,
+    0.2573,
+    0.2622,
+    0.3296,
+    0.3425,
+    0.351,
+    0.3783,
+    0.3829,
+    0.3865,
+    0.4521,
+    0.5708
+   ],
+   "incorrect": [
+    0.0221,
+    0.0929,
+    0.1062,
+    0.1112,
+    0.1167,
+    0.1246,
+    0.1359,
+    0.1365,
+    0.1492,
+    0.151,
+    0.1569,
+    0.1624,
+    0.1642,
+    0.1644,
+    0.167,
+    0.1676,
+    0.1827,
+    0.1842,
+    0.1892,
+    0.192,
+    0.197,
+    0.1984,
+    0.1986,
+    0.1986,
+    0.2001,
+    0.2007,
+    0.2007,
+    0.2047,
+    0.21,
+    0.2125,
+    0.2128,
+    0.2134,
+    0.214,
+    0.2147,
+    0.2168,
+    0.2172,
+    0.2173,
+    0.2183,
+    0.2211,
+    0.2253,
+    0.2272,
+    0.2319,
+    0.233,
+    0.2366,
+    0.2374,
+    0.2394,
+    0.2512,
+    0.2534,
+    0.2548,
+    0.2556,
+    0.259,
+    0.26,
+    0.2603,
+    0.2629,
+    0.2725,
+    0.2777,
+    0.2805,
+    0.2853,
+    0.286,
+    0.2968,
+    0.299,
+    0.2999,
+    0.3029,
+    0.3141,
+    0.3203,
+    0.3207,
+    0.3464,
+    0.3485,
+    0.3516,
+    0.3517,
+    0.3615,
+    0.3809,
+    0.3901,
+    0.3923,
+    0.3955,
+    0.4048,
+    0.4198,
+    0.4237,
+    0.4259,
+    0.4438,
+    0.465,
+    0.5333,
+    0.5421
+   ]
+  },
+  "failures": {
+   "aggregation_questions": 26,
+   "entity_not_in_store": 0,
+   "flat_wrong_retrieval_right": [
+    "94f70d80",
+    "c8c3f81d",
+    "8ebdbe50",
+    "0862e8bf",
+    "d52b4f67",
+    "15745da0",
+    "19b5f2b3",
+    "4100d0a0",
+    "f4f1d8a4",
+    "6d550036",
+    "46a3abf7",
+    "75832dbd",
+    "32260d93",
+    "1da05512",
+    "5025383b",
+    "0100672e",
+    "0ea62687",
+    "gpt4_a2d1d1f6",
+    "2ebe6c92",
+    "gpt4_468eb064",
+    "gpt4_5dcc0aab",
+    "gpt4_4edbafa2",
+    "gpt4_8c8961ae",
+    "gpt4_88806d6e",
+    "184da446",
+    "41698283",
+    "2133c1b5",
+    "ed4ddc30",
+    "06db6396",
+    "3ba21379",
+    "c6853660",
+    "7e00a6cb",
+    "e3fc4d6e",
+    "4388e9dd",
+    "b759caee",
+    "e48988bc"
+   ],
+   "flat_right_retrieval_wrong": [
+    "eeda8a6d",
+    "0bc8ad93"
+   ]
+  },
+  "per_question": {
+   "94f70d80": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "IKEA",
+    "flat_source": {
+     "sid": "answer_c63c0458",
+     "tid": "noans_c63c0458_7"
+    },
+    "entity": "user",
+    "attribute": "IKEA bookshelf assembly time",
+    "answer": "4 hours"
+   },
+   "dccbc061": {
+    "qtype": "single-session-user",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "Buddhism",
+    "flat_source": {
+     "sid": "answer_8f276838",
+     "tid": "answer_8f276838_1"
+    },
+    "entity": "user",
+    "attribute": "stance on spirituality",
+    "answer": "A staunch atheist"
+   },
+   "c8c3f81d": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "get a new pair of gym shoes soon",
+    "flat_source": {
+     "sid": "19ec83c5_1",
+     "tid": "19ec83c5_1_9"
+    },
+    "entity": "user",
+    "attribute": "favorite running shoes brand",
+    "answer": "Nike"
+   },
+   "8ebdbe50": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "requirements to get certified",
+    "flat_source": {
+     "sid": "b53f447a_1",
+     "tid": "b53f447a_1_5"
+    },
+    "entity": "user",
+    "attribute": "certification",
+    "answer": "Data Science"
+   },
+   "6b168ec8": {
+    "qtype": "single-session-user",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "three bikes: road bike, mountain bike, commuter bike",
+    "flat_source": {
+     "sid": "answer_e623ae87",
+     "tid": "answer_e623ae87_5"
+    },
+    "entity": "user",
+    "attribute": "bikes",
+    "answer": "three"
+   },
+   "75499fd8": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "Yellow Dog Design",
+    "flat_source": {
+     "sid": "answer_723bf11f",
+     "tid": "noans_723bf11f_11"
+    },
+    "entity": "user",
+    "attribute": "dog's breed",
+    "answer": "Golden Retriever"
+   },
+   "0862e8bf": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "Badger Renegade",
+    "flat_source": {
+     "sid": "f31033c0_2",
+     "tid": "f31033c0_2_7"
+    },
+    "entity": "user",
+    "attribute": "cat's name",
+    "answer": "Luna"
+   },
+   "d52b4f67": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "attended wedding expo",
+    "flat_source": {
+     "sid": "answer_0df6aa4b",
+     "tid": "noans_0df6aa4b_11"
+    },
+    "entity": "user",
+    "attribute": "cousin's wedding location",
+    "answer": "The Grand Ballroom"
+   },
+   "15745da0": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "of photography gear",
+    "flat_source": {
+     "sid": "39948bcf_5",
+     "tid": "39948bcf_5_7"
+    },
+    "entity": "user",
+    "attribute": "vintage camera collection duration",
+    "answer": "three months"
+   },
+   "e01b8e2f": {
+    "qtype": "single-session-user",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "a week",
+    "flat_source": {
+     "sid": "answer_5ca6cd28",
+     "tid": "answer_5ca6cd28_3"
+    },
+    "entity": "user",
+    "attribute": "week-long trip with family",
+    "answer": "Hawaii"
+   },
+   "19b5f2b3": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "in their calendar",
+    "flat_source": {
+     "sid": "571d2ec6",
+     "tid": "571d2ec6_3"
+    },
+    "entity": "user",
+    "attribute": "time in Japan",
+    "answer": "two weeks"
+   },
+   "4100d0a0": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "diversity and inclusion",
+    "flat_source": {
+     "sid": "8d068598",
+     "tid": "8d068598_11"
+    },
+    "entity": "user",
+    "attribute": "ethnicity",
+    "answer": "A mix of Irish and Italian"
+   },
+   "f4f1d8a4": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "cousin's birthday party",
+    "flat_source": {
+     "sid": "eb682e52_2",
+     "tid": "eb682e52_2_9"
+    },
+    "entity": "user",
+    "attribute": "birthday gift giver",
+    "answer": "my sister"
+   },
+   "0862e8bf_abs": {
+    "qtype": "single-session-user",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": false,
+    "flat_value": "Luna",
+    "flat_source": {
+     "sid": "noans_c6fd8ebd_abs",
+     "tid": "noans_c6fd8ebd_abs_11"
+    },
+    "entity": "user",
+    "attribute": "hamster's name",
+    "answer": "You did not mention this information. You mentioned your cat Luna but not your hamster."
+   },
+   "6d550036": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": false,
+    "flat_value": "project's goals and objectives",
+    "flat_source": {
+     "sid": "2e4430d8_2",
+     "tid": "2e4430d8_2_11"
+    },
+    "entity": "user",
+    "attribute": "led_projects",
+    "answer": 2
+   },
+   "gpt4_a56e767c": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": false,
+    "top5": true,
+    "flat_value": "Portland Film Festival",
+    "flat_source": {
+     "sid": "answer_cf9e3940_1",
+     "tid": "answer_cf9e3940_1_1"
+    },
+    "entity": "user",
+    "attribute": "movie festivals attended",
+    "answer": "I attended four movie festivals."
+   },
+   "6cb6f249": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": false,
+    "top5": false,
+    "flat_value": "a week-long break",
+    "flat_source": {
+     "sid": "answer_a4204937_1",
+     "tid": "answer_a4204937_1_1"
+    },
+    "entity": "user",
+    "attribute": "social media breaks",
+    "answer": "17 days"
+   },
+   "46a3abf7": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "before introducing to main tank",
+    "flat_source": {
+     "sid": "answer_c65042d7_2",
+     "tid": "noans_c65042d7_2_11"
+    },
+    "entity": "user",
+    "attribute": "tanks",
+    "answer": 3
+   },
+   "28dc39ac": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": false,
+    "top5": true,
+    "flat_value": "has been meaning to get into video games",
+    "flat_source": {
+     "sid": "cbd18c72",
+     "tid": "cbd18c72_7"
+    },
+    "entity": "user",
+    "attribute": "hours spent playing games",
+    "answer": "140 hours"
+   },
+   "gpt4_2f8be40d": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "a few weddings recently",
+    "flat_source": {
+     "sid": "answer_e7b0637e_1",
+     "tid": "answer_e7b0637e_1_1"
+    },
+    "entity": "user",
+    "attribute": "weddings attended",
+    "answer": "I attended three weddings. The couples were Rachel and Mike, Emily and Sarah, and Jen and Tom."
+   },
+   "7024f17c": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "set realistic goals and find a yoga buddy",
+    "flat_source": {
+     "sid": "noans_a21f3697_3",
+     "tid": "noans_a21f3697_3_7"
+    },
+    "entity": "user",
+    "attribute": "hours of jogging and yoga",
+    "answer": "0.5 hours"
+   },
+   "gpt4_5501fe77": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "Instagram, Facebook, Twitter, and TikTok",
+    "flat_source": {
+     "sid": "answer_203bf3fa_3",
+     "tid": "noans_203bf3fa_3_3"
+    },
+    "entity": "user",
+    "attribute": "social media followers gained",
+    "answer": "TikTok"
+   },
+   "b3c15d39": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "a high-end moisturizer from La Mer for $1,500",
+    "flat_source": {
+     "sid": "f58c36b8_2",
+     "tid": "f58c36b8_2_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "5 days. 6 days (including the last day) is also acceptable."
+   },
+   "gpt4_31ff4165": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": false,
+    "top5": false,
+    "flat_value": "if there are other health metrics to track in addition to sleep and steps",
+    "flat_source": {
+     "sid": "answer_02b63d04_1",
+     "tid": "noans_02b63d04_1_11"
+    },
+    "entity": "user",
+    "attribute": "health-related devices used per day",
+    "answer": "4"
+   },
+   "eeda8a6d": {
+    "qtype": "multi-session",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "10 neon tetras, 5 golden honey gouramis, and a small pleco catfish",
+    "flat_source": {
+     "sid": "answer_3e5fea0e_1",
+     "tid": "answer_3e5fea0e_1_1"
+    },
+    "entity": "user",
+    "attribute": "aquarium fish total count",
+    "answer": 17
+   },
+   "gpt4_731e37d7": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": false,
+    "top5": false,
+    "flat_value": "deserve to buy luxury items",
+    "flat_source": {
+     "sid": "267a912c",
+     "tid": "267a912c_9"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "$720"
+   },
+   "edced276": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "Hawaii",
+    "flat_source": {
+     "sid": "answer_60e8941a_1",
+     "tid": "answer_60e8941a_1_1"
+    },
+    "entity": "user",
+    "attribute": "travel days in Hawaii and New York City",
+    "answer": "15 days"
+   },
+   "2b8f3739": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "email marketing, social media, and in-store promotions",
+    "flat_source": {
+     "sid": "answer_23759615_3",
+     "tid": "noans_23759615_3_11"
+    },
+    "entity": "user",
+    "attribute": "earnings from selling products at markets",
+    "answer": "$495"
+   },
+   "c2ac3c61": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "some courses",
+    "flat_source": {
+     "sid": "answer_923c0221_1",
+     "tid": "noans_923c0221_1_1"
+    },
+    "entity": "user",
+    "attribute": "online courses completed",
+    "answer": 5
+   },
+   "80ec1f4f_abs": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "Natural History Museum",
+    "flat_source": {
+     "sid": "noans_990c8992_abs_1",
+     "tid": "noans_990c8992_abs_1_1"
+    },
+    "entity": "user",
+    "attribute": "museums or galleries visited",
+    "answer": "0. You did not mention visitng any museum in December"
+   },
+   "edced276_abs": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "Hawaii",
+    "flat_source": {
+     "sid": "noans_60e8941a_abs_1",
+     "tid": "noans_60e8941a_abs_1_1"
+    },
+    "entity": "user",
+    "attribute": "travel days in Hawaii and Seattle",
+    "answer": "The information provided is not enough. You mentioned traveling for 10 days in Hawaii but did not mention abything about the trip to Seattle."
+   },
+   "75832dbd": {
+    "qtype": "single-session-preference",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "content calendar to plan and organize their posts",
+    "flat_source": {
+     "sid": "47ec1674_2",
+     "tid": "47ec1674_2_11"
+    },
+    "entity": "user",
+    "attribute": "recent publications or conferences",
+    "answer": "The user would prefer suggestions related to recent research papers, articles, or conferences that focus on artificial intelligence in healthcare, particularly those that involve deep learning for medical image analysis. They would not be interested in general AI topics or those unrelated to healthcare."
+   },
+   "32260d93": {
+    "qtype": "single-session-preference",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "Saturday morning",
+    "flat_source": {
+     "sid": "c9a763e9",
+     "tid": "c9a763e9_3"
+    },
+    "entity": "user",
+    "attribute": "favorite movie or show",
+    "answer": "The user would prefer recommendations for stand-up comedy specials on Netflix, especially those that are known for their storytelling. They may not prefer recommendations for other genres or platforms."
+   },
+   "38146c39": {
+    "qtype": "single-session-preference",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "return policy",
+    "flat_source": {
+     "sid": "2ed8bd4a_2",
+     "tid": "2ed8bd4a_2_9"
+    },
+    "entity": "user",
+    "attribute": "cookie preferences",
+    "answer": "The user would prefer responses that build upon their previous experimentation with turbinado sugar, suggesting ingredients or techniques that complement its richer flavor. They might not prefer generic cookie-making advice or suggestions that don't take into account their existing use of turbinado sugar."
+   },
+   "1da05512": {
+    "qtype": "single-session-preference",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "Best Buy",
+    "flat_source": {
+     "sid": "f2565b3b_2",
+     "tid": "f2565b3b_2_3"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "The user would prefer responses that take into account their current home network storage capacity issues and recent reliance on external hard drives, highlighting the potential benefits of a NAS device in addressing these specific needs. They might not prefer responses that ignore their current storage challenges or fail to consider their recent tech upgrades and priorities. Preferred responses would utilize the user's previous mentions of storage capacity issues and tech investments to inform their decision."
+   },
+   "b6025781": {
+    "qtype": "single-session-preference",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "affordable gourmet food items",
+    "flat_source": {
+     "sid": "d6956a2e_1",
+     "tid": "d6956a2e_1_5"
+    },
+    "entity": "user",
+    "attribute": "meal prep recipes",
+    "answer": "The user would prefer responses that suggest healthy meal prep recipes, especially those that incorporate quinoa and roasted vegetables, and offer variations in protein sources. They might appreciate suggestions that build upon their existing preferences, such as new twists on chicken Caesar salads or turkey and avocado wraps. The user may not prefer responses that suggest unhealthy or high-calorie meal prep options, or those that deviate significantly from their established healthy eating habits."
+   },
+   "0a34ad58": {
+    "qtype": "single-session-preference",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "using public transport",
+    "flat_source": {
+     "sid": "ultrachat_397355",
+     "tid": "ultrachat_397355_13"
+    },
+    "entity": "user",
+    "attribute": "anxiety about getting around Tokyo",
+    "answer": "The user would prefer responses that utilize their existing resources, such as their Suica card and TripIt app, to provide personalized tips for navigating Tokyo's public transportation. They might not prefer general tips or recommendations that do not take into account their prior preparations."
+   },
+   "d905b33f": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "$40",
+    "flat_source": {
+     "sid": "7613d5ec_2",
+     "tid": "7613d5ec_2_11"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "20%"
+   },
+   "7405e8b1": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "$80",
+    "flat_source": {
+     "sid": "39adc97c_2",
+     "tid": "39adc97c_2_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "Yes."
+   },
+   "60036106": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "another Facebook ad campaign",
+    "flat_source": {
+     "sid": "answer_e552e1f9_2",
+     "tid": "noans_e552e1f9_2_9"
+    },
+    "entity": "user",
+    "attribute": "Facebook ad campaign and Instagram influencer collaboration reach",
+    "answer": "12,000"
+   },
+   "5025383b": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "on social media or online platforms",
+    "flat_source": {
+     "sid": "0e349efa",
+     "tid": "0e349efa_11"
+    },
+    "entity": "user",
+    "attribute": "hobbies that led to joining online communities",
+    "answer": "photography and cooking"
+   },
+   "3fdac837": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "day trip or weekend getaway destinations from Tokyo within a few hours",
+    "flat_source": {
+     "sid": "c85ef24e_1",
+     "tid": "c85ef24e_1_11"
+    },
+    "entity": "user",
+    "attribute": "days spent in Japan and Chicago",
+    "answer": "11 days (or 12 days, if April 15th to 22nd is considered as 8 days)"
+   },
+   "77eafa52": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": false,
+    "top5": false,
+    "flat_value": "$500",
+    "flat_source": {
+     "sid": "cd568521_3",
+     "tid": "cd568521_3_7"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "$300"
+   },
+   "0100672e": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "$50",
+    "flat_source": {
+     "sid": "answer_35c9798c_2",
+     "tid": "noans_35c9798c_2_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "$12"
+   },
+   "0ea62687": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "30 miles per gallon",
+    "flat_source": {
+     "sid": "answer_dc5e537d_1",
+     "tid": "answer_dc5e537d_1_1"
+    },
+    "entity": "user",
+    "attribute": "car miles per gallon",
+    "answer": "2"
+   },
+   "55241a1f": {
+    "qtype": "multi-session",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "how they started experimenting with vegan recipes, specifically referencing the Facebook Live session that received 12 comments",
+    "flat_source": {
+     "sid": "answer_fa08bf49_1",
+     "tid": "noans_fa08bf49_1_9"
+    },
+    "entity": "user",
+    "attribute": "total number of comments on recent Facebook Live session and most popular YouTube video",
+    "answer": "33"
+   },
+   "e5ba910e_abs": {
+    "qtype": "multi-session",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "on sale",
+    "flat_source": {
+     "sid": "noans_e49ed9d3_abs_2",
+     "tid": "noans_e49ed9d3_abs_2_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "The information provided is not enough. You mentioned purchasing a headphone, but you did not mention the iPad."
+   },
+   "0bc8ad92": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "attended guided tour at Natural History Museum with dad",
+    "flat_source": {
+     "sid": "answer_f4ea84fb_1",
+     "tid": "answer_f4ea84fb_1_1"
+    },
+    "entity": "user",
+    "attribute": "last museum visit with friend",
+    "answer": 5
+   },
+   "9a707b81": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "baking",
+    "flat_source": {
+     "sid": "answer_dba89487_1",
+     "tid": "noans_dba89487_1_1"
+    },
+    "entity": "user",
+    "attribute": "attended baking class",
+    "answer": "21 days. 22 days (including the last day) is also acceptable."
+   },
+   "gpt4_7a0daae1": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": true,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "on the same purchase",
+    "flat_source": {
+     "sid": "bf3aebdb_2",
+     "tid": "bf3aebdb_2_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "1 week"
+   },
+   "gpt4_61e13b3c": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "Spring Fling Market at the downtown park",
+    "flat_source": {
+     "sid": "answer_e831a29f_2",
+     "tid": "answer_e831a29f_2_1"
+    },
+    "entity": "user",
+    "attribute": "last Farmers' Market sale",
+    "answer": "3 weeks"
+   },
+   "gpt4_e061b84f": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "volleyball league game",
+    "flat_source": {
+     "sid": "answer_8c64ce25_2",
+     "tid": "noans_8c64ce25_2_5"
+    },
+    "entity": "user",
+    "attribute": "sports events participation order",
+    "answer": "I first completed the Spring Sprint Triathlon, then took part in the Midsummer 5K Run, and finally participated in the company's annual charity soccer tournament."
+   },
+   "gpt4_8e165409": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "cuttings from spider plant",
+    "flat_source": {
+     "sid": "answer_d97db962_2",
+     "tid": "answer_d97db962_2_9"
+    },
+    "entity": "user",
+    "attribute": "spider plant repotted date",
+    "answer": "14 days. 15 days (including the last day) is also acceptable."
+   },
+   "gpt4_98f46fc6": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "participated in a charity walk for cancer research",
+    "flat_source": {
+     "sid": "answer_5850de18_2",
+     "tid": "noans_5850de18_2_9"
+    },
+    "entity": "user",
+    "attribute": "participated_in_event",
+    "answer": "I participated in the charity bake sale first."
+   },
+   "eac54adc": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "guest blogging and paid advertising",
+    "flat_source": {
+     "sid": "answer_0d4d0347_2",
+     "tid": "noans_0d4d0347_2_11"
+    },
+    "entity": "user",
+    "attribute": "launched website",
+    "answer": "19 days ago. 20 days (including the last day) is also acceptable."
+   },
+   "gpt4_a2d1d1f6": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "how to store fresh herbs like basil",
+    "flat_source": {
+     "sid": "answer_f6d6e33f_1",
+     "tid": "noans_f6d6e33f_1_7"
+    },
+    "entity": "user",
+    "attribute": "harvested first batch of fresh herbs",
+    "answer": "3 days ago. 4 days (including the last day) is also acceptable."
+   },
+   "2ebe6c92": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "Happy Endings",
+    "flat_source": {
+     "sid": "ca3a4e4f_1",
+     "tid": "ca3a4e4f_1_7"
+    },
+    "entity": "user",
+    "attribute": "finished book",
+    "answer": "'The Nightingale' by Kristin Hannah"
+   },
+   "gpt4_59149c78": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": false,
+    "top5": true,
+    "flat_value": "City Art Museum",
+    "flat_source": {
+     "sid": "23754665",
+     "tid": "23754665_7"
+    },
+    "entity": "user",
+    "attribute": "art-related event location",
+    "answer": "The Metropolitan Museum of Art."
+   },
+   "gpt4_468eb064": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": true,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "offering farm-to-table meals",
+    "flat_source": {
+     "sid": "dff89d9d_1",
+     "tid": "dff89d9d_1_7"
+    },
+    "entity": "user",
+    "attribute": "lunch companions",
+    "answer": "Emma"
+   },
+   "9a707b82": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "baking",
+    "flat_source": {
+     "sid": "answer_dba89488_1",
+     "tid": "noans_dba89488_1_1"
+    },
+    "entity": "user",
+    "attribute": "cooking for friend",
+    "answer": "a chocolate cake"
+   },
+   "eac54add": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "made a huge difference",
+    "flat_source": {
+     "sid": "2ea6fda4_1",
+     "tid": "2ea6fda4_1_11"
+    },
+    "entity": "user",
+    "attribute": "significant business milestone",
+    "answer": "I signed a contract with my first client."
+   },
+   "0bc8ad93": {
+    "qtype": "temporal-reasoning",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "visiting various museums",
+    "flat_source": {
+     "sid": "noans_f4ea84fc_3",
+     "tid": "noans_f4ea84fc_3_7"
+    },
+    "entity": "user",
+    "attribute": "museum visit companion",
+    "answer": "No, you did not visit with a friend."
+   },
+   "gpt4_8279ba03": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "online shopping",
+    "flat_source": {
+     "sid": "89749c78_2",
+     "tid": "89749c78_2_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "a smoker"
+   },
+   "08f4fc43": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "weight",
+    "flat_source": {
+     "sid": "259d58da_2",
+     "tid": "259d58da_2_3"
+    },
+    "entity": "user",
+    "attribute": "mass and ash wednesday events",
+    "answer": "30 days. 31 days (including the last day) is also acceptable."
+   },
+   "gpt4_5dcc0aab": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "a pair of spare running shoes",
+    "flat_source": {
+     "sid": "noans_099c1b6c_5",
+     "tid": "noans_099c1b6c_5_1"
+    },
+    "entity": "user",
+    "attribute": "cleaned shoes",
+    "answer": "white Adidas sneakers"
+   },
+   "gpt4_4edbafa2": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "BBQ party",
+    "flat_source": {
+     "sid": "answer_0a00c163_1",
+     "tid": "noans_0a00c163_1_9"
+    },
+    "entity": "user",
+    "attribute": "attended first BBQ event in June",
+    "answer": "June 3rd"
+   },
+   "e4e14d04": {
+    "qtype": "temporal-reasoning",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": false,
+    "top1": true,
+    "top5": false,
+    "flat_value": "Book Lovers Unite",
+    "flat_source": {
+     "sid": "answer_cf425855_1",
+     "tid": "answer_cf425855_1_1"
+    },
+    "entity": "user",
+    "attribute": "membership duration in 'Book Lovers Unite'",
+    "answer": "Two weeks"
+   },
+   "c9f37c46": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "local comedy club",
+    "flat_source": {
+     "sid": "answer_cdba3d9f_2",
+     "tid": "answer_cdba3d9f_2_1"
+    },
+    "entity": "user",
+    "attribute": "stand-up comedy viewing habit duration",
+    "answer": "2 months"
+   },
+   "gpt4_8c8961ae": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "boat tour on Lago Argentino",
+    "flat_source": {
+     "sid": "answer_72d9aa58_1",
+     "tid": "noans_72d9aa58_1_11"
+    },
+    "entity": "user",
+    "attribute": "trip",
+    "answer": "The solo trip to Thailand"
+   },
+   "993da5e2": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "complementary to Moroccan-inspired area rug",
+    "flat_source": {
+     "sid": "answer_54f0d6f9_1",
+     "tid": "noans_54f0d6f9_1_7"
+    },
+    "entity": "user",
+    "attribute": "use_duration_new_area_rug",
+    "answer": "One week. Answers ranging from 7 days to 10 days are also acceptable."
+   },
+   "gpt4_d31cdae3": {
+    "qtype": "temporal-reasoning",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "road trip",
+    "flat_source": {
+     "sid": "answer_8464304d_2",
+     "tid": "answer_8464304d_2_1"
+    },
+    "entity": "user",
+    "attribute": "trip_order",
+    "answer": "The family road trip across the American Southwest"
+   },
+   "gpt4_88806d6e": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": false,
+    "flat_value": "Sophia",
+    "flat_source": {
+     "sid": "answer_e60a93ff_2",
+     "tid": "noans_e60a93ff_2_9"
+    },
+    "entity": "user",
+    "attribute": "met_first",
+    "answer": "Tom"
+   },
+   "gpt4_70e84552_abs": {
+    "qtype": "temporal-reasoning",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": false,
+    "flat_value": "shop more often",
+    "flat_source": {
+     "sid": "430d0a87_2",
+     "tid": "430d0a87_2_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "The information provided is not enough. You mentioned fixing the fence but did not mention purchasing cows from Peter."
+   },
+   "6aeb4375": {
+    "qtype": "knowledge-update",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "spicy kimchi stew",
+    "flat_source": {
+     "sid": "answer_3f9693b7_1",
+     "tid": "noans_3f9693b7_1_11"
+    },
+    "entity": "user",
+    "attribute": "korean restaurants tried",
+    "answer": "four"
+   },
+   "d7c942c3": {
+    "qtype": "knowledge-update",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "new grocery list app",
+    "flat_source": {
+     "sid": "answer_eecb10d9_1",
+     "tid": "noans_eecb10d9_1_5"
+    },
+    "entity": "user",
+    "attribute": "grocery list method",
+    "answer": "Yes."
+   },
+   "184da446": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "440 pages",
+    "flat_source": {
+     "sid": "bf633415_2",
+     "tid": "bf633415_2_1"
+    },
+    "entity": "user",
+    "attribute": "pages read in 'A Short History of Nearly Everything'",
+    "answer": "220"
+   },
+   "41698283": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "buy soon",
+    "flat_source": {
+     "sid": "47a2bd5a_1",
+     "tid": "47a2bd5a_1_5"
+    },
+    "entity": "user",
+    "attribute": "purchase",
+    "answer": "a 70-200mm zoom lens"
+   },
+   "72e3ee87": {
+    "qtype": "knowledge-update",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "Crash Course's Science series",
+    "flat_source": {
+     "sid": "answer_d7de9a6a_2",
+     "tid": "answer_d7de9a6a_2_9"
+    },
+    "entity": "user",
+    "attribute": "completed Crash Course Science episodes",
+    "answer": "50"
+   },
+   "6a27ffc2": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "20 videos from Corey Schafer's Python programming series on YouTube",
+    "flat_source": {
+     "sid": "answer_77f32504_1",
+     "tid": "answer_77f32504_1_1"
+    },
+    "entity": "user",
+    "attribute": "completed Corey Schafer's Python programming videos",
+    "answer": "30"
+   },
+   "2133c1b5": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "studio apartment in Harajuku",
+    "flat_source": {
+     "sid": "answer_52382508_1",
+     "tid": "answer_52382508_1_5"
+    },
+    "entity": "user",
+    "attribute": "time living in current apartment in Harajuku",
+    "answer": "3 months"
+   },
+   "18bc8abd": {
+    "qtype": "knowledge-update",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": true,
+    "flat_value": "Kansas City Masterpiece BBQ sauce",
+    "flat_source": {
+     "sid": "answer_fff743f5_2",
+     "tid": "answer_fff743f5_2_1"
+    },
+    "entity": "user",
+    "attribute": "favorite BBQ sauce",
+    "answer": "Kansas City Masterpiece"
+   },
+   "ed4ddc30": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "ricotta cheese",
+    "flat_source": {
+     "sid": "answer_babbaccb_1",
+     "tid": "noans_babbaccb_1_11"
+    },
+    "entity": "user",
+    "attribute": "refrigerator egg stock",
+    "answer": "20"
+   },
+   "8fb83627": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "National Geographic for in-depth articles on science and nature",
+    "flat_source": {
+     "sid": "answer_966cecbb_1",
+     "tid": "answer_966cecbb_1_3"
+    },
+    "entity": "user",
+    "attribute": "finished National Geographic issues",
+    "answer": "Five"
+   },
+   "affe2881": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "birding sanctuary in southern Wisconsin",
+    "flat_source": {
+     "sid": "fb5dd87f_7",
+     "tid": "fb5dd87f_7_3"
+    },
+    "entity": "user",
+    "attribute": "birds seen in local park",
+    "answer": "32"
+   },
+   "06db6396": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "compositing",
+    "flat_source": {
+     "sid": "sharegpt_SwdaeDm_15",
+     "tid": "sharegpt_SwdaeDm_15_8"
+    },
+    "entity": "user",
+    "attribute": "completed painting projects",
+    "answer": "5"
+   },
+   "3ba21379": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "current shoes worn out",
+    "flat_source": {
+     "sid": "49576fd6",
+     "tid": "49576fd6_11"
+    },
+    "entity": "user",
+    "attribute": "current vehicle model",
+    "answer": "Ford F-150 pickup truck"
+   },
+   "9bbe84a2": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "improving their aim in Apex Legends",
+    "flat_source": {
+     "sid": "answer_c6a0c6c2_1",
+     "tid": "noans_c6a0c6c2_1_11"
+    },
+    "entity": "user",
+    "attribute": "Apex Legends level goal",
+    "answer": "level 100"
+   },
+   "c6853660": {
+    "qtype": "knowledge-update",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "one cup",
+    "flat_source": {
+     "sid": "answer_626e93c4_1",
+     "tid": "answer_626e93c4_1_1"
+    },
+    "entity": "user",
+    "attribute": "coffee cup limit",
+    "answer": "You increased the limit (from one cup to two cups)"
+   },
+   "2698e78f_abs": {
+    "qtype": "knowledge-update",
+    "flat": true,
+    "flat_no_time": true,
+    "hier": true,
+    "comp": true,
+    "top1": true,
+    "top5": false,
+    "flat_value": "Dr. Smith",
+    "flat_source": {
+     "sid": "noans_9282283d_abs_2",
+     "tid": "noans_9282283d_abs_2_1"
+    },
+    "entity": "user",
+    "attribute": "scheduling with Dr. Johnson",
+    "answer": "The information provided is not enough. You mentioned seeing Dr. Smith but not Dr. Johnson."
+   },
+   "89527b6b": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "pale pink and blue cupcakes and baby-themed cookies with pastel-colored frosting",
+    "flat_source": {
+     "sid": "07f3f0e0_2",
+     "tid": "07f3f0e0_2_11"
+    },
+    "entity": "user",
+    "attribute": "favorite color of Plesiosaur's scaly body in the dinosaur children's book image",
+    "answer": "The Plesiosaur had a blue scaly body."
+   },
+   "7e00a6cb": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "popular shopping districts or malls in the Shinjuku area",
+    "flat_source": {
+     "sid": "24f78a31_2",
+     "tid": "24f78a31_2_9"
+    },
+    "entity": "user",
+    "attribute": "favorite hostel near Red Light District",
+    "answer": "International Budget Hostel"
+   },
+   "0e5e2d1a": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "#MusicToMyEars",
+    "flat_source": {
+     "sid": "920a7d0c_1",
+     "tid": "920a7d0c_1_3"
+    },
+    "entity": "user",
+    "attribute": "previous conversation about binaural beats for anxiety and depression",
+    "answer": "38 subjects"
+   },
+   "8464fc84": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "Vatican and try out restaurants in Rome",
+    "flat_source": {
+     "sid": "noans_ultrachat_467053",
+     "tid": "noans_ultrachat_467053_9"
+    },
+    "entity": "user",
+    "attribute": "favorite deli near Vatican",
+    "answer": "Roscioli"
+   },
+   "e8a79c70": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": true,
+    "flat_value": "a bagel or pastry",
+    "flat_source": {
+     "sid": "c2b2b2ea_1",
+     "tid": "c2b2b2ea_1_7"
+    },
+    "entity": "user",
+    "attribute": "eggs needed for French omelette recipe",
+    "answer": "2-3 eggs"
+   },
+   "d596882b": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "downtown",
+    "flat_source": {
+     "sid": "c324a5bc_1",
+     "tid": "c324a5bc_1_1"
+    },
+    "entity": "user",
+    "attribute": "favorite vegan eatery in NYC",
+    "answer": "By Chloe"
+   },
+   "e3fc4d6e": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": false,
+    "flat_value": "on the 15th of last month",
+    "flat_source": {
+     "sid": "bec86aec",
+     "tid": "bec86aec_5"
+    },
+    "entity": "user",
+    "attribute": "previous conversation about fusion breakthrough at Lawrence Livermore National Laboratory",
+    "answer": "Dr. Arati Prabhakar"
+   },
+   "352ab8bd": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": false,
+    "top5": false,
+    "flat_value": "monitor sleep patterns and wake during lighter sleep phase",
+    "flat_source": {
+     "sid": "337cbfc8_2",
+     "tid": "337cbfc8_2_11"
+    },
+    "entity": "user",
+    "attribute": "average improvement in framerate when using HAMT agent in 'To Adapt or Not to Adapt? Real-Time Adaptation for Semantic Segmentation' submission",
+    "answer": "The average improvement in framerate was approximately 20% when using the Hardware-Aware Modular Training (HAMT) agent."
+   },
+   "4388e9dd": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "black",
+    "flat_source": {
+     "sid": "cfd21744_2",
+     "tid": "cfd21744_2_7"
+    },
+    "entity": "user",
+    "attribute": "favorite color",
+    "answer": "Andy was wearing an untidy, stained white shirt."
+   },
+   "b759caee": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": false,
+    "flat_value": "for wedding favors",
+    "flat_source": {
+     "sid": "191f4c9b_2",
+     "tid": "191f4c9b_2_9"
+    },
+    "entity": "user",
+    "attribute": "previous conversation about buying unique engagement rings directly from designers",
+    "answer": "@jessica_poole_jewellery"
+   },
+   "e48988bc": {
+    "qtype": "single-session-assistant",
+    "flat": false,
+    "flat_no_time": false,
+    "hier": false,
+    "comp": false,
+    "top1": true,
+    "top5": true,
+    "flat_value": "stay up-to-date on the latest documentaries or series coming out soon in the nature and wildlife genre",
+    "flat_source": {
+     "sid": "8fb3fe3a_3",
+     "tid": "8fb3fe3a_3_11"
+    },
+    "entity": "bakery",
+    "attribute": "sustainability practice",
+    "answer": "Patagonia"
+   }
+  },
+  "finished": "2026-10-05T16:28:57"
+ },
+ "turn_atom_memory": {
+  "D": 16384,
+  "variants": {
+   "hier_nested": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.5357142857142857,
+      "recall_all@5": 0.14285714285714285,
+      "ndcg_any@5": 0.25839344677254994,
+      "recall_any@10": 0.6904761904761905,
+      "recall_all@10": 0.27380952380952384,
+      "ndcg_any@10": 0.31027530412935633
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.4666666666666667,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.2043643251190486,
+      "recall_any@10": 0.6,
+      "recall_all@10": 0.13333333333333333,
+      "ndcg_any@10": 0.24741767551135918
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.125,
+      "ndcg_any@5": 0.28032084844352356,
+      "recall_any@10": 0.875,
+      "recall_all@10": 0.25,
+      "ndcg_any@10": 0.35211552795372486
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.16666666666666666,
+      "recall_all@10": 0.16666666666666666,
+      "ndcg_any@10": 0.052577479464288125
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.23076923076923078,
+      "recall_all@5": 0.23076923076923078,
+      "ndcg_any@5": 0.20237921181318905,
+      "recall_any@10": 0.38461538461538464,
+      "recall_all@10": 0.38461538461538464,
+      "ndcg_any@10": 0.2552932735746139
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.76,
+      "recall_all@5": 0.24,
+      "ndcg_any@5": 0.3712381814356975,
+      "recall_any@10": 0.88,
+      "recall_all@10": 0.36,
+      "ndcg_any@10": 0.4106724124020178
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.2619047619047619,
+      "recall_all@5": 0.05952380952380952,
+      "ndcg_any@5": 0.1347934593759634,
+      "recall_any@10": 0.2976190476190476,
+      "recall_all@10": 0.05952380952380952,
+      "ndcg_any@10": 0.14091178825097397
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.26666666666666666,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.13170172083123768,
+      "recall_any@10": 0.3333333333333333,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.1422172167240953
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.2916666666666667,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.1241774957842449,
+      "recall_any@10": 0.3333333333333333,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.13159847884899536
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.23076923076923078,
+      "recall_all@5": 0.23076923076923078,
+      "ndcg_any@5": 0.18697511985179946,
+      "recall_any@10": 0.23076923076923078,
+      "recall_all@10": 0.23076923076923078,
+      "ndcg_any@10": 0.18697511985179946
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.32,
+      "recall_all@5": 0.08,
+      "ndcg_any@5": 0.15744753272868356,
+      "recall_any@10": 0.36,
+      "recall_all@10": 0.08,
+      "ndcg_any@10": 0.164571676470844
+     }
+    }
+   },
+   "hier_global": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.5357142857142857,
+      "recall_all@5": 0.14285714285714285,
+      "ndcg_any@5": 0.25839344677254994,
+      "recall_any@10": 0.6904761904761905,
+      "recall_all@10": 0.27380952380952384,
+      "ndcg_any@10": 0.31027530412935633
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.4666666666666667,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.2043643251190486,
+      "recall_any@10": 0.6,
+      "recall_all@10": 0.13333333333333333,
+      "ndcg_any@10": 0.24741767551135918
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.125,
+      "ndcg_any@5": 0.28032084844352356,
+      "recall_any@10": 0.875,
+      "recall_all@10": 0.25,
+      "ndcg_any@10": 0.35211552795372486
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.16666666666666666,
+      "recall_all@10": 0.16666666666666666,
+      "ndcg_any@10": 0.052577479464288125
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.23076923076923078,
+      "recall_all@5": 0.23076923076923078,
+      "ndcg_any@5": 0.20237921181318905,
+      "recall_any@10": 0.38461538461538464,
+      "recall_all@10": 0.38461538461538464,
+      "ndcg_any@10": 0.2552932735746139
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.76,
+      "recall_all@5": 0.24,
+      "ndcg_any@5": 0.3712381814356975,
+      "recall_any@10": 0.88,
+      "recall_all@10": 0.36,
+      "ndcg_any@10": 0.4106724124020178
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9166666666666666,
+      "recall_all@5": 0.7380952380952381,
+      "ndcg_any@5": 0.7584327325374066,
+      "recall_any@10": 0.9761904761904762,
+      "recall_all@10": 0.9047619047619048,
+      "ndcg_any@10": 0.7999892027846786
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.8,
+      "ndcg_any@5": 0.8360660459502862,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8716589224770163
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9583333333333334,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.7447441747527913,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7916666666666666,
+      "ndcg_any@10": 0.7797375786008347
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.4942230465061161,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.4942230465061161
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.64,
+      "ndcg_any@5": 0.6531264148313667,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.96,
+      "ndcg_any@10": 0.7378067612520411
+     }
+    }
+   },
+   "window4": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9404761904761905,
+      "recall_all@5": 0.8333333333333334,
+      "ndcg_any@5": 0.8275151895268515,
+      "recall_any@10": 0.9761904761904762,
+      "recall_all@10": 0.9285714285714286,
+      "ndcg_any@10": 0.8489352619090704
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9333333333333333,
+      "ndcg_any@5": 0.9130929753571457,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9333333333333333,
+      "ndcg_any@10": 0.9130929753571457
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9583333333333334,
+      "recall_all@5": 0.7083333333333334,
+      "ndcg_any@5": 0.800955600149468,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.875,
+      "ndcg_any@10": 0.8312642480939418
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.8333333333333334,
+      "recall_all@5": 0.8333333333333334,
+      "ndcg_any@5": 0.7718216255952429,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.7718216255952429
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.9230769230769231,
+      "recall_all@5": 0.9230769230769231,
+      "ndcg_any@5": 0.8461538461538461,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.875911754402657
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.92,
+      "recall_all@5": 0.84,
+      "ndcg_any@5": 0.7984406853095861,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.96,
+      "ndcg_any@10": 0.8258417141977649
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.7619047619047619,
+      "recall_all@5": 0.17857142857142858,
+      "ndcg_any@5": 0.44191732207570783,
+      "recall_any@10": 0.8928571428571429,
+      "recall_all@10": 0.6190476190476191,
+      "ndcg_any@10": 0.5531198845382315
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.4840125022287912,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.612760324243561
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9166666666666666,
+      "recall_all@5": 0.041666666666666664,
+      "ndcg_any@5": 0.41477771459940155,
+      "recall_any@10": 0.9583333333333334,
+      "recall_all@10": 0.375,
+      "ndcg_any@10": 0.5074746594831984
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.16666666666666666,
+      "recall_all@5": 0.16666666666666666,
+      "ndcg_any@5": 0.11922304650611609,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.300528088933323
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.6923076923076923,
+      "recall_all@5": 0.6923076923076923,
+      "ndcg_any@5": 0.648513581390261,
+      "recall_any@10": 0.9230769230769231,
+      "recall_all@10": 0.9230769230769231,
+      "ndcg_any@10": 0.7264708406118013
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.68,
+      "recall_all@5": 0.12,
+      "ndcg_any@5": 0.3904075013372747,
+      "recall_any@10": 0.8,
+      "recall_all@10": 0.64,
+      "ndcg_any@10": 0.5137593659363163
+     }
+    }
+   },
+   "window16": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8333333333333334,
+      "recall_all@5": 0.5595238095238095,
+      "ndcg_any@5": 0.6303643770793758,
+      "recall_any@10": 0.9285714285714286,
+      "recall_all@10": 0.7380952380952381,
+      "ndcg_any@10": 0.6832059579916576
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.5333333333333333,
+      "ndcg_any@5": 0.7130929753571458,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7333333333333333,
+      "ndcg_any@10": 0.7483771377280888
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9166666666666666,
+      "recall_all@5": 0.5416666666666666,
+      "ndcg_any@5": 0.6025653816688863,
+      "recall_any@10": 0.9583333333333334,
+      "recall_all@10": 0.625,
+      "ndcg_any@10": 0.6421085268349979
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.6666666666666666,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.7718216255952429
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.7692307692307693,
+      "recall_all@5": 0.7692307692307693,
+      "ndcg_any@5": 0.7692307692307693,
+      "recall_any@10": 0.8461538461538461,
+      "recall_all@10": 0.8461538461538461,
+      "ndcg_any@10": 0.7989886774795801
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.76,
+      "recall_all@5": 0.48,
+      "ndcg_any@5": 0.5517057553702844,
+      "recall_any@10": 0.92,
+      "recall_all@10": 0.76,
+      "ndcg_any@10": 0.6294102480212784
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.5714285714285714,
+      "recall_all@5": 0.13095238095238096,
+      "ndcg_any@5": 0.32368562208446494,
+      "recall_any@10": 0.7738095238095238,
+      "recall_all@10": 0.34523809523809523,
+      "ndcg_any@10": 0.4048245457344721
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.8,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.4006791688954579,
+      "recall_any@10": 0.9333333333333333,
+      "recall_all@10": 0.4,
+      "ndcg_any@10": 0.4941428285392846
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.625,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.2532692048236192,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.041666666666666664,
+      "ndcg_any@10": 0.32373532820762607
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.3333333333333333,
+      "recall_all@5": 0.3333333333333333,
+      "ndcg_any@5": 0.2858897131727827,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.40973304556321005
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.6153846153846154,
+      "recall_all@5": 0.6153846153846154,
+      "ndcg_any@5": 0.6153846153846154,
+      "recall_any@10": 0.7692307692307693,
+      "recall_all@10": 0.7692307692307693,
+      "ndcg_any@10": 0.6701857210935418
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.44,
+      "recall_all@5": 0.04,
+      "ndcg_any@5": 0.2154242210743852,
+      "recall_any@10": 0.68,
+      "recall_all@10": 0.32,
+      "ndcg_any@10": 0.3061063555611221
+     }
+    }
+   },
+   "per_session": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9761904761904762,
+      "recall_all@5": 0.9404761904761905,
+      "ndcg_any@5": 0.9100385319837531,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9880952380952381,
+      "ndcg_any@10": 0.9244145854084289
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9630929753571458,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9630929753571458
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.875,
+      "ndcg_any@5": 0.9073644662643033,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.9289497982322787
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.8333333333333334,
+      "recall_all@5": 0.8333333333333334,
+      "ndcg_any@5": 0.75,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8055555555555555
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.96,
+      "recall_all@5": 0.96,
+      "ndcg_any@5": 0.8688037946373914,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8830520821217124
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8690476190476191,
+      "recall_all@5": 0.2261904761904762,
+      "ndcg_any@5": 0.5155922880531101,
+      "recall_any@10": 0.9166666666666666,
+      "recall_all@10": 0.7261904761904762,
+      "ndcg_any@10": 0.6273634957019496
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.4594078191335551,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.8666666666666667,
+      "ndcg_any@10": 0.6232976541936417
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9583333333333334,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.4192574726424127,
+      "recall_any@10": 0.9583333333333334,
+      "recall_all@10": 0.5416666666666666,
+      "ndcg_any@10": 0.557641547699335
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.3333333333333333,
+      "recall_all@5": 0.3333333333333333,
+      "ndcg_any@5": 0.2858897131727827,
+      "recall_any@10": 0.5,
+      "recall_all@10": 0.5,
+      "ndcg_any@10": 0.34525757769078647
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.9230769230769231,
+      "recall_all@5": 0.9230769230769231,
+      "ndcg_any@5": 0.9230769230769231,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9504774759313863
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.16,
+      "ndcg_any@5": 0.46564469148013304,
+      "recall_any@10": 0.88,
+      "recall_all@10": 0.72,
+      "ndcg_any@10": 0.5815167611208941
+     }
+    }
+   },
+   "flat_hamming": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9761904761904762,
+      "ndcg_any@5": 0.9728407000878398,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9880952380952381,
+      "ndcg_any@10": 0.9765238923738002
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9876976584523819,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9876976584523819
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9166666666666666,
+      "ndcg_any@5": 0.933464747108034,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.9463559201088957
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.98,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.98
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9642857142857143,
+      "recall_all@5": 0.7857142857142857,
+      "ndcg_any@5": 0.8050800026819057,
+      "recall_any@10": 0.9880952380952381,
+      "recall_all@10": 0.9404761904761905,
+      "ndcg_any@10": 0.837811793354211
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.8,
+      "ndcg_any@5": 0.8527327126169529,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8873040684727992
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.625,
+      "ndcg_any@5": 0.7161080220130077,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.7554103069574237
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.5833333333333334,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.6800465351419688
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.96,
+      "recall_all@5": 0.88,
+      "ndcg_any@5": 0.8059654803085436,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.83426012147327
+     }
+    }
+   },
+   "hier_rewrite": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.4523809523809524,
+      "recall_all@5": 0.15476190476190477,
+      "ndcg_any@5": 0.23523714325398856,
+      "recall_any@10": 0.5952380952380952,
+      "recall_all@10": 0.2857142857142857,
+      "ndcg_any@10": 0.28739898933259367
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.26666666666666666,
+      "recall_all@5": 0.06666666666666667,
+      "ndcg_any@5": 0.13769765845238194,
+      "recall_any@10": 0.4666666666666667,
+      "recall_all@10": 0.13333333333333333,
+      "ndcg_any@10": 0.18307141126355211
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.625,
+      "recall_all@5": 0.16666666666666666,
+      "ndcg_any@5": 0.29102360844810915,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.25,
+      "ndcg_any@10": 0.32707312121479415
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.16666666666666666,
+      "recall_all@5": 0.16666666666666666,
+      "ndcg_any@5": 0.07177942634556551,
+      "recall_any@10": 0.5,
+      "recall_all@10": 0.5,
+      "ndcg_any@10": 0.17212275823355924
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.23076923076923078,
+      "recall_all@5": 0.23076923076923078,
+      "ndcg_any@5": 0.20237921181318905,
+      "recall_any@10": 0.46153846153846156,
+      "recall_all@10": 0.46153846153846156,
+      "ndcg_any@10": 0.2809342992156395
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.6,
+      "recall_all@5": 0.16,
+      "ndcg_any@5": 0.3059312896859936,
+      "recall_any@10": 0.72,
+      "recall_all@10": 0.28,
+      "ndcg_any@10": 0.3544322634649943
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.19047619047619047,
+      "recall_all@5": 0.03571428571428571,
+      "ndcg_any@5": 0.11072794352059383,
+      "recall_any@10": 0.2976190476190476,
+      "recall_all@10": 0.07142857142857142,
+      "ndcg_any@10": 0.134765276996457
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.13333333333333333,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.06666666666666667,
+      "recall_any@10": 0.2,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.08310694370151403
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.2916666666666667,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.14254389537558113,
+      "recall_any@10": 0.4166666666666667,
+      "recall_all@10": 0.08333333333333333,
+      "ndcg_any@10": 0.17115964422252172
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.15384615384615385,
+      "recall_all@5": 0.15384615384615385,
+      "ndcg_any@5": 0.15384615384615385,
+      "recall_any@10": 0.15384615384615385,
+      "recall_all@10": 0.15384615384615385,
+      "ndcg_any@10": 0.15384615384615385
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.2,
+      "recall_all@5": 0.04,
+      "ndcg_any@5": 0.11520375066863738,
+      "recall_any@10": 0.4,
+      "recall_all@10": 0.08,
+      "ndcg_any@10": 0.15863390603356614
+     }
+    }
+   },
+   "hier_flip0.05": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9404761904761905,
+      "recall_all@5": 0.8452380952380952,
+      "ndcg_any@5": 0.8009029857747411,
+      "recall_any@10": 0.9523809523809523,
+      "recall_all@10": 0.8809523809523809,
+      "ndcg_any@10": 0.8132594180176489
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9333333333333333,
+      "ndcg_any@5": 0.9253953169047638,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9333333333333333,
+      "ndcg_any@10": 0.9253953169047638
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.7916666666666666,
+      "ndcg_any@5": 0.8040382920952459,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.8264524716120896
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.8333333333333334,
+      "recall_all@5": 0.8333333333333334,
+      "ndcg_any@5": 0.7103099178571526,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.7103099178571526
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.8461538461538461,
+      "recall_all@5": 0.8461538461538461,
+      "ndcg_any@5": 0.779302288736266,
+      "recall_any@10": 0.8461538461538461,
+      "recall_all@10": 0.8461538461538461,
+      "ndcg_any@10": 0.779302288736266
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.92,
+      "recall_all@5": 0.84,
+      "ndcg_any@5": 0.7482085112202607,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.92,
+      "ndcg_any@10": 0.7682085112202607
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9047619047619048,
+      "recall_all@5": 0.7261904761904762,
+      "ndcg_any@5": 0.7475484255399174,
+      "recall_any@10": 0.9761904761904762,
+      "recall_all@10": 0.8928571428571429,
+      "ndcg_any@10": 0.7922717738638894
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.8,
+      "ndcg_any@5": 0.8193993792836196,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8650818462505768
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.7295559995620028,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7916666666666666,
+      "ndcg_any@10": 0.7590035353079418
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.5,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.42757747946428815,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.49205294733671173
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.64,
+      "ndcg_any@5": 0.657130727592999,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.92,
+      "ndcg_any@10": 0.7362479511758875
+     }
+    }
+   },
+   "hier_flip0.1": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9047619047619048,
+      "recall_all@5": 0.7142857142857143,
+      "ndcg_any@5": 0.756505859610539,
+      "recall_any@10": 0.9642857142857143,
+      "recall_all@10": 0.8571428571428571,
+      "ndcg_any@10": 0.7945019211378324
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.7333333333333333,
+      "ndcg_any@5": 0.8210309917857153,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.8666666666666667,
+      "ndcg_any@10": 0.8429388978781154
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.8086676705361645,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7916666666666666,
+      "ndcg_any@10": 0.8396449700430688
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.6051549589285763,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.66452282344658
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.7692307692307693,
+      "recall_all@5": 0.7692307692307693,
+      "ndcg_any@5": 0.7692307692307693,
+      "recall_any@10": 0.9230769230769231,
+      "recall_all@10": 0.9230769230769231,
+      "ndcg_any@10": 0.8222723477262581
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.88,
+      "recall_all@5": 0.72,
+      "ndcg_any@5": 0.6876829393624057,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.88,
+      "ndcg_any@10": 0.7306368466100679
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9166666666666666,
+      "recall_all@5": 0.7619047619047619,
+      "ndcg_any@5": 0.7672302775537458,
+      "recall_any@10": 0.9642857142857143,
+      "recall_all@10": 0.8928571428571429,
+      "ndcg_any@10": 0.7995792473789114
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.8666666666666667,
+      "ndcg_any@5": 0.8627242727670175,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8854220557192628
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9583333333333334,
+      "recall_all@5": 0.625,
+      "ndcg_any@5": 0.7257655051304557,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7916666666666666,
+      "ndcg_any@10": 0.7659094592756839
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.5051338593037376,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.5051338593037376
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.72,
+      "ndcg_any@5": 0.6822921577622415,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.92,
+      "ndcg_any@10": 0.738827830624031
+     }
+    }
+   },
+   "hier_flip0.2": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8809523809523809,
+      "recall_all@5": 0.6071428571428571,
+      "ndcg_any@5": 0.6886781354577354,
+      "recall_any@10": 0.9880952380952381,
+      "recall_all@10": 0.8095238095238095,
+      "ndcg_any@10": 0.7431121759577717
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.7333333333333333,
+      "ndcg_any@5": 0.789751202173877,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8326901000519924
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9583333333333334,
+      "recall_all@5": 0.4583333333333333,
+      "ndcg_any@5": 0.7042711130496206,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.5833333333333334,
+      "ndcg_any@10": 0.7308905443266746
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.5,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.5,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.6675008995378473
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.8461538461538461,
+      "recall_all@5": 0.8461538461538461,
+      "ndcg_any@5": 0.7893738082417627,
+      "recall_any@10": 0.9230769230769231,
+      "recall_all@10": 0.9230769230769231,
+      "ndcg_any@10": 0.816774361096226
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.56,
+      "ndcg_any@5": 0.5935331650203123,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.8,
+      "ndcg_any@10": 0.6706650449741892
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9047619047619048,
+      "recall_all@5": 0.7142857142857143,
+      "ndcg_any@5": 0.7222101860515164,
+      "recall_any@10": 0.9642857142857143,
+      "recall_all@10": 0.8452380952380952,
+      "ndcg_any@10": 0.7578373103991031
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.8,
+      "ndcg_any@5": 0.8404303710693348,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9333333333333333,
+      "ndcg_any@10": 0.8644365757549306
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9166666666666666,
+      "recall_all@5": 0.5833333333333334,
+      "ndcg_any@5": 0.6466512655981648,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.75,
+      "ndcg_any@10": 0.6990212172350976
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.4237771104942234,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.4237771104942234
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9716099810439582,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9716099810439582
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.64,
+      "ndcg_any@5": 0.6546390908557845,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.84,
+      "ndcg_any@10": 0.7096673522808623
+     }
+    }
+   },
+   "hier_flip0.3": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8095238095238095,
+      "recall_all@5": 0.44047619047619047,
+      "ndcg_any@5": 0.5429938768138294,
+      "recall_any@10": 0.8928571428571429,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.5998523666383117
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.5333333333333333,
+      "ndcg_any@5": 0.6607821939595923,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7333333333333333,
+      "ndcg_any@10": 0.7084802872009618
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.875,
+      "recall_all@5": 0.20833333333333334,
+      "ndcg_any@5": 0.4594497214656729,
+      "recall_any@10": 0.9583333333333334,
+      "recall_all@10": 0.5833333333333334,
+      "ndcg_any@10": 0.5488518329039688
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.5,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.5
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.48844609301223213,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.5529215608846557
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.6923076923076923,
+      "recall_all@5": 0.6923076923076923,
+      "ndcg_any@5": 0.6538461538461539,
+      "recall_any@10": 0.8461538461538461,
+      "recall_all@10": 0.8461538461538461,
+      "ndcg_any@10": 0.7067602156075787
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.76,
+      "recall_all@5": 0.4,
+      "ndcg_any@5": 0.5096913147887298,
+      "recall_any@10": 0.8,
+      "recall_all@10": 0.56,
+      "ndcg_any@10": 0.5433015332680814
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8928571428571429,
+      "recall_all@5": 0.6785714285714286,
+      "ndcg_any@5": 0.7076703452054055,
+      "recall_any@10": 0.9404761904761905,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.7513195747044231
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.8,
+      "ndcg_any@5": 0.8427411524668884,
+      "recall_any@10": 0.9333333333333333,
+      "recall_all@10": 0.8666666666666667,
+      "ndcg_any@10": 0.8525438418446492
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9583333333333334,
+      "recall_all@5": 0.5833333333333334,
+      "ndcg_any@5": 0.6200844350279414,
+      "recall_any@10": 0.9583333333333334,
+      "recall_all@10": 0.7083333333333334,
+      "ndcg_any@10": 0.6760888120863772
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.5634882922619097,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.5634882922619097
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9716099810439582,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9716099810439582
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.8,
+      "recall_all@5": 0.52,
+      "ndcg_any@5": 0.5963722304974892,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.88,
+      "ndcg_any@10": 0.6833878260114339
+     }
+    }
+   },
+   "hier_flip0.4": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.5357142857142857,
+      "recall_all@5": 0.14285714285714285,
+      "ndcg_any@5": 0.23451640506641605,
+      "recall_any@10": 0.6904761904761905,
+      "recall_all@10": 0.32142857142857145,
+      "ndcg_any@10": 0.29387906968718125
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.7333333333333333,
+      "recall_all@5": 0.2,
+      "ndcg_any@5": 0.33076531425972117,
+      "recall_any@10": 0.8666666666666667,
+      "recall_all@10": 0.4666666666666667,
+      "ndcg_any@10": 0.39938280996399766
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.625,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.25881274567236773,
+      "recall_any@10": 0.7916666666666666,
+      "recall_all@10": 0.16666666666666666,
+      "ndcg_any@10": 0.32648210847944403
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.5,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.29364325119048584,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.346220730654774
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.23076923076923078,
+      "recall_all@5": 0.23076923076923078,
+      "ndcg_any@5": 0.10471947047282971,
+      "recall_any@10": 0.5384615384615384,
+      "recall_all@10": 0.5384615384615384,
+      "ndcg_any@10": 0.21041098954313903
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.52,
+      "recall_all@5": 0.12,
+      "ndcg_any@5": 0.21612719169026412,
+      "recall_any@10": 0.6,
+      "recall_all@10": 0.2,
+      "ndcg_any@10": 0.2418744741106861
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.7857142857142857,
+      "recall_all@5": 0.44047619047619047,
+      "ndcg_any@5": 0.5439575568147751,
+      "recall_any@10": 0.8452380952380952,
+      "recall_all@10": 0.6071428571428571,
+      "ndcg_any@10": 0.5843188835241909
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.6,
+      "ndcg_any@5": 0.7050992264715413,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.7346911989206948
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.875,
+      "recall_all@5": 0.375,
+      "ndcg_any@5": 0.5482023437921817,
+      "recall_any@10": 0.9583333333333334,
+      "recall_all@10": 0.625,
+      "ndcg_any@10": 0.6096467796495958
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.5,
+      "recall_all@5": 0.16666666666666666,
+      "ndcg_any@5": 0.30257747946428815,
+      "recall_any@10": 0.5,
+      "recall_all@10": 0.3333333333333333,
+      "ndcg_any@10": 0.33481521340049997
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.6923076923076923,
+      "recall_all@5": 0.6923076923076923,
+      "ndcg_any@5": 0.6254561348901121,
+      "recall_any@10": 0.6923076923076923,
+      "recall_all@10": 0.6923076923076923,
+      "ndcg_any@10": 0.6254561348901121
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.72,
+      "recall_all@5": 0.32,
+      "ndcg_any@5": 0.4405078197599376,
+      "recall_any@10": 0.8,
+      "recall_all@10": 0.56,
+      "ndcg_any@10": 0.49164297946627433
+     }
+    }
+   },
+   "hier_flip0.5": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.17857142857142858,
+      "recall_all@5": 0.03571428571428571,
+      "ndcg_any@5": 0.06812610135957894,
+      "recall_any@10": 0.38095238095238093,
+      "recall_all@10": 0.10714285714285714,
+      "ndcg_any@10": 0.11512980659263794
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.2,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.08769765845238192,
+      "recall_any@10": 0.4,
+      "recall_all@10": 0.06666666666666667,
+      "ndcg_any@10": 0.13545100894517922
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.25,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.07834096028072314,
+      "recall_any@10": 0.5833333333333334,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.1356212614847484
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.16666666666666666,
+      "recall_all@10": 0.16666666666666666,
+      "ndcg_any@10": 0.052577479464288125
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.15384615384615385,
+      "recall_all@5": 0.15384615384615385,
+      "ndcg_any@5": 0.08166202397268083,
+      "recall_any@10": 0.3076923076923077,
+      "recall_all@10": 0.3076923076923077,
+      "ndcg_any@10": 0.13332910581066165
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.16,
+      "recall_all@5": 0.04,
+      "ndcg_any@5": 0.058613531161467856,
+      "recall_any@10": 0.28,
+      "recall_all@10": 0.12,
+      "ndcg_any@10": 0.0934194036658242
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.023809523809523808,
+      "recall_all@5": 0.011904761904761904,
+      "ndcg_any@5": 0.007901160418980592,
+      "recall_any@10": 0.07142857142857142,
+      "recall_all@10": 0.023809523809523808,
+      "ndcg_any@10": 0.01664927550370217
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.13333333333333333,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.022389068796458366
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.041666666666666664,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.004082318312739826
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.07692307692307693,
+      "recall_all@5": 0.07692307692307693,
+      "ndcg_any@5": 0.038461538461538464,
+      "recall_any@10": 0.07692307692307693,
+      "recall_all@10": 0.07692307692307693,
+      "ndcg_any@10": 0.038461538461538464
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.04,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.00654789900777479,
+      "recall_any@10": 0.08,
+      "recall_all@10": 0.04,
+      "ndcg_any@10": 0.018589098834334038
+     }
+    }
+   },
+   "hier_del0.1": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9642857142857143,
+      "recall_all@5": 0.9047619047619048,
+      "ndcg_any@5": 0.8520744339974256,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9880952380952381,
+      "ndcg_any@10": 0.8758784630013521
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9333333333333333,
+      "ndcg_any@5": 0.9297596420238124,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9426547355982972
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.875,
+      "ndcg_any@5": 0.8701029818255437,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.8953343242482497
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.6666666666666666,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.7866976900946457
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.9230769230769231,
+      "recall_all@5": 0.9230769230769231,
+      "ndcg_any@5": 0.8508927932034501,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8765338188444757
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.96,
+      "ndcg_any@5": 0.8273511979987467,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8332328116254031
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8452380952380952,
+      "recall_all@5": 0.5833333333333334,
+      "ndcg_any@5": 0.6372110795855696,
+      "recall_any@10": 0.9523809523809523,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.7003102114793998
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.7693993792836196,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9333333333333333,
+      "ndcg_any@10": 0.8248348803509449
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.875,
+      "recall_all@5": 0.4166666666666667,
+      "ndcg_any@5": 0.6041390945683975,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7083333333333334,
+      "ndcg_any@10": 0.6801593466913501
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.3333333333333333,
+      "recall_all@5": 0.3333333333333333,
+      "ndcg_any@5": 0.30257747946428815,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.41722461328070864
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.8461538461538461,
+      "recall_all@5": 0.8461538461538461,
+      "ndcg_any@5": 0.7301756053629419,
+      "recall_any@10": 0.9230769230769231,
+      "recall_all@10": 0.9230769230769231,
+      "ndcg_any@10": 0.7599335136117527
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.88,
+      "recall_all@5": 0.6,
+      "ndcg_any@5": 0.6071061591915216,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.88,
+      "ndcg_any@10": 0.6698890752710389
+     }
+    }
+   },
+   "index_del0.1": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9642857142857143,
+      "ndcg_any@5": 0.9674198750393033,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9880952380952381,
+      "ndcg_any@10": 0.9723961329140287
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9876976584523819,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9876976584523819
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.875,
+      "ndcg_any@5": 0.9263527644782937,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.9437696670398324
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9686135311614679,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9686135311614679
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9642857142857143,
+      "recall_all@5": 0.75,
+      "ndcg_any@5": 0.7936510314534001,
+      "recall_any@10": 0.9880952380952381,
+      "recall_all@10": 0.8928571428571429,
+      "ndcg_any@10": 0.8255801190901398
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.8,
+      "ndcg_any@5": 0.8550434940145064,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8906363705412365
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.5833333333333334,
+      "ndcg_any@5": 0.6996676592459773,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.75,
+      "ndcg_any@10": 0.7355220331466111
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.5833333333333334,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.6800465351419688
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.96,
+      "recall_all@5": 0.8,
+      "ndcg_any@5": 0.7819604163985824,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.92,
+      "ndcg_any@10": 0.8102550575633087
+     }
+    }
+   },
+   "hier_del0.25": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9404761904761905,
+      "recall_all@5": 0.9047619047619048,
+      "ndcg_any@5": 0.8567186736271863,
+      "recall_any@10": 0.9880952380952381,
+      "recall_all@10": 0.9761904761904762,
+      "ndcg_any@10": 0.8787214973202265
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9341239671428611,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9341239671428611
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9583333333333334,
+      "recall_all@5": 0.8333333333333334,
+      "ndcg_any@5": 0.8585437679619138,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.8919808297396633
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.6666666666666666,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.7260345311846703
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.8461538461538461,
+      "recall_all@5": 0.8461538461538461,
+      "ndcg_any@5": 0.8461538461538461,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.899195424649335
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.8538983458581924,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8538983458581924
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8452380952380952,
+      "recall_all@5": 0.5714285714285714,
+      "ndcg_any@5": 0.6293172362880941,
+      "recall_any@10": 0.9404761904761905,
+      "recall_all@10": 0.7738095238095238,
+      "ndcg_any@10": 0.6825754526472482
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.7904303710693348,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9333333333333333,
+      "ndcg_any@10": 0.8341591458072954
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.875,
+      "recall_all@5": 0.4166666666666667,
+      "ndcg_any@5": 0.5906840114078903,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.625,
+      "ndcg_any@10": 0.6544649375824956
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.3333333333333333,
+      "recall_all@5": 0.3333333333333333,
+      "ndcg_any@5": 0.2858897131727827,
+      "recall_any@10": 0.6666666666666666,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.39551178623826017
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.7692307692307693,
+      "recall_all@5": 0.7692307692307693,
+      "ndcg_any@5": 0.7023792118131891,
+      "recall_any@10": 0.8461538461538461,
+      "recall_all@10": 0.8461538461538461,
+      "ndcg_any@10": 0.7321371200619999
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.88,
+      "recall_all@5": 0.6,
+      "ndcg_any@5": 0.599340319030495,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.8,
+      "ndcg_any@10": 0.6490375622017587
+     }
+    }
+   },
+   "index_del0.25": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9523809523809523,
+      "ndcg_any@5": 0.955818564969672,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9880952380952381,
+      "ndcg_any@10": 0.963301790610746
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.9876976584523819,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9876976584523819
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9166666666666666,
+      "ndcg_any@5": 0.9411537105752954,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.9542826784426715
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.92,
+      "ndcg_any@5": 0.9154242210743851,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9279640500757128
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9404761904761905,
+      "recall_all@5": 0.6904761904761905,
+      "ndcg_any@5": 0.7519817245865121,
+      "recall_any@10": 0.9761904761904762,
+      "recall_all@10": 0.7976190476190477,
+      "ndcg_any@10": 0.7797021041166173
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.7927411524668884,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7333333333333333,
+      "ndcg_any@10": 0.8025438418446491
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.625,
+      "ndcg_any@5": 0.7198724474318676,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7083333333333334,
+      "ndcg_any@10": 0.7439823056908116
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.5,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.6666666666666666,
+      "ndcg_any@10": 0.5525774794642881
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.9230769230769231,
+      "recall_all@5": 0.9230769230769231,
+      "ndcg_any@5": 0.9230769230769231,
+      "recall_any@10": 0.9230769230769231,
+      "recall_all@10": 0.9230769230769231,
+      "ndcg_any@10": 0.9230769230769231
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.92,
+      "recall_all@5": 0.68,
+      "ndcg_any@5": 0.7199363535959549,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.88,
+      "ndcg_any@10": 0.7714311561904367
+     }
+    }
+   },
+   "hier_del0.5": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9880952380952381,
+      "recall_all@5": 0.9285714285714286,
+      "ndcg_any@5": 0.8730562639638523,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9880952380952381,
+      "ndcg_any@10": 0.8851793725606439
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.9333333333333333,
+      "ndcg_any@5": 0.9297596420238124,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.9416332149274133
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.875,
+      "ndcg_any@5": 0.8839022713701071,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.8971519626143888
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.8333333333333334,
+      "recall_all@5": 0.8333333333333334,
+      "ndcg_any@5": 0.7718216255952429,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8362970934676666
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.8893543316649886,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8893543316649886
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.96,
+      "ndcg_any@5": 0.8393656385803014,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.8447813238394685
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8809523809523809,
+      "recall_all@5": 0.6309523809523809,
+      "ndcg_any@5": 0.6352920696592174,
+      "recall_any@10": 0.9880952380952381,
+      "recall_all@10": 0.7857142857142857,
+      "ndcg_any@10": 0.6848747416657485
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.7514698027049855,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.7333333333333333,
+      "ndcg_any@10": 0.7633433756085863
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 0.9166666666666666,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.5909532690805724,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.5833333333333334,
+      "ndcg_any@10": 0.6275861010478727
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.6666666666666666,
+      "recall_all@5": 0.5,
+      "ndcg_any@5": 0.4269343852741418,
+      "recall_any@10": 0.8333333333333334,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.5147276747659091
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.8461538461538461,
+      "recall_all@5": 0.8461538461538461,
+      "ndcg_any@5": 0.7171896783682897,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.7767054948659116
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.64,
+      "ndcg_any@5": 0.6009814488973251,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.88,
+      "ndcg_any@10": 0.6732689503517129
+     }
+    }
+   },
+   "index_del0.5": {
+    "session": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.9642857142857143,
+      "recall_all@5": 0.9166666666666666,
+      "ndcg_any@5": 0.916377427668334,
+      "recall_any@10": 0.9761904761904762,
+      "recall_all@10": 0.9642857142857143,
+      "ndcg_any@10": 0.9278433015034195
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.9333333333333333,
+      "recall_all@5": 0.9333333333333333,
+      "ndcg_any@5": 0.8774488606262589,
+      "recall_any@10": 0.9333333333333333,
+      "recall_all@10": 0.9333333333333333,
+      "ndcg_any@10": 0.8774488606262589
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.8333333333333334,
+      "ndcg_any@5": 0.9048794812837216,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.9583333333333334,
+      "ndcg_any@10": 0.9288911727384157
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 0.6309297535714575,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.6309297535714575
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 1.0,
+      "recall_all@5": 1.0,
+      "ndcg_any@5": 1.0,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 1.0
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.9230769230769231,
+      "recall_all@5": 0.9230769230769231,
+      "ndcg_any@5": 0.9230769230769231,
+      "recall_any@10": 1.0,
+      "recall_all@10": 1.0,
+      "ndcg_any@10": 0.952834831325734
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.96,
+      "recall_all@5": 0.96,
+      "ndcg_any@5": 0.9386373484146161,
+      "recall_any@10": 0.96,
+      "recall_all@10": 0.96,
+      "ndcg_any@10": 0.9386373484146161
+     }
+    },
+    "turn": {
+     "overall": {
+      "n_questions": 84,
+      "recall_any@5": 0.8690476190476191,
+      "recall_all@5": 0.4880952380952381,
+      "ndcg_any@5": 0.64445253084592,
+      "recall_any@10": 0.8928571428571429,
+      "recall_all@10": 0.5476190476190477,
+      "ndcg_any@10": 0.661941450381116
+     },
+     "knowledge-update": {
+      "n_questions": 15,
+      "recall_any@5": 0.8666666666666667,
+      "recall_all@5": 0.3333333333333333,
+      "ndcg_any@5": 0.5580494813426392,
+      "recall_any@10": 0.8666666666666667,
+      "recall_all@10": 0.3333333333333333,
+      "ndcg_any@10": 0.5580494813426392
+     },
+     "multi-session": {
+      "n_questions": 24,
+      "recall_any@5": 1.0,
+      "recall_all@5": 0.3333333333333333,
+      "ndcg_any@5": 0.6129690067240007,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.4166666666666667,
+      "ndcg_any@10": 0.6328105688151806
+     },
+     "single-session-assistant": {
+      "n_questions": 1,
+      "recall_any@5": 0.0,
+      "recall_all@5": 0.0,
+      "ndcg_any@5": 0.0,
+      "recall_any@10": 0.0,
+      "recall_all@10": 0.0,
+      "ndcg_any@10": 0.0
+     },
+     "single-session-preference": {
+      "n_questions": 6,
+      "recall_any@5": 0.8333333333333334,
+      "recall_all@5": 0.6666666666666666,
+      "ndcg_any@5": 0.75,
+      "recall_any@10": 1.0,
+      "recall_all@10": 0.8333333333333334,
+      "ndcg_any@10": 0.8144754678724236
+     },
+     "single-session-user": {
+      "n_questions": 13,
+      "recall_any@5": 0.7692307692307693,
+      "recall_all@5": 0.7692307692307693,
+      "ndcg_any@5": 0.7692307692307693,
+      "recall_any@10": 0.7692307692307693,
+      "recall_all@10": 0.7692307692307693,
+      "ndcg_any@10": 0.7692307692307693
+     },
+     "temporal-reasoning": {
+      "n_questions": 25,
+      "recall_any@5": 0.84,
+      "recall_all@5": 0.56,
+      "ndcg_any@5": 0.6620805683816674,
+      "recall_any@10": 0.88,
+      "recall_all@10": 0.64,
+      "ndcg_any@10": 0.6863213261230114
+     }
+    }
+   }
+  },
+  "sizes": {
+   "atoms_per_user_trace_mean": 384.6,
+   "atoms_per_user_trace_max": 472,
+   "atoms_per_session_trace_mean": 8.1,
+   "sessions_per_user_trace_mean": 47.6
+  },
+  "query_cost_vector_ops": {
+   "hier": 864.2,
+   "flat": 384.6
+  },
+  "eval_utils_sha256": "c98b8d1096877a15aa755c9de44fe33c195298466a2eb6f3c0f9f6bde8c72349"
+ },
+ "cost_usd": {
+  "tag_ledger_cumulative": 0.757,
+  "note": "ledger after the judge and turn-export stages; one L4 shard (about 8 min, about $0.12) lost to a Modal worker preemption before its ledger write is not counted"
+ }
+}
