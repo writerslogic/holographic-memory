@@ -177,3 +177,48 @@ indicative only; recall, capacity and correctness figures are unaffected by load
 - Kaviani, Ozdarendeli, Zhu, Ding, Popa. Opal: Private Memory for Personal AI. https://arxiv.org/abs/2604.02522
 - Birkholz et al. Remote ATtestation procedureS (RATS) Architecture. RFC 9334. https://www.rfc-editor.org/rfc/rfc9334
 - Morris, Kuleshov, Shmatikov, Rush. Text Embeddings Reveal (Almost) As Much As Text. EMNLP 2023. https://arxiv.org/abs/2310.06816
+
+## 5. Strategy after the public benchmarks (2026-10-05)
+
+**Measured strengths.** Local hybrid retrieval (BM25 + exact cosine, rank fusion) beats either
+component and matches published baselines on BEIR; a transactional, crash-safe, optionally signed
+store in one embedded engine. **Unmeasured:** VSA reasoning (binding, analogy, multi-hop) on any
+real benchmark. **Measured weakness:** the dense-to-sparse encoder (section 4, item 6).
+
+### 5.1 Encoder: dense binary sign codes instead of sparse top-k codes (measured, numpy)
+
+Random-rotation sign codes (SimHash; dense binary hypervectors, i.e. the BSC representation that
+supports XOR binding and majority bundling) were tested against the exact top-10 on the
+public data (`all-MiniLM-L6-v2` for BEIR; 1,000 nytimes queries):
+
+| Code | SciFact top-100 + re-rank | NFCorpus | nytimes | Hamming top-10 alone (SciFact / nytimes) |
+|---|---|---|---|---|
+| current sparse (64 of 16,384) | | | 0.54 | |
+| sign codes, 384 bits (48 B) | 0.897 | 0.852 | 0.714 | 0.503 / 0.449 |
+| sign codes, 1,024 bits (128 B) | 0.987 | 0.955 | 0.878 | 0.654 / 0.606 |
+| sign codes, 4,096 bits (512 B) | 0.999 | 0.997 | 0.972 | 0.812 / 0.772 |
+
+Sign codes are standard binary quantization, not a novel technique; the point is that they are
+also valid VSA hypervectors, so one representation can serve retrieval and the algebra. A linear
+Hamming scan will not match HNSW throughput at 1M vectors; the claim to pursue is recall and
+memory, not speed. Next: a versioned `sign-projection-v1` encoder in Rust, measured with
+`public-bench` on all four sets.
+
+### 5.2 Where "superior" is testable: agent long-term memory (LongMemEval)
+
+LongMemEval (Wu et al., ICLR 2025, arXiv 2410.10813, MIT) scores retrieval of the evidence for
+500 questions over long chat histories, including temporal reasoning, knowledge updates and
+abstention. Published retrieval on LongMemEval_M with Stella V5 1.5B (Table 3, read from the PDF):
+
+| Value / key | Recall@5 | NDCG@5 | Recall@10 | NDCG@10 |
+|---|---|---|---|---|
+| Round, K = V | 0.582 | 0.481 | 0.692 | 0.512 |
+| Round, K = V + LLM-extracted facts | 0.644 | 0.498 | 0.784 | 0.536 |
+| Session, K = V | 0.706 | 0.617 | 0.783 | 0.638 |
+| Session, K = V + LLM-extracted facts | 0.732 | 0.620 | 0.862 | 0.652 |
+
+Falsifiable plan: (1) with one embedding model held fixed, compare exact-cosine dense retrieval
+against HMS (hybrid, round/session keys, time-aware filtering) using the repository's official
+retrieval evaluation, one store per question; (2) report the paper's numbers separately with the
+model-size difference stated; (3) add engine features (date-range filters, update handling) only
+where the baseline shows failures. LLM fact extraction needs an API and is a separate decision.
