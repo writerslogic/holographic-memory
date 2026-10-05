@@ -58,6 +58,8 @@ pub mod phase_graph;
 pub mod phase_hvec;
 pub mod phase_resonator;
 pub(crate) mod posting;
+#[cfg(feature = "private-search")]
+pub mod private_query;
 #[cfg(feature = "provenance")]
 pub mod provenance;
 pub(crate) mod role;

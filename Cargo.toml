@@ -91,6 +91,9 @@ provenance-scitt = ["provenance", "ureq"]
 # binaries that exercise them. Off by default so they are not part of the
 # published public API.
 experimental = []
+# Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
+# the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
+private-search = ["zeroize", "rand/chacha"]
 
 [[bin]]
 name = "hms-eval"
@@ -142,6 +145,10 @@ path = "src/bin/route-sweep.rs"
 [[bin]]
 name = "bundle-subset-sweep"
 required-features = ["experimental"]
+
+[[bin]]
+name = "private-query-bench"
+required-features = ["private-search"]
 
 [profile.release]
 lto = true

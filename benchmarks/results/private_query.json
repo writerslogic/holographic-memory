@@ -1,0 +1,116 @@
+{
+  "benchmark": "private_query",
+  "environment": {
+    "arch": "aarch64",
+    "crate_version": "0.6.1",
+    "os": "macos",
+    "rayon_threads": 10
+  },
+  "matrix_bytes": 67108864,
+  "matrix_expand_ms": 43.299916,
+  "note": "Experimental. Wall-clock, single machine, release build. All decoded scores were checked against plaintext intersection counts.",
+  "parameters": {
+    "dim": 16384,
+    "error_sigma": 6.4,
+    "error_tail": 77,
+    "lwe_dim": 1024,
+    "max_row_weight": 1023,
+    "modulus_bits": 32,
+    "plaintext_modulus": 1024
+  },
+  "results": [
+    {
+      "answer_bytes": 4000,
+      "client_decode_ms": {
+        "max": 28.57975,
+        "median": 0.446625,
+        "min": 0.079458,
+        "samples": 20
+      },
+      "client_query_ms": {
+        "max": 13.965541,
+        "median": 2.597334,
+        "min": 1.235708,
+        "samples": 20
+      },
+      "hint_build_ms": {
+        "max": 33.65475,
+        "median": 9.573208,
+        "min": 8.349584,
+        "samples": 3
+      },
+      "hint_bytes": 4096000,
+      "query_bytes": 65536,
+      "row_weight_max": 64,
+      "rows": 1000,
+      "server_answer_ms": {
+        "max": 17.486416000000002,
+        "median": 0.078667,
+        "min": 0.035583000000000004,
+        "samples": 20
+      }
+    },
+    {
+      "answer_bytes": 40000,
+      "client_decode_ms": {
+        "max": 7.951166000000001,
+        "median": 0.8744999999999999,
+        "min": 0.561792,
+        "samples": 20
+      },
+      "client_query_ms": {
+        "max": 61.8335,
+        "median": 3.342334,
+        "min": 0.9886249999999999,
+        "samples": 20
+      },
+      "hint_build_ms": {
+        "max": 274.62283399999995,
+        "median": 136.344417,
+        "min": 132.364291,
+        "samples": 3
+      },
+      "hint_bytes": 40960000,
+      "query_bytes": 65536,
+      "row_weight_max": 64,
+      "rows": 10000,
+      "server_answer_ms": {
+        "max": 23.342458,
+        "median": 0.39129200000000003,
+        "min": 0.084708,
+        "samples": 20
+      }
+    },
+    {
+      "answer_bytes": 400000,
+      "client_decode_ms": {
+        "max": 17.857000000000003,
+        "median": 5.065334,
+        "min": 3.985,
+        "samples": 20
+      },
+      "client_query_ms": {
+        "max": 22.898541,
+        "median": 1.2731249999999998,
+        "min": 0.937041,
+        "samples": 20
+      },
+      "hint_build_ms": {
+        "max": 892.843042,
+        "median": 816.3936659999999,
+        "min": 791.04125,
+        "samples": 3
+      },
+      "hint_bytes": 409600000,
+      "query_bytes": 65536,
+      "row_weight_max": 64,
+      "rows": 100000,
+      "server_answer_ms": {
+        "max": 26.616167,
+        "median": 0.884666,
+        "min": 0.531334,
+        "samples": 20
+      }
+    }
+  ]
+}
