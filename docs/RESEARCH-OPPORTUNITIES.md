@@ -244,3 +244,37 @@ Target: beat the paper on LongMemEval_M retrieval with open-weights models run l
 
 Open decision: an LLM for fact-key extraction (the paper's largest gain) and for end-to-end QA,
 local (Qwen3 via MLX) or API.
+
+### 5.4 Targets after review (2026-10-05)
+
+**Speed track (beat HNSW).** Target: higher single-thread QPS than FAISS HNSW and hnswlib at
+recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular, all systems timed in the
+same session on an idle machine with repeated runs. Approach: rotated 1-bit codes (RaBitQ; also
+HMS's binary hypervectors) searched inside a graph built on exact distances, codes of each
+vertex's neighbours stored contiguously, popcount/estimator SIMD kernels, exact re-rank of a small
+candidate set (the quantized-graph design of SymphonyQG, SIGMOD 2025). `src/core/nsg` is not
+reused: it runs on the sparse codes and its recall collapsed on clustered data.
+
+Estimator check (numpy, 1,000 queries, exact top-10 recall):
+
+| Set | Bits | RaBitQ est. top-10 | Hamming top-10 | RaBitQ top-100 + re-rank | Hamming top-100 + re-rank |
+|---|---|---|---|---|---|
+| SciFact | 384 | 0.625 | 0.582 | 0.984 | 0.949 |
+| nytimes | 256 | 0.580 | 0.449 | 0.881 | 0.731 |
+| nytimes | 1,024 (padded) | 0.761 | 0.661 | 0.973 | 0.930 |
+| glove (300k subset) | 128 | 0.243 | 0.192 | 0.628 | 0.476 |
+
+The estimator beats plain Hamming at native length; zero-padding does not add information
+(multi-bit extended codes are the route to more precision). glove needs larger candidate sets,
+which the graph search provides.
+
+**Accuracy track (LongMemEval).** Goal: as close to 1.0 as achievable, reported per question type.
+Rules: a stratified split frozen before any tuning (100 dev / 400 held-out questions, by type);
+tune only on dev, report held-out, and label full-set numbers as tuned. Iterate on S; one final
+run on M.
+
+**Compute.** Qwen3-Embedding-8B in fp16 on this M4 via PyTorch MPS measured 72 tokens/s on user
+turns and 123 tokens/s on sessions. LongMemEval_M deduplicates to 49,018 sessions (about 120M
+tokens) and 254,089 user turns (about 15M tokens), so a full M pass with the 8B model is about
+1.5 days (turns) to 2 weeks (sessions) locally. Local LLM fact extraction over M is slower still.
+M-scale runs with 8B-class models need a rented GPU or a smaller model.
