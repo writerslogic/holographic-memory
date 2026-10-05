@@ -881,12 +881,8 @@ impl HmsCore {
             }
         }
 
-        // Drain heap into sorted vec (highest similarity first)
-        let mut results: Vec<super::types::RetrievalResult> = heap.into_sorted_vec();
-        // into_sorted_vec uses the Ord (min-heap), so lowest similarity is first.
-        // Reverse to get descending order.
-        results.reverse();
-        Ok(results)
+        // `RetrievalResult`'s reversed `Ord` makes ascending order highest-similarity first.
+        Ok(heap.into_sorted_vec())
     }
 
     // === Meaning Memory API ===

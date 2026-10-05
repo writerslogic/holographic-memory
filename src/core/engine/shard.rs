@@ -311,16 +311,14 @@ impl Shard {
             }
         }
 
-        let mut results: Vec<RetrievalResult> = heap
-            .into_sorted_vec()
+        // The reversed `Ord` makes ascending order highest-similarity first.
+        heap.into_sorted_vec()
             .into_iter()
             .map(|c| RetrievalResult {
                 similarity: c.similarity,
                 id: c.id.to_string(),
             })
-            .collect();
-        results.reverse();
-        results
+            .collect()
     }
 
     pub fn nsg_trained(&self) -> bool {
@@ -379,9 +377,8 @@ impl ShardManager {
                 }
             }
         }
-        let mut merged = heap.into_sorted_vec();
-        merged.reverse();
-        merged
+        // `RetrievalResult`'s reversed `Ord` makes ascending order highest-similarity first.
+        heap.into_sorted_vec()
     }
 
     pub fn total_count(&self) -> u64 {

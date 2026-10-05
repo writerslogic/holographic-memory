@@ -195,3 +195,55 @@ fn corrupt_ann_cache_does_not_prevent_recovery_of_durable_data() -> anyhow::Resu
     );
     Ok(())
 }
+
+fn assert_best_first(results: &[holographic_memory::RetrievalResult], expected_top: &str) {
+    let listed: Vec<String> = results
+        .iter()
+        .map(|r| format!("{}={:.3}", r.id, r.similarity))
+        .collect();
+    assert_eq!(results.len(), 5, "{listed:?}");
+    assert_eq!(results[0].id, expected_top, "{listed:?}");
+    assert!(
+        results
+            .windows(2)
+            .all(|w| w[0].similarity >= w[1].similarity),
+        "results are not in descending similarity: {listed:?}"
+    );
+    assert!(results[0].similarity > results[4].similarity, "{listed:?}");
+}
+
+#[test]
+fn every_query_route_returns_best_match_first() -> anyhow::Result<()> {
+    const DIM: usize = 16384;
+    let scalar = |i: usize| EntangledHVec::from_scalar(i as f64, 0.0, 4000.0, DIM);
+    let query = scalar(20);
+
+    // Exact scan (fewer than 1,000 vectors), then the inverted index once past it.
+    let dir = tempfile::tempdir()?;
+    let single = HmsCore::new(DIM as u32, Some(dir.path().display().to_string()), None)?;
+    for i in 0..40 {
+        single.memorize(format!("s-{i}"), scalar(i))?;
+    }
+    assert_best_first(&single.query(&query, 5), "s-20");
+    assert_best_first(&single.federated_query(&[], &query, 5)?, "s-20");
+    for i in 40..1200 {
+        single.memorize(format!("s-{i}"), scalar(i))?;
+    }
+    assert_best_first(&single.query(&query, 5), "s-20");
+
+    // Multi-shard merge.
+    let dir = tempfile::tempdir()?;
+    let mut config = HmsConfig::default();
+    config.shard.enabled = true;
+    config.shard.shard_count = 4;
+    let sharded = HmsCore::new(
+        DIM as u32,
+        Some(dir.path().display().to_string()),
+        Some(config),
+    )?;
+    for i in 0..40 {
+        sharded.memorize(format!("s-{i}"), scalar(i))?;
+    }
+    assert_best_first(&sharded.query(&query, 5), "s-20");
+    Ok(())
+}
