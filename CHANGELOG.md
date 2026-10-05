@@ -14,6 +14,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Record the encoder test and the agent-memory benchmark plan
 - Attribute semantic search to the document API
 - Update changelog [skip ci]
 - Record the outcomes of the algorithm work
@@ -33,6 +34,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Add LongMemEval_S retrieval baseline (dense, lexical, hybrid)
 - Add public BEIR and ann-benchmarks comparisons
 - Report encoder candidate recall after exact rerank
 ## [0.6.1] - 2026-10-05
