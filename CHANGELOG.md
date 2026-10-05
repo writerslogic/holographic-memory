@@ -14,6 +14,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Record the holographic prototype outcome
+- Record continuation state for the next session
+- Plan the holographic fact memory and its tests
+- Plan local model stages inside HMS
 - Define the single-run protocol for LongMemEval_M
 - Set the speed and accuracy targets and record the compute limits
 - Plan the LongMemEval_M run with larger models
@@ -37,6 +41,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Prototype the holographic fact memory and measure it on LongMemEval_S dev
 - Make the Modal cost cap cumulative across relaunches
 - Key LongMemEval fact extraction by content and re-tune on dev
 - Record the LongMemEval dev results and the Modal dry run
