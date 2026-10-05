@@ -35,7 +35,7 @@ memmap2 = "0.9"
 anyhow = "1.0"
 thiserror = "2.0"
 tracing = "0.1"
-clap = { version = "4.4", features = ["derive"] }
+clap = { version = "4.4", features = ["derive", "env"] }
 fxhash = "0.2"
 fs2 = "0.4"
 nalgebra = { version = "0.35", features = ["serde-serialize"] }
@@ -51,6 +51,8 @@ ureq = { version = "3", optional = true }
 multibase = { version = "0.9", optional = true }
 base64 = { version = "0.23", optional = true }
 tempfile = "3"
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json"], optional = true }
+subtle = { version = "2.6", optional = true }
 
 [build-dependencies]
 napi-build = { version = "2.2", optional = true }
@@ -94,6 +96,8 @@ experimental = []
 # Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
+# HTTP service for the holographic-sdk Python client (`hms-server` binary).
+server = ["tokio", "axum", "subtle"]
 
 [[bin]]
 name = "hms-eval"
@@ -102,6 +106,11 @@ path = "src/bin/hms-eval.rs"
 [[bin]]
 name = "hms-admin"
 path = "src/bin/hms-admin.rs"
+
+[[bin]]
+name = "hms-server"
+path = "src/bin/hms-server.rs"
+required-features = ["server"]
 
 # Experiment harnesses that depend on `experimental` modules. Declared
 # explicitly so they only build with `--features experimental`; the remaining

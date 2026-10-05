@@ -29,7 +29,7 @@
 
 ---
 
-The client talks to a service exposing `POST /api/v1/documents/batch`, `POST /api/v1/documents`, `DELETE /api/v1/documents/{id}` and `POST /api/v1/query`. The `holographic-memory` repository does not ship that service; you must provide one.
+The client talks to a service exposing `POST /api/v1/documents/batch`, `POST /api/v1/documents`, `DELETE /api/v1/documents/{id}` and `POST /api/v1/query`. The `holographic-memory` repository ships a reference implementation, `hms-server` (build with `--features server`); see `docs/SERVER.md`.
 
 ## Installation
 

@@ -1,5 +1,6 @@
 import hashlib
 import struct
+from urllib.parse import quote
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -118,7 +119,7 @@ class HolographicClient:
             res.raise_for_status()
 
     def delete_document(self, doc_id: str) -> None:
-        res = self.client.delete(f"{self.url}/api/v1/documents/{doc_id}")
+        res = self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         res.raise_for_status()
 
     def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -179,7 +180,7 @@ class AsyncHolographicClient:
             res.raise_for_status()
 
     async def delete_document(self, doc_id: str) -> None:
-        res = await self.client.delete(f"{self.url}/api/v1/documents/{doc_id}")
+        res = await self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         res.raise_for_status()
 
     async def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
