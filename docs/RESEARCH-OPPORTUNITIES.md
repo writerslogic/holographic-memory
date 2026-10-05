@@ -222,3 +222,25 @@ against HMS (hybrid, round/session keys, time-aware filtering) using the reposit
 retrieval evaluation, one store per question; (2) report the paper's numbers separately with the
 model-size difference stated; (3) add engine features (date-range filters, update handling) only
 where the baseline shows failures. LLM fact extraction needs an API and is a separate decision.
+
+### 5.3 LongMemEval_M with larger models (plan, 2026-10-05)
+
+Target: beat the paper on LongMemEval_M retrieval with open-weights models run locally.
+
+1. **Reproduce the paper's baseline first** on the cleaned M release: Stella V5 1.5B
+   (`NovaSearch/stella_en_1.5B_v5` @ `7817065`, MIT), encoded exactly as the official
+   `src/retrieval/run_retrieval.py` does (no query instruction, mean pooling, 1024-d `2_Dense_1024`
+   head, max 512 tokens), K = V at round and session level, official `eval_utils.py`. Every later
+   number is compared with this reproduction, not only with the PDF, so a cleaned-data effect is
+   not mistaken for a model gain.
+2. **Larger embedder:** `Qwen/Qwen3-Embedding-8B` @ `1d8ad4ca9b3d` (Apache-2.0, 7.6B parameters,
+   about 5x Stella), with the model card's query instruction and last-token pooling.
+3. Then, one lever at a time on the same harness: hybrid (BM25 + dense), session aggregation of
+   round scores, time-aware filtering from `question_date` (needs a date-range filter in the
+   document API), cross-encoder rerank with `Qwen/Qwen3-Reranker-4B` (Apache-2.0; cost measured on
+   a sample first).
+4. Operational: data and model caches on /Volumes/A, embeddings in resumable shards keyed by
+   content hash, load average recorded, nothing else timed during runs.
+
+Open decision: an LLM for fact-key extraction (the paper's largest gain) and for end-to-end QA,
+local (Qwen3 via MLX) or API.
