@@ -3,6 +3,10 @@
 All notable changes to this project are generated from the commit history.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
+## [0.6.1] - 2026-10-05
+
+### Documentation
+- Update changelog [skip ci]
 ## [py-v0.6.1] - 2026-10-05
 
 ### Added
