@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Sorted-u32 intersection kernels: |a| = 64 against |b| in 64..16384.
-//! Group names are `b{|b|}_ov{overlap%}`; function names are the kernels.
+//! Group names are `b{|b|}_ov{overlap%}`. Rejected candidate kernels and their
+//! measurements are recorded in benchmarks/results/intersection_kernels.json.
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use holographic_memory::core::intersection::*;
+use holographic_memory::core::intersection::sparse_intersection_count;
 use std::hint::black_box;
 
 const UNIVERSE: u32 = 262_144;
@@ -50,34 +51,14 @@ fn make_pair(nb: usize, overlap_pct: usize, seed: u64) -> (Vec<u32>, Vec<u32>) {
     (a, b.into_iter().collect())
 }
 
-/// Frozen copy of the pre-change aarch64 dispatch (merge, or gallop when 8x skewed).
-fn baseline(a: &[u32], b: &[u32]) -> usize {
-    if a.is_empty() || b.is_empty() {
-        return 0;
-    }
-    let (small, large) = if a.len() <= b.len() { (a, b) } else { (b, a) };
-    if small.len() * 8 < large.len() {
-        galloping_count(small, large)
-    } else {
-        merge_branchy_count(small, large)
-    }
-}
-
 fn bench(c: &mut Criterion) {
     for &nb in &[64usize, 256, 1024, 4096, 16384] {
         for &ov in &[0usize, 10, 50, 100] {
             let (a, b) = make_pair(nb, ov, (nb * 1000 + ov) as u64);
             let mut g = c.benchmark_group(format!("b{nb}_ov{ov}"));
-            let mut run = |name: &str, f: &dyn Fn(&[u32], &[u32]) -> usize| {
-                g.bench_function(name, |bn| bn.iter(|| f(black_box(&a), black_box(&b))));
-            };
-            run("baseline", &baseline);
-            run("merge_branchy", &merge_branchy_count);
-            run("merge_branchless", &merge_branchless_count);
-            run("gallop", &galloping_count);
-            #[cfg(target_arch = "aarch64")]
-            run("neon", &neon_intersection_count);
-            run("final", &sparse_intersection_count);
+            g.bench_function("sparse_intersection_count", |bn| {
+                bn.iter(|| sparse_intersection_count(black_box(&a), black_box(&b)))
+            });
             g.finish();
         }
     }
