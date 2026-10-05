@@ -57,7 +57,7 @@ MODELS = {
 }
 USD_PER_HOUR = {"T4": 0.59, "L4": 0.80, "A10G": 1.10, "L40S": 1.95, "A100-80GB": 2.50, "H100": 3.95}
 OVERHEAD = 1.15
-CPU_USD_PER_HOUR = 8 * 0.0473 + 16 * 0.008
+CPU_USD_PER_HOUR = 8 * 0.0473 + 64 * 0.008
 
 gpu_image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -419,7 +419,7 @@ def _rerank_doc(q, target: str, level: str) -> str:
     raise KeyError(target)
 
 
-@app.function(image=cpu_image, volumes={"/vol": VOL}, timeout=24 * 3600, cpu=8, memory=16384)
+@app.function(image=cpu_image, volumes={"/vol": VOL}, timeout=24 * 3600, cpu=8, memory=65536)  # M's 2.7 GB JSON
 def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: str,
            all_kinds: bool = False, rerank_pool: tuple[int, int] = (30, 50), cache_ns: str = "") -> dict:
     global CACHE

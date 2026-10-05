@@ -1,0 +1,271 @@
+{
+ "dataset": {
+  "name": "longmemeval_s",
+  "release_revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+  "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+  "part": "dev",
+  "n_questions": 100,
+  "n_scored": 84
+ },
+ "models": {
+  "embed": {
+   "id": "Qwen/Qwen3-Embedding-0.6B",
+   "revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+   "gpu": "T4"
+  },
+  "rerank": {
+   "id": "Qwen/Qwen3-Reranker-0.6B",
+   "revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+   "gpu": "T4"
+  },
+  "llm": {
+   "id": "Qwen/Qwen3-4B-Instruct-2507",
+   "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "gpu": "L4"
+  }
+ },
+ "config": {
+  "turn": {
+   "kinds": {
+    "turn": 1.0
+   },
+   "variants": {
+    "orig": 1.0,
+    "rewrite": 0.0,
+    "sub": 0.25
+   },
+   "w_lex": 1.0,
+   "w_sem": 1.0,
+   "fuse": "cvx",
+   "agg": "max",
+   "k0": 60.0,
+   "sess_prior": 0.0,
+   "fact_as": "turn",
+   "time_w": 0.0,
+   "rerank_w": 4.0,
+   "rerank_n": 20
+  },
+  "session": {
+   "kinds": {
+    "session": 1.0,
+    "session_exp": 0.0,
+    "turn": 2.0
+   },
+   "variants": {
+    "orig": 1.0,
+    "rewrite": 0.0
+   },
+   "w_lex": 0.5,
+   "w_sem": 1.0,
+   "fuse": "rrf",
+   "agg": "max",
+   "k0": 60.0,
+   "sess_prior": 0.0,
+   "fact_as": null,
+   "time_w": 0.0,
+   "rerank_w": 0.0,
+   "rerank_n": 20
+  },
+  "kinds_indexed": [
+   "fact",
+   "session",
+   "turn"
+  ]
+ },
+ "evaluation": {
+  "code": "xiaowu0162/LongMemEval src/retrieval/eval_utils.py",
+  "commit": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+  "sha256": "c98b8d1096877a15aa755c9de44fe33c195298466a2eb6f3c0f9f6bde8c72349"
+ },
+ "cost": {
+  "estimated_usd": 0.7026,
+  "gpu_calls": [
+   {
+    "stage": "facts",
+    "gpu": "L4",
+    "secs": 403.5,
+    "items": 1500,
+    "usd": 0.1031
+   },
+   {
+    "stage": "facts",
+    "gpu": "L4",
+    "secs": 957.0,
+    "items": 3257,
+    "usd": 0.2446
+   },
+   {
+    "stage": "queries",
+    "gpu": "L4",
+    "secs": 162.2,
+    "items": 100,
+    "usd": 0.0415
+   },
+   {
+    "stage": "embed",
+    "gpu": "T4",
+    "secs": 22.1,
+    "items": 8000,
+    "usd": 0.0042
+   },
+   {
+    "stage": "embed",
+    "gpu": "T4",
+    "secs": 346.1,
+    "items": 29212,
+    "usd": 0.0652
+   },
+   {
+    "stage": "embed",
+    "gpu": "T4",
+    "secs": 6.5,
+    "items": 496,
+    "usd": 0.0012
+   },
+   {
+    "stage": "rerank",
+    "gpu": "T4",
+    "secs": 124.6,
+    "items": 1999,
+    "usd": 0.0235
+   }
+  ],
+  "driver_cpu_usd": 0.2193,
+  "cap_usd": 5.0
+ },
+ "metrics": {
+  "dev": {
+   "session": {
+    "overall": {
+     "n_questions": 84,
+     "recall_any@5": 0.9761904761904762,
+     "recall_all@5": 0.9404761904761905,
+     "ndcg_any@5": 0.9336955521614382,
+     "recall_any@10": 0.9880952380952381,
+     "recall_all@10": 0.9761904761904762,
+     "ndcg_any@10": 0.9424056212660397
+    },
+    "knowledge-update": {
+     "n_questions": 15,
+     "recall_any@5": 1.0,
+     "recall_all@5": 1.0,
+     "ndcg_any@5": 1.0,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 1.0
+    },
+    "multi-session": {
+     "n_questions": 24,
+     "recall_any@5": 0.9583333333333334,
+     "recall_all@5": 0.9166666666666666,
+     "ndcg_any@5": 0.9238695517502792,
+     "recall_any@10": 1.0,
+     "recall_all@10": 0.9583333333333334,
+     "ndcg_any@10": 0.9373339475214165
+    },
+    "single-session-assistant": {
+     "n_questions": 1,
+     "recall_any@5": 1.0,
+     "recall_all@5": 1.0,
+     "ndcg_any@5": 1.0,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 1.0
+    },
+    "single-session-preference": {
+     "n_questions": 6,
+     "recall_any@5": 1.0,
+     "recall_all@5": 1.0,
+     "ndcg_any@5": 0.9384882922619097,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 0.9384882922619097
+    },
+    "single-session-user": {
+     "n_questions": 13,
+     "recall_any@5": 1.0,
+     "recall_all@5": 1.0,
+     "ndcg_any@5": 1.0,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 1.0
+    },
+    "temporal-reasoning": {
+     "n_questions": 25,
+     "recall_any@5": 0.96,
+     "recall_all@5": 0.88,
+     "ndcg_any@5": 0.8650650954393058,
+     "recall_any@10": 0.96,
+     "recall_all@10": 0.96,
+     "ndcg_any@10": 0.8814051076904746
+    }
+   },
+   "turn": {
+    "overall": {
+     "n_questions": 84,
+     "recall_any@5": 0.9285714285714286,
+     "recall_all@5": 0.7857142857142857,
+     "ndcg_any@5": 0.776897669706049,
+     "recall_any@10": 0.9880952380952381,
+     "recall_all@10": 0.9166666666666666,
+     "ndcg_any@10": 0.814999834626932
+    },
+    "knowledge-update": {
+     "n_questions": 15,
+     "recall_any@5": 1.0,
+     "recall_all@5": 1.0,
+     "ndcg_any@5": 0.8972156905861249,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 0.8972156905861249
+    },
+    "multi-session": {
+     "n_questions": 24,
+     "recall_any@5": 0.9166666666666666,
+     "recall_all@5": 0.625,
+     "ndcg_any@5": 0.6807847673773612,
+     "recall_any@10": 1.0,
+     "recall_all@10": 0.8333333333333334,
+     "ndcg_any@10": 0.7438890915224325
+    },
+    "single-session-assistant": {
+     "n_questions": 1,
+     "recall_any@5": 1.0,
+     "recall_all@5": 1.0,
+     "ndcg_any@5": 1.0,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 1.0
+    },
+    "single-session-preference": {
+     "n_questions": 6,
+     "recall_any@5": 1.0,
+     "recall_all@5": 0.8333333333333334,
+     "ndcg_any@5": 0.6827113387680258,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 0.7149490727042375
+    },
+    "single-session-user": {
+     "n_questions": 13,
+     "recall_any@5": 1.0,
+     "recall_all@5": 1.0,
+     "ndcg_any@5": 1.0,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 1.0
+    },
+    "temporal-reasoning": {
+     "n_questions": 25,
+     "recall_any@5": 0.84,
+     "recall_all@5": 0.68,
+     "ndcg_any@5": 0.6946426578740567,
+     "recall_any@10": 0.96,
+     "recall_all@10": 0.88,
+     "ndcg_any@10": 0.754348724684265
+    }
+   }
+  }
+ },
+ "finished": "2026-10-05T20:50:52"
+}

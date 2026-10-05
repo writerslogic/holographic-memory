@@ -140,7 +140,7 @@ about 48 in S, the embedding model is a 1.5B-parameter model against a 22M-param
 dataset release differs, and the paper's recall variant and level mapping were not re-derived
 here. No ranking against the paper is implied.
 
-## LongMemEval retrieval pipeline (dev split, in progress)
+## LongMemEval retrieval pipeline (S dev split)
 
 Protocol: `benchmarks/public/longmemeval_split.json` freezes 100 dev / 400 held-out question ids
 (seed 20261005, stratified by question type and abstention; S and M share the same 500 ids). Only
@@ -160,6 +160,74 @@ nDCG@10 0.687.
 A date-range filter in the document API is not needed for this benchmark: every question's store is
 ranked exhaustively, so a date filter or boost applied to the full ranking gives the same result as
 an engine-side filter.
+
+Dev models (small, pinned in `longmemeval_modal.py`): Qwen3-Embedding-0.6B (model-card query
+instruction, last-token pooling, L2), Qwen3-Reranker-0.6B (model-card yes/no prompt),
+Qwen3-4B-Instruct-2507 for user-fact extraction per session and for query rewrite / sub-queries /
+time range. Levers were measured on cached scores (`longmemeval_sweep.py`): each alone against the
+baseline (user-turn keys for turns, session keys for sessions, original question, document-API
+hybrid RRF, max aggregation), then greedy ascent keeping a change only if the objective (mean of
+recall_all@5/10 and ndcg_any@5/10 at that level) rose by at least 0.005, then pruning of any kept
+lever whose removal cost less than 0.005.
+
+| Lever (best value) | Session, alone | Turn, alone | Kept (drop-one loss) |
+|---|---|---|---|
+| Lexical weight 0.5 (vs 1.0) | +0.018 | +0.004 | session (0.027) |
+| Min-max score blend instead of RRF | +0.017 | +0.008 | turn (0.007) |
+| User-turn keys merged into session ranking (weight 2) | +0.011 | n/a | session (0.020) |
+| Round keys (user + assistant) | +0.009 | -0.017 | no |
+| Facts as their own ranked list | -0.223 | -0.226 | no |
+| Facts in the value keys' index (paper's "separate" join) | +0.011 | +0.037 | turn (0.028) |
+| Fact-expanded keys (K = V + facts) | +0.011 (turn_exp) | +0.016 | no |
+| Aggregation sum2 / sum3 / RRF instead of max | <= -0.002 | <= -0.002 | no |
+| LLM rewrite as extra query | +0.007 | +0.013 | no (pruned) |
+| LLM sub-queries (weight 0.25) | +0.012 | +0.003 | turn (0.024) |
+| Session prior for turns | n/a | +0.001 | no |
+| Time-range boost from `question_date` | -0.011 | -0.010 | no |
+| Cross-encoder re-rank of top 20 (weight 2; turn top 50: +0.074) | +0.035 | +0.050 | turn, weight 4 (0.058) |
+
+Facts as a separate list lose because extraction yields facts for only some sessions (about 2.5 per
+session, many sessions none), and rank fusion then favours sessions that have any fact. Session
+re-ranking helps alone but adds less than 0.005 once lexical weighting and turn keys are in.
+
+Final dev metrics, from the end-to-end Modal dry run of the exact job on a fresh cache
+(`benchmarks/results/longmemeval_dev_final.json`, 84 scored dev questions, official
+`eval_utils.py`, recall_all / ndcg_any):
+
+| Level | Recall@5 | Recall@10 | nDCG@5 | nDCG@10 |
+|---|---|---|---|---|
+| Session, MiniLM hybrid baseline (dev) | 0.893 | 0.952 | 0.899 | 0.911 |
+| Session, pipeline | **0.940** | **0.976** | **0.934** | **0.942** |
+| Turn, MiniLM hybrid baseline (dev) | 0.607 | 0.786 | 0.649 | 0.687 |
+| Turn, pipeline | **0.786** | **0.917** | **0.777** | **0.815** |
+
+Per type (turn R@10 / session R@10): multi-session (24) 0.833 / 0.958, temporal-reasoning (25)
+0.880 / 0.960, knowledge-update (15) 1.000 / 1.000, single-session-user (13) 1.000 / 1.000,
+preference (6) 1.000 / 1.000. The dry run is below the sweep's own estimate on turns (sweep R@5
+0.821, R@10 0.929): the sweep had re-rank scores only for the candidates of the default config, and
+embeddings computed in different batches differ in fp16. The dry-run figures are the ones to quote.
+These are tuned-on-dev numbers; nothing here estimates held-out performance.
+
+Cost: the dry run's in-job estimate was $0.70; `modal billing report` shows $0.84 for that app
+(GPU, CPU and image build). All Modal use for this work, including the development runs, was $2.50.
+
+### The single M run (not executed; needs the maintainer's go-ahead)
+
+```sh
+uvx modal run benchmarks/public/longmemeval_modal.py --dataset m --part all --models large \
+  --cap 40 --tag m-all-large --out benchmarks/results/longmemeval_m_large.json
+```
+
+Large models: Qwen3-Embedding-8B @ `1d8ad4ca9b3d`, Qwen3-Reranker-8B @ `77d193c791ed`,
+Qwen3-30B-A3B-Instruct-2507 @ `0d7cf23991f4`, all on H100. Metrics are written for dev, held-out and
+all separately. Estimate (scaled from the dry run by item counts and by parameter count and GPU
+throughput, so an inference, not a measurement): M has 49,018 unique sessions (10.3x the dev
+sessions), so fact extraction is about 1 to 2 H100-hours; embedding about 300k keys with the 8B
+model about 1 H100-hour; re-ranking 10,000 turn pairs under 0.5 H100-hour; HMS scoring about 30
+minutes of driver CPU. Expected spend $10 to $20 and 2 to 4 hours of wall time with 4 GPU containers
+per stage; the `--cap 40` stop is enforced before every wave. Unverified until run: vLLM loading of
+the 30B MoE model on one H100, memory of the 2.7 GB M JSON in the driver (64 GiB allotted), and
+HMS ingestion speed at about 4,000 keys per question.
 
 ## What this means
 
