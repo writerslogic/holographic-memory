@@ -278,3 +278,22 @@ turns and 123 tokens/s on sessions. LongMemEval_M deduplicates to 49,018 session
 tokens) and 254,089 user turns (about 15M tokens), so a full M pass with the 8B model is about
 1.5 days (turns) to 2 weeks (sessions) locally. Local LLM fact extraction over M is slower still.
 M-scale runs with 8B-class models need a rented GPU or a smaller model.
+
+### 5.5 LongMemEval single-run protocol (2026-10-05)
+
+The large-model run on LongMemEval_M happens once, on Modal, after everything else is fixed:
+
+1. **Frozen split.** 100 dev / 400 held-out questions, stratified by question type, chosen with a
+   fixed seed and committed before any tuning. All tuning on dev only.
+2. **Pipeline built and ablated on S dev** with small models locally: multi-granularity indexing
+   (user turns, rounds, sessions, extracted facts), hybrid BM25 + dense, session aggregation of
+   turn scores, time-aware handling from `question_date` and session dates, query rewriting /
+   decomposition for multi-session questions, cross-encoder re-ranking. Each lever is kept only if
+   it improves dev, and its gain is recorded.
+3. **Dry run** of the exact Modal job on S end to end (cheap) so the M run cannot fail midway;
+   resumable shards, a hard spending cap, cost reported.
+4. **Single M run** with the strongest open models (Qwen3-Embedding-8B, Qwen3-Reranker-8B, a Qwen3
+   LLM for fact extraction and query rewriting), official `eval_utils.py`, every retrieval metric
+   at both granularities, per question type, held-out and full set reported separately.
+5. **Reporting.** Every number as measured, beside the paper's published baselines and the local
+   Stella reproduction. A metric where HMS does not lead is reported as such.
