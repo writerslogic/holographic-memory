@@ -297,3 +297,21 @@ The large-model run on LongMemEval_M happens once, on Modal, after everything el
    at both granularities, per question type, held-out and full set reported separately.
 5. **Reporting.** Every number as measured, beside the paper's published baselines and the local
    Stella reproduction. A metric where HMS does not lead is reported as such.
+
+### 5.6 Local model stages inside HMS (2026-10-05)
+
+Decision: fact extraction, query rewriting, embedding and re-ranking move from the benchmark
+scripts into HMS, so the LongMemEval headline exercises HMS's own stages and runs on-device.
+
+Order: (1) build the stages in HMS; (2) re-run S dev through them on Modal and compare with the
+tuned dev numbers (embedder and re-ranker within the ~0.004 noise floor; the generative LLM stages
+re-measured, not assumed equal); (3) only then the single M run, with a cost estimate from the
+HMS-stage timings, after maintainer approval.
+
+Constraints: candle with the exact tuned safetensors revisions (Qwen3-Embedding-0.6B/8B,
+Qwen3-Reranker-0.6B/8B, Qwen3-4B-Instruct-2507 / Qwen3-30B-A3B-Instruct-2507); a `local-models`
+feature that builds CPU-only on every OS; Metal only via a macOS target dependency; CUDA only in
+the Modal image, never under `--all-features`; MSRV impact checked; `cargo deny` on the full tree;
+models load from local directories with pinned revisions and are never downloaded by the library.
+Report on-device ingest time per session and query latency (query rewriting adds an LLM call per
+query). llama.cpp/GGUF is a later, separately measured speed path.
