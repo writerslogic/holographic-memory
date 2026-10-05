@@ -10,6 +10,9 @@
 //!         search latency per query, build time, resident memory.
 //! `beir`: BEIR sets with precomputed embeddings and text. Writes ranked runs for the
 //!         document API (lexical, dense, hybrid) and the raw sparse-vector path.
+//! `longmemeval`: LongMemEval_S with precomputed embeddings. Every question gets a fresh store
+//!         holding only its own haystack; writes full ranked runs per granularity (turn,
+//!         session) for the document API (lexical, dense, hybrid).
 
 use std::collections::HashMap;
 use std::fs;
@@ -49,6 +52,17 @@ enum Mode {
         data: PathBuf,
         #[arg(long, default_value_t = 16384)]
         dim: u32,
+        #[arg(long)]
+        out: PathBuf,
+    },
+    Longmemeval {
+        #[arg(long)]
+        data: PathBuf,
+        #[arg(long, default_value_t = 16384)]
+        dim: u32,
+        /// Only the first N questions (all by default).
+        #[arg(long)]
+        questions: Option<usize>,
         #[arg(long)]
         out: PathBuf,
     },
@@ -373,6 +387,151 @@ fn beir(data: &Path, dim: u32, out: &Path) -> Result<()> {
     Ok(())
 }
 
+struct LmeItem {
+    id: String,
+    text: String,
+    emb: usize,
+}
+
+/// Ranked ids per mode for one question's own haystack, plus per-mode search latency (us).
+type LmeQuestion = (
+    Vec<(&'static str, Vec<String>)>,
+    Vec<(&'static str, f64)>,
+    f64,
+);
+
+fn lme_question(
+    gran: &str,
+    qi: usize,
+    items: &[LmeItem],
+    embeddings: &[Vec<f32>],
+    query: (&str, &[f32]),
+    dim: u32,
+    model: &Value,
+) -> Result<LmeQuestion> {
+    let store = TempStore::new(&format!("lme-{gran}-{qi}"))?;
+    let config = HmsConfig {
+        embedding_space: Some(EmbeddingSpace {
+            model: model["model"].as_str().unwrap_or("unknown").into(),
+            revision: model["model_revision"].as_str().unwrap_or("unknown").into(),
+            dimensions: embeddings.first().map_or(0, Vec::len),
+            normalization: "l2".into(),
+            metric: "cosine".into(),
+        }),
+        ..HmsConfig::default()
+    };
+    let core = HmsCore::new(dim, Some(store.0.display().to_string()), Some(config))?;
+    let t = Instant::now();
+    for item in items {
+        core.memorize_document(DocumentInput {
+            id: item.id.clone(),
+            text: one_chunk(&item.text),
+            source_uri: None,
+            version: None,
+            metadata: None,
+            chunk_words: Some(4096),
+            overlap_words: Some(0),
+            store_text: Some(false),
+            embeddings: Some(vec![embeddings[item.emb]
+                .iter()
+                .map(|&x| f64::from(x))
+                .collect()]),
+        })?;
+    }
+    let ingest = t.elapsed().as_secs_f64();
+    // Rank the whole haystack so turn-to-session conversion can reach any depth.
+    let k = items.len().clamp(1, 1000) as u32;
+    let emb64: Vec<f64> = query.1.iter().map(|&x| f64::from(x)).collect();
+    let (mut runs, mut lat) = (Vec::new(), Vec::new());
+    for (name, query_text, embedding, lexical, semantic) in [
+        ("lexical", query.0, None, 1.0, 0.0),
+        ("dense_exact", "", Some(emb64.clone()), 0.0, 1.0),
+        ("hybrid", query.0, Some(emb64.clone()), 1.0, 1.0),
+    ] {
+        let options = SearchOptions {
+            k: Some(k),
+            candidate_limit: Some(k.max(100)),
+            embedding,
+            lexical_weight: Some(lexical),
+            semantic_weight: Some(semantic),
+            min_semantic_score: Some(-1.0),
+            ..SearchOptions::default()
+        };
+        let t0 = Instant::now();
+        let hits = core.search_documents(query_text, &options)?;
+        lat.push((name, t0.elapsed().as_secs_f64() * 1e6));
+        runs.push((name, hits.into_iter().map(|h| h.document_id).collect()));
+    }
+    Ok((runs, lat, ingest))
+}
+
+fn longmemeval(data: &Path, dim: u32, questions: Option<usize>, out: &Path) -> Result<()> {
+    let m = meta(data)?;
+    let d = m["dim"].as_u64().context("meta.dim")? as usize;
+    let qs = read_jsonl(&data.join("questions.jsonl"))?;
+    let n = questions.unwrap_or(qs.len()).min(qs.len());
+    let query_emb = read_f32(&data.join("queries.f32"), d)?;
+    ensure!(
+        query_emb.len() >= n,
+        "queries.f32 has fewer rows than questions"
+    );
+    let mut report =
+        json!({"dataset": m, "environment": environment(), "sparse_dim": dim, "runs": {}});
+    for gran in ["turn", "session"] {
+        let embeddings = read_f32(&data.join(format!("{gran}.f32")), d)?;
+        let mut by_q: Vec<Vec<LmeItem>> = (0..n).map(|_| Vec::new()).collect();
+        for line in fs::read_to_string(data.join(format!("{gran}.jsonl")))?.lines() {
+            let v: Value = serde_json::from_str(line)?;
+            let q = v["q"].as_u64().context("q")? as usize;
+            if q < n {
+                by_q[q].push(LmeItem {
+                    id: v["id"].as_str().context("id")?.to_string(),
+                    text: v["text"].as_str().unwrap_or_default().to_string(),
+                    emb: v["e"].as_u64().context("e")? as usize,
+                });
+            }
+        }
+        let t = Instant::now();
+        let per_q: Vec<LmeQuestion> = by_q
+            .par_iter()
+            .enumerate()
+            .map(|(qi, items)| {
+                lme_question(
+                    gran,
+                    qi,
+                    items,
+                    &embeddings,
+                    (&qs[qi].1, &query_emb[qi]),
+                    dim,
+                    &m,
+                )
+            })
+            .collect::<Result<_>>()?;
+        let total = t.elapsed().as_secs_f64();
+        let mut runs: HashMap<&str, HashMap<String, Vec<String>>> = HashMap::new();
+        let mut latency: HashMap<&str, Vec<f64>> = HashMap::new();
+        let mut ingest = 0.0;
+        for ((qid, _), (q_runs, q_lat, q_ingest)) in qs.iter().zip(per_q) {
+            ingest += q_ingest;
+            for (name, ids) in q_runs {
+                runs.entry(name).or_default().insert(qid.clone(), ids);
+            }
+            for (name, us) in q_lat {
+                latency.entry(name).or_default().push(us);
+            }
+        }
+        report["runs"][gran] = json!({
+            "wall_secs": total,
+            "ingest_cpu_secs": ingest,
+            "latency": latency.into_iter().map(|(k, v)| (k.to_string(), latency_summary(v))).collect::<serde_json::Map<_, _>>(),
+            "rankings": runs,
+        });
+        println!("{gran}: {n} questions in {total:.1}s");
+    }
+    fs::write(out, serde_json::to_string(&report)?)?;
+    Ok(())
+}
+
 fn main() -> Result<()> {
     match Cli::parse().mode {
         Mode::Ann {
@@ -382,5 +541,11 @@ fn main() -> Result<()> {
             out,
         } => ann(&data, dim, queries, &out),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
+        Mode::Longmemeval {
+            data,
+            dim,
+            questions,
+            out,
+        } => longmemeval(&data, dim, questions, &out),
     }
 }

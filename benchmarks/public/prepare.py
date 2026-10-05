@@ -16,6 +16,12 @@ Layout per dataset directory:
   corpus.f32 / queries.f32          embeddings (BEIR)
   corpus.jsonl / queries.jsonl      {"id", "text"} in embedding row order (BEIR)
   qrels.tsv                         query-id, corpus-id, relevance (BEIR test split)
+
+LongMemEval_S writes, per granularity g in {turn, session}, g.jsonl (one line per retrievable item
+of each question's own haystack: {"q": question index, "id": corpus id, "text", "e": embedding
+row}) and g.f32 (unique embeddings), plus questions.jsonl, queries.f32 and meta.json. Items and
+ids follow the official src/retrieval/run_retrieval.py: user turns only; a session is the
+concatenation of its user turns.
 """
 
 import argparse
@@ -30,6 +36,12 @@ import numpy as np
 
 ANN_URL = "https://ann-benchmarks.com/{name}.hdf5"
 BEIR_URL = "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{name}.zip"
+LME_REVISION = "98d7416c24c778c2fee6e6f3006e7a073259d48f"
+LME_URL = (
+    "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/"
+    + LME_REVISION
+    + "/longmemeval_{variant}_cleaned.json"
+)
 MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 MODEL_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
 
@@ -158,14 +170,82 @@ def prepare_beir(name: str) -> None:
     print(json.dumps(meta))
 
 
+def lme_items(entry: dict, granularity: str) -> list[tuple[str, str]]:
+    """(corpus id, text) pairs, mirroring process_item_flat_index in LongMemEval's run_retrieval.py."""
+    items = []
+    for sid, sess in zip(entry["haystack_session_ids"], entry["haystack_sessions"]):
+        users = [(i, t) for i, t in enumerate(sess) if t["role"] == "user"]
+        if granularity == "session":
+            cid = sid
+            if "answer" in sid and not any(t["has_answer"] for _, t in users):
+                cid = sid.replace("answer", "noans")
+            items.append((cid, " ".join(t["content"] for _, t in users)))
+        else:
+            for i, t in users:
+                cid = f"{sid}_{i + 1}"
+                if "answer" in sid and not t["has_answer"]:
+                    cid = cid.replace("answer", "noans")
+                items.append((cid, t["content"]))
+    return items
+
+
+def prepare_longmemeval(variant: str, limit: int | None) -> None:
+    from sentence_transformers import SentenceTransformer
+
+    url = LME_URL.format(variant=variant)
+    src = fetch(url, root() / "downloads" / f"longmemeval_{variant}_cleaned.json")
+    data = json.loads(src.read_text())[:limit]
+    out = root() / f"longmemeval_{variant}"
+    out.mkdir(parents=True, exist_ok=True)
+
+    model = SentenceTransformer(MODEL, revision=MODEL_REVISION, device="cpu")
+    emb = lambda texts: model.encode(  # noqa: E731
+        texts, batch_size=64, normalize_embeddings=True, show_progress_bar=True, convert_to_numpy=True
+    )
+    counts = {}
+    for gran in ("turn", "session"):
+        rows, unique = [], {}
+        for qi, entry in enumerate(data):
+            for cid, text in lme_items(entry, gran):
+                rows.append((qi, cid, text, unique.setdefault(text, len(unique))))
+        write_f32(out / f"{gran}.f32", emb(list(unique)))
+        with (out / f"{gran}.jsonl").open("w") as f:
+            for qi, cid, text, e in rows:
+                f.write(json.dumps({"q": qi, "id": cid, "text": text, "e": e}) + "\n")
+        counts[gran] = {"items": len(rows), "unique_embeddings": len(unique)}
+    write_f32(out / "queries.f32", emb([e["question"] for e in data]))
+    with (out / "questions.jsonl").open("w") as f:
+        for e in data:
+            f.write(json.dumps({"id": e["question_id"], "type": e["question_type"], "text": e["question"]}) + "\n")
+    meta = {
+        "kind": "longmemeval",
+        "name": f"longmemeval_{variant}",
+        "release": "xiaowu0162/longmemeval-cleaned",
+        "release_revision": LME_REVISION,
+        "source": url,
+        "sha256": sha256(src),
+        "model": MODEL,
+        "model_revision": MODEL_REVISION,
+        "normalization": "l2",
+        "max_seq_length": int(model.max_seq_length),
+        "n_questions": len(data),
+        "counts": counts,
+        "dim": int(model.get_sentence_embedding_dimension()),
+    }
+    (out / "meta.json").write_text(json.dumps(meta, indent=2))
+    print(json.dumps(meta))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("kind", choices=["ann", "beir"])
+    ap.add_argument("kind", choices=["ann", "beir", "longmemeval"])
     ap.add_argument("name")
     ap.add_argument("--limit", type=int)
     args = ap.parse_args()
     if args.kind == "ann":
         prepare_ann(args.name, args.limit)
+    elif args.kind == "longmemeval":
+        prepare_longmemeval(args.name, args.limit)
     else:
         prepare_beir(args.name)
 

@@ -6,16 +6,20 @@
 
   evaluate.py ann  <dataset> <hms-result.json>...   FAISS (flat, HNSW) and hnswlib sweeps
   evaluate.py beir <dataset> <hms-runs.json>        nDCG@10 / recall@100 with pytrec_eval
+  evaluate.py longmemeval s <hms-runs.json>         recall/nDCG@5,10 with LongMemEval's own eval_utils.py
 
 Writes benchmarks/results/public_<dataset>.json.
 """
 
 import argparse
+import hashlib
+import importlib.util
 import json
 import os
 import platform
 import subprocess
 import time
+import urllib.request
 from importlib.metadata import version
 from pathlib import Path
 
@@ -158,14 +162,128 @@ def run_beir(name: str, hms_file: str) -> dict:
             "ingest_secs": hms["ingest_secs"], "latency_us": hms["latency"], "metrics": scores}
 
 
+# LongMemEval's retrieval metrics, fetched at a pinned commit and used unmodified.
+LME_COMMIT = "9e0b455f4ef0e2ab8f2e582289761153549043fc"
+LME_EVAL_URL = f"https://raw.githubusercontent.com/xiaowu0162/LongMemEval/{LME_COMMIT}/src/retrieval/eval_utils.py"
+LME_KS = (5, 10)
+
+
+def lme_eval_utils():
+    path = data_dir("downloads") / f"longmemeval_eval_utils_{LME_COMMIT[:12]}.py"
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        req = urllib.request.Request(LME_EVAL_URL, headers={"User-Agent": "hms-public-bench/1.0"})
+        path.write_bytes(urllib.request.urlopen(req).read())
+    if not hasattr(np, "asfarray"):  # removed in NumPy 2; the file's only use is np.asfarray(x)
+        np.asfarray = lambda a: np.asarray(a, dtype=float)
+    spec = importlib.util.spec_from_file_location("lme_eval_utils", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod, hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def run_longmemeval(variant: str, hms_file: str) -> dict:
+    ev, ev_sha = lme_eval_utils()
+    d = data_dir(f"longmemeval_{variant}")
+    meta = json.loads((d / "meta.json").read_text())
+    questions = [json.loads(line) for line in (d / "questions.jsonl").read_text().splitlines()]
+    hms = json.loads(Path(hms_file).read_text())
+    qemb = load_f32(d / "queries.f32", meta["dim"])
+
+    items, emb = {}, {}
+    for gran in ("turn", "session"):
+        per_q: dict[int, list] = {}
+        for line in (d / f"{gran}.jsonl").read_text().splitlines():
+            r = json.loads(line)
+            per_q.setdefault(r["q"], []).append((r["id"], r["e"]))
+        items[gran] = per_q
+        emb[gran] = load_f32(d / f"{gran}.f32", meta["dim"])
+
+    # The official script skips abstention questions and questions with no answer-bearing user turn.
+    scored = [
+        i for i, q in enumerate(questions)
+        if "_abs" not in q["id"] and any("answer" in cid for cid, _ in items["turn"][i])
+    ]
+    types = sorted({questions[i]["type"] for i in scored})
+
+    def full_ranking(ids: list[str], ranked: list[str]) -> list[int]:
+        # Items a mode did not return (lexical score 0) follow in corpus order.
+        index = {cid: j for j, cid in enumerate(ids)}
+        head = [index[c] for c in ranked]
+        seen = set(head)
+        return head + [j for j in range(len(ids)) if j not in seen]
+
+    def score(rankings_by_q: dict[int, list[int]], gran: str) -> dict:
+        rows: dict[int, dict[str, dict[str, float]]] = {}
+        for i in scored:
+            ids = [cid for cid, _ in items[gran][i]]
+            correct = list({c for c in ids if "answer" in c})
+            rank = rankings_by_q[i]
+            levels = {gran: ev.evaluate_retrieval}
+            if gran == "turn":
+                levels["session"] = ev.evaluate_retrieval_turn2session
+            rows[i] = {}
+            for level, fn in levels.items():
+                m = {}
+                for k in LME_KS:
+                    r_any, r_all, nd = fn(rank, correct, ids, k=k)
+                    m.update({f"recall_any@{k}": r_any, f"recall_all@{k}": r_all, f"ndcg_any@{k}": nd})
+                rows[i][level] = m
+        out = {}
+        for group, members in [("overall", scored)] + [(t, [i for i in scored if questions[i]["type"] == t]) for t in types]:
+            out[group] = {"n_questions": len(members)}
+            for level in rows[members[0]]:
+                out[group][level] = {
+                    name: float(np.mean([rows[i][level][name] for i in members])) for name in rows[members[0]][level]
+                }
+        return out
+
+    metrics: dict = {}
+    for gran in ("turn", "session"):
+        metrics[gran] = {}
+        runs = hms["runs"][gran]["rankings"]
+        qids = [q["id"] for q in questions]
+        for mode, ranked in runs.items():
+            metrics[gran][mode] = score(
+                {i: full_ranking([c for c, _ in items[gran][i]], ranked[qids[i]]) for i in scored}, gran
+            )
+        # Independent exact-cosine reference over the same embeddings: HMS dense must reproduce it.
+        ref = {}
+        for i in scored:
+            e = emb[gran][[row for _, row in items[gran][i]]]
+            ref[i] = [int(j) for j in np.argsort(-(e @ qemb[i]), kind="stable")]
+        metrics[gran]["numpy_dense_exact_reference"] = score(ref, gran)
+
+    return {
+        "dataset": meta,
+        "evaluation": {
+            "code": "xiaowu0162/LongMemEval src/retrieval/eval_utils.py",
+            "commit": LME_COMMIT,
+            "sha256": ev_sha,
+            "scored_questions": len(scored),
+            "excluded": "abstention (_abs) and questions without an answer-bearing user turn",
+            "note": "Items are user turns only (official flat index); 'turn' is the paper's round granularity. "
+                    "Session-level metrics of a turn run use evaluate_retrieval_turn2session. "
+                    "recall_all and ndcg_any are the figures the official print_retrieval_metrics.py reports.",
+        },
+        "environment": {**environment(), "hms": hms["environment"]},
+        "latency_us": {g: hms["runs"][g]["latency"] for g in ("turn", "session")},
+        "metrics": metrics,
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("kind", choices=["ann", "beir"])
+    ap.add_argument("kind", choices=["ann", "beir", "longmemeval"])
     ap.add_argument("name")
     ap.add_argument("hms", nargs="+")
     args = ap.parse_args()
-    report = run_ann(args.name, args.hms) if args.kind == "ann" else run_beir(args.name, args.hms[0])
-    out = RESULTS / f"public_{args.name}.json"
+    if args.kind == "longmemeval":
+        report, out_name = run_longmemeval(args.name, args.hms[0]), f"public_longmemeval_{args.name}.json"
+    else:
+        report = run_ann(args.name, args.hms) if args.kind == "ann" else run_beir(args.name, args.hms[0])
+        out_name = f"public_{args.name}.json"
+    out = RESULTS / out_name
     out.write_text(json.dumps(report, indent=2) + "\n")
     print(f"wrote {out}")
 

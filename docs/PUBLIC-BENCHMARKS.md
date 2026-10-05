@@ -64,6 +64,82 @@ Full sweeps are in the result files.
 - Encoding dominates build time (155 s for nytimes, 265 s for glove, all cores) and is about half
   of query time on nytimes.
 
+## Agent long-term memory (LongMemEval_S)
+
+Retrieval only, no LLM. Data: LongMemEval_S from the `xiaowu0162/longmemeval-cleaned` release
+(revision `98d7416c24c778c2fee6e6f3006e7a073259d48f`, `longmemeval_s_cleaned.json`, sha256
+`d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442`), the release the
+[LongMemEval repository](https://github.com/xiaowu0162/LongMemEval) now points to (September 2025
+clean-up of the history sessions); the paper's numbers predate it. Embeddings: the same
+`all-MiniLM-L6-v2` revision as above, L2-normalized. Metrics come from the repository's own
+`src/retrieval/eval_utils.py` (commit `9e0b455f`, hash recorded in the result file), applied the way
+`run_retrieval.py` and `print_retrieval_metrics.py` do: items are user turns only, a session is
+the concatenation of its user turns, and the 30 abstention questions plus questions with no
+answer-bearing user turn are excluded, leaving 419 of 500 questions (only 5 of the 56
+single-session-assistant questions remain, so that row is not informative). Each question is
+searched in a fresh store holding only its own haystack (about 48 sessions, 245 user turns).
+Recall is `recall_all` (every evidence item in the top k) and nDCG is `ndcg_any`, the two figures
+the official script prints; `recall_any` is in the result file. "Round" is the official
+user-turn granularity. Turn-level rows score the round run against the labelled turns;
+session-level rows of a round run use the official turn-to-session conversion.
+Results: `benchmarks/results/public_longmemeval_s.json`.
+
+| Granularity | Level | Method | Recall@5 | Recall@10 | nDCG@5 | nDCG@10 |
+|---|---|---|---|---|---|---|
+| Round | Turn | HMS dense (exact cosine) | 0.511 | 0.711 | 0.570 | 0.623 |
+| Round | Turn | HMS lexical (BM25) | 0.599 | 0.718 | 0.642 | 0.675 |
+| Round | Turn | HMS hybrid | **0.668** | **0.785** | **0.681** | **0.712** |
+| Round | Session | HMS dense (exact cosine) | 0.690 | 0.840 | 0.611 | 0.647 |
+| Round | Session | HMS lexical (BM25) | 0.668 | 0.768 | 0.658 | 0.684 |
+| Round | Session | HMS hybrid | **0.764** | **0.854** | **0.702** | **0.723** |
+| Session | Session | HMS dense (exact cosine) | 0.852 | 0.938 | 0.861 | 0.878 |
+| Session | Session | HMS lexical (BM25) | 0.823 | 0.893 | 0.862 | 0.877 |
+| Session | Session | HMS hybrid | **0.876** | **0.952** | **0.904** | **0.919** |
+
+HMS dense reproduces an independent NumPy exact-cosine ranking on the same embeddings to every
+digit (the result file carries both).
+
+On this data and model, hybrid is above dense on every overall metric at every granularity and
+level (nDCG@10: +0.089 round/turn, +0.076 round/session, +0.041 session). The runs are single
+deterministic passes with no confidence intervals or significance test. Caveats that bound the
+comparison: MiniLM truncates input at 256 tokens, so a session embedding sees only the start of
+the concatenated user turns (the lexical index sees all of it); HMS BM25 is the engine's own, not
+the `rank_bm25` used by the official `flat-bm25`; zero-score items follow scored items in
+haystack order in the lexical run.
+
+Recall@10 and nDCG@10 per question type (`recall_all` / `ndcg_any`):
+
+| Type | n | Session run, session | Round run, session (dense) | Round run, session (hybrid) | Round run, turn (dense) | Round run, turn (hybrid) |
+|---|---|---|---|---|---|---|
+| multi-session | 121 | 0.909 / 0.895 | 0.736 / 0.585 | 0.727 / 0.654 | 0.545 / 0.553 | 0.595 / 0.633 |
+| temporal-reasoning | 127 | 0.953 / 0.893 | 0.756 / 0.570 | 0.850 / 0.690 | 0.614 / 0.538 | 0.787 / 0.678 |
+| knowledge-update | 72 | 1.000 / 0.982 | 0.986 / 0.686 | 0.986 / 0.772 | 0.903 / 0.673 | 0.986 / 0.772 |
+| single-session-preference | 30 | 0.900 / 0.788 | 0.967 / 0.703 | 0.800 / 0.543 | 0.767 / 0.678 | 0.633 / 0.522 |
+| single-session-user | 64 | 1.000 / 1.000 | 0.969 / 0.827 | 0.969 / 0.936 | 0.953 / 0.822 | 0.969 / 0.936 |
+| single-session-assistant | 5 | 1.000 / 1.000 | 1.000 / 0.900 | 1.000 / 0.877 | 1.000 / 0.900 | 1.000 / 0.877 |
+
+The session-run column is hybrid. The weakest types are multi-session (evidence spread over
+several sessions, all of which must be retrieved), single-session-preference, and
+temporal-reasoning. Preference is the one type where hybrid is below dense at round granularity
+(30 questions; lexical matching works against implicit preference questions). Temporal questions
+are where round-level hybrid helps most (turn Recall@10 0.614 to 0.787), but they are still
+weaker than the other types, and HMS has no date-aware filtering that would use the question
+date.
+
+Published numbers (Wu et al., ICLR 2025, Table 3), LongMemEval_M with Stella V5 1.5B:
+
+| Value / key | Recall@5 | NDCG@5 | Recall@10 | NDCG@10 |
+|---|---|---|---|---|
+| Round, K = V | 0.582 | 0.481 | 0.692 | 0.512 |
+| Round, K = V + LLM-extracted facts | 0.644 | 0.498 | 0.784 | 0.536 |
+| Session, K = V | 0.706 | 0.617 | 0.783 | 0.638 |
+| Session, K = V + LLM-extracted facts | 0.732 | 0.620 | 0.862 | 0.652 |
+
+These are not comparable with the table above: M has about 500 sessions per history against
+about 48 in S, the embedding model is a 1.5B-parameter model against a 22M-parameter one, the
+dataset release differs, and the paper's recall variant and level mapping were not re-derived
+here. No ranking against the paper is implied.
+
 ## What this means
 
 - For semantic search over text, use the document API: exact cosine reproduces the embedding
@@ -84,4 +160,7 @@ cargo build --release --bin public-bench
 uv run --script benchmarks/public/evaluate.py beir scifact scifact.json
 ./target/release/public-bench ann --data ~/.cache/hms-bench/glove-100-angular --dim 16384 --out glove.json
 uv run --script benchmarks/public/evaluate.py ann glove-100-angular glove.json
+uv run --script benchmarks/public/prepare.py longmemeval s
+./target/release/public-bench longmemeval --data ~/.cache/hms-bench/longmemeval_s --out lme.json
+uv run --script benchmarks/public/evaluate.py longmemeval s lme.json
 ```

@@ -1,0 +1,958 @@
+{
+  "dataset": {
+    "kind": "longmemeval",
+    "name": "longmemeval_s",
+    "release": "xiaowu0162/longmemeval-cleaned",
+    "release_revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+    "source": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/98d7416c24c778c2fee6e6f3006e7a073259d48f/longmemeval_s_cleaned.json",
+    "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "normalization": "l2",
+    "max_seq_length": 256,
+    "n_questions": 500,
+    "counts": {
+      "turn": {
+        "items": 122416,
+        "unique_embeddings": 93931
+      },
+      "session": {
+        "items": 23867,
+        "unique_embeddings": 18363
+      }
+    },
+    "dim": 384
+  },
+  "evaluation": {
+    "code": "xiaowu0162/LongMemEval src/retrieval/eval_utils.py",
+    "commit": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+    "sha256": "c98b8d1096877a15aa755c9de44fe33c195298466a2eb6f3c0f9f6bde8c72349",
+    "scored_questions": 419,
+    "excluded": "abstention (_abs) and questions without an answer-bearing user turn",
+    "note": "Items are user turns only (official flat index); 'turn' is the paper's round granularity. Session-level metrics of a turn run use evaluate_retrieval_turn2session. recall_all and ndcg_any are the figures the official print_retrieval_metrics.py reports."
+  },
+  "environment": {
+    "cpu": "Apple M4",
+    "machine": "arm64",
+    "python": "3.13.9",
+    "load_average": "{ 38.04 20.82 12.49 }",
+    "versions": {
+      "faiss-cpu": "1.15.1",
+      "hnswlib": "0.8.0",
+      "numpy": "2.5.3",
+      "pytrec-eval-terrier": "0.5.10"
+    },
+    "hms": {
+      "arch": "aarch64",
+      "cpu": "Apple M4",
+      "hms_version": "0.6.1",
+      "load_average": "{ 6.96 8.87 6.92 }",
+      "os": "macos",
+      "rayon_threads": 10
+    }
+  },
+  "latency_us": {
+    "turn": {
+      "dense_exact": {
+        "mean_us": 223.28100400000005,
+        "p50_us": 190.0,
+        "p95_us": 308.875,
+        "p99_us": 969.041
+      },
+      "hybrid": {
+        "mean_us": 1043.2064359999995,
+        "p50_us": 921.1669999999999,
+        "p95_us": 1967.958,
+        "p99_us": 2816.3340000000003
+      },
+      "lexical": {
+        "mean_us": 1116.3714699999998,
+        "p50_us": 962.5,
+        "p95_us": 2146.209,
+        "p99_us": 3081.916
+      }
+    },
+    "session": {
+      "dense_exact": {
+        "mean_us": 41.214008000000014,
+        "p50_us": 40.792,
+        "p95_us": 48.417,
+        "p99_us": 54.708
+      },
+      "hybrid": {
+        "mean_us": 217.75911200000002,
+        "p50_us": 182.75,
+        "p95_us": 400.083,
+        "p99_us": 593.375
+      },
+      "lexical": {
+        "mean_us": 277.6368300000001,
+        "p50_us": 242.958,
+        "p95_us": 498.375,
+        "p99_us": 757.375
+      }
+    }
+  },
+  "metrics": {
+    "turn": {
+      "dense_exact": {
+        "overall": {
+          "n_questions": 419,
+          "turn": {
+            "recall_any@5": 0.8305489260143198,
+            "recall_all@5": 0.5107398568019093,
+            "ndcg_any@5": 0.5696764895105692,
+            "recall_any@10": 0.9021479713603818,
+            "recall_all@10": 0.711217183770883,
+            "ndcg_any@10": 0.6232620426170026
+          },
+          "session": {
+            "recall_any@5": 0.8878281622911695,
+            "recall_all@5": 0.6897374701670644,
+            "ndcg_any@5": 0.6106238442163957,
+            "recall_any@10": 0.9498806682577565,
+            "recall_all@10": 0.8400954653937948,
+            "ndcg_any@10": 0.647019299484161
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "turn": {
+            "recall_any@5": 0.9444444444444444,
+            "recall_all@5": 0.625,
+            "ndcg_any@5": 0.6162994231932177,
+            "recall_any@10": 0.9861111111111112,
+            "recall_all@10": 0.9027777777777778,
+            "ndcg_any@10": 0.6729279058168385
+          },
+          "session": {
+            "recall_any@5": 0.9583333333333334,
+            "recall_all@5": 0.875,
+            "ndcg_any@5": 0.6636443833576181,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.9861111111111112,
+            "ndcg_any@10": 0.6858438631957934
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "turn": {
+            "recall_any@5": 0.859504132231405,
+            "recall_all@5": 0.30578512396694213,
+            "ndcg_any@5": 0.4819601484829182,
+            "recall_any@10": 0.9338842975206612,
+            "recall_all@10": 0.5454545454545454,
+            "ndcg_any@10": 0.5530509370181392
+          },
+          "session": {
+            "recall_any@5": 0.9090909090909091,
+            "recall_all@5": 0.512396694214876,
+            "ndcg_any@5": 0.5323582433164331,
+            "recall_any@10": 0.9669421487603306,
+            "recall_all@10": 0.7355371900826446,
+            "ndcg_any@10": 0.5854666649202533
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "turn": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 0.9,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.9
+          },
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 0.9,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.9
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "turn": {
+            "recall_any@5": 0.7,
+            "recall_all@5": 0.6,
+            "ndcg_any@5": 0.6165232544137063,
+            "recall_any@10": 0.8666666666666667,
+            "recall_all@10": 0.7666666666666667,
+            "ndcg_any@10": 0.6777994893586755
+          },
+          "session": {
+            "recall_any@5": 0.8666666666666667,
+            "recall_all@5": 0.8666666666666667,
+            "ndcg_any@5": 0.673586662882259,
+            "recall_any@10": 0.9666666666666667,
+            "recall_all@10": 0.9666666666666667,
+            "ndcg_any@10": 0.7033953448366277
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "turn": {
+            "recall_any@5": 0.921875,
+            "recall_all@5": 0.921875,
+            "ndcg_any@5": 0.8116668506574605,
+            "recall_any@10": 0.953125,
+            "recall_all@10": 0.953125,
+            "ndcg_any@10": 0.8224409212893566
+          },
+          "session": {
+            "recall_any@5": 0.953125,
+            "recall_all@5": 0.953125,
+            "ndcg_any@5": 0.8224409212893566,
+            "recall_any@10": 0.96875,
+            "recall_all@10": 0.96875,
+            "ndcg_any@10": 0.8269575592005736
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "turn": {
+            "recall_any@5": 0.7165354330708661,
+            "recall_all@5": 0.3937007874015748,
+            "ndcg_any@5": 0.48079792593775605,
+            "recall_any@10": 0.8031496062992126,
+            "recall_all@10": 0.6141732283464567,
+            "ndcg_any@10": 0.5378473985451796
+          },
+          "session": {
+            "recall_any@5": 0.7952755905511811,
+            "recall_all@5": 0.5669291338582677,
+            "ndcg_any@5": 0.522124636493278,
+            "recall_any@10": 0.889763779527559,
+            "recall_all@10": 0.7559055118110236,
+            "ndcg_any@10": 0.5696985649171664
+          }
+        }
+      },
+      "hybrid": {
+        "overall": {
+          "n_questions": 419,
+          "turn": {
+            "recall_any@5": 0.9021479713603818,
+            "recall_all@5": 0.6682577565632458,
+            "ndcg_any@5": 0.6805021593956628,
+            "recall_any@10": 0.9379474940334129,
+            "recall_all@10": 0.7852028639618138,
+            "ndcg_any@10": 0.7115732355022133
+          },
+          "session": {
+            "recall_any@5": 0.9307875894988067,
+            "recall_all@5": 0.7637231503579952,
+            "ndcg_any@5": 0.7020064266910346,
+            "recall_any@10": 0.9522673031026253,
+            "recall_all@10": 0.8544152744630071,
+            "ndcg_any@10": 0.7228842402788552
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "turn": {
+            "recall_any@5": 0.9861111111111112,
+            "recall_all@5": 0.875,
+            "ndcg_any@5": 0.7491011548969848,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.9861111111111112,
+            "ndcg_any@10": 0.7717454468889654
+          },
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 0.9722222222222222,
+            "ndcg_any@5": 0.7680657993503766,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.9861111111111112,
+            "ndcg_any@10": 0.7717454468889654
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "turn": {
+            "recall_any@5": 0.9173553719008265,
+            "recall_all@5": 0.4462809917355372,
+            "ndcg_any@5": 0.5902914544794452,
+            "recall_any@10": 0.9586776859504132,
+            "recall_all@10": 0.5950413223140496,
+            "ndcg_any@10": 0.6325621968964937
+          },
+          "session": {
+            "recall_any@5": 0.9504132231404959,
+            "recall_all@5": 0.5371900826446281,
+            "ndcg_any@5": 0.6164719248680195,
+            "recall_any@10": 0.9669421487603306,
+            "recall_all@10": 0.7272727272727273,
+            "ndcg_any@10": 0.6535692958771335
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "turn": {
+            "recall_any@5": 0.8,
+            "recall_all@5": 0.8,
+            "ndcg_any@5": 0.8,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.8773705614469083
+          },
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 0.8773705614469083,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.8773705614469083
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "turn": {
+            "recall_any@5": 0.7333333333333333,
+            "recall_all@5": 0.5333333333333333,
+            "ndcg_any@5": 0.5018991264850047,
+            "recall_any@10": 0.7333333333333333,
+            "recall_all@10": 0.6333333333333333,
+            "ndcg_any@10": 0.5217185270398799
+          },
+          "session": {
+            "recall_any@5": 0.7333333333333333,
+            "recall_all@5": 0.7333333333333333,
+            "ndcg_any@5": 0.512348983986111,
+            "recall_any@10": 0.8,
+            "recall_all@10": 0.8,
+            "ndcg_any@10": 0.5433235143723366
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "turn": {
+            "recall_any@5": 0.953125,
+            "recall_all@5": 0.953125,
+            "ndcg_any@5": 0.9306500986194508,
+            "recall_any@10": 0.96875,
+            "recall_all@10": 0.96875,
+            "ndcg_any@10": 0.9362158359180137
+          },
+          "session": {
+            "recall_any@5": 0.96875,
+            "recall_all@5": 0.96875,
+            "ndcg_any@5": 0.9362158359180137,
+            "recall_any@10": 0.96875,
+            "recall_all@10": 0.96875,
+            "ndcg_any@10": 0.9362158359180137
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "turn": {
+            "recall_any@5": 0.8582677165354331,
+            "recall_all@5": 0.6456692913385826,
+            "ndcg_any@5": 0.638986421543244,
+            "recall_any@10": 0.9133858267716536,
+            "recall_all@10": 0.7874015748031497,
+            "ndcg_any@10": 0.6778524847067899
+          },
+          "session": {
+            "recall_any@5": 0.8976377952755905,
+            "recall_all@5": 0.7559055118110236,
+            "ndcg_any@5": 0.6659190275253174,
+            "recall_any@10": 0.937007874015748,
+            "recall_all@10": 0.8503937007874016,
+            "ndcg_any@10": 0.6900517162405055
+          }
+        }
+      },
+      "lexical": {
+        "overall": {
+          "n_questions": 419,
+          "turn": {
+            "recall_any@5": 0.8329355608591885,
+            "recall_all@5": 0.5990453460620525,
+            "ndcg_any@5": 0.641846074766149,
+            "recall_any@10": 0.8878281622911695,
+            "recall_all@10": 0.7183770883054893,
+            "ndcg_any@10": 0.6753026651246965
+          },
+          "session": {
+            "recall_any@5": 0.8615751789976134,
+            "recall_all@5": 0.6682577565632458,
+            "ndcg_any@5": 0.6576325460359536,
+            "recall_any@10": 0.9116945107398569,
+            "recall_all@10": 0.7684964200477327,
+            "ndcg_any@10": 0.6841837513184366
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "turn": {
+            "recall_any@5": 0.9583333333333334,
+            "recall_all@5": 0.7916666666666666,
+            "ndcg_any@5": 0.757058074276807,
+            "recall_any@10": 0.9861111111111112,
+            "recall_all@10": 0.9027777777777778,
+            "ndcg_any@10": 0.7812904886404833
+          },
+          "session": {
+            "recall_any@5": 0.9861111111111112,
+            "recall_all@5": 0.8611111111111112,
+            "ndcg_any@5": 0.7746944594336566,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.9444444444444444,
+            "ndcg_any@10": 0.7888386688923873
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "turn": {
+            "recall_any@5": 0.8347107438016529,
+            "recall_all@5": 0.36363636363636365,
+            "ndcg_any@5": 0.5136529144365158,
+            "recall_any@10": 0.8925619834710744,
+            "recall_all@10": 0.5371900826446281,
+            "ndcg_any@10": 0.5619593546357662
+          },
+          "session": {
+            "recall_any@5": 0.8677685950413223,
+            "recall_all@5": 0.4132231404958678,
+            "ndcg_any@5": 0.5291095525604086,
+            "recall_any@10": 0.9256198347107438,
+            "recall_all@10": 0.5785123966942148,
+            "ndcg_any@10": 0.573499594283844
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "turn": {
+            "recall_any@5": 0.6,
+            "recall_all@5": 0.6,
+            "ndcg_any@5": 0.6,
+            "recall_any@10": 0.8,
+            "recall_all@10": 0.8,
+            "ndcg_any@10": 0.6773705614469083
+          },
+          "session": {
+            "recall_any@5": 0.8,
+            "recall_all@5": 0.8,
+            "ndcg_any@5": 0.6773705614469083,
+            "recall_any@10": 0.8,
+            "recall_all@10": 0.8,
+            "ndcg_any@10": 0.6773705614469083
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "turn": {
+            "recall_any@5": 0.4666666666666667,
+            "recall_all@5": 0.26666666666666666,
+            "ndcg_any@5": 0.3285411180136893,
+            "recall_any@10": 0.5666666666666667,
+            "recall_all@10": 0.4,
+            "ndcg_any@10": 0.36850662960386776
+          },
+          "session": {
+            "recall_any@5": 0.5,
+            "recall_all@5": 0.5,
+            "ndcg_any@5": 0.3522882638208908,
+            "recall_any@10": 0.6666666666666666,
+            "recall_all@10": 0.6666666666666666,
+            "ndcg_any@10": 0.3959893027651727
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "turn": {
+            "recall_any@5": 0.921875,
+            "recall_all@5": 0.921875,
+            "ndcg_any@5": 0.908295777399554,
+            "recall_any@10": 0.953125,
+            "recall_all@10": 0.953125,
+            "ndcg_any@10": 0.9199060898111566
+          },
+          "session": {
+            "recall_any@5": 0.953125,
+            "recall_all@5": 0.953125,
+            "ndcg_any@5": 0.9199060898111566,
+            "recall_any@10": 0.96875,
+            "recall_all@10": 0.96875,
+            "ndcg_any@10": 0.9244227277223735
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "turn": {
+            "recall_any@5": 0.8110236220472441,
+            "recall_all@5": 0.6299212598425197,
+            "ndcg_any@5": 0.6400484884904388,
+            "recall_any@10": 0.8740157480314961,
+            "recall_all@10": 0.7401574803149606,
+            "ndcg_any@10": 0.6723289618184307
+          },
+          "session": {
+            "recall_any@5": 0.8267716535433071,
+            "recall_all@5": 0.6929133858267716,
+            "ndcg_any@5": 0.652899916379973,
+            "recall_any@10": 0.8818897637795275,
+            "recall_all@10": 0.7716535433070866,
+            "ndcg_any@10": 0.6775871674756401
+          }
+        }
+      },
+      "numpy_dense_exact_reference": {
+        "overall": {
+          "n_questions": 419,
+          "turn": {
+            "recall_any@5": 0.8305489260143198,
+            "recall_all@5": 0.5107398568019093,
+            "ndcg_any@5": 0.5696764895105692,
+            "recall_any@10": 0.9021479713603818,
+            "recall_all@10": 0.711217183770883,
+            "ndcg_any@10": 0.6232620426170026
+          },
+          "session": {
+            "recall_any@5": 0.8878281622911695,
+            "recall_all@5": 0.6897374701670644,
+            "ndcg_any@5": 0.6106238442163957,
+            "recall_any@10": 0.9498806682577565,
+            "recall_all@10": 0.8400954653937948,
+            "ndcg_any@10": 0.647019299484161
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "turn": {
+            "recall_any@5": 0.9444444444444444,
+            "recall_all@5": 0.625,
+            "ndcg_any@5": 0.6162994231932177,
+            "recall_any@10": 0.9861111111111112,
+            "recall_all@10": 0.9027777777777778,
+            "ndcg_any@10": 0.6729279058168385
+          },
+          "session": {
+            "recall_any@5": 0.9583333333333334,
+            "recall_all@5": 0.875,
+            "ndcg_any@5": 0.6636443833576181,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.9861111111111112,
+            "ndcg_any@10": 0.6858438631957934
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "turn": {
+            "recall_any@5": 0.859504132231405,
+            "recall_all@5": 0.30578512396694213,
+            "ndcg_any@5": 0.4819601484829182,
+            "recall_any@10": 0.9338842975206612,
+            "recall_all@10": 0.5454545454545454,
+            "ndcg_any@10": 0.5530509370181392
+          },
+          "session": {
+            "recall_any@5": 0.9090909090909091,
+            "recall_all@5": 0.512396694214876,
+            "ndcg_any@5": 0.5323582433164331,
+            "recall_any@10": 0.9669421487603306,
+            "recall_all@10": 0.7355371900826446,
+            "ndcg_any@10": 0.5854666649202533
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "turn": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 0.9,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.9
+          },
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 0.9,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.9
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "turn": {
+            "recall_any@5": 0.7,
+            "recall_all@5": 0.6,
+            "ndcg_any@5": 0.6165232544137063,
+            "recall_any@10": 0.8666666666666667,
+            "recall_all@10": 0.7666666666666667,
+            "ndcg_any@10": 0.6777994893586755
+          },
+          "session": {
+            "recall_any@5": 0.8666666666666667,
+            "recall_all@5": 0.8666666666666667,
+            "ndcg_any@5": 0.673586662882259,
+            "recall_any@10": 0.9666666666666667,
+            "recall_all@10": 0.9666666666666667,
+            "ndcg_any@10": 0.7033953448366277
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "turn": {
+            "recall_any@5": 0.921875,
+            "recall_all@5": 0.921875,
+            "ndcg_any@5": 0.8116668506574605,
+            "recall_any@10": 0.953125,
+            "recall_all@10": 0.953125,
+            "ndcg_any@10": 0.8224409212893566
+          },
+          "session": {
+            "recall_any@5": 0.953125,
+            "recall_all@5": 0.953125,
+            "ndcg_any@5": 0.8224409212893566,
+            "recall_any@10": 0.96875,
+            "recall_all@10": 0.96875,
+            "ndcg_any@10": 0.8269575592005736
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "turn": {
+            "recall_any@5": 0.7165354330708661,
+            "recall_all@5": 0.3937007874015748,
+            "ndcg_any@5": 0.48079792593775605,
+            "recall_any@10": 0.8031496062992126,
+            "recall_all@10": 0.6141732283464567,
+            "ndcg_any@10": 0.5378473985451796
+          },
+          "session": {
+            "recall_any@5": 0.7952755905511811,
+            "recall_all@5": 0.5669291338582677,
+            "ndcg_any@5": 0.522124636493278,
+            "recall_any@10": 0.889763779527559,
+            "recall_all@10": 0.7559055118110236,
+            "ndcg_any@10": 0.5696985649171664
+          }
+        }
+      }
+    },
+    "session": {
+      "dense_exact": {
+        "overall": {
+          "n_questions": 419,
+          "session": {
+            "recall_any@5": 0.9570405727923628,
+            "recall_all@5": 0.8520286396181385,
+            "ndcg_any@5": 0.8605096910611311,
+            "recall_any@10": 0.9809069212410502,
+            "recall_all@10": 0.9379474940334129,
+            "ndcg_any@10": 0.878296528523342
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 0.9722222222222222,
+            "ndcg_any@5": 0.933131276717774,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.9385042323738091
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "session": {
+            "recall_any@5": 0.9834710743801653,
+            "recall_all@5": 0.7768595041322314,
+            "ndcg_any@5": 0.8495600743939163,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.8842975206611571,
+            "ndcg_any@10": 0.868356941576967
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 1.0,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 1.0
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "session": {
+            "recall_any@5": 0.9666666666666667,
+            "recall_all@5": 0.9666666666666667,
+            "ndcg_any@5": 0.8807653142597213,
+            "recall_any@10": 0.9666666666666667,
+            "recall_all@10": 0.9666666666666667,
+            "ndcg_any@10": 0.8807653142597213
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "session": {
+            "recall_any@5": 0.921875,
+            "recall_all@5": 0.921875,
+            "ndcg_any@5": 0.902529054799108,
+            "recall_any@10": 0.984375,
+            "recall_all@10": 0.984375,
+            "ndcg_any@10": 0.9247920039933595
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "session": {
+            "recall_any@5": 0.9212598425196851,
+            "recall_all@5": 0.7874015748031497,
+            "ndcg_any@5": 0.7983190605853211,
+            "recall_any@10": 0.952755905511811,
+            "recall_all@10": 0.9212598425196851,
+            "ndcg_any@10": 0.824827583513279
+          }
+        }
+      },
+      "hybrid": {
+        "overall": {
+          "n_questions": 419,
+          "session": {
+            "recall_any@5": 0.9713603818615751,
+            "recall_all@5": 0.8758949880668258,
+            "ndcg_any@5": 0.9038551915830912,
+            "recall_any@10": 0.9880668257756563,
+            "recall_all@10": 0.9522673031026253,
+            "ndcg_any@10": 0.9188018446288493
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 0.9861111111111112,
+            "ndcg_any@5": 0.9793313820436516,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.9818050430652351
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "session": {
+            "recall_any@5": 0.9834710743801653,
+            "recall_all@5": 0.7603305785123967,
+            "ndcg_any@5": 0.8669750077523654,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.9090909090909091,
+            "ndcg_any@10": 0.8948659008365132
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 1.0,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 1.0
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "session": {
+            "recall_any@5": 0.8333333333333334,
+            "recall_all@5": 0.8333333333333334,
+            "ndcg_any@5": 0.7664094289906082,
+            "recall_any@10": 0.9,
+            "recall_all@10": 0.9,
+            "ndcg_any@10": 0.7875548732905187
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 1.0,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 1.0
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "session": {
+            "recall_any@5": 0.9606299212598425,
+            "recall_all@5": 0.8661417322834646,
+            "ndcg_any@5": 0.8764347004599833,
+            "recall_any@10": 0.984251968503937,
+            "recall_all@10": 0.952755905511811,
+            "ndcg_any@10": 0.892776296053994
+          }
+        }
+      },
+      "lexical": {
+        "overall": {
+          "n_questions": 419,
+          "session": {
+            "recall_any@5": 0.9474940334128878,
+            "recall_all@5": 0.8233890214797136,
+            "ndcg_any@5": 0.8617339065555075,
+            "recall_any@10": 0.9665871121718377,
+            "recall_all@10": 0.8926014319809069,
+            "ndcg_any@10": 0.8771057227378058
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 0.9722222222222222,
+            "ndcg_any@5": 0.9707331841765886,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.9861111111111112,
+            "ndcg_any@10": 0.9730479989914033
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "session": {
+            "recall_any@5": 0.9669421487603306,
+            "recall_all@5": 0.6776859504132231,
+            "ndcg_any@5": 0.8015566492648593,
+            "recall_any@10": 0.9834710743801653,
+            "recall_all@10": 0.8099173553719008,
+            "ndcg_any@10": 0.828826504400187
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 1.0,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 1.0
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "session": {
+            "recall_any@5": 0.7333333333333333,
+            "recall_all@5": 0.7333333333333333,
+            "ndcg_any@5": 0.6541070874429901,
+            "recall_any@10": 0.7666666666666667,
+            "recall_all@10": 0.7666666666666667,
+            "ndcg_any@10": 0.6659806603465908
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 0.994233277399554,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.994233277399554
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "session": {
+            "recall_any@5": 0.9212598425196851,
+            "recall_all@5": 0.8031496062992126,
+            "ndcg_any@5": 0.8341040995916075,
+            "recall_any@10": 0.9606299212598425,
+            "recall_all@10": 0.889763779527559,
+            "ndcg_any@10": 0.8547203567194311
+          }
+        }
+      },
+      "numpy_dense_exact_reference": {
+        "overall": {
+          "n_questions": 419,
+          "session": {
+            "recall_any@5": 0.9570405727923628,
+            "recall_all@5": 0.8520286396181385,
+            "ndcg_any@5": 0.8605096910611311,
+            "recall_any@10": 0.9809069212410502,
+            "recall_all@10": 0.9379474940334129,
+            "ndcg_any@10": 0.878296528523342
+          }
+        },
+        "knowledge-update": {
+          "n_questions": 72,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 0.9722222222222222,
+            "ndcg_any@5": 0.933131276717774,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 0.9385042323738091
+          }
+        },
+        "multi-session": {
+          "n_questions": 121,
+          "session": {
+            "recall_any@5": 0.9834710743801653,
+            "recall_all@5": 0.7768595041322314,
+            "ndcg_any@5": 0.8495600743939163,
+            "recall_any@10": 1.0,
+            "recall_all@10": 0.8842975206611571,
+            "ndcg_any@10": 0.868356941576967
+          }
+        },
+        "single-session-assistant": {
+          "n_questions": 5,
+          "session": {
+            "recall_any@5": 1.0,
+            "recall_all@5": 1.0,
+            "ndcg_any@5": 1.0,
+            "recall_any@10": 1.0,
+            "recall_all@10": 1.0,
+            "ndcg_any@10": 1.0
+          }
+        },
+        "single-session-preference": {
+          "n_questions": 30,
+          "session": {
+            "recall_any@5": 0.9666666666666667,
+            "recall_all@5": 0.9666666666666667,
+            "ndcg_any@5": 0.8807653142597213,
+            "recall_any@10": 0.9666666666666667,
+            "recall_all@10": 0.9666666666666667,
+            "ndcg_any@10": 0.8807653142597213
+          }
+        },
+        "single-session-user": {
+          "n_questions": 64,
+          "session": {
+            "recall_any@5": 0.921875,
+            "recall_all@5": 0.921875,
+            "ndcg_any@5": 0.902529054799108,
+            "recall_any@10": 0.984375,
+            "recall_all@10": 0.984375,
+            "ndcg_any@10": 0.9247920039933595
+          }
+        },
+        "temporal-reasoning": {
+          "n_questions": 127,
+          "session": {
+            "recall_any@5": 0.9212598425196851,
+            "recall_all@5": 0.7874015748031497,
+            "ndcg_any@5": 0.7983190605853211,
+            "recall_any@10": 0.952755905511811,
+            "recall_all@10": 0.9212598425196851,
+            "ndcg_any@10": 0.824827583513279
+          }
+        }
+      }
+    }
+  }
+}
