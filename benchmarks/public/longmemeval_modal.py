@@ -224,14 +224,26 @@ FN = {("embed", "T4"): embed_t4, ("embed", "H100"): embed_h100, ("llm", "L4"): l
 
 
 class Budget:
-    def __init__(self, cap: float):
-        self.cap, self.spent, self.t0, self.log = cap, 0.0, time.time(), []
+    """Spend tracker whose cap covers every invocation sharing a ledger (one per --tag), so a
+    resumed or relaunched run cannot spend past --cap in total."""
+
+    def __init__(self, cap: float, ledger: Path | None = None):
+        self.cap, self.spent, self.t0, self.log, self.ledger = cap, 0.0, time.time(), [], ledger
+        self.prior = json.loads(ledger.read_text())["usd"] if ledger and ledger.exists() else 0.0
+        if self.prior:
+            print(f"[budget] ${self.prior:.3f} already spent under this tag", flush=True)
 
     def cpu(self) -> float:
         return (time.time() - self.t0) / 3600 * CPU_USD_PER_HOUR
 
     def total(self) -> float:
-        return self.spent + self.cpu()
+        return self.prior + self.spent + self.cpu()
+
+    def persist(self) -> None:
+        if self.ledger:
+            self.ledger.parent.mkdir(parents=True, exist_ok=True)
+            self.ledger.write_text(json.dumps({"usd": round(self.total(), 4)}))
+            VOL.commit()
 
     def check(self, projected: float, what: str) -> None:
         if self.total() + projected > self.cap:
@@ -241,6 +253,7 @@ class Budget:
         usd = secs / 3600 * USD_PER_HOUR[gpu] * OVERHEAD
         self.spent += usd
         self.log.append({"stage": stage, "gpu": gpu, "secs": round(secs, 1), "items": n, "usd": round(usd, 4)})
+        self.persist()
         print(f"[{stage}] {n} items on {gpu}: {secs:.0f}s ${usd:.3f} (total ${self.total():.3f})", flush=True)
 
 
@@ -427,7 +440,7 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
 
     if cache_ns:
         CACHE = V / cache_ns / "cache"
-    budget = Budget(cap)
+    budget = Budget(cap, V / "ledger" / f"{tag}.json")
     split = json.loads(config.pop("_split"))
     ids = None if part == "all" else set(split[part])
     qs = P.load(_dataset(dataset), ids)
