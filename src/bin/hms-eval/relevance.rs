@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use anyhow::{ensure, Context, Result};
 use holographic_memory::{core::HmsConfig, DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
 use serde::Deserialize;

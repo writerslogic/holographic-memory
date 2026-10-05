@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 fn hash_pair(seed: u64) -> (usize, usize) {
     let a = seed
         .wrapping_mul(6364136223846793005)

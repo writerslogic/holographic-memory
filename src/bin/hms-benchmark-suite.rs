@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // HMS VSA/HDC benchmark suite with pre-registered experiments.
 
 use holographic_memory::core::bloom_memory::HolographicBloomMemory;

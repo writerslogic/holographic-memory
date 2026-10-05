@@ -22,7 +22,6 @@ Cargo.lock
 build.rs
 deny.toml
 .editorconfig
-HMS_INIT_TEST
 
 # CI/CD
 .github/

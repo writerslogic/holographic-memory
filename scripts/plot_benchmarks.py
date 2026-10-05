@@ -36,8 +36,8 @@ log = logging.getLogger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
-SCALING_PATH = ROOT / "benchmark_scaling_results.json"
-RESEARCH_PATH = ROOT / "research_bench_16384_256.json"
+SCALING_PATH = ROOT / "benchmarks" / "results" / "benchmark_scaling_results.json"
+RESEARCH_PATH = ROOT / "benchmarks" / "results" / "research_bench_16384_256.json"
 FIG_DIR = ROOT / "figures"
 FIG_DIR.mkdir(exist_ok=True)
 

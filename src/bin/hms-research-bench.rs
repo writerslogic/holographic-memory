@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use holographic_memory::core::entangled::{hash_u64, EntangledHVec};
 use std::collections::HashMap;
 use std::time::Instant;

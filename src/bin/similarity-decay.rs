@@ -1,3 +1,6 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use holographic_memory::core::block_codes::{BlockCodeBundle, BlockCodeConfig, BlockCodeVec};
 use holographic_memory::core::entangled::EntangledHVec;
 

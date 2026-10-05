@@ -4,6 +4,7 @@ import json
 import logging
 import modal
 import datetime
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger("hms-bench")
@@ -84,7 +85,7 @@ def main():
         "scaling_benchmark": results,
     }
 
-    outfile = "benchmark_scaling_results.json"
+    outfile = Path(__file__).resolve().parent / "results" / "benchmark_scaling_results.json"
     with open(outfile, "w") as f:
         json.dump(report, f, indent=2)
     log.info("Results saved to %s", outfile)
