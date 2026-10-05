@@ -148,3 +148,7 @@ lto = true
 strip = true
 opt-level = 3
 
+
+[[bench]]
+name = "intersection_kernels"
+harness = false

@@ -17,18 +17,20 @@ pub fn sparse_intersection_count(a: &[u32], b: &[u32]) -> usize {
         return 0;
     }
 
+    // Ensure a is the smaller slice for the skew check.
+    let (small, large) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+    // Skewed sizes gallop before any block kernel: a block kernel walks the
+    // large side linearly.
+    if small.len() * 8 < large.len() {
+        return galloping_intersection_count(small, large);
+    }
+
     #[cfg(target_arch = "x86_64")]
-    if let Some(count) = crate::core::simd_math::simd_intersection_count(a, b) {
+    if let Some(count) = crate::core::simd_math::simd_intersection_count(small, large) {
         return count;
     }
 
-    // Ensure a is the smaller slice for the skew check.
-    let (small, large) = if a.len() <= b.len() { (a, b) } else { (b, a) };
-    if small.len() * 8 < large.len() {
-        galloping_intersection_count(small, large)
-    } else {
-        merge_intersection_count(small, large)
-    }
+    merge_intersection_count(small, large)
 }
 
 /// Sorted merge intersection count: O(|a| + |b|).
@@ -77,6 +79,64 @@ fn galloping_intersection_count(small: &[u32], large: &[u32]) -> usize {
         }
     }
     count
+}
+
+/// Branchless sorted merge: the three-way compare becomes flag arithmetic.
+#[doc(hidden)]
+#[inline]
+pub fn merge_branchless_count(a: &[u32], b: &[u32]) -> usize {
+    let mut count = 0;
+    let mut i = 0;
+    let mut j = 0;
+    while i < a.len() && j < b.len() {
+        let (x, y) = (a[i], b[j]);
+        count += (x == y) as usize;
+        i += (x <= y) as usize;
+        j += (x >= y) as usize;
+    }
+    count
+}
+
+#[doc(hidden)]
+pub fn merge_branchy_count(a: &[u32], b: &[u32]) -> usize {
+    merge_intersection_count(a, b)
+}
+
+#[doc(hidden)]
+pub fn galloping_count(small: &[u32], large: &[u32]) -> usize {
+    galloping_intersection_count(small, large)
+}
+
+/// NEON 4x4 block intersection of sorted, deduplicated slices.
+#[doc(hidden)]
+#[cfg(target_arch = "aarch64")]
+pub fn neon_intersection_count(a: &[u32], b: &[u32]) -> usize {
+    use std::arch::aarch64::*;
+    let mut count = 0;
+    let mut i = 0;
+    let mut j = 0;
+    while i + 4 <= a.len() && j + 4 <= b.len() {
+        // SAFETY: the loop condition guarantees a[i..i+4] and b[j..j+4] are in
+        // bounds, and vld1q_u32 has no alignment requirement. NEON is baseline
+        // on aarch64.
+        unsafe {
+            let va = vld1q_u32(a.as_ptr().add(i));
+            let vb = vld1q_u32(b.as_ptr().add(j));
+            let m = vorrq_u32(
+                vorrq_u32(vceqq_u32(va, vb), vceqq_u32(va, vextq_u32::<1>(vb, vb))),
+                vorrq_u32(
+                    vceqq_u32(va, vextq_u32::<2>(vb, vb)),
+                    vceqq_u32(va, vextq_u32::<3>(vb, vb)),
+                ),
+            );
+            // Inputs are deduplicated, so each lane of `a` matches at most once.
+            count += vaddvq_u32(vshrq_n_u32::<31>(m)) as usize;
+        }
+        let (ma, mb) = (a[i + 3], b[j + 3]);
+        i += 4 * (ma <= mb) as usize;
+        j += 4 * (mb <= ma) as usize;
+    }
+    count + merge_branchless_count(&a[i..], &b[j..])
 }
 
 /// Binary search for the leftmost position where `slice[pos] >= target`.
@@ -147,6 +207,88 @@ mod tests {
     fn test_identical() {
         let a: Vec<u32> = (0..50).collect();
         assert_eq!(sparse_intersection_count(&a, &a), 50);
+    }
+
+    fn naive(a: &[u32], b: &[u32]) -> usize {
+        let set: std::collections::HashSet<u32> = b.iter().copied().collect();
+        a.iter().filter(|x| set.contains(x)).count()
+    }
+
+    struct Lcg(u64);
+    impl Lcg {
+        fn next(&mut self) -> u64 {
+            self.0 = self
+                .0
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            self.0 >> 33
+        }
+    }
+
+    /// Sorted, deduplicated sample of `n` values below `universe` (`universe >= n`).
+    fn sample(rng: &mut Lcg, n: usize, universe: u64) -> Vec<u32> {
+        let mut set = std::collections::BTreeSet::new();
+        while set.len() < n {
+            set.insert((rng.next() % universe) as u32);
+        }
+        set.into_iter().collect()
+    }
+
+    fn check_all(a: &[u32], b: &[u32]) {
+        let want = naive(a, b);
+        assert_eq!(sparse_intersection_count(a, b), want, "dispatch a,b");
+        assert_eq!(sparse_intersection_count(b, a), want, "dispatch b,a");
+        assert_eq!(merge_branchy_count(a, b), want, "branchy");
+        assert_eq!(merge_branchless_count(a, b), want, "branchless");
+        let (small, large) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+        assert_eq!(galloping_count(small, large), want, "gallop");
+        #[cfg(target_arch = "aarch64")]
+        {
+            assert_eq!(neon_intersection_count(a, b), want, "neon a,b");
+            assert_eq!(neon_intersection_count(b, a), want, "neon b,a");
+        }
+        #[cfg(target_arch = "x86_64")]
+        if let Some(c) = crate::core::simd_math::simd_intersection_count(a, b) {
+            assert_eq!(c, want, "avx2");
+        }
+    }
+
+    #[test]
+    fn all_kernels_match_naive_count() {
+        for seed in 0..300u64 {
+            let mut rng = Lcg(seed);
+            let na = (rng.next() % 2001) as usize;
+            let nb = (rng.next() % 2001) as usize;
+            // A universe near max(na, nb) forces heavy overlap; a wide one forces little.
+            let universe = (na.max(nb) as u64 + 1) * (1 + rng.next() % 8);
+            check_all(
+                &sample(&mut rng, na, universe),
+                &sample(&mut rng, nb, universe),
+            );
+        }
+    }
+
+    #[test]
+    fn kernels_match_on_edge_shapes_and_tails() {
+        let mut rng = Lcg(7);
+        for na in 0..=17usize {
+            for nb in (0..=17usize).chain([64, 65, 600]) {
+                for universe in [40u64, 2000, 1 << 20] {
+                    let universe = universe.max(na.max(nb) as u64);
+                    check_all(
+                        &sample(&mut rng, na, universe),
+                        &sample(&mut rng, nb, universe),
+                    );
+                }
+            }
+        }
+        let ident = sample(&mut rng, 777, 5000);
+        check_all(&ident, &ident);
+        let evens: Vec<u32> = (0..1000).map(|x| x * 2).collect();
+        let odds: Vec<u32> = (0..1000).map(|x| x * 2 + 1).collect();
+        check_all(&evens, &odds);
+        check_all(&[], &odds);
+        check_all(&[], &[]);
     }
 
     #[test]

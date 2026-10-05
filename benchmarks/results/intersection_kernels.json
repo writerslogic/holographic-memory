@@ -1,0 +1,251 @@
+{
+  "machine": "Apple M4 (macOS, Darwin 27.0.0)",
+  "arch": "aarch64",
+  "bench": "cargo bench --bench intersection_kernels -- --warm-up-time 1 --measurement-time 2",
+  "a_len": 64,
+  "statistic": "criterion mean point_estimate, ns/op",
+  "caveat": "Machine under heavy external load (load average ~36) during the run. final is the same aarch64 code path as baseline (no candidate beat baseline by 10%), so baseline vs final differences are the measurement noise floor, not a speedup.",
+  "x86_64": "unmeasured; only change is galloping skew check before the AVX2 path",
+  "results": [
+    {
+      "b_len": 64,
+      "overlap_pct": 0,
+      "baseline_ns": 195.4,
+      "final_ns": 127.7,
+      "candidates_ns": {
+        "merge_branchy": 138.5,
+        "merge_branchless": 294.5,
+        "gallop": 415.2,
+        "neon": 151.4
+      }
+    },
+    {
+      "b_len": 64,
+      "overlap_pct": 10,
+      "baseline_ns": 118.5,
+      "final_ns": 125.2,
+      "candidates_ns": {
+        "merge_branchy": 119.0,
+        "merge_branchless": 274.7,
+        "gallop": 422.6,
+        "neon": 130.6
+      }
+    },
+    {
+      "b_len": 64,
+      "overlap_pct": 50,
+      "baseline_ns": 83.3,
+      "final_ns": 78.2,
+      "candidates_ns": {
+        "merge_branchy": 101.2,
+        "merge_branchless": 500.0,
+        "gallop": 529.8,
+        "neon": 126.1
+      }
+    },
+    {
+      "b_len": 64,
+      "overlap_pct": 100,
+      "baseline_ns": 324.9,
+      "final_ns": 39.8,
+      "candidates_ns": {
+        "merge_branchy": 197.4,
+        "merge_branchless": 829.7,
+        "gallop": 582.0,
+        "neon": 49.7
+      }
+    },
+    {
+      "b_len": 256,
+      "overlap_pct": 0,
+      "baseline_ns": 261.5,
+      "final_ns": 275.1,
+      "candidates_ns": {
+        "merge_branchy": 529.9,
+        "merge_branchless": 926.7,
+        "gallop": 589.8,
+        "neon": 520.6
+      }
+    },
+    {
+      "b_len": 256,
+      "overlap_pct": 10,
+      "baseline_ns": 246.1,
+      "final_ns": 474.8,
+      "candidates_ns": {
+        "merge_branchy": 244.1,
+        "merge_branchless": 661.7,
+        "gallop": 926.1,
+        "neon": 676.7
+      }
+    },
+    {
+      "b_len": 256,
+      "overlap_pct": 50,
+      "baseline_ns": 208.6,
+      "final_ns": 260.3,
+      "candidates_ns": {
+        "merge_branchy": 286.1,
+        "merge_branchless": 1444.7,
+        "gallop": 593.2,
+        "neon": 818.1
+      }
+    },
+    {
+      "b_len": 256,
+      "overlap_pct": 100,
+      "baseline_ns": 236.6,
+      "final_ns": 269.4,
+      "candidates_ns": {
+        "merge_branchy": 445.7,
+        "merge_branchless": 1123.0,
+        "gallop": 1165.2,
+        "neon": 1560.5
+      }
+    },
+    {
+      "b_len": 1024,
+      "overlap_pct": 0,
+      "baseline_ns": 859.7,
+      "final_ns": 879.0,
+      "candidates_ns": {
+        "merge_branchy": 944.8,
+        "merge_branchless": 5602.9,
+        "gallop": 1109.0,
+        "neon": 1223.2
+      }
+    },
+    {
+      "b_len": 1024,
+      "overlap_pct": 10,
+      "baseline_ns": 850.6,
+      "final_ns": 917.7,
+      "candidates_ns": {
+        "merge_branchy": 1068.6,
+        "merge_branchless": 2234.9,
+        "gallop": 929.7,
+        "neon": 1081.7
+      }
+    },
+    {
+      "b_len": 1024,
+      "overlap_pct": 50,
+      "baseline_ns": 804.8,
+      "final_ns": 923.4,
+      "candidates_ns": {
+        "merge_branchy": 2825.2,
+        "merge_branchless": 7355.7,
+        "gallop": 1807.0,
+        "neon": 1675.8
+      }
+    },
+    {
+      "b_len": 1024,
+      "overlap_pct": 100,
+      "baseline_ns": 780.0,
+      "final_ns": 2414.1,
+      "candidates_ns": {
+        "merge_branchy": 1660.6,
+        "merge_branchless": 5061.8,
+        "gallop": 2092.3,
+        "neon": 2177.2
+      }
+    },
+    {
+      "b_len": 4096,
+      "overlap_pct": 0,
+      "baseline_ns": 4674.4,
+      "final_ns": 2295.3,
+      "candidates_ns": {
+        "merge_branchy": 7553.0,
+        "merge_branchless": 20033.9,
+        "gallop": 4709.4,
+        "neon": 12689.9
+      }
+    },
+    {
+      "b_len": 4096,
+      "overlap_pct": 10,
+      "baseline_ns": 3455.7,
+      "final_ns": 4913.9,
+      "candidates_ns": {
+        "merge_branchy": 14040.8,
+        "merge_branchless": 67703.7,
+        "gallop": 6413.9,
+        "neon": 19988.1
+      }
+    },
+    {
+      "b_len": 4096,
+      "overlap_pct": 50,
+      "baseline_ns": 5774.5,
+      "final_ns": 2203.7,
+      "candidates_ns": {
+        "merge_branchy": 7134.0,
+        "merge_branchless": 15744.6,
+        "gallop": 2166.7,
+        "neon": 10052.7
+      }
+    },
+    {
+      "b_len": 4096,
+      "overlap_pct": 100,
+      "baseline_ns": 2382.0,
+      "final_ns": 1912.8,
+      "candidates_ns": {
+        "merge_branchy": 5520.0,
+        "merge_branchless": 13469.9,
+        "gallop": 1818.9,
+        "neon": 6628.9
+      }
+    },
+    {
+      "b_len": 16384,
+      "overlap_pct": 0,
+      "baseline_ns": 2869.8,
+      "final_ns": 2736.9,
+      "candidates_ns": {
+        "merge_branchy": 21389.1,
+        "merge_branchless": 49800.6,
+        "gallop": 2653.7,
+        "neon": 23505.7
+      }
+    },
+    {
+      "b_len": 16384,
+      "overlap_pct": 10,
+      "baseline_ns": 2760.5,
+      "final_ns": 2404.6,
+      "candidates_ns": {
+        "merge_branchy": 27438.4,
+        "merge_branchless": 111646.2,
+        "gallop": 3288.1,
+        "neon": 25453.3
+      }
+    },
+    {
+      "b_len": 16384,
+      "overlap_pct": 50,
+      "baseline_ns": 2390.9,
+      "final_ns": 3099.5,
+      "candidates_ns": {
+        "merge_branchy": 24402.3,
+        "merge_branchless": 60808.3,
+        "gallop": 3730.1,
+        "neon": 38904.8
+      }
+    },
+    {
+      "b_len": 16384,
+      "overlap_pct": 100,
+      "baseline_ns": 4578.9,
+      "final_ns": 3213.2,
+      "candidates_ns": {
+        "merge_branchy": 21912.5,
+        "merge_branchless": 63155.7,
+        "gallop": 2894.6,
+        "neon": 28406.4
+      }
+    }
+  ]
+}
