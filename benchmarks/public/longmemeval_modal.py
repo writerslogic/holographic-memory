@@ -438,7 +438,7 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
 
     facts = None
     if any(k in kinds for k in ("fact", "turn_exp", "session_exp")):
-        need = {P.fact_key(s, llm): P.FACT_PROMPT.format(date=s.date_text, messages=s.fact_input())
+        need = {P.fact_key(s, llm): P.FACT_PROMPT.format(messages=s.fact_input())
                 for q in qs for s in q.sessions}
         facts = _llm_stage("facts", models, need, budget)
     queries = None
@@ -552,8 +552,8 @@ def main(dataset: str = "s", part: str = "dev", models: str = "small", cap: floa
          out: str = "", cache_ns: str = ""):
     if dataset not in ("s", "m") or part not in ("dev", "heldout", "all") or models not in MODELS:
         sys.exit("bad --dataset / --part / --models")
-    if part == "heldout" and dataset == "s":
-        sys.exit("held-out questions are scored only in the final M run")
+    if dataset == "s" and part != "dev":
+        sys.exit("on S only dev is run; held-out questions are scored only in the final M run")
     cfg = json.loads(Path(config).read_text())
     cfg["_split"] = (HERE / "longmemeval_split.json").read_text()
     tag = tag or f"{dataset}-{part}-{models}-{int(time.time())}"

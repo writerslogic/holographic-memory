@@ -21,19 +21,20 @@
     "sess_prior": 0.0,
     "fact_as": null,
     "time_w": 0.0,
+    "time_pad": 0,
     "rerank_w": 0.0,
     "rerank_n": 20
    },
-   "baseline_objective": 0.9126422596572223,
+   "baseline_objective": 0.9088328593290514,
    "baseline_metrics": {
     "overall": {
      "n_questions": 84,
      "recall_any@5": 0.9761904761904762,
-     "recall_all@5": 0.8928571428571429,
-     "ndcg_any@5": 0.8958076942543297,
+     "recall_all@5": 0.8809523809523809,
+     "ndcg_any@5": 0.8935452313572111,
      "recall_any@10": 0.9880952380952381,
      "recall_all@10": 0.9523809523809523,
-     "ndcg_any@10": 0.9095232491364645
+     "ndcg_any@10": 0.9084528726256615
     },
     "knowledge-update": {
      "n_questions": 15,
@@ -47,11 +48,11 @@
     "multi-session": {
      "n_questions": 24,
      "recall_any@5": 1.0,
-     "recall_all@5": 0.7916666666666666,
-     "ndcg_any@5": 0.8693511409139122,
+     "recall_all@5": 0.75,
+     "ndcg_any@5": 0.861432520773997,
      "recall_any@10": 1.0,
      "recall_all@10": 0.9166666666666666,
-     "ndcg_any@10": 0.8921840164892307
+     "ndcg_any@10": 0.8895444764425923
     },
     "single-session-assistant": {
      "n_questions": 1,
@@ -69,7 +70,7 @@
      "ndcg_any@5": 0.8333333333333334,
      "recall_any@10": 1.0,
      "recall_all@10": 1.0,
-     "ndcg_any@10": 0.888888888888889
+     "ndcg_any@10": 0.8859108127976215
     },
     "single-session-user": {
      "n_questions": 13,
@@ -87,7 +88,7 @@
      "ndcg_any@5": 0.8253367574171919,
      "recall_any@10": 0.96,
      "recall_all@10": 0.92,
-     "ndcg_any@10": 0.8361681279355261
+     "ndcg_any@10": 0.8358203595659048
     }
    },
    "alone": [
@@ -95,314 +96,345 @@
      "lever": "w_lex",
      "value": 0.0,
      "objective": 0.9167150690375345,
-     "gain": 0.004072809380312181
+     "gain": 0.007882209708483079
     },
     {
      "lever": "w_lex",
      "value": 0.5,
-     "objective": 0.930738685411716,
-     "gain": 0.01809642575449366
+     "objective": 0.9214328424976964,
+     "gain": 0.012599983168644968
     },
     {
      "lever": "w_lex",
      "value": 2.0,
-     "objective": 0.8806799539905643,
-     "gain": -0.03196230566665803
+     "objective": 0.8755736322807841,
+     "gain": -0.03325922704826734
     },
     {
      "lever": "fuse",
      "value": "cvx",
-     "objective": 0.9300481864375647,
-     "gain": 0.017405926780342362
+     "objective": 0.9255433768353472,
+     "gain": 0.016710517506295708
     },
     {
      "lever": "kinds.session_exp",
      "value": 0.5,
-     "objective": 0.9069423961680255,
-     "gain": -0.005699863489196821
+     "objective": 0.9028593382205469,
+     "gain": -0.005973521108504576
     },
     {
      "lever": "kinds.session_exp",
      "value": 1.0,
-     "objective": 0.9073451879622907,
-     "gain": -0.005297071694931654
+     "objective": 0.9029437989534963,
+     "gain": -0.005889060375555144
     },
     {
      "lever": "kinds.session_exp",
      "value": 2.0,
-     "objective": 0.9088243232521022,
-     "gain": -0.0038179364051201814
+     "objective": 0.9017481835193841,
+     "gain": -0.007084675809667318
     },
     {
      "lever": "kinds.session",
      "value": 0.0,
      "objective": 0.06109004811167543,
-     "gain": -0.8515522115455469
+     "gain": -0.847742811217376
     },
     {
      "lever": "kinds.session",
      "value": 0.5,
-     "objective": 0.9126422596572223,
+     "objective": 0.9088328593290514,
      "gain": 0.0
     },
     {
      "lever": "kinds.turn",
      "value": 0.5,
-     "objective": 0.921449023660978,
-     "gain": 0.008806764003755685
+     "objective": 0.9170933262025218,
+     "gain": 0.008260466873470373
     },
     {
      "lever": "kinds.turn",
      "value": 1.0,
-     "objective": 0.923728819770551,
-     "gain": 0.011086560113328647
+     "objective": 0.9245984947987735,
+     "gain": 0.015765635469722095
     },
     {
      "lever": "kinds.turn",
      "value": 2.0,
-     "objective": 0.9239574071813037,
-     "gain": 0.01131514752408136
+     "objective": 0.9221181370100525,
+     "gain": 0.013285277681001073
     },
     {
      "lever": "kinds.round",
      "value": 0.5,
-     "objective": 0.9169067015068892,
-     "gain": 0.0042644418496669
+     "objective": 0.9165980006613837,
+     "gain": 0.007765141332332304
     },
     {
      "lever": "kinds.round",
      "value": 1.0,
-     "objective": 0.9214699984318974,
-     "gain": 0.00882773877467502
+     "objective": 0.9188643657282645,
+     "gain": 0.01003150639921302
     },
     {
      "lever": "kinds.fact",
      "value": 0.5,
-     "objective": 0.6896006385240354,
-     "gain": -0.22304162113318693
+     "objective": 0.7564284877627945,
+     "gain": -0.15240437156625697
     },
     {
      "lever": "kinds.fact",
      "value": 1.0,
-     "objective": 0.5852202813736338,
-     "gain": -0.32742197828358854
+     "objective": 0.6820386852776441,
+     "gain": -0.22679417405140734
     },
     {
      "lever": "fact_as",
      "value": "session",
-     "objective": 0.9233031210454479,
-     "gain": 0.010660861388225529
+     "objective": 0.9356788889107497,
+     "gain": 0.02684602958169824
     },
     {
      "lever": "fact_as",
      "value": "session_exp",
-     "objective": 0.9126422596572223,
+     "objective": 0.9088328593290514,
      "gain": 0.0
     },
     {
      "lever": "fact_as",
      "value": "turn",
-     "objective": 0.9126422596572223,
+     "objective": 0.9088328593290514,
      "gain": 0.0
     },
     {
      "lever": "fact_as",
      "value": "turn_exp",
-     "objective": 0.9126422596572223,
+     "objective": 0.9088328593290514,
      "gain": 0.0
     },
     {
      "lever": "kinds.turn_exp",
      "value": 0.5,
-     "objective": 0.9201273902804395,
-     "gain": 0.007485130623217207
+     "objective": 0.9160024368838264,
+     "gain": 0.007169577554774986
     },
     {
      "lever": "kinds.turn_exp",
      "value": 1.0,
-     "objective": 0.9235838860555694,
-     "gain": 0.01094162639834706
+     "objective": 0.9269944897648346,
+     "gain": 0.018161630435783116
     },
     {
      "lever": "agg",
      "value": "sum2",
-     "objective": 0.9100557410666612,
+     "objective": 0.9062463407384903,
      "gain": -0.0025865185905611376
     },
     {
      "lever": "agg",
      "value": "sum3",
-     "objective": 0.9100557410666612,
+     "objective": 0.9062463407384903,
      "gain": -0.0025865185905611376
     },
     {
      "lever": "agg",
      "value": "rrf",
-     "objective": 0.9100557410666612,
+     "objective": 0.9062463407384903,
      "gain": -0.0025865185905611376
     },
     {
      "lever": "variants.rewrite",
      "value": 0.5,
-     "objective": 0.9194833302194565,
-     "gain": 0.006841070562234153
+     "objective": 0.9150838715833238,
+     "gain": 0.006251012254272381
     },
     {
      "lever": "variants.rewrite",
      "value": 1.0,
-     "objective": 0.9200376677183195,
-     "gain": 0.007395408061097175
+     "objective": 0.9194681864677827,
+     "gain": 0.010635327138731276
     },
     {
      "lever": "variants.sub",
      "value": 0.25,
-     "objective": 0.9248156156724373,
-     "gain": 0.012173356015214964
+     "objective": 0.9166968771206827,
+     "gain": 0.007864017791631261
     },
     {
      "lever": "variants.sub",
      "value": 0.5,
-     "objective": 0.9177540402418307,
-     "gain": 0.005111780584608372
+     "objective": 0.9136110559313233,
+     "gain": 0.004778196602271856
     },
     {
      "lever": "variants.sub",
      "value": 1.0,
-     "objective": 0.9120947932083544,
-     "gain": -0.0005474664488679393
+     "objective": 0.9038824947025296,
+     "gain": -0.004950364626521875
     },
     {
      "lever": "time_w",
      "value": 0.5,
-     "objective": 0.9014874019235977,
-     "gain": -0.011154857733624679
+     "objective": 0.8975470355029069,
+     "gain": -0.011285823826144514
     },
     {
      "lever": "time_w",
      "value": 1.0,
-     "objective": 0.9014874019235977,
-     "gain": -0.011154857733624679
+     "objective": 0.8975470355029069,
+     "gain": -0.011285823826144514
     },
     {
      "lever": "time_w",
      "value": 2.0,
-     "objective": 0.9014874019235977,
-     "gain": -0.011154857733624679
+     "objective": 0.8975470355029069,
+     "gain": -0.011285823826144514
+    },
+    {
+     "lever": "time_pad",
+     "value": 7,
+     "objective": 0.9072522314671996,
+     "gain": -0.0015806278618518688
+    },
+    {
+     "lever": "time_pad",
+     "value": 14,
+     "objective": 0.8893712119809762,
+     "gain": -0.019461647348075206
+    },
+    {
+     "lever": "time_pad",
+     "value": 31,
+     "objective": 0.9006836316717388,
+     "gain": -0.00814922765731263
     },
     {
      "lever": "k0",
      "value": 10.0,
-     "objective": 0.9126422596572223,
+     "objective": 0.9088328593290514,
      "gain": 0.0
     },
     {
      "lever": "k0",
      "value": 30.0,
-     "objective": 0.9126422596572223,
+     "objective": 0.9088328593290514,
      "gain": 0.0
     },
     {
      "lever": "rerank_w",
      "value": 1.0,
-     "objective": 0.9450773006112138,
-     "gain": 0.03243504095399141
+     "objective": 0.9445078193606768,
+     "gain": 0.0356749600316254
     },
     {
      "lever": "rerank_w",
      "value": 2.0,
-     "objective": 0.9475470097006717,
-     "gain": 0.034904750043449395
+     "objective": 0.9487716893252762,
+     "gain": 0.03993882999622478
     },
     {
      "lever": "rerank_w",
      "value": 4.0,
-     "objective": 0.9408954021810538,
-     "gain": 0.028253142523831487
+     "objective": 0.9412572604031402,
+     "gain": 0.03242440107408873
     },
     {
      "lever": "rerank_w",
      "value": 8.0,
-     "objective": 0.9383682972190719,
-     "gain": 0.025726037561849546
+     "objective": 0.9388848535308808,
+     "gain": 0.030051994201829357
     },
     {
      "lever": "rerank_n",
      "value": 10,
-     "objective": 0.9438250943316564,
-     "gain": 0.031182834674434057
+     "objective": 0.9439185425077015,
+     "gain": 0.03508568317865002
     },
     {
      "lever": "rerank_n",
      "value": 30,
-     "objective": 0.9430379885397057,
-     "gain": 0.03039572888248332
+     "objective": 0.9445241409526085,
+     "gain": 0.03569128162355706
     }
    ],
    "greedy": [
     {
      "lever": "w_lex",
-     "value": 0.5,
-     "objective": 0.930738685411716,
-     "gain": 0.01809642575449366
+     "value": 0.0,
+     "objective": 0.9167150690375345,
+     "gain": 0.007882209708483079
     },
     {
      "lever": "kinds.session_exp",
-     "value": 1.0,
-     "objective": 0.9376089083015359,
-     "gain": 0.006870222889819866
+     "value": 0.5,
+     "objective": 0.9230642600100906,
+     "gain": 0.00634919097255604
     },
     {
      "lever": "kinds.turn",
-     "value": 2.0,
-     "objective": 0.9491528249975836,
-     "gain": 0.011543916696047707
+     "value": 1.0,
+     "objective": 0.9361849944714795,
+     "gain": 0.01312073446138895
     },
     {
-     "lever": "variants.rewrite",
+     "lever": "fact_as",
+     "value": "turn",
+     "objective": 0.9445113256465527,
+     "gain": 0.008326331175073198
+    },
+    {
+     "lever": "kinds.turn_exp",
+     "value": 0.5,
+     "objective": 0.9520305879812205,
+     "gain": 0.00751926233466782
+    },
+    {
+     "lever": "rerank_w",
      "value": 1.0,
-     "objective": 0.954795521434127,
-     "gain": 0.005642696436543471
+     "objective": 0.963558459733842,
+     "gain": 0.011527871752621488
+    },
+    {
+     "pruned": "kinds.turn_exp",
+     "objective": 0.9644571516568133
     },
     {
      "pruned": "kinds.session_exp",
-     "objective": 0.9553035741179864
-    },
-    {
-     "pruned": "variants.rewrite",
-     "objective": 0.9510916876712896
+     "objective": 0.9646706757968448
     }
    ],
    "final": {
     "kinds": {
      "session": 1.0,
      "session_exp": 0.0,
-     "turn": 2.0
+     "turn": 1.0,
+     "turn_exp": 0.0
     },
     "variants": {
-     "orig": 1.0,
-     "rewrite": 0.0
+     "orig": 1.0
     },
-    "w_lex": 0.5,
+    "w_lex": 0.0,
     "w_sem": 1.0,
     "fuse": "rrf",
     "agg": "max",
     "k0": 60.0,
     "sess_prior": 0.0,
-    "fact_as": null,
+    "fact_as": "turn",
     "time_w": 0.0,
-    "rerank_w": 0.0,
+    "time_pad": 0,
+    "rerank_w": 1.0,
     "rerank_n": 20
    },
-   "final_objective": 0.9510916876712896,
+   "final_objective": 0.9646706757968448,
    "final_metrics": {
     "overall": {
      "n_questions": 84,
      "recall_any@5": 0.9761904761904762,
-     "recall_all@5": 0.9404761904761905,
-     "ndcg_any@5": 0.9394610367617291,
-     "recall_any@10": 0.9880952380952381,
-     "recall_all@10": 0.9761904761904762,
-     "ndcg_any@10": 0.9482390472567632
+     "recall_all@5": 0.9642857142857143,
+     "ndcg_any@5": 0.9493496231693266,
+     "recall_any@10": 1.0,
+     "recall_all@10": 0.9880952380952381,
+     "ndcg_any@10": 0.9569521276371005
     },
     "knowledge-update": {
      "n_questions": 15,
@@ -417,10 +449,10 @@
      "n_questions": 24,
      "recall_any@5": 0.9583333333333334,
      "recall_all@5": 0.9166666666666666,
-     "ndcg_any@5": 0.9286708209167748,
+     "ndcg_any@5": 0.9391160909347652,
      "recall_any@10": 1.0,
      "recall_all@10": 0.9583333333333334,
-     "ndcg_any@10": 0.9423730115544265
+     "ndcg_any@10": 0.9525804867059025
     },
     "single-session-assistant": {
      "n_questions": 1,
@@ -435,10 +467,10 @@
      "n_questions": 6,
      "recall_any@5": 1.0,
      "recall_all@5": 1.0,
-     "ndcg_any@5": 1.0,
+     "ndcg_any@5": 0.9166666666666666,
      "recall_any@10": 1.0,
      "recall_all@10": 1.0,
-     "ndcg_any@10": 1.0
+     "ndcg_any@10": 0.9166666666666666
     },
     "single-session-user": {
      "n_questions": 13,
@@ -452,25 +484,37 @@
     "temporal-reasoning": {
      "n_questions": 25,
      "recall_any@5": 0.96,
-     "recall_all@5": 0.88,
-     "ndcg_any@5": 0.8650650954393058,
-     "recall_any@10": 0.96,
-     "recall_all@10": 0.96,
-     "ndcg_any@10": 0.8814051076904746
+     "recall_all@5": 0.96,
+     "ndcg_any@5": 0.9082632865515623,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 0.9208818816229913
     }
    },
    "drop_one": [
     {
      "lever": "w_lex",
      "reverted_to": 1.0,
-     "objective": 0.9239574071813037,
-     "loss": 0.027134280489985896
+     "objective": 0.9494664367631398,
+     "loss": 0.015204239033705047
     },
     {
      "lever": "kinds.turn",
      "reverted_to": 0.0,
-     "objective": 0.930738685411716,
-     "loss": 0.020353002259573594
+     "objective": 0.9436091580881704,
+     "loss": 0.021061517708674482
+    },
+    {
+     "lever": "fact_as",
+     "reverted_to": null,
+     "objective": 0.9454760958202117,
+     "loss": 0.019194579976633097
+    },
+    {
+     "lever": "rerank_w",
+     "reverted_to": 0.0,
+     "objective": 0.9493525919930091,
+     "loss": 0.015318083803835703
     }
    ]
   },
@@ -490,19 +534,20 @@
     "sess_prior": 0.0,
     "fact_as": null,
     "time_w": 0.0,
+    "time_pad": 0,
     "rerank_w": 0.0,
     "rerank_n": 20
    },
-   "baseline_objective": 0.7339753359504841,
+   "baseline_objective": 0.7344085600823744,
    "baseline_metrics": {
     "overall": {
      "n_questions": 84,
      "recall_any@5": 0.8928571428571429,
      "recall_all@5": 0.6785714285714286,
-     "ndcg_any@5": 0.7069401921822618,
+     "ndcg_any@5": 0.7073528317175392,
      "recall_any@10": 0.9285714285714286,
      "recall_all@10": 0.8095238095238095,
-     "ndcg_any@10": 0.7408659135244369
+     "ndcg_any@10": 0.7421861705167208
     },
     "knowledge-update": {
      "n_questions": 15,
@@ -517,10 +562,10 @@
      "n_questions": 24,
      "recall_any@5": 0.9166666666666666,
      "recall_all@5": 0.4166666666666667,
-     "ndcg_any@5": 0.5775609374650926,
+     "ndcg_any@5": 0.5790051758385636,
      "recall_any@10": 0.9583333333333334,
      "recall_all@10": 0.625,
-     "ndcg_any@10": 0.6312843515510026
+     "ndcg_any@10": 0.6359052510239961
     },
     "single-session-assistant": {
      "n_questions": 1,
@@ -564,339 +609,388 @@
      "lever": "w_lex",
      "value": 0.0,
      "objective": 0.7251163021410559,
-     "gain": -0.008859033809428207
+     "gain": -0.009292257941318494
     },
     {
      "lever": "w_lex",
      "value": 0.5,
-     "objective": 0.737773976898811,
-     "gain": 0.0037986409483268258
+     "objective": 0.7377393096095632,
+     "gain": 0.0033307495271888143
     },
     {
      "lever": "w_lex",
      "value": 2.0,
-     "objective": 0.7089390925917497,
-     "gain": -0.025036243358734445
+     "objective": 0.7098032313588652,
+     "gain": -0.02460532872350918
     },
     {
      "lever": "fuse",
      "value": "cvx",
-     "objective": 0.7419379118886065,
-     "gain": 0.00796257593812233
+     "objective": 0.7393428849651318,
+     "gain": 0.004934324882757357
     },
     {
      "lever": "kinds.turn",
      "value": 0.0,
      "objective": 0.010252752280689174,
-     "gain": -0.7237225836697949
+     "gain": -0.7241558078016852
     },
     {
      "lever": "kinds.turn",
      "value": 0.5,
-     "objective": 0.7339753359504841,
+     "objective": 0.7344085600823744,
      "gain": 0.0
     },
     {
      "lever": "kinds.round",
      "value": 0.5,
-     "objective": 0.7167606273565604,
-     "gain": -0.01721470859392371
+     "objective": 0.719247599730098,
+     "gain": -0.015160960352276431
     },
     {
      "lever": "kinds.round",
      "value": 1.0,
-     "objective": 0.7103477883006364,
-     "gain": -0.023627547649847758
+     "objective": 0.7074430368307728,
+     "gain": -0.02696552325160162
     },
     {
      "lever": "kinds.round",
      "value": 2.0,
-     "objective": 0.7003978101898877,
-     "gain": -0.03357752576059647
+     "objective": 0.6989005027327853,
+     "gain": -0.03550805734958917
     },
     {
      "lever": "kinds.fact",
      "value": 0.5,
-     "objective": 0.5084391284949216,
-     "gain": -0.22553620745556258
+     "objective": 0.5818284595188346,
+     "gain": -0.15258010056353988
     },
     {
      "lever": "kinds.fact",
      "value": 1.0,
-     "objective": 0.49629804612824024,
-     "gain": -0.2376772898222439
+     "objective": 0.5838850558200628,
+     "gain": -0.15052350426231165
     },
     {
      "lever": "kinds.fact",
      "value": 2.0,
-     "objective": 0.496660000465836,
-     "gain": -0.23731533548464812
+     "objective": 0.5865010801147381,
+     "gain": -0.1479074799676363
     },
     {
      "lever": "fact_as",
      "value": "turn",
-     "objective": 0.7706952587880684,
-     "gain": 0.036719922837584296
+     "objective": 0.759136038138609,
+     "gain": 0.024727478056234542
     },
     {
      "lever": "fact_as",
      "value": "turn_exp",
-     "objective": 0.7339753359504841,
+     "objective": 0.7344085600823744,
      "gain": 0.0
     },
     {
      "lever": "fact_as",
      "value": "round",
-     "objective": 0.7339753359504841,
+     "objective": 0.7344085600823744,
      "gain": 0.0
     },
     {
      "lever": "kinds.turn_exp",
      "value": 0.5,
-     "objective": 0.7385795808123056,
-     "gain": 0.004604244861821427
+     "objective": 0.7374767910196127,
+     "gain": 0.003068230937238292
     },
     {
      "lever": "kinds.turn_exp",
      "value": 1.0,
-     "objective": 0.7441272459665873,
-     "gain": 0.01015191001610316
+     "objective": 0.7464287684715787,
+     "gain": 0.012020208389204257
     },
     {
      "lever": "kinds.turn_exp",
      "value": 2.0,
-     "objective": 0.7502774283293483,
-     "gain": 0.016302092378864153
+     "objective": 0.7486671830796393,
+     "gain": 0.01425862299726488
     },
     {
      "lever": "agg",
      "value": "sum2",
-     "objective": 0.731891249059121,
+     "objective": 0.7323244731910112,
      "gain": -0.0020840868913631905
     },
     {
      "lever": "agg",
      "value": "sum3",
-     "objective": 0.731891249059121,
+     "objective": 0.7323244731910112,
      "gain": -0.0020840868913631905
     },
     {
      "lever": "agg",
      "value": "rrf",
-     "objective": 0.7301968340533869,
-     "gain": -0.003778501897097275
+     "objective": 0.7310197300709067,
+     "gain": -0.003388830011467725
     },
     {
      "lever": "variants.rewrite",
      "value": 0.5,
-     "objective": 0.7439673056848419,
-     "gain": 0.009991969734357786
+     "objective": 0.7434127753078554,
+     "gain": 0.009004215225481005
     },
     {
      "lever": "variants.rewrite",
      "value": 1.0,
-     "objective": 0.7468451913326117,
-     "gain": 0.012869855382127593
+     "objective": 0.7488253179691641,
+     "gain": 0.014416757886789644
     },
     {
      "lever": "variants.sub",
      "value": 0.25,
-     "objective": 0.737114241504215,
-     "gain": 0.003138905553730864
+     "objective": 0.7380007872992811,
+     "gain": 0.0035922272169066627
     },
     {
      "lever": "variants.sub",
      "value": 0.5,
-     "objective": 0.7266604628707657,
-     "gain": -0.007314873079718454
+     "objective": 0.7306507017633574,
+     "gain": -0.0037578583190169823
     },
     {
      "lever": "variants.sub",
      "value": 1.0,
-     "objective": 0.716096880023884,
-     "gain": -0.01787845592660009
+     "objective": 0.715872849880779,
+     "gain": -0.01853571020159539
     },
     {
      "lever": "sess_prior",
      "value": 0.5,
-     "objective": 0.7338089448186083,
-     "gain": -0.00016639113187588706
+     "objective": 0.7397614315736766,
+     "gain": 0.005352871491302147
     },
     {
      "lever": "sess_prior",
      "value": 1.0,
-     "objective": 0.730711752784531,
-     "gain": -0.003263583165953099
+     "objective": 0.7527773686707694,
+     "gain": 0.018368808588394958
     },
     {
      "lever": "sess_prior",
      "value": 2.0,
-     "objective": 0.7304895199887955,
-     "gain": -0.003485815961688621
+     "objective": 0.7425595569462791,
+     "gain": 0.008150996863904636
     },
     {
      "lever": "sess_prior",
      "value": 4.0,
-     "objective": 0.7135897267335163,
-     "gain": -0.02038560921696786
+     "objective": 0.72795400301636,
+     "gain": -0.006454557066014388
     },
     {
      "lever": "time_w",
      "value": 0.5,
-     "objective": 0.724250751688875,
+     "objective": 0.7246839758207653,
      "gain": -0.00972458426160916
     },
     {
      "lever": "time_w",
      "value": 1.0,
-     "objective": 0.7118499580380814,
-     "gain": -0.022125377912402766
+     "objective": 0.7122831821699718,
+     "gain": -0.022125377912402655
     },
     {
      "lever": "time_w",
      "value": 2.0,
-     "objective": 0.7118499580380814,
-     "gain": -0.022125377912402766
+     "objective": 0.7122831821699718,
+     "gain": -0.022125377912402655
+    },
+    {
+     "lever": "time_pad",
+     "value": 7,
+     "objective": 0.727164134550924,
+     "gain": -0.007244425531450438
+    },
+    {
+     "lever": "time_pad",
+     "value": 14,
+     "objective": 0.7230470473649407,
+     "gain": -0.011361512717433686
+    },
+    {
+     "lever": "time_pad",
+     "value": 31,
+     "objective": 0.7372520563751501,
+     "gain": 0.0028434962927756935
     },
     {
      "lever": "k0",
      "value": 10.0,
-     "objective": 0.7339753359504841,
+     "objective": 0.7344085600823744,
      "gain": 0.0
     },
     {
      "lever": "k0",
      "value": 30.0,
-     "objective": 0.7339753359504841,
+     "objective": 0.7344085600823744,
      "gain": 0.0
     },
     {
      "lever": "rerank_w",
      "value": 1.0,
-     "objective": 0.7627112846677515,
-     "gain": 0.028735948717267368
+     "objective": 0.7652034660181256,
+     "gain": 0.030794905935751182
     },
     {
      "lever": "rerank_w",
      "value": 2.0,
-     "objective": 0.7834861994180597,
-     "gain": 0.049510863467575605
+     "objective": 0.7867814694754576,
+     "gain": 0.052372909393083145
     },
     {
      "lever": "rerank_w",
      "value": 4.0,
-     "objective": 0.7818455907663245,
-     "gain": 0.047870254815840396
+     "objective": 0.7777863545898269,
+     "gain": 0.043377794507452494
     },
     {
      "lever": "rerank_w",
      "value": 8.0,
-     "objective": 0.7834410507103494,
-     "gain": 0.049465714759865276
+     "objective": 0.7838307225959787,
+     "gain": 0.04942216251360432
     },
     {
      "lever": "rerank_n",
      "value": 10,
-     "objective": 0.7680608660021633,
-     "gain": 0.034085530051679136
+     "objective": 0.7713714880367735,
+     "gain": 0.03696292795439904
     },
     {
      "lever": "rerank_n",
      "value": 30,
-     "objective": 0.7962188382671508,
-     "gain": 0.06224350231666664
+     "objective": 0.790929076039265,
+     "gain": 0.05652051595689056
     },
     {
      "lever": "rerank_n",
      "value": 50,
-     "objective": 0.80762637293428,
-     "gain": 0.07365103698379583
+     "objective": 0.808232651727755,
+     "gain": 0.07382409164538062
     }
    ],
    "greedy": [
     {
-     "lever": "fuse",
-     "value": "cvx",
-     "objective": 0.7419379118886065,
-     "gain": 0.00796257593812233
-    },
-    {
      "lever": "fact_as",
      "value": "turn",
-     "objective": 0.7682948728604093,
-     "gain": 0.026356960971802845
+     "objective": 0.759136038138609,
+     "gain": 0.024727478056234542
+    },
+    {
+     "lever": "kinds.turn_exp",
+     "value": 2.0,
+     "objective": 0.765253358611562,
+     "gain": 0.006117320472952992
     },
     {
      "lever": "variants.rewrite",
-     "value": 0.5,
-     "objective": 0.7770373323260051,
-     "gain": 0.00874245946559582
+     "value": 1.0,
+     "objective": 0.7826578033793115,
+     "gain": 0.017404444767749494
     },
     {
-     "lever": "variants.sub",
-     "value": 0.25,
-     "objective": 0.7961979855962638,
-     "gain": 0.01916065327025862
+     "lever": "time_w",
+     "value": 0.5,
+     "objective": 0.7914319241367836,
+     "gain": 0.008774120757472192
     },
     {
      "lever": "rerank_w",
-     "value": 4.0,
-     "objective": 0.8395086811036554,
-     "gain": 0.04331069550739164
+     "value": 8.0,
+     "objective": 0.8184098462920255,
+     "gain": 0.026977922155241862
     },
     {
-     "pruned": "variants.rewrite",
-     "objective": 0.841996778817941
+     "lever": "rerank_n",
+     "value": 30,
+     "objective": 0.8290167729743864,
+     "gain": 0.010606926682360851
+    },
+    {
+     "lever": "rerank_w+rerank_n+k0",
+     "value": [
+      8.0,
+      30,
+      10.0
+     ],
+     "objective": 0.836947487733588,
+     "gain": 0.007930714759201596
+    },
+    {
+     "lever": "w_lex",
+     "value": 0.5,
+     "objective": 0.8424696763055107,
+     "gain": 0.00552218857192277
+    },
+    {
+     "pruned": "rerank_n",
+     "objective": 0.8430311653249003
+    },
+    {
+     "pruned": "time_w",
+     "objective": 0.8394146901599054
+    },
+    {
+     "pruned": "k0",
+     "objective": 0.8403174597280868
     }
    ],
    "final": {
     "kinds": {
-     "turn": 1.0
+     "turn": 1.0,
+     "turn_exp": 2.0
     },
     "variants": {
      "orig": 1.0,
-     "rewrite": 0.0,
-     "sub": 0.25
+     "rewrite": 1.0
     },
-    "w_lex": 1.0,
+    "w_lex": 0.5,
     "w_sem": 1.0,
-    "fuse": "cvx",
+    "fuse": "rrf",
     "agg": "max",
     "k0": 60.0,
     "sess_prior": 0.0,
     "fact_as": "turn",
     "time_w": 0.0,
-    "rerank_w": 4.0,
+    "time_pad": 0,
+    "rerank_w": 8.0,
     "rerank_n": 20
    },
-   "final_objective": 0.841996778817941,
+   "final_objective": 0.8403174597280868,
    "final_metrics": {
     "overall": {
      "n_questions": 84,
-     "recall_any@5": 0.9761904761904762,
-     "recall_all@5": 0.8214285714285714,
-     "ndcg_any@5": 0.7945953487761582,
+     "recall_any@5": 0.9404761904761905,
+     "recall_all@5": 0.8095238095238095,
+     "ndcg_any@5": 0.795529349690016,
      "recall_any@10": 1.0,
      "recall_all@10": 0.9285714285714286,
-     "ndcg_any@10": 0.8233917664956059
+     "ndcg_any@10": 0.8276452511270933
     },
     "knowledge-update": {
      "n_questions": 15,
      "recall_any@5": 1.0,
-     "recall_all@5": 1.0,
-     "ndcg_any@5": 0.8972156905861249,
+     "recall_all@5": 0.9333333333333333,
+     "ndcg_any@5": 0.907464488412248,
      "recall_any@10": 1.0,
      "recall_all@10": 1.0,
-     "ndcg_any@10": 0.8972156905861249
+     "ndcg_any@10": 0.9203595819867326
     },
     "multi-session": {
      "n_questions": 24,
-     "recall_any@5": 0.9583333333333334,
-     "recall_all@5": 0.625,
-     "ndcg_any@5": 0.6872622631709809,
+     "recall_any@5": 0.8333333333333334,
+     "recall_all@5": 0.5833333333333334,
+     "ndcg_any@5": 0.647215503928273,
      "recall_any@10": 1.0,
      "recall_all@10": 0.8333333333333334,
-     "ndcg_any@10": 0.7491059732493358
+     "ndcg_any@10": 0.7193314346154418
     },
     "single-session-assistant": {
      "n_questions": 1,
@@ -911,54 +1005,60 @@
      "n_questions": 6,
      "recall_any@5": 1.0,
      "recall_all@5": 0.8333333333333334,
-     "ndcg_any@5": 0.6827113387680258,
+     "ndcg_any@5": 0.7384460930122323,
      "recall_any@10": 1.0,
      "recall_all@10": 1.0,
-     "ndcg_any@10": 0.7149490727042375
+     "ndcg_any@10": 0.7681300252712341
     },
     "single-session-user": {
      "n_questions": 13,
      "recall_any@5": 1.0,
      "recall_all@5": 1.0,
-     "ndcg_any@5": 1.0,
+     "ndcg_any@5": 0.9615384615384616,
      "recall_any@10": 1.0,
      "recall_all@10": 1.0,
-     "ndcg_any@10": 1.0
+     "ndcg_any@10": 0.9615384615384616
     },
     "temporal-reasoning": {
      "n_questions": 25,
      "recall_any@5": 0.96,
-     "recall_all@5": 0.8,
-     "ndcg_any@5": 0.7478884635877491,
+     "recall_all@5": 0.84,
+     "ndcg_any@5": 0.7899459758170276,
      "recall_any@10": 1.0,
      "recall_all@10": 0.92,
-     "ndcg_any@10": 0.7775374093051817
+     "ndcg_any@10": 0.8137629112990739
     }
    },
    "drop_one": [
     {
-     "lever": "fuse",
-     "reverted_to": "rrf",
-     "objective": 0.8350065440171233,
-     "loss": 0.0069902348008177295
+     "lever": "w_lex",
+     "reverted_to": 1.0,
+     "objective": 0.8240430358851741,
+     "loss": 0.016274423842912666
     },
     {
      "lever": "fact_as",
      "reverted_to": null,
-     "objective": 0.8141179179334145,
-     "loss": 0.027878860884526513
+     "objective": 0.8259290338418119,
+     "loss": 0.01438842588627487
     },
     {
-     "lever": "variants.sub",
+     "lever": "kinds.turn_exp",
      "reverted_to": 0.0,
-     "objective": 0.8178455527883618,
-     "loss": 0.024151226029579198
+     "objective": 0.8318907764788713,
+     "loss": 0.008426683249215472
+    },
+    {
+     "lever": "variants.rewrite",
+     "reverted_to": 0.0,
+     "objective": 0.825556851884419,
+     "loss": 0.014760607843667839
     },
     {
      "lever": "rerank_w",
      "reverted_to": 0.0,
-     "objective": 0.7838752196064531,
-     "loss": 0.05812155921148787
+     "objective": 0.7980622280188623,
+     "loss": 0.04225523170922452
     }
    ]
   }

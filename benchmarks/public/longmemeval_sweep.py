@@ -43,6 +43,7 @@ LEVERS = {
         ("variants.rewrite", [0.0, 0.5, 1.0]),
         ("variants.sub", [0.0, 0.25, 0.5, 1.0]),
         ("time_w", [0.0, 0.5, 1.0, 2.0]),
+        ("time_pad", [0, 7, 14, 31]),
         ("k0", [10.0, 30.0, 60.0]),
         ("rerank_w", [0.0, 1.0, 2.0, 4.0, 8.0]),
         ("rerank_n", [10, 20, 30]),
@@ -60,6 +61,7 @@ LEVERS = {
         ("variants.sub", [0.0, 0.25, 0.5, 1.0]),
         ("sess_prior", [0.0, 0.5, 1.0, 2.0, 4.0]),
         ("time_w", [0.0, 0.5, 1.0, 2.0]),
+        ("time_pad", [0, 7, 14, 31]),
         ("k0", [10.0, 30.0, 60.0]),
         ("rerank_w", [0.0, 1.0, 2.0, 4.0, 8.0]),
         ("rerank_n", [10, 20, 30, 50]),
@@ -124,6 +126,8 @@ def main(run_dir: str, data: str) -> None:
                     continue
                 if path == "rerank_n":
                     c = setv(setv(b, "rerank_w", 2.0), path, v)
+                elif path == "time_pad":
+                    c = setv(setv(b, "time_w", 1.0), path, v)
                 else:
                     c = setv(b, path, v)
                 alone.append({"lever": path, "value": v, "objective": P.objective(metrics(c, level, sr)),
@@ -154,6 +158,17 @@ def main(run_dir: str, data: str) -> None:
             if best_c is not None:
                 trace.append({"lever": "rerank_w+rerank_n+k0", "value": [best_c["rerank_w"], best_c["rerank_n"],
                               best_c["k0"]], "objective": best_o, "gain": best_o - cur_obj})
+                cur, cur_obj, changed = best_c, best_o, True
+            best_c, best_o = None, cur_obj
+            for w in (0.0, 0.5, 1.0, 2.0):
+                for pad in (0, 7, 14, 31):
+                    c = setv(setv(cur, "time_w", w), "time_pad", pad)
+                    o = P.objective(metrics(c, level, sr))
+                    if o >= best_o + MIN_GAIN:
+                        best_c, best_o = c, o
+            if best_c is not None:
+                trace.append({"lever": "time_w+time_pad", "value": [best_c["time_w"], best_c["time_pad"]],
+                              "objective": best_o, "gain": best_o - cur_obj})
                 cur, cur_obj, changed = best_c, best_o, True
             if not changed:
                 break

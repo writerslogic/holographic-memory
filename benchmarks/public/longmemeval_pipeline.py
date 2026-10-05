@@ -27,7 +27,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -42,9 +42,11 @@ RERANK_TASK = (
 )
 ROUND_CHARS = 2000  # assistant replies are long; the round key keeps the user turn plus the reply's start
 
-FACT_PROMPT = """Below are the user's messages from one conversation with an AI assistant, numbered. The conversation took place on {date}.
+# Date-free on purpose: the same session recurs in many haystacks with different dates (LongMemEval_M:
+# 237,046 session instances, 48,783 distinct texts), so extraction is keyed by content alone.
+FACT_PROMPT = """Below are the user's messages from one conversation with an AI assistant, numbered.
 
-List every piece of personal information the user reveals: facts about themselves, people they know, possessions, purchases, places, events, plans, preferences, opinions, habits, numbers and dates. Write each as one short self-contained sentence in the third person ("The user ...") that keeps the specifics (names, items, quantities). Resolve relative dates ("yesterday", "last month") against the conversation date and state the absolute date. Skip generic requests that reveal nothing about the user.
+List every piece of personal information the user reveals: facts about themselves, people they know, possessions, purchases, places, events, plans, preferences, opinions, habits, numbers and dates. Write each as one short self-contained sentence in the third person ("The user ...") that keeps the specifics (names, items, quantities, and time expressions as the user stated them). Skip generic requests that reveal nothing about the user.
 
 Answer with JSON only: {{"facts": [{{"turn": <message number>, "fact": "<sentence>"}}]}}. Use {{"facts": []}} if there are none.
 
@@ -147,7 +149,7 @@ KINDS = ("turn", "round", "session", "fact", "turn_exp", "session_exp")
 
 
 def fact_key(s: Session, llm: str) -> str:
-    return sha("facts", llm, FACT_PROMPT, s.date_text, s.fact_input())
+    return sha("facts", llm, FACT_PROMPT, s.fact_input())
 
 
 def query_key(q: Question, llm: str) -> str:
@@ -256,6 +258,7 @@ DEFAULT = {
     "sess_prior": 0.0,  # turn ranking: weight of the turn's session rank
     "fact_as": None,  # merge fact keys into this kind's list (max over keys) instead of their own list
     "time_w": 0.0,  # sessions dated inside the parsed time range
+    "time_pad": 0,  # days added on both sides of the parsed range (the LLM's date arithmetic is loose)
     "rerank_w": 0.0,
     "rerank_n": 20,
 }
@@ -339,7 +342,8 @@ def rank_question(q: Question, raw: dict, targets: dict, cfg: dict, level: str,
         sdate = {s.sid: s.date for s in q.sessions}
         for t in final:
             d = sdate.get(turn_session.get(t, t))
-            if d is not None and trange[0] <= d <= trange[1]:
+            pad = timedelta(days=cfg.get("time_pad", 0))
+            if d is not None and trange[0] - pad <= d <= trange[1] + pad:
                 final[t] += cfg["time_w"] / (k0 + 1)
     if cfg["rerank_w"] > 0 and rerank:
         head = sorted(final, key=lambda t: (-final[t], all_targets.index(t)))[: cfg["rerank_n"]]

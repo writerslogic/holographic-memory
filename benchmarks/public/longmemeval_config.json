@@ -3,11 +3,32 @@
   "kinds": {
    "session": 1.0,
    "session_exp": 0.0,
-   "turn": 2.0
+   "turn": 1.0,
+   "turn_exp": 0.0
+  },
+  "variants": {
+   "orig": 1.0
+  },
+  "w_lex": 0.0,
+  "w_sem": 1.0,
+  "fuse": "rrf",
+  "agg": "max",
+  "k0": 60.0,
+  "sess_prior": 0.0,
+  "fact_as": "turn",
+  "time_w": 0.0,
+  "time_pad": 0,
+  "rerank_w": 1.0,
+  "rerank_n": 20
+ },
+ "turn": {
+  "kinds": {
+   "turn": 1.0,
+   "turn_exp": 2.0
   },
   "variants": {
    "orig": 1.0,
-   "rewrite": 0.0
+   "rewrite": 1.0
   },
   "w_lex": 0.5,
   "w_sem": 1.0,
@@ -15,29 +36,10 @@
   "agg": "max",
   "k0": 60.0,
   "sess_prior": 0.0,
-  "fact_as": null,
-  "time_w": 0.0,
-  "rerank_w": 0.0,
-  "rerank_n": 20
- },
- "turn": {
-  "kinds": {
-   "turn": 1.0
-  },
-  "variants": {
-   "orig": 1.0,
-   "rewrite": 0.0,
-   "sub": 0.25
-  },
-  "w_lex": 1.0,
-  "w_sem": 1.0,
-  "fuse": "cvx",
-  "agg": "max",
-  "k0": 60.0,
-  "sess_prior": 0.0,
   "fact_as": "turn",
   "time_w": 0.0,
-  "rerank_w": 4.0,
+  "time_pad": 0,
+  "rerank_w": 8.0,
   "rerank_n": 20
  }
 }

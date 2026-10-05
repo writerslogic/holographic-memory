@@ -27,33 +27,12 @@
  "config": {
   "turn": {
    "kinds": {
-    "turn": 1.0
+    "turn": 1.0,
+    "turn_exp": 2.0
    },
    "variants": {
     "orig": 1.0,
-    "rewrite": 0.0,
-    "sub": 0.25
-   },
-   "w_lex": 1.0,
-   "w_sem": 1.0,
-   "fuse": "cvx",
-   "agg": "max",
-   "k0": 60.0,
-   "sess_prior": 0.0,
-   "fact_as": "turn",
-   "time_w": 0.0,
-   "rerank_w": 4.0,
-   "rerank_n": 20
-  },
-  "session": {
-   "kinds": {
-    "session": 1.0,
-    "session_exp": 0.0,
-    "turn": 2.0
-   },
-   "variants": {
-    "orig": 1.0,
-    "rewrite": 0.0
+    "rewrite": 1.0
    },
    "w_lex": 0.5,
    "w_sem": 1.0,
@@ -61,15 +40,39 @@
    "agg": "max",
    "k0": 60.0,
    "sess_prior": 0.0,
-   "fact_as": null,
+   "fact_as": "turn",
    "time_w": 0.0,
-   "rerank_w": 0.0,
+   "time_pad": 0,
+   "rerank_w": 8.0,
+   "rerank_n": 20
+  },
+  "session": {
+   "kinds": {
+    "session": 1.0,
+    "session_exp": 0.0,
+    "turn": 1.0,
+    "turn_exp": 0.0
+   },
+   "variants": {
+    "orig": 1.0
+   },
+   "w_lex": 0.0,
+   "w_sem": 1.0,
+   "fuse": "rrf",
+   "agg": "max",
+   "k0": 60.0,
+   "sess_prior": 0.0,
+   "fact_as": "turn",
+   "time_w": 0.0,
+   "time_pad": 0,
+   "rerank_w": 1.0,
    "rerank_n": 20
   },
   "kinds_indexed": [
    "fact",
    "session",
-   "turn"
+   "turn",
+   "turn_exp"
   ]
  },
  "evaluation": {
@@ -78,59 +81,66 @@
   "sha256": "c98b8d1096877a15aa755c9de44fe33c195298466a2eb6f3c0f9f6bde8c72349"
  },
  "cost": {
-  "estimated_usd": 0.7026,
+  "estimated_usd": 0.8531,
   "gpu_calls": [
    {
     "stage": "facts",
     "gpu": "L4",
-    "secs": 403.5,
+    "secs": 417.9,
     "items": 1500,
-    "usd": 0.1031
+    "usd": 0.1068
    },
    {
     "stage": "facts",
     "gpu": "L4",
-    "secs": 957.0,
-    "items": 3257,
-    "usd": 0.2446
+    "secs": 831.6,
+    "items": 3006,
+    "usd": 0.2125
    },
    {
     "stage": "queries",
     "gpu": "L4",
-    "secs": 162.2,
+    "secs": 59.3,
     "items": 100,
-    "usd": 0.0415
+    "usd": 0.0152
    },
    {
     "stage": "embed",
     "gpu": "T4",
-    "secs": 22.1,
+    "secs": 20.3,
     "items": 8000,
-    "usd": 0.0042
+    "usd": 0.0038
    },
    {
     "stage": "embed",
     "gpu": "T4",
-    "secs": 346.1,
-    "items": 29212,
-    "usd": 0.0652
+    "secs": 165.1,
+    "items": 32000,
+    "usd": 0.0311
    },
    {
     "stage": "embed",
     "gpu": "T4",
-    "secs": 6.5,
-    "items": 496,
-    "usd": 0.0012
+    "secs": 267.4,
+    "items": 10088,
+    "usd": 0.0504
+   },
+   {
+    "stage": "embed",
+    "gpu": "T4",
+    "secs": 5.3,
+    "items": 497,
+    "usd": 0.001
    },
    {
     "stage": "rerank",
     "gpu": "T4",
-    "secs": 124.6,
-    "items": 1999,
-    "usd": 0.0235
+    "secs": 272.6,
+    "items": 3997,
+    "usd": 0.0514
    }
   ],
-  "driver_cpu_usd": 0.2193,
+  "driver_cpu_usd": 0.381,
   "cap_usd": 5.0
  },
  "metrics": {
@@ -139,11 +149,11 @@
     "overall": {
      "n_questions": 84,
      "recall_any@5": 0.9761904761904762,
-     "recall_all@5": 0.9404761904761905,
-     "ndcg_any@5": 0.9336955521614382,
-     "recall_any@10": 0.9880952380952381,
-     "recall_all@10": 0.9761904761904762,
-     "ndcg_any@10": 0.9424056212660397
+     "recall_all@5": 0.9642857142857143,
+     "ndcg_any@5": 0.950908310711844,
+     "recall_any@10": 1.0,
+     "recall_all@10": 0.9880952380952381,
+     "ndcg_any@10": 0.9583389713567401
     },
     "knowledge-update": {
      "n_questions": 15,
@@ -158,10 +168,10 @@
      "n_questions": 24,
      "recall_any@5": 0.9583333333333334,
      "recall_all@5": 0.9166666666666666,
-     "ndcg_any@5": 0.9238695517502792,
+     "ndcg_any@5": 0.9391160909347652,
      "recall_any@10": 1.0,
      "recall_all@10": 0.9583333333333334,
-     "ndcg_any@10": 0.9373339475214165
+     "ndcg_any@10": 0.9525804867059025
     },
     "single-session-assistant": {
      "n_questions": 1,
@@ -193,40 +203,40 @@
     "temporal-reasoning": {
      "n_questions": 25,
      "recall_any@5": 0.96,
-     "recall_all@5": 0.88,
-     "ndcg_any@5": 0.8650650954393058,
-     "recall_any@10": 0.96,
-     "recall_all@10": 0.96,
-     "ndcg_any@10": 0.8814051076904746
+     "recall_all@5": 0.96,
+     "ndcg_any@5": 0.9082632865515623,
+     "recall_any@10": 1.0,
+     "recall_all@10": 1.0,
+     "ndcg_any@10": 0.9203044863781216
     }
    },
    "turn": {
     "overall": {
      "n_questions": 84,
-     "recall_any@5": 0.9285714285714286,
-     "recall_all@5": 0.7857142857142857,
-     "ndcg_any@5": 0.776897669706049,
-     "recall_any@10": 0.9880952380952381,
-     "recall_all@10": 0.9166666666666666,
-     "ndcg_any@10": 0.814999834626932
+     "recall_any@5": 0.9404761904761905,
+     "recall_all@5": 0.8214285714285714,
+     "ndcg_any@5": 0.7914416925568598,
+     "recall_any@10": 1.0,
+     "recall_all@10": 0.9285714285714286,
+     "ndcg_any@10": 0.8228736767080139
     },
     "knowledge-update": {
      "n_questions": 15,
      "recall_any@5": 1.0,
-     "recall_all@5": 1.0,
-     "ndcg_any@5": 0.8972156905861249,
+     "recall_all@5": 0.9333333333333333,
+     "ndcg_any@5": 0.8828598053170118,
      "recall_any@10": 1.0,
      "recall_all@10": 1.0,
-     "ndcg_any@10": 0.8972156905861249
+     "ndcg_any@10": 0.8957548988914965
     },
     "multi-session": {
      "n_questions": 24,
-     "recall_any@5": 0.9166666666666666,
+     "recall_any@5": 0.8333333333333334,
      "recall_all@5": 0.625,
-     "ndcg_any@5": 0.6807847673773612,
+     "ndcg_any@5": 0.6490759495917283,
      "recall_any@10": 1.0,
      "recall_all@10": 0.8333333333333334,
-     "ndcg_any@10": 0.7438890915224325
+     "ndcg_any@10": 0.7184359110598102
     },
     "single-session-assistant": {
      "n_questions": 1,
@@ -241,10 +251,10 @@
      "n_questions": 6,
      "recall_any@5": 1.0,
      "recall_all@5": 0.8333333333333334,
-     "ndcg_any@5": 0.6827113387680258,
+     "ndcg_any@5": 0.7384460930122323,
      "recall_any@10": 1.0,
      "recall_all@10": 1.0,
-     "ndcg_any@10": 0.7149490727042375
+     "ndcg_any@10": 0.7681300252712341
     },
     "single-session-user": {
      "n_questions": 13,
@@ -257,15 +267,15 @@
     },
     "temporal-reasoning": {
      "n_questions": 25,
-     "recall_any@5": 0.84,
-     "recall_all@5": 0.68,
-     "ndcg_any@5": 0.6946426578740567,
-     "recall_any@10": 0.96,
-     "recall_all@10": 0.88,
-     "ndcg_any@10": 0.754348724684265
+     "recall_any@5": 0.96,
+     "recall_all@5": 0.84,
+     "ndcg_any@5": 0.7691882298698474,
+     "recall_any@10": 1.0,
+     "recall_all@10": 0.92,
+     "ndcg_any@10": 0.7933529337215145
     }
    }
   }
  },
- "finished": "2026-10-05T20:50:52"
+ "finished": "2026-10-05T21:50:05"
 }
