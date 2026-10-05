@@ -3,6 +3,35 @@
 All notable changes to this project are generated from the commit history.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
+## [Unreleased]
+
+### Added
+- Add hms-server HTTP service for the Python SDK
+- Add experimental query-private similarity scoring behind private-search
+- Subset-union bundle experiment and capacity sweep
+
+### Changed
+- Drop rejected intersection kernel candidates
+
+### Documentation
+- Record the outcomes of the algorithm work
+- Give the SDK README the project header, badges and a quick start
+- Use absolute logo URLs so the README renders on package registries
+- Update changelog [skip ci]
+
+### Fixed
+- Resolve leftover merge markers in .bestpractices.json
+- Serve SDK queries by exact cosine through the document API
+- Return query results best-first on exact-scan, multi-shard and federated paths
+
+### Performance
+- Speed up from_dense with branchless term compaction and add encoder-eval
+- Gallop before AVX2 on skewed sizes; add intersection kernel bench
+- Route sparse queries to the exact inverted index
+
+### Bench
+- Add public BEIR and ann-benchmarks comparisons
+- Report encoder candidate recall after exact rerank
 ## [0.6.1] - 2026-10-05
 
 ### Documentation
