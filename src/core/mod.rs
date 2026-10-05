@@ -19,6 +19,8 @@ pub mod block_codes;
 #[cfg(feature = "experimental")]
 pub mod bloom_memory;
 #[cfg(feature = "experimental")]
+pub mod bundle_subset;
+#[cfg(feature = "experimental")]
 pub mod cls_memory;
 pub mod cognition;
 #[cfg(feature = "experimental")]

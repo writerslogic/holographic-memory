@@ -139,6 +139,10 @@ required-features = ["experimental"]
 name = "route-sweep"
 path = "src/bin/route-sweep.rs"
 
+[[bin]]
+name = "bundle-subset-sweep"
+required-features = ["experimental"]
+
 [profile.release]
 lto = true
 strip = true
