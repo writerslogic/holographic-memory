@@ -132,17 +132,37 @@ ORAM-backed encrypted index with a seconds-scale latency budget.
 Embeddings are not a privacy boundary by themselves: text can be reconstructed from them
 (Morris et al. 2023).
 
-## 4. Ranked options
+## 4. Outcomes (2026-10-05)
 
-1. Fix result ordering (2.1). Correctness, small, testable.
-2. README capacity column (2.2): relabelled in 0.6.1 from the committed sweep. Still open: regenerate
-   with at least 1,000 non-member probes so FPR ≤ 1% and ≤ 0.1% limits can be reported.
-3. Bundle-capacity sweep over subset size (2.3). Largest expected gain; theory and partial data agree.
-4. Routing sweep, then planner thresholds from the measured crossover (2.4).
-5. Intersection kernel microbench and dispatch fix (2.5).
-6. Encoder evaluation on a real corpus (2.6).
-7. Private search: decide the deployment model first. If hosted personal memory, scope TEE
-   attestation verification; if shared corpus, prototype homomorphic scoring as an experiment.
+All runs on an Apple M4. Several ran while other builds were compiling, so latencies are
+indicative only; recall, capacity and correctness figures are unaffected by load.
+
+1. **Result ordering (2.1), fixed.** Exact-scan, multi-shard and federated queries returned
+   top-k worst-first. Regression test `every_query_route_returns_best_match_first`.
+2. **Capacity column (2.2), relabelled** in 0.6.1 from the committed sweep.
+3. **Subset bundles (2.3), measured, partly confirmed.** `benchmarks/results/bundle_subset_sweep.json`
+   (64 active indices, 5 seeds x 4,000 probes). Inserting an 8-index subset per item stores about
+   2.7x more items at FPR <= 1% (D=16384: 606 -> 1,611) and about 2x at FPR <= 0.1%. Less than
+   the unconstrained Bloom optimum suggests; the grid stops at the first point above 1%.
+   Experimental module `bundle_subset`; not wired into the engine.
+4. **Routing (2.4), measured and applied.** `benchmarks/results/route_sweep.json` (N = 1e3..1e6,
+   D = 4096 and 16384, random and clustered codes). The exact inverted index had recall@10 = 1.0
+   and the lowest latency at every point; NSG recall fell to about 0 on clustered codes at
+   N >= 1e5. The planner now sends every sparse query to the inverted index.
+5. **Intersection kernels (2.5), negative result.** A branchless merge was 2-10x slower and a NEON
+   block kernel won only on identical inputs, so the aarch64 kernels are unchanged. On x86 the
+   skew check now runs before AVX2 (unmeasured: no x86 machine).
+6. **Encoder (2.6), measured on synthetic data.** `from_dense` is 2-3.5x faster with bit-identical
+   output. Recall@10 of sparse top-10 against dense cosine top-10 is 0.13 / 0.23 / 0.36 at
+   D = 4096 / 16384 / 65536, but the true top-10 is inside the sparse top-100 at 0.76 / 0.96 /
+   1.00 (clusters of 100): the codes find the neighbourhood but cannot order near-ties.
+   Synthetic data; a real-embedding benchmark is the next step.
+7. **Private search (3), prototype.** `private-search` feature and `docs/PRIVATE-SEARCH.md`:
+   SimplePIR-style scoring that hides the query from an honest-but-curious server. 0.88 ms server
+   time per query at N = 1e5, with a 410 MB one-time client hint. The database stays visible to
+   the server.
+8. **SDK service.** `hms-server` (feature `server`) serves the Python SDK with exact cosine through
+   the document API; the SDK's live tests run against it.
 
 ## Sources
 
