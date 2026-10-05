@@ -26,6 +26,8 @@ client = HolographicClient(url="http://127.0.0.1:8080", api_key="change-me", ten
 | `--data-dir` | `HMS_DATA_DIR` | `./hms-data` | Root for per-tenant stores. |
 | `--dim` | `HMS_DIM` | `4096` | Hypervector dimensions per store (>= 256). Fixed once a store exists. |
 | `--input-dim` | `HMS_INPUT_DIM` | `384` | Required length of every client embedding. |
+| `--embedding-model` | `HMS_EMBEDDING_MODEL` | `client-supplied` | Embedding model name recorded in each store. |
+| `--embedding-revision` | `HMS_EMBEDDING_REVISION` | `unversioned` | Embedding model revision recorded in each store. |
 | `--max-body-bytes` | | 16 MiB | Request body limit (413 above it). |
 | `--max-batch` | | `1000` | Documents per batch request. |
 | `--max-top-k` | | `100` | Upper bound for `top_k`. |
@@ -42,7 +44,7 @@ Starting on a non-loopback address without `HMS_API_KEY` prints a warning.
 
 Errors are JSON: `{"error": {"code": "...", "message": "..."}}`. Internal failures return a fixed 500 message; detail goes to the server's stderr.
 
-A document is `{"id": str, "vector": [float], "text"?: str, "metadata"?: object}`. `vector` must have exactly `--input-dim` finite values (representable as f32, not all zero). `id` is 1 to 256 bytes with no control characters and not starting with `hms:`. `text` is at most 1 MiB, `metadata` at most 64 KiB. Adding an existing id replaces it.
+A document is `{"id": str, "vector": [float], "text"?: str, "metadata"?: object}`. `vector` must have exactly `--input-dim` finite values (representable as f32, not all zero). `id` is 1 to 256 bytes with no control characters and not starting with `hms:`. `text` is optional; when present it must fit one engine chunk (at most 4096 words and 64 KiB), because one vector describes one stored chunk. Split longer documents and send one vector per part. `metadata` is at most 64 KiB. Adding an existing id replaces it.
 
 | Request | Success | Failure |
 |---|---|---|
@@ -53,13 +55,15 @@ A document is `{"id": str, "vector": [float], "text"?: str, "metadata"?: object}
 
 Other statuses: 401 (missing or wrong key), 400 `invalid_tenant`, 404 unknown route, 405, 503 `tenant_limit`.
 
-`filter` keeps matches whose metadata contains every filter key with an equal JSON value. Filtering is applied to the engine's top 10,000 candidates, so a very selective filter on a larger store can return fewer than `top_k` matches.
+`filter` keeps documents whose metadata contains every filter key with an equal JSON value. It is applied before ranking, so it never reduces the number of matches below `top_k` when enough documents match.
 
-`score` is the engine's similarity between the sparse codes of the query and the document (`EntangledHVec::from_dense`), not cosine similarity of the original embeddings.
+`score` is the exact cosine similarity between the query and the stored embedding. Every query is a linear scan over the tenant's stored embeddings, so latency grows linearly with the number of documents; there is no approximate index on this path.
 
 ## Storage
 
-Vectors live in the engine store. Text and metadata live in `meta.jsonl` beside it (append-only, compacted at startup, flushed to the OS on every write and fsynced at shutdown). The two are not one transaction: after a crash a document can exist in one and not the other. A vector without metadata is returned with empty text and metadata.
+Each tenant is one engine store. Documents (embedding, text and metadata) go through the engine's document API, so each document is written in a single transaction. A batch is not atomic as a whole: a failure part-way leaves the earlier documents stored. Embeddings are kept at full precision (about 4 bytes per dimension per document), so the sparse-code compression described in the main README does not apply to this service.
+
+The store records the embedding model, revision and input dimension (`--embedding-model`, `--embedding-revision`, `--input-dim`). Reopening a store with different values is refused, so vectors from different models are never mixed.
 
 ## What it does not provide
 

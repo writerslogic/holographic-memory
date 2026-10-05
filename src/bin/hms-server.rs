@@ -7,10 +7,8 @@
 //! `DELETE /api/v1/documents/{id}`, `POST /api/v1/query`. See docs/SERVER.md.
 
 use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::SocketAddr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{bail, Context, Result};
@@ -22,18 +20,20 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, post};
 use axum::{Json, Router};
 use clap::Parser;
-use holographic_memory::{EntangledHVec, HmsCore};
+use holographic_memory::core::HmsConfig;
+use holographic_memory::{chunk_document, DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
 use parking_lot::Mutex;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{json, Value};
 use subtle::ConstantTimeEq;
 
 const MAX_ID_BYTES: usize = 256;
-const MAX_TEXT_BYTES: usize = 1 << 20;
+/// One client vector describes one stored chunk, so a document must fit in one
+/// chunk: the engine's per-chunk limits are 4096 words and 64 KiB.
+const MAX_TEXT_BYTES: usize = 64 * 1024;
+const CHUNK_WORDS: u32 = 4096;
 const MAX_METADATA_BYTES: usize = 64 * 1024;
 const MAX_TENANT_BYTES: usize = 64;
-/// Engine query ceiling; filtered queries rank this many candidates first.
-const FILTER_WINDOW: u32 = 10_000;
 
 #[derive(Parser)]
 #[command(
@@ -53,6 +53,13 @@ struct Cli {
     /// Required length of client embeddings.
     #[arg(long, env = "HMS_INPUT_DIM", default_value_t = 384)]
     input_dim: usize,
+    /// Embedding model identifier recorded in each store. Reopening a store with
+    /// a different model, revision or input dimension is refused.
+    #[arg(long, env = "HMS_EMBEDDING_MODEL", default_value = "client-supplied")]
+    embedding_model: String,
+    /// Embedding model revision recorded in each store.
+    #[arg(long, env = "HMS_EMBEDDING_REVISION", default_value = "unversioned")]
+    embedding_revision: String,
     /// Maximum request body in bytes.
     #[arg(long, default_value_t = 16 * 1024 * 1024)]
     max_body_bytes: usize,
@@ -67,105 +74,8 @@ struct Cli {
     max_tenants: usize,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-struct Entry {
-    text: Option<String>,
-    metadata: Value,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "op", rename_all = "lowercase")]
-enum LogLine {
-    Put {
-        id: String,
-        text: Option<String>,
-        metadata: Value,
-    },
-    Del {
-        id: String,
-    },
-}
-
-/// Text and metadata sidecar: an append-only JSONL log replayed (and compacted) on open.
-struct MetaStore {
-    entries: HashMap<String, Entry>,
-    log: BufWriter<File>,
-}
-
-impl MetaStore {
-    fn open(dir: &Path) -> Result<Self> {
-        let path = dir.join("meta.jsonl");
-        let mut entries = HashMap::new();
-        if path.exists() {
-            for line in BufReader::new(File::open(&path)?).lines() {
-                let line = line?;
-                if line.is_empty() {
-                    continue;
-                }
-                match serde_json::from_str::<LogLine>(&line) {
-                    Ok(LogLine::Put { id, text, metadata }) => {
-                        entries.insert(id, Entry { text, metadata });
-                    }
-                    Ok(LogLine::Del { id }) => {
-                        entries.remove(&id);
-                    }
-                    // A torn final line from a crash; earlier lines are intact.
-                    Err(_) => break,
-                }
-            }
-        }
-        let tmp = dir.join("meta.jsonl.tmp");
-        {
-            let mut out = BufWriter::new(File::create(&tmp)?);
-            for (id, e) in &entries {
-                serde_json::to_writer(
-                    &mut out,
-                    &LogLine::Put {
-                        id: id.clone(),
-                        text: e.text.clone(),
-                        metadata: e.metadata.clone(),
-                    },
-                )?;
-                out.write_all(b"\n")?;
-            }
-            out.flush()?;
-            out.get_ref().sync_all()?;
-        }
-        std::fs::rename(&tmp, &path)?;
-        let log = BufWriter::new(OpenOptions::new().append(true).open(&path)?);
-        Ok(Self { entries, log })
-    }
-
-    fn append(&mut self, line: &LogLine) -> Result<()> {
-        serde_json::to_writer(&mut self.log, line)?;
-        self.log.write_all(b"\n")?;
-        self.log.flush()?;
-        Ok(())
-    }
-
-    fn put(&mut self, id: String, entry: Entry) -> Result<()> {
-        self.append(&LogLine::Put {
-            id: id.clone(),
-            text: entry.text.clone(),
-            metadata: entry.metadata.clone(),
-        })?;
-        self.entries.insert(id, entry);
-        Ok(())
-    }
-
-    fn del(&mut self, id: &str) -> Result<bool> {
-        if !self.entries.contains_key(id) {
-            return Ok(false);
-        }
-        self.append(&LogLine::Del { id: id.into() })?;
-        self.entries.remove(id);
-        Ok(true)
-    }
-}
-
 struct Tenant {
     core: HmsCore,
-    meta: Mutex<MetaStore>,
 }
 
 struct AppState {
@@ -192,9 +102,18 @@ impl AppState {
         let dir = self.cli.data_dir.join("tenants").join(hex);
         let open = || -> Result<Tenant> {
             std::fs::create_dir_all(&dir)?;
-            let core = HmsCore::new(self.cli.dim, Some(dir.display().to_string()), None)?;
-            let meta = Mutex::new(MetaStore::open(&dir)?);
-            Ok(Tenant { core, meta })
+            let config = HmsConfig {
+                embedding_space: Some(EmbeddingSpace {
+                    model: self.cli.embedding_model.clone(),
+                    revision: self.cli.embedding_revision.clone(),
+                    dimensions: self.cli.input_dim,
+                    normalization: "l2".into(),
+                    metric: "cosine".into(),
+                }),
+                ..HmsConfig::default()
+            };
+            let core = HmsCore::new(self.cli.dim, Some(dir.display().to_string()), Some(config))?;
+            Ok(Tenant { core })
         };
         let tenant = Arc::new(open().map_err(ApiError::internal)?);
         tenants.insert(name.to_string(), tenant.clone());
@@ -333,9 +252,7 @@ struct DocIn {
 }
 
 struct ValidDoc {
-    id: String,
-    vector: EntangledHVec,
-    entry: Entry,
+    input: DocumentInput,
 }
 
 fn dense(values: &[f64], input_dim: usize, what: &str) -> Result<Vec<f32>, ApiError> {
@@ -365,7 +282,8 @@ fn validate_doc(doc: DocIn, cli: &Cli) -> Result<ValidDoc, ApiError> {
             "id must be 1..={MAX_ID_BYTES} bytes, without control characters or the reserved \"hms:\" prefix"
         )));
     }
-    if doc.text.as_ref().is_some_and(|t| t.len() > MAX_TEXT_BYTES) {
+    let text = doc.text.unwrap_or_default();
+    if text.len() > MAX_TEXT_BYTES {
         return Err(ApiError::bad(format!(
             "text exceeds {MAX_TEXT_BYTES} bytes"
         )));
@@ -381,26 +299,37 @@ fn validate_doc(doc: DocIn, cli: &Cli) -> Result<ValidDoc, ApiError> {
         )));
     }
     let values = doc.vector.unwrap_or_default();
-    let dense = dense(&values, cli.input_dim, "vector")?;
-    Ok(ValidDoc {
+    dense(&values, cli.input_dim, "vector")?;
+    // The document store indexes text for lexical search and requires at least one
+    // word. Queries here are vector-only, so a vector-only document is indexed under a
+    // placeholder word that is never stored or returned.
+    let has_text = text.split_whitespace().next().is_some();
+    let input = DocumentInput {
         id: doc.id,
-        vector: EntangledHVec::from_dense(&dense, cli.dim as usize),
-        entry: Entry {
-            text: doc.text,
-            metadata,
-        },
-    })
+        text: if has_text { text } else { "_".into() },
+        source_uri: None,
+        version: None,
+        metadata: Some(metadata),
+        chunk_words: Some(CHUNK_WORDS),
+        overlap_words: Some(0),
+        store_text: Some(has_text),
+        embeddings: Some(vec![values]),
+    };
+    match chunk_document(&input) {
+        Ok(chunks) if chunks.len() == 1 => Ok(ValidDoc { input }),
+        Ok(_) => Err(ApiError::bad(format!(
+            "text must fit one chunk of at most {CHUNK_WORDS} words; split the document and send one vector per part"
+        ))),
+        Err(e) => Err(ApiError::bad(format!("invalid document: {e}"))),
+    }
 }
 
 fn store_docs(tenant: &Tenant, docs: Vec<ValidDoc>) -> Result<usize, ApiError> {
     let n = docs.len();
-    let mut meta = tenant.meta.lock();
     for doc in docs {
-        meta.put(doc.id.clone(), doc.entry)
-            .map_err(ApiError::internal)?;
         tenant
             .core
-            .memorize(doc.id, doc.vector)
+            .memorize_document(doc.input)
             .map_err(ApiError::internal)?;
     }
     Ok(n)
@@ -452,10 +381,11 @@ async fn delete_doc(
             return Err(ApiError::bad("invalid id"));
         }
         let tenant = state.tenant(&name)?;
-        let mut meta = tenant.meta.lock();
-        let in_engine = tenant.core.delete(&id).map_err(ApiError::internal)?;
-        let in_meta = meta.del(&id).map_err(ApiError::internal)?;
-        if in_engine || in_meta {
+        if tenant
+            .core
+            .delete_document(&id)
+            .map_err(ApiError::internal)?
+        {
             Ok(())
         } else {
             Err(ApiError::new(
@@ -496,41 +426,34 @@ async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
         Some(_) => return Err(ApiError::bad("filter must be a JSON object")),
     };
     let matches = blocking(move || {
-        let dense = dense(&q.query_vector, state.cli.input_dim, "query_vector")?;
+        dense(&q.query_vector, state.cli.input_dim, "query_vector")?;
         let tenant = state.tenant(&name)?;
-        let vector = EntangledHVec::from_dense(&dense, state.cli.dim as usize);
-        let fetch = if filter.is_some() {
-            FILTER_WINDOW
-        } else {
-            top_k as u32
+        // Exact cosine over every stored embedding (a linear scan); no lexical term.
+        let options = SearchOptions {
+            k: Some(top_k as u32),
+            candidate_limit: Some((top_k as u32).max(100)),
+            filter: filter.map(Value::Object),
+            embedding: Some(q.query_vector),
+            lexical_weight: Some(0.0),
+            semantic_weight: Some(1.0),
+            min_semantic_score: Some(-1.0),
+            ..SearchOptions::default()
         };
-        let hits = tenant.core.query(&vector, fetch);
-        let meta = tenant.meta.lock();
-        let mut out = Vec::new();
-        for hit in hits {
-            let entry = meta.entries.get(&hit.id);
-            if let Some(f) = &filter {
-                let ok = entry.is_some_and(|e| f.iter().all(|(k, v)| e.metadata.get(k) == Some(v)));
-                if !ok {
-                    continue;
-                }
-            }
-            let score = if hit.similarity.is_finite() {
-                hit.similarity
-            } else {
-                0.0
-            };
-            out.push(json!({
-                "id": hit.id,
-                "text": entry.and_then(|e| e.text.clone()).unwrap_or_default(),
-                "metadata": entry.map_or_else(|| json!({}), |e| e.metadata.clone()),
-                "score": score,
-            }));
-            if out.len() == top_k as usize {
-                break;
-            }
-        }
-        Ok(out)
+        let hits = tenant
+            .core
+            .search_documents("", &options)
+            .map_err(ApiError::internal)?;
+        Ok(hits
+            .into_iter()
+            .map(|hit| {
+                json!({
+                    "id": hit.document_id,
+                    "text": hit.text.unwrap_or_default(),
+                    "metadata": hit.metadata,
+                    "score": hit.semantic_score.unwrap_or(0.0),
+                })
+            })
+            .collect::<Vec<_>>())
     })
     .await?;
     Ok(Json(json!({"matches": matches})).into_response())
@@ -616,17 +539,6 @@ async fn main() -> Result<()> {
     for (name, tenant) in tenants {
         if let Err(e) = tenant.core.flush() {
             eprintln!("flush failed for tenant {name}: {e:#}");
-            failed = true;
-        }
-        if let Err(e) = tenant
-            .meta
-            .lock()
-            .log
-            .get_ref()
-            .sync_all()
-            .map_err(anyhow::Error::from)
-        {
-            eprintln!("metadata sync failed for tenant {name}: {e:#}");
             failed = true;
         }
     }

@@ -198,6 +198,75 @@ fn add_batch_query_filter_delete() {
     assert!(!ids(&r).contains(&"solo".to_string()));
 }
 
+fn cosine(a: &[f64], b: &[f64]) -> f64 {
+    let dot: f64 = a.iter().zip(b).map(|(x, y)| x * y).sum();
+    let norm = |v: &[f64]| v.iter().map(|x| x * x).sum::<f64>().sqrt();
+    dot / (norm(a) * norm(b))
+}
+
+#[test]
+fn scores_are_exact_cosine_and_documents_must_fit_one_chunk() {
+    let s = Server::start(&[], None);
+    let batch = json!([
+        doc("x", 11, json!({})),
+        doc("y", 12, json!({})),
+        doc("z", 13, json!({}))
+    ]);
+    let (st, _) = s.json("POST", "/api/v1/documents/batch", None, &batch);
+    assert_eq!(st, 200);
+    let query = embedding(14);
+    let (st, r) = s.json(
+        "POST",
+        "/api/v1/query",
+        None,
+        &json!({"query_vector": query, "top_k": 3}),
+    );
+    assert_eq!(st, 200);
+    let mut expected: Vec<(String, f64)> = [("x", 11), ("y", 12), ("z", 13)]
+        .iter()
+        .map(|(id, seed)| (id.to_string(), cosine(&query, &embedding(*seed))))
+        .collect();
+    expected.sort_by(|a, b| b.1.total_cmp(&a.1));
+    let got: Vec<(String, f64)> = r["matches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| {
+            (
+                m["id"].as_str().unwrap().to_string(),
+                m["score"].as_f64().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(got.len(), 3);
+    for ((gid, gs), (eid, es)) in got.iter().zip(&expected) {
+        assert_eq!(gid, eid);
+        assert!((gs - es).abs() < 1e-9, "{gid}: score {gs} vs cosine {es}");
+    }
+
+    let bare = json!({"id": "bare", "vector": embedding(16)});
+    let (st, _) = s.json("POST", "/api/v1/documents", None, &bare);
+    assert_eq!(st, 200);
+    let (_, r) = s.json(
+        "POST",
+        "/api/v1/query",
+        None,
+        &json!({"query_vector": embedding(16), "top_k": 1}),
+    );
+    assert_eq!(
+        (ids(&r)[0].as_str(), r["matches"][0]["text"].as_str()),
+        ("bare", Some(""))
+    );
+
+    let words = "w ".repeat(4097);
+    let long = json!({"id": "long", "text": words, "vector": embedding(15)});
+    let (st, e) = s.json("POST", "/api/v1/documents", None, &long);
+    assert_eq!(
+        (st, e["error"]["code"].as_str()),
+        (422, Some("invalid_request"))
+    );
+}
+
 #[test]
 fn upsert_replaces_text_and_metadata() {
     let s = Server::start(&[], None);
