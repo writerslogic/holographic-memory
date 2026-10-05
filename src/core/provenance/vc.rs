@@ -131,71 +131,72 @@ fn jcs_serialize<T: serde::Serialize>(value: &T) -> Result<Vec<u8>> {
     serde_json::to_vec(&json_value).map_err(|e| anyhow!("JCS serialization failed: {e}"))
 }
 
-/// Sign a VC with Ed25519 DataIntegrity proof using eddsa-jcs-2022.
+const PROOF_TYPE: &str = "DataIntegrityProof";
+const CRYPTOSUITE: &str = "eddsa-jcs-2022";
+const PROOF_PURPOSE: &str = "assertionMethod";
+
+fn proof_hash_data<T: Serialize>(
+    unsigned: &T,
+    proof_options: &serde_json::Value,
+) -> Result<[u8; 64]> {
+    let mut hash_data = [0u8; 64];
+    hash_data[..32].copy_from_slice(&Sha256::digest(jcs_serialize(proof_options)?));
+    hash_data[32..].copy_from_slice(&Sha256::digest(jcs_serialize(unsigned)?));
+    Ok(hash_data)
+}
+
+/// Create an eddsa-jcs-2022 Data Integrity proof over a proof-less document.
 /// Per W3C Data Integrity EdDSA Cryptosuites v1.0:
 ///   hashData = SHA-256(JCS(proofOptions)) || SHA-256(JCS(unsignedDocument))
 ///   signature = Ed25519.sign(hashData)
-pub fn sign_credential(
+pub(crate) fn sign_document<T: Serialize>(
     signing_key: &SigningKey,
-    mut credential: FactCredential,
-) -> Result<FactCredential> {
+    unsigned: &T,
+) -> Result<DataIntegrityProof> {
     let issuer_did = did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
     let created = chrono_iso8601_now();
-
-    credential.proof = None;
-    let document_hash = Sha256::digest(jcs_serialize(&credential)?);
-
+    let verification_method = format!("{issuer_did}#key-0");
     let proof_options = serde_json::json!({
-        "type": "DataIntegrityProof",
-        "cryptosuite": "eddsa-jcs-2022",
+        "type": PROOF_TYPE,
+        "cryptosuite": CRYPTOSUITE,
         "created": &created,
-        "verificationMethod": format!("{issuer_did}#key-0"),
-        "proofPurpose": "assertionMethod"
+        "verificationMethod": &verification_method,
+        "proofPurpose": PROOF_PURPOSE
     });
-    let options_hash = Sha256::digest(jcs_serialize(&proof_options)?);
+    let signature = signing_key.sign(&proof_hash_data(unsigned, &proof_options)?);
 
-    let mut hash_data = [0u8; 64];
-    hash_data[..32].copy_from_slice(&options_hash);
-    hash_data[32..].copy_from_slice(&document_hash);
-    let signature = signing_key.sign(&hash_data);
-
-    credential.proof = Some(DataIntegrityProof {
-        proof_type: "DataIntegrityProof".to_string(),
-        cryptosuite: "eddsa-jcs-2022".to_string(),
+    Ok(DataIntegrityProof {
+        proof_type: PROOF_TYPE.to_string(),
+        cryptosuite: CRYPTOSUITE.to_string(),
         created,
-        verification_method: format!("{issuer_did}#key-0"),
-        proof_purpose: "assertionMethod".to_string(),
+        verification_method,
+        proof_purpose: PROOF_PURPOSE.to_string(),
         proof_value: multibase::encode(multibase::Base::Base58Btc, signature.to_bytes()),
-    });
-
-    Ok(credential)
+    })
 }
 
-/// Verify a signed VC against the DID:key in its proof.
-/// Reconstructs hashData = SHA-256(JCS(proofOptions)) || SHA-256(JCS(document))
-/// and verifies the Ed25519 signature over it.
-pub fn verify_credential(credential: &FactCredential) -> Result<()> {
-    let proof = credential
-        .proof
-        .as_ref()
-        .ok_or_else(|| anyhow!("credential has no proof"))?;
+/// Verify an eddsa-jcs-2022 proof over a proof-less document and return the
+/// issuer's key. The proof's verification method DID must equal `issuer`:
+/// without that binding an attacker can tamper a document, re-sign it with
+/// their own key, and have it verify under the original issuer's name.
+pub(crate) fn verify_document<T: Serialize>(
+    unsigned: &T,
+    issuer: &str,
+    proof: &DataIntegrityProof,
+) -> Result<VerifyingKey> {
+    if proof.proof_type != PROOF_TYPE
+        || proof.cryptosuite != CRYPTOSUITE
+        || proof.proof_purpose != PROOF_PURPOSE
+    {
+        return Err(anyhow!("unsupported proof type, cryptosuite, or purpose"));
+    }
 
-    let vm = &proof.verification_method;
-    let did_part = vm
+    let did_part = proof
+        .verification_method
         .split('#')
         .next()
-        .ok_or_else(|| anyhow!("invalid verification method"))?;
-
-    // Bind the signing key to the claimed issuer: the proof's verification
-    // method DID must match `credential.issuer`. Without this, an attacker can
-    // tamper a credential, re-sign it with their own key, point the
-    // verification method at that key, and have it verify under the original
-    // issuer's name.
-    let issuer_did = credential
-        .issuer
-        .split('#')
-        .next()
-        .unwrap_or(&credential.issuer);
+        .unwrap_or(&proof.verification_method);
+    let issuer_did = issuer.split('#').next().unwrap_or(issuer);
     if did_part != issuer_did {
         return Err(anyhow!(
             "verification method DID ({did_part}) does not match credential issuer ({issuer_did})"
@@ -211,10 +212,6 @@ pub fn verify_credential(credential: &FactCredential) -> Result<()> {
     let signature = ed25519_dalek::Signature::from_slice(&sig_bytes)
         .map_err(|e| anyhow!("invalid signature: {e}"))?;
 
-    let mut unsigned = credential.clone();
-    unsigned.proof = None;
-    let document_hash = Sha256::digest(jcs_serialize(&unsigned)?);
-
     let proof_options = serde_json::json!({
         "type": &proof.proof_type,
         "cryptosuite": &proof.cryptosuite,
@@ -222,18 +219,83 @@ pub fn verify_credential(credential: &FactCredential) -> Result<()> {
         "verificationMethod": &proof.verification_method,
         "proofPurpose": &proof.proof_purpose
     });
-    let options_hash = Sha256::digest(jcs_serialize(&proof_options)?);
-
-    let mut hash_data = [0u8; 64];
-    hash_data[..32].copy_from_slice(&options_hash);
-    hash_data[32..].copy_from_slice(&document_hash);
-
     verifying_key
-        .verify(&hash_data, &signature)
-        .map_err(|e| anyhow!("VC signature verification failed: {e}"))
+        .verify(&proof_hash_data(unsigned, &proof_options)?, &signature)
+        .map_err(|e| anyhow!("VC signature verification failed: {e}"))?;
+    Ok(verifying_key)
 }
 
-fn chrono_iso8601_now() -> String {
+/// Sign a VC with Ed25519 DataIntegrity proof using eddsa-jcs-2022.
+pub fn sign_credential(
+    signing_key: &SigningKey,
+    mut credential: FactCredential,
+) -> Result<FactCredential> {
+    credential.proof = None;
+    credential.proof = Some(sign_document(signing_key, &credential)?);
+    Ok(credential)
+}
+
+/// Verify a signed VC against the DID:key in its proof.
+pub fn verify_credential(credential: &FactCredential) -> Result<()> {
+    let proof = credential
+        .proof
+        .as_ref()
+        .ok_or_else(|| anyhow!("credential has no proof"))?;
+    let mut unsigned = credential.clone();
+    unsigned.proof = None;
+    verify_document(&unsigned, &credential.issuer, proof).map(|_| ())
+}
+
+/// Parse a UTC `YYYY-MM-DDTHH:MM:SSZ` timestamp into unix seconds.
+pub(crate) fn parse_iso8601_utc(value: &str) -> Result<u64> {
+    let b = value.as_bytes();
+    let well_formed = b.len() == 20
+        && b[4] == b'-'
+        && b[7] == b'-'
+        && b[10] == b'T'
+        && b[13] == b':'
+        && b[16] == b':'
+        && b[19] == b'Z';
+    let field = |range: std::ops::Range<usize>| -> Option<u64> {
+        let part = value.get(range)?;
+        part.bytes()
+            .all(|c| c.is_ascii_digit())
+            .then(|| part.parse().ok())
+            .flatten()
+    };
+    let parsed = well_formed
+        .then(|| {
+            Some((
+                field(0..4)?,
+                field(5..7)?,
+                field(8..10)?,
+                field(11..13)?,
+                field(14..16)?,
+                field(17..19)?,
+            ))
+        })
+        .flatten();
+    let Some((year, month, day, hour, minute, second)) = parsed else {
+        return Err(anyhow!("timestamp must be YYYY-MM-DDTHH:MM:SSZ"));
+    };
+    if year < 1970 || !(1..=12).contains(&month) || hour > 23 || minute > 59 || second > 59 {
+        return Err(anyhow!("timestamp field out of range"));
+    }
+    // Days from civil (Howard Hinnant), the inverse of `days_to_ymd`.
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y / 400;
+    let yoe = y - era * 400;
+    let mp = (month + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146097 + doe - 719468;
+    if day == 0 || days_to_ymd(days) != (year, month, day) {
+        return Err(anyhow!("timestamp is not a valid calendar date"));
+    }
+    Ok(days * 86400 + hour * 3600 + minute * 60 + second)
+}
+
+pub(crate) fn chrono_iso8601_now() -> String {
     let dur = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default();

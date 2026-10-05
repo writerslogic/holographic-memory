@@ -277,13 +277,16 @@ impl Shard {
         impl<'a> Eq for Candidate<'a> {}
         impl<'a> PartialOrd for Candidate<'a> {
             fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-                // We want a min-heap, so we reverse the comparison on similarity
-                other.similarity.partial_cmp(&self.similarity)
+                Some(self.cmp(other))
             }
         }
         impl<'a> Ord for Candidate<'a> {
             fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                self.partial_cmp(other).unwrap_or(std::cmp::Ordering::Equal)
+                // Reversed on similarity so the max-heap behaves as a min-heap.
+                other
+                    .similarity
+                    .partial_cmp(&self.similarity)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             }
         }
 

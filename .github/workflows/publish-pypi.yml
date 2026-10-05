@@ -1,5 +1,8 @@
 name: publish-pypi
 
+# Dormant until a `py-v*` tag is pushed. `workflow_dispatch` builds wheels, the
+# sdist and the SDK for verification WITHOUT publishing (publish jobs are gated
+# on the tag ref). Publishing uses PyPI Trusted Publishing (OIDC).
 on:
   push:
     tags: ['py-v*']
@@ -54,7 +57,7 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    if: startsWith(github.ref, 'refs/tags/py-v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/py-v')
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
     environment: pypi
@@ -78,13 +81,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "0.4.x"
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - name: Build SDK
         run: |
           cd bindings/python/holographic-sdk
           uv build
+      - name: Test SDK
+        run: |
+          cd bindings/python/holographic-sdk
+          PYTHONPATH=. uv run --no-project --with 'httpx>=0.27' --with pytest pytest -q tests
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: sdk-dist
@@ -92,7 +97,7 @@ jobs:
 
   holographic-sdk-publish:
     name: Publish Holographic SDK to PyPI
-    if: startsWith(github.ref, 'refs/tags/py-v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/py-v')
     needs: [holographic-sdk-build]
     runs-on: ubuntu-latest
     environment: pypi

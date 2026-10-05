@@ -73,10 +73,6 @@ pub struct PrivacyConfig {
     /// Privacy budget epsilon. Smaller = more private, noisier.
     /// Typical range: 0.1 (strong) to 10.0 (weak).
     pub epsilon: f64,
-    /// FHE-Lite: Zero-Trust encryption key. If set, all vectors are XOR-bound
-    /// with a dense deterministic key derived from this string before being
-    /// persisted or searched. The server/storage never sees the plaintext vector.
-    pub zero_trust_key: Option<String>,
 }
 
 impl Default for PrivacyConfig {
@@ -84,7 +80,6 @@ impl Default for PrivacyConfig {
         Self {
             dp_enabled: false,
             epsilon: 1.0,
-            zero_trust_key: None,
         }
     }
 }

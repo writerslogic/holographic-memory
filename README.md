@@ -38,22 +38,13 @@
 
 ---
 
-Holographic Memory System (HMS) is a hyper-scalable **Zero-Trust Agentic Data Enclave** powered by Vector Symbolic Architectures (VSA). 
-
-Designed specifically for autonomous AI agents, HMS offers the absolute highest grade of decentralized enterprise security. It features FHE-Lite cryptography, native W3C Decentralized Identifiers (DIDs), Verifiable Credentials (VCs), IETF SCITT transparency ledgers, and POSME (Proof of Sequential Memory Execution) receipts. 
-
-Whether you are running multi-agent workflows in LangChain, LlamaIndex, or CrewAI, HMS guarantees that your agent's memories are cryptographically tamper-proof, non-repudiable, and invisible to the host infrastructure.
+HMS is a high-performance vector memory engine for Rust and Node.js. It implements **Vector Symbolic Architectures (VSA)** using **Binary Spatter Code (BSC)** to deliver semantic search, analogical reasoning, relational knowledge graphs, and associative memory — with no external API calls, no cloud dependencies, and no data leaving your device. Optional features add encrypted storage, signed audit logs, credential-gated agent access, and COSE/SCITT/C2PA provenance.
 
 > Developed by [WritersLogic](https://github.com/writerslogic)
 
-## Python SDK Installation (New)
+## Python SDK (experimental)
 
-To use HMS with modern Python AI Agent frameworks (LangChain, LlamaIndex, Haystack, Semantic Kernel, CrewAI, Phidata, PydanticAI, SmolAgents, DSPy, and Embedchain), install the official Python SDK:
-
-```bash
-pip install holographic-sdk
-```
-*Note: The Python SDK features native async (`AsyncHolographicClient`), HTTP batching, and metadata hybrid-search filters out of the box.*
+`holographic-sdk` (in `bindings/python/holographic-sdk`) is an HTTP client with adapters for LangChain, LlamaIndex, Haystack, Semantic Kernel, CrewAI, Phidata, PydanticAI, SmolAgents, DSPy, and Embedchain. It expects an HMS-backed HTTP service exposing `/api/v1/documents` and `/api/v1/query`; **this repository does not ship that service**, so the SDK is only useful against a server you provide.
 
 ## Rust & Node.js Core Installation
 
@@ -71,13 +62,16 @@ npm install holographic-memory
 holographic-memory = "0.6"
 ```
 
-## Zero-Trust Enterprise Security Features
+## Security Features
 
-- **Zero-Trust FHE-Lite Cryptography**: Vectors are obfuscated at the edge using deterministic Argon2 key derivation. The edge node never sees the plaintext semantic vectors. (Enabled by default).
-- **W3C DID & Verifiable Credential Admission**: Access to semantic data is tightly gated. Agents must authenticate with a strict `did:key` or `did:web` and present a valid W3C Verifiable Credential to the `IdentityRegistry`.
-- **Proof of Sequential Memory Execution (POSME)**: Built-in hardware attestation (RATS) ensures queries are only processed if the edge node asserts cryptographic proof of memory bandwidth exertion, eliminating DDOS vectors.
-- **IETF SCITT & C2PA Provenance**: The optional `provenance-scitt` feature provides an unalterable transparency ledger and generates ISO 19566-5 JUMBF binaries to embed C2PA manifests into agentic outputs.
-- **VSA Algebra**: Blisteringly fast branchless AVX2 block comparisons for cognitive composition and semantic reasoning.
+All of these are opt-in Cargo features; `default = []`. See [SECURITY.md](docs/SECURITY.md) and [PRIVACY.md](docs/PRIVACY.md) for the threat model and limits.
+
+- **Encrypted storage and signed audit log** (`security`): AES-256-GCM over arena payloads and index caches with an Argon2id-derived key; Ed25519-signed audit entries.
+- **Client-side vector masking** (`security`, `core::mask::VectorMask`): an Argon2id-keyed secret permutation applied before vectors leave the client, so a remote store can rank them without the original coordinates. This is obfuscation, **not encryption and not homomorphic encryption**: it preserves and therefore reveals all pairwise similarities, and known plaintext/masked pairs progressively reveal the key.
+- **Credential-gated agent access** (`provenance`, `core::provenance::access`): agents are admitted by W3C Verifiable Credentials with an `eddsa-jcs-2022` proof from an issuer `did:key` the host explicitly trusts, with expiry and revocation. `HmsCore::query_as` enforces a read grant. The host must still authenticate that a caller controls the DID it presents.
+- **Provenance** (`provenance`, `provenance-scitt`): COSE_Sign1 signed statements, SCITT registration, and C2PA manifests in JUMBF.
+
+Not implemented: PoSME receipts, RATS attestation verification, `did:web` resolution for access credentials, and any form of search over encrypted data.
 
 ## Quick Start
 
@@ -216,13 +210,15 @@ The following historical results describe isolated algebra/research workloads, n
 
 ### Capacity Scaling
 
-| Dimension | Density | Hard Wall (95% recall) | Encode ops/s | Compression |
-|-----------|---------|------------------------|--------------|-------------|
-| 16,384 | 1/256 | 2,478 | 1,918,811 | 256x |
-| 65,536 | 1/1024 | 9,800 | 1,888,303 | 1,024x |
-| 262,144 | 1/4096 | 58,432 | 1,373,826 | 4,096x |
+Items stored in one union (Bloom) bundle before members and non-members stop being separable, from `benchmarks/results/benchmark_scaling_results.json` (50 member and 50 non-member probes per point):
 
-The tested points are research observations; they do not establish an application capacity guarantee.
+| Dimension | Density | Last N with a positive member/non-member gap | Last N with d' ≥ 2 | Encode ops/s | Compression |
+|-----------|---------|----------------------------------------------|--------------------|--------------|-------------|
+| 16,384 | 1/256 | 500 | 1,000 | 1,918,811 | 256x |
+| 65,536 | 1/1024 | 2,800 | 4,000 | 1,888,303 | 1,024x |
+| 262,144 | 1/4096 | 11,200 | 16,000 | 1,373,826 | 4,096x |
+
+At D=16,384 the measured false-positive rate is 4% at N=500 and 32% at N=1,000. Earlier versions of this table reported 2,478 / 9,800 / 58,432 as a "hard wall (95% recall)"; that is the point where the bundle is fully saturated and the false-positive rate is 100%, not a usable capacity. The tested points are research observations; they do not establish an application capacity guarantee.
 
 ### Noise Tolerance (Hopfield cleanup)
 
@@ -399,6 +395,6 @@ Lossy vectors are not encryption or anonymization. Document ingestion stores sou
 Holographic Memory System (HMS) uses a **Dual-Licensing** model:
 
 1. **Open Source (AGPL-3.0):** The core engine is free to use and modify for open-source projects, personal use, or internal evaluation, provided you comply with the [GNU Affero General Public License v3.0](LICENSE). Note that using HMS as a backend for a proprietary service over a network requires you to open-source your service under AGPL, or purchase a commercial license.
-2. **Commercial License (WritersLogic Enterprise):** For companies building closed-source, proprietary software, or those requiring the **Zero-Trust FHE-Lite SDK** and **Multi-Tenant Cloudflare Edge** plugins, you must purchase a Commercial License. This bypasses the AGPL restrictions and provides production SLA support.
+2. **Commercial License (WritersLogic Enterprise):** For companies building closed-source, proprietary software, you must purchase a Commercial License. This bypasses the AGPL restrictions and provides production SLA support.
 
 Contact licensing@writerslogic.com for enterprise inquiries.

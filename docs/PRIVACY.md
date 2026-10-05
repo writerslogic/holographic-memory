@@ -33,6 +33,35 @@ encryption, signing, audit, and DP settings. Checksums detect accidental corrupt
 not authentication. An audit log records operation timing and ID hashes; low-entropy IDs may
 still be guessed. Signing does not provide confidentiality.
 
+## Client-side vector masking
+
+`core::mask::VectorMask` (feature `security`) permutes vector coordinates with a secret
+permutation derived from a passphrase by Argon2id. A client can mask vectors before sending
+them to a store it does not fully trust. It is **obfuscation, not encryption**, and not
+homomorphic encryption:
+
+- Every pairwise similarity is preserved exactly, so the store learns the full similarity
+  graph, vector equality, vector weight, and per-coordinate activation frequency.
+- Masking is deterministic. Each known (plain, masked) pair reveals the image of that
+  vector's active coordinates as a set; enough pairs recover the permutation.
+- An attacker who can encode likely inputs can still test membership once any part of the
+  permutation is known, and frequency analysis of common coordinates needs no known pairs.
+- The engine itself applies no mask. A process holding both the passphrase and the vectors
+  gains nothing from masking; use storage encryption for confidentiality at rest.
+
+Set algebra (bind, bundle, similarity) commutes with the mask. Cyclic permutation used for
+ordered binding does not, so compose sequences before masking.
+
+## Credential-gated agent access
+
+`core::provenance::access` (feature `provenance`) admits agents by W3C Verifiable Credentials
+carrying an `eddsa-jcs-2022` proof from an issuer `did:key` the host has explicitly trusted,
+with an optional expiry and explicit revocation. `HmsCore::query_as` refuses a query unless
+the named agent holds a current read grant. The registry is in-memory and per-process. It
+decides authorization only: the host must authenticate that the caller controls the DID it
+presents, and in-process callers can still use the ungated `query`. PoSME receipts and RATS
+attestation evidence are not verified anywhere in HMS.
+
 ## Differentially private bundling
 
 DP applies only to the configured **bundle operation**, not ingestion, retrieval, document

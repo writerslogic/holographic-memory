@@ -14,17 +14,33 @@ impl HmsCore {
             return Vec::new();
         }
 
-        let mut search_vec = query_vec.clone();
-        
-        // --- FHE-Lite / Zero-Trust Encryption ---
-        if let Some(ref master_key) = self.cached_zt_key {
-            search_vec = search_vec.bind(master_key);
-        }
-
         let _transaction = self.mutation_gate.read();
         self.shards
             .read()
-            .query(&search_vec, k.min(10000), self.dimensions)
+            .query(query_vec, k.min(10000), self.dimensions)
+    }
+
+    /// The registry of agents admitted by verified access credentials.
+    #[cfg(feature = "provenance")]
+    pub fn agent_registry(
+        &self,
+    ) -> &parking_lot::RwLock<crate::core::provenance::access::AgentRegistry> {
+        &self.agents
+    }
+
+    /// [`Self::query`], refused unless `agent_did` holds a current read grant.
+    /// The caller must already have authenticated control of `agent_did`.
+    #[cfg(feature = "provenance")]
+    pub fn query_as(
+        &self,
+        agent_did: &str,
+        query_vec: &EntangledHVec,
+        k: u32,
+    ) -> anyhow::Result<Vec<RetrievalResult>> {
+        self.agents
+            .read()
+            .authorize(agent_did, crate::core::provenance::access::Permission::Read)?;
+        Ok(self.query(query_vec, k))
     }
 
     pub fn explain_query(&self, query_vec: &EntangledHVec, k: u32) -> QueryExplanation {

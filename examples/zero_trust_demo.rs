@@ -1,85 +1,70 @@
-use holographic_memory::core::algebra::HolographicAlgebra;
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+//! Client-side vector masking: a store ranks masked vectors without seeing the
+//! original coordinates. This is keyed obfuscation, not encryption; the store
+//! still learns every pairwise similarity. See `core::mask` for the limits.
 
 use holographic_memory::core::entangled::EntangledHVec;
+use holographic_memory::core::mask::VectorMask;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-// A simple deterministic encoder for the demo
-fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
-    let mut hasher = DefaultHasher::new();
-    text.hash(&mut hasher);
-    EntangledHVec::new_deterministic(dim, hasher.finish())
+const DIM: usize = 16384;
+
+/// Toy lexical encoder: the union of one deterministic vector per lowercase
+/// word, so texts sharing words share active coordinates.
+fn encode(text: &str) -> EntangledHVec {
+    let mut indices: Vec<u32> = text
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .flat_map(|w| {
+            let mut hasher = DefaultHasher::new();
+            w.to_lowercase().hash(&mut hasher);
+            EntangledHVec::new_deterministic(DIM, hasher.finish())
+                .indices()
+                .to_vec()
+        })
+        .collect();
+    indices.sort_unstable();
+    indices.dedup();
+    EntangledHVec::from_indices(indices, DIM)
 }
 
-fn main() {
-    println!("=== FHE-Lite: Zero-Trust Holographic Vector Search Demo ===\n");
-    let dim = 16384;
+fn main() -> anyhow::Result<()> {
+    // The passphrase stays on the client. The salt is public and shared by
+    // every client of the collection.
+    let mask = VectorMask::derive(b"client passphrase", b"collection-salt-01", DIM)?;
 
-    // 1. Client initializes their Master Key. This NEVER leaves their machine.
-    // In practice, this key is made dense so that it properly obscures the sparse vectors.
-    println!("[Client] Generating Master Cryptographic Key...");
-    let mut master_key = EntangledHVec::new_deterministic(dim, 8888);
-    for i in 0..50 {
-        master_key = master_key.bind(&EntangledHVec::new_deterministic(dim, 8888 + i));
-    }
-
-    // 2. Client processes private documents locally
-    println!("[Client] Encoding private documents...");
-    let docs = vec![
+    let docs = [
         "The Q3 financial earnings were surprisingly high due to the merger.",
         "Operation Midnight will commence on Tuesday at 0400 hours.",
         "Patient 402 has a history of severe allergic reactions to penicillin.",
-        "The recipe for the secret sauce includes two parts cinnamon, one part nutmeg."
     ];
+    let store: Vec<EntangledHVec> = docs
+        .iter()
+        .map(|text| mask.apply(&encode(text)))
+        .collect::<anyhow::Result<_>>()?;
 
-    // Client encodes them, encrypts them, and sends them to the server
-    let mut server_database: Vec<(usize, EntangledHVec)> = Vec::new();
+    let query = encode("What were the financial earnings?");
+    let masked_query = mask.apply(&query)?;
 
-    println!("[Client] Encrypting documents and sending to untrusted server...");
-    for (id, text) in docs.iter().enumerate() {
-        // Local encoding (standard VSA sparse vector)
-        let plain_vec = encode_text_internal(text, dim);
-        
-        // FHE-Lite Encryption: Bind with Master Key
-        let encrypted_vec = plain_vec.bind(&master_key);
-        
-        // Send to server
-        server_database.push((id, encrypted_vec));
-    }
-    println!("[Server] Received {} vectors. They appear as pure uniform noise.\n", server_database.len());
+    // The store ranks using masked vectors only.
+    let (best, score) = store
+        .iter()
+        .map(|v| masked_query.similarity(v))
+        .enumerate()
+        .max_by(|a, b| a.1.total_cmp(&b.1))
+        .expect("store is not empty");
 
-    // 3. Client wants to search for "financial earnings"
-    let query_text = "What were the financial earnings?";
-    println!("[Client] Query: '{}'", query_text);
-    
-    // Client encodes and encrypts the query locally
-    let plain_query = encode_text_internal(query_text, dim);
-    let encrypted_query = plain_query.bind(&master_key);
-    println!("[Client] Sending encrypted query vector to server...\n");
-
-    // 4. Server performs search over ENCRYPTED data
-    println!("[Server] Performing semantic search on encrypted data...");
-    let mut results: Vec<(usize, f64)> = server_database.iter().map(|(id, enc_vec)| {
-        let sim = encrypted_query.similarity(enc_vec);
-        (*id, sim)
-    }).collect();
-    
-    // Sort by similarity descending
-    results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-
-    // Server returns the top encrypted result
-    let top_result_id = results[0].0;
-    println!("[Server] Returning best match ID: {} (Score: {:.4})\n", top_result_id, results[0].1);
-
-    // 5. Client verifies
-    println!("[Client] Match corresponds to: '{}'", docs[top_result_id]);
-    
-    // Show mathematically that it worked
-    let plain_sim = plain_query.similarity(&encode_text_internal(docs[top_result_id], dim));
-    println!("[Verification] Plaintext Similarity would have been: {:.4}", plain_sim);
-    println!("[Verification] Encrypted Similarity was: {:.4}", results[0].1);
-    
-    if (plain_sim - results[0].1).abs() < 0.05 {
-         println!("\nSUCCESS: Mathematical equivalence proven. Search executed flawlessly over encrypted data.");
-    }
+    let plain_score = query.similarity(&encode(docs[best]));
+    println!("best match: {:?}", docs[best]);
+    println!("masked similarity {score:.4}, plaintext similarity {plain_score:.4}");
+    println!(
+        "masked vector overlap with its plaintext: {:.4}",
+        store[best].similarity(&encode(docs[best]))
+    );
+    anyhow::ensure!(best == 0, "expected the earnings document to rank first");
+    anyhow::ensure!(score == plain_score, "masking must preserve similarity");
+    Ok(())
 }

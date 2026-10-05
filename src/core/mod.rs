@@ -38,8 +38,6 @@ pub(crate) mod diffusion;
 pub mod documents;
 pub mod encoding;
 pub mod engine;
-pub mod cloud;
-pub mod simd_math;
 pub mod entangled;
 pub(crate) mod error;
 pub(crate) mod graph;
@@ -50,6 +48,8 @@ pub(crate) mod index;
 pub(crate) mod indexed_memory;
 pub mod intersection;
 pub(crate) mod ivf;
+#[cfg(feature = "security")]
+pub mod mask;
 pub(crate) mod nsg;
 #[cfg(feature = "experimental")]
 pub mod phase_graph;
@@ -61,6 +61,8 @@ pub mod provenance;
 pub(crate) mod role;
 pub(crate) mod rules;
 pub(crate) mod security;
+#[cfg(target_arch = "x86_64")]
+pub(crate) mod simd_math;
 #[cfg(feature = "experimental")]
 pub mod sparse_autoencoder;
 pub(crate) mod storage;

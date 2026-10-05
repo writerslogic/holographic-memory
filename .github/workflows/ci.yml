@@ -38,8 +38,11 @@ jobs:
     - name: Lint (Clippy)
       run: cargo clippy --all-targets --all-features -- -D warnings
 
+    - name: Lint default feature set
+      run: cargo clippy --all-targets -- -D warnings
+
     - name: Test default feature set
-      run: cargo test --locked --no-default-features
+      run: cargo test --locked
 
     - name: Run Tests
       run: cargo test --locked --all-features --verbose

@@ -49,7 +49,6 @@ type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 /// Persistent operations take mutation_gate before ShardSet and component locks.
 pub struct HmsCore {
     config: HmsConfig,
-    cached_zt_key: Option<EntangledHVec>,
     mutation_gate: RwLock<()>,
     revision: std::sync::atomic::AtomicU64,
     pub(crate) arena: Arc<PersistentArena>,
@@ -75,8 +74,8 @@ pub struct HmsCore {
     #[cfg(feature = "security")]
     #[allow(dead_code)]
     encryption: Option<super::security::EncryptionManager>,
-    #[cfg(feature = "security")]
-    pub identity_registry: parking_lot::RwLock<super::security::identity::IdentityRegistry>,
+    #[cfg(feature = "provenance")]
+    agents: RwLock<super::provenance::access::AgentRegistry>,
     #[cfg(feature = "provenance")]
     provenance: Option<super::provenance::ProvenanceManager>,
     /// Experimental opt-in plastic relation store (lazily created on first use).
@@ -218,18 +217,7 @@ impl HmsCore {
                 (None, None, None, None, None, None, None)
             };
 
-
-        let cached_zt_key = config.privacy.zero_trust_key.as_ref().map(|zt_key| {
-            let seed = fxhash::hash64(zt_key);
-            let mut master_key = EntangledHVec::new_deterministic(dim, seed);
-            for i in 1..25 {
-                master_key = master_key.bind(&EntangledHVec::new_deterministic(dim, seed + i));
-            }
-            master_key
-        });
-
         let core = Self {
-            cached_zt_key,
             config: config.clone(),
             mutation_gate: RwLock::new(()),
             revision: std::sync::atomic::AtomicU64::new(0),
@@ -263,8 +251,8 @@ impl HmsCore {
             signing,
             #[cfg(feature = "security")]
             encryption,
-            #[cfg(feature = "security")]
-            identity_registry: parking_lot::RwLock::new(super::security::identity::IdentityRegistry::new()),
+            #[cfg(feature = "provenance")]
+            agents: RwLock::new(super::provenance::access::AgentRegistry::default()),
             #[cfg(feature = "provenance")]
             provenance,
             #[cfg(feature = "experimental")]
@@ -667,22 +655,12 @@ impl HmsCore {
     }
 
     /// Store a vector with the given ID. Persists to the arena log and updates all indices.
-    pub fn memorize(&self, id: String, mut vector: EntangledHVec) -> Result<()> {
+    pub fn memorize(&self, id: String, vector: EntangledHVec) -> Result<()> {
         mutation::validate_public_id(&id)?;
         anyhow::ensure!(
             !id.starts_with(super::documents::CHUNK_PREFIX),
             "chunk IDs are reserved for document ingestion"
         );
-
-        // --- FHE-Lite / Zero-Trust Encryption ---
-        if let Some(ref zt_key) = self.config.privacy.zero_trust_key {
-            let seed = fxhash::hash64(zt_key);
-            let mut master_key = EntangledHVec::new_deterministic(self.dimensions, seed);
-            for i in 1..25 {
-                master_key = master_key.bind(&EntangledHVec::new_deterministic(self.dimensions, seed + i));
-            }
-            vector = vector.bind(&master_key);
-        }
 
         self.commit(&[Mutation::Vector {
             id: id.clone(),

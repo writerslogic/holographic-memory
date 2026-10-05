@@ -51,7 +51,6 @@ ureq = { version = "3", optional = true }
 multibase = { version = "0.9", optional = true }
 base64 = { version = "0.23", optional = true }
 tempfile = "3"
-async-trait = "0.1.92"
 
 [build-dependencies]
 napi-build = { version = "2.2", optional = true }
@@ -75,10 +74,10 @@ required-features = ["experimental"]
 
 [[example]]
 name = "zero_trust_demo"
-required-features = ["experimental"]
+required-features = ["security"]
 
 [features]
-default = ["security"]
+default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
 # Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
 # wheels with `maturin build --features python`; publishing is wired in
