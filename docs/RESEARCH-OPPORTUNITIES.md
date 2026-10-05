@@ -315,3 +315,20 @@ the Modal image, never under `--all-features`; MSRV impact checked; `cargo deny`
 models load from local directories with pinned revisions and are never downloaded by the library.
 Report on-device ingest time per session and query latency (query rewriting adds an LLM call per
 query). llama.cpp/GGUF is a later, separately measured speed path.
+
+### 5.7 Holographic fact memory (2026-10-05)
+
+Goal: make the memory itself holographic and measure whether it answers LongMemEval better than
+chunk retrieval. Facts (from the LLM extraction stage) become hypervectors by binding entity,
+attribute, value and time; an entity's facts are superposed into one trace; queries unbind the
+trace and clean up against the known values. Semantics come from the embedder: component vectors
+are rotated sign codes of the embeddings (§5.1), so near-synonymous entities and values share
+bits. Time is bound in; a later fact for the same (entity, attribute) supersedes by time, so
+knowledge-update and temporal questions are algebra on the trace. Provenance: each fact keeps its
+source session and turn ids.
+
+Measurement, on the frozen S dev split only: answer accuracy per question type against the tuned
+retrieval pipeline; superposition capacity per trace (facts per entity before cleanup fails);
+graceful degradation (accuracy versus fraction of trace bits corrupted, with the chunk index as
+the control, which fails outright). Numpy prototype first; Rust in `src/core` only if dev shows a
+gain or a robustness property the index lacks. No claim before measurement.
