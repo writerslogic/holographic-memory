@@ -8,7 +8,7 @@ Durable copy of the hand-off. Delete this file once the items below are merged o
 |---|---|---|
 | `worktree-agent-a74af5826c592ef18` | Quantized-graph ANN index (`src/core/qgraph/`, `public-bench ann-qgraph`) | Commit `bb1277c` + uncommitted work; timed comparison vs FAISS/hnswlib in progress |
 | `worktree-agent-afbc860a90d53dcac` | Local model stages inside HMS (`src/core/models/`, `local-models` feature) | Uncommitted work in progress |
-| `worktree-agent-a864a5c529281f471` | Holographic fact memory prototype (`benchmarks/public/holographic_memory_proto.py`) | Structuring pass on Modal (tag `holo-struct-dev`, cap $5); uncommitted |
+| (merged) | Holographic fact memory prototype | On main as `486ec35`: `benchmarks/results/holographic_dev.json`, doc section in `docs/PUBLIC-BENCHMARKS.md`. EAV variant negative (extraction ceiling); turn-atom traces close to flat scan; shard-loss robustness shown (50% shards deleted: session 0.929 vs index 0.917, turn 0.631 vs 0.488) at a cost in zero-loss recall; capacity ~128-256 atoms per 16k-bit trace with centered codes. Next for a Rust port: per-session/window traces + hierarchical unbinding; replicated-index control at equal bytes; multiple seeds. |
 
 If the agents are gone, collect their work by hand: inspect each worktree's `git status` and `git log main..HEAD`,
 run the gate in the worktree, then fast-forward or cherry-pick onto `main` (sign with
