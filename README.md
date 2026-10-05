@@ -1,7 +1,7 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-white.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/logo-black.svg">
-  <img src="./assets/logo-black.svg" width="120" alt="Holographic Memory System" align="left">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-black.svg">
+  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.png" width="120" alt="Holographic Memory System" align="left">
 </picture>
 
 <h3>Holographic Memory System (HMS)</h3>
