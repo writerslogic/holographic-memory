@@ -62,6 +62,7 @@ pub(crate) mod posting;
 pub mod private_query;
 #[cfg(feature = "provenance")]
 pub mod provenance;
+pub mod qgraph;
 pub(crate) mod role;
 pub(crate) mod rules;
 pub(crate) mod security;

@@ -58,16 +58,67 @@ def recall(found: np.ndarray, truth: np.ndarray) -> float:
     return float(np.mean([len(set(f[:K]) & set(t[:K])) / K for f, t in zip(found, truth)]))
 
 
-def timed_queries(search, queries: np.ndarray) -> tuple[np.ndarray, float]:
-    """Single-threaded, one query at a time, as ann-benchmarks does."""
+MAX_LOAD = 3.0
+MAX_WAIT_SECS = 10800  # total budget for load-gate waiting across one run of this script
+_wait_deadline: float | None = None
+EF_SWEEP = (16, 32, 64, 128, 256, 512, 768, 1024)
+TARGET_RECALLS = (0.90, 0.95)
+
+
+def wait_for_idle() -> tuple[float, bool]:
+    """Waits until the 1-minute load is below MAX_LOAD or the script's total wait budget is
+    spent; returns the load and whether the gate was met."""
+    global _wait_deadline
+    if _wait_deadline is None:
+        _wait_deadline = time.monotonic() + MAX_WAIT_SECS
+    while True:
+        load = os.getloadavg()[0]
+        if load < MAX_LOAD:
+            return load, True
+        if time.monotonic() >= _wait_deadline:
+            return load, False
+        time.sleep(5)
+
+
+def timed_queries(search, queries: np.ndarray, repeats: int = 1) -> tuple[np.ndarray, float, dict]:
+    """Single-threaded, one query at a time, as ann-benchmarks does. Each repeat waits for the
+    load gate; returns the first repeat's results, the median QPS and the per-run record."""
     out = np.empty((len(queries), K), dtype=np.int64)
-    t = time.perf_counter()
-    for i, q in enumerate(queries):
-        out[i] = search(q[None, :])
-    return out, len(queries) / (time.perf_counter() - t)
+    runs, loads, gate = [], [], True
+    for rep in range(repeats):
+        load, met = wait_for_idle()
+        loads.append(load)
+        gate &= met
+        res = out if rep == 0 else np.empty_like(out)
+        t = time.perf_counter()
+        for i, q in enumerate(queries):
+            res[i] = search(q[None, :])
+        runs.append(len(queries) / (time.perf_counter() - t))
+    return out, float(np.median(runs)), {"qps_runs": runs, "load_1m_before_runs": loads, "load_gate_met": gate}
 
 
-def run_ann(name: str, hms_files: list[str]) -> dict:
+def qps_at_recall(points: list[tuple[float, float]], target: float) -> dict:
+    """QPS at `target` recall on the Pareto frontier of (recall, qps) points, interpolated
+    linearly in log(QPS) between the two frontier points that bracket the target."""
+    frontier = []
+    for r, q in sorted(points, key=lambda x: (-x[0], -x[1])):
+        if not frontier or q > frontier[-1][1]:
+            frontier.append((r, q))
+    frontier.reverse()  # ascending recall, descending qps
+    above = [(r, q) for r, q in frontier if r >= target]
+    below = [(r, q) for r, q in frontier if r < target]
+    if not above:
+        return {"qps": None, "method": "not reached", "max_recall": max(r for r, _ in points)}
+    hi = above[0]
+    if not below:
+        return {"qps": hi[1], "method": "lower bound (fastest swept point already exceeds the target)"}
+    lo = below[-1]
+    f = (target - lo[0]) / (hi[0] - lo[0])
+    return {"qps": float(np.exp(np.log(lo[1]) + f * (np.log(hi[1]) - np.log(lo[1])))),
+            "method": "interpolated", "between": [lo, hi]}
+
+
+def run_ann(name: str, hms_files: list[str], repeats: int = 1) -> dict:
     import faiss
     import hnswlib
 
@@ -88,9 +139,9 @@ def run_ann(name: str, hms_files: list[str]) -> dict:
     flat.add(train)
     build = time.perf_counter() - t
     faiss.omp_set_num_threads(1)
-    found, qps = timed_queries(lambda q: flat.search(q, K)[1][0], test)
+    found, qps, runs = timed_queries(lambda q: flat.search(q, K)[1][0], test)
     rows.append({"library": "faiss", "index": "IndexFlat (exact)", "params": {}, "recall_at_10": recall(found, truth),
-                 "qps_single_thread": qps, "build_secs": build, "index_bytes": int(train.nbytes)})
+                 "qps_single_thread": qps, "build_secs": build, "index_bytes": int(train.nbytes), **runs})
 
     for m in (16, 32):
         faiss.omp_set_num_threads(os.cpu_count())
@@ -101,11 +152,12 @@ def run_ann(name: str, hms_files: list[str]) -> dict:
         build = time.perf_counter() - t
         size = len(faiss.serialize_index(hnsw))
         faiss.omp_set_num_threads(1)
-        for ef in (16, 32, 64, 128, 256, 512):
+        for ef in EF_SWEEP:
             hnsw.hnsw.efSearch = ef
-            found, qps = timed_queries(lambda q: hnsw.search(q, K)[1][0], test)
+            found, qps, runs = timed_queries(lambda q: hnsw.search(q, K)[1][0], test, repeats)
             rows.append({"library": "faiss", "index": "IndexHNSWFlat", "params": {"M": m, "efConstruction": 200, "efSearch": ef},
-                         "recall_at_10": recall(found, truth), "qps_single_thread": qps, "build_secs": build, "index_bytes": size})
+                         "recall_at_10": recall(found, truth), "qps_single_thread": qps, "build_secs": build, "index_bytes": size,
+                         **runs})
 
     t = time.perf_counter()
     h = hnswlib.Index(space=space, dim=dim)
@@ -113,15 +165,27 @@ def run_ann(name: str, hms_files: list[str]) -> dict:
     h.add_items(train, num_threads=os.cpu_count())
     build = time.perf_counter() - t
     h.set_num_threads(1)
-    for ef in (16, 32, 64, 128, 256, 512):
+    for ef in EF_SWEEP:
         h.set_ef(max(ef, K))
-        found, qps = timed_queries(lambda q: h.knn_query(q, k=K)[0][0], test)
+        found, qps, runs = timed_queries(lambda q: h.knn_query(q, k=K)[0][0], test, repeats)
         rows.append({"library": "hnswlib", "index": "HNSW", "params": {"M": 16, "ef_construction": 200, "ef": ef},
                      "recall_at_10": recall(found, truth), "qps_single_thread": qps, "build_secs": build,
-                     "index_bytes": int(h.element_count * (dim * 4 + 16 * 2 * 4 + 8))})
+                     "index_bytes": int(h.element_count * (dim * 4 + 16 * 2 * 4 + 8)), **runs})
+
+    series: dict[str, list[tuple[float, float]]] = {}
+    for r in rows:
+        if r["index"] == "IndexHNSWFlat":
+            series.setdefault(f"faiss HNSW M={r['params']['M']}", []).append((r["recall_at_10"], r["qps_single_thread"]))
+        elif r["library"] == "hnswlib":
+            series.setdefault("hnswlib M=16", []).append((r["recall_at_10"], r["qps_single_thread"]))
 
     hms = [json.loads(Path(f).read_text()) for f in hms_files]
-    return {"dataset": meta, "environment": environment(), "competitors": rows,
+    for h in hms:
+        if h.get("sweep"):
+            series[h.get("system", "hms")] = [(r["recall_at_10"], r["qps_single_thread"]) for r in h["sweep"]]
+    at_recall = {name: {f"{t:.2f}": qps_at_recall(pts, t) for t in TARGET_RECALLS} for name, pts in series.items()}
+    return {"dataset": meta, "environment": environment(), "repeats": repeats, "max_load": MAX_LOAD,
+            "qps_at_recall": at_recall, "competitors": rows,
             "hms": [{k: v for k, v in r.items() if k != "dataset"} for r in hms],
             "notes": ["Queries run single-threaded one at a time for every system; builds use all cores.",
                       "HMS takes dense input through its sparse encoder; its latency includes encoding (query_total).",
@@ -279,6 +343,8 @@ def main() -> None:
     ap.add_argument("name")
     ap.add_argument("hms", nargs="+")
     ap.add_argument("--split", choices=["dev"], help="longmemeval: score only this part of longmemeval_split.json")
+    ap.add_argument("--repeats", type=int, default=1, help="ann: timed runs per configuration (median reported)")
+    ap.add_argument("--out", help="result file name under benchmarks/results (default public_<dataset>.json)")
     args = ap.parse_args()
     if args.kind == "longmemeval" and args.split:
         ids = set(json.loads((Path(__file__).with_name("longmemeval_split.json")).read_text())[args.split])
@@ -286,9 +352,9 @@ def main() -> None:
     elif args.kind == "longmemeval":
         report, out_name = run_longmemeval(args.name, args.hms[0]), f"public_longmemeval_{args.name}.json"
     else:
-        report = run_ann(args.name, args.hms) if args.kind == "ann" else run_beir(args.name, args.hms[0])
+        report = run_ann(args.name, args.hms, args.repeats) if args.kind == "ann" else run_beir(args.name, args.hms[0])
         out_name = f"public_{args.name}.json"
-    out = RESULTS / out_name
+    out = RESULTS / (args.out or out_name)
     out.write_text(json.dumps(report, indent=2) + "\n")
     print(f"wrote {out}")
 

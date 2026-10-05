@@ -8,6 +8,9 @@
 //! `ann`:  ann-benchmarks sets (dense vectors + shipped ground truth). Measures the raw
 //!         sparse-vector path (`from_dense` + inverted index): recall@10, encode and
 //!         search latency per query, build time, resident memory.
+//! `ann-qgraph`: the same sets through the quantized graph index (`core::qgraph`). Builds on
+//!         all cores, then times single-threaded queries one at a time over an `ef` x
+//!         `max-exact` sweep, each configuration repeated and gated on the 1-minute load.
 //! `beir`: BEIR sets with precomputed embeddings and text. Writes ranked runs for the
 //!         document API (lexical, dense, hybrid) and the raw sparse-vector path.
 //! `longmemeval`: LongMemEval_S with precomputed embeddings. Every question gets a fresh store
@@ -25,6 +28,7 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
+use holographic_memory::core::qgraph::{BuildParams, QGraph, SearchParams};
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
 use rayon::prelude::*;
@@ -50,6 +54,42 @@ enum Mode {
         queries: Option<usize>,
         #[arg(long)]
         out: PathBuf,
+    },
+    AnnQgraph {
+        #[arg(long)]
+        data: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+        /// Candidate pool sizes to sweep.
+        #[arg(
+            long,
+            value_delimiter = ',',
+            default_value = "10,16,24,32,48,64,96,128,192,256,384,512"
+        )]
+        ef: Vec<usize>,
+        /// Caps on exactly scored vertices per query (0 = no cap).
+        #[arg(long, value_delimiter = ',', default_value = "0")]
+        max_exact: Vec<usize>,
+        #[arg(long, default_value_t = 128)]
+        build_ef: usize,
+        #[arg(long, default_value_t = 1.0)]
+        alpha: f32,
+        #[arg(long, default_value_t = 32)]
+        degree: usize,
+        /// Edge code length in bits (0 = smallest power of two >= dim).
+        #[arg(long, default_value_t = 0)]
+        code_bits: usize,
+        #[arg(long, default_value_t = 3)]
+        repeats: usize,
+        /// Time only when the 1-minute load average is below this.
+        #[arg(long, default_value_t = 3.0)]
+        max_load: f64,
+        /// Total seconds the sweep may spend waiting for the load gate; once spent, runs
+        /// proceed and record the load and `load_gate_met: false`.
+        #[arg(long, default_value_t = 3600)]
+        max_wait_secs: u64,
+        #[arg(long)]
+        queries: Option<usize>,
     },
     Beir {
         #[arg(long)]
@@ -288,6 +328,163 @@ fn ann(data: &Path, dim: u32, queries: Option<usize>, out: &Path) -> Result<()> 
 }
 
 /// Truncate to the engine's single-chunk limits (4096 words, 64 KiB) on a char boundary.
+fn load_1m() -> Option<f64> {
+    let out = std::process::Command::new("sysctl")
+        .args(["-n", "vm.loadavg"])
+        .output()
+        .ok()?;
+    String::from_utf8_lossy(&out.stdout)
+        .split_whitespace()
+        .nth(1)?
+        .parse()
+        .ok()
+}
+
+/// Waits until the 1-minute load is below `max` or `deadline` passes; returns the load and
+/// whether the gate was met.
+fn wait_for_idle(max: f64, deadline: Instant) -> (f64, bool) {
+    loop {
+        let l = load_1m().unwrap_or(f64::NAN);
+        if l < max {
+            return (l, true);
+        }
+        if Instant::now() >= deadline {
+            return (l, false);
+        }
+        std::thread::sleep(std::time::Duration::from_secs(5));
+    }
+}
+
+struct QgraphArgs {
+    data: PathBuf,
+    out: PathBuf,
+    ef: Vec<usize>,
+    max_exact: Vec<usize>,
+    build_ef: usize,
+    alpha: f32,
+    code_bits: usize,
+    degree: usize,
+    repeats: usize,
+    max_load: f64,
+    max_wait_secs: u64,
+    queries: Option<usize>,
+}
+
+fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
+    const K: usize = 10;
+    ensure!(a.repeats > 0, "repeats must be positive");
+    let m = meta(&a.data)?;
+    ensure!(
+        m["metric"] == "angular",
+        "qgraph supports angular data only"
+    );
+    let d = m["dim"].as_u64().context("meta.dim")? as usize;
+    let width = m["n_neighbors"].as_u64().context("meta.n_neighbors")? as usize;
+    let train = read_f32(&a.data.join("train.f32"), d)?.concat();
+    let mut test = read_f32(&a.data.join("test.f32"), d)?;
+    let truth = read_i32(&a.data.join("neighbors.i32"), width)?;
+    if let Some(q) = a.queries {
+        test.truncate(q);
+    }
+    // Normalized outside the timer, as evaluate.py does for the other systems.
+    for q in &mut test {
+        let n = q.iter().map(|x| x * x).sum::<f32>().sqrt();
+        if n > 0.0 {
+            q.iter_mut().for_each(|x| *x /= n);
+        }
+    }
+    let params = BuildParams {
+        build_ef: a.build_ef,
+        alpha: a.alpha,
+        code_bits: a.code_bits,
+        degree: a.degree,
+        ..BuildParams::default()
+    };
+    let load_before_build = load_1m();
+    let t = Instant::now();
+    let index = QGraph::build(&train, d, &params);
+    let build_secs = t.elapsed().as_secs_f64();
+    drop(train);
+    eprintln!("built in {build_secs:.1}s, {} bytes", index.index_bytes());
+
+    let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
+    let mut searcher = index.searcher();
+    let mut rows = Vec::new();
+    let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
+    let mut out = Vec::with_capacity(K);
+    for &max_exact in &a.max_exact {
+        for &ef in &a.ef {
+            let sp = SearchParams { ef, max_exact };
+            let (mut qps, mut loads, mut gate) = (Vec::new(), Vec::new(), true);
+            let (mut recall, mut exact_mean) = (0.0, 0.0);
+            for rep in 0..a.repeats {
+                let (load, met) = wait_for_idle(a.max_load, deadline);
+                loads.push(load);
+                gate &= met;
+                ids.clear();
+                let mut exact = 0usize;
+                let t = Instant::now();
+                for q in &test {
+                    exact += searcher.search(q, K, sp, &mut out);
+                    ids.extend_from_slice(&out);
+                    ids.resize(ids.len() + K - out.len(), u32::MAX);
+                }
+                qps.push(test.len() as f64 / t.elapsed().as_secs_f64());
+                if rep == 0 {
+                    let hits: usize = ids
+                        .as_chunks::<K>()
+                        .0
+                        .iter()
+                        .zip(&truth)
+                        .map(|(f, t)| {
+                            let t = &t[..K];
+                            let mut f = f.to_vec();
+                            f.sort_unstable();
+                            f.dedup();
+                            f.iter().filter(|&&x| t.contains(&(x as i32))).count()
+                        })
+                        .sum();
+                    recall = hits as f64 / (K * test.len()) as f64;
+                    exact_mean = exact as f64 / test.len() as f64;
+                }
+            }
+            let mut sorted = qps.clone();
+            sorted.sort_by(f64::total_cmp);
+            let median = sorted[sorted.len() / 2];
+            eprintln!("ef={ef} max_exact={max_exact} recall={recall:.4} qps={median:.0} exact/q={exact_mean:.0} load={loads:?}");
+            rows.push(json!({
+                "params": {"ef": ef, "max_exact": max_exact},
+                "recall_at_10": recall,
+                "qps_single_thread": median,
+                "qps_runs": qps,
+                "load_1m_before_runs": loads,
+                "load_gate_met": gate,
+                "mean_exact_evals_per_query": exact_mean,
+            }));
+        }
+    }
+    let report = json!({
+        "system": "hms qgraph",
+        "dataset": m,
+        "environment": environment(),
+        "n_queries": test.len(),
+        "build": {"params": {"degree": a.degree, "build_ef": a.build_ef,
+                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed},
+                  "build_secs": build_secs, "load_1m_before_build": load_before_build},
+        "index_bytes": index.index_bytes(),
+        "repeats": a.repeats,
+        "max_load": a.max_load,
+        "sweep": rows,
+        "notes": [
+            "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+            "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+            "Each expanded vertex is scored exactly; mean_exact_evals_per_query is the re-rank count.",
+        ],
+    });
+    fs::write(&a.out, serde_json::to_string_pretty(&report)? + "\n")?;
+    Ok(())
+}
+
 fn one_chunk(text: &str) -> String {
     let mut end = text.len().min(60 * 1024);
     while !text.is_char_boundary(end) {
@@ -702,6 +899,33 @@ fn main() -> Result<()> {
             queries,
             out,
         } => ann(&data, dim, queries, &out),
+        Mode::AnnQgraph {
+            data,
+            out,
+            ef,
+            max_exact,
+            build_ef,
+            alpha,
+            code_bits,
+            degree,
+            repeats,
+            max_load,
+            max_wait_secs,
+            queries,
+        } => ann_qgraph(&QgraphArgs {
+            data,
+            out,
+            ef,
+            max_exact,
+            build_ef,
+            alpha,
+            code_bits,
+            degree,
+            repeats,
+            max_load,
+            max_wait_secs,
+            queries,
+        }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {
             data,
