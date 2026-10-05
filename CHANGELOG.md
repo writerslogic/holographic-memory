@@ -14,6 +14,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Define the single-run protocol for LongMemEval_M
+- Set the speed and accuracy targets and record the compute limits
+- Plan the LongMemEval_M run with larger models
 - Record the encoder test and the agent-memory benchmark plan
 - Attribute semantic search to the document API
 - Update changelog [skip ci]
@@ -34,6 +37,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Make the Modal cost cap cumulative across relaunches
+- Key LongMemEval fact extraction by content and re-tune on dev
+- Record the LongMemEval dev results and the Modal dry run
+- Tune the LongMemEval pipeline on dev and record the ablation
+- Add the LongMemEval multi-key pipeline, Modal job and dev sweep
+- Freeze the LongMemEval 100 dev / 400 held-out split
 - Add LongMemEval_S retrieval baseline (dense, lexical, hybrid)
 - Add public BEIR and ann-benchmarks comparisons
 - Report encoder candidate recall after exact rerank
