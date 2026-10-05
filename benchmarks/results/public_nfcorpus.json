@@ -1,0 +1,92 @@
+{
+  "dataset": {
+    "kind": "beir",
+    "name": "nfcorpus",
+    "source": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/nfcorpus.zip",
+    "sha256": "efe5be03f8c5b86a5870102d0599d227c8c6e2484328e68c6522560385671b0b",
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "normalization": "l2",
+    "n_corpus": 3633,
+    "n_queries": 323,
+    "dim": 384
+  },
+  "environment": {
+    "cpu": "Apple M4",
+    "machine": "arm64",
+    "python": "3.13.9",
+    "load_average": "{ 4.22 5.25 8.13 }",
+    "versions": {
+      "faiss-cpu": "1.15.1",
+      "hnswlib": "0.8.0",
+      "numpy": "2.5.3",
+      "pytrec-eval-terrier": "0.5.10"
+    },
+    "hms": {
+      "arch": "aarch64",
+      "cpu": "Apple M4",
+      "hms_version": "0.6.1",
+      "load_average": "{ 4.22 5.25 8.13 }",
+      "os": "macos",
+      "rayon_threads": 10
+    }
+  },
+  "sparse_dim": 16384,
+  "ingest_secs": {
+    "document_api": 94.41807850000001,
+    "sparse_encode_and_insert": 2.811820875
+  },
+  "latency_us": {
+    "hms_dense_exact": {
+      "mean_us": 708.7528235294112,
+      "p50_us": 713.1659999999999,
+      "p95_us": 787.875,
+      "p99_us": 848.2090000000001
+    },
+    "hms_hybrid": {
+      "mean_us": 3304.8315386996906,
+      "p50_us": 2440.958,
+      "p95_us": 7059.083,
+      "p99_us": 8837.375
+    },
+    "hms_lexical": {
+      "mean_us": 3194.288795665634,
+      "p50_us": 2510.5409999999997,
+      "p95_us": 7015.625,
+      "p99_us": 8745.707999999999
+    },
+    "hms_sparse": {
+      "mean_us": 3974.4530557275543,
+      "p50_us": 3906.708,
+      "p95_us": 4308.25,
+      "p99_us": 4594.791
+    }
+  },
+  "metrics": {
+    "hms_dense_exact": {
+      "ndcg_at_10": 0.31667312754717797,
+      "recall_at_100": 0.3114503860264584,
+      "n_queries": 323
+    },
+    "hms_hybrid": {
+      "ndcg_at_10": 0.34411016430105273,
+      "recall_at_100": 0.32521618655221973,
+      "n_queries": 323
+    },
+    "hms_lexical": {
+      "ndcg_at_10": 0.30694483905086023,
+      "recall_at_100": 0.23689438905155122,
+      "n_queries": 323
+    },
+    "hms_sparse": {
+      "ndcg_at_10": 0.20870828554651882,
+      "recall_at_100": 0.2073651486065041,
+      "n_queries": 323
+    },
+    "numpy_dense_exact_reference": {
+      "ndcg_at_10": 0.3159015615017377,
+      "recall_at_100": 0.31150992401169303,
+      "n_queries": 323
+    }
+  }
+}

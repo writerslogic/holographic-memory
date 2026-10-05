@@ -196,6 +196,20 @@ HMS ships as the semantic memory backend for [scrivener-mcp](https://github.com/
 <details>
 <summary><strong>Performance</strong> -- compositional algebra, capacity scaling, noise tolerance benchmarks</summary>
 
+### Public Benchmarks
+
+Measured on BEIR and ann-benchmarks against published baselines, FAISS and hnswlib ([details](docs/PUBLIC-BENCHMARKS.md)):
+
+| Task | Result |
+|------|--------|
+| Text retrieval, SciFact nDCG@10 (all-MiniLM-L6-v2) | hybrid **0.683**, dense 0.645, BM25 0.662 (BEIR paper BM25: 0.665) |
+| Text retrieval, NFCorpus nDCG@10 | hybrid **0.344**, dense 0.317, BM25 0.307 (BEIR paper BM25: 0.325) |
+| Vector search, glove-100-angular recall@10 | sparse path 0.25 at 34 QPS; FAISS HNSW 0.83 at 4,111 QPS |
+
+Use the document API for semantic search; the sparse vector path (`memorize_vector` / `query_vector`) loses neighbour recall and is not a competitive vector index.
+
+### Research Benchmarks
+
 The following historical results describe isolated algebra/research workloads, not the new document pipeline or current end-to-end latency. Their datasets include: 120 real-world knowledge graph facts, 2,000 synthetic facts (Zipfian), 350 analogies across 7 relation types, sequences up to length 200.
 
 ### Compositional Algebra (D=16,384, density 1/256)

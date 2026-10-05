@@ -1,0 +1,321 @@
+{
+  "dataset": {
+    "kind": "ann",
+    "name": "nytimes-256-angular",
+    "source": "https://ann-benchmarks.com/nytimes-256-angular.hdf5",
+    "sha256": "6ad5d2cde6d6a6f21528d541901304ebfd40885d6ce6afae37bccbe278254a93",
+    "metric": "angular",
+    "n_train": 290000,
+    "n_test": 10000,
+    "dim": 256,
+    "n_neighbors": 100
+  },
+  "environment": {
+    "cpu": "Apple M4",
+    "machine": "arm64",
+    "python": "3.13.9",
+    "load_average": "{ 14.37 14.74 12.76 }",
+    "versions": {
+      "faiss-cpu": "1.15.1",
+      "hnswlib": "0.8.0",
+      "numpy": "2.5.3",
+      "pytrec-eval-terrier": "0.5.10"
+    }
+  },
+  "competitors": [
+    {
+      "library": "faiss",
+      "index": "IndexFlat (exact)",
+      "params": {},
+      "recall_at_10": 0.9853,
+      "qps_single_thread": 206.26335806647276,
+      "build_secs": 0.014433999895118177,
+      "index_bytes": 296960000
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 16,
+        "efConstruction": 200,
+        "efSearch": 16
+      },
+      "recall_at_10": 0.69245,
+      "qps_single_thread": 13781.524591733652,
+      "build_secs": 36.38485866703559,
+      "index_bytes": 338802554
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 16,
+        "efConstruction": 200,
+        "efSearch": 32
+      },
+      "recall_at_10": 0.78696,
+      "qps_single_thread": 8516.091313844569,
+      "build_secs": 36.38485866703559,
+      "index_bytes": 338802554
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 16,
+        "efConstruction": 200,
+        "efSearch": 64
+      },
+      "recall_at_10": 0.8448,
+      "qps_single_thread": 4996.741187837199,
+      "build_secs": 36.38485866703559,
+      "index_bytes": 338802554
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 16,
+        "efConstruction": 200,
+        "efSearch": 128
+      },
+      "recall_at_10": 0.8810899999999999,
+      "qps_single_thread": 2875.221565269314,
+      "build_secs": 36.38485866703559,
+      "index_bytes": 338802554
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 16,
+        "efConstruction": 200,
+        "efSearch": 256
+      },
+      "recall_at_10": 0.9084099999999998,
+      "qps_single_thread": 1513.4900871428958,
+      "build_secs": 36.38485866703559,
+      "index_bytes": 338802554
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 16,
+        "efConstruction": 200,
+        "efSearch": 512
+      },
+      "recall_at_10": 0.9329199999999999,
+      "qps_single_thread": 783.6663223363925,
+      "build_secs": 36.38485866703559,
+      "index_bytes": 338802554
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 32,
+        "efConstruction": 200,
+        "efSearch": 16
+      },
+      "recall_at_10": 0.7944399999999999,
+      "qps_single_thread": 9126.351483699602,
+      "build_secs": 75.96348187490366,
+      "index_bytes": 375882658
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 32,
+        "efConstruction": 200,
+        "efSearch": 32
+      },
+      "recall_at_10": 0.8518099999999998,
+      "qps_single_thread": 5456.382892453905,
+      "build_secs": 75.96348187490366,
+      "index_bytes": 375882658
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 32,
+        "efConstruction": 200,
+        "efSearch": 64
+      },
+      "recall_at_10": 0.8912,
+      "qps_single_thread": 3207.6285104420876,
+      "build_secs": 75.96348187490366,
+      "index_bytes": 375882658
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 32,
+        "efConstruction": 200,
+        "efSearch": 128
+      },
+      "recall_at_10": 0.9189700000000001,
+      "qps_single_thread": 1906.1325047974844,
+      "build_secs": 75.96348187490366,
+      "index_bytes": 375882658
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 32,
+        "efConstruction": 200,
+        "efSearch": 256
+      },
+      "recall_at_10": 0.9418700000000001,
+      "qps_single_thread": 1012.9051244752578,
+      "build_secs": 75.96348187490366,
+      "index_bytes": 375882658
+    },
+    {
+      "library": "faiss",
+      "index": "IndexHNSWFlat",
+      "params": {
+        "M": 32,
+        "efConstruction": 200,
+        "efSearch": 512
+      },
+      "recall_at_10": 0.96065,
+      "qps_single_thread": 508.67837201960157,
+      "build_secs": 75.96348187490366,
+      "index_bytes": 375882658
+    },
+    {
+      "library": "hnswlib",
+      "index": "HNSW",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "ef": 16
+      },
+      "recall_at_10": 0.6757200000000001,
+      "qps_single_thread": 4625.261862042305,
+      "build_secs": 55.265411583008245,
+      "index_bytes": 336400000
+    },
+    {
+      "library": "hnswlib",
+      "index": "HNSW",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "ef": 32
+      },
+      "recall_at_10": 0.7767900000000001,
+      "qps_single_thread": 2477.19586386278,
+      "build_secs": 55.265411583008245,
+      "index_bytes": 336400000
+    },
+    {
+      "library": "hnswlib",
+      "index": "HNSW",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "ef": 64
+      },
+      "recall_at_10": 0.83768,
+      "qps_single_thread": 1513.9105193362846,
+      "build_secs": 55.265411583008245,
+      "index_bytes": 336400000
+    },
+    {
+      "library": "hnswlib",
+      "index": "HNSW",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "ef": 128
+      },
+      "recall_at_10": 0.8784200000000001,
+      "qps_single_thread": 1201.9762112097324,
+      "build_secs": 55.265411583008245,
+      "index_bytes": 336400000
+    },
+    {
+      "library": "hnswlib",
+      "index": "HNSW",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "ef": 256
+      },
+      "recall_at_10": 0.9057799999999999,
+      "qps_single_thread": 874.4766744180962,
+      "build_secs": 55.265411583008245,
+      "index_bytes": 336400000
+    },
+    {
+      "library": "hnswlib",
+      "index": "HNSW",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "ef": 512
+      },
+      "recall_at_10": 0.9318700000000001,
+      "qps_single_thread": 427.11677182381004,
+      "build_secs": 55.265411583008245,
+      "index_bytes": 336400000
+    }
+  ],
+  "hms": [
+    {
+      "build": {
+        "encode_secs_parallel": 154.820701084,
+        "insert_secs": 7.402279625,
+        "rss_bytes_after_build": 849772544
+      },
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 11.24 14.37 11.92 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "experimental_prefilter": {
+        "candidates": 100,
+        "note": "fraction of the true top-10 inside the sparse top-100; an exact re-rank of those candidates would return this recall. Not a shipped path.",
+        "recall_at_10": 0.53856
+      },
+      "k": 10,
+      "n_queries": 10000,
+      "path": "raw sparse vector: EntangledHVec::from_dense + HmsCore::query (inverted index)",
+      "qps_single_thread": 204.3990924295938,
+      "query_encode": {
+        "mean_us": 2582.4464877999967,
+        "p50_us": 2508.209,
+        "p95_us": 2889.5420000000004,
+        "p99_us": 3164.9159999999997
+      },
+      "query_search": {
+        "mean_us": 2309.9431413000016,
+        "p50_us": 2278.125,
+        "p95_us": 2863.292,
+        "p99_us": 3231.833
+      },
+      "query_total": {
+        "mean_us": 4892.389629099982,
+        "p50_us": 4846.2080000000005,
+        "p95_us": 5581.6669999999995,
+        "p99_us": 6052.0
+      },
+      "recall_at_10": 0.33949,
+      "sparse_dim": 16384
+    }
+  ],
+  "notes": [
+    "Queries run single-threaded one at a time for every system; builds use all cores.",
+    "HMS takes dense input through its sparse encoder; its latency includes encoding (query_total).",
+    "hnswlib index_bytes is an estimate (vectors + level-0 links); FAISS sizes are serialized bytes."
+  ]
+}

@@ -148,6 +148,10 @@ name = "similarity-decay"
 required-features = ["experimental"]
 
 [[bin]]
+name = "public-bench"
+path = "src/bin/public-bench.rs"
+
+[[bin]]
 name = "route-sweep"
 path = "src/bin/route-sweep.rs"
 
