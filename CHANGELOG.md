@@ -5,12 +5,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
 ## [Unreleased]
 
+### Added
+- Introduce IdentityRegistry enforcing W3C DIDs, Verifiable Credentials, and POSME Receipts for queries
+- Add AsyncHolographicClient, batch uploading, and metadata filtering
+- Add Pydantic AI and SmolAgents tool wrappers
+- Add Phidata integration and fix broken Rust examples
+- Add Semantic Kernel and DSPy integrations to Holographic SDK
+- Add LlamaIndex SDK adapter and CI pipeline
+- Pivot to Zero-Trust Edge Architecture (FHE-Lite, AGPL-3.0, SIMD)
+
 ### Changed
+- Centralize SDK HTTP client and add CrewAI + Embedchain platforms
+- Consolidate LangChain, LlamaIndex, and Haystack adapters into unified holographic-sdk
 - Remove dead self-inverse resonator; move ResonatorConfig to phase_resonator
 - Extract shared wire codec (write/read_lp_str, write/read_deltas)
 - Extract meaning_ctx() helper shared by structural_query and multi_hop
 
 ### Documentation
+- Record algorithm findings and private-search threat models
+- Rewrite README to highlight Zero-Trust Enterprise Security and Python SDK
+- State the testing policy explicitly in CONTRIBUTING.md (#66)
+- Sync changelog (#54)
 - Align guidance and track deferred production work (#52)
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -24,8 +39,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Remove unimplemented security claims and retired cloud code
+- Add missing experimental feature gate to zero_trust_demo
+- Add missing experimental feature gate to zero_trust_demo
+- Resolve CodeQL alerts and README formatting
+- Resolve clippy::chunks_exact_to_as_chunks lint regression on main (#61)
 - Resolve workflow code scanning alerts (#53)
 - Give relations a distinct magic byte (0xFA), accept legacy 0xFE on read
+
+### Performance
+- Optimize Zero-Trust FHE-Lite key generation and eliminate string cloning in hot loops
 
 ### Security
 - Remediate repository alerts and dependencies (#38)
