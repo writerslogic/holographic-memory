@@ -627,7 +627,17 @@ fn lme_scores(
         .enumerate()
         .map(|(n, (qid, items))| {
             let store = TempStore::new(&format!("lme-scores-{n}"))?;
-            let core = HmsCore::new(dim, Some(store.0.display().to_string()), None)?;
+            let config = HmsConfig {
+                embedding_space: Some(EmbeddingSpace {
+                    model: "external".into(),
+                    revision: "see benchmarks/public/longmemeval_modal.py".into(),
+                    dimensions: emb_dim,
+                    normalization: "l2".into(),
+                    metric: "cosine".into(),
+                }),
+                ..HmsConfig::default()
+            };
+            let core = HmsCore::new(dim, Some(store.0.display().to_string()), Some(config))?;
             for item in items {
                 core.memorize_document(DocumentInput {
                     id: item.id.clone(),
@@ -644,23 +654,31 @@ fn lme_scores(
                         .collect()]),
                 })?;
             }
-            let k = u32::try_from(items.len().max(1))?;
+            // The API returns at most 1000 hits, so each search is restricted to one chunk of
+            // ids; BM25 statistics are store-wide and cosine is exact, so scores do not depend
+            // on the chunking.
+            let ids: Vec<String> = items.iter().map(|i| i.id.clone()).collect();
             let mut per_variant = serde_json::Map::new();
             for query in variants.get(qid).map_or(&[][..], Vec::as_slice) {
-                let options = SearchOptions {
-                    k: Some(k),
-                    candidate_limit: Some(k),
-                    embedding: Some(q_emb[query.emb].iter().map(|&x| f64::from(x)).collect()),
-                    lexical_weight: Some(1.0),
-                    semantic_weight: Some(1.0),
-                    min_semantic_score: Some(-1.0),
-                    ..SearchOptions::default()
-                };
-                let rows: Vec<Value> = core
-                    .search_documents(&query.text, &options)?
-                    .into_iter()
-                    .map(|h| json!([h.document_id, h.lexical_score, h.semantic_score]))
-                    .collect();
+                let mut rows: Vec<Value> = Vec::with_capacity(ids.len());
+                for chunk in ids.chunks(1000) {
+                    let k = u32::try_from(chunk.len())?;
+                    let options = SearchOptions {
+                        k: Some(k),
+                        candidate_limit: Some(k),
+                        document_ids: Some(chunk.to_vec()),
+                        embedding: Some(q_emb[query.emb].iter().map(|&x| f64::from(x)).collect()),
+                        lexical_weight: Some(1.0),
+                        semantic_weight: Some(1.0),
+                        min_semantic_score: Some(-1.0),
+                        ..SearchOptions::default()
+                    };
+                    rows.extend(
+                        core.search_documents(&query.text, &options)?
+                            .into_iter()
+                            .map(|h| json!([h.document_id, h.lexical_score, h.semantic_score])),
+                    );
+                }
                 per_variant.insert(query.variant.clone(), Value::Array(rows));
             }
             Ok((qid.clone(), Value::Object(per_variant)))

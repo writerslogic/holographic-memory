@@ -37,6 +37,7 @@ LEVERS = {
         ("kinds.turn", [0.0, 0.5, 1.0, 2.0]),
         ("kinds.round", [0.0, 0.5, 1.0]),
         ("kinds.fact", [0.0, 0.5, 1.0]),
+        ("fact_as", [None, "session", "session_exp", "turn", "turn_exp"]),
         ("kinds.turn_exp", [0.0, 0.5, 1.0]),
         ("agg", ["max", "sum2", "sum3", "rrf"]),
         ("variants.rewrite", [0.0, 0.5, 1.0]),
@@ -52,6 +53,7 @@ LEVERS = {
         ("kinds.turn", [0.0, 0.5, 1.0]),
         ("kinds.round", [0.0, 0.5, 1.0, 2.0]),
         ("kinds.fact", [0.0, 0.5, 1.0, 2.0]),
+        ("fact_as", [None, "turn", "turn_exp", "round"]),
         ("kinds.turn_exp", [0.0, 0.5, 1.0, 2.0]),
         ("agg", ["max", "sum2", "sum3", "rrf"]),
         ("variants.rewrite", [0.0, 0.5, 1.0]),
@@ -140,14 +142,36 @@ def main(run_dir: str, data: str) -> None:
                 if best_v != getv(cur, path):
                     trace.append({"lever": path, "value": best_v, "objective": best_o, "gain": best_o - cur_obj})
                     cur, cur_obj, changed = setv(cur, path, best_v), best_o, True
+            # Re-rank weight, depth and the merge constant interact; search them jointly.
+            best_c, best_o = None, cur_obj
+            for w in (0.0, 1.0, 2.0, 4.0, 8.0, 16.0):
+                for n in dict(LEVERS[level])["rerank_n"]:
+                    for k0 in (10.0, 30.0, 60.0):
+                        c = setv(setv(setv(cur, "rerank_w", w), "rerank_n", n), "k0", k0)
+                        o = P.objective(metrics(c, level, sr))
+                        if o >= best_o + MIN_GAIN:
+                            best_c, best_o = c, o
+            if best_c is not None:
+                trace.append({"lever": "rerank_w+rerank_n+k0", "value": [best_c["rerank_w"], best_c["rerank_n"],
+                              best_c["k0"]], "objective": best_o, "gain": best_o - cur_obj})
+                cur, cur_obj, changed = best_c, best_o, True
             if not changed:
                 break
-        drop_one = []
-        for path, values in LEVERS[level]:
-            bv = getv(b, path)
-            if getv(cur, path) != bv:
-                o = P.objective(metrics(setv(cur, path, bv), level, sr))
-                drop_one.append({"lever": path, "reverted_to": bv, "objective": o, "loss": cur_obj - o})
+        pruned = []
+        while True:
+            drop_one = []
+            for path, _ in LEVERS[level]:
+                bv = getv(b, path)
+                if getv(cur, path) != bv:
+                    o = P.objective(metrics(setv(cur, path, bv), level, sr))
+                    drop_one.append({"lever": path, "reverted_to": bv, "objective": o, "loss": cur_obj - o})
+            weakest = min(drop_one, key=lambda d: d["loss"], default=None)
+            if weakest is None or weakest["loss"] >= MIN_GAIN:
+                break
+            # Keep only levers that still pay for themselves in combination.
+            pruned.append(weakest)
+            cur, cur_obj = setv(cur, weakest["lever"], weakest["reverted_to"]), weakest["objective"]
+        trace += [{"pruned": p["lever"], "objective": p["objective"]} for p in pruned]
         base_m, final_m = metrics(b, level, sr), metrics(cur, level, sr)
         report["levels"][level] = {"baseline": b, "baseline_objective": b_obj, "baseline_metrics": base_m,
                                    "alone": alone, "greedy": trace, "final": cur, "final_objective": cur_obj,
@@ -157,7 +181,7 @@ def main(run_dir: str, data: str) -> None:
             best_sess_rank = rank(cur, "session")
         print(f"{level}: baseline {b_obj:.4f} -> {cur_obj:.4f}", flush=True)
     (HERE / "longmemeval_config.json").write_text(json.dumps(final, indent=1) + "\n")
-    out = HERE.parents[1] / "results" / "longmemeval_dev_ablation.json"
+    out = HERE.parent / "results" / "longmemeval_dev_ablation.json"
     out.write_text(json.dumps(report, indent=1) + "\n")
     print(f"wrote {out}")
 

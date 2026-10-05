@@ -254,6 +254,7 @@ DEFAULT = {
     "agg": "max",  # key scores -> target: 'max', 'sum2', 'sum3', 'rrf'
     "k0": 60.0,  # RRF constant of the merge across lists
     "sess_prior": 0.0,  # turn ranking: weight of the turn's session rank
+    "fact_as": None,  # merge fact keys into this kind's list (max over keys) instead of their own list
     "time_w": 0.0,  # sessions dated inside the parsed time range
     "rerank_w": 0.0,
     "rerank_n": 20,
@@ -313,7 +314,10 @@ def rank_question(q: Question, raw: dict, targets: dict, cfg: dict, level: str,
             continue
         by_kind: dict[str, list] = {}
         for r in rows:
-            by_kind.setdefault(r[0].split("|", 1)[0], []).append(r)
+            kind = r[0].split("|", 1)[0]
+            if kind == "fact" and cfg.get("fact_as"):
+                kind = cfg["fact_as"]  # the paper's "separate" join: facts share the value keys' index
+            by_kind.setdefault(kind, []).append(r)
         for kind, krows in by_kind.items():
             kw = cfg["kinds"].get(kind, 0.0)
             if kw <= 0:
@@ -321,9 +325,12 @@ def rank_question(q: Question, raw: dict, targets: dict, cfg: dict, level: str,
             idx = 0 if level == "turn" else 1
             kt = {r[0]: targets[r[0]][idx] for r in krows}
             agg = _aggregate(_fuse_keys(krows, cfg), kt, cfg["agg"])
-            for t, r in _ranks(agg).items():
-                if t in final:
-                    final[t] += kw * vw / (k0 + r + 1)
+            ranks = _ranks(agg)
+            # Partial lists (facts exist for some sessions only) rank absent targets last, so
+            # merely having a key of this kind is not rewarded.
+            worst = len(all_targets)
+            for t in final:
+                final[t] += kw * vw / (k0 + ranks.get(t, worst) + 1)
     if level == "turn" and cfg["sess_prior"] > 0 and session_ranking:
         srank = {s: r for r, s in enumerate(session_ranking)}
         for t in final:

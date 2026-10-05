@@ -108,7 +108,18 @@ def _embed(model: str, rev: str, gpu: str, texts: list[str], is_query: bool) -> 
     m.max_seq_length = 2048
     # Model card: queries carry "Instruct: {task}\nQuery:{query}", documents no prompt; last-token pooling, L2.
     prompt = f"Instruct: {P.EMBED_TASK}\nQuery:" if is_query else None
-    e = m.encode(texts, prompt=prompt, batch_size=16, normalize_embeddings=True, convert_to_numpy=True)
+    budget = 16384 if gpu == "T4" else 65536  # padded tokens per batch; long keys get small batches
+    out, i = [], 0
+    while i < len(texts):
+        est = min(m.max_seq_length, len(texts[i]) // 3 + 32)
+        n = max(1, min(64, budget // est))
+        # Texts arrive sorted by length, so the batch's last text bounds its padded length.
+        while n > 1 and min(m.max_seq_length, len(texts[min(i + n, len(texts)) - 1]) // 3 + 32) * n > budget:
+            n //= 2
+        out.append(m.encode(texts[i:i + n], prompt=prompt, batch_size=n, normalize_embeddings=True,
+                            convert_to_numpy=True))
+        i += n
+    e = np.concatenate(out)
     return np.asarray(e, dtype=np.float16).tobytes(), time.time() - t
 
 
@@ -233,8 +244,11 @@ class Budget:
         print(f"[{stage}] {n} items on {gpu}: {secs:.0f}s ${usd:.3f} (total ${self.total():.3f})", flush=True)
 
 
+CACHE = V / "cache"  # the driver points this at /vol/<namespace>/cache for an isolated (fresh) run
+
+
 def _cache_dir(stage: str, model: str, rev: str) -> Path:
-    return V / "cache" / stage / f"{model.replace('/', '__')}@{rev[:12]}"
+    return CACHE / stage / f"{model.replace('/', '__')}@{rev[:12]}"
 
 
 def _load_json_cache(d: Path) -> dict:
@@ -386,7 +400,9 @@ def _eval_utils():
 
 
 def _kinds_used(cfgs) -> list[str]:
-    return sorted({k for c in cfgs for k, w in c["kinds"].items() if w > 0})
+    used = {k for c in cfgs for k, w in c["kinds"].items() if w > 0}
+    used |= {"fact" for c in cfgs if c.get("fact_as") and c["kinds"].get(c["fact_as"], 0) > 0}
+    return sorted(used)
 
 
 def _rerank_query(q) -> str:
@@ -405,10 +421,12 @@ def _rerank_doc(q, target: str, level: str) -> str:
 
 @app.function(image=cpu_image, volumes={"/vol": VOL}, timeout=24 * 3600, cpu=8, memory=16384)
 def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: str,
-           all_kinds: bool = False, rerank_pool: tuple[int, int] = (30, 50)) -> dict:
-
+           all_kinds: bool = False, rerank_pool: tuple[int, int] = (30, 50), cache_ns: str = "") -> dict:
+    global CACHE
     import longmemeval_pipeline as P
 
+    if cache_ns:
+        CACHE = V / cache_ns / "cache"
     budget = Budget(cap)
     split = json.loads(config.pop("_split"))
     ids = None if part == "all" else set(split[part])
@@ -451,7 +469,7 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
         digest = hashlib.sha256()
         for f in ("items.jsonl", "queries.jsonl", "items.f32", "queries.f32"):
             digest.update((tmp / f).read_bytes())
-        out = V / "cache" / "scores" / f"{digest.hexdigest()[:32]}.json"
+        out = CACHE / "scores" / f"{digest.hexdigest()[:32]}.json"
         if not out.exists():
             out.parent.mkdir(parents=True, exist_ok=True)
             subprocess.run([exe, "lme-scores", "--items", tmp / "items.jsonl", "--item-emb", tmp / "items.f32",
@@ -477,8 +495,10 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
         cache = _load_json_cache(d)
         want, pairs = {}, {}
         byq = {q.qid: q for q in qs}
-        for level, depth in (("session", rerank_pool[0]), ("turn", rerank_pool[1])):
+        for level, depth, cfg in (("session", rerank_pool[0], cfg_s), ("turn", rerank_pool[1], cfg_t)):
             want[level] = {}
+            if not all_kinds:
+                depth = min(depth, cfg["rerank_n"]) if cfg["rerank_w"] > 0 else 0
             for qid, ranked in rankings[level].items():
                 q = byq[qid]
                 for t in ranked[:depth]:
@@ -529,7 +549,7 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
 @app.local_entrypoint()
 def main(dataset: str = "s", part: str = "dev", models: str = "small", cap: float = 5.0,
          config: str = str(HERE / "longmemeval_config.json"), tag: str = "", all_kinds: bool = False,
-         out: str = ""):
+         out: str = "", cache_ns: str = ""):
     if dataset not in ("s", "m") or part not in ("dev", "heldout", "all") or models not in MODELS:
         sys.exit("bad --dataset / --part / --models")
     if part == "heldout" and dataset == "s":
@@ -537,7 +557,7 @@ def main(dataset: str = "s", part: str = "dev", models: str = "small", cap: floa
     cfg = json.loads(Path(config).read_text())
     cfg["_split"] = (HERE / "longmemeval_split.json").read_text()
     tag = tag or f"{dataset}-{part}-{models}-{int(time.time())}"
-    result = driver.remote(dataset, part, models, cap, cfg, tag, all_kinds)
+    result = driver.remote(dataset, part, models, cap, cfg, tag, all_kinds, cache_ns=cache_ns)
     o = result["metrics"]
     for name, m in o.items():
         for lvl in ("session", "turn"):
