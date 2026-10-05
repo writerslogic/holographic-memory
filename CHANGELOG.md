@@ -14,12 +14,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Attribute semantic search to the document API
+- Update changelog [skip ci]
 - Record the outcomes of the algorithm work
 - Give the SDK README the project header, badges and a quick start
 - Use absolute logo URLs so the README renders on package registries
 - Update changelog [skip ci]
 
 ### Fixed
+- Decode benchmark data with as_chunks for the current clippy
 - Resolve leftover merge markers in .bestpractices.json
 - Serve SDK queries by exact cosine through the document API
 - Return query results best-first on exact-scan, multi-shard and federated paths
