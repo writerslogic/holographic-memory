@@ -1,0 +1,1067 @@
+{
+  "arch": "aarch64",
+  "cluster_model": "300 base vectors, each copy has 20% indices replaced",
+  "complete": true,
+  "cpus": 10,
+  "k": 10,
+  "latency": "single-threaded caller, wall time per HmsCore::query, warm, microseconds",
+  "machine": "Apple M4",
+  "os": "macos",
+  "points": [
+    {
+      "active_per_vector": 16,
+      "dataset": "random",
+      "dim": 4096,
+      "memorize_secs": 0.041711208,
+      "n": 1000,
+      "routes": {
+        "exact": {
+          "mean_us": 124.27725999999991,
+          "p50_us": 122.708,
+          "p95_us": 146.125,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 7.254159999999998,
+          "p50_us": 6.0,
+          "p95_us": 9.5,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 171.70102499999993,
+          "p50_us": 156.041,
+          "p95_us": 220.916,
+          "queries": 200,
+          "recall_at_10": 0.29099999999999987,
+          "route_reported": "ivf",
+          "train_secs": 4.549659542
+        },
+        "nsg": {
+          "mean_us": 112.344385,
+          "p50_us": 112.54100000000001,
+          "p95_us": 135.375,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 0.201785791
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "random",
+      "dim": 4096,
+      "memorize_secs": 0.062989834,
+      "n": 3000,
+      "routes": {
+        "exact": {
+          "mean_us": 302.023935,
+          "p50_us": 299.54200000000003,
+          "p95_us": 353.209,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 9.530879999999998,
+          "p50_us": 9.541,
+          "p95_us": 10.959,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 288.57688999999993,
+          "p50_us": 240.916,
+          "p95_us": 433.416,
+          "queries": 200,
+          "recall_at_10": 0.23200000000000018,
+          "route_reported": "ivf",
+          "train_secs": 11.662350792
+        },
+        "nsg": {
+          "mean_us": 229.114765,
+          "p50_us": 225.583,
+          "p95_us": 290.167,
+          "queries": 200,
+          "recall_at_10": 0.9965000000000002,
+          "route_reported": "nsg",
+          "train_secs": 2.066830208
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "random",
+      "dim": 4096,
+      "memorize_secs": 0.282857792,
+      "n": 10000,
+      "routes": {
+        "exact": {
+          "mean_us": 1209.0052099999996,
+          "p50_us": 1130.292,
+          "p95_us": 1494.0,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 29.79748499999999,
+          "p50_us": 27.625,
+          "p95_us": 31.541999999999998,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 227.3418649999999,
+          "p50_us": 226.833,
+          "p95_us": 251.37500000000003,
+          "queries": 200,
+          "recall_at_10": 0.07299999999999988,
+          "route_reported": "ivf",
+          "train_secs": 50.873393167
+        },
+        "nsg": {
+          "mean_us": 339.454595,
+          "p50_us": 249.66700000000003,
+          "p95_us": 496.87500000000006,
+          "queries": 200,
+          "recall_at_10": 0.9895,
+          "route_reported": "nsg",
+          "train_secs": 6.708269875
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "random",
+      "dim": 4096,
+      "memorize_secs": 0.666877417,
+      "n": 30000,
+      "routes": {
+        "exact": {
+          "mean_us": 2563.1576800000003,
+          "p50_us": 2529.916,
+          "p95_us": 2842.417,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 54.98541500000002,
+          "p50_us": 54.708,
+          "p95_us": 59.833,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 625.9504400000002,
+          "p50_us": 323.791,
+          "p95_us": 602.166,
+          "queries": 200,
+          "recall_at_10": 0.06299999999999993,
+          "route_reported": "ivf",
+          "train_secs": 170.516537125
+        },
+        "nsg": {
+          "mean_us": 446.2124750000001,
+          "p50_us": 433.833,
+          "p95_us": 530.25,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 98.5575635
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "random",
+      "dim": 4096,
+      "memorize_secs": 2.029136208,
+      "n": 100000,
+      "routes": {
+        "exact": {
+          "mean_us": 9187.52314,
+          "p50_us": 8995.542000000001,
+          "p95_us": 11301.25,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 222.2525250000001,
+          "p50_us": 191.0,
+          "p95_us": 379.083,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 816s exceeds budget 600s"
+        },
+        "nsg": {
+          "mean_us": 475.9237750000001,
+          "p50_us": 467.625,
+          "p95_us": 564.0,
+          "queries": 200,
+          "recall_at_10": 0.9995,
+          "route_reported": "nsg",
+          "train_secs": 465.396475959
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "random",
+      "dim": 4096,
+      "memorize_secs": 5.158037417,
+      "n": 300000,
+      "routes": {
+        "exact": {
+          "mean_us": 24778.721845000015,
+          "p50_us": 25086.958,
+          "p95_us": 27095.834,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 498.39167499999996,
+          "p50_us": 495.70799999999997,
+          "p95_us": 537.958,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 3402s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 1941s exceeds budget 600s"
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "random",
+      "dim": 4096,
+      "memorize_secs": 19.582320292,
+      "n": 1000000,
+      "routes": {
+        "exact": {
+          "mean_us": 81886.87707499998,
+          "p50_us": 82064.333,
+          "p95_us": 90120.79100000001,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 2031.5468950000009,
+          "p50_us": 1909.25,
+          "p95_us": 2843.375,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 16275s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 9286s exceeds budget 600s"
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "clustered",
+      "dim": 4096,
+      "memorize_secs": 0.020779084,
+      "n": 1000,
+      "routes": {
+        "exact": {
+          "mean_us": 87.38830999999999,
+          "p50_us": 87.167,
+          "p95_us": 93.166,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 3.4910449999999997,
+          "p50_us": 3.458,
+          "p95_us": 4.3340000000000005,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 130.43147499999998,
+          "p50_us": 129.667,
+          "p95_us": 140.5,
+          "queries": 200,
+          "recall_at_10": 0.5039999999999998,
+          "route_reported": "ivf",
+          "train_secs": 1.6235277909999999
+        },
+        "nsg": {
+          "mean_us": 98.53562999999997,
+          "p50_us": 98.459,
+          "p95_us": 105.708,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 0.201328
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "clustered",
+      "dim": 4096,
+      "memorize_secs": 0.061289708,
+      "n": 3000,
+      "routes": {
+        "exact": {
+          "mean_us": 258.23144,
+          "p50_us": 255.08300000000003,
+          "p95_us": 280.959,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 7.195044999999999,
+          "p50_us": 7.209,
+          "p95_us": 9.583,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 149.24185500000004,
+          "p50_us": 150.083,
+          "p95_us": 159.75,
+          "queries": 200,
+          "recall_at_10": 0.9089999999999999,
+          "route_reported": "ivf",
+          "train_secs": 6.5700196250000005
+        },
+        "nsg": {
+          "mean_us": 128.28459,
+          "p50_us": 125.95799999999998,
+          "p95_us": 172.084,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 2.101104833
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "clustered",
+      "dim": 4096,
+      "memorize_secs": 0.1901235,
+      "n": 10000,
+      "routes": {
+        "exact": {
+          "mean_us": 896.0633499999997,
+          "p50_us": 858.2909999999999,
+          "p95_us": 1182.25,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 28.730819999999998,
+          "p50_us": 23.875,
+          "p95_us": 53.542,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 171.07060000000004,
+          "p50_us": 173.75,
+          "p95_us": 214.083,
+          "queries": 200,
+          "recall_at_10": 0.7420000000000002,
+          "route_reported": "ivf",
+          "train_secs": 23.906112708
+        },
+        "nsg": {
+          "mean_us": 180.30647999999994,
+          "p50_us": 172.375,
+          "p95_us": 234.042,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 6.125148334
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "clustered",
+      "dim": 4096,
+      "memorize_secs": 0.628625625,
+      "n": 30000,
+      "routes": {
+        "exact": {
+          "mean_us": 2501.1833749999996,
+          "p50_us": 2524.25,
+          "p95_us": 2724.25,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 64.65355000000004,
+          "p50_us": 64.625,
+          "p95_us": 80.16699999999999,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 212.697505,
+          "p50_us": 238.417,
+          "p95_us": 270.208,
+          "queries": 200,
+          "recall_at_10": 0.7165000000000004,
+          "route_reported": "ivf",
+          "train_secs": 76.621949625
+        },
+        "nsg": {
+          "mean_us": 171.549545,
+          "p50_us": 175.292,
+          "p95_us": 227.0,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 21.381200875
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "clustered",
+      "dim": 4096,
+      "memorize_secs": 2.014193875,
+      "n": 100000,
+      "routes": {
+        "exact": {
+          "mean_us": 8442.239380000005,
+          "p50_us": 8314.292,
+          "p95_us": 10261.417,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 301.62333500000005,
+          "p50_us": 226.583,
+          "p95_us": 786.167,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 440.18021999999996,
+          "p50_us": 541.75,
+          "p95_us": 654.833,
+          "queries": 200,
+          "recall_at_10": 0.3669999999999999,
+          "route_reported": "ivf",
+          "train_secs": 272.673860625
+        },
+        "nsg": {
+          "mean_us": 42.358370000000015,
+          "p50_us": 39.792,
+          "p95_us": 56.709,
+          "queries": 200,
+          "recall_at_10": 0.0,
+          "route_reported": "nsg",
+          "train_secs": 129.612126541
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "clustered",
+      "dim": 4096,
+      "memorize_secs": 6.435479,
+      "n": 300000,
+      "routes": {
+        "exact": {
+          "mean_us": 28560.637485000017,
+          "p50_us": 28882.333,
+          "p95_us": 32425.334,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 872.9377150000004,
+          "p50_us": 765.875,
+          "p95_us": 1733.5829999999999,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 1137s exceeds budget 600s"
+        },
+        "nsg": {
+          "mean_us": 79.9454,
+          "p50_us": 78.834,
+          "p95_us": 96.167,
+          "queries": 200,
+          "recall_at_10": 0.005,
+          "route_reported": "nsg",
+          "train_secs": 399.190530334
+        }
+      }
+    },
+    {
+      "active_per_vector": 16,
+      "dataset": "clustered",
+      "dim": 4096,
+      "memorize_secs": 19.317108041,
+      "n": 1000000,
+      "routes": {
+        "exact": {
+          "mean_us": 93744.32602000002,
+          "p50_us": 91110.5,
+          "p95_us": 121197.375,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 2858.182259999999,
+          "p50_us": 2262.875,
+          "p95_us": 7273.458,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 5441s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 1910s exceeds budget 600s"
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "random",
+      "dim": 16384,
+      "memorize_secs": 0.021224792,
+      "n": 1000,
+      "routes": {
+        "exact": {
+          "mean_us": 426.7662249999999,
+          "p50_us": 403.792,
+          "p95_us": 555.209,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 10.342545,
+          "p50_us": 10.292000000000002,
+          "p95_us": 11.625,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 699.754805,
+          "p50_us": 683.0,
+          "p95_us": 893.5,
+          "queries": 200,
+          "recall_at_10": 0.14100000000000018,
+          "route_reported": "ivf",
+          "train_secs": 16.280338542
+        },
+        "nsg": {
+          "mean_us": 542.79371,
+          "p50_us": 551.4159999999999,
+          "p95_us": 662.959,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 0.746291333
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "random",
+      "dim": 16384,
+      "memorize_secs": 0.068951334,
+      "n": 3000,
+      "routes": {
+        "exact": {
+          "mean_us": 1656.045229999999,
+          "p50_us": 1619.0,
+          "p95_us": 2248.375,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 28.43710999999999,
+          "p50_us": 27.375,
+          "p95_us": 33.875,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 592.2158700000001,
+          "p50_us": 585.875,
+          "p95_us": 641.958,
+          "queries": 200,
+          "recall_at_10": 0.11949999999999995,
+          "route_reported": "ivf",
+          "train_secs": 50.056178792
+        },
+        "nsg": {
+          "mean_us": 770.3445800000002,
+          "p50_us": 767.5,
+          "p95_us": 821.625,
+          "queries": 200,
+          "recall_at_10": 0.9800000000000001,
+          "route_reported": "nsg",
+          "train_secs": 2.644259667
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "random",
+      "dim": 16384,
+      "memorize_secs": 0.211581541,
+      "n": 10000,
+      "routes": {
+        "exact": {
+          "mean_us": 3947.4960050000013,
+          "p50_us": 3938.917,
+          "p95_us": 4139.125,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 75.40815000000002,
+          "p50_us": 74.0,
+          "p95_us": 84.875,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 721.2956450000003,
+          "p50_us": 721.7909999999999,
+          "p95_us": 767.75,
+          "queries": 200,
+          "recall_at_10": 0.06499999999999989,
+          "route_reported": "ivf",
+          "train_secs": 173.096926958
+        },
+        "nsg": {
+          "mean_us": 1481.7556049999996,
+          "p50_us": 1495.208,
+          "p95_us": 1756.042,
+          "queries": 200,
+          "recall_at_10": 0.9975,
+          "route_reported": "nsg",
+          "train_secs": 25.065045416
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "random",
+      "dim": 16384,
+      "memorize_secs": 0.6168905,
+      "n": 30000,
+      "routes": {
+        "exact": {
+          "mean_us": 11539.163704999999,
+          "p50_us": 11547.958,
+          "p95_us": 11950.208999999999,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 195.03519499999996,
+          "p50_us": 193.5,
+          "p95_us": 210.792,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 722s exceeds budget 600s"
+        },
+        "nsg": {
+          "mean_us": 1686.80039,
+          "p50_us": 1650.9579999999999,
+          "p95_us": 1883.0,
+          "queries": 200,
+          "recall_at_10": 0.9945000000000002,
+          "route_reported": "nsg",
+          "train_secs": 266.119531709
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "random",
+      "dim": 16384,
+      "memorize_secs": 2.398265875,
+      "n": 100000,
+      "routes": {
+        "exact": {
+          "mean_us": 40281.65149000003,
+          "p50_us": 38879.875,
+          "p95_us": 46584.792,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 2515.5603849999998,
+          "p50_us": 909.9159999999999,
+          "p95_us": 9816.458,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 3454s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 1273s exceeds budget 600s"
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "random",
+      "dim": 16384,
+      "memorize_secs": 7.922956334,
+      "n": 300000,
+      "routes": {
+        "exact": {
+          "mean_us": 156191.76897,
+          "p50_us": 145756.95799999998,
+          "p95_us": 273001.91699999996,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 19474.523994999992,
+          "p50_us": 14817.875,
+          "p95_us": 53613.916999999994,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 14406s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 5310s exceeds budget 600s"
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "random",
+      "dim": 16384,
+      "memorize_secs": 28.118531875,
+      "n": 1000000,
+      "routes": {
+        "exact": {
+          "mean_us": 521803.5935199999,
+          "p50_us": 471767.541,
+          "p95_us": 880136.542,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 10571.243809999996,
+          "p50_us": 9719.791000000001,
+          "p95_us": 15761.875000000002,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 68911s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 25399s exceeds budget 600s"
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "clustered",
+      "dim": 16384,
+      "memorize_secs": 0.020225541,
+      "n": 1000,
+      "routes": {
+        "exact": {
+          "mean_us": 399.77355500000004,
+          "p50_us": 398.542,
+          "p95_us": 409.167,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 10.104575,
+          "p50_us": 10.0,
+          "p95_us": 11.834000000000001,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 537.29147,
+          "p50_us": 529.791,
+          "p95_us": 619.083,
+          "queries": 200,
+          "recall_at_10": 0.3754999999999991,
+          "route_reported": "ivf",
+          "train_secs": 15.468843375
+        },
+        "nsg": {
+          "mean_us": 366.169785,
+          "p50_us": 365.25,
+          "p95_us": 383.291,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 0.618315208
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "clustered",
+      "dim": 16384,
+      "memorize_secs": 0.065817583,
+      "n": 3000,
+      "routes": {
+        "exact": {
+          "mean_us": 1264.989165,
+          "p50_us": 1212.75,
+          "p95_us": 1516.708,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 23.984569999999994,
+          "p50_us": 22.166999999999998,
+          "p95_us": 38.083,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 657.75478,
+          "p50_us": 606.708,
+          "p95_us": 839.2090000000001,
+          "queries": 200,
+          "recall_at_10": 0.9104999999999996,
+          "route_reported": "ivf",
+          "train_secs": 52.905759625
+        },
+        "nsg": {
+          "mean_us": 930.2939650000002,
+          "p50_us": 907.583,
+          "p95_us": 1195.4579999999999,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 4.0939215
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "clustered",
+      "dim": 16384,
+      "memorize_secs": 0.214139833,
+      "n": 10000,
+      "routes": {
+        "exact": {
+          "mean_us": 4012.7522799999992,
+          "p50_us": 3962.0840000000003,
+          "p95_us": 4417.0,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 71.69226999999997,
+          "p50_us": 69.25,
+          "p95_us": 94.084,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "mean_us": 582.3643599999999,
+          "p50_us": 596.375,
+          "p95_us": 628.25,
+          "queries": 200,
+          "recall_at_10": 0.556,
+          "route_reported": "ivf",
+          "train_secs": 163.7232095
+        },
+        "nsg": {
+          "mean_us": 869.1143549999995,
+          "p50_us": 845.8330000000001,
+          "p95_us": 1100.583,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "nsg",
+          "train_secs": 25.974835333
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "clustered",
+      "dim": 16384,
+      "memorize_secs": 0.659044958,
+      "n": 30000,
+      "routes": {
+        "exact": {
+          "mean_us": 12145.548979999998,
+          "p50_us": 12095.333999999999,
+          "p95_us": 12862.792,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 254.95728000000005,
+          "p50_us": 244.292,
+          "p95_us": 403.334,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 683s exceeds budget 600s"
+        },
+        "nsg": {
+          "mean_us": 507.75041999999996,
+          "p50_us": 514.959,
+          "p95_us": 714.542,
+          "queries": 200,
+          "recall_at_10": 0.995,
+          "route_reported": "nsg",
+          "train_secs": 78.370612958
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "clustered",
+      "dim": 16384,
+      "memorize_secs": 2.117897916,
+      "n": 100000,
+      "routes": {
+        "exact": {
+          "mean_us": 39336.28001999999,
+          "p50_us": 39165.041999999994,
+          "p95_us": 41168.167,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 663.67231,
+          "p50_us": 652.9580000000001,
+          "p95_us": 779.625,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 3267s exceeds budget 600s"
+        },
+        "nsg": {
+          "mean_us": 162.04163,
+          "p50_us": 162.75,
+          "p95_us": 214.792,
+          "queries": 200,
+          "recall_at_10": 0.01,
+          "route_reported": "nsg",
+          "train_secs": 331.141898083
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "clustered",
+      "dim": 16384,
+      "memorize_secs": 7.862260291,
+      "n": 300000,
+      "routes": {
+        "exact": {
+          "mean_us": 142199.59542000003,
+          "p50_us": 142413.0,
+          "p95_us": 153280.792,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 3113.154979999999,
+          "p50_us": 2599.166,
+          "p95_us": 6069.75,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 13626s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 1381s exceeds budget 600s"
+        }
+      }
+    },
+    {
+      "active_per_vector": 64,
+      "dataset": "clustered",
+      "dim": 16384,
+      "memorize_secs": 31.955504167,
+      "n": 1000000,
+      "routes": {
+        "exact": {
+          "mean_us": 466261.3678849999,
+          "p50_us": 467134.0,
+          "p95_us": 500299.87499999994,
+          "queries": 200,
+          "recall_at_10": 1.0
+        },
+        "inverted": {
+          "mean_us": 25340.784559999996,
+          "p50_us": 24226.417,
+          "p95_us": 41271.583,
+          "queries": 200,
+          "recall_at_10": 1.0,
+          "route_reported": "inverted"
+        },
+        "ivf": {
+          "skipped": "estimated training 65179s exceeds budget 600s"
+        },
+        "nsg": {
+          "skipped": "estimated training 6607s exceeds budget 600s"
+        }
+      }
+    }
+  ],
+  "queries_per_point": 200,
+  "query_model": "stored vector with 25% of active indices replaced by random ones",
+  "recall_model": "tie-tolerant recall@10 vs exact Jaccard scan",
+  "schema_version": 1,
+  "train_budget_secs": 600.0
+}

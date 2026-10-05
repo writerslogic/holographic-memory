@@ -95,23 +95,29 @@ impl QueryPlanner {
             };
         }
 
-        // High-sparsity queries are ideal for Sparse Inverted Index
-        if self.inverted_available && s <= SPARSE_INDEX_THRESHOLD {
+        // Exact inverted scoring costs about N*s^2/D counter increments. On
+        // benchmarks/results/route_sweep.json (Apple M4, N = 1e3..1e6, D = 4096 and
+        // 16384, s = D/256, random and clustered codes) it had recall@10 = 1.0 at every
+        // point. NSG and IVF were faster only on clustered codes at N >= 1e5, with
+        // recall@10 <= 0.37, so no usable crossover was reached in that range.
+        // Denser queries are unmeasured and fall through to the approximate indexes.
+        if self.inverted_available
+            && (s <= SPARSE_INDEX_THRESHOLD || s < self.dimensions / INVERTED_SPARSITY_DENOM)
+        {
             return QueryPlan {
                 route: IndexRoute::Inverted,
                 ef_search,
                 n_probe,
-                rationale: "very sparse queries favor the inverted index",
+                rationale: "exact inverted scoring is exact and fast for sparse queries",
             };
         }
 
-        // Preferred indexed routes
         if self.nsg_available {
             return QueryPlan {
                 route: IndexRoute::NSG,
                 ef_search,
                 n_probe,
-                rationale: "a trained NSG index is preferred for approximate retrieval",
+                rationale: "a dense query with a trained NSG index uses graph retrieval",
             };
         }
 
@@ -120,17 +126,7 @@ impl QueryPlanner {
                 route: IndexRoute::IVF,
                 ef_search,
                 n_probe,
-                rationale: "a trained IVF index is available",
-            };
-        }
-
-        // Default to Inverted if it's the only thing we have and s isn't too high.
-        if self.inverted_available && s < (self.dimensions / INVERTED_SPARSITY_DENOM) {
-            return QueryPlan {
-                route: IndexRoute::Inverted,
-                ef_search,
-                n_probe,
-                rationale: "the inverted index is the only applicable trained index",
+                rationale: "a dense query with a trained IVF index uses IVF retrieval",
             };
         }
 
@@ -194,9 +190,37 @@ mod tests {
     #[test]
     fn plan_adjusts_ef_search_for_large_k() {
         let planner = QueryPlanner::new(true, true, true, 5000, 1000);
-        let q = EntangledHVec::from_indices((0..10).collect(), 1000);
+        let q = EntangledHVec::from_indices((0..40).collect(), 1000);
         let plan = planner.plan(&q, 100);
         assert!(plan.ef_search >= 100);
         assert_eq!(plan.route, IndexRoute::NSG);
+    }
+
+    #[test]
+    fn plan_default_density_prefers_inverted_over_trained_indexes() {
+        // D/256 active indices, the density the sweep measured.
+        let q = EntangledHVec::from_indices((0..64).collect(), 16384);
+        for n in [1_000, 100_000, 1_000_000] {
+            let plan = QueryPlanner::new(true, true, true, n, 16384).plan(&q, 10);
+            assert_eq!(plan.route, IndexRoute::Inverted, "n = {n}");
+        }
+    }
+
+    #[test]
+    fn plan_dense_query_falls_back_to_trained_indexes() {
+        let q = EntangledHVec::from_indices((0..40).collect(), 1000);
+        let nsg = QueryPlanner::new(true, true, true, 5000, 1000).plan(&q, 10);
+        assert_eq!(nsg.route, IndexRoute::NSG);
+        let ivf = QueryPlanner::new(false, true, true, 5000, 1000).plan(&q, 10);
+        assert_eq!(ivf.route, IndexRoute::IVF);
+    }
+
+    #[test]
+    fn plan_brute_force_boundary() {
+        let q = EntangledHVec::from_indices((0..64).collect(), 16384);
+        let below = QueryPlanner::new(true, true, true, BRUTE_FORCE_THRESHOLD - 1, 16384);
+        assert_eq!(below.plan(&q, 10).route, IndexRoute::BruteForce);
+        let at = QueryPlanner::new(true, true, true, BRUTE_FORCE_THRESHOLD, 16384);
+        assert_eq!(at.plan(&q, 10).route, IndexRoute::Inverted);
     }
 }
