@@ -497,3 +497,22 @@ Ingest time is dominated by the LLM's output length (sessions with many facts ta
 seconds); query latency by the rewrite generation. The CPU path was checked for correctness, not
 timed end to end. Embedder and re-ranker parity with the Python stages on 48 turns / 16 questions /
 48 pairs: cosine >= 0.9999997, p(yes) max |diff| 8.4e-8 (CPU) and 7.4e-8 (Metal).
+
+### LLM stage on GPU, S dev (Modal L4)
+
+`benchmarks/results/longmemeval_dev_hms_stages.json`. HMS's fact extraction (Qwen3-4B-Instruct-2507,
+candle, CUDA, one sequence at a time) was run over the S dev sessions on an L4 and compared key by key
+with the cached Python/vLLM outputs for the same model, revision and prompt
+(`benchmarks/public/compare_fact_caches.py`). On the first 1,500 sessions: identical output for 1,106
+(74%), the same fact set after normalization for 1,111, the same empty/non-empty decision for 1,482,
+and 2 unparseable outputs on each side. HMS produced 4,597 facts against Python's 4,493; 96% of
+Python's facts have an HMS fact with token Jaccard >= 0.5 (85% at >= 0.8), and 94% / 83% the other
+way. The prompt and parser are shared, so the differences come from decoding; their source within
+the decoder (kernels, numeric precision) was not isolated.
+
+Throughput is the problem: 4.64 s per session against 0.28 s with vLLM on the same GPU type, about
+17x slower, because HMS decodes one sequence at a time on GPU (the candle mask bug noted above). At
+that rate the S dev fact stage alone costs about $5.3 on an L4, so the `--cap 8` run is not expected
+to reach the retrieval stages; this run gives no retrieval comparison with
+`longmemeval_dev_final.json`. Candle 0.11 also does not compile its CUDA kernels for T4 (sm_75) on
+CUDA 12.4, so every HMS stage runs on L4.

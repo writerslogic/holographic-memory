@@ -1,0 +1,43 @@
+{
+ "protocol": "LongMemEval_S frozen dev split; HMS local-models stages (candle, CUDA) on Modal L4 via `longmemeval_modal.py --engine hms --models small --cap 8 --tag s-dev-hms`. Fact extraction compared key by key (same model, revision and prompt) with the cached Python/vLLM 0.11.0 outputs using benchmarks/public/compare_fact_caches.py. Held-out ids untouched.",
+ "model": "Qwen/Qwen3-4B-Instruct-2507 @ cdbee75f17c0",
+ "fact_extraction_agreement": {
+  "sessions_compared": 1500,
+  "parse_failures": {
+   "python": 2,
+   "hms": 2
+  },
+  "identical_output": 1106,
+  "same_fact_set_after_normalization": 1111,
+  "agree_on_empty_vs_nonempty": 1482,
+  "facts_total": {
+   "python": 4493,
+   "hms": 4597
+  },
+  "python_facts_with_hms_match_jaccard_ge_0.8": 0.8504340084576008,
+  "python_facts_with_hms_match_jaccard_ge_0.5": 0.960605386156243,
+  "hms_facts_with_python_match_jaccard_ge_0.8": 0.8324994561670654,
+  "hms_facts_with_python_match_jaccard_ge_0.5": 0.9436589079834675
+ },
+ "throughput": {
+  "hms_l4_batch1": {
+   "items": 1500,
+   "gpu_secs": 6959,
+   "secs_per_session": 4.64,
+   "usd": 1.778
+  },
+  "python_vllm_l4": {
+   "items": 4506,
+   "gpu_secs": 1250,
+   "secs_per_session": 0.28,
+   "source": "docs/PUBLIC-BENCHMARKS.md stage-cost table"
+  },
+  "slowdown": 16.7
+ },
+ "cost": {
+  "ledger_usd_at_record": 3.5489,
+  "cap_usd": 8.0,
+  "notes": "About $1.77 of the ledger is from driver restarts (Modal cancelled the in-flight fact shard each time) before the first 1,500-item shard was stored. HMS decodes one sequence at a time on GPU (candle mask bug), which causes the slowdown."
+ },
+ "status": "in progress at record time: remaining fact shards running; facts alone project to about $7.1, so embedding and re-ranking are expected to stop at the $8 cap before retrieval metrics exist. No retrieval comparison with longmemeval_dev_final.json is available from this run."
+}
