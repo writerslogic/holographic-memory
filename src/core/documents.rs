@@ -185,7 +185,22 @@ pub(crate) fn prepare(
     dimensions: usize,
     embedding_dimensions: Option<usize>,
 ) -> Result<StoredDocument> {
+    prepare_with_keys(input, dimensions, embedding_dimensions, None)
+}
+
+/// `keys` replaces each chunk's text as its lexical key (for example the chunk prefixed with
+/// facts extracted from it); the stored text and byte offsets stay the chunk's own.
+pub(crate) fn prepare_with_keys(
+    input: DocumentInput,
+    dimensions: usize,
+    embedding_dimensions: Option<usize>,
+    keys: Option<&[String]>,
+) -> Result<StoredDocument> {
     let chunks = chunk_document(&input)?;
+    ensure!(
+        keys.is_none_or(|k| k.len() == chunks.len()),
+        "provide one key per chunk"
+    );
     ensure!(
         input.metadata.as_ref().is_none_or(Value::is_object),
         "metadata must be a JSON object"
@@ -217,7 +232,7 @@ pub(crate) fn prepare(
     }
     let mut stored = Vec::with_capacity(chunks.len());
     for (i, chunk) in chunks.into_iter().enumerate() {
-        let terms = terms(&chunk.text);
+        let terms = terms(keys.map_or(chunk.text.as_str(), |k| k[i].as_str()));
         let word_count = terms.values().map(|&n| n as usize).sum();
         let embedding = input
             .embeddings

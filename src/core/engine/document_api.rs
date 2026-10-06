@@ -26,6 +26,10 @@ impl HmsCore {
     }
 
     pub fn memorize_document(&self, input: DocumentInput) -> Result<u32> {
+        #[cfg(feature = "local-models")]
+        if let Some(stages) = self.model_stages() {
+            return self.memorize_document_with_models(input, &stages);
+        }
         let document = documents::prepare(
             input,
             self.dimensions,
@@ -41,6 +45,11 @@ impl HmsCore {
         text: &str,
         options: &SearchOptions,
     ) -> Result<Vec<DocumentResult>> {
+        // A text query goes through the installed model stages; a vector-only query does not.
+        #[cfg(feature = "local-models")]
+        if let Some(stages) = self.model_stages().filter(|_| !text.trim().is_empty()) {
+            return self.search_documents_with_models(text, "", options, &stages);
+        }
         let _transaction = self.mutation_gate.read();
         documents::search(
             &self.documents.read(),
@@ -118,5 +127,102 @@ impl HmsCore {
             );
         }
         Ok(())
+    }
+}
+
+#[cfg(feature = "local-models")]
+impl HmsCore {
+    /// Installs (or with `None` removes) the on-device model stages `memorize_document` and
+    /// `search_documents` use. An embedder must match the store's embedding space.
+    pub fn set_model_stages(
+        &self,
+        stages: Option<std::sync::Arc<crate::core::models::ModelStages>>,
+    ) -> Result<()> {
+        if let Some(e) = stages.as_ref().and_then(|s| s.embedder.as_ref()) {
+            let space = self.config.embedding_space.as_ref().map(|s| s.dimensions);
+            ensure!(
+                space == Some(e.dimensions()),
+                "the embedder's {} dimensions do not match the store embedding space {space:?}",
+                e.dimensions()
+            );
+        }
+        *self.model_stages.write() = stages;
+        Ok(())
+    }
+
+    pub fn model_stages(&self) -> Option<std::sync::Arc<crate::core::models::ModelStages>> {
+        self.model_stages.read().clone()
+    }
+
+    fn memorize_document_with_models(
+        &self,
+        mut input: DocumentInput,
+        stages: &crate::core::models::ModelStages,
+    ) -> Result<u32> {
+        let chunks: Vec<String> = documents::chunk_document(&input)?
+            .into_iter()
+            .map(|c| c.text)
+            .collect();
+        let keys = stages.fact_keys(&chunks)?;
+        if let (Some(embedder), None) = (&stages.embedder, &input.embeddings) {
+            let texts = keys.as_deref().unwrap_or(&chunks);
+            input.embeddings = Some(
+                embedder
+                    .embed(texts, false)?
+                    .into_iter()
+                    .map(|e| e.into_iter().map(f64::from).collect())
+                    .collect(),
+            );
+        }
+        let document = documents::prepare_with_keys(
+            input,
+            self.dimensions,
+            self.config.embedding_space.as_ref().map(|s| s.dimensions),
+            keys.as_deref(),
+        )?;
+        let count = document.chunks.len() as u32;
+        self.commit(&[Mutation::Document(document)])?;
+        Ok(count)
+    }
+
+    /// Search through the model stages: the optional LLM rewrite (`today` is the date relative
+    /// times resolve against), a hybrid search per query variant with on-device query
+    /// embeddings, weighted RRF across variants, then the re-rank of the fused head.
+    pub fn search_documents_with_models(
+        &self,
+        text: &str,
+        today: &str,
+        options: &SearchOptions,
+        stages: &crate::core::models::ModelStages,
+    ) -> Result<Vec<DocumentResult>> {
+        let k = options.k.unwrap_or(10) as usize;
+        let pool = k.max(stages.params.rerank_n) as u32;
+        let variants = stages.query_variants(text, today)?;
+        let embeddings = match (&stages.embedder, &options.embedding) {
+            (Some(e), None) => {
+                let queries: Vec<&str> = variants.iter().map(|v| v.0.as_str()).collect();
+                Some(e.embed(&queries, true)?)
+            }
+            _ => None,
+        };
+        let mut lists = Vec::with_capacity(variants.len());
+        for (i, (query, weight)) in variants.iter().enumerate() {
+            let mut opts = options.clone();
+            opts.k = Some(pool);
+            opts.lexical_weight = opts.lexical_weight.or(Some(stages.params.lexical_weight));
+            opts.semantic_weight = opts.semantic_weight.or(Some(stages.params.semantic_weight));
+            if let Some(e) = &embeddings {
+                opts.embedding = Some(e[i].iter().copied().map(f64::from).collect());
+            }
+            let _transaction = self.mutation_gate.read();
+            let list = documents::search(
+                &self.documents.read(),
+                query,
+                &opts,
+                self.config.embedding_space.as_ref().map(|s| s.dimensions),
+            )?;
+            lists.push((*weight, list));
+        }
+        stages.fuse(text, lists, k)
     }
 }

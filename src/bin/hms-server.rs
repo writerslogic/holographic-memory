@@ -72,6 +72,67 @@ struct Cli {
     /// Maximum number of tenant stores open at once.
     #[arg(long, default_value_t = 64)]
     max_tenants: usize,
+    #[cfg(feature = "local-models")]
+    #[command(flatten)]
+    models: ModelArgs,
+}
+
+/// On-device model stages (feature `local-models`). Each directory holds safetensors and
+/// tokenizer.json and must record the given revision; nothing is downloaded.
+#[cfg(feature = "local-models")]
+#[derive(clap::Args)]
+struct ModelArgs {
+    /// Qwen3-Embedding directory: documents without a vector and text queries are embedded here.
+    #[arg(long, env = "HMS_EMBED_MODEL", requires = "embed_revision")]
+    embed_model: Option<PathBuf>,
+    #[arg(long, env = "HMS_EMBED_REVISION")]
+    embed_revision: Option<String>,
+    /// Qwen3-Reranker directory: re-ranks the fused head of text queries.
+    #[arg(long, env = "HMS_RERANK_MODEL", requires = "rerank_revision")]
+    rerank_model: Option<PathBuf>,
+    #[arg(long, env = "HMS_RERANK_REVISION")]
+    rerank_revision: Option<String>,
+    /// Qwen3 instruct LLM directory for fact extraction and query rewriting.
+    #[arg(long, env = "HMS_LLM_MODEL", requires = "llm_revision")]
+    llm_model: Option<PathBuf>,
+    #[arg(long, env = "HMS_LLM_REVISION")]
+    llm_revision: Option<String>,
+    /// Extract facts at ingest with the LLM and index them with each document.
+    #[arg(long, env = "HMS_EXTRACT_FACTS", requires = "llm_model")]
+    extract_facts: bool,
+    /// Rewrite text queries with the LLM and search both forms.
+    #[arg(long, env = "HMS_REWRITE_QUERIES", requires = "llm_model")]
+    rewrite_queries: bool,
+}
+
+#[cfg(feature = "local-models")]
+fn load_stages(
+    args: &ModelArgs,
+) -> Result<Option<Arc<holographic_memory::core::models::ModelStages>>> {
+    use holographic_memory::core::models::{
+        default_device, Embedder, Generator, ModelSource, ModelStages, Reranker,
+    };
+    let source = |dir: &Option<PathBuf>, rev: &Option<String>| {
+        dir.as_ref()
+            .map(|d| ModelSource::new(d, rev.clone().unwrap_or_default()))
+    };
+    let device = default_device()?;
+    let stages = ModelStages {
+        embedder: source(&args.embed_model, &args.embed_revision)
+            .map(|s| Embedder::load(&s, &device))
+            .transpose()?,
+        reranker: source(&args.rerank_model, &args.rerank_revision)
+            .map(|s| Reranker::load(&s, &device))
+            .transpose()?,
+        generator: source(&args.llm_model, &args.llm_revision)
+            .map(|s| Generator::load(&s, &device))
+            .transpose()?,
+        extract_facts: args.extract_facts,
+        rewrite_queries: args.rewrite_queries,
+        params: Default::default(),
+    };
+    let any = stages.embedder.is_some() || stages.reranker.is_some() || stages.generator.is_some();
+    Ok(any.then(|| Arc::new(stages)))
 }
 
 struct Tenant {
@@ -82,9 +143,20 @@ struct AppState {
     cli: Cli,
     api_key: Option<Vec<u8>>,
     tenants: Mutex<HashMap<String, Arc<Tenant>>>,
+    #[cfg(feature = "local-models")]
+    stages: Option<Arc<holographic_memory::core::models::ModelStages>>,
 }
 
 impl AppState {
+    /// Whether this server embeds document and query text itself.
+    fn server_embeds(&self) -> bool {
+        #[cfg(feature = "local-models")]
+        if let Some(s) = &self.stages {
+            return s.embedder.is_some();
+        }
+        false
+    }
+
     fn tenant(&self, name: &str) -> Result<Arc<Tenant>, ApiError> {
         let mut tenants = self.tenants.lock();
         if let Some(t) = tenants.get(name) {
@@ -113,6 +185,8 @@ impl AppState {
                 ..HmsConfig::default()
             };
             let core = HmsCore::new(self.cli.dim, Some(dir.display().to_string()), Some(config))?;
+            #[cfg(feature = "local-models")]
+            core.set_model_stages(self.stages.clone())?;
             Ok(Tenant { core })
         };
         let tenant = Arc::new(open().map_err(ApiError::internal)?);
@@ -272,7 +346,7 @@ fn dense(values: &[f64], input_dim: usize, what: &str) -> Result<Vec<f32>, ApiEr
     Ok(out)
 }
 
-fn validate_doc(doc: DocIn, cli: &Cli) -> Result<ValidDoc, ApiError> {
+fn validate_doc(doc: DocIn, cli: &Cli, server_embeds: bool) -> Result<ValidDoc, ApiError> {
     if doc.id.is_empty()
         || doc.id.len() > MAX_ID_BYTES
         || doc.id.chars().any(char::is_control)
@@ -298,8 +372,15 @@ fn validate_doc(doc: DocIn, cli: &Cli) -> Result<ValidDoc, ApiError> {
             "metadata exceeds {MAX_METADATA_BYTES} bytes"
         )));
     }
-    let values = doc.vector.unwrap_or_default();
-    dense(&values, cli.input_dim, "vector")?;
+    // With an on-device embedder a document may omit its vector; the server embeds its text.
+    let embeddings = match doc.vector {
+        None if server_embeds && text.split_whitespace().next().is_some() => None,
+        vector => {
+            let values = vector.unwrap_or_default();
+            dense(&values, cli.input_dim, "vector")?;
+            Some(vec![values])
+        }
+    };
     // The document store indexes text for lexical search and requires at least one
     // word. Queries here are vector-only, so a vector-only document is indexed under a
     // placeholder word that is never stored or returned.
@@ -313,7 +394,7 @@ fn validate_doc(doc: DocIn, cli: &Cli) -> Result<ValidDoc, ApiError> {
         chunk_words: Some(CHUNK_WORDS),
         overlap_words: Some(0),
         store_text: Some(has_text),
-        embeddings: Some(vec![values]),
+        embeddings,
     };
     match chunk_document(&input) {
         Ok(chunks) if chunks.len() == 1 => Ok(ValidDoc { input }),
@@ -348,7 +429,7 @@ async fn add_batch(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
     let n = blocking(move || {
         let valid = docs
             .into_iter()
-            .map(|d| validate_doc(d, &state.cli))
+            .map(|d| validate_doc(d, &state.cli, state.server_embeds()))
             .collect::<Result<Vec<_>, _>>()?;
         let tenant = state.tenant(&name)?;
         store_docs(&tenant, valid)
@@ -362,7 +443,7 @@ async fn add_one(State(state): State<Arc<AppState>>, req: Request) -> ApiResult 
     let bytes = read_body(&state, req.into_body()).await?;
     let doc: DocIn = parse(&bytes)?;
     let n = blocking(move || {
-        let valid = validate_doc(doc, &state.cli)?;
+        let valid = validate_doc(doc, &state.cli, state.server_embeds())?;
         let tenant = state.tenant(&name)?;
         store_docs(&tenant, vec![valid])
     })
@@ -401,7 +482,14 @@ async fn delete_doc(
 
 #[derive(Deserialize)]
 struct QueryIn {
-    query_vector: Vec<f64>,
+    #[serde(default)]
+    query_vector: Option<Vec<f64>>,
+    /// Text query; requires the on-device model stages (`local-models`).
+    #[serde(default)]
+    query: Option<String>,
+    /// Date relative times in `query` resolve against (query rewriting).
+    #[serde(default)]
+    today: Option<String>,
     #[serde(default)]
     top_k: Option<i64>,
     #[serde(default)]
@@ -426,23 +514,45 @@ async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
         Some(_) => return Err(ApiError::bad("filter must be a JSON object")),
     };
     let matches = blocking(move || {
-        dense(&q.query_vector, state.cli.input_dim, "query_vector")?;
         let tenant = state.tenant(&name)?;
-        // Exact cosine over every stored embedding (a linear scan); no lexical term.
-        let options = SearchOptions {
-            k: Some(top_k as u32),
-            candidate_limit: Some((top_k as u32).max(100)),
-            filter: filter.map(Value::Object),
-            embedding: Some(q.query_vector),
-            lexical_weight: Some(0.0),
-            semantic_weight: Some(1.0),
-            min_semantic_score: Some(-1.0),
-            ..SearchOptions::default()
+        let hits = match (q.query_vector, q.query) {
+            (Some(v), None) => {
+                dense(&v, state.cli.input_dim, "query_vector")?;
+                vector_search(&tenant, v, top_k as u32, filter)?
+            }
+            #[cfg(feature = "local-models")]
+            (v, Some(text)) if state.stages.is_some() => {
+                if text.trim().is_empty() || text.len() > 8192 {
+                    return Err(ApiError::bad("query requires 1..=8192 bytes"));
+                }
+                if let Some(v) = &v {
+                    dense(v, state.cli.input_dim, "query_vector")?;
+                }
+                let options = SearchOptions {
+                    k: Some(top_k as u32),
+                    candidate_limit: Some((top_k as u32).max(100)),
+                    filter: filter.map(Value::Object),
+                    embedding: v,
+                    ..SearchOptions::default()
+                };
+                let stages = state.stages.as_ref().expect("guarded");
+                tenant
+                    .core
+                    .search_documents_with_models(
+                        &text,
+                        q.today.as_deref().unwrap_or(""),
+                        &options,
+                        stages,
+                    )
+                    .map_err(ApiError::internal)?
+            }
+            (_, Some(_)) => {
+                return Err(ApiError::bad(
+                    "text queries need the server's on-device model stages; send query_vector",
+                ))
+            }
+            (None, None) => return Err(ApiError::bad("query_vector is required")),
         };
-        let hits = tenant
-            .core
-            .search_documents("", &options)
-            .map_err(ApiError::internal)?;
         Ok(hits
             .into_iter()
             .map(|hit| {
@@ -450,13 +560,44 @@ async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
                     "id": hit.document_id,
                     "text": hit.text.unwrap_or_default(),
                     "metadata": hit.metadata,
-                    "score": hit.semantic_score.unwrap_or(0.0),
+                    "score": hit.score,
                 })
             })
             .collect::<Vec<_>>())
     })
     .await?;
     Ok(Json(json!({"matches": matches})).into_response())
+}
+
+fn vector_search(
+    tenant: &Tenant,
+    query_vector: Vec<f64>,
+    top_k: u32,
+    filter: Option<serde_json::Map<String, Value>>,
+) -> Result<Vec<holographic_memory::DocumentResult>, ApiError> {
+    // Exact cosine over every stored embedding (a linear scan); no lexical term.
+    let options = SearchOptions {
+        k: Some(top_k),
+        candidate_limit: Some(top_k.max(100)),
+        filter: filter.map(Value::Object),
+        embedding: Some(query_vector),
+        lexical_weight: Some(0.0),
+        semantic_weight: Some(1.0),
+        min_semantic_score: Some(-1.0),
+        ..SearchOptions::default()
+    };
+    let hits = tenant
+        .core
+        .search_documents("", &options)
+        .map_err(ApiError::internal)?;
+    // The response score of a vector query is the cosine similarity.
+    Ok(hits
+        .into_iter()
+        .map(|mut hit| {
+            hit.score = hit.semantic_score.unwrap_or(0.0);
+            hit
+        })
+        .collect())
 }
 
 async fn not_found() -> ApiError {
@@ -521,10 +662,14 @@ async fn main() -> Result<()> {
     }
     std::fs::create_dir_all(&cli.data_dir).context("cannot create --data-dir")?;
     let bind = cli.bind;
+    #[cfg(feature = "local-models")]
+    let stages = load_stages(&cli.models)?;
     let state = Arc::new(AppState {
         cli,
         api_key,
         tenants: Mutex::new(HashMap::new()),
+        #[cfg(feature = "local-models")]
+        stages,
     });
     let listener = tokio::net::TcpListener::bind(bind)
         .await

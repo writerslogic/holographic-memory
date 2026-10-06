@@ -71,6 +71,10 @@ All of these are opt-in Cargo features; `default = []`. See [SECURITY.md](docs/S
 - **Credential-gated agent access** (`provenance`, `core::provenance::access`): agents are admitted by W3C Verifiable Credentials with an `eddsa-jcs-2022` proof from an issuer `did:key` the host explicitly trusts, with expiry and revocation. `HmsCore::query_as` enforces a read grant. The host must still authenticate that a caller controls the DID it presents.
 - **Provenance** (`provenance`, `provenance-scitt`): COSE_Sign1 signed statements, SCITT registration, and C2PA manifests in JUMBF.
 
+## On-device model stages
+
+`local-models` (opt-in) adds `core::models`: Qwen3-Embedding, Qwen3-Reranker and a Qwen3 instruct LLM (fact extraction at ingest, query rewriting at search, greedy decoding), run with candle on the CPU on every OS, on Metal on macOS, and on CUDA only in builds made with `RUSTFLAGS="--cfg hms_cuda"`. `HmsCore::set_model_stages` wires them into `memorize_document` and `search_documents`; with no stages installed the document API is unchanged. Weights load from local directories whose recorded revision must match; the library never downloads a model and makes no network calls, so text never leaves the machine. `hms-server` exposes the stages behind flags ([SERVER.md](docs/SERVER.md)); measured on-device costs are in [PUBLIC-BENCHMARKS.md](docs/PUBLIC-BENCHMARKS.md).
+
 Not implemented: PoSME receipts, RATS attestation verification, `did:web` resolution for access credentials, and any form of search over encrypted data.
 
 ## Quick Start

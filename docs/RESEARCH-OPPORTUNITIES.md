@@ -316,6 +316,36 @@ models load from local directories with pinned revisions and are never downloade
 Report on-device ingest time per session and query latency (query rewriting adds an LLM call per
 query). llama.cpp/GGUF is a later, separately measured speed path.
 
+Implementation notes (verified 2026-10-05):
+
+- Feature layout: `local-models` = candle-core/nn/transformers 0.11 + tokenizers 0.22
+  (`fancy-regex`, no onig/C++). Metal comes from a `cfg(target_os = "macos")` dependency entry.
+  CUDA comes from a `cfg(hms_cuda)` entry enabled only by `RUSTFLAGS="--cfg hms_cuda"` in the
+  Modal image, so `--all-features` never pulls cuda (`cargo tree -e features -i candle-core
+  --all-features` shows no cuda). `cargo deny --all-features check`: advisories, bans, licenses,
+  sources ok. No resolved crate declares a rust-version above 1.89; `cargo +1.89.0 check
+  --features local-models` is the binding MSRV check.
+- candle 0.11 `qwen3`: `Model::forward` returns post-norm hidden states for every position (last
+  token pooling is a narrow), `ModelForCausalLM::forward` returns last-position logits (yes/no
+  scoring and greedy decode). `Model::clear_kv_cache` is private, but `Model` is `Clone`, so each
+  call runs on a clone of a pristine model (empty cache). There is no padding mask, so batches
+  hold sequences of identical token length only (exact). The CPU path uses a causal fused kernel
+  without an explicit mask. `Device::new_cuda`/`new_metal` exist without the backend feature and
+  fail at runtime, so HMS code needs no cfg for device selection.
+- candle 0.11's Qwen3 explicit causal mask (Metal/CUDA path) is built for a batch of one; a
+  batch of two returned a wrong second row on Metal (NaN or cosine 0.17). HMS therefore runs
+  batch 1 on GPUs; the CPU fused kernel batches correctly.
+- Local parity, 48 LongMemEval_S turns / 16 questions / 48 re-rank pairs, Python reference
+  (sentence-transformers 5.1.1 / transformers, CPU f32) vs HMS (f32): embedding cosine >= 0.9999997
+  and re-rank p(yes) max |diff| 8.4e-8 on CPU, 7.4e-8 on Metal. The pinned Qwen3-4B-Instruct-2507
+  chat template with `enable_thinking=False` renders exactly the string HMS builds.
+- MSRV: `local-models` needs Rust >= 1.94 (candle-core 0.11 uses `stdarch_neon_f16` on aarch64;
+  1.89 fails, 1.94 passes, 1.90-1.93 untested). Every other feature still checks on 1.89; the
+  CI MSRV job (`--no-default-features`) is unaffected. The HMS Modal image pins 1.94.0.
+- Status (2026-10-05): stages, document-API wiring, `hms-server` flags, `public-bench lme-model`
+  and the Modal `--engine hms` path are built. The Modal S-dev re-run through the HMS stages has
+  not been run (no Modal spend yet), so the CUDA build and the LLM-stage dev numbers are unverified.
+
 ### 5.7 Holographic fact memory (2026-10-05)
 
 Goal: make the memory itself holographic and measure whether it answers LongMemEval better than

@@ -53,6 +53,24 @@ base64 = { version = "0.23", optional = true }
 tempfile = "3"
 axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json"], optional = true }
 subtle = { version = "2.6", optional = true }
+# On-device model stages (`local-models`): CPU everywhere, Metal on macOS. Needs Rust >= 1.94:
+# candle-core 0.11 uses `stdarch_neon_f16` on aarch64 (fails on 1.89; 1.90-1.93 untested).
+candle-core = { version = "0.11", optional = true }
+candle-nn = { version = "0.11", optional = true }
+candle-transformers = { version = "0.11", optional = true }
+tokenizers = { version = "0.22", default-features = false, features = ["fancy-regex"], optional = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+candle-core = { version = "0.11", features = ["metal"], optional = true }
+candle-nn = { version = "0.11", features = ["metal"], optional = true }
+candle-transformers = { version = "0.11", features = ["metal"], optional = true }
+
+# CUDA for the Modal image only, enabled from outside the crate with RUSTFLAGS="--cfg hms_cuda",
+# so `--all-features` never needs nvcc.
+[target.'cfg(hms_cuda)'.dependencies]
+candle-core = { version = "0.11", features = ["cuda"], optional = true }
+candle-nn = { version = "0.11", features = ["cuda"], optional = true }
+candle-transformers = { version = "0.11", features = ["cuda"], optional = true }
 
 [build-dependencies]
 napi-build = { version = "2.2", optional = true }
@@ -93,6 +111,9 @@ provenance-scitt = ["provenance", "ureq"]
 # binaries that exercise them. Off by default so they are not part of the
 # published public API.
 experimental = []
+# On-device embedding, re-ranking, fact extraction and query rewriting (candle, Qwen3).
+# Weights load from local directories only; the library never downloads.
+local-models = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers"]
 # Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]

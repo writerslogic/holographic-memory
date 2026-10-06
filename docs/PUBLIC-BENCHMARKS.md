@@ -459,3 +459,23 @@ uv run --script benchmarks/public/prepare.py longmemeval s
 ./target/release/public-bench longmemeval --data ~/.cache/hms-bench/longmemeval_s --out lme.json
 uv run --script benchmarks/public/evaluate.py longmemeval s lme.json
 ```
+
+## On-device model stages (`local-models`), Apple M4, 32 GB
+
+Measured 2026-10-05 with `public-bench lme-model --stage device` (Metal; encoders f32, LLM bf16;
+Qwen3-Embedding-0.6B, Qwen3-Reranker-0.6B, Qwen3-4B-Instruct-2507 at the pinned revisions), every
+stage on, through the document API. The first 10 LongMemEval_S sessions (mean 127 user words) were
+ingested one session per document; 10 questions were searched with `k = 10`. Small sample: these
+are data points, not a distribution.
+
+| Measure | Value |
+|---|---|
+| Model load (all three) | 25.6 s |
+| Ingest per session (fact extraction + embedding) | mean 13.8 s, median 1.5 s, max 48.7 s |
+| Query (LLM rewrite + 2 query embeddings + hybrid search + re-rank of 20) | mean 10.3 s, median 10.6 s, max 12.8 s |
+| Peak memory footprint (`/usr/bin/time -l`) | 17.5 GB (max RSS 9.9 GB) |
+
+Ingest time is dominated by the LLM's output length (sessions with many facts take tens of
+seconds); query latency by the rewrite generation. The CPU path was checked for correctness, not
+timed end to end. Embedder and re-ranker parity with the Python stages on 48 turns / 16 questions /
+48 pairs: cosine >= 0.9999997, p(yes) max |diff| 8.4e-8 (CPU) and 7.4e-8 (Metal).

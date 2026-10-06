@@ -52,6 +52,8 @@ pub mod intersection;
 pub(crate) mod ivf;
 #[cfg(feature = "security")]
 pub mod mask;
+#[cfg(feature = "local-models")]
+pub mod models;
 pub(crate) mod nsg;
 #[cfg(feature = "experimental")]
 pub mod phase_graph;

@@ -59,6 +59,22 @@ Other statuses: 401 (missing or wrong key), 400 `invalid_tenant`, 404 unknown ro
 
 `score` is the exact cosine similarity between the query and the stored embedding. Every query is a linear scan over the tenant's stored embeddings, so latency grows linearly with the number of documents; there is no approximate index on this path.
 
+## On-device model stages (`local-models`)
+
+Built with `--features server,local-models`, the server can run the model stages itself instead of requiring client vectors. Every stage is off unless its flag is given; with none given the server behaves exactly as described above.
+
+| Flag | Environment | Stage |
+|---|---|---|
+| `--embed-model DIR --embed-revision SHA` | `HMS_EMBED_MODEL`, `HMS_EMBED_REVISION` | Qwen3-Embedding. Documents may omit `vector` (the text is embedded); `--input-dim` must equal the model's hidden size (1024 for 0.6B). |
+| `--rerank-model DIR --rerank-revision SHA` | `HMS_RERANK_MODEL`, `HMS_RERANK_REVISION` | Qwen3-Reranker over the fused top 20 of a text query. |
+| `--llm-model DIR --llm-revision SHA` | `HMS_LLM_MODEL`, `HMS_LLM_REVISION` | Qwen3 instruct LLM (greedy decoding). |
+| `--extract-facts` | `HMS_EXTRACT_FACTS` | At ingest, the LLM lists the personal facts in each document; they are indexed with it (lexical and embedding key), the stored text is unchanged. |
+| `--rewrite-queries` | `HMS_REWRITE_QUERIES` | The LLM rewrites each text query; the original and the rewrite are searched and merged by RRF. |
+
+A query may then be `{"query": str, "today"?: str, "top_k"?, "filter"?, "query_vector"?}`: hybrid BM25 + cosine per query form, weighted RRF across forms, then the re-rank, with the tuned LongMemEval parameters. `score` is then the fused rank score, not a cosine. Vector-only queries keep the cosine path.
+
+**What runs where.** Every stage runs in the server process: candle on the CPU, on the GPU through Metal on macOS, or through CUDA in builds made with `RUSTFLAGS="--cfg hms_cuda"`. Weights are read from the given local directories, which must record the given revision (a `REVISION` file or the metadata `hf download --revision <sha> --local-dir <dir>` writes); the server never downloads a model and makes no network calls, so no document or query text leaves the machine. Fact extraction adds one LLM generation per document and query rewriting one per text query; see `docs/PUBLIC-BENCHMARKS.md` for measured on-device costs.
+
 ## Storage
 
 Each tenant is one engine store. Documents (embedding, text and metadata) go through the engine's document API, so each document is written in a single transaction. A batch is not atomic as a whole: a failure part-way leaves the earlier documents stored. Embeddings are kept at full precision (about 4 bytes per dimension per document), so the sparse-code compression described in the main README does not apply to this service.

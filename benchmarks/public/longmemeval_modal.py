@@ -80,6 +80,31 @@ cpu_image = (
     .env(HF)
     .add_local_python_source("longmemeval_pipeline")
 )
+
+
+def _hms_image(cap: str) -> modal.Image:
+    """public-bench with HMS's own model stages (candle, CUDA); `cap` is the CUDA compute capability."""
+    return (
+        modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
+        .apt_install("curl", "build-essential", "pkg-config")
+        .run_commands("curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.94.0")
+        .uv_pip_install("numpy<2.3", "huggingface_hub==0.35.3")
+        .add_local_dir(
+            REPO,
+            "/src",
+            copy=True,
+            ignore=["target", "**/target", ".git", ".venv", "**/.venv", ".claude", "**/node_modules", "figures",
+                    "benchmarks/results"],
+        )
+        .env({"CUDA_COMPUTE_CAP": cap, "RUSTFLAGS": "--cfg hms_cuda"})
+        .run_commands("cd /src && /root/.cargo/bin/cargo build --release --locked --features local-models --bin public-bench")
+        .env(HF)
+        .add_local_python_source("longmemeval_pipeline")
+    )
+
+
+hms_t4_image, hms_l4_image = _hms_image("75"), _hms_image("89")
+ENGINE = "python"  # "hms": the model stages run in HMS (public-bench lme-model) instead of Python
 app = modal.App("hms-longmemeval")
 
 
@@ -183,7 +208,63 @@ def _rerank(model: str, rev: str, gpu: str, pairs: list[tuple[str, str]]) -> tup
     return scores, time.time() - t
 
 
+def _hms(stage: str, model: str, rev: str, payload, query: bool = False) -> tuple[bytes, float]:
+    """One HMS model stage. The harness fetches the pinned snapshot; HMS checks the revision it records."""
+    import subprocess
+    import tempfile
+
+    from huggingface_hub import snapshot_download
+
+    t = time.time()
+    d = V / "models" / f"{model.replace('/', '__')}@{rev}"
+    if not (d / "config.json").exists():
+        snapshot_download(model, revision=rev, local_dir=d)
+        VOL.commit()
+    with tempfile.TemporaryDirectory() as tmp:
+        src, dst = Path(tmp) / "in.json", Path(tmp) / "out"
+        src.write_text(json.dumps(payload))
+        cmd = ["/src/target/release/public-bench", "lme-model", "--stage", stage, "--model", str(d),
+               "--revision", rev, "--input", str(src), "--out", str(dst)] + (["--query"] if query else [])
+        subprocess.run(cmd, check=True)
+        return dst.read_bytes(), time.time() - t
+
+
+def _embed_hms(model, rev, gpu, texts, is_query):
+    import numpy as np
+
+    data, secs = _hms("embed", model, rev, texts, is_query)
+    return np.frombuffer(data, dtype="<f4").astype(np.float16).tobytes(), secs
+
+
+def _llm_hms(model, rev, gpu, prompts):
+    data, secs = _hms("chat", model, rev, prompts)
+    return json.loads(data), secs
+
+
+def _rerank_hms(model, rev, gpu, pairs):
+    data, secs = _hms("rerank", model, rev, [list(p) for p in pairs])
+    return json.loads(data), secs
+
+
 _gpu_kw = dict(image=gpu_image, volumes={"/vol": VOL}, timeout=6 * 3600, max_containers=4)
+_hms_kw = dict(volumes={"/vol": VOL}, timeout=6 * 3600, max_containers=4)
+
+
+@app.function(gpu="T4", image=hms_t4_image, **_hms_kw)
+def embed_hms_t4(*a):
+    return _embed_hms(*a)
+
+
+@app.function(gpu="L4", image=hms_l4_image, **_hms_kw)
+def llm_hms_l4(*a):
+    return _llm_hms(*a)
+
+
+@app.function(gpu="T4", image=hms_t4_image, **_hms_kw)
+def rerank_hms_t4(*a):
+    return _rerank_hms(*a)
+
+
 
 
 @app.function(gpu="T4", **_gpu_kw)
@@ -218,6 +299,7 @@ def rerank_h100(*a):
 
 FN = {("embed", "T4"): embed_t4, ("embed", "H100"): embed_h100, ("llm", "L4"): llm_l4,
       ("llm", "H100"): llm_h100, ("rerank", "T4"): rerank_t4, ("rerank", "H100"): rerank_h100}
+FN_HMS = {("embed", "T4"): embed_hms_t4, ("llm", "L4"): llm_hms_l4, ("rerank", "T4"): rerank_hms_t4}
 
 
 # ----------------------------------------------------------------------------------- driver
@@ -261,7 +343,8 @@ CACHE = V / "cache"  # the driver points this at /vol/<namespace>/cache for an i
 
 
 def _cache_dir(stage: str, model: str, rev: str) -> Path:
-    return CACHE / stage / f"{model.replace('/', '__')}@{rev[:12]}"
+    # HMS-stage outputs never share a cache entry with the Python stages' outputs.
+    return CACHE / stage / (f"{model.replace('/', '__')}@{rev[:12]}" + ("+hms" if ENGINE == "hms" else ""))
 
 
 def _load_json_cache(d: Path) -> dict:
@@ -274,7 +357,7 @@ def _load_json_cache(d: Path) -> dict:
 def _waves(stage, kind, models, items, shard, budget, call, store):
     """Run `call(chunk)` over shards of the missing items in waves of 4 containers, storing each shard."""
     gpu = _gpu(kind, models)
-    fn = FN[(kind, gpu)]
+    fn = (FN_HMS if ENGINE == "hms" else FN)[(kind, gpu)]
     shards = [items[i:i + shard] for i in range(0, len(items), shard)]
     per_item = None
     first = True
@@ -434,8 +517,10 @@ def _rerank_doc(q, target: str, level: str) -> str:
 
 @app.function(image=cpu_image, volumes={"/vol": VOL}, timeout=24 * 3600, cpu=8, memory=65536)  # M's 2.7 GB JSON
 def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: str,
-           all_kinds: bool = False, rerank_pool: tuple[int, int] = (30, 50), cache_ns: str = "") -> dict:
-    global CACHE
+           all_kinds: bool = False, rerank_pool: tuple[int, int] = (30, 50), cache_ns: str = "",
+           engine: str = "python") -> dict:
+    global CACHE, ENGINE
+    ENGINE = engine
     import longmemeval_pipeline as P
 
     if cache_ns:
@@ -546,6 +631,7 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
         "dataset": {"name": f"longmemeval_{dataset}", "release_revision": LME_REVISION, "sha256": DATA_SHA256[dataset],
                     "part": part, "n_questions": len(qs), "n_scored": sum(q.scored for q in qs)},
         "models": {k: {"id": v[0], "revision": v[1], "gpu": v[2]} for k, v in MODELS[models].items()},
+        "engine": "HMS local-models stages (candle, CUDA)" if engine == "hms" else "Python (vLLM, sentence-transformers, transformers)",
         "config": {"turn": cfg_t, "session": cfg_s, "kinds_indexed": kinds},
         "evaluation": {"code": "xiaowu0162/LongMemEval src/retrieval/eval_utils.py", "commit": EVAL_COMMIT,
                        "sha256": ev_sha},
@@ -562,15 +648,17 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
 @app.local_entrypoint()
 def main(dataset: str = "s", part: str = "dev", models: str = "small", cap: float = 5.0,
          config: str = str(HERE / "longmemeval_config.json"), tag: str = "", all_kinds: bool = False,
-         out: str = "", cache_ns: str = ""):
+         out: str = "", cache_ns: str = "", engine: str = "python"):
     if dataset not in ("s", "m") or part not in ("dev", "heldout", "all") or models not in MODELS:
         sys.exit("bad --dataset / --part / --models")
+    if engine not in ("python", "hms") or (engine == "hms" and models != "small"):
+        sys.exit("--engine is python or hms; the HMS stages are wired for the small models")
     if dataset == "s" and part != "dev":
         sys.exit("on S only dev is run; held-out questions are scored only in the final M run")
     cfg = json.loads(Path(config).read_text())
     cfg["_split"] = (HERE / "longmemeval_split.json").read_text()
     tag = tag or f"{dataset}-{part}-{models}-{int(time.time())}"
-    result = driver.remote(dataset, part, models, cap, cfg, tag, all_kinds, cache_ns=cache_ns)
+    result = driver.remote(dataset, part, models, cap, cfg, tag, all_kinds, cache_ns=cache_ns, engine=engine)
     o = result["metrics"]
     for name, m in o.items():
         for lvl in ("session", "turn"):

@@ -57,6 +57,8 @@ pub struct HmsCore {
     shards: RwLock<ShardSet>,
     graph: RelationStore,
     documents: RwLock<std::collections::BTreeMap<String, super::documents::StoredDocument>>,
+    #[cfg(feature = "local-models")]
+    model_stages: RwLock<Option<Arc<crate::core::models::ModelStages>>>,
     derived: RwLock<std::collections::BTreeMap<String, Vec<String>>>,
     atom_memory: Option<Arc<AtomMemory>>,
     composite_memory: Option<Arc<CompositeMemory>>,
@@ -227,6 +229,8 @@ impl HmsCore {
             shards: RwLock::new(shard_set),
             graph: RelationStore::new(),
             documents: RwLock::new(std::collections::BTreeMap::new()),
+            #[cfg(feature = "local-models")]
+            model_stages: RwLock::new(None),
             derived: RwLock::new(std::collections::BTreeMap::new()),
             atom_memory: atom_mem,
             composite_memory: comp_mem,

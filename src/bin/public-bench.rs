@@ -129,6 +129,31 @@ enum Mode {
         #[arg(long)]
         out: PathBuf,
     },
+    /// HMS's on-device model stages for the LongMemEval job (feature `local-models`).
+    #[cfg(feature = "local-models")]
+    LmeModel {
+        /// `embed` (JSON list of texts -> little-endian f32 rows), `rerank` (list of
+        /// [query, document] -> list of p(yes)), `facts` (list of sessions, each a list of user
+        /// turns -> raw LLM outputs), `query` (list of [question date, question] -> raw outputs),
+        /// `chat` (list of user messages -> greedy replies). `device` times the document API end
+        /// to end: `--input` is the LongMemEval_S cache directory, `--model` the directory
+        /// holding the three small models, `--revision` is ignored (pinned revisions are used).
+        #[arg(long)]
+        stage: String,
+        /// Local model directory (safetensors + tokenizer.json); never downloaded here.
+        #[arg(long)]
+        model: PathBuf,
+        /// Commit sha the directory must record.
+        #[arg(long)]
+        revision: String,
+        /// `embed` only: inputs are queries (instruction prefix).
+        #[arg(long)]
+        query: bool,
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+    },
 }
 
 fn read_f32(path: &Path, dim: usize) -> Result<Vec<Vec<f32>>> {
@@ -942,5 +967,228 @@ fn main() -> Result<()> {
             dim,
             out,
         } => lme_scores(&items, &item_emb, &queries, &query_emb, emb_dim, dim, &out),
+        #[cfg(feature = "local-models")]
+        Mode::LmeModel {
+            stage,
+            model,
+            revision,
+            query,
+            input,
+            out,
+        } => lme_model(&stage, &model, &revision, query, &input, &out),
     }
+}
+
+/// Runs one model stage over a JSON input file; prints a timing line to stderr.
+#[cfg(feature = "local-models")]
+fn lme_model(
+    stage: &str,
+    model: &Path,
+    revision: &str,
+    query: bool,
+    input: &Path,
+    out: &Path,
+) -> Result<()> {
+    use holographic_memory::core::models::{
+        default_device, Embedder, FactExtractor, Generator, ModelSource, QueryRewriter, Reranker,
+    };
+    if stage == "device" {
+        return lme_device(input, model, out);
+    }
+    let source = ModelSource::new(model, revision);
+    let device = default_device()?;
+    let raw = fs::read(input)?;
+    let t = Instant::now();
+    let n = match stage {
+        "embed" => {
+            let texts: Vec<String> = serde_json::from_slice(&raw)?;
+            let rows = Embedder::load(&source, &device)?.embed(&texts, query)?;
+            let bytes: Vec<u8> = rows
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .collect();
+            fs::write(out, bytes)?;
+            texts.len()
+        }
+        "rerank" => {
+            let pairs: Vec<(String, String)> = serde_json::from_slice(&raw)?;
+            let scores = Reranker::load(&source, &device)?.score(&pairs)?;
+            fs::write(out, serde_json::to_vec(&scores)?)?;
+            pairs.len()
+        }
+        "chat" | "facts" | "query" => {
+            let generator = Generator::load(&source, &device)?;
+            let outs: Vec<String> = if stage == "chat" {
+                let prompts: Vec<String> = serde_json::from_slice(&raw)?;
+                prompts
+                    .iter()
+                    .map(|p| generator.complete(p))
+                    .collect::<Result<_>>()?
+            } else if stage == "facts" {
+                let sessions: Vec<Vec<String>> = serde_json::from_slice(&raw)?;
+                let x = FactExtractor(&generator);
+                sessions
+                    .iter()
+                    .map(|s| x.extract(s).map(|r| r.0))
+                    .collect::<Result<_>>()?
+            } else {
+                let qs: Vec<(String, String)> = serde_json::from_slice(&raw)?;
+                let x = QueryRewriter(&generator);
+                qs.iter()
+                    .map(|(today, q)| x.rewrite(today, q).map(|r| r.0))
+                    .collect::<Result<_>>()?
+            };
+            fs::write(out, serde_json::to_vec(&outs)?)?;
+            outs.len()
+        }
+        other => anyhow::bail!("unknown stage {other}"),
+    };
+    eprintln!(
+        "{}",
+        json!({"stage": stage, "items": n, "device": format!("{device:?}"),
+               "secs": t.elapsed().as_secs_f64()})
+    );
+    Ok(())
+}
+
+/// On-device cost through the document API with every stage on: each LongMemEval_S session
+/// (its user turns) is ingested as one document (fact extraction + embedding), then questions
+/// are searched (rewrite + query embeddings + hybrid search + re-rank). Sizes from
+/// `HMS_DEVICE_SESSIONS` (default 20) and `HMS_DEVICE_QUERIES` (default 20).
+#[cfg(feature = "local-models")]
+fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
+    use holographic_memory::core::models::{
+        default_device, Embedder, Generator, ModelSource, ModelStages, Reranker, PINNED,
+    };
+    let env_n = |k: &str, d: usize| {
+        std::env::var(k)
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(d)
+    };
+    let (n_sessions, n_queries) = (
+        env_n("HMS_DEVICE_SESSIONS", 20),
+        env_n("HMS_DEVICE_QUERIES", 20),
+    );
+    let source = |id: &str| {
+        let rev = PINNED
+            .iter()
+            .find(|p| p.0 == id)
+            .map(|p| p.1)
+            .unwrap_or_default();
+        ModelSource::new(models.join(id.rsplit('/').next().unwrap_or(id)), rev)
+    };
+    let device = default_device()?;
+    let t = Instant::now();
+    let stages = ModelStages {
+        embedder: Some(Embedder::load(
+            &source("Qwen/Qwen3-Embedding-0.6B"),
+            &device,
+        )?),
+        reranker: Some(Reranker::load(
+            &source("Qwen/Qwen3-Reranker-0.6B"),
+            &device,
+        )?),
+        generator: Some(Generator::load(
+            &source("Qwen/Qwen3-4B-Instruct-2507"),
+            &device,
+        )?),
+        extract_facts: true,
+        rewrite_queries: true,
+        params: Default::default(),
+    };
+    let load_secs = t.elapsed().as_secs_f64();
+    let dims = stages.embedder.as_ref().map_or(0, Embedder::dimensions);
+    // Sessions in file order: consecutive user turns sharing the `<session>_<n>` prefix.
+    let mut sessions: Vec<(String, Vec<String>)> = Vec::new();
+    for line in fs::read_to_string(data.join("turn.jsonl"))?.lines() {
+        let v: Value = serde_json::from_str(line)?;
+        let id = v["id"].as_str().context("id")?;
+        let sid = id.rsplit_once('_').map_or(id, |x| x.0).to_string();
+        let text = v["text"].as_str().unwrap_or_default().to_string();
+        if let Some((_, turns)) = sessions.last_mut().filter(|(s, _)| *s == sid) {
+            turns.push(text);
+        } else if sessions.len() == n_sessions {
+            break;
+        } else {
+            sessions.push((sid, vec![text]));
+        }
+    }
+    let questions: Vec<String> = fs::read_to_string(data.join("questions.jsonl"))?
+        .lines()
+        .take(n_queries)
+        .map(|l| {
+            Ok(serde_json::from_str::<Value>(l)?["text"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string())
+        })
+        .collect::<Result<_>>()?;
+    let store = TempStore::new("lme-device")?;
+    let config = HmsConfig {
+        embedding_space: Some(EmbeddingSpace {
+            model: "Qwen/Qwen3-Embedding-0.6B".into(),
+            revision: source("Qwen/Qwen3-Embedding-0.6B").revision,
+            dimensions: dims,
+            normalization: "l2".into(),
+            metric: "cosine".into(),
+        }),
+        ..HmsConfig::default()
+    };
+    let core = HmsCore::new(16384, Some(store.0.display().to_string()), Some(config))?;
+    core.set_model_stages(Some(std::sync::Arc::new(stages)))?;
+    let mut ingest = Vec::new();
+    for (sid, turns) in &sessions {
+        let t = Instant::now();
+        core.memorize_document(DocumentInput {
+            id: sid.clone(),
+            text: turns.join("\n\n"),
+            source_uri: None,
+            version: None,
+            metadata: None,
+            chunk_words: Some(4096),
+            overlap_words: Some(0),
+            store_text: Some(true),
+            embeddings: None,
+        })?;
+        ingest.push(t.elapsed().as_secs_f64());
+    }
+    let mut query = Vec::new();
+    for q in &questions {
+        let t = Instant::now();
+        core.search_documents(
+            q,
+            &SearchOptions {
+                k: Some(10),
+                ..SearchOptions::default()
+            },
+        )?;
+        query.push(t.elapsed().as_secs_f64());
+    }
+    let summary = |mut v: Vec<f64>| {
+        v.sort_by(f64::total_cmp);
+        let at = |p: f64| {
+            v.get(((v.len() as f64 * p) as usize).min(v.len().saturating_sub(1)))
+                .copied()
+        };
+        json!({"n": v.len(), "mean_secs": v.iter().sum::<f64>() / v.len().max(1) as f64,
+               "p50_secs": at(0.5), "p90_secs": at(0.9), "max_secs": v.last()})
+    };
+    let words: usize = sessions
+        .iter()
+        .flat_map(|s| &s.1)
+        .map(|t| t.split_whitespace().count())
+        .sum();
+    let report = json!({
+        "environment": environment(),
+        "device": format!("{device:?}"),
+        "models": PINNED.iter().take(3).map(|p| format!("{}@{}", p.0, p.1)).collect::<Vec<_>>(),
+        "model_load_secs": load_secs,
+        "session_user_words_mean": words as f64 / sessions.len().max(1) as f64,
+        "ingest_per_session": summary(ingest),
+        "query": summary(query),
+    });
+    fs::write(out, serde_json::to_string_pretty(&report)?)?;
+    Ok(())
 }
