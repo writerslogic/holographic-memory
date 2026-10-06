@@ -6,6 +6,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Add on-device Qwen3 model stages behind local-models
+- Add quantized graph ANN index and its public benchmark mode
 - Add hms-server HTTP service for the Python SDK
 - Add experimental query-private similarity scoring behind private-search
 - Subset-union bundle experiment and capacity sweep
@@ -14,6 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Record the index and model-stage outcomes
 - Record the holographic prototype outcome
 - Record continuation state for the next session
 - Plan the holographic fact memory and its tests
@@ -41,6 +44,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Record quantized graph results against HNSW
 - Prototype the holographic fact memory and measure it on LongMemEval_S dev
 - Make the Modal cost cap cumulative across relaunches
 - Key LongMemEval fact extraction by content and re-tune on dev
