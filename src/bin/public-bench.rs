@@ -478,7 +478,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "notes": [
             "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
             "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
-            "Each expanded vertex is scored exactly; mean_exact_evals_per_query is the re-rank count.",
+            "Each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent.",
         ],
     });
     fs::write(&a.out, serde_json::to_string_pretty(&report)? + "\n")?;

@@ -11,7 +11,7 @@
 //! Search keeps a pool of `ef` candidates ordered by estimated distance. Expanding a vertex
 //! scores it exactly (this is the re-rank) and estimates all of its neighbours in one batch from
 //! the edge codes against a 4-bit query code. The result is the top-k of the exactly scored
-//! vertices. `max_exact` caps the number of exact evaluations (0 = no cap).
+//! vertices. `max_exact` caps the number of expansions (0 = no cap).
 //!
 //! Estimator (RaBitQ, Gao & Long 2024, applied per edge as in SymphonyQG, Gou et al. 2025):
 //! with `w = u - v` and `s = sign(w)`, `<q, u> ~= <q, v> + <v, w> + M (<s, q> - <s, v>)` where
@@ -667,14 +667,15 @@ mod tests {
         x
     }
 
-    /// Mean of the shipped per-edge estimator over rotation seeds must match `<q, u>`.
+    /// Mean of the shipped per-edge estimator over rotation seeds must match `<q, u>`, for the
+    /// automatic code length (128 bits at d = 100) and for 512-bit codes.
     /// The WHT-with-signs rotation is not Haar, so the bound is empirical: 400 seeds put the
     /// standard error near 0.003; tolerances are 0.02 (float query) and 0.03 (4-bit query).
     #[test]
     fn edge_estimator_is_unbiased_over_rotations() {
         let d = 100;
         let mut rng = SplitMix(42);
-        for _ in 0..6 {
+        for bits in [0, 0, 0, 512, 512, 512] {
             let q = unit((0..d).map(|_| gaussian(&mut rng)).collect());
             let v = unit((0..d).map(|_| gaussian(&mut rng)).collect());
             let u = unit(v.iter().map(|x| x + 0.15 * gaussian(&mut rng)).collect());
@@ -682,7 +683,7 @@ mod tests {
             let (mut float_sum, mut quant_sum) = (0f64, 0f64);
             let seeds = 400;
             for seed in 0..seeds {
-                let rot = Rotation::new(d, 0, seed);
+                let rot = Rotation::new(d, bits, seed);
                 let p = rot.padded();
                 let (mut pq, mut pv, mut pu) = (vec![0.0; p], vec![0.0; p], vec![0.0; p]);
                 rot.apply(&q, &mut pq);

@@ -64,6 +64,42 @@ Full sweeps are in the result files.
 - Encoding dominates build time (155 s for nytimes, 265 s for glove, all cores) and is about half
   of query time on nytimes.
 
+## Quantized graph index (`core::qgraph`) vs HNSW
+
+`core::qgraph` uses rotated 1-bit RaBitQ codes of each edge residual, stored contiguously per
+vertex (SymphonyQG layout), inside a Vamana-style graph built on exact distances (alpha 1.0,
+out-degree 64, build_ef 200), with small HNSW-like upper layers for the entry point. Every expanded
+vertex is scored exactly. Built from commit bb1277c, all cores; queries single-threaded, one at a
+time, over all 10,000 test queries. Each configuration ran 3 times (median QPS), and each run
+started only when the 1-minute load was below 3 (`load_gate_met` is true for every row reported
+here). QPS at a recall target is interpolated linearly in log(QPS) between the two Pareto-frontier
+points that bracket it.
+
+| Set | System | QPS @ recall 0.90 | QPS @ recall 0.95 | Index bytes | Build |
+|---|---|---|---|---|---|
+| nytimes | HMS qgraph (1,024-bit codes) | 7,297 | 1,427 | 2.97 GB | 391 s |
+| nytimes | FAISS HNSW M=32 | 3,010 | 765 | 0.38 GB | 61 s |
+| nytimes | FAISS HNSW M=16 | 2,050 | 481 | 0.34 GB | 34 s |
+| nytimes | hnswlib M=16 | 1,430 | 366 | 0.34 GB (est.) | 49 s |
+| glove | HMS qgraph (512-bit codes) | 10,080 | 3,899 | 6.54 GB | 467 s |
+| glove | FAISS HNSW / hnswlib | not run | not run | | |
+
+`benchmarks/results/public_qgraph_<set>.json` holds the full sweeps, with per-run QPS and load.
+
+Caveats:
+
+- The glove competitor re-run was stopped before it finished, so glove has no same-session
+  comparison. The earlier glove run in `public_glove-100-angular.json` was taken at load 21 to 38.
+  It gives FAISS HNSW M=32 2,440 QPS at 0.90 and 988 at 0.95, but those numbers are not comparable.
+- Memory is the price. The index takes 8 to 9 times the bytes of FAISS HNSW on nytimes, because
+  each vertex stores 64 edge codes of 1,024 bits plus three float factors per edge.
+- The parameters (degree 64, code length, alpha 1.0) were chosen on recall over the first 2,000
+  nytimes test queries, which are part of the evaluation set. The glove parameters were carried
+  over from nytimes without tuning. The competitors ran at harness defaults (efConstruction 200).
+- The competitors are timed through a Python per-query loop and HMS through a native loop. That
+  per-query overhead was not measured.
+- `mean_exact_evals_per_query` includes the upper-layer descent, about 95 evaluations on nytimes.
+
 ## Agent long-term memory (LongMemEval_S)
 
 Retrieval only, no LLM. Data: LongMemEval_S from the `xiaowu0162/longmemeval-cleaned` release
