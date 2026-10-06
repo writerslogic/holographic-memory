@@ -1,29 +1,12 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-white.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-black.svg">
-  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.png" width="120" alt="Holographic Memory System" align="left">
-</picture>
+### Holographic Memory System (HMS)
 
-<h3>Holographic Memory System (HMS)</h3>
-<p><strong>Privacy-preserving semantic search and associative memory — runs entirely on your machine.</strong></p>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-white.svg"><img align="left" width="96" src="assets/logo.png" alt="Holographic Memory System logo"></picture>
+
+Privacy-preserving semantic search and associative memory that runs entirely on your machine.
 
 <br clear="left">
 
-<!-- Badge palette: dynamic health; metadata #007ec6; standards #6a4c93; label #20232a; platform brand colors. -->
-
-<p align="center">
-  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&amp;style=flat-square&amp;label=CI&amp;labelColor=20232a" alt="CI"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img src="https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory?style=flat-square&amp;labelColor=20232a" alt="OpenSSF Scorecard"></a>
-  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/writerslogic/holographic-memory/main/.github/badges/coverage.json&amp;style=flat-square&amp;labelColor=20232a" alt="Coverage"></a>
-  <a href="https://www.bestpractices.dev/projects/13977"><img src="https://www.bestpractices.dev/projects/13977/badge" alt="OpenSSF Best Practices"></a>
-  <a href="https://www.npmjs.com/package/holographic-memory"><img src="https://img.shields.io/npm/v/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=npm" alt="npm version"></a>
-  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=rust" alt="crates.io version"></a>
-  <a href="https://docs.rs/holographic-memory"><img src="https://img.shields.io/docsrs/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=docs.rs" alt="docs.rs"></a>
-  <a href="https://blog.rust-lang.org/2025/08/07/Rust-1.89.0.html"><img src="https://img.shields.io/badge/MSRV-1.89-007ec6?style=flat-square&amp;labelColor=20232a&amp;logo=rust" alt="MSRV 1.89"></a>
-  <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/local--first-yes-007ec6?style=flat-square&amp;labelColor=20232a" alt="Local-first">
-  <a href="https://github.com/sponsors/dcondrey"><img src="https://img.shields.io/badge/sponsor-dcondrey-EA4AAA?style=flat-square&amp;labelColor=20232a&amp;logo=githubsponsors&amp;logoColor=white" alt="Sponsor dcondrey"></a>
-</p>
+[![CI](https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml) [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory)](https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory) [![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory) [![License](https://img.shields.io/crates/l/holographic-memory.svg)](#license)
 
 <p align="center">
   <a href="#installation">Install</a> &middot;
