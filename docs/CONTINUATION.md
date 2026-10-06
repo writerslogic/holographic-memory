@@ -2,18 +2,13 @@
 
 Durable copy of the hand-off. Delete this file once the items below are merged or resolved.
 
-## Three agents were running in worktrees under `.claude/worktrees/` when the session ended
+## State (updated 2026-10-06)
 
-| Worktree branch | Task | State at hand-off |
-|---|---|---|
-| (merged) | Quantized-graph ANN index (`src/core/qgraph/`, `public-bench ann-qgraph`) | On main. nytimes: 2.4x the best HNSW QPS at recall 0.90, 1.9x at 0.95, but 8-9x the memory and parameters tuned on 2,000 of the test queries (contaminated; re-tune on held-out train vectors). glove: HMS run only; FAISS/hnswlib re-run NOT done, so no glove claim. Next: clean re-tune, glove competitor re-run on an idle machine, memory reduction (degree 64 -> smaller or compressed neighbour codes). |
-| (merged) | Local model stages inside HMS (`src/core/models/`, `local-models` feature) | On main. Embedder/re-ranker match Python within 1e-6 on a 48-item sample; LLM stages unmeasured for quality; `local-models` needs Rust >= 1.94 (candle 0.11), all other features still 1.89; GPUs run batch 1 (candle mask bug). On-device M4/Metal: ingest median 1.5 s per session (max 49 s), query ~10 s (dominated by LLM rewrite), peak RSS 9.9 GB. Next: `modal run benchmarks/public/longmemeval_modal.py --engine hms --models small --cap 8 --tag s-dev-hms` and compare with `benchmarks/results/longmemeval_dev_final.json`; check projected cost after the first wave (HMS decodes one sequence at a time). |
-| (merged) | Holographic fact memory prototype | On main as `486ec35`: `benchmarks/results/holographic_dev.json`, doc section in `docs/PUBLIC-BENCHMARKS.md`. EAV variant negative (extraction ceiling); turn-atom traces close to flat scan; shard-loss robustness shown (50% shards deleted: session 0.929 vs index 0.917, turn 0.631 vs 0.488) at a cost in zero-loss recall; capacity ~128-256 atoms per 16k-bit trace with centered codes. Next for a Rust port: per-session/window traces + hierarchical unbinding; replicated-index control at equal bytes; multiple seeds. |
-
-If the agents are gone, collect their work by hand: inspect each worktree's `git status` and `git log main..HEAD`,
-run the gate in the worktree, then fast-forward or cherry-pick onto `main` (sign with
-`git -c user.email=david@writerslogic.com commit -S`), remove the worktree and branch. Nothing is accepted without
-its gate passing and its numbers in `benchmarks/results/`.
+| Workstream | State |
+|---|---|
+| Quantized-graph index | `public-bench ann-qgraph --holdout N` tunes on held-out train vectors (test set unread). nytimes held-out grid in `benchmarks/results/public_qgraph_tuning_nytimes-256-angular.json`: degree 64 / 512-bit codes wins at both targets (7,715 / 2,087 QPS at 0.90 / 0.95 on held-out queries) with 1.77 GB against 2.95 GB for the old 1,024-bit setting. Alpha and build_ef were not swept. Running unattended: `/Volumes/A/.hms-target/logs/qgraph_pipeline.sh` (log `qgraph_pipeline.log`; tuning JSONs in `logs/tune/glove`, finals in `logs/final`) = glove held-out grid (d64 b128/256/512, d32 b256), auto-pick, then final HMS runs (repeats 3, load < 3) and `evaluate.py ann ... --repeats 3` for both sets, writing `benchmarks/results/public_qgraph_<set>.json`. The machine is shared with other sessions' builds (load 20-40 observed), so runs wait up to 6 h for the gate; check `load_gate_met` on every row before using a number. A first glove tuning attempt ran entirely at load ~38 and was discarded (`logs/tune/glove_unmet`). Next: when the pipeline finishes, merge glove tuning with `logs/merge_tuning.py`, rewrite the qgraph section of `docs/PUBLIC-BENCHMARKS.md` (drop the contamination caveat, state alpha/build_ef untuned, new memory ratio, glove same-session numbers), commit. |
+| Local model stages | Every HMS stage runs on L4 (candle 0.11 CUDA kernels do not build for T4). `--engine hms --models small --cap 8 --tag s-dev-hms` is running (ledger $3.55 at 16:04; ~17x slower than vLLM per session; facts alone project to ~$5.3, so it is expected to stop at the cap before retrieval metrics). LLM-stage quality measured on 1,500 sessions: 74% identical fact output, 96% of facts matched (`benchmarks/results/longmemeval_dev_hms_stages.json`). Next: record the run's final ledger and outcome in that file; do not raise the cap without the maintainer. Batched GPU decoding in HMS is the fix that would make the run affordable. |
+| Holographic memory | Done for dev: 3 seeds and the equal-bytes control are in `holographic_dev.json` and the doc. Shards beat an equal-bytes index only beyond ~30% loss; no variant beats the index on accuracy; no Rust port. |
 
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus
