@@ -19,7 +19,7 @@ Local stages (numpy):
   uv run --script benchmarks/public/holographic_memory_proto.py capacity <dir> <out.json>
   uv run --script benchmarks/public/holographic_memory_proto.py answer <dir> <candidates.json> <state.json>
   uv run --script benchmarks/public/holographic_memory_proto.py report <dir> <state.json> <judged.json> <out.json> [capacity.json]
-  uv run --script benchmarks/public/holographic_memory_proto.py rank <dir> <eval_utils.py> <out.json>   (turn-atom variant)
+  uv run --script benchmarks/public/holographic_memory_proto.py rank <dir> <eval_utils.py> <out.json> [D] [seeds]   (turn-atom variant)
   uvx modal run benchmarks/public/holographic_memory_proto.py --stage export-turns --out <dir>
 """
 
@@ -1074,7 +1074,37 @@ def _turn_rankings(mem, q, sess_scores, atom_scores, nested: bool):
     return [sids[j] for j in sorder], sorted(tids, key=key)
 
 
-def rank_turns(export_dir: Path, eval_utils: Path, out: Path, D: int = 16384) -> None:
+def _replicated_alive(n_atoms: int, units: int, f: float, rng):
+    """Replicated-index control at the shards' byte budget: `units` atom copies in all (each atom
+    gets units // n_atoms, the remainder one more at random); a fraction `f` of the copies is
+    deleted uniformly and an atom survives while any copy does."""
+    import numpy as np
+    base, extra = divmod(units, n_atoms)
+    copies = np.full(n_atoms, base)
+    copies[rng.choice(n_atoms, extra, replace=False)] += 1
+    owner = np.repeat(np.arange(n_atoms), copies)
+    dead = np.zeros(len(owner), dtype=bool)
+    dead[rng.choice(len(owner), int(round(f * len(owner))), replace=False)] = True
+    alive = np.zeros(n_atoms, dtype=bool)
+    np.logical_or.at(alive, owner[~dead], True)
+    return alive
+
+
+def _mean_std(dicts: list) -> tuple:
+    """Element-wise mean and sample std over equally shaped nested dicts of numbers."""
+    import numpy as np
+    first = dicts[0]
+    if isinstance(first, dict):
+        pairs = {k: _mean_std([d[k] for d in dicts]) for k in first}
+        return {k: v[0] for k, v in pairs.items()}, {k: v[1] for k, v in pairs.items()}
+    a = np.asarray(dicts, dtype=float)
+    return float(a.mean()), float(a.std(ddof=1)) if len(a) > 1 else 0.0
+
+
+def rank_turns(export_dir: Path, eval_utils: Path, out: Path, D: int = 16384, seeds: int = 1) -> None:
+    """Official-metric evaluation of the turn-atom memory; `seeds` independent draws of every
+    random code (projection, time, session, turn, tie), corruption and shard assignment, reported
+    as mean and sample std over seeds (`variants`, `variants_std`) with each seed kept."""
     import importlib.util
 
     import numpy as np
@@ -1090,22 +1120,43 @@ def rank_turns(export_dir: Path, eval_utils: Path, out: Path, D: int = 16384) ->
     temb = np.fromfile(export_dir / "turn_emb.f16", dtype=np.float16).reshape(-1, dim)
     qemb = {"orig": np.fromfile(export_dir / "q_emb.f16", dtype=np.float16).reshape(-1, dim),
             "rewrite": np.fromfile(export_dir / "rewrite_emb.f16", dtype=np.float16).reshape(-1, dim)}
-    pos = {s: i for i, s in enumerate(ex["strings"])}
-    struct_q = {q["qid"]: q for q in ex["questions"]}
-    C = Codes(dim, D, np.concatenate([temb.astype(np.float32), emb.astype(np.float32)]).mean(axis=0))
-    rng = np.random.default_rng(3)
+    mean = np.concatenate([temb.astype(np.float32), emb.astype(np.float32)]).mean(axis=0)
     dates = [P.parse_date(s["date"]) for q in tx["questions"] for s in q["sessions"]]
     origin = date(min(d for d in dates if d).year, 1, 1)
+    per_seed = [_rank_turns_seed(ex, tx, emb, temb, qemb, mean, origin, dim, D, ev, s) for s in range(seeds)]
+    variants, std = _mean_std([r["variants"] for r in per_seed])
+    res = {"D": D, "seeds": seeds, "variants": variants, "variants_std": std,
+           "variants_per_seed": [r["variants"] for r in per_seed],
+           "sizes": per_seed[0]["sizes"], "bytes_per_question": per_seed[0]["bytes_per_question"],
+           "query_cost_vector_ops": per_seed[0]["query_cost_vector_ops"],
+           "eval_utils_sha256": __import__("hashlib").sha256(eval_utils.read_bytes()).hexdigest()}
+    out.write_text(json.dumps(res, indent=1) + "\n")
+    for v in variants:
+        m, sd = variants[v], std[v]
+        print(v, " ".join(f"{lvl[0]}:R5 {m[lvl]['overall']['recall_all@5']:.3f}±{sd[lvl]['overall']['recall_all@5']:.3f} "
+                          f"N10 {m[lvl]['overall']['ndcg_any@10']:.3f}±{sd[lvl]['overall']['ndcg_any@10']:.3f}"
+                          for lvl in ("session", "turn")))
+
+
+def _rank_turns_seed(ex, tx, emb, temb, qemb, mean, origin, dim, D, ev, seed: int) -> dict:
+    import numpy as np
+    S = 1_000_003 * seed  # offset applied to every per-question stream so seeds are independent
+    pos = {s: i for i, s in enumerate(ex["strings"])}
+    struct_q = {q["qid"]: q for q in ex["questions"]}
+    C = Codes(dim, D, mean, seed=7 + seed)
+    rng = np.random.default_rng(3 + seed)
+    dates = [P.parse_date(s["date"]) for q in tx["questions"] for s in q["sessions"]]
     tcodes = time_codes(_bucket(max(d for d in dates if d), origin) + 2, D, rng)
     questions, rankings, sizes, ops = [], {}, [], {}
     # hier_* : coarse from the user trace, fine from session traces; window / per_session: coarse from
     # traces of W sessions; flips corrupt window-4 and session traces; del* keeps a subset of 8 shards
-    # of each session trace (coarse = best atom); index_del* drops atoms from the flat scan outright.
+    # of each session trace (coarse = best atom); index_del* drops atoms from the flat scan outright;
+    # index_rep_del* replicates the flat index up to the shards' byte budget before deleting.
     variants = ["hier_nested", "hier_global", "window4", "window16", "per_session", "flat_hamming", "hier_rewrite"]
     for f in FRACS[1:]:
         variants.append(f"hier_flip{f}")
     for f in DELETE[1:]:
-        variants += [f"hier_del{f}", f"index_del{f}"]
+        variants += [f"hier_del{f}", f"index_del{f}", f"index_rep_del{f}"]
     rankings = {v: {"session": {}, "turn": {}} for v in variants}
     row = 0
     for qi, q in enumerate(tx["questions"]):
@@ -1125,7 +1176,7 @@ def rank_turns(export_dir: Path, eval_utils: Path, out: Path, D: int = 16384) ->
                 a_sess += [j] * len(facts)
                 a_tid += [s["tids"][ti] if ti >= 0 else None for ti, _ in facts]
         codes = np.concatenate(codes)
-        mem = TurnMemory(q, codes, a_sess, a_tid, [P.parse_date(s["date"]) for s in q["sessions"]], tcodes, origin, np.random.default_rng(qi))
+        mem = TurnMemory(q, codes, a_sess, a_tid, [P.parse_date(s["date"]) for s in q["sessions"]], tcodes, origin, np.random.default_rng(qi + S))
         sizes.append({"atoms": len(codes), "sessions": mem.n_sess, "atoms_per_session": len(codes) / mem.n_sess})
         qc = {v: C.of(qemb[v][qi][None])[0] for v in ("orig", "rewrite")}
 
@@ -1151,11 +1202,11 @@ def rank_turns(export_dir: Path, eval_utils: Path, out: Path, D: int = 16384) ->
         flat_sess = np.array([flat_atom[a].max() if len(a) else -1 for a in mem.atoms])
         put("flat_hamming", flat_sess, flat_atom, False)
         for f in FRACS[1:]:
-            crng = np.random.default_rng(qi * 100 + int(f * 100))
+            crng = np.random.default_rng(qi * 100 + int(f * 100) + S)
             w4 = [flip(t, f, crng) for t in mem.windows(4)]
             st = np.stack([flip(t, f, crng) for t in mem.sess])
             put(f"hier_flip{f}", mem.coarse(qc["orig"], lambda j, w=w4: w[j // 4]), mem.fine(qc["orig"], st), False)
-        srng = np.random.default_rng(qi * 7 + 1)
+        srng = np.random.default_rng(qi * 7 + 1 + S)
         memb_a = srng.random((len(codes), SHARDS)) < 0.5
         for r in memb_a:
             if not r.any():
@@ -1168,19 +1219,23 @@ def rank_turns(export_dir: Path, eval_utils: Path, out: Path, D: int = 16384) ->
             alive = srng.random(len(codes)) >= f
             fa = np.where(alive, flat_atom, -2.0)
             put(f"index_del{f}", np.array([fa[a].max() if len(a) else -2 for a in mem.atoms]), fa, False)
-        print(f"{qi + 1}/{len(tx['questions'])} {q['qid'][:12]} atoms={len(codes)} sessions={mem.n_sess}", flush=True)
+            alive = _replicated_alive(len(codes), mem.n_sess * SHARDS, f, srng)
+            fa = np.where(alive, flat_atom, -2.0)
+            put(f"index_rep_del{f}", np.array([fa[a].max() if len(a) else -2 for a in mem.atoms]), fa, False)
+        print(f"seed {seed} {qi + 1}/{len(tx['questions'])} {q['qid'][:12]} atoms={len(codes)} sessions={mem.n_sess}", flush=True)
     metrics = {v: {lvl: P.evaluate(questions, rankings[v][lvl], lvl, ev) for lvl in ("session", "turn")} for v in variants}
-    res = {"D": D, "variants": metrics,
-           "sizes": {"atoms_per_user_trace_mean": round(float(np.mean([s["atoms"] for s in sizes])), 1),
-                     "atoms_per_user_trace_max": max(s["atoms"] for s in sizes),
-                     "atoms_per_session_trace_mean": round(float(np.mean([s["atoms_per_session"] for s in sizes])), 1),
-                     "sessions_per_user_trace_mean": round(float(np.mean([s["sessions"] for s in sizes])), 1)},
-           "query_cost_vector_ops": {k: round(float(np.mean(v)), 1) for k, v in ops.items()},
-           "eval_utils_sha256": __import__("hashlib").sha256(eval_utils.read_bytes()).hexdigest()}
-    out.write_text(json.dumps(res, indent=1) + "\n")
-    for v in variants:
-        m = metrics[v]
-        print(v, " ".join(f"{lvl[0]}:R5 {m[lvl]['overall']['recall_all@5']:.3f} N10 {m[lvl]['overall']['ndcg_any@10']:.3f}" for lvl in ("session", "turn")))
+    atoms, sess = np.mean([s["atoms"] for s in sizes]), np.mean([s["sessions"] for s in sizes])
+    return {"variants": metrics,
+            "sizes": {"atoms_per_user_trace_mean": round(float(atoms), 1),
+                      "atoms_per_user_trace_max": max(s["atoms"] for s in sizes),
+                      "atoms_per_session_trace_mean": round(float(np.mean([s["atoms_per_session"] for s in sizes])), 1),
+                      "sessions_per_user_trace_mean": round(float(sess), 1)},
+            "bytes_per_question": {"flat_index_atom_codes": round(float(atoms * D / 8)),
+                                   "session_traces": round(float(sess * D / 8)),
+                                   "session_trace_shards": round(float(sess * SHARDS * D / 8)),
+                                   "replicated_index_control": round(float(sess * SHARDS * D / 8)),
+                                   "user_trace": D // 8},
+            "query_cost_vector_ops": {k: round(float(np.mean(v)), 1) for k, v in ops.items()}}
 
 
 if __name__ == "__main__":
@@ -1196,7 +1251,8 @@ if __name__ == "__main__":
     elif a[0] == "report":
         report(Path(a[1]), Path(a[2]), Path(a[3]), Path(a[4]), Path(a[5]) if len(a) > 5 else None)
     elif a[0] == "rank":
-        rank_turns(Path(a[1]), Path(a[2]), Path(a[3]), D=int(a[4]) if len(a) > 4 else 16384)
+        rank_turns(Path(a[1]), Path(a[2]), Path(a[3]), D=int(a[4]) if len(a) > 4 else 16384,
+                   seeds=int(a[5]) if len(a) > 5 else 1)
     else:
         sys.exit(__doc__)
     print(f"{time.time() - t0:.0f}s")
