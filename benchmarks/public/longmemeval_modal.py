@@ -103,7 +103,10 @@ def _hms_image(cap: str) -> modal.Image:
     )
 
 
-hms_t4_image, hms_l4_image = _hms_image("75"), _hms_image("89")
+# One image for compute capability 8.9 (L4). candle-kernels 0.11 does not compile for sm_75 (T4) on
+# CUDA 12.4: its compatibility.cuh redefines __hmax_nan/__hmin_nan below __CUDA_ARCH__ 800, which
+# cuda_fp16.h already provides. The HMS engine therefore runs every stage on L4.
+hms_l4_image = _hms_image("89")
 ENGINE = "python"  # "hms": the model stages run in HMS (public-bench lme-model) instead of Python
 app = modal.App("hms-longmemeval")
 
@@ -250,8 +253,8 @@ _gpu_kw = dict(image=gpu_image, volumes={"/vol": VOL}, timeout=6 * 3600, max_con
 _hms_kw = dict(volumes={"/vol": VOL}, timeout=6 * 3600, max_containers=4)
 
 
-@app.function(gpu="T4", image=hms_t4_image, **_hms_kw)
-def embed_hms_t4(*a):
+@app.function(gpu="L4", image=hms_l4_image, **_hms_kw)
+def embed_hms_l4(*a):
     return _embed_hms(*a)
 
 
@@ -260,8 +263,8 @@ def llm_hms_l4(*a):
     return _llm_hms(*a)
 
 
-@app.function(gpu="T4", image=hms_t4_image, **_hms_kw)
-def rerank_hms_t4(*a):
+@app.function(gpu="L4", image=hms_l4_image, **_hms_kw)
+def rerank_hms_l4(*a):
     return _rerank_hms(*a)
 
 
@@ -299,7 +302,7 @@ def rerank_h100(*a):
 
 FN = {("embed", "T4"): embed_t4, ("embed", "H100"): embed_h100, ("llm", "L4"): llm_l4,
       ("llm", "H100"): llm_h100, ("rerank", "T4"): rerank_t4, ("rerank", "H100"): rerank_h100}
-FN_HMS = {("embed", "T4"): embed_hms_t4, ("llm", "L4"): llm_hms_l4, ("rerank", "T4"): rerank_hms_t4}
+FN_HMS = {("embed", "L4"): embed_hms_l4, ("llm", "L4"): llm_hms_l4, ("rerank", "L4"): rerank_hms_l4}
 
 
 # ----------------------------------------------------------------------------------- driver
@@ -357,6 +360,8 @@ def _load_json_cache(d: Path) -> dict:
 def _waves(stage, kind, models, items, shard, budget, call, store):
     """Run `call(chunk)` over shards of the missing items in waves of 4 containers, storing each shard."""
     gpu = _gpu(kind, models)
+    if ENGINE == "hms" and gpu == "T4":
+        gpu = "L4"  # see hms_l4_image; the budget is charged at the L4 rate
     fn = (FN_HMS if ENGINE == "hms" else FN)[(kind, gpu)]
     shards = [items[i:i + shard] for i in range(0, len(items), shard)]
     per_item = None
