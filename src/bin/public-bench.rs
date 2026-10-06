@@ -90,6 +90,10 @@ enum Mode {
         max_wait_secs: u64,
         #[arg(long)]
         queries: Option<usize>,
+        /// Tuning mode: hold out every (n / N)-th train vector as a query (N in total), build
+        /// on the rest and score against exact cosine truth; the test queries are not read.
+        #[arg(long, conflicts_with = "queries")]
+        holdout: Option<usize>,
     },
     Beir {
         #[arg(long)]
@@ -393,6 +397,50 @@ struct QgraphArgs {
     max_load: f64,
     max_wait_secs: u64,
     queries: Option<usize>,
+    holdout: Option<usize>,
+}
+
+fn normalize(v: &mut [f32]) {
+    let n = v.iter().map(|x| x * x).sum::<f32>().sqrt();
+    if n > 0.0 {
+        v.iter_mut().for_each(|x| *x /= n);
+    }
+}
+
+/// Indexed rows, query rows and per-query ground-truth ids.
+type Split = (Vec<Vec<f32>>, Vec<Vec<f32>>, Vec<Vec<i32>>);
+
+/// Splits `rows` into a tuning set of `n` queries (every `rows.len() / n`-th row) and the
+/// rest, with the exact cosine top-`k` of each query over the rest as ground truth.
+fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize) -> Result<Split> {
+    ensure!(n > 0 && n < rows.len(), "holdout must be in 1..n_train");
+    let step = rows.len() / n;
+    let mut queries = Vec::with_capacity(n);
+    let mut keep = Vec::with_capacity(rows.len() - n);
+    for (i, mut r) in rows.drain(..).enumerate() {
+        normalize(&mut r);
+        if i % step == 0 && queries.len() < n {
+            queries.push(r);
+        } else {
+            keep.push(r);
+        }
+    }
+    let truth: Vec<Vec<i32>> = queries
+        .par_iter()
+        .map(|q| {
+            let mut top: Vec<(f32, u32)> = Vec::with_capacity(k + 1);
+            for (i, r) in keep.iter().enumerate() {
+                let s = q.iter().zip(r).map(|(a, b)| a * b).sum::<f32>();
+                if top.len() < k || s > top[k - 1].0 {
+                    let pos = top.partition_point(|t| t.0 >= s);
+                    top.insert(pos, (s, i as u32));
+                    top.truncate(k);
+                }
+            }
+            top.iter().map(|t| t.1 as i32).collect()
+        })
+        .collect();
+    Ok((keep, queries, truth))
 }
 
 fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
@@ -405,18 +453,24 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     );
     let d = m["dim"].as_u64().context("meta.dim")? as usize;
     let width = m["n_neighbors"].as_u64().context("meta.n_neighbors")? as usize;
-    let train = read_f32(&a.data.join("train.f32"), d)?.concat();
-    let mut test = read_f32(&a.data.join("test.f32"), d)?;
-    let truth = read_i32(&a.data.join("neighbors.i32"), width)?;
-    if let Some(q) = a.queries {
-        test.truncate(q);
-    }
+    let rows = read_f32(&a.data.join("train.f32"), d)?;
+    let (train, mut test, truth) = match a.holdout {
+        Some(n) => {
+            let (keep, q, t) = holdout_split(rows, n, K)?;
+            (keep.concat(), q, t)
+        }
+        None => {
+            let mut test = read_f32(&a.data.join("test.f32"), d)?;
+            let truth = read_i32(&a.data.join("neighbors.i32"), width)?;
+            if let Some(q) = a.queries {
+                test.truncate(q);
+            }
+            (rows.concat(), test, truth)
+        }
+    };
     // Normalized outside the timer, as evaluate.py does for the other systems.
     for q in &mut test {
-        let n = q.iter().map(|x| x * x).sum::<f32>().sqrt();
-        if n > 0.0 {
-            q.iter_mut().for_each(|x| *x /= n);
-        }
+        normalize(q);
     }
     let params = BuildParams {
         build_ef: a.build_ef,
@@ -497,6 +551,10 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed},
                   "build_secs": build_secs, "load_1m_before_build": load_before_build},
         "index_bytes": index.index_bytes(),
+        "holdout": a.holdout.map(|n| json!({
+            "n_queries": n,
+            "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read.",
+        })),
         "repeats": a.repeats,
         "max_load": a.max_load,
         "sweep": rows,
@@ -937,6 +995,7 @@ fn main() -> Result<()> {
             max_load,
             max_wait_secs,
             queries,
+            holdout,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -950,6 +1009,7 @@ fn main() -> Result<()> {
             max_load,
             max_wait_secs,
             queries,
+            holdout,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {
