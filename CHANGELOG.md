@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Add held-out tuning mode to public-bench ann-qgraph
 - Add on-device Qwen3 model stages behind local-models
 - Add quantized graph ANN index and its public benchmark mode
 - Add hms-server HTTP service for the Python SDK
@@ -16,6 +17,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Update continuation state
 - Record the index and model-stage outcomes
 - Record the holographic prototype outcome
 - Record continuation state for the next session
@@ -33,6 +35,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Run HMS model stages on L4 on Modal
 - Decode benchmark data with as_chunks for the current clippy
 - Resolve leftover merge markers in .bestpractices.json
 - Serve SDK queries by exact cosine through the document API
@@ -44,6 +47,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Record held-out qgraph tuning on nytimes
+- Measure HMS fact extraction against the Python stage on S dev
+- Add seeds and an equal-bytes index control to the holographic prototype
 - Record quantized graph results against HNSW
 - Prototype the holographic fact memory and measure it on LongMemEval_S dev
 - Make the Modal cost cap cumulative across relaunches
