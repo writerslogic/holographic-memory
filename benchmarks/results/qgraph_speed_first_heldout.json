@@ -455,5 +455,512 @@
  "fused_two_plane_kernel_equivalence": {
   "note": "One NEON pass over both bit planes of 2-bit edge codes (shared table loads) versus two single-plane passes: recall@10 and exact evals per query identical at every ef (nytimes 256x2, ef 16..512).",
   "identical": true
- }
+ },
+ "timed_runs": [
+  {
+   "name": "ny_main_512x1_full",
+   "status": "not run (timing lock and load gate not obtained in this session)"
+  },
+  {
+   "name": "ny_new_256x2_full",
+   "binary": "worktree 56be468bfc1ede64066a6dee5e448a7222e4dd53",
+   "dataset": "nytimes-256-angular",
+   "build_params": {
+    "alpha": 1.0,
+    "build_ef": 200,
+    "code_bits": 256,
+    "degree": 64,
+    "edge_bits": 2,
+    "seed": 24301
+   },
+   "build_secs": 216.055741,
+   "build_note": "full build, all cores",
+   "build_load_1m_before": 2.92,
+   "build_load_gate_met": true,
+   "idle_wait_log": [
+    "{ 2.81 6.27 13.41 } at start"
+   ],
+   "index_bytes": 1770726960,
+   "load_gate_met_all_sweep": true,
+   "qps_at_recall": {
+    "0.90": {
+     "qps": 13437.970431463084,
+     "method": "interpolated",
+     "between": [
+      [
+       0.8955,
+       14364.22152806962
+      ],
+      [
+       0.9036,
+       12740.162007085122
+      ]
+     ]
+    },
+    "0.95": {
+     "qps": 3799.862636566693,
+     "method": "interpolated",
+     "between": [
+      [
+       0.9477,
+       4283.800727228721
+      ],
+      [
+       0.95085,
+       3635.1959717608233
+      ]
+     ]
+    }
+   },
+   "determinism_check": {
+    "reference": "eq_fused",
+    "efs_compared": 8,
+    "identical": true
+   },
+   "us_per_exact_eval": [
+    {
+     "ef": 24,
+     "recall": 0.848,
+     "exact_per_q": 148.9775,
+     "us": 0.39573607423939855
+    },
+    {
+     "ef": 32,
+     "recall": 0.871,
+     "exact_per_q": 162.294,
+     "us": 0.3584581346198873
+    },
+    {
+     "ef": 40,
+     "recall": 0.8839,
+     "exact_per_q": 175.105,
+     "us": 0.36000732988778156
+    },
+    {
+     "ef": 48,
+     "recall": 0.8955,
+     "exact_per_q": 188.0835,
+     "us": 0.3701410118378274
+    },
+    {
+     "ef": 56,
+     "recall": 0.9036,
+     "exact_per_q": 201.3415,
+     "us": 0.38984480348065353
+    },
+    {
+     "ef": 64,
+     "recall": 0.90895,
+     "exact_per_q": 215.5645,
+     "us": 0.3963465691243224
+    },
+    {
+     "ef": 80,
+     "recall": 0.9179,
+     "exact_per_q": 243.2595,
+     "us": 0.4149790820091301
+    },
+    {
+     "ef": 96,
+     "recall": 0.9255,
+     "exact_per_q": 273.091,
+     "us": 0.44133831213771235
+    },
+    {
+     "ef": 112,
+     "recall": 0.93145,
+     "exact_per_q": 302.6655,
+     "us": 0.447088452433462
+    },
+    {
+     "ef": 128,
+     "recall": 0.9357,
+     "exact_per_q": 332.1955,
+     "us": 0.4641605997071002
+    },
+    {
+     "ef": 144,
+     "recall": 0.9384,
+     "exact_per_q": 362.6735,
+     "us": 0.47660700189012983
+    },
+    {
+     "ef": 160,
+     "recall": 0.94135,
+     "exact_per_q": 394.2975,
+     "us": 0.4931434487918387
+    },
+    {
+     "ef": 192,
+     "recall": 0.9477,
+     "exact_per_q": 458.8535,
+     "us": 0.5087409434601675
+    },
+    {
+     "ef": 224,
+     "recall": 0.95085,
+     "exact_per_q": 523.9865,
+     "us": 0.5249912602710185
+    },
+    {
+     "ef": 256,
+     "recall": 0.9548,
+     "exact_per_q": 589.907,
+     "us": 0.5449214528730799
+    },
+    {
+     "ef": 320,
+     "recall": 0.9596,
+     "exact_per_q": 723.345,
+     "us": 0.569151649627771
+    }
+   ],
+   "environment": {
+    "arch": "aarch64",
+    "cpu": "Apple M4",
+    "hms_version": "0.6.1",
+    "load_average": "{ 2.90 5.24 6.95 }",
+    "os": "macos",
+    "rayon_threads": 10
+   },
+   "sweep": [
+    {
+     "load_1m_before_runs": [
+      2.88,
+      2.88,
+      2.88
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 148.9775,
+     "params": {
+      "ef": 24,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      1031.0317130910191,
+      16961.867906027386,
+      20435.010281364546
+     ],
+     "qps_single_thread": 16961.867906027386,
+     "recall_at_10": 0.848
+    },
+    {
+     "load_1m_before_runs": [
+      2.88,
+      2.88,
+      2.88
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 162.294,
+     "params": {
+      "ef": 32,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      12517.15562233486,
+      17189.335780773883,
+      17894.129383502506
+     ],
+     "qps_single_thread": 17189.335780773883,
+     "recall_at_10": 0.871
+    },
+    {
+     "load_1m_before_runs": [
+      2.88,
+      2.88,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 175.105,
+     "params": {
+      "ef": 40,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      12881.745869200891,
+      15863.174787431675,
+      16094.237036759978
+     ],
+     "qps_single_thread": 15863.174787431675,
+     "recall_at_10": 0.8839
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.97,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 188.0835,
+     "params": {
+      "ef": 48,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      12557.371490999505,
+      14364.22152806962,
+      14457.552625491559
+     ],
+     "qps_single_thread": 14364.22152806962,
+     "recall_at_10": 0.8955
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.97,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 201.3415,
+     "params": {
+      "ef": 56,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      12056.18783931274,
+      12883.682091923461,
+      12740.162007085122
+     ],
+     "qps_single_thread": 12740.162007085122,
+     "recall_at_10": 0.9036
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.97,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 215.5645,
+     "params": {
+      "ef": 64,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      11259.050341325148,
+      11704.359581335058,
+      11759.368028513787
+     ],
+     "qps_single_thread": 11704.359581335058,
+     "recall_at_10": 0.90895
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.97,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 243.2595,
+     "params": {
+      "ef": 80,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      9080.007922306911,
+      10012.824776422509,
+      9906.129124174162
+     ],
+     "qps_single_thread": 9906.129124174162,
+     "recall_at_10": 0.9179
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.97,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 273.091,
+     "params": {
+      "ef": 96,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      8296.99794452662,
+      8296.090214041078,
+      8435.604777946792
+     ],
+     "qps_single_thread": 8296.99794452662,
+     "recall_at_10": 0.9255
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.97,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 302.6655,
+     "params": {
+      "ef": 112,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      7368.386777998767,
+      7393.717610641634,
+      7389.986199200773
+     ],
+     "qps_single_thread": 7389.986199200773,
+     "recall_at_10": 0.93145
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.97,
+      2.97
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 332.1955,
+     "params": {
+      "ef": 128,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      6521.533567443562,
+      6485.418145308226,
+      6465.768932582888
+     ],
+     "qps_single_thread": 6485.418145308226,
+     "recall_at_10": 0.9357
+    },
+    {
+     "load_1m_before_runs": [
+      2.97,
+      2.98,
+      2.98
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 362.6735,
+     "params": {
+      "ef": 144,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      5785.271675446699,
+      5846.193238703303,
+      5745.075906930322
+     ],
+     "qps_single_thread": 5785.271675446699,
+     "recall_at_10": 0.9384
+    },
+    {
+     "load_1m_before_runs": [
+      2.98,
+      2.98,
+      2.98
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 394.2975,
+     "params": {
+      "ef": 160,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      5247.134003601182,
+      5020.871650481439,
+      5142.836392246991
+     ],
+     "qps_single_thread": 5142.836392246991,
+     "recall_at_10": 0.94135
+    },
+    {
+     "load_1m_before_runs": [
+      2.98,
+      2.98,
+      2.98
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 458.8535,
+     "params": {
+      "ef": 192,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      4298.194018363278,
+      4253.726644185409,
+      4283.800727228721
+     ],
+     "qps_single_thread": 4283.800727228721,
+     "recall_at_10": 0.9477
+    },
+    {
+     "load_1m_before_runs": [
+      2.98,
+      2.98,
+      2.98
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 523.9865,
+     "params": {
+      "ef": 224,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      3617.784124480586,
+      3651.7946798818252,
+      3635.1959717608233
+     ],
+     "qps_single_thread": 3635.1959717608233,
+     "recall_at_10": 0.95085
+    },
+    {
+     "load_1m_before_runs": [
+      2.98,
+      2.9,
+      2.9
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 589.907,
+     "params": {
+      "ef": 256,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      3070.721400740274,
+      3127.0777966140786,
+      3110.874883024688
+     ],
+     "qps_single_thread": 3110.874883024688,
+     "recall_at_10": 0.9548
+    },
+    {
+     "load_1m_before_runs": [
+      2.9,
+      2.9,
+      2.9
+     ],
+     "load_gate_met": true,
+     "mean_exact_evals_per_query": 723.345,
+     "params": {
+      "ef": 320,
+      "max_exact": 0
+     },
+     "qps_runs": [
+      2431.5605638619227,
+      2428.994420599816,
+      2421.7848028954395
+     ],
+     "qps_single_thread": 2428.994420599816,
+     "recall_at_10": 0.9596
+    }
+   ]
+  },
+  {
+   "name": "ny_new_512x1_cached",
+   "status": "not run (timing lock and load gate not obtained in this session)"
+  },
+  {
+   "name": "gl_main_128x1_full",
+   "status": "not run (timing lock and load gate not obtained in this session)"
+  },
+  {
+   "name": "gl_new_128x2_full",
+   "status": "not run (timing lock and load gate not obtained in this session)"
+  },
+  {
+   "name": "gl_new_128x1_cached",
+   "status": "not run (timing lock and load gate not obtained in this session)"
+  }
+ ]
 }
