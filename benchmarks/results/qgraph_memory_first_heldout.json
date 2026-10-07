@@ -1,0 +1,2058 @@
+{
+  "workstream": "qgraph memory-first: integer stored vectors (Store::I8/I16) and one 1-bit RaBitQ code per vertex against the data centroid in a separate compact array (Codes::Vertex), instead of per-edge residual codes in the vertex block (Codes::Edge, the previous layout, still the default).",
+  "protocol": "public-bench ann-qgraph --holdout 2000: every (n/2000)-th train vector is a query and is left out of the index; truth is exact cosine over the rest. test.f32 and neighbors.i32 were not read. Single thread, one query at a time, k=10.",
+  "screening_note": "Screening runs were untimed (no lock, --max-load 1000) on a machine at load 40-135; their QPS and build_secs are NOT results. Their recall and mean_exact_evals_per_query are deterministic and machine-independent and were used for design choices.",
+  "timed_note": "Timed runs ran under /Volumes/A/.hms-target/timed.sh with --max-load 3 and --repeats 3. A timed number whose load_gate_met is false is not a result.",
+  "qps_at_recall_method": "Pareto frontier of (recall, qps), linear interpolation in log(QPS) between bracketing points, identical to benchmarks/public/evaluate.py qps_at_recall.",
+  "references": {
+    "old_layout_nytimes_heldout": {
+      "source": "/Volumes/A/.hms-target/logs/tune/nytimes/d64_b512_a1.0.json (main, benchmarks/results/public_qgraph_tuning_nytimes-256-angular.json)",
+      "params": "degree 64, code_bits 512, alpha 1.0, build_ef 200, f32 store, edge codes",
+      "qps_at_0.90": 7715,
+      "qps_at_0.95": 2087,
+      "index_bytes": 1770726960,
+      "build_secs": 227.4,
+      "build_load_1m": 5.07,
+      "evals_at_0.90_approx": 250,
+      "evals_at_0.95_approx": 800
+    },
+    "old_layout_glove_heldout": {
+      "source": "/Volumes/A/.hms-target/logs/tune/glove/d64_b128_a1.0.json",
+      "params": "degree 64, code_bits 128, alpha 1.0, build_ef 200, f32 store, edge codes",
+      "index_bytes": 2897511684,
+      "build_secs": 622.7,
+      "build_load_1m": 42.24,
+      "evals_at_0.90_approx": 1100,
+      "evals_at_0.95_approx": 2450,
+      "note": "sweep load gate met; build was at load 42, so its build time is not a result"
+    },
+    "faiss_hnsw_m16_test_set": {
+      "source": "benchmarks/results/public_nytimes-256-angular.json, public_glove-100-angular.json (test queries, orientation only)",
+      "nytimes_index_bytes": 340000000,
+      "glove_index_bytes": 644153874
+    }
+  },
+  "screening": [
+    {
+      "file": "glove_d64_e128_i8_vertex_b0.json",
+      "dataset": "glove-100-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 0,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 477621920,
+      "bytes_per_vector": 404.2456712319956,
+      "build_secs": 453.535407667,
+      "build_load_1m": 118.94,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 55.12 100.68 117.77 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 955.9086026894865,
+        "0.95": 1998.3957553956807
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.5846,
+          "mean_exact_evals_per_query": 235.976,
+          "qps_single_thread": 2995.2295368546356,
+          "qps_runs": [
+            2995.2295368546356
+          ],
+          "load_1m_before_runs": [
+            113.59
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.6706,
+          "mean_exact_evals_per_query": 290.9975,
+          "qps_single_thread": 2699.7367937508457,
+          "qps_runs": [
+            2699.7367937508457
+          ],
+          "load_1m_before_runs": [
+            108.74
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.73665,
+          "mean_exact_evals_per_query": 358.0445,
+          "qps_single_thread": 1368.5314288689394,
+          "qps_runs": [
+            1368.5314288689394
+          ],
+          "load_1m_before_runs": [
+            108.74
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.77735,
+          "mean_exact_evals_per_query": 422.0915,
+          "qps_single_thread": 1015.6537419693743,
+          "qps_runs": [
+            1015.6537419693743
+          ],
+          "load_1m_before_runs": [
+            108.74
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.8254,
+          "mean_exact_evals_per_query": 532.6185,
+          "qps_single_thread": 644.3353891191126,
+          "qps_runs": [
+            644.3353891191126
+          ],
+          "load_1m_before_runs": [
+            108.74
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.8548,
+          "mean_exact_evals_per_query": 642.173,
+          "qps_single_thread": 722.9930574172325,
+          "qps_runs": [
+            722.9930574172325
+          ],
+          "load_1m_before_runs": [
+            109.16
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.88835,
+          "mean_exact_evals_per_query": 846.269,
+          "qps_single_thread": 558.4225058525268,
+          "qps_runs": [
+            558.4225058525268
+          ],
+          "load_1m_before_runs": [
+            105.14
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.9088,
+          "mean_exact_evals_per_query": 1038.7265,
+          "qps_single_thread": 465.00761057612146,
+          "qps_runs": [
+            465.00761057612146
+          ],
+          "load_1m_before_runs": [
+            105.14
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.9327,
+          "mean_exact_evals_per_query": 1394.9585,
+          "qps_single_thread": 348.2209594715748,
+          "qps_runs": [
+            348.2209594715748
+          ],
+          "load_1m_before_runs": [
+            99.52
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9445,
+          "mean_exact_evals_per_query": 1744.31,
+          "qps_single_thread": 365.19635797889106,
+          "qps_runs": [
+            365.19635797889106
+          ],
+          "load_1m_before_runs": [
+            96.2
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.9584,
+          "mean_exact_evals_per_query": 2386.454,
+          "qps_single_thread": 251.51476338214167,
+          "qps_runs": [
+            251.51476338214167
+          ],
+          "load_1m_before_runs": [
+            89.54
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.96485,
+          "mean_exact_evals_per_query": 3004.109,
+          "qps_single_thread": 182.6823210953495,
+          "qps_runs": [
+            182.6823210953495
+          ],
+          "load_1m_before_runs": [
+            77.83
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.97265,
+          "mean_exact_evals_per_query": 4167.518,
+          "qps_single_thread": 148.8144833732849,
+          "qps_runs": [
+            148.8144833732849
+          ],
+          "load_1m_before_runs": [
+            67.94
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "glove_d64_e128_i8_vertex_b256.json",
+      "dataset": "glove-100-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 256,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 496526656,
+      "bytes_per_vector": 420.24610457430043,
+      "build_secs": 740.80273125,
+      "build_load_1m": 59.17,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 106.69 96.87 102.64 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 345.2403343848581,
+        "0.95": 605.9179162735848
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.58025,
+          "mean_exact_evals_per_query": 147.5465,
+          "qps_single_thread": 12417.832136092884,
+          "qps_runs": [
+            12417.832136092884
+          ],
+          "load_1m_before_runs": [
+            95.7
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.68905,
+          "mean_exact_evals_per_query": 166.0685,
+          "qps_single_thread": 4873.417049265034,
+          "qps_runs": [
+            4873.417049265034
+          ],
+          "load_1m_before_runs": [
+            95.7
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.76045,
+          "mean_exact_evals_per_query": 189.0395,
+          "qps_single_thread": 3344.632382273848,
+          "qps_runs": [
+            3344.632382273848
+          ],
+          "load_1m_before_runs": [
+            95.7
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.8031,
+          "mean_exact_evals_per_query": 211.068,
+          "qps_single_thread": 2047.0975738823104,
+          "qps_runs": [
+            2047.0975738823104
+          ],
+          "load_1m_before_runs": [
+            95.7
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.8523,
+          "mean_exact_evals_per_query": 253.603,
+          "qps_single_thread": 1288.4111603463118,
+          "qps_runs": [
+            1288.4111603463118
+          ],
+          "load_1m_before_runs": [
+            95.7
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.8807,
+          "mean_exact_evals_per_query": 296.278,
+          "qps_single_thread": 920.0534149522778,
+          "qps_runs": [
+            920.0534149522778
+          ],
+          "load_1m_before_runs": [
+            95.7
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.9124,
+          "mean_exact_evals_per_query": 376.698,
+          "qps_single_thread": 691.2910889381415,
+          "qps_runs": [
+            691.2910889381415
+          ],
+          "load_1m_before_runs": [
+            93.81
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.92955,
+          "mean_exact_evals_per_query": 455.799,
+          "qps_single_thread": 493.876045076437,
+          "qps_runs": [
+            493.876045076437
+          ],
+          "load_1m_before_runs": [
+            93.81
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.95075,
+          "mean_exact_evals_per_query": 611.4235,
+          "qps_single_thread": 384.1610126369045,
+          "qps_runs": [
+            384.1610126369045
+          ],
+          "load_1m_before_runs": [
+            94.38
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.95985,
+          "mean_exact_evals_per_query": 762.639,
+          "qps_single_thread": 291.9745467153813,
+          "qps_runs": [
+            291.9745467153813
+          ],
+          "load_1m_before_runs": [
+            96.91
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.9704,
+          "mean_exact_evals_per_query": 1057.878,
+          "qps_single_thread": 147.993968119861,
+          "qps_runs": [
+            147.993968119861
+          ],
+          "load_1m_before_runs": [
+            99.76
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.9755,
+          "mean_exact_evals_per_query": 1345.8865,
+          "qps_single_thread": 151.0187393843128,
+          "qps_runs": [
+            151.0187393843128
+          ],
+          "load_1m_before_runs": [
+            103.45
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.9798,
+          "mean_exact_evals_per_query": 1906.4275,
+          "qps_single_thread": 129.24911201619057,
+          "qps_runs": [
+            129.24911201619057
+          ],
+          "load_1m_before_runs": [
+            106.84
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "glove_d64_e128_i8_vertex_b512.json",
+      "dataset": "glove-100-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 512,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 534336128,
+      "bytes_per_vector": 452.24697125891015,
+      "build_secs": 1142.163687334,
+      "build_load_1m": 111.71,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 93.87 118.71 121.32 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 256.6392577132487,
+        "0.95": 470.22266995073824
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.59795,
+          "mean_exact_evals_per_query": 131.1315,
+          "qps_single_thread": 16954.02567532907,
+          "qps_runs": [
+            16954.02567532907
+          ],
+          "load_1m_before_runs": [
+            86.16
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.70015,
+          "mean_exact_evals_per_query": 141.563,
+          "qps_single_thread": 3347.133985145838,
+          "qps_runs": [
+            3347.133985145838
+          ],
+          "load_1m_before_runs": [
+            86.16
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.77185,
+          "mean_exact_evals_per_query": 155.202,
+          "qps_single_thread": 2842.097164228065,
+          "qps_runs": [
+            2842.097164228065
+          ],
+          "load_1m_before_runs": [
+            86.16
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.8127,
+          "mean_exact_evals_per_query": 168.3755,
+          "qps_single_thread": 2740.595918821581,
+          "qps_runs": [
+            2740.595918821581
+          ],
+          "load_1m_before_runs": [
+            86.16
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.85735,
+          "mean_exact_evals_per_query": 194.919,
+          "qps_single_thread": 2102.5560262690237,
+          "qps_runs": [
+            2102.5560262690237
+          ],
+          "load_1m_before_runs": [
+            88.39
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.88085,
+          "mean_exact_evals_per_query": 221.071,
+          "qps_single_thread": 1491.3778328329518,
+          "qps_runs": [
+            1491.3778328329518
+          ],
+          "load_1m_before_runs": [
+            88.39
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.9084,
+          "mean_exact_evals_per_query": 272.241,
+          "qps_single_thread": 1238.936906696965,
+          "qps_runs": [
+            1238.936906696965
+          ],
+          "load_1m_before_runs": [
+            88.39
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.92545,
+          "mean_exact_evals_per_query": 323.2075,
+          "qps_single_thread": 846.5583529313955,
+          "qps_runs": [
+            846.5583529313955
+          ],
+          "load_1m_before_runs": [
+            88.39
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.9453,
+          "mean_exact_evals_per_query": 424.052,
+          "qps_single_thread": 554.7775506208427,
+          "qps_runs": [
+            554.7775506208427
+          ],
+          "load_1m_before_runs": [
+            91.88
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.95545,
+          "mean_exact_evals_per_query": 523.761,
+          "qps_single_thread": 407.5087355864797,
+          "qps_runs": [
+            407.5087355864797
+          ],
+          "load_1m_before_runs": [
+            94.85
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.9668,
+          "mean_exact_evals_per_query": 721.565,
+          "qps_single_thread": 417.271351533823,
+          "qps_runs": [
+            417.271351533823
+          ],
+          "load_1m_before_runs": [
+            93.26
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.9715,
+          "mean_exact_evals_per_query": 916.404,
+          "qps_single_thread": 417.91392930857626,
+          "qps_runs": [
+            417.91392930857626
+          ],
+          "load_1m_before_runs": [
+            93.26
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.97745,
+          "mean_exact_evals_per_query": 1299.338,
+          "qps_single_thread": 160.42708308971896,
+          "qps_runs": [
+            160.42708308971896
+          ],
+          "load_1m_before_runs": [
+            93.24
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d16_e128_i8_edge_b0.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 0,
+        "codes": "edge",
+        "degree": 16,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 298469396,
+      "bytes_per_vector": 1036.3520694444444,
+      "build_secs": 121.03842725,
+      "build_load_1m": 134.23,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 96.93 114.20 99.28 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 2897.601086330938,
+        "0.95": null
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.5115,
+          "mean_exact_evals_per_query": 190.2505,
+          "qps_single_thread": 9087.183015429746,
+          "qps_runs": [
+            9087.183015429746
+          ],
+          "load_1m_before_runs": [
+            116.57
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.62815,
+          "mean_exact_evals_per_query": 217.569,
+          "qps_single_thread": 5089.914937977796,
+          "qps_runs": [
+            5089.914937977796
+          ],
+          "load_1m_before_runs": [
+            116.57
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.69445,
+          "mean_exact_evals_per_query": 246.9725,
+          "qps_single_thread": 2123.522282119837,
+          "qps_runs": [
+            2123.522282119837
+          ],
+          "load_1m_before_runs": [
+            116.57
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.7281,
+          "mean_exact_evals_per_query": 279.4915,
+          "qps_single_thread": 3978.228151881789,
+          "qps_runs": [
+            3978.228151881789
+          ],
+          "load_1m_before_runs": [
+            116.57
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.76875,
+          "mean_exact_evals_per_query": 336.994,
+          "qps_single_thread": 1786.6728277101342,
+          "qps_runs": [
+            1786.6728277101342
+          ],
+          "load_1m_before_runs": [
+            116.57
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.7897,
+          "mean_exact_evals_per_query": 391.4835,
+          "qps_single_thread": 1820.9874499657294,
+          "qps_runs": [
+            1820.9874499657294
+          ],
+          "load_1m_before_runs": [
+            115.25
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.81605,
+          "mean_exact_evals_per_query": 513.3525,
+          "qps_single_thread": 1511.3017030481067,
+          "qps_runs": [
+            1511.3017030481067
+          ],
+          "load_1m_before_runs": [
+            115.25
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.83305,
+          "mean_exact_evals_per_query": 628.6815,
+          "qps_single_thread": 1375.228917683276,
+          "qps_runs": [
+            1375.228917683276
+          ],
+          "load_1m_before_runs": [
+            115.25
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.85355,
+          "mean_exact_evals_per_query": 881.2225,
+          "qps_single_thread": 985.5997310274679,
+          "qps_runs": [
+            985.5997310274679
+          ],
+          "load_1m_before_runs": [
+            115.25
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.8628,
+          "mean_exact_evals_per_query": 1137.6055,
+          "qps_single_thread": 730.7636292411623,
+          "qps_runs": [
+            730.7636292411623
+          ],
+          "load_1m_before_runs": [
+            110.58
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.8813,
+          "mean_exact_evals_per_query": 1672.334,
+          "qps_single_thread": 430.5536900411655,
+          "qps_runs": [
+            430.5536900411655
+          ],
+          "load_1m_before_runs": [
+            110.58
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.89135,
+          "mean_exact_evals_per_query": 2218.8555,
+          "qps_single_thread": 278.70448307408145,
+          "qps_runs": [
+            278.70448307408145
+          ],
+          "load_1m_before_runs": [
+            109.33
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.90525,
+          "mean_exact_evals_per_query": 3309.5565,
+          "qps_single_thread": 169.13232764723915,
+          "qps_runs": [
+            169.13232764723915
+          ],
+          "load_1m_before_runs": [
+            105.84
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d32_e128_i16_vertex_b0.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 0,
+        "codes": "vertex",
+        "degree": 32,
+        "seed": 24301,
+        "store": "i16"
+      },
+      "index_bytes": 201702420,
+      "bytes_per_vector": 700.355625,
+      "build_secs": 306.729417083,
+      "build_load_1m": 70.73,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 126.04 117.50 95.29 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 567.2266666666667,
+        "0.95": 2463.3221481481455
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.6109,
+          "mean_exact_evals_per_query": 146.3825,
+          "qps_single_thread": 1970.7911507043052,
+          "qps_runs": [
+            1970.7911507043052
+          ],
+          "load_1m_before_runs": [
+            141.71
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.7175,
+          "mean_exact_evals_per_query": 184.6485,
+          "qps_single_thread": 1603.7765730742753,
+          "qps_runs": [
+            1603.7765730742753
+          ],
+          "load_1m_before_runs": [
+            141.71
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.77885,
+          "mean_exact_evals_per_query": 211.4975,
+          "qps_single_thread": 1662.7678805935257,
+          "qps_runs": [
+            1662.7678805935257
+          ],
+          "load_1m_before_runs": [
+            141.09
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.81185,
+          "mean_exact_evals_per_query": 238.154,
+          "qps_single_thread": 1614.9237259048969,
+          "qps_runs": [
+            1614.9237259048969
+          ],
+          "load_1m_before_runs": [
+            141.09
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.84775,
+          "mean_exact_evals_per_query": 292.8345,
+          "qps_single_thread": 1073.3664050939822,
+          "qps_runs": [
+            1073.3664050939822
+          ],
+          "load_1m_before_runs": [
+            141.09
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.8653,
+          "mean_exact_evals_per_query": 345.941,
+          "qps_single_thread": 969.5229843904982,
+          "qps_runs": [
+            969.5229843904982
+          ],
+          "load_1m_before_runs": [
+            140.28
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.88845,
+          "mean_exact_evals_per_query": 461.0345,
+          "qps_single_thread": 547.9025178688989,
+          "qps_runs": [
+            547.9025178688989
+          ],
+          "load_1m_before_runs": [
+            140.28
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.90105,
+          "mean_exact_evals_per_query": 576.8805,
+          "qps_single_thread": 466.9111270297352,
+          "qps_runs": [
+            466.9111270297352
+          ],
+          "load_1m_before_runs": [
+            139.22
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.91695,
+          "mean_exact_evals_per_query": 819.008,
+          "qps_single_thread": 309.8464795901413,
+          "qps_runs": [
+            309.8464795901413
+          ],
+          "load_1m_before_runs": [
+            138.0
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9275,
+          "mean_exact_evals_per_query": 1069.2705,
+          "qps_single_thread": 230.4149622259871,
+          "qps_runs": [
+            230.4149622259871
+          ],
+          "load_1m_before_runs": [
+            136.88
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.9397,
+          "mean_exact_evals_per_query": 1572.0885,
+          "qps_single_thread": 180.40604733248068,
+          "qps_runs": [
+            180.40604733248068
+          ],
+          "load_1m_before_runs": [
+            134.83
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.94675,
+          "mean_exact_evals_per_query": 2073.534,
+          "qps_single_thread": 120.7295529987588,
+          "qps_runs": [
+            120.7295529987588
+          ],
+          "load_1m_before_runs": [
+            132.43
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.95485,
+          "mean_exact_evals_per_query": 3045.006,
+          "qps_single_thread": 69.07450897778043,
+          "qps_runs": [
+            69.07450897778043
+          ],
+          "load_1m_before_runs": [
+            132.98
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d32_e128_i8_vertex_b0.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 0,
+        "codes": "vertex",
+        "degree": 32,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 127974420,
+      "bytes_per_vector": 444.355625,
+      "build_secs": 237.534080791,
+      "build_load_1m": 40.98,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 68.92 72.85 72.58 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 613.0667026578069,
+        "0.95": null
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.6113,
+          "mean_exact_evals_per_query": 146.101,
+          "qps_single_thread": 8802.350361342204,
+          "qps_runs": [
+            8802.350361342204
+          ],
+          "load_1m_before_runs": [
+            73.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.71735,
+          "mean_exact_evals_per_query": 184.2285,
+          "qps_single_thread": 3936.3537574039665,
+          "qps_runs": [
+            3936.3537574039665
+          ],
+          "load_1m_before_runs": [
+            73.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.7758,
+          "mean_exact_evals_per_query": 211.443,
+          "qps_single_thread": 3381.066480434369,
+          "qps_runs": [
+            3381.066480434369
+          ],
+          "load_1m_before_runs": [
+            73.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.8095,
+          "mean_exact_evals_per_query": 238.0775,
+          "qps_single_thread": 1860.7572118879127,
+          "qps_runs": [
+            1860.7572118879127
+          ],
+          "load_1m_before_runs": [
+            74.46
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.84505,
+          "mean_exact_evals_per_query": 293.0195,
+          "qps_single_thread": 1559.2722759342796,
+          "qps_runs": [
+            1559.2722759342796
+          ],
+          "load_1m_before_runs": [
+            74.46
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.86265,
+          "mean_exact_evals_per_query": 346.886,
+          "qps_single_thread": 1648.4499783928595,
+          "qps_runs": [
+            1648.4499783928595
+          ],
+          "load_1m_before_runs": [
+            74.46
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.88425,
+          "mean_exact_evals_per_query": 460.979,
+          "qps_single_thread": 1097.6819885566072,
+          "qps_runs": [
+            1097.6819885566072
+          ],
+          "load_1m_before_runs": [
+            74.46
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.8978,
+          "mean_exact_evals_per_query": 577.8955,
+          "qps_single_thread": 927.7001886138794,
+          "qps_runs": [
+            927.7001886138794
+          ],
+          "load_1m_before_runs": [
+            71.46
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.91285,
+          "mean_exact_evals_per_query": 818.4985,
+          "qps_single_thread": 521.4946174348953,
+          "qps_runs": [
+            521.4946174348953
+          ],
+          "load_1m_before_runs": [
+            71.46
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.92285,
+          "mean_exact_evals_per_query": 1068.9375,
+          "qps_single_thread": 264.69310751620367,
+          "qps_runs": [
+            264.69310751620367
+          ],
+          "load_1m_before_runs": [
+            69.58
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.93455,
+          "mean_exact_evals_per_query": 1571.191,
+          "qps_single_thread": 160.23186725370735,
+          "qps_runs": [
+            160.23186725370735
+          ],
+          "load_1m_before_runs": [
+            68.49
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.94125,
+          "mean_exact_evals_per_query": 2073.446,
+          "qps_single_thread": 116.06871068939967,
+          "qps_runs": [
+            116.06871068939967
+          ],
+          "load_1m_before_runs": [
+            66.54
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.94915,
+          "mean_exact_evals_per_query": 3046.594,
+          "qps_single_thread": 68.052644305587,
+          "qps_runs": [
+            68.052644305587
+          ],
+          "load_1m_before_runs": [
+            66.99
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d32_e128_i8_vertex_b512.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 512,
+        "codes": "vertex",
+        "degree": 32,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 137191444,
+      "bytes_per_vector": 476.35918055555555,
+      "build_secs": 183.049664333,
+      "build_load_1m": 163.73,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 131.38 138.11 122.27 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 480.0033411078715,
+        "0.95": null
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.59385,
+          "mean_exact_evals_per_query": 138.8535,
+          "qps_single_thread": 19000.32181795079,
+          "qps_runs": [
+            19000.32181795079
+          ],
+          "load_1m_before_runs": [
+            133.73
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.7082,
+          "mean_exact_evals_per_query": 157.3245,
+          "qps_single_thread": 13299.051393293073,
+          "qps_runs": [
+            13299.051393293073
+          ],
+          "load_1m_before_runs": [
+            133.73
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.766,
+          "mean_exact_evals_per_query": 172.6555,
+          "qps_single_thread": 4017.2715923441997,
+          "qps_runs": [
+            4017.2715923441997
+          ],
+          "load_1m_before_runs": [
+            133.73
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.79905,
+          "mean_exact_evals_per_query": 191.0115,
+          "qps_single_thread": 4870.313202633998,
+          "qps_runs": [
+            4870.313202633998
+          ],
+          "load_1m_before_runs": [
+            133.73
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.83645,
+          "mean_exact_evals_per_query": 220.8135,
+          "qps_single_thread": 2929.0474831021565,
+          "qps_runs": [
+            2929.0474831021565
+          ],
+          "load_1m_before_runs": [
+            133.73
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.8545,
+          "mean_exact_evals_per_query": 249.745,
+          "qps_single_thread": 2376.7501565202874,
+          "qps_runs": [
+            2376.7501565202874
+          ],
+          "load_1m_before_runs": [
+            133.73
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.8734,
+          "mean_exact_evals_per_query": 309.525,
+          "qps_single_thread": 1856.44914187959,
+          "qps_runs": [
+            1856.44914187959
+          ],
+          "load_1m_before_runs": [
+            133.73
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.8856,
+          "mean_exact_evals_per_query": 371.238,
+          "qps_single_thread": 1653.5285213517552,
+          "qps_runs": [
+            1653.5285213517552
+          ],
+          "load_1m_before_runs": [
+            131.51
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.90275,
+          "mean_exact_evals_per_query": 500.7745,
+          "qps_single_thread": 1528.9769311316736,
+          "qps_runs": [
+            1528.9769311316736
+          ],
+          "load_1m_before_runs": [
+            131.51
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9133,
+          "mean_exact_evals_per_query": 634.371,
+          "qps_single_thread": 1252.4985718259784,
+          "qps_runs": [
+            1252.4985718259784
+          ],
+          "load_1m_before_runs": [
+            131.51
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.92605,
+          "mean_exact_evals_per_query": 909.1575,
+          "qps_single_thread": 642.4767307327929,
+          "qps_runs": [
+            642.4767307327929
+          ],
+          "load_1m_before_runs": [
+            131.51
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.9345,
+          "mean_exact_evals_per_query": 1190.478,
+          "qps_single_thread": 341.2435726239903,
+          "qps_runs": [
+            341.2435726239903
+          ],
+          "load_1m_before_runs": [
+            128.51
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.9431,
+          "mean_exact_evals_per_query": 1753.045,
+          "qps_single_thread": 191.95052743271918,
+          "qps_runs": [
+            191.95052743271918
+          ],
+          "load_1m_before_runs": [
+            128.39
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d64_e128_i8_vertex_b0.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 0,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 164838420,
+      "bytes_per_vector": 572.355625,
+      "build_secs": 324.676384875,
+      "build_load_1m": 102.93,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 150.13 133.43 114.68 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 406.20637009063444,
+        "0.95": 1357.8355344827562
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.6604,
+          "mean_exact_evals_per_query": 143.941,
+          "qps_single_thread": 3283.9160937173106,
+          "qps_runs": [
+            3283.9160937173106
+          ],
+          "load_1m_before_runs": [
+            141.71
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.7671,
+          "mean_exact_evals_per_query": 176.4775,
+          "qps_single_thread": 2423.7160606843095,
+          "qps_runs": [
+            2423.7160606843095
+          ],
+          "load_1m_before_runs": [
+            141.71
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.82795,
+          "mean_exact_evals_per_query": 215.3685,
+          "qps_single_thread": 1452.27440473053,
+          "qps_runs": [
+            1452.27440473053
+          ],
+          "load_1m_before_runs": [
+            141.71
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.86025,
+          "mean_exact_evals_per_query": 264.563,
+          "qps_single_thread": 1403.7475725414354,
+          "qps_runs": [
+            1403.7475725414354
+          ],
+          "load_1m_before_runs": [
+            141.71
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.89125,
+          "mean_exact_evals_per_query": 361.966,
+          "qps_single_thread": 945.9550835524735,
+          "qps_runs": [
+            945.9550835524735
+          ],
+          "load_1m_before_runs": [
+            140.77
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.9078,
+          "mean_exact_evals_per_query": 445.6435,
+          "qps_single_thread": 592.5244010221417,
+          "qps_runs": [
+            592.5244010221417
+          ],
+          "load_1m_before_runs": [
+            140.77
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.92705,
+          "mean_exact_evals_per_query": 620.1955,
+          "qps_single_thread": 465.9755026776263,
+          "qps_runs": [
+            465.9755026776263
+          ],
+          "load_1m_before_runs": [
+            140.39
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.9365,
+          "mean_exact_evals_per_query": 793.188,
+          "qps_single_thread": 493.83354167672513,
+          "qps_runs": [
+            493.83354167672513
+          ],
+          "load_1m_before_runs": [
+            141.08
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.9461,
+          "mean_exact_evals_per_query": 1126.6785,
+          "qps_single_thread": 257.50870435750755,
+          "qps_runs": [
+            257.50870435750755
+          ],
+          "load_1m_before_runs": [
+            141.08
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9519,
+          "mean_exact_evals_per_query": 1470.4505,
+          "qps_single_thread": 156.48589840854697,
+          "qps_runs": [
+            156.48589840854697
+          ],
+          "load_1m_before_runs": [
+            138.4
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.95745,
+          "mean_exact_evals_per_query": 2131.392,
+          "qps_single_thread": 97.62798015466629,
+          "qps_runs": [
+            97.62798015466629
+          ],
+          "load_1m_before_runs": [
+            136.51
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.96005,
+          "mean_exact_evals_per_query": 2747.123,
+          "qps_single_thread": 81.83175570827113,
+          "qps_runs": [
+            81.83175570827113
+          ],
+          "load_1m_before_runs": [
+            137.87
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.96365,
+          "mean_exact_evals_per_query": 3882.9795,
+          "qps_single_thread": 51.79490685271932,
+          "qps_runs": [
+            51.79490685271932
+          ],
+          "load_1m_before_runs": [
+            145.76
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d64_e128_i8_vertex_b1024.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 1024,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 192489492,
+      "bytes_per_vector": 668.3662916666667,
+      "build_secs": 280.749030292,
+      "build_load_1m": 152.91,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 124.25 144.39 134.70 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 225.12592857142872,
+        "0.95": 682.134956043956
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.672,
+          "mean_exact_evals_per_query": 113.1755,
+          "qps_single_thread": 16267.965934879334,
+          "qps_runs": [
+            16267.965934879334
+          ],
+          "load_1m_before_runs": [
+            148.22
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.77935,
+          "mean_exact_evals_per_query": 123.3295,
+          "qps_single_thread": 14317.34026769847,
+          "qps_runs": [
+            14317.34026769847
+          ],
+          "load_1m_before_runs": [
+            148.22
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.82695,
+          "mean_exact_evals_per_query": 149.8855,
+          "qps_single_thread": 6918.153060677391,
+          "qps_runs": [
+            6918.153060677391
+          ],
+          "load_1m_before_runs": [
+            148.22
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.85245,
+          "mean_exact_evals_per_query": 161.812,
+          "qps_single_thread": 5943.143432566494,
+          "qps_runs": [
+            5943.143432566494
+          ],
+          "load_1m_before_runs": [
+            148.22
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.87885,
+          "mean_exact_evals_per_query": 185.4595,
+          "qps_single_thread": 4786.746460230312,
+          "qps_runs": [
+            4786.746460230312
+          ],
+          "load_1m_before_runs": [
+            143.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.89525,
+          "mean_exact_evals_per_query": 207.667,
+          "qps_single_thread": 3168.267474467574,
+          "qps_runs": [
+            3168.267474467574
+          ],
+          "load_1m_before_runs": [
+            143.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.90855,
+          "mean_exact_evals_per_query": 256.552,
+          "qps_single_thread": 2555.2734946719984,
+          "qps_runs": [
+            2555.2734946719984
+          ],
+          "load_1m_before_runs": [
+            143.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.9208,
+          "mean_exact_evals_per_query": 306.517,
+          "qps_single_thread": 1896.8648499206456,
+          "qps_runs": [
+            1896.8648499206456
+          ],
+          "load_1m_before_runs": [
+            143.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.93445,
+          "mean_exact_evals_per_query": 409.274,
+          "qps_single_thread": 1508.1075856262732,
+          "qps_runs": [
+            1508.1075856262732
+          ],
+          "load_1m_before_runs": [
+            143.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9429,
+          "mean_exact_evals_per_query": 514.447,
+          "qps_single_thread": 862.608870922295,
+          "qps_runs": [
+            862.608870922295
+          ],
+          "load_1m_before_runs": [
+            143.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.952,
+          "mean_exact_evals_per_query": 729.371,
+          "qps_single_thread": 653.5752991832351,
+          "qps_runs": [
+            653.5752991832351
+          ],
+          "load_1m_before_runs": [
+            141.5
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.95755,
+          "mean_exact_evals_per_query": 947.374,
+          "qps_single_thread": 484.58050196307806,
+          "qps_runs": [
+            484.58050196307806
+          ],
+          "load_1m_before_runs": [
+            141.5
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.9627,
+          "mean_exact_evals_per_query": 1380.344,
+          "qps_single_thread": 297.2105140321806,
+          "qps_runs": [
+            297.2105140321806
+          ],
+          "load_1m_before_runs": [
+            136.01
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d64_e128_i8_vertex_b512.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 512,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 174055444,
+      "bytes_per_vector": 604.3591805555556,
+      "build_secs": 321.503578542,
+      "build_load_1m": 101.32,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 152.19 141.65 127.90 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 236.95205000000004,
+        "0.95": 692.3552999999988
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.6662,
+          "mean_exact_evals_per_query": 131.6835,
+          "qps_single_thread": 16777.5441430189,
+          "qps_runs": [
+            16777.5441430189
+          ],
+          "load_1m_before_runs": [
+            149.38
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.77695,
+          "mean_exact_evals_per_query": 126.019,
+          "qps_single_thread": 12716.026777231162,
+          "qps_runs": [
+            12716.026777231162
+          ],
+          "load_1m_before_runs": [
+            149.38
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.8335,
+          "mean_exact_evals_per_query": 161.955,
+          "qps_single_thread": 5019.6440633140255,
+          "qps_runs": [
+            5019.6440633140255
+          ],
+          "load_1m_before_runs": [
+            149.38
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.86105,
+          "mean_exact_evals_per_query": 175.84,
+          "qps_single_thread": 3675.07385749993,
+          "qps_runs": [
+            3675.07385749993
+          ],
+          "load_1m_before_runs": [
+            149.38
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.8892,
+          "mean_exact_evals_per_query": 213.296,
+          "qps_single_thread": 2804.836821612823,
+          "qps_runs": [
+            2804.836821612823
+          ],
+          "load_1m_before_runs": [
+            149.38
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.9052,
+          "mean_exact_evals_per_query": 248.342,
+          "qps_single_thread": 2464.2924030793797,
+          "qps_runs": [
+            2464.2924030793797
+          ],
+          "load_1m_before_runs": [
+            149.38
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.9202,
+          "mean_exact_evals_per_query": 320.4295,
+          "qps_single_thread": 2340.0589208583815,
+          "qps_runs": [
+            2340.0589208583815
+          ],
+          "load_1m_before_runs": [
+            152.07
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.93205,
+          "mean_exact_evals_per_query": 395.301,
+          "qps_single_thread": 1670.910023431823,
+          "qps_runs": [
+            1670.910023431823
+          ],
+          "load_1m_before_runs": [
+            152.07
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.9446,
+          "mean_exact_evals_per_query": 549.249,
+          "qps_single_thread": 1005.662171679912,
+          "qps_runs": [
+            1005.662171679912
+          ],
+          "load_1m_before_runs": [
+            152.07
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9506,
+          "mean_exact_evals_per_query": 708.256,
+          "qps_single_thread": 712.1368413668897,
+          "qps_runs": [
+            712.1368413668897
+          ],
+          "load_1m_before_runs": [
+            152.07
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.95855,
+          "mean_exact_evals_per_query": 1030.7085,
+          "qps_single_thread": 439.74842795417374,
+          "qps_runs": [
+            439.74842795417374
+          ],
+          "load_1m_before_runs": [
+            153.27
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.96205,
+          "mean_exact_evals_per_query": 1351.697,
+          "qps_single_thread": 333.661440701303,
+          "qps_runs": [
+            333.661440701303
+          ],
+          "load_1m_before_runs": [
+            153.57
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.96505,
+          "mean_exact_evals_per_query": 1981.823,
+          "qps_single_thread": 203.86596378609113,
+          "qps_runs": [
+            203.86596378609113
+          ],
+          "load_1m_before_runs": [
+            152.8
+          ],
+          "load_gate_met": true
+        }
+      ]
+    }
+  ],
+  "timed": []
+}
