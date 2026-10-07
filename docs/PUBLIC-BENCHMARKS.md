@@ -512,7 +512,11 @@ the decoder (kernels, numeric precision) was not isolated.
 
 Throughput is the problem: 4.64 s per session against 0.28 s with vLLM on the same GPU type, about
 17x slower, because HMS decodes one sequence at a time on GPU (the candle mask bug noted above). At
-that rate the S dev fact stage alone costs about $5.3 on an L4, so the `--cap 8` run is not expected
-to reach the retrieval stages; this run gives no retrieval comparison with
-`longmemeval_dev_final.json`. Candle 0.11 also does not compile its CUDA kernels for T4 (sm_75) on
+that rate the S dev fact stage alone costs about $5.3 on an L4. The run did not reach the retrieval
+stages and gives no retrieval comparison with `longmemeval_dev_final.json`. It also overran its
+cap: Modal billed $14.40 against `--cap 8`, because the CPU driver was preempted six times and each
+restart cancelled in-flight L4 shards that were billed but never recorded in the ledger, and the
+driver's own CPU and memory were recorded only after a wave completed. The run was stopped by hand
+after 1,500 of 4,506 sessions; `longmemeval_modal.py` now reserves each wave's projected cost
+before launching it, so a preempted driver's restart inherits the spend. Candle 0.11 also does not compile its CUDA kernels for T4 (sm_75) on
 CUDA 12.4, so every HMS stage runs on L4.

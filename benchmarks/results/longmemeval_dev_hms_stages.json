@@ -35,9 +35,19 @@
   "slowdown": 16.7
  },
  "cost": {
-  "ledger_usd_at_record": 3.5489,
+  "billed_usd": 14.399,
+  "billed_breakdown_usd": {
+   "L4": 7.727,
+   "cpu": 3.122,
+   "memory": 3.547,
+   "egress": 0.002
+  },
+  "billing_source": "modal billing report --start 2026-10-06 --show-resources, app hms-longmemeval (includes the first attempt's image builds)",
+  "ledger_usd_at_stop": 3.5489,
   "cap_usd": 8.0,
-  "notes": "About $1.77 of the ledger is from driver restarts (Modal cancelled the in-flight fact shard each time) before the first 1,500-item shard was stored. HMS decodes one sequence at a time on GPU (candle mask bug), which causes the slowdown."
+  "cap_exceeded_by_usd": 6.399,
+  "cause": "The CPU driver container was preempted repeatedly (6 'Container terminated due to preemption' events). Each restart cancelled the in-flight L4 fact shards (1,500 items, about 2 h each), which Modal billed but which never returned, so the ledger never recorded them. The driver's own CPU and memory (8 CPU, 64 GiB, about 8 h) were recorded only when a wave completed.",
+  "fix": "longmemeval_modal.py now reserves each wave's projected GPU cost plus driver time in the ledger before launching it, and probes throughput with a 32-item first wave; a restarted driver inherits the reservation. Simulated preemption: the ledger keeps the reservation and the restart refuses further waves."
  },
- "status": "in progress at record time: remaining fact shards running; facts alone project to about $7.1, so embedding and re-ranking are expected to stop at the $8 cap before retrieval metrics exist. No retrieval comparison with longmemeval_dev_final.json is available from this run."
+ "status": "stopped by hand at 18:00 PDT 2026-10-06 after the bill was found to exceed the cap; 1,500 of 4,506 fact sessions completed, no embedding, re-rank or retrieval stage ran. The s-dev-hms ledger on the volume was set to the billed amount so the tag cannot be resumed."
 }
