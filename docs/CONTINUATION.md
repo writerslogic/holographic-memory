@@ -10,12 +10,25 @@ Durable copy of the hand-off. Delete this file once the items below are merged o
 | Local model stages | Every HMS stage runs on L4 (candle 0.11 CUDA kernels do not build for T4). The `s-dev-hms` run was stopped at 18:00 PDT 2026-10-06 after Modal billed $14.40 against the $8 cap (driver preemptions cancelled billed-but-unledgered L4 shards); 1,500 of 4,506 fact sessions done, no retrieval metrics. Budget now reserves wave cost before launch (simulated preemption verified). LLM-stage quality on those 1,500 sessions: 74% identical fact output, 96% of facts matched (`benchmarks/results/longmemeval_dev_hms_stages.json`). At ~17x vLLM's per-session time, a full HMS S-dev run costs roughly $8 GPU plus driver time; do not relaunch without the maintainer's approval and a new cap. Batched GPU decoding in HMS is the fix that makes it affordable. The `s-dev-hms` ledger on the `hms-lme` volume is set to the billed $14.40. |
 | Holographic memory | Done for dev: 3 seeds and the equal-bytes control are in `holographic_dev.json` and the doc. Shards beat an equal-bytes index only beyond ~30% loss; no variant beats the index on accuracy; no Rust port. |
 
-## State (2026-10-07 15:40): integration branch `integrate/qgraph-speed` (unpushed, head 52778f1)
+## State (2026-10-07): everything is on local `main` (unpushed, ahead of origin/main by the merged qgraph and model work)
 
-Merged, 16 qgraph unit tests pass, release binary builds, FULL GATE NOT RUN: build-time
-speedups (worktree 5), the per-vertex 8-bit LVQ index `VGraph` (worktree 4), batched Metal model
-stages (worktree 1), build-bounds screening (`work/vertex-build`, ccb4d8a) and the opt-in 4-bit
-search encoding (`work/vertex-search`, fcf0056). Not merged: worktrees 2 and 3 (superseded).
+There are no other branches, worktrees or stashes. Merged into `main` with signed merge commits:
+the build-time speedups, the per-vertex 8-bit LVQ index `VGraph`, batched Metal model stages,
+build-bounds screening (ccb4d8a) and the opt-in 4-bit search encoding (fcf0056). The 16 qgraph
+unit tests pass and the release binary builds; the FULL GATE HAS NOT BEEN RUN on this main.
+
+Recorded as merged WITHOUT their code (`-s ours`; reachable only as second parents of these
+merge commits, so `git show <tip>` and `git diff main <tip>` still work):
+- 18e541d, memory-first qgraph: integer vector stores and per-vertex codes, layout screening,
+  a timed glove run of an i8 vertex-code index. Superseded by VGraph; its results files
+  (`benchmarks/results/qgraph_memory_first_*.json`) exist only there.
+- 1993058, edge-index speed: FastScan edge kernel, batched pool merge, 2-bit edge codes scanned
+  in one NEON pass; results in `qgraph_speed_first_heldout.json`, only there. Targets the
+  per-edge QGraph; the FastScan kernel and pool merge may be worth porting to VGraph.
+Four raw pareto logs that were never committed are in
+`/Volumes/A/.hms-target/logs/worktree_ignored/wf-4_pareto_raw/`. The scratch target dirs
+`/Volumes/A/.hms-target-*` were left in place (`.hms-target-vsearch/bin/pb-base` is the baseline
+binary the next session uses).
 
 Status of the claims (verify before quoting; results files are in `benchmarks/results/`):
 - Build bounds: nytimes build ~1.9x faster with a bit-identical graph; slower on glove, so on
@@ -26,9 +39,9 @@ Status of the claims (verify before quoting; results files are in `benchmarks/re
   runs the new pool/kernel code at x0.94 / x1.06 (inconclusive; possible regression).
 - `--graph-cache` is keyed by filename only; must be fixed before any published run.
 
-Next: run docs/NEXT-SESSIONS prompt 1 (Fable) from the prompts file: step 1 verifies the merge
-and decides defaults with one clean paired held-out run, then the competitor harness, the gate,
-the M4 test-set comparison, the doc rewrite, and the specs for the Opus and Sonnet sessions.
+Next: run prompt 1 (Fable) from the prompts file. Step 1 verifies the merge and decides the
+defaults with one clean paired held-out run, then the competitor harness, the gate, the M4
+test-set comparison, the doc rewrite, and the specs for the Opus and Sonnet sessions.
 
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus
