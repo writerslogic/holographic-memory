@@ -16,14 +16,19 @@
 //! Estimator (RaBitQ, Gao & Long 2024, applied per edge as in SymphonyQG, Gou et al. 2025):
 //! with `w = u - v` and `s = sign(w)`, `<q, u> ~= <q, v> + <v, w> + M (<s, q> - <s, v>)` where
 //! `M = |w|^2 / |w|_1`. `<q, v>` is exact at expansion time; `<s, q>` comes from the bit planes.
+//!
+//! [`VGraph`] is the compact alternative on the same [`Graph`]: one 8-bit code per vertex instead
+//! of one 1-bit code per edge (see `vertex.rs`).
 
 mod kernels;
+mod vertex;
 
 use std::cell::RefCell;
 
 use rayon::prelude::*;
 
 use kernels::{as_f32, as_f32_mut, as_u32, as_u32_mut, dot, QueryCode, Rotation, SplitMix};
+pub use vertex::{VGraph, VSearchParams, VSearcher};
 
 /// Default out-degree of every vertex; one batch of edge codes per expansion.
 pub const DEFAULT_DEGREE: usize = 32;
@@ -339,6 +344,90 @@ impl QGraph {
     /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
     /// stay zero. Uses the rayon pool; the result depends only on the data and `params`.
     pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Self {
+        Self::from_graph(&Graph::build(data, dim, params), params)
+    }
+
+    /// Encodes a built graph; `params` must be the ones the graph was built with.
+    pub fn from_graph(g: &Graph, params: &BuildParams) -> Self {
+        let (n, dim, r) = (g.n, g.dim, g.degree);
+        assert_eq!(r, params.degree, "graph built with another degree");
+        let rotation = Rotation::new(dim, params.code_bits, params.seed);
+        let words = rotation.padded() / 64;
+        let rows = g.rows();
+        let graph = &g.adj;
+        let codes_off = dim.div_ceil(2);
+        let factors_off = codes_off + r * words;
+        let ids_off = factors_off + 3 * r / 2;
+        let stride = ids_off + r / 2;
+        let mut blocks = vec![0u64; n * stride];
+        blocks
+            .par_chunks_mut(stride)
+            .zip(graph.par_iter())
+            .enumerate()
+            .for_each(|(v, (b, adj))| {
+                let (vec_w, rest) = b.split_at_mut(codes_off);
+                let (codes, rest) = rest.split_at_mut(r * words);
+                let (fac, ids) = rest.split_at_mut(3 * r / 2);
+                as_f32_mut(vec_w)[..dim].copy_from_slice(rows.row(v as u32));
+                let fac = as_f32_mut(fac);
+                let ids = as_u32_mut(ids);
+                ids.fill(NONE);
+                let mut pv = vec![0f32; rotation.padded()];
+                let mut pu = pv.clone();
+                rotation.apply(rows.row(v as u32), &mut pv);
+                for (j, &u) in adj.iter().enumerate() {
+                    ids[j] = u;
+                    rotation.apply(rows.row(u), &mut pu);
+                    let (k, m, pop) =
+                        edge_factors(&pv, &pu, &mut codes[j * words..(j + 1) * words]);
+                    fac[j] = k;
+                    fac[r + j] = m;
+                    fac[2 * r + j] = pop;
+                }
+            });
+        Self {
+            n,
+            dim,
+            degree: r,
+            words,
+            rotation,
+            stride,
+            codes_off,
+            factors_off,
+            ids_off,
+            blocks,
+            entry: g.entry,
+            upper_ids: g.upper_ids.clone(),
+            layers: g.layers.clone(),
+        }
+    }
+}
+
+/// A built proximity graph over normalized vectors, before any encoding. Holds a full-precision
+/// copy of the data, so it is a build-time object; the indexes keep only their encodings.
+pub struct Graph {
+    n: usize,
+    dim: usize,
+    degree: usize,
+    unit: Vec<f32>,
+    adj: Vec<Vec<u32>>,
+    entry: u32,
+    upper_ids: Vec<u32>,
+    layers: Vec<Vec<Vec<u32>>>,
+}
+
+impl Graph {
+    fn rows(&self) -> Rows<'_> {
+        Rows {
+            data: &self.unit,
+            dim: self.dim,
+        }
+    }
+
+    /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
+    /// stay zero. Uses the rayon pool; the result depends only on the data and `params`
+    /// (`code_bits` is not used).
+    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Self {
         assert!(dim > 0 && data.len().is_multiple_of(dim), "ragged data");
         let n = data.len() / dim;
         assert!(n > 0 && n < NONE as usize, "index size out of range");
@@ -348,8 +437,6 @@ impl QGraph {
             r > 0 && r.is_multiple_of(2),
             "degree must be positive and even"
         );
-        let rotation = Rotation::new(dim, params.code_bits, params.seed);
-        let words = rotation.padded() / 64;
         let mut unit = data.to_vec();
         unit.par_chunks_mut(dim).for_each(|x| {
             let norm = dot(x, x).sqrt();
@@ -413,54 +500,26 @@ impl QGraph {
             size /= LAYER_RATIO;
         }
         let upper_ids = order[..n / LAYER_RATIO].to_vec();
-
-        let codes_off = dim.div_ceil(2);
-        let factors_off = codes_off + r * words;
-        let ids_off = factors_off + 3 * r / 2;
-        let stride = ids_off + r / 2;
-        let mut blocks = vec![0u64; n * stride];
-        blocks
-            .par_chunks_mut(stride)
-            .zip(graph.par_iter())
-            .enumerate()
-            .for_each(|(v, (b, adj))| {
-                let (vec_w, rest) = b.split_at_mut(codes_off);
-                let (codes, rest) = rest.split_at_mut(r * words);
-                let (fac, ids) = rest.split_at_mut(3 * r / 2);
-                as_f32_mut(vec_w)[..dim].copy_from_slice(rows.row(v as u32));
-                let fac = as_f32_mut(fac);
-                let ids = as_u32_mut(ids);
-                ids.fill(NONE);
-                let mut pv = vec![0f32; rotation.padded()];
-                let mut pu = pv.clone();
-                rotation.apply(rows.row(v as u32), &mut pv);
-                for (j, &u) in adj.iter().enumerate() {
-                    ids[j] = u;
-                    rotation.apply(rows.row(u), &mut pu);
-                    let (k, m, pop) =
-                        edge_factors(&pv, &pu, &mut codes[j * words..(j + 1) * words]);
-                    fac[j] = k;
-                    fac[r + j] = m;
-                    fac[2 * r + j] = pop;
-                }
-            });
         Self {
             n,
             dim,
             degree: r,
-            words,
-            rotation,
-            stride,
-            codes_off,
-            factors_off,
-            ids_off,
-            blocks,
+            unit,
+            adj: graph,
             entry,
             upper_ids,
             layers,
         }
     }
+}
 
+/// Bytes of the upper layers and their id map.
+fn upper_bytes(upper_ids: &[u32], layers: &[Vec<Vec<u32>>]) -> usize {
+    let adj: usize = layers.iter().flatten().map(|a| a.len() * 4).sum();
+    upper_ids.len() * 4 + adj
+}
+
+impl QGraph {
     pub fn len(&self) -> usize {
         self.n
     }
@@ -471,8 +530,7 @@ impl QGraph {
 
     /// Bytes held by the index (vertex blocks; the rotation is negligible).
     pub fn index_bytes(&self) -> usize {
-        let upper: usize = self.layers.iter().flatten().map(|adj| adj.len() * 4).sum();
-        self.blocks.len() * 8 + self.upper_ids.len() * 4 + upper
+        self.blocks.len() * 8 + upper_bytes(&self.upper_ids, &self.layers)
     }
 
     fn vector(&self, v: u32) -> &[f32] {
@@ -655,7 +713,7 @@ mod tests {
     use super::*;
     use kernels::raw_estimates;
 
-    fn gaussian(rng: &mut SplitMix) -> f32 {
+    pub(super) fn gaussian(rng: &mut SplitMix) -> f32 {
         let u = rng.next_f32().max(1e-7);
         let v = rng.next_f32();
         (-2.0 * u.ln()).sqrt() * (std::f32::consts::TAU * v).cos()
@@ -725,7 +783,7 @@ mod tests {
         }
     }
 
-    fn clustered(n: usize, d: usize, seed: u64) -> Vec<f32> {
+    pub(super) fn clustered(n: usize, d: usize, seed: u64) -> Vec<f32> {
         let mut rng = SplitMix(seed);
         let centers: Vec<Vec<f32>> = (0..20)
             .map(|_| (0..d).map(|_| gaussian(&mut rng)).collect())
@@ -740,7 +798,7 @@ mod tests {
             .collect()
     }
 
-    fn brute_force(data: &[f32], d: usize, q: &[f32], k: usize) -> Vec<u32> {
+    pub(super) fn brute_force(data: &[f32], d: usize, q: &[f32], k: usize) -> Vec<u32> {
         let mut s: Vec<(f32, u32)> = data
             .chunks_exact(d)
             .enumerate()

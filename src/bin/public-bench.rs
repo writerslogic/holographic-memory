@@ -11,6 +11,8 @@
 //! `ann-qgraph`: the same sets through the quantized graph index (`core::qgraph`). Builds on
 //!         all cores, then times single-threaded queries one at a time over an `ef` x
 //!         `max-exact` sweep, each configuration repeated and gated on the 1-minute load.
+//!         `--index vertex` uses the per-vertex 8-bit code index (`VGraph`) instead, swept over
+//!         `ef` x `rerank`; `--residual` adds its second code for the re-rank.
 //! `beir`: BEIR sets with precomputed embeddings and text. Writes ranked runs for the
 //!         document API (lexical, dense, hybrid) and the raw sparse-vector path.
 //! `longmemeval`: LongMemEval_S with precomputed embeddings. Every question gets a fresh store
@@ -28,7 +30,9 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
-use holographic_memory::core::qgraph::{BuildParams, QGraph, SearchParams};
+use holographic_memory::core::qgraph::{
+    BuildParams, Graph, QGraph, SearchParams, VGraph, VSearchParams,
+};
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
 use rayon::prelude::*;
@@ -94,6 +98,16 @@ enum Mode {
         /// on the rest and score against exact cosine truth; the test queries are not read.
         #[arg(long, conflicts_with = "queries")]
         holdout: Option<usize>,
+        /// Index layout: `edge` (1-bit code per edge, QGraph) or `vertex` (8-bit code per
+        /// vertex, VGraph).
+        #[arg(long, default_value = "edge", value_parser = ["edge", "vertex"])]
+        index: String,
+        /// Vertex index only: also store the residual code used by the re-rank.
+        #[arg(long)]
+        residual: bool,
+        /// Vertex index only: pool candidates re-scored with the float query (0 = none).
+        #[arg(long, value_delimiter = ',', default_value = "0")]
+        rerank: Vec<usize>,
     },
     Beir {
         #[arg(long)]
@@ -398,6 +412,14 @@ struct QgraphArgs {
     max_wait_secs: u64,
     queries: Option<usize>,
     holdout: Option<usize>,
+    index: String,
+    residual: bool,
+    rerank: Vec<usize>,
+}
+
+enum Built {
+    Edge(QGraph),
+    Vertex(VGraph),
 }
 
 fn normalize(v: &mut [f32]) {
@@ -479,21 +501,55 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         degree: a.degree,
         ..BuildParams::default()
     };
-    let load_before_build = load_1m();
-    let t = Instant::now();
-    let index = QGraph::build(&train, d, &params);
-    let build_secs = t.elapsed().as_secs_f64();
-    drop(train);
-    eprintln!("built in {build_secs:.1}s, {} bytes", index.index_bytes());
-
     let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
-    let mut searcher = index.searcher();
+    let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
+    let t = Instant::now();
+    let index = match a.index.as_str() {
+        "edge" => Built::Edge(QGraph::build(&train, d, &params)),
+        _ => Built::Vertex(VGraph::from_graph(
+            &Graph::build(&train, d, &params),
+            a.residual,
+        )),
+    };
+    let build_secs = t.elapsed().as_secs_f64();
+    let load_after_build = load_1m();
+    drop(train);
+    let (index_bytes, residual_bytes) = match &index {
+        Built::Edge(g) => (g.index_bytes(), 0),
+        Built::Vertex(g) => (g.index_bytes(), g.residual_bytes()),
+    };
+    eprintln!("built in {build_secs:.1}s, {index_bytes} bytes");
+
+    // (sweep label, search) pairs; the second parameter is max_exact or rerank.
+    let seconds: &[usize] = match &index {
+        Built::Edge(_) => &a.max_exact,
+        Built::Vertex(_) => &a.rerank,
+    };
+    let (mut edge_s, mut vertex_s) = match &index {
+        Built::Edge(g) => (Some(g.searcher()), None),
+        Built::Vertex(g) => (None, Some(g.searcher())),
+    };
     let mut rows = Vec::new();
     let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
     let mut out = Vec::with_capacity(K);
-    for &max_exact in &a.max_exact {
+    for &second in seconds {
         for &ef in &a.ef {
-            let sp = SearchParams { ef, max_exact };
+            let mut search = |q: &[f32], out: &mut Vec<u32>| -> usize {
+                if let Some(s) = edge_s.as_mut() {
+                    s.search(
+                        q,
+                        K,
+                        SearchParams {
+                            ef,
+                            max_exact: second,
+                        },
+                        out,
+                    )
+                } else {
+                    let s = vertex_s.as_mut().expect("one searcher exists");
+                    s.search(q, K, VSearchParams { ef, rerank: second }, out)
+                }
+            };
             let (mut qps, mut loads, mut gate) = (Vec::new(), Vec::new(), true);
             let (mut recall, mut exact_mean) = (0.0, 0.0);
             for rep in 0..a.repeats {
@@ -504,7 +560,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 let mut exact = 0usize;
                 let t = Instant::now();
                 for q in &test {
-                    exact += searcher.search(q, K, sp, &mut out);
+                    exact += search(q, &mut out);
                     ids.extend_from_slice(&out);
                     ids.resize(ids.len() + K - out.len(), u32::MAX);
                 }
@@ -530,9 +586,13 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
             let mut sorted = qps.clone();
             sorted.sort_by(f64::total_cmp);
             let median = sorted[sorted.len() / 2];
-            eprintln!("ef={ef} max_exact={max_exact} recall={recall:.4} qps={median:.0} exact/q={exact_mean:.0} load={loads:?}");
+            let second_name = match &index {
+                Built::Edge(_) => "max_exact",
+                Built::Vertex(_) => "rerank",
+            };
+            eprintln!("ef={ef} {second_name}={second} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} load={loads:?}");
             rows.push(json!({
-                "params": {"ef": ef, "max_exact": max_exact},
+                "params": {"ef": ef, second_name: second},
                 "recall_at_10": recall,
                 "qps_single_thread": median,
                 "qps_runs": qps,
@@ -543,14 +603,21 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         }
     }
     let report = json!({
-        "system": "hms qgraph",
+        "system": match a.index.as_str() {
+            "edge" => "hms qgraph",
+            _ => "hms qgraph-vertex",
+        },
         "dataset": m,
         "environment": environment(),
         "n_queries": test.len(),
-        "build": {"params": {"degree": a.degree, "build_ef": a.build_ef,
-                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed},
-                  "build_secs": build_secs, "load_1m_before_build": load_before_build},
-        "index_bytes": index.index_bytes(),
+        "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef,
+                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
+                             "residual": a.residual},
+                  "build_secs": build_secs, "load_1m_before_build": load_before_build,
+                  "load_1m_after_build": load_after_build, "load_gate_met": build_gate,
+                  "threads": rayon::current_num_threads()},
+        "index_bytes": index_bytes,
+        "residual_bytes": residual_bytes,
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
             "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read.",
@@ -561,7 +628,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "notes": [
             "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
             "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
-            "Each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent.",
+            "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores.",
         ],
     });
     fs::write(&a.out, serde_json::to_string_pretty(&report)? + "\n")?;
@@ -996,6 +1063,9 @@ fn main() -> Result<()> {
             max_wait_secs,
             queries,
             holdout,
+            index,
+            residual,
+            rerank,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1010,6 +1080,9 @@ fn main() -> Result<()> {
             max_wait_secs,
             queries,
             holdout,
+            index,
+            residual,
+            rerank,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {
