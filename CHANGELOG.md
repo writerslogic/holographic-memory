@@ -20,6 +20,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Record the green CI and the clippy toolchain for the gate
 - Record that main is pushed and in sync
 - Record that all work is on main and what was superseded
 - Record the merged qgraph state and what is unverified
