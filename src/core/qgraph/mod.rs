@@ -951,24 +951,28 @@ mod tests {
     fn build_and_search_are_deterministic() {
         let d = 16;
         let data = clustered(3000, d, 3);
-        let params = BuildParams {
-            seed: 9,
-            ..BuildParams::default()
-        };
-        let a = QGraph::build(&data, d, &params);
-        let b = QGraph::build(&data, d, &params);
-        assert_eq!(a.entry, b.entry);
-        assert!(a.blocks == b.blocks && a.vcodes == b.vcodes);
-        let (mut sa, mut sb) = (a.searcher(), b.searcher());
-        let (mut oa, mut ob) = (Vec::new(), Vec::new());
-        let p = SearchParams {
-            ef: 32,
-            max_exact: 0,
-        };
-        for q in data.chunks_exact(d).take(50) {
-            sa.search(q, 10, p, &mut oa);
-            sb.search(q, 10, p, &mut ob);
-            assert_eq!(oa, ob);
+        for (store, codes) in [(Store::F32, Codes::Edge), (Store::I8, Codes::Vertex)] {
+            let params = BuildParams {
+                seed: 9,
+                store,
+                codes,
+                ..BuildParams::default()
+            };
+            let a = QGraph::build(&data, d, &params);
+            let b = QGraph::build(&data, d, &params);
+            assert_eq!(a.entry, b.entry);
+            assert!(a.blocks == b.blocks && a.vcodes == b.vcodes);
+            let (mut sa, mut sb) = (a.searcher(), b.searcher());
+            let (mut oa, mut ob) = (Vec::new(), Vec::new());
+            let p = SearchParams {
+                ef: 32,
+                max_exact: 0,
+            };
+            for q in data.chunks_exact(d).take(50) {
+                sa.search(q, 10, p, &mut oa);
+                sb.search(q, 10, p, &mut ob);
+                assert_eq!(oa, ob);
+            }
         }
     }
 

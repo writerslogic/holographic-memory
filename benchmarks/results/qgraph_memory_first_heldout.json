@@ -1448,6 +1448,208 @@
       ]
     },
     {
+      "file": "nytimes_d64_e128_i16_vertex_b512.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 512,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i16"
+      },
+      "index_bytes": 247783444,
+      "bytes_per_vector": 860.3591805555556,
+      "build_secs": 406.745114208,
+      "build_load_1m": 140.05,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 152.60 149.33 148.51 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 228.4099814241486,
+        "0.95": 569.3426379310324
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.6655,
+          "mean_exact_evals_per_query": 131.676,
+          "qps_single_thread": 5220.278908435086,
+          "qps_runs": [
+            5220.278908435086
+          ],
+          "load_1m_before_runs": [
+            152.2
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.7782,
+          "mean_exact_evals_per_query": 125.9855,
+          "qps_single_thread": 2474.3628940828858,
+          "qps_runs": [
+            2474.3628940828858
+          ],
+          "load_1m_before_runs": [
+            152.2
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.8354,
+          "mean_exact_evals_per_query": 161.983,
+          "qps_single_thread": 1540.6660739914296,
+          "qps_runs": [
+            1540.6660739914296
+          ],
+          "load_1m_before_runs": [
+            152.2
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.8658,
+          "mean_exact_evals_per_query": 175.913,
+          "qps_single_thread": 1412.6676494722644,
+          "qps_runs": [
+            1412.6676494722644
+          ],
+          "load_1m_before_runs": [
+            152.2
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.893,
+          "mean_exact_evals_per_query": 213.158,
+          "qps_single_thread": 982.7083657971042,
+          "qps_runs": [
+            982.7083657971042
+          ],
+          "load_1m_before_runs": [
+            152.75
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.90915,
+          "mean_exact_evals_per_query": 248.3465,
+          "qps_single_thread": 735.6519817741795,
+          "qps_runs": [
+            735.6519817741795
+          ],
+          "load_1m_before_runs": [
+            152.75
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.92455,
+          "mean_exact_evals_per_query": 320.3,
+          "qps_single_thread": 502.91797194112354,
+          "qps_runs": [
+            502.91797194112354
+          ],
+          "load_1m_before_runs": [
+            152.75
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.937,
+          "mean_exact_evals_per_query": 395.9535,
+          "qps_single_thread": 403.7997964647126,
+          "qps_runs": [
+            403.7997964647126
+          ],
+          "load_1m_before_runs": [
+            155.65
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.9491,
+          "mean_exact_evals_per_query": 549.6345,
+          "qps_single_thread": 221.35885811258285,
+          "qps_runs": [
+            221.35885811258285
+          ],
+          "load_1m_before_runs": [
+            156.56
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.95635,
+          "mean_exact_evals_per_query": 708.3945,
+          "qps_single_thread": 181.20402167376773,
+          "qps_runs": [
+            181.20402167376773
+          ],
+          "load_1m_before_runs": [
+            157.93
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.96425,
+          "mean_exact_evals_per_query": 1029.446,
+          "qps_single_thread": 115.40849634320607,
+          "qps_runs": [
+            115.40849634320607
+          ],
+          "load_1m_before_runs": [
+            155.47
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.9679,
+          "mean_exact_evals_per_query": 1351.5645,
+          "qps_single_thread": 96.87850963214885,
+          "qps_runs": [
+            96.87850963214885
+          ],
+          "load_1m_before_runs": [
+            155.54
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.9715,
+          "mean_exact_evals_per_query": 1980.8115,
+          "qps_single_thread": 58.78346250344469,
+          "qps_runs": [
+            58.78346250344469
+          ],
+          "load_1m_before_runs": [
+            152.9
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
       "file": "nytimes_d64_e128_i8_vertex_b0.json",
       "dataset": "nytimes-256-angular",
       "build_params": {
@@ -2048,6 +2250,612 @@
           ],
           "load_1m_before_runs": [
             152.8
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d64_e128_i8_vertex_b512_a1.2.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.2000000476837158,
+        "build_ef": 128,
+        "code_bits": 512,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 174102232,
+      "bytes_per_vector": 604.5216388888889,
+      "build_secs": 597.881793167,
+      "build_load_1m": 98.79,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 120.65 127.31 122.49 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 327.779078034682,
+        "0.95": null
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.58055,
+          "mean_exact_evals_per_query": 154.8205,
+          "qps_single_thread": 4701.746663387261,
+          "qps_runs": [
+            4701.746663387261
+          ],
+          "load_1m_before_runs": [
+            133.67
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.713,
+          "mean_exact_evals_per_query": 170.5845,
+          "qps_single_thread": 2774.505849271496,
+          "qps_runs": [
+            2774.505849271496
+          ],
+          "load_1m_before_runs": [
+            133.67
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.79075,
+          "mean_exact_evals_per_query": 187.023,
+          "qps_single_thread": 2360.569751978111,
+          "qps_runs": [
+            2360.569751978111
+          ],
+          "load_1m_before_runs": [
+            133.67
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.8301,
+          "mean_exact_evals_per_query": 203.027,
+          "qps_single_thread": 1865.3247940418184,
+          "qps_runs": [
+            1865.3247940418184
+          ],
+          "load_1m_before_runs": [
+            133.67
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.8663,
+          "mean_exact_evals_per_query": 237.061,
+          "qps_single_thread": 1327.1324546928608,
+          "qps_runs": [
+            1327.1324546928608
+          ],
+          "load_1m_before_runs": [
+            133.67
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.8846,
+          "mean_exact_evals_per_query": 266.3175,
+          "qps_single_thread": 1129.3026337885692,
+          "qps_runs": [
+            1129.3026337885692
+          ],
+          "load_1m_before_runs": [
+            132.26
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.9019,
+          "mean_exact_evals_per_query": 335.362,
+          "qps_single_thread": 907.6285268693398,
+          "qps_runs": [
+            907.6285268693398
+          ],
+          "load_1m_before_runs": [
+            132.26
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.91365,
+          "mean_exact_evals_per_query": 405.7865,
+          "qps_single_thread": 587.8240765981798,
+          "qps_runs": [
+            587.8240765981798
+          ],
+          "load_1m_before_runs": [
+            132.26
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.927,
+          "mean_exact_evals_per_query": 551.7395,
+          "qps_single_thread": 421.40534039663856,
+          "qps_runs": [
+            421.40534039663856
+          ],
+          "load_1m_before_runs": [
+            134.24
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9339,
+          "mean_exact_evals_per_query": 702.6675,
+          "qps_single_thread": 238.29644846743054,
+          "qps_runs": [
+            238.29644846743054
+          ],
+          "load_1m_before_runs": [
+            133.34
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.9405,
+          "mean_exact_evals_per_query": 1007.0105,
+          "qps_single_thread": 164.6123587379774,
+          "qps_runs": [
+            164.6123587379774
+          ],
+          "load_1m_before_runs": [
+            129.31
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.94455,
+          "mean_exact_evals_per_query": 1316.5085,
+          "qps_single_thread": 139.8521130334425,
+          "qps_runs": [
+            139.8521130334425
+          ],
+          "load_1m_before_runs": [
+            126.43
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.9497,
+          "mean_exact_evals_per_query": 1923.702,
+          "qps_single_thread": 81.21471357947838,
+          "qps_runs": [
+            81.21471357947838
+          ],
+          "load_1m_before_runs": [
+            119.5
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d64_e200_i8_vertex_b512.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 200,
+        "code_bits": 512,
+        "codes": "vertex",
+        "degree": 64,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 174057008,
+      "bytes_per_vector": 604.3646111111111,
+      "build_secs": 815.567988834,
+      "build_load_1m": 146.49,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 134.60 141.31 147.39 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 227.87084892086327,
+        "0.95": 624.8499731543612
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.67765,
+          "mean_exact_evals_per_query": 124.821,
+          "qps_single_thread": 3990.395453337036,
+          "qps_runs": [
+            3990.395453337036
+          ],
+          "load_1m_before_runs": [
+            131.44
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.787,
+          "mean_exact_evals_per_query": 141.1315,
+          "qps_single_thread": 3047.9526759383934,
+          "qps_runs": [
+            3047.9526759383934
+          ],
+          "load_1m_before_runs": [
+            131.44
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.8399,
+          "mean_exact_evals_per_query": 159.838,
+          "qps_single_thread": 1527.1568095179937,
+          "qps_runs": [
+            1527.1568095179937
+          ],
+          "load_1m_before_runs": [
+            131.44
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.8659,
+          "mean_exact_evals_per_query": 177.2275,
+          "qps_single_thread": 1293.8365296401423,
+          "qps_runs": [
+            1293.8365296401423
+          ],
+          "load_1m_before_runs": [
+            131.44
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.89395,
+          "mean_exact_evals_per_query": 212.7045,
+          "qps_single_thread": 900.4413343016668,
+          "qps_runs": [
+            900.4413343016668
+          ],
+          "load_1m_before_runs": [
+            129.89
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.90785,
+          "mean_exact_evals_per_query": 247.5495,
+          "qps_single_thread": 883.9946036549421,
+          "qps_runs": [
+            883.9946036549421
+          ],
+          "load_1m_before_runs": [
+            129.89
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.92605,
+          "mean_exact_evals_per_query": 320.6925,
+          "qps_single_thread": 689.0768131364138,
+          "qps_runs": [
+            689.0768131364138
+          ],
+          "load_1m_before_runs": [
+            127.49
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.936,
+          "mean_exact_evals_per_query": 397.752,
+          "qps_single_thread": 620.0091124537284,
+          "qps_runs": [
+            620.0091124537284
+          ],
+          "load_1m_before_runs": [
+            127.49
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.94675,
+          "mean_exact_evals_per_query": 555.3665,
+          "qps_single_thread": 405.48862304097355,
+          "qps_runs": [
+            405.48862304097355
+          ],
+          "load_1m_before_runs": [
+            126.97
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.9542,
+          "mean_exact_evals_per_query": 714.644,
+          "qps_single_thread": 275.7071833249263,
+          "qps_runs": [
+            275.7071833249263
+          ],
+          "load_1m_before_runs": [
+            127.3
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.9606,
+          "mean_exact_evals_per_query": 1041.9065,
+          "qps_single_thread": 190.41056079775203,
+          "qps_runs": [
+            190.41056079775203
+          ],
+          "load_1m_before_runs": [
+            127.11
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.9628,
+          "mean_exact_evals_per_query": 1369.5155,
+          "qps_single_thread": 114.1743795860548,
+          "qps_runs": [
+            114.1743795860548
+          ],
+          "load_1m_before_runs": [
+            130.34
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.9662,
+          "mean_exact_evals_per_query": 2002.7375,
+          "qps_single_thread": 79.79546931910873,
+          "qps_runs": [
+            79.79546931910873
+          ],
+          "load_1m_before_runs": [
+            131.36
+          ],
+          "load_gate_met": true
+        }
+      ]
+    },
+    {
+      "file": "nytimes_d96_e128_i8_vertex_b512.json",
+      "dataset": "nytimes-256-angular",
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 128,
+        "code_bits": 512,
+        "codes": "vertex",
+        "degree": 96,
+        "seed": 24301,
+        "store": "i8"
+      },
+      "index_bytes": 210919444,
+      "bytes_per_vector": 732.3591805555556,
+      "build_secs": 606.94550775,
+      "build_load_1m": 134.37,
+      "build_load_gate_met": true,
+      "sweep_load_gate_met": true,
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 145.24 160.49 151.88 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "evals_at_recall": {
+        "0.90": 207.44789638157894,
+        "0.95": 523.2655106951858
+      },
+      "sweep": [
+        {
+          "ef": 10,
+          "recall_at_10": 0.68185,
+          "mean_exact_evals_per_query": 117.5425,
+          "qps_single_thread": 2309.9983079262392,
+          "qps_runs": [
+            2309.9983079262392
+          ],
+          "load_1m_before_runs": [
+            159.01
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 16,
+          "recall_at_10": 0.79605,
+          "mean_exact_evals_per_query": 141.075,
+          "qps_single_thread": 1557.6538820035796,
+          "qps_runs": [
+            1557.6538820035796
+          ],
+          "load_1m_before_runs": [
+            159.01
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 24,
+          "recall_at_10": 0.85005,
+          "mean_exact_evals_per_query": 157.823,
+          "qps_single_thread": 1177.129694310454,
+          "qps_runs": [
+            1177.129694310454
+          ],
+          "load_1m_before_runs": [
+            159.01
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 32,
+          "recall_at_10": 0.8757,
+          "mean_exact_evals_per_query": 177.919,
+          "qps_single_thread": 964.1737342356986,
+          "qps_runs": [
+            964.1737342356986
+          ],
+          "load_1m_before_runs": [
+            156.61
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 48,
+          "recall_at_10": 0.9061,
+          "mean_exact_evals_per_query": 214.8605,
+          "qps_single_thread": 681.7475666376434,
+          "qps_runs": [
+            681.7475666376434
+          ],
+          "load_1m_before_runs": [
+            156.61
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 64,
+          "recall_at_10": 0.9209,
+          "mean_exact_evals_per_query": 252.931,
+          "qps_single_thread": 502.24117275825046,
+          "qps_runs": [
+            502.24117275825046
+          ],
+          "load_1m_before_runs": [
+            156.88
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 96,
+          "recall_at_10": 0.9359,
+          "mean_exact_evals_per_query": 334.4845,
+          "qps_single_thread": 345.1705697044568,
+          "qps_runs": [
+            345.1705697044568
+          ],
+          "load_1m_before_runs": [
+            155.61
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 128,
+          "recall_at_10": 0.9441,
+          "mean_exact_evals_per_query": 416.1335,
+          "qps_single_thread": 218.74365329303234,
+          "qps_runs": [
+            218.74365329303234
+          ],
+          "load_1m_before_runs": [
+            153.72
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 192,
+          "recall_at_10": 0.95345,
+          "mean_exact_evals_per_query": 585.9105,
+          "qps_single_thread": 155.60282546881257,
+          "qps_runs": [
+            155.60282546881257
+          ],
+          "load_1m_before_runs": [
+            153.12
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 256,
+          "recall_at_10": 0.95995,
+          "mean_exact_evals_per_query": 759.815,
+          "qps_single_thread": 113.57379721888293,
+          "qps_runs": [
+            113.57379721888293
+          ],
+          "load_1m_before_runs": [
+            154.11
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 384,
+          "recall_at_10": 0.96385,
+          "mean_exact_evals_per_query": 1099.675,
+          "qps_single_thread": 81.45084480205347,
+          "qps_runs": [
+            81.45084480205347
+          ],
+          "load_1m_before_runs": [
+            157.42
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 512,
+          "recall_at_10": 0.9656,
+          "mean_exact_evals_per_query": 1438.143,
+          "qps_single_thread": 85.76793754130061,
+          "qps_runs": [
+            85.76793754130061
+          ],
+          "load_1m_before_runs": [
+            157.65
+          ],
+          "load_gate_met": true
+        },
+        {
+          "ef": 768,
+          "recall_at_10": 0.968,
+          "mean_exact_evals_per_query": 2083.352,
+          "qps_single_thread": 75.75746228781917,
+          "qps_runs": [
+            75.75746228781917
+          ],
+          "load_1m_before_runs": [
+            152.55
           ],
           "load_gate_met": true
         }
