@@ -108,6 +108,12 @@ enum Mode {
         /// Vertex index only: pool candidates re-scored with the float query (0 = none).
         #[arg(long, value_delimiter = ',', default_value = "0")]
         rerank: Vec<usize>,
+        /// Paired timing: after the build write `<SYNC>.ready`, then before timing round `r`
+        /// block until `<SYNC>.go.<r>` exists and afterwards write `<SYNC>.done.<r>`, so an
+        /// outside coordinator holding the timing lock can alternate two processes. The build
+        /// does not wait for the load gate and timed runs only record it.
+        #[arg(long)]
+        sync: Option<PathBuf>,
     },
     Beir {
         #[arg(long)]
@@ -415,6 +421,7 @@ struct QgraphArgs {
     index: String,
     residual: bool,
     rerank: Vec<usize>,
+    sync: Option<PathBuf>,
 }
 
 enum Built {
@@ -501,7 +508,8 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         degree: a.degree,
         ..BuildParams::default()
     };
-    let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
+    let wait = if a.sync.is_some() { 0 } else { a.max_wait_secs };
+    let deadline = Instant::now() + std::time::Duration::from_secs(wait);
     let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
     let t = Instant::now();
     let index = match a.index.as_str() {
@@ -529,78 +537,102 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         Built::Edge(g) => (Some(g.searcher()), None),
         Built::Vertex(g) => (None, Some(g.searcher())),
     };
-    let mut rows = Vec::new();
+    let second_name = match &index {
+        Built::Edge(_) => "max_exact",
+        Built::Vertex(_) => "rerank",
+    };
+    let configs: Vec<(usize, usize)> = seconds
+        .iter()
+        .flat_map(|&second| a.ef.iter().map(move |&ef| (second, ef)))
+        .collect();
+    let mut search = |q: &[f32], (second, ef): (usize, usize), out: &mut Vec<u32>| -> usize {
+        if let Some(s) = edge_s.as_mut() {
+            s.search(
+                q,
+                K,
+                SearchParams {
+                    ef,
+                    max_exact: second,
+                },
+                out,
+            )
+        } else {
+            let s = vertex_s.as_mut().expect("one searcher exists");
+            s.search(q, K, VSearchParams { ef, rerank: second }, out)
+        }
+    };
+    let sync_path = |suffix: String| -> Option<PathBuf> {
+        a.sync.as_ref().map(|p| {
+            let mut s = p.clone().into_os_string();
+            s.push(suffix);
+            PathBuf::from(s)
+        })
+    };
+    if let Some(p) = sync_path(".ready".into()) {
+        fs::write(&p, "")?;
+    }
+    // Per configuration: qps runs, loads, gate, recall, evals/query.
+    type Acc = (Vec<f64>, Vec<f64>, bool, f64, f64);
+    let mut acc: Vec<Acc> = vec![(Vec::new(), Vec::new(), true, 0.0, 0.0); configs.len()];
     let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
     let mut out = Vec::with_capacity(K);
-    for &second in seconds {
-        for &ef in &a.ef {
-            let mut search = |q: &[f32], out: &mut Vec<u32>| -> usize {
-                if let Some(s) = edge_s.as_mut() {
-                    s.search(
-                        q,
-                        K,
-                        SearchParams {
-                            ef,
-                            max_exact: second,
-                        },
-                        out,
-                    )
-                } else {
-                    let s = vertex_s.as_mut().expect("one searcher exists");
-                    s.search(q, K, VSearchParams { ef, rerank: second }, out)
-                }
-            };
-            let (mut qps, mut loads, mut gate) = (Vec::new(), Vec::new(), true);
-            let (mut recall, mut exact_mean) = (0.0, 0.0);
-            for rep in 0..a.repeats {
-                let (load, met) = wait_for_idle(a.max_load, deadline);
-                loads.push(load);
-                gate &= met;
-                ids.clear();
-                let mut exact = 0usize;
-                let t = Instant::now();
-                for q in &test {
-                    exact += search(q, &mut out);
-                    ids.extend_from_slice(&out);
-                    ids.resize(ids.len() + K - out.len(), u32::MAX);
-                }
-                qps.push(test.len() as f64 / t.elapsed().as_secs_f64());
-                if rep == 0 {
-                    let hits: usize = ids
-                        .as_chunks::<K>()
-                        .0
-                        .iter()
-                        .zip(&truth)
-                        .map(|(f, t)| {
-                            let t = &t[..K];
-                            let mut f = f.to_vec();
-                            f.sort_unstable();
-                            f.dedup();
-                            f.iter().filter(|&&x| t.contains(&(x as i32))).count()
-                        })
-                        .sum();
-                    recall = hits as f64 / (K * test.len()) as f64;
-                    exact_mean = exact as f64 / test.len() as f64;
-                }
+    // Round-major, so one round of every configuration is a unit a coordinator can pair.
+    for rep in 0..a.repeats {
+        if let Some(go) = sync_path(format!(".go.{rep}")) {
+            while !go.exists() {
+                std::thread::sleep(std::time::Duration::from_millis(50));
             }
-            let mut sorted = qps.clone();
-            sorted.sort_by(f64::total_cmp);
-            let median = sorted[sorted.len() / 2];
-            let second_name = match &index {
-                Built::Edge(_) => "max_exact",
-                Built::Vertex(_) => "rerank",
-            };
-            eprintln!("ef={ef} {second_name}={second} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} load={loads:?}");
-            rows.push(json!({
-                "params": {"ef": ef, second_name: second},
-                "recall_at_10": recall,
-                "qps_single_thread": median,
-                "qps_runs": qps,
-                "load_1m_before_runs": loads,
-                "load_gate_met": gate,
-                "mean_exact_evals_per_query": exact_mean,
-            }));
         }
+        for (&cfg, (qps, loads, gate, recall, exact_mean)) in configs.iter().zip(&mut acc) {
+            let (load, met) = wait_for_idle(a.max_load, deadline);
+            loads.push(load);
+            *gate &= met;
+            ids.clear();
+            let mut exact = 0usize;
+            let t = Instant::now();
+            for q in &test {
+                exact += search(q, cfg, &mut out);
+                ids.extend_from_slice(&out);
+                ids.resize(ids.len() + K - out.len(), u32::MAX);
+            }
+            qps.push(test.len() as f64 / t.elapsed().as_secs_f64());
+            if rep == 0 {
+                let hits: usize = ids
+                    .as_chunks::<K>()
+                    .0
+                    .iter()
+                    .zip(&truth)
+                    .map(|(f, t)| {
+                        let t = &t[..K];
+                        let mut f = f.to_vec();
+                        f.sort_unstable();
+                        f.dedup();
+                        f.iter().filter(|&&x| t.contains(&(x as i32))).count()
+                    })
+                    .sum();
+                *recall = hits as f64 / (K * test.len()) as f64;
+                *exact_mean = exact as f64 / test.len() as f64;
+            }
+        }
+        if let Some(done) = sync_path(format!(".done.{rep}")) {
+            fs::write(&done, "")?;
+        }
+    }
+    let mut rows = Vec::new();
+    for (&(second, ef), (qps, loads, gate, recall, exact_mean)) in configs.iter().zip(&acc) {
+        let mut sorted = qps.clone();
+        sorted.sort_by(f64::total_cmp);
+        let median = sorted[sorted.len() / 2];
+        eprintln!("ef={ef} {second_name}={second} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} load={loads:?}");
+        rows.push(json!({
+            "params": {"ef": ef, second_name: second},
+            "recall_at_10": recall,
+            "qps_single_thread": median,
+            "qps_runs": qps,
+            "load_1m_before_runs": loads,
+            "load_gate_met": gate,
+            "mean_exact_evals_per_query": exact_mean,
+        }));
     }
     let report = json!({
         "system": match a.index.as_str() {
@@ -624,6 +656,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         })),
         "repeats": a.repeats,
         "max_load": a.max_load,
+        "paired_sync": a.sync.is_some(),
         "sweep": rows,
         "notes": [
             "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
@@ -1066,6 +1099,7 @@ fn main() -> Result<()> {
             index,
             residual,
             rerank,
+            sync,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1083,6 +1117,7 @@ fn main() -> Result<()> {
             index,
             residual,
             rerank,
+            sync,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {
