@@ -250,7 +250,7 @@
         "dataset": "nytimes-256-angular",
         "baseline_files": {
           "paired_edge": "benchmarks/results/pareto_raw/nytimes_A.json",
-          "clean_edge": "/Volumes/A/.hms-target/logs/tune/nytimes/d64_b512_a1.0.json"
+          "clean_edge": "benchmarks/results/pareto_raw/clean_edge_nytimes_d64_b512.json (copy of /Volumes/A/.hms-target/logs/tune/nytimes/d64_b512_a1.0.json)"
         },
         "candidate_file": "benchmarks/results/pareto_raw/nytimes_B.json",
         "coordinator_file": "benchmarks/results/pareto_raw/nytimes_coord.json",
@@ -360,7 +360,7 @@
         "dataset": "glove-100-angular",
         "baseline_files": {
           "paired_edge": "benchmarks/results/pareto_raw/glove_A.json",
-          "clean_edge": "/Volumes/A/.hms-target/logs/tune/glove/d64_b128_a1.0.json"
+          "clean_edge": "benchmarks/results/pareto_raw/clean_edge_glove_d64_b128.json (copy of /Volumes/A/.hms-target/logs/tune/glove/d64_b128_a1.0.json)"
         },
         "candidate_file": "benchmarks/results/pareto_raw/glove_B.json",
         "coordinator_file": "benchmarks/results/pareto_raw/glove_coord.json",
@@ -479,7 +479,11 @@
       "qps_at_0.95": "2,061 paired (anchored 1,602)",
       "index_gb": 0.431
     },
-    "vs_faiss_hnsw": "Search side: above FAISS HNSW M=32/M=16 test-set QPS at 0.90 and 0.95 (orientation only: different query set) and below their index memory on both datasets. Build time is NOT competitive: 540-820 s on 4 threads under load vs 34-110 s for FAISS; not measured cleanly.",
-    "vs_edge_baseline": "Paired: 1.50x/1.66x faster on nytimes, 3.43x/2.93x on glove, at 7.9x / 6.7x less memory."
+    "vs_faiss_hnsw": {
+      "nytimes": "Above FAISS HNSW M=32 (3,010/765) and M=16 (2,050/481) QPS at 0.90 and 0.95 and below their memory (0.225 vs 0.34-0.38 GB). Orientation only: competitors measured on the test set, HMS on held-out train queries.",
+      "glove": "Below FAISS memory (0.431 vs 0.644/0.796 GB). Above FAISS M=16 near 0.92 (4,193 at 0.9236 vs 1,084 at 0.9213; competitor recorded at load 37, gate unmet). Not established at 0.95 or against M=32: no FAISS glove points exist there.",
+      "build_time": "NOT competitive: 540-820 s on 4 threads under load vs 34-110 s for FAISS; not measured cleanly."
+    },
+    "vs_edge_baseline": "Paired: nytimes 1.50x at 0.90; at 0.95 1.66x comparing candidate 0.9501 to baseline 0.9566, 1.15x at equal recall 0.9566. Glove 3.43x at 0.90, 2.93x at 0.95. Memory 7.9x (nytimes) / 6.7x (glove) smaller."
   }
 }
