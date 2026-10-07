@@ -122,7 +122,10 @@ fn quantize4(x: &[f32], code: &mut [i8]) -> f32 {
         return 0.0;
     }
     let scale = m / 7.0;
-    let q = |i: usize| x.get(i).map_or(0, |&v| (v / scale).round().clamp(-7.0, 7.0) as i8);
+    let q = |i: usize| {
+        x.get(i)
+            .map_or(0, |&v| (v / scale).round().clamp(-7.0, 7.0) as i8)
+    };
     for (j, c) in code.iter_mut().enumerate() {
         *c = ((q(2 * j) as u8 & 0x0F) | ((q(2 * j + 1) as u8) << 4)) as i8;
     }
@@ -291,7 +294,10 @@ impl VGraph {
         let mut scales = Vec::with_capacity(n);
         let mut residual = Vec::with_capacity(n * res_stride);
         let mut res_scales = Vec::with_capacity(if residual_bits > 0 { n } else { 0 });
-        for ((c, s, r, sr), dst) in rows.into_iter().zip(codes.bytes_mut().chunks_exact_mut(stride)) {
+        for ((c, s, r, sr), dst) in rows
+            .into_iter()
+            .zip(codes.bytes_mut().chunks_exact_mut(stride))
+        {
             dst[..cbytes].copy_from_slice(&c);
             scales.push(s);
             if residual_bits > 0 {
@@ -620,15 +626,17 @@ impl VSearcher<'_> {
             self.results
                 .sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         } else {
-            self.results
-                .extend(self.keys[..take].iter().map(|&c| (0.0, g.original(key_id(c)))));
+            self.results.extend(
+                self.keys[..take]
+                    .iter()
+                    .map(|&c| (0.0, g.original(key_id(c)))),
+            );
         }
         out.clear();
         out.extend(self.results.iter().take(k).map(|r| r.1));
         evals
     }
 }
-
 
 const CACHE_MAGIC: &[u8; 8] = b"HMSGRF01";
 
@@ -826,7 +834,10 @@ mod tests {
         // A sanity bound: 4-bit codes of 24 coordinates are coarse, so a wider pool and re-rank.
         let wide = VSearchParams { ef: 96, rerank: 64 };
         let r3 = recall(&lvq48, &data, &queries, d, wide);
-        assert!(r3 >= r0 - 0.05, "4-bit traversal with 8-bit residual {r3} vs {r0}");
+        assert!(
+            r3 >= r0 - 0.05,
+            "4-bit traversal with 8-bit residual {r3} vs {r0}"
+        );
     }
 
     /// Renumbering and aligning the rows change the layout, not the search: the same ids come

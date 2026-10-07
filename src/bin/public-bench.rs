@@ -552,12 +552,14 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "edge" => Built::Edge(QGraph::build(&train, d, &params)),
         _ => {
             let graph = match &a.graph_cache {
-                Some(p) if p.exists() => Graph::load(&train, d, p)
-                    .with_context(|| format!("loading {}", p.display()))?,
+                Some(p) if p.exists() => {
+                    Graph::load(&train, d, p).with_context(|| format!("loading {}", p.display()))?
+                }
                 cache => {
                     let g = Graph::build(&train, d, &params);
                     if let Some(p) = cache {
-                        g.save(p).with_context(|| format!("saving {}", p.display()))?;
+                        g.save(p)
+                            .with_context(|| format!("saving {}", p.display()))?;
                     }
                     g
                 }
