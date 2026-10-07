@@ -13,8 +13,8 @@
       "index_bytes": 1770726960,
       "build_secs": 227.4,
       "build_load_1m": 5.07,
-      "evals_at_0.90_approx": 250,
-      "evals_at_0.95_approx": 800
+      "evals_at_0.90": 247,
+      "evals_at_0.95": 686
     },
     "old_layout_glove_heldout": {
       "source": "/Volumes/A/.hms-target/logs/tune/glove/d64_b128_a1.0.json",
@@ -22,9 +22,9 @@
       "index_bytes": 2897511684,
       "build_secs": 622.7,
       "build_load_1m": 42.24,
-      "evals_at_0.90_approx": 1100,
-      "evals_at_0.95_approx": 2450,
-      "note": "sweep load gate met; build was at load 42, so its build time is not a result"
+      "note": "sweep load gate met; build was at load 42, so its build time is not a result",
+      "evals_at_0.90": 1074,
+      "evals_at_0.95": 2336
     },
     "faiss_hnsw_m16_test_set": {
       "source": "benchmarks/results/public_nytimes-256-angular.json, public_glove-100-angular.json (test queries, orientation only)",
