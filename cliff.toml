@@ -36,6 +36,7 @@ commit_parsers = [
   { message = "^refactor", group = "Changed" },
   { message = "^security", group = "Security" },
   { message = "^docs", group = "Documentation" },
+  { message = "^wip", skip = true },
   { message = "^test", skip = true },
   { message = "^chore", skip = true },
   { message = "^ci", skip = true },

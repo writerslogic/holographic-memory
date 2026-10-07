@@ -6,6 +6,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Add integer vector stores and per-vertex codes to qgraph
+- Batch Qwen3 decoding and padded encoder batches on Metal and CUDA
+- Add per-vertex 8-bit code graph index with residual re-rank
 - Add held-out tuning mode to public-bench ann-qgraph
 - Add on-device Qwen3 model stages behind local-models
 - Add quantized graph ANN index and its public benchmark mode
@@ -17,6 +20,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Record that main is pushed and in sync
+- Record that all work is on main and what was superseded
+- Record the merged qgraph state and what is unverified
+- Record the integration state
+- Standardize README header (#71)
 - Update continuation state
 - Record the index and model-stage outcomes
 - Record the holographic prototype outcome
@@ -35,6 +43,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Keep greedy decoding at batch 1 unless a batch is set
 - Reserve Modal wave cost before launch so preemption cannot bypass the cap
 - Run HMS model stages on L4 on Modal
 - Decode benchmark data with as_chunks for the current clippy
@@ -43,11 +52,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Return query results best-first on exact-scan, multi-shard and federated paths
 
 ### Performance
+- Scan both planes of 2-bit qgraph edge codes in one NEON pass
+- Add FastScan edge kernel, batched pool merge and 2-bit qgraph edge codes
+- Add 4-bit traversal codes, aligned rows, BFS reorder and 3-byte ids to the vertex index
+- Screen exact distances in vertex graph construction with 8-bit bounds
+- Measure Metal batching and set per-stage defaults
+- Prefetch rows ahead in qgraph fill, prune inputs and edge encoding
+- Use a bitset visited set and prefetch adjacency in qgraph construction
+- Speed up qgraph construction without changing the built index
 - Speed up from_dense with branchless term compaction and add encoder-eval
 - Gallop before AVX2 on skewed sizes; add intersection kernel bench
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Record timed held-out glove run of i8 vertex-code qgraph
+- Correct reference eval counts in memory-first results
+- Record held-out recall screening of qgraph memory layouts
+- Add grid-matched vertex search pairs and correct the alignment claim
+- Record paired held-out timing of the vertex search encodings
+- Narrow the FAISS comparison and vendor the clean edge baselines
+- Record paired held-out timing of the per-vertex code index
+- Add paired-timing sync to ann-qgraph
+- Record held-out recall and memory of the per-vertex code index
 - Record the s-dev-hms cost overrun and stop
 - Record held-out qgraph tuning on nytimes
 - Measure HMS fact extraction against the Python stage on S dev
