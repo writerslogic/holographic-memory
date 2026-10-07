@@ -164,6 +164,7 @@ impl Rows<'_> {
         &self.data[i * self.dim..(i + 1) * self.dim]
     }
 
+    #[cfg(test)]
     fn d2(&self, a: u32, b: u32) -> f32 {
         d2(self.row(a), self.row(b))
     }
@@ -173,6 +174,24 @@ impl Rows<'_> {
         out.clear();
         let (quads, rest) = ids.as_chunks::<4>();
         for q in quads {
+            let d = build_kernels::dot4(target, q.map(|u| self.row(u)));
+            out.extend(d.map(|x| (2.0 - 2.0 * x).max(0.0)));
+        }
+        out.extend(rest.iter().map(|&u| d2(target, self.row(u))));
+    }
+
+    /// `d2_many` over a long list of rows not yet in cache, prefetching a few rows ahead.
+    fn d2_stream(&self, target: &[f32], ids: &[u32], out: &mut Vec<f32>) {
+        const AHEAD: usize = 16;
+        out.clear();
+        for &u in ids.iter().take(AHEAD) {
+            build_kernels::prefetch_row(self.row(u));
+        }
+        let (quads, rest) = ids.as_chunks::<4>();
+        for (i, q) in quads.iter().enumerate() {
+            for &u in ids.iter().skip(AHEAD + 4 * i).take(4) {
+                build_kernels::prefetch_row(self.row(u));
+            }
             let d = build_kernels::dot4(target, q.map(|u| self.row(u)));
             out.extend(d.map(|x| (2.0 - 2.0 * x).max(0.0)));
         }
@@ -277,7 +296,7 @@ impl Rows<'_> {
     /// the rest of the list; the result equals `prune` of the whole list.
     fn prune_merged(&self, t: u32, list: &[u32], closed: usize, alpha: f32, r: usize) -> Vec<u32> {
         let mut d = Vec::with_capacity(list.len());
-        self.d2_many(self.row(t), list, &mut d);
+        self.d2_stream(self.row(t), list, &mut d);
         let mut cands: Vec<(f32, u32, bool)> = d
             .into_iter()
             .zip(list)
@@ -330,7 +349,10 @@ impl Rows<'_> {
                         let mut vis = cell.borrow_mut();
                         self.greedy(g, entry, self.row(p), l, &mut vis)
                     });
-                    cands.extend(g[p as usize].iter().map(|&u| (self.d2(p, u), u)));
+                    let adj = &g[p as usize];
+                    let mut d = Vec::with_capacity(adj.len());
+                    self.d2_stream(self.row(p), adj, &mut d);
+                    cands.extend(d.into_iter().zip(adj.iter().copied()));
                     self.prune(p, cands, alpha, r)
                 })
                 .collect();
@@ -395,7 +417,7 @@ impl Rows<'_> {
                 ids.sort_unstable();
                 ids.dedup();
                 let mut d = Vec::new();
-                self.d2_many(self.row(v as u32), &ids, &mut d);
+                self.d2_stream(self.row(v as u32), &ids, &mut d);
                 let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
                 c.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
                 c.into_iter().take(r - have.len()).map(|x| x.1).collect()
@@ -541,7 +563,13 @@ impl QGraph {
                 let ids = as_u32_mut(ids);
                 ids.fill(NONE);
                 let pv = rot_row(v as u32);
+                for &u in adj.iter().take(4) {
+                    build_kernels::prefetch_row(rot_row(u));
+                }
                 for (j, &u) in adj.iter().enumerate() {
+                    if let Some(&next) = adj.get(j + 4) {
+                        build_kernels::prefetch_row(rot_row(next));
+                    }
                     ids[j] = u;
                     let (k, m, pop) =
                         edge_factors(pv, rot_row(u), &mut codes[j * words..(j + 1) * words]);
