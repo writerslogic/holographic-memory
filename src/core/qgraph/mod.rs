@@ -17,6 +17,7 @@
 //! with `w = u - v` and `s = sign(w)`, `<q, u> ~= <q, v> + <v, w> + M (<s, q> - <s, v>)` where
 //! `M = |w|^2 / |w|_1`. `<q, v>` is exact at expansion time; `<s, q>` comes from the bit planes.
 
+mod build_kernels;
 mod kernels;
 
 use std::cell::RefCell;
@@ -145,6 +146,30 @@ impl Rows<'_> {
         d2(self.row(a), self.row(b))
     }
 
+    /// `d2(target, row(u))` for every `u` in `ids`, written to `out`.
+    fn d2_many(&self, target: &[f32], ids: &[u32], out: &mut Vec<f32>) {
+        out.clear();
+        let (quads, rest) = ids.as_chunks::<4>();
+        for q in quads {
+            let d = build_kernels::dot4(target, q.map(|u| self.row(u)));
+            out.extend(d.map(|x| (2.0 - 2.0 * x).max(0.0)));
+        }
+        out.extend(rest.iter().map(|&u| d2(target, self.row(u))));
+    }
+
+    /// True if some `s` in `kept` has `a2 d2(s, c) <= dc`.
+    fn occluded(&self, c: u32, kept: &[u32], dc: f32, a2: f32) -> bool {
+        let rc = self.row(c);
+        let (quads, rest) = kept.as_chunks::<4>();
+        for q in quads {
+            let d = build_kernels::dot4(rc, q.map(|u| self.row(u)));
+            if d.iter().any(|&x| a2 * (2.0 - 2.0 * x).max(0.0) <= dc) {
+                return true;
+            }
+        }
+        rest.iter().any(|&s| a2 * d2(self.row(s), rc) <= dc)
+    }
+
     /// Greedy search from `start`; returns every expanded vertex with its distance to `target`.
     fn greedy(
         &self,
@@ -162,17 +187,24 @@ impl Rows<'_> {
             done: false,
         }];
         let mut expanded = Vec::new();
+        let mut fresh = Vec::new();
+        let mut dists = Vec::new();
         let mut cur = 0;
         while cur < pool.len() {
             pool[cur].done = true;
             let v = pool[cur].id;
             expanded.push((pool[cur].dist, v));
-            let mut best = usize::MAX;
+            // Mark and prefetch every new neighbour first so their rows load concurrently.
+            fresh.clear();
             for &u in &graph[v as usize] {
-                if !visited.insert(u) {
-                    continue;
+                if visited.insert(u) {
+                    build_kernels::prefetch_row(self.row(u));
+                    fresh.push(u);
                 }
-                let du = d2(target, self.row(u));
+            }
+            self.d2_many(target, &fresh, &mut dists);
+            let mut best = usize::MAX;
+            for (&u, &du) in fresh.iter().zip(&dists) {
                 if pool.len() >= l && du >= pool[l - 1].dist {
                     continue;
                 }
@@ -207,8 +239,39 @@ impl Rows<'_> {
             if out.len() == r {
                 break;
             }
-            if out.iter().all(|&s| a2 * self.d2(s, c) > dc) {
+            if !self.occluded(c, &out, dc, a2) {
                 out.push(c);
+            }
+        }
+        out
+    }
+
+    /// `prune` of `list` (distinct ids, not `t`) when its first `closed` entries are an
+    /// unchanged `prune` output for `t` under the same `alpha`. Such an entry was not occluded
+    /// by the closed entries nearer than it, so it is checked only against kept entries from
+    /// the rest of the list; the result equals `prune` of the whole list.
+    fn prune_merged(&self, t: u32, list: &[u32], closed: usize, alpha: f32, r: usize) -> Vec<u32> {
+        let mut d = Vec::with_capacity(list.len());
+        self.d2_many(self.row(t), list, &mut d);
+        let mut cands: Vec<(f32, u32, bool)> = d
+            .into_iter()
+            .zip(list)
+            .enumerate()
+            .map(|(i, (d, &u))| (d, u, i < closed))
+            .collect();
+        cands.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        let a2 = alpha * alpha;
+        let mut out: Vec<u32> = Vec::with_capacity(r);
+        let mut open: Vec<u32> = Vec::new();
+        for &(dc, c, was_kept) in &cands {
+            if out.len() == r {
+                break;
+            }
+            if !self.occluded(c, if was_kept { &open } else { &out }, dc, a2) {
+                out.push(c);
+                if !was_kept {
+                    open.push(c);
+                }
             }
         }
         out
@@ -227,6 +290,8 @@ impl Rows<'_> {
         r: usize,
     ) {
         let n = graph.len();
+        // Length of the prefix of each list that is an unchanged output of `prune` in this pass.
+        let mut closed = vec![0u32; n];
         let max_batch = (n / 50).max(64);
         let (mut start, mut size) = (0, 1);
         while start < order.len() {
@@ -253,12 +318,13 @@ impl Rows<'_> {
                 .flat_map(|(&p, out)| out.iter().map(move |&u| (u, p)))
                 .collect();
             for (&p, out) in batch.iter().zip(outs) {
+                closed[p as usize] = out.len() as u32;
                 graph[p as usize] = out;
             }
             rev.sort_unstable();
             let groups: Vec<&[(u32, u32)]> = rev.chunk_by(|a, b| a.0 == b.0).collect();
             let g: &[Vec<u32>] = graph;
-            let updates: Vec<(u32, Vec<u32>)> = groups
+            let updates: Vec<(u32, Vec<u32>, bool)> = groups
                 .par_iter()
                 .map(|grp| {
                     let t = grp[0].0;
@@ -269,13 +335,18 @@ impl Rows<'_> {
                         }
                     }
                     if merged.len() > r {
-                        let cands = merged.iter().map(|&u| (self.d2(t, u), u)).collect();
-                        merged = self.prune(t, cands, alpha, r);
+                        let c = closed[t as usize] as usize;
+                        merged = self.prune_merged(t, &merged, c, alpha, r);
+                        (t, merged, true)
+                    } else {
+                        (t, merged, false)
                     }
-                    (t, merged)
                 })
                 .collect();
-            for (t, m) in updates {
+            for (t, m, pruned) in updates {
+                if pruned {
+                    closed[t as usize] = m.len() as u32;
+                }
                 graph[t as usize] = m;
             }
             start = end;
@@ -301,8 +372,9 @@ impl Rows<'_> {
                     .collect();
                 ids.sort_unstable();
                 ids.dedup();
-                let mut c: Vec<(f32, u32)> =
-                    ids.iter().map(|&u| (self.d2(v as u32, u), u)).collect();
+                let mut d = Vec::new();
+                self.d2_many(self.row(v as u32), &ids, &mut d);
+                let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
                 c.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
                 c.into_iter().take(r - have.len()).map(|x| x.1).collect()
             })
@@ -316,19 +388,26 @@ impl Rows<'_> {
 /// Per-edge code and factors for the edge v -> u (rotated unit vectors).
 /// Returns `(K, M, popcount)` with `K = <v, w> - M <s, v>`.
 fn edge_factors(pv: &[f32], pu: &[f32], code: &mut [u64]) -> (f32, f32, f32) {
-    code.fill(0);
     let (mut r2, mut l1, mut sv, mut vw) = (0f32, 0f32, 0f32, 0f32);
-    for (i, (&a, &b)) in pv.iter().zip(pu).enumerate() {
-        let w = b - a;
-        r2 += w * w;
-        l1 += w.abs();
-        vw += a * w;
-        if w > 0.0 {
-            code[i / 64] |= 1 << (i % 64);
-            sv += a;
-        } else {
-            sv -= a;
+    // The padded length is a multiple of 64, so every code word is written.
+    for ((a64, b64), word) in pv
+        .as_chunks::<64>()
+        .0
+        .iter()
+        .zip(pu.as_chunks::<64>().0)
+        .zip(code.iter_mut())
+    {
+        let mut bits = 0u64;
+        for (i, (&a, &b)) in a64.iter().zip(b64).enumerate() {
+            let w = b - a;
+            r2 += w * w;
+            l1 += w.abs();
+            vw += a * w;
+            let up = w > 0.0;
+            sv += if up { a } else { -a };
+            bits |= u64::from(up) << i;
         }
+        *word = bits;
     }
     let m = if l1 > 0.0 { r2 / l1 } else { 0.0 };
     let pop = code.iter().map(|c| c.count_ones()).sum::<u32>() as f32;
@@ -418,6 +497,14 @@ impl QGraph {
         let factors_off = codes_off + r * words;
         let ids_off = factors_off + 3 * r / 2;
         let stride = ids_off + r / 2;
+        // Every row is rotated once here instead of once per incident edge.
+        let padded = rotation.padded();
+        let mut rotated = vec![0f32; n * padded];
+        rotated
+            .par_chunks_mut(padded)
+            .enumerate()
+            .for_each(|(v, out)| rotation.apply(rows.row(v as u32), out));
+        let rot_row = |v: u32| &rotated[v as usize * padded..(v as usize + 1) * padded];
         let mut blocks = vec![0u64; n * stride];
         blocks
             .par_chunks_mut(stride)
@@ -431,14 +518,11 @@ impl QGraph {
                 let fac = as_f32_mut(fac);
                 let ids = as_u32_mut(ids);
                 ids.fill(NONE);
-                let mut pv = vec![0f32; rotation.padded()];
-                let mut pu = pv.clone();
-                rotation.apply(rows.row(v as u32), &mut pv);
+                let pv = rot_row(v as u32);
                 for (j, &u) in adj.iter().enumerate() {
                     ids[j] = u;
-                    rotation.apply(rows.row(u), &mut pu);
                     let (k, m, pop) =
-                        edge_factors(&pv, &pu, &mut codes[j * words..(j + 1) * words]);
+                        edge_factors(pv, rot_row(u), &mut codes[j * words..(j + 1) * words]);
                     fac[j] = k;
                     fac[r + j] = m;
                     fac[2 * r + j] = pop;
@@ -775,6 +859,47 @@ mod tests {
         let recall = hits as f64 / 1000.0;
         // Regression guard on a deliberately hard set (24 dimensions of noise per cluster).
         assert!(recall >= 0.9, "recall {recall}");
+    }
+
+    /// The reverse-edge prune that skips re-checks inside a closed prefix must equal a full
+    /// prune of the merged list.
+    #[test]
+    fn prune_merged_matches_prune() {
+        let d = 12;
+        let mut data = clustered(600, d, 5);
+        data.chunks_exact_mut(d).for_each(|x| {
+            let n = dot(x, x).sqrt();
+            x.iter_mut().for_each(|v| *v /= n);
+        });
+        let rows = Rows {
+            data: &data,
+            dim: d,
+        };
+        let mut rng = SplitMix(11);
+        for trial in 0..200 {
+            let t = (rng.next_u64() % 600) as u32;
+            let (r, alpha) = (4 + trial % 13, [1.0, 1.2][trial % 2]);
+            let all = |ids: &[u32]| -> Vec<(f32, u32)> {
+                ids.iter().map(|&u| (rows.d2(t, u), u)).collect()
+            };
+            let pool: Vec<u32> = (0..60)
+                .map(|_| (rng.next_u64() % 600) as u32)
+                .filter(|&u| u != t)
+                .collect();
+            let mut list = rows.prune(t, all(&pool), alpha, r);
+            let closed = list.len();
+            for _ in 0..1 + trial % 9 {
+                let u = (rng.next_u64() % 600) as u32;
+                if u != t && !list.contains(&u) {
+                    list.push(u);
+                }
+            }
+            assert_eq!(
+                rows.prune_merged(t, &list, closed, alpha, r),
+                rows.prune(t, all(&list), alpha, r),
+                "trial {trial}"
+            );
+        }
     }
 
     #[test]
