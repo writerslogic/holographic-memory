@@ -15,7 +15,7 @@ Durable copy of the hand-off. Delete this file once the items below are merged o
 There are no other branches, worktrees or stashes. Merged into `main` with signed merge commits:
 the build-time speedups, the per-vertex 8-bit LVQ index `VGraph`, batched Metal model stages,
 build-bounds screening (ccb4d8a) and the opt-in 4-bit search encoding (fcf0056). The 16 qgraph
-unit tests pass and the release binary builds; the FULL GATE HAS NOT BEEN RUN locally on this main (the GitHub CI run on 58d1ff0 is the only full check so far; read it with `gh run list --branch main`).
+unit tests pass and the release binary builds. GitHub CI is GREEN on 0f169e3 (format, clippy 1.99, tests, MSRV 1.89, deny, retrieval-quality, napi on three platforms, CodeQL, coverage). CI's clippy runs stable, currently 1.99.0, which has lints the local `cargo +1.98.0 clippy` gate does not: run `cargo +1.99.0 clippy --all-targets --all-features -- -D warnings` locally before pushing (1.99.0 is installed).
 
 Recorded as merged WITHOUT their code (`-s ours`; reachable only as second parents of these
 merge commits, so `git show <tip>` and `git diff main <tip>` still work):
