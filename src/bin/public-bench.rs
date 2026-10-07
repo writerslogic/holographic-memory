@@ -177,6 +177,17 @@ enum Mode {
         input: PathBuf,
         #[arg(long)]
         out: PathBuf,
+        /// Sequences per forward pass (encoders) or decoded together (`facts`, `chat`);
+        /// default: the device default for encoders, 1 for decoding.
+        #[arg(long)]
+        batch: Option<usize>,
+        /// Load gate: wait (inside any timing lock) until the 1-minute load average is below
+        /// this before loading and timing; the timing line records the loads and whether the
+        /// gate was met.
+        #[arg(long)]
+        max_load: Option<f64>,
+        #[arg(long, default_value_t = 3600)]
+        max_wait_secs: u64,
     },
 }
 
@@ -1143,12 +1154,25 @@ fn main() -> Result<()> {
             query,
             input,
             out,
-        } => lme_model(&stage, &model, &revision, query, &input, &out),
+            batch,
+            max_load,
+            max_wait_secs,
+        } => lme_model(
+            &stage,
+            &model,
+            &revision,
+            query,
+            &input,
+            &out,
+            batch,
+            max_load.map(|m| (m, max_wait_secs)),
+        ),
     }
 }
 
 /// Runs one model stage over a JSON input file; prints a timing line to stderr.
 #[cfg(feature = "local-models")]
+#[allow(clippy::too_many_arguments)]
 fn lme_model(
     stage: &str,
     model: &Path,
@@ -1156,9 +1180,11 @@ fn lme_model(
     query: bool,
     input: &Path,
     out: &Path,
+    batch: Option<usize>,
+    gate: Option<(f64, u64)>,
 ) -> Result<()> {
     use holographic_memory::core::models::{
-        default_device, Embedder, FactExtractor, Generator, ModelSource, QueryRewriter, Reranker,
+        default_device, Embedder, Generator, ModelSource, QueryRewriter, Reranker,
     };
     if stage == "device" {
         return lme_device(input, model, out);
@@ -1166,11 +1192,23 @@ fn lme_model(
     let source = ModelSource::new(model, revision);
     let device = default_device()?;
     let raw = fs::read(input)?;
+    let gate_result = gate.map(|(max, wait)| {
+        let deadline = Instant::now() + std::time::Duration::from_secs(wait);
+        wait_for_idle(max, deadline)
+    });
+    let load_before = load_avgs();
     let t = Instant::now();
+    let load_secs: f64;
+    let mut generated = 0usize;
     let n = match stage {
         "embed" => {
             let texts: Vec<String> = serde_json::from_slice(&raw)?;
-            let rows = Embedder::load(&source, &device)?.embed(&texts, query)?;
+            let mut embedder = Embedder::load(&source, &device)?;
+            if let Some(b) = batch {
+                embedder.set_batch(b);
+            }
+            load_secs = t.elapsed().as_secs_f64();
+            let rows = embedder.embed(&texts, query)?;
             let bytes: Vec<u8> = rows
                 .iter()
                 .flatten()
@@ -1181,25 +1219,36 @@ fn lme_model(
         }
         "rerank" => {
             let pairs: Vec<(String, String)> = serde_json::from_slice(&raw)?;
-            let scores = Reranker::load(&source, &device)?.score(&pairs)?;
+            let mut reranker = Reranker::load(&source, &device)?;
+            if let Some(b) = batch {
+                reranker.set_batch(b);
+            }
+            load_secs = t.elapsed().as_secs_f64();
+            let scores = reranker.score(&pairs)?;
             fs::write(out, serde_json::to_vec(&scores)?)?;
             pairs.len()
         }
         "chat" | "facts" | "query" => {
-            let generator = Generator::load(&source, &device)?;
-            let outs: Vec<String> = if stage == "chat" {
-                let prompts: Vec<String> = serde_json::from_slice(&raw)?;
-                prompts
-                    .iter()
-                    .map(|p| generator.complete(p))
-                    .collect::<Result<_>>()?
-            } else if stage == "facts" {
-                let sessions: Vec<Vec<String>> = serde_json::from_slice(&raw)?;
-                let x = FactExtractor(&generator);
-                sessions
-                    .iter()
-                    .map(|s| x.extract(s).map(|r| r.0))
-                    .collect::<Result<_>>()?
+            let mut generator = Generator::load(&source, &device)?;
+            if let Some(b) = batch {
+                generator.set_batch(b);
+            }
+            load_secs = t.elapsed().as_secs_f64();
+            let outs: Vec<String> = if stage == "chat" || stage == "facts" {
+                // Both decode as one batch; `facts` is `FactExtractor::extract_batch`'s raw
+                // output, generated here directly to count the tokens.
+                let prompts: Vec<String> = if stage == "chat" {
+                    serde_json::from_slice(&raw)?
+                } else {
+                    let sessions: Vec<Vec<String>> = serde_json::from_slice(&raw)?;
+                    sessions
+                        .iter()
+                        .map(|s| holographic_memory::core::models::prompts::fact_prompt(s))
+                        .collect()
+                };
+                let done = generator.generate(&prompts)?;
+                generated = done.iter().map(|c| c.tokens).sum();
+                done.into_iter().map(|c| c.text).collect()
             } else {
                 let qs: Vec<(String, String)> = serde_json::from_slice(&raw)?;
                 let x = QueryRewriter(&generator);
@@ -1212,12 +1261,32 @@ fn lme_model(
         }
         other => anyhow::bail!("unknown stage {other}"),
     };
+    let secs = t.elapsed().as_secs_f64();
     eprintln!(
         "{}",
         json!({"stage": stage, "items": n, "device": format!("{device:?}"),
-               "secs": t.elapsed().as_secs_f64()})
+               "batch": batch, "secs": secs, "load_secs": load_secs,
+               "run_secs": secs - load_secs, "generated_tokens": generated,
+               "load_avg_before": load_before, "load_avg_after": load_avgs(),
+               "max_load": gate.map(|g| g.0),
+               "load_at_gate": gate_result.map(|g| g.0),
+               "load_gate_met": gate_result.map(|g| g.1)})
     );
     Ok(())
+}
+
+/// The 1, 5 and 15-minute load averages.
+#[cfg(feature = "local-models")]
+fn load_avgs() -> Option<Vec<f64>> {
+    let out = std::process::Command::new("sysctl")
+        .args(["-n", "vm.loadavg"])
+        .output()
+        .ok()?;
+    let v: Vec<f64> = String::from_utf8_lossy(&out.stdout)
+        .split_whitespace()
+        .filter_map(|x| x.parse().ok())
+        .collect();
+    (v.len() == 3).then_some(v)
 }
 
 /// On-device cost through the document API with every stage on: each LongMemEval_S session
