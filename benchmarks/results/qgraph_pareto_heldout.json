@@ -1,0 +1,241 @@
+{
+  "workstream": "qgraph PARETO: per-vertex 8-bit LVQ code graph (VGraph) with optional 8-bit residual re-rank (LVQ-8x8)",
+  "method": "public-bench ann-qgraph --index vertex --holdout 2000 (train vectors held out, exact cosine truth; test.f32/neighbors.i32 not read). Single-thread, one query at a time. Timed runs under /Volumes/A/.hms-target/timed.sh with --max-load 3.",
+  "selection_rule": "Timed: best QPS among rows with recall >= threshold and load_gate_met. Untimed: lowest code estimates per query among rows with recall >= threshold. No interpolation.",
+  "configs": [
+    {
+      "file": "benchmarks/results/qgraph_pareto_glove-100-angular_vertex_d32_res_untimed.json",
+      "dataset": "glove-100-angular",
+      "timed": false,
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 200,
+        "code_bits": 0,
+        "degree": 32,
+        "index": "vertex",
+        "residual": true,
+        "seed": 24301
+      },
+      "index_bytes": 430510900,
+      "residual_bytes": 137055624,
+      "index_bytes_without_residual": 293455276,
+      "build_secs": null,
+      "build_load_gate_met": null,
+      "load_1m_before_build": 18.53,
+      "load_1m_after_build": 11.61,
+      "at_recall_0.90": {
+        "any_rerank": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 256,
+            "rerank": 16
+          },
+          "recall_at_10": 0.9019,
+          "evals_per_query": 5746.3905
+        },
+        "rerank_0": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 384,
+            "rerank": 0
+          },
+          "recall_at_10": 0.91305,
+          "evals_per_query": 8088.296
+        }
+      },
+      "at_recall_0.95": {
+        "any_rerank": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 768,
+            "rerank": 16
+          },
+          "recall_at_10": 0.9556,
+          "evals_per_query": 14771.898
+        },
+        "rerank_0": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 1024,
+            "rerank": 0
+          },
+          "recall_at_10": 0.9533,
+          "evals_per_query": 18976.9665
+        }
+      },
+      "max_recall_at_10": 0.96555,
+      "note": "Untimed recall/memory run (no lock, RAYON_NUM_THREADS=4, load 10-90): QPS and build time in the raw file are not results; recall, evals/query and index_bytes are."
+    },
+    {
+      "file": "benchmarks/results/qgraph_pareto_nytimes-256-angular_vertex_d32_res_untimed.json",
+      "dataset": "nytimes-256-angular",
+      "timed": false,
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 200,
+        "code_bits": 0,
+        "degree": 32,
+        "index": "vertex",
+        "residual": true,
+        "seed": 24301
+      },
+      "index_bytes": 187879984,
+      "residual_bytes": 74880000,
+      "index_bytes_without_residual": 112999984,
+      "build_secs": null,
+      "build_load_gate_met": null,
+      "load_1m_before_build": 121.4,
+      "load_1m_after_build": 87.77,
+      "at_recall_0.90": {
+        "any_rerank": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 256,
+            "rerank": 0
+          },
+          "recall_at_10": 0.90235,
+          "evals_per_query": 5424.491
+        },
+        "rerank_0": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 256,
+            "rerank": 0
+          },
+          "recall_at_10": 0.90235,
+          "evals_per_query": 5424.491
+        }
+      },
+      "at_recall_0.95": {
+        "any_rerank": null,
+        "rerank_0": null
+      },
+      "max_recall_at_10": 0.94755,
+      "note": "Untimed recall/memory run (no lock, RAYON_NUM_THREADS=4, load 10-90): QPS and build time in the raw file are not results; recall, evals/query and index_bytes are."
+    },
+    {
+      "file": "benchmarks/results/qgraph_pareto_nytimes-256-angular_vertex_d64_res_untimed.json",
+      "dataset": "nytimes-256-angular",
+      "timed": false,
+      "build_params": {
+        "alpha": 1.0,
+        "build_ef": 200,
+        "code_bits": 0,
+        "degree": 64,
+        "index": "vertex",
+        "residual": true,
+        "seed": 24301
+      },
+      "index_bytes": 224743984,
+      "residual_bytes": 74880000,
+      "index_bytes_without_residual": 149863984,
+      "build_secs": null,
+      "build_load_gate_met": null,
+      "load_1m_before_build": 40.88,
+      "load_1m_after_build": 22.97,
+      "at_recall_0.90": {
+        "any_rerank": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 96,
+            "rerank": 16
+          },
+          "recall_at_10": 0.90225,
+          "evals_per_query": 4208.631
+        },
+        "rerank_0": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 128,
+            "rerank": 0
+          },
+          "recall_at_10": 0.90805,
+          "evals_per_query": 5380.899
+        }
+      },
+      "at_recall_0.95": {
+        "any_rerank": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 384,
+            "rerank": 64
+          },
+          "recall_at_10": 0.9501,
+          "evals_per_query": 14894.944
+        },
+        "rerank_0": {
+          "reached": true,
+          "qps": null,
+          "params": {
+            "ef": 768,
+            "rerank": 0
+          },
+          "recall_at_10": 0.9579,
+          "evals_per_query": 28448.2995
+        }
+      },
+      "max_recall_at_10": 0.9699,
+      "note": "Untimed recall/memory run (no lock, RAYON_NUM_THREADS=4, load 10-90): QPS and build time in the raw file are not results; recall, evals/query and index_bytes are."
+    }
+  ],
+  "competitors": {
+    "nytimes-256-angular": {
+      "source": "benchmarks/results/public_qgraph_nytimes-256-angular.json (TEST set, earlier session; orientation only)",
+      "faiss_hnsw_m32": {
+        "qps_at_0.90": 3010,
+        "qps_at_0.95": 765,
+        "index_gb": 0.38,
+        "build_secs": 61
+      },
+      "faiss_hnsw_m16": {
+        "qps_at_0.90": 2050,
+        "qps_at_0.95": 481,
+        "index_gb": 0.34,
+        "build_secs": 34
+      },
+      "hnswlib_m16": {
+        "qps_at_0.90": 1430,
+        "qps_at_0.95": 366,
+        "index_gb": 0.34,
+        "build_secs": 49
+      }
+    },
+    "glove-100-angular": {
+      "source": "benchmarks/results/public_glove-100-angular.json (TEST set; recorded at load average 37, so these competitor QPS are themselves load-gate-unmet; orientation only)",
+      "faiss_hnsw_m16": {
+        "index_gb": 0.644,
+        "build_secs": 73.7,
+        "recall_qps": [
+          [
+            0.8824,
+            2194
+          ],
+          [
+            0.9213,
+            1084
+          ]
+        ]
+      },
+      "faiss_hnsw_m32": {
+        "index_gb": 0.796,
+        "build_secs": 110.2
+      }
+    }
+  },
+  "edge_index_baseline_heldout_nytimes": {
+    "file": "/Volumes/A/.hms-target/logs/tune/nytimes/d64_b512_a1.0.json",
+    "qps_at_0.90": 7715,
+    "qps_at_0.95": 2087,
+    "index_gb": 1.77,
+    "build_secs": 227
+  }
+}
