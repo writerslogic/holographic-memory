@@ -28,7 +28,10 @@ use std::cell::RefCell;
 
 use rayon::prelude::*;
 
-use kernels::{as_f32, as_f32_mut, as_u32, as_u32_mut, dot, QueryCode, Rotation, SplitMix};
+use kernels::{
+    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, prefetch_bytes, DotI8, QueryCode,
+    Rotation, SplitMix,
+};
 pub use vertex::{VGraph, VSearchParams, VSearcher};
 
 /// Default out-degree of every vertex; one batch of edge codes per expansion.
@@ -37,6 +40,10 @@ const NONE: u32 = u32::MAX;
 const UPPER_DEGREE: usize = 16;
 const LAYER_RATIO: usize = 16;
 const MIN_LAYER: usize = 64;
+/// Smallest dimension at which construction screens exact distances with [`BuildCodes`]: a
+/// skipped distance then saves a row of at least 512 bytes, which pays for the extra code
+/// access (the build measured 1.8x faster at 256 dimensions, and not faster at 100).
+const BUILD_CODES_MIN_DIM: usize = 128;
 
 #[derive(Clone, Debug)]
 pub struct BuildParams {
@@ -149,6 +156,63 @@ impl BuildVisited {
     }
 }
 
+/// Opt-in construction profile (`HMS_QGRAPH_BUILD_PROFILE` set): per-phase wall and CPU
+/// seconds, construction-search filter counts and a hash of the built graph, on stderr.
+mod prof {
+    use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+    use std::sync::OnceLock;
+    use std::time::Instant;
+
+    pub(super) static GREEDY: AtomicU64 = AtomicU64::new(0);
+    pub(super) static PRUNE: AtomicU64 = AtomicU64::new(0);
+    pub(super) static REV: AtomicU64 = AtomicU64::new(0);
+    pub(super) static FRESH: AtomicU64 = AtomicU64::new(0);
+    pub(super) static EXACT: AtomicU64 = AtomicU64::new(0);
+
+    pub(super) fn on() -> bool {
+        static ON: OnceLock<bool> = OnceLock::new();
+        *ON.get_or_init(|| std::env::var_os("HMS_QGRAPH_BUILD_PROFILE").is_some())
+    }
+
+    pub(super) fn start() -> Option<Instant> {
+        on().then(Instant::now)
+    }
+
+    pub(super) fn add(c: &AtomicU64, t: Option<Instant>) {
+        if let Some(t) = t {
+            c.fetch_add(t.elapsed().as_nanos() as u64, Relaxed);
+        }
+    }
+
+    pub(super) fn count(c: &AtomicU64, n: u64) {
+        if on() {
+            c.fetch_add(n, Relaxed);
+        }
+    }
+
+    pub(super) fn report(phase: &str, t: Option<Instant>) {
+        let Some(t) = t else { return };
+        let secs = |c: &AtomicU64| c.swap(0, Relaxed) as f64 * 1e-9;
+        eprintln!(
+            "PHASE {phase} wall={:.2}s greedy_cpu={:.1}s prune_cpu={:.1}s rev_wall={:.2}s fresh={} exact={}",
+            t.elapsed().as_secs_f64(),
+            secs(&GREEDY),
+            secs(&PRUNE),
+            secs(&REV),
+            FRESH.swap(0, Relaxed),
+            EXACT.swap(0, Relaxed),
+        );
+    }
+
+    pub(super) fn graph_hash(h: impl std::hash::Hash) {
+        if on() {
+            use std::hash::Hasher;
+            let mut s = std::collections::hash_map::DefaultHasher::new();
+            h.hash(&mut s);
+            eprintln!("GRAPH_HASH {:016x}", s.finish());
+        }
+    }
+}
 thread_local! {
     static BUILD_VISITED: RefCell<BuildVisited> = RefCell::new(BuildVisited::default());
 }
@@ -161,6 +225,82 @@ fn d2(a: &[f32], b: &[f32]) -> f32 {
 struct Rows<'a> {
     data: &'a [f32],
     dim: usize,
+    /// Bounds that let construction skip exact distances whose outcome they already decide.
+    codes: Option<&'a BuildCodes>,
+}
+
+/// One 8-bit code per row (`x = scale q + e` with `|e| <= err`), giving bounds on the
+/// computed `d2` of two rows. The construction search, the prune and the fill use them only to
+/// settle comparisons the bounds decide; the rest are scored exactly, so the graph is the one
+/// exact scoring alone would build.
+struct BuildCodes {
+    width: usize,
+    q: Vec<i8>,
+    scale: Vec<f32>,
+    err: Vec<f32>,
+    dot: DotI8,
+}
+
+impl BuildCodes {
+    fn new(data: &[f32], dim: usize) -> Self {
+        let n = data.len() / dim;
+        let width = dim.next_multiple_of(16);
+        let mut q = vec![0i8; n * width];
+        let mut scale = vec![0f32; n];
+        let mut err = vec![0f32; n];
+        q.par_chunks_mut(width)
+            .zip(scale.par_iter_mut().zip(err.par_iter_mut()))
+            .zip(data.par_chunks(dim))
+            .for_each(|((q, (s, e)), x)| {
+                let max = x.iter().fold(0f32, |m, v| m.max(v.abs()));
+                *s = if max > 0.0 { max / 127.0 } else { 0.0 };
+                let mut e2 = 0f64;
+                for (o, &v) in q.iter_mut().zip(x) {
+                    let c = if *s > 0.0 {
+                        (v / *s).round().clamp(-127.0, 127.0)
+                    } else {
+                        0.0
+                    };
+                    *o = c as i8;
+                    let r = f64::from(v) - f64::from(*s) * f64::from(c);
+                    e2 += r * r;
+                }
+                // Rounded up so that `err` bounds the true residual norm.
+                *e = (e2.sqrt() * (1.0 + 1e-6)) as f32 + 1e-7;
+            });
+        Self {
+            width,
+            q,
+            scale,
+            err,
+            dot: dot_i8_kernel(),
+        }
+    }
+
+    fn code(&self, i: u32) -> &[i8] {
+        let i = i as usize;
+        &self.q[i * self.width..(i + 1) * self.width]
+    }
+
+    /// A lower bound on the computed `d2` of the unit rows `p` and `u`. With
+    /// `x = s_x q_x + e_x`: `<p, u> <= s_p s_u <q_p, q_u> + |e_p| + |s_p q_p| |e_u|`, and
+    /// `|s_p q_p| <= 1 + |e_p|`. `SLACK` covers the f32 rounding of this bound and of the exact
+    /// dot product (at most `dim * 2^-24` for unit vectors).
+    fn d2_lower(&self, p: u32, u: u32) -> f32 {
+        self.d2_bounds(p, u).0
+    }
+
+    /// `(lower, upper)` bounds on the computed `d2` of the unit rows `p` and `u`, from the
+    /// two-sided form of the inequality in [`Self::d2_lower`].
+    fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
+        const SLACK: f32 = 1e-4;
+        let (pi, ui) = (p as usize, u as usize);
+        let raw = (self.dot)(self.code(p), self.code(u)) as f32;
+        let ep = self.err[pi];
+        let est = self.scale[pi] * self.scale[ui] * raw;
+        let margin = ep + (1.0 + ep) * self.err[ui] + SLACK;
+        (2.0 - 2.0 * (est + margin), 2.0 - 2.0 * (est - margin))
+    }
 }
 
 impl Rows<'_> {
@@ -206,6 +346,33 @@ impl Rows<'_> {
     /// True if some `s` in `kept` has `a2 d2(s, c) <= dc`.
     fn occluded(&self, c: u32, kept: &[u32], dc: f32, a2: f32) -> bool {
         let rc = self.row(c);
+        if let Some(codes) = self.codes {
+            // The codes settle most pairs; the rest are scored exactly, four at a time, so the
+            // answer is the one exact scoring alone gives (it does not depend on the order).
+            let mut open = [0u32; 4];
+            let mut n_open = 0;
+            for &s in kept {
+                let (lo, hi) = codes.d2_bounds(c, s);
+                if a2 * hi <= dc {
+                    return true;
+                }
+                if a2 * lo > dc {
+                    continue;
+                }
+                open[n_open] = s;
+                n_open += 1;
+                if n_open == 4 {
+                    n_open = 0;
+                    let d = build_kernels::dot4(rc, open.map(|u| self.row(u)));
+                    if d.iter().any(|&x| a2 * (2.0 - 2.0 * x).max(0.0) <= dc) {
+                        return true;
+                    }
+                }
+            }
+            return open[..n_open]
+                .iter()
+                .any(|&s| a2 * d2(self.row(s), rc) <= dc);
+        }
         let (quads, rest) = kept.as_chunks::<4>();
         for q in quads {
             let d = build_kernels::dot4(rc, q.map(|u| self.row(u)));
@@ -221,10 +388,12 @@ impl Rows<'_> {
         &self,
         graph: &[Vec<u32>],
         start: u32,
-        target: &[f32],
+        p: u32,
         l: usize,
         visited: &mut BuildVisited,
     ) -> Vec<(f32, u32)> {
+        let target = self.row(p);
+        let (mut n_fresh, mut n_exact) = (0u64, 0u64);
         visited.reset(graph.len());
         visited.insert(start);
         let mut pool = vec![Candidate {
@@ -242,12 +411,34 @@ impl Rows<'_> {
             expanded.push((pool[cur].dist, v));
             // Mark and prefetch every new neighbour first so their rows load concurrently.
             fresh.clear();
-            for &u in &graph[v as usize] {
-                if visited.insert(u) {
-                    build_kernels::prefetch_row(self.row(u));
-                    fresh.push(u);
+            // With a full pool, a neighbour at or beyond the pool bound is discarded below; the
+            // codes rule most of them out without loading their rows.
+            match self.codes.filter(|_| pool.len() >= l) {
+                Some(codes) => {
+                    for &u in &graph[v as usize] {
+                        if visited.insert(u) {
+                            prefetch_bytes(codes.code(u));
+                            fresh.push(u);
+                        }
+                    }
+                    let bound = pool[l - 1].dist;
+                    n_fresh += fresh.len() as u64;
+                    fresh.retain(|&u| codes.d2_lower(p, u) < bound);
+                    for &u in &fresh {
+                        build_kernels::prefetch_row(self.row(u));
+                    }
+                }
+                None => {
+                    for &u in &graph[v as usize] {
+                        if visited.insert(u) {
+                            build_kernels::prefetch_row(self.row(u));
+                            fresh.push(u);
+                        }
+                    }
+                    n_fresh += fresh.len() as u64;
                 }
             }
+            n_exact += fresh.len() as u64;
             self.d2_many(target, &fresh, &mut dists);
             let mut best = usize::MAX;
             for (&u, &du) in fresh.iter().zip(&dists) {
@@ -274,6 +465,8 @@ impl Rows<'_> {
                 build_kernels::prefetch_ids(&graph[c.id as usize]);
             }
         }
+        prof::count(&prof::FRESH, n_fresh);
+        prof::count(&prof::EXACT, n_exact);
         expanded
     }
 
@@ -350,17 +543,23 @@ impl Rows<'_> {
             let outs: Vec<Vec<u32>> = batch
                 .par_iter()
                 .map(|&p| {
+                    let t0 = prof::start();
                     let mut cands = BUILD_VISITED.with(|cell| {
                         let mut vis = cell.borrow_mut();
-                        self.greedy(g, entry, self.row(p), l, &mut vis)
+                        self.greedy(g, entry, p, l, &mut vis)
                     });
+                    prof::add(&prof::GREEDY, t0);
+                    let t0 = prof::start();
                     let adj = &g[p as usize];
                     let mut d = Vec::with_capacity(adj.len());
                     self.d2_stream(self.row(p), adj, &mut d);
                     cands.extend(d.into_iter().zip(adj.iter().copied()));
-                    self.prune(p, cands, alpha, r)
+                    let out = self.prune(p, cands, alpha, r);
+                    prof::add(&prof::PRUNE, t0);
+                    out
                 })
                 .collect();
+            let trev = prof::start();
             let mut rev: Vec<(u32, u32)> = batch
                 .iter()
                 .zip(&outs)
@@ -398,6 +597,7 @@ impl Rows<'_> {
                 }
                 graph[t as usize] = m;
             }
+            prof::add(&prof::REV, trev);
             start = end;
             size = (size * 2).min(max_batch);
         }
@@ -417,10 +617,21 @@ impl Rows<'_> {
                 let mut ids: Vec<u32> = have
                     .iter()
                     .flat_map(|&u| g[u as usize].iter().copied())
-                    .filter(|&u| u as usize != v && !have.contains(&u))
                     .collect();
                 ids.sort_unstable();
                 ids.dedup();
+                ids.retain(|&u| u as usize != v && !have.contains(&u));
+                let k = r - have.len();
+                if let Some(codes) = self.codes.filter(|_| ids.len() > k) {
+                    // At least `k` ids score at most the k-th smallest upper bound, so an id
+                    // whose lower bound exceeds it cannot be among the `k` nearest.
+                    let bounds: Vec<(f32, f32)> =
+                        ids.iter().map(|&u| codes.d2_bounds(v as u32, u)).collect();
+                    let mut upper: Vec<f32> = bounds.iter().map(|b| b.1).collect();
+                    let cut = *upper.select_nth_unstable_by(k - 1, f32::total_cmp).1;
+                    let mut b = bounds.iter();
+                    ids.retain(|_| b.next().is_some_and(|b| b.0 <= cut));
+                }
                 let mut d = Vec::new();
                 self.d2_stream(self.row(v as u32), &ids, &mut d);
                 let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
@@ -555,6 +766,7 @@ impl Graph {
         Rows {
             data: &self.unit,
             dim: self.dim,
+            codes: None,
         }
     }
 
@@ -578,7 +790,12 @@ impl Graph {
                 x.iter_mut().for_each(|o| *o /= norm);
             }
         });
-        let rows = Rows { data: &unit, dim };
+        let codes = (dim >= BUILD_CODES_MIN_DIM).then(|| BuildCodes::new(&unit, dim));
+        let rows = Rows {
+            data: &unit,
+            dim,
+            codes: codes.as_ref(),
+        };
 
         let mut centroid = vec![0f32; dim];
         for x in unit.chunks_exact(dim) {
@@ -606,9 +823,14 @@ impl Graph {
         }
         let mut graph: Vec<Vec<u32>> = vec![Vec::new(); n];
         for alpha in [1.0, params.alpha] {
+            let t = prof::start();
             rows.insert_pass(&mut graph, &order, entry, params.build_ef, alpha, r);
+            prof::report("pass", t);
         }
+        let t = prof::start();
         rows.fill(&mut graph, r);
+        prof::report("fill", t);
+        let tup = prof::start();
 
         // Upper layers (HNSW-like) give each query a nearby entry vertex: layer j holds the
         // first n / 16^(j+1) vertices of `order`, so a vertex keeps its local id in every layer.
@@ -619,7 +841,12 @@ impl Graph {
                 .iter()
                 .flat_map(|&g| rows.row(g).iter().copied())
                 .collect();
-            let sub_rows = Rows { data: &sub, dim };
+            let sub_codes = (dim >= BUILD_CODES_MIN_DIM).then(|| BuildCodes::new(&sub, dim));
+            let sub_rows = Rows {
+                data: &sub,
+                dim,
+                codes: sub_codes.as_ref(),
+            };
             let local: Vec<u32> = (0..size as u32).collect();
             let mut g: Vec<Vec<u32>> = vec![Vec::new(); size];
             sub_rows.insert_pass(
@@ -633,6 +860,8 @@ impl Graph {
             layers.push(g);
             size /= LAYER_RATIO;
         }
+        prof::report("upper", tup);
+        prof::graph_hash((&graph, &layers, entry));
         let upper_ids = order[..n / LAYER_RATIO].to_vec();
         Self {
             n,
@@ -982,6 +1211,7 @@ mod tests {
         let rows = Rows {
             data: &data,
             dim: d,
+            codes: None,
         };
         let mut rng = SplitMix(11);
         for trial in 0..200 {
@@ -1007,6 +1237,47 @@ mod tests {
                 rows.prune(t, all(&list), alpha, r),
                 "trial {trial}"
             );
+        }
+    }
+
+    /// The code filters of the construction search, the prune and the fill only skip exact
+    /// work, so they build the very graph exact scoring builds, including on near-duplicate
+    /// rows (bounds at their tightest) and a zero row.
+    #[test]
+    fn build_codes_leave_the_graph_unchanged() {
+        for d in [100, 160] {
+            let n = 1200;
+            let mut data = clustered(n, d, 3);
+            let mut rng = SplitMix(5);
+            for i in (0..n).step_by(7) {
+                let j = (rng.next_u64() % n as u64) as usize;
+                for k in 0..d {
+                    data[i * d + k] = data[j * d + k] * (1.0 + 1e-6 * gaussian(&mut rng));
+                }
+            }
+            data[5 * d..6 * d].fill(0.0);
+            data.chunks_exact_mut(d).for_each(|x| {
+                let norm = dot(x, x).sqrt();
+                if norm > 0.0 {
+                    x.iter_mut().for_each(|v| *v /= norm);
+                }
+            });
+            let codes = BuildCodes::new(&data, d);
+            let build = |codes: Option<&BuildCodes>| {
+                let rows = Rows {
+                    data: &data,
+                    dim: d,
+                    codes,
+                };
+                let order: Vec<u32> = (0..n as u32).rev().collect();
+                let mut graph = vec![Vec::new(); n];
+                for alpha in [1.0, 1.2] {
+                    rows.insert_pass(&mut graph, &order, 0, 40, alpha, 12);
+                }
+                rows.fill(&mut graph, 12);
+                graph
+            };
+            assert_eq!(build(Some(&codes)), build(None), "d = {d}");
         }
     }
 
