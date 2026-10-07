@@ -186,6 +186,95 @@ mod neon {
 
     use super::{scalar_word, QUERY_BITS};
 
+    /// [`super::DotI8`] with the SDOT instruction. Handed out only by `dot_i8_kernel` after
+    /// detecting `dotprod`.
+    #[cfg_attr(target_feature = "dotprod", allow(dead_code))]
+    pub(super) fn dot_i8_sdot(a: &[i8], b: &[i8]) -> i32 {
+        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+        // SAFETY: the only caller path checked `dotprod` at runtime.
+        unsafe { sdot(a, b) }
+    }
+
+    #[target_feature(enable = "dotprod")]
+    #[inline]
+    pub(super) unsafe fn sdot(a: &[i8], b: &[i8]) -> i32 {
+        let (mut s0, mut s1) = (vdupq_n_s32(0), vdupq_n_s32(0));
+        let mut i = 0;
+        // SAFETY (all loads): `i + 16 <= len` (or `i + 32 <= len`) for both slices, whose
+        // lengths are equal and a multiple of 16 (asserted by the caller).
+        while i + 32 <= a.len() {
+            let (x0, y0) = (vld1q_s8(a.as_ptr().add(i)), vld1q_s8(b.as_ptr().add(i)));
+            let (x1, y1) = (
+                vld1q_s8(a.as_ptr().add(i + 16)),
+                vld1q_s8(b.as_ptr().add(i + 16)),
+            );
+            std::arch::asm!(
+                "sdot {s0:v}.4s, {x0:v}.16b, {y0:v}.16b",
+                "sdot {s1:v}.4s, {x1:v}.16b, {y1:v}.16b",
+                s0 = inout(vreg) s0, s1 = inout(vreg) s1,
+                x0 = in(vreg) x0, y0 = in(vreg) y0, x1 = in(vreg) x1, y1 = in(vreg) y1,
+                options(pure, nomem, nostack, preserves_flags)
+            );
+            i += 32;
+        }
+        if i < a.len() {
+            let (x0, y0) = (vld1q_s8(a.as_ptr().add(i)), vld1q_s8(b.as_ptr().add(i)));
+            std::arch::asm!(
+                "sdot {s0:v}.4s, {x0:v}.16b, {y0:v}.16b",
+                s0 = inout(vreg) s0, x0 = in(vreg) x0, y0 = in(vreg) y0,
+                options(pure, nomem, nostack, preserves_flags)
+            );
+        }
+        vaddvq_s32(vaddq_s32(s0, s1))
+    }
+
+    /// [`super::dot_i4_inline`] with SDOT: each 16 packed bytes become the 16 even and the 16
+    /// odd coordinates of a 32-wide block, matched with the query laid out by
+    /// [`super::interleave_for_i4`].
+    #[target_feature(enable = "dotprod")]
+    #[inline]
+    #[cfg_attr(not(target_feature = "dotprod"), allow(dead_code))]
+    pub(super) unsafe fn sdot4(q: &[i8], p: &[i8]) -> i32 {
+        let (mut s0, mut s1) = (vdupq_n_s32(0), vdupq_n_s32(0));
+        let mut i = 0;
+        // SAFETY (all loads): the caller checked `q.len() == 2 * p.len()` and `p.len() % 16 == 0`,
+        // so `i + 16 <= p.len()` and `2 * i + 32 <= q.len()`.
+        while i + 16 <= p.len() {
+            let x = vld1q_s8(p.as_ptr().add(i));
+            let lo = vshrq_n_s8::<4>(vshlq_n_s8::<4>(x));
+            let hi = vshrq_n_s8::<4>(x);
+            let (qe, qo) = (vld1q_s8(q.as_ptr().add(2 * i)), vld1q_s8(q.as_ptr().add(2 * i + 16)));
+            std::arch::asm!(
+                "sdot {s0:v}.4s, {lo:v}.16b, {qe:v}.16b",
+                "sdot {s1:v}.4s, {hi:v}.16b, {qo:v}.16b",
+                s0 = inout(vreg) s0, s1 = inout(vreg) s1,
+                lo = in(vreg) lo, qe = in(vreg) qe, hi = in(vreg) hi, qo = in(vreg) qo,
+                options(pure, nomem, nostack, preserves_flags)
+            );
+            i += 16;
+        }
+        vaddvq_s32(vaddq_s32(s0, s1))
+    }
+
+    /// [`super::DotI8`] with widening multiplies; for cores without `dotprod`.
+    #[cfg_attr(target_feature = "dotprod", allow(dead_code))]
+    pub(super) fn dot_i8(a: &[i8], b: &[i8]) -> i32 {
+        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+        let mut i = 0;
+        // SAFETY: NEON is part of the aarch64 baseline; `i + 16 <= len` for both slices. Each
+        // i16 lane holds one product (|x| <= 128 * 128), and the pairwise adds go to i32.
+        unsafe {
+            let mut s = vdupq_n_s32(0);
+            while i < a.len() {
+                let (x, y) = (vld1q_s8(a.as_ptr().add(i)), vld1q_s8(b.as_ptr().add(i)));
+                s = vpadalq_s16(s, vmull_s8(vget_low_s8(x), vget_low_s8(y)));
+                s = vpadalq_s16(s, vmull_high_s8(x, y));
+                i += 16;
+            }
+            vaddvq_s32(s)
+        }
+    }
+
     pub(super) fn raw<const W: usize>(codes: &[u64], planes: &[u64], out: &mut [u32]) {
         assert_eq!(QUERY_BITS, 4);
         assert_eq!(planes.len(), 4 * W);
@@ -222,6 +311,145 @@ mod neon {
             *o = total;
         }
     }
+}
+
+/// Integer dot product of two i8 rows whose length is a multiple of 16.
+#[cfg_attr(all(target_arch = "aarch64", target_feature = "dotprod"), allow(dead_code))]
+pub(crate) type DotI8 = fn(&[i8], &[i8]) -> i32;
+
+/// The fastest [`DotI8`] this CPU supports.
+#[cfg_attr(all(target_arch = "aarch64", target_feature = "dotprod"), allow(dead_code))]
+pub(crate) fn dot_i8_kernel() -> DotI8 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        if std::arch::is_aarch64_feature_detected!("dotprod") {
+            return neon::dot_i8_sdot;
+        }
+        neon::dot_i8
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    dot_i8_scalar
+}
+
+/// [`DotI8`] resolved at compile time, so the search loop can inline it: SDOT when the build
+/// target enables `dotprod` (every Apple core), else the runtime-detected kernel.
+#[inline(always)]
+pub(crate) fn dot_i8_inline(a: &[i8], b: &[i8]) -> i32 {
+    #[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
+    {
+        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+        // SAFETY: `dotprod` is enabled for the whole build; the lengths are checked above.
+        unsafe { neon::sdot(a, b) }
+    }
+    #[cfg(not(all(target_arch = "aarch64", target_feature = "dotprod")))]
+    dot_i8_kernel()(a, b)
+}
+
+/// Lays out an i8 query code for [`dot_i4_inline`]: per 32-wide block, its 16 even then its
+/// 16 odd coordinates. `q.len()` is a multiple of 32.
+pub(crate) fn interleave_for_i4(q: &[i8], out: &mut [i8]) {
+    assert!(q.len() == out.len() && q.len().is_multiple_of(32));
+    for (src, dst) in q.chunks_exact(32).zip(out.chunks_exact_mut(32)) {
+        for j in 0..16 {
+            dst[j] = src[2 * j];
+            dst[16 + j] = src[2 * j + 1];
+        }
+    }
+}
+
+/// `sum_i q_i * c_i` for a query code laid out by [`interleave_for_i4`] and a row packed as
+/// [`dot_f32_i4`] reads it; `q.len() == 2 * packed.len()`, a multiple of 32.
+#[inline(always)]
+pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
+    assert!(q.len() == 2 * packed.len() && packed.len().is_multiple_of(16));
+    #[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
+    {
+        // SAFETY: `dotprod` is enabled for the whole build; the lengths are checked above.
+        unsafe { neon::sdot4(q, packed) }
+    }
+    #[cfg(not(all(target_arch = "aarch64", target_feature = "dotprod")))]
+    dot_i4_scalar(q, packed)
+}
+
+#[cfg(any(test, not(all(target_arch = "aarch64", target_feature = "dotprod"))))]
+pub(crate) fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
+    let mut s = 0i32;
+    for (qb, pb) in q.chunks_exact(32).zip(packed.chunks_exact(16)) {
+        for (j, &x) in pb.iter().enumerate() {
+            let lo = (((x as u8) << 4) as i8) >> 4;
+            s += i32::from(qb[j]) * i32::from(lo) + i32::from(qb[16 + j]) * i32::from(x >> 4);
+        }
+    }
+    s
+}
+
+/// `sum_i a_i * c_i` where `c` is packed two signed 4-bit values per byte, element `2j` in the
+/// low nibble of byte `j` and `2j + 1` in the high nibble; `a.len() == 2 * packed.len()`.
+pub(crate) fn dot_f32_i4(a: &[f32], packed: &[i8]) -> f32 {
+    debug_assert_eq!(a.len(), 2 * packed.len());
+    let mut acc = [0f32; 16];
+    let ((ca, ta), (cb, tb)) = (a.as_chunks::<16>(), packed.as_chunks::<8>());
+    debug_assert!(ta.is_empty() && tb.is_empty(), "length not a multiple of 16");
+    for (x, y) in ca.iter().zip(cb) {
+        for (j, &b) in y.iter().enumerate() {
+            let lo = f32::from((((b as u8) << 4) as i8) >> 4);
+            let hi = f32::from(b >> 4);
+            acc[2 * j] += x[2 * j] * lo;
+            acc[2 * j + 1] += x[2 * j + 1] * hi;
+        }
+    }
+    acc.iter().sum::<f32>()
+}
+
+#[cfg(any(test, not(target_arch = "aarch64")))]
+pub(crate) fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
+    assert_eq!(a.len(), b.len());
+    a.iter()
+        .zip(b)
+        .map(|(&x, &y)| i32::from(x) * i32::from(y))
+        .sum()
+}
+
+/// `sum_i a_i * b_i` for a float row and an i8 row of the same length.
+pub(crate) fn dot_f32_i8(a: &[f32], b: &[i8]) -> f32 {
+    debug_assert_eq!(a.len(), b.len());
+    let mut acc = [0f32; 16];
+    let ((ca, ta), (cb, tb)) = (a.as_chunks::<16>(), b.as_chunks::<16>());
+    let tail: f32 = ta.iter().zip(tb).map(|(x, &y)| x * f32::from(y)).sum();
+    for (x, y) in ca.iter().zip(cb) {
+        for ((s, p), &q) in acc.iter_mut().zip(x).zip(y) {
+            *s += p * f32::from(q);
+        }
+    }
+    acc.iter().sum::<f32>() + tail
+}
+
+/// Hint the cache to load every line of `bytes` (128-byte lines on Apple cores).
+#[inline]
+pub(crate) fn prefetch_bytes(bytes: &[i8]) {
+    #[cfg(target_arch = "aarch64")]
+    if let Some(last) = bytes.len().checked_sub(1) {
+        let base = bytes.as_ptr();
+        let mut off = 0;
+        loop {
+            let at = off.min(last);
+            // SAFETY: PRFM is a hint that never faults or writes; `at < bytes.len()`, so the
+            // address is inside the live slice.
+            unsafe {
+                std::arch::asm!(
+                    "prfm pldl1keep, [{0}]",
+                    in(reg) base.add(at),
+                    options(nostack, preserves_flags, readonly)
+                );
+            }
+            if at == last {
+                break;
+            }
+            off += 128;
+        }
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    let _ = bytes;
 }
 
 /// Hint the cache to load `words`. A no-op where no prefetch instruction is wired up.
@@ -278,6 +506,50 @@ mod tests {
             raw_estimates(&codes, &planes, words, &mut fast);
             raw_scalar(&codes, &planes, words, &mut slow);
             assert_eq!(fast, slow, "words = {words}");
+        }
+    }
+
+    #[test]
+    fn integer_dot_kernels_match_scalar() {
+        let mut rng = SplitMix(13);
+        let kernels: Vec<DotI8> = {
+            #[cfg(target_arch = "aarch64")]
+            {
+                let mut k: Vec<DotI8> = vec![neon::dot_i8];
+                if std::arch::is_aarch64_feature_detected!("dotprod") {
+                    k.push(neon::dot_i8_sdot);
+                }
+                k
+            }
+            #[cfg(not(target_arch = "aarch64"))]
+            vec![dot_i8_kernel()]
+        };
+        for len in (0..=96).step_by(16) {
+            let a: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
+            let mut b: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
+            if len > 0 {
+                b[0] = -128;
+            }
+            let want = dot_i8_scalar(&a, &b);
+            for k in &kernels {
+                assert_eq!(k(&a, &b), want, "len = {len}");
+            }
+            assert_eq!(dot_i8_inline(&a, &b), want, "len = {len}");
+            let af: Vec<f32> = a.iter().map(|&x| f32::from(x)).collect();
+            assert_eq!(dot_f32_i8(&af, &b), want as f32);
+            let nib: Vec<i8> = b.iter().map(|&x| x >> 4).collect();
+            let packed: Vec<i8> = nib
+                .chunks_exact(2)
+                .map(|p| ((p[0] as u8 & 0x0F) | ((p[1] as u8) << 4)) as i8)
+                .collect();
+            assert_eq!(dot_f32_i4(&af, &packed), dot_i8_scalar(&a, &nib) as f32);
+            if len % 32 == 0 {
+                let mut qi = vec![0i8; len];
+                interleave_for_i4(&a, &mut qi);
+                let want4 = dot_i8_scalar(&a, &nib);
+                assert_eq!(dot_i4_scalar(&qi, &packed), want4, "len = {len}");
+                assert_eq!(dot_i4_inline(&qi, &packed), want4, "len = {len}");
+            }
         }
     }
 

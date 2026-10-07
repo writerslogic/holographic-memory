@@ -11,6 +11,8 @@
 //! `ann-qgraph`: the same sets through the quantized graph index (`core::qgraph`). Builds on
 //!         all cores, then times single-threaded queries one at a time over an `ef` x
 //!         `max-exact` sweep, each configuration repeated and gated on the 1-minute load.
+//!         `--index vertex` uses the per-vertex 8-bit code index (`VGraph`) instead, swept over
+//!         `ef` x `rerank`; `--residual` adds its second code for the re-rank.
 //! `beir`: BEIR sets with precomputed embeddings and text. Writes ranked runs for the
 //!         document API (lexical, dense, hybrid) and the raw sparse-vector path.
 //! `longmemeval`: LongMemEval_S with precomputed embeddings. Every question gets a fresh store
@@ -28,7 +30,9 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
-use holographic_memory::core::qgraph::{BuildParams, QGraph, SearchParams};
+use holographic_memory::core::qgraph::{
+    BuildParams, Graph, QGraph, SearchParams, VGraph, VSearchParams,
+};
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
 use rayon::prelude::*;
@@ -94,6 +98,41 @@ enum Mode {
         /// on the rest and score against exact cosine truth; the test queries are not read.
         #[arg(long, conflicts_with = "queries")]
         holdout: Option<usize>,
+        /// Index layout: `edge` (1-bit code per edge, QGraph) or `vertex` (8-bit code per
+        /// vertex, VGraph).
+        #[arg(long, default_value = "edge", value_parser = ["edge", "vertex"])]
+        index: String,
+        /// Vertex index only: also store the residual code used by the re-rank.
+        #[arg(long)]
+        residual: bool,
+        /// Vertex index only: bits per residual coordinate with `--residual` (8 or 4).
+        #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u8).range(4..=8))]
+        residual_bits: u8,
+        /// Vertex index only: bits per traversal code coordinate (8 or 4).
+        #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u8).range(4..=8))]
+        vertex_bits: u8,
+        /// Vertex index only: bytes per stored neighbour id (4, or 3 below 2^24 - 1 vertices).
+        #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(3..=4))]
+        id_bytes: u8,
+        /// Vertex index only: start every code row on a 128-byte cache line.
+        #[arg(long)]
+        align_rows: bool,
+        /// Vertex index only: renumber vertices in breadth-first order for locality.
+        #[arg(long)]
+        reorder: bool,
+        /// Vertex index only: pool candidates re-scored with the float query (0 = none).
+        #[arg(long, value_delimiter = ',', default_value = "0")]
+        rerank: Vec<usize>,
+        /// Paired timing: after the build write `<SYNC>.ready`, then before timing round `r`
+        /// block until `<SYNC>.go.<r>` exists and afterwards write `<SYNC>.done.<r>`, so an
+        /// outside coordinator holding the timing lock can alternate two processes. The build
+        /// does not wait for the load gate and timed runs only record it.
+        #[arg(long)]
+        sync: Option<PathBuf>,
+        /// Load the graph structure from this file if it exists, else build and save it there
+        /// (benchmark support for search experiments; the file must match data and params).
+        #[arg(long)]
+        graph_cache: Option<PathBuf>,
     },
     Beir {
         #[arg(long)]
@@ -157,6 +196,17 @@ enum Mode {
         input: PathBuf,
         #[arg(long)]
         out: PathBuf,
+        /// Sequences per forward pass (encoders) or decoded together (`facts`, `chat`);
+        /// default: the device default for encoders, 1 for decoding.
+        #[arg(long)]
+        batch: Option<usize>,
+        /// Load gate: wait (inside any timing lock) until the 1-minute load average is below
+        /// this before loading and timing; the timing line records the loads and whether the
+        /// gate was met.
+        #[arg(long)]
+        max_load: Option<f64>,
+        #[arg(long, default_value_t = 3600)]
+        max_wait_secs: u64,
     },
 }
 
@@ -398,6 +448,21 @@ struct QgraphArgs {
     max_wait_secs: u64,
     queries: Option<usize>,
     holdout: Option<usize>,
+    index: String,
+    residual: bool,
+    residual_bits: u8,
+    vertex_bits: u8,
+    id_bytes: u8,
+    align_rows: bool,
+    reorder: bool,
+    rerank: Vec<usize>,
+    sync: Option<PathBuf>,
+    graph_cache: Option<PathBuf>,
+}
+
+enum Built {
+    Edge(QGraph),
+    Vertex(VGraph),
 }
 
 fn normalize(v: &mut [f32]) {
@@ -479,89 +544,185 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         degree: a.degree,
         ..BuildParams::default()
     };
-    let load_before_build = load_1m();
+    let wait = if a.sync.is_some() { 0 } else { a.max_wait_secs };
+    let deadline = Instant::now() + std::time::Duration::from_secs(wait);
+    let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
     let t = Instant::now();
-    let index = QGraph::build(&train, d, &params);
+    let index = match a.index.as_str() {
+        "edge" => Built::Edge(QGraph::build(&train, d, &params)),
+        _ => {
+            let graph = match &a.graph_cache {
+                Some(p) if p.exists() => Graph::load(&train, d, p)
+                    .with_context(|| format!("loading {}", p.display()))?,
+                cache => {
+                    let g = Graph::build(&train, d, &params);
+                    if let Some(p) = cache {
+                        g.save(p).with_context(|| format!("saving {}", p.display()))?;
+                    }
+                    g
+                }
+            };
+            anyhow::ensure!(
+                matches!(a.residual_bits, 4 | 8) && matches!(a.vertex_bits, 4 | 8),
+                "--residual-bits and --vertex-bits must be 4 or 8"
+            );
+            let bits = if a.residual { a.residual_bits } else { 0 };
+            Built::Vertex(VGraph::from_graph_with(
+                &graph,
+                a.vertex_bits,
+                bits,
+                a.align_rows,
+                a.reorder,
+                a.id_bytes,
+            ))
+        }
+    };
     let build_secs = t.elapsed().as_secs_f64();
+    let load_after_build = load_1m();
     drop(train);
-    eprintln!("built in {build_secs:.1}s, {} bytes", index.index_bytes());
+    let (index_bytes, residual_bytes) = match &index {
+        Built::Edge(g) => (g.index_bytes(), 0),
+        Built::Vertex(g) => (g.index_bytes(), g.residual_bytes()),
+    };
+    eprintln!("built in {build_secs:.1}s, {index_bytes} bytes");
 
-    let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
-    let mut searcher = index.searcher();
-    let mut rows = Vec::new();
+    // (sweep label, search) pairs; the second parameter is max_exact or rerank.
+    let seconds: &[usize] = match &index {
+        Built::Edge(_) => &a.max_exact,
+        Built::Vertex(_) => &a.rerank,
+    };
+    let (mut edge_s, mut vertex_s) = match &index {
+        Built::Edge(g) => (Some(g.searcher()), None),
+        Built::Vertex(g) => (None, Some(g.searcher())),
+    };
+    let second_name = match &index {
+        Built::Edge(_) => "max_exact",
+        Built::Vertex(_) => "rerank",
+    };
+    let configs: Vec<(usize, usize)> = seconds
+        .iter()
+        .flat_map(|&second| a.ef.iter().map(move |&ef| (second, ef)))
+        .collect();
+    let mut search = |q: &[f32], (second, ef): (usize, usize), out: &mut Vec<u32>| -> usize {
+        if let Some(s) = edge_s.as_mut() {
+            s.search(
+                q,
+                K,
+                SearchParams {
+                    ef,
+                    max_exact: second,
+                },
+                out,
+            )
+        } else {
+            let s = vertex_s.as_mut().expect("one searcher exists");
+            s.search(q, K, VSearchParams { ef, rerank: second }, out)
+        }
+    };
+    let sync_path = |suffix: String| -> Option<PathBuf> {
+        a.sync.as_ref().map(|p| {
+            let mut s = p.clone().into_os_string();
+            s.push(suffix);
+            PathBuf::from(s)
+        })
+    };
+    if let Some(p) = sync_path(".ready".into()) {
+        fs::write(&p, "")?;
+    }
+    // Per configuration: qps runs, loads, gate, recall, evals/query.
+    type Acc = (Vec<f64>, Vec<f64>, bool, f64, f64);
+    let mut acc: Vec<Acc> = vec![(Vec::new(), Vec::new(), true, 0.0, 0.0); configs.len()];
     let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
     let mut out = Vec::with_capacity(K);
-    for &max_exact in &a.max_exact {
-        for &ef in &a.ef {
-            let sp = SearchParams { ef, max_exact };
-            let (mut qps, mut loads, mut gate) = (Vec::new(), Vec::new(), true);
-            let (mut recall, mut exact_mean) = (0.0, 0.0);
-            for rep in 0..a.repeats {
-                let (load, met) = wait_for_idle(a.max_load, deadline);
-                loads.push(load);
-                gate &= met;
-                ids.clear();
-                let mut exact = 0usize;
-                let t = Instant::now();
-                for q in &test {
-                    exact += searcher.search(q, K, sp, &mut out);
-                    ids.extend_from_slice(&out);
-                    ids.resize(ids.len() + K - out.len(), u32::MAX);
-                }
-                qps.push(test.len() as f64 / t.elapsed().as_secs_f64());
-                if rep == 0 {
-                    let hits: usize = ids
-                        .as_chunks::<K>()
-                        .0
-                        .iter()
-                        .zip(&truth)
-                        .map(|(f, t)| {
-                            let t = &t[..K];
-                            let mut f = f.to_vec();
-                            f.sort_unstable();
-                            f.dedup();
-                            f.iter().filter(|&&x| t.contains(&(x as i32))).count()
-                        })
-                        .sum();
-                    recall = hits as f64 / (K * test.len()) as f64;
-                    exact_mean = exact as f64 / test.len() as f64;
-                }
+    // Round-major, so one round of every configuration is a unit a coordinator can pair.
+    for rep in 0..a.repeats {
+        if let Some(go) = sync_path(format!(".go.{rep}")) {
+            while !go.exists() {
+                std::thread::sleep(std::time::Duration::from_millis(50));
             }
-            let mut sorted = qps.clone();
-            sorted.sort_by(f64::total_cmp);
-            let median = sorted[sorted.len() / 2];
-            eprintln!("ef={ef} max_exact={max_exact} recall={recall:.4} qps={median:.0} exact/q={exact_mean:.0} load={loads:?}");
-            rows.push(json!({
-                "params": {"ef": ef, "max_exact": max_exact},
-                "recall_at_10": recall,
-                "qps_single_thread": median,
-                "qps_runs": qps,
-                "load_1m_before_runs": loads,
-                "load_gate_met": gate,
-                "mean_exact_evals_per_query": exact_mean,
-            }));
+        }
+        for (&cfg, (qps, loads, gate, recall, exact_mean)) in configs.iter().zip(&mut acc) {
+            let (load, met) = wait_for_idle(a.max_load, deadline);
+            loads.push(load);
+            *gate &= met;
+            ids.clear();
+            let mut exact = 0usize;
+            let t = Instant::now();
+            for q in &test {
+                exact += search(q, cfg, &mut out);
+                ids.extend_from_slice(&out);
+                ids.resize(ids.len() + K - out.len(), u32::MAX);
+            }
+            qps.push(test.len() as f64 / t.elapsed().as_secs_f64());
+            if rep == 0 {
+                let hits: usize = ids
+                    .as_chunks::<K>()
+                    .0
+                    .iter()
+                    .zip(&truth)
+                    .map(|(f, t)| {
+                        let t = &t[..K];
+                        let mut f = f.to_vec();
+                        f.sort_unstable();
+                        f.dedup();
+                        f.iter().filter(|&&x| t.contains(&(x as i32))).count()
+                    })
+                    .sum();
+                *recall = hits as f64 / (K * test.len()) as f64;
+                *exact_mean = exact as f64 / test.len() as f64;
+            }
+        }
+        if let Some(done) = sync_path(format!(".done.{rep}")) {
+            fs::write(&done, "")?;
         }
     }
+    let mut rows = Vec::new();
+    for (&(second, ef), (qps, loads, gate, recall, exact_mean)) in configs.iter().zip(&acc) {
+        let mut sorted = qps.clone();
+        sorted.sort_by(f64::total_cmp);
+        let median = sorted[sorted.len() / 2];
+        eprintln!("ef={ef} {second_name}={second} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} load={loads:?}");
+        rows.push(json!({
+            "params": {"ef": ef, second_name: second},
+            "recall_at_10": recall,
+            "qps_single_thread": median,
+            "qps_runs": qps,
+            "load_1m_before_runs": loads,
+            "load_gate_met": gate,
+            "mean_exact_evals_per_query": exact_mean,
+        }));
+    }
     let report = json!({
-        "system": "hms qgraph",
+        "system": match a.index.as_str() {
+            "edge" => "hms qgraph",
+            _ => "hms qgraph-vertex",
+        },
         "dataset": m,
         "environment": environment(),
         "n_queries": test.len(),
-        "build": {"params": {"degree": a.degree, "build_ef": a.build_ef,
-                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed},
-                  "build_secs": build_secs, "load_1m_before_build": load_before_build},
-        "index_bytes": index.index_bytes(),
+        "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef,
+                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
+                             "residual": a.residual, "residual_bits": a.residual_bits,
+                             "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes,
+                             "align_rows": a.align_rows, "reorder": a.reorder,
+                             "graph_cache": a.graph_cache.as_ref().map(|p| p.display().to_string())},
+                  "build_secs": build_secs, "load_1m_before_build": load_before_build,
+                  "load_1m_after_build": load_after_build, "load_gate_met": build_gate,
+                  "threads": rayon::current_num_threads()},
+        "index_bytes": index_bytes,
+        "residual_bytes": residual_bytes,
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
             "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read.",
         })),
         "repeats": a.repeats,
         "max_load": a.max_load,
+        "paired_sync": a.sync.is_some(),
         "sweep": rows,
         "notes": [
             "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
             "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
-            "Each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent.",
+            "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores.",
         ],
     });
     fs::write(&a.out, serde_json::to_string_pretty(&report)? + "\n")?;
@@ -996,6 +1157,16 @@ fn main() -> Result<()> {
             max_wait_secs,
             queries,
             holdout,
+            index,
+            residual,
+            residual_bits,
+            vertex_bits,
+            id_bytes,
+            align_rows,
+            reorder,
+            rerank,
+            sync,
+            graph_cache,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1010,6 +1181,16 @@ fn main() -> Result<()> {
             max_wait_secs,
             queries,
             holdout,
+            index,
+            residual,
+            residual_bits,
+            vertex_bits,
+            id_bytes,
+            align_rows,
+            reorder,
+            rerank,
+            sync,
+            graph_cache,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {
@@ -1035,12 +1216,25 @@ fn main() -> Result<()> {
             query,
             input,
             out,
-        } => lme_model(&stage, &model, &revision, query, &input, &out),
+            batch,
+            max_load,
+            max_wait_secs,
+        } => lme_model(
+            &stage,
+            &model,
+            &revision,
+            query,
+            &input,
+            &out,
+            batch,
+            max_load.map(|m| (m, max_wait_secs)),
+        ),
     }
 }
 
 /// Runs one model stage over a JSON input file; prints a timing line to stderr.
 #[cfg(feature = "local-models")]
+#[allow(clippy::too_many_arguments)]
 fn lme_model(
     stage: &str,
     model: &Path,
@@ -1048,9 +1242,11 @@ fn lme_model(
     query: bool,
     input: &Path,
     out: &Path,
+    batch: Option<usize>,
+    gate: Option<(f64, u64)>,
 ) -> Result<()> {
     use holographic_memory::core::models::{
-        default_device, Embedder, FactExtractor, Generator, ModelSource, QueryRewriter, Reranker,
+        default_device, Embedder, Generator, ModelSource, QueryRewriter, Reranker,
     };
     if stage == "device" {
         return lme_device(input, model, out);
@@ -1058,11 +1254,23 @@ fn lme_model(
     let source = ModelSource::new(model, revision);
     let device = default_device()?;
     let raw = fs::read(input)?;
+    let gate_result = gate.map(|(max, wait)| {
+        let deadline = Instant::now() + std::time::Duration::from_secs(wait);
+        wait_for_idle(max, deadline)
+    });
+    let load_before = load_avgs();
     let t = Instant::now();
+    let load_secs: f64;
+    let mut generated = 0usize;
     let n = match stage {
         "embed" => {
             let texts: Vec<String> = serde_json::from_slice(&raw)?;
-            let rows = Embedder::load(&source, &device)?.embed(&texts, query)?;
+            let mut embedder = Embedder::load(&source, &device)?;
+            if let Some(b) = batch {
+                embedder.set_batch(b);
+            }
+            load_secs = t.elapsed().as_secs_f64();
+            let rows = embedder.embed(&texts, query)?;
             let bytes: Vec<u8> = rows
                 .iter()
                 .flatten()
@@ -1073,25 +1281,36 @@ fn lme_model(
         }
         "rerank" => {
             let pairs: Vec<(String, String)> = serde_json::from_slice(&raw)?;
-            let scores = Reranker::load(&source, &device)?.score(&pairs)?;
+            let mut reranker = Reranker::load(&source, &device)?;
+            if let Some(b) = batch {
+                reranker.set_batch(b);
+            }
+            load_secs = t.elapsed().as_secs_f64();
+            let scores = reranker.score(&pairs)?;
             fs::write(out, serde_json::to_vec(&scores)?)?;
             pairs.len()
         }
         "chat" | "facts" | "query" => {
-            let generator = Generator::load(&source, &device)?;
-            let outs: Vec<String> = if stage == "chat" {
-                let prompts: Vec<String> = serde_json::from_slice(&raw)?;
-                prompts
-                    .iter()
-                    .map(|p| generator.complete(p))
-                    .collect::<Result<_>>()?
-            } else if stage == "facts" {
-                let sessions: Vec<Vec<String>> = serde_json::from_slice(&raw)?;
-                let x = FactExtractor(&generator);
-                sessions
-                    .iter()
-                    .map(|s| x.extract(s).map(|r| r.0))
-                    .collect::<Result<_>>()?
+            let mut generator = Generator::load(&source, &device)?;
+            if let Some(b) = batch {
+                generator.set_batch(b);
+            }
+            load_secs = t.elapsed().as_secs_f64();
+            let outs: Vec<String> = if stage == "chat" || stage == "facts" {
+                // Both decode as one batch; `facts` is `FactExtractor::extract_batch`'s raw
+                // output, generated here directly to count the tokens.
+                let prompts: Vec<String> = if stage == "chat" {
+                    serde_json::from_slice(&raw)?
+                } else {
+                    let sessions: Vec<Vec<String>> = serde_json::from_slice(&raw)?;
+                    sessions
+                        .iter()
+                        .map(|s| holographic_memory::core::models::prompts::fact_prompt(s))
+                        .collect()
+                };
+                let done = generator.generate(&prompts)?;
+                generated = done.iter().map(|c| c.tokens).sum();
+                done.into_iter().map(|c| c.text).collect()
             } else {
                 let qs: Vec<(String, String)> = serde_json::from_slice(&raw)?;
                 let x = QueryRewriter(&generator);
@@ -1104,12 +1323,32 @@ fn lme_model(
         }
         other => anyhow::bail!("unknown stage {other}"),
     };
+    let secs = t.elapsed().as_secs_f64();
     eprintln!(
         "{}",
         json!({"stage": stage, "items": n, "device": format!("{device:?}"),
-               "secs": t.elapsed().as_secs_f64()})
+               "batch": batch, "secs": secs, "load_secs": load_secs,
+               "run_secs": secs - load_secs, "generated_tokens": generated,
+               "load_avg_before": load_before, "load_avg_after": load_avgs(),
+               "max_load": gate.map(|g| g.0),
+               "load_at_gate": gate_result.map(|g| g.0),
+               "load_gate_met": gate_result.map(|g| g.1)})
     );
     Ok(())
+}
+
+/// The 1, 5 and 15-minute load averages.
+#[cfg(feature = "local-models")]
+fn load_avgs() -> Option<Vec<f64>> {
+    let out = std::process::Command::new("sysctl")
+        .args(["-n", "vm.loadavg"])
+        .output()
+        .ok()?;
+    let v: Vec<f64> = String::from_utf8_lossy(&out.stdout)
+        .split_whitespace()
+        .filter_map(|x| x.parse().ok())
+        .collect();
+    (v.len() == 3).then_some(v)
 }
 
 /// On-device cost through the document API with every stage on: each LongMemEval_S session

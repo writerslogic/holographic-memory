@@ -1,0 +1,215 @@
+{
+  "build": {
+    "build_secs": 540.662460166,
+    "load_1m_after_build": 24.4,
+    "load_1m_before_build": 15.27,
+    "load_gate_met": false,
+    "params": {
+      "alpha": 1.0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 64,
+      "index": "vertex",
+      "residual": true,
+      "seed": 24301
+    },
+    "threads": 4
+  },
+  "dataset": {
+    "dim": 256,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 290000,
+    "name": "nytimes-256-angular",
+    "sha256": "6ad5d2cde6d6a6f21528d541901304ebfd40885d6ce6afae37bccbe278254a93",
+    "source": "https://ann-benchmarks.com/nytimes-256-angular.hdf5"
+  },
+  "environment": {
+    "arch": "aarch64",
+    "cpu": "Apple M4",
+    "hms_version": "0.6.1",
+    "load_average": "{ 6.95 16.10 43.07 }",
+    "os": "macos",
+    "rayon_threads": 4
+  },
+  "holdout": {
+    "n_queries": 2000,
+    "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read."
+  },
+  "index_bytes": 224743984,
+  "max_load": 8.0,
+  "n_queries": 2000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": true,
+  "repeats": 3,
+  "residual_bytes": 74880000,
+  "sweep": [
+    {
+      "load_1m_before_runs": [
+        7.27,
+        7.38,
+        7.11
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4208.631,
+      "params": {
+        "ef": 96,
+        "rerank": 16
+      },
+      "qps_runs": [
+        7559.333692056474,
+        9031.056095041245,
+        8921.266464593142
+      ],
+      "qps_single_thread": 8921.266464593142,
+      "recall_at_10": 0.90225
+    },
+    {
+      "load_1m_before_runs": [
+        7.27,
+        7.38,
+        7.11
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5396.885,
+      "params": {
+        "ef": 128,
+        "rerank": 16
+      },
+      "qps_runs": [
+        7035.064675882189,
+        6915.878432592091,
+        6909.482176735075
+      ],
+      "qps_single_thread": 6915.878432592091,
+      "recall_at_10": 0.9142
+    },
+    {
+      "load_1m_before_runs": [
+        7.27,
+        7.38,
+        6.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 14846.992,
+      "params": {
+        "ef": 384,
+        "rerank": 16
+      },
+      "qps_runs": [
+        2419.978495466095,
+        2342.7132816538124,
+        2046.7470203786913
+      ],
+      "qps_single_thread": 2342.7132816538124,
+      "recall_at_10": 0.9495
+    },
+    {
+      "load_1m_before_runs": [
+        7.27,
+        7.38,
+        6.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 19478.8965,
+      "params": {
+        "ef": 512,
+        "rerank": 16
+      },
+      "qps_runs": [
+        1592.7719473856264,
+        1674.8635535768437,
+        1509.9973622233579
+      ],
+      "qps_single_thread": 1592.7719473856264,
+      "recall_at_10": 0.9566
+    },
+    {
+      "load_1m_before_runs": [
+        7.24,
+        7.38,
+        6.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4256.583,
+      "params": {
+        "ef": 96,
+        "rerank": 64
+      },
+      "qps_runs": [
+        7469.728932836841,
+        8004.754824365673,
+        6741.269100939389
+      ],
+      "qps_single_thread": 7469.728932836841,
+      "recall_at_10": 0.90245
+    },
+    {
+      "load_1m_before_runs": [
+        7.24,
+        7.38,
+        6.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5444.837,
+      "params": {
+        "ef": 128,
+        "rerank": 64
+      },
+      "qps_runs": [
+        5985.350113414006,
+        6409.760783721451,
+        5866.03227639369
+      ],
+      "qps_single_thread": 5985.350113414006,
+      "recall_at_10": 0.91445
+    },
+    {
+      "load_1m_before_runs": [
+        7.24,
+        7.38,
+        6.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 14894.944,
+      "params": {
+        "ef": 384,
+        "rerank": 64
+      },
+      "qps_runs": [
+        2293.7750463891916,
+        2352.8906585240966,
+        2104.2170474970562
+      ],
+      "qps_single_thread": 2293.7750463891916,
+      "recall_at_10": 0.9501
+    },
+    {
+      "load_1m_before_runs": [
+        7.24,
+        7.11,
+        6.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 19526.8485,
+      "params": {
+        "ef": 512,
+        "rerank": 64
+      },
+      "qps_runs": [
+        1568.1031105071281,
+        1804.4233639757772,
+        1593.047728157582
+      ],
+      "qps_single_thread": 1593.047728157582,
+      "recall_at_10": 0.95725
+    }
+  ],
+  "system": "hms qgraph-vertex"
+}

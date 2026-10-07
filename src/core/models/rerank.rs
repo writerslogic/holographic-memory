@@ -3,24 +3,29 @@
 
 use anyhow::Result;
 use candle_core::{DType, Device, Tensor, D};
-use candle_transformers::models::qwen3::ModelForCausalLM;
 
-use super::{encode, equal_length_batches, load, prompts, token_id, ModelSource};
+use super::qwen3::Qwen3;
+use super::{encode, encoder_batches, last_hidden, load, prompts, token_id, ModelSource};
 
 /// Qwen3-Reranker: p(yes) from a softmax over the `no`/`yes` logits after the model-card
 /// prompt; the query/document body is cut to `4096 - prefix - suffix` tokens.
 pub struct Reranker {
-    model: ModelForCausalLM,
+    model: Qwen3,
     tokenizer: tokenizers::Tokenizer,
     device: Device,
     prefix: Vec<u32>,
     suffix: Vec<u32>,
     yes: u32,
     no: u32,
+    batch: usize,
 }
 
 const MAX_TOKENS: usize = 4096;
 const BATCH_TOKENS: usize = 12288;
+/// Default padded batch on Metal/CUDA: on an M4 (Metal), 96 pairs scored in 10.6 s at batch 1
+/// against 10.9 s at 2, 11.1 s at 4, 12.0 s at 8 and 15.3 s at 16, so padding does not pay
+/// (`benchmarks/results/local_models_batching.json`). CUDA is unmeasured.
+const GPU_BATCH: usize = 1;
 
 impl Reranker {
     pub fn load(source: &ModelSource, device: &Device) -> Result<Self> {
@@ -33,12 +38,18 @@ impl Reranker {
         Ok(Self {
             yes: token_id(&tokenizer, "yes")?,
             no: token_id(&tokenizer, "no")?,
-            model: ModelForCausalLM::new(&l.config, l.vb)?,
+            model: Qwen3::new(&l.config, l.vb, true)?,
             tokenizer,
             device: device.clone(),
             prefix,
             suffix,
+            batch: super::default_encode_batch(device, GPU_BATCH),
         })
+    }
+
+    /// Sets the most sequences per forward pass (at least 1).
+    pub fn set_batch(&mut self, batch: usize) {
+        self.batch = batch.max(1);
     }
 
     /// Relevance in [0, 1] for each (query, document) pair, in input order.
@@ -61,11 +72,10 @@ impl Reranker {
             .collect::<Result<_>>()?;
         let lens: Vec<usize> = ids.iter().map(Vec::len).collect();
         let mut out = vec![0.0; pairs.len()];
-        for batch in equal_length_batches(&lens, BATCH_TOKENS, super::max_batch(&self.device)) {
-            let len = lens[batch[0]];
-            let flat: Vec<u32> = batch.iter().flat_map(|&i| ids[i].iter().copied()).collect();
-            let input = Tensor::from_vec(flat, (batch.len(), len), &self.device)?;
-            let logits = self.model.clone().forward(&input, 0)?.squeeze(1)?;
+        for batch in encoder_batches(&self.device, &lens, BATCH_TOKENS, self.batch) {
+            let logits = self
+                .model
+                .logits(&last_hidden(&self.model, &ids, &batch)?)?;
             let no = logits.narrow(D::Minus1, self.no as usize, 1)?;
             let yes = logits.narrow(D::Minus1, self.yes as usize, 1)?;
             let pair = Tensor::cat(&[no, yes], 1)?.to_dtype(DType::F32)?;

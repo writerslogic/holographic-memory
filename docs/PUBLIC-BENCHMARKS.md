@@ -498,6 +498,37 @@ seconds); query latency by the rewrite generation. The CPU path was checked for 
 timed end to end. Embedder and re-ranker parity with the Python stages on 48 turns / 16 questions /
 48 pairs: cosine >= 0.9999997, p(yes) max |diff| 8.4e-8 (CPU) and 7.4e-8 (Metal).
 
+### Batched model stages on Metal
+
+`benchmarks/results/local_models_batching.json`. HMS now vendors the Qwen3 forward pass so that
+Metal and CUDA can batch: the decoder runs continuous batching with left-padded rows, the encoders
+run right-padded batches. Inputs: the first 64 distinct LongMemEval_S haystack sessions
+(`prompts::fact_prompt`, greedy, up to 1536 new tokens), 96 user turns, 96 questions and 96
+(question, turn) pairs. Timing is paired (arms alternating, 2 rounds, one `timed.sh` lock, 1-minute
+load average below 8 before every run; every run cited in the table met the gate). Throughput
+excludes model load. The decoder timing held the lock for about 21 minutes, over the 15-minute
+limit; a shorter re-run could not start because the machine stayed loaded (see the JSON's
+`protocol_deviations`).
+
+| Stage | Batch 1 | Best batch | Parity vs batch 1 |
+|---|---|---|---|
+| Fact extraction, 16 sessions | 0.074 sessions/s, 9.6 tokens/s, peak 8.9 GB | batch 8: 0.146 sessions/s, 18.1 tokens/s, peak 13.7 GB | 56 / 64 outputs identical; the other 8 parse to different fact lists (205 vs 202 facts; one session went from 3 facts to none) |
+| Embedding, 96 turns | 22.1 turns/s | batch 4: 27.1 turns/s (30.2 in the default-arm run) | min cosine 1 - 5.4e-12, max abs diff 3.6e-7 |
+| Re-ranking, 96 pairs | 9.1 pairs/s | batch 1 (batch 2: 8.8, 4: 8.7, 8: 8.0) | batch 16: max p(yes) diff 3.6e-7 |
+
+On the full 64 sessions, untimed: batch 1 took 829 s (7,851 tokens) and batch 8 434 s (7,812
+tokens), peak memory footprint 9.6 GB and 19.2 GB. At batch 1 the new decoder reproduces the
+candle 0.11 decoder on main byte for byte (64 / 64), and embeddings and p(yes) at batch 1 match main
+exactly. Batch-1 decoding first ran slower than main because the KV cache was concatenated from a
+strided tensor and re-copied each step; making it contiguous fixed that (wall 218 to 251 s against
+main's 231 to 238 s for 16 sessions).
+
+Defaults on Metal and CUDA: the decoder stays at batch 1 because batch 8 changed 12.5% of fact
+outputs, which is above the 5% bar for making it the default; set `--batch` (or
+`Generator::set_batch`) to trade that for about 2x throughput. The embedder defaults to batch 4 and
+the re-ranker to batch 1. CUDA was not built or run for this measurement, so the CUDA defaults and
+the S dev throughput gap above remain unverified with batching.
+
 ### LLM stage on GPU, S dev (Modal L4)
 
 `benchmarks/results/longmemeval_dev_hms_stages.json`. HMS's fact extraction (Qwen3-4B-Instruct-2507,

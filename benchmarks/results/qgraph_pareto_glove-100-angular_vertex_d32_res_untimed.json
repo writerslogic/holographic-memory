@@ -1,0 +1,1174 @@
+{
+  "build": {
+    "build_secs": 603.161843958,
+    "load_1m_after_build": 11.61,
+    "load_1m_before_build": 18.53,
+    "load_gate_met": false,
+    "params": {
+      "alpha": 1.0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 32,
+      "index": "vertex",
+      "residual": true,
+      "seed": 24301
+    },
+    "threads": 4
+  },
+  "dataset": {
+    "dim": 100,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1183514,
+    "name": "glove-100-angular",
+    "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+    "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+  },
+  "environment": {
+    "arch": "aarch64",
+    "cpu": "Apple M4",
+    "hms_version": "0.6.1",
+    "load_average": "{ 9.41 15.28 38.06 }",
+    "os": "macos",
+    "rayon_threads": 4
+  },
+  "holdout": {
+    "n_queries": 2000,
+    "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read."
+  },
+  "index_bytes": 430510900,
+  "max_load": 3.0,
+  "n_queries": 2000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "repeats": 1,
+  "residual_bytes": 137055624,
+  "sweep": [
+    {
+      "load_1m_before_runs": [
+        11.61
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 556.8545,
+      "params": {
+        "ef": 10,
+        "rerank": 0
+      },
+      "qps_runs": [
+        58117.2898152617
+      ],
+      "qps_single_thread": 58117.2898152617,
+      "recall_at_10": 0.51985
+    },
+    {
+      "load_1m_before_runs": [
+        11.61
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 734.8875,
+      "params": {
+        "ef": 16,
+        "rerank": 0
+      },
+      "qps_runs": [
+        53356.81032987848
+      ],
+      "qps_single_thread": 53356.81032987848,
+      "recall_at_10": 0.6013
+    },
+    {
+      "load_1m_before_runs": [
+        11.61
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 946.345,
+      "params": {
+        "ef": 24,
+        "rerank": 0
+      },
+      "qps_runs": [
+        41522.024693646345
+      ],
+      "qps_single_thread": 41522.024693646345,
+      "recall_at_10": 0.66155
+    },
+    {
+      "load_1m_before_runs": [
+        11.61
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1145.5275,
+      "params": {
+        "ef": 32,
+        "rerank": 0
+      },
+      "qps_runs": [
+        31856.6237853149
+      ],
+      "qps_single_thread": 31856.6237853149,
+      "recall_at_10": 0.70335
+    },
+    {
+      "load_1m_before_runs": [
+        11.61
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1526.236,
+      "params": {
+        "ef": 48,
+        "rerank": 0
+      },
+      "qps_runs": [
+        23143.683881532757
+      ],
+      "qps_single_thread": 23143.683881532757,
+      "recall_at_10": 0.7551
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1885.836,
+      "params": {
+        "ef": 64,
+        "rerank": 0
+      },
+      "qps_runs": [
+        17926.11293644752
+      ],
+      "qps_single_thread": 17926.11293644752,
+      "recall_at_10": 0.7853
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 2569.5375,
+      "params": {
+        "ef": 96,
+        "rerank": 0
+      },
+      "qps_runs": [
+        12735.132329964095
+      ],
+      "qps_single_thread": 12735.132329964095,
+      "recall_at_10": 0.8227
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 3231.3885,
+      "params": {
+        "ef": 128,
+        "rerank": 0
+      },
+      "qps_runs": [
+        9954.964140427273
+      ],
+      "qps_single_thread": 9954.964140427273,
+      "recall_at_10": 0.8469
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 4501.1785,
+      "params": {
+        "ef": 192,
+        "rerank": 0
+      },
+      "qps_runs": [
+        6686.04411514756
+      ],
+      "qps_single_thread": 6686.04411514756,
+      "recall_at_10": 0.874
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 5730.3905,
+      "params": {
+        "ef": 256,
+        "rerank": 0
+      },
+      "qps_runs": [
+        5106.475334219002
+      ],
+      "qps_single_thread": 5106.475334219002,
+      "recall_at_10": 0.8922
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 8088.296,
+      "params": {
+        "ef": 384,
+        "rerank": 0
+      },
+      "qps_runs": [
+        3432.88018754154
+      ],
+      "qps_single_thread": 3432.88018754154,
+      "recall_at_10": 0.91305
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 10367.989,
+      "params": {
+        "ef": 512,
+        "rerank": 0
+      },
+      "qps_runs": [
+        2564.810353113471
+      ],
+      "qps_single_thread": 2564.810353113471,
+      "recall_at_10": 0.9268
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 14755.898,
+      "params": {
+        "ef": 768,
+        "rerank": 0
+      },
+      "qps_runs": [
+        1644.5366846798252
+      ],
+      "qps_single_thread": 1644.5366846798252,
+      "recall_at_10": 0.94385
+    },
+    {
+      "load_1m_before_runs": [
+        11.4
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 18976.9665,
+      "params": {
+        "ef": 1024,
+        "rerank": 0
+      },
+      "qps_runs": [
+        1191.262181008712
+      ],
+      "qps_single_thread": 1191.262181008712,
+      "recall_at_10": 0.9533
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 566.8545,
+      "params": {
+        "ef": 10,
+        "rerank": 16
+      },
+      "qps_runs": [
+        58447.06157397937
+      ],
+      "qps_single_thread": 58447.06157397937,
+      "recall_at_10": 0.51985
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 750.8875,
+      "params": {
+        "ef": 16,
+        "rerank": 16
+      },
+      "qps_runs": [
+        49872.40892263278
+      ],
+      "qps_single_thread": 49872.40892263278,
+      "recall_at_10": 0.60415
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 962.345,
+      "params": {
+        "ef": 24,
+        "rerank": 16
+      },
+      "qps_runs": [
+        38044.39122287741
+      ],
+      "qps_single_thread": 38044.39122287741,
+      "recall_at_10": 0.66555
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1161.5275,
+      "params": {
+        "ef": 32,
+        "rerank": 16
+      },
+      "qps_runs": [
+        29842.283531535835
+      ],
+      "qps_single_thread": 29842.283531535835,
+      "recall_at_10": 0.70815
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1542.236,
+      "params": {
+        "ef": 48,
+        "rerank": 16
+      },
+      "qps_runs": [
+        21790.290246666085
+      ],
+      "qps_single_thread": 21790.290246666085,
+      "recall_at_10": 0.7609
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1901.836,
+      "params": {
+        "ef": 64,
+        "rerank": 16
+      },
+      "qps_runs": [
+        17480.830215670965
+      ],
+      "qps_single_thread": 17480.830215670965,
+      "recall_at_10": 0.792
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 2585.5375,
+      "params": {
+        "ef": 96,
+        "rerank": 16
+      },
+      "qps_runs": [
+        12338.903431040626
+      ],
+      "qps_single_thread": 12338.903431040626,
+      "recall_at_10": 0.8303
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 3247.3885,
+      "params": {
+        "ef": 128,
+        "rerank": 16
+      },
+      "qps_runs": [
+        9732.316716291425
+      ],
+      "qps_single_thread": 9732.316716291425,
+      "recall_at_10": 0.85515
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 4517.1785,
+      "params": {
+        "ef": 192,
+        "rerank": 16
+      },
+      "qps_runs": [
+        6668.504195226009
+      ],
+      "qps_single_thread": 6668.504195226009,
+      "recall_at_10": 0.88305
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 5746.3905,
+      "params": {
+        "ef": 256,
+        "rerank": 16
+      },
+      "qps_runs": [
+        5100.3520793441785
+      ],
+      "qps_single_thread": 5100.3520793441785,
+      "recall_at_10": 0.9019
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 8104.296,
+      "params": {
+        "ef": 384,
+        "rerank": 16
+      },
+      "qps_runs": [
+        3368.6576898418284
+      ],
+      "qps_single_thread": 3368.6576898418284,
+      "recall_at_10": 0.92365
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 10383.989,
+      "params": {
+        "ef": 512,
+        "rerank": 16
+      },
+      "qps_runs": [
+        2533.574479290082
+      ],
+      "qps_single_thread": 2533.574479290082,
+      "recall_at_10": 0.9378
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 14771.898,
+      "params": {
+        "ef": 768,
+        "rerank": 16
+      },
+      "qps_runs": [
+        1639.2642030499915
+      ],
+      "qps_single_thread": 1639.2642030499915,
+      "recall_at_10": 0.9556
+    },
+    {
+      "load_1m_before_runs": [
+        10.97
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 18992.9665,
+      "params": {
+        "ef": 1024,
+        "rerank": 16
+      },
+      "qps_runs": [
+        1194.0255144733107
+      ],
+      "qps_single_thread": 1194.0255144733107,
+      "recall_at_10": 0.96555
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 566.8545,
+      "params": {
+        "ef": 10,
+        "rerank": 32
+      },
+      "qps_runs": [
+        66294.95527211958
+      ],
+      "qps_single_thread": 66294.95527211958,
+      "recall_at_10": 0.51985
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 750.8875,
+      "params": {
+        "ef": 16,
+        "rerank": 32
+      },
+      "qps_runs": [
+        50737.65188886891
+      ],
+      "qps_single_thread": 50737.65188886891,
+      "recall_at_10": 0.60415
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 970.345,
+      "params": {
+        "ef": 24,
+        "rerank": 32
+      },
+      "qps_runs": [
+        35598.08846808467
+      ],
+      "qps_single_thread": 35598.08846808467,
+      "recall_at_10": 0.66555
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1177.5275,
+      "params": {
+        "ef": 32,
+        "rerank": 32
+      },
+      "qps_runs": [
+        28669.96478296206
+      ],
+      "qps_single_thread": 28669.96478296206,
+      "recall_at_10": 0.70815
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1558.236,
+      "params": {
+        "ef": 48,
+        "rerank": 32
+      },
+      "qps_runs": [
+        21710.487929647163
+      ],
+      "qps_single_thread": 21710.487929647163,
+      "recall_at_10": 0.7609
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1917.836,
+      "params": {
+        "ef": 64,
+        "rerank": 32
+      },
+      "qps_runs": [
+        16964.817538594813
+      ],
+      "qps_single_thread": 16964.817538594813,
+      "recall_at_10": 0.792
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 2601.5375,
+      "params": {
+        "ef": 96,
+        "rerank": 32
+      },
+      "qps_runs": [
+        12083.792059254469
+      ],
+      "qps_single_thread": 12083.792059254469,
+      "recall_at_10": 0.8303
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 3263.3885,
+      "params": {
+        "ef": 128,
+        "rerank": 32
+      },
+      "qps_runs": [
+        9598.166750150722
+      ],
+      "qps_single_thread": 9598.166750150722,
+      "recall_at_10": 0.85515
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 4533.1785,
+      "params": {
+        "ef": 192,
+        "rerank": 32
+      },
+      "qps_runs": [
+        6458.890447620097
+      ],
+      "qps_single_thread": 6458.890447620097,
+      "recall_at_10": 0.88305
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 5762.3905,
+      "params": {
+        "ef": 256,
+        "rerank": 32
+      },
+      "qps_runs": [
+        5057.24325245221
+      ],
+      "qps_single_thread": 5057.24325245221,
+      "recall_at_10": 0.9019
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 8120.296,
+      "params": {
+        "ef": 384,
+        "rerank": 32
+      },
+      "qps_runs": [
+        3381.397315033247
+      ],
+      "qps_single_thread": 3381.397315033247,
+      "recall_at_10": 0.92365
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 10399.989,
+      "params": {
+        "ef": 512,
+        "rerank": 32
+      },
+      "qps_runs": [
+        2516.965793557703
+      ],
+      "qps_single_thread": 2516.965793557703,
+      "recall_at_10": 0.9378
+    },
+    {
+      "load_1m_before_runs": [
+        10.57
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 14787.898,
+      "params": {
+        "ef": 768,
+        "rerank": 32
+      },
+      "qps_runs": [
+        1626.0260639099918
+      ],
+      "qps_single_thread": 1626.0260639099918,
+      "recall_at_10": 0.9556
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 19008.9665,
+      "params": {
+        "ef": 1024,
+        "rerank": 32
+      },
+      "qps_runs": [
+        1186.6689024537234
+      ],
+      "qps_single_thread": 1186.6689024537234,
+      "recall_at_10": 0.96555
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 566.8545,
+      "params": {
+        "ef": 10,
+        "rerank": 64
+      },
+      "qps_runs": [
+        66653.52259201152
+      ],
+      "qps_single_thread": 66653.52259201152,
+      "recall_at_10": 0.51985
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 750.8875,
+      "params": {
+        "ef": 16,
+        "rerank": 64
+      },
+      "qps_runs": [
+        49866.34821351813
+      ],
+      "qps_single_thread": 49866.34821351813,
+      "recall_at_10": 0.60415
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 970.345,
+      "params": {
+        "ef": 24,
+        "rerank": 64
+      },
+      "qps_runs": [
+        33421.575762793575
+      ],
+      "qps_single_thread": 33421.575762793575,
+      "recall_at_10": 0.66555
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1177.5275,
+      "params": {
+        "ef": 32,
+        "rerank": 64
+      },
+      "qps_runs": [
+        26595.229044628362
+      ],
+      "qps_single_thread": 26595.229044628362,
+      "recall_at_10": 0.70815
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1574.236,
+      "params": {
+        "ef": 48,
+        "rerank": 64
+      },
+      "qps_runs": [
+        19919.715181538028
+      ],
+      "qps_single_thread": 19919.715181538028,
+      "recall_at_10": 0.7609
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1949.836,
+      "params": {
+        "ef": 64,
+        "rerank": 64
+      },
+      "qps_runs": [
+        15383.604563460145
+      ],
+      "qps_single_thread": 15383.604563460145,
+      "recall_at_10": 0.792
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 2633.5375,
+      "params": {
+        "ef": 96,
+        "rerank": 64
+      },
+      "qps_runs": [
+        11472.472779593669
+      ],
+      "qps_single_thread": 11472.472779593669,
+      "recall_at_10": 0.8303
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 3295.3885,
+      "params": {
+        "ef": 128,
+        "rerank": 64
+      },
+      "qps_runs": [
+        9105.88205833911
+      ],
+      "qps_single_thread": 9105.88205833911,
+      "recall_at_10": 0.85515
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 4565.1785,
+      "params": {
+        "ef": 192,
+        "rerank": 64
+      },
+      "qps_runs": [
+        6332.468027962596
+      ],
+      "qps_single_thread": 6332.468027962596,
+      "recall_at_10": 0.88305
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 5794.3905,
+      "params": {
+        "ef": 256,
+        "rerank": 64
+      },
+      "qps_runs": [
+        4916.794016753361
+      ],
+      "qps_single_thread": 4916.794016753361,
+      "recall_at_10": 0.9019
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 8152.296,
+      "params": {
+        "ef": 384,
+        "rerank": 64
+      },
+      "qps_runs": [
+        3303.5270294631105
+      ],
+      "qps_single_thread": 3303.5270294631105,
+      "recall_at_10": 0.92365
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 10431.989,
+      "params": {
+        "ef": 512,
+        "rerank": 64
+      },
+      "qps_runs": [
+        2499.3549852105793
+      ],
+      "qps_single_thread": 2499.3549852105793,
+      "recall_at_10": 0.9378
+    },
+    {
+      "load_1m_before_runs": [
+        10.13
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 14819.898,
+      "params": {
+        "ef": 768,
+        "rerank": 64
+      },
+      "qps_runs": [
+        1608.672029174876
+      ],
+      "qps_single_thread": 1608.672029174876,
+      "recall_at_10": 0.9556
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 19040.9665,
+      "params": {
+        "ef": 1024,
+        "rerank": 64
+      },
+      "qps_runs": [
+        1184.0598021243661
+      ],
+      "qps_single_thread": 1184.0598021243661,
+      "recall_at_10": 0.96555
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 566.8545,
+      "params": {
+        "ef": 10,
+        "rerank": 128
+      },
+      "qps_runs": [
+        66654.81766191364
+      ],
+      "qps_single_thread": 66654.81766191364,
+      "recall_at_10": 0.51985
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 750.8875,
+      "params": {
+        "ef": 16,
+        "rerank": 128
+      },
+      "qps_runs": [
+        49644.62762098501
+      ],
+      "qps_single_thread": 49644.62762098501,
+      "recall_at_10": 0.60415
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 970.345,
+      "params": {
+        "ef": 24,
+        "rerank": 128
+      },
+      "qps_runs": [
+        34296.615513950564
+      ],
+      "qps_single_thread": 34296.615513950564,
+      "recall_at_10": 0.66555
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1177.5275,
+      "params": {
+        "ef": 32,
+        "rerank": 128
+      },
+      "qps_runs": [
+        28284.275694924498
+      ],
+      "qps_single_thread": 28284.275694924498,
+      "recall_at_10": 0.70815
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1574.236,
+      "params": {
+        "ef": 48,
+        "rerank": 128
+      },
+      "qps_runs": [
+        20495.04951814038
+      ],
+      "qps_single_thread": 20495.04951814038,
+      "recall_at_10": 0.7609
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 1949.836,
+      "params": {
+        "ef": 64,
+        "rerank": 128
+      },
+      "qps_runs": [
+        16411.894839175453
+      ],
+      "qps_single_thread": 16411.894839175453,
+      "recall_at_10": 0.792
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 2665.5375,
+      "params": {
+        "ef": 96,
+        "rerank": 128
+      },
+      "qps_runs": [
+        11213.75591438017
+      ],
+      "qps_single_thread": 11213.75591438017,
+      "recall_at_10": 0.8303
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 3359.3885,
+      "params": {
+        "ef": 128,
+        "rerank": 128
+      },
+      "qps_runs": [
+        8630.917180424529
+      ],
+      "qps_single_thread": 8630.917180424529,
+      "recall_at_10": 0.85515
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 4629.1785,
+      "params": {
+        "ef": 192,
+        "rerank": 128
+      },
+      "qps_runs": [
+        6100.55932612148
+      ],
+      "qps_single_thread": 6100.55932612148,
+      "recall_at_10": 0.88305
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 5858.3905,
+      "params": {
+        "ef": 256,
+        "rerank": 128
+      },
+      "qps_runs": [
+        4725.016356707248
+      ],
+      "qps_single_thread": 4725.016356707248,
+      "recall_at_10": 0.9019
+    },
+    {
+      "load_1m_before_runs": [
+        9.8
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 8216.296,
+      "params": {
+        "ef": 384,
+        "rerank": 128
+      },
+      "qps_runs": [
+        3229.093486494619
+      ],
+      "qps_single_thread": 3229.093486494619,
+      "recall_at_10": 0.92365
+    },
+    {
+      "load_1m_before_runs": [
+        9.41
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 10495.989,
+      "params": {
+        "ef": 512,
+        "rerank": 128
+      },
+      "qps_runs": [
+        2541.7593878780503
+      ],
+      "qps_single_thread": 2541.7593878780503,
+      "recall_at_10": 0.9378
+    },
+    {
+      "load_1m_before_runs": [
+        9.41
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 14883.898,
+      "params": {
+        "ef": 768,
+        "rerank": 128
+      },
+      "qps_runs": [
+        1668.2684365330958
+      ],
+      "qps_single_thread": 1668.2684365330958,
+      "recall_at_10": 0.9556
+    },
+    {
+      "load_1m_before_runs": [
+        9.41
+      ],
+      "load_gate_met": false,
+      "mean_exact_evals_per_query": 19104.9665,
+      "params": {
+        "ef": 1024,
+        "rerank": 128
+      },
+      "qps_runs": [
+        1213.941266168637
+      ],
+      "qps_single_thread": 1213.941266168637,
+      "recall_at_10": 0.96555
+    }
+  ],
+  "system": "hms qgraph-vertex"
+}

@@ -10,6 +10,26 @@ Durable copy of the hand-off. Delete this file once the items below are merged o
 | Local model stages | Every HMS stage runs on L4 (candle 0.11 CUDA kernels do not build for T4). The `s-dev-hms` run was stopped at 18:00 PDT 2026-10-06 after Modal billed $14.40 against the $8 cap (driver preemptions cancelled billed-but-unledgered L4 shards); 1,500 of 4,506 fact sessions done, no retrieval metrics. Budget now reserves wave cost before launch (simulated preemption verified). LLM-stage quality on those 1,500 sessions: 74% identical fact output, 96% of facts matched (`benchmarks/results/longmemeval_dev_hms_stages.json`). At ~17x vLLM's per-session time, a full HMS S-dev run costs roughly $8 GPU plus driver time; do not relaunch without the maintainer's approval and a new cap. Batched GPU decoding in HMS is the fix that makes it affordable. The `s-dev-hms` ledger on the `hms-lme` volume is set to the billed $14.40. |
 | Holographic memory | Done for dev: 3 seeds and the equal-bytes control are in `holographic_dev.json` and the doc. Shards beat an equal-bytes index only beyond ~30% loss; no variant beats the index on accuracy; no Rust port. |
 
+## State (2026-10-07 15:40): integration branch `integrate/qgraph-speed` (unpushed, head 52778f1)
+
+Merged, 16 qgraph unit tests pass, release binary builds, FULL GATE NOT RUN: build-time
+speedups (worktree 5), the per-vertex 8-bit LVQ index `VGraph` (worktree 4), batched Metal model
+stages (worktree 1), build-bounds screening (`work/vertex-build`, ccb4d8a) and the opt-in 4-bit
+search encoding (`work/vertex-search`, fcf0056). Not merged: worktrees 2 and 3 (superseded).
+
+Status of the claims (verify before quoting; results files are in `benchmarks/results/`):
+- Build bounds: nytimes build ~1.9x faster with a bit-identical graph; slower on glove, so on
+  only at dim >= 128 (untested between 100 and 256 dims).
+- 4-bit encoding (`--residual --vertex-bits 4 --residual-bits 8 --align-rows --reorder
+  --id-bytes 3`, rerank 32 nytimes / 64 glove): memory -24.1% nytimes, -16.5% glove (certain).
+  Speed UNCONFIRMED: paired ratios 0.79-1.98 across runs at load 39-270; the default path now
+  runs the new pool/kernel code at x0.94 / x1.06 (inconclusive; possible regression).
+- `--graph-cache` is keyed by filename only; must be fixed before any published run.
+
+Next: run docs/NEXT-SESSIONS prompt 1 (Fable) from the prompts file: step 1 verifies the merge
+and decides defaults with one clean paired held-out run, then the competitor harness, the gate,
+the M4 test-set comparison, the doc rewrite, and the specs for the Opus and Sonnet sessions.
+
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus
   FAISS HNSW and hnswlib re-timed in the same session on an idle machine (1-min load < 3), medians of 3 runs. Report
