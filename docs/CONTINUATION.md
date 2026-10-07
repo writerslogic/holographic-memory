@@ -10,12 +10,12 @@ Durable copy of the hand-off. Delete this file once the items below are merged o
 | Local model stages | Every HMS stage runs on L4 (candle 0.11 CUDA kernels do not build for T4). The `s-dev-hms` run was stopped at 18:00 PDT 2026-10-06 after Modal billed $14.40 against the $8 cap (driver preemptions cancelled billed-but-unledgered L4 shards); 1,500 of 4,506 fact sessions done, no retrieval metrics. Budget now reserves wave cost before launch (simulated preemption verified). LLM-stage quality on those 1,500 sessions: 74% identical fact output, 96% of facts matched (`benchmarks/results/longmemeval_dev_hms_stages.json`). At ~17x vLLM's per-session time, a full HMS S-dev run costs roughly $8 GPU plus driver time; do not relaunch without the maintainer's approval and a new cap. Batched GPU decoding in HMS is the fix that makes it affordable. The `s-dev-hms` ledger on the `hms-lme` volume is set to the billed $14.40. |
 | Holographic memory | Done for dev: 3 seeds and the equal-bytes control are in `holographic_dev.json` and the doc. Shards beat an equal-bytes index only beyond ~30% loss; no variant beats the index on accuracy; no Rust port. |
 
-## State (2026-10-07): everything is on local `main` (unpushed, ahead of origin/main by the merged qgraph and model work)
+## State (2026-10-07): everything is on `main`, pushed (58d1ff0; origin/main is in sync)
 
 There are no other branches, worktrees or stashes. Merged into `main` with signed merge commits:
 the build-time speedups, the per-vertex 8-bit LVQ index `VGraph`, batched Metal model stages,
 build-bounds screening (ccb4d8a) and the opt-in 4-bit search encoding (fcf0056). The 16 qgraph
-unit tests pass and the release binary builds; the FULL GATE HAS NOT BEEN RUN on this main.
+unit tests pass and the release binary builds; the FULL GATE HAS NOT BEEN RUN locally on this main (the GitHub CI run on 58d1ff0 is the only full check so far; read it with `gh run list --branch main`).
 
 Recorded as merged WITHOUT their code (`-s ours`; reachable only as second parents of these
 merge commits, so `git show <tip>` and `git diff main <tip>` still work):
