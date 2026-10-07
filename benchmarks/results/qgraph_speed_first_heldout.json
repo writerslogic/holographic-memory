@@ -451,5 +451,9 @@
     "mean_exact_evals_per_query": 2232.2
    }
   ]
+ },
+ "fused_two_plane_kernel_equivalence": {
+  "note": "One NEON pass over both bit planes of 2-bit edge codes (shared table loads) versus two single-plane passes: recall@10 and exact evals per query identical at every ef (nytimes 256x2, ef 16..512).",
+  "identical": true
  }
 }

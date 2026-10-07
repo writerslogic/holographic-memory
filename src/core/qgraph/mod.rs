@@ -845,12 +845,7 @@ impl Searcher<'_> {
                 .chunks_exact(idx.bits * plane_bytes)
                 .zip(self.raw.as_chunks_mut::<BATCH>().0)
             {
-                fastscan(&batch[..plane_bytes], &self.code.lut, raw);
-                if idx.bits == 2 {
-                    let mut high = [0u32; BATCH];
-                    fastscan(&batch[plane_bytes..], &self.code.lut, &mut high);
-                    raw.iter_mut().zip(high).for_each(|(r, h)| *r += 2 * h);
-                }
+                fastscan(batch, &self.code.lut, raw);
             }
             let fac = as_f32(&b[idx.factors_off..idx.ids_off]);
             let (kf, rest) = fac.split_at(idx.degree);
@@ -976,14 +971,16 @@ mod tests {
             .sum();
         let mut qc = QueryCode::new(p);
         qc.encode(pq);
-        let mut raw = 0;
-        for (b, plane) in code.chunks_exact(p / 64).enumerate() {
-            let mut packed = vec![0u8; 4 * p];
-            pack_batch(&[plane], p, &mut packed);
-            let mut out = [0u32; BATCH];
-            fastscan(&packed, &qc.lut, &mut out);
-            raw += out[0] << b;
+        let mut packed = vec![0u8; bits * 4 * p];
+        for (plane, out) in code
+            .chunks_exact(p / 64)
+            .zip(packed.chunks_exact_mut(4 * p))
+        {
+            pack_batch(&[plane], p, out);
         }
+        let mut out = [0u32; BATCH];
+        fastscan(&packed, &qc.lut, &mut out);
+        let raw = out[0];
         let quant =
             ipv + k + g * (2.0 * qc.lo * sum - offset * qc.sum + 2.0 * qc.delta * raw as f32);
         (ipv + k + g * lq, quant)

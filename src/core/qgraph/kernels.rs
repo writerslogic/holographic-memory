@@ -176,14 +176,25 @@ pub(crate) fn pack_batch(codes: &[&[u64]], dims: usize, out: &mut [u8]) {
     }
 }
 
-/// `out[j] = sum_i bit_i(code_j) * q_i` for the [`BATCH`] codes of one packed bit plane.
-pub(crate) fn fastscan(packed: &[u8], lut: &[u8], out: &mut [u32; BATCH]) {
-    assert_eq!(packed.len(), lut.len());
+/// `out[j] = sum_p 2^p sum_i bit_i(plane_p(code_j)) * q_i` for the [`BATCH`] codes whose
+/// packed bit planes (one or two, each `lut.len()` bytes) are concatenated in `planes`.
+pub(crate) fn fastscan(planes: &[u8], lut: &[u8], out: &mut [u32; BATCH]) {
+    let n = lut.len();
+    assert!(n > 0 && (planes.len() == n || planes.len() == 2 * n));
     #[cfg(target_arch = "aarch64")]
-    if packed.len().is_multiple_of(64) && packed.len() <= 16 * MAX_NEON_GROUPS {
-        return neon::fastscan(packed, lut, out);
+    if n.is_multiple_of(64) && n <= 16 * MAX_NEON_GROUPS {
+        return if planes.len() == n {
+            neon::fastscan::<1>(planes, lut, out)
+        } else {
+            neon::fastscan::<2>(planes, lut, out)
+        };
     }
-    fastscan_scalar(packed, lut, out)
+    fastscan_scalar(&planes[..n], lut, out);
+    if planes.len() == 2 * n {
+        let mut high = [0u32; BATCH];
+        fastscan_scalar(&planes[n..], lut, &mut high);
+        out.iter_mut().zip(high).for_each(|(o, h)| *o += 2 * h);
+    }
 }
 
 /// Groups the NEON kernel can sum in u16 lanes: each table entry is at most 4 * 15 = 60.
@@ -211,22 +222,19 @@ mod neon {
 
     use super::BATCH;
 
-    pub(super) fn fastscan(packed: &[u8], lut: &[u8], out: &mut [u32; BATCH]) {
-        assert!(packed.len() == lut.len() && packed.len().is_multiple_of(64));
-        // SAFETY: NEON is part of the aarch64 baseline. Every load reads 16 bytes at offset
-        // `16 g` with `g < packed.len() / 16` from slices of equal length (asserted). Four
-        // table entries of at most 60 sum to at most 240, so the u8 additions cannot overflow;
-        // the caller bounds the group count so that the u16 lanes cannot overflow either.
+    /// Sums of the table entries over one packed plane, as four u16x8 lanes (codes 0-7, 8-15,
+    /// 16-23, 24-31).
+    ///
+    /// # Safety
+    /// `pc` and `pl` must be valid for `64 * chunks` bytes, and `240 * chunks` must fit a u16.
+    #[inline(always)]
+    unsafe fn plane(pc: *const u8, pl: *const u8, chunks: usize) -> [uint16x8_t; 4] {
+        // SAFETY: the caller guarantees the reads; NEON is part of the aarch64 baseline. Four
+        // table entries of at most 60 sum to at most 240, so the u8 additions cannot overflow.
         unsafe {
             let mask = vdupq_n_u8(0x0F);
-            let (mut a0, mut a1, mut a2, mut a3) = (
-                vdupq_n_u16(0),
-                vdupq_n_u16(0),
-                vdupq_n_u16(0),
-                vdupq_n_u16(0),
-            );
-            let (pc, pl) = (packed.as_ptr(), lut.as_ptr());
-            for chunk in 0..packed.len() / 64 {
+            let mut a = [vdupq_n_u16(0); 4];
+            for chunk in 0..chunks {
                 let (mut lo, mut hi) = (vdupq_n_u8(0), vdupq_n_u8(0));
                 for t in 0..4 {
                     let off = 64 * chunk + 16 * t;
@@ -235,20 +243,35 @@ mod neon {
                     lo = vaddq_u8(lo, vqtbl1q_u8(l, vandq_u8(c, mask)));
                     hi = vaddq_u8(hi, vqtbl1q_u8(l, vshrq_n_u8::<4>(c)));
                 }
-                a0 = vaddw_u8(a0, vget_low_u8(lo));
-                a1 = vaddw_high_u8(a1, lo);
-                a2 = vaddw_u8(a2, vget_low_u8(hi));
-                a3 = vaddw_high_u8(a3, hi);
+                a[0] = vaddw_u8(a[0], vget_low_u8(lo));
+                a[1] = vaddw_high_u8(a[1], lo);
+                a[2] = vaddw_u8(a[2], vget_low_u8(hi));
+                a[3] = vaddw_high_u8(a[3], hi);
             }
+            a
+        }
+    }
+
+    pub(super) fn fastscan<const P: usize>(planes: &[u8], lut: &[u8], out: &mut [u32; BATCH]) {
+        let n = lut.len();
+        assert!((P == 1 || P == 2) && planes.len() == P * n && n.is_multiple_of(64));
+        // SAFETY: plane `p < P` is `planes[p n..(p + 1) n]` and the table is `lut`, `n` bytes
+        // each (asserted), that is `n / 64` chunks; the caller bounds `n` so that the u16 lanes
+        // cannot overflow. The stores write exactly the 32 u32 of `out`.
+        unsafe {
+            let a = plane(planes.as_ptr(), lut.as_ptr(), n / 64);
+            let b = if P == 2 {
+                plane(planes.as_ptr().add(n), lut.as_ptr(), n / 64)
+            } else {
+                [vdupq_n_u16(0); 4]
+            };
             let o = out.as_mut_ptr();
-            vst1q_u32(o, vmovl_u16(vget_low_u16(a0)));
-            vst1q_u32(o.add(4), vmovl_high_u16(a0));
-            vst1q_u32(o.add(8), vmovl_u16(vget_low_u16(a1)));
-            vst1q_u32(o.add(12), vmovl_high_u16(a1));
-            vst1q_u32(o.add(16), vmovl_u16(vget_low_u16(a2)));
-            vst1q_u32(o.add(20), vmovl_high_u16(a2));
-            vst1q_u32(o.add(24), vmovl_u16(vget_low_u16(a3)));
-            vst1q_u32(o.add(28), vmovl_high_u16(a3));
+            for (q, (&x, &y)) in a.iter().zip(&b).enumerate() {
+                let lo = vmlal_n_u16(vmovl_u16(vget_low_u16(x)), vget_low_u16(y), 2);
+                let hi = vmlal_high_n_u16(vmovl_high_u16(x), y, 2);
+                vst1q_u32(o.add(8 * q), lo);
+                vst1q_u32(o.add(8 * q + 4), hi);
+            }
         }
     }
 }
@@ -351,6 +374,18 @@ mod tests {
                             .sum()
                     });
                     assert_eq!(got, want, "dims = {dims}, code {j}");
+                }
+                // Two planes: the second (weight 2) holds the codes in reverse order.
+                let rev: Vec<&[u64]> = refs.iter().rev().copied().collect();
+                let mut two = packed.clone();
+                two.resize(8 * dims, 0);
+                pack_batch(&rev, dims, &mut two[4 * dims..]);
+                let mut high = [0u32; BATCH];
+                fastscan_scalar(&two[4 * dims..], &qc.lut, &mut high);
+                let mut fused = [0u32; BATCH];
+                fastscan(&two, &qc.lut, &mut fused);
+                for j in 0..BATCH {
+                    assert_eq!(fused[j], slow[j] + 2 * high[j], "dims = {dims}, code {j}");
                 }
             }
         }
