@@ -40,7 +40,7 @@
   "C (round 2, glove3, glove4)": "--residual-bits 4 --align-rows --reorder --id-bytes 3",
   "H (glove3, glove4)": "--residual-bits 4 --reorder --id-bytes 3 (no alignment)",
   "D (round 1)": "--vertex-bits 4 (8-bit residual) --align-rows --reorder",
-  "D (round 2, ny3, glove4)": "--vertex-bits 4 --align-rows --reorder --id-bytes 3",
+  "D (round 2, ny3, glove4, ny4, glove5, ny5)": "--vertex-bits 4 --align-rows --reorder --id-bytes 3",
   "G (glove3, ny3, glove4)": "new code, --reorder only (8/8)"
  },
  "identity_checks": "Recall is deterministic: F == B row for row on both datasets (3-byte ids change no result); B, C, D identical across rounds where configs overlap; new code with default flags differs from A only by tie order among duplicate vectors (+0.0000..+0.0015 recall, +0..+4 evals/query on nytimes; identical on glove); re-rank ties break by original id so reordering changes no recall beyond that.",
@@ -158,7 +158,7 @@
    },
    "processes": {
     "A": {
-     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 + graph cache)",
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -230,7 +230,7 @@
      ]
     },
     "B": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -302,7 +302,7 @@
      ]
     },
     "C": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -374,7 +374,7 @@
      ]
     },
     "D": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -446,7 +446,7 @@
      ]
     },
     "E": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -843,7 +843,7 @@
    },
    "processes": {
     "A": {
-     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 + graph cache)",
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -943,7 +943,7 @@
      ]
     },
     "B": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -1043,7 +1043,7 @@
      ]
     },
     "C": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -1101,7 +1101,7 @@
      ]
     },
     "D": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -1173,7 +1173,7 @@
      ]
     },
     "E": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v3 (work/vertex-search before 3-byte ids)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -1598,7 +1598,7 @@
    },
    "processes": {
     "A": {
-     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 + graph cache)",
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -1670,7 +1670,7 @@
      ]
     },
     "B": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -1742,7 +1742,7 @@
      ]
     },
     "C": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -1814,7 +1814,7 @@
      ]
     },
     "D": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -1886,7 +1886,7 @@
      ]
     },
     "F": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -2283,7 +2283,7 @@
    },
    "processes": {
     "A": {
-     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 + graph cache)",
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -2383,7 +2383,7 @@
      ]
     },
     "B": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -2483,7 +2483,7 @@
      ]
     },
     "C": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -2541,7 +2541,7 @@
      ]
     },
     "D": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -2627,7 +2627,7 @@
      ]
     },
     "F": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -3032,7 +3032,7 @@
    },
    "processes": {
     "A": {
-     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 + graph cache)",
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -3104,7 +3104,7 @@
      ]
     },
     "C": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -3176,7 +3176,7 @@
      ]
     },
     "G": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -3248,7 +3248,7 @@
      ]
     },
     "H": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -3601,7 +3601,7 @@
    },
    "processes": {
     "A": {
-     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 + graph cache)",
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -3677,7 +3677,7 @@
      ]
     },
     "B": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -3753,7 +3753,7 @@
      ]
     },
     "D": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -3799,7 +3799,7 @@
      ]
     },
     "G": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 64,
       "residual": true,
@@ -4196,7 +4196,7 @@
    },
    "processes": {
     "A": {
-     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 + graph cache)",
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -4257,7 +4257,7 @@
      ]
     },
     "C": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -4303,7 +4303,7 @@
      ]
     },
     "D": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -4349,7 +4349,7 @@
      ]
     },
     "G": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -4410,7 +4410,7 @@
      ]
     },
     "H": {
-     "binary": "work/vertex-search",
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
      "encoding": {
       "degree": 32,
       "residual": true,
@@ -4684,6 +4684,874 @@
      "D": 2.404
     }
    }
+  },
+  {
+   "tag": "ny4",
+   "dataset": "nytimes-256-angular",
+   "rounds": 5,
+   "coordinator": {
+    "completed": true,
+    "load_1m_at_start": 62.82568359375,
+    "load_1m_at_end": 61.15966796875,
+    "load_1m_per_step": [
+     [
+      0,
+      "A",
+      62.8
+     ],
+     [
+      0,
+      "D",
+      64.2
+     ],
+     [
+      1,
+      "D",
+      63.4
+     ],
+     [
+      1,
+      "A",
+      63.4
+     ],
+     [
+      2,
+      "A",
+      64.0
+     ],
+     [
+      2,
+      "D",
+      62.0
+     ],
+     [
+      3,
+      "D",
+      61.0
+     ],
+     [
+      3,
+      "A",
+      61.0
+     ],
+     [
+      4,
+      "A",
+      59.7
+     ],
+     [
+      4,
+      "D",
+      59.7
+     ]
+    ]
+   },
+   "processes": {
+    "A": {
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
+     "encoding": {
+      "degree": 64,
+      "residual": true,
+      "residual_bits": null,
+      "vertex_bits": null,
+      "id_bytes": null,
+      "align_rows": null,
+      "reorder": null
+     },
+     "index_bytes": 224743984,
+     "residual_bytes": 74880000,
+     "sweep": [
+      {
+       "params": {
+        "ef": 92,
+        "rerank": 16
+       },
+       "recall_at_10": 0.90005,
+       "qps_runs": [
+        6792,
+        7186,
+        4942,
+        6756,
+        4238
+       ],
+       "evals_per_query": 4055.782
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9495,
+       "qps_runs": [
+        884,
+        964,
+        970,
+        952,
+        1019
+       ],
+       "evals_per_query": 14846.992
+      },
+      {
+       "params": {
+        "ef": 92,
+        "rerank": 64
+       },
+       "recall_at_10": 0.90025,
+       "qps_runs": [
+        3163,
+        3396,
+        3781,
+        3496,
+        3585
+       ],
+       "evals_per_query": 4103.734
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9501,
+       "qps_runs": [
+        866,
+        974,
+        962,
+        966,
+        952
+       ],
+       "evals_per_query": 14894.944
+      }
+     ]
+    },
+    "D": {
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
+     "encoding": {
+      "degree": 64,
+      "residual": true,
+      "residual_bits": 8,
+      "vertex_bits": 4,
+      "id_bytes": 3,
+      "align_rows": true,
+      "reorder": true
+     },
+     "index_bytes": 170599984,
+     "residual_bytes": 74880000,
+     "sweep": [
+      {
+       "params": {
+        "ef": 84,
+        "rerank": 32
+       },
+       "recall_at_10": 0.8968,
+       "qps_runs": [
+        10958,
+        5824,
+        11702,
+        6366,
+        11310
+       ],
+       "evals_per_query": 3775.756
+      },
+      {
+       "params": {
+        "ef": 88,
+        "rerank": 32
+       },
+       "recall_at_10": 0.9,
+       "qps_runs": [
+        5342,
+        4446,
+        8322,
+        5287,
+        6427
+       ],
+       "evals_per_query": 3927.2555
+      },
+      {
+       "params": {
+        "ef": 400,
+        "rerank": 32
+       },
+       "recall_at_10": 0.95,
+       "qps_runs": [
+        1240,
+        1252,
+        1395,
+        1533,
+        1305
+       ],
+       "evals_per_query": 15471.333
+      }
+     ]
+    }
+   },
+   "at_recall_0.90": {
+    "baseline": {
+     "params": {
+      "ef": 92,
+      "rerank": 16
+     },
+     "recall_at_10": 0.90005,
+     "qps_runs": [
+      6792,
+      7186,
+      4942,
+      6756,
+      4238
+     ]
+    },
+    "D": {
+     "params": {
+      "ef": 88,
+      "rerank": 32
+     },
+     "recall_at_10": 0.9,
+     "qps_runs": [
+      5342,
+      4446,
+      8322,
+      5287,
+      6427
+     ],
+     "paired_ratios": [
+      0.787,
+      0.619,
+      1.684,
+      0.783,
+      1.517
+     ],
+     "median_ratio": 0.787,
+     "anchored_qps": null
+    }
+   },
+   "at_recall_0.95": {
+    "baseline": {
+     "params": {
+      "ef": 384,
+      "rerank": 64
+     },
+     "recall_at_10": 0.9501,
+     "qps_runs": [
+      866,
+      974,
+      962,
+      966,
+      952
+     ]
+    },
+    "D": {
+     "params": {
+      "ef": 400,
+      "rerank": 32
+     },
+     "recall_at_10": 0.95,
+     "qps_runs": [
+      1240,
+      1252,
+      1395,
+      1533,
+      1305
+     ],
+     "paired_ratios": [
+      1.432,
+      1.285,
+      1.451,
+      1.586,
+      1.371
+     ],
+     "median_ratio": 1.432,
+     "anchored_qps": 3285
+    }
+   },
+   "step_time_ratio_vs_A": {
+    "note": "Sum over rounds of each process's wall time per round (all its configs); comparable only between processes with the same ef/rerank list as A.",
+    "same_configs_as_A": [],
+    "ratios": {
+     "D": 2.416
+    }
+   }
+  },
+  {
+   "tag": "glove5",
+   "dataset": "glove-100-angular",
+   "rounds": 5,
+   "coordinator": {
+    "completed": true,
+    "load_1m_at_start": 72.95556640625,
+    "load_1m_at_end": 71.5166015625,
+    "load_1m_per_step": [
+     [
+      0,
+      "A",
+      73.0
+     ],
+     [
+      0,
+      "D",
+      74.3
+     ],
+     [
+      1,
+      "D",
+      75.2
+     ],
+     [
+      1,
+      "A",
+      73.1
+     ],
+     [
+      2,
+      "A",
+      73.5
+     ],
+     [
+      2,
+      "D",
+      73.4
+     ],
+     [
+      3,
+      "D",
+      70.9
+     ],
+     [
+      3,
+      "A",
+      69.2
+     ],
+     [
+      4,
+      "A",
+      69.4
+     ],
+     [
+      4,
+      "D",
+      70.0
+     ]
+    ]
+   },
+   "processes": {
+    "A": {
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
+     "encoding": {
+      "degree": 32,
+      "residual": true,
+      "residual_bits": null,
+      "vertex_bits": null,
+      "id_bytes": null,
+      "align_rows": null,
+      "reorder": null
+     },
+     "index_bytes": 430510900,
+     "residual_bytes": 137055624,
+     "sweep": [
+      {
+       "params": {
+        "ef": 240,
+        "rerank": 16
+       },
+       "recall_at_10": 0.8974,
+       "qps_runs": [
+        3380,
+        3395,
+        2911,
+        3583,
+        3054
+       ],
+       "evals_per_query": 5435.8315
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9019,
+       "qps_runs": [
+        2349,
+        2332,
+        2366,
+        2390,
+        2558
+       ],
+       "evals_per_query": 5746.3905
+      },
+      {
+       "params": {
+        "ef": 736,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9539,
+       "qps_runs": [
+        829,
+        807,
+        840,
+        875,
+        847
+       ],
+       "evals_per_query": 14234.155
+      },
+      {
+       "params": {
+        "ef": 768,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9556,
+       "qps_runs": [
+        845,
+        758,
+        750,
+        852,
+        842
+       ],
+       "evals_per_query": 14771.898
+      }
+     ]
+    },
+    "D": {
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
+     "encoding": {
+      "degree": 32,
+      "residual": true,
+      "residual_bits": 8,
+      "vertex_bits": 4,
+      "id_bytes": 3,
+      "align_rows": true,
+      "reorder": true
+     },
+     "index_bytes": 359620124,
+     "residual_bytes": 155959848,
+     "sweep": [
+      {
+       "params": {
+        "ef": 240,
+        "rerank": 64
+       },
+       "recall_at_10": 0.89715,
+       "qps_runs": [
+        5814,
+        2793,
+        5253,
+        3311,
+        6115
+       ],
+       "evals_per_query": 5507.2395
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9005,
+       "qps_runs": [
+        2889,
+        2294,
+        2986,
+        3071,
+        3173
+       ],
+       "evals_per_query": 5810.9095
+      },
+      {
+       "params": {
+        "ef": 736,
+        "rerank": 64
+       },
+       "recall_at_10": 0.95065,
+       "qps_runs": [
+        1173,
+        912,
+        997,
+        1216,
+        1105
+       ],
+       "evals_per_query": 14341.2625
+      },
+      {
+       "params": {
+        "ef": 752,
+        "rerank": 64
+       },
+       "recall_at_10": 0.95125,
+       "qps_runs": [
+        1134,
+        977,
+        988,
+        1161,
+        1140
+       ],
+       "evals_per_query": 14611.375
+      },
+      {
+       "params": {
+        "ef": 768,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9518,
+       "qps_runs": [
+        978,
+        1011,
+        975,
+        1049,
+        1145
+       ],
+       "evals_per_query": 14882.0945
+      }
+     ]
+    }
+   },
+   "at_recall_0.90": {
+    "baseline": {
+     "params": {
+      "ef": 256,
+      "rerank": 16
+     },
+     "recall_at_10": 0.9019,
+     "qps_runs": [
+      2349,
+      2332,
+      2366,
+      2390,
+      2558
+     ]
+    },
+    "D": {
+     "params": {
+      "ef": 256,
+      "rerank": 64
+     },
+     "recall_at_10": 0.9005,
+     "qps_runs": [
+      2889,
+      2294,
+      2986,
+      3071,
+      3173
+     ],
+     "paired_ratios": [
+      1.23,
+      0.984,
+      1.262,
+      1.285,
+      1.241
+     ],
+     "median_ratio": 1.241,
+     "anchored_qps": 7825
+    }
+   },
+   "at_recall_0.95": {
+    "baseline": {
+     "params": {
+      "ef": 736,
+      "rerank": 16
+     },
+     "recall_at_10": 0.9539,
+     "qps_runs": [
+      829,
+      807,
+      840,
+      875,
+      847
+     ]
+    },
+    "D": {
+     "params": {
+      "ef": 736,
+      "rerank": 64
+     },
+     "recall_at_10": 0.95065,
+     "qps_runs": [
+      1173,
+      912,
+      997,
+      1216,
+      1105
+     ],
+     "paired_ratios": [
+      1.416,
+      1.13,
+      1.187,
+      1.39,
+      1.304
+     ],
+     "median_ratio": 1.304,
+     "anchored_qps": null
+    }
+   },
+   "step_time_ratio_vs_A": {
+    "note": "Sum over rounds of each process's wall time per round (all its configs); comparable only between processes with the same ef/rerank list as A.",
+    "same_configs_as_A": [],
+    "ratios": {
+     "D": 0.925
+    }
+   }
+  },
+  {
+   "tag": "ny5",
+   "dataset": "nytimes-256-angular",
+   "rounds": 11,
+   "coordinator": {
+    "completed": true,
+    "load_1m_at_start": 68.091796875,
+    "load_1m_at_end": 65.6015625,
+    "load_1m_per_step": [
+     [
+      0,
+      "A",
+      68.1
+     ],
+     [
+      0,
+      "D",
+      68.1
+     ],
+     [
+      1,
+      "D",
+      68.1
+     ],
+     [
+      1,
+      "A",
+      68.1
+     ],
+     [
+      2,
+      "A",
+      68.1
+     ],
+     [
+      2,
+      "D",
+      68.1
+     ],
+     [
+      3,
+      "D",
+      68.1
+     ],
+     [
+      3,
+      "A",
+      68.1
+     ],
+     [
+      4,
+      "A",
+      68.1
+     ],
+     [
+      4,
+      "D",
+      68.1
+     ],
+     [
+      5,
+      "D",
+      68.1
+     ],
+     [
+      5,
+      "A",
+      68.1
+     ],
+     [
+      6,
+      "A",
+      65.6
+     ],
+     [
+      6,
+      "D",
+      65.6
+     ],
+     [
+      7,
+      "D",
+      65.6
+     ],
+     [
+      7,
+      "A",
+      65.6
+     ],
+     [
+      8,
+      "A",
+      65.6
+     ],
+     [
+      8,
+      "D",
+      65.6
+     ],
+     [
+      9,
+      "D",
+      65.6
+     ],
+     [
+      9,
+      "A",
+      65.6
+     ],
+     [
+      10,
+      "A",
+      65.6
+     ],
+     [
+      10,
+      "D",
+      65.6
+     ]
+    ]
+   },
+   "processes": {
+    "A": {
+     "binary": "pb-base (integrate/qgraph-speed 4ed59b8 search code + graph cache)",
+     "encoding": {
+      "degree": 64,
+      "residual": true,
+      "residual_bits": null,
+      "vertex_bits": null,
+      "id_bytes": null,
+      "align_rows": null,
+      "reorder": null
+     },
+     "index_bytes": 224743984,
+     "residual_bytes": 74880000,
+     "sweep": [
+      {
+       "params": {
+        "ef": 92,
+        "rerank": 16
+       },
+       "recall_at_10": 0.90005,
+       "qps_runs": [
+        7078,
+        7287,
+        5111,
+        7029,
+        5689,
+        6971,
+        5460,
+        7102,
+        6138,
+        7266,
+        5847
+       ],
+       "evals_per_query": 4055.782
+      }
+     ]
+    },
+    "D": {
+     "binary": "pb-v4 (= fcf0056 apart from test-only edits and one cfg_attr)",
+     "encoding": {
+      "degree": 64,
+      "residual": true,
+      "residual_bits": 8,
+      "vertex_bits": 4,
+      "id_bytes": 3,
+      "align_rows": true,
+      "reorder": true
+     },
+     "index_bytes": 170599984,
+     "residual_bytes": 74880000,
+     "sweep": [
+      {
+       "params": {
+        "ef": 88,
+        "rerank": 32
+       },
+       "recall_at_10": 0.9,
+       "qps_runs": [
+        10913,
+        10732,
+        10095,
+        11220,
+        10508,
+        11052,
+        10182,
+        10681,
+        10837,
+        11024,
+        10302
+       ],
+       "evals_per_query": 3927.2555
+      }
+     ]
+    }
+   },
+   "at_recall_0.90": {
+    "baseline": {
+     "params": {
+      "ef": 92,
+      "rerank": 16
+     },
+     "recall_at_10": 0.90005,
+     "qps_runs": [
+      7078,
+      7287,
+      5111,
+      7029,
+      5689,
+      6971,
+      5460,
+      7102,
+      6138,
+      7266,
+      5847
+     ]
+    },
+    "D": {
+     "params": {
+      "ef": 88,
+      "rerank": 32
+     },
+     "recall_at_10": 0.9,
+     "qps_runs": [
+      10913,
+      10732,
+      10095,
+      11220,
+      10508,
+      11052,
+      10182,
+      10681,
+      10837,
+      11024,
+      10302
+     ],
+     "paired_ratios": [
+      1.542,
+      1.473,
+      1.975,
+      1.596,
+      1.847,
+      1.585,
+      1.865,
+      1.504,
+      1.766,
+      1.517,
+      1.762
+     ],
+     "median_ratio": 1.596,
+     "anchored_qps": null
+    }
+   },
+   "at_recall_0.95": {
+    "baseline": null,
+    "D": null
+   },
+   "step_time_ratio_vs_A": {
+    "note": "Sum over rounds of each process's wall time per round (all its configs); comparable only between processes with the same ef/rerank list as A.",
+    "same_configs_as_A": [],
+    "ratios": {
+     "D": 1.497
+    }
+   }
   }
  ],
  "caveats": [
@@ -4705,16 +5573,27 @@
      "rerank": 32
     },
     "recall_at_10": 0.9,
-    "paired_median_ratio": 1.634,
+    "paired_median_ratio": 1.596,
     "paired_ratios": [
-     1.527,
-     1.634,
-     1.724,
-     1.805,
-     1.528
+     1.542,
+     1.473,
+     1.975,
+     1.596,
+     1.847,
+     1.585,
+     1.865,
+     1.504,
+     1.766,
+     1.517,
+     1.762
     ],
-    "run": "ny3 (load 39-58)",
-    "anchored_qps_extrapolated": 14574
+    "run": "ny5 (load 66-68, 11 rounds, grid-matched: baseline at its first qualifying ef 92, recall 0.90005)",
+    "measured_qps_median": {
+     "baseline": 6971,
+     "candidate": 10732
+    },
+    "anchored_qps_extrapolated": "about 14,200 (1.596 x 8,921 at ef 96; the baseline's ef 92 is faster, so this is optimistic)",
+    "earlier_runs": "ny3 vs baseline ef 96 (load 39-58): 1.634 [1.53-1.81]; ny4 grid-matched, 5 rounds (load 60-64): 0.787 [0.62-1.68], short 0.3 s configs scattered and were re-run as ny5"
    },
    "at_0.95": {
     "params": {
@@ -4730,8 +5609,9 @@
      2.831,
      1.701
     ],
-    "run": "ny3 (load 39-58)",
-    "anchored_qps_extrapolated": 3900
+    "run": "ny3 (load 39-58); baseline ef 384 rerank 64 (0.9501) is its first qualifying config",
+    "anchored_qps_extrapolated": 3900,
+    "earlier_runs": "ny4 (load 60-64): 1.432 [1.29-1.59]"
    },
    "other_runs": "ny2 (load 160-205): 1.104 at 0.90, 1.361 at 0.95; ny1 without 3-byte ids (load 210-260): 1.695 / 1.275"
   },
@@ -4753,30 +5633,32 @@
      1.293,
      1.381
     ],
-    "run": "glove4 (load 55-68)",
-    "anchored_qps_extrapolated": 8958
+    "run": "glove4 (load 55-68); baseline ef 256 (0.9019) is its first qualifying config",
+    "anchored_qps_extrapolated": 8958,
+    "earlier_runs": "glove5 (load 69-75): 1.241 [0.98-1.29]; absolute glove QPS in these runs is about half the committed values, so anchored numbers are extrapolations"
    },
    "at_0.95": {
     "params": {
-     "ef": 768,
+     "ef": 736,
      "rerank": 64
     },
-    "recall_at_10": 0.9518,
-    "paired_median_ratio": 1.312,
+    "recall_at_10": 0.95065,
+    "paired_median_ratio": 1.304,
     "paired_ratios": [
-     1.242,
-     1.268,
-     1.331,
-     1.378,
-     1.312
+     1.416,
+     1.13,
+     1.187,
+     1.39,
+     1.304
     ],
-    "run": "glove4 (load 55-68); baseline here is ef 736 (0.9539), faster than the committed ef 768",
-    "anchored_qps_extrapolated": "about 2,700 (1.312 x 2,060 at ef 768; ratio taken against ef 736, so conservative)"
+    "run": "glove5 (load 69-75, grid-matched: both at ef 736)",
+    "anchored_qps_extrapolated": "about 2,690 (1.304 x 2,060 at ef 768; the baseline's ef 736 is faster, so this is optimistic by up to ~4%)",
+    "earlier_runs": "glove4 at ef 768 vs baseline ef 736: 1.312 [1.24-1.38]"
    },
    "other_runs": "glove2 (load 175-270): 1.062 / 1.221; glove1 without 3-byte ids: 1.138 / 1.27"
   },
   "smallest_memory_measured": "glove H (--residual-bits 4 --reorder --id-bytes 3, 8-bit traversal): 331,263,724 bytes (-23%), paired 1.145-1.364 at 0.90 and 1.121-1.434 at 0.95; nytimes 4-bit traversal with 4-bit residual (152,167,984 bytes, -32%) loses ~0.005 recall at equal ef (untimed only).",
-  "what_moved_qps": "Reordering is the largest single gain (glove G 1.30-1.55, nytimes G 1.25-1.33); 4-bit traversal codes add speed on nytimes (256-d rows halve to one 128-byte line) and memory on both; cache-line alignment ~5% on glove step time (H vs C) for +19 MB; 3-byte ids change no result and no measurable speed (B vs F within noise) for -18.6 MB / -37.8 MB.",
+  "what_moved_qps": "Reordering is the largest single gain (glove G 1.30-1.55, nytimes G 1.25-1.33); 4-bit traversal codes add speed on nytimes (256-d rows halve to one 128-byte line) and memory on both; cache-line alignment of 8-bit glove rows is inconclusive (step time H/C 1.052 in glove3, 0.981 in glove4) for +19 MB and does not apply to the recommended encoding's 64-byte glove / 128-byte nytimes rows; 3-byte ids change no result and no measurable speed (B vs F within noise) for -18.6 MB / -37.8 MB.",
   "negative_or_inconclusive": [
    "new pool/kernel code at default flags (E): 0.94 / 1.06 on nytimes, 1.08 / 1.09 on glove under load 175-270: no demonstrated gain",
    "4-bit residual with 8-bit traversal (C) is not faster than 8/8 on nytimes (0.96-1.40)",
