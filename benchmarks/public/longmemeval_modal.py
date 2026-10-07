@@ -57,6 +57,7 @@ MODELS = {
 }
 USD_PER_HOUR = {"T4": 0.59, "L4": 0.80, "A10G": 1.10, "L40S": 1.95, "A100-80GB": 2.50, "H100": 3.95}
 OVERHEAD = 1.15
+PROBE_ITEMS, PROBE_SECS_PER_ITEM = 32, 30.0  # first wave per stage; deliberately pessimistic rate
 CPU_USD_PER_HOUR = 8 * 0.0473 + 64 * 0.008
 
 gpu_image = (
@@ -310,10 +311,16 @@ FN_HMS = {("embed", "L4"): embed_hms_l4, ("llm", "L4"): llm_hms_l4, ("rerank", "
 
 class Budget:
     """Spend tracker whose cap covers every invocation sharing a ledger (one per --tag), so a
-    resumed or relaunched run cannot spend past --cap in total."""
+    resumed or relaunched run cannot spend past --cap in total.
+
+    Each wave's projected cost (GPU plus the driver's own CPU and memory while it waits) is
+    reserved and written to the ledger before the wave starts. If the driver is preempted, Modal
+    restarts it and cancels the in-flight GPU calls, which are billed but never return; the
+    restarted driver inherits the reservation as spent instead of losing it."""
 
     def __init__(self, cap: float, ledger: Path | None = None):
         self.cap, self.spent, self.t0, self.log, self.ledger = cap, 0.0, time.time(), [], ledger
+        self.reserved = 0.0
         self.prior = json.loads(ledger.read_text())["usd"] if ledger and ledger.exists() else 0.0
         if self.prior:
             print(f"[budget] ${self.prior:.3f} already spent under this tag", flush=True)
@@ -322,7 +329,14 @@ class Budget:
         return (time.time() - self.t0) / 3600 * CPU_USD_PER_HOUR
 
     def total(self) -> float:
-        return self.prior + self.spent + self.cpu()
+        return self.prior + self.spent + self.reserved + self.cpu()
+
+    def reserve(self, usd: float) -> None:
+        self.reserved += usd
+        self.persist()
+
+    def release(self, usd: float) -> None:
+        self.reserved -= usd
 
     def persist(self) -> None:
         if self.ledger:
@@ -363,24 +377,29 @@ def _waves(stage, kind, models, items, shard, budget, call, store):
     if ENGINE == "hms" and gpu == "T4":
         gpu = "L4"  # see hms_l4_image; the budget is charged at the L4 rate
     fn = (FN_HMS if ENGINE == "hms" else FN)[(kind, gpu)]
-    shards = [items[i:i + shard] for i in range(0, len(items), shard)]
+    # Throughput is unknown until measured, so the first wave is a small probe priced at a
+    # pessimistic PROBE_SECS_PER_ITEM; later waves are priced from the measured rate.
+    shards = [items[:PROBE_ITEMS]] + [items[i:i + shard] for i in range(PROBE_ITEMS, len(items), shard)]
+    shards = [w for w in shards if w]
     per_item = None
-    first = True
     while shards:
-        wave = shards[:1] if first else shards[:4]
+        wave = shards[:1] if per_item is None else shards[:4]
         shards = shards[len(wave):]
         n = sum(len(w) for w in wave)
-        projected = (per_item or 0.0) * n / 3600 * USD_PER_HOUR[gpu] * OVERHEAD
-        budget.check(projected if per_item else 120 / 3600 * USD_PER_HOUR[gpu] * OVERHEAD * len(wave), f"{stage} wave")
+        rate = per_item if per_item is not None else PROBE_SECS_PER_ITEM
+        wall = max(len(w) for w in wave) * rate + 120  # + container start and model load
+        reserve = (n * rate + 120 * len(wave)) / 3600 * USD_PER_HOUR[gpu] * OVERHEAD + wall / 3600 * CPU_USD_PER_HOUR
+        budget.check(reserve, f"{stage} wave")
+        budget.reserve(reserve)
         results = list(fn.starmap([call(w) for w in wave]))
         secs = 0.0
         for w, (res, s) in zip(wave, results):
             store(w, res)
             secs += s
         VOL.commit()
+        budget.release(reserve)
         budget.add(stage, gpu, secs, n)
         per_item = secs / n
-        first = False
 
 
 def _parse_json(text: str) -> dict | None:
