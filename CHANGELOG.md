@@ -35,6 +35,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 
 ### Fixed
+- Reserve Modal wave cost before launch so preemption cannot bypass the cap
 - Run HMS model stages on L4 on Modal
 - Decode benchmark data with as_chunks for the current clippy
 - Resolve leftover merge markers in .bestpractices.json
@@ -47,6 +48,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Record the s-dev-hms cost overrun and stop
 - Record held-out qgraph tuning on nytimes
 - Measure HMS fact extraction against the Python stage on S dev
 - Add seeds and an equal-bytes index control to the holographic prototype
