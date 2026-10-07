@@ -1,0 +1,95 @@
+{
+  "build": {
+    "build_secs": 1254.329067333,
+    "load_1m_after_build": 8.46,
+    "load_1m_before_build": 13.52,
+    "load_gate_met": false,
+    "params": {
+      "alpha": 1.0,
+      "build_ef": 200,
+      "code_bits": 128,
+      "degree": 64,
+      "index": "edge",
+      "residual": false,
+      "seed": 24301
+    },
+    "threads": 4
+  },
+  "dataset": {
+    "dim": 100,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1183514,
+    "name": "glove-100-angular",
+    "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+    "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+  },
+  "environment": {
+    "arch": "aarch64",
+    "cpu": "Apple M4",
+    "hms_version": "0.6.1",
+    "load_average": "{ 3.32 3.26 8.52 }",
+    "os": "macos",
+    "rayon_threads": 4
+  },
+  "holdout": {
+    "n_queries": 2000,
+    "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read."
+  },
+  "index_bytes": 2897511684,
+  "max_load": 8.0,
+  "n_queries": 2000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": true,
+  "repeats": 3,
+  "residual_bytes": 0,
+  "sweep": [
+    {
+      "load_1m_before_runs": [
+        3.14,
+        3.04,
+        3.44
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1127.129,
+      "params": {
+        "ef": 96,
+        "max_exact": 0
+      },
+      "qps_runs": [
+        1149.207994580335,
+        1837.2204324633178,
+        1866.892289809892
+      ],
+      "qps_single_thread": 1837.2204324633178,
+      "recall_at_10": 0.90505
+    },
+    {
+      "load_1m_before_runs": [
+        3.14,
+        3.04,
+        3.32
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2576.898,
+      "params": {
+        "ef": 256,
+        "max_exact": 0
+      },
+      "qps_runs": [
+        686.5308455804798,
+        710.3175758850024,
+        703.2416289980797
+      ],
+      "qps_single_thread": 703.2416289980797,
+      "recall_at_10": 0.9548
+    }
+  ],
+  "system": "hms qgraph"
+}

@@ -1,0 +1,135 @@
+{
+  "build": {
+    "build_secs": 564.810895209,
+    "load_1m_after_build": 19.96,
+    "load_1m_before_build": 15.27,
+    "load_gate_met": false,
+    "params": {
+      "alpha": 1.0,
+      "build_ef": 200,
+      "code_bits": 512,
+      "degree": 64,
+      "index": "edge",
+      "residual": false,
+      "seed": 24301
+    },
+    "threads": 4
+  },
+  "dataset": {
+    "dim": 256,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 290000,
+    "name": "nytimes-256-angular",
+    "sha256": "6ad5d2cde6d6a6f21528d541901304ebfd40885d6ce6afae37bccbe278254a93",
+    "source": "https://ann-benchmarks.com/nytimes-256-angular.hdf5"
+  },
+  "environment": {
+    "arch": "aarch64",
+    "cpu": "Apple M4",
+    "hms_version": "0.6.1",
+    "load_average": "{ 7.11 16.45 43.51 }",
+    "os": "macos",
+    "rayon_threads": 4
+  },
+  "holdout": {
+    "n_queries": 2000,
+    "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read."
+  },
+  "index_bytes": 1770726960,
+  "max_load": 8.0,
+  "n_queries": 2000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": true,
+  "repeats": 3,
+  "residual_bytes": 0,
+  "sweep": [
+    {
+      "load_1m_before_runs": [
+        7.64,
+        7.24,
+        7.11
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 214.366,
+      "params": {
+        "ef": 32,
+        "max_exact": 0
+      },
+      "qps_runs": [
+        3775.099105034235,
+        8075.201672206302,
+        8956.779606373002
+      ],
+      "qps_single_thread": 8075.201672206302,
+      "recall_at_10": 0.8854
+    },
+    {
+      "load_1m_before_runs": [
+        7.27,
+        7.24,
+        7.11
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 270.695,
+      "params": {
+        "ef": 48,
+        "max_exact": 0
+      },
+      "qps_runs": [
+        5929.998578668291,
+        5669.897833714042,
+        6247.663627614607
+      ],
+      "qps_single_thread": 5929.998578668291,
+      "recall_at_10": 0.91045
+    },
+    {
+      "load_1m_before_runs": [
+        7.27,
+        7.24,
+        7.11
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 591.6595,
+      "params": {
+        "ef": 128,
+        "max_exact": 0
+      },
+      "qps_runs": [
+        2126.7760573931787,
+        1949.7900630817335,
+        2373.6387253119497
+      ],
+      "qps_single_thread": 2126.7760573931787,
+      "recall_at_10": 0.94655
+    },
+    {
+      "load_1m_before_runs": [
+        7.27,
+        7.38,
+        7.11
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 866.773,
+      "params": {
+        "ef": 192,
+        "max_exact": 0
+      },
+      "qps_runs": [
+        1385.5732957039893,
+        1306.4873763936541,
+        1495.5068431589068
+      ],
+      "qps_single_thread": 1385.5732957039893,
+      "recall_at_10": 0.9566
+    }
+  ],
+  "system": "hms qgraph"
+}

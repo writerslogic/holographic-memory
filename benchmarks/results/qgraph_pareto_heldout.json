@@ -1,6 +1,6 @@
 {
   "workstream": "qgraph PARETO: per-vertex 8-bit LVQ code graph (VGraph) with optional 8-bit residual re-rank (LVQ-8x8)",
-  "method": "public-bench ann-qgraph --index vertex --holdout 2000 (train vectors held out, exact cosine truth; test.f32/neighbors.i32 not read). Single-thread, one query at a time. Timed runs under /Volumes/A/.hms-target/timed.sh with --max-load 3.",
+  "method": "public-bench ann-qgraph --index vertex --holdout 2000 (train vectors held out, exact cosine truth; test.f32/neighbors.i32 not read). Single-thread, one query at a time. Timed runs under /Volumes/A/.hms-target/timed.sh with --max-load 3 (untimed rows) and paired runs under --max-load 8.",
   "selection_rule": "Timed: best QPS among rows with recall >= threshold and load_gate_met. Untimed: lowest code estimates per query among rows with recall >= threshold. No interpolation.",
   "configs": [
     {
@@ -237,5 +237,249 @@
     "qps_at_0.95": 2087,
     "index_gb": 1.77,
     "build_secs": 227
+  },
+  "paired_timing": {
+    "method": "Both indexes built in one process each with --sync; one /Volumes/A/.hms-target/timed.sh lock holds a coordinator that alternates A (edge baseline) and B (vertex candidate) round by round on the same 2,000 held-out queries. Selection: baseline = first ef reaching the threshold (as in the clean file); candidate = best QPS with recall >= threshold. Anchored = ratio x clean-file baseline QPS at the same baseline params.",
+    "environment": {
+      "cpu": "Apple M4",
+      "os": "Darwin",
+      "binary": "/Volumes/A/.hms-target-qgpareto/release/public-bench"
+    },
+    "pairs": [
+      {
+        "dataset": "nytimes-256-angular",
+        "baseline_files": {
+          "paired_edge": "benchmarks/results/pareto_raw/nytimes_A.json",
+          "clean_edge": "/Volumes/A/.hms-target/logs/tune/nytimes/d64_b512_a1.0.json"
+        },
+        "candidate_file": "benchmarks/results/pareto_raw/nytimes_B.json",
+        "coordinator_file": "benchmarks/results/pareto_raw/nytimes_coord.json",
+        "baseline_build_params": {
+          "alpha": 1.0,
+          "build_ef": 200,
+          "code_bits": 512,
+          "degree": 64,
+          "index": "edge",
+          "residual": false,
+          "seed": 24301
+        },
+        "candidate_build_params": {
+          "alpha": 1.0,
+          "build_ef": 200,
+          "code_bits": 0,
+          "degree": 64,
+          "index": "vertex",
+          "residual": true,
+          "seed": 24301
+        },
+        "baseline_index_bytes": 1770726960,
+        "candidate_index_bytes": 224743984,
+        "candidate_residual_bytes": 74880000,
+        "build_secs": {
+          "baseline": 564.810895209,
+          "candidate": 540.662460166,
+          "threads": 4,
+          "note": "Both built concurrently (4 rayon threads each) outside the lock at load 8-60; not a valid build-time result."
+        },
+        "lock_load_at_start": [
+          7.6376953125,
+          17.1904296875,
+          44.41162109375
+        ],
+        "load_gate_met": true,
+        "max_load": 8,
+        "rounds": "A,B,A,B,A,B (3 repeats each, median)",
+        "edge_recall_matches_clean_baseline": true,
+        "at": {
+          "0.90": {
+            "baseline": {
+              "params": {
+                "ef": 48,
+                "max_exact": 0
+              },
+              "recall": 0.91045,
+              "qps_paired": 5929.998578668291,
+              "qps_runs": [
+                5929.998578668291,
+                5669.897833714042,
+                6247.663627614607
+              ],
+              "qps_clean_file": 6763.930110298766
+            },
+            "candidate": {
+              "params": {
+                "ef": 96,
+                "rerank": 16
+              },
+              "recall": 0.90225,
+              "qps_paired": 8921.266464593142,
+              "qps_runs": [
+                7559.333692056474,
+                9031.056095041245,
+                8921.266464593142
+              ]
+            },
+            "ratio_candidate_over_baseline": 1.504,
+            "candidate_qps_anchored_to_clean_baseline": 10176
+          },
+          "0.95": {
+            "baseline": {
+              "params": {
+                "ef": 192,
+                "max_exact": 0
+              },
+              "recall": 0.9566,
+              "qps_paired": 1385.5732957039893,
+              "qps_runs": [
+                1385.5732957039893,
+                1306.4873763936541,
+                1495.5068431589068
+              ],
+              "qps_clean_file": 1549.9476448609857
+            },
+            "candidate": {
+              "params": {
+                "ef": 384,
+                "rerank": 64
+              },
+              "recall": 0.9501,
+              "qps_paired": 2293.7750463891916,
+              "qps_runs": [
+                2293.7750463891916,
+                2352.8906585240966,
+                2104.2170474970562
+              ]
+            },
+            "ratio_candidate_over_baseline": 1.655,
+            "candidate_qps_anchored_to_clean_baseline": 2566,
+            "note": "0.9501 is at the threshold within sampling noise; the next candidate point, ef 512 rerank 16 (recall 0.9566, the same recall as the baseline ef 192), timed 1,593 QPS paired vs 1,386 (ratio 1.15, anchored ~1,780)."
+          }
+        }
+      },
+      {
+        "dataset": "glove-100-angular",
+        "baseline_files": {
+          "paired_edge": "benchmarks/results/pareto_raw/glove_A.json",
+          "clean_edge": "/Volumes/A/.hms-target/logs/tune/glove/d64_b128_a1.0.json"
+        },
+        "candidate_file": "benchmarks/results/pareto_raw/glove_B.json",
+        "coordinator_file": "benchmarks/results/pareto_raw/glove_coord.json",
+        "baseline_build_params": {
+          "alpha": 1.0,
+          "build_ef": 200,
+          "code_bits": 128,
+          "degree": 64,
+          "index": "edge",
+          "residual": false,
+          "seed": 24301
+        },
+        "candidate_build_params": {
+          "alpha": 1.0,
+          "build_ef": 200,
+          "code_bits": 0,
+          "degree": 32,
+          "index": "vertex",
+          "residual": true,
+          "seed": 24301
+        },
+        "baseline_index_bytes": 2897511684,
+        "candidate_index_bytes": 430510900,
+        "candidate_residual_bytes": 137055624,
+        "build_secs": {
+          "baseline": 1254.329067333,
+          "candidate": 815.922959125,
+          "threads": 4,
+          "note": "Both built concurrently (4 rayon threads each) outside the lock at load 8-60; not a valid build-time result."
+        },
+        "lock_load_at_start": [
+          3.1416015625,
+          3.2314453125,
+          8.6337890625
+        ],
+        "load_gate_met": true,
+        "max_load": 8,
+        "rounds": "A,B,A,B,A,B (3 repeats each, median)",
+        "edge_recall_matches_clean_baseline": true,
+        "at": {
+          "0.90": {
+            "baseline": {
+              "params": {
+                "ef": 96,
+                "max_exact": 0
+              },
+              "recall": 0.90505,
+              "qps_paired": 1837.2204324633178,
+              "qps_runs": [
+                1149.207994580335,
+                1837.2204324633178,
+                1866.892289809892
+              ],
+              "qps_clean_file": 1758.2168340690557
+            },
+            "candidate": {
+              "params": {
+                "ef": 256,
+                "rerank": 16
+              },
+              "recall": 0.9019,
+              "qps_paired": 6308.106870167708,
+              "qps_runs": [
+                896.8576351952134,
+                6394.7205187397285,
+                6308.106870167708
+              ]
+            },
+            "ratio_candidate_over_baseline": 3.434,
+            "candidate_qps_anchored_to_clean_baseline": 6037
+          },
+          "0.95": {
+            "baseline": {
+              "params": {
+                "ef": 256,
+                "max_exact": 0
+              },
+              "recall": 0.9548,
+              "qps_paired": 703.2416289980797,
+              "qps_runs": [
+                686.5308455804798,
+                710.3175758850024,
+                703.2416289980797
+              ],
+              "qps_clean_file": 546.8302023668283
+            },
+            "candidate": {
+              "params": {
+                "ef": 768,
+                "rerank": 16
+              },
+              "recall": 0.9556,
+              "qps_paired": 2060.7741163605638,
+              "qps_runs": [
+                2063.3554125396004,
+                2054.278487199001,
+                2060.7741163605638
+              ]
+            },
+            "ratio_candidate_over_baseline": 2.93,
+            "candidate_qps_anchored_to_clean_baseline": 1602
+          }
+        }
+      }
+    ]
+  },
+  "conclusion": {
+    "design": "vertex index: degree-64 (nytimes) / degree-32 (glove) graph, one 8-bit LVQ code per vertex for traversal, 8-bit residual code for re-rank of the best 16-64 pool candidates",
+    "nytimes_heldout": {
+      "qps_at_0.90": "8,921 paired (anchored 10,176)",
+      "qps_at_0.95": "2,294 paired at 0.9501 (1,593 at 0.9566)",
+      "index_gb": 0.225
+    },
+    "glove_heldout": {
+      "qps_at_0.90": "6,308 paired (anchored 6,037)",
+      "qps_at_0.95": "2,061 paired (anchored 1,602)",
+      "index_gb": 0.431
+    },
+    "vs_faiss_hnsw": "Search side: above FAISS HNSW M=32/M=16 test-set QPS at 0.90 and 0.95 (orientation only: different query set) and below their index memory on both datasets. Build time is NOT competitive: 540-820 s on 4 threads under load vs 34-110 s for FAISS; not measured cleanly.",
+    "vs_edge_baseline": "Paired: 1.50x/1.66x faster on nytimes, 3.43x/2.93x on glove, at 7.9x / 6.7x less memory."
   }
 }
