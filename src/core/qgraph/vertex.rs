@@ -3,20 +3,26 @@
 //! Graph index with one compact code per vertex instead of one code per edge.
 //!
 //! Every vertex stores its mean-centred vector as 8-bit integers with one scale (locally
-//! adaptive scalar quantization, LVQ; Aguerrebere et al., VLDB 2023), next to that scale in one
-//! row. Traversal estimates `<q, x> - <q, mean> ~= s_x * s_q * <c_q, c_x>` with an int8 query
-//! code and one integer dot product per neighbour, so a neighbour costs one short row fetch
-//! (`dim + 4` bytes) rather than a full-precision vector. An optional second 8-bit code of the
-//! quantization residual (LVQ-8x8) re-ranks the best `rerank` candidates of the final pool with
-//! a float query.
+//! adaptive scalar quantization, LVQ; Aguerrebere et al., VLDB 2023). Traversal estimates
+//! `<q, x> - <q, mean> ~= s_x * s_q * <c_q, c_x>` with an int8 query code and one integer dot
+//! product per neighbour, so a neighbour costs one short code fetch (`dim` bytes, the scales
+//! live in their own small array) rather than a full-precision vector. An optional second code
+//! of the quantization residual (8-bit, LVQ-8x8, or 4-bit) re-ranks the best `rerank`
+//! candidates of the final pool with a float query.
 //!
-//! Memory per vertex is `4 * degree + dim + 4` bytes, plus `dim + 4` with the residual, against
-//! `4 * dim` for the vectors alone in an HNSW index.
+//! Memory per vertex is `4 * degree + dim + 4` bytes, plus `dim + 4` with the 8-bit residual
+//! (`dim / 2 + 4` with the 4-bit one), against `4 * dim` for the vectors alone in an HNSW
+//! index.
+
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 
 use rayon::prelude::*;
 
-use super::kernels::{dot_f32_i8, dot_i8_kernel, prefetch_bytes, DotI8};
-use super::{upper_bytes, Candidate, Graph, Visited, NONE};
+use super::kernels::{
+    dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i8_inline, interleave_for_i4, prefetch_bytes,
+};
+use super::{upper_bytes, Graph, NONE};
 
 /// Search parameters of a [`VGraph`].
 #[derive(Clone, Copy, Debug)]
@@ -28,21 +34,68 @@ pub struct VSearchParams {
     pub rerank: usize,
 }
 
+/// One 128-byte cache line (the line size of Apple cores).
+#[repr(C, align(128))]
+#[derive(Clone, Copy)]
+struct Line([i8; 128]);
+
+/// Zeroed bytes starting on a cache-line boundary.
+struct Lines {
+    lines: Vec<Line>,
+    len: usize,
+}
+
+impl Lines {
+    fn zeroed(len: usize) -> Self {
+        Self {
+            lines: vec![Line([0; 128]); len.div_ceil(128)],
+            len,
+        }
+    }
+
+    fn bytes(&self) -> &[i8] {
+        // SAFETY: `Line` is `repr(C)` around `[i8; 128]` (size 128, no padding), so `lines` is
+        // `128 * lines.len() >= len` initialized, contiguous bytes.
+        unsafe { std::slice::from_raw_parts(self.lines.as_ptr().cast::<i8>(), self.len) }
+    }
+
+    fn bytes_mut(&mut self) -> &mut [i8] {
+        // SAFETY: as in `bytes`, with the exclusive borrow of `lines`.
+        unsafe { std::slice::from_raw_parts_mut(self.lines.as_mut_ptr().cast::<i8>(), self.len) }
+    }
+}
+
 pub struct VGraph {
     n: usize,
     dim: usize,
-    /// `dim` rounded up to a multiple of 16 (the integer kernel's width).
+    /// `dim` rounded up to a multiple of 16 (32 with 4-bit codes), the integer kernels' width.
     padded: usize,
-    /// Bytes per code row: `padded` codes then the f32 scale.
-    row: usize,
+    /// Bits per traversal code coordinate: 8, or 4 (two per byte).
+    bits: u8,
+    /// Bytes of one traversal code: `padded` or `padded / 2`.
+    cbytes: usize,
+    /// Bytes from one code row to the next: `cbytes`, or with aligned rows the smallest
+    /// power of two (up to 64) or multiple of 128 that holds it, so no row straddles a line.
+    stride: usize,
     degree: usize,
     mean: Vec<f32>,
+    /// Neighbour ids, `degree` per vertex padded with `NONE`; empty with 3-byte ids.
     adj: Vec<u32>,
-    codes: Vec<i8>,
+    /// The same as 3-byte little-endian ids (padded with `NONE3`); empty with `u32` ids.
+    adj3: Vec<u8>,
+    codes: Lines,
+    scales: Vec<f32>,
+    /// 0 (none), 4 or 8.
+    res_bits: u8,
+    /// Bytes per residual row: `padded` (8-bit) or `padded / 2` (4-bit, two per byte).
+    res_stride: usize,
     residual: Vec<i8>,
+    res_scales: Vec<f32>,
     entry: u32,
     upper_ids: Vec<u32>,
     layers: Vec<Vec<Vec<u32>>>,
+    /// Original id of each stored vertex when the vertices were renumbered; empty otherwise.
+    ids: Vec<u32>,
 }
 
 /// Writes the symmetric 8-bit code of `x` into `code` (zero padded) and returns its scale, so
@@ -60,22 +113,132 @@ fn quantize(x: &[f32], code: &mut [i8]) -> f32 {
     scale
 }
 
-fn scale_of(row: &[i8], padded: usize) -> f32 {
-    f32::from_ne_bytes(std::array::from_fn(|i| row[padded + i] as u8))
+/// [`quantize`] with 4-bit codes in `-7..=7`, packed two per byte as [`dot_f32_i4`] reads them
+/// (`code` holds `code.len() * 2 >= x.len()` values).
+fn quantize4(x: &[f32], code: &mut [i8]) -> f32 {
+    let m = x.iter().fold(0f32, |a, &v| a.max(v.abs()));
+    code.fill(0);
+    if m == 0.0 {
+        return 0.0;
+    }
+    let scale = m / 7.0;
+    let q = |i: usize| x.get(i).map_or(0, |&v| (v / scale).round().clamp(-7.0, 7.0) as i8);
+    for (j, c) in code.iter_mut().enumerate() {
+        *c = ((q(2 * j) as u8 & 0x0F) | ((q(2 * j + 1) as u8) << 4)) as i8;
+    }
+    scale
 }
 
-fn set_scale(row: &mut [i8], padded: usize, s: f32) {
-    for (c, b) in row[padded..].iter_mut().zip(s.to_ne_bytes()) {
-        *c = b as i8;
+/// Breadth-first order of the bottom layer from the entry (unreached vertices follow in id
+/// order): neighbours get nearby positions, so a search touches fewer distinct pages and lines.
+fn bfs_order(g: &Graph) -> Vec<u32> {
+    let mut seen = vec![false; g.n];
+    let mut order = Vec::with_capacity(g.n);
+    for s in std::iter::once(g.entry as usize).chain(0..g.n) {
+        if seen[s] {
+            continue;
+        }
+        seen[s] = true;
+        let mut head = order.len();
+        order.push(s as u32);
+        while head < order.len() {
+            let v = order[head] as usize;
+            head += 1;
+            for &u in &g.adj[v] {
+                if !std::mem::replace(&mut seen[u as usize], true) {
+                    order.push(u);
+                }
+            }
+        }
+    }
+    order
+}
+
+/// Coordinate `i` of a code row of `bits` bits (0 past its end).
+fn code_at(c: &[i8], bits: u8, i: usize) -> i8 {
+    if bits == 8 {
+        c.get(i).copied().unwrap_or(0)
+    } else {
+        c.get(i / 2).map_or(0, |&b| {
+            if i % 2 == 0 {
+                (((b as u8) << 4) as i8) >> 4
+            } else {
+                b >> 4
+            }
+        })
     }
 }
 
+/// Padding of a 3-byte neighbour list.
+const NONE3: u32 = 0x00FF_FFFF;
+
+#[inline]
+fn prefetch_u8(bytes: &[u8]) {
+    // SAFETY: any initialized `u8` slice is also initialized `i8`s.
+    prefetch_bytes(unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<i8>(), bytes.len()) });
+}
+
+#[inline]
+fn prefetch_ids(ids: &[u32]) {
+    // SAFETY: any initialized `u32` slice is also `4 * len` initialized bytes.
+    prefetch_bytes(unsafe { std::slice::from_raw_parts(ids.as_ptr().cast::<i8>(), ids.len() * 4) });
+}
+
+/// Orders by distance, then id; `f32` order is kept for every non-NaN distance.
+#[inline]
+fn key(dist: f32, id: u32) -> u64 {
+    let b = dist.to_bits();
+    let o = if b >> 31 == 1 { !b } else { b | 0x8000_0000 };
+    (u64::from(o) << 32) | u64::from(id)
+}
+
+#[inline]
+fn key_id(k: u64) -> u32 {
+    k as u32
+}
+
 impl VGraph {
-    /// Encodes a built graph. `residual` adds the second code used by `rerank`.
+    /// Encodes a built graph with the 8-bit residual code used by `rerank` (or none), unaligned
+    /// rows and the build's vertex order.
     pub fn from_graph(g: &Graph, residual: bool) -> Self {
+        Self::from_graph_with(g, 8, if residual { 8 } else { 0 }, false, false, 4)
+    }
+
+    /// Encodes a built graph. `bits` (8 or 4) sizes the traversal code and `residual_bits`
+    /// (0, 4 or 8) the re-rank code of its residual; `align` keeps every code row inside as
+    /// few 128-byte lines as its size allows; `reorder` renumbers the vertices in breadth-first
+    /// order (search still returns the original ids); `id_bytes` 3 stores neighbour ids in
+    /// three bytes (graphs below 2^24 - 1 vertices) instead of 4.
+    pub fn from_graph_with(
+        g: &Graph,
+        bits: u8,
+        residual_bits: u8,
+        align: bool,
+        reorder: bool,
+        id_bytes: u8,
+    ) -> Self {
+        assert!(matches!(bits, 4 | 8), "bits must be 4 or 8");
+        assert!(
+            id_bytes == 4 || (id_bytes == 3 && (g.n as u64) < u64::from(NONE3)),
+            "id_bytes must be 4, or 3 below 2^24 - 1 vertices"
+        );
+        assert!(
+            matches!(residual_bits, 0 | 4 | 8),
+            "residual_bits must be 0, 4 or 8"
+        );
         let (n, dim) = (g.n, g.dim);
-        let padded = dim.next_multiple_of(16);
-        let row = padded + 4;
+        let padded = dim.next_multiple_of(if bits == 4 { 32 } else { 16 });
+        let cbytes = if bits == 4 { padded / 2 } else { padded };
+        let stride = match (align, cbytes) {
+            (false, _) => cbytes,
+            (true, c) if c <= 64 => c.next_power_of_two(),
+            (true, c) => c.next_multiple_of(128),
+        };
+        let res_stride = match residual_bits {
+            8 => padded,
+            4 => padded / 2,
+            _ => 0,
+        };
         let mut sum = vec![0f64; dim];
         for x in g.unit.chunks_exact(dim) {
             sum.iter_mut().zip(x).for_each(|(s, &v)| *s += f64::from(v));
@@ -83,56 +246,96 @@ impl VGraph {
         let mut mean: Vec<f32> = sum.iter().map(|s| (s / n as f64) as f32).collect();
         mean.resize(padded, 0.0);
 
-        let mut codes = vec![0i8; n * row];
-        let mut res = vec![0i8; if residual { n * row } else { 0 }];
-        let encode = |(v, (c, r)): (usize, (&mut [i8], Option<&mut [i8]>))| {
-            let mut x: Vec<f32> = g.unit[v * dim..(v + 1) * dim]
-                .iter()
-                .zip(&mean)
-                .map(|(a, m)| a - m)
-                .collect();
-            let s = quantize(&x, &mut c[..padded]);
-            set_scale(c, padded, s);
-            if let Some(r) = r {
-                x.iter_mut()
-                    .zip(&c[..dim])
-                    .for_each(|(a, &q)| *a -= s * f32::from(q));
-                let sr = quantize(&x, &mut r[..padded]);
-                set_scale(r, padded, sr);
+        let ids = if reorder { bfs_order(g) } else { Vec::new() };
+        let old = |v: usize| if reorder { ids[v] as usize } else { v };
+        let mut new_id: Vec<u32> = Vec::new();
+        if reorder {
+            new_id = vec![0; n];
+            for (v, &o) in ids.iter().enumerate() {
+                new_id[o as usize] = v as u32;
             }
-        };
-        if residual {
-            codes
-                .par_chunks_mut(row)
-                .zip(res.par_chunks_mut(row).map(Some))
-                .enumerate()
-                .for_each(encode);
-        } else {
-            codes
-                .par_chunks_mut(row)
-                .map(|c| (c, None))
-                .enumerate()
-                .for_each(encode);
+        }
+        let new = |o: u32| if reorder { new_id[o as usize] } else { o };
+
+        let rows: Vec<(Vec<i8>, f32, Vec<i8>, f32)> = (0..n)
+            .into_par_iter()
+            .map(|v| {
+                let o = old(v);
+                let mut x: Vec<f32> = g.unit[o * dim..(o + 1) * dim]
+                    .iter()
+                    .zip(&mean)
+                    .map(|(a, m)| a - m)
+                    .collect();
+                let mut c = vec![0i8; cbytes];
+                let s = if bits == 8 {
+                    quantize(&x, &mut c)
+                } else {
+                    quantize4(&x, &mut c)
+                };
+                let mut r = vec![0i8; res_stride];
+                let mut sr = 0.0;
+                if residual_bits > 0 {
+                    x.iter_mut()
+                        .enumerate()
+                        .for_each(|(i, a)| *a -= s * f32::from(code_at(&c, bits, i)));
+                    sr = if residual_bits == 8 {
+                        quantize(&x, &mut r)
+                    } else {
+                        quantize4(&x, &mut r)
+                    };
+                }
+                (c, s, r, sr)
+            })
+            .collect();
+        let mut codes = Lines::zeroed(n * stride);
+        let mut scales = Vec::with_capacity(n);
+        let mut residual = Vec::with_capacity(n * res_stride);
+        let mut res_scales = Vec::with_capacity(if residual_bits > 0 { n } else { 0 });
+        for ((c, s, r, sr), dst) in rows.into_iter().zip(codes.bytes_mut().chunks_exact_mut(stride)) {
+            dst[..cbytes].copy_from_slice(&c);
+            scales.push(s);
+            if residual_bits > 0 {
+                residual.extend_from_slice(&r);
+                res_scales.push(sr);
+            }
         }
 
         let r = g.degree;
         let mut adj = vec![NONE; n * r];
-        for (dst, src) in adj.chunks_exact_mut(r).zip(&g.adj) {
-            dst[..src.len()].copy_from_slice(src);
+        for (v, dst) in adj.chunks_exact_mut(r).enumerate() {
+            for (d, &u) in dst.iter_mut().zip(&g.adj[old(v)]) {
+                *d = new(u);
+            }
+        }
+        let mut adj3 = Vec::new();
+        if id_bytes == 3 {
+            adj3 = adj
+                .iter()
+                .flat_map(|&u| (u.min(NONE3)).to_le_bytes()[..3].to_vec())
+                .collect();
+            adj = Vec::new();
         }
         Self {
             n,
             dim,
             padded,
-            row,
+            bits,
+            cbytes,
+            stride,
             degree: r,
             mean,
             adj,
+            adj3,
             codes,
-            residual: res,
-            entry: g.entry,
-            upper_ids: g.upper_ids.clone(),
+            scales,
+            res_bits: residual_bits,
+            res_stride,
+            residual,
+            res_scales,
+            entry: new(g.entry),
+            upper_ids: g.upper_ids.iter().map(|&u| new(u)).collect(),
             layers: g.layers.clone(),
+            ids,
         }
     }
 
@@ -145,62 +348,120 @@ impl VGraph {
     }
 
     pub fn has_residual(&self) -> bool {
-        !self.residual.is_empty()
+        self.res_bits > 0
     }
 
-    /// Bytes held by the index, residual included.
+    /// Bytes held by the index, residual and id map included.
     pub fn index_bytes(&self) -> usize {
         self.adj.len() * 4
-            + self.codes.len()
-            + self.residual.len()
+            + self.adj3.len()
+            + self.n * self.stride
+            + self.scales.len() * 4
+            + self.residual_bytes()
             + self.mean.len() * 4
+            + self.ids.len() * 4
             + upper_bytes(&self.upper_ids, &self.layers)
     }
 
-    /// Bytes of the residual codes, which only `rerank` reads.
+    /// Bytes of the residual codes and their scales, which only `rerank` reads.
     pub fn residual_bytes(&self) -> usize {
-        self.residual.len()
+        self.residual.len() + self.res_scales.len() * 4
     }
 
+    #[inline]
     fn code(&self, v: u32) -> &[i8] {
-        let v = v as usize;
-        &self.codes[v * self.row..(v + 1) * self.row]
+        let at = v as usize * self.stride;
+        &self.codes.bytes()[at..at + self.cbytes]
+    }
+
+    /// Calls `f` on every neighbour of `v`, in list order.
+    #[inline]
+    fn for_each_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
+        let r = self.degree;
+        if self.adj3.is_empty() {
+            for &u in &self.adj[v * r..(v + 1) * r] {
+                if u == NONE {
+                    break;
+                }
+                f(u);
+            }
+        } else {
+            for b in self.adj3[3 * v * r..3 * (v + 1) * r].as_chunks::<3>().0 {
+                let u = u32::from_le_bytes([b[0], b[1], b[2], 0]);
+                if u == NONE3 {
+                    break;
+                }
+                f(u);
+            }
+        }
+    }
+
+    #[inline]
+    fn prefetch_neighbours(&self, v: usize) {
+        let r = self.degree;
+        if self.adj3.is_empty() {
+            prefetch_ids(&self.adj[v * r..(v + 1) * r]);
+        } else {
+            prefetch_u8(&self.adj3[3 * v * r..3 * (v + 1) * r]);
+        }
+    }
+
+    #[inline]
+    fn original(&self, v: u32) -> u32 {
+        if self.ids.is_empty() {
+            v
+        } else {
+            self.ids[v as usize]
+        }
     }
 
     /// Estimated negative inner product with the query code (up to the per-query terms
     /// `<q, mean>` and `s_q`, which do not change the order).
     #[inline]
-    fn est(&self, dot: DotI8, qc: &[i8], v: u32) -> f32 {
-        let c = self.code(v);
-        -(scale_of(c, self.padded) * dot(qc, &c[..self.padded]) as f32)
+    fn est(&self, qc: &[i8], v: u32) -> f32 {
+        let dot = if self.bits == 8 {
+            dot_i8_inline(qc, self.code(v))
+        } else {
+            dot_i4_inline(qc, self.code(v))
+        };
+        -(self.scales[v as usize] * dot as f32)
     }
 
     /// Re-rank score with the float (centred) query: negative estimated inner product.
     fn fine(&self, qf: &[f32], v: u32) -> f32 {
-        let c = self.code(v);
-        let mut ip = scale_of(c, self.padded) * dot_f32_i8(qf, &c[..self.padded]);
+        let primary = if self.bits == 8 {
+            dot_f32_i8(qf, self.code(v))
+        } else {
+            dot_f32_i4(qf, self.code(v))
+        };
+        let mut ip = self.scales[v as usize] * primary;
         if self.has_residual() {
             let v = v as usize;
-            let r = &self.residual[v * self.row..(v + 1) * self.row];
-            ip += scale_of(r, self.padded) * dot_f32_i8(qf, &r[..self.padded]);
+            let r = &self.residual[v * self.res_stride..(v + 1) * self.res_stride];
+            let d = if self.res_bits == 8 {
+                dot_f32_i8(qf, r)
+            } else {
+                dot_f32_i4(qf, r)
+            };
+            ip += self.res_scales[v] * d;
         }
         -ip
     }
 
     /// Greedy descent through the upper layers on estimated distances; returns the bottom-layer
     /// entry vertex and the number of estimates.
-    fn descend(&self, dot: DotI8, qc: &[i8]) -> (u32, usize) {
+    fn descend(&self, qc: &[i8]) -> (u32, usize) {
         if self.layers.is_empty() {
             return (self.entry, 0);
         }
         let mut p = 0u32;
-        let mut best = self.est(dot, qc, self.upper_ids[0]);
+        let mut best = self.est(qc, self.upper_ids[0]);
         let mut evals = 1;
         for layer in self.layers.iter().rev() {
             loop {
                 let mut moved = false;
                 for &u in &layer[p as usize] {
-                    let d = self.est(dot, qc, self.upper_ids[u as usize]);
+                    let d = self.est(qc, self.upper_ids[u as usize]);
                     evals += 1;
                     if d < best {
                         best = d;
@@ -219,26 +480,62 @@ impl VGraph {
     pub fn searcher(&self) -> VSearcher<'_> {
         VSearcher {
             index: self,
-            dot: dot_i8_kernel(),
-            visited: Visited::new(self.n),
+            visited: Marks {
+                marks: vec![0; self.n],
+                epoch: 0,
+            },
             qf: vec![0.0; self.padded],
             qc: vec![0; self.padded],
+            qtmp: vec![0; self.padded],
             fresh: Vec::with_capacity(self.degree),
-            pool: Vec::new(),
+            cand: BinaryHeap::new(),
+            best: BinaryHeap::new(),
+            keys: Vec::new(),
             results: Vec::new(),
         }
+    }
+}
+
+/// Visited marks with an 8-bit epoch: a quarter of the cache footprint of `u32` epochs, at the
+/// cost of clearing every 255 searches.
+struct Marks {
+    marks: Vec<u8>,
+    epoch: u8,
+}
+
+impl Marks {
+    fn next(&mut self) {
+        self.epoch = self.epoch.wrapping_add(1);
+        if self.epoch == 0 {
+            self.marks.fill(0);
+            self.epoch = 1;
+        }
+    }
+
+    /// True if `id` was not yet visited in this epoch.
+    #[inline]
+    fn insert(&mut self, id: u32) -> bool {
+        let m = &mut self.marks[id as usize];
+        let fresh = *m != self.epoch;
+        *m = self.epoch;
+        fresh
     }
 }
 
 /// Per-thread search state for one [`VGraph`].
 pub struct VSearcher<'a> {
     index: &'a VGraph,
-    dot: DotI8,
-    visited: Visited,
+    visited: Marks,
     qf: Vec<f32>,
+    /// Query code in the traversal kernel's layout.
     qc: Vec<i8>,
+    qtmp: Vec<i8>,
     fresh: Vec<u32>,
-    pool: Vec<Candidate>,
+    /// Unexpanded candidates, nearest on top.
+    cand: BinaryHeap<Reverse<u64>>,
+    /// The `ef` nearest seen so far, farthest on top.
+    best: BinaryHeap<u64>,
+    keys: Vec<u64>,
     results: Vec<(f32, u32)>,
 }
 
@@ -255,80 +552,208 @@ impl VSearcher<'_> {
         let g = self.index;
         assert_eq!(query.len(), g.dim);
         let ef = params.ef.max(k).max(1);
-        let dot = self.dot;
         // Only the order matters, so the query is used as given (no centring needed: the
         // `<q, mean>` term is common to all candidates) and its scale is dropped.
         self.qf[..g.dim].copy_from_slice(query);
-        quantize(&self.qf, &mut self.qc);
+        if g.bits == 8 {
+            quantize(&self.qf, &mut self.qc);
+        } else {
+            quantize(&self.qf, &mut self.qtmp);
+            interleave_for_i4(&self.qtmp, &mut self.qc);
+        }
+        let qc = &self.qc[..];
 
         self.visited.next();
-        let (entry, mut evals) = g.descend(dot, &self.qc);
+        let (entry, mut evals) = g.descend(qc);
         self.visited.insert(entry);
-        self.pool.clear();
-        self.pool.push(Candidate {
-            dist: g.est(dot, &self.qc, entry),
-            id: entry,
-            done: false,
-        });
+        self.cand.clear();
+        self.best.clear();
+        let k0 = key(g.est(qc, entry), entry);
+        self.cand.push(Reverse(k0));
+        self.best.push(k0);
         evals += 1;
-        let r = g.degree;
-        let mut cur = 0;
-        while cur < self.pool.len() {
-            self.pool[cur].done = true;
-            let v = self.pool[cur].id as usize;
+        // Best-first expansion of the nearest unexpanded candidate among the `ef` best seen;
+        // a candidate that fell out of those is farther than all of them, so it ends the search.
+        while let Some(Reverse(c)) = self.cand.pop() {
+            if self.best.len() >= ef && self.best.peek().is_some_and(|&w| c > w) {
+                break;
+            }
+            if let Some(&Reverse(next)) = self.cand.peek() {
+                g.prefetch_neighbours(key_id(next) as usize);
+            }
             self.fresh.clear();
-            for &u in &g.adj[v * r..(v + 1) * r] {
-                if u == NONE {
-                    break;
-                }
-                if self.visited.insert(u) {
+            let (visited, fresh) = (&mut self.visited, &mut self.fresh);
+            g.for_each_neighbour(key_id(c) as usize, |u| {
+                if visited.insert(u) {
                     prefetch_bytes(g.code(u));
-                    self.fresh.push(u);
+                    fresh.push(u);
                 }
-            }
-            let mut best = usize::MAX;
+            });
             for &u in &self.fresh {
-                let d = g.est(dot, &self.qc, u);
+                let kk = key(g.est(qc, u), u);
                 evals += 1;
-                if self.pool.len() >= ef && d >= self.pool[ef - 1].dist {
-                    continue;
+                if self.best.len() < ef {
+                    self.best.push(kk);
+                } else {
+                    let mut worst = self.best.peek_mut().expect("ef >= 1");
+                    if kk >= *worst {
+                        continue;
+                    }
+                    *worst = kk;
                 }
-                let pos = self.pool.partition_point(|c| c.dist <= d);
-                self.pool.insert(
-                    pos,
-                    Candidate {
-                        dist: d,
-                        id: u,
-                        done: false,
-                    },
-                );
-                self.pool.truncate(ef);
-                best = best.min(pos);
-            }
-            cur = best.min(cur + 1);
-            while cur < self.pool.len() && self.pool[cur].done {
-                cur += 1;
+                self.cand.push(Reverse(kk));
             }
         }
 
+        self.keys.clear();
+        self.keys.extend(self.best.drain());
+        self.keys.sort_unstable();
         self.results.clear();
-        let take = params.rerank.max(k).min(self.pool.len());
+        let take = params.rerank.max(k).min(self.keys.len());
         if params.rerank > 0 {
-            self.results.extend(
-                self.pool[..take]
-                    .iter()
-                    .map(|c| (g.fine(&self.qf, c.id), c.id)),
-            );
+            // Ties (duplicate vectors) break by the original id, independent of the layout.
+            self.results.extend(self.keys[..take].iter().map(|&c| {
+                let id = key_id(c);
+                (g.fine(&self.qf, id), g.original(id))
+            }));
             evals += take;
             self.results
                 .sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         } else {
             self.results
-                .extend(self.pool[..take].iter().map(|c| (c.dist, c.id)));
+                .extend(self.keys[..take].iter().map(|&c| (0.0, g.original(key_id(c)))));
         }
         out.clear();
         out.extend(self.results.iter().take(k).map(|r| r.1));
         evals
+    }
+}
+
+
+const CACHE_MAGIC: &[u8; 8] = b"HMSGRF01";
+
+fn put_u32s(w: &mut impl std::io::Write, xs: &[u32]) -> std::io::Result<()> {
+    w.write_all(&(xs.len() as u64).to_le_bytes())?;
+    for x in xs {
+        w.write_all(&x.to_le_bytes())?;
+    }
+    Ok(())
+}
+
+fn get_u64(r: &mut impl std::io::Read) -> std::io::Result<u64> {
+    let mut b = [0u8; 8];
+    r.read_exact(&mut b)?;
+    Ok(u64::from_le_bytes(b))
+}
+
+fn get_u32s(r: &mut impl std::io::Read, max: u64) -> std::io::Result<Vec<u32>> {
+    let len = get_u64(r)?;
+    if len > max {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "graph cache: list longer than the graph",
+        ));
+    }
+    let mut bytes = vec![0u8; len as usize * 4];
+    r.read_exact(&mut bytes)?;
+    Ok(bytes
+        .chunks_exact(4)
+        .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+        .collect())
+}
+
+fn put_lists(w: &mut impl std::io::Write, lists: &[Vec<u32>]) -> std::io::Result<()> {
+    let lens: Vec<u32> = lists.iter().map(|l| l.len() as u32).collect();
+    put_u32s(w, &lens)?;
+    put_u32s(w, &lists.concat())
+}
+
+fn get_lists(r: &mut impl std::io::Read, n: u64) -> std::io::Result<Vec<Vec<u32>>> {
+    let lens = get_u32s(r, n)?;
+    let flat = get_u32s(r, lens.iter().map(|&l| u64::from(l)).sum())?;
+    let mut out = Vec::with_capacity(lens.len());
+    let mut at = 0;
+    for l in lens {
+        out.push(flat[at..at + l as usize].to_vec());
+        at += l as usize;
+    }
+    Ok(out)
+}
+
+/// Benchmark support: the graph structure (not the vectors) on disk, so that search
+/// experiments on one graph need not rebuild it.
+impl Graph {
+    /// Writes the adjacency, entry and upper layers; the vectors are not stored.
+    pub fn save(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let mut w = std::io::BufWriter::new(std::fs::File::create(path)?);
+        use std::io::Write;
+        w.write_all(CACHE_MAGIC)?;
+        for x in [self.n, self.dim, self.degree, self.entry as usize] {
+            w.write_all(&(x as u64).to_le_bytes())?;
+        }
+        put_lists(&mut w, &self.adj)?;
+        put_u32s(&mut w, &self.upper_ids)?;
+        w.write_all(&(self.layers.len() as u64).to_le_bytes())?;
+        for l in &self.layers {
+            put_lists(&mut w, l)?;
+        }
+        w.flush()
+    }
+
+    /// Reads a graph written by [`Graph::save`] for the same `data` (normalized here exactly
+    /// as [`Graph::build`] does).
+    pub fn load(data: &[f32], dim: usize, path: &std::path::Path) -> std::io::Result<Self> {
+        let bad = |m: &str| std::io::Error::new(std::io::ErrorKind::InvalidData, m.to_string());
+        let mut r = std::io::BufReader::new(std::fs::File::open(path)?);
+        let mut magic = [0u8; 8];
+        std::io::Read::read_exact(&mut r, &mut magic)?;
+        if &magic != CACHE_MAGIC {
+            return Err(bad("graph cache: bad magic"));
+        }
+        let (n, d, degree, entry) = (
+            get_u64(&mut r)? as usize,
+            get_u64(&mut r)? as usize,
+            get_u64(&mut r)? as usize,
+            get_u64(&mut r)?,
+        );
+        if d != dim || data.len() != n * dim || entry >= n as u64 {
+            return Err(bad("graph cache: does not match the data"));
+        }
+        let adj = get_lists(&mut r, n as u64)?;
+        let upper_ids = get_u32s(&mut r, n as u64)?;
+        let nl = get_u64(&mut r)?;
+        if nl > 64 {
+            return Err(bad("graph cache: too many layers"));
+        }
+        let layers = (0..nl)
+            .map(|_| get_lists(&mut r, n as u64))
+            .collect::<std::io::Result<Vec<_>>>()?;
+        let ok = adj.len() == n
+            && adj.iter().flatten().all(|&u| (u as usize) < n)
+            && upper_ids.iter().all(|&u| (u as usize) < n)
+            && layers.iter().all(|l| {
+                l.len() <= upper_ids.len() && l.iter().flatten().all(|&u| (u as usize) < l.len())
+            });
+        if !ok {
+            return Err(bad("graph cache: id out of range"));
+        }
+        let mut unit = data.to_vec();
+        unit.par_chunks_mut(dim).for_each(|x| {
+            let norm = super::dot(x, x).sqrt();
+            if norm > 0.0 {
+                x.iter_mut().for_each(|o| *o /= norm);
+            }
+        });
+        Ok(Self {
+            n,
+            dim,
+            degree,
+            unit,
+            adj,
+            entry: entry as u32,
+            upper_ids,
+            layers,
+        })
     }
 }
 
@@ -391,6 +816,50 @@ mod tests {
         // Same regression guard as the edge-code index on this deliberately hard set.
         assert!(r0 >= 0.9, "recall {r0}");
         assert!(r1 >= r0, "rerank {r1} below pool order {r0}");
+        let fine4 = VGraph::from_graph_with(&graph, 8, 4, false, false, 4);
+        assert!(plain.index_bytes() < fine4.index_bytes());
+        assert!(fine4.index_bytes() < fine.index_bytes());
+        let r2 = recall(&fine4, &data, &queries, d, rr);
+        assert!(r2 >= r0 - 0.02, "4-bit rerank {r2} below pool order {r0}");
+        let lvq48 = VGraph::from_graph_with(&graph, 4, 8, true, false, 4);
+        assert!(lvq48.index_bytes() < fine.index_bytes());
+        // A sanity bound: 4-bit codes of 24 coordinates are coarse, so a wider pool and re-rank.
+        let wide = VSearchParams { ef: 96, rerank: 64 };
+        let r3 = recall(&lvq48, &data, &queries, d, wide);
+        assert!(r3 >= r0 - 0.05, "4-bit traversal with 8-bit residual {r3} vs {r0}");
+    }
+
+    /// Renumbering and aligning the rows change the layout, not the search: the same ids come
+    /// back (up to ties between equal estimates, which break by the stored id).
+    #[test]
+    fn reordered_aligned_index_returns_the_same_ids() {
+        let d = 24;
+        let data = clustered(3000, d, 5);
+        let graph = Graph::build(&data, d, &BuildParams::default());
+        let a = VGraph::from_graph(&graph, true);
+        let b = VGraph::from_graph_with(&graph, 8, 8, true, true, 4);
+        // 32-byte rows already sit inside one line; the id map is the only extra.
+        assert_eq!(b.index_bytes(), a.index_bytes() + b.n * 4);
+        let (mut sa, mut sb) = (a.searcher(), b.searcher());
+        let (mut oa, mut ob) = (Vec::new(), Vec::new());
+        let c = VGraph::from_graph_with(&graph, 8, 8, true, true, 3);
+        assert_eq!(c.index_bytes(), b.index_bytes() - c.n * c.degree);
+        let mut sc = c.searcher();
+        let mut oc = Vec::new();
+        let mut same = 0;
+        for q in data.chunks_exact(d).take(200) {
+            for p in [
+                VSearchParams { ef: 32, rerank: 0 },
+                VSearchParams { ef: 48, rerank: 16 },
+            ] {
+                sa.search(q, 10, p, &mut oa);
+                sb.search(q, 10, p, &mut ob);
+                sc.search(q, 10, p, &mut oc);
+                assert_eq!(ob, oc, "3-byte ids changed the search");
+                same += usize::from(oa == ob);
+            }
+        }
+        assert!(same >= 396, "{same} of 400 searches agree");
     }
 
     #[test]
@@ -403,7 +872,8 @@ mod tests {
         };
         let a = VGraph::from_graph(&Graph::build(&data, d, &params), true);
         let b = VGraph::from_graph(&Graph::build(&data, d, &params), true);
-        assert!(a.codes == b.codes && a.residual == b.residual && a.adj == b.adj);
+        assert!(a.codes.bytes() == b.codes.bytes() && a.residual == b.residual && a.adj == b.adj);
+        assert!(a.scales == b.scales && a.res_scales == b.res_scales);
         assert_eq!((a.entry, &a.mean), (b.entry, &b.mean));
         let (mut sa, mut sb) = (a.searcher(), b.searcher());
         let (mut oa, mut ob) = (Vec::new(), Vec::new());

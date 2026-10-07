@@ -105,6 +105,21 @@ enum Mode {
         /// Vertex index only: also store the residual code used by the re-rank.
         #[arg(long)]
         residual: bool,
+        /// Vertex index only: bits per residual coordinate with `--residual` (8 or 4).
+        #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u8).range(4..=8))]
+        residual_bits: u8,
+        /// Vertex index only: bits per traversal code coordinate (8 or 4).
+        #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u8).range(4..=8))]
+        vertex_bits: u8,
+        /// Vertex index only: bytes per stored neighbour id (4, or 3 below 2^24 - 1 vertices).
+        #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(3..=4))]
+        id_bytes: u8,
+        /// Vertex index only: start every code row on a 128-byte cache line.
+        #[arg(long)]
+        align_rows: bool,
+        /// Vertex index only: renumber vertices in breadth-first order for locality.
+        #[arg(long)]
+        reorder: bool,
         /// Vertex index only: pool candidates re-scored with the float query (0 = none).
         #[arg(long, value_delimiter = ',', default_value = "0")]
         rerank: Vec<usize>,
@@ -114,6 +129,10 @@ enum Mode {
         /// does not wait for the load gate and timed runs only record it.
         #[arg(long)]
         sync: Option<PathBuf>,
+        /// Load the graph structure from this file if it exists, else build and save it there
+        /// (benchmark support for search experiments; the file must match data and params).
+        #[arg(long)]
+        graph_cache: Option<PathBuf>,
     },
     Beir {
         #[arg(long)]
@@ -420,8 +439,14 @@ struct QgraphArgs {
     holdout: Option<usize>,
     index: String,
     residual: bool,
+    residual_bits: u8,
+    vertex_bits: u8,
+    id_bytes: u8,
+    align_rows: bool,
+    reorder: bool,
     rerank: Vec<usize>,
     sync: Option<PathBuf>,
+    graph_cache: Option<PathBuf>,
 }
 
 enum Built {
@@ -514,10 +539,32 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     let t = Instant::now();
     let index = match a.index.as_str() {
         "edge" => Built::Edge(QGraph::build(&train, d, &params)),
-        _ => Built::Vertex(VGraph::from_graph(
-            &Graph::build(&train, d, &params),
-            a.residual,
-        )),
+        _ => {
+            let graph = match &a.graph_cache {
+                Some(p) if p.exists() => Graph::load(&train, d, p)
+                    .with_context(|| format!("loading {}", p.display()))?,
+                cache => {
+                    let g = Graph::build(&train, d, &params);
+                    if let Some(p) = cache {
+                        g.save(p).with_context(|| format!("saving {}", p.display()))?;
+                    }
+                    g
+                }
+            };
+            anyhow::ensure!(
+                matches!(a.residual_bits, 4 | 8) && matches!(a.vertex_bits, 4 | 8),
+                "--residual-bits and --vertex-bits must be 4 or 8"
+            );
+            let bits = if a.residual { a.residual_bits } else { 0 };
+            Built::Vertex(VGraph::from_graph_with(
+                &graph,
+                a.vertex_bits,
+                bits,
+                a.align_rows,
+                a.reorder,
+                a.id_bytes,
+            ))
+        }
     };
     let build_secs = t.elapsed().as_secs_f64();
     let load_after_build = load_1m();
@@ -644,7 +691,10 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "n_queries": test.len(),
         "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef,
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
-                             "residual": a.residual},
+                             "residual": a.residual, "residual_bits": a.residual_bits,
+                             "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes,
+                             "align_rows": a.align_rows, "reorder": a.reorder,
+                             "graph_cache": a.graph_cache.as_ref().map(|p| p.display().to_string())},
                   "build_secs": build_secs, "load_1m_before_build": load_before_build,
                   "load_1m_after_build": load_after_build, "load_gate_met": build_gate,
                   "threads": rayon::current_num_threads()},
@@ -1098,8 +1148,14 @@ fn main() -> Result<()> {
             holdout,
             index,
             residual,
+            residual_bits,
+            vertex_bits,
+            id_bytes,
+            align_rows,
+            reorder,
             rerank,
             sync,
+            graph_cache,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1116,8 +1172,14 @@ fn main() -> Result<()> {
             holdout,
             index,
             residual,
+            residual_bits,
+            vertex_bits,
+            id_bytes,
+            align_rows,
+            reorder,
             rerank,
             sync,
+            graph_cache,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {
