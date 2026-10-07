@@ -23,6 +23,7 @@
 //! codes; `<q, c>` is computed once per query). `<s, q>` comes from the bit planes.
 
 mod kernels;
+mod persist;
 
 use std::cell::RefCell;
 
@@ -97,6 +98,42 @@ pub struct SearchParams {
     pub ef: usize,
     /// Maximum exactly scored vertices per query; 0 means no cap.
     pub max_exact: usize,
+}
+
+/// Word offsets inside a vertex block.
+struct Layout {
+    vec_words: usize,
+    codes_off: usize,
+    edge_words: usize,
+    factors_off: usize,
+    ids_off: usize,
+    stride: usize,
+}
+
+impl Layout {
+    fn new(dim: usize, words: usize, degree: usize, store: Store, codes: Codes) -> Self {
+        let (header, elem_bytes) = match store {
+            Store::F32 => (0, 4),
+            Store::I16 => (1, 2),
+            Store::I8 => (1, 1),
+        };
+        let vec_words = header + (dim * elem_bytes).div_ceil(8);
+        let codes_off = vec_words;
+        let edge_words = match codes {
+            Codes::Edge => degree * words,
+            Codes::Vertex => 0,
+        };
+        let factors_off = codes_off + edge_words;
+        let ids_off = factors_off + (3 * edge_words / words).div_ceil(2);
+        Self {
+            vec_words,
+            codes_off,
+            edge_words,
+            factors_off,
+            ids_off,
+            stride: ids_off + degree.div_ceil(2),
+        }
+    }
 }
 
 pub struct QGraph {
@@ -456,20 +493,14 @@ impl QGraph {
         }
         let upper_ids = order[..n / LAYER_RATIO].to_vec();
 
-        let (header, elem_bytes) = match params.store {
-            Store::F32 => (0, 4),
-            Store::I16 => (1, 2),
-            Store::I8 => (1, 1),
-        };
-        let vec_words = header + (dim * elem_bytes).div_ceil(8);
-        let codes_off = vec_words;
-        let edge_words = match params.codes {
-            Codes::Edge => r * words,
-            Codes::Vertex => 0,
-        };
-        let factors_off = codes_off + edge_words;
-        let ids_off = factors_off + (3 * edge_words / words).div_ceil(2);
-        let stride = ids_off + r.div_ceil(2);
+        let Layout {
+            vec_words,
+            codes_off,
+            edge_words,
+            factors_off,
+            ids_off,
+            stride,
+        } = Layout::new(dim, words, r, params.store, params.codes);
         let mut blocks = vec![0u64; n * stride];
         blocks
             .par_chunks_mut(stride)

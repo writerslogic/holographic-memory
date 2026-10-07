@@ -52,6 +52,25 @@ impl Rotation {
         }
     }
 
+    /// Rebuilds a rotation from its sign vectors (`ROUNDS * padded` entries of +-1).
+    pub(crate) fn from_signs(dim: usize, signs: Vec<f32>) -> Option<Self> {
+        let padded = signs.len() / ROUNDS;
+        let valid = signs.len() == ROUNDS * padded
+            && padded.is_power_of_two()
+            && padded >= dim.max(64)
+            && signs.iter().all(|&s| s == 1.0 || s == -1.0);
+        valid.then(|| Self {
+            dim,
+            padded,
+            signs,
+            scale: (padded as f32).powf(-0.5 * ROUNDS as f32),
+        })
+    }
+
+    pub(crate) fn signs(&self) -> &[f32] {
+        &self.signs
+    }
+
     pub(crate) fn padded(&self) -> usize {
         self.padded
     }

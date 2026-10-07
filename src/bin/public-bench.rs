@@ -100,6 +100,16 @@ enum Mode {
         /// on the rest and score against exact cosine truth; the test queries are not read.
         #[arg(long, conflicts_with = "queries")]
         holdout: Option<usize>,
+        /// Write the built index to this file.
+        #[arg(long)]
+        save_index: Option<PathBuf>,
+        /// Read the index from this file (written by --save-index on the same data and
+        /// holdout) instead of building it; the build flags are then ignored.
+        #[arg(long, conflicts_with = "save_index")]
+        load_index: Option<PathBuf>,
+        /// Do not compute ground truth or recall (timing-only runs of a loaded index).
+        #[arg(long)]
+        skip_recall: bool,
     },
     Beir {
         #[arg(long)]
@@ -406,6 +416,9 @@ struct QgraphArgs {
     max_wait_secs: u64,
     queries: Option<usize>,
     holdout: Option<usize>,
+    save_index: Option<PathBuf>,
+    load_index: Option<PathBuf>,
+    skip_recall: bool,
 }
 
 fn normalize(v: &mut [f32]) {
@@ -419,7 +432,8 @@ fn normalize(v: &mut [f32]) {
 type Split = (Vec<Vec<f32>>, Vec<Vec<f32>>, Vec<Vec<i32>>);
 
 /// Splits `rows` into a tuning set of `n` queries (every `rows.len() / n`-th row) and the
-/// rest, with the exact cosine top-`k` of each query over the rest as ground truth.
+/// rest, with the exact cosine top-`k` of each query over the rest as ground truth (empty when
+/// `k` is 0).
 fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize) -> Result<Split> {
     ensure!(n > 0 && n < rows.len(), "holdout must be in 1..n_train");
     let step = rows.len() / n;
@@ -432,6 +446,10 @@ fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize) -> Result<Split> {
         } else {
             keep.push(r);
         }
+    }
+    if k == 0 {
+        let truth = vec![Vec::new(); queries.len()];
+        return Ok((keep, queries, truth));
     }
     let truth: Vec<Vec<i32>> = queries
         .par_iter()
@@ -464,7 +482,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     let rows = read_f32(&a.data.join("train.f32"), d)?;
     let (train, mut test, truth) = match a.holdout {
         Some(n) => {
-            let (keep, q, t) = holdout_split(rows, n, K)?;
+            let (keep, q, t) = holdout_split(rows, n, if a.skip_recall { 0 } else { K })?;
             (keep.concat(), q, t)
         }
         None => {
@@ -501,12 +519,40 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         ..BuildParams::default()
     };
     let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
-    let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
-    let t = Instant::now();
-    let index = QGraph::build(&train, d, &params);
-    let build_secs = t.elapsed().as_secs_f64();
+    let (index, build_report) = match &a.load_index {
+        Some(path) => {
+            let mut r = std::io::BufReader::new(fs::File::open(path)?);
+            let index = QGraph::read_from(&mut r).with_context(|| path.display().to_string())?;
+            ensure!(
+                index.len() * d == train.len(),
+                "index size does not match the data"
+            );
+            eprintln!("loaded {}, {} bytes", path.display(), index.index_bytes());
+            (
+                index,
+                json!({"loaded_from": path, "note": "index read from a file written by --save-index; see that run for its build parameters and time"}),
+            )
+        }
+        None => {
+            let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
+            let t = Instant::now();
+            let index = QGraph::build(&train, d, &params);
+            let build_secs = t.elapsed().as_secs_f64();
+            eprintln!("built in {build_secs:.1}s, {} bytes", index.index_bytes());
+            if let Some(path) = &a.save_index {
+                let mut w = std::io::BufWriter::new(fs::File::create(path)?);
+                index.write_to(&mut w)?;
+                std::io::Write::flush(&mut w)?;
+            }
+            let report = json!({"params": {"degree": a.degree, "build_ef": a.build_ef,
+                                 "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
+                                 "store": a.store, "codes": a.codes},
+                      "build_secs": build_secs, "load_1m_before_build": load_before_build,
+                      "load_gate_met": build_gate});
+            (index, report)
+        }
+    };
     drop(train);
-    eprintln!("built in {build_secs:.1}s, {} bytes", index.index_bytes());
 
     let mut searcher = index.searcher();
     let mut rows = Vec::new();
@@ -516,7 +562,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         for &ef in &a.ef {
             let sp = SearchParams { ef, max_exact };
             let (mut qps, mut loads, mut gate) = (Vec::new(), Vec::new(), true);
-            let (mut recall, mut exact_mean) = (0.0, 0.0);
+            let (mut recall, mut exact_mean) = (None, 0.0);
             for rep in 0..a.repeats {
                 let (load, met) = wait_for_idle(a.max_load, deadline);
                 loads.push(load);
@@ -531,6 +577,9 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 }
                 qps.push(test.len() as f64 / t.elapsed().as_secs_f64());
                 if rep == 0 {
+                    exact_mean = exact as f64 / test.len() as f64;
+                }
+                if rep == 0 && !a.skip_recall {
                     let hits: usize = ids
                         .as_chunks::<K>()
                         .0
@@ -544,14 +593,13 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                             f.iter().filter(|&&x| t.contains(&(x as i32))).count()
                         })
                         .sum();
-                    recall = hits as f64 / (K * test.len()) as f64;
-                    exact_mean = exact as f64 / test.len() as f64;
+                    recall = Some(hits as f64 / (K * test.len()) as f64);
                 }
             }
             let mut sorted = qps.clone();
             sorted.sort_by(f64::total_cmp);
             let median = sorted[sorted.len() / 2];
-            eprintln!("ef={ef} max_exact={max_exact} recall={recall:.4} qps={median:.0} exact/q={exact_mean:.0} load={loads:?}");
+            eprintln!("ef={ef} max_exact={max_exact} recall={:.4} qps={median:.0} exact/q={exact_mean:.0} load={loads:?}", recall.unwrap_or(f64::NAN));
             rows.push(json!({
                 "params": {"ef": ef, "max_exact": max_exact},
                 "recall_at_10": recall,
@@ -568,11 +616,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "dataset": m,
         "environment": environment(),
         "n_queries": test.len(),
-        "build": {"params": {"degree": a.degree, "build_ef": a.build_ef,
-                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
-                             "store": a.store, "codes": a.codes},
-                  "build_secs": build_secs, "load_1m_before_build": load_before_build,
-                  "load_gate_met": build_gate},
+        "build": build_report,
         "index_bytes": index.index_bytes(),
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
@@ -1021,6 +1065,9 @@ fn main() -> Result<()> {
             max_wait_secs,
             queries,
             holdout,
+            save_index,
+            load_index,
+            skip_recall,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1037,6 +1084,9 @@ fn main() -> Result<()> {
             max_wait_secs,
             queries,
             holdout,
+            save_index,
+            load_index,
+            skip_recall,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {
