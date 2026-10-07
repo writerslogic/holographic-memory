@@ -10,23 +10,25 @@ Durable copy of the hand-off. Delete this file once the items below are merged o
 | Local model stages | Every HMS stage runs on L4 (candle 0.11 CUDA kernels do not build for T4). The `s-dev-hms` run was stopped at 18:00 PDT 2026-10-06 after Modal billed $14.40 against the $8 cap (driver preemptions cancelled billed-but-unledgered L4 shards); 1,500 of 4,506 fact sessions done, no retrieval metrics. Budget now reserves wave cost before launch (simulated preemption verified). LLM-stage quality on those 1,500 sessions: 74% identical fact output, 96% of facts matched (`benchmarks/results/longmemeval_dev_hms_stages.json`). At ~17x vLLM's per-session time, a full HMS S-dev run costs roughly $8 GPU plus driver time; do not relaunch without the maintainer's approval and a new cap. Batched GPU decoding in HMS is the fix that makes it affordable. The `s-dev-hms` ledger on the `hms-lme` volume is set to the billed $14.40. |
 | Holographic memory | Done for dev: 3 seeds and the equal-bytes control are in `holographic_dev.json` and the doc. Shards beat an equal-bytes index only beyond ~30% loss; no variant beats the index on accuracy; no Rust port. |
 
-## In flight (2026-10-07): integration branch `integrate/qgraph-speed`
+## State (2026-10-07 15:40): integration branch `integrate/qgraph-speed` (unpushed, head 52778f1)
 
-Merged so far (signed merges, qgraph unit tests pass; full gate not yet run): build-time speedups
-(worktree 5) and the per-vertex 8-bit code index `VGraph` (worktree 4, `--index vertex --residual
---rerank N`). Held-out, implementer-measured, not yet independently reproduced: nytimes d64
-0.225 GB (vs 1.77 GB edge) at 8,921 / 2,294 QPS for recall 0.90 / 0.95; glove d32 0.431 GB at
-6,308 / 2,061 (`benchmarks/results/qgraph_pareto_heldout.json`). Build time is the losing metric.
+Merged, 16 qgraph unit tests pass, release binary builds, FULL GATE NOT RUN: build-time
+speedups (worktree 5), the per-vertex 8-bit LVQ index `VGraph` (worktree 4), batched Metal model
+stages (worktree 1), build-bounds screening (`work/vertex-build`, ccb4d8a) and the opt-in 4-bit
+search encoding (`work/vertex-search`, fcf0056). Not merged: worktrees 2 and 3 (superseded).
 
-Not merged: worktree 3 (edge-index FastScan/2-bit codes; conflicts in three files, superseded for
-memory by VGraph), worktree 2 (memory-first; overlaps VGraph), worktree 1 (GPU batching, unfinished).
-Their unfinished edits are saved as `wip:` commits on their branches.
+Status of the claims (verify before quoting; results files are in `benchmarks/results/`):
+- Build bounds: nytimes build ~1.9x faster with a bit-identical graph; slower on glove, so on
+  only at dim >= 128 (untested between 100 and 256 dims).
+- 4-bit encoding (`--residual --vertex-bits 4 --residual-bits 8 --align-rows --reorder
+  --id-bytes 3`, rerank 32 nytimes / 64 glove): memory -24.1% nytimes, -16.5% glove (certain).
+  Speed UNCONFIRMED: paired ratios 0.79-1.98 across runs at load 39-270; the default path now
+  runs the new pool/kernel code at x0.94 / x1.06 (inconclusive; possible regression).
+- `--graph-cache` is keyed by filename only; must be fixed before any published run.
 
-Running: workflow `wf_9d907a9e-caa` (two agents, time box 15:15 PDT, compile budget): finish GPU
-batching in worktree 1; cut VGraph build time in worktree `.claude/worktrees/vertex-build` (branch
-`work/vertex-build`). Then: merge both, run the full gate once, run the final test-set comparison
-(VGraph vs FAISS HNSW M=16/32 and hnswlib, glove and nytimes, repeats 3, load recorded), update
-docs and the README claims, changelog, push to main.
+Next: run docs/NEXT-SESSIONS prompt 1 (Fable) from the prompts file: step 1 verifies the merge
+and decides defaults with one clean paired held-out run, then the competitor harness, the gate,
+the M4 test-set comparison, the doc rewrite, and the specs for the Opus and Sonnet sessions.
 
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus
