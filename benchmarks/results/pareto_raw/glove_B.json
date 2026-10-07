@@ -1,0 +1,135 @@
+{
+  "build": {
+    "build_secs": 815.922959125,
+    "load_1m_after_build": 26.9,
+    "load_1m_before_build": 13.52,
+    "load_gate_met": false,
+    "params": {
+      "alpha": 1.0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 32,
+      "index": "vertex",
+      "residual": true,
+      "seed": 24301
+    },
+    "threads": 4
+  },
+  "dataset": {
+    "dim": 100,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1183514,
+    "name": "glove-100-angular",
+    "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+    "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+  },
+  "environment": {
+    "arch": "aarch64",
+    "cpu": "Apple M4",
+    "hms_version": "0.6.1",
+    "load_average": "{ 3.38 3.28 8.49 }",
+    "os": "macos",
+    "rayon_threads": 4
+  },
+  "holdout": {
+    "n_queries": 2000,
+    "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read."
+  },
+  "index_bytes": 430510900,
+  "max_load": 8.0,
+  "n_queries": 2000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": true,
+  "repeats": 3,
+  "residual_bytes": 137055624,
+  "sweep": [
+    {
+      "load_1m_before_runs": [
+        3.13,
+        3.44,
+        3.32
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5746.3905,
+      "params": {
+        "ef": 256,
+        "rerank": 16
+      },
+      "qps_runs": [
+        896.8576351952134,
+        6394.7205187397285,
+        6308.106870167708
+      ],
+      "qps_single_thread": 6308.106870167708,
+      "recall_at_10": 0.9019
+    },
+    {
+      "load_1m_before_runs": [
+        3.13,
+        3.44,
+        3.32
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 8104.296,
+      "params": {
+        "ef": 384,
+        "rerank": 16
+      },
+      "qps_runs": [
+        4115.482496595724,
+        4192.8966594705935,
+        4236.760416564301
+      ],
+      "qps_single_thread": 4192.8966594705935,
+      "recall_at_10": 0.92365
+    },
+    {
+      "load_1m_before_runs": [
+        3.04,
+        3.44,
+        3.32
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 14771.898,
+      "params": {
+        "ef": 768,
+        "rerank": 16
+      },
+      "qps_runs": [
+        2063.3554125396004,
+        2054.278487199001,
+        2060.7741163605638
+      ],
+      "qps_single_thread": 2060.7741163605638,
+      "recall_at_10": 0.9556
+    },
+    {
+      "load_1m_before_runs": [
+        3.04,
+        3.44,
+        3.38
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 18992.9665,
+      "params": {
+        "ef": 1024,
+        "rerank": 16
+      },
+      "qps_runs": [
+        1525.055712191486,
+        1540.2080941579482,
+        1523.7153436897092
+      ],
+      "qps_single_thread": 1525.055712191486,
+      "recall_at_10": 0.96555
+    }
+  ],
+  "system": "hms qgraph-vertex"
+}

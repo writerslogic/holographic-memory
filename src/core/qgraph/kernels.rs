@@ -186,6 +186,64 @@ mod neon {
 
     use super::{scalar_word, QUERY_BITS};
 
+    /// [`super::DotI8`] with the SDOT instruction. Handed out only by `dot_i8_kernel` after
+    /// detecting `dotprod`.
+    pub(super) fn dot_i8_sdot(a: &[i8], b: &[i8]) -> i32 {
+        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+        // SAFETY: the only caller path checked `dotprod` at runtime.
+        unsafe { sdot(a, b) }
+    }
+
+    #[target_feature(enable = "dotprod")]
+    unsafe fn sdot(a: &[i8], b: &[i8]) -> i32 {
+        let (mut s0, mut s1) = (vdupq_n_s32(0), vdupq_n_s32(0));
+        let mut i = 0;
+        // SAFETY (all loads): `i + 16 <= len` (or `i + 32 <= len`) for both slices, whose
+        // lengths are equal and a multiple of 16 (asserted by the caller).
+        while i + 32 <= a.len() {
+            let (x0, y0) = (vld1q_s8(a.as_ptr().add(i)), vld1q_s8(b.as_ptr().add(i)));
+            let (x1, y1) = (
+                vld1q_s8(a.as_ptr().add(i + 16)),
+                vld1q_s8(b.as_ptr().add(i + 16)),
+            );
+            std::arch::asm!(
+                "sdot {s0:v}.4s, {x0:v}.16b, {y0:v}.16b",
+                "sdot {s1:v}.4s, {x1:v}.16b, {y1:v}.16b",
+                s0 = inout(vreg) s0, s1 = inout(vreg) s1,
+                x0 = in(vreg) x0, y0 = in(vreg) y0, x1 = in(vreg) x1, y1 = in(vreg) y1,
+                options(pure, nomem, nostack, preserves_flags)
+            );
+            i += 32;
+        }
+        if i < a.len() {
+            let (x0, y0) = (vld1q_s8(a.as_ptr().add(i)), vld1q_s8(b.as_ptr().add(i)));
+            std::arch::asm!(
+                "sdot {s0:v}.4s, {x0:v}.16b, {y0:v}.16b",
+                s0 = inout(vreg) s0, x0 = in(vreg) x0, y0 = in(vreg) y0,
+                options(pure, nomem, nostack, preserves_flags)
+            );
+        }
+        vaddvq_s32(vaddq_s32(s0, s1))
+    }
+
+    /// [`super::DotI8`] with widening multiplies; for cores without `dotprod`.
+    pub(super) fn dot_i8(a: &[i8], b: &[i8]) -> i32 {
+        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+        let mut i = 0;
+        // SAFETY: NEON is part of the aarch64 baseline; `i + 16 <= len` for both slices. Each
+        // i16 lane holds one product (|x| <= 128 * 128), and the pairwise adds go to i32.
+        unsafe {
+            let mut s = vdupq_n_s32(0);
+            while i < a.len() {
+                let (x, y) = (vld1q_s8(a.as_ptr().add(i)), vld1q_s8(b.as_ptr().add(i)));
+                s = vpadalq_s16(s, vmull_s8(vget_low_s8(x), vget_low_s8(y)));
+                s = vpadalq_s16(s, vmull_high_s8(x, y));
+                i += 16;
+            }
+            vaddvq_s32(s)
+        }
+    }
+
     pub(super) fn raw<const W: usize>(codes: &[u64], planes: &[u64], out: &mut [u32]) {
         assert_eq!(QUERY_BITS, 4);
         assert_eq!(planes.len(), 4 * W);
@@ -222,6 +280,73 @@ mod neon {
             *o = total;
         }
     }
+}
+
+/// Integer dot product of two i8 rows whose length is a multiple of 16.
+pub(crate) type DotI8 = fn(&[i8], &[i8]) -> i32;
+
+/// The fastest [`DotI8`] this CPU supports.
+pub(crate) fn dot_i8_kernel() -> DotI8 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        if std::arch::is_aarch64_feature_detected!("dotprod") {
+            return neon::dot_i8_sdot;
+        }
+        neon::dot_i8
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    dot_i8_scalar
+}
+
+#[cfg(any(test, not(target_arch = "aarch64")))]
+pub(crate) fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
+    assert_eq!(a.len(), b.len());
+    a.iter()
+        .zip(b)
+        .map(|(&x, &y)| i32::from(x) * i32::from(y))
+        .sum()
+}
+
+/// `sum_i a_i * b_i` for a float row and an i8 row of the same length.
+pub(crate) fn dot_f32_i8(a: &[f32], b: &[i8]) -> f32 {
+    debug_assert_eq!(a.len(), b.len());
+    let mut acc = [0f32; 16];
+    let ((ca, ta), (cb, tb)) = (a.as_chunks::<16>(), b.as_chunks::<16>());
+    let tail: f32 = ta.iter().zip(tb).map(|(x, &y)| x * f32::from(y)).sum();
+    for (x, y) in ca.iter().zip(cb) {
+        for ((s, p), &q) in acc.iter_mut().zip(x).zip(y) {
+            *s += p * f32::from(q);
+        }
+    }
+    acc.iter().sum::<f32>() + tail
+}
+
+/// Hint the cache to load every line of `bytes` (128-byte lines on Apple cores).
+#[inline]
+pub(crate) fn prefetch_bytes(bytes: &[i8]) {
+    #[cfg(target_arch = "aarch64")]
+    if let Some(last) = bytes.len().checked_sub(1) {
+        let base = bytes.as_ptr();
+        let mut off = 0;
+        loop {
+            let at = off.min(last);
+            // SAFETY: PRFM is a hint that never faults or writes; `at < bytes.len()`, so the
+            // address is inside the live slice.
+            unsafe {
+                std::arch::asm!(
+                    "prfm pldl1keep, [{0}]",
+                    in(reg) base.add(at),
+                    options(nostack, preserves_flags, readonly)
+                );
+            }
+            if at == last {
+                break;
+            }
+            off += 128;
+        }
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    let _ = bytes;
 }
 
 /// Hint the cache to load `words`. A no-op where no prefetch instruction is wired up.
@@ -278,6 +403,36 @@ mod tests {
             raw_estimates(&codes, &planes, words, &mut fast);
             raw_scalar(&codes, &planes, words, &mut slow);
             assert_eq!(fast, slow, "words = {words}");
+        }
+    }
+
+    #[test]
+    fn integer_dot_kernels_match_scalar() {
+        let mut rng = SplitMix(13);
+        let kernels: Vec<DotI8> = {
+            #[cfg(target_arch = "aarch64")]
+            {
+                let mut k: Vec<DotI8> = vec![neon::dot_i8];
+                if std::arch::is_aarch64_feature_detected!("dotprod") {
+                    k.push(neon::dot_i8_sdot);
+                }
+                k
+            }
+            #[cfg(not(target_arch = "aarch64"))]
+            vec![dot_i8_kernel()]
+        };
+        for len in (0..=96).step_by(16) {
+            let a: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
+            let mut b: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
+            if len > 0 {
+                b[0] = -128;
+            }
+            let want = dot_i8_scalar(&a, &b);
+            for k in &kernels {
+                assert_eq!(k(&a, &b), want, "len = {len}");
+            }
+            let af: Vec<f32> = a.iter().map(|&x| f32::from(x)).collect();
+            assert_eq!(dot_f32_i8(&af, &b), want as f32);
         }
     }
 
