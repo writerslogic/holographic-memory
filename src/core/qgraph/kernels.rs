@@ -254,6 +254,84 @@ pub(crate) fn as_f32_mut(w: &mut [u64]) -> &mut [f32] {
     unsafe { std::slice::from_raw_parts_mut(w.as_mut_ptr().cast::<f32>(), w.len() * 2) }
 }
 
+/// Element type of a stored vector: `f32`, or a signed integer scaled per vector.
+///
+/// # Safety
+/// Implementors must be plain numeric types with alignment at most 8 for which every bit
+/// pattern is valid, so that a `u64` buffer can be viewed as a slice of them.
+pub(crate) unsafe trait Elem: Copy + Send + Sync + 'static {
+    /// Largest stored magnitude; 0 marks the unscaled `f32` store.
+    const MAX: f32;
+    fn to_f32(self) -> f32;
+    fn from_f32(v: f32) -> Self;
+}
+
+// SAFETY: f32, i16 and i8 are plain numbers, aligned to at most 4, valid for every bit pattern.
+unsafe impl Elem for f32 {
+    const MAX: f32 = 0.0;
+    #[inline(always)]
+    fn to_f32(self) -> f32 {
+        self
+    }
+    fn from_f32(v: f32) -> Self {
+        v
+    }
+}
+
+// SAFETY: as for f32.
+unsafe impl Elem for i16 {
+    const MAX: f32 = i16::MAX as f32;
+    #[inline(always)]
+    fn to_f32(self) -> f32 {
+        f32::from(self)
+    }
+    fn from_f32(v: f32) -> Self {
+        let m = <Self as Elem>::MAX;
+        v.round().clamp(-m, m) as i16
+    }
+}
+
+// SAFETY: as for f32.
+unsafe impl Elem for i8 {
+    const MAX: f32 = i8::MAX as f32;
+    #[inline(always)]
+    fn to_f32(self) -> f32 {
+        f32::from(self)
+    }
+    fn from_f32(v: f32) -> Self {
+        let m = <Self as Elem>::MAX;
+        v.round().clamp(-m, m) as i8
+    }
+}
+
+/// `sum_i a_i * b_i` with `b` widened to f32; the caller applies the per-vector scale.
+#[inline]
+pub(crate) fn dot_elem<T: Elem>(a: &[f32], b: &[T]) -> f32 {
+    debug_assert_eq!(a.len(), b.len());
+    let mut acc = [0f32; 16];
+    let ((ca, ta), (cb, tb)) = (a.as_chunks::<16>(), b.as_chunks::<16>());
+    let tail: f32 = ta.iter().zip(tb).map(|(x, y)| x * y.to_f32()).sum();
+    for (x, y) in ca.iter().zip(cb) {
+        for ((s, p), q) in acc.iter_mut().zip(x).zip(y) {
+            *s += p * q.to_f32();
+        }
+    }
+    acc.iter().sum::<f32>() + tail
+}
+
+pub(crate) fn as_elems<T: Elem>(w: &[u64]) -> &[T] {
+    let len = std::mem::size_of_val(w) / std::mem::size_of::<T>();
+    // SAFETY: `Elem` guarantees alignment <= 8 and that every bit pattern is valid; the view
+    // covers exactly the bytes of `w` and borrows it.
+    unsafe { std::slice::from_raw_parts(w.as_ptr().cast::<T>(), len) }
+}
+
+pub(crate) fn as_elems_mut<T: Elem>(w: &mut [u64]) -> &mut [T] {
+    let len = std::mem::size_of_val(w) / std::mem::size_of::<T>();
+    // SAFETY: as in `as_elems`; the exclusive borrow of `w` is carried over to the view.
+    unsafe { std::slice::from_raw_parts_mut(w.as_mut_ptr().cast::<T>(), len) }
+}
+
 pub(crate) fn as_u32(w: &[u64]) -> &[u32] {
     // SAFETY: as in `as_f32`; every bit pattern is a valid u32.
     unsafe { std::slice::from_raw_parts(w.as_ptr().cast::<u32>(), w.len() * 2) }

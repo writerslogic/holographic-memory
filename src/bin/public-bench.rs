@@ -28,7 +28,7 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
-use holographic_memory::core::qgraph::{BuildParams, QGraph, SearchParams};
+use holographic_memory::core::qgraph::{BuildParams, Codes, QGraph, SearchParams, Store};
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
 use rayon::prelude::*;
@@ -79,6 +79,12 @@ enum Mode {
         /// Edge code length in bits (0 = smallest power of two >= dim).
         #[arg(long, default_value_t = 0)]
         code_bits: usize,
+        /// Stored vector type: f32, i16 or i8.
+        #[arg(long, default_value = "f32")]
+        store: String,
+        /// Code placement: edge (per-edge residual codes) or vertex (one code per vertex).
+        #[arg(long, default_value = "edge")]
+        codes: String,
         #[arg(long, default_value_t = 3)]
         repeats: usize,
         /// Time only when the 1-minute load average is below this.
@@ -392,6 +398,8 @@ struct QgraphArgs {
     build_ef: usize,
     alpha: f32,
     code_bits: usize,
+    store: String,
+    codes: String,
     degree: usize,
     repeats: usize,
     max_load: f64,
@@ -472,21 +480,34 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     for q in &mut test {
         normalize(q);
     }
+    let store = match a.store.as_str() {
+        "f32" => Store::F32,
+        "i16" => Store::I16,
+        "i8" => Store::I8,
+        s => anyhow::bail!("unknown store {s}"),
+    };
+    let codes = match a.codes.as_str() {
+        "edge" => Codes::Edge,
+        "vertex" => Codes::Vertex,
+        c => anyhow::bail!("unknown codes {c}"),
+    };
     let params = BuildParams {
         build_ef: a.build_ef,
         alpha: a.alpha,
         code_bits: a.code_bits,
         degree: a.degree,
+        store,
+        codes,
         ..BuildParams::default()
     };
-    let load_before_build = load_1m();
+    let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
+    let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
     let t = Instant::now();
     let index = QGraph::build(&train, d, &params);
     let build_secs = t.elapsed().as_secs_f64();
     drop(train);
     eprintln!("built in {build_secs:.1}s, {} bytes", index.index_bytes());
 
-    let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
     let mut searcher = index.searcher();
     let mut rows = Vec::new();
     let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
@@ -548,8 +569,10 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "environment": environment(),
         "n_queries": test.len(),
         "build": {"params": {"degree": a.degree, "build_ef": a.build_ef,
-                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed},
-                  "build_secs": build_secs, "load_1m_before_build": load_before_build},
+                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
+                             "store": a.store, "codes": a.codes},
+                  "build_secs": build_secs, "load_1m_before_build": load_before_build,
+                  "load_gate_met": build_gate},
         "index_bytes": index.index_bytes(),
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
@@ -990,6 +1013,8 @@ fn main() -> Result<()> {
             build_ef,
             alpha,
             code_bits,
+            store,
+            codes,
             degree,
             repeats,
             max_load,
@@ -1004,6 +1029,8 @@ fn main() -> Result<()> {
             build_ef,
             alpha,
             code_bits,
+            store,
+            codes,
             degree,
             repeats,
             max_load,
