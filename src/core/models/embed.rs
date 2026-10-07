@@ -19,6 +19,10 @@ pub struct Embedder {
 
 const MAX_TOKENS: usize = 2048;
 const BATCH_TOKENS: usize = 16384;
+/// Default padded batch on Metal/CUDA: on an M4 (Metal), 96 user turns embedded in 3.5 s at
+/// batch 4 against 4.3 s at 1, 3.7 s at 2, 4.0 s at 8 and 5.6 s at 16
+/// (`benchmarks/results/local_models_batching.json`). CUDA is unmeasured.
+const GPU_BATCH: usize = 4;
 
 impl Embedder {
     pub fn load(source: &ModelSource, device: &Device) -> Result<Self> {
@@ -37,7 +41,7 @@ impl Embedder {
             tokenizer,
             device: device.clone(),
             dim,
-            batch: super::default_encode_batch(device),
+            batch: super::default_encode_batch(device, GPU_BATCH),
         })
     }
 

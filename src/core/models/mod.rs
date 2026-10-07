@@ -176,15 +176,16 @@ fn encode(tokenizer: &tokenizers::Tokenizer, text: &str, special: bool) -> Resul
         .to_vec())
 }
 
-/// Default sequences per encoder forward pass. The CPU batches equal-length sequences through
-/// candle's fused attention kernel; Metal and CUDA batch right-padded sequences of different
-/// lengths (see [`padded_batches`]). candle 0.11's own Qwen3 could not batch on those devices
-/// (its causal mask is built for one row), which is why [`qwen3`] is vendored.
-pub fn default_encode_batch(device: &Device) -> usize {
+/// Default sequences per encoder forward pass: `gpu` on Metal or CUDA, 64 on the CPU. The CPU
+/// batches equal-length sequences through candle's fused attention kernel; Metal and CUDA batch
+/// right-padded sequences of different lengths (see [`padded_batches`]). candle 0.11's own
+/// Qwen3 could not batch on those devices (its causal mask is built for one row), which is why
+/// [`qwen3`] is vendored.
+fn default_encode_batch(device: &Device, gpu: usize) -> usize {
     if device.is_cpu() {
         64
     } else {
-        16
+        gpu
     }
 }
 

@@ -253,7 +253,10 @@ impl Attention {
         let q = candle_nn::rotary_emb::rope(&q.contiguous()?, cos, sin)?;
         let k = candle_nn::rotary_emb::rope(&k.contiguous()?, cos, sin)?;
         let offset = kv.as_ref().map_or(Ok(0), |(k, _)| k.dim(2))?;
-        // Same concatenation as candle's `ConcatKvCache` (dim 2).
+        // Same concatenation as candle's `ConcatKvCache` (dim 2). The inputs must be
+        // contiguous: `Tensor::cat` of a strided tensor returns a strided result, so the
+        // whole cache would be re-copied element-wise every decode step.
+        let (k, v) = (k.contiguous()?, v.contiguous()?);
         let (k, v) = match kv.take() {
             Some((pk, pv)) => (Tensor::cat(&[&pk, &k], 2)?, Tensor::cat(&[&pv, &v], 2)?),
             None => (k, v),

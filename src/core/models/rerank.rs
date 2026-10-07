@@ -22,6 +22,10 @@ pub struct Reranker {
 
 const MAX_TOKENS: usize = 4096;
 const BATCH_TOKENS: usize = 12288;
+/// Default padded batch on Metal/CUDA: on an M4 (Metal), 96 pairs scored in 10.6 s at batch 1
+/// against 10.9 s at 2, 11.1 s at 4, 12.0 s at 8 and 15.3 s at 16, so padding does not pay
+/// (`benchmarks/results/local_models_batching.json`). CUDA is unmeasured.
+const GPU_BATCH: usize = 1;
 
 impl Reranker {
     pub fn load(source: &ModelSource, device: &Device) -> Result<Self> {
@@ -39,7 +43,7 @@ impl Reranker {
             device: device.clone(),
             prefix,
             suffix,
-            batch: super::default_encode_batch(device),
+            batch: super::default_encode_batch(device, GPU_BATCH),
         })
     }
 
