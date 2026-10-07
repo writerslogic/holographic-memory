@@ -358,7 +358,12 @@ pub(crate) fn dot_i8_inline(a: &[i8], b: &[i8]) -> i32 {
 /// 16 odd coordinates. `q.len()` is a multiple of 32.
 pub(crate) fn interleave_for_i4(q: &[i8], out: &mut [i8]) {
     assert!(q.len() == out.len() && q.len().is_multiple_of(32));
-    for (src, dst) in q.chunks_exact(32).zip(out.chunks_exact_mut(32)) {
+    for (src, dst) in q
+        .as_chunks::<32>()
+        .0
+        .iter()
+        .zip(out.as_chunks_mut::<32>().0.iter_mut())
+    {
         for j in 0..16 {
             dst[j] = src[2 * j];
             dst[16 + j] = src[2 * j + 1];
@@ -383,7 +388,12 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
 #[cfg(any(test, not(all(target_arch = "aarch64", target_feature = "dotprod"))))]
 pub(crate) fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
     let mut s = 0i32;
-    for (qb, pb) in q.chunks_exact(32).zip(packed.chunks_exact(16)) {
+    for (qb, pb) in q
+        .as_chunks::<32>()
+        .0
+        .iter()
+        .zip(packed.as_chunks::<16>().0.iter())
+    {
         for (j, &x) in pb.iter().enumerate() {
             let lo = (((x as u8) << 4) as i8) >> 4;
             s += i32::from(qb[j]) * i32::from(lo) + i32::from(qb[16 + j]) * i32::from(x >> 4);
@@ -551,7 +561,9 @@ mod tests {
             assert_eq!(dot_f32_i8(&af, &b), want as f32);
             let nib: Vec<i8> = b.iter().map(|&x| x >> 4).collect();
             let packed: Vec<i8> = nib
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|p| ((p[0] as u8 & 0x0F) | ((p[1] as u8) << 4)) as i8)
                 .collect();
             assert_eq!(dot_f32_i4(&af, &packed), dot_i8_scalar(&a, &nib) as f32);

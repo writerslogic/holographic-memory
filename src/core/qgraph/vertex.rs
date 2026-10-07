@@ -163,7 +163,7 @@ fn code_at(c: &[i8], bits: u8, i: usize) -> i8 {
         c.get(i).copied().unwrap_or(0)
     } else {
         c.get(i / 2).map_or(0, |&b| {
-            if i % 2 == 0 {
+            if i.is_multiple_of(2) {
                 (((b as u8) << 4) as i8) >> 4
             } else {
                 b >> 4
@@ -665,8 +665,10 @@ fn get_u32s(r: &mut impl std::io::Read, max: u64) -> std::io::Result<Vec<u32>> {
     let mut bytes = vec![0u8; len as usize * 4];
     r.read_exact(&mut bytes)?;
     Ok(bytes
-        .chunks_exact(4)
-        .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| u32::from_le_bytes(*c))
         .collect())
 }
 
