@@ -158,7 +158,7 @@ enum Mode {
         #[arg(long)]
         out: PathBuf,
         /// Sequences per forward pass (encoders) or decoded together (`facts`, `chat`);
-        /// default: the device's default.
+        /// default: the device default for encoders, 1 for decoding.
         #[arg(long)]
         batch: Option<usize>,
         /// Load gate: wait (inside any timing lock) until the 1-minute load average is below

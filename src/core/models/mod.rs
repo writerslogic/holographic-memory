@@ -20,7 +20,7 @@ use candle_core::{DType, Device};
 use candle_nn::VarBuilder;
 
 pub use embed::Embedder;
-pub use llm::{default_decode_batch, Completion, FactExtractor, Generator, QueryRewriter};
+pub use llm::{Completion, FactExtractor, Generator, QueryRewriter};
 pub use prompts::QueryPlan;
 pub use rerank::Reranker;
 pub use stages::{ModelStages, StageParams};

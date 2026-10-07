@@ -45,15 +45,6 @@ struct Row {
     budget: usize,
 }
 
-/// Default decode batch: one on the CPU (its fused attention has no padding mask), 8 on a GPU.
-pub fn default_decode_batch(device: &Device) -> usize {
-    if device.is_cpu() {
-        1
-    } else {
-        8
-    }
-}
-
 impl Generator {
     pub fn load(source: &ModelSource, device: &Device) -> Result<Self> {
         let mut l = load(source, device, super::dtype_for(device, true))?;
@@ -79,7 +70,7 @@ impl Generator {
             model: Qwen3::new(&l.config, l.vb, true)?,
             tokenizer,
             stop,
-            batch: default_decode_batch(device),
+            batch: 1,
         })
     }
 
@@ -88,8 +79,11 @@ impl Generator {
         self.batch
     }
 
-    /// Sets the decode batch (at least 1). Batches above one use the padded attention path,
-    /// which on the CPU replaces the fused kernel with the standard one.
+    /// Sets the decode batch (at least 1; the default is 1). Batches above one use the padded
+    /// attention path, which on the CPU replaces the fused kernel with the standard one. Greedy
+    /// output is not bit-identical across batch sizes: on Metal, batch 8 changed 8 of 64
+    /// fact-extraction outputs (`benchmarks/results/local_models_batching.json`), so batching
+    /// is opt-in.
     pub fn set_batch(&mut self, batch: usize) {
         self.batch = batch.max(1);
     }
