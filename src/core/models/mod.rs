@@ -9,6 +9,7 @@
 mod embed;
 mod llm;
 pub mod prompts;
+mod qwen3;
 mod rerank;
 mod stages;
 
@@ -19,7 +20,7 @@ use candle_core::{DType, Device};
 use candle_nn::VarBuilder;
 
 pub use embed::Embedder;
-pub use llm::{FactExtractor, Generator, QueryRewriter};
+pub use llm::{default_decode_batch, Completion, FactExtractor, Generator, QueryRewriter};
 pub use prompts::QueryPlan;
 pub use rerank::Reranker;
 pub use stages::{ModelStages, StageParams};
@@ -175,20 +176,21 @@ fn encode(tokenizer: &tokenizers::Tokenizer, text: &str, special: bool) -> Resul
         .to_vec())
 }
 
-/// Sequences per forward pass. candle 0.11's Qwen3 builds its explicit causal mask (used on
-/// Metal and CUDA) for a batch of one, so on those devices a batch of two returns a wrong
-/// second row (measured on Metal: NaN or cosine 0.17 to the reference). The CPU path masks
-/// inside its fused kernel and batches correctly.
-fn max_batch(device: &Device) -> usize {
+/// Default sequences per encoder forward pass. The CPU batches equal-length sequences through
+/// candle's fused attention kernel; Metal and CUDA batch right-padded sequences of different
+/// lengths (see [`padded_batches`]). candle 0.11's own Qwen3 could not batch on those devices
+/// (its causal mask is built for one row), which is why [`qwen3`] is vendored.
+pub fn default_encode_batch(device: &Device) -> usize {
     if device.is_cpu() {
         64
     } else {
-        1
+        16
     }
 }
 
-/// Indices grouped by token length (no padding mask exists in candle's Qwen3, so a batch only
-/// holds sequences of one length), each group split so a batch stays within `budget` tokens.
+/// Indices grouped by token length (the CPU's fused attention has no padding mask, so a batch
+/// only holds sequences of one length), each group split so a batch stays within `budget`
+/// tokens.
 fn equal_length_batches(lens: &[usize], budget: usize, max_batch: usize) -> Vec<Vec<usize>> {
     let mut order: Vec<usize> = (0..lens.len()).collect();
     order.sort_by_key(|&i| (lens[i], i));
@@ -206,6 +208,80 @@ fn equal_length_batches(lens: &[usize], budget: usize, max_batch: usize) -> Vec<
         }
     }
     out
+}
+
+/// Attention-score budget of a padded batch: rows x padded length squared (64 Mi entries is
+/// 4 GiB of f32 scores for a 16-head encoder).
+const SCORE_BUDGET: usize = 1 << 26;
+
+/// Indices sorted by token length and cut into right-padded batches: at most `max_batch` rows,
+/// rows x longest length within `budget` tokens and rows x longest length squared within
+/// [`SCORE_BUDGET`]. Sorting keeps the padding small.
+fn padded_batches(lens: &[usize], budget: usize, max_batch: usize) -> Vec<Vec<usize>> {
+    let mut order: Vec<usize> = (0..lens.len()).collect();
+    order.sort_by_key(|&i| (lens[i], i));
+    let mut out: Vec<Vec<usize>> = Vec::new();
+    for i in order {
+        let l = lens[i];
+        match out.last_mut() {
+            Some(b)
+                if b.len() < max_batch
+                    && (b.len() + 1) * l <= budget
+                    && (b.len() + 1) * l * l <= SCORE_BUDGET =>
+            {
+                b.push(i)
+            }
+            _ => out.push(vec![i]),
+        }
+    }
+    out
+}
+
+/// Batches for an encoder pass on `device`.
+fn encoder_batches(
+    device: &Device,
+    lens: &[usize],
+    budget: usize,
+    max_batch: usize,
+) -> Vec<Vec<usize>> {
+    if device.is_cpu() {
+        equal_length_batches(lens, budget, max_batch)
+    } else {
+        padded_batches(lens, budget, max_batch)
+    }
+}
+
+/// Final hidden state at each row's last token, (rows, hidden), for one batch of `ids`.
+/// Shorter rows are right-padded; causal attention keeps every real token from seeing the
+/// padding after it, so no key mask is needed and every row keeps positions 0...
+fn last_hidden(
+    model: &qwen3::Qwen3,
+    ids: &[Vec<u32>],
+    batch: &[usize],
+) -> Result<candle_core::Tensor> {
+    let len = batch.iter().map(|&i| ids[i].len()).max().unwrap_or(0);
+    ensure!(
+        len > 0 && batch.iter().all(|&i| !ids[i].is_empty()),
+        "empty token sequence"
+    );
+    let flat: Vec<u32> = batch
+        .iter()
+        .flat_map(|&i| {
+            let row = &ids[i];
+            row.iter()
+                .copied()
+                .chain(std::iter::repeat_n(0, len - row.len()))
+        })
+        .collect();
+    let input = candle_core::Tensor::from_vec(flat, (batch.len(), len), model.device())?;
+    let mut cache = qwen3::Cache::default();
+    let hidden = model.forward(&input, qwen3::Positions::Uniform(0), &mut cache)?;
+    if batch.iter().all(|&i| ids[i].len() == len) {
+        Ok(hidden.narrow(1, len - 1, 1)?.squeeze(1)?.contiguous()?)
+    } else {
+        let last: Vec<usize> = batch.iter().map(|&i| ids[i].len() - 1).collect();
+        Ok(qwen3::Qwen3::gather_last(&hidden, &last)?)
+    }
 }
 
 #[cfg(test)]
@@ -234,5 +310,52 @@ mod tests {
         let all: usize = b.iter().map(Vec::len).sum();
         assert_eq!(all, lens.len());
         assert_eq!(equal_length_batches(&lens, 100, 2)[0], vec![0, 2]);
+    }
+
+    #[test]
+    fn padded_batches_respect_row_token_and_score_limits() {
+        let lens = [3, 5, 3, 3, 5, 9];
+        assert_eq!(
+            padded_batches(&lens, 15, 64),
+            vec![vec![0, 2, 3], vec![1, 4], vec![5]]
+        );
+        assert_eq!(padded_batches(&lens, 100, 2)[0], vec![0, 2]);
+        // Token budget 12 with rows of 4: limit - 1, limit and limit + 1 rows.
+        assert_eq!(padded_batches(&[4, 4], 12, 64), vec![vec![0, 1]]);
+        assert_eq!(padded_batches(&[4, 4, 4], 12, 64), vec![vec![0, 1, 2]]);
+        assert_eq!(
+            padded_batches(&[4, 4, 4, 4], 12, 64),
+            vec![vec![0, 1, 2], vec![3]]
+        );
+        // Two rows of 6000 tokens exceed the score budget, so each runs alone.
+        assert_eq!(
+            padded_batches(&[6000, 6000], 1 << 20, 64),
+            vec![vec![0], vec![1]]
+        );
+    }
+
+    #[test]
+    fn padded_encoder_rows_match_unpadded_rows() {
+        let ids: Vec<Vec<u32>> = vec![vec![5, 6, 7, 8, 9, 10], vec![1, 2], vec![3, 4, 5, 6]];
+        let all: Vec<usize> = (0..ids.len()).collect();
+        for flash in [true, false] {
+            let model = qwen3::testing::tiny(11, flash);
+            let padded = last_hidden(&model, &ids, &all)
+                .unwrap()
+                .to_vec2::<f32>()
+                .unwrap();
+            for (r, &i) in all.iter().enumerate() {
+                let alone = last_hidden(&model, &ids, &[i])
+                    .unwrap()
+                    .to_vec2::<f32>()
+                    .unwrap();
+                let diff = padded[r]
+                    .iter()
+                    .zip(&alone[0])
+                    .map(|(a, b)| (a - b).abs())
+                    .fold(0f32, f32::max);
+                assert!(diff < 1e-4, "row {i}, cpu flash {flash}: max |diff| {diff}");
+            }
+        }
     }
 }
