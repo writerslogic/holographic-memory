@@ -23,9 +23,12 @@ use std::cell::RefCell;
 
 use rayon::prelude::*;
 
-use kernels::{as_f32, as_f32_mut, as_u32, as_u32_mut, dot, QueryCode, Rotation, SplitMix};
+use kernels::{
+    as_f32, as_f32_mut, as_u32, as_u32_mut, as_u8, as_u8_mut, dot, fastscan, pack_batch, QueryCode,
+    Rotation, SplitMix, BATCH,
+};
 
-/// Default out-degree of every vertex; one batch of edge codes per expansion.
+/// Default out-degree of every vertex; one FastScan batch of edge codes per expansion.
 pub const DEFAULT_DEGREE: usize = 32;
 const NONE: u32 = u32::MAX;
 const UPPER_DEGREE: usize = 16;
@@ -40,9 +43,13 @@ pub struct BuildParams {
     pub degree: usize,
     /// Pruning parameter of the second pass (the first pass uses 1.0).
     pub alpha: f32,
-    /// Length of the 1-bit edge codes; rounded up to a power of two of at least 64 and at
-    /// least the dimension. 0 picks the smallest such length.
+    /// Coordinates of the rotated edge codes; rounded up to a power of two of at least 64 and
+    /// at least the dimension. 0 picks the smallest such length.
     pub code_bits: usize,
+    /// Bits per rotated coordinate of an edge code: 1 (RaBitQ) or 2 (extended RaBitQ, a
+    /// tighter estimate for twice the code memory). An edge code takes
+    /// `code_bits * edge_bits` bits.
+    pub edge_bits: usize,
     pub seed: u64,
 }
 
@@ -53,6 +60,7 @@ impl Default for BuildParams {
             degree: DEFAULT_DEGREE,
             alpha: 1.0,
             code_bits: 0,
+            edge_bits: 1,
             seed: 0x5EED,
         }
     }
@@ -69,8 +77,12 @@ pub struct SearchParams {
 pub struct QGraph {
     n: usize,
     dim: usize,
+    /// Edge slots per vertex: the degree rounded up to whole FastScan batches.
     degree: usize,
-    words: usize,
+    /// Rotated dimension (coordinates per code plane).
+    dims: usize,
+    /// Code planes per edge (`BuildParams::edge_bits`).
+    bits: usize,
     rotation: Rotation,
     stride: usize,
     codes_off: usize,
@@ -313,34 +325,111 @@ impl Rows<'_> {
     }
 }
 
-/// Per-edge code and factors for the edge v -> u (rotated unit vectors).
-/// Returns `(K, M, popcount)` with `K = <v, w> - M <s, v>`.
-fn edge_factors(pv: &[f32], pu: &[f32], code: &mut [u64]) -> (f32, f32, f32) {
+/// Per-edge code and factors for the edge v -> u (rotated unit vectors), with `bits` bits per
+/// coordinate. The residual `w = u - v` is quantized to odd levels `l_i` in
+/// `{-(2^bits - 1), .., -1, 1, .., 2^bits - 1}` stored as `c_i = (l_i + 2^bits - 1) / 2`,
+/// bit plane `p` in `code[p * words..]`. For 1 bit, `l = sign(w)` (RaBitQ); for 2 bits the
+/// `k` largest `|w_i|` get magnitude 3, with `k` maximizing the cosine between `l` and `w`
+/// (extended RaBitQ; the optimum is a threshold on `|w_i|` by the rearrangement inequality).
+///
+/// The estimator is `<q, w> ~= <v, w> + G <l, q - v>` with `G = |w|^2 / <l, w>`.
+/// Returns `(K, G, sum_i c_i)` with `K = <v, w> - G <l, v>`.
+fn edge_factors(pv: &[f32], pu: &[f32], bits: usize, code: &mut [u64]) -> (f32, f32, f32) {
+    let d = pv.len();
+    let words = d / 64;
+    debug_assert_eq!(code.len(), bits * words);
     code.fill(0);
-    let (mut r2, mut l1, mut sv, mut vw) = (0f32, 0f32, 0f32, 0f32);
+    // Coordinates at or before `cut` in (|w| descending, index ascending) order get magnitude 3.
+    let mut cut: Option<(f32, usize)> = None;
+    if bits == 2 {
+        let mut mag: Vec<(f32, usize)> = pv
+            .iter()
+            .zip(pu)
+            .enumerate()
+            .map(|(i, (a, b))| ((b - a).abs(), i))
+            .collect();
+        mag.sort_unstable_by(|x, y| y.0.total_cmp(&x.0).then(x.1.cmp(&y.1)));
+        let l1: f32 = mag.iter().map(|m| m.0).sum();
+        let (mut best, mut best_k, mut top) = (l1 / (d as f32).sqrt(), 0, 0f32);
+        for (k, m) in mag.iter().enumerate() {
+            top += m.0;
+            let cos = (l1 + 2.0 * top) / ((d + 8 * (k + 1)) as f32).sqrt();
+            if cos > best {
+                (best, best_k) = (cos, k + 1);
+            }
+        }
+        cut = best_k.checked_sub(1).map(|k| mag[k]);
+    }
+    let offset = (1u32 << bits) - 1;
+    let (mut r2, mut lw, mut lv, mut vw, mut sum) = (0f32, 0f32, 0f32, 0f32, 0u32);
     for (i, (&a, &b)) in pv.iter().zip(pu).enumerate() {
         let w = b - a;
         r2 += w * w;
-        l1 += w.abs();
         vw += a * w;
-        if w > 0.0 {
-            code[i / 64] |= 1 << (i % 64);
-            sv += a;
-        } else {
-            sv -= a;
+        let big = cut.is_some_and(|(m, j)| w.abs() > m || (w.abs() == m && i <= j));
+        let level: i32 = if big { 3 } else { 1 };
+        let level = if w > 0.0 { level } else { -level };
+        let l = level as f32;
+        lw += l * w;
+        lv += l * a;
+        let c = (level + offset as i32) as u32 / 2;
+        sum += c;
+        for p in 0..bits {
+            code[p * words + i / 64] |= u64::from((c >> p) & 1) << (i % 64);
         }
     }
-    let m = if l1 > 0.0 { r2 / l1 } else { 0.0 };
-    let pop = code.iter().map(|c| c.count_ones()).sum::<u32>() as f32;
-    (vw - m * sv, m, pop)
+    let g = if lw > 0.0 { r2 / lw } else { 0.0 };
+    (vw - g * lv, g, sum as f32)
 }
 
-impl QGraph {
-    /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
-    /// stay zero. Uses the rayon pool; the result depends only on the data and `params`.
+fn normalized(data: &[f32], dim: usize) -> Vec<f32> {
+    let mut unit = data.to_vec();
+    unit.par_chunks_mut(dim).for_each(|x| {
+        let norm = dot(x, x).sqrt();
+        if norm > 0.0 {
+            x.iter_mut().for_each(|o| *o /= norm);
+        }
+    });
+    unit
+}
+
+/// FNV-1a over the bit patterns of `data`; identifies the data a topology was built on.
+fn data_hash(data: &[f32]) -> u64 {
+    data.iter().fold(0xCBF2_9CE4_8422_2325, |h, x| {
+        (h ^ u64::from(x.to_bits())).wrapping_mul(0x0100_0000_01B3)
+    })
+}
+
+/// The graph of a [`QGraph`] without its codes: the expensive part of a build. Encoding a
+/// topology with different code parameters is cheap, which is what makes code and layout
+/// experiments affordable.
+pub struct Topology {
+    n: usize,
+    dim: usize,
+    build_ef: usize,
+    degree: usize,
+    alpha: f32,
+    seed: u64,
+    hash: u64,
+    entry: u32,
+    /// Insertion order; the first `n / 16` vertices form the upper layers.
+    order: Vec<u32>,
+    adj: Vec<Vec<u32>>,
+    layers: Vec<Vec<Vec<u32>>>,
+}
+
+const TOPOLOGY_MAGIC: u64 = 0x4851_4754_4F50_0001;
+
+impl Topology {
+    /// Builds the graph over `data` (row-major, `dim` floats per vector); see [`QGraph::build`].
     pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Self {
         assert!(dim > 0 && data.len().is_multiple_of(dim), "ragged data");
-        let n = data.len() / dim;
+        let unit = normalized(data, dim);
+        Self::build_unit(&unit, dim, params, data_hash(data))
+    }
+
+    fn build_unit(unit: &[f32], dim: usize, params: &BuildParams, hash: u64) -> Self {
+        let n = unit.len() / dim;
         assert!(n > 0 && n < NONE as usize, "index size out of range");
         assert!(params.build_ef > 0, "build_ef must be positive");
         let r = params.degree;
@@ -348,19 +437,10 @@ impl QGraph {
             r > 0 && r.is_multiple_of(2),
             "degree must be positive and even"
         );
-        let rotation = Rotation::new(dim, params.code_bits, params.seed);
-        let words = rotation.padded() / 64;
-        let mut unit = data.to_vec();
-        unit.par_chunks_mut(dim).for_each(|x| {
-            let norm = dot(x, x).sqrt();
-            if norm > 0.0 {
-                x.iter_mut().for_each(|o| *o /= norm);
-            }
-        });
-        let rows = Rows { data: &unit, dim };
+        let rows = Rows { data: unit, dim };
 
         let mut centroid = vec![0f32; dim];
-        for x in unit.chunks_exact(dim) {
+        for x in rows.data.chunks_exact(dim) {
             centroid.iter_mut().zip(x).for_each(|(c, v)| *c += v);
         }
         let entry = (0..n as u32)
@@ -412,52 +492,223 @@ impl QGraph {
             layers.push(g);
             size /= LAYER_RATIO;
         }
-        let upper_ids = order[..n / LAYER_RATIO].to_vec();
+        Self {
+            n,
+            dim,
+            build_ef: params.build_ef,
+            degree: r,
+            alpha: params.alpha,
+            seed: params.seed,
+            hash,
+            entry,
+            order,
+            adj: graph,
+            layers,
+        }
+    }
+
+    /// Panics unless this topology was built on `data` with the graph fields of `params`.
+    fn check(&self, data: &[f32], dim: usize, params: &BuildParams) {
+        assert_eq!(
+            (self.dim, self.n * self.dim, self.hash),
+            (dim, data.len(), data_hash(data)),
+            "topology was built on other data"
+        );
+        assert!(
+            self.build_ef == params.build_ef
+                && self.degree == params.degree
+                && self.alpha.to_bits() == params.alpha.to_bits()
+                && self.seed == params.seed,
+            "topology was built with other parameters"
+        );
+    }
+
+    pub fn write(&self, w: &mut impl std::io::Write) -> std::io::Result<()> {
+        let mut put = |x: u64| w.write_all(&x.to_le_bytes());
+        put(TOPOLOGY_MAGIC)?;
+        for x in [self.n, self.dim, self.build_ef, self.degree] {
+            put(x as u64)?;
+        }
+        put(u64::from(self.alpha.to_bits()))?;
+        put(self.seed)?;
+        put(self.hash)?;
+        put(u64::from(self.entry))?;
+        put(self.layers.len() as u64)?;
+        let mut buf: Vec<u8> = Vec::new();
+        let mut list = |l: &[u32]| {
+            buf.extend_from_slice(&(l.len() as u32).to_le_bytes());
+            l.iter()
+                .for_each(|x| buf.extend_from_slice(&x.to_le_bytes()));
+        };
+        list(&self.order);
+        self.adj.iter().for_each(|a| list(a));
+        for layer in &self.layers {
+            list(&[layer.len() as u32]);
+            layer.iter().for_each(|a| list(a));
+        }
+        w.write_all(&buf)
+    }
+
+    pub fn read(r: &mut impl std::io::Read) -> std::io::Result<Self> {
+        use std::io::{Error, ErrorKind};
+        let bad = |what: &str| Error::new(ErrorKind::InvalidData, format!("topology: {what}"));
+        let mut buf = Vec::new();
+        r.read_to_end(&mut buf)?;
+        let mut pos = 0usize;
+        let mut take = |len: usize| -> std::io::Result<&[u8]> {
+            let s = buf.get(pos..pos + len).ok_or_else(|| bad("truncated"))?;
+            pos += len;
+            Ok(s)
+        };
+        let mut u64s = [0u64; 10];
+        for x in &mut u64s {
+            *x = u64::from_le_bytes(take(8)?.try_into().expect("8 bytes"));
+        }
+        let [magic, n, dim, build_ef, degree, alpha, seed, hash, entry, n_layers] = u64s;
+        if magic != TOPOLOGY_MAGIC {
+            return Err(bad("bad magic"));
+        }
+        let mut list = |limit: usize| -> std::io::Result<Vec<u32>> {
+            let len = u32::from_le_bytes(take(4)?.try_into().expect("4 bytes")) as usize;
+            if len > limit {
+                return Err(bad("list too long"));
+            }
+            Ok(take(4 * len)?
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| u32::from_le_bytes(*b))
+                .collect())
+        };
+        let (n, degree) = (n as usize, degree as usize);
+        let order = list(n)?;
+        let adj = (0..n)
+            .map(|_| list(degree))
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut layers = Vec::new();
+        for _ in 0..n_layers {
+            let size = *list(1)?.first().ok_or_else(|| bad("layer size"))? as usize;
+            layers.push(
+                (0..size)
+                    .map(|_| list(UPPER_DEGREE))
+                    .collect::<Result<Vec<_>, _>>()?,
+            );
+        }
+        let in_range = |l: &[u32], m: usize| l.iter().all(|&x| (x as usize) < m);
+        let ok = order.len() == n
+            && (entry as usize) < n
+            && in_range(&order, n)
+            && adj.iter().all(|a| in_range(a, n))
+            && layers
+                .iter()
+                .all(|g| g.iter().all(|a| in_range(a, g.len())))
+            && layers.first().is_none_or(|g| g.len() <= n / LAYER_RATIO);
+        if !ok {
+            return Err(bad("ids out of range"));
+        }
+        Ok(Self {
+            n,
+            dim: dim as usize,
+            build_ef: build_ef as usize,
+            degree,
+            alpha: f32::from_bits(alpha as u32),
+            seed,
+            hash,
+            entry: entry as u32,
+            order,
+            adj,
+            layers,
+        })
+    }
+}
+
+impl QGraph {
+    /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
+    /// stay zero. Uses the rayon pool; the result depends only on the data and `params`.
+    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Self {
+        assert!(dim > 0 && data.len().is_multiple_of(dim), "ragged data");
+        let unit = normalized(data, dim);
+        let topo = Topology::build_unit(&unit, dim, params, data_hash(data));
+        Self::encode(&unit, &topo, params)
+    }
+
+    /// Encodes a prebuilt topology; `data` and the graph fields of `params` must be the ones
+    /// it was built with (checked).
+    pub fn from_topology(data: &[f32], dim: usize, topo: &Topology, params: &BuildParams) -> Self {
+        topo.check(data, dim, params);
+        Self::encode(&normalized(data, dim), topo, params)
+    }
+
+    fn encode(unit: &[f32], topo: &Topology, params: &BuildParams) -> Self {
+        let (n, dim) = (topo.n, topo.dim);
+        let bits = params.edge_bits;
+        assert!(bits == 1 || bits == 2, "edge_bits must be 1 or 2");
+        // Edge slots are stored in FastScan batches of 32; unused slots have id NONE.
+        let r = topo.degree.next_multiple_of(BATCH);
+        let rows = Rows { data: unit, dim };
+        let rotation = Rotation::new(dim, params.code_bits, params.seed);
+        let dims = rotation.padded();
+        let words = dims / 64;
+        let mut rotated = vec![0f32; n * dims];
+        rotated
+            .par_chunks_mut(dims)
+            .enumerate()
+            .for_each(|(v, out)| rotation.apply(rows.row(v as u32), out));
 
         let codes_off = dim.div_ceil(2);
-        let factors_off = codes_off + r * words;
+        let factors_off = codes_off + r * bits * words;
         let ids_off = factors_off + 3 * r / 2;
         let stride = ids_off + r / 2;
         let mut blocks = vec![0u64; n * stride];
         blocks
             .par_chunks_mut(stride)
-            .zip(graph.par_iter())
+            .zip(topo.adj.par_iter())
             .enumerate()
             .for_each(|(v, (b, adj))| {
                 let (vec_w, rest) = b.split_at_mut(codes_off);
-                let (codes, rest) = rest.split_at_mut(r * words);
+                let (codes, rest) = rest.split_at_mut(r * bits * words);
                 let (fac, ids) = rest.split_at_mut(3 * r / 2);
                 as_f32_mut(vec_w)[..dim].copy_from_slice(rows.row(v as u32));
                 let fac = as_f32_mut(fac);
                 let ids = as_u32_mut(ids);
                 ids.fill(NONE);
-                let mut pv = vec![0f32; rotation.padded()];
-                let mut pu = pv.clone();
-                rotation.apply(rows.row(v as u32), &mut pv);
+                let pv = &rotated[v * dims..(v + 1) * dims];
+                // Plain codes, `bits` planes of `words` per edge, packed per batch below.
+                let mut plain = vec![0u64; r * bits * words];
                 for (j, &u) in adj.iter().enumerate() {
                     ids[j] = u;
-                    rotation.apply(rows.row(u), &mut pu);
-                    let (k, m, pop) =
-                        edge_factors(&pv, &pu, &mut codes[j * words..(j + 1) * words]);
+                    let pu = &rotated[u as usize * dims..(u as usize + 1) * dims];
+                    let code = &mut plain[j * bits * words..(j + 1) * bits * words];
+                    let (k, g, sum) = edge_factors(pv, pu, bits, code);
                     fac[j] = k;
-                    fac[r + j] = m;
-                    fac[2 * r + j] = pop;
+                    fac[r + j] = g;
+                    fac[2 * r + j] = sum;
+                }
+                let packed = as_u8_mut(codes);
+                for (batch, out) in packed.chunks_exact_mut(BATCH * bits * dims / 8).enumerate() {
+                    for (p, plane) in out.chunks_exact_mut(4 * dims).enumerate() {
+                        let edges: Vec<&[u64]> = (batch * BATCH..(batch + 1) * BATCH)
+                            .map(|j| &plain[(j * bits + p) * words..(j * bits + p + 1) * words])
+                            .collect();
+                        pack_batch(&edges, dims, plane);
+                    }
                 }
             });
         Self {
             n,
             dim,
             degree: r,
-            words,
+            dims,
+            bits,
             rotation,
             stride,
             codes_off,
             factors_off,
             ids_off,
             blocks,
-            entry,
-            upper_ids,
-            layers,
+            entry: topo.entry,
+            upper_ids: topo.order[..n / LAYER_RATIO].to_vec(),
+            layers: topo.layers.clone(),
         }
     }
 
@@ -513,10 +764,11 @@ impl QGraph {
             index: self,
             visited: Visited::new(self.n),
             pq: vec![0.0; self.rotation.padded()],
-            code: QueryCode::new(self.words),
+            code: QueryCode::new(self.dims),
             raw: vec![0; self.degree],
             est: vec![0.0; self.degree],
             pool: Vec::new(),
+            fresh: Vec::new(),
             results: Vec::new(),
         }
     }
@@ -536,6 +788,8 @@ pub struct Searcher<'a> {
     raw: Vec<u32>,
     est: Vec<f32>,
     pool: Vec<Candidate>,
+    /// Accepted neighbours of the current expansion, sorted by estimated distance.
+    fresh: Vec<Candidate>,
     results: Vec<(f32, u32)>,
 }
 
@@ -553,7 +807,9 @@ impl Searcher<'_> {
         let ef = params.ef.max(1);
         idx.rotation.apply(query, &mut self.pq);
         self.code.encode(&self.pq);
-        let (lo2, d2q, sq) = (2.0 * self.code.lo, 2.0 * self.code.delta, self.code.sum);
+        let (lo2, d2q) = (2.0 * self.code.lo, 2.0 * self.code.delta);
+        let sq = self.code.sum * ((1 << idx.bits) - 1) as f32;
+        let plane_bytes = 4 * idx.dims;
 
         self.visited.next();
         let (entry, mut exact) = idx.descend(query);
@@ -571,8 +827,8 @@ impl Searcher<'_> {
             if params.max_exact > 0 && expanded >= params.max_exact {
                 break;
             }
-            let v = self.pool.remove(cur).id;
-            if let Some(next) = self.pool[cur..].iter().find(|c| !c.done) {
+            let v = self.pool[cur].id;
+            if let Some(next) = self.pool[cur + 1..].iter().find(|c| !c.done) {
                 kernels::prefetch(idx.block(next.id));
             }
             let b = idx.block(v);
@@ -580,27 +836,22 @@ impl Searcher<'_> {
             exact += 1;
             expanded += 1;
             push_top(&mut self.results, k, -ipv, v);
-            // The expanded vertex re-enters the pool with its exact distance, so an optimistic
-            // estimate cannot hold a pool slot and stall the search.
-            let pos = self.pool.partition_point(|c| c.dist <= -ipv);
-            if pos < ef {
-                self.pool.insert(
-                    pos,
-                    Candidate {
-                        dist: -ipv,
-                        id: v,
-                        done: true,
-                    },
-                );
-                self.pool.truncate(ef);
-            }
+            // The expanded vertex moves to its exact distance, so an optimistic estimate cannot
+            // hold a pool slot and stall the search.
+            reposition(&mut self.pool, cur, -ipv);
 
-            kernels::raw_estimates(
-                &b[idx.codes_off..idx.factors_off],
-                &self.code.planes,
-                idx.words,
-                &mut self.raw,
-            );
+            let packed = as_u8(&b[idx.codes_off..idx.factors_off]);
+            for (batch, raw) in packed
+                .chunks_exact(idx.bits * plane_bytes)
+                .zip(self.raw.as_chunks_mut::<BATCH>().0)
+            {
+                fastscan(&batch[..plane_bytes], &self.code.lut, raw);
+                if idx.bits == 2 {
+                    let mut high = [0u32; BATCH];
+                    fastscan(&batch[plane_bytes..], &self.code.lut, &mut high);
+                    raw.iter_mut().zip(high).for_each(|(r, h)| *r += 2 * h);
+                }
+            }
             let fac = as_f32(&b[idx.factors_off..idx.ids_off]);
             let (kf, rest) = fac.split_at(idx.degree);
             let (mf, pf) = rest.split_at(idx.degree);
@@ -610,16 +861,18 @@ impl Searcher<'_> {
                 *e = -(ipv + kj + mj * (lo2 * pj - sq + d2q * rj as f32));
             }
 
-            let mut best = usize::MAX;
+            let bound = if self.pool.len() >= ef {
+                self.pool[ef - 1].dist
+            } else {
+                f32::INFINITY
+            };
+            self.fresh.clear();
             for (&u, &d) in as_u32(&b[idx.ids_off..]).iter().zip(&self.est) {
-                if u == NONE || !self.visited.insert(u) {
+                if u == NONE || !self.visited.insert(u) || d >= bound {
                     continue;
                 }
-                if self.pool.len() >= ef && d >= self.pool[ef - 1].dist {
-                    continue;
-                }
-                let pos = self.pool.partition_point(|c| c.dist <= d);
-                self.pool.insert(
+                let pos = self.fresh.partition_point(|c| c.dist <= d);
+                self.fresh.insert(
                     pos,
                     Candidate {
                         dist: d,
@@ -627,10 +880,8 @@ impl Searcher<'_> {
                         done: false,
                     },
                 );
-                self.pool.truncate(ef);
-                best = best.min(pos);
             }
-            cur = best.min(cur);
+            cur = cur.min(merge(&mut self.pool, &self.fresh, ef));
             while cur < self.pool.len() && self.pool[cur].done {
                 cur += 1;
             }
@@ -639,6 +890,50 @@ impl Searcher<'_> {
         out.extend(self.results.iter().map(|r| r.1));
         exact
     }
+}
+
+/// Moves the candidate at `cur` to the position its exact distance `dist` takes among the
+/// others (after any equal distance) and marks it done.
+fn reposition(pool: &mut [Candidate], cur: usize, dist: f32) {
+    let v = pool[cur].id;
+    let before = pool[..cur].partition_point(|c| c.dist <= dist);
+    let pos = if before < cur {
+        pool[before..=cur].rotate_right(1);
+        before
+    } else {
+        let pos = cur + pool[cur + 1..].partition_point(|c| c.dist <= dist);
+        pool[cur..=pos].rotate_left(1);
+        pos
+    };
+    pool[pos] = Candidate {
+        dist,
+        id: v,
+        done: true,
+    };
+}
+
+/// Merges `fresh` (sorted) into the sorted `pool`, each after the pool entries of equal
+/// distance, keeping the first `ef`. Returns the position of the first fresh entry
+/// (`usize::MAX` if there is none); this equals inserting them one by one.
+fn merge(pool: &mut Vec<Candidate>, fresh: &[Candidate], ef: usize) -> usize {
+    let Some(first) = fresh.first() else {
+        return usize::MAX;
+    };
+    let (mut i, mut j) = (pool.len(), fresh.len());
+    pool.resize(i + j, *first);
+    let mut k = i + j;
+    while j > 0 {
+        k -= 1;
+        if i > 0 && pool[i - 1].dist > fresh[j - 1].dist {
+            pool[k] = pool[i - 1];
+            i -= 1;
+        } else {
+            pool[k] = fresh[j - 1];
+            j -= 1;
+        }
+    }
+    pool.truncate(ef);
+    k
 }
 
 fn push_top(top: &mut Vec<(f32, u32)>, k: usize, dist: f32, id: u32) {
@@ -653,7 +948,6 @@ fn push_top(top: &mut Vec<(f32, u32)>, k: usize, dist: f32, id: u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use kernels::raw_estimates;
 
     fn gaussian(rng: &mut SplitMix) -> f32 {
         let u = rng.next_f32().max(1e-7);
@@ -667,61 +961,76 @@ mod tests {
         x
     }
 
+    /// The shipped per-edge estimator through the FastScan kernel, as `search` evaluates it.
+    fn quantized_estimate(pq: &[f32], pv: &[f32], pu: &[f32], bits: usize) -> (f32, f32) {
+        let p = pq.len();
+        let mut code = vec![0u64; bits * p / 64];
+        let (k, g, sum) = edge_factors(pv, pu, bits, &mut code);
+        let ipv = dot(pq, pv);
+        let offset = ((1 << bits) - 1) as f32;
+        let lq: f32 = (0..p)
+            .map(|i| {
+                let c = (0..bits).map(|b| (code[b * p / 64 + i / 64] >> (i % 64) & 1) << b);
+                (2.0 * c.sum::<u64>() as f32 - offset) * pq[i]
+            })
+            .sum();
+        let mut qc = QueryCode::new(p);
+        qc.encode(pq);
+        let mut raw = 0;
+        for (b, plane) in code.chunks_exact(p / 64).enumerate() {
+            let mut packed = vec![0u8; 4 * p];
+            pack_batch(&[plane], p, &mut packed);
+            let mut out = [0u32; BATCH];
+            fastscan(&packed, &qc.lut, &mut out);
+            raw += out[0] << b;
+        }
+        let quant =
+            ipv + k + g * (2.0 * qc.lo * sum - offset * qc.sum + 2.0 * qc.delta * raw as f32);
+        (ipv + k + g * lq, quant)
+    }
+
     /// Mean of the shipped per-edge estimator over rotation seeds must match `<q, u>`, for the
-    /// automatic code length (128 bits at d = 100) and for 512-bit codes.
+    /// automatic code length (128 coordinates at d = 100) and for 512, with 1- and 2-bit codes;
+    /// the 2-bit codes must have the smaller mean squared error.
     /// The WHT-with-signs rotation is not Haar, so the bound is empirical: 400 seeds put the
     /// standard error near 0.003; tolerances are 0.02 (float query) and 0.03 (4-bit query).
     #[test]
     fn edge_estimator_is_unbiased_over_rotations() {
         let d = 100;
         let mut rng = SplitMix(42);
-        for bits in [0, 0, 0, 512, 512, 512] {
+        for code_bits in [0, 0, 0, 512, 512, 512] {
             let q = unit((0..d).map(|_| gaussian(&mut rng)).collect());
             let v = unit((0..d).map(|_| gaussian(&mut rng)).collect());
             let u = unit(v.iter().map(|x| x + 0.15 * gaussian(&mut rng)).collect());
-            let truth = dot(&q, &u);
-            let (mut float_sum, mut quant_sum) = (0f64, 0f64);
-            let seeds = 400;
-            for seed in 0..seeds {
-                let rot = Rotation::new(d, bits, seed);
-                let p = rot.padded();
-                let (mut pq, mut pv, mut pu) = (vec![0.0; p], vec![0.0; p], vec![0.0; p]);
-                rot.apply(&q, &mut pq);
-                rot.apply(&v, &mut pv);
-                rot.apply(&u, &mut pu);
-                let mut code = vec![0u64; p / 64];
-                let (k, m, pop) = edge_factors(&pv, &pu, &mut code);
-                let ipv = dot(&pq, &pv);
-                let sq: f32 = pq
-                    .iter()
-                    .enumerate()
-                    .map(|(i, x)| {
-                        if code[i / 64] >> (i % 64) & 1 == 1 {
-                            *x
-                        } else {
-                            -*x
-                        }
-                    })
-                    .sum();
-                float_sum += f64::from(ipv + k + m * sq);
-                let mut qc = QueryCode::new(p / 64);
-                qc.encode(&pq);
-                let mut raw = [0u32];
-                raw_estimates(&code, &qc.planes, p / 64, &mut raw);
-                let est =
-                    ipv + k + m * (2.0 * qc.lo * pop - qc.sum + 2.0 * qc.delta * raw[0] as f32);
-                quant_sum += f64::from(est);
+            let truth = f64::from(dot(&q, &u));
+            let mut mse = [0f64; 2];
+            for bits in [1, 2] {
+                let (mut float_sum, mut quant_sum) = (0f64, 0f64);
+                let seeds = 400;
+                for seed in 0..seeds {
+                    let rot = Rotation::new(d, code_bits, seed);
+                    let p = rot.padded();
+                    let (mut pq, mut pv, mut pu) = (vec![0.0; p], vec![0.0; p], vec![0.0; p]);
+                    rot.apply(&q, &mut pq);
+                    rot.apply(&v, &mut pv);
+                    rot.apply(&u, &mut pu);
+                    let (float, quant) = quantized_estimate(&pq, &pv, &pu, bits);
+                    float_sum += f64::from(float);
+                    quant_sum += f64::from(quant);
+                    mse[bits - 1] += (f64::from(quant) - truth).powi(2);
+                }
+                let float_mean = float_sum / f64::from(seeds as u32);
+                let quant_mean = quant_sum / f64::from(seeds as u32);
+                assert!(
+                    (float_mean - truth).abs() < 0.02,
+                    "{bits} bits: {float_mean} vs {truth}"
+                );
+                assert!(
+                    (quant_mean - truth).abs() < 0.03,
+                    "{bits} bits: {quant_mean} vs {truth}"
+                );
             }
-            let float_mean = float_sum / f64::from(seeds as u32);
-            let quant_mean = quant_sum / f64::from(seeds as u32);
-            assert!(
-                (float_mean - f64::from(truth)).abs() < 0.02,
-                "{float_mean} vs {truth}"
-            );
-            assert!(
-                (quant_mean - f64::from(truth)).abs() < 0.03,
-                "{quant_mean} vs {truth}"
-            );
+            assert!(mse[1] < mse[0], "2-bit mse {} >= 1-bit {}", mse[1], mse[0]);
         }
     }
 

@@ -28,7 +28,7 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
-use holographic_memory::core::qgraph::{BuildParams, QGraph, SearchParams};
+use holographic_memory::core::qgraph::{BuildParams, QGraph, SearchParams, Topology};
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
 use rayon::prelude::*;
@@ -79,6 +79,9 @@ enum Mode {
         /// Edge code length in bits (0 = smallest power of two >= dim).
         #[arg(long, default_value_t = 0)]
         code_bits: usize,
+        /// Bits per rotated coordinate of an edge code (1 or 2).
+        #[arg(long, default_value_t = 1)]
+        edge_bits: usize,
         #[arg(long, default_value_t = 3)]
         repeats: usize,
         /// Time only when the 1-minute load average is below this.
@@ -94,6 +97,10 @@ enum Mode {
         /// on the rest and score against exact cosine truth; the test queries are not read.
         #[arg(long, conflicts_with = "queries")]
         holdout: Option<usize>,
+        /// Reuse the graph topology stored in this file (built and saved there if absent).
+        /// build_secs then covers encoding only, so it is not a build time.
+        #[arg(long)]
+        graph_cache: Option<PathBuf>,
     },
     Beir {
         #[arg(long)]
@@ -392,12 +399,14 @@ struct QgraphArgs {
     build_ef: usize,
     alpha: f32,
     code_bits: usize,
+    edge_bits: usize,
     degree: usize,
     repeats: usize,
     max_load: f64,
     max_wait_secs: u64,
     queries: Option<usize>,
     holdout: Option<usize>,
+    graph_cache: Option<PathBuf>,
 }
 
 fn normalize(v: &mut [f32]) {
@@ -476,17 +485,35 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         build_ef: a.build_ef,
         alpha: a.alpha,
         code_bits: a.code_bits,
+        edge_bits: a.edge_bits,
         degree: a.degree,
         ..BuildParams::default()
     };
-    let load_before_build = load_1m();
+    let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
+    let cached = match &a.graph_cache {
+        Some(p) if p.exists() => {
+            let mut f = std::io::BufReader::new(fs::File::open(p)?);
+            Some(Topology::read(&mut f).with_context(|| format!("reading {}", p.display()))?)
+        }
+        Some(p) => {
+            let topo = Topology::build(&train, d, &params);
+            let mut f = std::io::BufWriter::new(fs::File::create(p)?);
+            topo.write(&mut f)?;
+            std::io::Write::flush(&mut f)?;
+            Some(topo)
+        }
+        None => None,
+    };
+    let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
     let t = Instant::now();
-    let index = QGraph::build(&train, d, &params);
+    let index = match &cached {
+        Some(topo) => QGraph::from_topology(&train, d, topo, &params),
+        None => QGraph::build(&train, d, &params),
+    };
     let build_secs = t.elapsed().as_secs_f64();
-    drop(train);
+    drop((train, cached));
     eprintln!("built in {build_secs:.1}s, {} bytes", index.index_bytes());
 
-    let deadline = Instant::now() + std::time::Duration::from_secs(a.max_wait_secs);
     let mut searcher = index.searcher();
     let mut rows = Vec::new();
     let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
@@ -548,8 +575,16 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "environment": environment(),
         "n_queries": test.len(),
         "build": {"params": {"degree": a.degree, "build_ef": a.build_ef,
-                             "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed},
-                  "build_secs": build_secs, "load_1m_before_build": load_before_build},
+                             "alpha": a.alpha, "code_bits": a.code_bits, "edge_bits": a.edge_bits,
+                             "seed": params.seed},
+                  "build_secs": build_secs, "load_1m_before_build": load_before_build,
+                  "load_gate_met": build_gate,
+                  "topology_from_cache": a.graph_cache.is_some(),
+                  "note": if a.graph_cache.is_some() {
+                      "topology from --graph-cache: build_secs covers encoding only"
+                  } else {
+                      "full build on all cores"
+                  }},
         "index_bytes": index.index_bytes(),
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
@@ -990,12 +1025,14 @@ fn main() -> Result<()> {
             build_ef,
             alpha,
             code_bits,
+            edge_bits,
             degree,
             repeats,
             max_load,
             max_wait_secs,
             queries,
             holdout,
+            graph_cache,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1004,12 +1041,14 @@ fn main() -> Result<()> {
             build_ef,
             alpha,
             code_bits,
+            edge_bits,
             degree,
             repeats,
             max_load,
             max_wait_secs,
             queries,
             holdout,
+            graph_cache,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {

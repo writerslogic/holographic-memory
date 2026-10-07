@@ -1,0 +1,455 @@
+{
+ "workstream": "qgraph speed-first at high recall (FastScan edge-code kernel, batched pool merge, 2-bit extended-RaBitQ edge codes)",
+ "protocol": "public-bench ann-qgraph --holdout 2000: every (n/2000)-th train vector is a query and is left out of the index; truth is exact cosine over the rest; test.f32 and neighbors.i32 were not read. Single thread, one query at a time.",
+ "screening": {
+  "note": "Untimed: recall@10 and exact evaluations per query on cached d64 topologies (build_ef 200, alpha 1.0, seed 24301). Search is deterministic, so these are exact; QPS from these runs (load 80-165) is not a result and is omitted.",
+  "runs": [
+   {
+    "name": "ny_512x1",
+    "dataset": "nytimes-256-angular",
+    "params": {
+     "alpha": 1.0,
+     "build_ef": 200,
+     "code_bits": 512,
+     "degree": 64,
+     "edge_bits": 1,
+     "seed": 24301
+    },
+    "index_bytes": 1770726960,
+    "sweep": [
+     {
+      "ef": 16,
+      "recall_at_10": 0.80795,
+      "mean_exact_evals_per_query": 158.7505
+     },
+     {
+      "ef": 24,
+      "recall_at_10": 0.8617,
+      "mean_exact_evals_per_query": 183.9455
+     },
+     {
+      "ef": 32,
+      "recall_at_10": 0.8854,
+      "mean_exact_evals_per_query": 214.366
+     },
+     {
+      "ef": 48,
+      "recall_at_10": 0.91045,
+      "mean_exact_evals_per_query": 270.695
+     },
+     {
+      "ef": 64,
+      "recall_at_10": 0.92285,
+      "mean_exact_evals_per_query": 333.5245
+     },
+     {
+      "ef": 96,
+      "recall_at_10": 0.9384,
+      "mean_exact_evals_per_query": 459.444
+     },
+     {
+      "ef": 128,
+      "recall_at_10": 0.94655,
+      "mean_exact_evals_per_query": 591.6595
+     },
+     {
+      "ef": 192,
+      "recall_at_10": 0.9566,
+      "mean_exact_evals_per_query": 866.773
+     },
+     {
+      "ef": 256,
+      "recall_at_10": 0.9607,
+      "mean_exact_evals_per_query": 1144.0565
+     },
+     {
+      "ef": 384,
+      "recall_at_10": 0.9673,
+      "mean_exact_evals_per_query": 1696.034
+     },
+     {
+      "ef": 512,
+      "recall_at_10": 0.9696,
+      "mean_exact_evals_per_query": 2232.2
+     }
+    ],
+    "load_1m": [
+     164.93,
+     164.93,
+     164.93,
+     163.01,
+     163.01,
+     163.01,
+     160.21,
+     159.71,
+     157.49,
+     155.37,
+     149.69
+    ]
+   },
+   {
+    "name": "ny_256x2",
+    "dataset": "nytimes-256-angular",
+    "params": {
+     "alpha": 1.0,
+     "build_ef": 200,
+     "code_bits": 256,
+     "degree": 64,
+     "edge_bits": 2,
+     "seed": 24301
+    },
+    "index_bytes": 1770726960,
+    "sweep": [
+     {
+      "ef": 16,
+      "recall_at_10": 0.8047,
+      "mean_exact_evals_per_query": 136.63
+     },
+     {
+      "ef": 24,
+      "recall_at_10": 0.848,
+      "mean_exact_evals_per_query": 148.9775
+     },
+     {
+      "ef": 32,
+      "recall_at_10": 0.871,
+      "mean_exact_evals_per_query": 162.294
+     },
+     {
+      "ef": 48,
+      "recall_at_10": 0.8955,
+      "mean_exact_evals_per_query": 188.0835
+     },
+     {
+      "ef": 64,
+      "recall_at_10": 0.90895,
+      "mean_exact_evals_per_query": 215.5645
+     },
+     {
+      "ef": 96,
+      "recall_at_10": 0.9255,
+      "mean_exact_evals_per_query": 273.091
+     },
+     {
+      "ef": 128,
+      "recall_at_10": 0.9357,
+      "mean_exact_evals_per_query": 332.1955
+     },
+     {
+      "ef": 192,
+      "recall_at_10": 0.9477,
+      "mean_exact_evals_per_query": 458.8535
+     },
+     {
+      "ef": 256,
+      "recall_at_10": 0.9548,
+      "mean_exact_evals_per_query": 589.907
+     },
+     {
+      "ef": 384,
+      "recall_at_10": 0.96365,
+      "mean_exact_evals_per_query": 859.7235
+     },
+     {
+      "ef": 512,
+      "recall_at_10": 0.96695,
+      "mean_exact_evals_per_query": 1132.0745
+     }
+    ],
+    "load_1m": [
+     137.54,
+     137.54,
+     137.54,
+     137.54,
+     137.54,
+     137.54,
+     137.54,
+     135.01,
+     135.01,
+     133.73,
+     131.51
+    ]
+   },
+   {
+    "name": "ny_256x1",
+    "dataset": "nytimes-256-angular",
+    "params": {
+     "alpha": 1.0,
+     "build_ef": 200,
+     "code_bits": 256,
+     "degree": 64,
+     "edge_bits": 1,
+     "seed": 24301
+    },
+    "index_bytes": 1180902960,
+    "sweep": [
+     {
+      "ef": 16,
+      "recall_at_10": 0.8161,
+      "mean_exact_evals_per_query": 487.5415
+     },
+     {
+      "ef": 24,
+      "recall_at_10": 0.86075,
+      "mean_exact_evals_per_query": 674.841
+     },
+     {
+      "ef": 32,
+      "recall_at_10": 0.8843,
+      "mean_exact_evals_per_query": 848.4135
+     },
+     {
+      "ef": 48,
+      "recall_at_10": 0.909,
+      "mean_exact_evals_per_query": 1179.698
+     },
+     {
+      "ef": 64,
+      "recall_at_10": 0.9193,
+      "mean_exact_evals_per_query": 1460.761
+     },
+     {
+      "ef": 96,
+      "recall_at_10": 0.93165,
+      "mean_exact_evals_per_query": 1972.018
+     },
+     {
+      "ef": 128,
+      "recall_at_10": 0.93655,
+      "mean_exact_evals_per_query": 2426.776
+     },
+     {
+      "ef": 192,
+      "recall_at_10": 0.94335,
+      "mean_exact_evals_per_query": 3244.0545
+     },
+     {
+      "ef": 256,
+      "recall_at_10": 0.9462,
+      "mean_exact_evals_per_query": 3937.627
+     },
+     {
+      "ef": 384,
+      "recall_at_10": 0.9514,
+      "mean_exact_evals_per_query": 5127.5315
+     },
+     {
+      "ef": 512,
+      "recall_at_10": 0.9549,
+      "mean_exact_evals_per_query": 6128.774
+     }
+    ],
+    "load_1m": [
+     128.62,
+     128.62,
+     124.81,
+     124.81,
+     122.34,
+     122.34,
+     117.75,
+     109.53,
+     104.59,
+     101.29,
+     98.53
+    ]
+   },
+   {
+    "name": "gl_128x1",
+    "dataset": "glove-100-angular",
+    "params": {
+     "alpha": 1.0,
+     "build_ef": 200,
+     "code_bits": 128,
+     "degree": 64,
+     "edge_bits": 1,
+     "seed": 24301
+    },
+    "index_bytes": 2897511684,
+    "sweep": [
+     {
+      "ef": 16,
+      "recall_at_10": 0.69995,
+      "mean_exact_evals_per_query": 316.0965
+     },
+     {
+      "ef": 24,
+      "recall_at_10": 0.76535,
+      "mean_exact_evals_per_query": 408.558
+     },
+     {
+      "ef": 32,
+      "recall_at_10": 0.804,
+      "mean_exact_evals_per_query": 494.089
+     },
+     {
+      "ef": 48,
+      "recall_at_10": 0.8464,
+      "mean_exact_evals_per_query": 654.562
+     },
+     {
+      "ef": 64,
+      "recall_at_10": 0.87525,
+      "mean_exact_evals_per_query": 815.1345
+     },
+     {
+      "ef": 96,
+      "recall_at_10": 0.90505,
+      "mean_exact_evals_per_query": 1127.129
+     },
+     {
+      "ef": 128,
+      "recall_at_10": 0.92215,
+      "mean_exact_evals_per_query": 1424.21
+     },
+     {
+      "ef": 192,
+      "recall_at_10": 0.9438,
+      "mean_exact_evals_per_query": 2024.0465
+     },
+     {
+      "ef": 256,
+      "recall_at_10": 0.9548,
+      "mean_exact_evals_per_query": 2576.898
+     },
+     {
+      "ef": 384,
+      "recall_at_10": 0.96595,
+      "mean_exact_evals_per_query": 3689.952
+     },
+     {
+      "ef": 512,
+      "recall_at_10": 0.9724,
+      "mean_exact_evals_per_query": 4726.3595
+     }
+    ],
+    "load_1m": [
+     85.95,
+     86.2,
+     86.2,
+     86.2,
+     84.66,
+     84.66,
+     86.69,
+     86.07,
+     86.47,
+     83.37,
+     91.39
+    ]
+   },
+   {
+    "name": "gl_128x2",
+    "dataset": "glove-100-angular",
+    "params": {
+     "alpha": 1.0,
+     "build_ef": 200,
+     "code_bits": 128,
+     "degree": 64,
+     "edge_bits": 2,
+     "seed": 24301
+    },
+    "index_bytes": 4107382020,
+    "sweep": [
+     {
+      "ef": 16,
+      "recall_at_10": 0.7141,
+      "mean_exact_evals_per_query": 138.8065
+     },
+     {
+      "ef": 24,
+      "recall_at_10": 0.7872,
+      "mean_exact_evals_per_query": 151.6245
+     },
+     {
+      "ef": 32,
+      "recall_at_10": 0.82545,
+      "mean_exact_evals_per_query": 164.58
+     },
+     {
+      "ef": 48,
+      "recall_at_10": 0.8752,
+      "mean_exact_evals_per_query": 190.1185
+     },
+     {
+      "ef": 64,
+      "recall_at_10": 0.90105,
+      "mean_exact_evals_per_query": 215.352
+     },
+     {
+      "ef": 96,
+      "recall_at_10": 0.93005,
+      "mean_exact_evals_per_query": 266.5165
+     },
+     {
+      "ef": 128,
+      "recall_at_10": 0.94615,
+      "mean_exact_evals_per_query": 317.4285
+     },
+     {
+      "ef": 192,
+      "recall_at_10": 0.9639,
+      "mean_exact_evals_per_query": 419.5545
+     },
+     {
+      "ef": 256,
+      "recall_at_10": 0.97485,
+      "mean_exact_evals_per_query": 523.0475
+     },
+     {
+      "ef": 384,
+      "recall_at_10": 0.9868,
+      "mean_exact_evals_per_query": 727.303
+     },
+     {
+      "ef": 512,
+      "recall_at_10": 0.99115,
+      "mean_exact_evals_per_query": 930.216
+     }
+    ],
+    "load_1m": [
+     155.07,
+     155.07,
+     155.07,
+     155.07,
+     156.11,
+     156.11,
+     157.06,
+     157.06,
+     158.58,
+     159.65,
+     159.92
+    ]
+   }
+  ]
+ },
+ "pool_rewrite_equivalence": {
+  "note": "Batched merge of accepted neighbours and in-place repositioning of the expanded vertex versus per-neighbour Vec insert: recall@10 and exact evals per query identical at every ef (nytimes, 512x1, ef 16/64/128/256/512).",
+  "identical": true,
+  "sweep": [
+   {
+    "ef": 16,
+    "recall_at_10": 0.80795,
+    "mean_exact_evals_per_query": 158.7505
+   },
+   {
+    "ef": 64,
+    "recall_at_10": 0.92285,
+    "mean_exact_evals_per_query": 333.5245
+   },
+   {
+    "ef": 128,
+    "recall_at_10": 0.94655,
+    "mean_exact_evals_per_query": 591.6595
+   },
+   {
+    "ef": 256,
+    "recall_at_10": 0.9607,
+    "mean_exact_evals_per_query": 1144.0565
+   },
+   {
+    "ef": 512,
+    "recall_at_10": 0.9696,
+    "mean_exact_evals_per_query": 2232.2
+   }
+  ]
+ }
+}

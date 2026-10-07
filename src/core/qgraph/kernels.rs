@@ -1,9 +1,9 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Inner loops of the quantized graph: rotation, float dot product, and the bit-plane
-//! popcount that turns 1-bit edge codes into inner-product estimates.
+//! Inner loops of the quantized graph: rotation, float dot product, and the FastScan table
+//! lookups that turn edge codes into inner-product estimates.
 
-/// Bits per query coordinate in the bit-plane estimator.
+/// Bits per query coordinate; FastScan table entries (four of them summed) must fit a u8.
 pub(crate) const QUERY_BITS: usize = 4;
 const ROUNDS: usize = 3;
 
@@ -102,11 +102,15 @@ pub(crate) fn dot(a: &[f32], b: &[f32]) -> f32 {
     acc.iter().sum::<f32>() + tail
 }
 
-/// A query coordinate vector quantized to [`QUERY_BITS`] unsigned bits per coordinate and
-/// stored as bit planes: `planes[p * words + w]` holds bit `p` of coordinates `64w..64w+63`.
-/// `sum_i b_i x_i ~= lo * popcount(b) + delta * raw(b)` for any bit vector `b`.
+/// Edges per FastScan batch: one 16-byte register of nibbles holds one position of 32 codes.
+pub(crate) const BATCH: usize = 32;
+
+/// A query coordinate vector quantized to [`QUERY_BITS`] unsigned bits per coordinate, stored
+/// as FastScan lookup tables: `lut[16 g + c] = sum_t bit_t(c) * q[4 g + t]` for each group `g`
+/// of four coordinates. For any bit vector `b`,
+/// `sum_i b_i x_i ~= lo * popcount(b) + delta * raw(b)` with `raw(b) = sum_i b_i q_i`.
 pub(crate) struct QueryCode {
-    pub(crate) planes: Vec<u64>,
+    pub(crate) lut: Vec<u8>,
     pub(crate) lo: f32,
     pub(crate) delta: f32,
     /// Sum of the dequantized coordinates.
@@ -114,9 +118,10 @@ pub(crate) struct QueryCode {
 }
 
 impl QueryCode {
-    pub(crate) fn new(words: usize) -> Self {
+    /// `dims` is the rotated (padded) dimension, a multiple of 64.
+    pub(crate) fn new(dims: usize) -> Self {
         Self {
-            planes: vec![0; QUERY_BITS * words],
+            lut: vec![0; 4 * dims],
             lo: 0.0,
             delta: 1.0,
             sum: 0.0,
@@ -124,8 +129,7 @@ impl QueryCode {
     }
 
     pub(crate) fn encode(&mut self, x: &[f32]) {
-        let words = self.planes.len() / QUERY_BITS;
-        debug_assert_eq!(x.len(), 64 * words);
+        debug_assert_eq!(4 * x.len(), self.lut.len());
         let (lo, hi) = x
             .iter()
             .fold((f32::INFINITY, f32::NEG_INFINITY), |(l, h), &v| {
@@ -133,13 +137,21 @@ impl QueryCode {
             });
         let levels = ((1 << QUERY_BITS) - 1) as f32;
         let delta = if hi > lo { (hi - lo) / levels } else { 1.0 };
-        self.planes.fill(0);
         let mut total = 0u32;
-        for (i, &v) in x.iter().enumerate() {
-            let q = ((v - lo) / delta).round().clamp(0.0, levels) as u32;
-            total += q;
-            for p in 0..QUERY_BITS {
-                self.planes[p * words + i / 64] |= u64::from((q >> p) & 1) << (i % 64);
+        for (group, table) in x
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(self.lut.as_chunks_mut::<16>().0)
+        {
+            let mut q = [0u8; 4];
+            for (o, &v) in q.iter_mut().zip(group) {
+                *o = ((v - lo) / delta).round().clamp(0.0, levels) as u8;
+                total += u32::from(*o);
+            }
+            table[0] = 0;
+            for c in 1..16 {
+                table[c] = table[c & (c - 1)] + q[c.trailing_zeros() as usize];
             }
         }
         self.lo = lo;
@@ -148,78 +160,95 @@ impl QueryCode {
     }
 }
 
-/// For each code row (`words` u64 each) computes `sum_p 2^p * popcount(code & plane_p)`.
-pub(crate) fn raw_estimates(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
+/// Packs one bit plane of up to [`BATCH`] codes (`dims` bits each, as u64 words) into the
+/// FastScan layout: byte `16 g + k` holds bits `4g..4g+3` of code `k` in its low nibble and
+/// of code `k + 16` in its high nibble. Missing codes are zero.
+pub(crate) fn pack_batch(codes: &[&[u64]], dims: usize, out: &mut [u8]) {
+    assert!(codes.len() <= BATCH);
+    assert_eq!(out.len(), 4 * dims);
+    out.fill(0);
+    for (j, code) in codes.iter().enumerate() {
+        let (lane, shift) = (j % 16, 4 * (j / 16));
+        for g in 0..dims / 4 {
+            let nib = (code[g / 16] >> (4 * (g % 16))) & 0xF;
+            out[16 * g + lane] |= (nib as u8) << shift;
+        }
+    }
+}
+
+/// `out[j] = sum_i bit_i(code_j) * q_i` for the [`BATCH`] codes of one packed bit plane.
+pub(crate) fn fastscan(packed: &[u8], lut: &[u8], out: &mut [u32; BATCH]) {
+    assert_eq!(packed.len(), lut.len());
     #[cfg(target_arch = "aarch64")]
-    match words {
-        1 => return neon::raw::<1>(codes, planes, out),
-        2 => return neon::raw::<2>(codes, planes, out),
-        4 => return neon::raw::<4>(codes, planes, out),
-        8 => return neon::raw::<8>(codes, planes, out),
-        16 => return neon::raw::<16>(codes, planes, out),
-        _ => {}
+    if packed.len().is_multiple_of(64) && packed.len() <= 16 * MAX_NEON_GROUPS {
+        return neon::fastscan(packed, lut, out);
     }
-    raw_scalar(codes, planes, words, out)
+    fastscan_scalar(packed, lut, out)
 }
 
-pub(crate) fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
-    assert_eq!(planes.len(), QUERY_BITS * words);
-    assert_eq!(codes.len(), out.len() * words);
-    for (code, o) in codes.chunks_exact(words).zip(out.iter_mut()) {
-        *o = code
-            .iter()
-            .enumerate()
-            .map(|(w, &c)| scalar_word(c, planes, words, w))
-            .sum();
-    }
-}
+/// Groups the NEON kernel can sum in u16 lanes: each table entry is at most 4 * 15 = 60.
+#[cfg(target_arch = "aarch64")]
+const MAX_NEON_GROUPS: usize = u16::MAX as usize / 60;
 
-fn scalar_word(c: u64, planes: &[u64], words: usize, w: usize) -> u32 {
-    (0..QUERY_BITS)
-        .map(|p| (c & planes[p * words + w]).count_ones() << p)
-        .sum()
+pub(crate) fn fastscan_scalar(packed: &[u8], lut: &[u8], out: &mut [u32; BATCH]) {
+    out.fill(0);
+    for (codes, table) in packed
+        .as_chunks::<16>()
+        .0
+        .iter()
+        .zip(lut.as_chunks::<16>().0)
+    {
+        for (k, &c) in codes.iter().enumerate() {
+            out[k] += u32::from(table[usize::from(c & 0xF)]);
+            out[k + 16] += u32::from(table[usize::from(c >> 4)]);
+        }
+    }
 }
 
 #[cfg(target_arch = "aarch64")]
 mod neon {
     use std::arch::aarch64::*;
 
-    use super::{scalar_word, QUERY_BITS};
+    use super::BATCH;
 
-    pub(super) fn raw<const W: usize>(codes: &[u64], planes: &[u64], out: &mut [u32]) {
-        assert_eq!(QUERY_BITS, 4);
-        assert_eq!(planes.len(), 4 * W);
-        assert_eq!(codes.len(), out.len() * W);
-        for (code, o) in codes.as_chunks::<W>().0.iter().zip(out.iter_mut()) {
-            let mut total = 0u32;
-            let mut k = 0;
-            while k + 2 <= W {
-                // SAFETY: NEON is part of the aarch64 baseline. `k + 2 <= W` keeps each 16-byte
-                // load inside `code` (length W) and inside plane `p` (planes[p*W..p*W+W], length
-                // checked by the assert above). Per byte the weighted sum is at most
-                // 8 * (1 + 2 + 4 + 8) = 120, so the u8 additions cannot overflow.
-                total += unsafe {
-                    let x = vreinterpretq_u8_u64(vld1q_u64(code.as_ptr().add(k)));
-                    let p0 = vreinterpretq_u8_u64(vld1q_u64(planes.as_ptr().add(k)));
-                    let p1 = vreinterpretq_u8_u64(vld1q_u64(planes.as_ptr().add(W + k)));
-                    let p2 = vreinterpretq_u8_u64(vld1q_u64(planes.as_ptr().add(2 * W + k)));
-                    let p3 = vreinterpretq_u8_u64(vld1q_u64(planes.as_ptr().add(3 * W + k)));
-                    let c0 = vcntq_u8(vandq_u8(x, p0));
-                    let c1 = vcntq_u8(vandq_u8(x, p1));
-                    let c2 = vcntq_u8(vandq_u8(x, p2));
-                    let c3 = vcntq_u8(vandq_u8(x, p3));
-                    let s = vaddq_u8(
-                        vaddq_u8(c0, vshlq_n_u8::<1>(c1)),
-                        vaddq_u8(vshlq_n_u8::<2>(c2), vshlq_n_u8::<3>(c3)),
-                    );
-                    u32::from(vaddlvq_u8(s))
-                };
-                k += 2;
+    pub(super) fn fastscan(packed: &[u8], lut: &[u8], out: &mut [u32; BATCH]) {
+        assert!(packed.len() == lut.len() && packed.len().is_multiple_of(64));
+        // SAFETY: NEON is part of the aarch64 baseline. Every load reads 16 bytes at offset
+        // `16 g` with `g < packed.len() / 16` from slices of equal length (asserted). Four
+        // table entries of at most 60 sum to at most 240, so the u8 additions cannot overflow;
+        // the caller bounds the group count so that the u16 lanes cannot overflow either.
+        unsafe {
+            let mask = vdupq_n_u8(0x0F);
+            let (mut a0, mut a1, mut a2, mut a3) = (
+                vdupq_n_u16(0),
+                vdupq_n_u16(0),
+                vdupq_n_u16(0),
+                vdupq_n_u16(0),
+            );
+            let (pc, pl) = (packed.as_ptr(), lut.as_ptr());
+            for chunk in 0..packed.len() / 64 {
+                let (mut lo, mut hi) = (vdupq_n_u8(0), vdupq_n_u8(0));
+                for t in 0..4 {
+                    let off = 64 * chunk + 16 * t;
+                    let c = vld1q_u8(pc.add(off));
+                    let l = vld1q_u8(pl.add(off));
+                    lo = vaddq_u8(lo, vqtbl1q_u8(l, vandq_u8(c, mask)));
+                    hi = vaddq_u8(hi, vqtbl1q_u8(l, vshrq_n_u8::<4>(c)));
+                }
+                a0 = vaddw_u8(a0, vget_low_u8(lo));
+                a1 = vaddw_high_u8(a1, lo);
+                a2 = vaddw_u8(a2, vget_low_u8(hi));
+                a3 = vaddw_high_u8(a3, hi);
             }
-            if W % 2 == 1 {
-                total += scalar_word(code[W - 1], planes, W, W - 1);
-            }
-            *o = total;
+            let o = out.as_mut_ptr();
+            vst1q_u32(o, vmovl_u16(vget_low_u16(a0)));
+            vst1q_u32(o.add(4), vmovl_high_u16(a0));
+            vst1q_u32(o.add(8), vmovl_u16(vget_low_u16(a1)));
+            vst1q_u32(o.add(12), vmovl_high_u16(a1));
+            vst1q_u32(o.add(16), vmovl_u16(vget_low_u16(a2)));
+            vst1q_u32(o.add(20), vmovl_high_u16(a2));
+            vst1q_u32(o.add(24), vmovl_u16(vget_low_u16(a3)));
+            vst1q_u32(o.add(28), vmovl_high_u16(a3));
         }
     }
 }
@@ -254,6 +283,17 @@ pub(crate) fn as_f32_mut(w: &mut [u64]) -> &mut [f32] {
     unsafe { std::slice::from_raw_parts_mut(w.as_mut_ptr().cast::<f32>(), w.len() * 2) }
 }
 
+pub(crate) fn as_u8(w: &[u64]) -> &[u8] {
+    // SAFETY: u8 has alignment 1, the view covers exactly the same bytes, every bit pattern is
+    // a valid u8, and the lifetime is tied to `w`.
+    unsafe { std::slice::from_raw_parts(w.as_ptr().cast::<u8>(), w.len() * 8) }
+}
+
+pub(crate) fn as_u8_mut(w: &mut [u64]) -> &mut [u8] {
+    // SAFETY: as in `as_u8`; the exclusive borrow of `w` is carried over to the view.
+    unsafe { std::slice::from_raw_parts_mut(w.as_mut_ptr().cast::<u8>(), w.len() * 8) }
+}
+
 pub(crate) fn as_u32(w: &[u64]) -> &[u32] {
     // SAFETY: as in `as_f32`; every bit pattern is a valid u32.
     unsafe { std::slice::from_raw_parts(w.as_ptr().cast::<u32>(), w.len() * 2) }
@@ -268,16 +308,51 @@ pub(crate) fn as_u32_mut(w: &mut [u64]) -> &mut [u32] {
 mod tests {
     use super::*;
 
+    /// Reference: the quantized query value of every coordinate, read back from the tables.
+    fn levels(qc: &QueryCode) -> Vec<u32> {
+        qc.lut
+            .as_chunks::<16>()
+            .0
+            .iter()
+            .flat_map(|t| [1, 2, 4, 8].map(|c| u32::from(t[c])))
+            .collect()
+    }
+
     #[test]
-    fn optimized_popcount_matches_scalar() {
+    fn fastscan_matches_bitwise_sum() {
         let mut rng = SplitMix(7);
-        for words in 1..=17 {
-            let codes: Vec<u64> = (0..32 * words).map(|_| rng.next_u64()).collect();
-            let planes: Vec<u64> = (0..QUERY_BITS * words).map(|_| rng.next_u64()).collect();
-            let (mut fast, mut slow) = ([0u32; 32], [0u32; 32]);
-            raw_estimates(&codes, &planes, words, &mut fast);
-            raw_scalar(&codes, &planes, words, &mut slow);
-            assert_eq!(fast, slow, "words = {words}");
+        // 64..=4096 dimensions covers both the NEON kernel and its u16 bound; 8192 takes the
+        // scalar path.
+        for dims in [64, 128, 192, 256, 512, 1024, 4096, 8192] {
+            let x: Vec<f32> = (0..dims).map(|_| rng.next_f32() - 0.5).collect();
+            let mut qc = QueryCode::new(dims);
+            qc.encode(&x);
+            let q = levels(&qc);
+            for n_codes in [1, 17, BATCH] {
+                let codes: Vec<Vec<u64>> = (0..n_codes)
+                    .map(|_| (0..dims / 64).map(|_| rng.next_u64()).collect())
+                    .collect();
+                // All-ones codes reach the u16 bound of the NEON path.
+                let codes: Vec<Vec<u64>> = std::iter::once(vec![u64::MAX; dims / 64])
+                    .chain(codes.into_iter().skip(1))
+                    .collect();
+                let refs: Vec<&[u64]> = codes.iter().map(Vec::as_slice).collect();
+                let mut packed = vec![0u8; 4 * dims];
+                pack_batch(&refs, dims, &mut packed);
+                let (mut fast, mut slow) = ([0u32; BATCH], [0u32; BATCH]);
+                fastscan(&packed, &qc.lut, &mut fast);
+                fastscan_scalar(&packed, &qc.lut, &mut slow);
+                assert_eq!(fast, slow, "dims = {dims}");
+                for (j, &got) in fast.iter().enumerate() {
+                    let want: u32 = codes.get(j).map_or(0, |c| {
+                        (0..dims)
+                            .filter(|&i| c[i / 64] >> (i % 64) & 1 == 1)
+                            .map(|i| q[i])
+                            .sum()
+                    });
+                    assert_eq!(got, want, "dims = {dims}, code {j}");
+                }
+            }
         }
     }
 
@@ -309,11 +384,13 @@ mod tests {
     fn query_code_reconstructs_bit_sums() {
         let mut rng = SplitMix(9);
         let x: Vec<f32> = (0..128).map(|_| rng.next_f32() - 0.5).collect();
-        let mut qc = QueryCode::new(2);
+        let mut qc = QueryCode::new(128);
         qc.encode(&x);
         let code = [rng.next_u64(), rng.next_u64()];
-        let mut raw = [0u32; 1];
-        raw_estimates(&code, &qc.planes, 2, &mut raw);
+        let mut packed = vec![0u8; 4 * 128];
+        pack_batch(&[&code], 128, &mut packed);
+        let mut raw = [0u32; BATCH];
+        fastscan(&packed, &qc.lut, &mut raw);
         let pop = code.iter().map(|c| c.count_ones()).sum::<u32>() as f32;
         let approx = qc.lo * pop + qc.delta * raw[0] as f32;
         let exact: f32 = (0..128)
@@ -322,5 +399,8 @@ mod tests {
             .sum();
         // Rounding error is at most delta / 2 per selected coordinate.
         assert!((approx - exact).abs() <= qc.delta / 2.0 * pop + 1e-4);
+        let q = levels(&qc);
+        let total: f32 = q.iter().map(|&v| v as f32).sum();
+        assert!((qc.sum - (qc.lo * 128.0 + qc.delta * total)).abs() < 1e-4);
     }
 }
