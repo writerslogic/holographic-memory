@@ -122,8 +122,30 @@ impl Visited {
     }
 }
 
+/// Visited set of the construction search: one bit per vertex, so it stays in the L1/L2 cache
+/// where the epoch marks of [`Visited`] would not; clearing it is cheap next to a search.
+#[derive(Default)]
+struct BuildVisited {
+    bits: Vec<u64>,
+}
+
+impl BuildVisited {
+    fn reset(&mut self, n: usize) {
+        self.bits.clear();
+        self.bits.resize(n.div_ceil(64), 0);
+    }
+
+    /// True if `id` was not yet visited since the last reset.
+    fn insert(&mut self, id: u32) -> bool {
+        let (w, b) = (id as usize / 64, 1u64 << (id % 64));
+        let fresh = self.bits[w] & b == 0;
+        self.bits[w] |= b;
+        fresh
+    }
+}
+
 thread_local! {
-    static BUILD_VISITED: RefCell<Visited> = RefCell::new(Visited::new(0));
+    static BUILD_VISITED: RefCell<BuildVisited> = RefCell::new(BuildVisited::default());
 }
 
 /// Squared Euclidean distance between unit vectors.
@@ -177,9 +199,9 @@ impl Rows<'_> {
         start: u32,
         target: &[f32],
         l: usize,
-        visited: &mut Visited,
+        visited: &mut BuildVisited,
     ) -> Vec<(f32, u32)> {
-        visited.next();
+        visited.reset(graph.len());
         visited.insert(start);
         let mut pool = vec![Candidate {
             dist: d2(target, self.row(start)),
@@ -223,6 +245,9 @@ impl Rows<'_> {
             cur = best.min(cur + 1);
             while cur < pool.len() && pool[cur].done {
                 cur += 1;
+            }
+            if let Some(c) = pool.get(cur) {
+                build_kernels::prefetch_ids(&graph[c.id as usize]);
             }
         }
         expanded
@@ -303,9 +328,6 @@ impl Rows<'_> {
                 .map(|&p| {
                     let mut cands = BUILD_VISITED.with(|cell| {
                         let mut vis = cell.borrow_mut();
-                        if vis.marks.len() != n {
-                            *vis = Visited::new(n);
-                        }
                         self.greedy(g, entry, self.row(p), l, &mut vis)
                     });
                     cands.extend(g[p as usize].iter().map(|&u| (self.d2(p, u), u)));
@@ -321,7 +343,7 @@ impl Rows<'_> {
                 closed[p as usize] = out.len() as u32;
                 graph[p as usize] = out;
             }
-            rev.sort_unstable();
+            rev.par_sort_unstable();
             let groups: Vec<&[(u32, u32)]> = rev.chunk_by(|a, b| a.0 == b.0).collect();
             let g: &[Vec<u32>] = graph;
             let updates: Vec<(u32, Vec<u32>, bool)> = groups

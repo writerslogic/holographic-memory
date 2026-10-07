@@ -21,6 +21,24 @@ pub(crate) fn prefetch_row(row: &[f32]) {
     let _ = row;
 }
 
+/// Hint the cache to load an adjacency list.
+#[inline]
+pub(crate) fn prefetch_ids(ids: &[u32]) {
+    #[cfg(target_arch = "aarch64")]
+    for line in ids.chunks(32) {
+        // SAFETY: as in `prefetch_row`.
+        unsafe {
+            std::arch::asm!(
+                "prfm pldl1keep, [{0}]",
+                in(reg) line.as_ptr(),
+                options(nostack, preserves_flags, readonly)
+            );
+        }
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    let _ = ids;
+}
+
 /// `[dot(a, b[0]), .., dot(a, b[3])]`, bit-identical to [`super::kernels::dot`]: lane `j` of
 /// every accumulator sums the products of coordinates `j mod 16` in order, with a separate
 /// multiply and add, and the lanes and tail are reduced as `dot` reduces them.
@@ -43,29 +61,49 @@ pub(crate) fn dot4(a: &[f32], b: [&[f32]; 4]) -> [f32; 4] {
 #[cfg(target_arch = "aarch64")]
 #[inline]
 fn lanes4(a: &[f32], b: [&[f32]; 4]) -> [[f32; 16]; 4] {
-    use std::arch::aarch64::{
-        float32x4_t, vaddq_f32, vdupq_n_f32, vld1q_f32, vmulq_f32, vst1q_f32,
-    };
+    use std::arch::aarch64::{vaddq_f32, vdupq_n_f32, vld1q_f32, vmulq_f32, vst1q_f32};
     // SAFETY: NEON is mandatory on aarch64. Every load reads 4 floats at offset `k + 4 i`
     // with `k + 16 <= a.len() == b[r].len()`, and every store writes 4 floats into a
     // 16-float array at offset 4 i < 16.
     unsafe {
-        let mut acc: [[float32x4_t; 4]; 4] = [[vdupq_n_f32(0.0); 4]; 4];
+        let z = vdupq_n_f32(0.0);
+        // Sixteen named accumulators (row, lane group) so that they stay in registers.
+        let (mut s00, mut s01, mut s02, mut s03) = (z, z, z, z);
+        let (mut s10, mut s11, mut s12, mut s13) = (z, z, z, z);
+        let (mut s20, mut s21, mut s22, mut s23) = (z, z, z, z);
+        let (mut s30, mut s31, mut s32, mut s33) = (z, z, z, z);
+        let [p0, p1, p2, p3] = b.map(<[f32]>::as_ptr);
+        let pa = a.as_ptr();
         let mut k = 0;
         while k < a.len() {
-            let x = [0, 4, 8, 12].map(|o| vld1q_f32(a.as_ptr().add(k + o)));
-            for (acc, r) in acc.iter_mut().zip(b) {
-                for (i, s) in acc.iter_mut().enumerate() {
-                    let y = vld1q_f32(r.as_ptr().add(k + 4 * i));
-                    *s = vaddq_f32(*s, vmulq_f32(x[i], y));
-                }
+            let x0 = vld1q_f32(pa.add(k));
+            let x1 = vld1q_f32(pa.add(k + 4));
+            let x2 = vld1q_f32(pa.add(k + 8));
+            let x3 = vld1q_f32(pa.add(k + 12));
+            macro_rules! row {
+                ($p:ident, $a0:ident, $a1:ident, $a2:ident, $a3:ident) => {
+                    $a0 = vaddq_f32($a0, vmulq_f32(x0, vld1q_f32($p.add(k))));
+                    $a1 = vaddq_f32($a1, vmulq_f32(x1, vld1q_f32($p.add(k + 4))));
+                    $a2 = vaddq_f32($a2, vmulq_f32(x2, vld1q_f32($p.add(k + 8))));
+                    $a3 = vaddq_f32($a3, vmulq_f32(x3, vld1q_f32($p.add(k + 12))));
+                };
             }
+            row!(p0, s00, s01, s02, s03);
+            row!(p1, s10, s11, s12, s13);
+            row!(p2, s20, s21, s22, s23);
+            row!(p3, s30, s31, s32, s33);
             k += 16;
         }
         let mut out = [[0f32; 16]; 4];
-        for (o, acc) in out.iter_mut().zip(&acc) {
-            for (i, s) in acc.iter().enumerate() {
-                vst1q_f32(o.as_mut_ptr().add(4 * i), *s);
+        let acc = [
+            [s00, s01, s02, s03],
+            [s10, s11, s12, s13],
+            [s20, s21, s22, s23],
+            [s30, s31, s32, s33],
+        ];
+        for (o, acc) in out.iter_mut().zip(acc) {
+            for (i, s) in acc.into_iter().enumerate() {
+                vst1q_f32(o.as_mut_ptr().add(4 * i), s);
             }
         }
         out
