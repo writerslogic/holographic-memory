@@ -6,6 +6,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Stemmed BM25 and min-max score blend in the document API
+- Patience stop rule, opt-in 1-bit screen and error-returning builds for the vertex graph index
 - Competitor ANN harness for SymphonyQG, RaBitQ, NGT and Lucene HNSW
 - Check the graph cache header and verify the merged qgraph defaults
 - Add integer vector stores and per-vertex codes to qgraph
@@ -22,6 +24,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Ideas tree for October 2026 with its 10-minute proxies
 - Preliminary nytimes VGraph comparison on the M4 and the next-session specs
 - Record the green CI and the clippy toolchain for the gate
 - Record that main is pushed and in sync
