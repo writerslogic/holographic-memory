@@ -131,8 +131,9 @@ tree, checkpoints 1 and 2). Proxy code `benchmarks/public/proxies/`, proxy resul
   tests added; 19 qgraph tests pass.
 Pruned with reasons in the doc: entry point, alpha/build_ef, 8-bit code variants, exact
 re-rank, relative-slack stop, stop list, valid-time extraction at ingest. LongMemEval
-per-session quota passed its dev proxy by one question; its full-pipeline measurement needs the
-cached scores on the `hms-lme` volume (next session, no compute).
+per-session quota passed its dev proxy by one question but FAILS on the tuned pipeline's cached
+dev scores (`benchmarks/results/longmemeval_dev_quota.json`, run dirs downloaded to
+`~/.cache/hms-bench/longmemeval_s/runs/`): not adopted.
 
 Paired timing DONE (`benchmarks/results/qgraph_stop_screen_heldout.json`): E1 patience x1.33 /
 x1.42 at 0.95 (nytimes 4/5, glove 4/4 rounds), neutral at 0.90; E2 screen x0.65-0.87, a negative

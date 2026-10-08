@@ -101,7 +101,7 @@ is re-derived after the rerun (see `docs/CONTINUATION.md`).
   stored with the vertex and estimated for all neighbours in one FastScan-style SIMD pass, with the
   raw vector read only to refine the few candidates that pass; plus a graph refined for that
   estimator. VGraph change: the 1-bit screen of (A0) is the adoption (skip the 8-bit estimate when
-  the 1-bit bound cannot enter the pool); to surpass it, batch the screen over all neighbours of a
+  the 1-bit bound cannot enter the pool); its scalar form lost (A0), so batch the screen over all neighbours of a
   vertex (one pass over the row) and keep the 8-bit code only for the survivors, which also cuts
   bytes toward RaBitQ's. The paired `timed.sh` run decides.
 - RaBitQ IVF 1+4 / 1+8 and RaBitQ HNSW 1+4 (rabitqlib): 55-95 MB against 172-226 MB for VGraph
@@ -114,17 +114,22 @@ is re-derived after the rerun (see `docs/CONTINUATION.md`).
 - Build time: SymphonyQG 17 s, RaBitQ 12-29 s, FAISS 51-93 s against VGraph 111 s (nytimes, load
   47): spec (E).
 
-### (A0) Already implemented, pending paired timing (ideas-tree session, 2026-10-07)
+### (A0) Committed with paired timing (ideas-tree session, 2026-10-07)
 
-Two search changes exist in the working tree (uncommitted at the time of writing; see
-`docs/research/IDEAS-2026-10.md` and `docs/CONTINUATION.md`): a patience stop rule
-(`VSearchParams::patience`, `--patience`; held-out: the same recall with 20-29% fewer code
-estimates on nytimes and 17-22% fewer on glove) and a 1-bit screen before the 8-bit estimate
-(`from_graph_with(.., screen)`, `--screen`, `--screen-sigmas`; held-out nytimes: 76% of the 8-bit
-estimates skipped at recall within 0.001, about 5% more index bytes). Before either becomes a
-default: the paired `timed.sh` protocol of `qgraph_merge_verification_heldout.json` (11 rounds,
-both sets, both targets, the sign-test rule), then the step-4 test-set protocol again for the
-public table. Fewer estimates is not yet a QPS claim.
+Both search changes are on `main` (6b714bf; `docs/research/IDEAS-2026-10.md` checkpoint 3,
+`benchmarks/results/qgraph_stop_screen_heldout.json`, paired coordinator rounds on held-out
+train vectors, nytimes 5 / glove 4, load 11-185 so only the paired ratios count):
+
+- Patience stop rule (`VSearchParams::patience`, `--patience`): 17-29% fewer code estimates at
+  equal recall; paired QPS x1.33 at 0.95 on nytimes (4/5 rounds) and x1.42 on glove (4/4),
+  neutral at 0.90. Library default stays 0. The test-set rerun adds HMS rows with
+  `--patience 256` (nytimes) / `--patience 384` (glove) beside the fixed-ef rows.
+- 1-bit screen (`from_graph_with(.., screen)`, `--screen`, `--screen-sigmas`): NEGATIVE as
+  implemented, x0.65-0.87 in every arm although 76% of the 8-bit estimates were skipped: the
+  scalar per-neighbour screen costs as much as the SDOT estimate it replaces. Stays opt-in and
+  off; the SymphonyQG adoption above needs a NEON FastScan kernel over the bit planes (16
+  neighbours per batch) and a microbenchmark showing the screen at < 25% of the 8-bit estimate's
+  time before any end-to-end run.
 
 ### (A1) Learned traversal (research item)
 

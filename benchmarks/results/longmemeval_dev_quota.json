@@ -1,0 +1,309 @@
+{
+ "question": "Does a per-session quota on the tuned turn ranking raise multi-session recall_all@5 without hurting the other types? (IDEAS-2026-10 leaf M1)",
+ "run_dir": "/Users/davidcondrey/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2",
+ "config": {
+  "kinds": {
+   "turn": 1.0,
+   "turn_exp": 2.0
+  },
+  "variants": {
+   "orig": 1.0,
+   "rewrite": 1.0
+  },
+  "w_lex": 0.5,
+  "w_sem": 1.0,
+  "fuse": "rrf",
+  "agg": "max",
+  "k0": 60.0,
+  "sess_prior": 0.0,
+  "fact_as": "turn",
+  "time_w": 0.0,
+  "time_pad": 0,
+  "rerank_w": 8.0,
+  "rerank_n": 20
+ },
+ "eval_sha256": "c98b8d1096877a15aa755c9de44fe33c195298466a2eb6f3c0f9f6bde8c72349",
+ "n_dev": 100,
+ "n_scored": 84,
+ "decision_rule": {
+  "multi_session_R5_min_gain": 0.04,
+  "overall_R5_min_gain": 0.0,
+  "max_type_loss": 0.02
+ },
+ "baseline": {
+  "overall": {
+   "n": 84,
+   "R5": 0.8095238095238095,
+   "R10": 0.9285714285714286,
+   "N10": 0.8276452511270933
+  },
+  "knowledge-update": {
+   "n": 15,
+   "R5": 0.9333333333333333,
+   "R10": 1.0,
+   "N10": 0.9203595819867326
+  },
+  "multi-session": {
+   "n": 24,
+   "R5": 0.5833333333333334,
+   "R10": 0.8333333333333334,
+   "N10": 0.7193314346154418
+  },
+  "single-session-assistant": {
+   "n": 1,
+   "R5": 1.0,
+   "R10": 1.0,
+   "N10": 1.0
+  },
+  "single-session-preference": {
+   "n": 6,
+   "R5": 0.8333333333333334,
+   "R10": 1.0,
+   "N10": 0.7681300252712341
+  },
+  "single-session-user": {
+   "n": 13,
+   "R5": 1.0,
+   "R10": 1.0,
+   "N10": 0.9615384615384616
+  },
+  "temporal-reasoning": {
+   "n": 25,
+   "R5": 0.84,
+   "R10": 0.92,
+   "N10": 0.8137629112990739
+  }
+ },
+ "quota": {
+  "1": {
+   "metrics": {
+    "overall": {
+     "n": 84,
+     "R5": 0.6190476190476191,
+     "R10": 0.6309523809523809,
+     "N10": 0.7405020898961376
+    },
+    "knowledge-update": {
+     "n": 15,
+     "R5": 0.7333333333333333,
+     "R10": 0.7333333333333333,
+     "N10": 0.8586729177810623
+    },
+    "multi-session": {
+     "n": 24,
+     "R5": 0.3333333333333333,
+     "R10": 0.3333333333333333,
+     "N10": 0.5914513252959127
+    },
+    "single-session-assistant": {
+     "n": 1,
+     "R5": 1.0,
+     "R10": 1.0,
+     "N10": 1.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "R5": 0.3333333333333333,
+     "R10": 0.3333333333333333,
+     "N10": 0.4166666666666667
+    },
+    "single-session-user": {
+     "n": 13,
+     "R5": 0.9230769230769231,
+     "R10": 0.9230769230769231,
+     "N10": 0.9230769230769231
+    },
+    "temporal-reasoning": {
+     "n": 25,
+     "R5": 0.72,
+     "R10": 0.76,
+     "N10": 0.7850899990983087
+    }
+   },
+   "delta_multi_session_R5": -0.25000000000000006,
+   "delta_overall_R5": -0.19047619047619047,
+   "type_losses_R5": {
+    "knowledge-update": 0.20000000000000007,
+    "multi-session": 0.25000000000000006,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.5,
+    "single-session-user": 0.07692307692307687,
+    "temporal-reasoning": 0.12
+   },
+   "passes_rule": false
+  },
+  "2": {
+   "metrics": {
+    "overall": {
+     "n": 84,
+     "R5": 0.7619047619047619,
+     "R10": 0.8095238095238095,
+     "N10": 0.7925998500688842
+    },
+    "knowledge-update": {
+     "n": 15,
+     "R5": 0.8666666666666667,
+     "R10": 0.8666666666666667,
+     "N10": 0.8931086031431349
+    },
+    "multi-session": {
+     "n": 24,
+     "R5": 0.5833333333333334,
+     "R10": 0.6666666666666666,
+     "N10": 0.6771612342603103
+    },
+    "single-session-assistant": {
+     "n": 1,
+     "R5": 1.0,
+     "R10": 1.0,
+     "N10": 1.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "R5": 0.5,
+     "R10": 0.5,
+     "N10": 0.5833333333333334
+    },
+    "single-session-user": {
+     "n": 13,
+     "R5": 0.9230769230769231,
+     "R10": 0.9230769230769231,
+     "N10": 0.9230769230769231
+    },
+    "temporal-reasoning": {
+     "n": 25,
+     "R5": 0.84,
+     "R10": 0.92,
+     "N10": 0.8171955494556729
+    }
+   },
+   "delta_multi_session_R5": 0.0,
+   "delta_overall_R5": -0.04761904761904767,
+   "type_losses_R5": {
+    "knowledge-update": 0.06666666666666665,
+    "multi-session": 0.0,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.33333333333333337,
+    "single-session-user": 0.07692307692307687,
+    "temporal-reasoning": 0.0
+   },
+   "passes_rule": false
+  },
+  "3": {
+   "metrics": {
+    "overall": {
+     "n": 84,
+     "R5": 0.7857142857142857,
+     "R10": 0.8690476190476191,
+     "N10": 0.8126876359497633
+    },
+    "knowledge-update": {
+     "n": 15,
+     "R5": 0.9333333333333333,
+     "R10": 1.0,
+     "N10": 0.9203595819867326
+    },
+    "multi-session": {
+     "n": 24,
+     "R5": 0.5833333333333334,
+     "R10": 0.75,
+     "N10": 0.7107816388651785
+    },
+    "single-session-assistant": {
+     "n": 1,
+     "R5": 1.0,
+     "R10": 1.0,
+     "N10": 1.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "R5": 0.6666666666666666,
+     "R10": 0.6666666666666666,
+     "N10": 0.6666666666666666
+    },
+    "single-session-user": {
+     "n": 13,
+     "R5": 0.9230769230769231,
+     "R10": 0.9230769230769231,
+     "N10": 0.9230769230769231
+    },
+    "temporal-reasoning": {
+     "n": 25,
+     "R5": 0.84,
+     "R10": 0.92,
+     "N10": 0.8160643342885936
+    }
+   },
+   "delta_multi_session_R5": 0.0,
+   "delta_overall_R5": -0.023809523809523836,
+   "type_losses_R5": {
+    "knowledge-update": 0.0,
+    "multi-session": 0.0,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.16666666666666674,
+    "single-session-user": 0.07692307692307687,
+    "temporal-reasoning": 0.0
+   },
+   "passes_rule": false
+  },
+  "4": {
+   "metrics": {
+    "overall": {
+     "n": 84,
+     "R5": 0.7976190476190477,
+     "R10": 0.8928571428571429,
+     "N10": 0.8185201012458998
+    },
+    "knowledge-update": {
+     "n": 15,
+     "R5": 0.9333333333333333,
+     "R10": 1.0,
+     "N10": 0.9203595819867326
+    },
+    "multi-session": {
+     "n": 24,
+     "R5": 0.5833333333333334,
+     "R10": 0.7916666666666666,
+     "N10": 0.7127592496824057
+    },
+    "single-session-assistant": {
+     "n": 1,
+     "R5": 1.0,
+     "R10": 1.0,
+     "N10": 1.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "R5": 0.6666666666666666,
+     "R10": 0.6666666666666666,
+     "N10": 0.6666666666666666
+    },
+    "single-session-user": {
+     "n": 13,
+     "R5": 1.0,
+     "R10": 1.0,
+     "N10": 0.9615384615384616
+    },
+    "temporal-reasoning": {
+     "n": 25,
+     "R5": 0.84,
+     "R10": 0.92,
+     "N10": 0.8137629112990739
+    }
+   },
+   "delta_multi_session_R5": 0.0,
+   "delta_overall_R5": -0.011904761904761862,
+   "type_losses_R5": {
+    "knowledge-update": 0.0,
+    "multi-session": 0.0,
+    "single-session-assistant": 0.0,
+    "single-session-preference": 0.16666666666666674,
+    "single-session-user": 0.0,
+    "temporal-reasoning": 0.0
+   },
+   "passes_rule": false
+  }
+ },
+ "decision": "no quota passes the rule on the tuned pipeline; not adopted",
+ "note": "Baseline reproduces benchmarks/results/longmemeval_dev_ablation.json final turn metrics (R5 0.8095) from the s-dev-small-all2 cached scores and the committed longmemeval_config.json; longmemeval_dev_final.json (R5 0.8214) was scored on Modal with its own run and differs by one question. The quota is applied as a post-process of the tuned turn ranking; the dense-only proxy that passed by one question is proxies_2026-10_lme.json 'diversify'."
+}
