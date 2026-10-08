@@ -61,6 +61,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Return query results best-first on exact-scan, multi-shard and federated paths
 
 ### Performance
+- NEON per-row 1-bit screen kernel with its microbenchmark kill test (screen stays off)
 - Scan both planes of 2-bit qgraph edge codes in one NEON pass
 - Add FastScan edge kernel, batched pool merge and 2-bit qgraph edge codes
 - Add 4-bit traversal codes, aligned rows, BFS reorder and 3-byte ids to the vertex index
