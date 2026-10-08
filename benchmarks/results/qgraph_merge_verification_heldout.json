@@ -1,0 +1,3284 @@
+{
+ "workstream": "qgraph merge verification: the merged default search path and the recommended opt-in encoding, one clean paired held-out run per dataset",
+ "date": "2026-10-07",
+ "method": "public-bench ann-qgraph --index vertex --holdout 2000 (train vectors held out as queries, exact cosine truth; test.f32 and neighbors.i32 not read). Graphs: degree 64 (nytimes) / 32 (glove), build_ef 200, alpha 1.0, seed 0x5EED; E and D load the same graph through the checked cache (header: n, dim, degree, build_ef, alpha, seed, data fingerprint; format HMSGRF02); A (old binary) loads the same-parameter graph it built itself. All processes started with --sync; one timed.sh lock held a coordinator that rotated A, E, D round by round (round r starts at process r mod 3), RAYON_NUM_THREADS=3, searches single-threaded one query at a time over the 2,000 held-out queries. Load recorded before every step.",
+ "decision_rules": "(written before the runs):\n (a) the new default path (E) \"loses beyond noise\" to A at a target when the median paired\n     E/A QPS ratio over the rounds is below 1 and E is slower in at least 10 of 11 rounds\n     (two-sided sign test p < 0.05); the paired ratio is taken row for row, which is exact\n     because A and E share the graph and the encoding (identical recall rows are checked).\n (b) the recommended encoding (D) \"wins\" over the default encoding at a target when the median\n     paired ratio of the log-interpolated QPS at that exact recall is above 1 and D is faster\n     in at least 10 of 11 rounds; it is adopted only if it wins at both targets on both sets.",
+ "machine": {
+  "cpu": "Apple M4 (10 cores)",
+  "os": "Darwin",
+  "shared": "other sessions' processes ran outside the lock; see load per step"
+ },
+ "datasets": {
+  "nytimes-256-angular": {
+   "rounds": 11,
+   "coordinator": {
+    "completed": true,
+    "load_1m_at_start": 28.7,
+    "load_1m_at_end": 6.7,
+    "load_1m_per_step": [
+     [
+      0,
+      "A",
+      28.7
+     ],
+     [
+      0,
+      "E",
+      26.7
+     ],
+     [
+      0,
+      "D",
+      24.9
+     ],
+     [
+      1,
+      "E",
+      24.9
+     ],
+     [
+      1,
+      "D",
+      23.3
+     ],
+     [
+      1,
+      "A",
+      21.7
+     ],
+     [
+      2,
+      "D",
+      20.4
+     ],
+     [
+      2,
+      "A",
+      19.1
+     ],
+     [
+      2,
+      "E",
+      17.8
+     ],
+     [
+      3,
+      "A",
+      17.3
+     ],
+     [
+      3,
+      "E",
+      16.4
+     ],
+     [
+      3,
+      "D",
+      15.3
+     ],
+     [
+      4,
+      "E",
+      14.5
+     ],
+     [
+      4,
+      "D",
+      14.0
+     ],
+     [
+      4,
+      "A",
+      14.0
+     ],
+     [
+      5,
+      "D",
+      13.2
+     ],
+     [
+      5,
+      "A",
+      12.4
+     ],
+     [
+      5,
+      "E",
+      11.7
+     ],
+     [
+      6,
+      "A",
+      11.3
+     ],
+     [
+      6,
+      "E",
+      10.7
+     ],
+     [
+      6,
+      "D",
+      10.2
+     ],
+     [
+      7,
+      "E",
+      9.7
+     ],
+     [
+      7,
+      "D",
+      9.2
+     ],
+     [
+      7,
+      "A",
+      9.2
+     ],
+     [
+      8,
+      "D",
+      8.7
+     ],
+     [
+      8,
+      "A",
+      8.2
+     ],
+     [
+      8,
+      "E",
+      7.7
+     ],
+     [
+      9,
+      "A",
+      7.5
+     ],
+     [
+      9,
+      "E",
+      7.2
+     ],
+     [
+      9,
+      "D",
+      7.0
+     ],
+     [
+      10,
+      "E",
+      6.8
+     ],
+     [
+      10,
+      "D",
+      6.9
+     ],
+     [
+      10,
+      "A",
+      6.9
+     ]
+    ]
+   },
+   "graph_identity": {
+    "E_graph_hash": "2b1eec1e99f10548",
+    "D_graph_hash": "2b1eec1e99f10548",
+    "A_vs_E_rows": {
+     "shared_rows": 12,
+     "max_abs_recall_diff": 0.0006,
+     "max_abs_evals_per_query_diff": 4.36,
+     "E_recall_minus_A_recall_per_row": [
+      0.0001,
+      0.0001,
+      0.00015,
+      0.0003,
+      0.00055,
+      0.0006,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.00015,
+      0.00015
+     ]
+    },
+    "note": "A (old binary) records no hash and loaded the HMSGRF01 cache both binaries shared in the earlier paired runs (qgraph_vertex_search_heldout.json); E and D built the graph fresh with the new binary (HMS_QGRAPH_BUILD_PROFILE hash bb380e95f29e097d on nytimes, equal to the hash recorded in qgraph_vertex_build_heldout.json) and loaded it through the checked cache. On glove the A and E rows are identical. On nytimes E's recall is higher by at most 0.0006 with at most 4 more code estimates per query at the same ef: the new default path quantizes the query differently (split scales), which the earlier run ny1 showed on the very same cache file, so the graphs are the same and the difference is in the search code."
+   },
+   "processes": {
+    "A": {
+     "binary": "/Volumes/A/.hms-target-vsearch/bin/pb-base: integrate/qgraph-speed 4ed59b8 search code (the old default path), built 2026-10-07 13:14",
+     "encoding": {
+      "degree": 64,
+      "build_ef": 200,
+      "alpha": 1.0,
+      "residual": true,
+      "residual_bits": null,
+      "vertex_bits": null,
+      "id_bytes": null,
+      "align_rows": null,
+      "reorder": null
+     },
+     "graph_cache": "/Volumes/A/.hms-target-vsearch/cache/nytimes-256-angular_d64_b200.graph",
+     "index_bytes": 224743984,
+     "residual_bytes": 74880000,
+     "load_gate_met_all_rows": false,
+     "sweep": [
+      {
+       "params": {
+        "ef": 64,
+        "rerank": 16
+       },
+       "recall_at_10": 0.88425,
+       "qps_runs": [
+        11914,
+        12661,
+        12839,
+        13064,
+        11751,
+        12619,
+        12120,
+        12870,
+        12641,
+        11942,
+        12413
+       ],
+       "qps_median": 12619,
+       "evals_per_query": 3000.6,
+       "load_1m_before_runs": [
+        28.7,
+        21.8,
+        19.1,
+        17.3,
+        14.0,
+        12.4,
+        11.3,
+        9.2,
+        8.2,
+        7.5,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 96,
+        "rerank": 16
+       },
+       "recall_at_10": 0.90225,
+       "qps_runs": [
+        9047,
+        9191,
+        8923,
+        8989,
+        8900,
+        9016,
+        8936,
+        9182,
+        9128,
+        8598,
+        8802
+       ],
+       "qps_median": 8989,
+       "evals_per_query": 4208.6,
+       "load_1m_before_runs": [
+        28.7,
+        21.8,
+        19.1,
+        17.3,
+        14.0,
+        12.4,
+        11.3,
+        9.2,
+        8.2,
+        7.5,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 128,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9142,
+       "qps_runs": [
+        6864,
+        6939,
+        6881,
+        6959,
+        6894,
+        6998,
+        6954,
+        7064,
+        7055,
+        6730,
+        6819
+       ],
+       "qps_median": 6939,
+       "evals_per_query": 5396.9,
+       "load_1m_before_runs": [
+        28.7,
+        21.8,
+        19.1,
+        17.3,
+        14.0,
+        12.4,
+        11.3,
+        9.2,
+        8.2,
+        7.5,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 16
+       },
+       "recall_at_10": 0.93745,
+       "qps_runs": [
+        3590,
+        3554,
+        3641,
+        3611,
+        3546,
+        3646,
+        3624,
+        3685,
+        3692,
+        3575,
+        3619
+       ],
+       "qps_median": 3619,
+       "evals_per_query": 10147.1,
+       "load_1m_before_runs": [
+        28.7,
+        21.8,
+        19.1,
+        17.3,
+        14.0,
+        12.4,
+        11.3,
+        9.2,
+        8.2,
+        7.5,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9495,
+       "qps_runs": [
+        2223,
+        2475,
+        2420,
+        2389,
+        2396,
+        2429,
+        2390,
+        2458,
+        2475,
+        2440,
+        2522
+       ],
+       "qps_median": 2429,
+       "evals_per_query": 14847.0,
+       "load_1m_before_runs": [
+        28.7,
+        21.8,
+        19.1,
+        17.3,
+        14.0,
+        12.4,
+        11.3,
+        9.2,
+        8.2,
+        7.5,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9566,
+       "qps_runs": [
+        1782,
+        1819,
+        1830,
+        1614,
+        1804,
+        1813,
+        1806,
+        1831,
+        1832,
+        1817,
+        1910
+       ],
+       "qps_median": 1817,
+       "evals_per_query": 19478.9,
+       "load_1m_before_runs": [
+        28.7,
+        21.8,
+        19.1,
+        17.3,
+        13.2,
+        12.4,
+        10.7,
+        8.7,
+        8.2,
+        7.2,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 64,
+        "rerank": 64
+       },
+       "recall_at_10": 0.88445,
+       "qps_runs": [
+        11419,
+        11580,
+        11534,
+        9946,
+        11488,
+        11383,
+        11610,
+        11576,
+        11609,
+        11403,
+        11910
+       ],
+       "qps_median": 11534,
+       "evals_per_query": 3048.6,
+       "load_1m_before_runs": [
+        28.7,
+        20.4,
+        19.1,
+        16.4,
+        13.2,
+        12.4,
+        10.7,
+        8.7,
+        8.2,
+        7.2,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 96,
+        "rerank": 64
+       },
+       "recall_at_10": 0.90245,
+       "qps_runs": [
+        8322,
+        8496,
+        8373,
+        7373,
+        8133,
+        8324,
+        8393,
+        8369,
+        8417,
+        8213,
+        8677
+       ],
+       "qps_median": 8369,
+       "evals_per_query": 4256.6,
+       "load_1m_before_runs": [
+        28.7,
+        20.4,
+        19.1,
+        16.4,
+        13.2,
+        12.4,
+        10.7,
+        8.7,
+        7.7,
+        7.2,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 128,
+        "rerank": 64
+       },
+       "recall_at_10": 0.91445,
+       "qps_runs": [
+        6545,
+        6698,
+        6629,
+        5643,
+        6509,
+        6599,
+        6739,
+        6617,
+        6695,
+        6553,
+        7068
+       ],
+       "qps_median": 6617,
+       "evals_per_query": 5444.8,
+       "load_1m_before_runs": [
+        28.7,
+        20.4,
+        19.1,
+        16.4,
+        13.2,
+        11.7,
+        10.7,
+        8.7,
+        7.7,
+        7.2,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 64
+       },
+       "recall_at_10": 0.93795,
+       "qps_runs": [
+        3452,
+        3498,
+        3552,
+        3102,
+        3532,
+        3460,
+        3563,
+        3540,
+        3539,
+        3519,
+        3750
+       ],
+       "qps_median": 3532,
+       "evals_per_query": 10195.0,
+       "load_1m_before_runs": [
+        26.7,
+        20.4,
+        19.1,
+        16.4,
+        13.2,
+        11.7,
+        10.7,
+        8.7,
+        7.7,
+        7.2,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9501,
+       "qps_runs": [
+        2275,
+        2323,
+        2354,
+        2323,
+        2348,
+        2200,
+        2366,
+        2373,
+        2342,
+        2345,
+        2469
+       ],
+       "qps_median": 2345,
+       "evals_per_query": 14894.9,
+       "load_1m_before_runs": [
+        26.7,
+        20.4,
+        17.8,
+        16.4,
+        13.2,
+        11.7,
+        10.7,
+        8.7,
+        7.7,
+        7.2,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 64
+       },
+       "recall_at_10": 0.95725,
+       "qps_runs": [
+        1761,
+        1767,
+        1793,
+        1736,
+        1751,
+        1747,
+        1777,
+        1779,
+        1752,
+        1729,
+        1828
+       ],
+       "qps_median": 1761,
+       "evals_per_query": 19526.8,
+       "load_1m_before_runs": [
+        26.7,
+        20.4,
+        17.8,
+        16.4,
+        13.2,
+        11.7,
+        10.7,
+        8.7,
+        7.7,
+        7.2,
+        6.7
+       ]
+      }
+     ]
+    },
+    "D": {
+     "binary": "the same binary as E with --vertex-bits 4 --residual-bits 8 --align-rows --reorder --id-bytes 3",
+     "encoding": {
+      "degree": 64,
+      "build_ef": 200,
+      "alpha": 1.0,
+      "residual": true,
+      "residual_bits": 8,
+      "vertex_bits": 4,
+      "id_bytes": 3,
+      "align_rows": true,
+      "reorder": true
+     },
+     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/nytimes-256-angular_d64_b200_v2.graph",
+     "index_bytes": 170599984,
+     "residual_bytes": 74880000,
+     "load_gate_met_all_rows": false,
+     "sweep": [
+      {
+       "params": {
+        "ef": 64,
+        "rerank": 32
+       },
+       "recall_at_10": 0.8831,
+       "qps_runs": [
+        18436,
+        19018,
+        19062,
+        19457,
+        17308,
+        19519,
+        19286,
+        19014,
+        19376,
+        18831,
+        16064
+       ],
+       "qps_median": 19018,
+       "evals_per_query": 3023.1,
+       "load_1m_before_runs": [
+        24.9,
+        23.3,
+        20.4,
+        15.3,
+        14.0,
+        13.2,
+        10.2,
+        9.2,
+        8.7,
+        7.0,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 80,
+        "rerank": 32
+       },
+       "recall_at_10": 0.89445,
+       "qps_runs": [
+        16051,
+        16326,
+        16116,
+        16201,
+        14220,
+        16191,
+        15981,
+        16138,
+        16087,
+        14930,
+        13732
+       ],
+       "qps_median": 16087,
+       "evals_per_query": 3626.9,
+       "load_1m_before_runs": [
+        24.9,
+        21.8,
+        20.4,
+        15.3,
+        14.0,
+        13.2,
+        10.2,
+        9.2,
+        8.7,
+        7.0,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 96,
+        "rerank": 32
+       },
+       "recall_at_10": 0.90315,
+       "qps_runs": [
+        13826,
+        14056,
+        13789,
+        14114,
+        11918,
+        14228,
+        14039,
+        14328,
+        14471,
+        12874,
+        11153
+       ],
+       "qps_median": 14039,
+       "evals_per_query": 4224.4,
+       "load_1m_before_runs": [
+        24.9,
+        21.8,
+        20.4,
+        15.3,
+        14.0,
+        13.2,
+        10.2,
+        9.2,
+        8.2,
+        7.0,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 128,
+        "rerank": 32
+       },
+       "recall_at_10": 0.9141,
+       "qps_runs": [
+        10837,
+        11298,
+        11007,
+        11294,
+        9775,
+        10835,
+        11043,
+        11337,
+        11581,
+        10076,
+        9441
+       ],
+       "qps_median": 11007,
+       "evals_per_query": 5411.7,
+       "load_1m_before_runs": [
+        24.9,
+        21.8,
+        20.4,
+        15.3,
+        14.0,
+        13.2,
+        10.2,
+        9.2,
+        8.2,
+        6.8,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 32
+       },
+       "recall_at_10": 0.93705,
+       "qps_runs": [
+        5970,
+        6016,
+        6130,
+        5944,
+        5682,
+        5990,
+        5959,
+        6037,
+        6111,
+        5627,
+        5103
+       ],
+       "qps_median": 5970,
+       "evals_per_query": 10170.3,
+       "load_1m_before_runs": [
+        24.9,
+        21.8,
+        20.4,
+        15.3,
+        14.0,
+        12.4,
+        10.2,
+        9.2,
+        8.2,
+        6.8,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 400,
+        "rerank": 32
+       },
+       "recall_at_10": 0.95,
+       "qps_runs": [
+        3816,
+        3897,
+        3907,
+        3561,
+        3732,
+        3836,
+        3842,
+        3896,
+        3943,
+        3407,
+        3232
+       ],
+       "qps_median": 3836,
+       "evals_per_query": 15471.3,
+       "load_1m_before_runs": [
+        24.9,
+        21.8,
+        20.4,
+        15.3,
+        14.0,
+        12.4,
+        9.7,
+        9.2,
+        8.2,
+        6.8,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 32
+       },
+       "recall_at_10": 0.9558,
+       "qps_runs": [
+        3039,
+        3022,
+        3041,
+        2988,
+        2706,
+        3022,
+        3002,
+        3073,
+        3096,
+        2436,
+        2772
+       ],
+       "qps_median": 3022,
+       "evals_per_query": 19519.4,
+       "load_1m_before_runs": [
+        24.9,
+        21.8,
+        20.4,
+        15.3,
+        14.0,
+        12.4,
+        9.7,
+        9.2,
+        8.2,
+        6.8,
+        6.9
+       ]
+      }
+     ]
+    },
+    "E": {
+     "binary": "public-bench built from main 1059725 plus the checked graph-cache header (this commit), default flags",
+     "encoding": {
+      "degree": 64,
+      "build_ef": 200,
+      "alpha": 1.0,
+      "residual": true,
+      "residual_bits": 8,
+      "vertex_bits": 8,
+      "id_bytes": 4,
+      "align_rows": false,
+      "reorder": false
+     },
+     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/nytimes-256-angular_d64_b200_v2.graph",
+     "index_bytes": 224743984,
+     "residual_bytes": 74880000,
+     "load_gate_met_all_rows": false,
+     "sweep": [
+      {
+       "params": {
+        "ef": 64,
+        "rerank": 16
+       },
+       "recall_at_10": 0.88435,
+       "qps_runs": [
+        16365,
+        16864,
+        16826,
+        16071,
+        16542,
+        16094,
+        16623,
+        16349,
+        16215,
+        15009,
+        13567
+       ],
+       "qps_median": 16349,
+       "evals_per_query": 3001.6,
+       "load_1m_before_runs": [
+        26.7,
+        24.9,
+        17.8,
+        16.4,
+        14.5,
+        11.7,
+        10.7,
+        9.7,
+        7.7,
+        7.2,
+        6.8
+       ]
+      },
+      {
+       "params": {
+        "ef": 96,
+        "rerank": 16
+       },
+       "recall_at_10": 0.90235,
+       "qps_runs": [
+        12105,
+        11982,
+        12169,
+        11615,
+        11568,
+        11753,
+        11983,
+        11831,
+        11472,
+        11068,
+        10275
+       ],
+       "qps_median": 11753,
+       "evals_per_query": 4208.9,
+       "load_1m_before_runs": [
+        26.7,
+        24.9,
+        17.8,
+        16.4,
+        14.5,
+        11.7,
+        10.7,
+        9.7,
+        7.7,
+        7.2,
+        6.8
+       ]
+      },
+      {
+       "params": {
+        "ef": 128,
+        "rerank": 16
+       },
+       "recall_at_10": 0.91435,
+       "qps_runs": [
+        9523,
+        9278,
+        9350,
+        9009,
+        9102,
+        9188,
+        9460,
+        9149,
+        9076,
+        8889,
+        7261
+       ],
+       "qps_median": 9149,
+       "evals_per_query": 5397.5,
+       "load_1m_before_runs": [
+        26.7,
+        23.3,
+        17.8,
+        16.4,
+        14.5,
+        11.7,
+        10.7,
+        9.7,
+        7.7,
+        7.0,
+        6.8
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 16
+       },
+       "recall_at_10": 0.93775,
+       "qps_runs": [
+        4888,
+        4991,
+        5067,
+        4817,
+        4831,
+        4834,
+        4928,
+        4842,
+        4944,
+        4683,
+        4113
+       ],
+       "qps_median": 4842,
+       "evals_per_query": 10151.4,
+       "load_1m_before_runs": [
+        26.7,
+        23.3,
+        17.8,
+        16.4,
+        14.5,
+        11.7,
+        10.2,
+        9.7,
+        7.7,
+        7.0,
+        6.8
+       ]
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 16
+       },
+       "recall_at_10": 0.95005,
+       "qps_runs": [
+        3209,
+        3299,
+        3362,
+        3299,
+        3211,
+        3273,
+        3253,
+        3246,
+        3238,
+        3098,
+        2663
+       ],
+       "qps_median": 3246,
+       "evals_per_query": 14849.8,
+       "load_1m_before_runs": [
+        26.7,
+        23.3,
+        17.8,
+        16.4,
+        14.5,
+        11.7,
+        10.2,
+        9.7,
+        7.7,
+        7.0,
+        6.8
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9572,
+       "qps_runs": [
+        2376,
+        2331,
+        2481,
+        2496,
+        2399,
+        2445,
+        2492,
+        2463,
+        2426,
+        2465,
+        2060
+       ],
+       "qps_median": 2445,
+       "evals_per_query": 19482.1,
+       "load_1m_before_runs": [
+        26.7,
+        23.3,
+        17.8,
+        15.3,
+        14.5,
+        11.7,
+        10.2,
+        9.7,
+        7.7,
+        7.0,
+        6.8
+       ]
+      },
+      {
+       "params": {
+        "ef": 64,
+        "rerank": 64
+       },
+       "recall_at_10": 0.88445,
+       "qps_runs": [
+        13259,
+        12790,
+        14454,
+        14254,
+        13681,
+        13946,
+        14080,
+        14223,
+        14107,
+        14130,
+        10937
+       ],
+       "qps_median": 14080,
+       "evals_per_query": 3049.6,
+       "load_1m_before_runs": [
+        24.9,
+        23.3,
+        17.8,
+        15.3,
+        14.5,
+        11.3,
+        10.2,
+        9.7,
+        7.5,
+        7.0,
+        6.8
+       ]
+      },
+      {
+       "params": {
+        "ef": 96,
+        "rerank": 64
+       },
+       "recall_at_10": 0.90245,
+       "qps_runs": [
+        10244,
+        9094,
+        10719,
+        10810,
+        9874,
+        10626,
+        10591,
+        10544,
+        10715,
+        10751,
+        8553
+       ],
+       "qps_median": 10591,
+       "evals_per_query": 4256.9,
+       "load_1m_before_runs": [
+        24.9,
+        23.3,
+        17.8,
+        15.3,
+        14.5,
+        11.3,
+        10.2,
+        9.7,
+        7.5,
+        7.0,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 128,
+        "rerank": 64
+       },
+       "recall_at_10": 0.91445,
+       "qps_runs": [
+        8394,
+        7401,
+        8635,
+        8646,
+        8206,
+        8433,
+        8435,
+        8463,
+        8993,
+        8621,
+        6778
+       ],
+       "qps_median": 8435,
+       "evals_per_query": 5445.4,
+       "load_1m_before_runs": [
+        24.9,
+        23.3,
+        17.8,
+        15.3,
+        14.5,
+        11.3,
+        10.2,
+        9.7,
+        7.5,
+        7.0,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 64
+       },
+       "recall_at_10": 0.93795,
+       "qps_runs": [
+        4592,
+        4177,
+        4697,
+        4733,
+        4367,
+        4682,
+        4632,
+        4641,
+        4737,
+        4552,
+        4184
+       ],
+       "qps_median": 4632,
+       "evals_per_query": 10199.4,
+       "load_1m_before_runs": [
+        24.9,
+        23.3,
+        17.8,
+        15.3,
+        14.5,
+        11.3,
+        10.2,
+        9.7,
+        7.5,
+        7.0,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 64
+       },
+       "recall_at_10": 0.95025,
+       "qps_runs": [
+        3115,
+        2911,
+        3215,
+        3222,
+        2968,
+        3109,
+        3155,
+        3150,
+        3229,
+        3140,
+        2655
+       ],
+       "qps_median": 3140,
+       "evals_per_query": 14897.8,
+       "load_1m_before_runs": [
+        24.9,
+        23.3,
+        17.3,
+        15.3,
+        14.5,
+        11.3,
+        10.2,
+        9.7,
+        7.5,
+        7.0,
+        6.9
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9574,
+       "qps_runs": [
+        2414,
+        2375,
+        2518,
+        2437,
+        2211,
+        2390,
+        2399,
+        2405,
+        2280,
+        2330,
+        1943
+       ],
+       "qps_median": 2390,
+       "evals_per_query": 19530.0,
+       "load_1m_before_runs": [
+        24.9,
+        23.3,
+        17.3,
+        15.3,
+        14.5,
+        11.3,
+        10.2,
+        9.2,
+        7.5,
+        7.0,
+        6.9
+       ]
+      }
+     ]
+    }
+   },
+   "at_recall_0.90": {
+    "E_over_A_same_row": {
+     "row": {
+      "ef": 96,
+      "rerank": 16
+     },
+     "recall_at_10": 0.90225,
+     "numerator_row": {
+      "ef": 96,
+      "rerank": 16
+     },
+     "numerator_recall_at_10": 0.90235,
+     "numerator_qps": [
+      12105,
+      11982,
+      12169,
+      11615,
+      11568,
+      11753,
+      11983,
+      11831,
+      11472,
+      11068,
+      10275
+     ],
+     "denominator_qps": [
+      9047,
+      9191,
+      8923,
+      8989,
+      8900,
+      9016,
+      8936,
+      9182,
+      9128,
+      8598,
+      8802
+     ],
+     "paired_ratios": [
+      1.338,
+      1.304,
+      1.364,
+      1.292,
+      1.3,
+      1.304,
+      1.341,
+      1.289,
+      1.257,
+      1.287,
+      1.167
+     ],
+     "median_ratio": 1.3,
+     "min_ratio": 1.167,
+     "max_ratio": 1.364,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "E_over_A_interpolated": {
+     "interpolated_at_recall": 0.9,
+     "numerator_qps": [
+      12251,
+      12085,
+      12447,
+      11931,
+      11826,
+      12020,
+      12239,
+      12121,
+      11788,
+      11428,
+      10360
+     ],
+     "denominator_qps": [
+      9317,
+      9463,
+      9217,
+      9105,
+      9191,
+      9286,
+      9237,
+      9455,
+      9409,
+      8911,
+      9145
+     ],
+     "paired_ratios": [
+      1.315,
+      1.277,
+      1.35,
+      1.31,
+      1.287,
+      1.294,
+      1.325,
+      1.282,
+      1.253,
+      1.283,
+      1.133
+     ],
+     "median_ratio": 1.287,
+     "min_ratio": 1.133,
+     "max_ratio": 1.35,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "D_over_E_interpolated": {
+     "interpolated_at_recall": 0.9,
+     "numerator_qps": [
+      14593,
+      14839,
+      14590,
+      14837,
+      12705,
+      14909,
+      14713,
+      14959,
+      15036,
+      13583,
+      12025
+     ],
+     "denominator_qps": [
+      12251,
+      12085,
+      12447,
+      11931,
+      11826,
+      12020,
+      12239,
+      12121,
+      11788,
+      11428,
+      10360
+     ],
+     "paired_ratios": [
+      1.191,
+      1.228,
+      1.172,
+      1.244,
+      1.074,
+      1.24,
+      1.202,
+      1.234,
+      1.276,
+      1.189,
+      1.161
+     ],
+     "median_ratio": 1.202,
+     "min_ratio": 1.074,
+     "max_ratio": 1.276,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "D_over_A_interpolated": {
+     "interpolated_at_recall": 0.9,
+     "numerator_qps": [
+      14593,
+      14839,
+      14590,
+      14837,
+      12705,
+      14909,
+      14713,
+      14959,
+      15036,
+      13583,
+      12025
+     ],
+     "denominator_qps": [
+      9317,
+      9463,
+      9217,
+      9105,
+      9191,
+      9286,
+      9237,
+      9455,
+      9409,
+      8911,
+      9145
+     ],
+     "paired_ratios": [
+      1.566,
+      1.568,
+      1.583,
+      1.63,
+      1.382,
+      1.606,
+      1.593,
+      1.582,
+      1.598,
+      1.524,
+      1.315
+     ],
+     "median_ratio": 1.582,
+     "min_ratio": 1.315,
+     "max_ratio": 1.63,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "interpolated_qps_by_round": {
+     "A": [
+      9317,
+      9463,
+      9217,
+      9105,
+      9191,
+      9286,
+      9237,
+      9455,
+      9409,
+      8911,
+      9145
+     ],
+     "D": [
+      14593,
+      14839,
+      14590,
+      14837,
+      12705,
+      14909,
+      14713,
+      14959,
+      15036,
+      13583,
+      12025
+     ],
+     "E": [
+      12251,
+      12085,
+      12447,
+      11931,
+      11826,
+      12020,
+      12239,
+      12121,
+      11788,
+      11428,
+      10360
+     ]
+    }
+   },
+   "at_recall_0.95": {
+    "E_over_A_same_row": {
+     "row": {
+      "ef": 384,
+      "rerank": 64
+     },
+     "recall_at_10": 0.9501,
+     "numerator_row": {
+      "ef": 384,
+      "rerank": 16
+     },
+     "numerator_recall_at_10": 0.95005,
+     "numerator_qps": [
+      3209,
+      3299,
+      3362,
+      3299,
+      3211,
+      3273,
+      3253,
+      3246,
+      3238,
+      3098,
+      2663
+     ],
+     "denominator_qps": [
+      2275,
+      2323,
+      2354,
+      2323,
+      2348,
+      2200,
+      2366,
+      2373,
+      2342,
+      2345,
+      2469
+     ],
+     "paired_ratios": [
+      1.411,
+      1.42,
+      1.428,
+      1.42,
+      1.368,
+      1.488,
+      1.375,
+      1.368,
+      1.382,
+      1.321,
+      1.078
+     ],
+     "median_ratio": 1.382,
+     "min_ratio": 1.078,
+     "max_ratio": 1.488,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "E_over_A_interpolated": {
+     "interpolated_at_recall": 0.95,
+     "numerator_qps": [
+      3214,
+      3302,
+      3366,
+      3304,
+      3215,
+      3278,
+      3258,
+      3251,
+      3243,
+      3164,
+      2668
+     ],
+     "denominator_qps": [
+      2282,
+      2347,
+      2365,
+      2334,
+      2356,
+      2237,
+      2370,
+      2387,
+      2364,
+      2361,
+      2478
+     ],
+     "paired_ratios": [
+      1.408,
+      1.407,
+      1.423,
+      1.415,
+      1.365,
+      1.466,
+      1.375,
+      1.362,
+      1.372,
+      1.34,
+      1.077
+     ],
+     "median_ratio": 1.375,
+     "min_ratio": 1.077,
+     "max_ratio": 1.466,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "D_over_E_interpolated": {
+     "interpolated_at_recall": 0.95,
+     "numerator_qps": [
+      3816,
+      3897,
+      3907,
+      3561,
+      3732,
+      3836,
+      3842,
+      3896,
+      3943,
+      3407,
+      3232
+     ],
+     "denominator_qps": [
+      3214,
+      3302,
+      3366,
+      3304,
+      3215,
+      3278,
+      3258,
+      3251,
+      3243,
+      3164,
+      2668
+     ],
+     "paired_ratios": [
+      1.187,
+      1.18,
+      1.161,
+      1.078,
+      1.161,
+      1.17,
+      1.179,
+      1.198,
+      1.216,
+      1.077,
+      1.211
+     ],
+     "median_ratio": 1.179,
+     "min_ratio": 1.077,
+     "max_ratio": 1.216,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "D_over_A_interpolated": {
+     "interpolated_at_recall": 0.95,
+     "numerator_qps": [
+      3816,
+      3897,
+      3907,
+      3561,
+      3732,
+      3836,
+      3842,
+      3896,
+      3943,
+      3407,
+      3232
+     ],
+     "denominator_qps": [
+      2282,
+      2347,
+      2365,
+      2334,
+      2356,
+      2237,
+      2370,
+      2387,
+      2364,
+      2361,
+      2478
+     ],
+     "paired_ratios": [
+      1.672,
+      1.66,
+      1.652,
+      1.526,
+      1.584,
+      1.715,
+      1.621,
+      1.632,
+      1.668,
+      1.443,
+      1.304
+     ],
+     "median_ratio": 1.632,
+     "min_ratio": 1.304,
+     "max_ratio": 1.715,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "interpolated_qps_by_round": {
+     "A": [
+      2282,
+      2347,
+      2365,
+      2334,
+      2356,
+      2237,
+      2370,
+      2387,
+      2364,
+      2361,
+      2478
+     ],
+     "D": [
+      3816,
+      3897,
+      3907,
+      3561,
+      3732,
+      3836,
+      3842,
+      3896,
+      3943,
+      3407,
+      3232
+     ],
+     "E": [
+      3214,
+      3302,
+      3366,
+      3304,
+      3215,
+      3278,
+      3258,
+      3251,
+      3243,
+      3164,
+      2668
+     ]
+    }
+   }
+  },
+  "glove-100-angular": {
+   "rounds": 11,
+   "coordinator": {
+    "completed": true,
+    "load_1m_at_start": 18.1,
+    "load_1m_at_end": 6.6,
+    "load_1m_per_step": [
+     [
+      0,
+      "A",
+      18.1
+     ],
+     [
+      0,
+      "E",
+      17.2
+     ],
+     [
+      0,
+      "D",
+      17.2
+     ],
+     [
+      1,
+      "E",
+      16.1
+     ],
+     [
+      1,
+      "D",
+      16.1
+     ],
+     [
+      1,
+      "A",
+      15.1
+     ],
+     [
+      2,
+      "D",
+      14.3
+     ],
+     [
+      2,
+      "A",
+      14.3
+     ],
+     [
+      2,
+      "E",
+      13.4
+     ],
+     [
+      3,
+      "A",
+      12.6
+     ],
+     [
+      3,
+      "E",
+      11.9
+     ],
+     [
+      3,
+      "D",
+      11.9
+     ],
+     [
+      4,
+      "E",
+      11.3
+     ],
+     [
+      4,
+      "D",
+      11.3
+     ],
+     [
+      4,
+      "A",
+      10.9
+     ],
+     [
+      5,
+      "D",
+      10.4
+     ],
+     [
+      5,
+      "A",
+      10.4
+     ],
+     [
+      5,
+      "E",
+      9.7
+     ],
+     [
+      6,
+      "A",
+      9.7
+     ],
+     [
+      6,
+      "E",
+      9.3
+     ],
+     [
+      6,
+      "D",
+      9.1
+     ],
+     [
+      7,
+      "E",
+      9.1
+     ],
+     [
+      7,
+      "D",
+      8.7
+     ],
+     [
+      7,
+      "A",
+      8.7
+     ],
+     [
+      8,
+      "D",
+      8.2
+     ],
+     [
+      8,
+      "A",
+      8.0
+     ],
+     [
+      8,
+      "E",
+      7.6
+     ],
+     [
+      9,
+      "A",
+      7.6
+     ],
+     [
+      9,
+      "E",
+      7.3
+     ],
+     [
+      9,
+      "D",
+      7.3
+     ],
+     [
+      10,
+      "E",
+      7.1
+     ],
+     [
+      10,
+      "D",
+      7.0
+     ],
+     [
+      10,
+      "A",
+      7.0
+     ]
+    ]
+   },
+   "graph_identity": {
+    "E_graph_hash": "f4728708cb2b4604",
+    "D_graph_hash": "f4728708cb2b4604",
+    "A_vs_E_rows": {
+     "shared_rows": 6,
+     "max_abs_recall_diff": 0.0,
+     "max_abs_evals_per_query_diff": 0.01,
+     "E_recall_minus_A_recall_per_row": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "note": "A (old binary) records no hash and loaded the HMSGRF01 cache both binaries shared in the earlier paired runs (qgraph_vertex_search_heldout.json); E and D built the graph fresh with the new binary (HMS_QGRAPH_BUILD_PROFILE hash bb380e95f29e097d on nytimes, equal to the hash recorded in qgraph_vertex_build_heldout.json) and loaded it through the checked cache. On glove the A and E rows are identical. On nytimes E's recall is higher by at most 0.0006 with at most 4 more code estimates per query at the same ef: the new default path quantizes the query differently (split scales), which the earlier run ny1 showed on the very same cache file, so the graphs are the same and the difference is in the search code."
+   },
+   "processes": {
+    "A": {
+     "binary": "/Volumes/A/.hms-target-vsearch/bin/pb-base: integrate/qgraph-speed 4ed59b8 search code (the old default path), built 2026-10-07 13:14",
+     "encoding": {
+      "degree": 32,
+      "build_ef": 200,
+      "alpha": 1.0,
+      "residual": true,
+      "residual_bits": null,
+      "vertex_bits": null,
+      "id_bytes": null,
+      "align_rows": null,
+      "reorder": null
+     },
+     "graph_cache": "/Volumes/A/.hms-target-vsearch/cache/glove-100-angular_d32_b200.graph",
+     "index_bytes": 430510900,
+     "residual_bytes": 137055624,
+     "load_gate_met_all_rows": false,
+     "sweep": [
+      {
+       "params": {
+        "ef": 192,
+        "rerank": 16
+       },
+       "recall_at_10": 0.88305,
+       "qps_runs": [
+        6453,
+        7876,
+        8072,
+        7911,
+        7124,
+        7869,
+        7512,
+        7843,
+        7086,
+        8237,
+        7567
+       ],
+       "qps_median": 7843,
+       "evals_per_query": 4517.2,
+       "load_1m_before_runs": [
+        18.1,
+        15.1,
+        14.3,
+        12.6,
+        10.9,
+        10.4,
+        9.7,
+        8.7,
+        8.0,
+        7.6,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9019,
+       "qps_runs": [
+        4886,
+        6150,
+        6109,
+        5537,
+        5728,
+        6105,
+        6017,
+        6005,
+        5839,
+        6257,
+        5871
+       ],
+       "qps_median": 6005,
+       "evals_per_query": 5746.4,
+       "load_1m_before_runs": [
+        18.1,
+        15.1,
+        14.3,
+        12.6,
+        10.9,
+        10.4,
+        9.7,
+        8.7,
+        8.0,
+        7.6,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 16
+       },
+       "recall_at_10": 0.92365,
+       "qps_runs": [
+        3216,
+        4117,
+        4096,
+        3742,
+        3708,
+        4060,
+        4084,
+        4086,
+        4099,
+        3973,
+        3851
+       ],
+       "qps_median": 4060,
+       "evals_per_query": 8104.3,
+       "load_1m_before_runs": [
+        18.1,
+        15.1,
+        14.3,
+        12.6,
+        10.9,
+        10.4,
+        9.3,
+        8.7,
+        8.0,
+        7.6,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9378,
+       "qps_runs": [
+        2348,
+        2999,
+        3065,
+        3103,
+        3050,
+        3089,
+        3027,
+        3047,
+        3081,
+        3031,
+        2843
+       ],
+       "qps_median": 3047,
+       "evals_per_query": 10384.0,
+       "load_1m_before_runs": [
+        18.1,
+        15.1,
+        13.4,
+        12.6,
+        10.9,
+        10.4,
+        9.3,
+        8.2,
+        8.0,
+        7.6,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 768,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9556,
+       "qps_runs": [
+        1656,
+        1830,
+        1981,
+        1972,
+        1995,
+        2032,
+        1983,
+        1949,
+        2006,
+        1995,
+        1934
+       ],
+       "qps_median": 1981,
+       "evals_per_query": 14771.9,
+       "load_1m_before_runs": [
+        18.1,
+        15.1,
+        13.4,
+        12.6,
+        10.9,
+        10.4,
+        9.3,
+        8.2,
+        8.0,
+        7.6,
+        6.7
+       ]
+      },
+      {
+       "params": {
+        "ef": 1024,
+        "rerank": 16
+       },
+       "recall_at_10": 0.96555,
+       "qps_runs": [
+        1318,
+        1393,
+        1484,
+        1442,
+        1437,
+        1482,
+        1479,
+        1424,
+        1482,
+        1473,
+        1436
+       ],
+       "qps_median": 1442,
+       "evals_per_query": 18993.0,
+       "load_1m_before_runs": [
+        18.1,
+        14.3,
+        13.4,
+        12.6,
+        10.9,
+        9.7,
+        9.3,
+        8.2,
+        8.0,
+        7.3,
+        6.7
+       ]
+      }
+     ]
+    },
+    "D": {
+     "binary": "the same binary as E with --vertex-bits 4 --residual-bits 8 --align-rows --reorder --id-bytes 3",
+     "encoding": {
+      "degree": 32,
+      "build_ef": 200,
+      "alpha": 1.0,
+      "residual": true,
+      "residual_bits": 8,
+      "vertex_bits": 4,
+      "id_bytes": 3,
+      "align_rows": true,
+      "reorder": true
+     },
+     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/glove-100-angular_d32_b200_v2.graph",
+     "index_bytes": 359620124,
+     "residual_bytes": 155959848,
+     "load_gate_met_all_rows": false,
+     "sweep": [
+      {
+       "params": {
+        "ef": 192,
+        "rerank": 64
+       },
+       "recall_at_10": 0.8827,
+       "qps_runs": [
+        9831,
+        10800,
+        11528,
+        11524,
+        11579,
+        11696,
+        11905,
+        11329,
+        11308,
+        10283,
+        9277
+       ],
+       "qps_median": 11329,
+       "evals_per_query": 4581.9,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        14.3,
+        11.9,
+        11.3,
+        10.4,
+        9.1,
+        8.7,
+        8.2,
+        7.3,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9005,
+       "qps_runs": [
+        8615,
+        8731,
+        9121,
+        8986,
+        8579,
+        9146,
+        9532,
+        9110,
+        9326,
+        8857,
+        8386
+       ],
+       "qps_median": 8986,
+       "evals_per_query": 5810.9,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        14.3,
+        11.9,
+        11.3,
+        10.4,
+        9.1,
+        8.7,
+        8.2,
+        7.3,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9222,
+       "qps_runs": [
+        5893,
+        5995,
+        6361,
+        6086,
+        5815,
+        6334,
+        6608,
+        6411,
+        6104,
+        6165,
+        5878
+       ],
+       "qps_median": 6104,
+       "evals_per_query": 8183.8,
+       "load_1m_before_runs": [
+        17.2,
+        15.1,
+        14.3,
+        11.9,
+        11.3,
+        10.4,
+        9.1,
+        8.7,
+        8.2,
+        7.1,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 64
+       },
+       "recall_at_10": 0.93685,
+       "qps_runs": [
+        4787,
+        4697,
+        4970,
+        4809,
+        4651,
+        4888,
+        5133,
+        5029,
+        4950,
+        4966,
+        4450
+       ],
+       "qps_median": 4888,
+       "evals_per_query": 10473.7,
+       "load_1m_before_runs": [
+        17.2,
+        15.1,
+        14.3,
+        11.9,
+        11.3,
+        10.4,
+        9.1,
+        8.7,
+        8.2,
+        7.1,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 768,
+        "rerank": 64
+       },
+       "recall_at_10": 0.9518,
+       "qps_runs": [
+        3068,
+        3191,
+        3330,
+        3256,
+        3008,
+        3359,
+        3477,
+        3328,
+        3297,
+        3063,
+        3034
+       ],
+       "qps_median": 3256,
+       "evals_per_query": 14882.1,
+       "load_1m_before_runs": [
+        16.1,
+        15.1,
+        14.3,
+        11.9,
+        11.3,
+        10.4,
+        9.1,
+        8.7,
+        8.2,
+        7.1,
+        7.0
+       ]
+      },
+      {
+       "params": {
+        "ef": 1024,
+        "rerank": 64
+       },
+       "recall_at_10": 0.96285,
+       "qps_runs": [
+        2428,
+        2447,
+        2579,
+        2588,
+        2328,
+        2598,
+        2684,
+        2636,
+        2379,
+        2408,
+        2138
+       ],
+       "qps_median": 2447,
+       "evals_per_query": 19125.7,
+       "load_1m_before_runs": [
+        16.1,
+        15.1,
+        14.3,
+        11.9,
+        10.9,
+        10.4,
+        9.1,
+        8.7,
+        8.0,
+        7.1,
+        7.0
+       ]
+      }
+     ]
+    },
+    "E": {
+     "binary": "public-bench built from main 1059725 plus the checked graph-cache header (this commit), default flags",
+     "encoding": {
+      "degree": 32,
+      "build_ef": 200,
+      "alpha": 1.0,
+      "residual": true,
+      "residual_bits": 8,
+      "vertex_bits": 8,
+      "id_bytes": 4,
+      "align_rows": false,
+      "reorder": false
+     },
+     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/glove-100-angular_d32_b200_v2.graph",
+     "index_bytes": 430510900,
+     "residual_bytes": 137055624,
+     "load_gate_met_all_rows": false,
+     "sweep": [
+      {
+       "params": {
+        "ef": 192,
+        "rerank": 16
+       },
+       "recall_at_10": 0.88305,
+       "qps_runs": [
+        10469,
+        10392,
+        11420,
+        11331,
+        11202,
+        10930,
+        11502,
+        10439,
+        11548,
+        10523,
+        10937
+       ],
+       "qps_median": 10937,
+       "evals_per_query": 4517.2,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        13.4,
+        11.9,
+        11.3,
+        9.7,
+        9.3,
+        9.1,
+        7.6,
+        7.3,
+        7.1
+       ]
+      },
+      {
+       "params": {
+        "ef": 256,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9019,
+       "qps_runs": [
+        7931,
+        8379,
+        8960,
+        8467,
+        8835,
+        9036,
+        8134,
+        8912,
+        8934,
+        8928,
+        8494
+       ],
+       "qps_median": 8835,
+       "evals_per_query": 5746.4,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        13.4,
+        11.9,
+        11.3,
+        9.7,
+        9.3,
+        9.1,
+        7.6,
+        7.3,
+        7.1
+       ]
+      },
+      {
+       "params": {
+        "ef": 384,
+        "rerank": 16
+       },
+       "recall_at_10": 0.92365,
+       "qps_runs": [
+        5557,
+        5627,
+        6176,
+        5713,
+        6217,
+        6178,
+        5611,
+        6088,
+        5768,
+        5347,
+        5982
+       ],
+       "qps_median": 5768,
+       "evals_per_query": 8104.3,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        13.4,
+        11.9,
+        11.3,
+        9.7,
+        9.3,
+        9.1,
+        7.6,
+        7.3,
+        7.1
+       ]
+      },
+      {
+       "params": {
+        "ef": 512,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9378,
+       "qps_runs": [
+        4091,
+        4310,
+        4810,
+        4596,
+        4809,
+        4793,
+        4700,
+        4760,
+        4684,
+        4540,
+        4641
+       ],
+       "qps_median": 4684,
+       "evals_per_query": 10384.0,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        13.4,
+        11.9,
+        11.3,
+        9.7,
+        9.3,
+        9.1,
+        7.6,
+        7.3,
+        7.1
+       ]
+      },
+      {
+       "params": {
+        "ef": 768,
+        "rerank": 16
+       },
+       "recall_at_10": 0.9556,
+       "qps_runs": [
+        2554,
+        2934,
+        3230,
+        3116,
+        3226,
+        3109,
+        3096,
+        3194,
+        3199,
+        3141,
+        2746
+       ],
+       "qps_median": 3116,
+       "evals_per_query": 14771.9,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        13.4,
+        11.9,
+        11.3,
+        9.7,
+        9.3,
+        8.7,
+        7.6,
+        7.3,
+        7.1
+       ]
+      },
+      {
+       "params": {
+        "ef": 1024,
+        "rerank": 16
+       },
+       "recall_at_10": 0.96555,
+       "qps_runs": [
+        1924,
+        2293,
+        2417,
+        2234,
+        2465,
+        2263,
+        2441,
+        2453,
+        2474,
+        2298,
+        2035
+       ],
+       "qps_median": 2298,
+       "evals_per_query": 18993.0,
+       "load_1m_before_runs": [
+        17.2,
+        16.1,
+        12.6,
+        11.9,
+        11.3,
+        9.7,
+        9.1,
+        8.7,
+        7.6,
+        7.3,
+        7.1
+       ]
+      }
+     ]
+    }
+   },
+   "at_recall_0.90": {
+    "E_over_A_same_row": {
+     "row": {
+      "ef": 256,
+      "rerank": 16
+     },
+     "recall_at_10": 0.9019,
+     "numerator_row": {
+      "ef": 256,
+      "rerank": 16
+     },
+     "numerator_recall_at_10": 0.9019,
+     "numerator_qps": [
+      7931,
+      8379,
+      8960,
+      8467,
+      8835,
+      9036,
+      8134,
+      8912,
+      8934,
+      8928,
+      8494
+     ],
+     "denominator_qps": [
+      4886,
+      6150,
+      6109,
+      5537,
+      5728,
+      6105,
+      6017,
+      6005,
+      5839,
+      6257,
+      5871
+     ],
+     "paired_ratios": [
+      1.623,
+      1.363,
+      1.467,
+      1.529,
+      1.542,
+      1.48,
+      1.352,
+      1.484,
+      1.53,
+      1.427,
+      1.447
+     ],
+     "median_ratio": 1.48,
+     "min_ratio": 1.352,
+     "max_ratio": 1.623,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "E_over_A_interpolated": {
+     "interpolated_at_recall": 0.9,
+     "numerator_qps": [
+      8156,
+      8563,
+      9182,
+      8720,
+      9049,
+      9211,
+      8423,
+      9055,
+      9168,
+      9077,
+      8713
+     ],
+     "denominator_qps": [
+      5025,
+      6305,
+      6283,
+      5740,
+      5856,
+      6263,
+      6153,
+      6169,
+      5954,
+      6433,
+      6023
+     ],
+     "paired_ratios": [
+      1.623,
+      1.358,
+      1.461,
+      1.519,
+      1.545,
+      1.471,
+      1.369,
+      1.468,
+      1.54,
+      1.411,
+      1.447
+     ],
+     "median_ratio": 1.468,
+     "min_ratio": 1.358,
+     "max_ratio": 1.623,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "D_over_E_interpolated": {
+     "interpolated_at_recall": 0.9,
+     "numerator_qps": [
+      8647,
+      8783,
+      9181,
+      9049,
+      8652,
+      9209,
+      9591,
+      9166,
+      9376,
+      8894,
+      8410
+     ],
+     "denominator_qps": [
+      8156,
+      8563,
+      9182,
+      8720,
+      9049,
+      9211,
+      8423,
+      9055,
+      9168,
+      9077,
+      8713
+     ],
+     "paired_ratios": [
+      1.06,
+      1.026,
+      1.0,
+      1.038,
+      0.956,
+      1.0,
+      1.139,
+      1.012,
+      1.023,
+      0.98,
+      0.965
+     ],
+     "median_ratio": 1.012,
+     "min_ratio": 0.956,
+     "max_ratio": 1.139,
+     "rounds_numerator_faster": 6,
+     "rounds_numerator_slower": 5,
+     "sign_test_p_faster": 1.0,
+     "sign_test_p_slower": 1.0
+    },
+    "D_over_A_interpolated": {
+     "interpolated_at_recall": 0.9,
+     "numerator_qps": [
+      8647,
+      8783,
+      9181,
+      9049,
+      8652,
+      9209,
+      9591,
+      9166,
+      9376,
+      8894,
+      8410
+     ],
+     "denominator_qps": [
+      5025,
+      6305,
+      6283,
+      5740,
+      5856,
+      6263,
+      6153,
+      6169,
+      5954,
+      6433,
+      6023
+     ],
+     "paired_ratios": [
+      1.721,
+      1.393,
+      1.461,
+      1.577,
+      1.478,
+      1.47,
+      1.559,
+      1.486,
+      1.575,
+      1.383,
+      1.396
+     ],
+     "median_ratio": 1.478,
+     "min_ratio": 1.383,
+     "max_ratio": 1.721,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "interpolated_qps_by_round": {
+     "A": [
+      5025,
+      6305,
+      6283,
+      5740,
+      5856,
+      6263,
+      6153,
+      6169,
+      5954,
+      6433,
+      6023
+     ],
+     "D": [
+      8647,
+      8783,
+      9181,
+      9049,
+      8652,
+      9209,
+      9591,
+      9166,
+      9376,
+      8894,
+      8410
+     ],
+     "E": [
+      8156,
+      8563,
+      9182,
+      8720,
+      9049,
+      9211,
+      8423,
+      9055,
+      9168,
+      9077,
+      8713
+     ]
+    }
+   },
+   "at_recall_0.95": {
+    "E_over_A_same_row": {
+     "row": {
+      "ef": 768,
+      "rerank": 16
+     },
+     "recall_at_10": 0.9556,
+     "numerator_row": {
+      "ef": 768,
+      "rerank": 16
+     },
+     "numerator_recall_at_10": 0.9556,
+     "numerator_qps": [
+      2554,
+      2934,
+      3230,
+      3116,
+      3226,
+      3109,
+      3096,
+      3194,
+      3199,
+      3141,
+      2746
+     ],
+     "denominator_qps": [
+      1656,
+      1830,
+      1981,
+      1972,
+      1995,
+      2032,
+      1983,
+      1949,
+      2006,
+      1995,
+      1934
+     ],
+     "paired_ratios": [
+      1.542,
+      1.603,
+      1.63,
+      1.58,
+      1.617,
+      1.53,
+      1.561,
+      1.639,
+      1.595,
+      1.574,
+      1.42
+     ],
+     "median_ratio": 1.58,
+     "min_ratio": 1.42,
+     "max_ratio": 1.639,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "E_over_A_interpolated": {
+     "interpolated_at_recall": 0.95,
+     "numerator_qps": [
+      2962,
+      3311,
+      3661,
+      3521,
+      3658,
+      3562,
+      3531,
+      3621,
+      3607,
+      3527,
+      3239
+     ],
+     "denominator_qps": [
+      1848,
+      2137,
+      2273,
+      2275,
+      2280,
+      2318,
+      2265,
+      2243,
+      2296,
+      2276,
+      2183
+     ],
+     "paired_ratios": [
+      1.602,
+      1.549,
+      1.611,
+      1.548,
+      1.604,
+      1.536,
+      1.558,
+      1.614,
+      1.571,
+      1.55,
+      1.484
+     ],
+     "median_ratio": 1.558,
+     "min_ratio": 1.484,
+     "max_ratio": 1.614,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "D_over_E_interpolated": {
+     "interpolated_at_recall": 0.95,
+     "numerator_qps": [
+      3237,
+      3343,
+      3495,
+      3413,
+      3170,
+      3515,
+      3644,
+      3497,
+      3463,
+      3246,
+      3177
+     ],
+     "denominator_qps": [
+      2962,
+      3311,
+      3661,
+      3521,
+      3658,
+      3562,
+      3531,
+      3621,
+      3607,
+      3527,
+      3239
+     ],
+     "paired_ratios": [
+      1.093,
+      1.01,
+      0.955,
+      0.969,
+      0.867,
+      0.987,
+      1.032,
+      0.966,
+      0.96,
+      0.92,
+      0.981
+     ],
+     "median_ratio": 0.969,
+     "min_ratio": 0.867,
+     "max_ratio": 1.093,
+     "rounds_numerator_faster": 3,
+     "rounds_numerator_slower": 8,
+     "sign_test_p_faster": 1.0,
+     "sign_test_p_slower": 0.2266
+    },
+    "D_over_A_interpolated": {
+     "interpolated_at_recall": 0.95,
+     "numerator_qps": [
+      3237,
+      3343,
+      3495,
+      3413,
+      3170,
+      3515,
+      3644,
+      3497,
+      3463,
+      3246,
+      3177
+     ],
+     "denominator_qps": [
+      1848,
+      2137,
+      2273,
+      2275,
+      2280,
+      2318,
+      2265,
+      2243,
+      2296,
+      2276,
+      2183
+     ],
+     "paired_ratios": [
+      1.751,
+      1.564,
+      1.538,
+      1.5,
+      1.39,
+      1.516,
+      1.609,
+      1.559,
+      1.508,
+      1.427,
+      1.455
+     ],
+     "median_ratio": 1.516,
+     "min_ratio": 1.39,
+     "max_ratio": 1.751,
+     "rounds_numerator_faster": 11,
+     "rounds_numerator_slower": 0,
+     "sign_test_p_faster": 0.001,
+     "sign_test_p_slower": 1.0
+    },
+    "interpolated_qps_by_round": {
+     "A": [
+      1848,
+      2137,
+      2273,
+      2275,
+      2280,
+      2318,
+      2265,
+      2243,
+      2296,
+      2276,
+      2183
+     ],
+     "D": [
+      3237,
+      3343,
+      3495,
+      3413,
+      3170,
+      3515,
+      3644,
+      3497,
+      3463,
+      3246,
+      3177
+     ],
+     "E": [
+      2962,
+      3311,
+      3661,
+      3521,
+      3658,
+      3562,
+      3531,
+      3621,
+      3607,
+      3527,
+      3239
+     ]
+    }
+   }
+  }
+ },
+ "verdict": {
+  "a_new_default_path_vs_old": {
+   "nytimes-256-angular": {
+    "0.90": {
+     "E_over_A_median": 1.3,
+     "loses_beyond_noise": false
+    },
+    "0.95": {
+     "E_over_A_median": 1.382,
+     "loses_beyond_noise": false
+    }
+   },
+   "glove-100-angular": {
+    "0.90": {
+     "E_over_A_median": 1.48,
+     "loses_beyond_noise": false
+    },
+    "0.95": {
+     "E_over_A_median": 1.58,
+     "loses_beyond_noise": false
+    }
+   }
+  },
+  "a_decision": "keep the new default path",
+  "b_recommended_encoding_vs_default": {
+   "nytimes-256-angular": {
+    "0.90": {
+     "D_over_E_median": 1.202,
+     "wins": true
+    },
+    "0.95": {
+     "D_over_E_median": 1.179,
+     "wins": true
+    }
+   },
+   "glove-100-angular": {
+    "0.90": {
+     "D_over_E_median": 1.012,
+     "wins": false
+    },
+    "0.95": {
+     "D_over_E_median": 0.969,
+     "wins": false
+    }
+   }
+  },
+  "b_decision": "step 4 uses the default encoding; the recommended encoding is a memory-only gain"
+ }
+}

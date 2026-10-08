@@ -22,7 +22,7 @@ use rayon::prelude::*;
 use super::kernels::{
     dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i8_inline, interleave_for_i4, prefetch_bytes,
 };
-use super::{upper_bytes, Graph, NONE};
+use super::{upper_bytes, BuildParams, Graph, NONE};
 
 /// Search parameters of a [`VGraph`].
 #[derive(Clone, Copy, Debug)]
@@ -638,7 +638,16 @@ impl VSearcher<'_> {
     }
 }
 
-const CACHE_MAGIC: &[u8; 8] = b"HMSGRF01";
+/// Format 02 adds the build parameters and a fingerprint of the vectors to the header, so a
+/// cache written for other data or parameters is rejected instead of silently reused.
+const CACHE_MAGIC: &[u8; 8] = b"HMSGRF02";
+
+/// Fingerprint of the normalized vectors a graph was built over.
+fn data_fingerprint(unit: &[f32]) -> u64 {
+    let mut h = super::Fnv::new();
+    unit.iter().for_each(|x| h.word(x.to_bits()));
+    h.finish()
+}
 
 fn put_u32s(w: &mut impl std::io::Write, xs: &[u32]) -> std::io::Result<()> {
     w.write_all(&(xs.len() as u64).to_le_bytes())?;
@@ -693,13 +702,24 @@ fn get_lists(r: &mut impl std::io::Read, n: u64) -> std::io::Result<Vec<Vec<u32>
 /// Benchmark support: the graph structure (not the vectors) on disk, so that search
 /// experiments on one graph need not rebuild it.
 impl Graph {
-    /// Writes the adjacency, entry and upper layers; the vectors are not stored.
+    /// Writes the header (n, dim, degree, build_ef, alpha, seed, entry, data fingerprint),
+    /// the adjacency and the upper layers; the vectors are not stored.
     pub fn save(&self, path: &std::path::Path) -> std::io::Result<()> {
         let mut w = std::io::BufWriter::new(std::fs::File::create(path)?);
         use std::io::Write;
         w.write_all(CACHE_MAGIC)?;
-        for x in [self.n, self.dim, self.degree, self.entry as usize] {
-            w.write_all(&(x as u64).to_le_bytes())?;
+        let header = [
+            self.n as u64,
+            self.dim as u64,
+            self.degree as u64,
+            self.build.build_ef as u64,
+            u64::from(self.build.alpha.to_bits()),
+            self.build.seed,
+            u64::from(self.entry),
+            data_fingerprint(&self.unit),
+        ];
+        for x in header {
+            w.write_all(&x.to_le_bytes())?;
         }
         put_lists(&mut w, &self.adj)?;
         put_u32s(&mut w, &self.upper_ids)?;
@@ -711,29 +731,72 @@ impl Graph {
     }
 
     /// Reads a graph written by [`Graph::save`] for the same `data` (normalized here exactly
-    /// as [`Graph::build`] does).
-    pub fn load(data: &[f32], dim: usize, path: &std::path::Path) -> std::io::Result<Self> {
-        let bad = |m: &str| std::io::Error::new(std::io::ErrorKind::InvalidData, m.to_string());
+    /// as [`Graph::build`] does) and the same `params`. Any mismatch in the vector count,
+    /// dimension, degree, build_ef, alpha, seed or the data fingerprint is an error, so a
+    /// stale cache never stands in for a build; delete the file to rebuild.
+    pub fn load(
+        data: &[f32],
+        dim: usize,
+        path: &std::path::Path,
+        params: &BuildParams,
+    ) -> std::io::Result<Self> {
+        let bad = |m: String| std::io::Error::new(std::io::ErrorKind::InvalidData, m);
         let mut r = std::io::BufReader::new(std::fs::File::open(path)?);
         let mut magic = [0u8; 8];
         std::io::Read::read_exact(&mut r, &mut magic)?;
         if &magic != CACHE_MAGIC {
-            return Err(bad("graph cache: bad magic"));
+            return Err(bad(
+                "graph cache: bad magic (an older format or not a cache file); delete it to rebuild"
+                    .into(),
+            ));
         }
-        let (n, d, degree, entry) = (
-            get_u64(&mut r)? as usize,
-            get_u64(&mut r)? as usize,
-            get_u64(&mut r)? as usize,
-            get_u64(&mut r)?,
-        );
-        if d != dim || data.len() != n * dim || entry >= n as u64 {
-            return Err(bad("graph cache: does not match the data"));
+        let mut header = [0u64; 8];
+        for x in &mut header {
+            *x = get_u64(&mut r)?;
+        }
+        let [n, d, degree, build_ef, alpha_bits, seed, entry, fingerprint] = header;
+        if dim == 0 || !data.len().is_multiple_of(dim) {
+            return Err(bad("graph cache: ragged data".into()));
+        }
+        let mut unit = data.to_vec();
+        unit.par_chunks_mut(dim).for_each(|x| {
+            let norm = super::dot(x, x).sqrt();
+            if norm > 0.0 {
+                x.iter_mut().for_each(|o| *o /= norm);
+            }
+        });
+        let checks: [(&str, u64, u64); 7] = [
+            ("n", n, (data.len() / dim) as u64),
+            ("dim", d, dim as u64),
+            ("degree", degree, params.degree as u64),
+            ("build_ef", build_ef, params.build_ef as u64),
+            ("alpha", alpha_bits, u64::from(params.alpha.to_bits())),
+            ("seed", seed, params.seed),
+            ("data fingerprint", fingerprint, data_fingerprint(&unit)),
+        ];
+        if let Some((what, file, want)) = checks.iter().find(|(_, a, b)| a != b) {
+            let show = |x: u64| {
+                if *what == "alpha" {
+                    f32::from_bits(x as u32).to_string()
+                } else {
+                    format!("{x:#x}")
+                }
+            };
+            return Err(bad(format!(
+                "graph cache: {what} {} in the file, {} requested; delete the file to rebuild",
+                show(*file),
+                show(*want)
+            )));
+        }
+        let n = n as usize;
+        if entry >= n as u64 {
+            return Err(bad("graph cache: entry out of range".into()));
         }
         let adj = get_lists(&mut r, n as u64)?;
         let upper_ids = get_u32s(&mut r, n as u64)?;
         let nl = get_u64(&mut r)?;
         if nl > 64 {
-            return Err(bad("graph cache: too many layers"));
+            return Err(bad("graph cache: too many layers".into()));
         }
         let layers = (0..nl)
             .map(|_| get_lists(&mut r, n as u64))
@@ -745,33 +808,99 @@ impl Graph {
                 l.len() <= upper_ids.len() && l.iter().flatten().all(|&u| (u as usize) < l.len())
             });
         if !ok {
-            return Err(bad("graph cache: id out of range"));
+            return Err(bad("graph cache: id out of range".into()));
         }
-        let mut unit = data.to_vec();
-        unit.par_chunks_mut(dim).for_each(|x| {
-            let norm = super::dot(x, x).sqrt();
-            if norm > 0.0 {
-                x.iter_mut().for_each(|o| *o /= norm);
-            }
-        });
         Ok(Self {
             n,
             dim,
-            degree,
+            degree: degree as usize,
             unit,
             adj,
             entry: entry as u32,
             upper_ids,
             layers,
+            build: params.clone(),
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::super::kernels::SplitMix;
     use super::super::tests::{brute_force, clustered, gaussian};
-    use super::super::{kernels::SplitMix, BuildParams};
     use super::*;
+
+    /// The cache round-trips the structure for the same data and parameters, and rejects a
+    /// file written for other data or for any other build parameter.
+    #[test]
+    fn graph_cache_round_trips_and_rejects_mismatches() {
+        let d = 16;
+        let data = clustered(600, d, 4);
+        let params = BuildParams {
+            build_ef: 32,
+            degree: 8,
+            alpha: 1.1,
+            seed: 9,
+            ..BuildParams::default()
+        };
+        let graph = Graph::build(&data, d, &params);
+        let path = std::env::temp_dir().join(format!("hms-qgraph-cache-{}", std::process::id()));
+        graph.save(&path).unwrap();
+        let back = Graph::load(&data, d, &path, &params).unwrap();
+        assert_eq!(back.structure_hash(), graph.structure_hash());
+        assert!(back.adj == graph.adj && back.layers == graph.layers);
+        assert_eq!(
+            (back.entry, &back.upper_ids),
+            (graph.entry, &graph.upper_ids)
+        );
+        assert_eq!(back.unit, graph.unit);
+        let rejects = |data: &[f32], p: &BuildParams, what: &str| {
+            let err = Graph::load(data, d, &path, p)
+                .err()
+                .expect("a mismatched cache was accepted")
+                .to_string();
+            assert!(err.contains(what), "{what}: {err}");
+        };
+        for (what, p) in [
+            (
+                "degree",
+                BuildParams {
+                    degree: 10,
+                    ..params.clone()
+                },
+            ),
+            (
+                "build_ef",
+                BuildParams {
+                    build_ef: 33,
+                    ..params.clone()
+                },
+            ),
+            (
+                "alpha",
+                BuildParams {
+                    alpha: 1.0,
+                    ..params.clone()
+                },
+            ),
+            (
+                "seed",
+                BuildParams {
+                    seed: 10,
+                    ..params.clone()
+                },
+            ),
+        ] {
+            rejects(&data, &p, what);
+        }
+        let mut other = data.clone();
+        other[d * 7 + 3] += 0.5;
+        rejects(&other, &params, "data fingerprint");
+        rejects(&data[..d * 599], &params, "n");
+        std::fs::write(&path, b"HMSGRF01").unwrap();
+        rejects(&data, &params, "bad magic");
+        std::fs::remove_file(&path).unwrap();
+    }
 
     /// Per coordinate the 8-bit code is off by at most half a step, and the residual code
     /// shrinks that error by about another factor of 127.

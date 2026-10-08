@@ -759,6 +759,8 @@ pub struct Graph {
     entry: u32,
     upper_ids: Vec<u32>,
     layers: Vec<Vec<Vec<u32>>>,
+    /// The parameters the graph was built with; the on-disk cache records and checks them.
+    build: BuildParams,
 }
 
 impl Graph {
@@ -768,6 +770,25 @@ impl Graph {
             dim: self.dim,
             codes: None,
         }
+    }
+
+    /// Stable 64-bit hash of the structure (adjacency, upper layers, entry): equal values mean
+    /// a bit-identical graph, across builds, binaries and cache round trips.
+    pub fn structure_hash(&self) -> u64 {
+        let mut h = Fnv::new();
+        h.word(self.entry);
+        for list in &self.adj {
+            h.word(list.len() as u32);
+            list.iter().for_each(|&u| h.word(u));
+        }
+        for layer in &self.layers {
+            h.word(layer.len() as u32);
+            for list in layer {
+                h.word(list.len() as u32);
+                list.iter().for_each(|&u| h.word(u));
+            }
+        }
+        h.finish()
     }
 
     /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
@@ -872,7 +893,25 @@ impl Graph {
             entry,
             upper_ids,
             layers,
+            build: params.clone(),
         }
+    }
+}
+
+/// FNV-1a over 32-bit words: a stable fingerprint, not a cryptographic hash.
+struct Fnv(u64);
+
+impl Fnv {
+    fn new() -> Self {
+        Self(0xcbf2_9ce4_8422_2325)
+    }
+
+    fn word(&mut self, w: u32) {
+        self.0 = (self.0 ^ u64::from(w)).wrapping_mul(0x0000_0100_0000_01b3);
+    }
+
+    fn finish(&self) -> u64 {
+        self.0
     }
 }
 

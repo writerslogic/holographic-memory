@@ -39,9 +39,28 @@ Status of the claims (verify before quoting; results files are in `benchmarks/re
   runs the new pool/kernel code at x0.94 / x1.06 (inconclusive; possible regression).
 - `--graph-cache` is keyed by filename only; must be fixed before any published run.
 
-Next: run prompt 1 (Fable) from the prompts file. Step 1 verifies the merge and decides the
-defaults with one clean paired held-out run, then the competitor harness, the gate, the M4
-test-set comparison, the doc rewrite, and the specs for the Opus and Sonnet sessions.
+## Prompt 1 progress (2026-10-07, Fable session)
+
+Step 1 DONE (`benchmarks/results/qgraph_merge_verification_heldout.json`, raw logs in
+`/Volumes/A/.hms-target/logs/merge_verify/`):
+- The graph cache is now format `HMSGRF02`: its header records n, dim, degree, build_ef, alpha,
+  seed and a fingerprint of the vectors, and `Graph::load` rejects any mismatch (test
+  `graph_cache_round_trips_and_rejects_mismatches`). Old `HMSGRF01` files are rejected (bad
+  magic); delete them to rebuild. `ann-qgraph` output now records `build.graph_hash` (stable FNV
+  over the structure). Checked caches for the held-out graphs:
+  `/Volumes/A/.hms-target/logs/merge_verify/cache/{nytimes-256-angular_d64_b200,glove-100-angular_d32_b200}_v2.graph`.
+- (a) The new default search path beats the old one on both sets at both targets in 11 of 11
+  paired rounds: nytimes x1.30 (0.90) / x1.38 (0.95), glove x1.48 / x1.58. KEEP the new default
+  path; nothing is reverted.
+- (b) The recommended encoding (`--vertex-bits 4 --residual-bits 8 --align-rows --reorder
+  --id-bytes 3`) wins on nytimes (x1.20 / x1.18, 11 of 11) but not on glove (x1.01 at 0.90, 6 of 11;
+  x0.97 at 0.95, 3 of 11), so step 4 uses the DEFAULT encoding (`--residual`, 8-bit codes) on both
+  sets and the recommended encoding is reported as a memory-only gain (-24.1% / -16.5%).
+- Load was 12-29 throughout (other sessions); paired ratios are the result, absolute QPS are not.
+
+Next: step 2 (competitor harness `--extra` in `benchmarks/public/evaluate.py`), then the gate
+(step 3), the M4 test-set comparison (step 4), the doc rewrite (5), commit/push (6) and
+`docs/NEXT-SESSIONS.md` (7).
 
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus

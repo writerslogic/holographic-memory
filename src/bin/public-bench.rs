@@ -548,13 +548,15 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     let deadline = Instant::now() + std::time::Duration::from_secs(wait);
     let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
     let t = Instant::now();
+    let mut graph_hash = None;
     let index = match a.index.as_str() {
         "edge" => Built::Edge(QGraph::build(&train, d, &params)),
         _ => {
+            // The cache header records n, dim, degree, build_ef, alpha, seed and a data
+            // fingerprint; a mismatch is an error, never a silent reuse.
             let graph = match &a.graph_cache {
-                Some(p) if p.exists() => {
-                    Graph::load(&train, d, p).with_context(|| format!("loading {}", p.display()))?
-                }
+                Some(p) if p.exists() => Graph::load(&train, d, p, &params)
+                    .with_context(|| format!("loading {}", p.display()))?,
                 cache => {
                     let g = Graph::build(&train, d, &params);
                     if let Some(p) = cache {
@@ -564,6 +566,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                     g
                 }
             };
+            graph_hash = Some(format!("{:016x}", graph.structure_hash()));
             anyhow::ensure!(
                 matches!(a.residual_bits, 4 | 8) && matches!(a.vertex_bits, 4 | 8),
                 "--residual-bits and --vertex-bits must be 4 or 8"
@@ -708,6 +711,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                              "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes,
                              "align_rows": a.align_rows, "reorder": a.reorder,
                              "graph_cache": a.graph_cache.as_ref().map(|p| p.display().to_string())},
+                  "graph_hash": graph_hash,
                   "build_secs": build_secs, "load_1m_before_build": load_before_build,
                   "load_1m_after_build": load_after_build, "load_gate_met": build_gate,
                   "threads": rayon::current_num_threads()},
