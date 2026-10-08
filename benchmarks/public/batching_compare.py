@@ -2,7 +2,11 @@
 
 Compares two lme-model outputs. facts: raw LLM strings (identical text, parsed fact lists);
 embed: little-endian f32 rows (cosine); rerank: p(yes) lists (abs diff)."""
-import json, re, struct, sys, math
+import json
+import re
+import struct
+import sys
+import math
 
 def parse(raw):
     s = raw.strip()
@@ -49,7 +53,9 @@ if __name__ == "__main__":
         assert len(A) == len(B)
         cos = []
         for x, y in zip(A, B):
-            dot = sum(p*q for p, q in zip(x, y)); nx = math.sqrt(sum(p*p for p in x)); ny = math.sqrt(sum(q*q for q in y))
+            dot = sum(p*q for p, q in zip(x, y))
+            nx = math.sqrt(sum(p*p for p in x))
+            ny = math.sqrt(sum(q*q for q in y))
             cos.append(dot / (nx*ny))
         print(json.dumps({"items": len(A), "min_cosine": min(cos), "max_one_minus_cosine": 1 - min(cos),
             "max_abs_diff": max(abs(p-q) for x, y in zip(A, B) for p, q in zip(x, y)),

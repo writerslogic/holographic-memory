@@ -2,7 +2,8 @@
 
 Builds batching-parity inputs from LongMemEval_S: the first 64 distinct haystack sessions
 (first-seen order) as user-turn lists, user turns for embedding, and (question, turn) pairs."""
-import json, sys
+import json
+import sys
 src, out = sys.argv[1], sys.argv[2]
 data = json.load(open(src))
 seen, sessions, ids = set(), [], []
@@ -14,7 +15,8 @@ for q in data:
         turns = [t["content"] for t in sess if t["role"] == "user"]
         if not turns:
             continue
-        sessions.append(turns); ids.append(sid)
+        sessions.append(turns)
+        ids.append(sid)
         if len(sessions) == 64:
             break
     if len(sessions) == 64:

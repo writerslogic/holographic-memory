@@ -4,11 +4,15 @@ Writes benchmarks/results/local_models_batching.json from the parity outputs (<w
 par2_* after the KV-contiguity fix) and the paired timing files from batching_timing.py:
 <work>/timing/{enc,facts}.json (commit 6004d40, before the fix), enc_sweep.json (encoder batch
 sweep; encoders are unaffected by the fix) and v2.json (after the fix)."""
-import json, re, statistics, subprocess, sys
+import json
+import re
+import statistics
+import subprocess
+import sys
 from pathlib import Path
 
 W, out_path = Path(sys.argv[1]), Path(sys.argv[2])
-O, T = W / "out", W / "timing"
+OUT, T = W / "out", W / "timing"
 here = Path(__file__).resolve().parent
 
 
@@ -23,9 +27,9 @@ def compare(kind, a, b, *extra):
 
 
 def untimed(tag):
-    if not (O / f"{tag}.log").exists():
+    if not (OUT / f"{tag}.log").exists():
         return None
-    txt = (O / f"{tag}.log").read_text()
+    txt = (OUT / f"{tag}.log").read_text()
     j = next(json.loads(x) for x in txt.splitlines() if x.startswith("{"))
     peak = re.search(r"(\d+)\s+peak memory footprint", txt)
     j["peak_memory_footprint_bytes"] = int(peak.group(1)) if peak else None
@@ -47,7 +51,7 @@ parity = {
     "embed_docs_main_vs_new_default_timed_run": compare("embed", "timing/v2/ed_base_r0.out", "timing/v2/ed_default_r0.out", "1024"),
     "rerank_main_vs_new_default_timed_run": compare("rerank", "timing/v2/rr_base_r0.out", "timing/v2/rr_default_r0.out"),
 }
-if (O / "par2_f_b8.out").exists():
+if (OUT / "par2_f_b8.out").exists():
     parity |= {
         "facts_main_vs_new_batch1": compare("facts", "out/par_f_base.out", "out/par2_f_b1.out"),
         "facts_main_vs_new_batch8": compare("facts", "out/par_f_base.out", "out/par2_f_b8.out"),
@@ -56,8 +60,8 @@ if (O / "par2_f_b8.out").exists():
     }
     sys.path.insert(0, str(here))
     from batching_compare import parse
-    b1 = json.loads((O / "par2_f_b1.out").read_text())
-    b8 = json.loads((O / "par2_f_b8.out").read_text())
+    b1 = json.loads((OUT / "par2_f_b1.out").read_text())
+    b8 = json.loads((OUT / "par2_f_b8.out").read_text())
     parity["facts_batch1_vs_batch8"]["fact_differences"] = [
         {"item": i, "facts_batch1": len(parse(b1[i])), "facts_batch8": len(parse(b8[i])),
          "only_batch1": [f for f in parse(b1[i]) if f not in parse(b8[i])],

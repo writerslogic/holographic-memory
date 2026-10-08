@@ -58,9 +58,32 @@ Step 1 DONE (`benchmarks/results/qgraph_merge_verification_heldout.json`, raw lo
   sets and the recommended encoding is reported as a memory-only gain (-24.1% / -16.5%).
 - Load was 12-29 throughout (other sessions); paired ratios are the result, absolute QPS are not.
 
-Next: step 2 (competitor harness `--extra` in `benchmarks/public/evaluate.py`), then the gate
-(step 3), the M4 test-set comparison (step 4), the doc rewrite (5), commit/push (6) and
-`docs/NEXT-SESSIONS.md` (7).
+Step 2 DONE: `benchmarks/public/evaluate.py ann ... --extra <system>...` runs each extra
+competitor in its own process through `benchmarks/public/ann_extra.py` (faiss-cpu and rabitqlib
+each bundle an OpenMP runtime; a rabitqlib build segfaults once FAISS is imported in the same
+process). Extras: `symphonyqg` (rabitqlib.SymqgIndex, the SymphonyQG authors' library, NEON),
+`rabitq` (rabitqlib IVF 1+4 / 1+8 and HNSW 1+4), `ngt` (NGT-onng via ngtpy and the Homebrew `ngt`
+command; NGT-qg needs `qbg`, absent from the macOS build), `lucene_hnsw` (lucene-core 9.12.3,
+`benchmarks/public/lucene_hnsw/LuceneHnsw.java`, Java 17); `glass`, `diskann`, `scann` are
+recorded as "not run on M4" with the reason (x86-only builds). Extra packages come from the
+command line: `uv run --with ngt --with 'rabitqlib>=0.5.2' --script benchmarks/public/evaluate.py
+ann <set> <hms.json>... --extra ...`. `--no-builtin`, `--queries N` and `--train-rows N` are
+smoke-test switches (not publishable); `--extra-timeout-secs` (default 5400) turns a system that
+has not built and run in time into "not run on M4". `evaluate.py ann-merge <set> <part.json>...
+--out public_qgraph_<set>.json` joins per-system parts so each holds the timing lock briefly.
+`benchmarks/public/qgraph_table.py <set>` prints the doc table from the merged file.
+
+Step 3 DONE: the full gate ran once after the step-1 Rust changes (log
+`/Volumes/A/.hms-target/logs/merge_verify/gate.log`): fmt, clippy 1.99 (both feature sets), tests
+(both), 1.89 check, deny: all rc 0; `uvx ruff check benchmarks/public` clean (it also fixed four
+pre-existing lints in `batching_*.py`). The harness is Python only, so no Rust rerun was needed.
+
+Next: step 4 = `/Volumes/A/.hms-target/logs/merge_verify/test/run_step4.sh nytimes-256-angular`
+then the same for `glove-100-angular` (full-train graphs are cached at
+`/Volumes/A/.hms-target/logs/merge_verify/cache/*_full_*_v2.graph`; each HMS sweep and each
+competitor runs under its own `timed.sh` hold; `--max-load 3`, waits recorded). Then step 5 (doc
+rewrite from `qgraph_table.py` output), 6 (commit, changelog, push) and 7 (`docs/NEXT-SESSIONS.md`
+is drafted; fill its "Systems that beat HMS on the M4" section from the step-4 files).
 
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus
