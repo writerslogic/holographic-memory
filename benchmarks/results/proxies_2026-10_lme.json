@@ -1,0 +1,415 @@
+{
+ "note": "LongMemEval S dev proxies (frozen dev ids only), dense-exact Qwen3-Embedding-0.6B arm",
+ "event_dates": {
+  "question": "How often do evidence turns state a time (absolute date or relative expression) other than the session date? (axiom M2: a fact's date is its session date)",
+  "results": {
+   "single-session-user": {
+    "questions": 14,
+    "evidence_turns": 77,
+    "with_absolute_date": 2,
+    "with_relative_time": 14,
+    "questions_with_any": 9,
+    "missing_text": 0,
+    "share_turns_with_time_expression": 0.208,
+    "share_questions_with_any": 0.643
+   },
+   "multi-session": {
+    "questions": 27,
+    "evidence_turns": 372,
+    "with_absolute_date": 13,
+    "with_relative_time": 22,
+    "questions_with_any": 14,
+    "missing_text": 0,
+    "share_turns_with_time_expression": 0.094,
+    "share_questions_with_any": 0.519
+   },
+   "single-session-preference": {
+    "questions": 6,
+    "evidence_turns": 42,
+    "with_absolute_date": 0,
+    "with_relative_time": 3,
+    "questions_with_any": 2,
+    "missing_text": 0,
+    "share_turns_with_time_expression": 0.071,
+    "share_questions_with_any": 0.333
+   },
+   "temporal-reasoning": {
+    "questions": 26,
+    "evidence_turns": 260,
+    "with_absolute_date": 3,
+    "with_relative_time": 61,
+    "questions_with_any": 26,
+    "missing_text": 0,
+    "share_turns_with_time_expression": 0.246,
+    "share_questions_with_any": 1.0
+   },
+   "knowledge-update": {
+    "questions": 16,
+    "evidence_turns": 177,
+    "with_absolute_date": 0,
+    "with_relative_time": 12,
+    "questions_with_any": 8,
+    "missing_text": 0,
+    "share_turns_with_time_expression": 0.068,
+    "share_questions_with_any": 0.5
+   },
+   "single-session-assistant": {
+    "questions": 11,
+    "evidence_turns": 3,
+    "with_absolute_date": 0,
+    "with_relative_time": 0,
+    "questions_with_any": 0,
+    "missing_text": 0,
+    "share_turns_with_time_expression": 0.0,
+    "share_questions_with_any": 0.0
+   }
+  },
+  "examples_temporal": [
+   {
+    "qid": "0bc8ad92",
+    "session_date": "2022/10/22 (Sat) 18:38",
+    "match": "today",
+    "snippet": "nking about my behind-the-scenes tour of the Science Museum today, and I remembered that I went with a friend who's a chemist"
+   },
+   {
+    "qid": "0bc8ad92",
+    "session_date": "2023/01/11 (Wed) 10:24",
+    "match": "this month",
+    "snippet": "a lecture at the History Museum about ancient civilizations this month."
+   },
+   {
+    "qid": "0bc8ad92",
+    "session_date": "2023/02/18 (Sat) 04:22",
+    "match": "yesterday",
+    "snippet": "urs. I attended a guided tour at the Natural History Museum yesterday with my dad and was really impressed by the fossil collecti"
+   },
+   {
+    "qid": "9a707b81",
+    "session_date": "2022/03/21 (Mon) 15:54",
+    "match": "yesterday",
+    "snippet": "that amazing baking class I took at a local culinary school yesterday. I was thinking of making a strawberry shortcake. Do you ha"
+   },
+   {
+    "qid": "9a707b81",
+    "session_date": "2022/04/10 (Sun) 14:14",
+    "match": "few weeks ago",
+    "snippet": "rawberries, and I think a strawberry rhubarb crisp I made a few weeks ago was incredible. Do you have any ideas for a savory dish tha"
+   },
+   {
+    "qid": "9a707b81",
+    "session_date": "2022/04/10 (Sun) 14:14",
+    "match": "today",
+    "snippet": " just baked a chocolate cake for my friend's birthday party today that turned out amazing. It was a new recipe I found online"
+   },
+   {
+    "qid": "gpt4_7a0daae1",
+    "session_date": "2023/03/10 (Fri) 12:43",
+    "match": "on Friday",
+    "snippet": "ng a local cycling group. I've been doing some solo cycling on Friday evenings along the river, and I'm looking forward to meetin"
+   },
+   {
+    "qid": "gpt4_7a0daae1",
+    "session_date": "2023/03/17 (Fri) 09:54",
+    "match": "today",
+    "snippet": "rove my tennis serves. I just received my new tennis racket today and I'm excited to try out some new techniques."
+   },
+   {
+    "qid": "gpt4_7a0daae1",
+    "session_date": "2023/03/17 (Fri) 09:54",
+    "match": "Saturday",
+    "snippet": "I've been trying to improve my endurance and stamina for my Saturday tennis lessons. Do you have any advice on how to incorporat"
+   },
+   {
+    "qid": "gpt4_61e13b3c",
+    "session_date": "2023/02/26 (Sun) 04:36",
+    "match": "today",
+    "snippet": " to price my baked goods for an upcoming event. By the way, today I sold homemade baked goods like muffins, scones, and cooki"
+   },
+   {
+    "qid": "gpt4_61e13b3c",
+    "session_date": "2023/03/21 (Tue) 05:16",
+    "match": "yesterday",
+    "snippet": "tique owner at the Spring Fling Market at the downtown park yesterday, where I was selling my handmade jewelry and candles."
+   },
+   {
+    "qid": "gpt4_e061b84f",
+    "session_date": "2023/06/02 (Fri) 15:29",
+    "match": "today",
+    "snippet": "y? By the way, I just completed the Spring Sprint Triathlon today, which included a 20K bike ride, and I'm itching to get bac"
+   }
+  ],
+  "decision_rule": "valid-time extraction (spec C lever ii, bitemporal mapping 3.4) is kept in the reader spec only if >= 30% of temporal-reasoning evidence turns carry a time expression; otherwise it is dropped from the spec",
+  "minutes": 0.0
+ },
+ "diversify": {
+  "question": "Does per-session diversification of the turn ranking raise multi-session recall_all@5 without hurting the other types? (axiom M1: a session is a flat set of turns; max aggregation)",
+  "results": {
+   "flat_max (baseline)": {
+    "turn": {
+     "overall": {
+      "n": 84,
+      "R5": 0.643,
+      "N10": 0.737
+     },
+     "knowledge-update": {
+      "n": 15,
+      "R5": 0.733,
+      "N10": 0.834
+     },
+     "multi-session": {
+      "n": 24,
+      "R5": 0.5,
+      "N10": 0.676
+     },
+     "single-session-assistant": {
+      "n": 1,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "single-session-preference": {
+      "n": 6,
+      "R5": 0.5,
+      "N10": 0.49
+     },
+     "single-session-user": {
+      "n": 13,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "temporal-reasoning": {
+      "n": 25,
+      "R5": 0.56,
+      "N10": 0.649
+     }
+    },
+    "session_overall": {
+     "n": 84,
+     "R5": 0.917,
+     "N10": 0.936
+    }
+   },
+   "quota_1_per_session_first": {
+    "turn": {
+     "overall": {
+      "n": 84,
+      "R5": 0.452,
+      "N10": 0.606
+     },
+     "knowledge-update": {
+      "n": 15,
+      "R5": 0.467,
+      "N10": 0.625
+     },
+     "multi-session": {
+      "n": 24,
+      "R5": 0.25,
+      "N10": 0.525
+     },
+     "single-session-assistant": {
+      "n": 1,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "single-session-preference": {
+      "n": 6,
+      "R5": 0.167,
+      "N10": 0.333
+     },
+     "single-session-user": {
+      "n": 13,
+      "R5": 0.923,
+      "N10": 0.923
+     },
+     "temporal-reasoning": {
+      "n": 25,
+      "R5": 0.44,
+      "N10": 0.557
+     }
+    },
+    "session_overall": {
+     "n": 84,
+     "R5": 0.917,
+     "N10": 0.936
+    }
+   },
+   "quota_2_per_session_first": {
+    "turn": {
+     "overall": {
+      "n": 84,
+      "R5": 0.655,
+      "N10": 0.712
+     },
+     "knowledge-update": {
+      "n": 15,
+      "R5": 0.8,
+      "N10": 0.795
+     },
+     "multi-session": {
+      "n": 24,
+      "R5": 0.5,
+      "N10": 0.631
+     },
+     "single-session-assistant": {
+      "n": 1,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "single-session-preference": {
+      "n": 6,
+      "R5": 0.333,
+      "N10": 0.405
+     },
+     "single-session-user": {
+      "n": 13,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "temporal-reasoning": {
+      "n": 25,
+      "R5": 0.6,
+      "N10": 0.651
+     }
+    },
+    "session_overall": {
+     "n": 84,
+     "R5": 0.917,
+     "N10": 0.936
+    }
+   },
+   "quota_3_per_session_first": {
+    "turn": {
+     "overall": {
+      "n": 84,
+      "R5": 0.679,
+      "N10": 0.729
+     },
+     "knowledge-update": {
+      "n": 15,
+      "R5": 0.867,
+      "N10": 0.837
+     },
+     "multi-session": {
+      "n": 24,
+      "R5": 0.542,
+      "N10": 0.667
+     },
+     "single-session-assistant": {
+      "n": 1,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "single-session-preference": {
+      "n": 6,
+      "R5": 0.5,
+      "N10": 0.458
+     },
+     "single-session-user": {
+      "n": 13,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "temporal-reasoning": {
+      "n": 25,
+      "R5": 0.56,
+      "N10": 0.637
+     }
+    },
+    "session_overall": {
+     "n": 84,
+     "R5": 0.917,
+     "N10": 0.936
+    }
+   },
+   "round_robin_top3_sessions": {
+    "turn": {
+     "overall": {
+      "n": 84,
+      "R5": 0.619,
+      "N10": 0.714
+     },
+     "knowledge-update": {
+      "n": 15,
+      "R5": 0.667,
+      "N10": 0.794
+     },
+     "multi-session": {
+      "n": 24,
+      "R5": 0.458,
+      "N10": 0.652
+     },
+     "single-session-assistant": {
+      "n": 1,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "single-session-preference": {
+      "n": 6,
+      "R5": 0.5,
+      "N10": 0.469
+     },
+     "single-session-user": {
+      "n": 13,
+      "R5": 1.0,
+      "N10": 0.962
+     },
+     "temporal-reasoning": {
+      "n": 25,
+      "R5": 0.56,
+      "N10": 0.644
+     }
+    },
+    "session_overall": {
+     "n": 84,
+     "R5": 0.917,
+     "N10": 0.936
+    }
+   },
+   "round_robin_top5_sessions": {
+    "turn": {
+     "overall": {
+      "n": 84,
+      "R5": 0.452,
+      "N10": 0.695
+     },
+     "knowledge-update": {
+      "n": 15,
+      "R5": 0.467,
+      "N10": 0.762
+     },
+     "multi-session": {
+      "n": 24,
+      "R5": 0.25,
+      "N10": 0.625
+     },
+     "single-session-assistant": {
+      "n": 1,
+      "R5": 1.0,
+      "N10": 1.0
+     },
+     "single-session-preference": {
+      "n": 6,
+      "R5": 0.167,
+      "N10": 0.453
+     },
+     "single-session-user": {
+      "n": 13,
+      "R5": 0.923,
+      "N10": 0.953
+     },
+     "temporal-reasoning": {
+      "n": 25,
+      "R5": 0.44,
+      "N10": 0.633
+     }
+    },
+    "session_overall": {
+     "n": 84,
+     "R5": 0.917,
+     "N10": 0.936
+    }
+   }
+  },
+  "decision_rule": "a diversification policy goes to the full pipeline (cached-score sweep, spec C) only if multi-session turn R5 rises >= 0.04 (one question = 0.042) with overall turn R5 not down and no other type down >= 0.02; n is 24 and 84, so CIs are wide and this is a go/no-go for a measurement, not a claim",
+  "minutes": 0.0
+ }
+}
