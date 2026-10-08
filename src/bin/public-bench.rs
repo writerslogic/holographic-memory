@@ -123,6 +123,17 @@ enum Mode {
         /// Vertex index only: pool candidates re-scored with the float query (0 = none).
         #[arg(long, value_delimiter = ',', default_value = "0")]
         rerank: Vec<usize>,
+        /// Vertex index only: stop after this many expansions without a change to the 10 best
+        /// estimates (0 = pool rule only); swept with ef and rerank.
+        #[arg(long, value_delimiter = ',', default_value = "0")]
+        patience: Vec<usize>,
+        /// Vertex index only: build the 1-bit screen consulted before every 8-bit estimate.
+        #[arg(long)]
+        screen: bool,
+        /// Vertex index only: screen margins in standard deviations of its error, swept with
+        /// ef (a negative value searches without the screen).
+        #[arg(long, value_delimiter = ',', default_value = "1.0")]
+        screen_sigmas: Vec<f32>,
         /// Paired timing: after the build write `<SYNC>.ready`, then before timing round `r`
         /// block until `<SYNC>.go.<r>` exists and afterwards write `<SYNC>.done.<r>`, so an
         /// outside coordinator holding the timing lock can alternate two processes. The build
@@ -456,13 +467,16 @@ struct QgraphArgs {
     align_rows: bool,
     reorder: bool,
     rerank: Vec<usize>,
+    patience: Vec<usize>,
+    screen: bool,
+    screen_sigmas: Vec<f32>,
     sync: Option<PathBuf>,
     graph_cache: Option<PathBuf>,
 }
 
 enum Built {
     Edge(QGraph),
-    Vertex(VGraph),
+    Vertex(Box<VGraph>),
 }
 
 fn normalize(v: &mut [f32]) {
@@ -550,7 +564,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     let t = Instant::now();
     let mut graph_hash = None;
     let index = match a.index.as_str() {
-        "edge" => Built::Edge(QGraph::build(&train, d, &params)),
+        "edge" => Built::Edge(QGraph::build(&train, d, &params)?),
         _ => {
             // The cache header records n, dim, degree, build_ef, alpha, seed and a data
             // fingerprint; a mismatch is an error, never a silent reuse.
@@ -558,7 +572,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 Some(p) if p.exists() => Graph::load(&train, d, p, &params)
                     .with_context(|| format!("loading {}", p.display()))?,
                 cache => {
-                    let g = Graph::build(&train, d, &params);
+                    let g = Graph::build(&train, d, &params)?;
                     if let Some(p) = cache {
                         g.save(p)
                             .with_context(|| format!("saving {}", p.display()))?;
@@ -572,14 +586,15 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 "--residual-bits and --vertex-bits must be 4 or 8"
             );
             let bits = if a.residual { a.residual_bits } else { 0 };
-            Built::Vertex(VGraph::from_graph_with(
+            Built::Vertex(Box::new(VGraph::from_graph_with(
                 &graph,
                 a.vertex_bits,
                 bits,
                 a.align_rows,
                 a.reorder,
                 a.id_bytes,
-            ))
+                a.screen,
+            )?))
         }
     };
     let build_secs = t.elapsed().as_secs_f64();
@@ -604,13 +619,27 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         Built::Edge(_) => "max_exact",
         Built::Vertex(_) => "rerank",
     };
-    let configs: Vec<(usize, usize)> = seconds
+    // (second, ef, patience, screen_sigmas); the edge index ignores the last two.
+    let (pat, sig): (&[usize], &[f32]) = match &index {
+        Built::Edge(_) => (&[0], &[1.0]),
+        Built::Vertex(_) => (&a.patience, &a.screen_sigmas),
+    };
+    let configs: Vec<(usize, usize, usize, f32)> = seconds
         .iter()
-        .flat_map(|&second| a.ef.iter().map(move |&ef| (second, ef)))
+        .flat_map(|&second| {
+            a.ef.iter().flat_map(move |&ef| {
+                pat.iter()
+                    .flat_map(move |&p| sig.iter().map(move |&s| (second, ef, p, s)))
+            })
+        })
         .collect();
-    let mut search = |q: &[f32], (second, ef): (usize, usize), out: &mut Vec<u32>| -> usize {
+    // Returns (estimates, neighbours the screen skipped).
+    let mut search = |q: &[f32],
+                      (second, ef, patience, sigmas): (usize, usize, usize, f32),
+                      out: &mut Vec<u32>|
+     -> (usize, usize) {
         if let Some(s) = edge_s.as_mut() {
-            s.search(
+            let e = s.search(
                 q,
                 K,
                 SearchParams {
@@ -618,10 +647,25 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                     max_exact: second,
                 },
                 out,
-            )
+            );
+            (e, 0)
         } else {
             let s = vertex_s.as_mut().expect("one searcher exists");
-            s.search(q, K, VSearchParams { ef, rerank: second }, out)
+            let e = s
+                .search(
+                    q,
+                    K,
+                    VSearchParams {
+                        ef,
+                        rerank: second,
+                        patience,
+                        screen_sigmas: sigmas.max(0.0),
+                        screen: sigmas >= 0.0,
+                    },
+                    out,
+                )
+                .expect("queries are validated by the loader");
+            (e, s.last_screened())
         }
     };
     let sync_path = |suffix: String| -> Option<PathBuf> {
@@ -634,9 +678,9 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     if let Some(p) = sync_path(".ready".into()) {
         fs::write(&p, "")?;
     }
-    // Per configuration: qps runs, loads, gate, recall, evals/query.
-    type Acc = (Vec<f64>, Vec<f64>, bool, f64, f64);
-    let mut acc: Vec<Acc> = vec![(Vec::new(), Vec::new(), true, 0.0, 0.0); configs.len()];
+    // Per configuration: qps runs, loads, gate, recall, evals/query, screened/query.
+    type Acc = (Vec<f64>, Vec<f64>, bool, f64, f64, f64);
+    let mut acc: Vec<Acc> = vec![(Vec::new(), Vec::new(), true, 0.0, 0.0, 0.0); configs.len()];
     let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
     let mut out = Vec::with_capacity(K);
     // Round-major, so one round of every configuration is a unit a coordinator can pair.
@@ -646,15 +690,19 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 std::thread::sleep(std::time::Duration::from_millis(50));
             }
         }
-        for (&cfg, (qps, loads, gate, recall, exact_mean)) in configs.iter().zip(&mut acc) {
+        for (&cfg, (qps, loads, gate, recall, exact_mean, screen_mean)) in
+            configs.iter().zip(&mut acc)
+        {
             let (load, met) = wait_for_idle(a.max_load, deadline);
             loads.push(load);
             *gate &= met;
             ids.clear();
-            let mut exact = 0usize;
+            let (mut exact, mut screened) = (0usize, 0usize);
             let t = Instant::now();
             for q in &test {
-                exact += search(q, cfg, &mut out);
+                let (e, s) = search(q, cfg, &mut out);
+                exact += e;
+                screened += s;
                 ids.extend_from_slice(&out);
                 ids.resize(ids.len() + K - out.len(), u32::MAX);
             }
@@ -675,6 +723,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                     .sum();
                 *recall = hits as f64 / (K * test.len()) as f64;
                 *exact_mean = exact as f64 / test.len() as f64;
+                *screen_mean = screened as f64 / test.len() as f64;
             }
         }
         if let Some(done) = sync_path(format!(".done.{rep}")) {
@@ -682,13 +731,16 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         }
     }
     let mut rows = Vec::new();
-    for (&(second, ef), (qps, loads, gate, recall, exact_mean)) in configs.iter().zip(&acc) {
+    for (&(second, ef, patience, sigmas), (qps, loads, gate, recall, exact_mean, screen_mean)) in
+        configs.iter().zip(&acc)
+    {
         let mut sorted = qps.clone();
         sorted.sort_by(f64::total_cmp);
         let median = sorted[sorted.len() / 2];
-        eprintln!("ef={ef} {second_name}={second} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} load={loads:?}");
+        eprintln!("ef={ef} {second_name}={second} patience={patience} sigmas={sigmas} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} screened/q={screen_mean:.0} load={loads:?}");
         rows.push(json!({
-            "params": {"ef": ef, second_name: second},
+            "params": {"ef": ef, second_name: second, "patience": patience, "screen": a.screen && sigmas >= 0.0, "screen_sigmas": sigmas},
+            "screened_per_query": screen_mean,
             "recall_at_10": recall,
             "qps_single_thread": median,
             "qps_runs": qps,
@@ -708,7 +760,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef,
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
                              "residual": a.residual, "residual_bits": a.residual_bits,
-                             "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes,
+                             "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes, "screen": a.screen,
                              "align_rows": a.align_rows, "reorder": a.reorder,
                              "graph_cache": a.graph_cache.as_ref().map(|p| p.display().to_string())},
                   "graph_hash": graph_hash,
@@ -1171,6 +1223,9 @@ fn main() -> Result<()> {
             align_rows,
             reorder,
             rerank,
+            patience,
+            screen,
+            screen_sigmas,
             sync,
             graph_cache,
         } => ann_qgraph(&QgraphArgs {
@@ -1195,6 +1250,9 @@ fn main() -> Result<()> {
             align_rows,
             reorder,
             rerank,
+            patience,
+            screen,
+            screen_sigmas,
             sync,
             graph_cache,
         }),

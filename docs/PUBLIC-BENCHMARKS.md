@@ -16,18 +16,27 @@ at revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`, L2-normalized, computed 
 
 | Method | SciFact nDCG@10 | SciFact R@100 | NFCorpus nDCG@10 | NFCorpus R@100 |
 |---|---|---|---|---|
-| HMS hybrid (document API, BM25 + exact cosine, rank fusion) | **0.683** | **0.954** | **0.344** | **0.325** |
-| HMS lexical (document API BM25) | 0.662 | 0.886 | 0.307 | 0.237 |
+| HMS hybrid (document API, stemmed BM25 + exact cosine, min-max score blend) | **0.729** | 0.953 | **0.355** | 0.322 |
+| HMS lexical (document API BM25, Porter stemming) | 0.688 | 0.925 | 0.323 | 0.249 |
 | HMS dense (document API, exact cosine) | 0.645 | 0.925 | 0.317 | 0.311 |
 | HMS sparse vector path (`from_dense` + inverted index, D=16384) | 0.470 | 0.779 | 0.209 | 0.207 |
 | Reference: exact cosine in NumPy, same embeddings | 0.645 | 0.925 | 0.316 | 0.312 |
 | Reference: BM25 as published in the BEIR paper (Thakur et al. 2021, main nDCG@10 results) | 0.665 | | 0.325 | |
+| Previous HMS hybrid (unstemmed BM25, reciprocal rank fusion; measured 2026-10-05) | 0.683 | 0.954 | 0.344 | 0.325 |
+| Previous HMS lexical (unstemmed) | 0.662 | 0.886 | 0.307 | 0.237 |
+
+Re-measured 2026-10-07 (load 70 to 119, which does not affect nDCG) after two document-API
+changes chosen on NFCorpus dev and SciFact train qrels only (`benchmarks/results/proxies_2026-10_beir.json`;
+the test qrels were read once, for this table): Porter (Snowball English) stemming of BM25 terms
+(+0.024 / +0.032 on dev/train; +0.026 / +0.016 on test) and a min-max score blend of the lexical
+and semantic lists in place of reciprocal rank fusion (+0.017 / +0.016 on dev/train; RRF remains
+available as `fusion: "rrf"`). Chunks stored before stemming keep matching unstemmed query
+terms.
 
 - HMS's dense search matches the independent NumPy reference. This is a correctness check of the
   document API; it says nothing new about the embedding model.
-- HMS's built-in BM25 is within 0.003 of the published BM25 on SciFact and 0.018 below it on
-  NFCorpus (HMS lowercases and splits on non-alphanumeric characters, with no stemming or stopword removal).
-- Hybrid search is the best configuration on both sets: +0.038 / +0.027 nDCG@10 over dense alone.
+- HMS's BM25 is now above the published BM25 on SciFact (+0.023) and 0.002 under it on NFCorpus.
+- Hybrid search is the best configuration on both sets: +0.084 / +0.038 nDCG@10 over dense alone.
 - The sparse vector path loses about 27% (SciFact) and 34% (NFCorpus) of nDCG@10 relative to exact
   cosine on the same embeddings. It is not suitable as the primary semantic retrieval path; the
   document API is.
@@ -135,6 +144,18 @@ QPS at load below 3) is superseded by `VGraph`; its sweeps stay in
 `benchmarks/results/public_qgraph_edge_<set>.json`. The competitors are timed through a Python
 per-query loop (Lucene through a Java loop) and HMS through a native loop; that per-query
 overhead was not measured.
+
+### Stop rule and 1-bit screen (held-out, 2026-10-07)
+
+`benchmarks/results/qgraph_stop_screen_heldout.json` (ideas tree `docs/research/IDEAS-2026-10.md`,
+leaves E1 and E2; held-out train vectors, test set unread). `VSearchParams::patience` ends a
+search after that many expansions without a change to the 10 best estimates: 17-29% fewer
+estimates at equal recall on both sets, and in coordinator-paired rounds (load 11-185, gate unmet,
+ratios only) x1.33 (4 of 5 rounds) on nytimes and x1.42 (4 of 4) on glove at recall 0.95, neutral
+at 0.90; off by default, `--patience` in the bench. The opt-in 1-bit screen before the 8-bit
+estimate skips 76% of the estimates on nytimes at equal recall but is slower in nearly every round
+(x0.65-0.87): its scalar popcount costs as much as the SDOT estimate; recorded as a negative
+result, off by default.
 
 ## Agent long-term memory (LongMemEval_S)
 

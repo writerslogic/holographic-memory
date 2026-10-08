@@ -109,6 +109,46 @@ the rerun.
 Next: (1) the parallel session commits and times its changes; (2) rerun step 4 as above; (3)
 rewrite both tables and the README vector-search row from the files; (4) then prompts 2 and 3.
 
+## Ideas-tree session (2026-10-07, Fable; prompt "a step, not a percent")
+
+Artefact: `docs/research/IDEAS-2026-10.md` (axioms, relaxations, mappings, counterfactuals, scored
+tree, checkpoints 1 and 2). Proxy code `benchmarks/public/proxies/`, proxy results
+`benchmarks/results/proxies_2026-10*.json`. Done and past their kill tests (held-out / dev only):
+- E1 `VSearchParams::patience` (`--patience`, swept): 17-29% fewer evaluations at equal recall
+  on both sets.
+- E2 1-bit screen (`VGraph::from_graph_with(.., screen)`, `--screen --screen-sigmas`): nytimes
+  76% of 8-bit estimates skipped at +-0.001 recall, +5% index bytes; glove 55% (marginal).
+- E3 document API: Porter-stemmed BM25 (per-chunk `stemmed` flag keeps old stores matching) and
+  min-max score blend (`fusion: "rrf"` keeps the old behaviour). BEIR test re-measured once:
+  hybrid nDCG@10 0.683 -> 0.729 SciFact, 0.344 -> 0.355 NFCorpus (`public_scifact.json`,
+  `public_nfcorpus.json` regenerated; doc table rewritten).
+- E4 qgraph builds and searches return `Result<_, HmsError>` naming the cause; two property
+  tests added; 19 qgraph tests pass.
+Pruned with reasons in the doc: entry point, alpha/build_ef, 8-bit code variants, exact
+re-rank, relative-slack stop, stop list, valid-time extraction at ingest. LongMemEval
+per-session quota passed its dev proxy by one question; its full-pipeline measurement needs the
+cached scores on the `hms-lme` volume (next session, no compute).
+
+Paired timing DONE (`benchmarks/results/qgraph_stop_screen_heldout.json`): E1 patience x1.33 /
+x1.42 at 0.95 (nytimes 4/5, glove 4/4 rounds), neutral at 0.90; E2 screen x0.65-0.87, a negative
+result (scalar screen costs as much as the SDOT estimate), code stays opt-in and off. Next
+test-set comparison (step 4 rerun) should add HMS rows with `--patience 256` (nytimes) /
+`--patience 384` (glove) and, on nytimes, the 4-bit encoding; see IDEAS doc checkpoint 3.
+Earlier note on the in-flight run: paired timing of E1/E2 (8-bit and 4-bit encodings, coordinator
+`/Volumes/A/.hms-target/logs/merge_verify/paired.py`, tags `e12ny` 5 rounds and `e12gl` 4
+rounds, outputs `e12{ny,gl}_{E,D}.json`; an 11-round attempt hit the 14-minute deadline before
+the processes wrote their files, so rounds were cut). Report:
+`uv run python benchmarks/public/proxies/stop_screen_report.py /Volumes/A/.hms-target/proxies/e1
+/Volumes/A/.hms-target/logs/merge_verify benchmarks/results/qgraph_stop_screen_heldout.json`.
+The gate ran once (`/Volumes/A/.hms-target/proxies/gate.log`); clippy failed on one complex
+type (fixed with an alias) and is being rerun with the qgraph tests
+(`/Volumes/A/.hms-target/proxies/gate2.log`). Then: results file, doc section "Quantized graph
+index" gains a paired-ratio paragraph for E1/E2, changelog, signed commits (stage only this
+session's hunks; the other session shares the tree), push.
+
+Library defaults are unchanged (patience 0, no screen, from_graph as before); the recommended
+bench configuration is decided by the paired ratios and written in the doc.
+
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus
   FAISS HNSW and hnswlib re-timed in the same session on an idle machine (1-min load < 3), medians of 3 runs. Report

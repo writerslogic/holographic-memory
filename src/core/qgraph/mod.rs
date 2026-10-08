@@ -28,6 +28,8 @@ use std::cell::RefCell;
 
 use rayon::prelude::*;
 
+use crate::core::error::HmsError;
+
 use kernels::{
     as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, prefetch_bytes, DotI8, QueryCode,
     Rotation, SplitMix,
@@ -37,6 +39,11 @@ pub use vertex::{VGraph, VSearchParams, VSearcher};
 /// Default out-degree of every vertex; one batch of edge codes per expansion.
 pub const DEFAULT_DEGREE: usize = 32;
 const NONE: u32 = u32::MAX;
+
+/// Every failure of a build or search names its cause as an invalid parameter.
+fn invalid(details: String) -> HmsError {
+    HmsError::InvalidParam { details }
+}
 const UPPER_DEGREE: usize = 16;
 const LAYER_RATIO: usize = 16;
 const MIN_LAYER: usize = 64;
@@ -677,14 +684,19 @@ fn edge_factors(pv: &[f32], pu: &[f32], code: &mut [u64]) -> (f32, f32, f32) {
 impl QGraph {
     /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
     /// stay zero. Uses the rayon pool; the result depends only on the data and `params`.
-    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Self {
-        Self::from_graph(&Graph::build(data, dim, params), params)
+    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, HmsError> {
+        Self::from_graph(&Graph::build(data, dim, params)?, params)
     }
 
     /// Encodes a built graph; `params` must be the ones the graph was built with.
-    pub fn from_graph(g: &Graph, params: &BuildParams) -> Self {
+    pub fn from_graph(g: &Graph, params: &BuildParams) -> Result<Self, HmsError> {
         let (n, dim, r) = (g.n, g.dim, g.degree);
-        assert_eq!(r, params.degree, "graph built with another degree");
+        if r != params.degree {
+            return Err(invalid(format!(
+                "graph built with degree {r}, parameters say {}",
+                params.degree
+            )));
+        }
         let rotation = Rotation::new(dim, params.code_bits, params.seed);
         let words = rotation.padded() / 64;
         let rows = g.rows();
@@ -730,7 +742,7 @@ impl QGraph {
                     fac[2 * r + j] = pop;
                 }
             });
-        Self {
+        Ok(Self {
             n,
             dim,
             degree: r,
@@ -744,7 +756,7 @@ impl QGraph {
             entry: g.entry,
             upper_ids: g.upper_ids.clone(),
             layers: g.layers.clone(),
-        }
+        })
     }
 }
 
@@ -794,16 +806,39 @@ impl Graph {
     /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
     /// stay zero. Uses the rayon pool; the result depends only on the data and `params`
     /// (`code_bits` is not used).
-    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Self {
-        assert!(dim > 0 && data.len().is_multiple_of(dim), "ragged data");
+    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, HmsError> {
+        if dim == 0 || !data.len().is_multiple_of(dim) {
+            return Err(invalid(format!(
+                "ragged data: {} values are not a multiple of dimension {dim}",
+                data.len()
+            )));
+        }
         let n = data.len() / dim;
-        assert!(n > 0 && n < NONE as usize, "index size out of range");
-        assert!(params.build_ef > 0, "build_ef must be positive");
+        if n == 0 {
+            return Err(invalid("empty index: no vectors to build from".into()));
+        }
+        if n >= NONE as usize {
+            return Err(invalid(format!(
+                "index too large: {n} vectors, the limit is {}",
+                NONE - 1
+            )));
+        }
+        if let Some(at) = data.iter().position(|v| !v.is_finite()) {
+            return Err(invalid(format!(
+                "non-finite value in row {} (coordinate {})",
+                at / dim,
+                at % dim
+            )));
+        }
+        if params.build_ef == 0 {
+            return Err(invalid("build_ef must be positive".into()));
+        }
         let r = params.degree;
-        assert!(
-            r > 0 && r.is_multiple_of(2),
-            "degree must be positive and even"
-        );
+        if r == 0 || !r.is_multiple_of(2) {
+            return Err(invalid(format!(
+                "degree must be positive and even, not {r}"
+            )));
+        }
         let mut unit = data.to_vec();
         unit.par_chunks_mut(dim).for_each(|x| {
             let norm = dot(x, x).sqrt();
@@ -884,7 +919,7 @@ impl Graph {
         prof::report("upper", tup);
         prof::graph_hash((&graph, &layers, entry));
         let upper_ids = order[..n / LAYER_RATIO].to_vec();
-        Self {
+        Ok(Self {
             n,
             dim,
             degree: r,
@@ -894,7 +929,7 @@ impl Graph {
             upper_ids,
             layers,
             build: params.clone(),
-        }
+        })
     }
 }
 
@@ -1215,7 +1250,7 @@ mod tests {
         let d = 24;
         let data = clustered(4000, d, 1);
         let queries = clustered(100, d, 2);
-        let index = QGraph::build(&data, d, &BuildParams::default());
+        let index = QGraph::build(&data, d, &BuildParams::default()).expect("build");
         let mut s = index.searcher();
         let mut out = Vec::new();
         let mut hits = 0;
@@ -1328,8 +1363,8 @@ mod tests {
             seed: 9,
             ..BuildParams::default()
         };
-        let a = QGraph::build(&data, d, &params);
-        let b = QGraph::build(&data, d, &params);
+        let a = QGraph::build(&data, d, &params).expect("build");
+        let b = QGraph::build(&data, d, &params).expect("build");
         assert_eq!(a.entry, b.entry);
         assert!(a.blocks == b.blocks);
         let (mut sa, mut sb) = (a.searcher(), b.searcher());
@@ -1349,7 +1384,7 @@ mod tests {
     fn exact_budget_caps_work() {
         let d = 16;
         let data = clustered(2000, d, 4);
-        let index = QGraph::build(&data, d, &BuildParams::default());
+        let index = QGraph::build(&data, d, &BuildParams::default()).expect("build");
         let mut s = index.searcher();
         let mut out = Vec::new();
         let q = &data[..d];

@@ -174,6 +174,15 @@ pub(crate) fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut 
     }
 }
 
+/// [`raw_estimates`] for one code row.
+#[inline]
+pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
+    code.iter()
+        .enumerate()
+        .map(|(w, &c)| scalar_word(c, planes, words, w))
+        .sum()
+}
+
 fn scalar_word(c: u64, planes: &[u64], words: usize, w: usize) -> u32 {
     (0..QUERY_BITS)
         .map(|p| (c & planes[p * words + w]).count_ones() << p)
