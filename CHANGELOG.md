@@ -6,6 +6,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- Competitor ANN harness for SymphonyQG, RaBitQ, NGT and Lucene HNSW
+- Check the graph cache header and verify the merged qgraph defaults
 - Add integer vector stores and per-vertex codes to qgraph
 - Batch Qwen3 decoding and padded encoder batches on Metal and CUDA
 - Add per-vertex 8-bit code graph index with residual re-rank
@@ -20,6 +22,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Drop rejected intersection kernel candidates
 
 ### Documentation
+- Preliminary nytimes VGraph comparison on the M4 and the next-session specs
 - Record the green CI and the clippy toolchain for the gate
 - Record that main is pushed and in sync
 - Record that all work is on main and what was superseded
