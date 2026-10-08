@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ## [Unreleased]
 
 ### Added
+- One series per patience value in the ANN comparison tables
 - Stemmed BM25 and min-max score blend in the document API
 - Patience stop rule, opt-in 1-bit screen and error-returning builds for the vertex graph index
 - Competitor ANN harness for SymphonyQG, RaBitQ, NGT and Lucene HNSW
@@ -73,6 +74,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Route sparse queries to the exact inverted index
 
 ### Bench
+- Per-session quota on the tuned LongMemEval turn ranking fails on cached dev scores
 - Record timed held-out glove run of i8 vertex-code qgraph
 - Correct reference eval counts in memory-first results
 - Record held-out recall screening of qgraph memory layouts
