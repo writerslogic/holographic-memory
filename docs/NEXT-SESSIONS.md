@@ -127,9 +127,12 @@ train vectors, nytimes 5 / glove 4, load 11-185 so only the paired ratios count)
 - 1-bit screen (`from_graph_with(.., screen)`, `--screen`, `--screen-sigmas`): NEGATIVE as
   implemented, x0.65-0.87 in every arm although 76% of the 8-bit estimates were skipped: the
   scalar per-neighbour screen costs as much as the SDOT estimate it replaces. Stays opt-in and
-  off; the SymphonyQG adoption above needs a NEON FastScan kernel over the bit planes (16
-  neighbours per batch) and a microbenchmark showing the screen at < 25% of the 8-bit estimate's
-  time before any end-to-end run.
+  off. The NEON kernel's microbenchmark (`benchmarks/results/qgraph_screen_microbench.json`)
+  reaches 0.25 of the estimate per neighbour, yet every screened loop model is slower than
+  estimating all 64 fresh neighbours: the 8-bit path is bound by overlapping row fetches, and
+  the screen serializes the survivors' fetches behind its result. The SymphonyQG adoption is
+  therefore not a kernel but a loop that overlaps those fetches (pipelined expansions); only
+  that version is worth an end-to-end run.
 
 ### (A1) Learned traversal (research item)
 

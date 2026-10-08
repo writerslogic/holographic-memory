@@ -174,9 +174,39 @@ pub(crate) fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut 
     }
 }
 
-/// [`raw_estimates`] for one code row.
+/// [`raw_estimates`] for one code row: NEON AND + CNT over the bit planes for the row widths
+/// the index produces (16 planes x 64 words at most), scalar otherwise.
 #[inline]
 pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        let mut out = [0u32; 1];
+        match words {
+            2 => {
+                neon::raw::<2>(code, planes, &mut out);
+                return out[0];
+            }
+            4 => {
+                neon::raw::<4>(code, planes, &mut out);
+                return out[0];
+            }
+            8 => {
+                neon::raw::<8>(code, planes, &mut out);
+                return out[0];
+            }
+            16 => {
+                neon::raw::<16>(code, planes, &mut out);
+                return out[0];
+            }
+            _ => {}
+        }
+    }
+    raw_one_scalar(code, planes, words)
+}
+
+/// Scalar form of [`raw_one`] (the reference, and the microbenchmark's baseline).
+#[inline]
+pub(crate) fn raw_one_scalar(code: &[u64], planes: &[u64], words: usize) -> u32 {
     code.iter()
         .enumerate()
         .map(|(w, &c)| scalar_word(c, planes, words, w))
@@ -627,5 +657,172 @@ mod tests {
             .sum();
         // Rounding error is at most delta / 2 per selected coordinate.
         assert!((approx - exact).abs() <= qc.delta / 2.0 * pop + 1e-4);
+    }
+
+    #[test]
+    fn raw_one_matches_scalar_at_every_width() {
+        let mut rng = SplitMix(21);
+        for words in [1usize, 2, 3, 4, 8, 16] {
+            let x: Vec<f32> = (0..64 * words).map(|_| rng.next_f32() - 0.5).collect();
+            let mut qc = QueryCode::new(words);
+            qc.encode(&x);
+            for _ in 0..8 {
+                let code: Vec<u64> = (0..words).map(|_| rng.next_u64()).collect();
+                assert_eq!(
+                    raw_one(&code, &qc.planes, words),
+                    raw_one_scalar(&code, &qc.planes, words)
+                );
+            }
+        }
+    }
+
+    /// Kill test for the 1-bit screen (docs/research/IDEAS-2026-10.md, E2): per neighbour,
+    /// the screen must cost < 25% of the 8-bit SDOT estimate on a nytimes-sized working set
+    /// (300k rows, 256 dims: 256-byte code rows, 40-byte screen rows) with the search loop's
+    /// access pattern (64 random fresh neighbours per expansion, prefetched, then estimated).
+    /// `cargo test --release raw_screen_microbenchmark -- --ignored --nocapture`; writes JSON
+    /// to `$HMS_SCREEN_BENCH_OUT` when set.
+    #[test]
+    #[ignore]
+    fn raw_screen_microbenchmark() {
+        use std::time::Instant;
+        const N: usize = 300_000;
+        const DIM: usize = 256;
+        const WORDS: usize = DIM / 64;
+        const DEG: usize = 64;
+        const EXPANSIONS: usize = 20_000;
+        let mut rng = SplitMix(3);
+        let codes: Vec<i8> = (0..N * DIM)
+            .map(|_| (rng.next_u64() & 0xff) as i8)
+            .collect();
+        let screen: Vec<u64> = (0..N * (WORDS + 1)).map(|_| rng.next_u64()).collect();
+        let q: Vec<i8> = (0..DIM).map(|_| (rng.next_u64() & 0xff) as i8).collect();
+        let x: Vec<f32> = (0..DIM).map(|_| rng.next_f32() - 0.5).collect();
+        let mut qc = QueryCode::new(WORDS);
+        qc.encode(&x);
+        let ids: Vec<u32> = (0..EXPANSIONS * DEG)
+            .map(|_| (rng.next_u64() % N as u64) as u32)
+            .collect();
+        let code = |v: u32| &codes[v as usize * DIM..(v as usize + 1) * DIM];
+        let srow = |v: u32| &screen[v as usize * (WORDS + 1)..(v as usize + 1) * (WORDS + 1)];
+        let time = |f: &dyn Fn(&[u32]) -> i64| -> (f64, i64) {
+            let mut best = f64::INFINITY;
+            let mut acc = 0i64;
+            for _ in 0..5 {
+                let t = Instant::now();
+                for batch in ids.as_chunks::<DEG>().0 {
+                    acc = acc.wrapping_add(f(batch));
+                }
+                best = best.min(t.elapsed().as_secs_f64() * 1e9 / ids.len() as f64);
+            }
+            (best, acc)
+        };
+        let est = |batch: &[u32]| -> i64 {
+            batch.iter().for_each(|&v| prefetch_bytes(code(v)));
+            batch
+                .iter()
+                .map(|&v| i64::from(dot_i8_inline(&q, code(v))))
+                .sum()
+        };
+        let scalar = |batch: &[u32]| -> i64 {
+            batch.iter().for_each(|&v| prefetch(srow(v)));
+            batch
+                .iter()
+                .map(|&v| i64::from(raw_one_scalar(&srow(v)[..WORDS], &qc.planes, WORDS)))
+                .sum()
+        };
+        let neon_row = |batch: &[u32]| -> i64 {
+            batch.iter().for_each(|&v| prefetch(srow(v)));
+            batch
+                .iter()
+                .map(|&v| i64::from(raw_one(&srow(v)[..WORDS], &qc.planes, WORDS)))
+                .sum()
+        };
+        let mut gathered = vec![0u64; DEG * WORDS];
+        let mut out = vec![0u32; DEG];
+        let neon_batch = |batch: &[u32]| -> i64 {
+            // SAFETY-free gather: copy the 64 rows into one contiguous block, then one
+            // `raw_estimates` pass (the FastScan-style form).
+            let mut g = gathered.clone();
+            let mut o = out.clone();
+            batch.iter().for_each(|&v| prefetch(srow(v)));
+            for (i, &v) in batch.iter().enumerate() {
+                g[i * WORDS..(i + 1) * WORDS].copy_from_slice(&srow(v)[..WORDS]);
+            }
+            raw_estimates(&g, &qc.planes, WORDS, &mut o);
+            o.iter().map(|&r| i64::from(r)).sum()
+        };
+        // Loop models: screen every fresh neighbour, then estimate the survivors (about 24%
+        // on nytimes, held-out: 76% skipped). `late` prefetches a survivor's code when it
+        // survives (the committed loop); `early` prefetches every code with the screen rows.
+        let mut sample: Vec<u32> = ids[..4096]
+            .iter()
+            .map(|&v| raw_one(&srow(v)[..WORDS], &qc.planes, WORDS))
+            .collect();
+        sample.sort_unstable();
+        let cut = sample[sample.len() * 24 / 100];
+        let survive = |v: u32| raw_one(&srow(v)[..WORDS], &qc.planes, WORDS) < cut;
+        let late = |batch: &[u32]| -> i64 {
+            batch.iter().for_each(|&v| prefetch(srow(v)));
+            let mut acc = 0i64;
+            for &v in batch {
+                if survive(v) {
+                    prefetch_bytes(code(v));
+                    acc += i64::from(dot_i8_inline(&q, code(v)));
+                }
+            }
+            acc
+        };
+        let late_two_pass = |batch: &[u32]| -> i64 {
+            batch.iter().for_each(|&v| prefetch(srow(v)));
+            let survivors: Vec<u32> = batch.iter().copied().filter(|&v| survive(v)).collect();
+            survivors.iter().for_each(|&v| prefetch_bytes(code(v)));
+            survivors
+                .iter()
+                .map(|&v| i64::from(dot_i8_inline(&q, code(v))))
+                .sum()
+        };
+        let early = |batch: &[u32]| -> i64 {
+            batch.iter().for_each(|&v| {
+                prefetch(srow(v));
+                prefetch_bytes(code(v));
+            });
+            batch
+                .iter()
+                .filter(|&&v| survive(v))
+                .map(|&v| i64::from(dot_i8_inline(&q, code(v))))
+                .sum()
+        };
+        let (t_est, a) = time(&est);
+        let (t_scalar, b) = time(&scalar);
+        let (t_neon, c) = time(&neon_row);
+        let (t_batch, d) = time(&neon_batch);
+        let (t_late, e) = time(&late);
+        let (t_late2, e2) = time(&late_two_pass);
+        let (t_early, f) = time(&early);
+        gathered.clear();
+        out.clear();
+        assert_eq!(c, d);
+        assert_eq!(e, f);
+        assert_eq!(e, e2);
+        let survivors = ids.iter().filter(|&&v| survive(v)).count() as f64 / ids.len() as f64;
+        let report = format!(
+            "{{\"n_rows\": {N}, \"dim\": {DIM}, \"degree\": {DEG}, \"expansions\": {EXPANSIONS}, \
+             \"ns_per_neighbour\": {{\"est_8bit_sdot\": {t_est:.2}, \"screen_scalar\": {t_scalar:.2}, \
+             \"screen_neon_row\": {t_neon:.2}, \"screen_neon_gathered_batch\": {t_batch:.2}}}, \
+             \"ratio_to_est\": {{\"screen_scalar\": {:.3}, \"screen_neon_row\": {:.3}, \
+             \"screen_neon_gathered_batch\": {:.3}}}, \"kill_rule\": \"screen < 0.25 of est\", \
+             \"loop_models_ns_per_fresh_neighbour\": {{\"estimate_all\": {t_est:.2}, \
+             \"screen_then_late_prefetch\": {t_late:.2}, \"screen_then_two_pass_prefetch\": {t_late2:.2}, \
+             \"screen_with_early_prefetch\": {t_early:.2}}}, \"survivor_share\": {survivors:.3}, \
+             \"checksums\": [{a}, {b}, {c}, {e}]}}",
+            t_scalar / t_est,
+            t_neon / t_est,
+            t_batch / t_est
+        );
+        println!("{report}");
+        if let Ok(path) = std::env::var("HMS_SCREEN_BENCH_OUT") {
+            std::fs::write(path, format!("{report}\n")).unwrap();
+        }
     }
 }

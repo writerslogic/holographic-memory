@@ -1,0 +1,168 @@
+{
+ "note": "Kill test for the 1-bit screen (IDEAS-2026-10 E2, checkpoint 3): microbenchmark `cargo test --release --lib raw_screen_microbenchmark -- --ignored --nocapture` in src/core/qgraph/kernels.rs. Random data (timing only; 300k rows x 256 dims, 256-byte 8-bit code rows, 40-byte 1-bit screen rows, 64 random fresh neighbours per expansion, 20k expansions, best of 5 passes, single thread, Apple M4). The survivor share is fixed at 25% by a raw-score quantile (nytimes held-out skipped 76%).",
+ "machine": "Apple M4, NEON + dotprod; 1-minute load 3.4-4.5 during runs 1-4",
+ "kill_rule": "screen kernel < 0.25 of the 8-bit estimate's time per neighbour, AND a loop model with the screen faster than estimating every fresh neighbour",
+ "runs": [
+  {
+   "n_rows": 300000,
+   "dim": 256,
+   "degree": 64,
+   "expansions": 20000,
+   "ns_per_neighbour": {
+    "est_8bit_sdot": 10.02,
+    "screen_scalar": 3.79,
+    "screen_neon_row": 2.44,
+    "screen_neon_gathered_batch": 3.78
+   },
+   "ratio_to_est": {
+    "screen_scalar": 0.378,
+    "screen_neon_row": 0.244,
+    "screen_neon_gathered_batch": 0.378
+   },
+   "kill_rule": "screen < 0.25 of est",
+   "checksums": [
+    5362665250,
+    5664368550,
+    5664368550
+   ]
+  },
+  {
+   "n_rows": 300000,
+   "dim": 256,
+   "degree": 64,
+   "expansions": 20000,
+   "ns_per_neighbour": {
+    "est_8bit_sdot": 10.02,
+    "screen_scalar": 4.0,
+    "screen_neon_row": 2.47,
+    "screen_neon_gathered_batch": 3.83
+   },
+   "ratio_to_est": {
+    "screen_scalar": 0.4,
+    "screen_neon_row": 0.247,
+    "screen_neon_gathered_batch": 0.382
+   },
+   "kill_rule": "screen < 0.25 of est",
+   "checksums": [
+    5362665250,
+    5664368550,
+    5664368550
+   ]
+  },
+  {
+   "n_rows": 300000,
+   "dim": 256,
+   "degree": 64,
+   "expansions": 20000,
+   "ns_per_neighbour": {
+    "est_8bit_sdot": 9.8,
+    "screen_scalar": 3.92,
+    "screen_neon_row": 2.41,
+    "screen_neon_gathered_batch": 3.77
+   },
+   "ratio_to_est": {
+    "screen_scalar": 0.401,
+    "screen_neon_row": 0.246,
+    "screen_neon_gathered_batch": 0.385
+   },
+   "kill_rule": "screen < 0.25 of est",
+   "loop_models_ns_per_fresh_neighbour": {
+    "estimate_all": 9.8,
+    "screen_then_late_prefetch": 13.16,
+    "screen_then_two_pass_prefetch": 11.21,
+    "screen_with_early_prefetch": 15.24
+   },
+   "survivor_share": 0.25,
+   "checksums": [
+    5362665250,
+    5664368550,
+    5664368550,
+    959495440
+   ]
+  },
+  {
+   "n_rows": 300000,
+   "dim": 256,
+   "degree": 64,
+   "expansions": 20000,
+   "ns_per_neighbour": {
+    "est_8bit_sdot": 9.92,
+    "screen_scalar": 3.7,
+    "screen_neon_row": 2.47,
+    "screen_neon_gathered_batch": 3.72
+   },
+   "ratio_to_est": {
+    "screen_scalar": 0.373,
+    "screen_neon_row": 0.249,
+    "screen_neon_gathered_batch": 0.375
+   },
+   "kill_rule": "screen < 0.25 of est",
+   "loop_models_ns_per_fresh_neighbour": {
+    "estimate_all": 9.92,
+    "screen_then_late_prefetch": 13.54,
+    "screen_then_two_pass_prefetch": 11.45,
+    "screen_with_early_prefetch": 15.58
+   },
+   "survivor_share": 0.25,
+   "checksums": [
+    5362665250,
+    5664368550,
+    5664368550,
+    959495440
+   ]
+  }
+ ],
+ "summary": {
+  "ns_per_neighbour_median": {
+   "est_8bit_sdot": [
+    9.92,
+    10.02
+   ],
+   "screen_scalar": [
+    3.79,
+    3.92
+   ],
+   "screen_neon_row": [
+    2.44,
+    2.47
+   ],
+   "screen_neon_gathered_batch": [
+    3.77,
+    3.78
+   ]
+  },
+  "ratio_to_est_range": {
+   "screen_scalar": [
+    0.373,
+    0.401
+   ],
+   "screen_neon_row": [
+    0.244,
+    0.249
+   ],
+   "screen_neon_gathered_batch": [
+    0.375,
+    0.385
+   ]
+  },
+  "loop_models_ns_range": {
+   "estimate_all": [
+    9.8,
+    9.92
+   ],
+   "screen_then_late_prefetch": [
+    13.16,
+    13.54
+   ],
+   "screen_then_two_pass_prefetch": [
+    11.21,
+    11.45
+   ],
+   "screen_with_early_prefetch": [
+    15.24,
+    15.58
+   ]
+  }
+ },
+ "verdict": "FAIL. The NEON per-row kernel (AND + CNT over the 4 query planes, now used by raw_one) is at 0.244-0.249 of the SDOT estimate, on the kill line; a gathered 64-row batch is no faster (0.375-0.385: the copy costs what it saves). But every loop model with the screen is slower than estimating all 64 fresh neighbours (late prefetch 13.2-13.5 ns, two-pass 11.2-11.5, early prefetch of all codes 15.2-15.6, against 9.8-9.9): the 8-bit path is bound by 64 overlapping row fetches, not by compute (9.8 ns per 256-byte row = 26 GB/s), and the screen makes the survivors' code fetches depend on its result, so their latency is exposed. Prefetching every code anyway removes the dependency but costs more bandwidth than the compute it saves. The scalar screen's end-to-end loss (x0.65-0.87) is explained; no NEON kernel fixes it. Only a search that overlaps the survivors' fetches with other work (pipelined expansions, a different algorithm) could, which is out of scope. The screen stays opt-in and off."
+}
