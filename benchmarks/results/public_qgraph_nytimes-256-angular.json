@@ -10,139 +10,412 @@
     "dim": 256,
     "n_neighbors": 100
   },
-  "environment": {
-    "cpu": "Apple M4",
-    "machine": "arm64",
-    "python": "3.13.9",
-    "load_average": "{ 2.92 4.30 6.01 }",
-    "versions": {
-      "faiss-cpu": "1.15.1",
-      "hnswlib": "0.8.0",
-      "numpy": "2.5.3",
-      "pytrec-eval-terrier": "0.5.10"
+  "environment": [
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 7.17 15.63 29.60 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10"
+      }
+    },
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 12.99 13.89 26.06 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10",
+        "rabitqlib": "0.5.2",
+        "ngt": "2.8.0.post1"
+      }
+    },
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 9.45 19.57 26.12 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10",
+        "rabitqlib": "0.5.2",
+        "ngt": "2.8.0.post1"
+      }
+    },
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 73.04 57.35 51.35 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10",
+        "rabitqlib": "0.5.2",
+        "ngt": "2.8.0.post1"
+      }
+    },
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 116.75 122.39 104.53 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10",
+        "rabitqlib": "0.5.2",
+        "ngt": "2.8.0.post1"
+      }
+    },
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 156.70 127.29 112.39 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10"
+      }
+    },
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 156.17 127.67 112.61 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10"
+      }
+    },
+    {
+      "cpu": "Apple M4",
+      "machine": "arm64",
+      "python": "3.13.9",
+      "load_average": "{ 156.17 127.67 112.61 }",
+      "versions": {
+        "faiss-cpu": "1.15.1",
+        "hnswlib": "0.8.0",
+        "numpy": "2.5.3",
+        "pytrec-eval-terrier": "0.5.10"
+      }
     }
-  },
-  "repeats": 3,
+  ],
+  "repeats": [
+    3
+  ],
   "max_load": 3.0,
   "qps_at_recall": {
     "faiss HNSW M=16": {
       "0.90": {
-        "qps": 2050.343905686993,
+        "qps": 2038.0054558823122,
         "method": "interpolated",
         "between": [
           [
             0.8810899999999999,
-            3093.8563879377784
+            3203.1309102544355
           ],
           [
             0.9084099999999998,
-            1707.5121478370284
+            1666.7573777333137
           ]
         ]
       },
       "0.95": {
-        "qps": 481.40129938260435,
+        "qps": 378.70743080875064,
         "method": "interpolated",
         "between": [
           [
             0.94586,
-            560.0213616529417
+            452.500332172672
           ],
           [
             0.9546900000000001,
-            405.58512278277095
+            309.54046068103145
           ]
         ]
       }
     },
     "faiss HNSW M=32": {
       "0.90": {
-        "qps": 3010.0923679066595,
+        "qps": 2011.062347861922,
         "method": "interpolated",
         "between": [
           [
             0.8912,
-            3640.8169617604817
+            2468.967673684355
           ],
           [
             0.9189700000000001,
-            1997.4664634948576
+            1292.3380305057597
           ]
         ]
       },
       "0.95": {
-        "qps": 765.0835741168589,
+        "qps": 508.52620595724574,
         "method": "interpolated",
         "between": [
           [
             0.9418700000000001,
-            1033.3408634469922
+            541.1453155360139
           ],
           [
             0.96065,
-            516.0754547301467
+            468.7524975653392
           ]
         ]
       }
     },
     "hnswlib M=16": {
       "0.90": {
-        "qps": 1429.5604570274947,
+        "qps": 1352.1638275083073,
         "method": "interpolated",
         "between": [
           [
-            0.878,
-            2270.1673577082865
+            0.87761,
+            2194.8388840666053
           ],
           [
-            0.906,
-            1260.1545021838801
+            0.9053700000000001,
+            1203.8532211582494
           ]
         ]
       },
       "0.95": {
-        "qps": 365.8090879313191,
+        "qps": 348.40207692094833,
         "method": "interpolated",
         "between": [
           [
-            0.94478,
-            436.3535137672592
+            0.94509,
+            413.1216297844503
           ],
           [
-            0.95309,
-            329.5492225943648
+            0.9531700000000001,
+            312.109204328828
           ]
         ]
       }
     },
-    "hms qgraph": {
+    "SymphonyQG (rabitqlib, qb=0)": {
       "0.90": {
-        "qps": 7297.0360071221185,
+        "qps": 5913.104495763937,
         "method": "interpolated",
         "between": [
           [
-            0.89414,
-            7620.208793720948
+            0.8841900000000001,
+            8583.378779813891
           ],
           [
-            0.90022,
-            7285.173883692241
+            0.9144400000000001,
+            4207.238690874298
           ]
         ]
       },
       "0.95": {
-        "qps": 1426.6244116945109,
+        "qps": null,
+        "method": "not reached",
+        "max_recall": 0.94106
+      }
+    },
+    "SymphonyQG (rabitqlib, qb=4)": {
+      "0.90": {
+        "qps": null,
+        "method": "not reached",
+        "max_recall": 0.87272
+      },
+      "0.95": {
+        "qps": null,
+        "method": "not reached",
+        "max_recall": 0.87272
+      }
+    },
+    "RaBitQ IVF 1+4": {
+      "0.90": {
+        "qps": 940.2701323199107,
         "method": "interpolated",
         "between": [
           [
-            0.94868,
-            1534.5889736751428
+            0.6899400000000001,
+            2684.3294651265687
           ],
           [
-            0.95726,
-            955.1164589510927
+            0.9342400000000002,
+            792.4869254026449
           ]
         ]
+      },
+      "0.95": {
+        "qps": null,
+        "method": "not reached",
+        "max_recall": 0.9342400000000002
+      }
+    },
+    "RaBitQ IVF 1+8": {
+      "0.90": {
+        "qps": 968.9243056952489,
+        "method": "interpolated",
+        "between": [
+          [
+            0.70243,
+            2037.1651756759397
+          ],
+          [
+            0.9630700000000001,
+            764.2987591526239
+          ]
+        ]
+      },
+      "0.95": {
+        "qps": 802.8111267607713,
+        "method": "interpolated",
+        "between": [
+          [
+            0.70243,
+            2037.1651756759397
+          ],
+          [
+            0.9630700000000001,
+            764.2987591526239
+          ]
+        ]
+      }
+    },
+    "RaBitQ HNSW 1+4": {
+      "0.90": {
+        "qps": 2065.7276506802577,
+        "method": "interpolated",
+        "between": [
+          [
+            0.8974900000000001,
+            2283.121963749047
+          ],
+          [
+            0.9086700000000001,
+            1462.0691203926892
+          ]
+        ]
+      },
+      "0.95": {
+        "qps": null,
+        "method": "not reached",
+        "max_recall": 0.9152400000000002
+      }
+    },
+    "Lucene HNSW M=16": {
+      "0.90": {
+        "qps": 1108.2330011273928,
+        "method": "interpolated",
+        "between": [
+          [
+            0.89674,
+            1269.6959601924923
+          ],
+          [
+            0.9226700000000001,
+            430.39611904933116
+          ]
+        ]
+      },
+      "0.95": {
+        "qps": 277.5119620902937,
+        "method": "interpolated",
+        "between": [
+          [
+            0.9438,
+            366.12633502696764
+          ],
+          [
+            0.9546899999999999,
+            225.0315004720148
+          ]
+        ]
+      }
+    },
+    "Lucene HNSW M=32": {
+      "0.90": {
+        "qps": 357.99505077264394,
+        "method": "interpolated",
+        "between": [
+          [
+            0.87425,
+            567.4325640717341
+          ],
+          [
+            0.9081400000000002,
+            309.48667253863795
+          ]
+        ]
+      },
+      "0.95": {
+        "qps": 128.73778133688177,
+        "method": "interpolated",
+        "between": [
+          [
+            0.9325,
+            160.32194538432125
+          ],
+          [
+            0.9530700000000001,
+            123.87679656930428
+          ]
+        ]
+      }
+    },
+    "HMS VGraph (8-bit codes, rerank)": {
+      "0.90": {
+        "qps": 4408.987218107903,
+        "method": "interpolated",
+        "between": [
+          [
+            0.89092,
+            5674.12976500204
+          ],
+          [
+            0.90296,
+            4060.907590722702
+          ]
+        ]
+      },
+      "0.95": {
+        "qps": null,
+        "method": "not reached",
+        "max_recall": 0.94789
+      }
+    },
+    "HMS VGraph (4-bit codes, rerank)": {
+      "0.90": {
+        "qps": 13133.242241751552,
+        "method": "interpolated",
+        "between": [
+          [
+            0.89131,
+            15759.125970381183
+          ],
+          [
+            0.90231,
+            12512.076108456553
+          ]
+        ]
+      },
+      "0.95": {
+        "qps": null,
+        "method": "not reached",
+        "max_recall": 0.94693
       }
     }
   },
@@ -152,16 +425,16 @@
       "index": "IndexFlat (exact)",
       "params": {},
       "recall_at_10": 0.9853,
-      "qps_single_thread": 211.8499477561759,
-      "build_secs": 0.01106662501115352,
+      "qps_single_thread": 176.6608751197713,
+      "build_secs": 0.010983709013089538,
       "index_bytes": 296960000,
       "qps_runs": [
-        211.8499477561759
+        176.6608751197713
       ],
       "load_1m_before_runs": [
-        2.87109375
+        3.99658203125
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -172,20 +445,20 @@
         "efSearch": 16
       },
       "recall_at_10": 0.69245,
-      "qps_single_thread": 15888.045434778753,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 15537.375658613433,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        16162.263749671592,
-        15888.045434778753,
-        15639.868066850955
+        14837.20708509483,
+        16748.426903284722,
+        15537.375658613433
       ],
       "load_1m_before_runs": [
-        2.94921875,
-        2.94921875,
-        2.94921875
+        25.8251953125,
+        25.8251953125,
+        25.8251953125
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -196,20 +469,20 @@
         "efSearch": 32
       },
       "recall_at_10": 0.78696,
-      "qps_single_thread": 9726.996834806147,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 9475.441905553109,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        9726.996834806147,
-        9700.848079227173,
-        9735.425215982592
+        9410.129558182332,
+        9475.441905553109,
+        9746.715353530373
       ],
       "load_1m_before_runs": [
-        2.94921875,
-        2.953125,
-        2.953125
+        25.8251953125,
+        25.8251953125,
+        25.8251953125
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -220,20 +493,20 @@
         "efSearch": 64
       },
       "recall_at_10": 0.8448,
-      "qps_single_thread": 5093.673503910045,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 5522.171851647064,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        5326.416684417969,
-        5054.736265426852,
-        5093.673503910045
+        5561.070153746666,
+        5338.321936511006,
+        5522.171851647064
       ],
       "load_1m_before_runs": [
-        2.953125,
-        2.953125,
-        2.95654296875
+        24.3974609375,
+        24.3974609375,
+        24.3974609375
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -244,20 +517,20 @@
         "efSearch": 128
       },
       "recall_at_10": 0.8810899999999999,
-      "qps_single_thread": 3093.8563879377784,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 3203.1309102544355,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        2894.1732179987184,
-        3169.5310445460213,
-        3093.8563879377784
+        3231.44889184624,
+        3169.4379968423978,
+        3203.1309102544355
       ],
       "load_1m_before_runs": [
-        2.95654296875,
-        2.953125,
-        2.953125
+        22.923828125,
+        22.923828125,
+        21.568359375
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -268,20 +541,20 @@
         "efSearch": 256
       },
       "recall_at_10": 0.9084099999999998,
-      "qps_single_thread": 1707.5121478370284,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 1666.7573777333137,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        1649.9971918937288,
-        1721.7907911448342,
-        1707.5121478370284
+        1666.7573777333137,
+        1710.8704258827377,
+        1638.1922012022812
       ],
       "load_1m_before_runs": [
-        2.95654296875,
-        2.98974609375,
-        2.990234375
+        20.8818359375,
+        19.68994140625,
+        18.43310546875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -292,20 +565,20 @@
         "efSearch": 512
       },
       "recall_at_10": 0.9329199999999999,
-      "qps_single_thread": 860.6939512780904,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 724.085201108385,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        849.9520954841911,
-        860.6939512780904,
-        862.7022800989791
+        724.085201108385,
+        621.3386776879101,
+        802.523913636987
       ],
       "load_1m_before_runs": [
-        2.98486328125,
-        2.85888671875,
-        2.88037109375
+        17.59716796875,
+        15.2001953125,
+        14.5478515625
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -316,20 +589,20 @@
         "efSearch": 768
       },
       "recall_at_10": 0.94586,
-      "qps_single_thread": 560.0213616529417,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 452.500332172672,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        560.0213616529417,
-        585.2474009891181,
-        458.40383878045753
+        525.941834450985,
+        452.500332172672,
+        127.39092550563214
       ],
       "load_1m_before_runs": [
-        2.83251953125,
-        2.849609375,
-        2.62548828125
+        15.9521484375,
+        13.61767578125,
+        10.71923828125
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -340,20 +613,20 @@
         "efSearch": 1024
       },
       "recall_at_10": 0.9546900000000001,
-      "qps_single_thread": 405.58512278277095,
-      "build_secs": 34.08969795808662,
+      "qps_single_thread": 309.54046068103145,
+      "build_secs": 51.01589454093482,
       "index_bytes": 338802554,
       "qps_runs": [
-        394.3123369773852,
-        405.58512278277095,
-        412.5052003375487
+        121.36570000359819,
+        374.9526938646644,
+        309.54046068103145
       ],
       "load_1m_before_runs": [
-        2.8984375,
-        2.7333984375,
-        2.6181640625
+        61.42724609375,
+        75.33935546875,
+        51.966796875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -364,20 +637,20 @@
         "efSearch": 16
       },
       "recall_at_10": 0.7944399999999999,
-      "qps_single_thread": 10194.110304578213,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 6159.244968918171,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        10194.110304578213,
-        10144.772661681613,
-        10260.362684671472
+        6674.433112749772,
+        6131.771621103418,
+        6159.244968918171
       ],
       "load_1m_before_runs": [
-        2.97265625,
-        2.97265625,
-        2.97265625
+        56.16796875,
+        58.31640625,
+        58.31640625
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -388,20 +661,20 @@
         "efSearch": 32
       },
       "recall_at_10": 0.8518099999999998,
-      "qps_single_thread": 6280.37362204066,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 4092.960197866154,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        6296.128982473083,
-        6280.37362204066,
-        6266.283851428082
+        3964.2498005873827,
+        4197.8079880116375,
+        4092.960197866154
       ],
       "load_1m_before_runs": [
-        2.974609375,
-        2.974609375,
-        2.974609375
+        58.31640625,
+        58.69140625,
+        58.69140625
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -412,20 +685,20 @@
         "efSearch": 64
       },
       "recall_at_10": 0.8912,
-      "qps_single_thread": 3640.8169617604817,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 2468.967673684355,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        3640.8169617604817,
-        3651.952993717282,
-        3628.7821762157414
+        2515.360230826542,
+        2468.967673684355,
+        2365.720777277922
       ],
       "load_1m_before_runs": [
-        2.974609375,
-        2.9716796875,
-        2.9736328125
+        59.7568359375,
+        60.57666015625,
+        60.57666015625
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -436,20 +709,20 @@
         "efSearch": 128
       },
       "recall_at_10": 0.9189700000000001,
-      "qps_single_thread": 1997.4664634948576,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 1292.3380305057597,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        1985.6552787606465,
-        2003.9354787891386,
-        1997.4664634948576
+        1334.4273561432399,
+        1292.3380305057597,
+        1178.7102821321948
       ],
       "load_1m_before_runs": [
-        2.9736328125,
-        2.9755859375,
-        2.9775390625
+        59.8896484375,
+        56.41162109375,
+        54.29638671875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -460,20 +733,20 @@
         "efSearch": 256
       },
       "recall_at_10": 0.9418700000000001,
-      "qps_single_thread": 1033.3408634469922,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 541.1453155360139,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        1042.5036287573319,
-        1022.8066100135387,
-        1033.3408634469922
+        440.51265444528593,
+        541.1453155360139,
+        629.815249180088
       ],
       "load_1m_before_runs": [
-        2.97900390625,
-        2.8857421875,
-        2.85986328125
+        56.4189453125,
+        60.791015625,
+        63.546875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -484,20 +757,20 @@
         "efSearch": 512
       },
       "recall_at_10": 0.96065,
-      "qps_single_thread": 516.0754547301467,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 468.7524975653392,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        512.7690321227888,
-        517.9962852147341,
-        516.0754547301467
+        398.8070968580999,
+        468.7524975653392,
+        524.809846458203
       ],
       "load_1m_before_runs": [
-        2.9560546875,
-        2.97314453125,
-        2.826171875
+        59.55615234375,
+        42.19873046875,
+        29.24169921875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -508,20 +781,20 @@
         "efSearch": 768
       },
       "recall_at_10": 0.9697899999999999,
-      "qps_single_thread": 339.10576738580846,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 328.342993640009,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        339.10576738580846,
-        338.6360001326228,
-        346.7849009823146
+        320.89052983317055,
+        328.342993640009,
+        348.97181199477143
       ],
       "load_1m_before_runs": [
-        2.72265625,
-        2.9287109375,
-        2.7490234375
+        23.79736328125,
+        15.4482421875,
+        11.02490234375
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "faiss",
@@ -532,20 +805,20 @@
         "efSearch": 1024
       },
       "recall_at_10": 0.974,
-      "qps_single_thread": 255.22605767801926,
-      "build_secs": 61.36514954105951,
+      "qps_single_thread": 252.27589993587029,
+      "build_secs": 93.02670149994083,
       "index_bytes": 375882658,
       "qps_runs": [
-        255.22605767801926,
-        240.93739633890848,
-        259.10549810409265
+        252.27589993587029,
+        260.1262468350645,
+        248.24692058692048
       ],
       "load_1m_before_runs": [
-        2.7314453125,
-        2.732421875,
-        2.9462890625
+        8.65380859375,
+        6.337890625,
+        4.7216796875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -555,21 +828,21 @@
         "ef_construction": 200,
         "ef": 16
       },
-      "recall_at_10": 0.67606,
-      "qps_single_thread": 10047.76623609401,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.67512,
+      "qps_single_thread": 9717.410416340752,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        9913.849067783223,
-        10072.44860465823,
-        10047.76623609401
+        9536.026226533826,
+        10312.878107739443,
+        9717.410416340752
       ],
       "load_1m_before_runs": [
-        2.99658203125,
-        2.990234375,
-        2.990234375
+        37.3037109375,
+        34.716796875,
+        34.716796875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -579,21 +852,21 @@
         "ef_construction": 200,
         "ef": 32
       },
-      "recall_at_10": 0.7747200000000001,
-      "qps_single_thread": 6305.273938256005,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.7769199999999999,
+      "qps_single_thread": 6258.994695257439,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        6305.273938256005,
-        6228.854177125887,
-        6494.98174861488
+        6290.212970068084,
+        6258.994695257439,
+        5861.892350657505
       ],
       "load_1m_before_runs": [
-        2.990234375,
-        2.990234375,
-        2.9599609375
+        34.716796875,
+        34.716796875,
+        32.1767578125
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -603,21 +876,21 @@
         "ef_construction": 200,
         "ef": 64
       },
-      "recall_at_10": 0.8399599999999998,
-      "qps_single_thread": 3898.1918967159218,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.8378899999999999,
+      "qps_single_thread": 3776.3440123087057,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        3898.1918967159218,
-        3901.192355499964,
-        3872.9581935979872
+        3776.3440123087057,
+        3762.305500902189,
+        3832.639675603322
       ],
       "load_1m_before_runs": [
-        2.9599609375,
-        2.9599609375,
-        2.8828125
+        32.1767578125,
+        32.1767578125,
+        29.84033203125
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -627,21 +900,21 @@
         "ef_construction": 200,
         "ef": 128
       },
-      "recall_at_10": 0.878,
-      "qps_single_thread": 2270.1673577082865,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.87761,
+      "qps_single_thread": 2194.8388840666053,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        2270.1673577082865,
-        2271.7472806831342,
-        2206.434813420284
+        2217.1190708841805,
+        2191.0525722315524,
+        2194.8388840666053
       ],
       "load_1m_before_runs": [
-        2.8828125,
-        2.89208984375,
-        2.900390625
+        27.77099609375,
+        27.77099609375,
+        25.947265625
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -651,21 +924,21 @@
         "ef_construction": 200,
         "ef": 256
       },
-      "recall_at_10": 0.906,
-      "qps_single_thread": 1260.1545021838801,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.9053700000000001,
+      "qps_single_thread": 1203.8532211582494,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        1260.1545021838801,
-        903.2308091801916,
-        1265.7330151688395
+        1207.791772711778,
+        1203.8532211582494,
+        1176.3302012473275
       ],
       "load_1m_before_runs": [
-        2.908203125,
-        2.97119140625,
-        2.91748046875
+        24.109375,
+        21.01123046875,
+        18.77685546875
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -675,21 +948,21 @@
         "ef_construction": 200,
         "ef": 512
       },
-      "recall_at_10": 0.9316099999999998,
-      "qps_single_thread": 643.6820674046171,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.93075,
+      "qps_single_thread": 494.3449268003901,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        650.7515434544982,
-        643.6820674046171,
-        618.4915059582086
+        336.66283715310027,
+        494.3449268003901,
+        530.5148622985358
       ],
       "load_1m_before_runs": [
-        2.93603515625,
-        2.94921875,
-        2.8798828125
+        17.59326171875,
+        24.9267578125,
+        19.62255859375
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -699,21 +972,21 @@
         "ef_construction": 200,
         "ef": 768
       },
-      "recall_at_10": 0.94478,
-      "qps_single_thread": 436.3535137672592,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.94509,
+      "qps_single_thread": 413.1216297844503,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        436.76466654015377,
-        436.3535137672592,
-        435.55703066759753
+        413.1216297844503,
+        383.0192378698165,
+        419.02341072884195
       ],
       "load_1m_before_runs": [
-        2.90576171875,
-        2.7783203125,
-        2.79052734375
+        15.89599609375,
+        11.98828125,
+        10.0859375
       ],
-      "load_gate_met": true
+      "load_gate_met": false
     },
     {
       "library": "hnswlib",
@@ -723,841 +996,2244 @@
         "ef_construction": 200,
         "ef": 1024
       },
-      "recall_at_10": 0.95309,
-      "qps_single_thread": 329.5492225943648,
-      "build_secs": 48.92756583401933,
+      "recall_at_10": 0.9531700000000001,
+      "qps_single_thread": 312.109204328828,
+      "build_secs": 51.49800154205877,
       "index_bytes": 336400000,
       "qps_runs": [
-        329.5492225943648,
-        326.7759365076567,
-        331.31718954717513
+        306.42652415530875,
+        312.109204328828,
+        329.8079778418174
       ],
       "load_1m_before_runs": [
-        2.86083984375,
-        2.794921875,
-        2.8642578125
+        7.80224609375,
+        7.1083984375,
+        9.9423828125
       ],
-      "load_gate_met": true
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 16
+      },
+      "recall_at_10": 0.50069,
+      "qps_single_thread": 82250.22873517538,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        76292.12639276934,
+        82382.44565829568,
+        82250.22873517538
+      ],
+      "load_1m_before_runs": [
+        8.18896484375,
+        8.18896484375,
+        8.18896484375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 32
+      },
+      "recall_at_10": 0.67852,
+      "qps_single_thread": 35163.83048135242,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        35163.83048135242,
+        33059.68640615816,
+        46900.8779448199
+      ],
+      "load_1m_before_runs": [
+        8.18896484375,
+        8.18896484375,
+        8.18896484375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 64
+      },
+      "recall_at_10": 0.7818,
+      "qps_single_thread": 29184.902139687347,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        28700.189927408755,
+        29353.266758457845,
+        29184.902139687347
+      ],
+      "load_1m_before_runs": [
+        7.7734375,
+        7.7734375,
+        7.7734375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 128
+      },
+      "recall_at_10": 0.84316,
+      "qps_single_thread": 16090.27933892373,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        16255.978575270088,
+        16090.27933892373,
+        15829.84915700384
+      ],
+      "load_1m_before_runs": [
+        7.7734375,
+        7.7734375,
+        7.7734375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 256
+      },
+      "recall_at_10": 0.8841900000000001,
+      "qps_single_thread": 8583.378779813891,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        8523.197021767885,
+        8583.378779813891,
+        8589.273395746486
+      ],
+      "load_1m_before_runs": [
+        7.7734375,
+        7.7734375,
+        7.39111328125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 512
+      },
+      "recall_at_10": 0.9144400000000001,
+      "qps_single_thread": 4207.238690874298,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        4220.4954208591535,
+        4207.238690874298,
+        4165.605449139482
+      ],
+      "load_1m_before_runs": [
+        7.39111328125,
+        7.39111328125,
+        7.359375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 768
+      },
+      "recall_at_10": 0.93032,
+      "qps_single_thread": 2650.843808972917,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        2640.265479140463,
+        2657.676102829525,
+        2650.843808972917
+      ],
+      "load_1m_before_runs": [
+        7.359375,
+        7.09033203125,
+        6.6826171875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=0)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 0,
+        "ef": 1024
+      },
+      "recall_at_10": 0.94106,
+      "qps_single_thread": 1880.0544381204688,
+      "build_secs": 16.583819375024177,
+      "index_bytes": 705280166,
+      "version": "0.5.2",
+      "qps_runs": [
+        1883.187156062058,
+        1876.0122405235052,
+        1880.0544381204688
+      ],
+      "load_1m_before_runs": [
+        6.6826171875,
+        6.12255859375,
+        5.8720703125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 16
+      },
+      "recall_at_10": 0.39894,
+      "qps_single_thread": 85618.02683081277,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        85618.02683081277,
+        82740.78862951744,
+        88157.60469822075
+      ],
+      "load_1m_before_runs": [
+        12.5126953125,
+        12.5126953125,
+        12.5126953125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 32
+      },
+      "recall_at_10": 0.57154,
+      "qps_single_thread": 51088.27606513241,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        51126.17100520725,
+        51088.27606513241,
+        50903.12732932099
+      ],
+      "load_1m_before_runs": [
+        12.5126953125,
+        12.5126953125,
+        12.5126953125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 64
+      },
+      "recall_at_10": 0.69315,
+      "qps_single_thread": 29009.033322700332,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        29009.033322700332,
+        29082.47699570403,
+        26622.434946594658
+      ],
+      "load_1m_before_runs": [
+        11.91064453125,
+        11.91064453125,
+        11.91064453125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 128
+      },
+      "recall_at_10": 0.76699,
+      "qps_single_thread": 14229.297661711495,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        13480.087303824052,
+        14229.297661711495,
+        14828.947175957188
+      ],
+      "load_1m_before_runs": [
+        11.91064453125,
+        11.91064453125,
+        11.91064453125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 256
+      },
+      "recall_at_10": 0.8129900000000001,
+      "qps_single_thread": 8296.593824081921,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        8181.597648546889,
+        8390.204354365667,
+        8296.593824081921
+      ],
+      "load_1m_before_runs": [
+        11.91064453125,
+        11.91064453125,
+        11.11669921875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 512
+      },
+      "recall_at_10": 0.8476600000000001,
+      "qps_single_thread": 4053.7477644277997,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        4030.660900543401,
+        4053.7477644277997,
+        4056.066328369344
+      ],
+      "load_1m_before_runs": [
+        11.11669921875,
+        11.11669921875,
+        10.86669921875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 768
+      },
+      "recall_at_10": 0.8631,
+      "qps_single_thread": 2525.5546938429957,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        2542.5376613003646,
+        2502.732149477929,
+        2525.5546938429957
+      ],
+      "load_1m_before_runs": [
+        10.86669921875,
+        10.31640625,
+        9.970703125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "SymphonyQG",
+      "series": "SymphonyQG (rabitqlib, qb=4)",
+      "params": {
+        "max_degree": 32,
+        "ef_construction": 200,
+        "init": "pipnn",
+        "quantization_bits": 4,
+        "ef": 1024
+      },
+      "recall_at_10": 0.87272,
+      "qps_single_thread": 1160.2270456971285,
+      "build_secs": 18.105373207945377,
+      "index_bytes": 447761210,
+      "version": "0.5.2",
+      "qps_runs": [
+        1827.7772332553643,
+        1160.2270456971285,
+        997.7045353800942
+      ],
+      "load_1m_before_runs": [
+        9.65234375,
+        9.11962890625,
+        10.244140625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 1
+      },
+      "recall_at_10": 0.12043,
+      "qps_single_thread": 13287.46353794403,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        22165.513383858353,
+        13287.46353794403,
+        11321.859666879154
+      ],
+      "load_1m_before_runs": [
+        54.54638671875,
+        54.54638671875,
+        54.54638671875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 2
+      },
+      "recall_at_10": 0.16696000000000003,
+      "qps_single_thread": 12810.93131309845,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        12810.93131309845,
+        12721.184959672868,
+        14415.911405960906
+      ],
+      "load_1m_before_runs": [
+        54.54638671875,
+        59.62744140625,
+        59.62744140625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 4
+      },
+      "recall_at_10": 0.20717999999999998,
+      "qps_single_thread": 11683.168253755372,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        11683.168253755372,
+        11374.567684431162,
+        11929.31937550102
+      ],
+      "load_1m_before_runs": [
+        59.62744140625,
+        59.62744140625,
+        59.62744140625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 8
+      },
+      "recall_at_10": 0.24244000000000002,
+      "qps_single_thread": 9985.299552149942,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        9507.159915743056,
+        9985.299552149942,
+        10230.24967133965
+      ],
+      "load_1m_before_runs": [
+        59.62744140625,
+        60.8583984375,
+        60.8583984375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 16
+      },
+      "recall_at_10": 0.27993,
+      "qps_single_thread": 8301.642966818308,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        8301.642966818308,
+        8608.175030820532,
+        8158.805436777941
+      ],
+      "load_1m_before_runs": [
+        60.8583984375,
+        60.8583984375,
+        62.07080078125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 32
+      },
+      "recall_at_10": 0.32567999999999997,
+      "qps_single_thread": 6065.33058569299,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        6065.33058569299,
+        5998.422716912019,
+        6619.774755208508
+      ],
+      "load_1m_before_runs": [
+        62.07080078125,
+        62.07080078125,
+        62.07080078125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 64
+      },
+      "recall_at_10": 0.38933,
+      "qps_single_thread": 5067.63059111639,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        4512.989400076571,
+        5067.63059111639,
+        7041.597918441375
+      ],
+      "load_1m_before_runs": [
+        62.86572265625,
+        62.86572265625,
+        61.67529296875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 128
+      },
+      "recall_at_10": 0.4898200000000001,
+      "qps_single_thread": 5730.703088119389,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        5161.483128790367,
+        5730.703088119389,
+        6961.8690602128
+      ],
+      "load_1m_before_runs": [
+        61.67529296875,
+        61.67529296875,
+        57.13671875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 256
+      },
+      "recall_at_10": 0.6899400000000001,
+      "qps_single_thread": 2684.3294651265687,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        2649.0434346996176,
+        2684.3294651265687,
+        2742.1136383240528
+      ],
+      "load_1m_before_runs": [
+        57.13671875,
+        52.80126953125,
+        52.80126953125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+4",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 5,
+        "nprobe": 512
+      },
+      "recall_at_10": 0.9342400000000002,
+      "qps_single_thread": 792.4869254026449,
+      "build_secs": 11.542609042022377,
+      "index_bytes": 55517282,
+      "version": "0.5.2",
+      "qps_runs": [
+        775.3291580009446,
+        792.4869254026449,
+        793.0484544693165
+      ],
+      "load_1m_before_runs": [
+        48.81298828125,
+        38.732421875,
+        33.39208984375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 1
+      },
+      "recall_at_10": 0.12211,
+      "qps_single_thread": 46059.07076085544,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        47552.521409717025,
+        46059.07076085544,
+        45708.85289790986
+      ],
+      "load_1m_before_runs": [
+        29.24853515625,
+        29.24853515625,
+        29.24853515625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 2
+      },
+      "recall_at_10": 0.16951999999999998,
+      "qps_single_thread": 43675.9419642172,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        43746.142662138336,
+        43675.9419642172,
+        42713.2830649325
+      ],
+      "load_1m_before_runs": [
+        29.24853515625,
+        29.24853515625,
+        29.24853515625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 4
+      },
+      "recall_at_10": 0.21071000000000004,
+      "qps_single_thread": 39617.02883145277,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        39617.02883145277,
+        39821.566259946354,
+        38641.38184505016
+      ],
+      "load_1m_before_runs": [
+        29.24853515625,
+        29.24853515625,
+        27.306640625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 8
+      },
+      "recall_at_10": 0.24677,
+      "qps_single_thread": 34070.64572277331,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        33135.75674318633,
+        34070.64572277331,
+        35018.833563581335
+      ],
+      "load_1m_before_runs": [
+        27.306640625,
+        27.306640625,
+        27.306640625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 16
+      },
+      "recall_at_10": 0.28505,
+      "qps_single_thread": 30848.868301259634,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        29694.054732598688,
+        30848.868301259634,
+        30865.158160255512
+      ],
+      "load_1m_before_runs": [
+        27.306640625,
+        27.306640625,
+        27.306640625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 32
+      },
+      "recall_at_10": 0.33138,
+      "qps_single_thread": 23290.026836299086,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        23514.305012837478,
+        23290.026836299086,
+        22845.482993104008
+      ],
+      "load_1m_before_runs": [
+        27.306640625,
+        27.306640625,
+        27.306640625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 64
+      },
+      "recall_at_10": 0.39596000000000003,
+      "qps_single_thread": 14463.164399107387,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        14564.240637163557,
+        14463.164399107387,
+        14074.526835382085
+      ],
+      "load_1m_before_runs": [
+        27.306640625,
+        27.306640625,
+        25.43994140625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 128
+      },
+      "recall_at_10": 0.49816000000000005,
+      "qps_single_thread": 2684.334208552427,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        5026.250007626325,
+        2684.334208552427,
+        2027.7098888852677
+      ],
+      "load_1m_before_runs": [
+        25.43994140625,
+        25.43994140625,
+        25.64453125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 256
+      },
+      "recall_at_10": 0.70243,
+      "qps_single_thread": 2037.1651756759397,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        1966.796121854113,
+        2037.1651756759397,
+        2412.4096043123027
+      ],
+      "load_1m_before_runs": [
+        25.0322265625,
+        23.5078125,
+        22.345703125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "IVF-RaBitQ",
+      "series": "RaBitQ IVF 1+8",
+      "params": {
+        "num_clusters": 1024,
+        "nbits": 9,
+        "nprobe": 512
+      },
+      "recall_at_10": 0.9630700000000001,
+      "qps_single_thread": 764.2987591526239,
+      "build_secs": 14.755788250011392,
+      "index_bytes": 92637282,
+      "version": "0.5.2",
+      "qps_runs": [
+        732.2657098819482,
+        764.2987591526239,
+        787.5505091604135
+      ],
+      "load_1m_before_runs": [
+        20.79638671875,
+        18.2939453125,
+        15.046875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 16
+      },
+      "recall_at_10": 0.65084,
+      "qps_single_thread": 25461.278800141255,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        25461.278800141255,
+        25112.233351225677,
+        27216.68872433438
+      ],
+      "load_1m_before_runs": [
+        28.2412109375,
+        28.2412109375,
+        28.2412109375
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 32
+      },
+      "recall_at_10": 0.75045,
+      "qps_single_thread": 19227.435266939498,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        19709.427222387887,
+        19227.435266939498,
+        18986.152159921785
+      ],
+      "load_1m_before_runs": [
+        26.2998046875,
+        26.2998046875,
+        26.2998046875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 64
+      },
+      "recall_at_10": 0.8143,
+      "qps_single_thread": 13532.130873111391,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        13145.027156378363,
+        13532.130873111391,
+        13707.869653292259
+      ],
+      "load_1m_before_runs": [
+        26.2998046875,
+        26.2998046875,
+        26.2998046875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 128
+      },
+      "recall_at_10": 0.85049,
+      "qps_single_thread": 8241.90796372676,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        8269.344394753442,
+        7858.248975793244,
+        8241.90796372676
+      ],
+      "load_1m_before_runs": [
+        26.2998046875,
+        24.9140625,
+        24.9140625
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 256
+      },
+      "recall_at_10": 0.8768300000000001,
+      "qps_single_thread": 4591.652307154516,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        4591.652307154516,
+        4595.0836249497515,
+        4588.708247422038
+      ],
+      "load_1m_before_runs": [
+        24.9140625,
+        24.9140625,
+        23.1591796875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 512
+      },
+      "recall_at_10": 0.8974900000000001,
+      "qps_single_thread": 2283.121963749047,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        2283.4287906400727,
+        2278.5014396777206,
+        2283.121963749047
+      ],
+      "load_1m_before_runs": [
+        23.1591796875,
+        21.54443359375,
+        20.05908203125
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 768
+      },
+      "recall_at_10": 0.9086700000000001,
+      "qps_single_thread": 1462.0691203926892,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        1460.0506241506828,
+        1462.0691203926892,
+        1463.523675639391
+      ],
+      "load_1m_before_runs": [
+        18.69287109375,
+        17.59619140625,
+        15.1982421875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "rabitqlib",
+      "index": "HNSW-RaBitQ",
+      "series": "RaBitQ HNSW 1+4",
+      "params": {
+        "M": 16,
+        "ef_construction": 200,
+        "nbits": 5,
+        "ef": 1024
+      },
+      "recall_at_10": 0.9152400000000002,
+      "qps_single_thread": 1047.832062387268,
+      "build_secs": 29.008723750943318,
+      "index_bytes": 95277781,
+      "version": "0.5.2",
+      "qps_runs": [
+        1047.6483933770926,
+        1047.832062387268,
+        1048.6333607056558
+      ],
+      "load_1m_before_runs": [
+        14.22119140625,
+        12.4091796875,
+        10.80810546875
+      ],
+      "load_gate_met": false
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 16
+      },
+      "recall_at_10": 0.72036,
+      "qps_single_thread": 6190.214299016437,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        6190.214299016437,
+        6263.898188533135,
+        6171.414111417391
+      ],
+      "load_1m_before_runs": [
+        29.1005859375,
+        29.1005859375,
+        29.1005859375
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 32
+      },
+      "recall_at_10": 0.80605,
+      "qps_single_thread": 3842.7558405284194,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        3842.7558405284194,
+        3803.137194713064,
+        3885.8423709837466
+      ],
+      "load_1m_before_runs": [
+        27.09033203125,
+        27.09033203125,
+        25.1611328125
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 64
+      },
+      "recall_at_10": 0.8636300000000001,
+      "qps_single_thread": 2305.7854008174504,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        2305.7854008174504,
+        2264.2290591278816,
+        2318.8572937646654
+      ],
+      "load_1m_before_runs": [
+        25.1611328125,
+        23.38623046875,
+        21.75341796875
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 128
+      },
+      "recall_at_10": 0.89674,
+      "qps_single_thread": 1269.6959601924923,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        1312.111812630511,
+        1263.0499836816343,
+        1269.6959601924923
+      ],
+      "load_1m_before_runs": [
+        20.33154296875,
+        17.58642578125,
+        16.978515625
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 256
+      },
+      "recall_at_10": 0.9226700000000001,
+      "qps_single_thread": 430.39611904933116,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        587.146999884332,
+        334.71059677047987,
+        430.39611904933116
+      ],
+      "load_1m_before_runs": [
+        14.7490234375,
+        14.58447265625,
+        21.501953125
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 512
+      },
+      "recall_at_10": 0.9438,
+      "qps_single_thread": 366.12633502696764,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        366.12633502696764,
+        374.96873757208067,
+        347.70987577304555
+      ],
+      "load_1m_before_runs": [
+        21.185546875,
+        15.74365234375,
+        11.7939453125
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 768
+      },
+      "recall_at_10": 0.9546899999999999,
+      "qps_single_thread": 225.0315004720148,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        225.0315004720148,
+        263.2548978139302,
+        173.17648173672598
+      ],
+      "load_1m_before_runs": [
+        8.572265625,
+        8.7890625,
+        6.2919921875
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=16",
+      "params": {
+        "M": 16,
+        "beamWidth": 500,
+        "ef": 1024
+      },
+      "recall_at_10": 0.9617899999999999,
+      "qps_single_thread": 172.0162414475811,
+      "build_secs": 242.839279958,
+      "index_bytes": 406592056,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        98.3700472141617,
+        196.45787901461202,
+        172.0162414475811
+      ],
+      "load_1m_before_runs": [
+        20.369140625,
+        45.50048828125,
+        20.36474609375
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 109632056
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 16
+      },
+      "recall_at_10": 0.82095,
+      "qps_single_thread": 600.5821608165005,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        772.8185023215273,
+        600.5821608165005,
+        568.814664895283
+      ],
+      "load_1m_before_runs": [
+        94.419921875,
+        85.5849609375,
+        81.5888671875
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 32
+      },
+      "recall_at_10": 0.87425,
+      "qps_single_thread": 567.4325640717341,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        586.9898914764284,
+        567.4325640717341,
+        497.55554072563626
+      ],
+      "load_1m_before_runs": [
+        81.66796875,
+        78.99560546875,
+        78.9814453125
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 64
+      },
+      "recall_at_10": 0.9081400000000002,
+      "qps_single_thread": 309.48667253863795,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        313.74195036360516,
+        255.60680040410975,
+        309.48667253863795
+      ],
+      "load_1m_before_runs": [
+        82.6162109375,
+        89.07373046875,
+        86.41552734375
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 128
+      },
+      "recall_at_10": 0.9325,
+      "qps_single_thread": 160.32194538432125,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        164.8806305557984,
+        150.18218469566202,
+        160.32194538432125
+      ],
+      "load_1m_before_runs": [
+        75.7158203125,
+        78.27587890625,
+        82.88232421875
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 256
+      },
+      "recall_at_10": 0.9530700000000001,
+      "qps_single_thread": 123.87679656930428,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        123.87679656930428,
+        126.83713817565182,
+        112.15618393843468
+      ],
+      "load_1m_before_runs": [
+        76.97314453125,
+        67.05908203125,
+        69.462890625
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 512
+      },
+      "recall_at_10": 0.9684900000000002,
+      "qps_single_thread": 77.79995954415797,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        87.64186175972415,
+        77.79995954415797,
+        67.87230930643912
+      ],
+      "load_1m_before_runs": [
+        89.34423828125,
+        102.77685546875,
+        76.439453125
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 768
+      },
+      "recall_at_10": 0.97498,
+      "qps_single_thread": 51.22350396626313,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        51.22350396626313,
+        57.748228744995394,
+        49.79236565868933
+      ],
+      "load_1m_before_runs": [
+        61.92578125,
+        42.462890625,
+        66.4443359375
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    },
+    {
+      "library": "lucene",
+      "index": "HNSW",
+      "series": "Lucene HNSW M=32",
+      "params": {
+        "M": 32,
+        "beamWidth": 500,
+        "ef": 1024
+      },
+      "recall_at_10": 0.97851,
+      "qps_single_thread": 21.69123773994385,
+      "build_secs": 851.049172458,
+      "index_bytes": 466298840,
+      "version": "lucene-core 9.12.3 (sha256 b64a3f8098a7), openjdk version \"17.0.19\" 2026-04-21",
+      "qps_runs": [
+        25.926019423256246,
+        21.69123773994385,
+        19.75003581295324
+      ],
+      "load_1m_before_runs": [
+        62.98095703125,
+        87.99169921875,
+        60.28466796875
+      ],
+      "load_gate_met": false,
+      "builder": "HnswConcurrentMergeBuilder(10 workers)",
+      "graph_ram_bytes": 169338840
+    }
+  ],
+  "extra_systems": [
+    {
+      "system": "symphonyqg",
+      "status": "ran",
+      "secs": 188.82195791602135
+    },
+    {
+      "system": "rabitq",
+      "status": "ran",
+      "secs": 335.809974416974
+    },
+    {
+      "system": "ngt",
+      "status": "not run on M4",
+      "reason": "did not build and run within 1800 s on this machine"
+    },
+    {
+      "system": "lucene_hnsw",
+      "status": "ran",
+      "secs": 4724.553485332988
+    },
+    {
+      "system": "glass",
+      "status": "not run on M4",
+      "reason": "PyPI `pyglass` 0.1.2 is an unrelated Python-2 package; zilliztech/pyglass 2.1.0 built from source fails under Apple clang on arm64 (its setup.py passes -march=native, -fopenmp and -lrt). x86 only here."
+    },
+    {
+      "system": "diskann",
+      "status": "not run on M4",
+      "reason": "diskannpy 0.7.0 ships cp39-cp311 wheels for Linux and Windows x86-64 only, and DiskANN's own build needs MKL and does not support macOS."
+    },
+    {
+      "system": "scann",
+      "status": "not run on M4",
+      "reason": "scann 1.4.2 ships manylinux wheels only (x86-64 and aarch64 Linux); no macOS build."
     }
   ],
   "hms": [
     {
       "build": {
-        "build_secs": 391.131222208,
-        "load_1m_before_build": 9.31,
+        "build_secs": 0.818544459,
+        "graph_hash": "c42fe74c0f19430c",
+        "load_1m_after_build": 9.17,
+        "load_1m_before_build": 9.17,
+        "load_gate_met": false,
         "params": {
+          "align_rows": false,
           "alpha": 1.0,
           "build_ef": 200,
-          "code_bits": 1024,
+          "code_bits": 0,
           "degree": 64,
-          "seed": 24301
-        }
+          "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/nytimes-256-angular_full_d64_b200_v2.graph",
+          "id_bytes": 4,
+          "index": "vertex",
+          "reorder": false,
+          "residual": true,
+          "residual_bits": 8,
+          "seed": 24301,
+          "vertex_bits": 8
+        },
+        "threads": 10
       },
       "environment": {
         "arch": "aarch64",
         "cpu": "Apple M4",
         "hms_version": "0.6.1",
-        "load_average": "{ 4.77 7.76 7.35 }",
+        "load_average": "{ 22.25 40.78 61.13 }",
         "os": "macos",
         "rayon_threads": 10
       },
-      "index_bytes": 2970869936,
+      "holdout": null,
+      "index_bytes": 226310960,
       "max_load": 3.0,
       "n_queries": 10000,
       "notes": [
         "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
         "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
-        "Each expanded vertex is scored exactly; mean_exact_evals_per_query is the re-rank count."
+        "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
       ],
+      "paired_sync": false,
       "repeats": 3,
+      "residual_bytes": 75400000,
       "sweep": [
         {
           "load_1m_before_runs": [
-            2.81,
-            2.97,
-            2.97
+            9.17,
+            10.91,
+            18.21
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 118.3424,
-          "params": {
-            "ef": 10,
-            "max_exact": 0
-          },
-          "qps_runs": [
-            8910.165040340724,
-            17639.857611069365,
-            20154.3588891081
-          ],
-          "qps_single_thread": 17639.857611069365,
-          "recall_at_10": 0.70553
-        },
-        {
-          "load_1m_before_runs": [
-            2.97,
-            2.97,
-            2.97
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 127.9276,
-          "params": {
-            "ef": 16,
-            "max_exact": 0
-          },
-          "qps_runs": [
-            14314.92696166391,
-            16477.459677159834,
-            17015.408090103392
-          ],
-          "qps_single_thread": 16477.459677159834,
-          "recall_at_10": 0.79871
-        },
-        {
-          "load_1m_before_runs": [
-            2.97,
-            2.97,
-            2.97
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 140.2103,
-          "params": {
-            "ef": 24,
-            "max_exact": 0
-          },
-          "qps_runs": [
-            12475.407214164457,
-            13462.273499082614,
-            13548.587253987158
-          ],
-          "qps_single_thread": 13462.273499082614,
-          "recall_at_10": 0.84256
-        },
-        {
-          "load_1m_before_runs": [
-            2.97,
-            2.97,
-            2.97
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 153.0719,
-          "params": {
-            "ef": 32,
-            "max_exact": 0
-          },
-          "qps_runs": [
-            10831.791311398398,
-            10937.946704034339,
-            11275.152579367383
-          ],
-          "qps_single_thread": 10937.946704034339,
-          "recall_at_10": 0.86224
-        },
-        {
-          "load_1m_before_runs": [
-            2.97,
-            2.97,
-            2.97
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 179.7323,
-          "params": {
-            "ef": 48,
-            "max_exact": 0
-          },
-          "qps_runs": [
-            7936.606885839342,
-            8108.613798520377,
-            8102.3302728857625
-          ],
-          "qps_single_thread": 8102.3302728857625,
-          "recall_at_10": 0.88768
-        },
-        {
-          "load_1m_before_runs": [
-            2.97,
-            2.97,
-            2.97
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 206.8086,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 2982.7389,
           "params": {
             "ef": 64,
-            "max_exact": 0
+            "rerank": 16
           },
           "qps_runs": [
-            6435.548594774667,
-            6372.941168858298,
-            6494.198787748303
+            11718.771743814757,
+            10649.790298972894,
+            7318.004650985664
           ],
-          "qps_single_thread": 6435.548594774667,
-          "recall_at_10": 0.90022
+          "qps_single_thread": 10649.790298972894,
+          "recall_at_10": 0.87462
         },
         {
           "load_1m_before_runs": [
-            2.97,
-            2.97,
-            2.97
+            9.17,
+            10.91,
+            18.21
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 264.4179,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 4161.5212,
           "params": {
             "ef": 96,
-            "max_exact": 0
+            "rerank": 16
           },
           "qps_runs": [
-            4417.848829557485,
-            4347.451512424407,
-            4378.832583344622
+            5555.568030892212,
+            5641.148892607413,
+            5113.449111744723
           ],
-          "qps_single_thread": 4378.832583344622,
-          "recall_at_10": 0.91838
+          "qps_single_thread": 5555.568030892212,
+          "recall_at_10": 0.89089
         },
         {
           "load_1m_before_runs": [
-            2.97,
-            2.9,
-            2.9
+            9.17,
+            10.91,
+            18.21
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 325.2001,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 5340.5426,
           "params": {
             "ef": 128,
-            "max_exact": 0
+            "rerank": 16
           },
           "qps_runs": [
-            3301.277788454202,
-            3311.924683451886,
-            3341.5561601040295
+            3369.065076018742,
+            3533.358161628686,
+            3867.568274182744
           ],
-          "qps_single_thread": 3311.924683451886,
-          "recall_at_10": 0.92854
+          "qps_single_thread": 3533.358161628686,
+          "recall_at_10": 0.90293
         },
         {
           "load_1m_before_runs": [
-            2.98,
-            2.99,
-            2.91
+            9.88,
+            11.16,
+            19.23
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 452.5413,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 7690.4675,
           "params": {
             "ef": 192,
-            "max_exact": 0
+            "rerank": 16
           },
           "qps_runs": [
-            2193.4157076919396,
-            2132.400744301515,
-            2134.9619014009804
+            2703.5765549088696,
+            2918.847182332831,
+            2549.342254198416
           ],
-          "qps_single_thread": 2134.9619014009804,
-          "recall_at_10": 0.9414
+          "qps_single_thread": 2703.5765549088696,
+          "recall_at_10": 0.91784
         },
         {
           "load_1m_before_runs": [
-            2.92,
-            2.84,
-            2.85
+            10.85,
+            11.16,
+            21.38
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 585.0497,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 10037.5988,
           "params": {
             "ef": 256,
-            "max_exact": 0
+            "rerank": 16
           },
           "qps_runs": [
-            1589.9828536249065,
-            1534.5889736751428,
-            1506.2892566046405
+            3026.6423220063575,
+            2245.4254090165264,
+            1997.1129236297777
           ],
-          "qps_single_thread": 1534.5889736751428,
-          "recall_at_10": 0.94868
+          "qps_single_thread": 2245.4254090165264,
+          "recall_at_10": 0.92748
         },
         {
           "load_1m_before_runs": [
-            2.94,
-            2.77,
-            2.99
+            10.85,
+            11.23,
+            25.99
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 859.4701,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 14703.6965,
           "params": {
             "ef": 384,
-            "max_exact": 0
+            "rerank": 16
           },
           "qps_runs": [
-            955.1164589510927,
-            905.4762684064367,
-            1002.1053858366909
+            2153.1496985621857,
+            1517.6707432681887,
+            1477.9533421359379
           ],
-          "qps_single_thread": 955.1164589510927,
-          "recall_at_10": 0.95726
+          "qps_single_thread": 1517.6707432681887,
+          "recall_at_10": 0.9402
         },
         {
           "load_1m_before_runs": [
-            2.83,
-            2.95,
-            2.88
+            10.54,
+            11.34,
+            28.23
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 1137.2991,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 19315.2451,
           "params": {
             "ef": 512,
-            "max_exact": 0
+            "rerank": 16
           },
           "qps_runs": [
-            479.72626723246464,
-            711.2136186270931,
-            725.8885611531393
+            1637.477593941729,
+            1311.8604086071293,
+            1178.654189610685
           ],
-          "qps_single_thread": 711.2136186270931,
-          "recall_at_10": 0.96117
+          "qps_single_thread": 1311.8604086071293,
+          "recall_at_10": 0.94786
         },
         {
           "load_1m_before_runs": [
-            2.99,
-            2.95,
-            2.93
+            10.25,
+            12.76,
+            27.57
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 1692.7166,
-          "params": {
-            "ef": 768,
-            "max_exact": 0
-          },
-          "qps_runs": [
-            451.4234357131214,
-            412.612569799412,
-            447.08486722439767
-          ],
-          "qps_single_thread": 447.08486722439767,
-          "recall_at_10": 0.96499
-        },
-        {
-          "load_1m_before_runs": [
-            2.87,
-            2.87,
-            2.87
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 105.3149,
-          "params": {
-            "ef": 10,
-            "max_exact": 150
-          },
-          "qps_runs": [
-            24375.851210818244,
-            30679.975640099343,
-            31056.98973766496
-          ],
-          "qps_single_thread": 30679.975640099343,
-          "recall_at_10": 0.70553
-        },
-        {
-          "load_1m_before_runs": [
-            2.87,
-            2.87,
-            2.88
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 114.2719,
-          "params": {
-            "ef": 16,
-            "max_exact": 150
-          },
-          "qps_runs": [
-            23485.002067866175,
-            22420.66589184881,
-            22736.546085963728
-          ],
-          "qps_single_thread": 22736.546085963728,
-          "recall_at_10": 0.79871
-        },
-        {
-          "load_1m_before_runs": [
-            2.88,
-            2.88,
-            2.88
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 126.3173,
-          "params": {
-            "ef": 24,
-            "max_exact": 150
-          },
-          "qps_runs": [
-            17209.07271813108,
-            17375.189479047545,
-            16884.51324551905
-          ],
-          "qps_single_thread": 17209.07271813108,
-          "recall_at_10": 0.84256
-        },
-        {
-          "load_1m_before_runs": [
-            2.88,
-            2.88,
-            2.88
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 138.6488,
-          "params": {
-            "ef": 32,
-            "max_exact": 150
-          },
-          "qps_runs": [
-            13767.899475730641,
-            13736.2857558317,
-            13746.852400389449
-          ],
-          "qps_single_thread": 13746.852400389449,
-          "recall_at_10": 0.86208
-        },
-        {
-          "load_1m_before_runs": [
-            2.88,
-            2.89,
-            2.89
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 163.8582,
-          "params": {
-            "ef": 48,
-            "max_exact": 150
-          },
-          "qps_runs": [
-            9699.87770384491,
-            9643.030674360038,
-            9641.367247225708
-          ],
-          "qps_single_thread": 9643.030674360038,
-          "recall_at_10": 0.88609
-        },
-        {
-          "load_1m_before_runs": [
-            2.89,
-            2.89,
-            2.9
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 186.5762,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 3030.6621,
           "params": {
             "ef": 64,
-            "max_exact": 150
+            "rerank": 64
           },
           "qps_runs": [
-            7620.208793720948,
-            7618.550355540337,
-            7718.289133744049
+            7578.260939436783,
+            7190.978487754238,
+            7140.839646532408
           ],
-          "qps_single_thread": 7620.208793720948,
-          "recall_at_10": 0.89414
+          "qps_single_thread": 7190.978487754238,
+          "recall_at_10": 0.87465
         },
         {
           "load_1m_before_runs": [
-            2.9,
-            2.9,
-            2.9
+            10.07,
+            12.76,
+            27.57
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 216.7751,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 4209.4444,
           "params": {
             "ef": 96,
-            "max_exact": 150
+            "rerank": 64
           },
           "qps_runs": [
-            5882.67620115452,
-            5789.438551764443,
-            5688.467117519743
+            5674.12976500204,
+            4350.750864091861,
+            7839.819935015732
           ],
-          "qps_single_thread": 5789.438551764443,
-          "recall_at_10": 0.89837
+          "qps_single_thread": 5674.12976500204,
+          "recall_at_10": 0.89092
         },
         {
           "load_1m_before_runs": [
-            2.9,
-            2.9,
-            2.83
+            10.07,
+            13.18,
+            27.57
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 231.1591,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 5388.4658,
           "params": {
             "ef": 128,
-            "max_exact": 150
+            "rerank": 64
           },
           "qps_runs": [
-            5014.404714949279,
-            5226.756173374768,
-            5245.576241631175
+            4060.907590722702,
+            3475.7498174342427,
+            7620.7053038965805
           ],
-          "qps_single_thread": 5226.756173374768,
-          "recall_at_10": 0.89899
+          "qps_single_thread": 4060.907590722702,
+          "recall_at_10": 0.90296
         },
         {
           "load_1m_before_runs": [
-            2.83,
-            2.83,
-            2.93
+            10.31,
+            14.68,
+            27.57
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 234.6062,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 7738.3907,
           "params": {
             "ef": 192,
-            "max_exact": 150
+            "rerank": 64
           },
           "qps_runs": [
-            4785.176574944041,
-            4718.2423894849335,
-            4664.141217031979
+            3119.7087623837465,
+            2356.0200328736278,
+            5959.807951529998
           ],
-          "qps_single_thread": 4718.2423894849335,
-          "recall_at_10": 0.89909
+          "qps_single_thread": 3119.7087623837465,
+          "recall_at_10": 0.91787
         },
         {
           "load_1m_before_runs": [
-            2.93,
-            2.85,
-            2.85
+            10.31,
+            14.68,
+            25.85
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 234.6062,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 10085.522,
           "params": {
             "ef": 256,
-            "max_exact": 150
+            "rerank": 64
           },
           "qps_runs": [
-            4500.614278941582,
-            4505.527297761915,
-            4445.855345530059
+            2508.8113902895157,
+            2169.805193286261,
+            4941.908280808439
           ],
-          "qps_single_thread": 4500.614278941582,
-          "recall_at_10": 0.89909
+          "qps_single_thread": 2508.8113902895157,
+          "recall_at_10": 0.92751
         },
         {
           "load_1m_before_runs": [
-            2.78,
-            2.78,
-            2.88
+            10.04,
+            15.19,
+            25.85
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 234.6062,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 14751.6197,
           "params": {
             "ef": 384,
-            "max_exact": 150
+            "rerank": 64
           },
           "qps_runs": [
-            3864.4594322788885,
-            3862.546518834893,
-            3858.4271065489947
+            2092.37438891097,
+            1450.2635470982248,
+            3370.229292609629
           ],
-          "qps_single_thread": 3862.546518834893,
-          "recall_at_10": 0.89909
+          "qps_single_thread": 2092.37438891097,
+          "recall_at_10": 0.94023
         },
         {
           "load_1m_before_runs": [
-            2.88,
-            2.97,
-            2.97
+            10.52,
+            16.32,
+            24.1
           ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 234.6062,
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 19363.1683,
           "params": {
             "ef": 512,
-            "max_exact": 150
+            "rerank": 64
           },
           "qps_runs": [
-            3454.3556268382413,
-            3474.0626406817323,
-            3476.5188313247386
+            1205.4992585727498,
+            1006.5512351415271,
+            2605.4178663529265
           ],
-          "qps_single_thread": 3474.0626406817323,
-          "recall_at_10": 0.89909
-        },
-        {
-          "load_1m_before_runs": [
-            2.92,
-            2.93,
-            2.93
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 234.6062,
-          "params": {
-            "ef": 768,
-            "max_exact": 150
-          },
-          "qps_runs": [
-            2755.421233619958,
-            2765.31784397103,
-            2792.192958682699
-          ],
-          "qps_single_thread": 2765.31784397103,
-          "recall_at_10": 0.89909
-        },
-        {
-          "load_1m_before_runs": [
-            2.98,
-            2.98,
-            2.98
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 105.4499,
-          "params": {
-            "ef": 10,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            26809.52569257383,
-            30710.585362951133,
-            30532.300120297263
-          ],
-          "qps_single_thread": 30532.300120297263,
-          "recall_at_10": 0.70553
-        },
-        {
-          "load_1m_before_runs": [
-            2.98,
-            2.98,
-            2.98
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 114.4069,
-          "params": {
-            "ef": 16,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            22991.40171237385,
-            23317.320163710905,
-            23144.388952917456
-          ],
-          "qps_single_thread": 23144.388952917456,
-          "recall_at_10": 0.79871
-        },
-        {
-          "load_1m_before_runs": [
-            2.98,
-            2.98,
-            2.98
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 126.4529,
-          "params": {
-            "ef": 24,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            16645.36523212953,
-            16919.7926585666,
-            16608.500018052608
-          ],
-          "qps_single_thread": 16645.36523212953,
-          "recall_at_10": 0.84256
-        },
-        {
-          "load_1m_before_runs": [
-            2.98,
-            2.98,
-            2.98
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 138.8501,
-          "params": {
-            "ef": 32,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            13448.49051620854,
-            13656.880007153364,
-            13634.478050024218
-          ],
-          "qps_single_thread": 13634.478050024218,
-          "recall_at_10": 0.86224
-        },
-        {
-          "load_1m_before_runs": [
-            2.98,
-            2.9,
-            2.9
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 165.0092,
-          "params": {
-            "ef": 48,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            9529.441732445797,
-            9509.330436157328,
-            9571.790786998794
-          ],
-          "qps_single_thread": 9529.441732445797,
-          "recall_at_10": 0.88768
-        },
-        {
-          "load_1m_before_runs": [
-            2.9,
-            2.9,
-            2.83
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 192.0526,
-          "params": {
-            "ef": 64,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            7309.2553854906155,
-            7269.003560448807,
-            7285.173883692241
-          ],
-          "qps_single_thread": 7285.173883692241,
-          "recall_at_10": 0.90022
-        },
-        {
-          "load_1m_before_runs": [
-            2.83,
-            2.83,
-            2.83
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 249.0717,
-          "params": {
-            "ef": 96,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            4862.744773856231,
-            4832.554114185884,
-            4801.740248237324
-          ],
-          "qps_single_thread": 4832.554114185884,
-          "recall_at_10": 0.9179
-        },
-        {
-          "load_1m_before_runs": [
-            2.83,
-            2.68,
-            2.68
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 301.0021,
-          "params": {
-            "ef": 128,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            3748.612193011092,
-            3758.396786004884,
-            3716.543615834694
-          ],
-          "qps_single_thread": 3748.612193011092,
-          "recall_at_10": 0.92454
-        },
-        {
-          "load_1m_before_runs": [
-            2.79,
-            2.79,
-            2.8
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 357.2755,
-          "params": {
-            "ef": 192,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            2892.059691977851,
-            2857.817573991248,
-            2876.766721332426
-          ],
-          "qps_single_thread": 2876.766721332426,
-          "recall_at_10": 0.92649
-        },
-        {
-          "load_1m_before_runs": [
-            2.74,
-            2.86,
-            2.86
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 379.4762,
-          "params": {
-            "ef": 256,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            2562.6404082211548,
-            2591.63069388669,
-            2594.8297280218553
-          ],
-          "qps_single_thread": 2591.63069388669,
-          "recall_at_10": 0.92699
-        },
-        {
-          "load_1m_before_runs": [
-            2.95,
-            2.95,
-            2.96
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 384.3662,
-          "params": {
-            "ef": 384,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            2303.5991663735335,
-            1894.6843942496234,
-            2284.758212320639
-          ],
-          "qps_single_thread": 2284.758212320639,
-          "recall_at_10": 0.92701
-        },
-        {
-          "load_1m_before_runs": [
-            2.98,
-            2.83,
-            2.76
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 384.3662,
-          "params": {
-            "ef": 512,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            2054.5174421340025,
-            2144.706051816259,
-            2145.469424285003
-          ],
-          "qps_single_thread": 2144.706051816259,
-          "recall_at_10": 0.92701
-        },
-        {
-          "load_1m_before_runs": [
-            2.78,
-            2.88,
-            2.99
-          ],
-          "load_gate_met": true,
-          "mean_exact_evals_per_query": 384.3662,
-          "params": {
-            "ef": 768,
-            "max_exact": 300
-          },
-          "qps_runs": [
-            1785.1013609614204,
-            1258.179167198313,
-            1516.2475496255029
-          ],
-          "qps_single_thread": 1516.2475496255029,
-          "recall_at_10": 0.92701
+          "qps_single_thread": 1205.4992585727498,
+          "recall_at_10": 0.94789
         }
       ],
-      "system": "hms qgraph"
+      "system": "hms qgraph-vertex"
+    },
+    {
+      "build": {
+        "build_secs": 3.9442892499999997,
+        "graph_hash": "c42fe74c0f19430c",
+        "load_1m_after_build": 8.65,
+        "load_1m_before_build": 9.23,
+        "load_gate_met": false,
+        "params": {
+          "align_rows": true,
+          "alpha": 1.0,
+          "build_ef": 200,
+          "code_bits": 0,
+          "degree": 64,
+          "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/nytimes-256-angular_full_d64_b200_v2.graph",
+          "id_bytes": 3,
+          "index": "vertex",
+          "reorder": true,
+          "residual": true,
+          "residual_bits": 8,
+          "seed": 24301,
+          "vertex_bits": 4
+        },
+        "threads": 10
+      },
+      "environment": {
+        "arch": "aarch64",
+        "cpu": "Apple M4",
+        "hms_version": "0.6.1",
+        "load_average": "{ 6.95 30.41 54.95 }",
+        "os": "macos",
+        "rayon_threads": 10
+      },
+      "holdout": null,
+      "index_bytes": 171790960,
+      "max_load": 3.0,
+      "n_queries": 10000,
+      "notes": [
+        "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+        "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+        "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+      ],
+      "paired_sync": false,
+      "repeats": 3,
+      "residual_bytes": 75400000,
+      "sweep": [
+        {
+          "load_1m_before_runs": [
+            8.65,
+            8.27,
+            7.75
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 3011.6513,
+          "params": {
+            "ef": 64,
+            "rerank": 32
+          },
+          "qps_runs": [
+            20673.077531342475,
+            21079.5153721607,
+            21897.136890010388
+          ],
+          "qps_single_thread": 21079.5153721607,
+          "recall_at_10": 0.87407
+        },
+        {
+          "load_1m_before_runs": [
+            8.65,
+            8.27,
+            7.75
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 3601.6989,
+          "params": {
+            "ef": 80,
+            "rerank": 32
+          },
+          "qps_runs": [
+            18123.668687403773,
+            16237.885015476733,
+            18320.238677095418
+          ],
+          "qps_single_thread": 18123.668687403773,
+          "recall_at_10": 0.8833
+        },
+        {
+          "load_1m_before_runs": [
+            8.65,
+            8.27,
+            7.75
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 4195.3183,
+          "params": {
+            "ef": 96,
+            "rerank": 32
+          },
+          "qps_runs": [
+            15759.125970381183,
+            15345.292082113021,
+            15991.496796632135
+          ],
+          "qps_single_thread": 15759.125970381183,
+          "recall_at_10": 0.89131
+        },
+        {
+          "load_1m_before_runs": [
+            8.65,
+            8.27,
+            7.75
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 5374.5857,
+          "params": {
+            "ef": 128,
+            "rerank": 32
+          },
+          "qps_runs": [
+            12632.2843500831,
+            12497.475775464716,
+            12512.076108456553
+          ],
+          "qps_single_thread": 12512.076108456553,
+          "recall_at_10": 0.90231
+        },
+        {
+          "load_1m_before_runs": [
+            8.65,
+            8.27,
+            7.75
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 7727.2784,
+          "params": {
+            "ef": 192,
+            "rerank": 32
+          },
+          "qps_runs": [
+            8732.237401155166,
+            8764.30142273096,
+            8929.874034080642
+          ],
+          "qps_single_thread": 8764.30142273096,
+          "recall_at_10": 0.91746
+        },
+        {
+          "load_1m_before_runs": [
+            8.12,
+            8.17,
+            7.29
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 10082.3393,
+          "params": {
+            "ef": 256,
+            "rerank": 32
+          },
+          "qps_runs": [
+            6685.9982991662755,
+            6800.949524361211,
+            6812.577697320902
+          ],
+          "qps_single_thread": 6800.949524361211,
+          "recall_at_10": 0.92679
+        },
+        {
+          "load_1m_before_runs": [
+            8.12,
+            8.17,
+            7.29
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 15342.0035,
+          "params": {
+            "ef": 400,
+            "rerank": 32
+          },
+          "qps_runs": [
+            4305.121544234217,
+            4409.052083920193,
+            4331.582261749261
+          ],
+          "qps_single_thread": 4331.582261749261,
+          "recall_at_10": 0.94013
+        },
+        {
+          "load_1m_before_runs": [
+            8.12,
+            8.17,
+            7.29
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 19383.5943,
+          "params": {
+            "ef": 512,
+            "rerank": 32
+          },
+          "qps_runs": [
+            3467.444051811538,
+            3468.237010766031,
+            3459.328366098031
+          ],
+          "qps_single_thread": 3467.444051811538,
+          "recall_at_10": 0.94693
+        }
+      ],
+      "system": "hms qgraph-vertex"
     }
   ],
   "notes": [
     "Queries run single-threaded one at a time for every system; builds use all cores.",
     "HMS takes dense input through its sparse encoder; its latency includes encoding (query_total).",
-    "hnswlib index_bytes is an estimate (vectors + level-0 links); FAISS sizes are serialized bytes."
+    "hnswlib index_bytes is an estimate (vectors + level-0 links); FAISS sizes are serialized bytes; rabitqlib sizes are saved-index bytes; NGT is the index directory; Lucene is the on-heap graph plus the float vectors.",
+    "Extra systems (--extra) are timed by the same loop; Lucene runs its loop in Java (lucene_hnsw/)."
+  ],
+  "merged_from": [
+    "nytimes-256-angular_part_builtin.json",
+    "nytimes-256-angular_part_symphonyqg.json",
+    "nytimes-256-angular_part_rabitq.json",
+    "nytimes-256-angular_part_ngt.json",
+    "nytimes-256-angular_part_lucene_hnsw.json",
+    "nytimes-256-angular_part_glass.json",
+    "nytimes-256-angular_part_diskann.json",
+    "nytimes-256-angular_part_scann.json"
   ]
 }

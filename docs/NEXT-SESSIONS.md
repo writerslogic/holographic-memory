@@ -91,16 +91,48 @@ with the M4 table second. The paper and the ann-benchmarks PR use these numbers.
 
 ## (A) ANN
 
-### Systems that beat HMS on the M4 (filled from `public_qgraph_<set>.json`)
+### Systems that beat HMS on the M4 (from `public_qgraph_nytimes-256-angular.json`, preliminary)
 
-[Filled by the Fable session after step 4: for each system that beat HMS on any metric, the
-responsible technique from its paper and the VGraph change that adopts or surpasses it.]
+Glove was not run and every nytimes row is above the load gate, so this list is provisional and
+is re-derived after the rerun (see `docs/CONTINUATION.md`).
+
+- SymphonyQG (rabitqlib `SymqgIndex`, raw refinement): 5,913 vs 4,409 QPS at recall 0.90 with the
+  8-bit VGraph (0.75x). Technique (Gou et al., SIGMOD 2025): 1-bit RaBitQ codes of every neighbour
+  stored with the vertex and estimated for all neighbours in one FastScan-style SIMD pass, with the
+  raw vector read only to refine the few candidates that pass; plus a graph refined for that
+  estimator. VGraph change: the 1-bit screen of (A0) is the adoption (skip the 8-bit estimate when
+  the 1-bit bound cannot enter the pool); to surpass it, batch the screen over all neighbours of a
+  vertex (one pass over the row) and keep the 8-bit code only for the survivors, which also cuts
+  bytes toward RaBitQ's. The paired `timed.sh` run decides.
+- RaBitQ IVF 1+4 / 1+8 and RaBitQ HNSW 1+4 (rabitqlib): 55-95 MB against 172-226 MB for VGraph
+  (0.25-0.42x of HMS bytes) at 0.2-0.5x of its QPS. Technique (Gao and Long, SIGMOD 2024; extended
+  RaBitQ 2025): a 1-bit code plus 4 or 8 extra bits per coordinate with a provable error bound.
+  VGraph change: an extended-RaBitQ vertex code (1+4 bits, a rotated 1-bit sign code and a 4-bit
+  residual) in place of the 8-bit LVQ code and 8-bit residual, behind `--vertex-code rabitq`;
+  acceptance: index bytes within 1.3x of RaBitQ HNSW 1+4 at no QPS loss against the 4-bit opt-in
+  encoding (paired, both sets). Spec it under (A3) if the screen lands first.
+- Build time: SymphonyQG 17 s, RaBitQ 12-29 s, FAISS 51-93 s against VGraph 111 s (nytimes, load
+  47): spec (E).
+
+### (A0) Already implemented, pending paired timing (ideas-tree session, 2026-10-07)
+
+Two search changes exist in the working tree (uncommitted at the time of writing; see
+`docs/research/IDEAS-2026-10.md` and `docs/CONTINUATION.md`): a patience stop rule
+(`VSearchParams::patience`, `--patience`; held-out: the same recall with 20-29% fewer code
+estimates on nytimes and 17-22% fewer on glove) and a 1-bit screen before the 8-bit estimate
+(`from_graph_with(.., screen)`, `--screen`, `--screen-sigmas`; held-out nytimes: 76% of the 8-bit
+estimates skipped at recall within 0.001, about 5% more index bytes). Before either becomes a
+default: the paired `timed.sh` protocol of `qgraph_merge_verification_heldout.json` (11 rounds,
+both sets, both targets, the sign-test rule), then the step-4 test-set protocol again for the
+public table. Fewer estimates is not yet a QPS claim.
 
 ### (A1) Learned traversal (research item)
 
 Prior art to cite and surpass: Baranchuk et al., ICML 2019 (learned routing in graph search);
 Li et al., SIGMOD 2020 (learned early termination). Ours replaces the fixed beam (ef) with a learned
-expand/stop policy over the quantized-graph search state.
+expand/stop policy over the quantized-graph search state. The baseline is the patience stop rule
+of (A0) once it lands, not fixed ef: a learned stop must cut code estimates at recall 0.95 by at
+least a further 10% against patience (and 15% against fixed ef) to pass.
 
 - Files: `public-bench ann-qgraph --oracle-trace <file>` (new flag) logs, per query and per
   expansion step, the state features and the oracle decision; `benchmarks/public/traversal_policy.py`

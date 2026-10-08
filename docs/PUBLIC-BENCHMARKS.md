@@ -64,41 +64,77 @@ Full sweeps are in the result files.
 - Encoding dominates build time (155 s for nytimes, 265 s for glove, all cores) and is about half
   of query time on nytimes.
 
-## Quantized graph index (`core::qgraph`) vs HNSW
+## Quantized graph index (`core::qgraph`) vs the field
 
-`core::qgraph` uses rotated 1-bit RaBitQ codes of each edge residual, stored contiguously per
-vertex (SymphonyQG layout), inside a Vamana-style graph built on exact distances (alpha 1.0,
-out-degree 64, build_ef 200), with small HNSW-like upper layers for the entry point. Every expanded
-vertex is scored exactly. Built from commit bb1277c, all cores; queries single-threaded, one at a
-time, over all 10,000 test queries. Each configuration ran 3 times (median QPS), and each run
-started only when the 1-minute load was below 3 (`load_gate_met` is true for every row reported
-here). QPS at a recall target is interpolated linearly in log(QPS) between the two Pareto-frontier
-points that bracket it.
+`VGraph` (`core::qgraph::vertex`) is a Vamana-style graph (out-degree 64 on nytimes, 32 on glove,
+build_ef 200, alpha 1.0, HNSW-like upper layers for the entry point) with one 8-bit LVQ code per
+vertex for the traversal and an 8-bit residual code for the re-rank of the best `rerank` pool
+candidates (`public-bench ann-qgraph --index vertex --residual`). An opt-in 4-bit traversal
+encoding (`--vertex-bits 4 --residual-bits 8 --align-rows --reorder --id-bytes 3`) costs no recall
+and saves 24% of the bytes on nytimes and 16.5% on glove. Parameters were chosen on held-out train
+vectors (`--holdout 2000`; the test queries are never read for a decision).
+`benchmarks/results/qgraph_merge_verification_heldout.json` (2026-10-07, one clean paired run per
+dataset, 11 rounds under one lock) keeps the current search path (x1.30 / x1.38 over the previous
+code at recall 0.90 / 0.95 on nytimes, x1.48 / x1.58 on glove, 11 of 11 rounds) and keeps the
+8-bit encoding as the default: the 4-bit encoding wins x1.20 / x1.18 on nytimes but only x1.01 /
+x0.97 on glove (6 and 3 of 11 rounds), so it is a memory-only gain.
 
-| Set | System | QPS @ recall 0.90 | QPS @ recall 0.95 | Index bytes | Build |
-|---|---|---|---|---|---|
-| nytimes | HMS qgraph (1,024-bit codes) | 7,297 | 1,427 | 2.97 GB | 391 s |
-| nytimes | FAISS HNSW M=32 | 3,010 | 765 | 0.38 GB | 61 s |
-| nytimes | FAISS HNSW M=16 | 2,050 | 481 | 0.34 GB | 34 s |
-| nytimes | hnswlib M=16 | 1,430 | 366 | 0.34 GB (est.) | 49 s |
-| glove | HMS qgraph (512-bit codes) | 10,080 | 3,899 | 6.54 GB | 467 s |
-| glove | FAISS HNSW / hnswlib | not run | not run | | |
+### nytimes-256-angular, test set, Apple M4 (NEON): preliminary, x86 numbers pending
 
-`benchmarks/results/public_qgraph_<set>.json` holds the full sweeps, with per-run QPS and load.
+`benchmarks/results/public_qgraph_nytimes-256-angular.json` (commit d985308, 2026-10-07):
+10,000 test queries, every system single-threaded one query at a time, 3 repeats (median QPS, the
+runs are in the file), QPS at a target interpolated in log(QPS) between the Pareto-frontier points
+that bracket it; builds use all cores; competitors at the parameters their authors recommend
+(`benchmarks/public/ann_extra.py`). Every row ran with the 1-minute load above the gate of 3
+(another session's builds and timings shared the machine; load 5 to 103, recorded per row), so the
+absolute QPS are indicative only, and the two HMS rows ran at different loads (9-28 against 7-9).
+Table: `uv run --script benchmarks/public/qgraph_table.py nytimes-256-angular`.
 
-Caveats:
+| System | QPS @ 0.90 | QPS @ 0.95 | HMS/sys @ 0.90 | Index bytes | sys/HMS bytes | Build s | Load 1m |
+|---|---|---|---|---|---|---|---|
+| HMS VGraph (8-bit codes, rerank) | 4,409 | not reached | 1.00 | 226,310,960 | 1.00 | 111 (graph from the checked cache: 1) | 9-28 |
+| HMS VGraph (4-bit codes, opt-in) | 13,133 | not reached | 0.34 | 171,790,960 | 0.76 | (cache: 4) | 7-9 |
+| SymphonyQG (rabitqlib, raw refinement) | 5,913 | not reached | 0.75 | 705,280,166 | 3.12 | 17 | 6-8 |
+| SymphonyQG (rabitqlib, 4-bit refinement) | not reached | not reached | | 447,761,210 | 1.98 | 18 | 9-13 |
+| FAISS HNSW M=16 | 2,038 | 379 | 2.16 | 338,802,554 | 1.50 | 51 | 11-75 |
+| FAISS HNSW M=32 | 2,011 | 509 | 2.19 | 375,882,658 | 1.66 | 93 | 5-64 |
+| hnswlib M=16 | 1,352 | 348 | 3.26 | 336,400,000 | 1.49 | 51 | 7-37 |
+| RaBitQ HNSW 1+4 | 2,066 | not reached | 2.13 | 95,277,781 | 0.42 | 29 | 11-28 |
+| RaBitQ IVF 1+8 | 969 | 803 | 4.55 | 92,637,282 | 0.41 | 15 | 15-29 |
+| RaBitQ IVF 1+4 | 940 | not reached | 4.69 | 55,517,282 | 0.25 | 12 | 33-63 |
+| Lucene HNSW M=16 | 1,108 | 278 | 3.98 | 406,592,056 | 1.80 | 243 | 6-46 |
+| Lucene HNSW M=32 | 358 | 129 | 12.32 | 466,298,840 | 2.06 | 851 | 42-103 |
 
-- The glove competitor re-run was stopped before it finished, so glove has no same-session
-  comparison. The earlier glove run in `public_glove-100-angular.json` was taken at load 21 to 38.
-  It gives FAISS HNSW M=32 2,440 QPS at 0.90 and 988 at 0.95, but those numbers are not comparable.
-- Memory is the price. The index takes 8 to 9 times the bytes of FAISS HNSW on nytimes, because
-  each vertex stores 64 edge codes of 1,024 bits plus three float factors per edge.
-- The parameters (degree 64, code length, alpha 1.0) were chosen on recall over the first 2,000
-  nytimes test queries, which are part of the evaluation set. The glove parameters were carried
-  over from nytimes without tuning. The competitors ran at harness defaults (efConstruction 200).
-- The competitors are timed through a Python per-query loop and HMS through a native loop. That
-  per-query overhead was not measured.
-- `mean_exact_evals_per_query` includes the upper-layer descent, about 95 evaluations on nytimes.
+Read as the file reads it:
+
+- At recall 0.90 the 8-bit VGraph is 2.2x FAISS HNSW (M 16 and 32), 3.3x hnswlib, 2.1x RaBitQ
+  HNSW, 4.6x RaBitQ IVF and 4.0x Lucene HNSW on QPS at 0.60-0.67x of their bytes. It LOSES to
+  SymphonyQG (the authors' library, raw-vector refinement) by 0.75x on QPS while using 0.32x of its
+  bytes. The 4-bit VGraph row is 2.2x SymphonyQG, but it ran at load 7-9 while the 8-bit row ran at
+  9-28; the paired held-out ratio of 4-bit over 8-bit is x1.20, not x3. Treat the 4-bit row as
+  unconfirmed until a rerun at equal load.
+- At recall 0.95 no HMS row is bracketed: both sweeps stopped at ef 512 with recall 0.948 (the test
+  set is harder than the held-out train vectors, where ef 384 gave 0.950). FAISS, hnswlib, Lucene
+  and RaBitQ IVF 1+8 reach it (379, 509, 348, 129-278 and 803 QPS). The rerun with ef up to 1,024
+  is scripted in `/Volumes/A/.hms-target/logs/merge_verify/test/run_step4b.sh`.
+- Memory: RaBitQ IVF (1+4: 55.5 MB, 1+8: 92.6 MB) and RaBitQ HNSW (95.3 MB) are 2.4-4.1x SMALLER
+  than the 8-bit VGraph (226 MB) and 1.8-3.1x smaller than the 4-bit one (172 MB). That is a loss
+  on index bytes at equal recall, one of the falsifiers listed in `docs/NEXT-SESSIONS.md`.
+- Build time: FAISS 51-93 s, SymphonyQG 17 s, RaBitQ 12-29 s, Lucene 243-851 s, VGraph 111 s for
+  the full nytimes graph (measured once at load 47 while building the checked cache; the paired
+  build numbers are in `qgraph_vertex_build_heldout.json`). Build time is the one metric where
+  losing is accepted; it is still a loss against SymphonyQG and RaBitQ here.
+- Not run on this machine: NGT (its quantized graph needs the `qbg` command, which the macOS
+  Homebrew build lacks; the ONNG stand-in did not build within its 30-minute cap), Glass, DiskANN
+  and ScaNN (x86-only builds). They run in the x86 session (`docs/NEXT-SESSIONS.md`, spec X).
+- glove-100-angular was not run in this pass (the run was stopped so that the search-path changes
+  of the parallel session can be timed and the whole comparison rerun once).
+
+The earlier edge-code index (1,024-bit RaBitQ codes per edge, 2.97 GB on nytimes, 7,297 / 1,427
+QPS at load below 3) is superseded by `VGraph`; its sweeps stay in
+`benchmarks/results/public_qgraph_edge_<set>.json`. The competitors are timed through a Python
+per-query loop (Lucene through a Java loop) and HMS through a native loop; that per-query
+overhead was not measured.
 
 ## Agent long-term memory (LongMemEval_S)
 
@@ -459,9 +495,11 @@ candidates, and anything on the held-out split or on M.
   model's quality, and hybrid search with the built-in BM25 improves on it.
 - Do not use the sparse vector path (`memorize_vector` / `query_vector`) where nearest-neighbour
   recall matters. Improving it needs a different encoder; making the current one faster does not.
-- HMS does not compete with HNSW libraries as a vector index. Its distinctive parts are the
-  compositional VSA algebra, structured memory and provenance features, which these benchmarks do
-  not measure.
+- As a vector index, `VGraph` is ahead of FAISS HNSW, hnswlib and Lucene HNSW on single-thread QPS
+  at recall 0.90 and below them on bytes on nytimes (Apple M4, load above the gate: indicative), and
+  behind SymphonyQG on QPS and behind RaBitQ on bytes. No x86 number exists yet, and the
+  distinctive parts of HMS (the compositional VSA algebra, structured memory and provenance) are
+  not what these benchmarks measure.
 
 ## Reproduce
 

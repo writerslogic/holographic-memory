@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["numpy>=1.26"]
+# ///
 """Prints the "Quantized graph index" tables of docs/PUBLIC-BENCHMARKS.md from the results files,
 so the prose is written from the files only.
 

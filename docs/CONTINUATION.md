@@ -78,12 +78,36 @@ Step 3 DONE: the full gate ran once after the step-1 Rust changes (log
 (both), 1.89 check, deny: all rc 0; `uvx ruff check benchmarks/public` clean (it also fixed four
 pre-existing lints in `batching_*.py`). The harness is Python only, so no Rust rerun was needed.
 
-Next: step 4 = `/Volumes/A/.hms-target/logs/merge_verify/test/run_step4.sh nytimes-256-angular`
-then the same for `glove-100-angular` (full-train graphs are cached at
-`/Volumes/A/.hms-target/logs/merge_verify/cache/*_full_*_v2.graph`; each HMS sweep and each
-competitor runs under its own `timed.sh` hold; `--max-load 3`, waits recorded). Then step 5 (doc
-rewrite from `qgraph_table.py` output), 6 (commit, changelog, push) and 7 (`docs/NEXT-SESSIONS.md`
-is drafted; fill its "Systems that beat HMS on the M4" section from the step-4 files).
+Step 4 PARTIAL, stopped on the maintainer's instruction so that the whole comparison is rerun
+once after the parallel session's search changes (patience stop, 1-bit screen) land: nytimes is
+done and merged into `benchmarks/results/public_qgraph_nytimes-256-angular.json` (binary of
+commit d985308; every row above the load gate, load 5-103; HMS at 0.95 not bracketed because the
+ef sweep stopped at 512 with recall 0.948; NGT, Glass, DiskANN, ScaNN recorded as not run on M4).
+glove-100-angular was NOT run. Parts and logs: `/Volumes/A/.hms-target/logs/merge_verify/test/`
+(`<set>_part_*.json`, `<set>_hms_{default,optin}.json`, `step4.log`). Full-train graphs are in the
+checked caches `/Volumes/A/.hms-target/logs/merge_verify/cache/*_full_*_v2.graph` (valid for
+degree 64 / 32, build_ef 200, alpha 1.0, seed 0x5EED; any other build parameters rebuild).
+The old edge-index results are `benchmarks/results/public_qgraph_edge_<set>.json`.
+
+Rerun recipe (both sets, after the search changes are committed): build the binary of the commit
+under test outside the shared target dir (`git worktree add /Volumes/A/.hms-wt-step4 <commit>`,
+`CARGO_TARGET_DIR=/Volumes/A/.hms-target-step4 cargo build --release --bin public-bench`; the
+shared `/Volumes/A/.hms-target/release/public-bench` is rebuilt by whichever session builds last),
+set `B=` in `/Volumes/A/.hms-target/logs/merge_verify/test/run_step4b.sh` to it, then
+`run_step4b.sh nytimes-256-angular all` and `run_step4b.sh glove-100-angular all` (ef up to 1,024
+/ 1,536, 60-s load wait, NGT capped at 30 min, HMS sweeps embedded at merge time via
+`--hms-files`), then `uv run --script benchmarks/public/qgraph_table.py <set>` and rewrite the
+tables in `docs/PUBLIC-BENCHMARKS.md` from the files. Run it when the machine is as quiet as it
+gets; every row's load is recorded and the doc must say when the gate was unmet.
+
+Step 5 PARTIAL: the "Quantized graph index" section of `docs/PUBLIC-BENCHMARKS.md` carries the
+step-1 verification and the preliminary nytimes table with its caveats; README unchanged (no
+gate-met number to cite). Step 6 DONE (pushed). Step 7 DONE: `docs/NEXT-SESSIONS.md` holds the
+specs; its (A) "systems that beat HMS" list is provisional (nytimes only) and is re-derived after
+the rerun.
+
+Next: (1) the parallel session commits and times its changes; (2) rerun step 4 as above; (3)
+rewrite both tables and the README vector-search row from the files; (4) then prompts 2 and 3.
 
 ## Acceptance criteria (binding)
 - Vector index: single-thread QPS at recall@10 = 0.90 and 0.95 on glove-100-angular and nytimes-256-angular versus

@@ -250,10 +250,11 @@ def finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries) -> d
     return report
 
 
-def merge_ann(parts: list[str]) -> dict:
+def merge_ann(parts: list[str], hms_files: list[str] | None = None) -> dict:
     """Merges `ann` reports of one dataset made in separate invocations (so that each system
     holds the timing lock briefly): competitors, extra systems and HMS sweeps are concatenated
-    and qps_at_recall is recomputed over all of them."""
+    and qps_at_recall is recomputed over all of them. `hms_files` replaces the HMS sweeps the
+    parts embed (for an HMS sweep rerun with a wider ef range)."""
     reports = [json.loads(Path(p).read_text()) for p in parts]
     names = {json.dumps(r["dataset"], sort_keys=True) for r in reports}
     if len(names) != 1:
@@ -262,11 +263,14 @@ def merge_ann(parts: list[str]) -> dict:
     for r in reports:
         rows.extend(r["competitors"])
         extra_runs.extend(r.get("extra_systems", []))
-        for h in r["hms"]:  # every part embeds the HMS sweeps it was given; keep each once
+        for h in [] if hms_files else r["hms"]:  # every part embeds the HMS sweeps; keep each once
             key = json.dumps(h, sort_keys=True)
             if key not in seen:
                 seen.add(key)
                 hms.append(h)
+    for f in hms_files or []:
+        h = json.loads(Path(f).read_text())
+        hms.append({k: v for k, v in h.items() if k != "dataset"})
     series: dict[str, list[tuple[float, float]]] = {}
     for r in rows:
         if r["index"] == "IndexHNSWFlat":
@@ -447,6 +451,7 @@ def main() -> None:
     ap.add_argument("--queries", type=int, help="ann: smoke test on the first N test queries only (not publishable)")
     ap.add_argument("--train-rows", type=int, help="ann --extra: smoke test on the first N train rows only (recall is meaningless)")
     ap.add_argument("--extra-timeout-secs", type=int, help=f"ann --extra: seconds per system before 'not run' (default {EXTRA_TIMEOUT_SECS})")
+    ap.add_argument("--hms-files", nargs="*", help="ann-merge: HMS sweep files that replace the ones embedded in the parts")
     ap.add_argument("--max-load", type=float, help=f"1-minute load the timing gate waits for (default {MAX_LOAD})")
     ap.add_argument("--max-wait-secs", type=int, help=f"total seconds the gate may wait (default {MAX_WAIT_SECS})")
     args = ap.parse_args()
@@ -468,7 +473,7 @@ def main() -> None:
     elif args.kind == "longmemeval":
         report, out_name = run_longmemeval(args.name, args.hms[0]), f"public_longmemeval_{args.name}.json"
     elif args.kind == "ann-merge":
-        report, out_name = merge_ann(args.hms), f"public_{args.name}.json"
+        report, out_name = merge_ann(args.hms, args.hms_files), f"public_{args.name}.json"
     else:
         report = (run_ann(args.name, args.hms, args.repeats, tuple(args.extra), not args.no_builtin, args.queries,
                           args.train_rows)
