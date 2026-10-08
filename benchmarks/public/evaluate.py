@@ -216,19 +216,36 @@ def run_ann(name: str, hms_files: list[str], repeats: int = 1, extra: tuple[str,
 
 
 def hms_label(h: dict) -> str:
-    """Series name of an ann-qgraph sweep file; the encoding tells the VGraph rows apart."""
+    """Series name of an ann-qgraph sweep file; the encoding, the 1-bit screen and the patience
+    stop rule tell the VGraph rows apart."""
     p = h.get("build", {}).get("params", {})
     if p.get("index") != "vertex":
         return h.get("system", "hms")
-    bits = f"{p.get('vertex_bits', 8)}-bit codes"
-    return f"HMS VGraph ({bits}, rerank)" if p.get("residual") else f"HMS VGraph ({bits})"
+    parts = [f"{p.get('vertex_bits', 8)}-bit codes"]
+    if p.get("residual"):
+        parts.append("rerank")
+    if p.get("screen"):
+        parts.append("1-bit screen")
+    patience = {r["params"].get("patience") for r in h.get("sweep", [])} - {None, 0}
+    if patience:
+        parts.append("patience " + "/".join(str(x) for x in sorted(patience)))
+    return f"HMS VGraph ({', '.join(parts)})"
+
+
+def hms_series(h: dict) -> dict[str, list[tuple[float, float]]]:
+    """(recall, qps) points of an ann-qgraph sweep file, one series per patience value, so that
+    `--patience 0,256` in one process yields a fixed-ef series and a patience series."""
+    out: dict[str, list[tuple[float, float]]] = {}
+    for r in h.get("sweep", []):
+        one = {**h, "sweep": [r]}
+        out.setdefault(hms_label(one), []).append((r["recall_at_10"], r["qps_single_thread"]))
+    return out
 
 
 def finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries) -> dict:
     hms = [json.loads(Path(f).read_text()) for f in hms_files]
     for h in hms:
-        if h.get("sweep"):
-            series[hms_label(h)] = [(r["recall_at_10"], r["qps_single_thread"]) for r in h["sweep"]]
+        series.update(hms_series(h))
     at_recall = {name: {f"{t:.2f}": qps_at_recall(pts, t) for t in TARGET_RECALLS} for name, pts in series.items()}
     env = environment()
     for p in ("rabitqlib", "ngt"):
@@ -283,8 +300,7 @@ def merge_ann(parts: list[str], hms_files: list[str] | None = None) -> dict:
             key = r.get("series") or f"{r['library']} {r['index']}"
         series.setdefault(key, []).append((r["recall_at_10"], r["qps_single_thread"]))
     for h in hms:
-        if h.get("sweep"):
-            series[hms_label(h)] = [(x["recall_at_10"], x["qps_single_thread"]) for x in h["sweep"]]
+        series.update(hms_series(h))
     first = reports[0]
     return {**first, "repeats": sorted({r["repeats"] for r in reports}), "merged_from": [Path(p).name for p in parts],
             "environment": [r["environment"] for r in reports],

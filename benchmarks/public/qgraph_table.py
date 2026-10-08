@@ -18,7 +18,7 @@ import json
 import sys
 from pathlib import Path
 
-from evaluate import hms_label
+from evaluate import hms_label, hms_series
 
 RESULTS = Path(__file__).resolve().parents[1] / "results"
 
@@ -38,9 +38,11 @@ def series_info(r: dict) -> dict:
         i["gate"] &= bool(row["load_gate_met"])
         i["loads"] += list(row["load_1m_before_runs"])
     for h in r["hms"]:
-        info[hms_label(h)] = {"bytes": h["index_bytes"], "build": h["build"]["build_secs"],
-                              "gate": all(x["load_gate_met"] for x in h["sweep"]),
-                              "loads": [x for s in h["sweep"] for x in s["load_1m_before_runs"]]}
+        for label in hms_series(h):
+            rows = [s for s in h["sweep"] if hms_label({**h, "sweep": [s]}) == label]
+            info[label] = {"bytes": h["index_bytes"], "build": h["build"]["build_secs"],
+                           "gate": all(x["load_gate_met"] for x in rows),
+                           "loads": [x for s in rows for x in s["load_1m_before_runs"]]}
     return info
 
 

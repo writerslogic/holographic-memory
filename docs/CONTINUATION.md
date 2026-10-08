@@ -89,7 +89,12 @@ checked caches `/Volumes/A/.hms-target/logs/merge_verify/cache/*_full_*_v2.graph
 degree 64 / 32, build_ef 200, alpha 1.0, seed 0x5EED; any other build parameters rebuild).
 The old edge-index results are `benchmarks/results/public_qgraph_edge_<set>.json`.
 
-Rerun recipe (both sets, after the search changes are committed): build the binary of the commit
+Rerun recipe (both sets; PREPARED 2026-10-07 22:00 and waiting for the maintainer's go: the
+search changes are committed at e517080, the pinned binary
+`/Volumes/A/.hms-target-step4/release/public-bench` is built from e517080, and `run_step4b.sh`
+sweeps `--patience 0,256` on nytimes and `0,384` on glove beside fixed ef, no `--screen`, which
+measured negative in `qgraph_stop_screen_heldout.json`; `evaluate.py` splits a sweep file into one
+series per patience value). For any later commit: build the binary of the commit
 under test outside the shared target dir (`git worktree add /Volumes/A/.hms-wt-step4 <commit>`,
 `CARGO_TARGET_DIR=/Volumes/A/.hms-target-step4 cargo build --release --bin public-bench`; the
 shared `/Volumes/A/.hms-target/release/public-bench` is rebuilt by whichever session builds last),
