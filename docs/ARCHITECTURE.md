@@ -49,7 +49,7 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   +-- decompose.rs              Decomposer: vector decomposition
   +-- sparse_autoencoder.rs     Sparse autoencoder for representation learning
   +-- graph.rs                  Graph engine: typed relations, multi-hop BFS, temporal
-  +-- documents.rs              Chunking, metadata filters, BM25/cosine rank fusion
+  +-- documents.rs              Chunking, stemmed BM25, metadata filters, BM25/cosine score blend
   +-- schema.rs                 Store and embedding-space compatibility
   +-- durable_file.rs           Flushed atomic file publication
   +-- storage.rs                PersistentArena: mmap segmented log and generations

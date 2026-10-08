@@ -5,6 +5,7 @@ use anyhow::{ensure, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::sync::OnceLock;
 
 use super::{encoding::encode_text_internal, entangled::EntangledHVec};
 
@@ -50,6 +51,10 @@ pub struct SearchOptions {
     pub lexical_weight: Option<f64>,
     pub semantic_weight: Option<f64>,
     pub min_semantic_score: Option<f64>,
+    /// How the lexical and semantic lists combine: `"blend"` (default) adds each list's
+    /// min-max normalized scores over its top `candidateLimit`, weighted by `lexicalWeight`
+    /// and `semanticWeight`; `"rrf"` is reciprocal rank fusion with k = 60.
+    pub fusion: Option<String>,
 }
 
 #[cfg_attr(feature = "node-api", napi_derive::napi(object))]
@@ -79,6 +84,10 @@ pub(crate) struct StoredChunk {
     pub embedding: Option<Vec<f64>>,
     pub terms: BTreeMap<String, u32>,
     pub word_count: usize,
+    /// Whether `terms` were stemmed at ingest; chunks stored before stemming existed match
+    /// the unstemmed query terms.
+    #[serde(default)]
+    pub stemmed: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -169,13 +178,26 @@ pub(crate) fn normalize_embedding(values: &[f64], dimensions: usize) -> Result<V
     Ok(values.iter().map(|x| (x / scale) / norm).collect())
 }
 
-pub(crate) fn terms(text: &str) -> BTreeMap<String, u32> {
+fn stemmer() -> &'static rust_stemmers::Stemmer {
+    static STEMMER: OnceLock<rust_stemmers::Stemmer> = OnceLock::new();
+    STEMMER.get_or_init(|| rust_stemmers::Stemmer::create(rust_stemmers::Algorithm::English))
+}
+
+/// Lowercased alphanumeric tokens and their counts; with `stem`, each token is reduced by
+/// the English Snowball (Porter 2) stemmer, which is what the published BM25 baselines do.
+pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
     let mut result = BTreeMap::new();
     for word in text
         .split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
     {
-        *result.entry(word.to_lowercase()).or_default() += 1;
+        let lower = word.to_lowercase();
+        let key = if stem {
+            stemmer().stem(&lower).into_owned()
+        } else {
+            lower
+        };
+        *result.entry(key).or_default() += 1;
     }
     result
 }
@@ -232,7 +254,7 @@ pub(crate) fn prepare_with_keys(
     }
     let mut stored = Vec::with_capacity(chunks.len());
     for (i, chunk) in chunks.into_iter().enumerate() {
-        let terms = terms(keys.map_or(chunk.text.as_str(), |k| k[i].as_str()));
+        let terms = terms(keys.map_or(chunk.text.as_str(), |k| k[i].as_str()), true);
         let word_count = terms.values().map(|&n| n as usize).sum();
         let embedding = input
             .embeddings
@@ -248,6 +270,7 @@ pub(crate) fn prepare_with_keys(
             embedding,
             terms,
             word_count,
+            stemmed: true,
         });
     }
     Ok(StoredDocument {
@@ -290,6 +313,11 @@ pub(crate) fn search(
         minimum.is_finite() && (-1.0..=1.0).contains(&minimum),
         "minSemanticScore must be in [-1,1]"
     );
+    let rrf = match options.fusion.as_deref() {
+        None | Some("blend") => false,
+        Some("rrf") => true,
+        Some(other) => anyhow::bail!("fusion must be \"blend\" or \"rrf\", not {other:?}"),
+    };
     let query_embedding = options
         .embedding
         .as_ref()
@@ -301,7 +329,8 @@ pub(crate) fn search(
             normalize_embedding(v, embedding_dimensions.unwrap_or(0))
         })
         .transpose()?;
-    let query_terms = terms(text);
+    // Unstemmed and stemmed query forms: a chunk is scored with the form it was stored in.
+    let query_terms = [terms(text, false), terms(text, true)];
     let eligible: Vec<_> = documents
         .values()
         .filter(|d| {
@@ -330,18 +359,23 @@ pub(crate) fn search(
     }
     let n = eligible.len() as f64;
     let average = eligible.iter().map(|(_, c)| c.word_count).sum::<usize>() as f64 / n;
-    let mut idf = BTreeMap::new();
-    for word in query_terms.keys() {
-        let df = eligible
-            .iter()
-            .filter(|(_, c)| c.terms.contains_key(word))
-            .count() as f64;
-        idf.insert(word, (1.0 + (n - df + 0.5) / (df + 0.5)).ln());
-    }
+    let idf: [BTreeMap<&String, f64>; 2] = std::array::from_fn(|form| {
+        let stemmed = form == 1;
+        query_terms[form]
+            .keys()
+            .map(|word| {
+                let df = eligible
+                    .iter()
+                    .filter(|(_, c)| c.stemmed == stemmed && c.terms.contains_key(word))
+                    .count() as f64;
+                (word, (1.0 + (n - df + 0.5) / (df + 0.5)).ln())
+            })
+            .collect()
+    });
     let scores: Vec<(f64, Option<f64>)> = eligible
         .iter()
         .map(|(_, c)| {
-            let lexical = idf
+            let lexical = idf[usize::from(c.stemmed)]
                 .iter()
                 .map(|(word, idf)| {
                     let tf = c.terms.get(*word).copied().unwrap_or(0) as f64;
@@ -377,9 +411,36 @@ pub(crate) fn search(
             .then(a.cmp(&b))
     });
     let mut fused = BTreeMap::<usize, f64>::new();
-    for (indices, weight) in [(&lexical, lexical_weight), (&semantic, semantic_weight)] {
-        for (rank, &i) in indices.iter().take(limit).enumerate() {
-            *fused.entry(i).or_default() += weight / (60.0 + rank as f64 + 1.0);
+    for (list, (indices, weight)) in [(&lexical, lexical_weight), (&semantic, semantic_weight)]
+        .into_iter()
+        .enumerate()
+    {
+        let top = &indices[..indices.len().min(limit)];
+        if rrf {
+            for (rank, &i) in top.iter().enumerate() {
+                *fused.entry(i).or_default() += weight / (60.0 + rank as f64 + 1.0);
+            }
+            continue;
+        }
+        // Min-max over the list's own top candidates; a flat list contributes its weight.
+        let value = |i: usize| {
+            if list == 0 {
+                scores[i].0
+            } else {
+                scores[i].1.unwrap_or(-1.0)
+            }
+        };
+        let (hi, lo) = match (top.first(), top.last()) {
+            (Some(&f), Some(&l)) => (value(f), value(l)),
+            _ => continue,
+        };
+        for &i in top {
+            let norm = if hi > lo {
+                (value(i) - lo) / (hi - lo)
+            } else {
+                1.0
+            };
+            *fused.entry(i).or_default() += weight * norm;
         }
     }
     let mut ranked: Vec<_> = fused.into_iter().collect();

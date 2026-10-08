@@ -109,7 +109,7 @@ requires stored passages. `memorizeFile` uses the default text-storage policy; u
 `DocumentInput` settings when a different policy is needed.
 
 Hybrid document retrieval currently scores eligible chunks with BM25 and exact dense cosine,
-combines ranked candidates with weighted reciprocal-rank fusion, then optionally reranks them.
+combines ranked candidates by a weighted blend of min-max normalized BM25 and cosine scores (reciprocal-rank fusion on request), then optionally reranks them.
 It scans eligible chunks and keeps dense embeddings in memory. NSG/IVF acceleration applies to
 the sparse vector API; it does not make document semantic retrieval sublinear. Measure corpus
 size, memory, and latency before selecting a deployment capacity.
