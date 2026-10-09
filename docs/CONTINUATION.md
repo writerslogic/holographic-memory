@@ -270,3 +270,15 @@ Accepted artifacts: `benchmarks/results/longmemeval_dev_answers_v1.json`, its `_
 Scoreboard diff: Zep and Mem0 now carry HMS dev87/100 and citation201/204; their matched vendor cells/margins remain empty. Vendor-native500-question values stay separate. D1 is established by the full checks and this acceptance commit; D2 and D3 remain open. Usage-supported cost $5.6556705, conservative reservations $22.0213475, exposure $27.677018. Checkpoint865f399 is pushed.
 
 The user approved parallel Item2 implementation at20:39 UTC. Draft producer/native bridge work is isolated in `/Volumes/A/hms-native-harness` at base865f399 with target `/Volumes/A/.hms-target-native-harness`; root owns the independent checker and scoreboard. Native performance timing waits for this Item1 commit and load below3; no ANN test inputs have been used for tuning.
+
+### Session 1 checkpoint 2026-10-09T21:13:55.826119+00:00
+
+1. Freeze the reviewed native protocol, complete train-only calibration and full native builds, then collect the 11 paired ANN rounds and commit checked scoreboard rows.
+2. Run learned early termination against the strongest documented patience control after Item2 acceptance.
+3. Start fetch pipelining next if learned termination fails; otherwise carry it to session2.
+
+D1 is committed and pushed in `bbc42d9`: matched dev83/82/87, local dev47/46/48, citation201/204 for matched operand, judge disagreements12/400. No memory requests remain running. Scoreboard diff since that acceptance: none; D2 and D3 remain open. Spend exposure remains $27.677018, comprising $5.6556705 usage-supported charges and $22.0213475 conservative reservations.
+
+Native producer/bridge drafts are isolated in `/Volumes/A/hms-native-harness` with target `/Volumes/A/.hms-target-native-harness`. A regression using16,384 real glove train vectors passed complete persistence/16-query output identity and rejects malformed headers/layers; Python adapter validation is pending a macOS27 link/import workaround. Documented controls are build_ef200, nytimes rerank16/64 and patience256, glove rerank16 and patience384. No ANN test vectors or performance timings have run. Root's independent `benchmarks/public/check_native_harness.py` is drafted and parses; full calibration/measurement checks and tamper tests await real producer artifacts.
+
+Local hardware pins and official distance-threshold recall references are in `docs/COMPETITORS.md`. Blocking resource for x86: dedicated bare-metal provider credentials; provisioning spend $0 and x86 cells remain no x86 run. All five root commit gates pass; default/all-feature suites pass337/521 tests, with numerical proof in `benchmarks/results/gates_checkpoint8_2026-10.json`. All operational elapsed values remain preliminary, with no ANN timing claim.

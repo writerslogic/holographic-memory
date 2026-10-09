@@ -36,3 +36,14 @@ model identifiers. Source hashes belong in the frozen reader protocol.
 
 x86: no x86 run. CPU, microcode, kernel, compiler and target flags remain empty.
 M4 measurements cannot populate the AVX-512 rows.
+Provisioning probe 2026-10-09 20:49 UTC: no AWS CLI, shared credentials, SSO
+cache, environment authentication or connected compute provider; no authenticated
+AWS, Equinix Metal, Vultr or Hetzner Robot configuration in the private environment.
+Blocking resource: dedicated bare-metal provider credentials. Provisioning spend $0.
+
+Local native measurements use Apple M4, 10 CPUs, 32 GiB RAM, Darwin 27.0.0,
+Rust 1.96.0 and `-C target-cpu=native`. The pinned
+[ann-benchmarks recall calculation](https://github.com/erikbern/ann-benchmarks/blob/2e081ad32c1eccab72dcb739ad886c310b90f715/ann_benchmarks/plotting/metrics.py)
+counts returned-vector distances within the tenth ground-truth distance plus 0.001;
+[angular distance](https://github.com/erikbern/ann-benchmarks/blob/2e081ad32c1eccab72dcb739ad886c310b90f715/ann_benchmarks/distance.py)
+is computed from the original vectors. ID overlap is reported separately.
