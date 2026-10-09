@@ -181,3 +181,22 @@ bench configuration is decided by the paired ratios and written in the doc.
 - No claim without a measurement in `benchmarks/results/`; label synthetic data; state load averages for timings.
 - No push, tag, publish, yank, or Modal spend beyond stated caps without the maintainer's explicit instruction. Check `modal billing report` after any run; the ledger is an estimate.
 - Credentials: the PyPI and Gemini credentials read by a prior agent still need rotation by the maintainer.
+
+## Superiority session 1 startup (2026-10-09)
+
+Next: finish Item 1's frozen 100-dev reader/judge report and independent checker.
+Then: commit Item 1 before starting Item 2's matched native harness.
+Then: Item 3 learned termination; Item 4 is next if Item 3's kill test fails.
+
+Branch `research/2026-10-superiority`, base `a46108c`; existing work preserved.
+Rust 1.96.0, uv 0.12.10, Python 3.13.9, NumPy 2.2.6; all requested inputs present.
+Startup load 2.74, timing lock free; `/Volumes/A` has 6.0 TiB free.
+Startup/preregistration/spend: `benchmarks/results/{startup,preregistration,spend}_2026-10.json`.
+Spend $0; scoreboard created with empty matched cells and separate vendor-native values.
+Reader producer, evidence preparation and independent checker are being built; no calls yet.
+
+Item 1 protocol frozen: `reader_protocol_v1.json`, SHA256 `66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d`. Complete-source reconstruction reproduces all 300 packet hashes; six actual-source tests pass. GPT snapshot available; weak Qwen3-4B weights/revision present. Preparation counts complete inputs for both tokenizers and checks API framing. Calls begin only after preparation. Logs: `target/superiority-validation/{prepare,gates}.log`; spend $0. Vendor conditions differ, so matched margins remain empty.
+
+Checkpoint (2026-10-09 17:13 UTC): all five Rust gates pass (`target/superiority-validation/gates.json`). Prepared all 100 dev questions and 600 reader-arm records; independent partial checker validates all source occurrences, full-input counts and shared cap. Local weak reader is running under the frozen batch-1 protocol (`weak-reader-run.log`, outputs `weak_reader_outputs.jsonl`). GPT generation rejected HTTP429; probe confirms `credit_balance_exhausted` / `insufficient_quota` (`benchmarks/results/reader_api_blocker_2026-10.json`). User received official API billing link. No GPT answers or accepted scoreboard rows; reserve $21.79889 for rejected calls is conservative accounting, not observed paid usage. D1 remains open; Item2 has not started.
+
+Checkpoint checker: `benchmarks/public/check_superiority_checkpoint.py`; verified artifact `benchmarks/results/checkpoint_2026-10_check.json`. Answer report is explicitly incomplete and unaccepted. Source-operand prerequisite independently rechecked: five gates pass, report hash `4e8f5346d10bb187ac11378bfe677e31cc9a96763079b80a9d4da3953ea8178e`. Startup record has its own later load snapshot; 2.74 above was the initial shell probe, not a timing gate. The weak manifest references the prepared-file hash before an artifact-only fingerprint refresh; all frozen reader strings and protocol hashes are unchanged.

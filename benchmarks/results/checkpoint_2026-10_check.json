@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "checkpoint_validated": true,
+  "answer_results_validated": false,
+  "D1_established": false,
+  "D2_established": false,
+  "D3_established": false,
+  "rust_gate_commands_verified": 5,
+  "mandatory_items_preregistered": 5,
+  "startup_inputs_verified": 10,
+  "missing_inputs": [],
+  "startup_load_gate_met": false,
+  "spend_calls_logged": 300,
+  "conservative_reservation_usd": 21.798890000000014,
+  "usage_supported_cost_usd": 0.0,
+  "observed_billing_established": false,
+  "spend_accounting_total_usd": 21.798890000000014,
+  "artifacts": [
+    {
+      "path": "benchmarks/results/startup_2026-10.json",
+      "sha256": "25ccb4546b08b9d3c645030521be20295b81baae4b5534287141b040825db081"
+    },
+    {
+      "path": "benchmarks/results/preregistration_2026-10.json",
+      "sha256": "763ad08d4c59bca813a1c2893d78530285368658b860595f040d21f2c298db78"
+    },
+    {
+      "path": "benchmarks/results/spend_2026-10.json",
+      "sha256": "d449959d313d0d38bbb3fc177675eb2081a246fda43e23ecd57e8fa34f678144"
+    },
+    {
+      "path": "benchmarks/results/gates_2026-10.json",
+      "sha256": "959d68a14406107ebd9176831314de56adfca4f2cc1feed7fe69b0f6ea82baaa"
+    },
+    {
+      "path": "benchmarks/public/reader_protocol_v1.json",
+      "sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d"
+    }
+  ],
+  "cached_input_fingerprints": [
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/downloads/nytimes-256-angular.hdf5",
+      "bytes": 315208288,
+      "sha256": "6ad5d2cde6d6a6f21528d541901304ebfd40885d6ce6afae37bccbe278254a93"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/downloads/glove-100-angular.hdf5",
+      "bytes": 485413888,
+      "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/scifact/meta.json",
+      "bytes": 411,
+      "sha256": "509de5f26b9770d951e7a00fc4c957a99559198bc46fd7004d5edcec32927e10"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/scifact/corpus.f32",
+      "bytes": 7961088,
+      "sha256": "e783d70ac62d3b73a6a8782e79d0b969903fbf337185bd49a6c81e2d39ba78b2"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/nfcorpus/meta.json",
+      "bytes": 413,
+      "sha256": "0737a428a4f9334c7daa67d75b7a12182186b64a7511aeb6283fcec486c3b496"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/nfcorpus/corpus.f32",
+      "bytes": 5580288,
+      "sha256": "7feee41cc0096b06ff0191bdf045ddc3365d9b60afe55a210b86c1f25397cfc7"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/downloads/longmemeval_s_cleaned.json",
+      "bytes": 277383467,
+      "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/holo_dev/export_dev.json",
+      "bytes": 7557460,
+      "sha256": "6073514f3b9e52c6fbc2ccacc56b810d40711ffceacbe296070b2ffb73c4e4da"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/holo_dev/turn_emb.f16",
+      "bytes": 49952768,
+      "sha256": "15d996d5bc5aa2331b5be730e8e0aae0b8ed6949ce6bf398d8e07863ffa7b28c"
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2/scores.json",
+      "bytes": 25028779,
+      "sha256": "ea573f1a245c4107ef0d494966e6114422b85c58dd27540390d5d12f712ad64d"
+    }
+  ],
+  "checker_sha256": "55e8c06b31bbd8c0c0ffc31b2fff33c2bb7c857170ee5c49a094c3ac10d25073"
+}

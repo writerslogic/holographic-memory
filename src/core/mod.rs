@@ -56,6 +56,8 @@ pub mod mask;
 pub mod models;
 pub(crate) mod nsg;
 #[cfg(feature = "experimental")]
+pub mod operand_retriever;
+#[cfg(feature = "experimental")]
 pub mod phase_graph;
 pub mod phase_hvec;
 pub mod phase_resonator;

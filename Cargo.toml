@@ -198,3 +198,7 @@ harness = false
 [[bin]]
 name = "encoder-eval"
 path = "src/bin/encoder-eval.rs"
+
+[[bin]]
+name = "operand-retriever"
+required-features = ["experimental"]

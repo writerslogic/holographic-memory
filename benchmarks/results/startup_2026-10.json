@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "session": 1,
+  "unix_time": 1791564830.661948,
+  "base_commit": "a46108c5bdc7af3f99097d0cf2eb423a5793fd93",
+  "branch": "research/2026-10-superiority",
+  "rust": "1.96.0",
+  "uv": "0.12.10",
+  "python": "3.13.9",
+  "numpy": "2.2.6",
+  "machine": "macOS-27.0-arm64-arm-64bit",
+  "load_average": [
+    3.42578125,
+    3.36279296875,
+    3.4541015625
+  ],
+  "free_disk_bytes": 6573988970496,
+  "timing_lock_held_at_probe": false,
+  "timing_lock_owner": null,
+  "inputs": [
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/downloads/nytimes-256-angular.hdf5",
+      "present": true,
+      "bytes": 315208288
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/downloads/glove-100-angular.hdf5",
+      "present": true,
+      "bytes": 485413888
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/scifact/meta.json",
+      "present": true,
+      "bytes": 411
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/scifact/corpus.f32",
+      "present": true,
+      "bytes": 7961088
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/nfcorpus/meta.json",
+      "present": true,
+      "bytes": 413
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/nfcorpus/corpus.f32",
+      "present": true,
+      "bytes": 5580288
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/downloads/longmemeval_s_cleaned.json",
+      "present": true,
+      "bytes": 277383467
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/holo_dev/export_dev.json",
+      "present": true,
+      "bytes": 7557460
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/holo_dev/turn_emb.f16",
+      "present": true,
+      "bytes": 49952768
+    },
+    {
+      "path": "/Users/davidcondrey/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2/scores.json",
+      "present": true,
+      "bytes": 25028779
+    }
+  ],
+  "paid_spend_usd": 0,
+  "existing_uncommitted_work_preserved": true
+}
