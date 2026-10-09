@@ -7,7 +7,7 @@
       "--check"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 1.9895950829377398
+    "elapsed_seconds": 1.0476574579952285
   },
   {
     "command": [
@@ -19,7 +19,7 @@
       "warnings"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 27.587133958935738
+    "elapsed_seconds": 19.67890483397059
   },
   {
     "command": [
@@ -32,7 +32,7 @@
       "warnings"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 8.559044667053968
+    "elapsed_seconds": 6.707941750064492
   },
   {
     "command": [
@@ -41,7 +41,7 @@
       "--locked"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 269.54978591704275
+    "elapsed_seconds": 246.0968470419757
   },
   {
     "command": [
@@ -51,6 +51,6 @@
       "--all-features"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 456.90924508299213
+    "elapsed_seconds": 447.8468276250642
   }
 ]

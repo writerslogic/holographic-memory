@@ -212,3 +212,13 @@ Checkpoint checker: `benchmarks/public/check_superiority_checkpoint.py`; verifie
 Matched primary answers are complete: first-five 83/100, anchored knapsack 82/100, operand 87/100; mechanical supported claims are 187/192, 180/186, 201/204. These are raw dev results pending the final checker. 197/400 repeats and 72/300 local arm records are recorded. Frozen prompts and the base producer are unchanged. Incremental weak judging will consume completed local chunks after the repeat writer exits.
 
 Results: `benchmarks/results/longmemeval_dev_answers_v1.json`, `benchmarks/results/reader_checkpoint_2026-10-09T1754.json`, `benchmarks/results/spend_checkpoint_2026-10-09T1754.json`. Usage-supported cost $5.415003; conservative unverified reservations $22.021348; ledger exposure $27.436351 under the $120 item cap. Five Rust commit gates and seven checker tests pass; three incremental stream-boundary tests pass. Running root writer session 21658; local runner session 61378 and telemetry-label watcher 7920. Scoreboard diff: no accepted rows yet. D1, D2 and D3 remain open.
+
+### Session 1 checkpoint 2026-10-09T18:24:42.365948+00:00
+
+1. Finish the local dev reader and incremental judges, pass both independent checkers with tamper tests, and commit the dev memory rows.
+2. Run and commit the native FAISS/hnswlib harness on both datasets and recall targets.
+3. Run learned early termination's preregistered kill test.
+
+Matched dev correctness is 83/100 first-five, 82/100 knapsack and 87/100 operand; the final answer checker remains pending. The fixed study completed 400 repeat judge calls: 12 disagreements (3%), two unstable questions (10%), zero failures. The local reader has 100 arm records; two fail the frozen JSON contract and count as incorrect. All 98 valid local records have judge outcomes. Its durable model/weight/chunk/token-count bundle passes the separate independent partial checker and eight tamper cases; this establishes neither D1 nor an accepted scoreboard row.
+
+Results: `benchmarks/results/longmemeval_dev_answers_v1.json`, `benchmarks/results/reader_checkpoint_2026-10-09T1824.json`, `benchmarks/results/spend_checkpoint_2026-10-09T1824.json`, `benchmarks/results/weak_reader_evidence_v1.json` and its `weak_reader_evidence_v1/` sidecars. Usage-supported cost $5.492053; conservative reservations $22.021348; ledger exposure $27.513401. Five Rust commit gates pass. Previous checkpoint e785732 is pushed. Running: incremental judge writer 31363, local runner 61378, telemetry watcher 7920, bundle updater 3004. Frozen prompts and generation sources are unchanged. Scoreboard diff: none; D1, D2 and D3 remain open.

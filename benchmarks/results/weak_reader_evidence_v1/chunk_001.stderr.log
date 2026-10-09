@@ -1,0 +1,1 @@
+{"batch":1,"device":"Metal(MetalDevice(DeviceId(1)))","generated_tokens":1572,"items":10,"load_at_gate":null,"load_avg_after":[6.72,7.86,6.47],"load_avg_before":[4.04,3.79,3.55],"load_gate_met":null,"load_secs":128.578299667,"max_load":null,"preliminary":true,"run_secs":970.958116041,"secs":1099.536415708,"stage":"chat","timing_claim":false}
