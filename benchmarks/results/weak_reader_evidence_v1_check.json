@@ -1,0 +1,22 @@
+{
+  "answer_report_sha256": "79aef5ef72dd8d1677783a9411e9e8feb78c15c1fe699f36a59efc7c74433887",
+  "bundle_sha256": "c28ea8ef7a9838af18b6af3ecc08912ef4dae876c3e61496fe696c3d2c805ba6",
+  "checker": "passed",
+  "checker_sha256": "75a9394b8098e3e70dc2e86c30bdc485c88a14aee1e895e22edaa264367a0533",
+  "complete": true,
+  "completed_chunks": 15,
+  "distinct_requests": 146,
+  "final_answer_report_checked": true,
+  "recorded_arms": 300,
+  "tamper_tests": [
+    "corrupted_bundle_bytes",
+    "model_revision",
+    "model_filename_escape",
+    "frozen_fingerprint",
+    "visible_output_count",
+    "corrupted_output_bytes",
+    "prediction_with_updated_hashes",
+    "cache_prediction_with_updated_hash",
+    "answer_report_prediction"
+  ]
+}
