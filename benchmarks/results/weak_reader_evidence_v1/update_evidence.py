@@ -155,8 +155,8 @@ def update():
         if output_path.exists():
             require(file_hash(output_path) == completion['native_output_sha256'],
                     f'native output fingerprint differs: {prefix}')
-            output = json.loads(output_path.read_text())
         if completion['status'] == 'completed':
+            output = json.loads(output_path.read_text())
             require(completion['returncode'] == 0 and isinstance(output, list)
                     and len(output) == len(jobs)
                     and all(isinstance(text, str) for text in output),
