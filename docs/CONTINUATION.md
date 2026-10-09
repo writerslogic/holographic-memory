@@ -232,3 +232,15 @@ Results: `benchmarks/results/longmemeval_dev_answers_v1.json`, `benchmarks/resul
 Matched dev accuracy remains 83/100 first-five, 82/100 knapsack and 87/100 operand; 400 judge repeats give 3% disagreement. The staged snapshot contains 167/300 local records, including two JSON-contract failures counted incorrect; 147 valid local records have judge outcomes. The GPU profile is preliminary: it is saturated, KV caching works, and an isolated Metal SDPA candidate is being prepared without changing the frozen run. ANN work has not started; relaxing the item order is awaiting the user's answer.
 
 Results: `benchmarks/results/reader_checkpoint_2026-10-09T1900.json`, `spend_checkpoint_2026-10-09T1900.json`, the staged answer report and weak evidence bundle. Usage-supported cost $5.543031; conservative reservations $22.021348; exposure $27.564378. Five Rust commit gates pass. Previous checkpoint 573ee71 is pushed. Running: weak reader 61378, incremental judges 31363, evidence updater 3004. Scoreboard diff: none; D1, D2 and D3 remain open.
+
+### Session 1 checkpoint 2026-10-09T20:04:41.238076+00:00
+
+1. Finish the frozen local reader and incremental judges; pass both independent checkers with tamper tests and commit the dev memory rows.
+2. Run and commit the native FAISS/hnswlib harness on both datasets and recall targets.
+3. Run learned early termination's preregistered kill test.
+
+The staged 19:56 UTC snapshot has 252/300 local records: 250 valid, two JSON failures counted incorrect, and 250 valid judge outcomes. Matched dev accuracy remains 83/100, 82/100 and 87/100; 400 repeat judges give 3% disagreement. The independent partial answer checker validates 552 completed reader/judge records; the 11-chunk local bundle passes eight tamper cases. Final acceptance remains pending. Results: `benchmarks/results/reader_checkpoint_2026-10-09T1956.json`, `answer_partial_check_checkpoint5_2026-10-09.json`, `weak_reader_evidence_v1_partial_check_checkpoint5_2026-10-09.json`.
+
+Two operational speed pilots produced no completed native predictions: the load gate blocked one, and the unchanged control exceeded the other's 120-second cap. No SDPA quality or speed result exists. Exact draft sources and attempts are archived in `benchmarks/results/metal_sdpa_draft_2026-10-09/`; the independent suspension/archive checker rejects seven corruptions. All elapsed values are preliminary. The frozen reader continues unchanged; ANN work has not started.
+
+Usage-supported cost $5.616808; conservative reservations $22.021348; exposure $27.638156 (`benchmarks/results/spend_checkpoint_2026-10-09T1956.json`). All five Rust commit gates pass (checkpoint5); source fingerprints remain unchanged. Previous checkpoint 72b3ea2 is pushed. Running: local reader61378, incremental judges31363, evidence updater3004. Scoreboard diff: none; D1, D2 and D3 remain open.

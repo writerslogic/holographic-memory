@@ -1,0 +1,26 @@
+{"waiting_for_load_gate": 3.20556640625}
+{"waiting_for_load_gate": 3.48095703125}
+{"waiting_for_load_gate": 3.7080078125}
+{"waiting_for_load_gate": 3.6787109375}
+{"waiting_for_load_gate": 3.5673828125}
+{"waiting_for_load_gate": 3.47314453125}
+{"waiting_for_load_gate": 3.64013671875}
+{"waiting_for_load_gate": 4.24951171875}
+{"waiting_for_load_gate": 3.970703125}
+{"waiting_for_load_gate": 3.66064453125}
+{"waiting_for_load_gate": 3.40478515625}
+{"waiting_for_load_gate": 3.49560546875}
+{"waiting_for_load_gate": 3.57275390625}
+{"waiting_for_load_gate": 4.66943359375}
+{"waiting_for_load_gate": 4.71337890625}
+{"waiting_for_load_gate": 4.99755859375}
+{"waiting_for_load_gate": 4.68994140625}
+{"waiting_for_load_gate": 4.4228515625}
+{"resumed_pids": [29858, 62480], "status": "pilot_stopped"}
+Traceback (most recent call last):
+  File "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pilot_control.py", line 126, in <module>
+    main()
+    ~~~~^^
+  File "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pilot_control.py", line 72, in main
+    raise RuntimeError("load gate remained unmet; no GPU check started")
+RuntimeError: load gate remained unmet; no GPU check started
