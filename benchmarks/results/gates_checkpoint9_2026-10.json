@@ -1,0 +1,167 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--",
+      "--check"
+    ],
+    "cwd": "/Volumes/A/holographic-memory",
+    "duration_scope": "operational validation runtime; no ANN query claim",
+    "elapsed_seconds": 0.5573989580152556,
+    "environment": {
+      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+    },
+    "exit_code": 0,
+    "log": {
+      "bytes": 0,
+      "path": "target/superiority-validation/gates-checkpoint9/1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "preliminary": true,
+    "source_files": 200,
+    "source_identity_verified": true,
+    "source_sha256_after": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "source_sha256_before": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "test_totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "timing_claim": false
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Volumes/A/holographic-memory",
+    "duration_scope": "operational validation runtime; no ANN query claim",
+    "elapsed_seconds": 173.9446909580147,
+    "environment": {
+      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+    },
+    "exit_code": 0,
+    "log": {
+      "bytes": 144,
+      "path": "target/superiority-validation/gates-checkpoint9/2.log",
+      "sha256": "7dae856bbed417aadbfad664b92668caa9729acb12a34ad407d73d162f195159"
+    },
+    "preliminary": true,
+    "source_files": 200,
+    "source_identity_verified": true,
+    "source_sha256_after": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "source_sha256_before": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "test_totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "timing_claim": false
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Volumes/A/holographic-memory",
+    "duration_scope": "operational validation runtime; no ANN query claim",
+    "elapsed_seconds": 35.94761654105969,
+    "environment": {
+      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+    },
+    "exit_code": 0,
+    "log": {
+      "bytes": 73,
+      "path": "target/superiority-validation/gates-checkpoint9/3.log",
+      "sha256": "5977c008a8fe46eafb060042b288b04a4d885f93b89e2a53b1fc9ed5bdb335de"
+    },
+    "preliminary": true,
+    "source_files": 200,
+    "source_identity_verified": true,
+    "source_sha256_after": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "source_sha256_before": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "test_totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "timing_claim": false
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked"
+    ],
+    "cwd": "/Volumes/A/holographic-memory",
+    "duration_scope": "operational validation runtime; no ANN query claim",
+    "elapsed_seconds": 226.7687044169288,
+    "environment": {
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+    },
+    "exit_code": 0,
+    "log": {
+      "bytes": 30823,
+      "path": "target/superiority-validation/gates-checkpoint9/4.log",
+      "sha256": "cac57813b4050f4b2a72ec1b91800f1ac0e226968c481aa01a9571a41fe0ed98"
+    },
+    "preliminary": true,
+    "source_files": 200,
+    "source_identity_verified": true,
+    "source_sha256_after": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "source_sha256_before": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "test_totals": {
+      "failed": 0,
+      "ignored": 1,
+      "passed": 337
+    },
+    "timing_claim": false
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--all-features"
+    ],
+    "cwd": "/Volumes/A/holographic-memory",
+    "duration_scope": "operational validation runtime; no ANN query claim",
+    "elapsed_seconds": 292.6134352500085,
+    "environment": {
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+    },
+    "exit_code": 0,
+    "log": {
+      "bytes": 47167,
+      "path": "target/superiority-validation/gates-checkpoint9/5.log",
+      "sha256": "f957f4a7de1f36fb89fb5920cd9150cc55aed6ba9baa3116f99e1767c812b50f"
+    },
+    "preliminary": true,
+    "source_files": 200,
+    "source_identity_verified": true,
+    "source_sha256_after": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "source_sha256_before": "494f8b407e69af134e91d84b08659da17fff655da735cf62a9eaf495d964211e",
+    "test_totals": {
+      "failed": 0,
+      "ignored": 1,
+      "passed": 521
+    },
+    "timing_claim": false
+  }
+]
