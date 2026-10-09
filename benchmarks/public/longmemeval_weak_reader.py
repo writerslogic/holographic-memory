@@ -45,6 +45,26 @@ def atomic_json(path, value):
     temporary.replace(path)
 
 
+def label_preliminary(path):
+    lines = []
+    for line in path.read_text().splitlines():
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            lines.append(line)
+            continue
+        if isinstance(value, dict):
+            value = {**value, "preliminary": True, "timing_claim": False}
+            line = canonical(value)
+        lines.append(line)
+    temporary = path.with_suffix(path.suffix + ".pending")
+    with temporary.open("w") as output:
+        output.write("\n".join(lines) + ("\n" if lines else ""))
+        output.flush()
+        os.fsync(output.fileno())
+    temporary.replace(path)
+
+
 def make_request(reader_input, system):
     require(isinstance(reader_input, str) and reader_input, "missing frozen reader input")
     return {
@@ -180,6 +200,7 @@ def run(args):
             with prefix.with_suffix(".stdout.log").open("wb") as stdout, \
                     prefix.with_suffix(".stderr.log").open("wb") as stderr:
                 completed = subprocess.run(command, stdout=stdout, stderr=stderr, check=False)
+            label_preliminary(prefix.with_suffix(".stderr.log"))
             status, reason, texts = "completed", None, None
             if completed.returncode != 0:
                 status, reason = "reader_failure", f"native_process_exit_{completed.returncode}"

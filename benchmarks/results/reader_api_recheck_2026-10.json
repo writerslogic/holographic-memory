@@ -1,0 +1,7 @@
+{
+  "http_status": 429,
+  "error_code": "credit_balance_exhausted",
+  "error_type": "insufficient_quota",
+  "exception_type": "RateLimitError",
+  "rate_limit_headers": {}
+}
