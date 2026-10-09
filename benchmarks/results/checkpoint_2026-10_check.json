@@ -10,11 +10,11 @@
   "startup_inputs_verified": 10,
   "missing_inputs": [],
   "startup_load_gate_met": false,
-  "spend_calls_logged": 1553,
+  "spend_calls_logged": 1593,
   "conservative_reservation_usd": 22.021347500000015,
-  "usage_supported_cost_usd": 5.616807999999998,
+  "usage_supported_cost_usd": 5.651205500000001,
   "observed_billing_established": false,
-  "spend_accounting_total_usd": 27.63815550000005,
+  "spend_accounting_total_usd": 27.672553000000043,
   "artifacts": [
     {
       "path": "benchmarks/results/startup_2026-10.json",
@@ -25,12 +25,12 @@
       "sha256": "763ad08d4c59bca813a1c2893d78530285368658b860595f040d21f2c298db78"
     },
     {
-      "path": "benchmarks/results/spend_checkpoint_2026-10-09T1956.json",
-      "sha256": "38f5c824ba103e1e3b1c69f2996b0747bb0f3be70644ad9de414727b49f3e634"
+      "path": "benchmarks/results/spend_checkpoint_2026-10-09T2034.json",
+      "sha256": "580af2f5263c576fce29badfc62b6cc8b14736d1b7141f242fe7702fd9c06a45"
     },
     {
       "path": "benchmarks/results/gates_2026-10.json",
-      "sha256": "cb6d5b295a2aa88e702a0fffe78cf158d091abc68050399c1ac938f20c061c3e"
+      "sha256": "f8033f375d3c5e208c52dc7724ffb3a926e36a56f3ddc822fb157efc905db156"
     },
     {
       "path": "benchmarks/public/reader_protocol_v1.json",
