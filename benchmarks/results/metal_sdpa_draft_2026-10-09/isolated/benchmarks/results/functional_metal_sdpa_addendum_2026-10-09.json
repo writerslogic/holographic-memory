@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "registered_at_utc": "2026-10-09T19:33:37.674461+00:00",
+  "parent_preregistration_sha256": "4907d1ff9fa565324ced692ff97535009106766a1194ed8a80537dcd8f84a066",
+  "build_manifest_sha256": "1e6a0def8233d9a624f1443a11f7f94354bf6ba64bd5cc5d802c33cbdb7d3113",
+  "condition": "Same registered real completed dev input, batch1, full original cap, model revision and prompts; existing frozen worker suspended only during each functional check. No concurrent builds or GPU workload.",
+  "metric": "Exact raw text equality; all native elapsed telemetry labeled preliminary and timing_claim=false.",
+  "expected_failure_mode": "Changed accumulation/rounding changes greedy text; baseline compiler rebuild may also drift.",
+  "acceptance": "Independent byte/prediction checker accepts diagnostic evidence only; no timing admission or mixed weak outputs.",
+  "reason_for_functional_first": "Unrelated rule30 cascade_pairs.py PID28853 keeps load above3; no timing call started in initial gated attempt."
+}

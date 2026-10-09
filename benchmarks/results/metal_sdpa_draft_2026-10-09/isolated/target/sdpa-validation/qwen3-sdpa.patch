@@ -1,0 +1,36 @@
+diff --git a/src/core/models/qwen3.rs b/src/core/models/qwen3.rs
+index 144dcc3..1ca4a6d 100644
+--- a/src/core/models/qwen3.rs
++++ b/src/core/models/qwen3.rs
+@@ -9,7 +9,7 @@
+ 
+ //! Qwen3 decoder with batch-correct masking. candle's version builds its causal mask for a
+ //! batch of one and has no padding mask; with [`Positions::Uniform`] this module computes
+-//! exactly what candle does for one sequence (same kernels in the same order), and
++//! the CPU computes what candle does for one sequence (same kernels in the same order), and
+ //! [`Positions::PerRow`] adds left-padded rows at their own RoPE positions.
+ 
+ use candle_core::{DType, Device, Module, Result, Tensor, D};
+@@ -266,6 +266,22 @@ impl Attention {
+         if flash {
+             return self.cpu_flash(&q, &k, &v, offset, b, l);
+         }
++        let metal_sdpa = x.device().is_metal()
++            && matches!(q.dtype(), DType::BF16 | DType::F16 | DType::F32)
++            && matches!(self.head_dim, 32 | 64 | 72 | 80 | 96 | 128 | 256 | 512)
++            && !(l > 1 && self.head_dim == 512 && q.dtype() == DType::F32)
++            && (l > 1 || mask.is_none());
++        if metal_sdpa {
++            // Candle's vector SDPA ignores masks; masked single-token rows use the path below.
++            let mask = mask
++                .map(|m| m.broadcast_as((b, self.num_heads, l, k.dim(2)?)))
++                .transpose()?;
++            let scale = 1.0 / (self.head_dim as f32).sqrt();
++            return candle_nn::ops::sdpa(&q, &k, &v, mask.as_ref(), false, scale, 1.0)?
++                .transpose(1, 2)?
++                .reshape((b, l, self.hidden_size))?
++                .apply(&self.o_proj);
++        }
+         let k = repeat_kv(k, self.num_kv_groups)?.contiguous()?;
+         let v = repeat_kv(v, self.num_kv_groups)?.contiguous()?;
+         let scale = 1.0 / (self.head_dim as f64).sqrt();

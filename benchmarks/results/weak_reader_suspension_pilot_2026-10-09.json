@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "status": "pilot_stopped",
+  "parent_pid": 62480,
+  "native_pid": 29858,
+  "started_at_utc": "2026-10-09T19:24:01.841399+00:00",
+  "resumed_at_utc": "2026-10-09T19:27:01.958841+00:00",
+  "frozen_binary_sha256": "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec",
+  "reason": "real-dev output and runtime pilots of isolated Metal attention candidate",
+  "timing_claim": false,
+  "frozen_prompt_or_generation_parameters_changed": false,
+  "checks": [],
+  "error": "load gate remained unmet; no GPU check started",
+  "resumed_pids": [
+    29858,
+    62480
+  ],
+  "suspended_elapsed_seconds": 180.07161087496206,
+  "frozen_protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d"
+}

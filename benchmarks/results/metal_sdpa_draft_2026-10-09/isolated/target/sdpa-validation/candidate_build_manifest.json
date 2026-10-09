@@ -1,0 +1,292 @@
+{
+  "build_command": "CARGO_TARGET_DIR=/Volumes/A/.hms-target-metal-sdpa cargo build --release --locked --features local-models --bin public-bench",
+  "build_conditions_identical": true,
+  "build_log": {
+    "path": "/Volumes/A/hms-metal-sdpa/target-metal-sdpa-build.log",
+    "sha256": "2759fc89fedd65b662da8a430a8d04382059be477d4f611f76dae543493e836d",
+    "size": 130
+  },
+  "candidate_binary": {
+    "path": "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-sdpa",
+    "sha256": "4771dc6cbd48282336343cb6b86171b90860e7427a373c93e405326f163ee317",
+    "size": 7721152
+  },
+  "candidate_cargo_fingerprint": {
+    "compile_kind": 0,
+    "config": 8247474407144887393,
+    "declared_features": "[\"aes-gcm\", \"argon2\", \"axum\", \"base64\", \"bs58\", \"ciborium\", \"coset\", \"default\", \"ed25519-dalek\", \"experimental\", \"local-models\", \"multibase\", \"napi\", \"napi-build\", \"napi-derive\", \"node-api\", \"private-search\", \"provenance\", \"provenance-scitt\", \"pyo3\", \"python\", \"security\", \"server\", \"sha2\", \"subtle\", \"tokio\", \"ureq\", \"zeroize\"]",
+    "deps": [
+      [
+        556297956429598517,
+        "candle_core",
+        false,
+        4465086769811566253
+      ],
+      [
+        1107309775460965643,
+        "lz4_flex",
+        false,
+        2856700898676966271
+      ],
+      [
+        1778674899812326980,
+        "candle_transformers",
+        false,
+        11674026311099802292
+      ],
+      [
+        3735948657744455170,
+        "rand",
+        false,
+        15063013595880877233
+      ],
+      [
+        5330460842384404171,
+        "serde_json",
+        false,
+        11586069257037408837
+      ],
+      [
+        6557439603276904804,
+        "serde",
+        false,
+        15246770656384259672
+      ],
+      [
+        6955168695617989009,
+        "schemars",
+        false,
+        1170887789920753145
+      ],
+      [
+        7085028899306969348,
+        "rust_stemmers",
+        false,
+        15371551427018737519
+      ],
+      [
+        7312356825837975969,
+        "crc32fast",
+        false,
+        976283641458028458
+      ],
+      [
+        7521345276086848634,
+        "fxhash",
+        false,
+        12930738919936879800
+      ],
+      [
+        8007447966389677717,
+        "ts_rs",
+        false,
+        2842547444912391327
+      ],
+      [
+        8128303468064674118,
+        "fs2",
+        false,
+        11434201208792756324
+      ],
+      [
+        9723370144619655183,
+        "tempfile",
+        false,
+        9664854429807312102
+      ],
+      [
+        10364619138950789809,
+        "anyhow",
+        false,
+        4473745173643051192
+      ],
+      [
+        10968047079748790161,
+        "memmap2",
+        false,
+        10208765236826351835
+      ],
+      [
+        11742730876020405241,
+        "thiserror",
+        false,
+        1238163069010618069
+      ],
+      [
+        11862723254873017773,
+        "bincode",
+        false,
+        4643608779839471958
+      ],
+      [
+        11910974697091955563,
+        "rayon",
+        false,
+        9430278544825183303
+      ],
+      [
+        12459942763388630573,
+        "parking_lot",
+        false,
+        18008040124265895002
+      ],
+      [
+        13712946525706330613,
+        "holographic_memory",
+        false,
+        16241338738409009906
+      ],
+      [
+        13712946525706330613,
+        "build_script_build",
+        false,
+        2417301562768295171
+      ],
+      [
+        14757622794040968908,
+        "tracing",
+        false,
+        16104436044868055597
+      ],
+      [
+        17765099493617107121,
+        "clap",
+        false,
+        16526297064949559252
+      ],
+      [
+        18006412424562104914,
+        "candle_nn",
+        false,
+        16392099213691798207
+      ],
+      [
+        18168724690172484497,
+        "tokenizers",
+        false,
+        14212628551004622803
+      ],
+      [
+        18445902723976434682,
+        "nalgebra",
+        false,
+        12033956830063397605
+      ]
+    ],
+    "features": "[\"default\", \"local-models\"]",
+    "local": [
+      {
+        "CheckDepInfo": {
+          "checksum": false,
+          "dep_info": "release/.fingerprint/holographic-memory-85aa480d220ff85a/dep-bin-public-bench"
+        }
+      }
+    ],
+    "path": 18031067692374244700,
+    "profile": 17900900905202929101,
+    "rustc": 17467972547956852243,
+    "rustflags": [],
+    "target": 4042923778193349304
+  },
+  "candidate_qwen_source": {
+    "path": "/Volumes/A/hms-metal-sdpa/src/core/models/qwen3.rs",
+    "sha256": "3b4f6c57315cedde07f74049599be79c9340151501cceaeb9c35e4e2dd9b8e96",
+    "size": 19836
+  },
+  "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+  "cargo_lock": {
+    "path": "/Volumes/A/hms-metal-sdpa/Cargo.lock",
+    "sha256": "585ff4990529495ea07cdb0f073b3f380793aae48d7218e7de0fae953d854220",
+    "size": 102858
+  },
+  "compiler": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: aarch64-apple-darwin\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+  "control_build_log": {
+    "path": "/Volumes/A/hms-metal-sdpa/target-metal-control-build.log",
+    "sha256": "9173efca27d3c3bf28441703832eff21be46f4471547c3fe59ffdcd6084764db",
+    "size": 130
+  },
+  "encoded_rustflags": "",
+  "focused_checks": {
+    "cargo_fmt_check": true,
+    "full_repo_commit_gate": false,
+    "git_diff_check": true,
+    "gpu_quality_or_speed": false,
+    "release_locked_local_models_build": true
+  },
+  "frozen_binary": {
+    "path": "/Volumes/A/.hms-target-gpubatch/release/public-bench",
+    "sha256": "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec",
+    "size": 7406992
+  },
+  "frozen_protocol": {
+    "path": "/Volumes/A/holographic-memory/benchmarks/public/reader_protocol_v1.json",
+    "sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
+    "size": 10076
+  },
+  "gpu_execution": false,
+  "observed_at_utc": "2026-10-09T19:21:25.776216+00:00",
+  "preregistration": {
+    "path": "/Volumes/A/hms-metal-sdpa/benchmarks/results/preregistration_metal_sdpa_2026-10-09.json",
+    "sha256": "4907d1ff9fa565324ced692ff97535009106766a1194ed8a80537dcd8f84a066",
+    "size": 33679
+  },
+  "qwen_patch": {
+    "path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/qwen3-sdpa.patch",
+    "sha256": "81af1dcc4e6ff6a7546bf2697852084b1650322bf65d4f6984c04a7b2f4fb34e",
+    "size": 1874
+  },
+  "release_profile": {
+    "lto": true,
+    "strip": true
+  },
+  "remaining_checks": [
+    "Same-build control vs frozen reader exact raw generated text on identical completed real dev input.",
+    "SDPA candidate vs same-build control and frozen reader exact raw generated text, full cap and batch1.",
+    "Real-input GPU mask/causal/cache-offset and GQA regression coverage before any general code admission.",
+    "Eleven alternating paired complete-query rounds under timing lock, load<3, no concurrent build/GPU workload, each lock hold<15min.",
+    "All distinct weak requests exact equality before reusing candidate with existing arm, otherwise separately frozen entire weak-arm restart."
+  ],
+  "rustflags": "",
+  "same_build_control_binary": {
+    "path": "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-control",
+    "sha256": "0039628291b4cb5eeec8e5315afedfdcde50ecc3e7ecebe6bad38842314fa623",
+    "size": 7605520
+  },
+  "status": "draft_build_complete_no_gpu_execution",
+  "supported_cases": {
+    "decode": "Only a single-token query with mask=None is eligible; masked single-token rows use original attention.",
+    "devices": [
+      "Metal"
+    ],
+    "dtypes": [
+      "BF16",
+      "F16",
+      "F32"
+    ],
+    "fallbacks": [
+      "CPU/CUDA",
+      "unsupported head dimension/dtype",
+      "F32 full attention with head_dim512",
+      "single-token query with explicit mask"
+    ],
+    "full_attention": "Existing causal-with-cache-offset or per-row additive masks broadcast without materialization to (batch,qheads,queries,keys); do_causal=false; softcapping=1.0.",
+    "gqa": "Unexpanded K/V, query-head count divisible by KV-head count.",
+    "head_dimensions": [
+      32,
+      64,
+      72,
+      80,
+      96,
+      128,
+      256,
+      512
+    ]
+  },
+  "timing_claim": false,
+  "unmodified_qwen_source": {
+    "path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/qwen3-control.rs",
+    "sha256": "006f0ea505752a2cf89e70225e180de72df0ba18ed84f5a21d6c6f9e6a7dc6b1",
+    "size": 18971
+  },
+  "worktree_head": "573ee718144562761c10ba79cc29a61dcfd05fce"
+}

@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pairs.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pairs.py", line 122, in main
+    run(arm, 0, True)
+    ~~~^^^^^^^^^^^^^^
+  File "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pairs.py", line 90, in run
+    result = subprocess.run(command, capture_output=True, timeout=120, check=False)
+  File "/Users/davidcondrey/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidcondrey/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 1222, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidcondrey/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 2129, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidcondrey/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 1269, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['/Volumes/A/.hms-target-gpubatch/release/public-bench', 'lme-model', '--stage', 'chat', '--model', '/Volumes/A/hms-models/Qwen3-4B-Instruct-2507', '--revision', 'cdbee75f17c01a7cc42f958dc650907174af0554', '--batch', '1', '--input', '/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/input.json', '--out', '/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/warmup_00_control.output.json']' timed out after 120 seconds

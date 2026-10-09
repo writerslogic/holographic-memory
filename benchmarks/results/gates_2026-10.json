@@ -7,7 +7,16 @@
       "--check"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 1.308799875085242
+    "elapsed_seconds": 0.8698112089186907,
+    "cwd": "/Volumes/A/holographic-memory",
+    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "source_files": 190,
+    "source_sha256_before": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "root_source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_identity_verified": true,
+    "cache_cloned_apfs": false,
+    "preparation_seconds": 0
   },
   {
     "command": [
@@ -19,7 +28,16 @@
       "warnings"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 19.492289250018075
+    "elapsed_seconds": 60.24078566697426,
+    "cwd": "/Volumes/A/holographic-memory",
+    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "source_files": 190,
+    "source_sha256_before": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "root_source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_identity_verified": true,
+    "cache_cloned_apfs": false,
+    "preparation_seconds": 0
   },
   {
     "command": [
@@ -32,7 +50,16 @@
       "warnings"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 5.570478291949257
+    "elapsed_seconds": 32.98992441711016,
+    "cwd": "/Volumes/A/holographic-memory",
+    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "source_files": 190,
+    "source_sha256_before": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "root_source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_identity_verified": true,
+    "cache_cloned_apfs": false,
+    "preparation_seconds": 0
   },
   {
     "command": [
@@ -41,7 +68,16 @@
       "--locked"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 244.95736062491778
+    "elapsed_seconds": 187.78680483298376,
+    "cwd": "/Volumes/A/holographic-memory",
+    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "source_files": 190,
+    "source_sha256_before": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "root_source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_identity_verified": true,
+    "cache_cloned_apfs": false,
+    "preparation_seconds": 0
   },
   {
     "command": [
@@ -51,6 +87,15 @@
       "--all-features"
     ],
     "exit_code": 0,
-    "elapsed_seconds": 280.6307686669752
+    "elapsed_seconds": 247.06417658296414,
+    "cwd": "/Volumes/A/holographic-memory",
+    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "source_files": 190,
+    "source_sha256_before": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "root_source_sha256_after": "f19a4821ca90810e7b9bb0a4f1e588ef0ee6f444e953d14220aa946a62879c25",
+    "source_identity_verified": true,
+    "cache_cloned_apfs": false,
+    "preparation_seconds": 0
   }
 ]

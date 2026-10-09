@@ -1,0 +1,9 @@
+{"name": "unmodified_control", "returncode": 1, "report_path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/report.json", "report_sha256": "fa87231eab171b7e4343af2e504d3d5dd09880461672ce646c402bd9d37a32b3", "output_agreement": false}
+{"resumed_pids": [29858, 62480], "status": "pilot_stopped"}
+Traceback (most recent call last):
+  File "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pilot_control.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pilot_control.py", line 114, in main
+    raise RuntimeError("pilot rejected; frozen worker will resume")
+RuntimeError: pilot rejected; frozen worker will resume
