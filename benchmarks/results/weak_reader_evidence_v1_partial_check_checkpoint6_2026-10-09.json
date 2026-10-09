@@ -1,0 +1,20 @@
+{
+  "bundle_sha256": "67ade96e5d3108c10c3a0c6fcf995d7d9d98445c733a808af7754a8020dd5ff6",
+  "checker": "passed",
+  "checker_sha256": "75a9394b8098e3e70dc2e86c30bdc485c88a14aee1e895e22edaa264367a0533",
+  "complete": false,
+  "completed_chunks": 14,
+  "distinct_requests": 140,
+  "final_answer_report_checked": false,
+  "recorded_arms": 294,
+  "tamper_tests": [
+    "corrupted_bundle_bytes",
+    "model_revision",
+    "model_filename_escape",
+    "frozen_fingerprint",
+    "visible_output_count",
+    "corrupted_output_bytes",
+    "prediction_with_updated_hashes",
+    "cache_prediction_with_updated_hash"
+  ]
+}

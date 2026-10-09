@@ -244,3 +244,15 @@ The staged 19:56 UTC snapshot has 252/300 local records: 250 valid, two JSON fai
 Two operational speed pilots produced no completed native predictions: the load gate blocked one, and the unchanged control exceeded the other's 120-second cap. No SDPA quality or speed result exists. Exact draft sources and attempts are archived in `benchmarks/results/metal_sdpa_draft_2026-10-09/`; the independent suspension/archive checker rejects seven corruptions. All elapsed values are preliminary. The frozen reader continues unchanged; ANN work has not started.
 
 Usage-supported cost $5.616808; conservative reservations $22.021348; exposure $27.638156 (`benchmarks/results/spend_checkpoint_2026-10-09T1956.json`). All five Rust commit gates pass (checkpoint5); source fingerprints remain unchanged. Previous checkpoint 72b3ea2 is pushed. Running: local reader61378, incremental judges31363, evidence updater3004. Scoreboard diff: none; D1, D2 and D3 remain open.
+
+### Session 1 checkpoint 2026-10-09T20:36:05.201056+00:00
+
+1. Finish the final six frozen local prompts and incremental judges; pass both full independent checkers with tamper tests and commit the dev memory rows.
+2. Run and commit the native FAISS/hnswlib harness on both datasets and recall targets.
+3. Run learned early termination's preregistered kill test.
+
+The staged snapshot has 294/300 local records: 290 valid, four malformed answers counted incorrect, and 290 valid judge outcomes. The final six distinct prompts are running. Matched dev accuracy remains 83/100, 82/100 and 87/100; 400 repeat judges give 3% disagreement. The partial answer checker validates 594 completed records; the 14-chunk local bundle passes eight tamper cases. Results: `benchmarks/results/reader_checkpoint_2026-10-09T2034.json`, `answer_partial_check_checkpoint6_2026-10-09.json`, `weak_reader_evidence_v1_partial_check_checkpoint6_2026-10-09.json`.
+
+All five Rust gates pass (`gates_checkpoint6_2026-10.json`). Both test commands use opt-level1 with debug assertions and overflow checks enabled. Preliminary library-suite execution durations are 7.98s default and 11.98s all-features; the initial optimized dependency rebuild is recorded separately. Reader prompts, binary and generation parameters are unchanged. Previous checkpoint13415cb is pushed.
+
+Usage-supported cost $5.651206; conservative reservations $22.021348; exposure $27.672553 (`benchmarks/results/spend_checkpoint_2026-10-09T2034.json`). Running: local reader61378, incremental judges31363, evidence updater3004. Scoreboard diff: none; D1, D2 and D3 remain open.
