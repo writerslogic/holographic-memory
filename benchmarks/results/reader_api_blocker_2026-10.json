@@ -1,0 +1,6 @@
+{
+  "status": 429,
+  "error_class": "RateLimitError",
+  "code": "credit_balance_exhausted",
+  "type": "insufficient_quota"
+}

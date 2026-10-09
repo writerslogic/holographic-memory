@@ -1,0 +1,3021 @@
+{
+ "schema_version": 1,
+ "caps_usd": {
+  "total": 250,
+  "reader_judge_dev": 120,
+  "qwen8b": 60,
+  "x86": 60,
+  "reserve": 10,
+  "heldout400": 0
+ },
+ "entries": [
+  {
+   "cache_key": "ad1016095ca562238acc28e45bd95ee4f1b8a6db6b380a08c826a09baa7ac329",
+   "call_id": "reader:e8a79c70:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0711425,
+   "cost_usd": 0.0711425,
+   "unix_time": 1791565424.421958,
+   "usage": null
+  },
+  {
+   "cache_key": "2361a8a75225aade724df68715d1a017fea18d7eccdc3641ca2b9cedb19a2806",
+   "call_id": "reader:edced276:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07415250000000001,
+   "cost_usd": 0.07415250000000001,
+   "unix_time": 1791565424.427289,
+   "usage": null
+  },
+  {
+   "cache_key": "d4cbc8fca857639ec38de1daf4aa09a2a65eb0bddb2c8303fb9b782363df8333",
+   "call_id": "reader:0862e8bf:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0722275,
+   "cost_usd": 0.0722275,
+   "unix_time": 1791565424.437669,
+   "usage": null
+  },
+  {
+   "cache_key": "551502aa5154a27ecc27e04c71f61c83231f6f7d8a61f69bbadbb57afd562e29",
+   "call_id": "reader:06db6396:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07418,
+   "cost_usd": 0.07418,
+   "unix_time": 1791565424.457349,
+   "usage": null
+  },
+  {
+   "cache_key": "dd67defe6f8957ed3de02e46cc74a5586c1245569ab15cb6c5f81d6ddcd95eca",
+   "call_id": "reader:2b8f3739:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0737225,
+   "cost_usd": 0.0737225,
+   "unix_time": 1791565424.4766579,
+   "usage": null
+  },
+  {
+   "cache_key": "ca4282a965728021e2ad29db5a78370d2435fecbcd520ce8cc9864e4a95f381b",
+   "call_id": "reader:6b168ec8:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07472000000000001,
+   "cost_usd": 0.07472000000000001,
+   "unix_time": 1791565424.49139,
+   "usage": null
+  },
+  {
+   "cache_key": "f56370168a5078d1f4de6807d5398d5c8363c06cb40aaf7293e9f88283e78cf8",
+   "call_id": "reader:d905b33f:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07157,
+   "cost_usd": 0.07157,
+   "unix_time": 1791565424.500103,
+   "usage": null
+  },
+  {
+   "cache_key": "338bd5e2387605c9413c926ecb7c7cc6c15a2139bf1034781e11d65d78c6fae2",
+   "call_id": "reader:352ab8bd:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07077,
+   "cost_usd": 0.07077,
+   "unix_time": 1791565424.503793,
+   "usage": null
+  },
+  {
+   "cache_key": "eae8259ff5741fbffbd5be7d4e7ec21d40261369cfeb2a61d06e6ff54ceed25e",
+   "call_id": "reader:94f70d80:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072395,
+   "cost_usd": 0.072395,
+   "unix_time": 1791565425.5300422,
+   "usage": null
+  },
+  {
+   "cache_key": "78290364a6cdadf61d1815f9daa772124652f7a71d431c47ab1e06c1d0426cff",
+   "call_id": "reader:gpt4_31ff4165:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07365000000000001,
+   "cost_usd": 0.07365000000000001,
+   "unix_time": 1791565425.881012,
+   "usage": null
+  },
+  {
+   "cache_key": "56253db04b04864f17bee026eae39ae950f8b0246e8500baeb2252d221071a28",
+   "call_id": "reader:89527b6b:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07136,
+   "cost_usd": 0.07136,
+   "unix_time": 1791565426.685502,
+   "usage": null
+  },
+  {
+   "cache_key": "8eb15bf510c62972f1ed069c94bf556d894f2bbd8c9529c4905cc1a83e46eba8",
+   "call_id": "reader:dccbc061:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072115,
+   "cost_usd": 0.072115,
+   "unix_time": 1791565426.918247,
+   "usage": null
+  },
+  {
+   "cache_key": "6a4170f082ec10d3855a270e8ae543bae0392bdc7f01232a9b65725991bfa0a4",
+   "call_id": "reader:e8a79c70:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0711425,
+   "cost_usd": 0.0711425,
+   "unix_time": 1791565427.352715,
+   "usage": null
+  },
+  {
+   "cache_key": "cb1b16a64974a70d77885931e3e057c8eac85068e127036224a1eb37517e6417",
+   "call_id": "reader:28dc39ac:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07376,
+   "cost_usd": 0.07376,
+   "unix_time": 1791565427.562958,
+   "usage": null
+  },
+  {
+   "cache_key": "bf48713f0ecf502c245be0e6c890415b1119ec17659359c21021191104f4afd7",
+   "call_id": "reader:0862e8bf_abs:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.06942000000000001,
+   "cost_usd": 0.06942000000000001,
+   "unix_time": 1791565428.81136,
+   "usage": null
+  },
+  {
+   "cache_key": "4d1dafc332ae36adc8f6a320af7369411e4ff023f3c9767ad73ce8e7c11c7a8b",
+   "call_id": "reader:gpt4_5dcc0aab:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07092,
+   "cost_usd": 0.07092,
+   "unix_time": 1791565429.183851,
+   "usage": null
+  },
+  {
+   "cache_key": "c3756505bb3f51d11ffc88313b4bc7c50b92cbfb7791098ebd39ffc2a1578754",
+   "call_id": "reader:b6025781:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0716725,
+   "cost_usd": 0.0716725,
+   "unix_time": 1791565429.768329,
+   "usage": null
+  },
+  {
+   "cache_key": "1b29392f75da72ecc15a36800427a5d917893d8aa11aae15e4811b5c579aa09e",
+   "call_id": "reader:28dc39ac:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0736075,
+   "cost_usd": 0.0736075,
+   "unix_time": 1791565429.9347498,
+   "usage": null
+  },
+  {
+   "cache_key": "a7da83b1180f5f2e2def47e45092fc56b1275b1ee9a0217b6bd2ce8106950f86",
+   "call_id": "reader:d52b4f67:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07181,
+   "cost_usd": 0.07181,
+   "unix_time": 1791565430.1010041,
+   "usage": null
+  },
+  {
+   "cache_key": "45497aed53e78d3239ca05b7985f2e36ce746f73c25ffd14999cc0ec72e2f13b",
+   "call_id": "reader:d596882b:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0708625,
+   "cost_usd": 0.0708625,
+   "unix_time": 1791565430.255611,
+   "usage": null
+  },
+  {
+   "cache_key": "95a9495c6fb4c5ab1d02c46c782cd023479e0993b1746d2c3c64ad38f8bb2035",
+   "call_id": "reader:9a707b81:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07218000000000001,
+   "cost_usd": 0.07218000000000001,
+   "unix_time": 1791565430.518656,
+   "usage": null
+  },
+  {
+   "cache_key": "682065d4ab0ddac4938964eb2389a51f557d9eb829eb0444d18ff9b0cb8a5c06",
+   "call_id": "reader:b759caee:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072615,
+   "cost_usd": 0.072615,
+   "unix_time": 1791565430.532016,
+   "usage": null
+  },
+  {
+   "cache_key": "79281279eb60ab5e50e23bed258d0c01618e53218eed86d2890e00ef89d1cdad",
+   "call_id": "reader:06db6396:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07418,
+   "cost_usd": 0.07418,
+   "unix_time": 1791565430.681887,
+   "usage": null
+  },
+  {
+   "cache_key": "cc407a06704073ca8f96b1758afbb9208cbc82aa185121fe55f184d63789cd0d",
+   "call_id": "reader:gpt4_70e84552_abs:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0728675,
+   "cost_usd": 0.0728675,
+   "unix_time": 1791565430.7205682,
+   "usage": null
+  },
+  {
+   "cache_key": "3a8d7063eeb273753eaa5aa73eeb05f23d2d8d60b8a8dcf1a80e48cc2ffde51d",
+   "call_id": "reader:b759caee:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072615,
+   "cost_usd": 0.072615,
+   "unix_time": 1791565430.776426,
+   "usage": null
+  },
+  {
+   "cache_key": "31c410490ea2de0f851478e99352d38d87bbd8409a6dd65ab2d48e15db3ca603",
+   "call_id": "reader:gpt4_61e13b3c:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0742975,
+   "cost_usd": 0.0742975,
+   "unix_time": 1791565430.8488362,
+   "usage": null
+  },
+  {
+   "cache_key": "c825ee0d9ce3b76e25e3fb4e24d1ec943ba774f15c1a7e0fa8c91144047ba1a3",
+   "call_id": "reader:e5ba910e_abs:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07182,
+   "cost_usd": 0.07182,
+   "unix_time": 1791565430.893661,
+   "usage": null
+  },
+  {
+   "cache_key": "5978adc482d2f61e2cb3faa711c16f5468a79a8a898ea67645b494ef4c14c765",
+   "call_id": "reader:gpt4_5501fe77:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07301250000000001,
+   "cost_usd": 0.07301250000000001,
+   "unix_time": 1791565431.188992,
+   "usage": null
+  },
+  {
+   "cache_key": "2ddc42df46868afd39c071a8d09bcb4de90b95f343e8ab52e6a61227cc77c3ca",
+   "call_id": "reader:0a34ad58:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0709825,
+   "cost_usd": 0.0709825,
+   "unix_time": 1791565431.2150989,
+   "usage": null
+  },
+  {
+   "cache_key": "531664033cc552d12f91dbf939c87d86bd5ca3ae3e72546f7a6cd18d0f117be0",
+   "call_id": "reader:9a707b82:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072105,
+   "cost_usd": 0.072105,
+   "unix_time": 1791565431.2411468,
+   "usage": null
+  },
+  {
+   "cache_key": "01a4ad5a9ab1f0f458673a71e5055841b43ffd503c6fcba979aff2ab44a1b8b2",
+   "call_id": "reader:08f4fc43:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0721825,
+   "cost_usd": 0.0721825,
+   "unix_time": 1791565431.27983,
+   "usage": null
+  },
+  {
+   "cache_key": "43767ac457655d0900753f695d582c30387b9c9e633b6f3d63f6beecc9705457",
+   "call_id": "reader:06db6396:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07418,
+   "cost_usd": 0.07418,
+   "unix_time": 1791565431.8364758,
+   "usage": null
+  },
+  {
+   "cache_key": "79c7540b91a7f6cd6ae5aa929b98e78832c970a1d1ca4a975d765414073c3e23",
+   "call_id": "reader:9bbe84a2:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0735075,
+   "cost_usd": 0.0735075,
+   "unix_time": 1791565431.948432,
+   "usage": null
+  },
+  {
+   "cache_key": "b3087cfc56a572a006587023f5babff6a4af611e939f01da9cf764d414cde2b4",
+   "call_id": "reader:60036106:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0723825,
+   "cost_usd": 0.0723825,
+   "unix_time": 1791565432.006187,
+   "usage": null
+  },
+  {
+   "cache_key": "b3f90144d018a4d77b590be2998dd1ab4a07e5a8da864735ff42f565f1e0399d",
+   "call_id": "reader:gpt4_a56e767c:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.074975,
+   "cost_usd": 0.074975,
+   "unix_time": 1791565432.063297,
+   "usage": null
+  },
+  {
+   "cache_key": "bc41d437e9d5b3f69c6a00fe37d9e3c0d87a4f1f605550af3848e07a0991471e",
+   "call_id": "reader:gpt4_88806d6e:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0712575,
+   "cost_usd": 0.0712575,
+   "unix_time": 1791565432.119533,
+   "usage": null
+  },
+  {
+   "cache_key": "bb2111d54534070731376004d9b6cb849287311ee0cdb0fe5db59b11c58ff19f",
+   "call_id": "reader:0a34ad58:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07296,
+   "cost_usd": 0.07296,
+   "unix_time": 1791565432.1640818,
+   "usage": null
+  },
+  {
+   "cache_key": "7c9789737510a2eca4164b37e510e91e47d837a1e6ed861921c1b10e38b9bfd4",
+   "call_id": "reader:edced276_abs:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.074645,
+   "cost_usd": 0.074645,
+   "unix_time": 1791565432.2326322,
+   "usage": null
+  },
+  {
+   "cache_key": "6dd0b1579c7604d40759f9b91e8ed32b9eaa9f12246efe1f4032953345a65a86",
+   "call_id": "reader:gpt4_5dcc0aab:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07092,
+   "cost_usd": 0.07092,
+   "unix_time": 1791565432.390406,
+   "usage": null
+  },
+  {
+   "cache_key": "dde63e2a405d3bbbcbe510761590b66c36f45d931a6b5dfe0f4214f29f390b25",
+   "call_id": "reader:0862e8bf_abs:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.06942000000000001,
+   "cost_usd": 0.06942000000000001,
+   "unix_time": 1791565432.4926121,
+   "usage": null
+  },
+  {
+   "cache_key": "e99d9ca89ece768b0da13fd7816af7abdfeaa40703daf81e30b78da49b62d01b",
+   "call_id": "reader:5025383b:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0717625,
+   "cost_usd": 0.0717625,
+   "unix_time": 1791565432.518296,
+   "usage": null
+  },
+  {
+   "cache_key": "c1e49da6966b241c9977e79524d99a41ffc877a862f34259f349f165bc17057e",
+   "call_id": "reader:7405e8b1:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072165,
+   "cost_usd": 0.072165,
+   "unix_time": 1791565432.995563,
+   "usage": null
+  },
+  {
+   "cache_key": "9ec96b22eed938ec8083811716ed45070c52ba1368c8c2dec0c95d1d3bce1ef9",
+   "call_id": "reader:28dc39ac:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0736075,
+   "cost_usd": 0.0736075,
+   "unix_time": 1791565433.070734,
+   "usage": null
+  },
+  {
+   "cache_key": "4b4ab56168a721293ee49a996a4fdda32953a96d344d342daca5368aa994e251",
+   "call_id": "reader:d7c942c3:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.070765,
+   "cost_usd": 0.070765,
+   "unix_time": 1791565433.0961869,
+   "usage": null
+  },
+  {
+   "cache_key": "a0900812d96f7acf72bd74830abae316fa8e80f61845b5e07b10278bc5484b89",
+   "call_id": "reader:gpt4_61e13b3c:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0742975,
+   "cost_usd": 0.0742975,
+   "unix_time": 1791565433.1278138,
+   "usage": null
+  },
+  {
+   "cache_key": "4e924466f2674236925772c05c0f1bad13eaa5b946c87f3ac1b953ea91c0b4c6",
+   "call_id": "reader:3ba21379:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0760725,
+   "cost_usd": 0.0760725,
+   "unix_time": 1791565433.278216,
+   "usage": null
+  },
+  {
+   "cache_key": "c69c658cebf01ac684e5586f0fd5514207fa1d5f7dfcd503f3724814134542ef",
+   "call_id": "reader:2133c1b5:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07123750000000001,
+   "cost_usd": 0.07123750000000001,
+   "unix_time": 1791565433.3225012,
+   "usage": null
+  },
+  {
+   "cache_key": "218f6ea6d25795fbff740fb9ad28744ed52922afd4b31a03288668fb19d45242",
+   "call_id": "reader:b3c15d39:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0711625,
+   "cost_usd": 0.0711625,
+   "unix_time": 1791565433.38529,
+   "usage": null
+  },
+  {
+   "cache_key": "6b06131a3ed6944adb4be763f3f9573f1893c06542863267ea909dce704e6533",
+   "call_id": "reader:eeda8a6d:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0735725,
+   "cost_usd": 0.0735725,
+   "unix_time": 1791565433.5409222,
+   "usage": null
+  },
+  {
+   "cache_key": "265d44a3eae2774c8609538e9da3526fb2b5c1327c9d133b08a3f2f6c704cc01",
+   "call_id": "reader:gpt4_4edbafa2:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730475,
+   "cost_usd": 0.0730475,
+   "unix_time": 1791565433.5662029,
+   "usage": null
+  },
+  {
+   "cache_key": "d16d6c09bdfec82f1e7515ab8871f3cc450cd2a3eb964c93fd02ba4c5f4e8db2",
+   "call_id": "reader:0862e8bf_abs:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.06942000000000001,
+   "cost_usd": 0.06942000000000001,
+   "unix_time": 1791565433.6170812,
+   "usage": null
+  },
+  {
+   "cache_key": "0080194bb52bc00b308f808a6ca8c3b5bce8c9e21a07323f155f4158bf92df09",
+   "call_id": "reader:7e00a6cb:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071265,
+   "cost_usd": 0.071265,
+   "unix_time": 1791565433.9488509,
+   "usage": null
+  },
+  {
+   "cache_key": "c9022f582719ef0fb1926298261818232f3b4125f2cd1b881a9bf678bac31996",
+   "call_id": "reader:e01b8e2f:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07163,
+   "cost_usd": 0.07163,
+   "unix_time": 1791565434.119672,
+   "usage": null
+  },
+  {
+   "cache_key": "2fd1315b413b178fcb5693cd438e4ba7ed2ec90065e93f6a18528e7010e69ddc",
+   "call_id": "reader:2698e78f_abs:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07215,
+   "cost_usd": 0.07215,
+   "unix_time": 1791565434.168395,
+   "usage": null
+  },
+  {
+   "cache_key": "5b5af19186487c3a9fadfd2bb693cbd4624442049325729145e427777a474833",
+   "call_id": "reader:e5ba910e_abs:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07182,
+   "cost_usd": 0.07182,
+   "unix_time": 1791565434.192996,
+   "usage": null
+  },
+  {
+   "cache_key": "bcca259ce1da91dbcd73797988884c18eb21b27f95f6fe82f27f41c0acfe5763",
+   "call_id": "reader:gpt4_8c8961ae:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0747525,
+   "cost_usd": 0.0747525,
+   "unix_time": 1791565434.455554,
+   "usage": null
+  },
+  {
+   "cache_key": "3fbdb0f274f14852992a7e0c9d26758ab940e9847c277d4ae466f185c6f444ba",
+   "call_id": "reader:08f4fc43:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0734475,
+   "cost_usd": 0.0734475,
+   "unix_time": 1791565434.503492,
+   "usage": null
+  },
+  {
+   "cache_key": "99196a0d01bc509b0c5bde3f91b977e35954e347a3bbe5d1ae0ef49393a81e8f",
+   "call_id": "reader:f4f1d8a4:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0710775,
+   "cost_usd": 0.0710775,
+   "unix_time": 1791565434.630743,
+   "usage": null
+  },
+  {
+   "cache_key": "dfabb315460b84f36871ce07bd0e85d11147594490c1dc98093b038a3553bf5a",
+   "call_id": "reader:6a27ffc2:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07461000000000001,
+   "cost_usd": 0.07461000000000001,
+   "unix_time": 1791565436.070061,
+   "usage": null
+  },
+  {
+   "cache_key": "272af8c62def035ef7d8c011f03ccfe1c63f9e1fdec37aec88151e6485fb90fa",
+   "call_id": "reader:b3c15d39:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071245,
+   "cost_usd": 0.071245,
+   "unix_time": 1791565436.2640269,
+   "usage": null
+  },
+  {
+   "cache_key": "73747aa0b42358e3b33009425b05bfe8fcb445692bd0d497c41611797342133f",
+   "call_id": "reader:c9f37c46:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07423,
+   "cost_usd": 0.07423,
+   "unix_time": 1791565436.339076,
+   "usage": null
+  },
+  {
+   "cache_key": "b968dfe6802ba0da7d62a054f53aedaaf83927a7f49d48c641088ee62a1838e8",
+   "call_id": "reader:5025383b:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0717625,
+   "cost_usd": 0.0717625,
+   "unix_time": 1791565436.401632,
+   "usage": null
+  },
+  {
+   "cache_key": "c44014551d1c8cca2e4f746bd2be3781942fd383e0768990c993e06fea2517c1",
+   "call_id": "reader:gpt4_70e84552_abs:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0728675,
+   "cost_usd": 0.0728675,
+   "unix_time": 1791565436.469743,
+   "usage": null
+  },
+  {
+   "cache_key": "e065893ed756690fe995e76639ca677fd866687aca19a807666303a4b4811227",
+   "call_id": "reader:15745da0:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07456750000000001,
+   "cost_usd": 0.07456750000000001,
+   "unix_time": 1791565436.518142,
+   "usage": null
+  },
+  {
+   "cache_key": "2308d61df4439567dcead85681518f43e0c55d5d9c3e53e7755e1263380ee331",
+   "call_id": "reader:0bc8ad92:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.070715,
+   "cost_usd": 0.070715,
+   "unix_time": 1791565436.645042,
+   "usage": null
+  },
+  {
+   "cache_key": "6b79da264d96bac1a9ecae6547b06851f277929afa43a003447b73cc7d2b3845",
+   "call_id": "reader:0bc8ad92:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0714125,
+   "cost_usd": 0.0714125,
+   "unix_time": 1791565436.697959,
+   "usage": null
+  },
+  {
+   "cache_key": "222e2402bd3f576cac048b680a95368cede04666331c03df28683ccef55cb18d",
+   "call_id": "reader:e48988bc:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0691525,
+   "cost_usd": 0.0691525,
+   "unix_time": 1791565437.088366,
+   "usage": null
+  },
+  {
+   "cache_key": "4ad9332b988732f3c17c3792a0caf4c59805c373972de811f421d3f94e130bc1",
+   "call_id": "reader:6b168ec8:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07472000000000001,
+   "cost_usd": 0.07472000000000001,
+   "unix_time": 1791565437.304018,
+   "usage": null
+  },
+  {
+   "cache_key": "c0f090e44584f46ee2c429f97fa33046b70ab87c4a69cf972742deae934879de",
+   "call_id": "reader:gpt4_e061b84f:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072325,
+   "cost_usd": 0.072325,
+   "unix_time": 1791565437.485943,
+   "usage": null
+  },
+  {
+   "cache_key": "6c1dff397b77743b362ac238cea4adda5cc32e9fc14b9e500effac5e74f68ed4",
+   "call_id": "reader:f4f1d8a4:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0710775,
+   "cost_usd": 0.0710775,
+   "unix_time": 1791565437.5555909,
+   "usage": null
+  },
+  {
+   "cache_key": "1db11e51a3b7e73da9b1db594f86cb0585b0e3495918ed49d9fadbb94f1d1ae5",
+   "call_id": "reader:55241a1f:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0752675,
+   "cost_usd": 0.0752675,
+   "unix_time": 1791565437.59377,
+   "usage": null
+  },
+  {
+   "cache_key": "5caab407aa6ee39a8f9ff8453d21c2578d958ca0e2e1a12a481bfc00ad63602e",
+   "call_id": "reader:8fb83627:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07155500000000001,
+   "cost_usd": 0.07155500000000001,
+   "unix_time": 1791565437.6505651,
+   "usage": null
+  },
+  {
+   "cache_key": "5f0fee7499de132a1c318f548bd215a915aaba6ad10a4d86e59129359351e09e",
+   "call_id": "reader:gpt4_98f46fc6:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729375,
+   "cost_usd": 0.0729375,
+   "unix_time": 1791565437.762839,
+   "usage": null
+  },
+  {
+   "cache_key": "40de4c017e87b1a4e684905ce8d59273382af3d7ee51523bfc2ebecb13459e0b",
+   "call_id": "reader:9a707b82:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07288750000000001,
+   "cost_usd": 0.07288750000000001,
+   "unix_time": 1791565438.391906,
+   "usage": null
+  },
+  {
+   "cache_key": "41200e9211894055f34833b9c2c46d2baff7e22ff2084c491eda7b249a0f7ad8",
+   "call_id": "reader:6b168ec8:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0736,
+   "cost_usd": 0.0736,
+   "unix_time": 1791565438.6913679,
+   "usage": null
+  },
+  {
+   "cache_key": "3c92fe8da77dbdc9aee5329d45a5e1783af539af739ffa4c95ba9a70ed771cf1",
+   "call_id": "reader:e01b8e2f:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07163,
+   "cost_usd": 0.07163,
+   "unix_time": 1791565438.748389,
+   "usage": null
+  },
+  {
+   "cache_key": "95d64457673b59308d227fe79cfda4abcd3bf4ec7f4b97f5285ca2bdcc64c136",
+   "call_id": "reader:c2ac3c61:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0739675,
+   "cost_usd": 0.0739675,
+   "unix_time": 1791565438.805322,
+   "usage": null
+  },
+  {
+   "cache_key": "8b7b2a00d2e00a980d0ac466e7e7a299aec9dbe4f3894ce959d07647c3412661",
+   "call_id": "reader:b6025781:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0716725,
+   "cost_usd": 0.0716725,
+   "unix_time": 1791565438.9541981,
+   "usage": null
+  },
+  {
+   "cache_key": "3edde0894c68f6586f6c4e419071adbd85aff94bebf836b93cbef2a0c34a0b85",
+   "call_id": "reader:gpt4_31ff4165:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07365000000000001,
+   "cost_usd": 0.07365000000000001,
+   "unix_time": 1791565438.9762628,
+   "usage": null
+  },
+  {
+   "cache_key": "566165bcd363786ca85d4f8b561b1b47b4a3139dbe3b642e6c093720c2a8830a",
+   "call_id": "reader:08f4fc43:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0734475,
+   "cost_usd": 0.0734475,
+   "unix_time": 1791565439.025951,
+   "usage": null
+  },
+  {
+   "cache_key": "15e1d8a1c7ada160cbf78a804e11c05574aebdfd60abd265cdaa2cc391f6eb01",
+   "call_id": "reader:8ebdbe50:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07351250000000001,
+   "cost_usd": 0.07351250000000001,
+   "unix_time": 1791565439.100152,
+   "usage": null
+  },
+  {
+   "cache_key": "571c9c89fb5430a359f09da016daff17955e94b2385e683036e665ea52ad4e00",
+   "call_id": "reader:gpt4_468eb064:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0794275,
+   "cost_usd": 0.0794275,
+   "unix_time": 1791565439.126715,
+   "usage": null
+  },
+  {
+   "cache_key": "d0b6f1380cdf5005d26fc6e65589b62100140620d3ad947dd314f2ed52b5bbf2",
+   "call_id": "reader:gpt4_8279ba03:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072925,
+   "cost_usd": 0.072925,
+   "unix_time": 1791565439.5921001,
+   "usage": null
+  },
+  {
+   "cache_key": "7198f1b4b43c301913160839a4cb1fe60079dd54af700f5b186c93590f0ba2a4",
+   "call_id": "reader:gpt4_88806d6e:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0712575,
+   "cost_usd": 0.0712575,
+   "unix_time": 1791565439.65396,
+   "usage": null
+  },
+  {
+   "cache_key": "65a6b7aad148f6b94dab82eaff976c3fbee6060e6b7b9304032a1c81aaf3308d",
+   "call_id": "reader:0bc8ad93:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0713575,
+   "cost_usd": 0.0713575,
+   "unix_time": 1791565439.709024,
+   "usage": null
+  },
+  {
+   "cache_key": "fb1e2e5cfa7c2fb59c6e3a22105d4deed65f00d1bfa790a06489b367a6f5c915",
+   "call_id": "reader:affe2881:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0703025,
+   "cost_usd": 0.0703025,
+   "unix_time": 1791565439.958911,
+   "usage": null
+  },
+  {
+   "cache_key": "306058dd1da596190e6bca0142020a47cf42d49330943680e20accdd956433ff",
+   "call_id": "reader:e3fc4d6e:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0718725,
+   "cost_usd": 0.0718725,
+   "unix_time": 1791565440.014556,
+   "usage": null
+  },
+  {
+   "cache_key": "c679984bada53c7b45bca30f30ed7f812e82f60a532733a9ccce2d1f60619924",
+   "call_id": "reader:4100d0a0:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.067785,
+   "cost_usd": 0.067785,
+   "unix_time": 1791565440.141761,
+   "usage": null
+  },
+  {
+   "cache_key": "d12248864bfed77d1208a2b644d1a139f7dd5c7d52a6b912b88bedcd69b856c2",
+   "call_id": "reader:2ebe6c92:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072685,
+   "cost_usd": 0.072685,
+   "unix_time": 1791565440.2827818,
+   "usage": null
+  },
+  {
+   "cache_key": "235292f288b61354e6149c4791dc6c3d0c32b4a2cfcd9c5cca8e338bf3bc519d",
+   "call_id": "reader:9a707b81:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07325000000000001,
+   "cost_usd": 0.07325000000000001,
+   "unix_time": 1791565440.307926,
+   "usage": null
+  },
+  {
+   "cache_key": "397ca54bdb8fa71af1dcdd72eb20d0c614d41c770956ed6874b644d54bdab7d4",
+   "call_id": "reader:77eafa52:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0702675,
+   "cost_usd": 0.0702675,
+   "unix_time": 1791565440.369942,
+   "usage": null
+  },
+  {
+   "cache_key": "28d59f528e8af0a259be234b448352ad85bf5dc8d59d9df07c2d218b67066ef0",
+   "call_id": "reader:46a3abf7:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0734625,
+   "cost_usd": 0.0734625,
+   "unix_time": 1791565440.7514298,
+   "usage": null
+  },
+  {
+   "cache_key": "1d43dcdf799063a2c027e3e3791a892f561d5c30a254d2e197880d7b2a06c0b3",
+   "call_id": "reader:eac54add:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0708525,
+   "cost_usd": 0.0708525,
+   "unix_time": 1791565441.278563,
+   "usage": null
+  },
+  {
+   "cache_key": "acc8c73e9632ed12ef05e42dac28e18807c466ba1d0f2ab6efab98071acc6ab2",
+   "call_id": "reader:gpt4_5501fe77:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07301250000000001,
+   "cost_usd": 0.07301250000000001,
+   "unix_time": 1791565441.469069,
+   "usage": null
+  },
+  {
+   "cache_key": "99d7a17c3e39342cc168ee0793bda6885748ab2e7f4bb1c59bbb384be3fac59f",
+   "call_id": "reader:72e3ee87:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0716375,
+   "cost_usd": 0.0716375,
+   "unix_time": 1791565441.539207,
+   "usage": null
+  },
+  {
+   "cache_key": "bceb59a1816098012f3081cef62ee734b13446c6a0df4c131fb7b3e53a3767e2",
+   "call_id": "reader:2ebe6c92:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072685,
+   "cost_usd": 0.072685,
+   "unix_time": 1791565441.6204941,
+   "usage": null
+  },
+  {
+   "cache_key": "188156ef72ce493395f6a2c1e482848017e0fef3b5351fc16add7f6e15e454b1",
+   "call_id": "reader:0862e8bf:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0722275,
+   "cost_usd": 0.0722275,
+   "unix_time": 1791565441.7325802,
+   "usage": null
+  },
+  {
+   "cache_key": "5cb9799a637cf607ad53ee05317de0c15b2430ad05fb58153965c925a320fe09",
+   "call_id": "reader:c9f37c46:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07423,
+   "cost_usd": 0.07423,
+   "unix_time": 1791565441.7493691,
+   "usage": null
+  },
+  {
+   "cache_key": "13dc4f78e52c3f07d7d77de1d5b0bd6f70dccfcd176aab48c03b85656e96a981",
+   "call_id": "reader:80ec1f4f_abs:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071685,
+   "cost_usd": 0.071685,
+   "unix_time": 1791565441.792541,
+   "usage": null
+  },
+  {
+   "cache_key": "2090cdc4fe8df53b241624fa50d94fbb71cc80854c8a65c88561d04954dbb0bb",
+   "call_id": "reader:184da446:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0741575,
+   "cost_usd": 0.0741575,
+   "unix_time": 1791565441.869455,
+   "usage": null
+  },
+  {
+   "cache_key": "c36b36b3dffd34dbace38bd098e7594d346c72956fc03b4d466666b045c3f6ad",
+   "call_id": "reader:3ba21379:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0760725,
+   "cost_usd": 0.0760725,
+   "unix_time": 1791565441.895055,
+   "usage": null
+  },
+  {
+   "cache_key": "42544a61785d488516bb35ded9662ac3e29d883c3d9989c9d69fc1f4a4e6ac38",
+   "call_id": "reader:6cb6f249:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072465,
+   "cost_usd": 0.072465,
+   "unix_time": 1791565442.357606,
+   "usage": null
+  },
+  {
+   "cache_key": "e5611c6e63d4ee6d4a4dbf65bfb165ea1d49896864363d800549f45617b192da",
+   "call_id": "reader:4388e9dd:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07166,
+   "cost_usd": 0.07166,
+   "unix_time": 1791565442.382797,
+   "usage": null
+  },
+  {
+   "cache_key": "856200146c63f832c7d085fb1d01d623320bac5aea5da069080fd8caf8592d7f",
+   "call_id": "reader:b6025781:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0716725,
+   "cost_usd": 0.0716725,
+   "unix_time": 1791565442.4595048,
+   "usage": null
+  },
+  {
+   "cache_key": "df740de573ccb748c1730f8fb7d0e0734213a0fd52ab339c06b0b710528530df",
+   "call_id": "reader:edced276:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07415250000000001,
+   "cost_usd": 0.07415250000000001,
+   "unix_time": 1791565442.61166,
+   "usage": null
+  },
+  {
+   "cache_key": "d9f633ccd1787b20299359acc15040092901c3f2c92974ca8f650b82e70418eb",
+   "call_id": "reader:80ec1f4f_abs:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071685,
+   "cost_usd": 0.071685,
+   "unix_time": 1791565442.673606,
+   "usage": null
+  },
+  {
+   "cache_key": "2ffef40bdb7762006d523a3397b10b64df5b31299eb7d05b9779e46b26d442cf",
+   "call_id": "reader:edced276:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07415250000000001,
+   "cost_usd": 0.07415250000000001,
+   "unix_time": 1791565442.913934,
+   "usage": null
+  },
+  {
+   "cache_key": "ae4ed23ebc07a102a7391bda34820322e0900e5ac151b88e8877b089ac00221b",
+   "call_id": "reader:38146c39:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07157,
+   "cost_usd": 0.07157,
+   "unix_time": 1791565443.02351,
+   "usage": null
+  },
+  {
+   "cache_key": "44a3848964e9a06f08286485c3b029968b7693999cd9dc1fa6d06c8e43d134cd",
+   "call_id": "reader:gpt4_61e13b3c:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0742975,
+   "cost_usd": 0.0742975,
+   "unix_time": 1791565443.04916,
+   "usage": null
+  },
+  {
+   "cache_key": "e10950fa7ef3538a82a05caf757caaa2d954aaaacbf1261e38cbee7b7edbe48b",
+   "call_id": "reader:c6853660:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729225,
+   "cost_usd": 0.0729225,
+   "unix_time": 1791565443.1065469,
+   "usage": null
+  },
+  {
+   "cache_key": "0d3a213944d9e95458309e3b9c5c909c23dce4202771b91d7c8462ff267794fd",
+   "call_id": "reader:gpt4_a56e767c:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.074975,
+   "cost_usd": 0.074975,
+   "unix_time": 1791565443.194442,
+   "usage": null
+  },
+  {
+   "cache_key": "f24b0909bf447a61e58ed127bb64c65579ed4a8f27c88ac3cfa3a377de7dabfa",
+   "call_id": "reader:75499fd8:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0726325,
+   "cost_usd": 0.0726325,
+   "unix_time": 1791565443.5378501,
+   "usage": null
+  },
+  {
+   "cache_key": "9afbaefdc1abf3307abf5bef168e07f3b00968f63dfad34e4ec7463228e4420f",
+   "call_id": "reader:gpt4_98f46fc6:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072635,
+   "cost_usd": 0.072635,
+   "unix_time": 1791565443.61468,
+   "usage": null
+  },
+  {
+   "cache_key": "c82d0d40da6f424fec1541850997ecb008644073b9d242790b1ed05ff289f8fb",
+   "call_id": "reader:9bbe84a2:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0735075,
+   "cost_usd": 0.0735075,
+   "unix_time": 1791565443.640262,
+   "usage": null
+  },
+  {
+   "cache_key": "3b807bc54549f77e5016247a80114b9b67599d2aeacaa54d474ba8eaf38da75f",
+   "call_id": "reader:gpt4_4edbafa2:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730475,
+   "cost_usd": 0.0730475,
+   "unix_time": 1791565443.81619,
+   "usage": null
+  },
+  {
+   "cache_key": "82cadb555a22719c2d64ca08eee171125fbc5cb55f0c9ac3ca9c1662b9f4df4a",
+   "call_id": "reader:d52b4f67:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07181,
+   "cost_usd": 0.07181,
+   "unix_time": 1791565443.8547509,
+   "usage": null
+  },
+  {
+   "cache_key": "2570d23fde29f73ce9e033194d2a07fe56b7df5b68b255a7a7d1f3fe8580cb6d",
+   "call_id": "reader:gpt4_5501fe77:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07301250000000001,
+   "cost_usd": 0.07301250000000001,
+   "unix_time": 1791565444.079774,
+   "usage": null
+  },
+  {
+   "cache_key": "17e873360e8add4d546bddd13b3b3363a6541858689f6dac0efefc7f39d6c86a",
+   "call_id": "reader:72e3ee87:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0716375,
+   "cost_usd": 0.0716375,
+   "unix_time": 1791565444.1202571,
+   "usage": null
+  },
+  {
+   "cache_key": "bbac5fe64c13e6d4b9247668337f408a79dd9712a32dcda1e963b1e4033d4705",
+   "call_id": "reader:2698e78f_abs:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07215,
+   "cost_usd": 0.07215,
+   "unix_time": 1791565444.197999,
+   "usage": null
+  },
+  {
+   "cache_key": "249432756c1b53c422dfef38a6779a5031e9d5bfed40e84eaccb05bd9da7c81f",
+   "call_id": "reader:7405e8b1:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072165,
+   "cost_usd": 0.072165,
+   "unix_time": 1791565444.222581,
+   "usage": null
+  },
+  {
+   "cache_key": "289a95c97cbf3933f528dc72146549b5c6be8d62a9d8780df388a675448bae09",
+   "call_id": "reader:c6853660:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729225,
+   "cost_usd": 0.0729225,
+   "unix_time": 1791565444.253439,
+   "usage": null
+  },
+  {
+   "cache_key": "a65d96905e236ad9a2bc08b556259cec99fdd5ca39cb6d17fd3fce59c1bf86bb",
+   "call_id": "reader:eac54add:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0708525,
+   "cost_usd": 0.0708525,
+   "unix_time": 1791565444.720215,
+   "usage": null
+  },
+  {
+   "cache_key": "0b220d78ff300e202cc7967b1b3e80552e3a9baa11fdc4f21f40618987ab6b02",
+   "call_id": "reader:77eafa52:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0702675,
+   "cost_usd": 0.0702675,
+   "unix_time": 1791565444.74486,
+   "usage": null
+  },
+  {
+   "cache_key": "9eb57d6900b17ea0fe998ca4b6a0e2e6468238bdc3fa4b681e857b4f7ad09be7",
+   "call_id": "reader:gpt4_98f46fc6:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729375,
+   "cost_usd": 0.0729375,
+   "unix_time": 1791565444.769501,
+   "usage": null
+  },
+  {
+   "cache_key": "369a5c670abd793b0c5be712181c6cc3ca9ee603e4aff13ebb98404758e40763",
+   "call_id": "reader:eac54adc:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0792975,
+   "cost_usd": 0.0792975,
+   "unix_time": 1791565444.819554,
+   "usage": null
+  },
+  {
+   "cache_key": "e56242a24693796daf021c36553ae69028ac10622f53b934b69ba4dadb16bf15",
+   "call_id": "reader:e48988bc:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0691525,
+   "cost_usd": 0.0691525,
+   "unix_time": 1791565445.084198,
+   "usage": null
+  },
+  {
+   "cache_key": "ac0a66665e9aafc67a8e0bea7a08a187f58e05947ac61fca773ec53ccac700c2",
+   "call_id": "reader:3fdac837:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0710075,
+   "cost_usd": 0.0710075,
+   "unix_time": 1791565445.258566,
+   "usage": null
+  },
+  {
+   "cache_key": "8845d1b7d66e1a0136ff55b9f1e93dea8dd2b9ca34d5d1aa62b3c890c80b52f8",
+   "call_id": "reader:gpt4_5dcc0aab:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07092,
+   "cost_usd": 0.07092,
+   "unix_time": 1791565445.283194,
+   "usage": null
+  },
+  {
+   "cache_key": "84e661f373517b94e5039ea099398263d2b40e082769618d9a8c059d5f260575",
+   "call_id": "reader:993da5e2:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07219,
+   "cost_usd": 0.07219,
+   "unix_time": 1791565445.3318899,
+   "usage": null
+  },
+  {
+   "cache_key": "55540f2dc7bce9baef7206e5f2870b6c71c5e92648ee79443c3f349040811449",
+   "call_id": "reader:6d550036:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0784775,
+   "cost_usd": 0.0784775,
+   "unix_time": 1791565445.3872929,
+   "usage": null
+  },
+  {
+   "cache_key": "40833daece34ba81390e9aeab95f1a8ce9a9ff8532f3ae1dcae80649fd4b32dc",
+   "call_id": "reader:c2ac3c61:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0739675,
+   "cost_usd": 0.0739675,
+   "unix_time": 1791565445.450447,
+   "usage": null
+  },
+  {
+   "cache_key": "a55cbc7079447685b0acf788e86703c64c534f7a96f950578a77cbba7ada2b4e",
+   "call_id": "reader:6cb6f249:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730525,
+   "cost_usd": 0.0730525,
+   "unix_time": 1791565445.640683,
+   "usage": null
+  },
+  {
+   "cache_key": "718e840f716ff96e2b88e92aa5afef22a4d0ad39e1978c6efe976f7b57df9120",
+   "call_id": "reader:eeda8a6d:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07332,
+   "cost_usd": 0.07332,
+   "unix_time": 1791565445.8788679,
+   "usage": null
+  },
+  {
+   "cache_key": "de1dd734e05396342fe21ac2e29518a294b97d3fa1369664ed287a3602261738",
+   "call_id": "reader:d905b33f:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07157,
+   "cost_usd": 0.07157,
+   "unix_time": 1791565445.933853,
+   "usage": null
+  },
+  {
+   "cache_key": "65ecbe4fce19687025fe90acccd4e95679225e56cee89482b43094a50f4d939e",
+   "call_id": "reader:c9f37c46:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07423,
+   "cost_usd": 0.07423,
+   "unix_time": 1791565446.003646,
+   "usage": null
+  },
+  {
+   "cache_key": "0621f7547545106297089d875b0a572b3e050502aa2c4ed0c527f26bc367bc08",
+   "call_id": "reader:3fdac837:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071345,
+   "cost_usd": 0.071345,
+   "unix_time": 1791565446.072684,
+   "usage": null
+  },
+  {
+   "cache_key": "61775036f5728bc41f75608ad35da9ff859e1a573e0a302b81994167af52e09a",
+   "call_id": "reader:gpt4_7a0daae1:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07137500000000001,
+   "cost_usd": 0.07137500000000001,
+   "unix_time": 1791565446.152162,
+   "usage": null
+  },
+  {
+   "cache_key": "0ca98bef573b8f61d0abdaab31131f778c3f2b5f0db06aedcb5ec1f2d54e2f20",
+   "call_id": "reader:ed4ddc30:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0740625,
+   "cost_usd": 0.0740625,
+   "unix_time": 1791565446.4146612,
+   "usage": null
+  },
+  {
+   "cache_key": "455c498ac23e70d5e13f732a071e9f37ce8b4c68bbff6c94ca8ab48cf699aa01",
+   "call_id": "reader:c8c3f81d:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0723425,
+   "cost_usd": 0.0723425,
+   "unix_time": 1791565446.4392478,
+   "usage": null
+  },
+  {
+   "cache_key": "a25250a5c498f74be0e11fae3d906b89e200e6af3059869999f2e75151f6ed67",
+   "call_id": "reader:184da446:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0741575,
+   "cost_usd": 0.0741575,
+   "unix_time": 1791565446.512641,
+   "usage": null
+  },
+  {
+   "cache_key": "8b9d6a3d08608b7e8fac08f9999382f8fb4cbd770e6fc68d31cebc8f4f81cb54",
+   "call_id": "reader:gpt4_8c8961ae:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0747525,
+   "cost_usd": 0.0747525,
+   "unix_time": 1791565446.70959,
+   "usage": null
+  },
+  {
+   "cache_key": "67ccfb6a0903f13d8f409497294d3f9adc992b30d1fea6fc6b8a7da9b5487ed5",
+   "call_id": "reader:7405e8b1:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072165,
+   "cost_usd": 0.072165,
+   "unix_time": 1791565447.010891,
+   "usage": null
+  },
+  {
+   "cache_key": "e03542ac460083230c35f88cf78f0f5c2d2f563382b042a3acb320788fb5381f",
+   "call_id": "reader:60036106:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0726775,
+   "cost_usd": 0.0726775,
+   "unix_time": 1791565447.035528,
+   "usage": null
+  },
+  {
+   "cache_key": "1b6bef4f3d3513aa1cd528af31e7bbde51d401285f5bfcc58e2969766751a651",
+   "call_id": "reader:89527b6b:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07136,
+   "cost_usd": 0.07136,
+   "unix_time": 1791565447.0846999,
+   "usage": null
+  },
+  {
+   "cache_key": "d2d3ba750039c48e84f875567b398bdc63f8d4172043f2787b9c604de1205b6f",
+   "call_id": "reader:8464fc84:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0697125,
+   "cost_usd": 0.0697125,
+   "unix_time": 1791565447.108734,
+   "usage": null
+  },
+  {
+   "cache_key": "817871904395820527fb0a2aaaa43f8ce6a5e6aab21e3829c1349526119a9a3b",
+   "call_id": "reader:c8c3f81d:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0723425,
+   "cost_usd": 0.0723425,
+   "unix_time": 1791565447.244978,
+   "usage": null
+  },
+  {
+   "cache_key": "2810b89738bba434088796efb31b740204fb1dff99d8dea171eeaafc32416b53",
+   "call_id": "reader:72e3ee87:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0716375,
+   "cost_usd": 0.0716375,
+   "unix_time": 1791565447.5331168,
+   "usage": null
+  },
+  {
+   "cache_key": "20f4b0c17f3b9c76ca31116f07e21274f29e5beef90830690533791f5f343771",
+   "call_id": "reader:eac54adc:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0781975,
+   "cost_usd": 0.0781975,
+   "unix_time": 1791565447.5665941,
+   "usage": null
+  },
+  {
+   "cache_key": "3eda7b4b51ed5bfbe2fd72febb87f7d1057011c195013afbf73e2ba0e785829b",
+   "call_id": "reader:e4e14d04:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0731775,
+   "cost_usd": 0.0731775,
+   "unix_time": 1791565447.645875,
+   "usage": null
+  },
+  {
+   "cache_key": "771a88e0986224fb22303d64e24e7f2e80978a8465c880977d2ef30208016c77",
+   "call_id": "reader:5025383b:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0717625,
+   "cost_usd": 0.0717625,
+   "unix_time": 1791565447.71056,
+   "usage": null
+  },
+  {
+   "cache_key": "04ecdeca762682b76b753cdc438376717dd272b801b549857f45d86425e887a8",
+   "call_id": "reader:7024f17c:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0736575,
+   "cost_usd": 0.0736575,
+   "unix_time": 1791565447.767273,
+   "usage": null
+  },
+  {
+   "cache_key": "299e36195d92fad44693b75066fa0c32cdfd8f4e6627a3b83ea50485a05a3eca",
+   "call_id": "reader:19b5f2b3:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0739075,
+   "cost_usd": 0.0739075,
+   "unix_time": 1791565447.948952,
+   "usage": null
+  },
+  {
+   "cache_key": "fb41900c01e4adf970c500b167b8bccf0fc1a748c99f32b7d84aa0986a069cf6",
+   "call_id": "reader:184da446:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0736,
+   "cost_usd": 0.0736,
+   "unix_time": 1791565448.110903,
+   "usage": null
+  },
+  {
+   "cache_key": "6b17babf00efec61beb32e4b12932a5e2f8d2992b78c366001da9470c050f626",
+   "call_id": "reader:e01b8e2f:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07163,
+   "cost_usd": 0.07163,
+   "unix_time": 1791565448.236696,
+   "usage": null
+  },
+  {
+   "cache_key": "c3d497ebbeb1378ab6366acef8e3f1fa2c4d76c3c86e5b99730f8ad63e28f834",
+   "call_id": "reader:gpt4_e061b84f:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0727425,
+   "cost_usd": 0.0727425,
+   "unix_time": 1791565448.26284,
+   "usage": null
+  },
+  {
+   "cache_key": "a96e7a759bb48c091c595506a9f9424ed561c2c1978029e5f8619c1e4191c624",
+   "call_id": "reader:18bc8abd:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07484,
+   "cost_usd": 0.07484,
+   "unix_time": 1791565448.433473,
+   "usage": null
+  },
+  {
+   "cache_key": "d8784e4c2e4ea001b752810aeca4de8462cfe8227950929ad5b0021f20b8c54e",
+   "call_id": "reader:94f70d80:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072395,
+   "cost_usd": 0.072395,
+   "unix_time": 1791565448.509036,
+   "usage": null
+  },
+  {
+   "cache_key": "0272c65505b72f23ba198aafc774a8d78e637d9468a87f8de3666b69e9b5d05f",
+   "call_id": "reader:gpt4_d31cdae3:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0723975,
+   "cost_usd": 0.0723975,
+   "unix_time": 1791565449.078448,
+   "usage": null
+  },
+  {
+   "cache_key": "856d50a21c58089e4b05ae402fe77d4bf375f8584b96b0ea2ebe1238a915578f",
+   "call_id": "reader:gpt4_88806d6e:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0712575,
+   "cost_usd": 0.0712575,
+   "unix_time": 1791565449.2247722,
+   "usage": null
+  },
+  {
+   "cache_key": "ee7dddbe6c34e4f9957c54bbca72b92a7fb4394ac597829b385dc14560b2c4dd",
+   "call_id": "reader:b3c15d39:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0711625,
+   "cost_usd": 0.0711625,
+   "unix_time": 1791565449.2571678,
+   "usage": null
+  },
+  {
+   "cache_key": "838583d02e547f1c2e36e55675f967a30c143a742e6548748e203c533841921a",
+   "call_id": "reader:0ea62687:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0719825,
+   "cost_usd": 0.0719825,
+   "unix_time": 1791565449.321023,
+   "usage": null
+  },
+  {
+   "cache_key": "d4d918374f1a9e9668815337be772e88080d0723ba6ad86753df5d3aa57522d7",
+   "call_id": "reader:gpt4_a2d1d1f6:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730075,
+   "cost_usd": 0.0730075,
+   "unix_time": 1791565449.388869,
+   "usage": null
+  },
+  {
+   "cache_key": "54bcdbe71682c97ab27fbb8f71d5def15b4b92362c1908d97248a31a5b695e54",
+   "call_id": "reader:0100672e:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07248500000000001,
+   "cost_usd": 0.07248500000000001,
+   "unix_time": 1791565449.469858,
+   "usage": null
+  },
+  {
+   "cache_key": "87499cc9684a18d82f69b8e86813e0ab9f94c034969432ba04d9a35a2d2bb1ca",
+   "call_id": "reader:3ba21379:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0760725,
+   "cost_usd": 0.0760725,
+   "unix_time": 1791565449.716543,
+   "usage": null
+  },
+  {
+   "cache_key": "bbef5dd8c2dfda9282957311a5cdc0ffd96c7e0bda943be208aee0c57e246fc2",
+   "call_id": "reader:8464fc84:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0697125,
+   "cost_usd": 0.0697125,
+   "unix_time": 1791565449.7427042,
+   "usage": null
+  },
+  {
+   "cache_key": "709941b59052adfe0a8c26a5779e53d631df490ce9a82460d57e1b7033d30cd7",
+   "call_id": "reader:2ebe6c92:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07250000000000001,
+   "cost_usd": 0.07250000000000001,
+   "unix_time": 1791565449.768874,
+   "usage": null
+  },
+  {
+   "cache_key": "617658df40860d6c49654a1998d675e5f47c191fd32e57ac39e04fd2db6bbddf",
+   "call_id": "reader:d905b33f:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07157,
+   "cost_usd": 0.07157,
+   "unix_time": 1791565449.82726,
+   "usage": null
+  },
+  {
+   "cache_key": "42c2702823f472bf6675e3031bc2b3c24cc56ee3c828bb4fb77d6d4fc1823b70",
+   "call_id": "reader:gpt4_8e165409:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07314,
+   "cost_usd": 0.07314,
+   "unix_time": 1791565451.452937,
+   "usage": null
+  },
+  {
+   "cache_key": "84a594cc127c4a2587027b99c2d7560715f5e909403ac67fdbc8bba4cbddb8be",
+   "call_id": "reader:75832dbd:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.073725,
+   "cost_usd": 0.073725,
+   "unix_time": 1791565451.682256,
+   "usage": null
+  },
+  {
+   "cache_key": "837006318e4829b82abf7f50602edfad5622577371873ddb4942a34e7eb23f82",
+   "call_id": "reader:8fb83627:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0718075,
+   "cost_usd": 0.0718075,
+   "unix_time": 1791565451.7570739,
+   "usage": null
+  },
+  {
+   "cache_key": "a3e550afae6f105db8de4064a5db055461bf4f4b6e4f3d69cf42afefc04fb598",
+   "call_id": "reader:gpt4_7a0daae1:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07545,
+   "cost_usd": 0.07545,
+   "unix_time": 1791565451.824806,
+   "usage": null
+  },
+  {
+   "cache_key": "cfae16d725915116c5a83ad808cdb50ad2bed7438244f3b70353435bfcc66145",
+   "call_id": "reader:gpt4_a2d1d1f6:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730075,
+   "cost_usd": 0.0730075,
+   "unix_time": 1791565452.087444,
+   "usage": null
+  },
+  {
+   "cache_key": "57da2509cb4506c5b7e82b0c6282ee0da6aaafaecab0694e03472e7f8b0a55e2",
+   "call_id": "reader:f4f1d8a4:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0710775,
+   "cost_usd": 0.0710775,
+   "unix_time": 1791565452.144948,
+   "usage": null
+  },
+  {
+   "cache_key": "ab816c175908482ce2917b52fe645964880130e5a97dce30e1677ad6f7cf7c9c",
+   "call_id": "reader:75499fd8:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0726325,
+   "cost_usd": 0.0726325,
+   "unix_time": 1791565453.076563,
+   "usage": null
+  },
+  {
+   "cache_key": "bffd51a68f7040b0ca17d2a127e6ac13ab29967cd285da620e353727dcee7fca",
+   "call_id": "reader:8fb83627:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07091,
+   "cost_usd": 0.07091,
+   "unix_time": 1791565453.16239,
+   "usage": null
+  },
+  {
+   "cache_key": "3d96b8a3eabbef3a45d8d95df1a4856d4b3dccc696fefbf6743cdd2c807430de",
+   "call_id": "reader:6aeb4375:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0707575,
+   "cost_usd": 0.0707575,
+   "unix_time": 1791565453.5767732,
+   "usage": null
+  },
+  {
+   "cache_key": "3e2d2273347a5383a2c24d4a60d982050432204f34bf677643ba5ead14fca840",
+   "call_id": "reader:2b8f3739:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072135,
+   "cost_usd": 0.072135,
+   "unix_time": 1791565453.602197,
+   "usage": null
+  },
+  {
+   "cache_key": "4fc3879fdd83927de96b5042214bc58af8e0ae8619095d6caa1e8963ed609446",
+   "call_id": "reader:41698283:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0743575,
+   "cost_usd": 0.0743575,
+   "unix_time": 1791565453.6276748,
+   "usage": null
+  },
+  {
+   "cache_key": "5085d7459c47ad52ac20afd68e54eeddf7c78e37312b2dca492402463ace3e13",
+   "call_id": "reader:gpt4_8279ba03:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072925,
+   "cost_usd": 0.072925,
+   "unix_time": 1791565453.653047,
+   "usage": null
+  },
+  {
+   "cache_key": "054731498327fbdb9b070863e30fabf5d26278768fa014c7d61344e36ba70289",
+   "call_id": "reader:ed4ddc30:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0740625,
+   "cost_usd": 0.0740625,
+   "unix_time": 1791565453.703768,
+   "usage": null
+  },
+  {
+   "cache_key": "5a46ca68ebb50e9ddfe545f816736cb9d86167b64c5401939e03d381d200d442",
+   "call_id": "reader:edced276_abs:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.074645,
+   "cost_usd": 0.074645,
+   "unix_time": 1791565454.066248,
+   "usage": null
+  },
+  {
+   "cache_key": "10e7f15804fc48d815de5264a75f69276b5e6da476ea21dde4600945c56ee06e",
+   "call_id": "reader:8ebdbe50:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07351250000000001,
+   "cost_usd": 0.07351250000000001,
+   "unix_time": 1791565454.162534,
+   "usage": null
+  },
+  {
+   "cache_key": "a0870a101976b886e5989b7dd57107736dcaa034aefca05180926036b835a68b",
+   "call_id": "reader:4100d0a0:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.067785,
+   "cost_usd": 0.067785,
+   "unix_time": 1791565454.187094,
+   "usage": null
+  },
+  {
+   "cache_key": "ec031cd112defc0c3c11803d819050bf4e117a323e220e29e8d55d3a9053c001",
+   "call_id": "reader:19b5f2b3:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0739075,
+   "cost_usd": 0.0739075,
+   "unix_time": 1791565454.211769,
+   "usage": null
+  },
+  {
+   "cache_key": "c6047ddff4e4cb3864b9e2ef80058b89918c157d495f302c21b8abebe5b9ad7f",
+   "call_id": "reader:9a707b82:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07288750000000001,
+   "cost_usd": 0.07288750000000001,
+   "unix_time": 1791565454.261591,
+   "usage": null
+  },
+  {
+   "cache_key": "9e062da8dd4c77c40c5ca690763d69b2f0e86520a9a124796b16b55c62912b88",
+   "call_id": "reader:8464fc84:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0697125,
+   "cost_usd": 0.0697125,
+   "unix_time": 1791565454.6320052,
+   "usage": null
+  },
+  {
+   "cache_key": "f17274a94ff227d12f08e5350b27d369bb9667278ccb06921140cde3ec5e406b",
+   "call_id": "reader:3fdac837:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071345,
+   "cost_usd": 0.071345,
+   "unix_time": 1791565454.670445,
+   "usage": null
+  },
+  {
+   "cache_key": "8c40680724784f043117f339115a40c736bc06332d1caf58b3fa42ee9f75ac50",
+   "call_id": "reader:gpt4_2f8be40d:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0736825,
+   "cost_usd": 0.0736825,
+   "unix_time": 1791565454.694567,
+   "usage": null
+  },
+  {
+   "cache_key": "5ef46a4c43376d239c3f0457714eff16e05dbe358470445234ae0113a55586e8",
+   "call_id": "reader:0bc8ad92:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.070715,
+   "cost_usd": 0.070715,
+   "unix_time": 1791565454.743793,
+   "usage": null
+  },
+  {
+   "cache_key": "516b6f83cf0358e0b623ac52e2eec7641f7b84a2d706e2b68817366649c89974",
+   "call_id": "reader:2133c1b5:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07123750000000001,
+   "cost_usd": 0.07123750000000001,
+   "unix_time": 1791565455.201731,
+   "usage": null
+  },
+  {
+   "cache_key": "3554c0dab9d8d339a5f8d9e109e970d97bbf22a75d7eaaf8b5e8f2276baf48f0",
+   "call_id": "reader:b759caee:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072615,
+   "cost_usd": 0.072615,
+   "unix_time": 1791565455.2297988,
+   "usage": null
+  },
+  {
+   "cache_key": "497d0a89bd04ab18c1c4c5f1c642a2af2b1401f98decd43d150d79f75c9637d8",
+   "call_id": "reader:affe2881:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0721,
+   "cost_usd": 0.0721,
+   "unix_time": 1791565455.3586009,
+   "usage": null
+  },
+  {
+   "cache_key": "192d51c359a6086fc87678fce449f1e81b506c371c55731dcd248141eb3b3b60",
+   "call_id": "reader:41698283:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07112500000000001,
+   "cost_usd": 0.07112500000000001,
+   "unix_time": 1791565455.426979,
+   "usage": null
+  },
+  {
+   "cache_key": "b5dc38424b00629ae73e3d184a0b5760d07de08bb8bb3520fb7766326bde826a",
+   "call_id": "reader:gpt4_2f8be40d:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07503750000000001,
+   "cost_usd": 0.07503750000000001,
+   "unix_time": 1791565455.495164,
+   "usage": null
+  },
+  {
+   "cache_key": "f91790c8b7b4b6b82596c31ca5216f64d2b3974ad6740699c92e2b5590ec2d0f",
+   "call_id": "reader:46a3abf7:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0748,
+   "cost_usd": 0.0748,
+   "unix_time": 1791565455.576652,
+   "usage": null
+  },
+  {
+   "cache_key": "83b22e6c9b01cc2e703ae2db8eed72662c39e1e246bf05f55c72f6ad818e8378",
+   "call_id": "reader:edced276_abs:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.074645,
+   "cost_usd": 0.074645,
+   "unix_time": 1791565455.760121,
+   "usage": null
+  },
+  {
+   "cache_key": "787ce5dfcec65d65fbbf09bc414e633a0085dfd68fc054acbba3c21910d9a624",
+   "call_id": "reader:gpt4_2f8be40d:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07344500000000001,
+   "cost_usd": 0.07344500000000001,
+   "unix_time": 1791565455.9148428,
+   "usage": null
+  },
+  {
+   "cache_key": "c05615286e2a206065ab761fa5c853b753013cf8e650c7df782282e7db232f08",
+   "call_id": "reader:gpt4_731e37d7:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07029250000000001,
+   "cost_usd": 0.07029250000000001,
+   "unix_time": 1791565455.93948,
+   "usage": null
+  },
+  {
+   "cache_key": "908b93c4c5689eefada2c7e70d21281973fd2f573b9231a80102445e5b5cc9fb",
+   "call_id": "reader:gpt4_731e37d7:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07065,
+   "cost_usd": 0.07065,
+   "unix_time": 1791565455.964137,
+   "usage": null
+  },
+  {
+   "cache_key": "1dfed2b7a4648ee83688f59b2cac70e854c0799df0eead64869d0ba224c2b1a4",
+   "call_id": "reader:gpt4_8279ba03:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072925,
+   "cost_usd": 0.072925,
+   "unix_time": 1791565455.9915352,
+   "usage": null
+  },
+  {
+   "cache_key": "bd5ef598c19a34cb5485c40f22b5c87728d7829e3a8a0eb1a1f448e20b9632f1",
+   "call_id": "reader:0e5e2d1a:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0710125,
+   "cost_usd": 0.0710125,
+   "unix_time": 1791565455.997611,
+   "usage": null
+  },
+  {
+   "cache_key": "ad5b636990276f39eb9e1c305c04705217289104dd2b74b09fd0a24a196a0132",
+   "call_id": "reader:9bbe84a2:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0735075,
+   "cost_usd": 0.0735075,
+   "unix_time": 1791565456.049469,
+   "usage": null
+  },
+  {
+   "cache_key": "7d8b8f361df49428a83b2eb7eb0492ad32e3074ee0341e8c762ebd70a1f45168",
+   "call_id": "reader:0862e8bf:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0722275,
+   "cost_usd": 0.0722275,
+   "unix_time": 1791565456.391501,
+   "usage": null
+  },
+  {
+   "cache_key": "bb2700c10b31c1b41f6c9adca734017a3bef32e48620eb7fa04aef8667093ced",
+   "call_id": "reader:8ebdbe50:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07351250000000001,
+   "cost_usd": 0.07351250000000001,
+   "unix_time": 1791565456.6005251,
+   "usage": null
+  },
+  {
+   "cache_key": "8364d2b7e30deba2e5031cfb25073f28e98f5e7f5d1b27f799d16d093d4cd8ff",
+   "call_id": "reader:75832dbd:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.073725,
+   "cost_usd": 0.073725,
+   "unix_time": 1791565456.673714,
+   "usage": null
+  },
+  {
+   "cache_key": "471d7525eaee43285032f93f0f0e5f30dda7f23a78b1461d84aa15caf19d8360",
+   "call_id": "reader:7024f17c:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0736575,
+   "cost_usd": 0.0736575,
+   "unix_time": 1791565456.924031,
+   "usage": null
+  },
+  {
+   "cache_key": "d01c3d2a76e95fd10bcaf7fea7588ab03eb76911f4a97a34527e4c275a9c5a34",
+   "call_id": "reader:38146c39:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07157,
+   "cost_usd": 0.07157,
+   "unix_time": 1791565456.9670458,
+   "usage": null
+  },
+  {
+   "cache_key": "0ea3eef15965b24d5abe7fa1355cafec5a81a84cfd554631d0c8bdbdc4b4b37f",
+   "call_id": "reader:gpt4_7a0daae1:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07545,
+   "cost_usd": 0.07545,
+   "unix_time": 1791565457.095565,
+   "usage": null
+  },
+  {
+   "cache_key": "98e1a3df1b0ac188cfee6ee753aab2292022a7cb807269ad584d53f3ab934d0e",
+   "call_id": "reader:d7c942c3:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.070765,
+   "cost_usd": 0.070765,
+   "unix_time": 1791565457.345769,
+   "usage": null
+  },
+  {
+   "cache_key": "3dc06677fb8ba6626e8ffca282717d90dd2f53bc90937f86147f12daaa5a60e5",
+   "call_id": "reader:4100d0a0:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.067785,
+   "cost_usd": 0.067785,
+   "unix_time": 1791565457.390761,
+   "usage": null
+  },
+  {
+   "cache_key": "ac4dcdb61e0947550c03f1e8c26637923642bba4062d78a73f8786635139a4a1",
+   "call_id": "reader:eac54adc:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0781975,
+   "cost_usd": 0.0781975,
+   "unix_time": 1791565457.49204,
+   "usage": null
+  },
+  {
+   "cache_key": "fb6c8816efc03f1ba03fb78e0ab82705250ba0ce87b240305d35119750a563e8",
+   "call_id": "reader:19b5f2b3:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0739075,
+   "cost_usd": 0.0739075,
+   "unix_time": 1791565457.522926,
+   "usage": null
+  },
+  {
+   "cache_key": "c7571245f3b6608483feac44b63bd37a3b21b04bf270becdd5062ee5af028e8d",
+   "call_id": "reader:6a27ffc2:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07461000000000001,
+   "cost_usd": 0.07461000000000001,
+   "unix_time": 1791565457.5928519,
+   "usage": null
+  },
+  {
+   "cache_key": "ea6e34fe8f57ca4e528e0a118d362c2fc726d03f282c21789465c8f7e7d6aaac",
+   "call_id": "reader:e3fc4d6e:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0718725,
+   "cost_usd": 0.0718725,
+   "unix_time": 1791565457.962158,
+   "usage": null
+  },
+  {
+   "cache_key": "5e99330724a9512da953d656b0075fb0ee14ad489a09d04191c7fb84c8eb0630",
+   "call_id": "reader:gpt4_8e165409:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07314,
+   "cost_usd": 0.07314,
+   "unix_time": 1791565458.0368361,
+   "usage": null
+  },
+  {
+   "cache_key": "829dec8db4f0e4fead481511d7ddfafed9c937bd2cabbdf3407b5934c2639b98",
+   "call_id": "reader:gpt4_4edbafa2:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730475,
+   "cost_usd": 0.0730475,
+   "unix_time": 1791565458.061846,
+   "usage": null
+  },
+  {
+   "cache_key": "c13b4b6cb366adbdf1b747f21a05d190bd2de7b6a0b3ea9b9d7a02401aed057a",
+   "call_id": "reader:gpt4_731e37d7:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07029250000000001,
+   "cost_usd": 0.07029250000000001,
+   "unix_time": 1791565458.104937,
+   "usage": null
+  },
+  {
+   "cache_key": "7f748a1c2f55bca9fd2c967eb98abd6e50138d4345155c2c95cbcbfcd5a89ada",
+   "call_id": "reader:18bc8abd:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0746275,
+   "cost_usd": 0.0746275,
+   "unix_time": 1791565458.180523,
+   "usage": null
+  },
+  {
+   "cache_key": "712846447ad7bae573e5f26fe87da7761841986b80480efa6c87df3aa650085c",
+   "call_id": "reader:15745da0:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07456750000000001,
+   "cost_usd": 0.07456750000000001,
+   "unix_time": 1791565458.5212412,
+   "usage": null
+  },
+  {
+   "cache_key": "428207b0c979ad4f69ad5a642f0f419ae515ec01c0f99050151847bf3bc653f3",
+   "call_id": "reader:e8a79c70:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0711425,
+   "cost_usd": 0.0711425,
+   "unix_time": 1791565458.59594,
+   "usage": null
+  },
+  {
+   "cache_key": "1c31601f18466b5010f3401de39261180f39bc9202d7d7a198ef3d1169cb6592",
+   "call_id": "reader:55241a1f:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0752675,
+   "cost_usd": 0.0752675,
+   "unix_time": 1791565458.620846,
+   "usage": null
+  },
+  {
+   "cache_key": "a4e53481739acb3f648247e4cad5b90fa0966af4124a83d59f6051e270bcff00",
+   "call_id": "reader:c2ac3c61:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0739675,
+   "cost_usd": 0.0739675,
+   "unix_time": 1791565458.7501,
+   "usage": null
+  },
+  {
+   "cache_key": "f3ac1f9f9663abe0360c69240983d2214148082219609119bd892192b457cb25",
+   "call_id": "reader:993da5e2:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07219,
+   "cost_usd": 0.07219,
+   "unix_time": 1791565458.8500779,
+   "usage": null
+  },
+  {
+   "cache_key": "e9b14ae5ea93012d3a2579a79d6949a27b236248c9b91d5d0bfcf9fdd2e04173",
+   "call_id": "reader:2698e78f_abs:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07215,
+   "cost_usd": 0.07215,
+   "unix_time": 1791565458.908322,
+   "usage": null
+  },
+  {
+   "cache_key": "1c4b9fa45834c6ac307f4fa18819bec9acc811a0c649a0daddf4f1cda7f130da",
+   "call_id": "reader:94f70d80:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0723425,
+   "cost_usd": 0.0723425,
+   "unix_time": 1791565459.1634402,
+   "usage": null
+  },
+  {
+   "cache_key": "6f9d4959d0efd0798d873adf54f224837c3efd864b0599432e0ca537b846a817",
+   "call_id": "reader:dccbc061:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0750625,
+   "cost_usd": 0.0750625,
+   "unix_time": 1791565459.188343,
+   "usage": null
+  },
+  {
+   "cache_key": "9de7202b1bdeb554a3e506276292022501934a099745fa202ea980c4a1d65903",
+   "call_id": "reader:d596882b:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0708625,
+   "cost_usd": 0.0708625,
+   "unix_time": 1791565459.219062,
+   "usage": null
+  },
+  {
+   "cache_key": "6da2346144ed4cb575d3eda3aa967faeee8f3d5b4387321c4626eadc5034cd0e",
+   "call_id": "reader:7e00a6cb:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071265,
+   "cost_usd": 0.071265,
+   "unix_time": 1791565459.377915,
+   "usage": null
+  },
+  {
+   "cache_key": "c810176cb7ec588164df1828ac9cee70bda412658fdffa68bc0042f0a4388e26",
+   "call_id": "reader:2b8f3739:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0737225,
+   "cost_usd": 0.0737225,
+   "unix_time": 1791565459.429635,
+   "usage": null
+  },
+  {
+   "cache_key": "66cd25d2eb2d2fb89d3e1987a7a1f309ddbe9d5c1156be044aef84179ac53e78",
+   "call_id": "reader:6d550036:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0725225,
+   "cost_usd": 0.0725225,
+   "unix_time": 1791565460.386082,
+   "usage": null
+  },
+  {
+   "cache_key": "42855ff5074901d0651fbfcdaf33e5d458d90be6dbd3873dc7b28aeac2bd63ce",
+   "call_id": "reader:4388e9dd:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07166,
+   "cost_usd": 0.07166,
+   "unix_time": 1791565460.630492,
+   "usage": null
+  },
+  {
+   "cache_key": "7f33e5b87145c9b0414a8fa242e95760cd4e8eb744682b22b0d832ddb50f1da9",
+   "call_id": "reader:e3fc4d6e:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0718725,
+   "cost_usd": 0.0718725,
+   "unix_time": 1791565460.687395,
+   "usage": null
+  },
+  {
+   "cache_key": "377fdf431d3a4cd64a29bba66b4d391907c94217af1c88cf20d969c3d03f6bb4",
+   "call_id": "reader:0bc8ad93:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0713575,
+   "cost_usd": 0.0713575,
+   "unix_time": 1791565461.1652942,
+   "usage": null
+  },
+  {
+   "cache_key": "5be865df2927a14329b298bd575c578e42aa38ba28bda8b5d00c7e30872681ed",
+   "call_id": "reader:eeda8a6d:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07332,
+   "cost_usd": 0.07332,
+   "unix_time": 1791565461.201507,
+   "usage": null
+  },
+  {
+   "cache_key": "e81d4a9cf3f597d39d2f4f931248fcfccf4e85445af73294effa3317c3570c55",
+   "call_id": "reader:d52b4f67:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07181,
+   "cost_usd": 0.07181,
+   "unix_time": 1791565461.226634,
+   "usage": null
+  },
+  {
+   "cache_key": "b9f710e9f2105d0b66be84b388b313cb76842a0852c96c526cd4be2441058984",
+   "call_id": "reader:75832dbd:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.073725,
+   "cost_usd": 0.073725,
+   "unix_time": 1791565461.251643,
+   "usage": null
+  },
+  {
+   "cache_key": "71732916f97665999eb5b0ffddd4060ff7f653ddfa96c578e3ad47c81f855aca",
+   "call_id": "reader:9a707b81:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07325000000000001,
+   "cost_usd": 0.07325000000000001,
+   "unix_time": 1791565461.2766972,
+   "usage": null
+  },
+  {
+   "cache_key": "34a1aeda215976eba44ba53df6fd72df68c7f753333d600ed76eeed3a6aeebf9",
+   "call_id": "reader:55241a1f:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0741625,
+   "cost_usd": 0.0741625,
+   "unix_time": 1791565461.4561,
+   "usage": null
+  },
+  {
+   "cache_key": "0a32964838015ffa85b34335840f09d8ae92638dcae9cd92b889e15ce7d84cbf",
+   "call_id": "reader:gpt4_a2d1d1f6:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730075,
+   "cost_usd": 0.0730075,
+   "unix_time": 1791565461.5071628,
+   "usage": null
+  },
+  {
+   "cache_key": "6ccd00aadf473944a05c9b00498413d461acd8a2d6d0cc20cca9bdd74fbe7348",
+   "call_id": "reader:80ec1f4f_abs:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071685,
+   "cost_usd": 0.071685,
+   "unix_time": 1791565463.406098,
+   "usage": null
+  },
+  {
+   "cache_key": "dda8842d253f75ab0f823c0c42f6dd2463b784d32e644fe29c1b9dc3cc3061ff",
+   "call_id": "reader:0100672e:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07248500000000001,
+   "cost_usd": 0.07248500000000001,
+   "unix_time": 1791565463.4770072,
+   "usage": null
+  },
+  {
+   "cache_key": "3eafc4c6ea5707e553769d5cef6f5e6796cb56f63ce11a9a0f996aaa202c3de6",
+   "call_id": "reader:c8c3f81d:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0723425,
+   "cost_usd": 0.0723425,
+   "unix_time": 1791565463.568207,
+   "usage": null
+  },
+  {
+   "cache_key": "4cf5255d0cd88d643ed94a17d62d1cc0528cac351ce9d0cdbd9c32fc8757d232",
+   "call_id": "reader:46a3abf7:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0748,
+   "cost_usd": 0.0748,
+   "unix_time": 1791565463.6254542,
+   "usage": null
+  },
+  {
+   "cache_key": "85b780e9ff890800aa855b11ae63f3cec66339310641330d5c1bda528c7f0a5f",
+   "call_id": "reader:993da5e2:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07219,
+   "cost_usd": 0.07219,
+   "unix_time": 1791565466.523437,
+   "usage": null
+  },
+  {
+   "cache_key": "63f35338810644360ac0f694e060ce6c021632f22ac22143e3c6e21afad1314e",
+   "call_id": "reader:d7c942c3:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.070765,
+   "cost_usd": 0.070765,
+   "unix_time": 1791565466.563144,
+   "usage": null
+  },
+  {
+   "cache_key": "ad6b81abb6a2698c0ee45d66decf0463ebed7865cf3cf92d3668a56a338ef321",
+   "call_id": "reader:gpt4_70e84552_abs:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0728675,
+   "cost_usd": 0.0728675,
+   "unix_time": 1791565466.587355,
+   "usage": null
+  },
+  {
+   "cache_key": "4afedcf622eec90c22699f00d595cd181a70a2c017a7effac29e97e18d1e2dcf",
+   "call_id": "reader:77eafa52:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.06952,
+   "cost_usd": 0.06952,
+   "unix_time": 1791565466.611489,
+   "usage": null
+  },
+  {
+   "cache_key": "b46e8ec6bc948068825b84928493ff884bd8b435dbe87edd6a286eddbee80764",
+   "call_id": "reader:gpt4_59149c78:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07198500000000001,
+   "cost_usd": 0.07198500000000001,
+   "unix_time": 1791565466.717827,
+   "usage": null
+  },
+  {
+   "cache_key": "07ca77d45ead8d0ef1e596544a87a716bd03334cf21c2594e8ec4b3cd54b6af5",
+   "call_id": "reader:0100672e:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07248500000000001,
+   "cost_usd": 0.07248500000000001,
+   "unix_time": 1791565467.0830731,
+   "usage": null
+  },
+  {
+   "cache_key": "b522f1da899d0c10bbc28da640f42bbf84f3e27f6863c48637ce97246720296f",
+   "call_id": "reader:c6853660:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0747675,
+   "cost_usd": 0.0747675,
+   "unix_time": 1791565467.152589,
+   "usage": null
+  },
+  {
+   "cache_key": "9c3d09c531da004d2933f209fbbec7a6733d5759fccedea41b3e1a68333e2658",
+   "call_id": "reader:38146c39:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07157,
+   "cost_usd": 0.07157,
+   "unix_time": 1791565467.2869,
+   "usage": null
+  },
+  {
+   "cache_key": "55b639ee65c2eb7749ff9bba6ef014f6484b06276f982e53166cb2ca8ca0d1d6",
+   "call_id": "reader:dccbc061:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072115,
+   "cost_usd": 0.072115,
+   "unix_time": 1791565467.297179,
+   "usage": null
+  },
+  {
+   "cache_key": "4c06413ca6557227dcd0e929c3f716e16fa43ffb939e98774459b58af72bd6fb",
+   "call_id": "reader:gpt4_8e165409:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07314,
+   "cost_usd": 0.07314,
+   "unix_time": 1791565467.302124,
+   "usage": null
+  },
+  {
+   "cache_key": "1a12d4ff25bf611ff491c129101f780519559ae01b1bd9bd163860fd22c1a3c2",
+   "call_id": "reader:1da05512:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07583000000000001,
+   "cost_usd": 0.07583000000000001,
+   "unix_time": 1791565467.3057642,
+   "usage": null
+  },
+  {
+   "cache_key": "87385142b18ede5a06b76e1f7a13cbee99e1fe99c8d3e92837fad9bc7d615c4e",
+   "call_id": "reader:15745da0:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07456750000000001,
+   "cost_usd": 0.07456750000000001,
+   "unix_time": 1791565467.322743,
+   "usage": null
+  },
+  {
+   "cache_key": "45ab548b80af1676b044738de6a0ad01d5dbc6c12b58e252c73db2509505921b",
+   "call_id": "reader:7024f17c:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07326,
+   "cost_usd": 0.07326,
+   "unix_time": 1791565468.742885,
+   "usage": null
+  },
+  {
+   "cache_key": "c9092312a4205d1726fbe341e6763c4b01b8c85290f1421cb09dfb9fb4816a34",
+   "call_id": "reader:gpt4_d31cdae3:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0715025,
+   "cost_usd": 0.0715025,
+   "unix_time": 1791565468.781603,
+   "usage": null
+  },
+  {
+   "cache_key": "1f2989ff7a9df914551eebfbc97d8831ca58ddbfca5fdd283464848375be2b9c",
+   "call_id": "reader:352ab8bd:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07077,
+   "cost_usd": 0.07077,
+   "unix_time": 1791565468.8392901,
+   "usage": null
+  },
+  {
+   "cache_key": "b9a25c5b9e86a5d7d2606769f01702ff01af7a964f1c92940bffde0795b4589f",
+   "call_id": "reader:d596882b:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0708625,
+   "cost_usd": 0.0708625,
+   "unix_time": 1791565468.8735921,
+   "usage": null
+  },
+  {
+   "cache_key": "284087da93a04a081babed1ea4d331b931093d1520ebb34eac4c243539e1a84d",
+   "call_id": "reader:6aeb4375:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.06983,
+   "cost_usd": 0.06983,
+   "unix_time": 1791565468.8851671,
+   "usage": null
+  },
+  {
+   "cache_key": "87c93b1d8f2de56a54118ff081d73efd1ae36df452f3fb16ff628193845ae9e7",
+   "call_id": "reader:eac54add:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0708525,
+   "cost_usd": 0.0708525,
+   "unix_time": 1791565468.8970208,
+   "usage": null
+  },
+  {
+   "cache_key": "ec2ada550c665f02ce36e3187947831ff8a76be357539215f9bdfcdd99294b85",
+   "call_id": "reader:ed4ddc30:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0740625,
+   "cost_usd": 0.0740625,
+   "unix_time": 1791565468.9000902,
+   "usage": null
+  },
+  {
+   "cache_key": "8d20375c6ed53a4381c917a078c2fdde2c9abf44386ec655b2bd0637aecf86ed",
+   "call_id": "reader:0a34ad58:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07296,
+   "cost_usd": 0.07296,
+   "unix_time": 1791565468.90347,
+   "usage": null
+  },
+  {
+   "cache_key": "af82b1c76c2f9fe042a6b2966e317f2565f43fdee5a321a33206a26b8bc9d05c",
+   "call_id": "reader:gpt4_a56e767c:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.074975,
+   "cost_usd": 0.074975,
+   "unix_time": 1791565469.291001,
+   "usage": null
+  },
+  {
+   "cache_key": "06ffed3ec06b2e9310a46ba6f319862604f7bd58d3b4cffb6c1b70c5d9646672",
+   "call_id": "reader:gpt4_d31cdae3:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0723975,
+   "cost_usd": 0.0723975,
+   "unix_time": 1791565469.836444,
+   "usage": null
+  },
+  {
+   "cache_key": "2bcaa4c404c1d7b21a773a7bbcf702af062d5a2e96082b450c9c8b63adfcfeb2",
+   "call_id": "reader:affe2881:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0721,
+   "cost_usd": 0.0721,
+   "unix_time": 1791565469.862085,
+   "usage": null
+  },
+  {
+   "cache_key": "1dbcb5d2e3be9ba3fc53f33701a7a8e92198d23b6672dae35d8d49990353c6c5",
+   "call_id": "reader:32260d93:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729925,
+   "cost_usd": 0.0729925,
+   "unix_time": 1791565469.887672,
+   "usage": null
+  },
+  {
+   "cache_key": "26f335b9ce43147fc0848393e15fa26997f453713d7151d2ce794f008f958b03",
+   "call_id": "reader:gpt4_468eb064:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.08079,
+   "cost_usd": 0.08079,
+   "unix_time": 1791565469.919745,
+   "usage": null
+  },
+  {
+   "cache_key": "3042b8c1c05b554344cf59e1de4e185fa01b2d195d94a00f4dab3a831f843bea",
+   "call_id": "reader:0bc8ad93:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0727775,
+   "cost_usd": 0.0727775,
+   "unix_time": 1791565469.935338,
+   "usage": null
+  },
+  {
+   "cache_key": "d9d51ed0111ef0bfac015b339292537f0c47bd58c86003c95f7763f323b23e2c",
+   "call_id": "reader:352ab8bd:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07077,
+   "cost_usd": 0.07077,
+   "unix_time": 1791565469.983993,
+   "usage": null
+  },
+  {
+   "cache_key": "77f9795bc63eaa992ce9fa39b381226105a74d575e63b3e1df503c5dccd3eb99",
+   "call_id": "reader:gpt4_59149c78:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07198500000000001,
+   "cost_usd": 0.07198500000000001,
+   "unix_time": 1791565470.018411,
+   "usage": null
+  },
+  {
+   "cache_key": "860f91bc0451c7ff7acec3bc6e76d0555f2586f87461ad9a0f4d1dc7fd59266e",
+   "call_id": "reader:e5ba910e_abs:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07182,
+   "cost_usd": 0.07182,
+   "unix_time": 1791565470.0508642,
+   "usage": null
+  },
+  {
+   "cache_key": "a5e3c0eb0c588ab33fcec2b0772954bf374bf749d4aa71d10e30018553310913",
+   "call_id": "reader:89527b6b:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07136,
+   "cost_usd": 0.07136,
+   "unix_time": 1791565470.256802,
+   "usage": null
+  },
+  {
+   "cache_key": "8a7e44d89d9623db841382c65ca99a61045b7029848d88933785e1b8f1e41c0e",
+   "call_id": "reader:32260d93:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729925,
+   "cost_usd": 0.0729925,
+   "unix_time": 1791565470.334846,
+   "usage": null
+  },
+  {
+   "cache_key": "57e7399bad45c2d2f1f6d6c0d267ea73f3c311f8d4848c7a388305c6c79ac437",
+   "call_id": "reader:6aeb4375:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0707575,
+   "cost_usd": 0.0707575,
+   "unix_time": 1791565470.39885,
+   "usage": null
+  },
+  {
+   "cache_key": "551777ef61a7a7a69036768715b79d1f7d73aca2b708fa3d3fe0fb69f3dbfe68",
+   "call_id": "reader:41698283:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0719525,
+   "cost_usd": 0.0719525,
+   "unix_time": 1791565470.449476,
+   "usage": null
+  },
+  {
+   "cache_key": "73d0aceb70a4cf7743c411b81d47ccb8a4fadff42f3cd0285e95a8291201df0f",
+   "call_id": "reader:1da05512:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07583000000000001,
+   "cost_usd": 0.07583000000000001,
+   "unix_time": 1791565470.5443609,
+   "usage": null
+  },
+  {
+   "cache_key": "1963a161e8fc27ba41f5edafade750dc095b9999b3898c5a45af30c7de1d9013",
+   "call_id": "reader:gpt4_8c8961ae:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.073925,
+   "cost_usd": 0.073925,
+   "unix_time": 1791565470.5537422,
+   "usage": null
+  },
+  {
+   "cache_key": "168902bd47f125cb97991edfc35cbdbb2640d19299601590ca39ef33bfd04bf1",
+   "call_id": "reader:2133c1b5:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07123750000000001,
+   "cost_usd": 0.07123750000000001,
+   "unix_time": 1791565470.6637802,
+   "usage": null
+  },
+  {
+   "cache_key": "83990715273a36c3f19f868f3c6644bf31c910f1772d32bd2322fbb24f93486a",
+   "call_id": "reader:7e00a6cb:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.071265,
+   "cost_usd": 0.071265,
+   "unix_time": 1791565470.754868,
+   "usage": null
+  },
+  {
+   "cache_key": "0e8721dc578070e25e67971faa19fe6e1aaea7982a95f01fcd360a925a1fe086",
+   "call_id": "reader:75499fd8:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0726325,
+   "cost_usd": 0.0726325,
+   "unix_time": 1791565471.483671,
+   "usage": null
+  },
+  {
+   "cache_key": "52cedc95e570f1dcccb25e4987b92043c46902f8c117d39e8116268434fcc0a9",
+   "call_id": "reader:18bc8abd:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07484,
+   "cost_usd": 0.07484,
+   "unix_time": 1791565471.512068,
+   "usage": null
+  },
+  {
+   "cache_key": "1066e5fb145dff6209ef04c2bff6b439fca36b2c2b83b00d0cdb1ae5ed240b0e",
+   "call_id": "reader:e4e14d04:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0731775,
+   "cost_usd": 0.0731775,
+   "unix_time": 1791565471.5715132,
+   "usage": null
+  },
+  {
+   "cache_key": "840047d4b5b76a27c05a6d26e2c9c0510f4c6a0383a6975719e742b1f841fee2",
+   "call_id": "reader:e4e14d04:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0731775,
+   "cost_usd": 0.0731775,
+   "unix_time": 1791565471.598565,
+   "usage": null
+  },
+  {
+   "cache_key": "8c1063f1171d27708dd686b4c75f2376b7d9ff22323d466eb99e8ce9e7f09cb8",
+   "call_id": "reader:0e5e2d1a:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07079250000000001,
+   "cost_usd": 0.07079250000000001,
+   "unix_time": 1791565471.651519,
+   "usage": null
+  },
+  {
+   "cache_key": "068dbc934db9c4a1e60322b34135edb2ffd4f56f01d4bce67690b4405bd338cf",
+   "call_id": "reader:gpt4_e061b84f:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0727425,
+   "cost_usd": 0.0727425,
+   "unix_time": 1791565471.666502,
+   "usage": null
+  },
+  {
+   "cache_key": "3385813361b7e0f69741fbf4b17888c60d7fc7a37ec7e0ee5bfca0e5645d6f4a",
+   "call_id": "reader:gpt4_468eb064:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0794275,
+   "cost_usd": 0.0794275,
+   "unix_time": 1791565471.68307,
+   "usage": null
+  },
+  {
+   "cache_key": "8e7cb29332ef86687cf2e67e6fc0090dd3707e9fba076a8bc53a9743f76e14dd",
+   "call_id": "reader:0ea62687:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729975,
+   "cost_usd": 0.0729975,
+   "unix_time": 1791565471.727851,
+   "usage": null
+  },
+  {
+   "cache_key": "98adc84cb550c742c0c03138b6f18bc03f3d421de3fe5b611faab78cb8e9617f",
+   "call_id": "reader:0ea62687:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0714425,
+   "cost_usd": 0.0714425,
+   "unix_time": 1791565472.032928,
+   "usage": null
+  },
+  {
+   "cache_key": "b1f6285d52a3778944aa3edcb5c984c33f37f065190cb50e5943e6b6b6c29105",
+   "call_id": "reader:4388e9dd:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07166,
+   "cost_usd": 0.07166,
+   "unix_time": 1791565472.069765,
+   "usage": null
+  },
+  {
+   "cache_key": "2d32524ff80cbb518d5e2a29ab93bf11383b93d806a94d6bcc631375f0551338",
+   "call_id": "reader:6cb6f249:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0730525,
+   "cost_usd": 0.0730525,
+   "unix_time": 1791565472.151113,
+   "usage": null
+  },
+  {
+   "cache_key": "48f70c2aeeb7b84fdab099058e4867f7a565ccb2ec833642988389368d3ede8f",
+   "call_id": "reader:60036106:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0726775,
+   "cost_usd": 0.0726775,
+   "unix_time": 1791565472.221408,
+   "usage": null
+  },
+  {
+   "cache_key": "7078502adedb583ce84b38f78811628dcedba82ef551ed4af0ad28a8a0ee33b5",
+   "call_id": "reader:e48988bc:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0691525,
+   "cost_usd": 0.0691525,
+   "unix_time": 1791565472.271832,
+   "usage": null
+  },
+  {
+   "cache_key": "571bbbe01feb0512f9f174816cd7c1ec55ef4f159298e8e70e341c8ca25b2eec",
+   "call_id": "reader:0e5e2d1a:knapsack",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0710125,
+   "cost_usd": 0.0710125,
+   "unix_time": 1791565472.2748532,
+   "usage": null
+  },
+  {
+   "cache_key": "49b0dbf6a0b0ed194aa946e5dba2e48e1ead840ff42b2bb46e3865d967c84912",
+   "call_id": "reader:32260d93:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0729925,
+   "cost_usd": 0.0729925,
+   "unix_time": 1791565472.6512692,
+   "usage": null
+  },
+  {
+   "cache_key": "1f1139b4a3c87f360d2687cbdcf9b43269a04bafe104092c6c5ac17cec3ebfaa",
+   "call_id": "reader:6d550036:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.072885,
+   "cost_usd": 0.072885,
+   "unix_time": 1791565472.751199,
+   "usage": null
+  },
+  {
+   "cache_key": "880ff82eb7c5da03e2f9d8d572ee3c868ea3ec87742e886112ac86d81423e099",
+   "call_id": "reader:gpt4_59149c78:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07198500000000001,
+   "cost_usd": 0.07198500000000001,
+   "unix_time": 1791565472.828059,
+   "usage": null
+  },
+  {
+   "cache_key": "ed027b1e5f18cdeb53d2b1bbb2c1de3e76049b1052e1e35c0f9c2821f2d34308",
+   "call_id": "reader:gpt4_31ff4165:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.0716475,
+   "cost_usd": 0.0716475,
+   "unix_time": 1791565472.853699,
+   "usage": null
+  },
+  {
+   "cache_key": "b6130fc2d74617b6d2a7b8a49d8491f67dc510806078b960013fcd375a8593f8",
+   "call_id": "reader:6a27ffc2:operand",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07461000000000001,
+   "cost_usd": 0.07461000000000001,
+   "unix_time": 1791565472.9392571,
+   "usage": null
+  },
+  {
+   "cache_key": "c400df570f05491b08db93ed4c58a8b6d9fcd7b4c74932bb0551f3a46d1a6bec",
+   "call_id": "reader:1da05512:first_five",
+   "category": "reader_judge_dev",
+   "status": "error",
+   "reserved_usd": 0.07583000000000001,
+   "cost_usd": 0.07583000000000001,
+   "unix_time": 1791565472.955411,
+   "usage": null
+  }
+ ],
+ "total_usd": 21.798890000000014,
+ "by_category_usd": {
+  "reader_judge_dev": 21.798890000000014,
+  "qwen8b": 0,
+  "x86": 0,
+  "reserve": 0,
+  "heldout400": 0
+ }
+}

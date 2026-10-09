@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "session": 1,
+  "created_at_unix": 1791564830.654319,
+  "branch": "research/2026-10-superiority",
+  "items": [
+    {
+      "item": 1,
+      "lever": "three-arm reader and official judge",
+      "kill_test": "100 dev questions per arm, citation fidelity, fixed20 questions x20 repeated judge calls",
+      "metric": "answer accuracy; verbatim citation support; judge disagreement",
+      "condition": "same reader/judge/token cap, assistant replies for all three arms",
+      "expected_failure_mode": "operand coverage may not entail answers; role additions or token cap may erase gain",
+      "budget_hours": 24
+    },
+    {
+      "item": 2,
+      "lever": "native matched ANN harness",
+      "kill_test": "11 alternating paired rounds on both datasets at recalls .90/.95",
+      "metric": "single-thread one-query QPS; serialized bytes; peak RSS; workspace; build seconds",
+      "condition": "load1<3 each round, equal interface overhead, pinned native systems",
+      "expected_failure_mode": "load gate or missing .95 bracket; Python/native interface asymmetry",
+      "budget_hours": 24
+    },
+    {
+      "item": 3,
+      "lever": "learned early termination",
+      "kill_test": "fewer evaluations than patience at every recall within .003 on both datasets AND faster complete query loops",
+      "metric": "evaluations/query; paired QPS ratio and 95% lower bound; inference ns",
+      "condition": "train-only tuning, strongest patience control, inference<50ns",
+      "expected_failure_mode": "state stability may not predict remaining neighbors; policy overhead erases saves",
+      "budget_hours": 24
+    },
+    {
+      "item": 4,
+      "lever": "overlapped fetch pipelining",
+      "kill_test": "faster complete query loop at unchanged recall and counts",
+      "metric": "paired QPS ratio and 95% lower bound",
+      "condition": "fresh rows fetched before compute, next-expansion prefetch; reorder off/on",
+      "expected_failure_mode": "memory-level parallelism already saturated; bookkeeping defeats overlap",
+      "budget_hours": 24
+    },
+    {
+      "item": 5,
+      "lever": "Qwen encoder and top100 cross-encoder",
+      "kill_test": "+.005 nDCG@10 on dev/train with no dataset regression, then one frozen test run",
+      "metric": "nDCG@10; HMS hybrid minus bare dense same encoder",
+      "condition": "SciFact train and NFCorpus dev; encoder/revision pinned before calls",
+      "expected_failure_mode": "stronger encoder removes lexical gains; rerank truncation or weak fusion regresses",
+      "budget_hours": 12
+    }
+  ],
+  "reader_protocol_path": "benchmarks/public/reader_protocol_v1.json",
+  "reader_protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
+  "spend_caps_usd": {
+    "total": 250,
+    "reader_judge_dev": 120,
+    "qwen8b": 60,
+    "x86": 60,
+    "reserve": 10,
+    "heldout400": 0
+  },
+  "heldout_authorized": false,
+  "ann_recall_targets": [
+    0.9,
+    0.95
+  ],
+  "ann_paired_rounds": 11,
+  "load_threshold": 3,
+  "admission": "positive paired95lower bound at any operating point and no unrecovered regression elsewhere"
+}

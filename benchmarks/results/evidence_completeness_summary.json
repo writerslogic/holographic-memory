@@ -1,0 +1,70 @@
+{
+ "report_sha256": "d7ab07c08502b307102571e87b0208688a2ac384c787668ee3c130d357785be4",
+ "validator_sha256": "6527646b95e517727bdf50959870dc3f896a9123153a2cb7c3f363a9fb3199ec",
+ "questions": 100,
+ "variants": 10,
+ "source_readouts_verified": 5000,
+ "partition_sizes": {
+  "calibration": 40,
+  "confirmation": 44
+ },
+ "selected": {
+  "minimum_beam": "minimum_beam_0.25",
+  "mean_beam": "mean_beam_0.75",
+  "mean_greedy": "mean_greedy_0.75"
+ },
+ "quality_leap_proxy_pass": false,
+ "confirmation_comparisons": {
+  "baseline": {
+   "overall": {
+    "mean": -0.045454545454545456,
+    "ci95": [
+     -0.11363636363636363,
+     0.0
+    ]
+   },
+   "knowledge-update": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "multi-session": {
+    "mean": -0.08333333333333333,
+    "ci95": [
+     -0.25,
+     0.0
+    ]
+   },
+   "single-session-assistant": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "single-session-preference": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "single-session-user": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "temporal-reasoning": {
+    "mean": -0.07692307692307693,
+    "ci95": [
+     -0.23076923076923078,
+     0.0
+    ]
+   }
+  }
+ }
+}
