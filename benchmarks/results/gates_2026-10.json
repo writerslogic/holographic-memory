@@ -10,7 +10,7 @@
     "compiler_seconds": null,
     "cwd": "/Volumes/A/holographic-memory",
     "duration_scope": "operational validation runtime; no ANN query claim",
-    "elapsed_seconds": 0.34230483300052583,
+    "elapsed_seconds": 0.4774005829822272,
     "environment": {
       "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
     },
@@ -33,10 +33,10 @@
       "-D",
       "warnings"
     ],
-    "compiler_seconds": 8.91,
+    "compiler_seconds": 16.26,
     "cwd": "/Volumes/A/holographic-memory",
     "duration_scope": "operational validation runtime; no ANN query claim",
-    "elapsed_seconds": 8.969602832919918,
+    "elapsed_seconds": 16.33406904200092,
     "environment": {
       "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
     },
@@ -60,10 +60,10 @@
       "-D",
       "warnings"
     ],
-    "compiler_seconds": 4.27,
+    "compiler_seconds": 4.47,
     "cwd": "/Volumes/A/holographic-memory",
     "duration_scope": "operational validation runtime; no ANN query claim",
-    "elapsed_seconds": 4.349736875039525,
+    "elapsed_seconds": 4.538908374961466,
     "environment": {
       "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
     },
@@ -83,10 +83,10 @@
       "test",
       "--locked"
     ],
-    "compiler_seconds": 93.0,
+    "compiler_seconds": 26.09,
     "cwd": "/Volumes/A/holographic-memory",
     "duration_scope": "operational validation runtime; no ANN query claim",
-    "elapsed_seconds": 115.64662304206286,
+    "elapsed_seconds": 38.892579457955435,
     "environment": {
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
@@ -103,7 +103,7 @@
     "suite_runtimes": [
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 7.98,
+        "elapsed_seconds": 11.08,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 1,
@@ -559,7 +559,7 @@
       },
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 0.18,
+        "elapsed_seconds": 0.17,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 0,
@@ -571,7 +571,7 @@
       },
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 0.66,
+        "elapsed_seconds": 0.65,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 0,
@@ -595,7 +595,7 @@
       },
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 2.01,
+        "elapsed_seconds": 0.22,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 0,
@@ -616,10 +616,10 @@
       "--locked",
       "--all-features"
     ],
-    "compiler_seconds": 302.0,
+    "compiler_seconds": 67.0,
     "cwd": "/Volumes/A/holographic-memory",
     "duration_scope": "operational validation runtime; no ANN query claim",
-    "elapsed_seconds": 318.2114433750976,
+    "elapsed_seconds": 82.8643896660069,
     "environment": {
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
@@ -636,7 +636,7 @@
     "suite_runtimes": [
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 11.98,
+        "elapsed_seconds": 11.52,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 1,
@@ -1248,7 +1248,7 @@
       },
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 0.18,
+        "elapsed_seconds": 0.19,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 0,
@@ -1260,7 +1260,7 @@
       },
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 0.63,
+        "elapsed_seconds": 0.65,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 0,
@@ -1272,7 +1272,7 @@
       },
       {
         "duration_scope": "operational validation runtime; no ANN query claim",
-        "elapsed_seconds": 0.24,
+        "elapsed_seconds": 0.25,
         "failed": 0,
         "filtered_out": 0,
         "ignored": 0,

@@ -256,3 +256,17 @@ The staged snapshot has 294/300 local records: 290 valid, four malformed answers
 All five Rust gates pass (`gates_checkpoint6_2026-10.json`). Both test commands use opt-level1 with debug assertions and overflow checks enabled. Preliminary library-suite execution durations are 7.98s default and 11.98s all-features; the initial optimized dependency rebuild is recorded separately. Reader prompts, binary and generation parameters are unchanged. Previous checkpoint13415cb is pushed.
 
 Usage-supported cost $5.651206; conservative reservations $22.021348; exposure $27.672553 (`benchmarks/results/spend_checkpoint_2026-10-09T2034.json`). Running: local reader61378, incremental judges31363, evidence updater3004. Scoreboard diff: none; D1, D2 and D3 remain open.
+
+### Session 1 Item1 acceptance 2026-10-09T20:46:03.178652+00:00
+
+1. Finish the approved parallel native harness implementation; freeze train-only operating points, then run and commit the matched native comparisons.
+2. Run learned early termination's preregistered kill test after Item2 acceptance.
+3. Begin fetch pipelining next if learned termination fails its kill test; otherwise start it in session2.
+
+All100 dev questions are complete for the three matched-reader arms and three local-reader arms. Matched correctness is 83/100, 82/100 and 87/100; verbatim citation-span scores are 187/192, 180/186 and 201/204. Local correctness is 47/100, 46/100 and 48/100; four malformed local answers remain incorrect. Repeats: 12/400 disagreements, two unstable questions among20, zero judge failures. The full answer checker rejects six corruptions; the full local evidence checker rejects nine and verifies all300 records/146 distinct requests/15 native chunks.
+
+Accepted artifacts: `benchmarks/results/longmemeval_dev_answers_v1.json`, its `_summary.json` and `_spend.json`, `weak_reader_evidence_v1.json`, and `weak_reader_evidence_v1_check.json`. The report SHA is `79aef5ef72dd8d1677783a9411e9e8feb78c15c1fe699f36a59efc7c74433887`. Five Rust commit gates pass (`gates_checkpoint7_2026-10.json`), with optimized tests retaining assertions and overflow checks. All reader/judge jobs and evidence updater have exited.
+
+Scoreboard diff: Zep and Mem0 now carry HMS dev87/100 and citation201/204; their matched vendor cells/margins remain empty. Vendor-native500-question values stay separate. D1 is established by the full checks and this acceptance commit; D2 and D3 remain open. Usage-supported cost $5.6556705, conservative reservations $22.0213475, exposure $27.677018. Checkpoint865f399 is pushed.
+
+The user approved parallel Item2 implementation at20:39 UTC. Draft producer/native bridge work is isolated in `/Volumes/A/hms-native-harness` at base865f399 with target `/Volumes/A/.hms-target-native-harness`; root owns the independent checker and scoreboard. Native performance timing waits for this Item1 commit and load below3; no ANN test inputs have been used for tuning.

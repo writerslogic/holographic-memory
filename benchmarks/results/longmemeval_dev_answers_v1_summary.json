@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "dev_questions_verified": 100,
+  "reader_arms_verified": 600,
+  "heldout_questions_untouched": 400,
+  "validation_gates_passed": [
+    "frozen protocol and input fingerprints",
+    "complete chronological raw-source occurrences",
+    "reader token caps and shared source selections",
+    "raw reader and official judge scores",
+    "failure-inclusive summaries and intervals",
+    "fixed repeated judge instability",
+    "API usage and spend"
+  ],
+  "input_tokens_verified": {
+    "matched_gpt54": 1193156,
+    "weak_qwen4b": 1352470
+  },
+  "paid_calls_verified": 1599,
+  "reader_judge_spend_usd": 27.677018,
+  "conservative_reservation_usd": 22.0213475,
+  "usage_supported_cost_usd": 5.655670499999999,
+  "observed_billing_established": false,
+  "instability": {
+    "n_questions": 20,
+    "n_calls": 400,
+    "disagreements": 12,
+    "disagreement_rate": 0.03,
+    "questions_with_disagreement": 2,
+    "question_instability_rate": 0.1,
+    "failures": 0
+  },
+  "summary": {
+    "matched_gpt54": {
+      "first_five": {
+        "n": 100,
+        "correct_count": 83,
+        "answer_accuracy": 0.83,
+        "answer_accuracy_ci": [
+          0.7445199523239887,
+          0.8910643388594006
+        ],
+        "citation_valid_claims": 187,
+        "citation_total_claims": 192,
+        "citation_support": 0.9739583333333334,
+        "all_claims_supported_count": 82,
+        "paired_deltas": {
+          "first_five": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "knapsack": {
+            "mean": 0.01,
+            "ci95": [
+              -0.02,
+              0.04
+            ]
+          }
+        }
+      },
+      "knapsack": {
+        "n": 100,
+        "correct_count": 82,
+        "answer_accuracy": 0.82,
+        "answer_accuracy_ci": [
+          0.7333264161369926,
+          0.8829977450105364
+        ],
+        "citation_valid_claims": 180,
+        "citation_total_claims": 186,
+        "citation_support": 0.967741935483871,
+        "all_claims_supported_count": 80,
+        "paired_deltas": {
+          "first_five": {
+            "mean": -0.01,
+            "ci95": [
+              -0.04,
+              0.02
+            ]
+          },
+          "knapsack": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "operand": {
+        "n": 100,
+        "correct_count": 87,
+        "answer_accuracy": 0.87,
+        "answer_accuracy_ci": [
+          0.7901964855992357,
+          0.9224283257275948
+        ],
+        "citation_valid_claims": 201,
+        "citation_total_claims": 204,
+        "citation_support": 0.9852941176470589,
+        "all_claims_supported_count": 86,
+        "paired_deltas": {
+          "first_five": {
+            "mean": 0.04,
+            "ci95": [
+              0.01,
+              0.08
+            ]
+          },
+          "knapsack": {
+            "mean": 0.05,
+            "ci95": [
+              0.0,
+              0.1
+            ]
+          }
+        }
+      }
+    },
+    "weak_qwen4b": {
+      "first_five": {
+        "n": 100,
+        "correct_count": 47,
+        "answer_accuracy": 0.47,
+        "answer_accuracy_ci": [
+          0.3751081795934127,
+          0.5671114302990063
+        ],
+        "citation_valid_claims": 55,
+        "citation_total_claims": 60,
+        "citation_support": 0.9166666666666666,
+        "all_claims_supported_count": 43,
+        "paired_deltas": {
+          "first_five": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "knapsack": {
+            "mean": 0.01,
+            "ci95": [
+              -0.02,
+              0.040249999999998634
+            ]
+          }
+        }
+      },
+      "knapsack": {
+        "n": 100,
+        "correct_count": 46,
+        "answer_accuracy": 0.46,
+        "answer_accuracy_ci": [
+          0.36560808309024106,
+          0.5573513967663177
+        ],
+        "citation_valid_claims": 51,
+        "citation_total_claims": 60,
+        "citation_support": 0.85,
+        "all_claims_supported_count": 39,
+        "paired_deltas": {
+          "first_five": {
+            "mean": -0.01,
+            "ci95": [
+              -0.04024999999999999,
+              0.02
+            ]
+          },
+          "knapsack": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "operand": {
+        "n": 100,
+        "correct_count": 48,
+        "answer_accuracy": 0.48,
+        "answer_accuracy_ci": [
+          0.384645517580519,
+          0.5768342223477603
+        ],
+        "citation_valid_claims": 52,
+        "citation_total_claims": 64,
+        "citation_support": 0.8125,
+        "all_claims_supported_count": 40,
+        "paired_deltas": {
+          "first_five": {
+            "mean": 0.01,
+            "ci95": [
+              -0.04,
+              0.06
+            ]
+          },
+          "knapsack": {
+            "mean": 0.02,
+            "ci95": [
+              -0.03,
+              0.07
+            ]
+          }
+        }
+      }
+    }
+  },
+  "tamper_tests": {
+    "citation": {
+      "rejected": true,
+      "reason": "answer or citation score mismatch: citation_valid_claims"
+    },
+    "score": {
+      "rejected": true,
+      "reason": "answer or citation score mismatch: correct"
+    },
+    "interval": {
+      "rejected": true,
+      "reason": "answer summary or interval mismatch: matched_gpt54: first_five: answer_accuracy_ci: 0"
+    },
+    "fingerprint": {
+      "rejected": true,
+      "reason": "protocol fingerprint mismatch"
+    },
+    "prediction": {
+      "rejected": true,
+      "reason": "judge prediction mismatch"
+    },
+    "source_bytes": {
+      "rejected": true,
+      "reason": "retained source changed or incomplete: sources: 0: text"
+    }
+  },
+  "report_sha256": "79aef5ef72dd8d1677783a9411e9e8feb78c15c1fe699f36a59efc7c74433887",
+  "checker_sha256": "4ff60e5aeb3fcfe41e86ad779bdef72350ce3eff530756aba96bf704d06b467e"
+}
