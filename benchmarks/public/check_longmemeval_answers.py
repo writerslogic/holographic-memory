@@ -17,7 +17,6 @@ from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 
-
 ARMS = ('first_five', 'knapsack', 'operand')
 SYSTEMS = ('matched_gpt54', 'weak_qwen4b')
 SOURCE_SHA256 = 'd6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442'
@@ -227,7 +226,7 @@ def check_fingerprints(report):
 def observation_key(value):
     match = re.fullmatch(r'(\d{4})/(\d{2})/(\d{2}) \([A-Za-z]{3}\) (\d{2}):(\d{2})', value)
     require(match is not None, 'invalid observation time')
-    return datetime(*(int(part) for part in match.groups()))
+    return datetime(*(int(part) for part in match.groups()))  # noqa: DTZ001 -- Source dates have no timezone.
 
 
 def reconstruct_groups(question, frozen, historical_ids):
@@ -483,8 +482,9 @@ def check_call(call, raw_text, status, protocol, expected_input=None, model=None
     if expected_input is not None:
         require(request['input'] == expected_input, 'API input differs from frozen serialized prompt')
     if stage != 'weak_reader':
-        require(request['store'] is False and request['truncation'] == 'disabled'
-                and request['reasoning']['effort'] == 'medium', 'API request policy differs')
+        require(set(request) == {'model', 'input', 'reasoning', 'max_output_tokens', 'store', 'truncation'}
+                and request['store'] is False and request['truncation'] == 'disabled'
+                and request['reasoning'] == {'effort': 'medium'}, 'API request policy differs')
         maximum = protocol['systems']['matched_gpt54'][stage + '_max_output_tokens']
         require(request['max_output_tokens'] == maximum, 'API output limit differs')
     response = call['response']
@@ -492,9 +492,11 @@ def check_call(call, raw_text, status, protocol, expected_input=None, model=None
         require(call['raw_text'] == raw_text, 'cached API text differs from reader or judge text')
     if response is not None:
         require(response_text(response) == raw_text, 'API response text fingerprint mismatch')
-    if status == 'ok':
         if stage != 'weak_reader':
-            require(response.get('status') == 'completed', 'incomplete API output scored as successful')
+            require(response.get('model') == request['model'], 'API response model differs from requested frozen snapshot')
+    if status == 'ok' and stage != 'weak_reader':
+        require(call['status'] == 'ok' and response.get('status') == 'completed',
+                'incomplete API output scored as successful')
     usage = call['usage']
     if stage == 'weak_reader':
         weak = protocol['systems']['weak_qwen4b']
@@ -592,6 +594,53 @@ def check_spend(report, calls, protocol, preregistration):
             'reader spend ledger has unreported calls')
 
 
+def reader_attempts(arm, qid, name, report, protocol, ledger_times=None):
+    reader = arm['reader']
+    current = reader.get('call')
+    prior = reader.get('prior_attempts', [])
+    require(isinstance(prior, list) and len(prior) <= 6, 'reader retry history exceeds authorized attempts')
+    require(current is not None or not prior, 'reader retry history has no current attempt')
+    call_ids = [f'reader:{qid}:{name}'] + [f'reader:{qid}:{name}:restored-credit-attempt:{index}' for index in range(1, 7)]
+    result, indices = [], []
+    for attempt in prior + ([current] if current is not None else []):
+        request = attempt['request']
+        matches = [index for index, call_id in enumerate(call_ids)
+                   if attempt['cache_key'] == digest(canonical({'request': request, 'call_id': call_id,
+                                                               'protocol_sha256': report['protocol_sha256']}))]
+        require(len(matches) == 1, 'reader attempt identity is not an authorized original or restoration call')
+        index = matches[0]
+        indices.append(index)
+        if attempt is not current:
+            require(attempt['status'] in ('error', 'budget_exhausted'),
+                    'credit restoration resampled a completed model answer')
+        status = reader['status'] if attempt is current else 'error'
+        text = reader['raw_text'] if attempt is current else attempt['raw_text']
+        cost = check_call(attempt, text, status, protocol, arm['reader_input'],
+                          protocol['systems']['matched_gpt54']['reader_model'], 'reader')
+        if attempt.get('usage'):
+            require(attempt['usage']['input_tokens'] <= protocol['token_cap'], 'paid reader actual input exceeds cap')
+        result.append((attempt, cost, call_ids[index]))
+    require(len(set(indices)) == len(indices), 'reader restoration attempts duplicated')
+    if prior:
+        require(indices[0] == 0, 'reader restoration lost its original failed attempt')
+        if ledger_times is None:
+            ledger = json.loads(artifact_path(report['spend_ledger_path']).read_text())
+            ledger_times = {entry['cache_key']: entry['unix_time'] for entry in ledger['entries']}
+        charged_times = []
+        for attempt, _, _ in result:
+            if attempt['status'] == 'budget_exhausted':
+                require(attempt['cache_key'] not in ledger_times, 'unissued reader attempt has a charged timestamp')
+            else:
+                require(attempt['cache_key'] in ledger_times, 'reader retry history lacks a charged timestamp')
+                charged_times.append(ledger_times[attempt['cache_key']])
+        require(charged_times == sorted(charged_times), 'reader restoration history is not in ledger chronological order')
+    if any(index > 0 for index in indices):
+        harness = ROOT / 'benchmarks/public/resume_longmemeval_readers.py'
+        require(any(artifact_path(artifact['path']).resolve() == harness.resolve() for artifact in report['artifacts']),
+                'restoration retry harness fingerprint missing')
+    return result
+
+
 def check_report(report, allow_incomplete=False):
     protocol, preregistration, raw = check_fingerprints(report)
     require(report['dev_only'] is True and report['heldout_run'] is False, 'held-out run is not authorized')
@@ -615,6 +664,8 @@ def check_report(report, allow_incomplete=False):
     frozen = {row['qid']: row for row in evidence['rows']}
     require(set(historical) == set(frozen) == set(raw), 'frozen evidence dev membership differs')
     paid_calls = []
+    ledger_times = {entry['cache_key']: entry['unix_time'] for entry in
+                    json.loads(artifact_path(report['spend_ledger_path']).read_text())['entries']}
     blind_ids = set()
     input_tokens = {system: 0 for system in SYSTEMS}
     for row in report['rows']:
@@ -633,12 +684,11 @@ def check_report(report, allow_incomplete=False):
                 reader = arm['reader']
                 config = protocol['systems'][system]
                 stage = 'reader' if system == 'matched_gpt54' else 'weak_reader'
-                cost = check_call(reader.get('call'), reader['raw_text'], reader['status'], protocol,
-                                  arm['reader_input'], config['reader_model'], stage)
-                if stage == 'reader' and reader.get('call') is not None:
-                    require(reader['call'].get('usage', {}).get('input_tokens', 0) <= protocol['token_cap']
-                            if reader['call'].get('usage') else True, 'paid reader actual input exceeds cap')
-                    paid_calls.append((reader['call'], cost, f"reader:{row['qid']}:{name}"))
+                if stage == 'reader':
+                    paid_calls.extend(reader_attempts(arm, row['qid'], name, report, protocol, ledger_times))
+                else:
+                    check_call(reader.get('call'), reader['raw_text'], reader['status'], protocol,
+                               arm['reader_input'], config['reader_model'], stage)
                 judge = arm['judge']
                 expected_blind = digest(f"judge-blind-v1:{row['qid']}:{system}:{name}")
                 if judge['status'] != 'pending':
@@ -678,6 +728,7 @@ def check_report(report, allow_incomplete=False):
             blind_id = digest(f"judge-blind-v1:{entry['qid']}:{entry['system']}:{entry['arm']}")
             paid_calls.append((judge['call'], cost, f"{blind_id}:repeat:{judge['repeat_index']}"))
     cost_total = sum(cost for _, cost, _ in paid_calls)
+    reservation_cost = sum(cost for call, cost, _ in paid_calls if call.get('cost_is_conservative_reservation') is True)
     require(cost_total <= protocol['cost']['subcap_usd'], 'reader and judge spend cap exceeded')
     check_spend(report, paid_calls, protocol, preregistration)
     return {'schema_version': 1, 'dev_questions_verified': 100, 'reader_arms_verified': 600,
@@ -687,7 +738,9 @@ def check_report(report, allow_incomplete=False):
                                        'failure-inclusive summaries and intervals', 'fixed repeated judge instability',
                                        'API usage and spend'],
             'input_tokens_verified': input_tokens, 'paid_calls_verified': len(paid_calls),
-            'reader_judge_spend_usd': cost_total, 'instability': instability, 'summary': expected_summary}
+            'reader_judge_spend_usd': cost_total, 'conservative_reservation_usd': reservation_cost,
+            'usage_supported_cost_usd': cost_total - reservation_cost, 'observed_billing_established': False,
+            'instability': instability, 'summary': expected_summary}
 
 
 def check_tampering(report):
