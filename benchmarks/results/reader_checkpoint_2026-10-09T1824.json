@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "utc": "2026-10-09T18:24:42.365948+00:00",
+  "status": "incomplete; full answer checker pending local reader completion",
+  "report_path": "benchmarks/results/longmemeval_dev_answers_v1.json",
+  "report_sha256": "2db0262de22efbdd94f6a2006bc62fd20e0219e508ca9a41fa7ba8645513d934",
+  "protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
+  "matched_primary_summary": {
+    "first_five": {
+      "n": 100,
+      "correct_count": 83,
+      "answer_accuracy": 0.83,
+      "answer_accuracy_ci": [
+        0.7445199523239887,
+        0.8910643388594006
+      ],
+      "citation_valid_claims": 187,
+      "citation_total_claims": 192,
+      "citation_support": 0.9739583333333334,
+      "all_claims_supported_count": 82,
+      "paired_deltas": {
+        "first_five": {
+          "mean": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "knapsack": {
+          "mean": 0.01,
+          "ci95": [
+            -0.02,
+            0.04
+          ]
+        }
+      }
+    },
+    "knapsack": {
+      "n": 100,
+      "correct_count": 82,
+      "answer_accuracy": 0.82,
+      "answer_accuracy_ci": [
+        0.7333264161369926,
+        0.8829977450105364
+      ],
+      "citation_valid_claims": 180,
+      "citation_total_claims": 186,
+      "citation_support": 0.967741935483871,
+      "all_claims_supported_count": 80,
+      "paired_deltas": {
+        "first_five": {
+          "mean": -0.01,
+          "ci95": [
+            -0.04,
+            0.02
+          ]
+        },
+        "knapsack": {
+          "mean": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "operand": {
+      "n": 100,
+      "correct_count": 87,
+      "answer_accuracy": 0.87,
+      "answer_accuracy_ci": [
+        0.7901964855992357,
+        0.9224283257275948
+      ],
+      "citation_valid_claims": 201,
+      "citation_total_claims": 204,
+      "citation_support": 0.9852941176470589,
+      "all_claims_supported_count": 86,
+      "paired_deltas": {
+        "first_five": {
+          "mean": 0.04,
+          "ci95": [
+            0.01,
+            0.08
+          ]
+        },
+        "knapsack": {
+          "mean": 0.05,
+          "ci95": [
+            0.0,
+            0.1
+          ]
+        }
+      }
+    }
+  },
+  "instability": {
+    "n_questions": 20,
+    "n_calls": 400,
+    "disagreements": 12,
+    "disagreement_rate": 0.03,
+    "questions_with_disagreement": 2,
+    "question_instability_rate": 0.1,
+    "failures": 0
+  },
+  "weak_reader_statuses": {
+    "ok": 98,
+    "pending": 200,
+    "error": 2
+  },
+  "weak_judge_statuses": {
+    "ok": 98,
+    "pending": 200,
+    "reader_failure": 2
+  },
+  "weak_partial_check_path": "benchmarks/results/weak_reader_evidence_v1_partial_check_2026-10-09T1818.json",
+  "spend_snapshot_path": "benchmarks/results/spend_checkpoint_2026-10-09T1824.json",
+  "usage_supported_cost_usd": 5.492053,
+  "conservative_reservations_usd": 22.0213475,
+  "spend_accounting_total_usd": 27.513400500000035,
+  "scoreboard_rows_added": 0,
+  "D1": false,
+  "D2": false,
+  "D3": false
+}
