@@ -21,8 +21,18 @@
 //! of one 1-bit code per edge (see `vertex.rs`).
 
 mod build_kernels;
+mod fastscan;
 mod kernels;
 mod vertex;
+
+#[cfg(feature = "experimental")]
+pub mod diagnostics;
+
+#[cfg(feature = "experimental")]
+pub mod ivf;
+
+#[cfg(feature = "experimental")]
+pub(crate) use kernels::fwht;
 
 use std::cell::RefCell;
 

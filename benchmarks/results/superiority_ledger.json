@@ -1,0 +1,277 @@
+{
+ "schema_version": 1,
+ "updated": "2026-10-16T12:45:00-07:00",
+ "note": "Status of every category of the October 16 comparison (docs/research/SUPERIORITY-2026-10-12.md). Numbers quote results files only; a lever's hours are wall clock spent on it in this ledger's sessions.",
+ "categories": {
+  "1A_vector_search": {
+   "metric": "single-thread QPS at recall@10 0.95 (and 0.90, 0.99), index bytes, build seconds, peak build RSS; GloVe-100 1.18M, GCE c4-standard-8",
+   "comparator": "RaBitQ IVF (next best at 0.95); SymphonyQG, ScaNN, Glass, FAISS HNSW, hnswlib also measured",
+   "best_accepted_hms": {
+    "qps_at_0.95_band": 877,
+    "qps_fastest_0.95": 1023,
+    "qps_at_0.99": null,
+    "index_mib": 392.29,
+    "build_s": 1435.41,
+    "peak_build_rss_mib": 4316.5
+   },
+   "next_best": {
+    "qps_at_0.95_band": 1699,
+    "qps_at_0.99": 530,
+    "index_mib": 190.55,
+    "build_s": 86.35,
+    "peak_build_rss_mib": 724.29,
+    "system": "RaBitQ IVF"
+   },
+   "gap_hms_over_next": {
+    "qps_at_0.95_band": 0.516,
+    "index_bytes": 0.486,
+    "build_s": 0.06,
+    "peak_build_rss": 0.168
+   },
+   "targets": {
+    "qps_at_0.95": "1.25x RaBitQ IVF",
+    "qps_at_0.99": ">= 600",
+    "index_bytes": "<= 0.9x RaBitQ IVF",
+    "build_s": "<= 300",
+    "peak_build_rss": "<= 2x final index bytes"
+   },
+   "results_file": "benchmarks/results/ann_extended_diagnostic_v1/report.md",
+   "levers": [
+    {
+     "name": "1A.1 neighbour-block codes + 4-bit LUT fast-scan (NEON tbl / AVX2 pshufb)",
+     "status": "in_flight",
+     "kill_test": "benchmarks/results/qgraph_block_scan_microbench.json (M4): 1-bit block 3.20 ns/neighbour = 0.221 of the 8-bit gather estimate (pass); 2-bit 0.347 and 4-bit 1.194 (killed as traversal codes). writerslogic-02 x86 before the kernel fix: 8-bit gather estimate 196 ns/neighbour (no prefetch, scalar dot); after AVX2 dot + prefetch 47 ns; 1-bit block 7.5-12.7 ns.",
+     "hours": 3.2,
+     "started": "2026-10-16T12:25",
+     "notes": "Blocks order the exploration only; each expanded vertex is scored with its own 4-bit code into the result pool (SymphonyQG's exact-on-expansion, with the per-row code instead of raw f32). First untimed glove sweep without that pool capped at recall 0.737 (rerank 128).",
+     "untimed_counts": "M4 held-out train sweeps (recall@10 vs ef, 2000 queries): baseline 4-bit per-row glove 0.90 at ef 256, 0.95 at ef 768; nytimes 0.90 at ef 96, 0.95 at ef 384 (writerslogic-02 untimed A). 1-bit direct blocks: glove 0.90 at ef 768, nytimes 0.90 at ef 256, 0.95 not reached by ef 768. 1-bit residual blocks (SymphonyQG form): glove 0.908 at ef 768, nytimes 0.900 at ef 384: no gain, residual and query-to-vertex norms are near 1 on these sets. Residual + fusion: glove 0.898 at ef 512, 0.9225 at ef 768 (+0.015 to +0.028).",
+     "x86_kill_test": "writerslogic-02 after the AVX2 fix: est 52.67 ns; 1-bit 7.10 (0.135 pass), 2-bit 11.08 (0.210 pass), 4-bit 17.23 (0.327 killed)",
+     "decision": "proceed with 2-bit residual blocks + fusion + certified stop (stop_z) as the candidate; 1-bit kept as the bytes-light variant; 4-bit blocks killed by the 25% rule on both hosts"
+    },
+    {
+     "name": "1A.2 patience stop + 4-bit traversal fold-in",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1A.3 bytes: 4-bit traversal + 4-bit residual, 3-byte ids, delta-varint adjacency, no f32 sidecar",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1A.4 build: parallel NN-descent init, quantized construction distances, streaming input",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1A.5 recall 0.99: ef bracket to 2048 + exact-rerank depth",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1A.6 new mechanism (query-adaptive out-degree or IVF-graph hybrid)",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1A.0 x86 kernels: AVX2 i8/i4 dot products and PREFETCHT0 (the committed x86 path had neither)",
+     "status": "in_flight",
+     "hours": 0.4
+    },
+    {
+     "name": "1A.7 (new mechanism) evidence fusion across re-encounters + certified early exit from a calibrated per-edge error model (block_kappa)",
+     "status": "in_flight",
+     "hours": 0.9,
+     "note": "appears in no prior document; fusion measured +0.015 to +0.028 recall at fixed ef on glove; stop_z sweep pending"
+    }
+   ]
+  },
+  "1B_agent_memory": {
+   "metric": "LongMemEval dev-100 answer accuracy (gpt-5.4-2026-03-05 reader and judge), citation support, median reader context tokens, p95 retrieval latency, RSS",
+   "comparator": "Mem0 (474/500 vendor), Zep (451/500 vendor); matched cells by running Mem0 OSS and Graphiti locally on dev 100",
+   "best_accepted_hms": {
+    "dev_accuracy": 87,
+    "citation_support": "201/204"
+   },
+   "next_best": {
+    "vendor_mem0": "474/500",
+    "vendor_zep": "451/500",
+    "matched": null
+   },
+   "gap_hms_over_next": null,
+   "targets": {
+    "dev_accuracy": ">= 95/100 with paired 95% CI over v1 excluding zero",
+    "matched_them_cells": "filled",
+    "spend_cap_usd": 40
+   },
+   "results_file": "benchmarks/results/longmemeval_dev_answers_v1.json",
+   "levers": [
+    {
+     "name": "1B.1 obligation decomposition for multi-session questions",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1B.2 session-grouped reader presentation with type-specific evidence cap",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1B.3 abstention calibration",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1B.4 event-date extraction",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1B.5 local reader row Qwen3-30B-A3B",
+     "status": "pending",
+     "hours": 0
+    },
+    {
+     "name": "1B.6 new mechanism",
+     "status": "pending",
+     "hours": 0
+    }
+   ]
+  },
+  "1C_learned_sparse": {
+   "metric": "BEIR nDCG@10 and R@100 on SciFact and NFCorpus test (read once), single-thread QPS, serving RSS, index bytes",
+   "comparator": "SPLADE v3 served by the pinned Anserini impact index",
+   "best_accepted_hms": {
+    "scifact_hybrid_minilm": 0.729,
+    "nfcorpus_hybrid_minilm": 0.355,
+    "learned_sparse": null
+   },
+   "next_best": {
+    "splade_v3": null
+   },
+   "gap_hms_over_next": null,
+   "targets": {
+    "ndcg_gap": "within 0.005 of SPLADE v3 on its own vectors",
+    "qps": ">= 2x Anserini",
+    "index_bytes": "<= 0.7x",
+    "blend": "above SPLADE v3 alone"
+   },
+   "results_file": null,
+   "levers": [
+    {
+     "name": "1C.1 HMS impact-weighted postings + block-max WAND/MaxScore over learned sparse vectors, local ONNX",
+     "status": "pending",
+     "hours": 0
+    }
+   ]
+  },
+  "2A_serving_memory": {
+   "metric": "serving RSS ratio to SQLite 3.53.4 and Lucene 9.12.3 over the 324 NFCorpus queries, same-output oracle, 33-pair protocol",
+   "comparator": "SQLite (accepted 1.0920x; private V30 0.9133x), Lucene",
+   "best_accepted_hms": {
+    "rss_ratio_vs_sqlite": 1.092
+   },
+   "next_best": {
+    "sqlite": 1.0
+   },
+   "gap_hms_over_next": {
+    "rss_ratio": 0.916
+   },
+   "targets": {
+    "rss_vs_sqlite": "<= 0.85 accepted, then <= 0.75",
+    "rss_vs_lucene": "<= 0.65 confirmed"
+   },
+   "results_file": "benchmarks/results/gates_2026-10.json",
+   "levers": [
+    {
+     "name": "2A V35 (no-allocation embedding validation + differential secondary-index updates on V31)",
+     "status": "acceptance_failed_1_of_2",
+     "evidence": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/publication-cost-v35-full-v1/analysis-final.json: paired_preservation_point_guards_met false; service p99 ratio 1.338/1.392 (5182 b2 r0, r2), 1.507/1.122 (20728 b2 r0, r1); scheduled_response 1.161 (5182 b2 r0); zero drops, zero oracle failures, 24/24 load gates",
+     "hours": 0.2
+    }
+   ]
+  },
+  "2B_lexical_speed": {
+   "metric": "lexical query throughput ratio to SQLite FTS5 and Lucene BM25, bit-exact top-k, 33-pair protocol",
+   "comparator": "SQLite FTS5, Lucene BM25",
+   "best_accepted_hms": {
+    "private_vs_sqlite": 4.76,
+    "private_vs_lucene": "2.15-2.24",
+    "accepted": null
+   },
+   "targets": {
+    "vs_sqlite": ">= 6x",
+    "vs_lucene": ">= 3x"
+   },
+   "results_file": null,
+   "levers": [
+    {
+     "name": "2B.1 confirm on accepted build; SIMD block-max WAND + galloping intersection",
+     "status": "pending",
+     "hours": 0
+    }
+   ]
+  },
+  "2C_lexical_relevance": {
+   "metric": "nDCG@10 over 324 NFCorpus queries at equal compute",
+   "comparator": "SQLite FTS5 BM25 and Lucene BM25 (tied at 0.2916)",
+   "best_accepted_hms": {
+    "ndcg_at_10": 0.2916
+   },
+   "next_best": {
+    "ndcg_at_10": 0.2916
+   },
+   "gap_hms_over_next": {
+    "ndcg_delta": 0.0
+   },
+   "targets": {
+    "lexical_only": "+0.010 over both controls"
+   },
+   "results_file": null,
+   "levers": [
+    {
+     "name": "2C.1 BM25 k1/b, title weighting, RM3, proximity bonus tuned on NFCorpus dev and SciFact train",
+     "status": "pending",
+     "hours": 0
+    }
+   ]
+  },
+  "3A_durability": {
+   "metric": "pass/fail/time matrix: SIGKILL at 200 points, fsync-interception power loss, torn-write and bit-flip injection, recovery time, bytes lost, reader consistency, snapshot round trip, old-binary rejection",
+   "comparator": "SQLite, Lucene",
+   "best_accepted_hms": null,
+   "targets": {
+    "cells": "pass every cell SQLite passes, detect every corruption SQLite detects, recover no slower"
+   },
+   "results_file": null,
+   "levers": [
+    {
+     "name": "3A.1 benchmarks/public/durability_matrix.py",
+     "status": "pending",
+     "hours": 0
+    }
+   ]
+  },
+  "3B_security": {
+   "metric": "egress bytes, encryption-at-rest overhead (QPS, RSS), tamper detection over 1000 flips, signed audit-log verification, key zeroization, constant-time comparison, cargo deny",
+   "comparator": "managed Mem0 and Zep (egress); SQLite+SQLCipher and Lucene on encrypted FS",
+   "best_accepted_hms": null,
+   "targets": {
+    "matrix": "benchmarks/results/security_matrix_v1.json"
+   },
+   "results_file": null,
+   "levers": [
+    {
+     "name": "3B.1 security matrix harness",
+     "status": "pending",
+     "hours": 0
+    }
+   ]
+  }
+ },
+ "wall_clock": {
+  "session_start": "2026-10-16T12:20",
+  "src_hours": 3.4,
+  "harness_doc_hours": 0.9
+ }
+}
