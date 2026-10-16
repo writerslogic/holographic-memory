@@ -17,17 +17,25 @@ ALLSTOP/PASS12+base8+factory8/Unicode10/builtin16; native1e69af73, ready49f4e9bf
 completion70e9a945, root independent proof3af5e922. Concurrent root edits are
 observations, not private-source changes; original nativeb8 observed unchanged.
 
-REMOTE LinuxNode build RUNNING supervisor290015, sole postings, canonical
-SH/jobs2 at /home/davidcondrey/hms-retained-20261016/js-only-v39-linux-build-v1
-(all.log/build.log). REV3ready2583611f, drivera6b88398/protocolb044dca6/
-positive6ae852c9/rootreviewdb9a7d99. Exact19staged assets, load0.11865/
-15.25GB available/no competing jobs at launch. Require fresh ELF/actualCargo
-target+builddir/all252 source and Node12/8/8/Unicode10 before measurement.
-JS prepared source-only three-round/nine-cell source249/candidate252/SQLite
-monotonic serving screen at E/js-only-v39-serving-screen-v1, ready0f8ef1bd;
-actualLinuxpins/protocol/release absent. Product RSS first; A/A diagnostic
-is HELD/UNSTARTED despite earlier release, zero staging/cells. Optional native
-postings+0/1metadata fallback250/203 ready7d019029 remains source-only.
+REMOTE LinuxNode ALLSTOP/PASS, rootproofa535b282 independently verified all317
+sealed payloads,252source/203Rust,actualCargo target+builddir/freshELF and
+Node12/base8/factory8/Unicode10/builtin16. Native7ff11e75/completion906fe548/
+packagea4cecd9e at /home/davidcondrey/hms-retained-20261016/
+js-only-v39-linux-build-v1; archivee7d5ffe5. No serving claim from correctness.
+Bound three-round/nine-cell source249/candidate252/SQLite monotonic serving
+screen E/js-only-v39-serving-screen-v1: ready4220e3b9, rootreview0928b447,
+protocol2352fe07, positive ONCE release dacc51ef. Sole remote postings is
+authorized to stage/recheckquiet/run once under EX900/watchdog895/cleanup5.
+Latest eligibility bc282221: no competing jobs,load1.1294,EXavailable,
+15,184,072KiBavailable; awakeSYSTEMrequest1916 active. Other sessions restart
+jobs, so recheckbeforelaunch; never stop their work. All losses retained.
+STAGING PREFLIGHT THEN BLOCKED: load5.700, newunrelated public-bench297462/3,
+public-bench-he297461 andPythonjobs under hms-fastscan-check/runs. stage-result
+retainsfailure; stage.tar only copied, zero cells/controller/output created,
+once-runrelease unconsumed. Local focused correctness of prospective253/204
+minimalnative+JS fallback is being prepared while remote window unavailable.
+Product RSS first; A/A diagnostic HELD/UNSTARTED despite earlier release.
+Optional native postings+0/1metadata fallback250/203 ready7d019029 source-only.
 
 V38 is rejected: root fullraw729a27d8, decision62863e74;5/6paired/2of2group
 guards pass,4/12load. Qualified response loss1.373892 remains decisive; saved
@@ -55,15 +63,17 @@ public-bench --block-bits/--fuse) measured paired on the M4: 0.62x at 0.90, 0.64
 2-bit per-edge residual code needs the unbiasing scale |x|^2/<levels,x> (RMS error 0.093 -> 0.034 on
 nytimes); 1-bit codes need 3x the ef; x86 per-evaluation cost is ~39 ns in both paths, so pool work,
 not the estimate, binds. x86 kernels fixed (AVX2 i8/i4 dot, PREFETCHT0; est 196 -> 53 ns/neighbour).
-Measured since: sorted pool (commit 7cbf2d3) paired on writerslogic-02 (x86): nytimes 1.035x at 0.90,
-1.0x at 0.95, with patience 1.126x at 0.95 (11/11 rounds); glove 1.148x at 0.90, 1.127x at 0.95
-(11/11), with patience 1.266x at 0.90 (benchmarks/results/qgraph_pool_paired_x86_{nytimes,glove}_v1.json).
-On the M4 the same arms are 0.96-0.98x (memory-latency bound there). In flight: glove compact
-encodings paired on the M4 (fsgl1: varint adjacency, 4-bit residual), nytimes neighbour-cap sweep
-(/Volumes/A/.hms-target-fastscan/runs/ny_cap{16,24}_untimed.json), x86 untimed sweeps glove_99_untimed
-(0.99 bracket) and glove_gp_untimed (patience at 0.95), the 1A.4 build-time fork (worktree
-/Volumes/A/.hms-wt-build). Uncommitted in the main tree: neighbour_cap parameter, lint fixes
-(operand_retriever byte string, kernels pub(crate) and algebraic_codebook import).
+Measured since: the sorted pool build 7cbf2d3 paired on x86 (writerslogic-02) was 1.15x/1.13x on
+glove and 1.04x/1.0x on nytimes (qgraph_pool_paired_x86_{glove,nytimes}_v1.json), but the 18a0eec
+build (varint-list branch and neighbour-cap counter added to the neighbour closure) measures
+0.93-0.97x (glove_v3, nytimes_v2); patience on top is 1.03-1.12x. The uncommitted restructuring
+(delta decoder in a cold fn, cap closure only when set) is being bisected on x86 (x86gl4, x86ny3:
+A heap, B 7cbf2d3, C restructured) with summaries written to /Volumes/A/.hms-target-fastscan/x86runs.
+On the M4 every arm is 0.96-0.98x (memory-latency bound). Killed this session: neighbour blocks
+(0.62x), evidence fusion and certified exit, neighbour cap (count proxy), varint adjacency
+(0.77x) and 4-bit residual (0.56x at 0.95); recall 0.99 not reached below ef 3072 on glove
+(0.9877 at ef 3072, qgraph_recall99_bracket_x86_glove_v1.json). GCE confirmation of the x86 kernel
+fix needs `gcloud auth login` by the user.
 Next 1A levers in order: bytes (4-bit residual, delta-varint adjacency, no f32), build time, 99% bracket.
 
 1B: v2b arm (benchmarks/results/longmemeval_dev_answers_v2b.json) 87/100, paired delta 0.00
@@ -73,7 +83,9 @@ reader row. Spend so far recorded in the ledger; cap $40.
 2A: V35 full 24-cell acceptance failed 1 of 2 (service p99 1.34-1.51 in batch-2 cells); a V36 with
 final maintenance outside the writer lease and publication work prepared before the exclusion is the
 agent's deliverable; check writerslogic-02:/home/davidcondrey/hms-retained-20261016/publication-cost-v36-*.
-1C, 2B, 2C, 3A, 3B: not started.
+1B.3 v3 88/100 (+0.01 vs v2b, CI [0.00, 0.03]); forks in flight: 1B.5 local reader (Modal, cap $20),
+1C learned sparse (src/core/sparse/, src/bin/sparse-bench.rs), 2A compact postings, 1A.4 build time
+(/Volumes/A/.hms-wt-build), 3A durability_matrix.py. 2B, 2C, 3B: not started. Branch pushed at 18a0eec.
 
 Constraints: tune on held-out/dev only; private CARGO_TARGET_DIR; one lock hold under 14 minutes; keep
 the rule30 workers and keep-awake.ps1 on writerslogic-02; the three stop questions are the only stops.

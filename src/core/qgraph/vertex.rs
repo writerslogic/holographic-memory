@@ -1073,23 +1073,9 @@ impl VGraph {
     fn for_each_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
         let r = self.degree;
         if !self.adjv_off.is_empty() {
-            let span = &self.adjv[self.adjv_off[v] as usize..self.adjv_off[v + 1] as usize];
-            let mut at = 0;
-            let mut prev = v as u32;
-            let mut first = true;
-            while at < span.len() {
-                let (delta, used) = get_varint(&span[at..]);
-                at += used;
-                let u = if first {
-                    (i64::from(prev) + unzigzag(delta)) as u32
-                } else {
-                    prev + delta as u32 + 1
-                };
-                first = false;
-                prev = u;
-                f(u);
-            }
-        } else if self.adj3.is_empty() {
+            return self.for_each_delta_neighbour(v, f);
+        }
+        if self.adj3.is_empty() {
             for &u in &self.adj[v * r..(v + 1) * r] {
                 if u == NONE {
                     break;
@@ -1104,6 +1090,28 @@ impl VGraph {
                 }
                 f(u);
             }
+        }
+    }
+
+    /// [`VGraph::for_each_neighbour`] over a delta-coded list.
+    #[cold]
+    #[inline(never)]
+    fn for_each_delta_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
+        let span = &self.adjv[self.adjv_off[v] as usize..self.adjv_off[v + 1] as usize];
+        let mut at = 0;
+        let mut prev = v as u32;
+        let mut first = true;
+        while at < span.len() {
+            let (delta, used) = get_varint(&span[at..]);
+            at += used;
+            let u = if first {
+                (i64::from(prev) + unzigzag(delta)) as u32
+            } else {
+                prev + delta as u32 + 1
+            };
+            first = false;
+            prev = u;
+            f(u);
         }
     }
 
@@ -1579,15 +1587,8 @@ impl VSearcher<'_> {
             }
             self.fresh.clear();
             let (visited, fresh) = (&mut self.visited, &mut self.fresh);
-            let cap = if params.neighbour_cap == 0 {
-                usize::MAX
-            } else {
-                params.neighbour_cap
-            };
-            let mut seen = 0usize;
-            g.for_each_neighbour(key_id(c) as usize, |u| {
-                seen += 1;
-                if seen <= cap && visited.insert(u) {
+            let admit = |u: u32, visited: &mut Marks, fresh: &mut Vec<u32>| {
+                if visited.insert(u) {
                     if screen {
                         g.prefetch_screen(u);
                     } else {
@@ -1595,7 +1596,18 @@ impl VSearcher<'_> {
                     }
                     fresh.push(u);
                 }
-            });
+            };
+            if params.neighbour_cap == 0 {
+                g.for_each_neighbour(key_id(c) as usize, |u| admit(u, visited, fresh));
+            } else {
+                let mut seen = 0usize;
+                g.for_each_neighbour(key_id(c) as usize, |u| {
+                    seen += 1;
+                    if seen <= params.neighbour_cap {
+                        admit(u, visited, fresh);
+                    }
+                });
+            }
             if screen {
                 // A neighbour whose optimistic 1-bit estimate cannot enter the full pool is
                 // skipped (it stays visited); the rest get the 8-bit estimate.

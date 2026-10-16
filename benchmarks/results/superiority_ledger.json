@@ -13,7 +13,7 @@
     "index_mib": 392.29,
     "build_s": 1435.41,
     "peak_build_rss_mib": 4316.5,
-    "x86_screen_note": "x86 screen host rows: pool 1.13-1.15x, pool + patience 1.27x at 0.90; GCE confirmation pending gcloud auth"
+    "x86_screen_note": "x86 rows under dispute: v1 runs (load 8-12, concurrent build) showed 1.13-1.27x, the quiet v2 glove run shows 1.0x; re-runs in flight"
    },
    "next_best": {
     "qps_at_0.95_band": 1699,
@@ -53,11 +53,13 @@
     },
     {
      "name": "1A.2 patience stop + 4-bit traversal fold-in",
-     "status": "accepted_x86_nytimes_pending_glove",
+     "status": "disputed_rerun_in_flight",
      "hours": 0.3,
      "note": "patience 64 at ef 128 (0.90) and 256 at ef 512 (0.95) cut evaluations 8-19% on nytimes but paired QPS 0.975x/0.971x on the M4",
      "paired_x86": "benchmarks/results/qgraph_pool_paired_x86_nytimes_v1.json: 1.126x at 0.95 (11/11 rounds, min 1.091), 1.011x at 0.90",
-     "paired_x86_glove": "1.266x at 0.90 (11/11, min 1.194); 0.95 point pending a wider patience sweep"
+     "paired_x86_glove": "1.266x at 0.90 (11/11, min 1.194); 0.95 point pending a wider patience sweep",
+     "paired_x86_glove_v2": "benchmarks/results/qgraph_pool_paired_x86_glove_v2.json: patience arm 0.999x at 0.90, 0.984x at 0.95 at load 5; re-runs x86gl3 and x86ny2 in flight",
+     "x86_rerun": "patience on the 18a0eec build: glove 1.076x/1.033x, nytimes 1.053x/1.119x (10 of 11 rounds)"
     },
     {
      "name": "1A.3 bytes: 4-bit traversal + 4-bit residual, 3-byte ids, delta-varint adjacency, no f32 sidecar",
@@ -72,8 +74,9 @@
     },
     {
      "name": "1A.5 recall 0.99: ef bracket to 2048 + exact-rerank depth",
-     "status": "pending",
-     "hours": 0
+     "status": "measured_not_bracketed",
+     "hours": 0.3,
+     "row": "benchmarks/results/qgraph_recall99_bracket_x86_glove_v1.json (x86, untimed single run): recall 0.9628 at ef 1024, 0.9733 at 1536, 0.9804 at 2048, 0.9877 at 3072 (249 QPS); rerank depth 64-512 changes recall by < 0.0003: the ceiling is graph reachability (degree 32), not the re-rank; 0.99 is not reached below ef 3072"
     },
     {
      "name": "1A.6 new mechanism (query-adaptive out-degree or IVF-graph hybrid)",
@@ -93,12 +96,14 @@
     },
     {
      "name": "1A.8 (new mechanism, both paths) single sorted candidate buffer replacing the two binary heaps, with the patience fold-in (1A.2) measured on it",
-     "status": "accepted_x86",
+     "status": "disputed_rerun_in_flight",
      "hours": 1.1,
      "started": "2026-10-16T15:00",
      "paired": "benchmarks/results/qgraph_pool_paired_m4_nytimes_v1.json: 0.966x/0.956x (pool), 0.975x/0.971x (pool + patience)",
      "paired_x86": "1.035x at 0.90, 0.996x at 0.95 (x86); kept: identical results, simpler code, sorted results for free",
-     "paired_x86_glove": "benchmarks/results/qgraph_pool_paired_x86_glove_v1.json: 1.148x at 0.90, 1.127x at 0.95 (11/11 rounds each)"
+     "paired_x86_glove": "benchmarks/results/qgraph_pool_paired_x86_glove_v1.json: 1.148x at 0.90, 1.127x at 0.95 (11/11 rounds each)",
+     "paired_x86_glove_v2": "benchmarks/results/qgraph_pool_paired_x86_glove_v2.json: patience arm 0.999x at 0.90, 0.984x at 0.95 at load 5; re-runs x86gl3 and x86ny2 in flight",
+     "x86_rerun": "glove v3: 0.966x/0.929x; nytimes v2: 0.957x/0.918x for the 18a0eec build; regression against the 7cbf2d3 build bisected next (delta-list branch and cap counter moved out of the default path)"
     },
     {
      "name": "1A.3 bytes: delta-varint adjacency (id_bytes 0) and 4-bit residual, no f32 sidecar",
@@ -119,6 +124,12 @@
      "physical_bound_note": "with 4-bit code + 4-bit residual (100 B) + per-vertex scales and id map (12 B) + adjacency (>= 64 B at degree 32 even at 2 B per id) the floor is about 176 B/vector = 1.04x RaBitQ IVF; the 0.9x target needs a smaller degree or a shared-code layout, recorded here as the measured bound, not met",
      "paired_speed": "pending (untimed single runs under load 15-20 showed lower QPS for the varint lists; decode cost per expansion is the suspect)",
      "paired": "benchmarks/results/qgraph_bytes_paired_m4_glove_v1.json: varint adjacency 0.77x/0.79x; with 4-bit residual 0.81x/0.56x (M4, load 72-80)"
+    },
+    {
+     "name": "1A.6b neighbour cap (first N of each list, nearest-first build order) as a query-time degree reduction",
+     "status": "killed",
+     "hours": 0.5,
+     "count_proxy": "nytimes (degree 64), cap 16: recall 0.9056 needs ef 512 at 5490 evals/query against the uncapped 0.9049 at ef 96 with 4236; 0.95 not reached by ef 768 (0.9196): the cap raises the evaluations needed at matched recall, so no timing run (/Volumes/A/.hms-target-fastscan/runs/ny_cap16_untimed.log)"
     }
    ]
   },
@@ -346,6 +357,15 @@
      "evidence": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/publication-cost-v36-full-v1/analysis-final.json: paired_preservation_point_guards_met false; 11 of 12 pairs pass; 20728 b2 r1 scheduled_response p99 ratio 1.388 (service 0.678, exclusion 0.838); zero drops, zero oracle failures, 310920 exact cross-arm pairs; load gates 20 of 24. Group median p99 ratios: service 0.914/0.505/0.792/0.633, scheduled_response 0.933/0.512/1.202/0.642, reader_exclusion 0.761/0.69/0.877/0.765 (5182b2/5182b64/20728b2/20728b64). Writer lease wait max 23.4->16.3 ms (5182 b2), 30.5->16.4 ms (20728 b2). Per-revision publication_work: b64 p50 3.3-4.5 ms candidate vs 4.5-9.7 baseline (max 4.2-6.1 vs 5.4-15.3); b2 p50 0.17-0.27 vs 0.22-0.36 but one window of 5.5-11.4 ms per candidate b2 cell (baseline max 0.4-0.7) occurring 25-48 ms after the final lease acquisition, while the post-release persist/audit tail runs. The 1 ms per-revision bound is not met at batch 64 (the install of 64 documents of postings and chunk vectors dominates the window). Candidate build: publication-cost-v36-build-v3 (clippy -D warnings lib/tests/example, 1.96.0), source manifest b82b5e1fffa03255184a33a34f01242688c601f991181355918cf0a8450b927a, probe ff288679c040cc2d099b48e54083db220ea5235b385d3b8dce4f38b0e8633e15. Local gate on the M4: 73+14 engine/documents/storage tests pass incl. two new regression tests; cargo +1.98.0 clippy --all-targets fails only in src/core/qgraph/vertex.rs (another session).",
      "hours": 1.1,
      "next": "mechanism insufficient per the two-run rule; the next mechanism must take the maintenance tail (index metadata write, audit) and the batch-64 install off the writer path entirely (copy-on-write document store publication), not shorten the lease"
+    },
+    {
+     "name": "2A V37: compact term dictionary (sorted base + overlay), delta-varint posting lists, file-backed chunk text read by positioned reads (no in-memory text, no mapping so touched pages stay out of RSS)",
+     "status": "in_flight",
+     "hours": 1.6,
+     "code": "src/core/documents/postings.rs, src/core/documents/text.rs, documents/index.rs, documents/search.rs, documents.rs (StoredChunk.text_at), engine/mod.rs (attach_text_segment), engine/compaction.rs (materialized text in snapshots); uncommitted in the main tree",
+     "gate": "cargo test --release --lib documents 27 passed; full lib + tests/documents rerun pending; cargo +1.98.0 clippy --lib --features node-api,security clean",
+     "measurement_plan": "writerslogic-02: v37-build-v1 (compose.py/build_v37.py from /Volumes/A/.hms-target-2a/v37-build) then serving-v37-monotonic-v1 (stage_v37.py derives the V30 controller; 11 rounds, 33 cells, 324 NFCorpus queries, serving_max_rss ratio vs sqlite-full)",
+     "bound": "V30 run: sqlite-full serving max RSS median 158.4 MB, static 82.5 MB; HMS V30 static 101.9 MB, serving max 145.1 MB; the Node runtime floor makes 0.75x reachable only with a near-zero native footprint (recorded as a physical bound once the V37 row exists)"
     }
    ]
   },
@@ -462,6 +482,18 @@
    "row": "benchmarks/results/qgraph_bytes_paired_m4_glove_v1.json",
    "ratio_to_previous_accepted": "bytes 0.951 (varint) and 0.741 (varint + 4-bit residual); QPS 0.77/0.79 and 0.81/0.56",
    "time": "2026-10-16T16:40"
+  },
+  {
+   "category": "1A",
+   "row": "benchmarks/results/qgraph_pool_paired_x86_glove_v2.json",
+   "ratio_to_previous_accepted": "0.999 (0.90), 0.984 (0.95) with patience",
+   "time": "2026-10-16T17:25"
+  },
+  {
+   "category": "1A",
+   "row": "benchmarks/results/qgraph_pool_paired_x86_{glove_v3,nytimes_v2}.json",
+   "ratio_to_previous_accepted": "pool 0.92-0.97; pool + patience 1.03-1.12",
+   "time": "2026-10-16T17:50"
   }
  ]
 }
