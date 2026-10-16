@@ -4258,3 +4258,104 @@ Status and all numbers: benchmarks/results/superiority_ledger.json. Gap = HMS ov
 | Durability, security | unmeasured | SQLite, Lucene | not started | n/a |
 
 Units of progress this period: two (both negative): benchmarks/results/qgraph_block_paired_m4_nytimes_v1.json and qgraph_pool_paired_m4_nytimes_v1.json. Wall clock 12:20 to 15:50: src 5.4 h, harness and documents 1.5 h (including the forks' time). In flight: x86 paired runs of the sorted pool and patience (writerslogic-02, x86ny1 and x86gl1), the glove paired run of the compact encodings (M4, fsgl1), the 2A compact-postings fork, the 1B abstention-calibration fork. No best accepted number improved yet. Open: the GCE confirmation of the x86 kernel fix needs an interactive gcloud auth login; no push yet (user asked to reconcile with main; branch commits f3539a9 and the next are verified in the worktree).
+
+### JavaScript-only V39 Linux correctness closes; serving screen released (2026-10-16)
+
+Linux Node build is ALLSTOP/PASS. Root proof `a535b282` independently hashes all
+317 sealed payloads, complete 252-input/203-Rust source, both COSE fixtures,
+actual Cargo identity/target/build_directory, fresh compile/ELF, nine package
+members and Node12/base8/factory8/Unicode10/builtin16 logs. Native `7ff11e75`,
+completion `906fe548`, package `a4cecd9e`, archive `e7d5ffe5`; all under
+`retained_memory_candidates_v1/js-only-v39-linux-build-v1`. These close the
+cross-host correctness preparation; no serving memory result is inferred.
+
+The bound prospective three-round/nine-cell serving screen is released once:
+`js-only-v39-serving-screen-v1`, source-ready `4220e3b9`, root source review
+`0928b447`, protocol `2352fe07`, positive release `dacc51ef`. Existing workload,
+complete output/native SQLite bit oracles, monotonic RSS brackets, pauses,
+numeric guards and all eight vectors remain intact; family6 [20,4979] is
+screen-only. The binding delta adds native competing-process names and a
+post-cell process check. Sole remote launcher is postings; EX900/watchdog895/
+cleanup5 and no competing builds/measurements are required. Final full
+publication/Rust/Node/source-SQLite/Lucene/quality acceptance remains mandatory.
+
+Separate public-bench jobs observed at build STOP were preserved and later
+exited. Latest read-only eligibility `bc282221`: no competing jobs, available
+EX lock, one-minute load1.1294, MemAvailable15,184,072KiB, and Windows awake
+PID1916 with SYSTEM request active. Recheck before launch because other
+sessions restart jobs. The user was asked to coordinate the other session's
+use of the canonical remote timing.lock; no answer or permission to stop it
+is inferred. A/A stays held; optional minimal native subset stays source-only.
+
+The independent screen raw verifier is prepared prospectively. Root review
+caught its helper below its top-level call; the unrun draft is preserved,
+and the order-only correction is source-compiled/AST checked (`3ad90ba9`).
+No raw verification or benchmark retry occurred. Accepted serving RSS remains
+1.091961 times SQLite; memory and overall superiority remain unestablished.
+
+V39 screen staging preflight was rejected before controller/output creation:
+new unrelated `uv297455/python297460/public-bench-he297461/public-bench297462/
+297463` and python297601 under `hms-fastscan-check/runs`, load5.700/5.025/3.668.
+`js-only-v39-serving-screen-v1/stage-result.json` preserves the failure; only
+stage.tar was copied, zero cells ran, and the once-run release is unconsumed.
+No unrelated process was stopped. Local correctness work now prepares the
+smallest native+JS fallback (prospective253/204 inputs) while the measurement
+window is unavailable; no full-six campaign, A/A or performance claim follows.
+
+## Checkpoint 2 of the superiority session (2026-10-16, 18:30)
+
+Status and numbers: benchmarks/results/superiority_ledger.json. Changes since checkpoint 1 only.
+
+| Category | HMS | Competitor/control | Standing | Gap to next |
+|---|---|---|---|---|
+| Vector search, QPS at 0.95 | M 877 accepted; this session's paired rows on the x86 screen host all fall inside a +-15% noise band (the same binary pair measured 1.148x then 0.991x while other forks built on the host); sorted pool and patience kept without a speed claim | RaBitQ IVF 1,699 | behind; GCE confirmation of the x86 kernel fix still needs gcloud auth | 0.52x |
+| Vector search, bytes | M 359.6 MB; varint adjacency 342.2 MB at 0.77x QPS, with 4-bit residual 266.6 MB at 0.56x QPS at 0.95 (M4 paired) | 190.6 MB | behind; floor about 176 B/vector measured | 0.53x |
+| Vector search, recall 0.99 | M 0.9877 at ef 3072 (249 QPS, x86 untimed); 0.99 not reached | RaBitQ IVF 530 QPS at 0.9911 | behind; ceiling is graph reachability, not re-rank | none |
+| Long-term QA | M v3 88/100 (+0.01 vs v2b, CI [0.00, 0.03]); 13 abstentions, 6 false | V Zep 451/500, Mem0 474/500 | unestablished | n/a |
+
+Units of progress this period: eight rows, all neutral or negative (qgraph_pool_paired_x86_{glove_v2,v3,v4; nytimes_v2,v3}.json, qgraph_bytes_paired_m4_glove_v1.json, qgraph_recall99_bracket_x86_glove_v1.json, longmemeval_dev_answers_v3.json). Wall clock 15:50 to 18:30: src 1.6 h, harness and documents 1.0 h, plus five forks (2A compact postings, 1C learned sparse, 1A.4 build time, 1B.5 local reader, 3A durability) in flight. Lever in flight: 4-bit residual neighbour blocks with the unbiasing scale (untimed sweeps on x86, then paired when the host is free of builds). Open: `gcloud auth login` is needed for the GCE confirmation (cap $10 per run); no best accepted number improved.
+
+The next prospective eligibility check qualified and the once-only V39
+nine-cell screen actually launched as remote supervisor313704. Exact51 staged
+files, protocol2352fe07/releasedacc51ef; no competing jobs and EXavailable at
+launch, one-minute load2.8643 (five/15minute5.313/4.580 retained). Receipt
+`js-only-v39-serving-screen-v1/eligibility-and-first-launch-v2-result.json`
+SHA15767eb6. The rejected preflight remains intact; it consumed no cells.
+Only postings shell monitoring is allowed remotely during the actual screen.
+
+The smallest combined native+JS fallback is separately frozen at
+`js-plus-native-v39-prep/source`:253 inputs/204Rust, manifest993f9f83,
+ready1ff81be5. Root prooff139a8c9 hashes every selected input and the exact
+six-native-path overlay over JS252; four new files and both COSE preserved.
+Local focused correctness launched session54305 in
+`js-native-v39-focused-v1`, driver29942e6f/planbf984c25, private target
+`/Volumes/A/.hms-target/retained-js-native-v39-focused`, SH/jobs2 and explicit
+validated PYO3_PYTHON. Actual per-mode test lists and all18 required
+posting/metadata/wire/retry/recovery/snapshot regressions are checked. This is
+correctness work on the other machine, not a competing remote measurement.
+Full six gates and production integration remain held pending screen results.
+
+### V39 serving screen interrupted after five cells (2026-10-16)
+
+The strict competing-runtime guard stopped the once-only campaign after5/9
+cells and six fixed pauses, when unrelated uv314868/python314874 appeared.
+All five completed load gates passed. No retry, post-hoc smaller campaign or
+confidence interval is permitted; the nine-cell completion/analysis does not
+exist. The original protocol/release/guard bytes stay immutable. Partial raw
+seal/transfer and independent root verification are pending.
+
+Provisional actual log points (not final acceptance): round0 baseline
+171,307,008B/3310.21QPS, candidate153,395,200B/3415.70QPS,
+SQLite158,613,504B/847.10QPS; round1 SQLite158,560,256B/852.44QPS and
+candidate153,300,992B/3528.49QPS. Only round0 is a complete three-arm round.
+Do not construct a missing baseline, substitute another round or fit the
+planned three-round CI to two observations. Accepted RSS remains1.091961
+SQLite; superiority remains unestablished.
+
+The provisional memory signal warrants advancing mandatory correctness
+validation after raw verification, without accepting this interrupted screen.
+Fresh final11/33 source/SQLite, both fixed Lucene controls33, family12,
+quality, original24 publication/all12 paired+allgroup/load guards and complete
+behavior/durability/security requirements remain intact. No gate is waived.
+The local fallback cache copy finished and its actual default focused test
+compile is running; no clone restart or unsupported cache-cause claim.

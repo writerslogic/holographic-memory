@@ -53,13 +53,14 @@
     },
     {
      "name": "1A.2 patience stop + 4-bit traversal fold-in",
-     "status": "disputed_rerun_in_flight",
+     "status": "within_noise",
      "hours": 0.3,
      "note": "patience 64 at ef 128 (0.90) and 256 at ef 512 (0.95) cut evaluations 8-19% on nytimes but paired QPS 0.975x/0.971x on the M4",
      "paired_x86": "benchmarks/results/qgraph_pool_paired_x86_nytimes_v1.json: 1.126x at 0.95 (11/11 rounds, min 1.091), 1.011x at 0.90",
      "paired_x86_glove": "1.266x at 0.90 (11/11, min 1.194); 0.95 point pending a wider patience sweep",
      "paired_x86_glove_v2": "benchmarks/results/qgraph_pool_paired_x86_glove_v2.json: patience arm 0.999x at 0.90, 0.984x at 0.95 at load 5; re-runs x86gl3 and x86ny2 in flight",
-     "x86_rerun": "patience on the 18a0eec build: glove 1.076x/1.033x, nytimes 1.053x/1.119x (10 of 11 rounds)"
+     "x86_rerun": "patience on the 18a0eec build: glove 1.076x/1.033x, nytimes 1.053x/1.119x (10 of 11 rounds)",
+     "verdict": "1.03-1.27x across x86 runs whose baseline pair itself moved 15%; not accepted"
     },
     {
      "name": "1A.3 bytes: 4-bit traversal + 4-bit residual, 3-byte ids, delta-varint adjacency, no f32 sidecar",
@@ -69,8 +70,16 @@
     },
     {
      "name": "1A.4 build: parallel NN-descent init, quantized construction distances, streaming input",
-     "status": "pending",
-     "hours": 0
+     "status": "in_flight",
+     "hours": 1.4,
+     "results_file": "benchmarks/results/qgraph_build_v1.json",
+     "nytimes_rows": {
+      "baseline_graph_build_s": 263.5,
+      "nn_descent_8_rounds": "killed: 360 s, peak RSS 4.1 GB, recall 0.8976/0.9396 (parked: benchmarks/results/parked/1A4-nn-descent-init.*)",
+      "locality_order_256": "killed: 167 s passes but recall 0.8926/0.9341; its prefix also starves the upper layers of the shuffled sample",
+      "quantized_search": "74 s graph build (3.5x), greedy CPU 210 s vs 952 s, recall 0.9048/0.9515 vs 0.9049/0.9498 (within 0.002), peak RSS unchanged"
+     },
+     "in_flight": "glove baseline and quantized + owned-input build (no duplicate f32 corpus) measurements"
     },
     {
      "name": "1A.5 recall 0.99: ef bracket to 2048 + exact-rerank depth",
@@ -96,14 +105,15 @@
     },
     {
      "name": "1A.8 (new mechanism, both paths) single sorted candidate buffer replacing the two binary heaps, with the patience fold-in (1A.2) measured on it",
-     "status": "disputed_rerun_in_flight",
+     "status": "neutral_within_noise",
      "hours": 1.1,
      "started": "2026-10-16T15:00",
      "paired": "benchmarks/results/qgraph_pool_paired_m4_nytimes_v1.json: 0.966x/0.956x (pool), 0.975x/0.971x (pool + patience)",
      "paired_x86": "1.035x at 0.90, 0.996x at 0.95 (x86); kept: identical results, simpler code, sorted results for free",
      "paired_x86_glove": "benchmarks/results/qgraph_pool_paired_x86_glove_v1.json: 1.148x at 0.90, 1.127x at 0.95 (11/11 rounds each)",
      "paired_x86_glove_v2": "benchmarks/results/qgraph_pool_paired_x86_glove_v2.json: patience arm 0.999x at 0.90, 0.984x at 0.95 at load 5; re-runs x86gl3 and x86ny2 in flight",
-     "x86_rerun": "glove v3: 0.966x/0.929x; nytimes v2: 0.957x/0.918x for the 18a0eec build; regression against the 7cbf2d3 build bisected next (delta-list branch and cap counter moved out of the default path)"
+     "x86_rerun": "glove v3: 0.966x/0.929x; nytimes v2: 0.957x/0.918x for the 18a0eec build; regression against the 7cbf2d3 build bisected next (delta-list branch and cap counter moved out of the default path)",
+     "verdict": "the 7cbf2d3 binary measured 1.148x/1.127x (glove v1) and 0.991x/0.939x (glove v4) against the same baseline binary on the x86 host; kept for identical results and simpler code, no speed claim"
     },
     {
      "name": "1A.3 bytes: delta-varint adjacency (id_bytes 0) and 4-bit residual, no f32 sidecar",
@@ -130,8 +140,15 @@
      "status": "killed",
      "hours": 0.5,
      "count_proxy": "nytimes (degree 64), cap 16: recall 0.9056 needs ef 512 at 5490 evals/query against the uncapped 0.9049 at ef 96 with 4236; 0.95 not reached by ef 768 (0.9196): the cap raises the evaluations needed at matched recall, so no timing run (/Volumes/A/.hms-target-fastscan/runs/ny_cap16_untimed.log)"
+    },
+    {
+     "name": "1A.1c 4-bit residual neighbour blocks with the unbiasing scale and byte marks (last block variant)",
+     "status": "killed",
+     "hours": 1.0,
+     "row": "benchmarks/results/qgraph_block4_untimed_x86_v1.json: zero ef penalty, 0.76x/0.79x of the per-row path on x86 back to back"
     }
-   ]
+   ],
+   "measurement_note": "writerslogic-02 paired ratios are reproducible only when nothing else runs there (the 2A and 1C forks build on it); GCE C4 is the confirmation host and needs gcloud auth"
   },
   "1B_agent_memory": {
    "metric": "LongMemEval dev-100 answer accuracy (gpt-5.4-2026-03-05 reader and judge), citation support, median reader context tokens, p95 retrieval latency, RSS",
@@ -318,12 +335,53 @@
     "index_bytes": "<= 0.7x",
     "blend": "above SPLADE v3 alone"
    },
-   "results_file": null,
+   "results_file": "benchmarks/results/public_learned_sparse_v1.json (pending assembly)",
    "levers": [
     {
-     "name": "1C.1 HMS impact-weighted postings + block-max WAND/MaxScore over learned sparse vectors, local ONNX",
-     "status": "pending",
-     "hours": 0
+     "name": "1C.1 HMS impact index (src/core/sparse, 8-bit impacts, 128-posting blocks with block maxima, MaxScore exact top-k) serving learned sparse vectors; bench src/bin/sparse-bench.rs; encoder benchmarks/public/learned_sparse_encode.py",
+     "status": "in_flight_measuring",
+     "hours": 2.5,
+     "comparator": "naver/splade-v3 is CC BY-NC-SA 4.0 and a gated repository the account cannot read (HTTP 401, 2026-10-16); naver/splade-cocondenser-ensembledistil (SPLADE++ ED, CC BY-NC-SA 4.0, ungated) stands in; shippable encoder opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill (Apache-2.0, document-only, IDF queries)",
+     "anserini": "io.anserini:anserini:1.2.0 fatjar (2.3.0 fetches prebuilt-index metadata from api.github.com at SearchCollection start and fails under the unauthenticated rate limit), JDK 21.0.12.1 in user space on both hosts",
+     "hms_x86_writerslogic-02": {
+      "nfcorpus/splade-pp-ed": {
+       "ndcg_at_10": 0.3477,
+       "recall_at_100": 0.2844,
+       "index_bytes": 1751871,
+       "qps_k10": 6585,
+       "rss_serving_bytes": 20131840,
+       "blend_ndcg": 0.3585,
+       "alpha": 0.5
+      },
+      "nfcorpus/os-doc-v2-distill": {
+       "ndcg_at_10": 0.3336,
+       "recall_at_100": 0.2754,
+       "index_bytes": 2481063,
+       "qps_k10": 58692,
+       "rss_serving_bytes": 27328512,
+       "blend_ndcg": 0.3462,
+       "alpha": 0.4
+      },
+      "scifact/splade-pp-ed": {
+       "ndcg_at_10": 0.7037,
+       "recall_at_100": 0.932,
+       "index_bytes": 2421764,
+       "qps_k10": 1328,
+       "rss_serving_bytes": 25829376,
+       "blend_ndcg": 0.7288,
+       "alpha": 0.5
+      },
+      "scifact/os-doc-v2-distill": {
+       "ndcg_at_10": 0.7004,
+       "recall_at_100": 0.9177,
+       "index_bytes": 4499386,
+       "qps_k10": 7176,
+       "rss_serving_bytes": 46657536,
+       "blend_ndcg": 0.728,
+       "alpha": 0.5
+      }
+     },
+     "pending": "Anserini 1.2.0 quality and timing on both hosts (chains running: /Volumes/A/.hms-target-1c/logs/anserini_time.done, writerslogic-02:~/hms-sparse-check/logs/run_anserini.done); results assembled by benchmarks/public/learned_sparse_results.py into benchmarks/results/public_learned_sparse_v1.json and checked by check_learned_sparse.py"
     }
    ]
   },
@@ -361,11 +419,13 @@
     {
      "name": "2A V37: compact term dictionary (sorted base + overlay), delta-varint posting lists, file-backed chunk text read by positioned reads (no in-memory text, no mapping so touched pages stay out of RSS)",
      "status": "in_flight",
-     "hours": 1.6,
+     "hours": 2.6,
      "code": "src/core/documents/postings.rs, src/core/documents/text.rs, documents/index.rs, documents/search.rs, documents.rs (StoredChunk.text_at), engine/mod.rs (attach_text_segment), engine/compaction.rs (materialized text in snapshots); uncommitted in the main tree",
-     "gate": "cargo test --release --lib documents 27 passed; full lib + tests/documents rerun pending; cargo +1.98.0 clippy --lib --features node-api,security clean",
+     "gate": "cargo test --release --lib core:: 347 passed, 1 failed in src/core/sparse (another agent's module, not 2A); tests/documents 6 passed; cargo +1.98.0 clippy --release --lib --features node-api,security -D warnings clean; new regression tests: postings round trip against a map model, dictionary lookups across overlay/base/tombstones, varint boundaries, text segment bounds, journal bytes identical through the text view (mutation.rs owner-lifetime test)",
      "measurement_plan": "writerslogic-02: v37-build-v1 (compose.py/build_v37.py from /Volumes/A/.hms-target-2a/v37-build) then serving-v37-monotonic-v1 (stage_v37.py derives the V30 controller; 11 rounds, 33 cells, 324 NFCorpus queries, serving_max_rss ratio vs sqlite-full)",
-     "bound": "V30 run: sqlite-full serving max RSS median 158.4 MB, static 82.5 MB; HMS V30 static 101.9 MB, serving max 145.1 MB; the Node runtime floor makes 0.75x reachable only with a near-zero native footprint (recorded as a physical bound once the V37 row exists)"
+     "bound": "V30 run: sqlite-full serving max RSS median 158.4 MB, static 82.5 MB; HMS V30 static 101.9 MB, serving max 145.1 MB; the Node runtime floor makes 0.75x reachable only with a near-zero native footprint (recorded as a physical bound once the V37 row exists)",
+     "finding": "V30's binding-side files (src/core/documents/metadata.rs, node_projection.rs, src/node_result_strings.rs, tests/node/result-storage.test.cjs, transport-buffer.test.cjs) exist only in the retained V30 capsule, not in the main tree: the private 0.9133x includes JS-side savings the tree never integrated; V37 = main tree + this mechanism without them",
+     "remote": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/v37-build-v1 (chain.sh: build_v37.py, stage_v37.py, serve_v37.py) -> serving-v37-monotonic-v1/serving-v37-monotonic-full11-v1 (analysis.json, measurements.json)"
     }
    ]
   },
@@ -494,6 +554,12 @@
    "row": "benchmarks/results/qgraph_pool_paired_x86_{glove_v3,nytimes_v2}.json",
    "ratio_to_previous_accepted": "pool 0.92-0.97; pool + patience 1.03-1.12",
    "time": "2026-10-16T17:50"
+  },
+  {
+   "category": "1A",
+   "row": "benchmarks/results/qgraph_pool_paired_x86_glove_v4.json",
+   "ratio_to_previous_accepted": "0.991 (0.90), 0.939 (0.95) for the binary that measured 1.148/1.127 earlier",
+   "time": "2026-10-16T18:15"
   }
  ]
 }

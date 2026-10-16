@@ -1202,7 +1202,7 @@ impl VGraph {
         VSearcher {
             index: self,
             visited: Marks {
-                marks: vec![0; if self.has_blocks() { 0 } else { self.n }],
+                marks: vec![0; self.n],
                 epoch: 0,
                 traces: vec![Trace::default(); if self.has_blocks() { self.n } else { 0 }],
             },
@@ -1459,12 +1459,11 @@ impl VSearcher<'_> {
 
         self.visited.next();
         let (entry, mut evals) = g.descend(qc);
-        if blocks {
-            self.visited.trace(entry);
-        } else {
-            self.visited.insert(entry);
-        }
+        self.visited.insert(entry);
         let fuse = blocks && params.fuse;
+        if fuse {
+            self.visited.trace(entry);
+        }
         // Query terms of the error model: `|q - x_v|^2 = |q|^2 + 1 - 2 (<q, x_v - mean> + <q, mean>)`
         // for unit index rows.
         let (qn2, qm) = if blocks {
@@ -1481,7 +1480,7 @@ impl VSearcher<'_> {
         let take = params.rerank.max(k).min(g.n);
         let k0 = key(g.est(qc, entry), entry);
         self.pool.insert(k0);
-        if blocks {
+        if fuse {
             self.visited.trace(entry).1.key = k0;
         }
         evals += 1;
@@ -1495,7 +1494,8 @@ impl VSearcher<'_> {
             if patience > 0 && stale >= patience {
                 break;
             }
-            if blocks {
+            if fuse {
+                // A re-admitted vertex may sit in the pool twice; expand it once.
                 let (_, t) = self.visited.trace(key_id(c));
                 if t.expanded {
                     continue;
@@ -1544,6 +1544,20 @@ impl VSearcher<'_> {
                         let s = le_f32(scales, i);
                         let ip =
                             ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
+                        if !fuse {
+                            // Without fusion the block path keeps the plain path's byte marks
+                            // (the per-vertex trace records would not stay in cache).
+                            if !self.visited.insert(u) {
+                                continue;
+                            }
+                            evals += 1;
+                            if let Some((pos, _)) = self.pool.insert(key(-ip * inv_sq, u)) {
+                                if patience > 0 && pos < k {
+                                    stale = 0;
+                                }
+                            }
+                            continue;
+                        }
                         // Precision of this estimate under the calibrated error model.
                         let w = 1.0 / (g.block_kappa * s * s * d2_v + 1e-12);
                         let (fresh, t) = self.visited.trace(u);
@@ -1552,7 +1566,7 @@ impl VSearcher<'_> {
                             t.wsum = w * ip;
                             ip
                         } else {
-                            if !fuse || t.expanded {
+                            if t.expanded {
                                 continue;
                             }
                             t.w += w;
