@@ -111,8 +111,9 @@ enum Mode {
         /// Vertex index only: bits per traversal code coordinate (8 or 4).
         #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u8).range(4..=8))]
         vertex_bits: u8,
-        /// Vertex index only: bytes per stored neighbour id (4, or 3 below 2^24 - 1 vertices).
-        #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(3..=4))]
+        /// Vertex index only: bytes per stored neighbour id (4, 3 below 2^24 - 1 vertices, or
+        /// 0 for sorted delta-coded varint lists).
+        #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(0..=4))]
         id_bytes: u8,
         /// Vertex index only: start every code row on a 128-byte cache line.
         #[arg(long)]
@@ -142,10 +143,6 @@ enum Mode {
         /// re-admit it when the fused estimate qualifies.
         #[arg(long)]
         fuse: bool,
-        /// Vertex index with blocks only: certified-stop margins in standard deviations of
-        /// the fused estimate (0 = pool rule alone), swept with ef.
-        #[arg(long, value_delimiter = ',', default_value = "0")]
-        stop_z: Vec<f32>,
         /// Paired timing: after the build write `<SYNC>.ready`, then before timing round `r`
         /// block until `<SYNC>.go.<r>` exists and afterwards write `<SYNC>.done.<r>`, so an
         /// outside coordinator holding the timing lock can alternate two processes. The build
@@ -484,7 +481,6 @@ struct QgraphArgs {
     screen_sigmas: Vec<f32>,
     block_bits: u8,
     fuse: bool,
-    stop_z: Vec<f32>,
     sync: Option<PathBuf>,
     graph_cache: Option<PathBuf>,
 }
@@ -639,25 +635,23 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         Built::Edge(_) => "max_exact",
         Built::Vertex(_) => "rerank",
     };
-    // (second, ef, patience, screen_sigmas, stop_z); the edge index ignores the last three.
-    let (pat, sig, stops): (&[usize], &[f32], &[f32]) = match &index {
-        Built::Edge(_) => (&[0], &[1.0], &[0.0]),
-        Built::Vertex(_) => (&a.patience, &a.screen_sigmas, &a.stop_z),
+    // (second, ef, patience, screen_sigmas); the edge index ignores the last two.
+    let (pat, sig): (&[usize], &[f32]) = match &index {
+        Built::Edge(_) => (&[0], &[1.0]),
+        Built::Vertex(_) => (&a.patience, &a.screen_sigmas),
     };
-    let configs: Vec<(usize, usize, usize, f32, f32)> = seconds
+    let configs: Vec<(usize, usize, usize, f32)> = seconds
         .iter()
         .flat_map(|&second| {
             a.ef.iter().flat_map(move |&ef| {
-                pat.iter().flat_map(move |&p| {
-                    sig.iter()
-                        .flat_map(move |&s| stops.iter().map(move |&z| (second, ef, p, s, z)))
-                })
+                pat.iter()
+                    .flat_map(move |&p| sig.iter().map(move |&s| (second, ef, p, s)))
             })
         })
         .collect();
     // Returns (estimates, neighbours the screen skipped).
     let mut search = |q: &[f32],
-                      (second, ef, patience, sigmas, stop_z): (usize, usize, usize, f32, f32),
+                      (second, ef, patience, sigmas): (usize, usize, usize, f32),
                       out: &mut Vec<u32>|
      -> (usize, usize) {
         if let Some(s) = edge_s.as_mut() {
@@ -684,7 +678,6 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                         screen_sigmas: sigmas.max(0.0),
                         screen: sigmas >= 0.0,
                         fuse: a.fuse,
-                        stop_z,
                     },
                     out,
                 )
@@ -755,15 +748,15 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         }
     }
     let mut rows = Vec::new();
-    for (&(second, ef, patience, sigmas, stop_z), (qps, loads, gate, recall, exact_mean, screen_mean)) in
+    for (&(second, ef, patience, sigmas), (qps, loads, gate, recall, exact_mean, screen_mean)) in
         configs.iter().zip(&acc)
     {
         let mut sorted = qps.clone();
         sorted.sort_by(f64::total_cmp);
         let median = sorted[sorted.len() / 2];
-        eprintln!("ef={ef} {second_name}={second} patience={patience} sigmas={sigmas} stop_z={stop_z} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} screened/q={screen_mean:.0} load={loads:?}");
+        eprintln!("ef={ef} {second_name}={second} patience={patience} sigmas={sigmas} recall={recall:.4} qps={median:.0} evals/q={exact_mean:.0} screened/q={screen_mean:.0} load={loads:?}");
         rows.push(json!({
-            "params": {"ef": ef, second_name: second, "patience": patience, "screen": a.screen && sigmas >= 0.0, "screen_sigmas": sigmas, "stop_z": stop_z},
+            "params": {"ef": ef, second_name: second, "patience": patience, "screen": a.screen && sigmas >= 0.0, "screen_sigmas": sigmas},
             "screened_per_query": screen_mean,
             "recall_at_10": recall,
             "qps_single_thread": median,
@@ -1253,7 +1246,6 @@ fn main() -> Result<()> {
             screen_sigmas,
             block_bits,
             fuse,
-            stop_z,
             sync,
             graph_cache,
         } => ann_qgraph(&QgraphArgs {
@@ -1283,7 +1275,6 @@ fn main() -> Result<()> {
             screen_sigmas,
             block_bits,
             fuse,
-            stop_z,
             sync,
             graph_cache,
         }),

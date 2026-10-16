@@ -1,0 +1,513 @@
+{
+ "schema_version": 1,
+ "tag": "fsny2",
+ "dataset": {
+  "dim": 256,
+  "kind": "ann",
+  "metric": "angular",
+  "n_neighbors": 100,
+  "n_test": 10000,
+  "n_train": 290000,
+  "name": "nytimes-256-angular",
+  "sha256": "6ad5d2cde6d6a6f21528d541901304ebfd40885d6ce6afae37bccbe278254a93",
+  "source": "https://ann-benchmarks.com/nytimes-256-angular.hdf5"
+ },
+ "rounds": 11,
+ "selection_rule": "per process and threshold, the row with recall@10 >= threshold and the fewest estimates per query; paired ratio = candidate QPS / baseline QPS in the same round",
+ "load_1m_per_step": [
+  [
+   0,
+   "A",
+   27.4
+  ],
+  [
+   0,
+   "B",
+   27.4
+  ],
+  [
+   0,
+   "C",
+   26.0
+  ],
+  [
+   1,
+   "B",
+   26.0
+  ],
+  [
+   1,
+   "C",
+   24.4
+  ],
+  [
+   1,
+   "A",
+   24.4
+  ],
+  [
+   2,
+   "C",
+   24.1
+  ],
+  [
+   2,
+   "A",
+   24.1
+  ],
+  [
+   2,
+   "B",
+   23.1
+  ],
+  [
+   3,
+   "A",
+   23.1
+  ],
+  [
+   3,
+   "B",
+   22.0
+  ],
+  [
+   3,
+   "C",
+   21.7
+  ],
+  [
+   4,
+   "B",
+   21.7
+  ],
+  [
+   4,
+   "C",
+   21.0
+  ],
+  [
+   4,
+   "A",
+   21.0
+  ],
+  [
+   5,
+   "C",
+   20.4
+  ],
+  [
+   5,
+   "A",
+   19.8
+  ],
+  [
+   5,
+   "B",
+   19.8
+  ],
+  [
+   6,
+   "A",
+   19.1
+  ],
+  [
+   6,
+   "B",
+   19.1
+  ],
+  [
+   6,
+   "C",
+   18.5
+  ],
+  [
+   7,
+   "B",
+   18.5
+  ],
+  [
+   7,
+   "C",
+   17.6
+  ],
+  [
+   7,
+   "A",
+   17.6
+  ],
+  [
+   8,
+   "C",
+   16.8
+  ],
+  [
+   8,
+   "A",
+   16.8
+  ],
+  [
+   8,
+   "B",
+   16.6
+  ],
+  [
+   9,
+   "A",
+   16.6
+  ],
+  [
+   9,
+   "B",
+   16.4
+  ],
+  [
+   9,
+   "C",
+   16.1
+  ],
+  [
+   10,
+   "B",
+   16.1
+  ],
+  [
+   10,
+   "C",
+   15.7
+  ],
+  [
+   10,
+   "A",
+   15.7
+  ]
+ ],
+ "index_bytes": {
+  "A": 170604904,
+  "B": 170604904,
+  "C": 170604904
+ },
+ "build": {
+  "A": {
+   "build_secs": 1.936584917,
+   "graph_hash": "c279d454c4e33af0",
+   "load_1m_after_build": 29.03,
+   "load_1m_before_build": 29.03,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 64,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  },
+  "B": {
+   "build_secs": 1.018637,
+   "graph_hash": "c279d454c4e33af0",
+   "load_1m_after_build": 27.35,
+   "load_1m_before_build": 27.35,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 64,
+    "fuse": false,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  },
+  "C": {
+   "build_secs": 1.333287167,
+   "graph_hash": "c279d454c4e33af0",
+   "load_1m_after_build": 29.03,
+   "load_1m_before_build": 29.03,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 64,
+    "fuse": false,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  }
+ },
+ "thresholds": {
+  "0.90": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 88,
+     "patience": 0,
+     "rerank": 32,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.900350525788683,
+    "evals_per_query": 3937.324486730095,
+    "qps_runs": [
+     5269.1935884441855,
+     8775.472924934951,
+     5685.7505433863535,
+     6424.619228389268,
+     5646.916445851827,
+     6828.932171468776,
+     8667.614664414765,
+     7605.957819506035,
+     7347.623975066705,
+     9411.999450003661,
+     6465.948138044917
+    ],
+    "qps_median": 6828.932171468776
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 88,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.900350525788683,
+     "evals_per_query": 3937.324486730095,
+     "qps_runs": [
+      6799.543965447802,
+      9684.633090061525,
+      5701.225238696627,
+      6204.492729420385,
+      4974.122680954785,
+      4924.265074397212,
+      6511.168274045989,
+      8815.205678016557,
+      6517.387382719867,
+      8034.312476644371,
+      7638.301975713169
+     ],
+     "qps_median": 6517.387382719867,
+     "paired_ratios": [
+      1.2904,
+      1.1036,
+      1.0027,
+      0.9657,
+      0.8809,
+      0.7211,
+      0.7512,
+      1.159,
+      0.887,
+      0.8536,
+      1.1813
+     ],
+     "paired_median_ratio": 0.9657,
+     "paired_min_ratio": 0.7211,
+     "rounds_above_1": 5,
+     "meets_min_ratio": false
+    },
+    "C": {
+     "params": {
+      "ef": 128,
+      "patience": 64,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9093139709564346,
+     "evals_per_query": 3903.534802203305,
+     "qps_runs": [
+      7247.092301086876,
+      9232.885329418183,
+      5731.554738237699,
+      5148.235739957379,
+      6743.9806241282895,
+      5624.967871912975,
+      6507.087699461829,
+      8617.087620889983,
+      7161.2396644476175,
+      5681.841088817382,
+      5649.792110707815
+     ],
+     "qps_median": 6507.087699461829,
+     "paired_ratios": [
+      1.3754,
+      1.0521,
+      1.0081,
+      0.8013,
+      1.1943,
+      0.8237,
+      0.7507,
+      1.1329,
+      0.9746,
+      0.6037,
+      0.8738
+     ],
+     "paired_median_ratio": 0.9746,
+     "paired_min_ratio": 0.6037,
+     "rounds_above_1": 5,
+     "meets_min_ratio": false
+    }
+   }
+  },
+  "0.95": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 400,
+     "patience": 0,
+     "rerank": 32,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.9508262393590385,
+    "evals_per_query": 15456.666499749625,
+    "qps_runs": [
+     1980.1044282881912,
+     1528.1948896152767,
+     1960.1702783136136,
+     1880.224652480323,
+     1345.4712464969061,
+     1511.7186583326584,
+     2006.1853194852633,
+     1624.6224531379748,
+     2282.1282474366412,
+     2231.453210158308,
+     2117.767174630215
+    ],
+    "qps_median": 1960.1702783136136
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 400,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9508262393590385,
+     "evals_per_query": 15456.666499749625,
+     "qps_runs": [
+      2206.074049852634,
+      2317.7971264278526,
+      1352.2162855390557,
+      1622.4693174295226,
+      1722.225953328496,
+      1990.4562933269797,
+      1917.08449436823,
+      2093.8947162579993,
+      1748.2996400580214,
+      1302.1755964125455,
+      1517.4157079544436
+     ],
+     "qps_median": 1748.2996400580214,
+     "paired_ratios": [
+      1.1141,
+      1.5167,
+      0.6898,
+      0.8629,
+      1.28,
+      1.3167,
+      0.9556,
+      1.2889,
+      0.7661,
+      0.5836,
+      0.7165
+     ],
+     "paired_median_ratio": 0.9556,
+     "paired_min_ratio": 0.5836,
+     "rounds_above_1": 5,
+     "meets_min_ratio": false
+    },
+    "C": {
+     "params": {
+      "ef": 512,
+      "patience": 256,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9504757135703555,
+     "evals_per_query": 12585.291437155734,
+     "qps_runs": [
+      2458.2639316411974,
+      2078.143898690175,
+      1767.5067737882691,
+      1468.3343977875393,
+      1605.6234067770592,
+      1467.303543904113,
+      2304.3531879938814,
+      1610.998080768051,
+      1855.6672046695328,
+      1598.6446605712226,
+      1770.0553735365847
+     ],
+     "qps_median": 1767.5067737882691,
+     "paired_ratios": [
+      1.2415,
+      1.3599,
+      0.9017,
+      0.7809,
+      1.1934,
+      0.9706,
+      1.1486,
+      0.9916,
+      0.8131,
+      0.7164,
+      0.8358
+     ],
+     "paired_median_ratio": 0.9706,
+     "paired_min_ratio": 0.7164,
+     "rounds_above_1": 4,
+     "meets_min_ratio": false
+    }
+   }
+  }
+ },
+ "check": {
+  "passed": true,
+  "failures": [],
+  "min_ratio": 1.0
+ },
+ "measurement": {
+  "host": "Apple M4 (development host), shared machine, 1-minute load 14-20",
+  "protocol": "as qgraph_block_paired_m4_nytimes_v1.json: nytimes-256-angular --holdout 2000, 11 paired rounds under the timing lock, alternating A B C",
+  "arms": {
+   "A": "heap pools (binary from before the pool change), accepted encoding, rerank 32",
+   "B": "single sorted candidate pool, same encoding and ef list (recall and evaluation counts identical to A row by row)",
+   "C": "B plus patience (ef 128 p64 at 0.90, ef 512 p256 at 0.95)"
+  },
+  "outcome": "B 0.966x at 0.90 and 0.956x at 0.95 (5 of 11 rounds above 1); C 0.975x and 0.971x: neither the candidate pool nor patience moves the per-row path on this host; with the earlier kernel kill tests this places the cost in memory latency of the per-neighbour row fetch and visited marks, not in arithmetic or heap work"
+ }
+}

@@ -14,7 +14,6 @@
 //! (`dim / 2 + 4` with the 4-bit one), against `4 * dim` for the vectors alone in an HNSW
 //! index.
 
-use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
 use rayon::prelude::*;
@@ -48,12 +47,6 @@ pub struct VSearchParams {
     /// vertex that lists it (precision-weighted by the edge residual's scale) and re-admit
     /// it to the pool when the fused estimate qualifies, instead of keeping its first one.
     pub fuse: bool,
-    /// With neighbour blocks: certified early exit. Every block estimate carries a variance
-    /// from the index's calibrated error model (the edge residual's scale and the query's
-    /// distance to the expanded vertex); the search stops once the best queued candidate's
-    /// fused estimate lies more than this many standard deviations below the current k-th
-    /// result. 0 keeps the pool rule alone.
-    pub stop_z: f32,
 }
 
 impl Default for VSearchParams {
@@ -65,7 +58,6 @@ impl Default for VSearchParams {
             screen_sigmas: 1.0,
             screen: true,
             fuse: false,
-            stop_z: 0.0,
         }
     }
 }
@@ -119,6 +111,11 @@ pub struct VGraph {
     adj: Vec<u32>,
     /// The same as 3-byte little-endian ids (padded with `NONE3`); empty with `u32` ids.
     adj3: Vec<u8>,
+    /// Delta-coded lists (`id_bytes` 0): per vertex, the sorted neighbour ids as LEB128
+    /// varints of the zigzag first difference to the vertex and the gaps less one after,
+    /// with `adjv_off[v]..adjv_off[v + 1]` the byte span of vertex `v`; empty otherwise.
+    adjv: Vec<u8>,
+    adjv_off: Vec<u32>,
     codes: Lines,
     scales: Vec<f32>,
     /// 0 (none), 4 or 8.
@@ -185,12 +182,6 @@ fn block_level(nibbles: &[u8], bits: u8, i: usize) -> f32 {
     }
 }
 
-/// True when the patience rule tracks the k best results.
-#[inline]
-fn patience_on(p: VSearchParams) -> bool {
-    p.patience > 0
-}
-
 /// Little-endian f32 number `i` of `bytes`.
 #[inline]
 fn le_f32(bytes: &[u8], i: usize) -> f32 {
@@ -205,8 +196,12 @@ fn le_f32(bytes: &[u8], i: usize) -> f32 {
 /// Encodes a rotated, centred vector as `m` nibbles for a `bits`-per-coordinate block code
 /// and returns its scale, so that coordinate `i ~= scale * level(i)` with the levels
 /// `{-1, 1}` (1 bit), `{-3, -1, 1, 3}` (2 bits) or `-7..=7` (4 bits; nibble `level + 7`).
-/// With one bit the scale is the RaBitQ factor `|x|^2 / sum |x_i|`; with 2 and 4 bits it is
-/// the value among eight candidates that minimizes the squared error.
+/// The levels of the 2- and 4-bit codes are chosen with the scale among eight candidates
+/// that minimizes the squared reconstruction error. The returned scale, for every width, is
+/// `|x|^2 / <levels, x>`: it makes the code error orthogonal to `x` itself (for one bit this
+/// is the RaBitQ factor `|x|^2 / sum |x_i|`), so inner products with queries that are
+/// correlated with `x` are unbiased, where the least-squares scale underestimates them by
+/// the relative error energy.
 fn encode_block_code(x: &[f32], bits: u8, nibbles: &mut [u8]) -> f32 {
     nibbles.fill(0);
     let m = x.iter().fold(0f32, |a, &v| a.max(v.abs()));
@@ -244,11 +239,13 @@ fn encode_block_code(x: &[f32], bits: u8, nibbles: &mut [u8]) -> f32 {
                     (best, best_err) = (s, e);
                 }
             }
+            let mut dot = 0f32;
             for (i, &v) in x.iter().enumerate() {
                 let t = ((v / best + 3.0) / 2.0).round().clamp(0.0, 3.0) as u8;
                 nibbles[i / 2] |= t << (2 * (i % 2));
+                dot += v * (2.0 * f32::from(t) - 3.0);
             }
-            best
+            unbiased_scale(x, dot, best)
         }
         _ => {
             let err = |s: f32| -> f32 {
@@ -267,11 +264,25 @@ fn encode_block_code(x: &[f32], bits: u8, nibbles: &mut [u8]) -> f32 {
                     (best, best_err) = (s, e);
                 }
             }
+            let mut dot = 0f32;
             for (i, &v) in x.iter().enumerate() {
-                nibbles[i] = ((v / best).round().clamp(-7.0, 7.0) as i8 + 7) as u8;
+                let level = (v / best).round().clamp(-7.0, 7.0);
+                nibbles[i] = (level as i8 + 7) as u8;
+                dot += v * level;
             }
-            best
+            unbiased_scale(x, dot, best)
         }
+    }
+}
+
+/// `|x|^2 / <levels, x>` (see [`encode_block_code`]), or the least-squares scale when the
+/// levels do not correlate with `x`.
+fn unbiased_scale(x: &[f32], dot: f32, fallback: f32) -> f32 {
+    let norm2: f32 = x.iter().map(|v| v * v).sum();
+    if dot > 0.0 {
+        norm2 / dot
+    } else {
+        fallback
     }
 }
 
@@ -445,6 +456,36 @@ pub(super) fn code_at(c: &[i8], bits: u8, i: usize) -> i8 {
 const NONE3: u32 = 0x00FF_FFFF;
 
 #[inline]
+/// LEB128 varint (7 bits per byte, low bits first).
+fn put_varint(out: &mut Vec<u8>, mut v: u64) {
+    while v >= 0x80 {
+        out.push((v as u8) | 0x80);
+        v >>= 7;
+    }
+    out.push(v as u8);
+}
+
+/// Decodes one LEB128 varint; returns the value and the bytes used.
+#[inline]
+fn get_varint(bytes: &[u8]) -> (u64, usize) {
+    let mut v = 0u64;
+    for (i, &b) in bytes.iter().enumerate() {
+        v |= u64::from(b & 0x7f) << (7 * i);
+        if b & 0x80 == 0 {
+            return (v, i + 1);
+        }
+    }
+    (v, bytes.len())
+}
+
+fn zigzag(v: i64) -> u64 {
+    ((v << 1) ^ (v >> 63)) as u64
+}
+
+fn unzigzag(v: u64) -> i64 {
+    ((v >> 1) as i64) ^ -((v & 1) as i64)
+}
+
 fn prefetch_u8(bytes: &[u8]) {
     // SAFETY: any initialized `u8` slice is also initialized `i8`s.
     prefetch_bytes(unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<i8>(), bytes.len()) });
@@ -480,7 +521,8 @@ impl VGraph {
     /// (0, 4 or 8) the re-rank code of its residual; `align` keeps every code row inside as
     /// few 128-byte lines as its size allows; `reorder` renumbers the vertices in breadth-first
     /// order (search still returns the original ids); `id_bytes` 3 stores neighbour ids in
-    /// three bytes (graphs below 2^24 - 1 vertices) instead of 4; `screen` adds a 1-bit
+    /// three bytes (graphs below 2^24 - 1 vertices) instead of 4, and 0 stores each list
+    /// sorted and delta-coded as varints (sizes vary; `reorder` makes the deltas small); `screen` adds a 1-bit
     /// sign code of the rotated centred vector per vertex (RaBitQ-style, with a per-vertex
     /// factor) that the search consults before paying for the 8-bit estimate.
     pub fn from_graph_with(
@@ -497,9 +539,9 @@ impl VGraph {
                 "vertex code bits must be 4 or 8, not {bits}"
             )));
         }
-        if !(id_bytes == 4 || (id_bytes == 3 && (g.n as u64) < u64::from(NONE3))) {
+        if !(id_bytes == 4 || id_bytes == 0 || (id_bytes == 3 && (g.n as u64) < u64::from(NONE3))) {
             return Err(invalid(format!(
-                "id_bytes must be 4, or 3 below 2^24 - 1 vertices (got {id_bytes} for {} vertices)",
+                "id_bytes must be 4, 0 (delta varints), or 3 below 2^24 - 1 vertices (got {id_bytes} for {} vertices)",
                 g.n
             )));
         }
@@ -616,11 +658,33 @@ impl VGraph {
             }
         }
         let mut adj3 = Vec::new();
+        let (mut adjv, mut adjv_off) = (Vec::new(), Vec::new());
         if id_bytes == 3 {
             adj3 = adj
                 .iter()
                 .flat_map(|&u| (u.min(NONE3)).to_le_bytes()[..3].to_vec())
                 .collect();
+            adj = Vec::new();
+        } else if id_bytes == 0 {
+            adjv_off.reserve(n + 1);
+            let mut list: Vec<u32> = Vec::with_capacity(r);
+            for (v, row) in adj.chunks_exact(r).enumerate() {
+                adjv_off.push(adjv.len() as u32);
+                list.clear();
+                list.extend(row.iter().copied().take_while(|&u| u != NONE));
+                list.sort_unstable();
+                let mut prev = v as u32;
+                for (i, &u) in list.iter().enumerate() {
+                    let delta = if i == 0 {
+                        zigzag(i64::from(u) - i64::from(prev))
+                    } else {
+                        u64::from(u - prev - 1)
+                    };
+                    put_varint(&mut adjv, delta);
+                    prev = u;
+                }
+            }
+            adjv_off.push(adjv.len() as u32);
             adj = Vec::new();
         }
         let mut out = Self {
@@ -634,6 +698,8 @@ impl VGraph {
             mean,
             adj,
             adj3,
+            adjv,
+            adjv_off,
             codes,
             scales,
             res_bits: residual_bits,
@@ -677,7 +743,6 @@ impl VGraph {
         let m = bd * usize::from(bits) / 4;
         let per_vertex = r.div_ceil(BLOCK);
         let record = block_record_bytes(m);
-        let mean = &self.mean;
         let ids = &self.ids;
         let old = |v: usize| if ids.is_empty() { v } else { ids[v] as usize };
         let row = |v: usize| &g.unit[old(v) * dim..(old(v) + 1) * dim];
@@ -764,6 +829,7 @@ impl VGraph {
         let mut rng = SplitMix(BLOCK_SEED ^ 1);
         let mut s = self.searcher();
         let (mut num, mut den) = (0f64, 0f64);
+        let (mut diag_sum2, mut diag_n) = (0f64, 0f64);
         let mut scan = [0u32; BLOCK];
         for _ in 0..nq {
             let qi = (rng.next_u64() % self.n as u64) as usize;
@@ -781,29 +847,44 @@ impl VGraph {
                     .map(|((a, b), m)| a * (b - m))
                     .sum()
             };
+            let mut list = Vec::with_capacity(self.degree);
             for _ in 0..nv {
                 let v = (rng.next_u64() % self.n as u64) as usize;
                 let xv = self.unit_row(g, v);
                 let ip_v = centred(xv);
                 let d2: f32 = q.iter().zip(xv).map(|(a, b)| (a - b) * (a - b)).sum();
+                list.clear();
+                self.for_each_neighbour(v, |u| list.push(u));
                 for b in 0..self.blocks_per_vertex {
                     let (codes, scales, offsets) = self.block(v, b);
                     scan32(codes, &s.bq.lut, self.block_m, &mut scan);
                     for i in 0..BLOCK {
-                        let u = self.neighbour(v, b * BLOCK + i);
-                        if u == NONE {
+                        let Some(&u) = list.get(b * BLOCK + i) else {
                             break;
-                        }
+                        };
                         let sc = le_f32(scales, i);
                         let est = ip_v
                             + sc * (s.bq.delta * scan[i] as f32 + s.bq.min_sum)
                             + le_f32(offsets, i);
-                        let err = f64::from(est - centred(self.unit_row(g, u as usize)));
+                        let exact = centred(self.unit_row(g, u as usize));
+                        let err = f64::from(est - exact);
                         num += err * err;
                         den += f64::from(sc * sc * d2);
+                        diag_sum2 += f64::from(exact - ip_v).powi(2);
+                        diag_n += 1.0;
                     }
                 }
             }
+        }
+        if std::env::var_os("HMS_BLOCK_DIAG").is_some() && diag_n > 0.0 {
+            eprintln!(
+                "block diag: bits {} kappa {:.4} rms_err {:.5} rms_residual_ip {:.5} pairs {}",
+                self.block_bits,
+                num / den.max(1e-30),
+                (num / diag_n).sqrt(),
+                (diag_sum2 / diag_n).sqrt(),
+                diag_n
+            );
         }
         if den > 0.0 {
             (num / den) as f32
@@ -842,23 +923,6 @@ impl VGraph {
         let record = block_record_bytes(self.block_m) * self.blocks_per_vertex;
         let at = v * record;
         prefetch_bytes(&self.blocks.bytes()[at..at + record]);
-    }
-
-    /// Neighbour `i` of `v` (`NONE` past the end of its list).
-    #[inline]
-    fn neighbour(&self, v: usize, i: usize) -> u32 {
-        let at = v * self.degree + i;
-        if self.adj3.is_empty() {
-            self.adj[at]
-        } else {
-            let b = &self.adj3[3 * at..3 * at + 3];
-            let u = u32::from_le_bytes([b[0], b[1], b[2], 0]);
-            if u == NONE3 {
-                NONE
-            } else {
-                u
-            }
-        }
     }
 
     /// Builds the block lookup table of a query (`qf` padded, `sq` its 8-bit code scale).
@@ -977,6 +1041,8 @@ impl VGraph {
     pub fn index_bytes(&self) -> usize {
         self.adj.len() * 4
             + self.adj3.len()
+            + self.adjv.len()
+            + self.adjv_off.len() * 4
             + self.n * self.stride
             + self.scales.len() * 4
             + self.residual_bytes()
@@ -1002,7 +1068,24 @@ impl VGraph {
     #[inline]
     fn for_each_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
         let r = self.degree;
-        if self.adj3.is_empty() {
+        if !self.adjv_off.is_empty() {
+            let span = &self.adjv[self.adjv_off[v] as usize..self.adjv_off[v + 1] as usize];
+            let mut at = 0;
+            let mut prev = v as u32;
+            let mut first = true;
+            while at < span.len() {
+                let (delta, used) = get_varint(&span[at..]);
+                at += used;
+                let u = if first {
+                    (i64::from(prev) + unzigzag(delta)) as u32
+                } else {
+                    prev + delta as u32 + 1
+                };
+                first = false;
+                prev = u;
+                f(u);
+            }
+        } else if self.adj3.is_empty() {
             for &u in &self.adj[v * r..(v + 1) * r] {
                 if u == NONE {
                     break;
@@ -1023,7 +1106,9 @@ impl VGraph {
     #[inline]
     fn prefetch_neighbours(&self, v: usize) {
         let r = self.degree;
-        if self.adj3.is_empty() {
+        if !self.adjv_off.is_empty() {
+            prefetch_u8(&self.adjv[self.adjv_off[v] as usize..self.adjv_off[v + 1] as usize]);
+        } else if self.adj3.is_empty() {
             prefetch_ids(&self.adj[v * r..(v + 1) * r]);
         } else {
             prefetch_u8(&self.adj3[3 * v * r..3 * (v + 1) * r]);
@@ -1120,11 +1205,14 @@ impl VGraph {
             fresh: Vec::with_capacity(self.degree),
             survivors: Vec::with_capacity(self.degree),
             screened: 0,
-            cand: BinaryHeap::new(),
-            best: BinaryHeap::new(),
+            pool: Pool {
+                keys: Vec::new(),
+                expanded: Vec::new(),
+                cap: 1,
+                cursor: 0,
+            },
             expanded: BinaryHeap::new(),
             keys: Vec::new(),
-            topk: Vec::new(),
             results: Vec::new(),
         }
     }
@@ -1148,6 +1236,8 @@ struct Trace {
     expanded: bool,
     w: f32,
     wsum: f32,
+    /// The vertex's key in the pool, or `u64::MAX` when it holds none.
+    key: u64,
 }
 
 impl Marks {
@@ -1168,6 +1258,7 @@ impl Marks {
         if fresh {
             *t = Trace {
                 epoch: self.epoch,
+                key: u64::MAX,
                 ..Trace::default()
             };
         }
@@ -1181,6 +1272,93 @@ impl Marks {
         let fresh = *m != self.epoch;
         *m = self.epoch;
         fresh
+    }
+}
+
+/// Best-first candidate pool as one sorted array: the `ef` best keys seen, nearest first,
+/// each with an expanded flag, and a cursor at the nearest unexpanded entry. One insert is a
+/// binary search and a short move; one expansion step is a scan from the cursor; the pool
+/// rule ("the nearest unexpanded candidate is among the `ef` best seen") holds by
+/// construction, so the search ends when no unexpanded entry is left. Two binary heaps
+/// (queue and bounded pool) cost two sifts per admitted candidate and a pop per expansion,
+/// and their results came back unsorted; the array is cache-resident at any practical `ef`.
+struct Pool {
+    keys: Vec<u64>,
+    expanded: Vec<bool>,
+    cap: usize,
+    cursor: usize,
+}
+
+impl Pool {
+    fn reset(&mut self, cap: usize) {
+        self.keys.clear();
+        self.expanded.clear();
+        self.cap = cap.max(1);
+        self.cursor = 0;
+    }
+
+    fn is_full(&self) -> bool {
+        self.keys.len() >= self.cap
+    }
+
+    /// The worst key held, once the pool is full.
+    fn worst(&self) -> Option<u64> {
+        self.is_full().then(|| self.keys[self.keys.len() - 1])
+    }
+
+    /// Admits `key` unless the pool is full of better ones; returns its position and the
+    /// key evicted to make room.
+    #[inline]
+    fn insert(&mut self, key: u64) -> Option<(usize, Option<u64>)> {
+        let n = self.keys.len();
+        if n >= self.cap && key >= self.keys[n - 1] {
+            return None;
+        }
+        let pos = self.keys.partition_point(|&t| t < key);
+        let mut evicted = None;
+        if n >= self.cap {
+            evicted = self.keys.pop();
+            self.expanded.pop();
+        }
+        self.keys.insert(pos, key);
+        self.expanded.insert(pos, false);
+        if pos < self.cursor {
+            self.cursor = pos;
+        }
+        Some((pos, evicted))
+    }
+
+    /// Drops `key` if present (a re-admitted vertex's older entry).
+    fn remove(&mut self, key: u64) {
+        let pos = self.keys.partition_point(|&t| t < key);
+        if pos < self.keys.len() && self.keys[pos] == key {
+            self.keys.remove(pos);
+            self.expanded.remove(pos);
+            if pos < self.cursor {
+                self.cursor -= 1;
+            }
+        }
+    }
+
+    /// The nearest unexpanded key, now marked expanded.
+    #[inline]
+    fn next(&mut self) -> Option<u64> {
+        while self.cursor < self.keys.len() {
+            if !self.expanded[self.cursor] {
+                self.expanded[self.cursor] = true;
+                return Some(self.keys[self.cursor]);
+            }
+            self.cursor += 1;
+        }
+        None
+    }
+
+    /// The key [`Pool::next`] would return.
+    #[inline]
+    fn peek_next(&self) -> Option<u64> {
+        (self.cursor..self.keys.len())
+            .find(|&i| !self.expanded[i])
+            .map(|i| self.keys[i])
     }
 }
 
@@ -1204,16 +1382,12 @@ pub struct VSearcher<'a> {
     survivors: Vec<u32>,
     /// Neighbours the screen skipped in the last search.
     screened: usize,
-    /// Unexpanded candidates, nearest on top.
-    cand: BinaryHeap<Reverse<u64>>,
-    /// The `ef` nearest seen so far, farthest on top.
-    best: BinaryHeap<u64>,
+    /// The `ef` best candidates seen, with their expansion state.
+    pool: Pool,
     /// With blocks: the best `max(k, rerank)` expanded vertices by their own-code estimate,
     /// farthest on top. Block estimates only order the exploration; results come from here.
     expanded: BinaryHeap<u64>,
     keys: Vec<u64>,
-    /// The `k` best keys seen, sorted, when `patience` is set.
-    topk: Vec<u64>,
     results: Vec<(f32, u32)>,
 }
 
@@ -1279,8 +1453,6 @@ impl VSearcher<'_> {
             self.visited.insert(entry);
         }
         let fuse = blocks && params.fuse;
-        let stop_z = if blocks { params.stop_z } else { 0.0 };
-        let track = patience_on(params) || stop_z > 0.0;
         // Query terms of the error model: `|q - x_v|^2 = |q|^2 + 1 - 2 (<q, x_v - mean> + <q, mean>)`
         // for unit index rows.
         let (qn2, qm) = if blocks {
@@ -1292,48 +1464,34 @@ impl VSearcher<'_> {
         } else {
             (0.0, 0.0)
         };
-        self.cand.clear();
-        self.best.clear();
+        self.pool.reset(ef);
         self.expanded.clear();
         let take = params.rerank.max(k).min(g.n);
         let k0 = key(g.est(qc, entry), entry);
-        self.cand.push(Reverse(k0));
-        self.best.push(k0);
+        self.pool.insert(k0);
+        if blocks {
+            self.visited.trace(entry).1.key = k0;
+        }
         evals += 1;
         // Best-first expansion of the nearest unexpanded candidate among the `ef` best seen;
-        // a candidate that fell out of those is farther than all of them, so it ends the search.
-        // With `patience`, the `k` best keys are tracked and the search also ends after that
-        // many expansions without a change to them.
+        // the pool holds exactly those, so the search ends when none is left. With
+        // `patience`, it also ends after that many expansions without an insert among the
+        // `k` best.
         let patience = params.patience;
-        self.topk.clear();
         let mut stale = 0usize;
-        while let Some(Reverse(c)) = self.cand.pop() {
-            if self.best.len() >= ef && self.best.peek().is_some_and(|&w| c > w) {
-                break;
-            }
+        while let Some(c) = self.pool.next() {
             if patience > 0 && stale >= patience {
                 break;
             }
             if blocks {
-                // A re-admitted vertex may sit in the queue twice; expand it once. With
-                // `stop_z`, a candidate whose fused estimate cannot plausibly beat the k-th
-                // result ends the search (every later candidate is estimated worse still).
                 let (_, t) = self.visited.trace(key_id(c));
                 if t.expanded {
                     continue;
                 }
-                if stop_z > 0.0 && self.topk.len() >= k && t.w > 0.0 {
-                    let sigma = (1.0 / t.w).sqrt();
-                    let mu = -key_dist(c) * sq;
-                    let tau = -key_dist(self.topk[k - 1]) * sq;
-                    if mu < tau - stop_z * sigma {
-                        break;
-                    }
-                }
                 t.expanded = true;
             }
             stale += 1;
-            if let Some(&Reverse(next)) = self.cand.peek() {
+            if let Some(next) = self.pool.peek_next() {
                 g.prefetch_neighbours(key_id(next) as usize);
                 if blocks {
                     g.prefetch_blocks(key_id(next) as usize);
@@ -1342,9 +1500,10 @@ impl VSearcher<'_> {
             }
             if blocks {
                 // The expanded vertex is scored with its own code (the per-row estimate the
-                // plain search uses everywhere) into the result pool; `patience` watches
-                // that pool. One table scan per block then estimates all its neighbours,
-                // ordering the exploration; visited ones and list padding are skipped.
+                // plain search uses everywhere) into the result pool. One table scan per
+                // block then estimates all its neighbours, ordering the exploration; list
+                // padding is skipped, and a vertex met again is re-admitted only when its
+                // fused estimate improves on the entry it holds.
                 let v = key_id(c) as usize;
                 let est_v = g.est(qc, v as u32);
                 let ek = key(est_v, v as u32);
@@ -1359,21 +1518,17 @@ impl VSearcher<'_> {
                         *worst = ek;
                     }
                 }
-                if track && (self.topk.len() < k || ek < self.topk[self.topk.len() - 1]) {
-                    let at = self.topk.partition_point(|&t| t < ek);
-                    self.topk.insert(at, ek);
-                    self.topk.truncate(k);
-                    stale = 0;
-                }
                 let (delta, min_sum, inv_sq) = (self.bq.delta, self.bq.min_sum, self.bq.inv_sq);
+                self.fresh.clear();
+                let list = &mut self.fresh;
+                g.for_each_neighbour(v, |u| list.push(u));
                 'blocks: for b in 0..g.blocks_per_vertex {
                     let (codes, scales, offsets) = g.block(v, b);
                     scan32(codes, &self.bq.lut, g.block_m, &mut self.scan);
                     for i in 0..BLOCK {
-                        let u = g.neighbour(v, b * BLOCK + i);
-                        if u == NONE {
+                        let Some(&u) = self.fresh.get(b * BLOCK + i) else {
                             break 'blocks;
-                        }
+                        };
                         let s = le_f32(scales, i);
                         let ip =
                             ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
@@ -1393,17 +1548,27 @@ impl VSearcher<'_> {
                             t.wsum / t.w
                         };
                         let kk = key(-ip * inv_sq, u);
+                        let old = t.key;
                         evals += 1;
-                        if self.best.len() < ef {
-                            self.best.push(kk);
-                        } else {
-                            let mut worst = self.best.peek_mut().expect("ef >= 1");
-                            if kk >= *worst {
-                                continue;
-                            }
-                            *worst = kk;
+                        if !fresh && kk >= old {
+                            continue;
                         }
-                        self.cand.push(Reverse(kk));
+                        if old != u64::MAX {
+                            self.pool.remove(old);
+                        }
+                        let Some((pos, evicted)) = self.pool.insert(kk) else {
+                            if old != u64::MAX {
+                                self.visited.trace(u).1.key = u64::MAX;
+                            }
+                            continue;
+                        };
+                        self.visited.trace(u).1.key = kk;
+                        if let Some(e) = evicted {
+                            self.visited.trace(key_id(e)).1.key = u64::MAX;
+                        }
+                        if patience > 0 && pos < k {
+                            stale = 0;
+                        }
                     }
                 }
                 continue;
@@ -1423,11 +1588,7 @@ impl VSearcher<'_> {
             if screen {
                 // A neighbour whose optimistic 1-bit estimate cannot enter the full pool is
                 // skipped (it stays visited); the rest get the 8-bit estimate.
-                let worst = if self.best.len() >= ef {
-                    self.best.peek().map(|&w| key_dist(w))
-                } else {
-                    None
-                };
+                let worst = self.pool.worst().map(key_dist);
                 self.survivors.clear();
                 for &u in &self.fresh {
                     if let Some(w) = worst {
@@ -1444,21 +1605,10 @@ impl VSearcher<'_> {
             for &u in &self.fresh {
                 let kk = key(g.est(qc, u), u);
                 evals += 1;
-                if self.best.len() < ef {
-                    self.best.push(kk);
-                } else {
-                    let mut worst = self.best.peek_mut().expect("ef >= 1");
-                    if kk >= *worst {
-                        continue;
+                if let Some((pos, _)) = self.pool.insert(kk) {
+                    if patience > 0 && pos < k {
+                        stale = 0;
                     }
-                    *worst = kk;
-                }
-                self.cand.push(Reverse(kk));
-                if patience > 0 && (self.topk.len() < k || kk < self.topk[self.topk.len() - 1]) {
-                    let at = self.topk.partition_point(|&t| t < kk);
-                    self.topk.insert(at, kk);
-                    self.topk.truncate(k);
-                    stale = 0;
                 }
             }
         }
@@ -1466,10 +1616,10 @@ impl VSearcher<'_> {
         self.keys.clear();
         if blocks {
             self.keys.extend(self.expanded.drain());
+            self.keys.sort_unstable();
         } else {
-            self.keys.extend(self.best.drain());
+            self.keys.extend_from_slice(&self.pool.keys);
         }
-        self.keys.sort_unstable();
         self.results.clear();
         let take = take.min(self.keys.len());
         if params.rerank > 0 {
@@ -1912,14 +2062,15 @@ mod tests {
             for v in 0..64usize {
                 // The exact `<q, x_v - mean>` stands in for the expanded vertex's estimate.
                 let ip_v = centred(v);
+                let mut list = Vec::new();
+                g.for_each_neighbour(v, |u| list.push(u));
                 for b in 0..g.blocks_per_vertex {
                     let (codes, scales, offsets) = g.block(v, b);
                     scan32(codes, &s.bq.lut, g.block_m, &mut s.scan);
                     for i in 0..BLOCK {
-                        let u = g.neighbour(v, b * BLOCK + i);
-                        if u == NONE {
+                        let Some(&u) = list.get(b * BLOCK + i) else {
                             break;
-                        }
+                        };
                         let ip = ip_v
                             + le_f32(scales, i) * (s.bq.delta * s.scan[i] as f32 + s.bq.min_sum)
                             + le_f32(offsets, i);
@@ -1946,6 +2097,54 @@ mod tests {
                 "{bits}-bit block estimates: correlation {r} below {bar}"
             );
         }
+    }
+
+    /// Delta-coded lists hold the same neighbour sets as the 4-byte ones, in fewer bytes,
+    /// and the search returns the same ids; the block index decodes them in the same order
+    /// it was built in.
+    #[test]
+    fn delta_coded_adjacency_round_trips() {
+        let d = 24;
+        let data = clustered(4000, d, 1);
+        let queries = clustered(50, d, 2);
+        let graph = Graph::build(&data, d, &BuildParams::default()).expect("build");
+        let wide = VGraph::from_graph_with(&graph, 4, 8, true, true, 4, false).expect("encode");
+        let delta = VGraph::from_graph_with(&graph, 4, 8, true, true, 0, false).expect("encode");
+        assert!(
+            delta.index_bytes() < wide.index_bytes(),
+            "{} vs {}",
+            delta.index_bytes(),
+            wide.index_bytes()
+        );
+        for v in 0..wide.n {
+            let (mut a, mut b) = (Vec::new(), Vec::new());
+            wide.for_each_neighbour(v, |u| a.push(u));
+            delta.for_each_neighbour(v, |u| b.push(u));
+            a.sort_unstable();
+            assert_eq!(a, b, "vertex {v}");
+        }
+        let p = VSearchParams {
+            ef: 48,
+            rerank: 16,
+            ..VSearchParams::default()
+        };
+        let (mut s1, mut s2) = (wide.searcher(), delta.searcher());
+        let (mut o1, mut o2) = (Vec::new(), Vec::new());
+        for q in queries.chunks_exact(d) {
+            s1.search(q, 10, p, &mut o1).expect("search");
+            s2.search(q, 10, p, &mut o2).expect("search");
+            assert_eq!(o1, o2);
+        }
+        let blocks = VGraph::from_graph_with(&graph, 8, 8, true, true, 0, false)
+            .expect("encode")
+            .with_blocks(&graph, 2)
+            .expect("blocks");
+        assert!(recall(&blocks, &data, &queries, d, p) > 0.8);
+        assert_eq!(zigzag(-1), 1);
+        assert_eq!(unzigzag(zigzag(-123_456)), -123_456);
+        let mut buf = Vec::new();
+        put_varint(&mut buf, 300);
+        assert_eq!(get_varint(&buf), (300, 2));
     }
 
     /// Renumbering and aligning the rows change the layout, not the search: the same ids come
