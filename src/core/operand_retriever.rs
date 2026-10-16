@@ -60,7 +60,7 @@ fn valid_date(date: &str) -> bool {
         return false;
     };
     let bytes = prefix.as_bytes();
-    if ![b'/', b'-'].contains(&bytes[4])
+    if !b"/-".contains(&bytes[4])
         || bytes[7] != bytes[4]
         || bytes
             .iter()
@@ -204,8 +204,8 @@ fn validate(request: &Request) -> Result<()> {
         "invalid packet budget"
     );
     ensure!(
-        !request.candidates.is_empty() && request.candidates.len() <= 20,
-        "expected 1..=20 candidates"
+        !request.candidates.is_empty() && request.candidates.len() <= 64,
+        "expected 1..=64 candidates"
     );
     let mut ids = BTreeSet::new();
     let mut bytes = 0usize;

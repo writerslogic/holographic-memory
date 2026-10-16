@@ -47,6 +47,9 @@ pub struct VSearchParams {
     /// vertex that lists it (precision-weighted by the edge residual's scale) and re-admit
     /// it to the pool when the fused estimate qualifies, instead of keeping its first one.
     pub fuse: bool,
+    /// Per-row search: estimate only the first this many neighbours of each expanded vertex
+    /// (lists keep the build's order, nearest first); 0 = all.
+    pub neighbour_cap: usize,
 }
 
 impl Default for VSearchParams {
@@ -58,6 +61,7 @@ impl Default for VSearchParams {
             screen_sigmas: 1.0,
             screen: true,
             fuse: false,
+            neighbour_cap: 0,
         }
     }
 }
@@ -858,13 +862,13 @@ impl VGraph {
                 for b in 0..self.blocks_per_vertex {
                     let (codes, scales, offsets) = self.block(v, b);
                     scan32(codes, &s.bq.lut, self.block_m, &mut scan);
-                    for i in 0..BLOCK {
+                    for (i, &sum) in scan.iter().enumerate() {
                         let Some(&u) = list.get(b * BLOCK + i) else {
                             break;
                         };
                         let sc = le_f32(scales, i);
                         let est = ip_v
-                            + sc * (s.bq.delta * scan[i] as f32 + s.bq.min_sum)
+                            + sc * (s.bq.delta * sum as f32 + s.bq.min_sum)
                             + le_f32(offsets, i);
                         let exact = centred(self.unit_row(g, u as usize));
                         let err = f64::from(est - exact);
@@ -1575,8 +1579,15 @@ impl VSearcher<'_> {
             }
             self.fresh.clear();
             let (visited, fresh) = (&mut self.visited, &mut self.fresh);
+            let cap = if params.neighbour_cap == 0 {
+                usize::MAX
+            } else {
+                params.neighbour_cap
+            };
+            let mut seen = 0usize;
             g.for_each_neighbour(key_id(c) as usize, |u| {
-                if visited.insert(u) {
+                seen += 1;
+                if seen <= cap && visited.insert(u) {
                     if screen {
                         g.prefetch_screen(u);
                     } else {

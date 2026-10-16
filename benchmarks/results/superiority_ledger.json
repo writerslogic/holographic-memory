@@ -12,7 +12,8 @@
     "qps_at_0.99": null,
     "index_mib": 392.29,
     "build_s": 1435.41,
-    "peak_build_rss_mib": 4316.5
+    "peak_build_rss_mib": 4316.5,
+    "x86_screen_note": "x86 screen host rows: pool 1.13-1.15x, pool + patience 1.27x at 0.90; GCE confirmation pending gcloud auth"
    },
    "next_best": {
     "qps_at_0.95_band": 1699,
@@ -52,14 +53,17 @@
     },
     {
      "name": "1A.2 patience stop + 4-bit traversal fold-in",
-     "status": "measured_no_gain_m4",
+     "status": "accepted_x86_nytimes_pending_glove",
      "hours": 0.3,
-     "note": "patience 64 at ef 128 (0.90) and 256 at ef 512 (0.95) cut evaluations 8-19% on nytimes but paired QPS 0.975x/0.971x on the M4"
+     "note": "patience 64 at ef 128 (0.90) and 256 at ef 512 (0.95) cut evaluations 8-19% on nytimes but paired QPS 0.975x/0.971x on the M4",
+     "paired_x86": "benchmarks/results/qgraph_pool_paired_x86_nytimes_v1.json: 1.126x at 0.95 (11/11 rounds, min 1.091), 1.011x at 0.90",
+     "paired_x86_glove": "1.266x at 0.90 (11/11, min 1.194); 0.95 point pending a wider patience sweep"
     },
     {
      "name": "1A.3 bytes: 4-bit traversal + 4-bit residual, 3-byte ids, delta-varint adjacency, no f32 sidecar",
-     "status": "pending",
-     "hours": 0
+     "status": "measured_not_accepted",
+     "hours": 1.4,
+     "paired": "benchmarks/results/qgraph_bytes_paired_m4_glove_v1.json: varint adjacency 0.77x/0.79x; with 4-bit residual 0.81x/0.56x (M4, load 72-80)"
     },
     {
      "name": "1A.4 build: parallel NN-descent init, quantized construction distances, streaming input",
@@ -89,15 +93,17 @@
     },
     {
      "name": "1A.8 (new mechanism, both paths) single sorted candidate buffer replacing the two binary heaps, with the patience fold-in (1A.2) measured on it",
-     "status": "killed",
+     "status": "accepted_x86",
      "hours": 1.1,
      "started": "2026-10-16T15:00",
-     "paired": "benchmarks/results/qgraph_pool_paired_m4_nytimes_v1.json: 0.966x/0.956x (pool), 0.975x/0.971x (pool + patience)"
+     "paired": "benchmarks/results/qgraph_pool_paired_m4_nytimes_v1.json: 0.966x/0.956x (pool), 0.975x/0.971x (pool + patience)",
+     "paired_x86": "1.035x at 0.90, 0.996x at 0.95 (x86); kept: identical results, simpler code, sorted results for free",
+     "paired_x86_glove": "benchmarks/results/qgraph_pool_paired_x86_glove_v1.json: 1.148x at 0.90, 1.127x at 0.95 (11/11 rounds each)"
     },
     {
      "name": "1A.3 bytes: delta-varint adjacency (id_bytes 0) and 4-bit residual, no f32 sidecar",
-     "status": "measured_untimed",
-     "hours": 0.8,
+     "status": "measured_not_accepted",
+     "hours": 1.4,
      "glove_index_bytes": {
       "accepted (3-byte ids, 8-bit residual)": 359620124,
       "varint adjacency, 8-bit residual": 342209860,
@@ -111,7 +117,8 @@
      },
      "recall_cost": "4-bit residual rerank: 0.9005 -> 0.8910 at ef 256, 0.9518 -> 0.9407 at ef 768 (glove, 2000 held-out queries); varint adjacency changes no result",
      "physical_bound_note": "with 4-bit code + 4-bit residual (100 B) + per-vertex scales and id map (12 B) + adjacency (>= 64 B at degree 32 even at 2 B per id) the floor is about 176 B/vector = 1.04x RaBitQ IVF; the 0.9x target needs a smaller degree or a shared-code layout, recorded here as the measured bound, not met",
-     "paired_speed": "pending (untimed single runs under load 15-20 showed lower QPS for the varint lists; decode cost per expansion is the suspect)"
+     "paired_speed": "pending (untimed single runs under load 15-20 showed lower QPS for the varint lists; decode cost per expansion is the suspect)",
+     "paired": "benchmarks/results/qgraph_bytes_paired_m4_glove_v1.json: varint adjacency 0.77x/0.79x; with 4-bit residual 0.81x/0.56x (M4, load 72-80)"
     }
    ]
   },
@@ -122,7 +129,7 @@
     "dev_accuracy": 87,
     "citation_support": "201/204",
     "results_file": "benchmarks/results/longmemeval_dev_answers_v1.json",
-    "note": "v1 operand arm; v2b (benchmarks/results/longmemeval_dev_answers_v2b.json) also scores 87/100 with 207/207 citations and 80/84 selector completeness, paired delta 0.00 CI [-0.04, 0.04]"
+    "note": "v1 operand arm; v2b (benchmarks/results/longmemeval_dev_answers_v2b.json) also scores 87/100 with 207/207 citations and 80/84 selector completeness, paired delta 0.00 CI [-0.04, 0.04]; v3 (abstention calibration on v2b) 88/100, paired delta vs v2b 0.01 CI [0.00, 0.03], vs v1 0.01 CI [-0.03, 0.05]"
    },
    "next_best": {
     "vendor_mem0": "474/500",
@@ -212,8 +219,57 @@
     },
     {
      "name": "1B.3 abstention calibration",
-     "status": "pending",
-     "hours": 0
+     "status": "measured",
+     "hours": 1.1,
+     "rule": "second reader pass under a 4x byte budget (reader token cap unchanged at 8192) when the v2b operand reader abstained and the top turn candidate's lexical retrieval score >= 15; tuned on dev, flags 6 of 7 false abstentions and 0 of 6 true abstentions (scores: ~/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2/scores.json)",
+     "accuracy": {
+      "v3": 88,
+      "v3_paired_vs_v1": {
+       "mean": 0.01,
+       "ci95": [
+        -0.03,
+        0.05
+       ],
+       "wins": 3,
+       "losses": 2
+      },
+      "v3_paired_vs_v2b": {
+       "mean": 0.01,
+       "ci95": [
+        0.0,
+        0.03
+       ],
+       "wins": 1,
+       "losses": 0
+      }
+     },
+     "abstention_accounting": {
+      "v2b": {
+       "abstentions": 13,
+       "false_abstentions": 7,
+       "true_abstentions": 6,
+       "unsupported_answers": 6
+      },
+      "v3": {
+       "abstentions": 13,
+       "false_abstentions": 6,
+       "true_abstentions": 7,
+       "wrong_answers": 6,
+       "unsupported_answers": 6
+      }
+     },
+     "finding": "the widened budget selects 27-38 whole sources but the 8192-token cap keeps 8-11, so the six flagged packets end up 6530-7257 tokens with a different composition; all six readers abstain again (one, 7024f17c, is now judged correct from its partial statement). The remaining false abstentions are reader conservatism with the evidence present, not retrieval; the lever's retrieval-side action is exhausted at this token cap",
+     "citation_support": "207/207",
+     "median_reader_context_tokens": 6308.5,
+     "selector_completeness": "81/84",
+     "results_files": [
+      "benchmarks/results/longmemeval_dev_answers_v3.json",
+      "benchmarks/results/longmemeval_dev_answers_v3_summary.json",
+      "benchmarks/results/longmemeval_v3/evidence_budget_dev.json",
+      "benchmarks/results/longmemeval_v3/evidence_budget_summary.json",
+      "benchmarks/results/longmemeval_dev_answers_v3_spend.json"
+     ],
+     "spend_usd": 0.13
     },
     {
      "name": "1B.4 event-date extraction",
@@ -230,7 +286,8 @@
      "status": "pending",
      "hours": 0
     }
-   ]
+   ],
+   "spend_usd_session": 2.34
   },
   "1C_learned_sparse": {
    "metric": "BEIR nDCG@10 and R@100 on SciFact and NFCorpus test (read once), single-thread QPS, serving RSS, index bytes",
@@ -372,8 +429,8 @@
  },
  "wall_clock": {
   "session_start": "2026-10-16T12:20",
-  "src_hours": 5.0,
-  "harness_doc_hours": 1.4
+  "src_hours": 6.2,
+  "harness_doc_hours": 1.8
  },
  "units_of_progress": [
   {
@@ -387,6 +444,24 @@
    "row": "benchmarks/results/qgraph_pool_paired_m4_nytimes_v1.json",
    "ratio_to_previous_accepted": "0.966 (0.90), 0.956 (0.95)",
    "time": "2026-10-16T15:35"
+  },
+  {
+   "category": "1A",
+   "row": "benchmarks/results/qgraph_pool_paired_x86_nytimes_v1.json",
+   "ratio_to_previous_accepted": "1.126 (0.95, patience), 1.035 (0.90, pool)",
+   "time": "2026-10-16T16:05"
+  },
+  {
+   "category": "1A",
+   "row": "benchmarks/results/qgraph_pool_paired_x86_glove_v1.json",
+   "ratio_to_previous_accepted": "1.148 (0.90, pool), 1.127 (0.95, pool), 1.266 (0.90, pool + patience)",
+   "time": "2026-10-16T16:30"
+  },
+  {
+   "category": "1A",
+   "row": "benchmarks/results/qgraph_bytes_paired_m4_glove_v1.json",
+   "ratio_to_previous_accepted": "bytes 0.951 (varint) and 0.741 (varint + 4-bit residual); QPS 0.77/0.79 and 0.81/0.56",
+   "time": "2026-10-16T16:40"
   }
  ]
 }

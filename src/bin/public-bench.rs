@@ -143,6 +143,10 @@ enum Mode {
         /// re-admit it when the fused estimate qualifies.
         #[arg(long)]
         fuse: bool,
+        /// Vertex index, per-row search: estimate only the first N neighbours of each expanded
+        /// vertex (0 = all).
+        #[arg(long, default_value_t = 0)]
+        neighbour_cap: usize,
         /// Paired timing: after the build write `<SYNC>.ready`, then before timing round `r`
         /// block until `<SYNC>.go.<r>` exists and afterwards write `<SYNC>.done.<r>`, so an
         /// outside coordinator holding the timing lock can alternate two processes. The build
@@ -481,6 +485,7 @@ struct QgraphArgs {
     screen_sigmas: Vec<f32>,
     block_bits: u8,
     fuse: bool,
+    neighbour_cap: usize,
     sync: Option<PathBuf>,
     graph_cache: Option<PathBuf>,
 }
@@ -678,6 +683,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                         screen_sigmas: sigmas.max(0.0),
                         screen: sigmas >= 0.0,
                         fuse: a.fuse,
+                        neighbour_cap: a.neighbour_cap,
                     },
                     out,
                 )
@@ -778,7 +784,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
                              "residual": a.residual, "residual_bits": a.residual_bits,
                              "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes, "screen": a.screen,
-                             "block_bits": a.block_bits, "fuse": a.fuse,
+                             "block_bits": a.block_bits, "fuse": a.fuse, "neighbour_cap": a.neighbour_cap,
                              "align_rows": a.align_rows, "reorder": a.reorder,
                              "graph_cache": a.graph_cache.as_ref().map(|p| p.display().to_string())},
                   "graph_hash": graph_hash,
@@ -1246,6 +1252,7 @@ fn main() -> Result<()> {
             screen_sigmas,
             block_bits,
             fuse,
+            neighbour_cap,
             sync,
             graph_cache,
         } => ann_qgraph(&QgraphArgs {
@@ -1275,6 +1282,7 @@ fn main() -> Result<()> {
             screen_sigmas,
             block_bits,
             fuse,
+            neighbour_cap,
             sync,
             graph_cache,
         }),

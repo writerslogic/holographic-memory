@@ -55,12 +55,15 @@ public-bench --block-bits/--fuse) measured paired on the M4: 0.62x at 0.90, 0.64
 2-bit per-edge residual code needs the unbiasing scale |x|^2/<levels,x> (RMS error 0.093 -> 0.034 on
 nytimes); 1-bit codes need 3x the ef; x86 per-evaluation cost is ~39 ns in both paths, so pool work,
 not the estimate, binds. x86 kernels fixed (AVX2 i8/i4 dot, PREFETCHT0; est 196 -> 53 ns/neighbour).
-In flight: single sorted candidate pool replacing the two heaps (both paths) plus the patience
-fold-in; untimed sweeps /Volumes/A/.hms-target-fastscan/runs/{ny,glove}_pool_untimed.json, then the
-paired run on the M4 (/Volumes/A/.hms-target-vsearch/runs/fs_pair.sh, paired.py, 11 rounds, lock
-/Volumes/A/.hms-target/timed.sh) and on writerslogic-02 (~/hms-fastscan-check/runs/paired.py, binaries
-target/release/public-bench-heap = baseline, public-bench = candidate; datasets in ~/.cache/hms-bench).
-Summarize with benchmarks/public/qgraph_paired.py <run dir> <tag> A B --out <results json>.
+Measured since: sorted pool (commit 7cbf2d3) paired on writerslogic-02 (x86): nytimes 1.035x at 0.90,
+1.0x at 0.95, with patience 1.126x at 0.95 (11/11 rounds); glove 1.148x at 0.90, 1.127x at 0.95
+(11/11), with patience 1.266x at 0.90 (benchmarks/results/qgraph_pool_paired_x86_{nytimes,glove}_v1.json).
+On the M4 the same arms are 0.96-0.98x (memory-latency bound there). In flight: glove compact
+encodings paired on the M4 (fsgl1: varint adjacency, 4-bit residual), nytimes neighbour-cap sweep
+(/Volumes/A/.hms-target-fastscan/runs/ny_cap{16,24}_untimed.json), x86 untimed sweeps glove_99_untimed
+(0.99 bracket) and glove_gp_untimed (patience at 0.95), the 1A.4 build-time fork (worktree
+/Volumes/A/.hms-wt-build). Uncommitted in the main tree: neighbour_cap parameter, lint fixes
+(operand_retriever byte string, kernels pub(crate) and algebraic_codebook import).
 Next 1A levers in order: bytes (4-bit residual, delta-varint adjacency, no f32), build time, 99% bracket.
 
 1B: v2b arm (benchmarks/results/longmemeval_dev_answers_v2b.json) 87/100, paired delta 0.00
