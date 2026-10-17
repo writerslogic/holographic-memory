@@ -213,7 +213,8 @@ fn dir_bytes(path: &Path) -> u64 {
 
 fn welch_t(a: &[f64], b: &[f64]) -> f64 {
     let mean = |x: &[f64]| x.iter().sum::<f64>() / x.len() as f64;
-    let var = |x: &[f64], m: f64| x.iter().map(|v| (v - m) * (v - m)).sum::<f64>() / (x.len() - 1) as f64;
+    let var =
+        |x: &[f64], m: f64| x.iter().map(|v| (v - m) * (v - m)).sum::<f64>() / (x.len() - 1) as f64;
     let (ma, mb) = (mean(a), mean(b));
     let (va, vb) = (var(a, ma), var(b, mb));
     (ma - mb) / (va / a.len() as f64 + vb / b.len() as f64).sqrt()
@@ -294,8 +295,8 @@ fn audit_verify(store: &Path) -> Result<Value> {
     use ed25519_dalek::{Signature, SigningKey, Verifier};
     let core = open(store, None, true)?;
     let entries = core.audit_since(0)?;
-    let mut key_bytes = std::fs::read(store.join("hms_signing.key"))
-        .context("reading hms_signing.key")?;
+    let mut key_bytes =
+        std::fs::read(store.join("hms_signing.key")).context("reading hms_signing.key")?;
     let secret: [u8; 32] = key_bytes
         .as_slice()
         .try_into()
@@ -345,7 +346,9 @@ fn memscan(store: &Path) -> Result<Value> {
         let (mut pass_hits, mut key_hits, mut bytes) = (0usize, 0usize, 0u64);
         for line in maps.lines() {
             let mut parts = line.split_whitespace();
-            let (Some(range), Some(perms)) = (parts.next(), parts.next()) else { continue };
+            let (Some(range), Some(perms)) = (parts.next(), parts.next()) else {
+                continue;
+            };
             let name = parts.nth(3).unwrap_or("");
             if !perms.starts_with('r') || name.contains("vvar") || name.contains("vsyscall") {
                 continue;
@@ -362,13 +365,20 @@ fn memscan(store: &Path) -> Result<Value> {
             bytes += buf.len() as u64;
             let count = |needle: &[u8]| -> usize {
                 buf.windows(needle.len())
-                    .filter(|w| w.iter().zip(needle).zip(&mask).all(|((b, n), m)| b ^ m == *n))
+                    .filter(|w| {
+                        w.iter()
+                            .zip(needle)
+                            .zip(&mask)
+                            .all(|((b, n), m)| b ^ m == *n)
+                    })
                     .count()
             };
             pass_hits += count(&masked_pass);
             key_hits += count(&masked_key);
         }
-        Ok(json!({"phase": label, "bytes_scanned": bytes, "passphrase_copies": pass_hits, "derived_key_copies": key_hits}))
+        Ok(
+            json!({"phase": label, "bytes_scanned": bytes, "passphrase_copies": pass_hits, "derived_key_copies": key_hits}),
+        )
     };
     let live = scan("core_open")?;
     drop(core);
@@ -379,7 +389,9 @@ fn memscan(store: &Path) -> Result<Value> {
 
 #[cfg(not(target_os = "linux"))]
 fn memscan(_store: &Path) -> Result<Value> {
-    Ok(json!({"excluded": "process memory scan runs on Linux (/proc/self/mem); this host is not Linux"}))
+    Ok(
+        json!({"excluded": "process memory scan runs on Linux (/proc/self/mem); this host is not Linux"}),
+    )
 }
 
 #[cfg(not(feature = "security"))]
@@ -390,8 +402,17 @@ fn audit_verify(_store: &Path) -> Result<Value> {
 fn main() -> Result<()> {
     let args = Args::parse();
     match args.cmd {
-        Cmd::Seed { store, docs, encrypted, audit } => {
-            let pass = if encrypted { Some(read_passphrase()?) } else { None };
+        Cmd::Seed {
+            store,
+            docs,
+            encrypted,
+            audit,
+        } => {
+            let pass = if encrypted {
+                Some(read_passphrase()?)
+            } else {
+                None
+            };
             let t = Instant::now();
             let core = open(&store, pass, audit)?;
             seed(&core, docs, audit)?;
@@ -404,8 +425,16 @@ fn main() -> Result<()> {
                        "expected": expect})
             );
         }
-        Cmd::Open { store, encrypted, expect } => {
-            let pass = if encrypted { Some(read_passphrase()?) } else { None };
+        Cmd::Open {
+            store,
+            encrypted,
+            expect,
+        } => {
+            let pass = if encrypted {
+                Some(read_passphrase()?)
+            } else {
+                None
+            };
             let outcome = (|| -> Result<Vec<Value>> {
                 let core = open(&store, pass, false)?;
                 run_queries(&core, QUERIES)
@@ -427,8 +456,17 @@ fn main() -> Result<()> {
                 }
             }
         }
-        Cmd::Bench { store, docs, queries: n, encrypted } => {
-            let pass = if encrypted { Some(read_passphrase()?) } else { None };
+        Cmd::Bench {
+            store,
+            docs,
+            queries: n,
+            encrypted,
+        } => {
+            let pass = if encrypted {
+                Some(read_passphrase()?)
+            } else {
+                None
+            };
             let t = Instant::now();
             let core = open(&store, pass, false)?;
             seed(&core, docs, false)?;
