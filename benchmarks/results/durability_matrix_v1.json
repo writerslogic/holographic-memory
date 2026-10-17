@@ -1,0 +1,361 @@
+{
+ "schema_version": 1,
+ "host": "writerslogic-02",
+ "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+ "versions": {
+  "hms": "research/2026-10-superiority at 18a0eec (durability-driver over the public crate API; hms-admin verify as the integrity scan; old binary: hms-admin built from tag v0.6.1)",
+  "sqlite": "library 3.53.1 (Python sqlite3 module on the host; the pinned 3.53.4 is the host's CLI and was not used by the driver), WAL, synchronous=FULL",
+  "lucene": "lucene-core-9.12.3.jar, Temurin JDK 17.0.20.1; old binary: lucene-core-8.11.4"
+ },
+ "workload": {
+  "docs": 4000,
+  "batch": 20,
+  "kill_points_per_cell": 200,
+  "power_loss_points": 50,
+  "torn_write_trials": 50,
+  "bit_flip_trials": 50,
+  "write_window_s": 3.0,
+  "hms_commit_granularity": "one transaction per document; a batch is announced after its last document commits"
+ },
+ "power_loss_method": "LD_PRELOAD shim: fsync/fdatasync/msync copy the synced file under a shadow root keyed by device and inode (a rename keeps the inode, so atomic temp-and-rename publication is honoured without intercepting rename); after SIGKILL every store file is reset to its last synced copy and never-synced files are removed, i.e. every write after the last sync is lost; directory-entry durability (a rename not followed by a directory fsync) is taken as durable",
+ "runs": {
+  "run1 (hms, sqlite, all cells)": {
+   "started_unix": 1792187053.6607723,
+   "note": "its power_loss cells are superseded: the shim rewrote shadow copies in place, so a kill landing inside a copy truncated the shadow (bytes_after far below bytes_at_kill in every failing row); first-run power_loss numbers kept here for the record",
+   "superseded_power_loss": {
+    "hms": {
+     "points": 50,
+     "committed_docs_lost": 203,
+     "points_with_loss": 2
+    },
+    "sqlite": {
+     "points": 50,
+     "committed_docs_lost": 2620,
+     "points_with_loss": 3
+    }
+   }
+  },
+  "run2 (hms, sqlite power_loss, atomic shadow copies)": {
+   "started_unix": 1792271029.4865236,
+   "finished_unix": 1792271199.648582
+  },
+  "run3 (lucene, all cells)": {
+   "started_unix": 1792271199.7541199,
+   "finished_unix": 1792271993.0810804,
+   "note": "the first Lucene attempt crashed at kill_compaction point 182 on a segment file deleted by a merge during size accounting; the harness now skips vanished files"
+  }
+ },
+ "table": [
+  {
+   "cell": "kill_writes",
+   "hms": "pass 200 points, lost 0 committed docs, recovery median 13.8 ms max 30.0 ms",
+   "sqlite": "pass 200 points, lost 0 committed docs, recovery median 2.1 ms max 4.2 ms",
+   "lucene": "pass 200 points, lost 0 committed docs, recovery median 181.5 ms max 313.2 ms"
+  },
+  {
+   "cell": "kill_compaction",
+   "hms": "pass 200 points, lost 0 committed docs, recovery median 9.1 ms max 65.9 ms",
+   "sqlite": "pass 200 points, lost 0 committed docs, recovery median 0.7 ms max 1.8 ms",
+   "lucene": "pass 200 points, lost 0 committed docs, recovery median 173.6 ms max 304.4 ms"
+  },
+  {
+   "cell": "power_loss",
+   "hms": "pass 50 points, lost 0 committed docs, recovery median 12.9 ms max 19.6 ms",
+   "sqlite": "pass 50 points, lost 0 committed docs, recovery median 2.1 ms max 3.7 ms",
+   "lucene": "pass 50 points, lost 0 committed docs, recovery median 184.7 ms max 281.5 ms"
+  },
+  {
+   "cell": "torn_write",
+   "hms": "FAIL 50 trials: detected 13, benign 27, silent 10",
+   "sqlite": "pass 50 trials: detected 48, benign 2, silent 0",
+   "lucene": "pass 50 trials: detected 50, benign 0, silent 0"
+  },
+  {
+   "cell": "bit_flip",
+   "hms": "FAIL 50 trials: detected 23, benign 16, silent 11",
+   "sqlite": "FAIL 50 trials: detected 11, benign 4, silent 35",
+   "lucene": "pass 50 trials: detected 50, benign 0, silent 0"
+  },
+  {
+   "cell": "readers",
+   "hms": "pass 0 torn of 26698 reads; compaction 7315 ms",
+   "sqlite": "pass 0 torn of 34458 reads; compaction 9 ms",
+   "lucene": "pass 0 torn of 123464 reads; compaction 199 ms"
+  },
+  {
+   "cell": "snapshot_restore",
+   "hms": "pass snapshot 3.3 ms, 1683456 bytes, restored 4000/4000",
+   "sqlite": "pass snapshot 26.3 ms, 335872 bytes, restored 4000/4000",
+   "lucene": "pass snapshot 2.1 ms, 221184 bytes, restored 4000/4000"
+  },
+  {
+   "cell": "old_binary",
+   "hms": "pass format manifest version bumped by one; the older release must refuse to open it",
+   "sqlite": "pass header write/read version bytes set to 3; the library refuses an unknown newer format file is not a database",
+   "lucene": "pass index written by the pinned release opened with the older lucene-core jar rejected IllegalArgumentException"
+  }
+ ],
+ "cells": {
+  "hms": {
+   "kill_writes": {
+    "points": 200,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 2192,
+    "recovery_ms_median": 13.807333499999999,
+    "recovery_ms_max": 30.010957,
+    "bytes_lost_median": 0.0,
+    "mean_committed_batches": 32.415
+   },
+   "kill_compaction": {
+    "points": 200,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 376,
+    "recovery_ms_median": 9.106868,
+    "recovery_ms_max": 65.891678,
+    "bytes_lost_median": 0.0,
+    "mean_committed_batches": 5.1
+   },
+   "power_loss": {
+    "points": 50,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 564,
+    "recovery_ms_median": 12.881744,
+    "recovery_ms_max": 19.631014,
+    "bytes_lost_median": 0.0,
+    "mean_committed_batches": 29.22
+   },
+   "torn_write": {
+    "detected": 13,
+    "benign": 27,
+    "silent": 10,
+    "trials": 50,
+    "pass": false
+   },
+   "bit_flip": {
+    "detected": 23,
+    "benign": 16,
+    "silent": 11,
+    "trials": 50,
+    "pass": false
+   },
+   "readers": {
+    "reads": 26698,
+    "torn_reads": 0,
+    "writer": {
+     "batches": 200,
+     "compaction_ms": 7315.214278
+    },
+    "pass": true
+   },
+   "snapshot_restore": {
+    "checked": 4000,
+    "mismatched": 0,
+    "missing": 0,
+    "open_ok": true,
+    "present": 4000,
+    "read_errors": 0,
+    "recovery_ms": 30.380296,
+    "store_bytes": 1073742392,
+    "uncommitted_present": 0,
+    "detected": false,
+    "pass": true,
+    "snapshot_ms": 3.310602992773056,
+    "snapshot_bytes": 1683456
+   },
+   "old_binary": {
+    "pass": true,
+    "exit": 1,
+    "stderr": "Error: storage format 3 is newer than supported format 2\n",
+    "field": "version",
+    "method": "format manifest version bumped by one; the older release must refuse to open it"
+   }
+  },
+  "sqlite": {
+   "kill_writes": {
+    "points": 200,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 920,
+    "recovery_ms_median": 2.1175880028749816,
+    "recovery_ms_max": 4.222378003760241,
+    "bytes_lost_median": 0.0,
+    "mean_committed_batches": 174.02
+   },
+   "kill_compaction": {
+    "points": 200,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 2320,
+    "recovery_ms_median": 0.6662109954049811,
+    "recovery_ms_max": 1.7981140117626637,
+    "bytes_lost_median": 104448.0,
+    "mean_committed_batches": 27.95
+   },
+   "power_loss": {
+    "points": 50,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 20,
+    "recovery_ms_median": 2.1453254885273054,
+    "recovery_ms_max": 3.67024599108845,
+    "bytes_lost_median": 0.0,
+    "mean_committed_batches": 163.48
+   },
+   "torn_write": {
+    "detected": 48,
+    "benign": 2,
+    "silent": 0,
+    "trials": 50,
+    "pass": true
+   },
+   "bit_flip": {
+    "detected": 11,
+    "benign": 4,
+    "silent": 35,
+    "trials": 50,
+    "pass": false
+   },
+   "readers": {
+    "reads": 34458,
+    "torn_reads": 0,
+    "writer": {
+     "batches": 200,
+     "compaction_ms": 8.916735998354852
+    },
+    "pass": true
+   },
+   "snapshot_restore": {
+    "open_ok": true,
+    "integrity": "ok",
+    "detected": false,
+    "recovery_ms": 3.0416700028581545,
+    "checked": 4000,
+    "present": 4000,
+    "missing": 0,
+    "mismatched": 0,
+    "uncommitted_present": 0,
+    "store_bytes": 368640,
+    "pass": true,
+    "snapshot_ms": 26.341498985886574,
+    "snapshot_bytes": 335872
+   },
+   "old_binary": {
+    "pass": true,
+    "error": "file is not a database",
+    "method": "header write/read version bytes set to 3; the library refuses an unknown newer format",
+    "library": "3.53.1"
+   }
+  },
+  "lucene": {
+   "kill_writes": {
+    "points": 200,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 420,
+    "recovery_ms_median": 181.52195949999998,
+    "recovery_ms_max": 313.188387,
+    "bytes_lost_median": 0.0,
+    "mean_committed_batches": 33.295
+   },
+   "kill_compaction": {
+    "points": 200,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 140,
+    "recovery_ms_median": 173.612672,
+    "recovery_ms_max": 304.380534,
+    "bytes_lost_median": 0.0,
+    "mean_committed_batches": 7.01
+   },
+   "power_loss": {
+    "points": 50,
+    "pass": true,
+    "open_failures": 0,
+    "committed_docs_lost": 0,
+    "points_with_loss": 0,
+    "uncommitted_served": 40,
+    "recovery_ms_median": 184.6822665,
+    "recovery_ms_max": 281.461101,
+    "bytes_lost_median": 4096.0,
+    "mean_committed_batches": 18.32
+   },
+   "torn_write": {
+    "detected": 50,
+    "benign": 0,
+    "silent": 0,
+    "trials": 50,
+    "pass": true
+   },
+   "bit_flip": {
+    "detected": 50,
+    "benign": 0,
+    "silent": 0,
+    "trials": 50,
+    "pass": true
+   },
+   "readers": {
+    "reads": 123464,
+    "torn_reads": 0,
+    "writer": {
+     "batches": 200,
+     "compaction_ms": 198.946178
+    },
+    "pass": true
+   },
+   "snapshot_restore": {
+    "open_ok": true,
+    "detected": false,
+    "recovery_ms": 168.48358,
+    "checked": 4000,
+    "present": 4000,
+    "missing": 0,
+    "mismatched": 0,
+    "uncommitted_present": 0,
+    "store_bytes": 148173,
+    "pass": true,
+    "snapshot_ms": 2.1280550062656403,
+    "snapshot_bytes": 221184
+   },
+   "old_binary": {
+    "pass": true,
+    "output": "rejected IllegalArgumentException",
+    "method": "index written by the pinned release opened with the older lucene-core jar"
+   }
+  }
+ },
+ "failure_rows": {
+  "hms": {},
+  "sqlite": {},
+  "lucene": {}
+ },
+ "verdict": {
+  "cells_passed": {
+   "hms": 6,
+   "sqlite": 7,
+   "lucene": 8
+  },
+  "hms_vs_sqlite": "HMS passes every kill, power-loss, reader, snapshot and old-binary cell SQLite passes and loses no committed document in 450 crash points; HMS fails torn_write (10 silent of 50) where SQLite passes (48 detected, 0 silent), and detects fewer bit flips as silent-free (11 silent vs SQLite 35 silent, both fail); HMS recovery is 12.9-13.8 ms median against SQLite 0.7-2.1 ms. Target not met: corruption detection.",
+  "hms_vs_lucene": "Lucene passes all eight cells with 50/50 detection on both corruption cells (per-file checksums); HMS recovers 13x faster (13 ms vs 174-185 ms median) and snapshots in 3.3 ms vs 2.1 ms (Lucene) and 26 ms (SQLite). Target not met: corruption detection and the torn-write cell.",
+  "product_gap": "the arena frames carry CRC32 but the JSON manifests (store.json, indices.json) and some frame regions let corruption through unreported: 10 torn sectors and 11 bit flips were served as missing or wrong documents with hms-admin verify reporting a clean store; a manifest checksum and a verify that cross-checks document presence against the index would close it"
+ },
+ "finished_unix": 1792272265.476212
+}

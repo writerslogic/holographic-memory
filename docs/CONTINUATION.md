@@ -433,7 +433,11 @@ final maintenance outside the writer lease and publication work prepared before 
 agent's deliverable; check writerslogic-02:/home/davidcondrey/hms-retained-20261016/publication-cost-v36-*.
 1B.3 v3 88/100 (+0.01 vs v2b, CI [0.00, 0.03]); forks in flight: 1B.5 local reader (Modal, cap $20),
 1C learned sparse (src/core/sparse/, src/bin/sparse-bench.rs), 2A compact postings, 1A.4 build time
-(/Volumes/A/.hms-wt-build), 3A durability_matrix.py. 2B, 2C, 3B: not started. Branch pushed at cc3f14a. The neighbour-block layout is closed on both hosts (4-bit residual blocks: no ef
+(/Volumes/A/.hms-wt-build), 3A durability_matrix.py. 3A measured (benchmarks/results/durability_matrix_v1.json): HMS 6/8 cells, 0 committed documents lost in 450
+crash and power-loss points; torn-write and bit-flip cells fail on silent serves because store.json and
+indices.json carry no checksum and hms-admin verify does not cross-check document presence. Next 3A lever:
+manifest checksums plus a verify cross-check in src/core/storage.rs (after the 2A fork releases that file).
+2B, 2C: not started; 3B fork running. Branch pushed at 9eef2ba (build lever integrated, cache header format 03, --quantized-search). The neighbour-block layout is closed on both hosts (4-bit residual blocks: no ef
 penalty, 0.76-0.79x of the per-row path on x86, qgraph_block4_untimed_x86_v1.json); 3B security fork started.
 
 Constraints: tune on held-out/dev only; private CARGO_TARGET_DIR; one lock hold under 14 minutes; keep
