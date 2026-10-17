@@ -2,51 +2,394 @@
 
 ## Latest handoff authority (2026-10-16, MEMORY task)
 
-This MEMORY task follows the user's direct instructions: MEMORY first, Rust
-1.96.0/MSRV1.89, no commits/push/publication/protected evaluation/model downloads/
-broad ANN/new paid compute. Another concurrent session replaced the earlier
-leading section; its different category/toolchain/push instructions below do
-not supersede these direct user constraints. Preserve its edits and jobs.
-Canonical evidence here remains docs/research/SUPERIORITY-2026-10-12.md.
+Direct user constraints: MEMORY first; Rust1.96/MSRV1.89; no commits/push/
+publication/protected evaluation/model downloads/broad ANN/new paid compute.
+Preserve concurrent root edits/jobs and EVERY loss. Canonical ledger:
+docs/research/SUPERIORITY-2026-10-12.md, latest V55 checkpoint. E=
+benchmarks/results/superiority_v3/retained_memory_candidates_v1; R=
+/home/davidcondrey/hms-retained-20261016. Branch research/2026-10-superiority;
+foreign HEADcc3f14ac/root dirty/nativeb8da5c6e preserved. No integration.
+Accepted serving RSS remains1.091961SQLite (9.2%worse). MEMORY and overall
+superiority are UNESTABLISHED. Actual /Volumes/A is HFS; old APFS clone labels
+are unsupported and qualified, not evidence of copy-on-write.
 
-Current candidate is JS-only V39, E=benchmarks/results/superiority_v3/
-retained_memory_candidates_v1. Original frozen dirty249 plus only cfg(node-api)
-lib changes/new strings module/two Node tests:252 inputs/203 Rust, both COSE,
-manifest899f77ba. Core/query/publication paths remain baseline. LOCAL Node
-ALLSTOP/PASS12+base8+factory8/Unicode10/builtin16; native1e69af73, ready49f4e9bf,
-completion70e9a945, root independent proof3af5e922. Concurrent root edits are
-observations, not private-source changes; original nativeb8 observed unchanged.
+LATEST: P46full24 CLOSED/ALLSTOP0, REJECTED. Rootd15df4fb independently
+verifies all460 sealed payloads, original24 cells,310920 orderedJSON/f64
+pairs, all8oracles/load/zero drops, EX/20s pauses/source/native/STOP. ALL12
+pair and ALL4group publication-preservation guards FAIL. Group p99 service
+ratios8.670788/7.049129/21.685126/16.168662; exclusion3.752865/4.242336/
+4.915547/11.343853. Largest bulk exclusion9.055212->102.720994ms/service
+5.733593->92.704525ms. Raw3c748a42/sealed86d2e0c7/transfer82e3ca77 retained.
+No retry/filter/waiver/final33/LC/integration release for46. Earlier live46
+statements below are superseded. Serving9 diagnostic PASS/root44f406e3
+(.949597RSS/SQLmedian/.956536upper) does NOT override publication rejection.
 
-REMOTE LinuxNode ALLSTOP/PASS, rootproofa535b282 independently verified all317
-sealed payloads,252source/203Rust,actualCargo target+builddir/freshELF and
-Node12/base8/factory8/Unicode10/builtin16. Native7ff11e75/completion906fe548/
-packagea4cecd9e at /home/davidcondrey/hms-retained-20261016/
-js-only-v39-linux-build-v1; archivee7d5ffe5. No serving claim from correctness.
-Bound three-round/nine-cell source249/candidate252/SQLite monotonic serving
-screen E/js-only-v39-serving-screen-v1: ready4220e3b9, rootreview0928b447,
-protocol2352fe07, positive ONCE release dacc51ef. Sole remote postings is
-authorized to stage/recheckquiet/run once under EX900/watchdog895/cleanup5.
-Latest eligibility bc282221: no competing jobs,load1.1294,EXavailable,
-15,184,072KiBavailable; awakeSYSTEMrequest1916 active. Other sessions restart
-jobs, so recheckbeforelaunch; never stop their work. All losses retained.
-STAGING PREFLIGHT THEN BLOCKED: load5.700, newunrelated public-bench297462/3,
-public-bench-he297461 andPythonjobs under hms-fastscan-check/runs. stage-result
-retainsfailure; stage.tar only copied, zero cells/controller/output created,
-once-runrelease unconsumed. Local focused correctness of prospective253/204
-minimalnative+JS fallback is being prepared while remote window unavailable.
-Product RSS first; A/A diagnostic HELD/UNSTARTED despite earlier release.
-Optional native postings+0/1metadata fallback250/203 ready7d019029 source-only.
+V49 actually implements in-place varint frequency edits in postings.rs:
+unchanged frequency avoids whole-list decode/re-encode; changed frequency
+uses stack5bytes and shifts only encoded tail. Fullusize/u32, exact bytes/
+headers/capacity/order and missing-slot invariant preserved. Sourcec51ef556,
+only posting file differs46; focused docs46/mutation12/Clippy PASS. Initial
+reporter expected48 instead of actual46; original failure retained, actual
+binary --list verifies46, no docs rerun. Sealed15b5aff1/manifest6c5e8d73,
+completion61c80455/STOPcfb7edc7. Microprobe source-only/EX HELD. The expensive
+old update path is a concrete plausible publication cause; causality and
+recovery are NOT yet measured.
 
-V38 is rejected: root fullraw729a27d8, decision62863e74;5/6paired/2of2group
-guards pass,4/12load. Qualified response loss1.373892 remains decisive; saved
-preAPIp99290389ns already exceeds guard257898.3ns, no cause assigned. No V38
-integration/further campaigns/retry/filter/waiver. Diagnostic444allocation
-pairs exact; requested372improve/72loss,peak360improve/42loss/42tie,retention
-444tie; root e0d45e87. Source concurrent guard failures/build overlap limits
-and all losses preserved. Accepted servingRSS1.091961SQLite; superiority is
-unestablished. Final sixRust gates/freshNode/full24/33SQLite/bothfixedLC33,
-complete wire/transaction/recovery/durability/security and family12 remain
-mandatory. Keep awake1916 and unrelated jobs. Do not reconstruct old audits.
+V48 actually implements ONE adaptive query-local capture choice across both
+posting maps: common64-bit captures packu32 local chunk index+fullu32frequency
+into u64; fullusize fallback;32-bit oldwidth unchanged. Source57bb3c11,
+only search.rs differs46. Focused docs46/mutation12/Clippy/fmt PASS, proof
+343f856b. Actual64-bit entry16->8B, listVec24unchanged; query map enum48->56B
+(+8/query) retained. This changes query-local capacity, not retained postings.
+No RSS/speed/32-bit measurement claim. Per-list unbuilt prototype retained.
+
+V50 composed source276/211 2713e408363bd2b06b795fd94c7d4dc33520a026c23a74f87c738209c40877e2
+is46 a1f70a88 plus ONLY exact48search/exact49postings; all274other inputs,
+Cargo/lock/bothCOSE exact46. Source-ready138e85c7/composition8e82ac54/
+patch5eae91ee. Independent root-source-verification6b7e8b44 rehashes all four
+complete origin maps and reviews actual logic. Private root47 was exactly46,
+now obsolete for acceptance; do not apply it. Recheck/remerge mutable root
+only after a genuinely accepted new source.
+
+V50 fresh local all6+Node CLOSED/PASS/rootb83ad3f3: focused70,458default/
+692allfeature/0fail/2ignored each/fmt/bothalltargetClippy-Dwarnings/MSRV1.89,
+all38required names, both actual binaries/source/package independently checked.
+Fresh localNode486c1bc6 API12/base8/factory8/typed8/framing10/builtin16PASS;
+completion331f686e/STOP6cd04bea, sessions5299/38941/PIDs83272/83271 STOP0.
+LinuxNode50 CLOSED/PASS root0efc74b0: completion0d1e9560/native81f81c5e/
+pkg82e4d437/archive02631aff/337payloads. Defaultpublication50 CLOSED/PASS
+root4328bb43: completion236eaa01/native d5e01941/instrument0e5e2105(278/213)/
+archive7251eb64/601payloads, independent five-output instrumentation rebuild
+exact. Both remote supervisors408606/411177+checks/seals/transfersSTOP0;
+no matching remote work, keepawakePID1916verified. Metadata soleSSH owner.
+Correctness-only remote build uses actualsourceproof6b7e8b44 to allow useful
+parallel work; actualclosedfullsix+Node now independently verified beforetiming.
+
+NEXT: ORIGINAL V50full24 STOP0/NumericallyREJECTED. All24exact/loadPASS/oracle8/
+310920JSON-f64/zero drops/endguardsPASS, but8/12pairs+3/4groupsPASS only. Group
+5182b2service1.102889/response1.115847FAIL; failedpairs5182b2r0service2.157525,
+5182b2r2response1.162207,20728b2r2response1.227603,20728b64r2exclusion1.137980.
+Savedanalysis a66816ea/rejectionsummaryf37c301c/profiles9d7536e0 preserved. No
+source33/LC/integration release orretry/waiver. Archive9006c083/464payloads
+648871070B CLOSED; rootf4eda37e independently rawverified exactlosses and
+alloracles/load/EX/endmaps. Sealed0c60c829/transfer0b84c989, all STOP0.
+Metadata soleSSHowner; no remotejob running.
+Actualprotocol6c6ae50d/release7761b6e1/rootreviewa6190159 unchanged.
+V55 actualsource FROZEN at E/current-native-v55-composed-prep/source:
+manifestcba0e4694739990a4e63c16b999d637d0df5d9875febdb1bd50d7d72fea18c2d,
+276/211/root-source07347eba. Exact50 plus53postings+54text+56search only;
+all273other/Cargo/lock/bothCOSE exact50. V53 in-placeinsert/removal nine standalone
+boundary tests PASS/completionbb1c062c; full53source6dd35f44/root05f12b4f.
+V54cache source2a0ae916/root6f5cd8ad:256slots/512KiBBoxpayload+fixedheader,
+noArc/map; append/platformIO unchanged, noIOunderlock, encryptedguard unchanged,
+immutable per-open ranges/externaltamper notmonitored. Actual header cost6168B (Entry24/Option24/Cache6160/Mutex6168/Segment6184);
+<=524288B payload extra, allocator rounding/RSS unmeasured.
+V56source787d6922: exactshortcircuit slot_count>=scan_work skipsunused dictionary
+reads; meaningful cutoff/fullwire/heldtest. Seven newtests/45required total.
+Local55 allsix+Node CLOSED/root7f54e01e: focused77/default465/all699/0fail/
+2ignored each/fmt/bothClippy/MSRV1.89/all45requirednames/source276/package9 PASS.
+Completion87a64c29/STOPc73eaa4d, sessions70578/1494STOP0/localnative3dfbb1e1.
+Serializer55 buildSTOP0/39420/f08f3af6/fa4011f6/root-buildd0eb08d6; original21
+actualruntime10166STOP0/EXreleased/8594ops each/fullbytes/eightdeltas0. Archive
+365863e3/652payloads/653members/manifest3b5d7d85; no ownstdout exception (excluded).
+First wrong rootdigest failedbeforeprobe, logs preserved; actualreleasef8406e5e
+ran once. Independent raw21root08418607 PASS, verifiera454c205/652payloads/fullbytes+8deltas0,
+strictarchive/currentwithnoexception. All serializerworkSTOP0.
+EncryptedNode4 actual55 CLOSED/root0b45b4e7/session78343STOP0/fourprocess0/
+276bits/fullJSON/endmaps/wrongkey/held/no plaintextcache; releaseab548ca3.
+RemoteLinuxNode55 CLOSED/root4348b6f7/native731181a0/completion2044f3c2/
+archive d440b594/all336rawpayloads337members verified. RemotePub55 CLOSED/
+root7f3fca2f/completion7b2ab0b9/probed7d27960/archive4c5ffd82/604payloads/
+605members/pubmanifestc8ca1f20/independent5instrumentation exact. Both remoteSH
+released, no jobs. D55 fixed4cell source-only drafta541e02d; source/build/native
+actualbound,4prereqs(fullsix+Node/P55build/ser21/Node4), no timingrelease yet.
+D55 ROOTRELEASED ONCE44849c21/protocol6edc6a63/rootreview9b13ec18/
+ready21c4f73c/driver ee71e8b3. Allfour actualproofs7f54/7f3f/0841/0b45 matched.
+D55 CLOSED/ALLSTOP0 and independentlyrootPASS d37b1adfd962804ddff867d2fba194c32ce2e00078281bbb0f399e4b4a38273b:
+all132sealedpayloads/51820orderedJSON-types-f64pairs/oracle8/resources/2EXgroups/
+zero drops/endmaps verified. Archive71e292c4/sealed89453e21/transfer3adbb7cf.
+Both fixedpointguards PASS: small5182/b2 exclusion.788748/service.674666/
+response.825798; largest20728/b64 .631866/.625354/.644380. ALLlosses retained,
+including smallwrites1.083971/writerwait1.057143 andbulkappend1.349856/queue1.064545.
+No CI/formal24/categoryacceptance/pooling/retry/waiver. Metadata soleSSHowner;
+no remotejob. Original55formal24 readyb2e580ab, actualfourproofs bound77557987;
+Original55full24 STOP0/REJECTED, formerly supervisor/PGID436587 at R/current-native-v55-publication-full-v1/all.log,
+protocol4a566ea4/release33e46b33/rootruntimeb123f6c1. Clean33payload/34memberstage
+b8141f89/import/externalrelease checked; prior LOCAL-only missinghistoricalalias
+failure preserved/corrected beforeSSH, no runtime retry. Freshload.088/resources/
+cache/nootherjobs/awake1916/canonicalEX PASS. All24exact/load/310920orderedJSON-f64/
+oracle8/0drops/endmaps/4EX PASS, butonly8/12pairs+3/4groups. Failedsmallgroupservice
+1.239379 (60707->75239ns). Failedpairs: smallb2r1service1.385005 (54324->75239),
+smallb2r2response1.114330 (302466->337047); smallb64r2exclusion1.817831
+(6436573->11700605); largeb64r0exclusion1.153884 (8759788->10107778).
+Actualanalysis ed54208e/rejection-summary.json saved. Archive5c94c719/460payloads/
+648873202B CLOSED/ALLSTOP0, sealed103d6c95/transferb912304a. Independent frozen
+root0072 verificationSTOP0 proof2f9a74b0ec6bc0dd587057e90baaf57e3d4189c0a1aaaa41164b939929a8439f
+confirmsallraw/all24load/310920exactpairs/8oracles/EX/losses/REJECTION.
+No retry/waiver/source33/LC/integration release. Rootnative/productionuntouched.
+Frozen LOCAL full24 verifier0072d16e independently source-reviewed b4ffe542;
+ready to execute only aftersealedSTOP/actualexternalarchiveSHA. Final55source33/LC
+helpers andprivate57integration remaindisabled/obsoleteunlessnewacceptedsource.
+58 fixedwidth FROZEN manifest1acab4db/276-211/onlypostings566f036f, standalone7PASS
+completion0491f64f/header32->32/nativeentry12, readyc4b6917a. No58Cargo (savesduplicate
+build); composed60 ownsallcrategates. Fullusize/u32/3-4-both6-8-nativefallback,
+binarysearch/inplacewiden-narrow; bytecapacity/RSSdistribution/speed notyetmeasured.
+59query FROZEN f8aff3ce/onlysearchc9795748: deferpositionsmap+remove documentVec.
+Focusedactualdocs56/fmt/lib-testsClippy PASS/ALLSTOP0/proof892d39f2/sourceROOTcfc7d7ba.
+60composition FROZEN at E/current-native-v60-composed-prep/source:276/211 manifest
+db4a31129326f575988d82bd79561c39d14a0ca568df43dc5d0653899f50fd28. EXACT55+58postings+59search,
+all274others/Cargo/COSE exact55, root8907a1ea/ready ae7ea7cf. Root/source/nativeUNTOUCHED.
+60LOCAL focused+all6 Rust LIVE session1805, freshNode LIVE96432, E/current-native-v60-
+validation-v1/{rust-execution-v1.log,node-execution-v1.log}; protocol88f9bfb5/
+Rustrelease11d6d939/Noderelease0b939385/root3b85bdaf,47requiredactualnames. EveryCargo
+absolute/package0.6.1guard/isolated60targets/SH/jobs2; no measuredtiming whilebuilders.
+60LinuxNodeROOTreleased755aac02/protocolf9ca7293/root9c06324d, metadata stages/launches
+afterfreshprocess/resource/cache/awakeguards; no remote jobPID knownyet. P60source/pub
+archivesROOTreviewed5177066e/276+278/5instrumentoutputs exact55; freshNode60completion
+andseparatebuildrelease stillrequired. Metadata soleSSHowner. No perfreleaseyet.
+JavaScript nowimplements SEPARATE61 Arc textcache from59, manifest4f89bef7/onlytextc96bed00,
+publicStringcopyoutsideMutex, paddedArc allocationbudget/pinnedall-entryclear guard.
+61NOTpart60; correctness/componentUNRUN andno claim. No sharedmutablemetadata.
+55posthocoverlap all115200queries rootcalculated714327f4: smallb2nonoverlap p99ratios
+1.0637/1.3475/1.3139; otherp50mostlynear1, not causal/filter/waiver. All55lossesstand.
+Completed child agents require followup_task to reactivate; send_message only
+queuesmessages (this caused a corrected coordinationdelay). No duplicateverifier.
+Saved50nonoverlap queryp50 loses all12pairs1.217-1.490x (posthocc6d20de0),
+correlationonly/no causalclaim/filter/waiver. Root/native notintegrated.
+
+V50 two-cell diagnostic CLOSED/ALLSTOP0 and independentlyrootverified3088976d:
+all102rawpayloads/full41456JSON-memberorder-types-f64pairs/oracle8/2loadgates/
+2pauses/EX146.424s/0drops/source/native/endmaps. Archive548373e5/sealed63b81e0e/
+transfercea5b821/analysisc99800d4. P99 C/B exclusion.669915/service.639300/
+response.642818, primarypointguardsPASS. All11losses retained includingservice/
+response p50, leasep99 1.155112, compaction/finalmaintenance; no strict24/category
+acceptance. Original V1unrun9c39 and V2unboundc1b32 preserved; actual2cell
+protocol94d82b92/release81a1f528/driver e54490e0/verifier8cdb unchanged.
+
+Local50 exactserialization21fixturepairs in TWO fresh probes CLOSED/STOP0/
+EXreleased,8594ops/arm/fullbytesexact/all8counterdeltas0. Independentroot7668301a
+at current-native-v50-serialization-v1/root-completion-verification-v2.json
+checks all663sealedpayloads/664archive members,662other currentfiles, actual
+newsource/native/processreceipts/endmaps. Archiveede91cfd/analysisc96a414c.
+Receipt-only qualification: ownsealerstdout archived0B then printed585B;
+V1failure914658ff/current585B6c067e8a preserved and V2verifier8aa58bf2 accepts
+ONLYthat exact boundpostseal summary, no source/measurement/numericexception.
+Constant completion hashfda92152 equals46; new50process/source/native/analysis
+provefreshness, never completion alone. Fresh50encryptedNode4 ROOTPASSbdbf4c4e,
+276f64bits/fullJSON/packages/heldmutation/wrongkey/coldreopen/no plaintextcache.
+All fullgates/localNode/encrypted4/serbuild/runtime STOP; no mandatory localjob.
+Optional49 synthetic component CLOSED/STOP0/root4fcb8f00:18cases/3pairs/108cells,
+345sealedpayloads/fullentries+bytes/header32/capacity2N, EX4.646703s/load1m<3.
+Unchanged/samewidth allocations128->0, allfour elapsedlosses retained(max1.08513),
+no CI/RSS/macrocause claim. Archive19a2afca/analysis569f8818, ownstdout0B->131B
+ONLYqualifiedb1e64069. Initialrootverifier two source/stream-assumption failures
+preserved; actualcorrectedsource+rawmathproof passes withoutmeasurementrerun.
+AlllocaljobsSTOP. Other metadata20 remainsHELD.
+
+Final50 sourceSQL33+bothfixedLC33 controllers ready0866737f at current-native-
+v50-final-known-bindings-prep. Actualsource2713/Linux81f8/build0d1e/package82e4/
+roots6b7e/0efc/b83 bound; acceptedfull24/finalSQL33 proofs NULL and allruntime
+flagsfalse, no materialization/release. finish-bindings.json fdd948b0 has exact
+orderedcommands. Source33ready6cb69c2b, LCreadya5241244, mathematical methods/
+controls unchanged. IMPORTANT path-resolution-v2 ready108d6e1e/reciped84a125a
+requires hash-checked immutable relocation BEFOREstaging/release to LOCAL:
+E/current-native-v50-serving-final-v1 and E/lucene-memory/v25-linux-confirmation/
+frontier-current-native-v50-unbound-v1. NestedmaterializedLC otherwise derives
+wrongE/misses historicalsiblings; supportedpaths resolve originalcontrols/
+oracle/qrels/quality/remoteROOT. Helpersourcecfa5fbef unrun. Do not silentlyuse
+oldnested finish-recipe destination as runtime verificationroot.
+
+Private52 integration is CLOSED/source-only and EXACT50 2713/276/211. Root
+independentcontentproofe17b0e66 rehashes all276candidate +276privatepatchresult
+and271dirtyancestor, CLI8114actualinputs/nativeb8privatebackup. Source-ready
+44be5fc1/patchd46d2991 (13changedexisting+5added), actualcurrentancestor70eaf221
+stable atbranchresearch/2026-10-superiority/foreignHEADcc3f14ac. No foreigninput
+deltas, source/no newmeasurementidentity; root/native stillUNTOUCHED. Recheck
+mutable root and accept memory campaign BEFOREapplying; no old47rejected46patch.
+
+V46 correctness/historical savings remain valid for THEIR source only:
+all6+freshNode root6f0dad50 (454default/688allfeature/2ignored each/MSRV1.89),
+encrypted cold-reopen root15f2401f, LinuxNodeccc47bdc/root5b0504ad and default
+probe6a057453/rootb079d921. Selected V8public graph12,430,368->7,359,040B,
+2numbers/hit both; private72,200Btyped view/backing+80,224Bcache arrays are
+separate. Root62a74752. Native census root a1a70e7c: four nonempty loaded
+pairs save2.1466-2.1549MBrequested/2.2047-2.2130MBusable, empty+64/+4192B
+and+2block losses retained; archiveb544bd9c. No RSS/universalcoverage claim.
+Exact21serialization/8594ops each/complete bytes/all8deltas0 rootdc5ce6b7.
+Metadata boundary diagnostic PARTIAL/STOP1:16goodprocesses,17th baseline
+explicitnull REJECTS (metadata must be a JSON object), contrary to harness
+normalization assumption. Omitted metadata normalizes; explicitnull does NOT.
+No candidate-null result from that failedrun. Partialarchive d6c62d5b,
+analysisc3569caf/STOPdc0ccd33; 0/omitted targetdelta-16req/-32usable,
+1key-592/-608;2/3/4/11/12keys+16req/0usable/+1block losses retained.
+Corrected remaining20processes are HELD; no repetition of16goodoutputs.
+
+After fresh50correctness/build proofs: run the bounded diagnostic once;
+if qualified then original full24 once, final sourceSQL33, both selected
+LC33/joint12/quality. FinalSQL template current-native-v45-serving-final-prep
+and LC template lucene-memory/v25-linux-confirmation/
+frontier-current-native-v46-unbound-v1 remain source-only, numerical methods
+unchanged. Only LC RSS1000/128MiB and fastest100/32MiB, no newgrid. Existing
+46-known-bindings drafts36e63dde cannot become50proofs or publicationPASS.
+
+Historical checkpoints follow; their live-job statements are superseded.
+
+Historical validated baseline: E/current-native-v44-prep/source274/210 FROZEN
+9f8a5e1b. Native security/cache fixes + postings append fastpath + compatible
+JS storage. Only public-bench.rs differs from43: existing QgraphArgs boxed,
+fixing inherited Clippy large_enum_variant without library/Node changes.
+Root library equivalence1d033eef and actual CLI regression1PASS/0filtered.
+43 fresh functional default80/security82 PASS independently verified by
+root7167b9f7; all8 new tests ran. Actual43 negative preguard test reproduces
+plaintext sidecar once, 0PASS/1FAIL with sentinel; not a compile failure.
+43 Clippy rejected CLI variant; no43all-gate claim. All failures preserved.
+
+Local44 Node + allsix CLOSED/PASS; independentroot65871212 at
+E/current-native-v44-validation-v1/root-validation-verification.json verifies
+all6 actualreceipt/log/identities,443default/676allfeature/0fail/2ignored each,
+22requirednames/bothpreservedtestbinaries/MSRV1.89defaultlib. Originalruntime
+repair-v3/rust-execution.log drivercf78dae8/protocol38448af1.
+Initial controller failures (CLI selector; missing copied fmt stderr) are
+retained, no product failure, no repeated fmt/negative/CLI/clone. Fresh local
+Node STOP0, native dcf7e369; actual12/base8/factory8/Unicode/builtin PASS,
+node-run-v1/ready14688e84. All274sources/9package exact. Framingrawfirst query
+independentlyverified; repeated/fallback equality is inside successfulchild,
+not separatelyprinted rawrows (clarifies earlierLinuxproofwording).
+
+Fresh Linux44 Node STOP0/native7d254c41/completiondf641824/packagea2b897ef;
+rootc64b83fd independently checks all342 payloads/274source/9package/actual
+Node12/base8/factory8/Unicode10/builtin16/fullJSON-f64/endmaps. Fresh default
+publication build STOP0/probe4a4677b4/completion8f55a0a2, pure274/instrumented276
+manifest2a51b8ca; rootc97a7a69 verifies all594payloads/Cargo/endmaps plus exact
+independent reconstruction of allfive instrumentation outputs.
+New helper brackets existing consumed compaction release before detachedIO;
+no second drop or persistence reordering. No publication timing44 yet.
+
+SCREEN44 CLOSED/ALLSTOP0 at R/current-native-v44-serving-screen-v1/all.log.
+Protocol8af35b78/release1c93531a/driver1702ea05,
+fixed3round9cells/2592ops each/20s pauses/fulloracles/EX900-895-5 unchanged.
+All9/9load PASS/23328ops/972completeJSON-f64pairs. Independent root99263258
+verifies all138sealedpayloads/monotonicRSS/nativeSQL/8vectors/pauses/endmaps.
+Archive2a0967f6/manifestd413a673/transferSTOP6c38b225. RSSSQLite median.985313/
+upper.990583 and sourceRSSupper.924502, BUT sourcep95upper1.130435 and
+sourceQPSlower.882062 FAIL preservation. Allrounds/losses retained; no retry,
+filter/waiver/final24release. Query-cost implementation is next.
+Original unrun36file stage missing2local imports retained; corrected38file
+stage independently clean-preflighted before SSH (root-stage-repair-v2.json).
+Final independent raw verifier12d366ec PASS, numerical acceptanceFALSE.
+Existing44 diagnostic profile ALLSTOP0/exact2592calls; analysis94724934/
+transferSTOPe2ab80f0. perf unavailable/native unsymbolized, classical22ticks/
+86.4%UNKNOWN; cpuprofile phasealignment unproved. No attribution/retry/tools.
+Genuine44 full24 source-only packet81354af0 is HELD/releaseABSENT; paired
+component24 is HELD duringlocalbuilders. Full24/serving33/bothLC33/allgates
+stillrequired. AcceptedRSS1.091961SQLite; no MEMORY acceptance/integration.
+
+JS-only V39 source E/js-only-v39-prep/source is pure252/203 over original
+frozen dirty249: only cfg(node-api) lib changes plus strings module/two Node
+fixtures; all248 other original inputs/both COSE exact. Manifest899f77ba.
+Local Node12/base8/factory8/Unicode10/builtin16 PASS, native1e69af73/root3af5e922.
+Linux same checks PASS, native7ff11e75/completion906fe548/packagea4cecd9e,
+317payload archivee7d5ffe5/roota535b282 at E/js-only-v39-linux-build-v1.
+
+ONCE9cell serving screen STOPPEDexit1 after5cells/6pauses, all5loadPASS:
+new unrelateduv314868/python314874 (hms-3a) triggered strict runtime guard.
+Never retry or downsize/refit CI. Partialarchive7288212b/manifestc222d29f;
+rootindependentproofa96c2427 at E/js-only-v39-serving-screen-v1 verifiesall104
+payloads/12960ops/324same-roundcompletepairs/oracles/monoRSS/STOP/endmaps.
+Round0 C/sourceRSS0.895440308,QPS1.031867279,p95.971751497,p99.973887309;
+C/SQLiteRSS.967100506,QPS4.032207303; round1C/SQLRSS.966831133,QPS4.139276005.
+All actual points improve, but incomplete screen establishes no superiority.
+Missing failureJSON (bootstrap runpy bypassed writer) and initialseal failure
+retained; actualguardfailure bound to timing-lock/all.log/exit. AcceptedRSS
+still1.091961SQLite; MEMORY/overall unestablished. Keep awakeSYSTEMPID1916.
+
+Rootdecision29009634 advances mandatory correctness, waiving nothing.
+SixRust77751 ALLSTOPexit1: gates1-4PASS/default424/0/1; gate5allfeaturelib
+595/1/1 failed unchangedmutation_gate.rs202 queue-release try_lock test.
+All12 Node-storage regressions passed; otherallfeaturetargets/MSRV NOTRUN.
+Failureseal476a2364/log55b2d786 at E/js-only-v39-validation/rust-run-v1.
+Root rejects initialmain-pollhypothesis (polling ends beforemaintenance
+release); queuedCondvarwaiters canlegitimatelycontend. Actualholderunknown.
+Smallest test-only final-writer assertion fix is frozen252/203 at
+E/mutation-gate-test-v40-prep/source, manifestd7d10639; all251 other inputs
+and production mutation-gate prefix are exact. Root equivalence6fc2406a
+binds actual runtime899f without relabelling it. Corrected validation42573
+STOP0: allsix PASS/default424/allfeature655/oneignored each/MSRV1.89;
+focused module5/fixed32 each1 PASS. Seal f60efdd3/root e31a5877 in
+E/js-only-v39-validation-testfix-v2. Focused binary was replaced by planned
+fullsuite rebuild; historical0629797b bytes were not separately archived.
+Execution-time digest guards/all32 logs remain; current fullsuite00c957f1
+and defaultcc22624e executables preserved. No rerun or identity relabelling.
+Production/source899f/Nodeidentities mustnotbesilentlyrelabelled; explicit
+cfg(test)-onlyequivalencebridge/rootreviewrequired. No productionchange.
+Remote defaultpubbuild355880 STOP0, completion73d593e3/archive35e426d9/
+manifestc3f8eced/root20cf81cb at E/js-only-v39-publication-build-v1.
+All559payloads/252pure/254instrumented/sourceendmaps/Cargoidentities checked;
+fresh actual8be17bc8 probe is BYTE-EQUAL original baseline. No Node rebuild.
+Root authorized one consequential eligibility check after gates advanced:
+no foreign jobs/load0.076 allowed build. Earlier blocked preflights and
+foreign-controller inspection30b151eb remain; no foreign job changed.
+Full24 boundprotocol599cce77/rootreviewd264283a/ONCEreleasefb310d39 at
+E/js-only-v39-publication-full-v1; sole remote metadata authorized to
+stage/recheck/launch original24. ALLSTOP0; all24 exact/load PASS/zero drops,
+310920 complete cross-arm pairs. Qualified publication REJECTED: four/12
+pairs fail,20728/b64 service1.1144768/response1.109091 exceed1.10. Probe is
+byte-identical to baseline; cause unestablished, no waiver/retry. All459 raw
+payloads sealed archive2c341082/completion6d865e5f/sealed6b560d9e; root
+independent proof996b97e9/rejectionb9437016. Remote allSTOP; final
+sourceSQLite33 and Lucene33 HELD/UNRUN. No MEMORY acceptance/integration.
+Encrypted Node matched cold reopen/query check STOP0, completion21727701/
+root6551eac7 at E/js-only-v39-acceptance-coverage-v1; all4processes and276
+numeric bits verified. Coverage-ready4b65e48b distinguishes all evidence.
+Full24 raw verifier2bfe9736/root71d31caa and STOP sealer4d2bfc4e/
+controlleraddfaf4e/root33d7f9eb prepared. Consume transfer-completion.json,
+not sealing-result.json (unrun erroneous draft retained). Finalsource33 raw
+verifier94fdb5b7/rootb81025b5 and sealer605d25fe/materializercfb25c64/
+root5654cb42 prepared. S future running.pid=pgid supervisor leader required.
+FinalsourceSQL11round33 packet E/js-only-v39-serving-final-v1 ready d34e83de/
+rootreviewf3e1dc44/protocolba3aef26 (futurepublic-bench prefixguard) UNRELEASED.
+User coordination question pending: other sessions must honor canonical
+R/timing.lock for exclusive final windows; no permission to stop their jobs.
+LC33unboundsourcepacket ready27b957b0/rootreview3d69db59 at E/lucene-memory/v25-linux-confirmation/
+frontier-js-only-v39-monotonic-v1: fixedbothcontrols/methods unchanged,
+current2pure source/release guards PASS; 251/252/253 and202/203/204 boundaries.
+Original unrun fixtures retained; freshfinal33authorities/positiveprotocol+
+release ABSENT. No oldperformanceuse.
+LC33 STOP/seal source c8acc284/remotee0a54c99/root420765f3 is prepared;
+actual future protocol/release SHA still required, no runtime.
+
+Prospective integration only: E/js-only-v39-current-integration-prep freezes
+CURRENT dirty271/209 inputs (70eaf221;22new paths/16original changes) and
+private JS274/210 overlay75ddbfac, EXACT4paths. Original candidate.patchdf616
+contains lib.rs only; three added payloads must also be copied/hash-guarded.
+Initial missing-payload prep failure retained. Source-ready3519ed08. No root
+edits/builds; pure899f remains performance authority. JS now prepares separate
+current-validation capsule with only unchanged oracle-test-body fix added;
+all current production/additional tests preserved, no whole-file replacement.
+
+Current274/210 validation31e898ba/ready924cf67c is FROZEN/UNRUN. Separate
+NEW current-native-v41-prep/source is under correction: current-native code
+unconditionally caches plaintext text even for encrypted stores; cache append
+can panic after durable journal append; offset addition unchecked. Do not
+run frozen presecurity274. JS owns encrypted attach/existing-cache rejection
+and engine tests; root owns cache error/overflow production fix; postings owns
+focused failure/domain tests; metadata owns remote focused-build prep only.
+No source integration or new validation result yet. Remote read-only check
+no matching jobs/load0.0547/14.49GiB available; keepawakePID1916 active.
+
+Optional JS+native fallback E/js-plus-native-v39-prep is253/204manifest993f,
+rootf139a8c9. Focused E/js-native-v39-focused-v1 ALLSTOP: default49PASS/all18
+required names, rootdd2ebc96; allfeature RELEASE linkCPythonfail101/no tests,
+log4892210c/STOP25349ff6 retained. HOLD/no retry; encryptedcases did not run.
+V38 rejected response1.373892 (qualified), root729a27d8/decision62863e74;
+allocation444exact/retention444tie/72requestedlosses/root e0d45e87 retained.
+No V38 retry/integration/campaigns. A/A HELD/UNSTARTED despite earlier release.
+
+Require originalfresh24 publication ALL12paired/allgroup/load, fullsix/fresh
+Node, finalsourceSQL33/bothfixedLucenecontrols33/jointfamily12[10,4989]/quality,
+completeTxn/JSON/bincode/f64/API/retry/heldversions/plain+encryptedrecovery/
+durability/security before acceptance/integration. Do not reconstruct old
+investigations; no historical performance reassignment or guard waiver.
 
 ## Latest handoff authority (2026-10-16, superiority session)
 
@@ -74,7 +417,12 @@ On the M4 every arm is 0.96-0.98x (memory-latency bound). Killed this session: n
 (0.77x) and 4-bit residual (0.56x at 0.95); recall 0.99 not reached below ef 3072 on glove
 (0.9877 at ef 3072, qgraph_recall99_bracket_x86_glove_v1.json). GCE confirmation of the x86 kernel
 fix needs `gcloud auth login` by the user.
-Next 1A levers in order: bytes (4-bit residual, delta-varint adjacency, no f32), build time, 99% bracket.
+1A.4 (fork, worktree /Volumes/A/.hms-wt-build, uncommitted to the branch): quantized construction search
+cuts the nytimes graph build 263.5 -> 74.3 s (3.54x) and glove 238.7 -> 184.5 s with peak RSS 3.78 -> 2.16 GB,
+recall within 0.002 (benchmarks/results/qgraph_build_v1.json); NN-descent init and locality order parked
+under benchmarks/results/parked/. Next: merge the build worktree commit into the branch after its gate,
+then the GCE confirmation (x86 kernels + build) once gcloud auth is done. All six forks were cut by the
+credit limit on 2026-10-16 evening and resumed on 2026-10-17; their ledger entries carry their state.
 
 1B: v2b arm (benchmarks/results/longmemeval_dev_answers_v2b.json) 87/100, paired delta 0.00
 CI [-0.04, 0.04]; pool extension 20 -> 48 lifts coverage 81 -> 83/84; LLM obligation sub-queries
@@ -85,7 +433,8 @@ final maintenance outside the writer lease and publication work prepared before 
 agent's deliverable; check writerslogic-02:/home/davidcondrey/hms-retained-20261016/publication-cost-v36-*.
 1B.3 v3 88/100 (+0.01 vs v2b, CI [0.00, 0.03]); forks in flight: 1B.5 local reader (Modal, cap $20),
 1C learned sparse (src/core/sparse/, src/bin/sparse-bench.rs), 2A compact postings, 1A.4 build time
-(/Volumes/A/.hms-wt-build), 3A durability_matrix.py. 2B, 2C, 3B: not started. Branch pushed at 18a0eec.
+(/Volumes/A/.hms-wt-build), 3A durability_matrix.py. 2B, 2C, 3B: not started. Branch pushed at cc3f14a. The neighbour-block layout is closed on both hosts (4-bit residual blocks: no ef
+penalty, 0.76-0.79x of the per-row path on x86, qgraph_block4_untimed_x86_v1.json); 3B security fork started.
 
 Constraints: tune on held-out/dev only; private CARGO_TARGET_DIR; one lock hold under 14 minutes; keep
 the rule30 workers and keep-awake.ps1 on writerslogic-02; the three stop questions are the only stops.

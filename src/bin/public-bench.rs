@@ -76,6 +76,9 @@ enum Mode {
         max_exact: Vec<usize>,
         #[arg(long, default_value_t = 128)]
         build_ef: usize,
+        /// Score the construction search with 8-bit codes (exact prune).
+        #[arg(long)]
+        quantized_search: bool,
         #[arg(long, default_value_t = 1.0)]
         alpha: f32,
         #[arg(long, default_value_t = 32)]
@@ -464,6 +467,7 @@ struct QgraphArgs {
     ef: Vec<usize>,
     max_exact: Vec<usize>,
     build_ef: usize,
+    quantized_search: bool,
     alpha: f32,
     code_bits: usize,
     degree: usize,
@@ -550,7 +554,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     let d = m["dim"].as_u64().context("meta.dim")? as usize;
     let width = m["n_neighbors"].as_u64().context("meta.n_neighbors")? as usize;
     let rows = read_f32(&a.data.join("train.f32"), d)?;
-    let (train, mut test, truth) = match a.holdout {
+    let (mut train, mut test, truth) = match a.holdout {
         Some(n) => {
             let (keep, q, t) = holdout_split(rows, n, K)?;
             (keep.concat(), q, t)
@@ -570,6 +574,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     }
     let params = BuildParams {
         build_ef: a.build_ef,
+        quantized_search: a.quantized_search,
         alpha: a.alpha,
         code_bits: a.code_bits,
         degree: a.degree,
@@ -589,7 +594,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 Some(p) if p.exists() => Graph::load(&train, d, p, &params)
                     .with_context(|| format!("loading {}", p.display()))?,
                 cache => {
-                    let g = Graph::build(&train, d, &params)?;
+                    let g = Graph::build_owned(std::mem::take(&mut train), d, &params)?;
                     if let Some(p) = cache {
                         g.save(p)
                             .with_context(|| format!("saving {}", p.display()))?;
@@ -780,7 +785,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "dataset": m,
         "environment": environment(),
         "n_queries": test.len(),
-        "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef,
+        "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef, "quantized_search": a.quantized_search,
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
                              "residual": a.residual, "residual_bits": a.residual_bits,
                              "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes, "screen": a.screen,
@@ -1231,6 +1236,7 @@ fn main() -> Result<()> {
             ef,
             max_exact,
             build_ef,
+            quantized_search,
             alpha,
             code_bits,
             degree,
@@ -1261,6 +1267,7 @@ fn main() -> Result<()> {
             ef,
             max_exact,
             build_ef,
+            quantized_search,
             alpha,
             code_bits,
             degree,

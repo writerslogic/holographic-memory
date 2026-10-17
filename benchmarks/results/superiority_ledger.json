@@ -70,8 +70,8 @@
     },
     {
      "name": "1A.4 build: parallel NN-descent init, quantized construction distances, streaming input",
-     "status": "in_flight",
-     "hours": 1.4,
+     "status": "measured_same_host; GCE confirmation pending",
+     "hours": 2.9,
      "results_file": "benchmarks/results/qgraph_build_v1.json",
      "nytimes_rows": {
       "baseline_graph_build_s": 263.5,
@@ -79,7 +79,12 @@
       "locality_order_256": "killed: 167 s passes but recall 0.8926/0.9341; its prefix also starves the upper layers of the shuffled sample",
       "quantized_search": "74 s graph build (3.5x), greedy CPU 210 s vs 952 s, recall 0.9048/0.9515 vs 0.9049/0.9498 (within 0.002), peak RSS unchanged"
      },
-     "in_flight": "glove baseline and quantized + owned-input build (no duplicate f32 corpus) measurements"
+     "in_flight": "glove baseline and quantized + owned-input build (no duplicate f32 corpus) measurements",
+     "nytimes": "graph build 263.5 s -> 74.3 s (3.54x) with the quantized construction search; recall 0.9049/0.9498 -> 0.9048/0.9515; peak RSS 982 -> 980 MB",
+     "glove": "graph build 238.7 s -> 184.5 s (1.29x) with quantized search + owned input; peak RSS 3.78 GB -> 2.16 GB (0.57x); recall identical 0.9005/0.9518",
+     "killed": "NN-descent init (296 s vs 199 s first pass, 4.3 GB RSS, recall -0.01); locality order (recall -0.012/-0.016, pass 2 slower)",
+     "code": "worktree /Volumes/A/.hms-wt-build src/core/qgraph/mod.rs: BuildParams.quantized_search (default false), Graph::build_owned; harness flag patch /Volumes/A/.hms-target-build/public-bench-quantized-flag.patch",
+     "open": "cache header does not record quantized_search (vertex.rs Graph::save/load); clippy 1.98 flags vertex.rs:861 needless_range_loop (parent's file); glove gain is 1.29x because its baseline already lacked the exact-distance screening cost that dominates nytimes"
     },
     {
      "name": "1A.5 recall 0.99: ef bracket to 2048 + exact-rerank depth",
@@ -157,7 +162,14 @@
     "dev_accuracy": 87,
     "citation_support": "201/204",
     "results_file": "benchmarks/results/longmemeval_dev_answers_v1.json",
-    "note": "v1 operand arm; v2b (benchmarks/results/longmemeval_dev_answers_v2b.json) also scores 87/100 with 207/207 citations and 80/84 selector completeness, paired delta 0.00 CI [-0.04, 0.04]; v3 (abstention calibration on v2b) 88/100, paired delta vs v2b 0.01 CI [0.00, 0.03], vs v1 0.01 CI [-0.03, 0.05]"
+    "note": "v1 operand arm; v2b (benchmarks/results/longmemeval_dev_answers_v2b.json) also scores 87/100 with 207/207 citations and 80/84 selector completeness, paired delta 0.00 CI [-0.04, 0.04]; v3 (abstention calibration on v2b) 88/100, paired delta vs v2b 0.01 CI [0.00, 0.03], vs v1 0.01 CI [-0.03, 0.05]",
+    "local_reader_row": {
+     "model": "Qwen3-30B-A3B-Instruct-2507",
+     "operand": "67/100",
+     "first_five": "68/100",
+     "knapsack": "70/100",
+     "file": "benchmarks/results/longmemeval_dev_answers_local30b_v1.json"
+    }
    },
    "next_best": {
     "vendor_mem0": "474/500",
@@ -305,14 +317,113 @@
      "hours": 0
     },
     {
-     "name": "1B.5 local reader row Qwen3-30B-A3B",
+     "name": "1B.6 new mechanism",
      "status": "pending",
      "hours": 0
     },
     {
-     "name": "1B.6 new mechanism",
-     "status": "pending",
-     "hours": 0
+     "name": "1B.5 local reader row Qwen3-30B-A3B-Instruct-2507 (Modal H100, vLLM 0.11.0, greedy, 1536 new tokens) on the v3 evidence",
+     "status": "measured",
+     "hours": 1.6,
+     "results_file": "benchmarks/results/longmemeval_dev_answers_local30b_v1.json",
+     "summary_file": "benchmarks/results/longmemeval_dev_answers_local30b_v1_summary.json",
+     "checker": "all gates passed, 600 arms verified (matched gpt-5.4 carried over from v3 and reported under its own name)",
+     "local_qwen30b": {
+      "first_five": {
+       "correct": 68,
+       "accuracy_ci": [
+        0.583,
+        0.763
+       ],
+       "citation_support": "91/107",
+       "abstentions": 27,
+       "false_abstentions": 21,
+       "reader_failures": 1,
+       "unsupported_answers": 23,
+       "median_context_tokens_o200k": 3974.0,
+       "median_context_tokens_qwen": 4502.0,
+       "paired_vs_gpt54_same_arm": {
+        "mean": -0.15,
+        "ci95": [
+         -0.24,
+         -0.06
+        ]
+       }
+      },
+      "knapsack": {
+       "correct": 70,
+       "accuracy_ci": [
+        0.604,
+        0.781
+       ],
+       "citation_support": "92/106",
+       "abstentions": 26,
+       "false_abstentions": 20,
+       "reader_failures": 1,
+       "unsupported_answers": 20,
+       "median_context_tokens_o200k": 4034.0,
+       "median_context_tokens_qwen": 4540.0,
+       "paired_vs_gpt54_same_arm": {
+        "mean": -0.12,
+        "ci95": [
+         -0.21,
+         -0.04
+        ]
+       }
+      },
+      "operand": {
+       "correct": 67,
+       "accuracy_ci": [
+        0.573,
+        0.754
+       ],
+       "citation_support": "118/132",
+       "abstentions": 17,
+       "false_abstentions": 13,
+       "reader_failures": 1,
+       "unsupported_answers": 30,
+       "median_context_tokens_o200k": 6308.5,
+       "median_context_tokens_qwen": 7265.5,
+       "paired_vs_gpt54_same_arm": {
+        "mean": -0.21,
+        "ci95": [
+         -0.31,
+         -0.12
+        ]
+       }
+      }
+     },
+     "reader_latency": {
+      "gpu_seconds_per_answer_amortized_including_model_load": 1.9,
+      "batches": [
+       {
+        "batch_size": 100,
+        "gpu_seconds": 71.96919012069702,
+        "wall_seconds": 72.8002188205719,
+        "usd": 0.0908111239231295
+       },
+       {
+        "batch_size": 100,
+        "gpu_seconds": 103.97101187705994,
+        "wall_seconds": 105.21240282058716,
+        "usd": 0.13119120040320686
+       },
+       {
+        "batch_size": 100,
+        "gpu_seconds": 397.6124756336212,
+        "wall_seconds": 416.4789729118347,
+        "usd": 0.5017096307127011
+       }
+      ]
+     },
+     "spend": {
+      "modal_gpu_usd": 0.724,
+      "modal_driver_total_usd": 0.949,
+      "judge_api_new_spend_usd": 0.233,
+      "modal_cap_usd": 20,
+      "category_cap_usd": 40
+     },
+     "note": "its own line; never blended with the gpt-5.4 rows (v3: 83/82/88)"
     }
    ],
    "spend_usd_session": 2.34
@@ -418,14 +529,15 @@
     },
     {
      "name": "2A V37: compact term dictionary (sorted base + overlay), delta-varint posting lists, file-backed chunk text read by positioned reads (no in-memory text, no mapping so touched pages stay out of RSS)",
-     "status": "in_flight",
-     "hours": 2.6,
+     "status": "measurement_in_flight",
+     "hours": 3.1,
      "code": "src/core/documents/postings.rs, src/core/documents/text.rs, documents/index.rs, documents/search.rs, documents.rs (StoredChunk.text_at), engine/mod.rs (attach_text_segment), engine/compaction.rs (materialized text in snapshots); uncommitted in the main tree",
      "gate": "cargo test --release --lib core:: 347 passed, 1 failed in src/core/sparse (another agent's module, not 2A); tests/documents 6 passed; cargo +1.98.0 clippy --release --lib --features node-api,security -D warnings clean; new regression tests: postings round trip against a map model, dictionary lookups across overlay/base/tombstones, varint boundaries, text segment bounds, journal bytes identical through the text view (mutation.rs owner-lifetime test)",
      "measurement_plan": "writerslogic-02: v37-build-v1 (compose.py/build_v37.py from /Volumes/A/.hms-target-2a/v37-build) then serving-v37-monotonic-v1 (stage_v37.py derives the V30 controller; 11 rounds, 33 cells, 324 NFCorpus queries, serving_max_rss ratio vs sqlite-full)",
      "bound": "V30 run: sqlite-full serving max RSS median 158.4 MB, static 82.5 MB; HMS V30 static 101.9 MB, serving max 145.1 MB; the Node runtime floor makes 0.75x reachable only with a near-zero native footprint (recorded as a physical bound once the V37 row exists)",
      "finding": "V30's binding-side files (src/core/documents/metadata.rs, node_projection.rs, src/node_result_strings.rs, tests/node/result-storage.test.cjs, transport-buffer.test.cjs) exist only in the retained V30 capsule, not in the main tree: the private 0.9133x includes JS-side savings the tree never integrated; V37 = main tree + this mechanism without them",
-     "remote": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/v37-build-v1 (chain.sh: build_v37.py, stage_v37.py, serve_v37.py) -> serving-v37-monotonic-v1/serving-v37-monotonic-full11-v1 (analysis.json, measurements.json)"
+     "remote": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/v37-build-v1 (chain.sh: build_v37.py, stage_v37.py, serve_v37.py) -> serving-v37-monotonic-v1/serving-v37-monotonic-full11-v1 (analysis.json, measurements.json)",
+     "remote_attempts": "serve attempts 1-3 (2026-10-16/17) aborted by the controller's competing-process guard: other sessions' js-only-v39 screen (python3.13/uv), a python3.14/uv job, then a java process mid-campaign; relaunch.sh (serving-v37-monotonic-v1) starts the campaign after 90 s with no build/measurement process, up to 4 attempts, every attempt preserved as serve-attemptN.log"
     }
    ]
   },
@@ -509,8 +621,9 @@
  },
  "wall_clock": {
   "session_start": "2026-10-16T12:20",
-  "src_hours": 6.2,
-  "harness_doc_hours": 1.8
+  "src_hours": 9.1,
+  "harness_doc_hours": 2.6,
+  "note": "fork hours included"
  },
  "units_of_progress": [
   {
@@ -560,6 +673,24 @@
    "row": "benchmarks/results/qgraph_pool_paired_x86_glove_v4.json",
    "ratio_to_previous_accepted": "0.991 (0.90), 0.939 (0.95) for the binary that measured 1.148/1.127 earlier",
    "time": "2026-10-16T18:15"
+  },
+  {
+   "category": "1B",
+   "row": "benchmarks/results/longmemeval_dev_answers_local30b_v1.json",
+   "ratio_to_previous_accepted": "local reader row (own line): operand 67/100 vs weak Qwen3-4B 48/100; not compared with gpt-5.4 rows",
+   "time": "2026-10-17T14:03"
+  },
+  {
+   "category": "1A",
+   "row": "benchmarks/results/qgraph_build_v1.json",
+   "ratio_to_previous_accepted": "same-host graph build 3.54x faster (nytimes), 1.29x faster with peak RSS 0.57x (glove), recall within 0.002; GCE confirmation pending",
+   "time": "2026-10-17T07:10"
+  },
+  {
+   "category": "1B",
+   "row": "benchmarks/results/longmemeval_dev_answers_local30b_v1.json",
+   "ratio_to_previous_accepted": "local Qwen3-30B-A3B reader 67-70/100 on its own line (previous local arm 47-48/100); gpt-5.4 rows 83/82/88 unchanged",
+   "time": "2026-10-17T07:15"
   }
  ]
 }

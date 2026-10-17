@@ -1683,7 +1683,7 @@ impl VSearcher<'_> {
 
 /// Format 02 adds the build parameters and a fingerprint of the vectors to the header, so a
 /// cache written for other data or parameters is rejected instead of silently reused.
-const CACHE_MAGIC: &[u8; 8] = b"HMSGRF02";
+const CACHE_MAGIC: &[u8; 8] = b"HMSGRF03";
 
 /// Fingerprint of the normalized vectors a graph was built over.
 fn data_fingerprint(unit: &[f32]) -> u64 {
@@ -1745,7 +1745,8 @@ fn get_lists(r: &mut impl std::io::Read, n: u64) -> std::io::Result<Vec<Vec<u32>
 /// Benchmark support: the graph structure (not the vectors) on disk, so that search
 /// experiments on one graph need not rebuild it.
 impl Graph {
-    /// Writes the header (n, dim, degree, build_ef, alpha, seed, entry, data fingerprint),
+    /// Writes the header (n, dim, degree, build_ef, alpha, seed, entry, data fingerprint,
+    /// quantized_search),
     /// the adjacency and the upper layers; the vectors are not stored.
     pub fn save(&self, path: &std::path::Path) -> std::io::Result<()> {
         let mut w = std::io::BufWriter::new(std::fs::File::create(path)?);
@@ -1760,6 +1761,7 @@ impl Graph {
             self.build.seed,
             u64::from(self.entry),
             data_fingerprint(&self.unit),
+            u64::from(self.build.quantized_search),
         ];
         for x in header {
             w.write_all(&x.to_le_bytes())?;
@@ -1793,11 +1795,11 @@ impl Graph {
                     .into(),
             ));
         }
-        let mut header = [0u64; 8];
+        let mut header = [0u64; 9];
         for x in &mut header {
             *x = get_u64(&mut r)?;
         }
-        let [n, d, degree, build_ef, alpha_bits, seed, entry, fingerprint] = header;
+        let [n, d, degree, build_ef, alpha_bits, seed, entry, fingerprint, quantized] = header;
         if dim == 0 || !data.len().is_multiple_of(dim) {
             return Err(bad("graph cache: ragged data".into()));
         }
@@ -1808,7 +1810,7 @@ impl Graph {
                 x.iter_mut().for_each(|o| *o /= norm);
             }
         });
-        let checks: [(&str, u64, u64); 7] = [
+        let checks: [(&str, u64, u64); 8] = [
             ("n", n, (data.len() / dim) as u64),
             ("dim", d, dim as u64),
             ("degree", degree, params.degree as u64),
@@ -1816,6 +1818,11 @@ impl Graph {
             ("alpha", alpha_bits, u64::from(params.alpha.to_bits())),
             ("seed", seed, params.seed),
             ("data fingerprint", fingerprint, data_fingerprint(&unit)),
+            (
+                "quantized_search",
+                quantized,
+                u64::from(params.quantized_search),
+            ),
         ];
         if let Some((what, file, want)) = checks.iter().find(|(_, a, b)| a != b) {
             let show = |x: u64| {

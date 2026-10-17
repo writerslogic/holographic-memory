@@ -31,7 +31,6 @@ pub mod diagnostics;
 #[cfg(feature = "experimental")]
 pub mod ivf;
 
-
 use std::cell::RefCell;
 
 use rayon::prelude::*;
