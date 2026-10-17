@@ -336,6 +336,9 @@ fn memscan(store: &Path) -> Result<Value> {
         .map_err(|e| anyhow!("argon2: {e}"))?;
     let masked_key: Vec<u8> = key.iter().zip(&mask).map(|(a, m)| a ^ m).collect();
     key.zeroize();
+    // The probe's own derivation left the key in callee frames; scrub them so every copy
+    // the scan finds belongs to the store or its cipher.
+    holographic_memory::core::scrub_stack();
     let core = open(store, Some(pass.clone()), false)?;
     pass.zeroize();
     drop(pass);
@@ -375,6 +378,8 @@ fn memscan(store: &Path) -> Result<Value> {
             };
             pass_hits += count(&masked_pass);
             key_hits += count(&masked_key);
+            // A freed scan buffer would otherwise be found by a later range or scan.
+            buf.zeroize();
         }
         Ok(
             json!({"phase": label, "bytes_scanned": bytes, "passphrase_copies": pass_hits, "derived_key_copies": key_hits}),

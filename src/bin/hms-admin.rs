@@ -3,7 +3,9 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use holographic_memory::core::admin::{inspect_store, migrate_store, reencode_documents};
+use holographic_memory::core::admin::{
+    inspect_store, migrate_store, reencode_documents, verify_store,
+};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -17,8 +19,14 @@ struct Cli {
 enum Command {
     /// Read format and utilization metadata without verifying every checksum.
     Inspect { store: PathBuf },
-    /// Scan every arena frame and validate compression and CRC32 checksums.
-    Verify { store: PathBuf },
+    /// Scan every arena frame (compression and CRC32), verify the manifest checksums, and
+    /// open the store to confirm every logged document resolves.
+    Verify {
+        store: PathBuf,
+        /// Environment variable holding the passphrase of an encrypted store.
+        #[arg(long)]
+        encryption_passphrase_env: Option<String>,
+    },
     /// Create a locked, verified, atomically published current-format copy.
     Migrate {
         source: PathBuf,
@@ -38,7 +46,10 @@ enum Command {
 fn main() -> Result<()> {
     let output = match Cli::parse().command {
         Command::Inspect { store } => serde_json::to_value(inspect_store(store, false)?)?,
-        Command::Verify { store } => serde_json::to_value(inspect_store(store, true)?)?,
+        Command::Verify {
+            store,
+            encryption_passphrase_env,
+        } => serde_json::to_value(verify_store(store, encryption_passphrase_env)?)?,
         Command::Migrate {
             source,
             destination,
@@ -68,6 +79,13 @@ mod tests {
         for args in [
             vec!["hms-admin", "inspect", "store"],
             vec!["hms-admin", "verify", "store"],
+            vec![
+                "hms-admin",
+                "verify",
+                "store",
+                "--encryption-passphrase-env",
+                "HMS_PASS",
+            ],
             vec!["hms-admin", "migrate", "source", "destination"],
         ] {
             Cli::try_parse_from(args).expect("valid administration command");

@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated": "2026-10-16T16:05:00-07:00",
+ "updated": "2026-10-17T15:17:09-07:00",
  "note": "Status of every category of the October 16 comparison (docs/research/SUPERIORITY-2026-10-12.md). Numbers quote results files only; a lever's hours are wall clock spent on it in this ledger's sessions.",
  "categories": {
   "1A_vector_search": {
@@ -698,14 +698,16 @@
    "metric": "pass/fail/time matrix: SIGKILL at 200 points, fsync-interception power loss, torn-write and bit-flip injection, recovery time, bytes lost, reader consistency, snapshot round trip, old-binary rejection",
    "comparator": "SQLite, Lucene",
    "best_accepted_hms": {
-    "cells_passed": "6 of 8 (kill_writes, kill_compaction, power_loss, readers, snapshot_restore, old_binary); fails torn_write and bit_flip on silent serves",
+    "cells_passed": "8 of 8",
+    "torn_write": "39 detected, 11 benign, 0 silent of 50",
+    "bit_flip": "31 detected, 19 benign, 0 silent of 50",
     "recovery_ms_median": "9.1-13.8",
     "committed_docs_lost": 0
    },
    "targets": {
     "cells": "pass every cell SQLite passes, detect every corruption SQLite detects, recover no slower"
    },
-   "results_file": "benchmarks/results/durability_matrix_v1.json",
+   "results_file": "benchmarks/results/durability_matrix_v2.json",
    "levers": [
     {
      "name": "3A.1 benchmarks/public/durability_matrix.py",
@@ -713,6 +715,12 @@
      "hours": 4.5,
      "harness": "benchmarks/public/durability_matrix.py (+ test_durability_matrix.py, src/bin/durability-driver.rs); run on writerslogic-02, Linux, LD_PRELOAD write-barrier shim for power loss",
      "finding": "no committed document lost by HMS in 450 crash and power-loss points; corruption cells fail on silent serves (10 torn, 11 bit flips of 50 each) because the JSON manifests carry no checksum and hms-admin verify does not cross-check document presence; next lever is a manifest checksum plus presence cross-check in verify (src/core, not changed here)"
+    },
+    {
+     "name": "3A.2 end-of-log marker, manifest checksums, verify cross-check (src/core/storage.rs, durable_file.rs, admin.rs, engine/document_api.rs, bin/hms-admin.rs)",
+     "status": "measured",
+     "hours": 3.0,
+     "finding": "every frame's flush range now ends with a 16-byte end-of-log marker, so a frame that fails its CRC with committed data after it is corruption and open fails; only a frame with nothing after it is a torn tail; store.json/indices.json/format.json carry a crc32 sidecar checked at open; hms-admin verify opens the store and cross-checks every logged document id. Re-measured on writerslogic-02: torn_write 39 detected / 0 silent (v1: 13 / 10), bit_flip 31 detected / 0 silent (v1: 23 / 11); kernel, lexical and search paths untouched"
     }
    ],
    "next_best": {
@@ -720,7 +728,7 @@
     "lucene": "8 of 8; recovery 174-185 ms"
    },
    "gap_hms_over_next": {
-    "corruption_detection": "HMS torn 13/50 detected vs SQLite 48/50 and Lucene 50/50; bit flips 23/50 vs 11/50 and 50/50",
+    "corruption_detection": "HMS torn 39/50 detected (0 silent) vs SQLite 48/50 (0 silent) and Lucene 50/50; bit flips 31/50 (0 silent) vs SQLite 11/50 (35 silent) and Lucene 50/50",
     "recovery_time": "HMS 13 ms vs SQLite 2 ms vs Lucene 180 ms"
    }
   },
@@ -728,26 +736,26 @@
    "metric": "egress bytes, encryption-at-rest overhead (QPS, RSS), tamper detection over 1000 flips, signed audit-log verification, key zeroization, constant-time comparison, cargo deny",
    "comparator": "managed Mem0 and Zep (egress); SQLite+SQLCipher and Lucene on encrypted FS",
    "best_accepted_hms": {
-    "results_file": "benchmarks/results/security_matrix_v1.json",
+    "results_file": "benchmarks/results/security_matrix_v2.json",
     "egress_sockets": 0,
     "encryption_overhead_qps_ratio": 0.929,
     "tamper_counts": {
      "hms_plain": {
-      "detected": 324,
-      "served_different": 163,
-      "served_identical": 513,
+      "detected": 750,
+      "served_different": 0,
+      "served_identical": 250,
       "crashed": 0
      },
      "hms_encrypted": {
-      "detected": 422,
-      "served_different": 172,
-      "served_identical": 406,
+      "detected": 779,
+      "served_different": 0,
+      "served_identical": 221,
       "crashed": 0
      },
      "sqlite": {
-      "detected": 431,
-      "served_different": 1,
-      "served_identical": 568,
+      "detected": 441,
+      "served_different": 0,
+      "served_identical": 559,
       "crashed": 0
      }
     },
@@ -756,12 +764,13 @@
      1.25,
      3.17
     ],
-    "cargo_deny_rc": 0
+    "cargo_deny_rc": 0,
+    "derived_key_copies_after_drop": 0
    },
    "targets": {
     "matrix": "benchmarks/results/security_matrix_v1.json"
    },
-   "results_file": "benchmarks/results/security_matrix_v1.json",
+   "results_file": "benchmarks/results/security_matrix_v2.json",
    "levers": [
     {
      "name": "3B.1 security matrix harness (benchmarks/public/security_matrix.py, src/bin/security-probe.rs)",
@@ -782,14 +791,24 @@
       "merged memscan from Linux x86_64",
       "merged constant_time from Linux x86_64"
      ]
+    },
+    {
+     "name": "3B.2 arena corruption fails open; AES key schedule boxed and zeroized on drop (src/core/storage.rs, security.rs, Cargo.toml aes-gcm/zeroize)",
+     "status": "measured",
+     "hours": 1.0,
+     "findings": [
+      "arena segment flips: plain detected 110 / served_different 0 / served_identical 0; encrypted detected 83 / served_different 0 / served_identical 1 (v1: 335 of 335 hits served)",
+      "derived AES key copies (Linux /proc/self/mem, masked needle, scan buffers scrubbed): 1 while open, 0 after drop (v1: 5 / 6)",
+      "tamper totals plain {'detected': 750, 'served_different': 0, 'served_identical': 250, 'crashed': 0}; encrypted {'detected': 779, 'served_different': 0, 'served_identical': 221, 'crashed': 0}"
+     ]
     }
    ]
   }
  },
  "wall_clock": {
   "session_start": "2026-10-16T12:20",
-  "src_hours": 9.1,
-  "harness_doc_hours": 2.6,
+  "src_hours": 12.1,
+  "harness_doc_hours": 3.6,
   "note": "fork hours included"
  },
  "units_of_progress": [
@@ -876,6 +895,18 @@
    "row": "benchmarks/results/serving_memory_v37.json",
    "ratio_to_previous_accepted": "0.971 (1.0605 vs 1.092 RSS ratio to SQLite)",
    "time": "2026-10-17T14:55"
+  },
+  {
+   "category": "3A",
+   "row": "benchmarks/results/durability_matrix_v2.json",
+   "ratio_to_previous_accepted": "silent serves torn 0/10, bit_flip 0/11 (v2/v1); cells passed 8/6",
+   "time": "2026-10-17T15:17"
+  },
+  {
+   "category": "3B",
+   "row": "benchmarks/results/security_matrix_v2.json",
+   "ratio_to_previous_accepted": "arena flips served 1/335; key copies after drop 0/6",
+   "time": "2026-10-17T15:17"
   }
  ]
 }

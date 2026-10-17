@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use crc32fast::Hasher;
 use memmap2::{Mmap, MmapMut};
 use parking_lot::RwLock;
@@ -21,6 +21,28 @@ pub(crate) const HEADER_SIZE: usize = 16;
 /// Maximum decompressed frame payload (50 MB). Used consistently in
 /// `discover_offset` and `read_frame` to reject corrupt/malicious data.
 pub(crate) const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
+/// Version word of the end-of-log marker: a zero-length header written after every frame in
+/// the frame's own flush range, so the committed end of the log is recorded at no extra cost.
+/// A frame that fails its checks with the marker (or a valid frame) after it was committed
+/// and is corrupt; one with nothing after it is a crash-truncated append. A plain zero header
+/// (stores written before the marker) still means end of log.
+pub(crate) const END_MARK: u32 = 0x454E_444C;
+
+/// True if the 16 bytes at `at` are an end-of-log marker or the legacy zero header.
+#[inline]
+pub(crate) fn is_log_end(header: &[u8]) -> bool {
+    let word = |i: usize| u32::from_le_bytes(header[i..i + 4].try_into().expect("4 bytes"));
+    header.len() >= HEADER_SIZE
+        && word(4) == 0
+        && word(8) == 0
+        && (header[..HEADER_SIZE].iter().all(|&b| b == 0) || (word(0) == 0 && word(12) == END_MARK))
+}
+
+fn end_marker_bytes() -> [u8; HEADER_SIZE] {
+    let mut bytes = [0u8; HEADER_SIZE];
+    bytes[12..16].copy_from_slice(&END_MARK.to_le_bytes());
+    bytes
+}
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub(crate) struct FormatManifest {
@@ -56,6 +78,9 @@ impl PersistentArena {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
         Self::validate_or_create_manifest(&base)?;
+        if let Some(store) = base.parent() {
+            super::durable_file::verify_manifests(store, &base)?;
+        }
         let data_path = super::durable_file::arena_generation(&base)?;
 
         let mut id = 0;
@@ -88,12 +113,14 @@ impl PersistentArena {
         file.sync_all()?;
         let mut mut_map = unsafe { MmapMut::map_mut(&file)? };
 
-        let (recovered_offset, max_version) = Self::discover_offset(&mut_map);
-        // A corrupt or partially written tail may contain bytes from an older frame.
-        // Persist a zero-header sentinel at the recovered boundary so future restarts
-        // never interpret stale tail bytes as a valid frame.
+        let (recovered_offset, max_version) = Self::discover_offset(&mut_map)
+            .with_context(|| format!("arena segment {}", active_path.display()))?;
+        // A partially written tail may contain bytes from an older frame. Persist the end
+        // marker at the recovered boundary so future restarts never interpret stale tail
+        // bytes as a valid frame.
         if recovered_offset + HEADER_SIZE <= mut_map.len() {
-            mut_map[recovered_offset..recovered_offset + HEADER_SIZE].fill(0);
+            mut_map[recovered_offset..recovered_offset + HEADER_SIZE]
+                .copy_from_slice(&end_marker_bytes());
             mut_map.flush_range(recovered_offset, HEADER_SIZE)?;
         }
 
@@ -174,10 +201,24 @@ impl PersistentArena {
 
     /// Walk CRC32-framed entries in the active segment to find the first free offset
     /// and the highest version number present.
-    fn discover_offset(mmap: &MmapMut) -> (usize, u32) {
+    /// Walk CRC32-framed entries in the active segment to find the first free offset
+    /// and the highest version number present. A frame that fails its checks ends the walk
+    /// only when nothing valid follows it (a crash-truncated append); a bad frame with a
+    /// valid frame after it is corruption inside committed data and an error.
+    fn discover_offset(mmap: &MmapMut) -> Result<(usize, u32)> {
         let mut offset = 0;
         let mut max_version = 0;
         let data = &mmap[..];
+        let fail = |offset: usize, max_version: u32| -> Result<(usize, u32)> {
+            match Self::committed_after(data, offset + 1) {
+                Some(next) => Err(anyhow!(
+                    "frame at offset {offset} fails its checks but committed data follows at \
+                     offset {next}: the segment is corrupt, not a torn tail; restore a \
+                     snapshot or re-encode the sources"
+                )),
+                None => Ok((offset, max_version)),
+            }
+        };
         while offset + HEADER_SIZE <= data.len() {
             // Unwraps are safe: the loop guard ensures at least HEADER_SIZE (16) bytes
             // remain, so each 4-byte slice is within bounds.
@@ -197,37 +238,25 @@ impl PersistentArena {
                     .expect("4-byte slice"),
             );
 
-            // Zero header means no more frames
+            // A zero header or the end marker means no more frames.
             if raw_len == 0 && comp_len == 0 {
-                break;
+                if is_log_end(&data[offset..offset + HEADER_SIZE]) {
+                    break;
+                }
+                return fail(offset, max_version);
             }
             // Sanity: reject impossibly large or zero-progress frames
-            if comp_len > SEGMENT_SIZE || raw_len > MAX_RAW_FRAME_SIZE || comp_len == 0 {
-                break;
+            if comp_len > mmap.len() || raw_len > MAX_RAW_FRAME_SIZE || comp_len == 0 {
+                return fail(offset, max_version);
             }
 
             let frame_size = HEADER_SIZE + comp_len;
             if offset + frame_size > data.len() {
-                break;
+                return fail(offset, max_version);
             }
 
-            // Verify CRC to make sure this is a valid frame
-            let expected_crc =
-                u32::from_le_bytes(data[offset..offset + 4].try_into().expect("4-byte slice"));
-            let payload = &data[offset + HEADER_SIZE..offset + frame_size];
-            let decompressed = if comp_len < raw_len {
-                match lz4_flex::decompress(payload, raw_len) {
-                    Ok(d) => d,
-                    Err(_) => break,
-                }
-            } else {
-                payload.to_vec()
-            };
-
-            let mut hasher = Hasher::new();
-            hasher.update(&decompressed);
-            if hasher.finalize() != expected_crc {
-                break;
+            if !Self::frame_checks_out(data, offset) {
+                return fail(offset, max_version);
             }
 
             if version > max_version {
@@ -235,7 +264,52 @@ impl PersistentArena {
             }
             offset += frame_size;
         }
-        (offset, max_version)
+        Ok((offset, max_version))
+    }
+
+    /// True if the frame at `offset` has plausible lengths, decompresses and matches its CRC32.
+    fn frame_checks_out(data: &[u8], offset: usize) -> bool {
+        if offset + HEADER_SIZE > data.len() {
+            return false;
+        }
+        let word = |at: usize| u32::from_le_bytes(data[at..at + 4].try_into().expect("4 bytes"));
+        let (expected_crc, raw_len, comp_len) = (
+            word(offset),
+            word(offset + 4) as usize,
+            word(offset + 8) as usize,
+        );
+        if comp_len == 0 || raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE || comp_len > raw_len {
+            return false;
+        }
+        let end = match offset.checked_add(HEADER_SIZE + comp_len) {
+            Some(end) if end <= data.len() => end,
+            _ => return false,
+        };
+        let payload = &data[offset + HEADER_SIZE..end];
+        let decompressed = if comp_len < raw_len {
+            match lz4_flex::decompress(payload, raw_len) {
+                Ok(d) => d,
+                Err(_) => return false,
+            }
+        } else {
+            payload.to_vec()
+        };
+        let mut hasher = Hasher::new();
+        hasher.update(&decompressed);
+        hasher.finalize() == expected_crc
+    }
+
+    /// The first offset at or after `from` holding committed data: a valid frame or the end
+    /// marker, scanning every byte up to the last non-zero byte of the segment (bytes beyond
+    /// the write frontier are zero).
+    fn committed_after(data: &[u8], from: usize) -> Option<usize> {
+        let last = data.iter().rposition(|&b| b != 0)?;
+        (from..=last.saturating_sub(HEADER_SIZE - 1)).find(|&at| {
+            at + HEADER_SIZE <= data.len()
+                && (Self::frame_checks_out(data, at)
+                    || (is_log_end(&data[at..at + HEADER_SIZE])
+                        && data[at + 12..at + 16] == END_MARK.to_le_bytes()))
+        })
     }
 
     pub fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
@@ -347,7 +421,7 @@ impl PersistentArena {
                 return Ok((segment + 1) * SEGMENT_SIZE);
             }
             let header = self.read_slice(next, HEADER_SIZE)?;
-            if header.iter().all(|&b| b == 0) {
+            if is_log_end(&header) {
                 return Ok((segment + 1) * SEGMENT_SIZE);
             }
         }
@@ -430,8 +504,9 @@ impl PersistentArena {
             std::ptr::copy_nonoverlapping(write_data.as_ptr(), target.add(HEADER_SIZE), comp_len);
         }
         let frame_end = offset + total_frame_len;
+        // The end marker rides in the frame's flush range: it records the committed end.
         let sentinel_len = if frame_end + HEADER_SIZE <= active.len() {
-            active[frame_end..frame_end + HEADER_SIZE].fill(0);
+            active[frame_end..frame_end + HEADER_SIZE].copy_from_slice(&end_marker_bytes());
             HEADER_SIZE
         } else {
             0
@@ -683,7 +758,7 @@ mod tests {
     }
 
     #[test]
-    fn recovers_from_a_corrupt_tail_and_reuses_its_offset() -> Result<()> {
+    fn recovers_from_a_torn_tail_and_reuses_its_offset() -> Result<()> {
         use std::io::{Seek, SeekFrom, Write};
 
         let dir = tempdir()?;
@@ -691,13 +766,15 @@ mod tests {
         {
             let arena = PersistentArena::new(dir.path())?;
             arena.write_slice(b"valid frame")?;
-            second_offset = arena.write_slice(b"frame that will be corrupted")?;
+            second_offset = arena.write_slice(b"frame that will be torn")?;
         }
 
+        // A crash-truncated append: the frame's payload stops short and the end marker
+        // that would have followed it was never written (the file is zero beyond it).
         let segment = dir.path().join("seg_0.bin");
         let mut file = OpenOptions::new().write(true).open(segment)?;
-        file.seek(SeekFrom::Start((second_offset + HEADER_SIZE) as u64))?;
-        file.write_all(&[0xff])?;
+        file.seek(SeekFrom::Start((second_offset + HEADER_SIZE + 4) as u64))?;
+        file.write_all(&[0u8; 64])?;
         file.sync_all()?;
 
         {
@@ -708,6 +785,64 @@ mod tests {
         }
         let arena = PersistentArena::new(dir.path())?;
         assert_eq!(arena.read_frame(second_offset)?.0, b"replacement");
+        Ok(())
+    }
+
+    /// A flipped byte inside a committed frame is corruption, not a torn tail: committed data
+    /// (the next frame, or the end marker after the last frame) follows it, so open fails
+    /// instead of serving the log truncated at the damage.
+    #[test]
+    fn open_fails_on_corruption_inside_committed_data() -> Result<()> {
+        use std::io::{Seek, SeekFrom, Write};
+        for damage_last in [false, true] {
+            let dir = tempdir()?;
+            let (first, last);
+            {
+                let arena = PersistentArena::new(dir.path())?;
+                first = arena.write_slice(b"first committed frame")?;
+                arena.write_slice(b"second committed frame")?;
+                last = arena.write_slice(b"third committed frame")?;
+            }
+            let segment = dir.path().join("seg_0.bin");
+            let mut file = OpenOptions::new().write(true).open(&segment)?;
+            let target = if damage_last { last } else { first };
+            file.seek(SeekFrom::Start((target + HEADER_SIZE + 2) as u64))?;
+            file.write_all(&[0xff])?;
+            file.sync_all()?;
+            let error = match PersistentArena::new(dir.path()) {
+                Ok(_) => panic!("corrupt frame at {target} opened (damage_last {damage_last})"),
+                Err(e) => format!("{e:#}"),
+            };
+            assert!(error.contains("corrupt"), "{error}");
+            // The damage is left in place for diagnosis: no marker was written over it.
+            let bytes = std::fs::read(&segment)?;
+            assert_eq!(bytes[target + HEADER_SIZE + 2], 0xff);
+        }
+        Ok(())
+    }
+
+    /// A manifest whose sidecar checksum does not match its bytes fails open; manifests
+    /// without a sidecar (older stores) still open.
+    #[test]
+    fn manifest_checksum_mismatch_fails_open() -> Result<()> {
+        let store = tempdir()?;
+        let arena_dir = store.path().join("vectors_data.bin");
+        {
+            let arena = PersistentArena::new(&arena_dir)?;
+            arena.write_slice(b"frame")?;
+        }
+        let schema = store.path().join("store.json");
+        super::super::durable_file::atomic_write(&schema, br#"{"version":2,"dimensions":1024}"#)?;
+        assert!(store.path().join("store.json.crc32").exists());
+        PersistentArena::new(&arena_dir)?;
+        std::fs::write(&schema, br#"{"version":2,"dimensions":1025}"#)?;
+        let error = match PersistentArena::new(&arena_dir) {
+            Ok(_) => panic!("flipped manifest opened"),
+            Err(e) => format!("{e:#}"),
+        };
+        assert!(error.contains("checksum"), "{error}");
+        std::fs::remove_file(store.path().join("store.json.crc32"))?;
+        PersistentArena::new(&arena_dir)?;
         Ok(())
     }
 }

@@ -71,6 +71,8 @@ pub mod qgraph;
 pub(crate) mod role;
 pub(crate) mod rules;
 pub(crate) mod security;
+#[cfg(feature = "security")]
+pub use security::scrub_stack;
 #[cfg(target_arch = "x86_64")]
 pub(crate) mod simd_math;
 #[cfg(feature = "experimental")]
