@@ -432,26 +432,42 @@
    "metric": "BEIR nDCG@10 and R@100 on SciFact and NFCorpus test (read once), single-thread QPS, serving RSS, index bytes",
    "comparator": "SPLADE v3 served by the pinned Anserini impact index",
    "best_accepted_hms": {
-    "scifact_hybrid_minilm": 0.729,
-    "nfcorpus_hybrid_minilm": 0.355,
-    "learned_sparse": null
+    "nfcorpus_splade_pp_ed_vectors_ndcg": 0.3477,
+    "scifact_splade_pp_ed_vectors_ndcg": 0.7037,
+    "nfcorpus_blend_ndcg": 0.3585,
+    "scifact_blend_ndcg": 0.7288,
+    "shippable_encoder_nfcorpus_ndcg": 0.3336,
+    "shippable_encoder_scifact_ndcg": 0.7004
    },
    "next_best": {
-    "splade_v3": null
+    "anserini_1.2.0_splade_pp_ed": {
+     "nfcorpus_ndcg": 0.3484,
+     "scifact_ndcg": 0.7037,
+     "nfcorpus_qps": 1676,
+     "scifact_qps": 768,
+     "nfcorpus_index_bytes": 1699840,
+     "scifact_index_bytes": 2416640
+    },
+    "note": "SPLADE v3 weights are gated; SPLADE++ ED stands in (same license family); vendor SPLADE v3 BEIR numbers are not reproduced here"
    },
-   "gap_hms_over_next": null,
+   "gap_hms_over_next": {
+    "ndcg_same_vectors": "-0.0007 (nfcorpus), 0.0000 (scifact)",
+    "qps_same_vectors_x86": "3.93x (nfcorpus), 1.73x (scifact)",
+    "index_bytes": "1.03x (nfcorpus), 1.00x (scifact)",
+    "blend_over_sparse_alone": "+0.0108 (nfcorpus), +0.0251 (scifact)"
+   },
    "targets": {
     "ndcg_gap": "within 0.005 of SPLADE v3 on its own vectors",
     "qps": ">= 2x Anserini",
     "index_bytes": "<= 0.7x",
     "blend": "above SPLADE v3 alone"
    },
-   "results_file": "benchmarks/results/public_learned_sparse_v1.json (pending assembly)",
+   "results_file": "benchmarks/results/public_learned_sparse_v1.json (check: public_learned_sparse_v1_summary.json)",
    "levers": [
     {
      "name": "1C.1 HMS impact index (src/core/sparse, 8-bit impacts, 128-posting blocks with block maxima, MaxScore exact top-k) serving learned sparse vectors; bench src/bin/sparse-bench.rs; encoder benchmarks/public/learned_sparse_encode.py",
-     "status": "in_flight_measuring",
-     "hours": 2.5,
+     "status": "measured",
+     "hours": 4.5,
      "comparator": "naver/splade-v3 is CC BY-NC-SA 4.0 and a gated repository the account cannot read (HTTP 401, 2026-10-16); naver/splade-cocondenser-ensembledistil (SPLADE++ ED, CC BY-NC-SA 4.0, ungated) stands in; shippable encoder opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill (Apache-2.0, document-only, IDF queries)",
      "anserini": "io.anserini:anserini:1.2.0 fatjar (2.3.0 fetches prebuilt-index metadata from api.github.com at SearchCollection start and fails under the unauthenticated rate limit), JDK 21.0.12.1 in user space on both hosts",
      "hms_x86_writerslogic-02": {
@@ -492,7 +508,93 @@
        "alpha": 0.5
       }
      },
-     "pending": "Anserini 1.2.0 quality and timing on both hosts (chains running: /Volumes/A/.hms-target-1c/logs/anserini_time.done, writerslogic-02:~/hms-sparse-check/logs/run_anserini.done); results assembled by benchmarks/public/learned_sparse_results.py into benchmarks/results/public_learned_sparse_v1.json and checked by check_learned_sparse.py"
+     "pending": null,
+     "x86_rows_writerslogic-02": {
+      "nfcorpus/splade-pp-ed": {
+       "hms": {
+        "ndcg": 0.3477,
+        "r100": 0.2844,
+        "bytes": 1751871,
+        "qps_k10": 6585,
+        "rss": 20131840
+       },
+       "anserini": {
+        "ndcg": 0.3484,
+        "r100": 0.2827,
+        "bytes": 1699840,
+        "qps": 1676
+       },
+       "blend": {
+        "ndcg": 0.3585,
+        "alpha": 0.5
+       }
+      },
+      "nfcorpus/os-doc-v2-distill": {
+       "hms": {
+        "ndcg": 0.3336,
+        "r100": 0.2754,
+        "bytes": 2481063,
+        "qps_k10": 58692,
+        "rss": 27328512
+       },
+       "anserini": {
+        "ndcg": 0.3333,
+        "r100": 0.2757,
+        "bytes": 2281472,
+        "qps": 3818
+       },
+       "blend": {
+        "ndcg": 0.3462,
+        "alpha": 0.4
+       }
+      },
+      "scifact/splade-pp-ed": {
+       "hms": {
+        "ndcg": 0.7037,
+        "r100": 0.932,
+        "bytes": 2421764,
+        "qps_k10": 1328,
+        "rss": 25829376
+       },
+       "anserini": {
+        "ndcg": 0.7037,
+        "r100": 0.932,
+        "bytes": 2416640,
+        "qps": 768
+       },
+       "blend": {
+        "ndcg": 0.7288,
+        "alpha": 0.5
+       }
+      },
+      "scifact/os-doc-v2-distill": {
+       "hms": {
+        "ndcg": 0.7004,
+        "r100": 0.9177,
+        "bytes": 4499386,
+        "qps_k10": 7176,
+        "rss": 46657536
+       },
+       "anserini": {
+        "ndcg": 0.7005,
+        "r100": 0.9177,
+        "bytes": 3919872,
+        "qps": 1180
+       },
+       "blend": {
+        "ndcg": 0.728,
+        "alpha": 0.5
+       }
+      }
+     },
+     "targets": {
+      "ndcg_within_0.005": "met on all four",
+      "qps_2x": "met on nfcorpus (3.93x) and on both shippable-encoder rows (15.4x, 6.1x); not met on scifact SPLADE++ (1.73x)",
+      "bytes_0.7x": "not met: 1.00-1.15x (5-byte block headers plus varint gaps vs Lucene's compressed postings); next lever: bit-packed impact blocks",
+      "blend_above_sparse": "met on all four"
+     },
+     "anserini_qps_method": "Anserini's own 'queries processed ... q/s' over the test topics repeated 200 times (TsvString pretokenized topics with tokens repeated by weight, 1 thread, hits 10), median of 3; HMS QPS is sparse-bench's k=10 loop median of 7; the M4 rows are kept in the file but are under load 5-90 and not compared",
+     "gate": "cargo test --release --lib core::sparse 3 passed; rustfmt applied; cargo +1.98.0 clippy reports no finding in src/core/sparse or src/bin/sparse-bench (the lib-wide run fails only on src/core/qgraph/vertex.rs, another lever's file); Python tests test_check_learned_sparse.py 3 passed"
     }
    ]
   },
@@ -758,6 +860,12 @@
    "row": "benchmarks/results/durability_matrix_v1.json",
    "ratio_to_previous_accepted": "first measurement: HMS 6/8 cells, SQLite 7/8, Lucene 8/8",
    "time": "2026-10-17"
+  },
+  {
+   "category": "1C",
+   "row": "benchmarks/results/public_learned_sparse_v1.json",
+   "ratio_to_previous_accepted": "first measured row: HMS vs Anserini on the same vectors, x86: QPS 3.93x/1.73x (SPLADE++ ED), 15.4x/6.1x (Apache-2.0 encoder); nDCG gap <= 0.0007; bytes 1.00-1.15x",
+   "time": "2026-10-17T14:40"
   }
  ]
 }

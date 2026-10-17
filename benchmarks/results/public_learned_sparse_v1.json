@@ -1,0 +1,1129 @@
+{
+ "schema_version": 1,
+ "comparator_note": "naver/splade-v3 (CC BY-NC-SA 4.0) is a gated repository the account cannot read (HTTP 401 on 2026-10-16); the ungated naver/splade-cocondenser-ensembledistil (SPLADE++ ED, CC BY-NC-SA 4.0) stands in as the comparator vectors; the shippable HMS encoder is opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill (Apache-2.0, document-only, IDF queries)",
+ "protocol": "documents encoded once per model (max 256 tokens, log1p(relu) max pooling; Anserini weights quantized by 100), test queries read once per table; HMS serves 8-bit impacts with MaxScore (exact over quantized impacts) at depth 100 for quality and k=10 for QPS; Anserini 2.3.0 impact index, same vectors, single thread; blend alpha tuned on NFCorpus dev / SciFact train only",
+ "rows": [
+  {
+   "dataset": "nfcorpus",
+   "model": "splade-pp-ed",
+   "model_id": "naver/splade-cocondenser-ensembledistil",
+   "license": "cc-by-nc-sa-4.0",
+   "system": "hms_impact_index",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.3476710111927444,
+   "recall_at_100": 0.2843861920002185,
+   "index_bytes": 1751871,
+   "postings": 670741,
+   "bytes_per_posting": 2.611844214085616,
+   "qps_single_thread_k10": 6585.160457118597,
+   "qps_single_thread_k100": 4028.8699088508724,
+   "rss_bytes_serving": 20131840,
+   "build_seconds": 0.013935723,
+   "queries": 323,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 3.928366744288704,
+   "bytes_ratio": 1.0306093514683734,
+   "ndcg_gap_to_anserini_same_vectors": -0.0007651949047201012
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "splade-pp-ed",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.35849545543004174,
+   "recall_at_100": 0.3203296870943652,
+   "alpha": 0.5,
+   "tuning": {
+    "chosen_alpha": 0.5,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.3024313000358515
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.31561404142461635
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.3290779502471622
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.33542581262793225
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.34277969050053275
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.34292095239133114
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.3427241260073556
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.34202112196656
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.34000574194821176
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.3350524432163629
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.33045462695349553
+     }
+    ],
+    "queries": 324,
+    "split": "dev"
+   },
+   "dense_only_ndcg_at_10": 0.31667312754717786,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "splade-pp-ed",
+   "system": "anserini_impact",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.3484362060974645,
+   "recall_at_100": 0.28272715183849173,
+   "index_bytes": 1699840,
+   "qps_single_thread_k10": 1676.31,
+   "timing": {
+    "reported_q_per_s": [
+     1677.18,
+     1676.31,
+     1673.71
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.864902,
+      "rep_topics": 64600,
+      "rep_secs": 49.503429
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.838842,
+      "rep_topics": 64600,
+      "rep_secs": 48.286288
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.766203,
+      "rep_topics": 64600,
+      "rep_secs": 50.45349
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 0.77604,
+      "rep_topics": 64600,
+      "rep_secs": 47.002621
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.7611,
+      "rep_topics": 64600,
+      "rep_secs": 50.155224
+     }
+    ]
+   },
+   "queries": 323,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "os-doc-v2-distill",
+   "model_id": "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill",
+   "license": "apache-2.0",
+   "system": "hms_impact_index",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.3335841037648501,
+   "recall_at_100": 0.27537395463819186,
+   "index_bytes": 2481063,
+   "postings": 994039,
+   "bytes_per_posting": 2.495941306125816,
+   "qps_single_thread_k10": 58691.82286626151,
+   "qps_single_thread_k100": 34404.73732994953,
+   "rss_bytes_serving": 27328512,
+   "build_seconds": 0.02397193,
+   "queries": 323,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 15.373446820962535,
+   "bytes_ratio": 1.0874834317493267,
+   "ndcg_gap_to_anserini_same_vectors": 0.0002760704907163736
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "os-doc-v2-distill",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.34617723545851053,
+   "recall_at_100": 0.31810268036922906,
+   "alpha": 0.4000000059604645,
+   "tuning": {
+    "chosen_alpha": 0.4000000059604645,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.3024313000358516
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.3158939065267385
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.32635755108729747
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.3336091914738566
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.33749651428121996
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.3362383772176762
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.33581062451793114
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.3332736035170207
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.33252967186986454
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.33062717167143185
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.32882835881939604
+     }
+    ],
+    "queries": 324,
+    "split": "dev"
+   },
+   "dense_only_ndcg_at_10": 0.31667312754717797,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "os-doc-v2-distill",
+   "system": "anserini_impact",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.3333080332741337,
+   "recall_at_100": 0.27571942807239885,
+   "index_bytes": 2281472,
+   "qps_single_thread_k10": 3817.74,
+   "timing": {
+    "reported_q_per_s": [
+     3764.57,
+     3817.74,
+     4011.92
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.713532,
+      "rep_topics": 64600,
+      "rep_secs": 25.465116
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.904686,
+      "rep_topics": 64600,
+      "rep_secs": 22.585187
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.794309,
+      "rep_topics": 64600,
+      "rep_secs": 24.32879
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 0.755155,
+      "rep_topics": 64600,
+      "rep_secs": 25.354315
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.796571,
+      "rep_topics": 64600,
+      "rep_secs": 22.503304
+     }
+    ]
+   },
+   "queries": 323,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "splade-pp-ed",
+   "model_id": "naver/splade-cocondenser-ensembledistil",
+   "license": "cc-by-nc-sa-4.0",
+   "system": "hms_impact_index",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.7037363997422744,
+   "recall_at_100": 0.932,
+   "index_bytes": 2421764,
+   "postings": 974871,
+   "bytes_per_posting": 2.4841891901595186,
+   "qps_single_thread_k10": 1328.4669757678678,
+   "qps_single_thread_k100": 1017.6331434485292,
+   "rss_bytes_serving": 25829376,
+   "build_seconds": 0.02589545,
+   "queries": 300,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 1.7300900890368918,
+   "bytes_ratio": 1.0021202992584746,
+   "ndcg_gap_to_anserini_same_vectors": 5.956152182517993e-05
+  },
+  {
+   "dataset": "scifact",
+   "model": "splade-pp-ed",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.7287819989220947,
+   "recall_at_100": 0.9426666666666667,
+   "alpha": 0.5,
+   "tuning": {
+    "chosen_alpha": 0.5,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.6602002541701142
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.6857067109639505
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.7068264989735792
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.7244248987109383
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.7335159509238514
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.7372595648832124
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.7371057484809397
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.7309058404619623
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.7226374049048586
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.7176515391572181
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.711850815169043
+     }
+    ],
+    "queries": 809,
+    "split": "train"
+   },
+   "dense_only_ndcg_at_10": 0.6450816521455772,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "splade-pp-ed",
+   "system": "anserini_impact",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.7036768382204492,
+   "recall_at_100": 0.932,
+   "index_bytes": 2416640,
+   "qps_single_thread_k10": 767.86,
+   "timing": {
+    "reported_q_per_s": [
+     767.86,
+     765.16,
+     780.86
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.775967,
+      "rep_topics": 60000,
+      "rep_secs": 99.590971
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.77973,
+      "rep_topics": 60000,
+      "rep_secs": 99.61956
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.774404,
+      "rep_topics": 60000,
+      "rep_secs": 105.025847
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 0.744642,
+      "rep_topics": 60000,
+      "rep_secs": 97.091936
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.714226,
+      "rep_topics": 60000,
+      "rep_secs": 90.448496
+     }
+    ]
+   },
+   "queries": 300,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "os-doc-v2-distill",
+   "model_id": "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill",
+   "license": "apache-2.0",
+   "system": "hms_impact_index",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.700440525306831,
+   "recall_at_100": 0.9176666666666667,
+   "index_bytes": 4499386,
+   "postings": 1941363,
+   "bytes_per_posting": 2.3176428107468823,
+   "qps_single_thread_k10": 7175.788545011281,
+   "qps_single_thread_k100": 5764.30040789919,
+   "rss_bytes_serving": 46657536,
+   "build_seconds": 0.0371192,
+   "queries": 300,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 6.082413834179223,
+   "bytes_ratio": 1.147840031511233,
+   "ndcg_gap_to_anserini_same_vectors": -8.663402858588576e-05
+  },
+  {
+   "dataset": "scifact",
+   "model": "os-doc-v2-distill",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.7279600306742572,
+   "recall_at_100": 0.9376666666666668,
+   "alpha": 0.5,
+   "tuning": {
+    "chosen_alpha": 0.5,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.660200254170115
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.6879682085550992
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.7086118732683865
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.7205051707685824
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.7274260966095728
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.728790519072336
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.7258628206672981
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.722179454591846
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.715478896316232
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.7104989340728607
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.7008978508203967
+     }
+    ],
+    "queries": 809,
+    "split": "train"
+   },
+   "dense_only_ndcg_at_10": 0.6450816521455771,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "os-doc-v2-distill",
+   "system": "anserini_impact",
+   "host": "writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)",
+   "ndcg_at_10": 0.7005271593354169,
+   "recall_at_100": 0.9176666666666667,
+   "index_bytes": 3919872,
+   "qps_single_thread_k10": 1179.76,
+   "timing": {
+    "reported_q_per_s": [
+     1144.12,
+     1179.76,
+     1200.96
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.752213,
+      "rep_topics": 60000,
+      "rep_secs": 70.850246
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.720239,
+      "rep_topics": 60000,
+      "rep_secs": 70.126794
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.700237,
+      "rep_topics": 60000,
+      "rep_secs": 70.021363
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 0.716631,
+      "rep_topics": 60000,
+      "rep_secs": 73.564616
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.711733,
+      "rep_topics": 60000,
+      "rep_secs": 70.708925
+     }
+    ]
+   },
+   "queries": 300,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "splade-pp-ed",
+   "model_id": "naver/splade-cocondenser-ensembledistil",
+   "license": "cc-by-nc-sa-4.0",
+   "system": "hms_impact_index",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.34767101119274424,
+   "recall_at_100": 0.28438619200021853,
+   "index_bytes": 1751871,
+   "postings": 670741,
+   "bytes_per_posting": 2.611844214085616,
+   "qps_single_thread_k10": 1602.573047623832,
+   "qps_single_thread_k100": 1166.4530950034443,
+   "rss_bytes_serving": 21725184,
+   "build_seconds": 0.015820416,
+   "queries": 323,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 1.4560903576447686,
+   "bytes_ratio": 1.0087332095739976,
+   "ndcg_gap_to_anserini_same_vectors": -0.0007651949047203233
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "splade-pp-ed",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.35849545543004196,
+   "recall_at_100": 0.32032968709436505,
+   "alpha": 0.5,
+   "tuning": {
+    "chosen_alpha": 0.5,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.30243130003585156
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.31561404142461646
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.3290779502471623
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.3354258126279324
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.34277969050053286
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.3429209523913313
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.3427241260073557
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.34202112196656037
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.340005741948212
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.3350524432163631
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.33045462695349576
+     }
+    ],
+    "queries": 324,
+    "split": "dev"
+   },
+   "dense_only_ndcg_at_10": 0.31667312754717786,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "splade-pp-ed",
+   "system": "anserini_impact",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.34843620609746456,
+   "recall_at_100": 0.28272715183849195,
+   "index_bytes": 1736704,
+   "qps_single_thread_k10": 1100.6,
+   "timing": {
+    "reported_q_per_s": [
+     797.15,
+     1100.6,
+     1656.75
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.406062,
+      "rep_topics": 64600,
+      "rep_secs": 64.112745
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.520653,
+      "rep_topics": 64600,
+      "rep_secs": 45.578573
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.428842,
+      "rep_topics": 64600,
+      "rep_secs": 42.625204
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 0.43547,
+      "rep_topics": 64600,
+      "rep_secs": 46.259392
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.399695,
+      "rep_topics": 64600,
+      "rep_secs": 41.225619
+     }
+    ]
+   },
+   "queries": 323,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "os-doc-v2-distill",
+   "model_id": "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill",
+   "license": "apache-2.0",
+   "system": "hms_impact_index",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.33358410376485,
+   "recall_at_100": 0.275373954638192,
+   "index_bytes": 2481063,
+   "postings": 994039,
+   "bytes_per_posting": 2.495941306125816,
+   "qps_single_thread_k10": 49307.63982952074,
+   "qps_single_thread_k100": 28008.2096137876,
+   "rss_bytes_serving": 29409280,
+   "build_seconds": 0.018191584,
+   "queries": 323,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 14.915178101232275,
+   "bytes_ratio": 1.0664230131767165,
+   "ndcg_gap_to_anserini_same_vectors": 0.0002760704907164291
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "os-doc-v2-distill",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.3461772354585106,
+   "recall_at_100": 0.3181026803692293,
+   "alpha": 0.4000000059604645,
+   "tuning": {
+    "chosen_alpha": 0.4000000059604645,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.3024313000358516
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.31589390652673865
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.32635755108729764
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.33360919147385637
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.3374965142812201
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.3362383772176762
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.33581062451793114
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.3332736035170206
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.33252967186986465
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.3306271716714319
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.32882835881939587
+     }
+    ],
+    "queries": 324,
+    "split": "dev"
+   },
+   "dense_only_ndcg_at_10": 0.3166731275471781,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "nfcorpus",
+   "model": "os-doc-v2-distill",
+   "system": "anserini_impact",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.33330803327413355,
+   "recall_at_100": 0.2757194280723988,
+   "index_bytes": 2326528,
+   "qps_single_thread_k10": 3305.87,
+   "timing": {
+    "reported_q_per_s": [
+     3305.87,
+     3360.56,
+     3281.02
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.52926,
+      "rep_topics": 64600,
+      "rep_secs": 22.292479
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.427288,
+      "rep_topics": 64600,
+      "rep_secs": 22.825337
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.431437,
+      "rep_topics": 64600,
+      "rep_secs": 23.043088
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 0.412014,
+      "rep_topics": 64600,
+      "rep_secs": 25.670751
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.416519,
+      "rep_topics": 64600,
+      "rep_secs": 22.301209
+     }
+    ]
+   },
+   "queries": 323,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "splade-pp-ed",
+   "model_id": "naver/splade-cocondenser-ensembledistil",
+   "license": "cc-by-nc-sa-4.0",
+   "system": "hms_impact_index",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.7037363997422744,
+   "recall_at_100": 0.932,
+   "index_bytes": 2421764,
+   "postings": 974871,
+   "bytes_per_posting": 2.4841891901595186,
+   "qps_single_thread_k10": 742.7920536165528,
+   "qps_single_thread_k100": 684.6875814271839,
+   "rss_bytes_serving": 27557888,
+   "build_seconds": 0.023980666,
+   "queries": 300,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 1.0908653786297258,
+   "bytes_ratio": 0.9854182942708334,
+   "ndcg_gap_to_anserini_same_vectors": 5.9561521825513e-05
+  },
+  {
+   "dataset": "scifact",
+   "model": "splade-pp-ed",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.7287819989220946,
+   "recall_at_100": 0.9426666666666667,
+   "alpha": 0.5,
+   "tuning": {
+    "chosen_alpha": 0.5,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.6602002541701146
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.6857067109639509
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.7068264989735793
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.7244248987109391
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.7335159509238517
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.7372595648832129
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.7371057484809393
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.7309058404619626
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.7226374049048593
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.7176515391572187
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.7118508151690434
+     }
+    ],
+    "queries": 809,
+    "split": "train"
+   },
+   "dense_only_ndcg_at_10": 0.6450816521455769,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "splade-pp-ed",
+   "system": "anserini_impact",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.7036768382204489,
+   "recall_at_100": 0.932,
+   "index_bytes": 2457600,
+   "qps_single_thread_k10": 680.92,
+   "timing": {
+    "reported_q_per_s": [
+     672.68,
+     710.51,
+     680.92
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.492705,
+      "rep_topics": 60000,
+      "rep_secs": 87.704885
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.602749,
+      "rep_topics": 60000,
+      "rep_secs": 87.40878
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.479599,
+      "rep_topics": 60000,
+      "rep_secs": 90.194025
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 2.672909,
+      "rep_topics": 60000,
+      "rep_secs": 88.387568
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.495001,
+      "rep_topics": 60000,
+      "rep_secs": 96.116458
+     }
+    ]
+   },
+   "queries": 300,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "os-doc-v2-distill",
+   "model_id": "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill",
+   "license": "apache-2.0",
+   "system": "hms_impact_index",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.7004405253068311,
+   "recall_at_100": 0.9176666666666667,
+   "index_bytes": 4499386,
+   "postings": 1941363,
+   "bytes_per_posting": 2.3176428107468823,
+   "qps_single_thread_k10": 1601.6750018189691,
+   "qps_single_thread_k100": 1519.615385345969,
+   "rss_bytes_serving": 53051392,
+   "build_seconds": 0.043012083,
+   "queries": 300,
+   "ratios_to": "anserini_impact",
+   "qps_ratio": 1.6663632221009272,
+   "bytes_ratio": 1.1347963947895146,
+   "ndcg_gap_to_anserini_same_vectors": -8.663402858588576e-05
+  },
+  {
+   "dataset": "scifact",
+   "model": "os-doc-v2-distill",
+   "system": "hms_blend_sparse_exact_dense",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.7279600306742572,
+   "recall_at_100": 0.9376666666666668,
+   "alpha": 0.5,
+   "tuning": {
+    "chosen_alpha": 0.5,
+    "grid": [
+     {
+      "alpha": 0.0,
+      "ndcg_at_10": 0.6602002541701147
+     },
+     {
+      "alpha": 0.10000000149011612,
+      "ndcg_at_10": 0.6879682085550988
+     },
+     {
+      "alpha": 0.20000000298023224,
+      "ndcg_at_10": 0.7086118732683866
+     },
+     {
+      "alpha": 0.30000001192092896,
+      "ndcg_at_10": 0.7205051707685819
+     },
+     {
+      "alpha": 0.4000000059604645,
+      "ndcg_at_10": 0.7274260966095724
+     },
+     {
+      "alpha": 0.5,
+      "ndcg_at_10": 0.7287905190723362
+     },
+     {
+      "alpha": 0.6000000238418579,
+      "ndcg_at_10": 0.725862820667298
+     },
+     {
+      "alpha": 0.699999988079071,
+      "ndcg_at_10": 0.722179454591846
+     },
+     {
+      "alpha": 0.800000011920929,
+      "ndcg_at_10": 0.715478896316232
+     },
+     {
+      "alpha": 0.8999999761581421,
+      "ndcg_at_10": 0.7104989340728606
+     },
+     {
+      "alpha": 1.0,
+      "ndcg_at_10": 0.700897850820397
+     }
+    ],
+    "queries": 809,
+    "split": "train"
+   },
+   "dense_only_ndcg_at_10": 0.6450816521455773,
+   "dense_model": "sentence-transformers/all-MiniLM-L6-v2 (exact dot product over all documents)"
+  },
+  {
+   "dataset": "scifact",
+   "model": "os-doc-v2-distill",
+   "system": "anserini_impact",
+   "host": "Apple M4 (shared development host, load 5-90)",
+   "ndcg_at_10": 0.700527159335417,
+   "recall_at_100": 0.9176666666666667,
+   "index_bytes": 3964928,
+   "qps_single_thread_k10": 961.18,
+   "timing": {
+    "reported_q_per_s": [
+     932.42,
+     990.44,
+     961.18
+    ],
+    "wall_clock_rounds": [
+     {
+      "round": 0,
+      "one_topic_secs": 0.394755,
+      "rep_topics": 60000,
+      "rep_secs": 76.262611
+     },
+     {
+      "round": 1,
+      "one_topic_secs": 0.472373,
+      "rep_topics": 60000,
+      "rep_secs": 97.724843
+     },
+     {
+      "round": 2,
+      "one_topic_secs": 0.593266,
+      "rep_topics": 60000,
+      "rep_secs": 88.42943
+     },
+     {
+      "round": 3,
+      "one_topic_secs": 0.558158,
+      "rep_topics": 60000,
+      "rep_secs": 84.595232
+     },
+     {
+      "round": 4,
+      "one_topic_secs": 0.518079,
+      "rep_topics": 60000,
+      "rep_secs": 83.732461
+     }
+    ]
+   },
+   "queries": 300,
+   "version": "io.anserini:anserini:2.3.0 fatjar, Lucene impact index (-impact -pretokenized, 1 thread, hits 10)"
+  }
+ ],
+ "targets": {
+  "ndcg_within_0.005_of_splade_same_vectors": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true
+  },
+  "qps_at_least_2x_anserini": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": false
+  },
+  "bytes_at_most_0.7x_anserini": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": false,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": false
+  },
+  "blend_above_sparse_alone": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true
+  }
+ }
+}
