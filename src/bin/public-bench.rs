@@ -44,6 +44,8 @@ struct Cli {
     mode: Mode,
 }
 
+// Parsed once; the ann-qgraph variant carries every sweep list, and boxing it buys nothing.
+#[allow(clippy::large_enum_variant)]
 #[derive(Subcommand)]
 enum Mode {
     Ann {
