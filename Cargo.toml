@@ -97,6 +97,10 @@ required-features = ["experimental"]
 name = "zero_trust_demo"
 required-features = ["security"]
 
+[[bin]]
+name = "security-probe"
+required-features = ["security", "server"]
+
 [features]
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]

@@ -621,16 +621,61 @@
   "3B_security": {
    "metric": "egress bytes, encryption-at-rest overhead (QPS, RSS), tamper detection over 1000 flips, signed audit-log verification, key zeroization, constant-time comparison, cargo deny",
    "comparator": "managed Mem0 and Zep (egress); SQLite+SQLCipher and Lucene on encrypted FS",
-   "best_accepted_hms": null,
+   "best_accepted_hms": {
+    "results_file": "benchmarks/results/security_matrix_v1.json",
+    "egress_sockets": 0,
+    "encryption_overhead_qps_ratio": 0.929,
+    "tamper_counts": {
+     "hms_plain": {
+      "detected": 324,
+      "served_different": 163,
+      "served_identical": 513,
+      "crashed": 0
+     },
+     "hms_encrypted": {
+      "detected": 422,
+      "served_different": 172,
+      "served_identical": 406,
+      "crashed": 0
+     },
+     "sqlite": {
+      "detected": 431,
+      "served_different": 1,
+      "served_identical": 568,
+      "crashed": 0
+     }
+    },
+    "audit_pass": true,
+    "ct_eq_t_linux": [
+     1.25,
+     3.17
+    ],
+    "cargo_deny_rc": 0
+   },
    "targets": {
     "matrix": "benchmarks/results/security_matrix_v1.json"
    },
-   "results_file": null,
+   "results_file": "benchmarks/results/security_matrix_v1.json",
    "levers": [
     {
-     "name": "3B.1 security matrix harness",
-     "status": "pending",
-     "hours": 0
+     "name": "3B.1 security matrix harness (benchmarks/public/security_matrix.py, src/bin/security-probe.rs)",
+     "status": "measured",
+     "hours": 2.6,
+     "findings": [
+      "arena-segment flips (plain and encrypted) are served silently as truncated data instead of an error: 335 of 335 hits",
+      "document writes carry no audit entry",
+      "derived AES key: 5 heap copies while open, 6 after drop (no zeroize on drop); passphrase not retained",
+      "encryption at rest costs 7% QPS and +22.6 MB peak RSS at open (Argon2id)",
+      "ct_eq passes dudect on the quiet host"
+     ],
+     "exclusions": [
+      "managed Mem0 and Zep egress: no mem0ai or zep SDK and no API key is installed in this environment; HMS measured alone",
+      "SQLite with SQLCipher: sqlcipher is not installed on this host",
+      "Lucene on an encrypted filesystem: no query driver with the pinned jars; encryption overhead measured for HMS only",
+      "Lucene tamper cell: anserini IndexCollection failed (Java Runtime (class file version 65.0), this version of the Java Runtime only recognizes class file versions up to 61.0\n)",
+      "merged memscan from Linux x86_64",
+      "merged constant_time from Linux x86_64"
+     ]
     }
    ]
   }

@@ -1,0 +1,420 @@
+{
+ "schema_version": 1,
+ "host": "Darwin arm64",
+ "probe": "/Volumes/A/.hms-target-3b/release/security-probe",
+ "passphrase_source": "stdin",
+ "exclusions": [
+  "managed Mem0 and Zep egress: no mem0ai or zep SDK and no API key is installed in this environment; HMS measured alone",
+  "SQLite with SQLCipher: sqlcipher is not installed on this host",
+  "Lucene on an encrypted filesystem: no query driver with the pinned jars; encryption overhead measured for HMS only",
+  "Lucene tamper cell: anserini IndexCollection failed (Java Runtime (class file version 65.0), this version of the Java Runtime only recognizes class file versions up to 61.0\n)",
+  "merged memscan from Linux x86_64",
+  "merged constant_time from Linux x86_64"
+ ],
+ "cells": {
+  "egress": {
+   "hms": {
+    "method": "nettop -p <pid> sampled until exit (cumulative per-process bytes) and lsof -i socket counts",
+    "bytes_in": null,
+    "bytes_out": null,
+    "samples": 0,
+    "max_open_network_sockets": 0,
+    "socket_samples": 2,
+    "workload": {
+     "docs": 2000,
+     "encrypted": false,
+     "hits": 200000,
+     "qps": 4023.545688782111,
+     "queries": 20000,
+     "query_s": 4.970740125,
+     "seed_s": 0.424698792,
+     "store_bytes": 67687696
+    },
+    "rc": 0
+   }
+  },
+  "encryption_overhead": {
+   "hms": {
+    "rows": [
+     {
+      "docs": 2000,
+      "encrypted": false,
+      "hits": 20000,
+      "qps": 4224.640323258663,
+      "queries": 2000,
+      "query_s": 0.473413083,
+      "seed_s": 0.376261792,
+      "store_bytes": 67687696,
+      "repeat": 0,
+      "peak_rss_bytes": 24788992
+     },
+     {
+      "docs": 2000,
+      "encrypted": true,
+      "hits": 20000,
+      "qps": 4142.233958551771,
+      "queries": 2000,
+      "query_s": 0.48283125,
+      "seed_s": 0.385004541,
+      "store_bytes": 67687711,
+      "repeat": 0,
+      "peak_rss_bytes": 47202304
+     },
+     {
+      "docs": 2000,
+      "encrypted": false,
+      "hits": 20000,
+      "qps": 4057.0564128622887,
+      "queries": 2000,
+      "query_s": 0.49296825,
+      "seed_s": 0.370471958,
+      "store_bytes": 67687696,
+      "repeat": 1,
+      "peak_rss_bytes": 24559616
+     },
+     {
+      "docs": 2000,
+      "encrypted": true,
+      "hits": 20000,
+      "qps": 3766.156807998618,
+      "queries": 2000,
+      "query_s": 0.531045334,
+      "seed_s": 0.392847083,
+      "store_bytes": 67687711,
+      "repeat": 1,
+      "peak_rss_bytes": 47104000
+     },
+     {
+      "docs": 2000,
+      "encrypted": false,
+      "hits": 20000,
+      "qps": 3607.7465512301533,
+      "queries": 2000,
+      "query_s": 0.554362667,
+      "seed_s": 0.457406917,
+      "store_bytes": 67687696,
+      "repeat": 2,
+      "peak_rss_bytes": 24592384
+     },
+     {
+      "docs": 2000,
+      "encrypted": true,
+      "hits": 20000,
+      "qps": 3767.390625967719,
+      "queries": 2000,
+      "query_s": 0.530871417,
+      "seed_s": 0.431811125,
+      "store_bytes": 67687711,
+      "repeat": 2,
+      "peak_rss_bytes": 48005120
+     }
+    ],
+    "median": {
+     "plain": {
+      "qps": 4057.0564128622887,
+      "seed_s": 0.376261792,
+      "peak_rss_bytes": 24592384,
+      "store_bytes": 67687696
+     },
+     "encrypted": {
+      "qps": 3767.390625967719,
+      "seed_s": 0.392847083,
+      "peak_rss_bytes": 47202304,
+      "store_bytes": 67687711
+     }
+    }
+   }
+  },
+  "tamper": {
+   "hms_plain": {
+    "files": [
+     "store.json",
+     ".hms.lock",
+     "vectors_data.bin",
+     "indices.json",
+     "documents.text"
+    ],
+    "store_bytes": 67224773,
+    "flips": 1000,
+    "counts": {
+     "detected": 324,
+     "served_different": 163,
+     "served_identical": 513,
+     "crashed": 0
+    },
+    "per_file": {
+     "documents.text": {
+      "detected": 0,
+      "served_different": 0,
+      "served_identical": 168,
+      "crashed": 0
+     },
+     "indices.json": {
+      "detected": 0,
+      "served_different": 0,
+      "served_identical": 186,
+      "crashed": 0
+     },
+     "seg_0.bin": {
+      "detected": 0,
+      "served_different": 163,
+      "served_identical": 0,
+      "crashed": 0
+     },
+     "format.json": {
+      "detected": 165,
+      "served_different": 0,
+      "served_identical": 0,
+      "crashed": 0
+     },
+     "store.json": {
+      "detected": 159,
+      "served_different": 0,
+      "served_identical": 0,
+      "crashed": 0
+     },
+     ".hms.lock": {
+      "detected": 0,
+      "served_different": 0,
+      "served_identical": 159,
+      "crashed": 0
+     }
+    }
+   },
+   "hms_encrypted": {
+    "files": [
+     "store.json",
+     ".hms.lock",
+     "vectors_data.bin",
+     "encryption.salt",
+     "indices.json",
+     "documents.text"
+    ],
+    "store_bytes": 67224789,
+    "flips": 1000,
+    "counts": {
+     "detected": 422,
+     "served_different": 172,
+     "served_identical": 406,
+     "crashed": 0
+    },
+    "per_file": {
+     "store.json": {
+      "detected": 136,
+      "served_different": 0,
+      "served_identical": 0,
+      "crashed": 0
+     },
+     ".hms.lock": {
+      "detected": 0,
+      "served_different": 0,
+      "served_identical": 116,
+      "crashed": 0
+     },
+     "format.json": {
+      "detected": 129,
+      "served_different": 0,
+      "served_identical": 0,
+      "crashed": 0
+     },
+     "documents.text": {
+      "detected": 0,
+      "served_different": 0,
+      "served_identical": 144,
+      "crashed": 0
+     },
+     "seg_0.bin": {
+      "detected": 0,
+      "served_different": 172,
+      "served_identical": 0,
+      "crashed": 0
+     },
+     "encryption.salt": {
+      "detected": 157,
+      "served_different": 0,
+      "served_identical": 0,
+      "crashed": 0
+     },
+     "indices.json": {
+      "detected": 0,
+      "served_different": 0,
+      "served_identical": 146,
+      "crashed": 0
+     }
+    }
+   },
+   "sqlite": {
+    "flips": 1000,
+    "counts": {
+     "detected": 431,
+     "served_different": 1,
+     "served_identical": 568,
+     "crashed": 0
+    },
+    "detection_rule": "DatabaseError (or an undecodable SQLite error message) on open/query, or PRAGMA integrity_check != ok"
+   }
+  },
+  "audit": {
+   "hms": {
+    "intact": {
+     "entries": 64,
+     "failed": 0,
+     "verified": 64
+    },
+    "intact_rc": 0,
+    "flipped_signature_byte": {
+     "entry": 15,
+     "offset": 1644,
+     "entries": 64,
+     "failed": 1,
+     "verified": 63
+    },
+    "flipped_rc": 2,
+    "pass": true
+   }
+  },
+  "constant_time": {
+   "hms_server_ct_eq": {
+    "calls_per_sample": 256,
+    "ct_eq": {
+     "median_ns": [
+      25.71875,
+      25.71875,
+      25.71875
+     ],
+     "t_equal_vs_first_differs": 12.909622225679556,
+     "t_equal_vs_last_differs": 13.349718135321615
+    },
+    "rule": "dudect threshold: |t| < 4.5 is indistinguishable at this sample size",
+    "samples_per_class": 100000,
+    "secret_bytes": 32,
+    "slice_eq": {
+     "median_ns": [
+      1.30078125,
+      1.30078125,
+      1.625
+     ],
+     "t_equal_vs_first_differs": -7.798091579012116,
+     "t_equal_vs_last_differs": -877.8142843827321
+    }
+   },
+   "constant_time_from_Linux x86_64": {
+    "hms_server_ct_eq": {
+     "calls_per_sample": 256,
+     "ct_eq": {
+      "median_ns": [
+       29.7734375,
+       29.77734375,
+       29.76171875
+      ],
+      "t_equal_vs_first_differs": 1.2536953015042613,
+      "t_equal_vs_last_differs": 3.1660771378484505
+     },
+     "rule": "dudect threshold: |t| < 4.5 is indistinguishable at this sample size",
+     "samples_per_class": 100000,
+     "secret_bytes": 32,
+     "slice_eq": {
+      "median_ns": [
+       1.5390625,
+       1.30859375,
+       1.30859375
+      ],
+      "t_equal_vs_first_differs": 457.9296899097062,
+      "t_equal_vs_last_differs": 459.41774482382425
+     }
+    }
+   }
+  },
+  "cargo_deny": {
+   "rc": 0,
+   "advisories_ok": true,
+   "output_tail": " holographic-memory v0.6.1 (*)\n      \u2502       \u251c\u2500\u2500 nalgebra v0.35.0\n      \u2502       \u2502   \u2514\u2500\u2500 holographic-memory v0.6.1 (*)\n      \u2502       \u251c\u2500\u2500 num-complex v0.4.6\n      \u2502       \u2502   \u251c\u2500\u2500 nalgebra v0.35.0 (*)\n      \u2502       \u2502   \u2514\u2500\u2500 simba v0.10.2\n      \u2502       \u2502       \u2514\u2500\u2500 nalgebra v0.35.0 (*)\n      \u2502       \u251c\u2500\u2500 rust-stemmers v1.2.0 (*)\n      \u2502       \u251c\u2500\u2500 schemars v1.2.1 (*)\n      \u2502       \u2514\u2500\u2500 tinytemplate v1.2.1\n      \u2502           \u2514\u2500\u2500 criterion v0.8.2 (*)\n      \u2514\u2500\u2500 thiserror-impl v2.0.19\n          \u2514\u2500\u2500 thiserror v2.0.19\n              \u251c\u2500\u2500 holographic-memory v0.6.1 (*)\n              \u2514\u2500\u2500 ts-rs v12.0.1\n                  \u2514\u2500\u2500 holographic-memory v0.6.1 (*)\n\nwarning[yanked]: detected yanked crate (try `cargo update -p chacha20`)\n   \u250c\u2500 /Volumes/A/holographic-memory/Cargo.lock:22:1\n   \u2502\n22 \u2502 chacha20 0.10.1 registry+https://github.com/rust-lang/crates.io-index\n   \u2502 \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 yanked version\n   \u2502\n   \u251c chacha20 v0.10.1\n     \u2514\u2500\u2500 rand v0.10.2\n         \u2514\u2500\u2500 holographic-memory v0.6.1\n\nwarning[advisory-not-detected]: advisory was not encountered\n   \u250c\u2500 /Volumes/A/holographic-memory/deny.toml:15:13\n   \u2502\n15 \u2502     { id = \"RUSTSEC-2024-0436\", reason = \"paste is a transitive dep via nalgebra/simba; no upstream fix available\" },\n   \u2502             \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501             \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 ignore reason\n   \u2502             \u2502                              \n   \u2502             no crate matched advisory criteria\n\n"
+  },
+  "memscan": {
+   "memscan_from_Linux x86_64": {
+    "hms": {
+     "host": "linux",
+     "note": "the needles are held XOR-masked, so every copy found belongs to the store or its cipher; a live AES-256 cipher keeps its key schedule (round keys 0 and 1 are the key) by necessity",
+     "scans": [
+      {
+       "bytes_scanned": 1099542528,
+       "derived_key_copies": 5,
+       "passphrase_copies": 0,
+       "phase": "core_open"
+      },
+      {
+       "bytes_scanned": 25800704,
+       "derived_key_copies": 6,
+       "passphrase_copies": 0,
+       "phase": "core_dropped"
+      }
+     ]
+    }
+   }
+  }
+ },
+ "summary": {
+  "egress": "HMS local serving (2000 documents, 20000 queries): 0 open network sockets in every lsof sample and no nettop row (nettop lists only processes with network activity); managed Mem0 and Zep not measurable here (no SDK or key)",
+  "encryption_at_rest_overhead_hms": {
+   "qps_ratio_encrypted_over_plain": 0.929,
+   "peak_rss_plain_bytes": 24592384,
+   "peak_rss_encrypted_bytes": 47202304,
+   "note": "RSS difference is the Argon2id key derivation's working memory at open; store bytes differ by 15 B"
+  },
+  "tamper_1000_flips_within_used_bytes": {
+   "hms_plain": {
+    "detected": 324,
+    "served_different": 163,
+    "served_identical": 513,
+    "crashed": 0
+   },
+   "hms_encrypted": {
+    "detected": 422,
+    "served_different": 172,
+    "served_identical": 406,
+    "crashed": 0
+   },
+   "sqlite": {
+    "detected": 431,
+    "served_different": 1,
+    "served_identical": 568,
+    "crashed": 0
+   }
+  },
+  "tamper_reading": "HMS surfaces every flip in store.json, format.json and encryption.salt as an error, but a flip in the arena segment (seg_0.bin) is never reported: 163 of 163 plain and 172 of 172 encrypted flips opened without error and served different results (the replay treats a frame that fails its CRC or AES-GCM check as the end of the log and drops what follows); flips in documents.text and indices.json changed nothing the fixed queries return. SQLite reports 431 of 1000 (integrity_check or a DatabaseError) and served 1 flip silently; its remaining flips hit bytes the queries never read.",
+  "signed_audit_log": {
+   "entries": 64,
+   "verified_intact": 64,
+   "failed_after_one_flipped_signature_byte": 1,
+   "pass": true,
+   "note": "document writes (memorize_document) record no audit entry; the vector API's memorize and delete do"
+  },
+  "key_zeroization_linux": {
+   "passphrase_copies_core_open": 0,
+   "derived_key_copies_core_open": 5,
+   "passphrase_copies_core_dropped": 0,
+   "derived_key_copies_core_dropped": 6,
+   "note": "the passphrase is not retained; the derived AES key sits in 5 heap copies while the core is open (a live cipher needs its schedule; 5 copies means the cipher is cloned) and 6 copies remain after the core is dropped: no zeroize on drop"
+  },
+  "constant_time_ct_eq": {
+   "linux_quiet_t": [
+    1.25,
+    3.17
+   ],
+   "macos_load_90_t": [
+    12.91,
+    13.35
+   ],
+   "note": "Welch t over 100k samples of 256 calls per class, 5% upper crop; |t| < 4.5 passes on the quiet Linux host; the macOS numbers were taken at 1-minute load above 90 with equal medians and are not conclusive"
+  },
+  "cargo_deny": {
+   "rc": 0,
+   "advisories_ok": true,
+   "note": "one ignored advisory recorded in deny.toml (transitive via nalgebra/simba, no upstream fix)"
+  }
+ },
+ "hosts": {
+  "macos": "Apple M4, shared machine at 1-minute load 70-95 (other sessions)",
+  "linux": "writerslogic-02, Intel Core Ultra 9 185H, load 1-5"
+ }
+}
