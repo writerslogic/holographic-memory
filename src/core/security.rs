@@ -262,10 +262,12 @@ mod tests {
         use argon2::Argon2;
         use std::io::{Read, Seek, SeekFrom};
 
-        fn heap_copies(masked: &[u8], mask: &[u8]) -> Result<usize> {
+        /// Where the masked needle occurs in the process's writable anonymous mappings, as
+        /// `range perms name +offset` lines.
+        fn heap_copies(masked: &[u8], mask: &[u8]) -> Result<Vec<String>> {
             let maps = std::fs::read_to_string("/proc/self/maps")?;
             let mut mem = std::fs::File::open("/proc/self/mem")?;
-            let mut hits = 0usize;
+            let mut hits = Vec::new();
             for line in maps.lines() {
                 let mut parts = line.split_whitespace();
                 let (Some(range), Some(perms)) = (parts.next(), parts.next()) else {
@@ -301,12 +303,11 @@ mod tests {
                     })
                     .map(|(at, _)| at)
                     .collect::<Vec<_>>();
-                if std::env::var_os("HMS_KEY_SCAN_DIAG").is_some() {
-                    for at in &found {
-                        eprintln!("key copy in {range} {perms} {name:?} at +{at:#x}");
-                    }
-                }
-                hits += found.len();
+                hits.extend(
+                    found
+                        .iter()
+                        .map(|at| format!("{range} {perms} {name:?} +{at:#x}")),
+                );
                 buf.zeroize();
             }
             Ok(hits)
@@ -329,15 +330,15 @@ mod tests {
         #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("aes") {
             assert!(
-                heap_copies(&masked, &mask)? >= 1,
+                !heap_copies(&masked, &mask)?.is_empty(),
                 "a live AES-NI cipher keeps round key 0 (the key) in its heap schedule"
             );
         }
         drop(manager);
-        assert_eq!(
-            heap_copies(&masked, &mask)?,
-            0,
-            "derived key survives the manager's drop"
+        let survivors = heap_copies(&masked, &mask)?;
+        assert!(
+            survivors.is_empty(),
+            "derived key survives the manager's drop at {survivors:?}"
         );
         assert!(!ciphertext.is_empty());
         Ok(())
