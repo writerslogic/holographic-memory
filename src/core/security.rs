@@ -121,7 +121,7 @@ pub struct EncryptionManager {
 
 #[cfg(feature = "security")]
 /// Bytes of stack `scrub_stack` overwrites below its caller's frame.
-const SCRUB_BYTES: usize = 64 * 1024;
+const SCRUB_BYTES: usize = 256 * 1024;
 
 /// Overwrites the stack region below the caller's frame so secrets left there by callees
 /// (Argon2 temporaries, a cipher value before it moved to the heap) do not linger. Best
@@ -130,11 +130,11 @@ const SCRUB_BYTES: usize = 64 * 1024;
 #[cfg(feature = "security")]
 #[inline(never)]
 pub fn scrub_stack() {
-    let mut pad = [0u8; SCRUB_BYTES];
-    for byte in pad.iter_mut() {
-        // SAFETY: `byte` is a valid, aligned, exclusive reference into `pad`; the volatile
+    let mut pad = [0u64; SCRUB_BYTES / 8];
+    for word in pad.iter_mut() {
+        // SAFETY: `word` is a valid, aligned, exclusive reference into `pad`; the volatile
         // write keeps the store from being elided as dead.
-        unsafe { std::ptr::write_volatile(byte, 0) };
+        unsafe { std::ptr::write_volatile(word, 0) };
     }
     std::hint::black_box(&pad);
 }
@@ -290,15 +290,23 @@ mod tests {
                 {
                     continue;
                 }
-                hits += buf
+                let found = buf
                     .windows(masked.len())
-                    .filter(|w| {
+                    .enumerate()
+                    .filter(|(_, w)| {
                         w.iter()
                             .zip(masked)
                             .zip(mask)
                             .all(|((b, n), m)| b ^ m == *n)
                     })
-                    .count();
+                    .map(|(at, _)| at)
+                    .collect::<Vec<_>>();
+                if std::env::var_os("HMS_KEY_SCAN_DIAG").is_some() {
+                    for at in &found {
+                        eprintln!("key copy in {range} {perms} {name:?} at +{at:#x}");
+                    }
+                }
+                hits += found.len();
                 buf.zeroize();
             }
             Ok(hits)
