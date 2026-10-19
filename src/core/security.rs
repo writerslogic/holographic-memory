@@ -127,6 +127,7 @@ const SCRUB_BYTES: usize = 64 * 1024;
 /// (Argon2 temporaries, a cipher value before it moved to the heap) do not linger. Best
 /// effort: the language guarantees nothing about frame layout, so the key-zeroization test
 /// in this module measures the result rather than assuming it.
+#[cfg(feature = "security")]
 #[inline(never)]
 pub fn scrub_stack() {
     let mut pad = [0u8; SCRUB_BYTES];
@@ -138,6 +139,7 @@ pub fn scrub_stack() {
     std::hint::black_box(&pad);
 }
 
+#[cfg(feature = "security")]
 impl EncryptionManager {
     /// Derive an AES-256 key from a passphrase using Argon2id and create the cipher.
     /// The salt is stored at `{storage_path}/encryption.salt`. If it doesn't exist,
