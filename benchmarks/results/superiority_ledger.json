@@ -602,8 +602,10 @@
    "metric": "serving RSS ratio to SQLite 3.53.4 and Lucene 9.12.3 over the 324 NFCorpus queries, same-output oracle, 33-pair protocol",
    "comparator": "SQLite (accepted 1.0920x; private V30 0.9133x), Lucene",
    "best_accepted_hms": {
-    "rss_ratio_vs_sqlite": 1.092,
-    "note": "accepted 1.092x unchanged; V37 measured 1.0605x (not accepted: RSS still above SQLite, p95/p99 guard upper bounds exceed 1.10)"
+    "rss_vs_sqlite": 1.0725,
+    "previous": 1.092,
+    "results_file": "benchmarks/results/serving_memory_v40.json",
+    "candidate": "V40"
    },
    "next_best": {
     "sqlite": 1.0
@@ -646,29 +648,85 @@
      "results_file": "benchmarks/results/serving_memory_v37.json",
      "result": "serving max RSS candidate/baseline 0.970 [0.945, 0.982], candidate/sqlite-full 1.0605 [1.038, 1.071]; static 119.9 vs 125.5 (baseline) vs 102.7 MB (sqlite); QPS 0.957 of baseline, p99 1.107 of baseline; 33/33 load gates; oracle exact (324 complete rows, candidate rows equal baseline rows every round, quality identical); guards: RSS below SQLite fails, p95/p99 upper 1.10 fail on the CI upper bound, RSS/QPS preservation pass",
      "next": "the dictionary binary search and per-access varint decode cost 4-7% query latency; cache the decoded lists of query terms per captured query or keep hot lists unpacked; the text lever needs a fixture that stores text to show anything"
+    },
+    {
+     "name": "2A V38: V37 + the 2B.1 capture and packed-result levers (p99 lever for the V37 guard failure)",
+     "status": "measured_not_accepted",
+     "hours": 0.5,
+     "remote": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/v38-build-v1 (chain.sh, build-driver.log, stage.log, relaunch.out) -> serving-v38-monotonic-v1/serving-v38-monotonic-full11-v1",
+     "readout": "uv run --offline --python 3.13.9 --no-project python v37-build-v1/extract_v37.py with v38 names, or analysis.json in the campaign folder",
+     "note": "second and last acceptance run for the V37 candidate line",
+     "results_file": "benchmarks/results/serving_memory_v38.json",
+     "result": "serving max RSS 1.0027x baseline [0.937, 1.033], 1.117x sqlite-full; QPS 2.40x baseline, 10.12x sqlite; p99 0.66x; 33/33 load gates; six family-8 guards pass except strictly-below-one (pre-existing); not accepted on RSS (accepted row 1.092)"
+    },
+    {
+     "name": "2A V39: V38 with the packed result path resolved off the JavaScript thread (tokio blocking pool + JS-thread packing callback) and per-call buffers reused",
+     "status": "parked",
+     "hours": 0.8,
+     "result": "writerslogic-02 ab-v39-v1/ab.log: V39 QPS 1.34x V37 (5354-5532 vs 3990-4099; the thread hop costs ~100 us on WSL2, the sync V38 path was 3.3x), peak RSS 131 vs 121-122 MB (+9, same as V38); the async native path of the same binary is 121-123, V8 heap/external/arrayBuffers equal, so the residency is native and common to the packed path; split experiment ab-v39x-v1 (HMS_PACK_NO_INTERN / HMS_PACK_NO_META toggles, temporary build v39x-build-v1) running; ab-v39y-v1: residency appears only when the JavaScript wrapper rebuilds the result objects (118 MB without the rebuild, 130-131 with, 121-124 async napi path), independent of JSON.parse and object shape, invisible to V8 statistics; transport parked as benchmarks/results/parked/2B-packed-node-results.{patch,md}",
+     "remote": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/v39-build-v1 (build_only.sh, chain.sh for the campaign)",
+     "split_experiments": "ab-v39x-v1: interning and metadata JSON excluded (131 MB with either disabled); ab-v39y-v1: native returning no results 115-118 MB, wrapper skipping the object rebuild 118 MB, full path 131, async native path 123-124 -> the residency comes from the JavaScript rebuild of the result objects (JSON.parse per result and object literals), not from Rust; ab2 (JSON.parse bypass variants) running",
+     "results_file": "benchmarks/results/parked/2B-packed-node-results.md"
+    },
+    {
+     "name": "2A V40: V37 + the 2B.1 Rust capture levers only (dense-slot posting capture, closure varint decode, slot word counts, packed selection; no transport change), p99 lever for the V37 guard failure",
+     "status": "accepted",
+     "hours": 0.3,
+     "rationale": "new mechanism set measured once (V38 measured it only together with the transport); Linux bench v39raw/v37: QPS 1.11x, p99 0.72x, peak RSS equal",
+     "remote": "writerslogic-02:/home/davidcondrey/hms-retained-20261016/v40-build-v1 (chain.sh) -> serving-v40-monotonic-v1",
+     "results_file": "benchmarks/results/serving_memory_v40.json",
+     "result": "serving max RSS 0.964x the accepted build, 1.0725x sqlite-full [1.042, 1.079] vs accepted 1.092; QPS 1.057x, p99 0.854x; 33/33 load gates; guards pass (strictly-below-one vs sqlite still false, as for the accepted row)"
     }
-   ]
+   ],
+   "standing": "HMS 1.0725x SQLite serving max RSS (accepted 2026-10-19, V40); Lucene unmeasured",
+   "gap_to_next": "0.0725 above SQLite; target 0.85 is below the measured Node-runtime bound (0.84 at zero native footprint, serving_memory_v37.json)"
   },
   "2B_lexical_speed": {
    "metric": "lexical query throughput ratio to SQLite FTS5 and Lucene BM25, bit-exact top-k, 33-pair protocol",
    "comparator": "SQLite FTS5, Lucene BM25",
    "best_accepted_hms": {
+    "vs_sqlite": 4.48,
+    "vs_sqlite_ci": [
+     4.443,
+     4.531
+    ],
     "private_vs_sqlite": 4.76,
     "private_vs_lucene": "2.15-2.24",
-    "accepted": null
+    "accepted": "V40 2026-10-19"
    },
    "targets": {
     "vs_sqlite": ">= 6x",
     "vs_lucene": ">= 3x"
    },
-   "results_file": null,
+   "results_file": "benchmarks/results/serving_memory_v40.json",
    "levers": [
     {
-     "name": "2B.1 confirm on accepted build; SIMD block-max WAND + galloping intersection",
-     "status": "pending",
-     "hours": 0
+     "name": "2B.1 dense-slot posting capture, closure varint decode, slot word counts, packed selection (src/core/documents/search.rs, index.rs, postings.rs) + packed synchronous Node result path with per-instance string interning (src/lib.rs searchDocumentsPacked, index.js wrapper, engine try_search_documents)",
+     "status": "accepted_in_v40_without_the_transport",
+     "hours": 5.5,
+     "results_file": "benchmarks/results/lexical_capture_microbench_v1.json",
+     "result": "M4: Rust search mean 47.6 -> 31.7 us (1.50x), p99 185.5 -> 119.6 us (1.55x); Node end-to-end mean 102.8 -> 39.9-46.7 us (2.2-2.6x), p50 97 -> 33-40 us; output bit-identical to the async napi path over 600 query/option pairs (JSON, deepEqual, key order); Node api tests pass",
+     "risk": "macOS peak RSS +6-7 MB on the packed path (native residency on the JS thread); decided by the Linux campaign",
+     "campaign": "writerslogic-02 v38-build-v1/chain.sh -> serving-v38-monotonic-v1 (same 11-round/33-cell protocol as V37; QPS vs sqlite-full is the 2B SQLite row, serving max RSS the 2A row)",
+     "campaign_result": "serving-v38-monotonic-v1: QPS 10.12x sqlite-full [9.60, 10.37] (target 6x met in measurement), 2.40x baseline; p99 0.66x baseline; tied to the 2A acceptance which failed on RSS; benchmarks/results/serving_memory_v38.json"
+    },
+    {
+     "name": "2B.1b packed Node result transport (searchDocumentsPacked + index.js rebuild)",
+     "status": "parked",
+     "hours": 3.0,
+     "results_file": "benchmarks/results/parked/2B-packed-node-results.md",
+     "result": "2.40x QPS in the V38 campaign, bit-identical output; parked on an unexplained 8-9 MB RSS residency that fails 2A acceptance"
+    },
+    {
+     "name": "2B.2 exact MaxScore document-at-a-time ranking under the lock",
+     "status": "parked",
+     "hours": 1.5,
+     "results_file": "benchmarks/results/parked/2B-maxscore-daat.md",
+     "result": "mean within noise, p99 138-181 vs 96-122 us on the campaign input (68 matching chunks per query on average, so bounds rarely prune)"
     }
-   ]
+   ],
+   "standing": "HMS 4.48x SQLite FTS5 QPS accepted (V40); Lucene row unmeasured",
+   "gap_to_next": "target 6x: 1.34x short; the packed transport (parked) reached 10.1x"
   },
   "2C_lexical_relevance": {
    "metric": "nDCG@10 over 324 NFCorpus queries at equal compute",
@@ -685,12 +743,20 @@
    "targets": {
     "lexical_only": "+0.010 over both controls"
    },
-   "results_file": null,
+   "results_file": "benchmarks/results/lexical_relevance_v1.json",
    "levers": [
     {
-     "name": "2C.1 BM25 k1/b, title weighting, RM3, proximity bonus tuned on NFCorpus dev and SciFact train",
-     "status": "pending",
-     "hours": 0
+     "name": "2C.1 BM25 k1/b grid (5x5) through the Node package: selected on SciFact train (809 queries), reported on NFCorpus dev (324); opt-in SearchOptions bm25K1/bm25B with bit-identical defaults (src/core/documents.rs Bm25, search.rs); harness benchmarks/public/lexical_relevance_tune.py, check check_lexical_relevance.py",
+     "status": "measured_no_gain",
+     "hours": 1.2,
+     "result": "the default (1.2, 0.75) is the SciFact-train argmax, so NFCorpus dev stays 0.29158 (table 0.2916 reproduced); the NFCorpus-dev-optimal (1.5, 0.5) reaches only 0.29267 (+0.0011, tuned on the evaluation queries, not claimable); title weighting, RM3 and proximity need extra compute or positions and were not tried"
+    },
+    {
+     "name": "2C.2 title weighting at equal compute: opt-in DocumentInput titleWeight (first line counted n times in the first chunk, src/core/documents.rs prepare_with_keys), grid 1-4 at default BM25, selected on SciFact train, reported on NFCorpus dev",
+     "status": "measured_no_gain",
+     "hours": 0.8,
+     "results_file": "benchmarks/results/lexical_relevance_v1.json",
+     "result": "SciFact train 0.7027 -> 0.7092 at weight 3 (selected), NFCorpus dev 0.29158 -> 0.28953 (weights 2-4 all below default), so the transfer-selected setting loses 0.002 on the row; RM3 and proximity remain outside the equal-compute metric"
     }
    ]
   },
@@ -801,6 +867,12 @@
       "derived AES key copies (Linux /proc/self/mem, masked needle, scan buffers scrubbed): 1 while open, 0 after drop (v1: 5 / 6)",
       "tamper totals plain {'detected': 750, 'served_different': 0, 'served_identical': 250, 'crashed': 0}; encrypted {'detected': 779, 'served_different': 0, 'served_identical': 221, 'crashed': 0}"
      ]
+    },
+    {
+     "name": "3B.3 scrub 256 KiB below the key derivation (64 KiB left a derived-key copy just past the scrubbed region on Linux; CI check job failed at eea0aa7 and 95ceb9d); scan test prints the mapping and offset of every surviving copy under HMS_KEY_SCAN_DIAG",
+     "status": "fixed_22c57ea_ci_passed_at_5480446_flaky_on_runner",
+     "hours": 1.0,
+     "result": "writerslogic-02: 1 surviving copy at 64 KiB -> 0 at 256 KiB (single test, security and all-features); CI full suite still reports 9 copies at 22c57ea, full-suite Linux reproduction with the diagnostic running"
     }
    ]
   }
@@ -907,6 +979,32 @@
    "row": "benchmarks/results/security_matrix_v2.json",
    "ratio_to_previous_accepted": "arena flips served 1/335; key copies after drop 0/6",
    "time": "2026-10-17T15:17"
+  },
+  {
+   "date": "2026-10-19",
+   "file": "benchmarks/results/serving_memory_v40.json",
+   "ratio_to_previous_accepted": 0.9822,
+   "category": "2A_serving_memory",
+   "positive": true
+  },
+  {
+   "date": "2026-10-19",
+   "file": "benchmarks/results/serving_memory_v38.json",
+   "category": "2B_lexical_speed",
+   "positive": false,
+   "note": "10.1x QPS but RSS regression; transport parked"
+  },
+  {
+   "date": "2026-10-19",
+   "file": "benchmarks/results/lexical_relevance_v1.json",
+   "category": "2C_lexical_relevance",
+   "positive": false
+  },
+  {
+   "date": "2026-10-19",
+   "file": "benchmarks/results/lexical_capture_microbench_v1.json",
+   "category": "2B_lexical_speed",
+   "positive": true
   }
  ]
 }

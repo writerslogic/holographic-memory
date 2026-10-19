@@ -1,0 +1,124 @@
+{
+ "schema_version": 1,
+ "category": [
+  "2A_serving_memory",
+  "2B_lexical_speed"
+ ],
+ "candidate": "V40",
+ "date": "2026-10-19",
+ "mechanism": "V37 (compact term dictionary, delta-varint postings, file-backed text) + dense-slot posting capture, closure varint decode with a single-byte fast path, u32 captured postings, slot word counts kept by the store, packed (score, index) selection (src/core/documents/search.rs, index.rs, postings.rs); no binding change",
+ "protocol": "serving-v30 controller derived as serving-v40-monotonic-v1 on writerslogic-02 (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v40 / sqlite-full (Node 26.8.1, SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3; all 33 load gates met; oracle exact",
+ "identities": {
+  "candidate_manifest_sha256": "68aed64047e7c1d186c5422cafeee75aa0b44871fd76db2d36a39737ef0c03f5",
+  "candidate_native_sha256": "64107573e80f3e7355e405456b5716fc135771e323f2c70f8e2408ae36aeefd4",
+  "protocol_sha256": "b1d38aaf5e07a2469d43f12ded5e89053b4ea7b42a81cc80158a0e41cf0ca2b9",
+  "driver_sha256": "5cbbc22addc01e747ec0d0815a4961e77782e0ffd5fefd25a6dc9af7e18da9f5"
+ },
+ "arm_medians_over_11_rounds": {
+  "baseline": {
+   "serving_max_rss_bytes": 175976448,
+   "static_median_rss_bytes": 105598976,
+   "qps": 3700,
+   "api_p99_ns": 607913
+  },
+  "candidate-v40": {
+   "serving_max_rss_bytes": 170299392,
+   "static_median_rss_bytes": 100028416,
+   "qps": 3902,
+   "api_p99_ns": 517811
+  },
+  "sqlite-full": {
+   "serving_max_rss_bytes": 158670848,
+   "static_median_rss_bytes": 82628608,
+   "qps": 870,
+   "api_p99_ns": 5126679
+  }
+ },
+ "paired_estimates": {
+  "candidate_over_baseline": {
+   "serving_max_rss": [
+    0.9642,
+    [
+     0.9594,
+     0.9697
+    ]
+   ],
+   "api_p95": [
+    0.8672,
+    [
+     0.8406,
+     0.8755
+    ]
+   ],
+   "api_p99": [
+    0.8543,
+    [
+     0.839,
+     0.9121
+    ]
+   ],
+   "qps": [
+    1.0573,
+    [
+     1.0503,
+     1.0804
+    ]
+   ]
+  },
+  "candidate_over_sqlite_full": {
+   "serving_max_rss": [
+    1.0725,
+    [
+     1.0416,
+     1.0788
+    ]
+   ],
+   "api_p95": [
+    0.1129,
+    [
+     0.1113,
+     0.1148
+    ]
+   ],
+   "api_p99": [
+    0.1028,
+    [
+     0.0987,
+     0.1056
+    ]
+   ],
+   "qps": [
+    4.4798,
+    [
+     4.443,
+     4.5313
+    ]
+   ]
+  },
+  "format": "[paired median over 11 rounds, bootstrap 95% interval]"
+ },
+ "numerical_guards_family8": {
+  "sqlite_rss_upper_strictly_below_one": false,
+  "source_rss_upper_at_most_1_10": true,
+  "source_p95_upper_at_most_1_10": true,
+  "source_p99_upper_at_most_1_10": true,
+  "source_qps_lower_at_least_inverse_1_10": true,
+  "sqlite_qps_lower_at_least_1_20": true
+ },
+ "ratio_to_previous_accepted": {
+  "accepted_rss_vs_sqlite": 1.092,
+  "this_row_rss_vs_sqlite": 1.0725,
+  "ratio": 0.9822,
+  "accepted_qps_vs_sqlite": null,
+  "accepted_build_qps_vs_sqlite_this_run": 4.253,
+  "this_row_qps_vs_sqlite": 4.4798,
+  "private_best_v30_qps_vs_sqlite": 4.76
+ },
+ "verdict": "accepted: serving max RSS 0.964x the accepted build [0.959, 0.970] and 1.0725x sqlite-full [1.042, 1.079] (accepted row 1.092); QPS 1.057x the accepted build, 4.48x sqlite-full [4.44, 4.53]; p95 0.867x, p99 0.854x; every family-8 guard passes except strictly-below-one versus sqlite, which the accepted row also fails. This is the first accepted 2B SQLite row; the 6x target is not met.",
+ "paths": {
+  "host": "writerslogic-02",
+  "build": "/home/davidcondrey/hms-retained-20261016/v40-build-v1",
+  "campaign": "/home/davidcondrey/hms-retained-20261016/serving-v40-monotonic-v1/serving-v40-monotonic-full11-v1 (analysis.json, measurements.json, cells/)",
+  "local_scripts": "/Volumes/A/.hms-target-2a/v40-build"
+ }
+}

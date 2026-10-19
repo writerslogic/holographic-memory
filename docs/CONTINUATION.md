@@ -1,42 +1,42 @@
 # Continuation state
 
-## Latest handoff authority (2026-10-17, superiority session)
+## Latest handoff authority (2026-10-19 evening, superiority session)
 
 Objective: docs/research/SUPERIORITY-2026-10-12.md comparison table, largest deficit first (brief
 pasted 2026-10-16). Status lives in benchmarks/results/superiority_ledger.json; quote it, do not
-reread this file's history. Branch research/2026-10-superiority pushed at ac1f89f; main is protected,
-reconciliation is PR #76 (https://github.com/writerslogic/holographic-memory/pull/76): deny, msrv,
-retrieval-quality pass; `check` reruns after 4b50ca5 (clap enum lint allowance, zip advisories ignored
-with reasons because candle-core 0.11 pins zip ^8.6 and extract is never called). The main tree also
-holds uncommitted fork edits (2A V37 in src/core/documents/*, engine/compaction.rs, engine/mod.rs;
-1C in src/core/sparse/; 3fix in storage.rs, security.rs, hms-admin.rs); each fork gates its own files.
-Builds for the branch happen in the detached worktree /Volumes/A/.hms-wt-fastscan (target
-/Volumes/A/.hms-target-fastscan-wt, overlay /Volumes/A/.hms-target-fastscan/sync_wt.sh); commits are
-made there, then `git update-ref refs/heads/research/2026-10-superiority <sha> && git reset -q`.
+reread this file's history. Branch research/2026-10-superiority; PR #76 to the protected main has
+every check green and is BLOCKED on REVIEW_REQUIRED (user action). Builds for the branch happen in
+/Volumes/A/.hms-wt-fastscan (target /Volumes/A/.hms-target-fastscan-wt); commit there, then
+`git update-ref refs/heads/research/2026-10-superiority <sha> && git reset -q`, then push.
 
-Results this session (all in benchmarks/results/): 1A paired rows on the M4 and x86 all within noise
-or negative except the build lever: quantized construction search (opt-in --quantized-search, cache
-format 03) nytimes graph build 263.5 -> 74.3 s, glove 238.7 -> 184.5 s with peak RSS 3.78 -> 2.16 GB,
-recall within 0.002 (qgraph_build_v1.json); neighbour blocks, fusion, certified exit, neighbour cap,
-varint adjacency, 4-bit residual all killed with rows; recall 0.99 not reached below ef 3072 on glove;
-x86 AVX2 kernels and prefetch fixed. 1B: v3 88/100 (+0.01 vs v2b), local Qwen3-30B-A3B row 67-70/100.
-3A: durability_matrix_v1.json HMS 6/8 cells, 0 of 450 crash points lose a committed document.
-3B: security_matrix_v1.json, zero egress, encryption 0.93x QPS, constant-time compare passes.
-Defects found and being fixed by the 3fix fork: arena replay treats a corrupted frame as end of log
-(silent truncated serves), manifests lack checksums, AES key cloned and not zeroized on drop.
+Accepted this session: V40 (serving_memory_v40.json): serving max RSS 1.0725x SQLite [1.042, 1.079]
+against the accepted 1.092 (0.964x the accepted build), QPS 4.48x SQLite [4.44, 4.53] (first
+accepted 2B row), p99 0.854x, all family-8 guards. V40 = the V37 compact postings and text segment
+plus the Rust capture levers in src/core/documents/{search,index,postings}.rs (dense slot table,
+closure varint decode, slot word counts, packed selection). Measured, not accepted: V38 packed Node
+transport (serving_memory_v38.json, 10.1x QPS, RSS regression; parked with its Linux residency
+experiments in benchmarks/results/parked/2B-packed-node-results.{patch,md}); 2C BM25 k1/b and title
+weighting (lexical_relevance_v1.json, both null; opt-in bm25K1/bm25B search options and titleWeight
+document option stay, defaults bit-identical); MaxScore ranking parked (2B-maxscore-daat).
 
-1C measured and committed (public_learned_sparse_v1.json: nDCG parity with Anserini on every row, QPS >= 2x on 3 of 4 x86 rows, bytes 1.03-1.15x so the 0.7x target is unmet, blend above sparse). In flight:
-2A V37 compact postings measured, not accepted (ledger 2A entry): serving max RSS 0.970x of the HMS
-baseline, 1.0605x SQLite (accepted row 1.092x), QPS 0.957x, p99 1.107x fails the 1.10 guard; oracle exact,
-33/33 load gates; the fork measured the Node runtime floor at about 0.76x SQLite, so 0.75 is at the floor.
-V37 code is uncommitted in the main tree (src/core/documents/postings.rs, text.rs, index.rs, search.rs,
-documents.rs, engine/mod.rs, engine/compaction.rs); the next 2A step is the p99 path, then commit.
-3fix (above). Not started: 2B, 2C.
+NOT COMMITTED: the V40 source set lives only in the main tree, together with other sessions'
+uncommitted work it depends on (HmsConfig.text_encoder / encoding::TextEncoder, storage.rs
+replay_compaction_tail and StagedArena plus src/core/storage/, StageParams::validate, serde "rc"):
+a worktree build of the documents + engine files alone fails on exactly those symbols. The campaign
+measured the composed main tree (candidate manifest in serving_memory_v40.json). Integration must be
+one commit from the main tree once the owning sessions land their parts, or by the user; the file
+set is src/core/documents/ (all), src/core/documents.rs, src/core/engine/{compaction,document_batch,
+document_snapshot_tests,document_stage_tests,mutation_gate,mod,mutation,query,document_api}.rs,
+src/lib.rs (memorize_documents, train_document_index, title_weight), index.d.ts, tests/documents.rs,
+tests/document_dense.rs, and `title_weight: None` in every DocumentInput literal (18 sites). Gates in
+the main tree: clippy all features and none clean, 427 lib tests, documents/document_dense/
+encoder_versions integration tests pass. Committed from the worktree: evidence, harnesses and docs only.
 
-Open user actions: `! gcloud auth login` for the GCE C4 confirmation of the x86 kernel fix and the
-build lever (cap $10 per run); merge PR #76 when `check` is green. Constraints unchanged: tune on
-held-out/dev only; private CARGO_TARGET_DIR; one lock hold under 14 minutes; keep the rule30 workers
-and keep-awake.ps1 alive on writerslogic-02; the three stop questions are the only stops.
+Next: Lucene 2B row (java only when no campaign runs on writerslogic-02); 2A target 0.85 is below the
+measured Node-runtime bound (0.84, serving_memory_v37.json); 1A GCE confirmation needs
+`! gcloud auth login`; 1B.4 event dates untouched. Constraints unchanged: tune on held-out/dev only;
+private CARGO_TARGET_DIR; one lock hold under 14 minutes; keep keep-awake.ps1 alive on
+writerslogic-02 (no rule30 process visible 2026-10-19); the three stop questions are the only stops.
 
 ## Active work: memory architecture and byte ledger (2026-10-15)
 

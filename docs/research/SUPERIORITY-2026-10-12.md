@@ -5804,3 +5804,28 @@ Status and numbers: benchmarks/results/superiority_ledger.json. Changes since ch
 | Long-term QA, local reader | M Qwen3-30B-A3B 67-70/100 on its own line (previous local arm 47-48/100); gpt-5.4 rows 83/82/88 | V Zep 451/500, Mem0 474/500 | local row established, Modal $0.95 | n/a |
 
 Units of progress this period: two positive (qgraph_build_v1.json, longmemeval_dev_answers_local30b_v1.json) and one negative (qgraph_block4_untimed_x86_v1.json). Forks in flight: 2A V37 compact postings, 1C learned sparse (in_flight_measuring), 3A durability matrix (rerun on writerslogic-02), 3B security matrix. Open: `gcloud auth login` for the GCE confirmation of the x86 kernels and the build lever (cap $10 per run). Branch research/2026-10-superiority pushed at 9eef2ba; main untouched pending the full-tree gate.
+
+## Checkpoint 4 of the superiority session (2026-10-19, 15:30)
+
+Status and numbers: benchmarks/results/superiority_ledger.json. Changes since checkpoint 3 only.
+
+| Category | HMS | Competitor/control | Standing | Gap to next |
+|---|---|---|---|---|
+| Lexical speed (2B) | M V38 campaign QPS 10.12x sqlite-full [9.60, 10.37], 2.40x the accepted build, p99 0.66x (serving_memory_v38.json); M4 Rust search 1.50x, Node end-to-end 2.2-2.6x (lexical_capture_microbench_v1.json) | SQLite FTS5 (Lucene row unrun) | measured, not accepted (tied to 2A) | target 6x met in measurement |
+| Serving memory (2A) | M V38 1.0027x the accepted build, 1.117x sqlite-full; static RSS 105.7 -> 100.3 MB but the packed result path adds ~9 MB over the serving window (Linux A/B: 134 vs 122-124 MB) | SQLite 1.092x accepted | not accepted; V39 (packed path off the JavaScript thread, buffers reused) built, Linux A/B running | 1.117 vs 1.092 |
+| Lexical relevance (2C) | M BM25 k1/b grid: default is the SciFact-train argmax, NFCorpus dev 0.29158 unchanged (lexical_relevance_v1.json); bm25K1/bm25B opt-in options | SQLite, Lucene 0.2916 | measured, no gain | 0.0 |
+| Security (3B) | M 256 KiB stack scrub: 0 surviving key copies on writerslogic-02 (single test and full all-features suite); CI check passed at 5480446 after failing at 22c57ea with the same scrub | n/a | fixed, runner-dependent | n/a |
+
+Units of progress this period: serving_memory_v38.json (positive on 2B, negative on 2A), lexical_capture_microbench_v1.json, lexical_relevance_v1.json (null), parked/2B-maxscore-daat (negative). Wall clock about 70% on src levers (search.rs, index.rs, postings.rs, lib.rs, index.js, security.rs, documents.rs), 30% on harnesses (latency bench, lexical_relevance_tune.py + check, remote chains). Lever in flight: 2A/2B V39. Open: PR #76 needs a review to merge (REVIEW_REQUIRED, all checks green); GCE confirmation needs `! gcloud auth login`; Lucene 2B row.
+
+## Checkpoint 5 of the superiority session (2026-10-19, 19:30)
+
+Status and numbers: benchmarks/results/superiority_ledger.json. Changes since checkpoint 4 only.
+
+| Category | HMS | Competitor/control | Standing | Gap to next |
+|---|---|---|---|---|
+| Serving memory (2A) | M V40 accepted: 1.0725x SQLite [1.042, 1.079], 0.964x the accepted build, p99 0.854x (serving_memory_v40.json) | SQLite 1.092x previously accepted | improved, accepted | 0.0725 above SQLite; 0.85 target below the measured runtime bound |
+| Lexical speed (2B) | M V40 4.48x SQLite [4.44, 4.53], first accepted row; V38 transport 10.1x parked on RSS | SQLite FTS5; Lucene unmeasured | accepted | 1.34x short of 6x |
+| Lexical relevance (2C) | M title weighting: SciFact train +0.0065 at weight 3, NFCorpus dev -0.0021 (lexical_relevance_v1.json) | 0.2916 tie | measured, no gain | 0.0 |
+
+Units of progress this period: serving_memory_v40.json (positive, ratio 0.982 to the accepted 2A row), lexical_relevance_v1.json title rows (null). Wall clock about 65% on src levers. Lever in flight: none. Open: V40 source integration blocked on other sessions' uncommitted dependencies (see docs/CONTINUATION.md); PR #76 review; GCE login; Lucene row.

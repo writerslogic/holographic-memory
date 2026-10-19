@@ -1,0 +1,161 @@
+{
+ "schema_version": 1,
+ "category": [
+  "2B_lexical_speed",
+  "2A_serving_memory"
+ ],
+ "date": "2026-10-19",
+ "host": "Apple M4 (shared; load average 8-11 during every run), macOS; Node v26.8.1; cargo release",
+ "workload": "NFCorpus campaign input (3633 one-chunk documents, storeText false, chunkWords 4096; 324 queries, k=100, candidateLimit=100, lexicalWeight 1, semanticWeight 0), 8 passes = 2592 queries",
+ "rust_microbench": {
+  "command": "HMS_LEX_BENCH_INPUT=<nfcorpus-dev-input.json> cargo test --release --lib documents::search::latency_bench -- --ignored --nocapture",
+  "v37_before": {
+   "prepare": {
+    "mean_ns": 1399,
+    "p50_ns": 1000,
+    "p99_ns": 5083
+   },
+   "capture": {
+    "mean_ns": 24131,
+    "p50_ns": 9667,
+    "p99_ns": 105125
+   },
+   "execute": {
+    "mean_ns": 22105,
+    "p50_ns": 15708,
+    "p99_ns": 78958
+   },
+   "total": {
+    "mean_ns": 47636,
+    "p50_ns": 26708,
+    "p99_ns": 185542
+   }
+  },
+  "v38_after": {
+   "prepare": {
+    "mean_ns": 1268,
+    "p50_ns": 917,
+    "p99_ns": 5375
+   },
+   "capture": {
+    "mean_ns": 11527,
+    "p50_ns": 4875,
+    "p99_ns": 53042
+   },
+   "execute": {
+    "mean_ns": 18929,
+    "p50_ns": 13542,
+    "p99_ns": 65917
+   },
+   "total": {
+    "mean_ns": 31725,
+    "p50_ns": 19250,
+    "p99_ns": 119625
+   }
+  },
+  "ratio_mean_total": 1.502,
+  "ratio_p99_total": 1.551,
+  "levers": "dense slot-to-position table (hash map beyond 2^19 slots), closure posting decode with a single-byte varint fast path, u32 captured postings, slot word counts kept by the store so scoring never touches a document, packed (score, index) selection"
+ },
+ "node_end_to_end": {
+  "script": "bench.cjs in this directory: memorizeDocuments then 2592 searchDocuments calls, hrtime per call, RSS sampled every 64 calls",
+  "runs": [
+   {
+    "ingest_ms": 2336,
+    "queries": 2592,
+    "mean_ns": 102761,
+    "p50_ns": 98542,
+    "p99_ns": 248458,
+    "hits_per_query": 68.16666666666667,
+    "qps": 9731,
+    "rss_mb": 110,
+    "peak_rss_mb": 109,
+    "package": "v37"
+   },
+   {
+    "ingest_ms": 2179,
+    "queries": 2592,
+    "mean_ns": 46745,
+    "p50_ns": 37459,
+    "p99_ns": 222500,
+    "hits_per_query": 68.16666666666667,
+    "qps": 21393,
+    "rss_mb": 117,
+    "peak_rss_mb": 117,
+    "package": "v38"
+   },
+   {
+    "ingest_ms": 2585,
+    "queries": 2592,
+    "mean_ns": 102885,
+    "p50_ns": 98125,
+    "p99_ns": 261625,
+    "hits_per_query": 68.16666666666667,
+    "qps": 9720,
+    "rss_mb": 111,
+    "peak_rss_mb": 110,
+    "package": "v37"
+   },
+   {
+    "ingest_ms": 1994,
+    "queries": 2592,
+    "mean_ns": 39882,
+    "p50_ns": 33166,
+    "p99_ns": 169417,
+    "hits_per_query": 68.16666666666667,
+    "qps": 25074,
+    "rss_mb": 116,
+    "peak_rss_mb": 116,
+    "package": "v38"
+   },
+   {
+    "ingest_ms": 2159,
+    "queries": 2592,
+    "mean_ns": 102123,
+    "p50_ns": 97375,
+    "p99_ns": 240417,
+    "hits_per_query": 68.16666666666667,
+    "qps": 9792,
+    "rss_mb": 109,
+    "peak_rss_mb": 109,
+    "heap_used_mb": 16,
+    "after_gc_rss_mb": 109,
+    "after_gc_heap_mb": 11,
+    "package": "v37"
+   },
+   {
+    "ingest_ms": 1851,
+    "queries": 2592,
+    "mean_ns": 38976,
+    "p50_ns": 32375,
+    "p99_ns": 166291,
+    "hits_per_query": 68.16666666666667,
+    "qps": 25657,
+    "rss_mb": 117,
+    "peak_rss_mb": 117,
+    "heap_used_mb": 14,
+    "after_gc_rss_mb": 117,
+    "after_gc_heap_mb": 11,
+    "package": "v38"
+   },
+   {
+    "ingest_ms": 1822,
+    "queries": 2592,
+    "mean_ns": 84962,
+    "p50_ns": 91875,
+    "p99_ns": 233000,
+    "hits_per_query": 68.16666666666667,
+    "qps": 11770,
+    "rss_mb": 111,
+    "peak_rss_mb": 110,
+    "heap_used_mb": 16,
+    "after_gc_rss_mb": 111,
+    "after_gc_heap_mb": 11,
+    "package": "v38raw"
+   }
+  ],
+  "note": "v37 = V37 capsule package (async napi path); v38 = this tree (packed synchronous path through index.js); v38raw = this tree through the untouched async native method; after_gc fields from node --expose-gc"
+ },
+ "finding": "Rust search time drops about 1.5x; end-to-end Node query time drops 2.2-2.6x with the packed synchronous result path (p50 97 us -> 33-40 us). Peak RSS on macOS is 6-7 MB higher on the packed path than on the async path of the same binary (117 vs 110-111 MB; JS heap after GC identical at 11 MB), so the delta is native allocator residency on the main thread; the Linux campaign (serving-v38-monotonic-v1 on writerslogic-02) is the matched measurement that decides acceptance.",
+ "parked": "2B-maxscore-daat.patch and .md in this directory (exact MaxScore ranking, slower p99 on this workload)."
+}
