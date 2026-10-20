@@ -155,14 +155,33 @@ removes the matched facts, and:
 - with `include_chain`, every fact connected to a match by supersession, in both directions, so
   no version of the chain survives;
 - with `dry_run`, nothing; the report lists what would go;
-- with `purge`, the store is compacted afterwards, which rewrites the journal without the
-  deleted text.
+- with `purge`, the store is compacted afterwards and what the compaction replaced is
+  overwritten (see below).
 
 What "gone" means: removed from search, `has_document`, `recall`, `get`, `history`, `explain`
-and the in-memory index at once, and after a restart. The journal is append-only, so deleted
-text remains in it until a compaction (`purge`), and the text segment file (`documents.text`)
-is a cache rebuilt at the next open. Removal is one journal transaction per 4096 facts; a
-crash between transactions leaves a prefix removed and the same call finishes it.
+and the in-memory index at once, and after a restart. Removal is one journal transaction per
+4096 facts; a crash between transactions leaves a prefix removed and the same call finishes it.
+
+Physical erasure, checked by `tests/purge.rs` (a marker string scanned for in every file under
+the store directory, before reopen, after an abort in a child process, and after restart):
+
+- **Always, before `forget` returns:** the deleted chunks' records in `documents.text` are
+  overwritten with zeros and synced. Postings and the memory-API index live in memory and are
+  rebuilt from the journal; no file stores terms. A bare `HmsCore::delete_document` zeroes the
+  records too but leaves the fsync to the next `forget`, purge or compaction, like the journal
+  frame that records the delete (syncing every delete costs about 4 ms instead of 60 us;
+  `benchmarks/results/purge_v1.json`). `DELETE /api/v1/documents/{id}?purge=true` purges.
+- **With `purge`, before it returns:** the journal is rewritten without the text, then the
+  replaced generation and any unreferenced generation left by an interrupted compaction are
+  overwritten with zeros, synced and unlinked.
+- **Without `purge`:** the deleted frames stay in the append-only journal until a compaction.
+  This is the one bounded exception; use `purge` when the text must be gone.
+- **Not controlled by any file API:** copies kept by SSD wear levelling or over-provisioning,
+  copy-on-write or snapshotting filesystems, filesystem journals, OS swap or hibernation
+  images, backups, and bytes the caller already returned from `recall`. Use full-disk
+  encryption (or `security` encryption, which makes the files ciphertext) when those matter.
+  Derived data (hashed n-gram vectors in the ANN index files, fact ids) is rewritten without
+  the deleted entries by the purge but is not text.
 
 ## Guarantees
 

@@ -89,5 +89,7 @@ nothing extra; the first memory call after open scans the documents once.
 
 `forget` deletes documents through the ordinary delete mutation. The journal is append-only, so
 the deleted text remains in it until the store compacts; `ForgetOptions::purge` compacts
-afterwards. The text segment file (`documents.text`) is a cache rebuilt from the journal when
-the store opens, so bytes of deleted text can remain in it until the next open.
+afterwards and overwrites the replaced generation with zeros. The text segment file
+(`documents.text`) is a cache rebuilt from the journal when the store opens; a delete zeroes
+the deleted chunks' records in it and syncs before returning. See "What gone means" in
+README.md for the guarantees and their limits.

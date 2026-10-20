@@ -444,6 +444,21 @@ impl DocumentStore {
         self.documents.insert(id, document);
     }
 
+    /// Removes a document and zeroes its chunk text in the segment (see
+    /// [`TextSegment::scrub`]); the caller syncs the segment once per transaction.
+    pub(crate) fn remove_scrubbed(
+        &mut self,
+        id: &str,
+    ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
+        let removed = self.remove(id);
+        if let (Some(document), Some(segment)) = (&removed, self.text.as_deref()) {
+            for (at, len) in document.chunks.iter().filter_map(|c| c.text_at) {
+                segment.scrub(at, len)?;
+            }
+        }
+        Ok(removed)
+    }
+
     pub(crate) fn remove(&mut self, id: &str) -> Option<Arc<StoredDocument>> {
         let document = self.documents.remove(id)?;
         self.invalidate_dense_index();
@@ -497,9 +512,11 @@ impl DocumentStore {
         self.word_counts.truncate(self.slot_count);
         if self.slot_count > 1024 && self.free.len() > self.slot_count / 2 {
             let generation = self.generation;
+            let text = self.text.take();
             let documents = std::mem::take(&mut self.documents);
             *self = Self::default();
             self.generation = generation;
+            self.text = text;
             for (id, document) in documents {
                 self.insert_shared(id, document);
             }

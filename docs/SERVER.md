@@ -54,7 +54,7 @@ A document is `{"id": str, "vector": [float], "text"?: str, "metadata"?: object}
 |---|---|---|
 | `POST /api/v1/documents` with one document | 200 `{"added": 1}` | 400 `invalid_json`, 422 `invalid_request`, 413 |
 | `POST /api/v1/documents/batch` with an array of 1..=`max-batch` documents | 200 `{"added": n}` | as above; all documents are validated before one atomic commit |
-| `DELETE /api/v1/documents/{id}` (percent-encoded) | 200 `{"deleted": true}` | 404 `not_found` |
+| `DELETE /api/v1/documents/{id}[?purge=true]` (percent-encoded) | 200 `{"deleted": true}` | 404 `not_found` |
 | `POST /api/v1/query` with `{"query_vector": [...], "top_k"?: 1..=max-top-k (default 3), "filter"?: object}` | 200 `{"matches": [{"id","text","metadata","score"}]}` best first | 400, 422 |
 | `POST /api/v1/index/maintain` with an empty body or `{}` | 200 `{"documentIndexTrained": bool}` | 400, 422, 500 |
 
