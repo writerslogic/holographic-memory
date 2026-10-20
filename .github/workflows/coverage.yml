@@ -1,71 +1,53 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Line coverage of the library on every push to main. The result is a job summary and
+# a downloadable artifact (lcov and a shields endpoint JSON); nothing is committed
+# back, because main only accepts signed, reviewed pull requests.
 name: Coverage
 
 on:
   push:
-    branches: [ main ]
-
-permissions:
-  contents: write
+    branches: [main]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+permissions:
+  contents: read
 
 jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
-
-    - name: Install cargo-llvm-cov
-      uses: taiki-e/install-action@eba66cc6f87204a1e73f96e528e759b6c1fcf573 # cargo-llvm-cov
-
-    - name: Cache cargo
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-coverage-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Generate coverage
-      run: |
-        cargo llvm-cov --lib --json --output-path coverage.json
-        COVERAGE=$(cat coverage.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"{d['data'][0]['totals']['lines']['percent']:.1f}\")")
-        echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-        echo "## Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
-
-    - name: Generate badge
-      run: |
-        if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
-          COLOR="brightgreen"
-        elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
-          COLOR="yellow"
-        else
-          COLOR="red"
-        fi
-        mkdir -p .github/badges
-        cat > .github/badges/coverage.json << EOF
-        {
-          "schemaVersion": 1,
-          "label": "coverage",
-          "message": "${COVERAGE}%",
-          "color": "${COLOR}"
-        }
-        EOF
-
-    - name: Commit badge
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add .github/badges/coverage.json
-        git diff --cached --quiet && exit 0
-        git commit -m "ci: update coverage badge [skip ci]"
-        for i in 1 2 3 4 5; do
-          git push && break
-          echo "push rejected, rebasing onto origin/main (attempt $i)"
-          git pull --rebase --autostash origin main
-        done
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: coverage
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: cargo-llvm-cov
+      - name: Measure
+        run: |
+          set -euo pipefail
+          mkdir -p coverage
+          cargo llvm-cov --lib --lcov --output-path coverage/lcov.info
+          cargo llvm-cov report --json --output-path coverage/summary.json
+          pct=$(jq -r '.data[0].totals.lines.percent' coverage/summary.json | xargs printf '%.1f')
+          color=red
+          if awk "BEGIN{exit !($pct >= 80)}"; then color=brightgreen; elif awk "BEGIN{exit !($pct >= 60)}"; then color=yellow; fi
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' "$pct" "$color" > coverage/badge.json
+          echo "## Line coverage: ${pct}%" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: coverage

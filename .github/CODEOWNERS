@@ -1,9 +1,22 @@
-# Default owners for the HMS repository
-* @writerslogic/core
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Every owner must be a user or a team that exists and has write access, otherwise GitHub
+# ignores the rule and the "require review from code owners" protection checks nothing
+# (`gh api repos/writerslogic/holographic-memory/codeowners/errors` lists problems).
+# Add a team here when one exists; until then the maintainer owns everything.
 
-# Security-sensitive paths require security team review
-src/core/security.rs @writerslogic/security
-src/core/audit.rs @writerslogic/security
-src/core/storage.rs @writerslogic/core @writerslogic/security
-src/core/wire.rs @writerslogic/core @writerslogic/security
-fuzz/ @writerslogic/security
+* @dcondrey
+
+# Security-sensitive code, release machinery and supply-chain configuration.
+/src/core/security.rs @dcondrey
+/src/core/audit.rs @dcondrey
+/src/core/storage.rs @dcondrey
+/src/core/durable_file.rs @dcondrey
+/src/core/provenance/ @dcondrey
+/fuzz/ @dcondrey
+/.github/ @dcondrey
+/scripts/ci/ @dcondrey
+/deny.toml @dcondrey
+/SECURITY.md @dcondrey
+/docs/RELEASING.md @dcondrey

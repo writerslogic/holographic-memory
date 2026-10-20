@@ -1,6 +1,10 @@
 # Rust
 /target
-Cargo.lock
+/fuzz/Cargo.lock
+/bindings/wasm/Cargo.lock
+/fuzz/target
+/fuzz/corpus
+/fuzz/artifacts
 
 # Node.js
 /node_modules
