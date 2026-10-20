@@ -1,0 +1,4 @@
+hnswlib==0.8.0
+    # via -r requirements/hnswlib.footprint.in
+numpy==2.5.4
+    # via hnswlib

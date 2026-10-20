@@ -1,0 +1,4 @@
+cached-property==2.0.1
+    # via whoosh-reloaded
+whoosh-reloaded==2.7.5
+    # via -r requirements/whoosh.footprint.in

@@ -1,0 +1,10 @@
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via tqdm
+numkong==7.8.5
+    # via usearch
+numpy==2.5.4
+    # via usearch
+tqdm==4.70.1
+    # via usearch
+usearch==2.26.5
+    # via -r requirements/usearch.footprint.in

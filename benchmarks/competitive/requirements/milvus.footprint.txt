@@ -1,0 +1,47 @@
+cachetools==7.2.4
+    # via pymilvus
+certifi==2026.10.19
+    # via requests
+charset-normalizer==3.5.2
+    # via requests
+faiss-cpu==1.15.1
+    # via milvus-lite
+grpcio==1.84.0
+    # via
+    #   milvus-lite
+    #   pymilvus
+idna==3.20
+    # via requests
+milvus-lite==3.2.2
+    # via -r requirements/milvus.footprint.in
+numpy==2.5.4
+    # via
+    #   faiss-cpu
+    #   milvus-lite
+    #   pandas
+orjson==3.13.0
+    # via pymilvus
+packaging==26.3
+    # via faiss-cpu
+pandas==3.0.6
+    # via pymilvus
+protobuf==7.36.2
+    # via pymilvus
+pyarrow==26.0.0
+    # via milvus-lite
+pymilvus==3.0.2
+    # via -r requirements/milvus.footprint.in
+python-dateutil==2.9.0.post0
+    # via pandas
+python-dotenv==1.2.4
+    # via pymilvus
+requests==2.34.2
+    # via pymilvus
+six==1.17.0
+    # via python-dateutil
+typing-extensions==4.16.0
+    # via grpcio
+tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
+    # via pandas
+urllib3==2.8.0
+    # via requests

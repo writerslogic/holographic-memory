@@ -1,0 +1,53 @@
+annotated-types==0.8.0
+    # via pydantic
+anyio==4.15.1
+    # via httpx
+certifi==2026.10.19
+    # via
+    #   httpcore
+    #   httpx
+grpcio==1.84.0
+    # via qdrant-client
+h11==0.16.0
+    # via httpcore
+h2==4.4.1
+    # via httpx
+hpack==4.2.0
+    # via h2
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via qdrant-client
+hyperframe==6.1.0
+    # via h2
+idna==3.20
+    # via
+    #   anyio
+    #   httpx
+numpy==2.5.4
+    # via
+    #   -r requirements/qdrant.in
+    #   qdrant-client
+portalocker==3.2.0
+    # via qdrant-client
+protobuf==7.36.2
+    # via qdrant-client
+pydantic==2.14.1
+    # via qdrant-client
+pydantic-core==2.50.1
+    # via pydantic
+pywin32==312 ; sys_platform == 'win32'
+    # via portalocker
+qdrant-client==1.19.1
+    # via -r requirements/qdrant.in
+typing-extensions==4.16.0
+    # via
+    #   anyio
+    #   grpcio
+    #   pydantic
+    #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via pydantic
+urllib3==2.8.0
+    # via qdrant-client

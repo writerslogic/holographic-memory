@@ -1,0 +1,2 @@
+sqlite-vec==0.1.9
+    # via -r requirements/sqlite-vec.footprint.in
