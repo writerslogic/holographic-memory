@@ -1,0 +1,594 @@
+{
+ "schema_version": 1,
+ "repo": "writerslogic/holographic-memory",
+ "tag": "evidence-v1",
+ "base_url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/",
+ "format": "NAME.tar.zst.NNN parts concatenate to one zstd-compressed tar; NAME.index.jsonl lists every member",
+ "sources": [
+  {
+   "path": "benchmarks/results/superiority_v3",
+   "kind": "dir",
+   "size": 370384796230,
+   "files": 129359,
+   "entries": 149544,
+   "sha256": "f5328145d05eb6f28a9541cf53da0a782b2106e466725dc65e862f6a71a92af2",
+   "archive": "superiority_v3",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.001",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.002",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.003",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.004",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.005",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.006",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.007",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.008",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.009",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.010",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.011",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.012",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.013",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.014",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.015",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.016",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.017",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.018",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.019",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.020",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.021",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.022",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.023",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/superiority_v2",
+   "kind": "dir",
+   "size": 40250743445,
+   "files": 1827,
+   "entries": 1997,
+   "sha256": "9bffda5761cb3d7dcd36e5b76c5ce202b4ba2bc215dda45983f7b8992cb990eb",
+   "archive": "superiority_v2",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v2.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v2.tar.zst.001",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v2.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/native_harness_v1",
+   "kind": "dir",
+   "size": 1718239706,
+   "files": 597,
+   "entries": 606,
+   "sha256": "d56f39be93f28fa1cd5a9b8ac1dd8ab4765ad531abe08cc394c4e71c24169769",
+   "archive": "native_harness_v1",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_v1.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_v1.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/native_harness_gce_v1",
+   "kind": "dir",
+   "size": 5254525052,
+   "files": 53,
+   "entries": 57,
+   "sha256": "88f81b109f9f223020fc7f2c767836cbff9a6c2e9c8868d2e9c6384b273b4379",
+   "archive": "native_harness_gce_v1",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.tar.zst.001",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.tar.zst.002",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/ann_extended_diagnostic_v1",
+   "kind": "dir",
+   "size": 28603756986,
+   "files": 1760,
+   "entries": 1810,
+   "sha256": "85e408dcef493ef92279b92fcce006acdc5ab3e8e3ef71730ac3f0d6a7c56434",
+   "archive": "ann_extended_diagnostic_v1",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.001",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.002",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.003",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.004",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.005",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.006",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.007",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.008",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.009",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.010",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.011",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.012",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.013",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.014",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/ann_minimal_diagnostic_v1",
+   "kind": "dir",
+   "size": 1997942226,
+   "files": 517,
+   "entries": 565,
+   "sha256": "39666fb94f439617c525dcfb915ed18a114c11c19f175ca49dc4992d08639a89",
+   "archive": "ann_minimal_diagnostic_v1",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_minimal_diagnostic_v1.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_minimal_diagnostic_v1.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/algebraic_codebook_synthetic.json",
+   "kind": "file",
+   "size": 27792796,
+   "sha256": "e414d82f969d699275e3cab6d5bbed89ceced0047cd0376ad4a05cdd4b8fad30",
+   "archive": "large_results_files",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/longmemeval_dev_answers_v2.json",
+   "kind": "file",
+   "size": 37236273,
+   "sha256": "2d3f8a46ceb121372649df326758d9f22c9605b782edef55a02c5bff0b095c2b",
+   "archive": "large_results_files",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.index.jsonl"
+   ]
+  },
+  {
+   "path": "benchmarks/results/longmemeval_dev_answers_v2b.json",
+   "kind": "file",
+   "size": 39824407,
+   "sha256": "04767552debfe16f88cc2d4301cfbb969a1f2fe0b7f4da4fd3c24e42924679e0",
+   "archive": "large_results_files",
+   "asset_urls": [
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.tar.zst.000",
+    "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.index.jsonl"
+   ]
+  }
+ ],
+ "assets": [
+  {
+   "name": "superiority_v3.index.jsonl",
+   "archive": "superiority_v3",
+   "role": "index",
+   "size": 35587981,
+   "sha256": "354385952d877b1f45bfca78e0f25681ab97e9fd71bf05fef158e067859447a3",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.index.jsonl"
+  },
+  {
+   "name": "superiority_v3.tar.zst.000",
+   "size": 1800000000,
+   "sha256": "17c945a94921b6eb3794ae9d63a722c1b4e94bebfffb521393a1223f062dfc62",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.000"
+  },
+  {
+   "name": "superiority_v3.tar.zst.001",
+   "size": 1800000000,
+   "sha256": "efe7af4e4489faef6f021755ce9249a1a98f7b4ae458a7da100a39066a85dc03",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.001"
+  },
+  {
+   "name": "superiority_v3.tar.zst.002",
+   "size": 1800000000,
+   "sha256": "ee5974742eddebda8bfa8b60988a2d5ed6a1ce4b0816340e7e747652f6e41118",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.002"
+  },
+  {
+   "name": "superiority_v3.tar.zst.003",
+   "size": 1800000000,
+   "sha256": "5cdc41156febad177514435751f63db1e193f7cbdd161f36a4e8065516bcdbab",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.003"
+  },
+  {
+   "name": "superiority_v3.tar.zst.004",
+   "size": 1800000000,
+   "sha256": "91352ccf84201bca450e8a730758c3c51060ca811070136bd3ec0e0fcfc15f12",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.004"
+  },
+  {
+   "name": "superiority_v3.tar.zst.005",
+   "size": 1800000000,
+   "sha256": "10616cdec8f59c1c574b5a799e18379a0ea77b6405b5adaf49647856fef7360d",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.005"
+  },
+  {
+   "name": "superiority_v3.tar.zst.006",
+   "size": 1800000000,
+   "sha256": "256ada4d1b273d2ab067ed469d4cb0954f26437462270427086b7dced4a78eca",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.006"
+  },
+  {
+   "name": "superiority_v3.tar.zst.007",
+   "size": 1800000000,
+   "sha256": "0dd969e12371250bdfefd55a8e14cb11bdd2eedbbcd86b21fabd8ddd1fb9c86d",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.007"
+  },
+  {
+   "name": "superiority_v3.tar.zst.008",
+   "size": 1800000000,
+   "sha256": "9f1a3386b4dc944a2abf495e609ba411745ed2ce4d2ceeb3c83b6fde5ae4e479",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.008"
+  },
+  {
+   "name": "superiority_v3.tar.zst.009",
+   "size": 1800000000,
+   "sha256": "745a3643d22220eb5f087c09e078c11b560d1130162a4b4f3e409d7481ec53e3",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.009"
+  },
+  {
+   "name": "superiority_v3.tar.zst.010",
+   "size": 1800000000,
+   "sha256": "c4aa9b08897076b5a214411eeb7d7f6444b3d620ecebaf5c12dc08e236b63560",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.010"
+  },
+  {
+   "name": "superiority_v3.tar.zst.011",
+   "size": 1800000000,
+   "sha256": "c4ceb010211de0efc2577a0d38f941b2b490a086216b3b66a3ee0db2956f70a5",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.011"
+  },
+  {
+   "name": "superiority_v3.tar.zst.012",
+   "size": 1800000000,
+   "sha256": "4e1191421c132a3ea6e4b0917298be02f26e79702fdd090da86c9f74c6ad33e0",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.012"
+  },
+  {
+   "name": "superiority_v3.tar.zst.013",
+   "size": 1800000000,
+   "sha256": "b4b59bfadccb9abf9ed0d0005e9133bdd9043324c1053476599c683cbba2e324",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.013"
+  },
+  {
+   "name": "superiority_v3.tar.zst.014",
+   "size": 1800000000,
+   "sha256": "65be3793b208f5c430090fb5c7b9edf0a326a8ffbf05a5314e86540d47e325d9",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.014"
+  },
+  {
+   "name": "superiority_v3.tar.zst.015",
+   "size": 1800000000,
+   "sha256": "54ad28698afbe17a279b391760fa7d28f4f7b2992a4a5c152e6404ee31b3445c",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.015"
+  },
+  {
+   "name": "superiority_v3.tar.zst.016",
+   "size": 1800000000,
+   "sha256": "a65d24b7c98c8af0ffb1e2b07d2a6b650aa0536869b545c6544f0754a785333e",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.016"
+  },
+  {
+   "name": "superiority_v3.tar.zst.017",
+   "size": 1800000000,
+   "sha256": "d1feb80f1a2162c0ef9ac2f9bf4aa8f3188c9eac9d959ed4b66decb07a8830e3",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.017"
+  },
+  {
+   "name": "superiority_v3.tar.zst.018",
+   "size": 1800000000,
+   "sha256": "c68abeda13e9e9ae8e841d89f2f76b39edf35c56f3985f29175a4c216a1eda2f",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.018"
+  },
+  {
+   "name": "superiority_v3.tar.zst.019",
+   "size": 1800000000,
+   "sha256": "87c6a4a108e5a6ec1054af012d09b617b08ae177af409b2a449d27be1bb7fe7b",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.019"
+  },
+  {
+   "name": "superiority_v3.tar.zst.020",
+   "size": 1800000000,
+   "sha256": "1dc832038784adb7ff34dd4a64cdef8ca73387218f9936a05738547e4c765130",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.020"
+  },
+  {
+   "name": "superiority_v3.tar.zst.021",
+   "size": 1800000000,
+   "sha256": "9ad65c32379ca52e394a550a2cd5e8e36c4bbcfce9fefcb8a604096d34596415",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.021"
+  },
+  {
+   "name": "superiority_v3.tar.zst.022",
+   "size": 1800000000,
+   "sha256": "7b88bcdd538ce15d2c1ea63344f2f08b9657e832bd7d76ee1629b17488c33765",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.022"
+  },
+  {
+   "name": "superiority_v3.tar.zst.023",
+   "size": 833812351,
+   "sha256": "d5855a7b241076125359decf2ed89f7591d8d6d92dfc20d449fdc495d3e7a850",
+   "archive": "superiority_v3",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v3.tar.zst.023"
+  },
+  {
+   "name": "superiority_v2.index.jsonl",
+   "archive": "superiority_v2",
+   "role": "index",
+   "size": 407914,
+   "sha256": "56012fbc8677f1d31c9bd264fe75cc8ae2f12435585ea50d56dda41b7b7f3971",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v2.index.jsonl"
+  },
+  {
+   "name": "superiority_v2.tar.zst.000",
+   "size": 1800000000,
+   "sha256": "5ee967aa51b759f4ebbdfc880b3c18dc23ffe426a3180048e41cffdca55b0707",
+   "archive": "superiority_v2",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v2.tar.zst.000"
+  },
+  {
+   "name": "superiority_v2.tar.zst.001",
+   "size": 429972446,
+   "sha256": "d76d132daaa2519fc59f328bc021dab63ef797a41ed40fcff3e77ba33ddfaad1",
+   "archive": "superiority_v2",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/superiority_v2.tar.zst.001"
+  },
+  {
+   "name": "native_harness_v1.index.jsonl",
+   "archive": "native_harness_v1",
+   "role": "index",
+   "size": 142677,
+   "sha256": "3e7aa9c8f133f67632fcec48cccb45fd5dc4af9e4d48dd68c0210c2629965508",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_v1.index.jsonl"
+  },
+  {
+   "name": "native_harness_v1.tar.zst.000",
+   "size": 1450339076,
+   "sha256": "348722771e99ea65717ec3784078d8f38c62c031051f00d0548bc463b7ada1e5",
+   "archive": "native_harness_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_v1.tar.zst.000"
+  },
+  {
+   "name": "native_harness_gce_v1.index.jsonl",
+   "archive": "native_harness_gce_v1",
+   "role": "index",
+   "size": 10095,
+   "sha256": "e140cc08a51100d07797873d20595d490a032c1ed9c0a380b61b3c6dfc108f65",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.index.jsonl"
+  },
+  {
+   "name": "native_harness_gce_v1.tar.zst.000",
+   "size": 1800000000,
+   "sha256": "345d9404d7d54ec34784bf81986e128d15fc90576dc8ecdd1ec03da8b675c2d7",
+   "archive": "native_harness_gce_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.tar.zst.000"
+  },
+  {
+   "name": "native_harness_gce_v1.tar.zst.001",
+   "size": 1800000000,
+   "sha256": "9d8e08e82f2a134a795b4a3c81a922f1569ea007227dfaf60877513f8046dddb",
+   "archive": "native_harness_gce_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.tar.zst.001"
+  },
+  {
+   "name": "native_harness_gce_v1.tar.zst.002",
+   "size": 1650867634,
+   "sha256": "8ebae051a34f52f9b6d21745e215bfa42d930a05cb668dd0aba6040055c9995c",
+   "archive": "native_harness_gce_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/native_harness_gce_v1.tar.zst.002"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.index.jsonl",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "index",
+   "size": 391657,
+   "sha256": "967ae7cafe1d854cdb928450d7196042def96fe78f385a2f72695f0e46ac6539",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.index.jsonl"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.000",
+   "size": 1800000000,
+   "sha256": "c3ed5948535c4aa4419bc0c863636a6a02eaa57f36c15369dfb46c9b07e4aa7a",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.000"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.001",
+   "size": 1800000000,
+   "sha256": "52d4c2b2f93e676f4d940b6a6320e13e7766194499972806f0c108ee980ed8d6",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.001"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.002",
+   "size": 1800000000,
+   "sha256": "db864ad5655d965ea428d7d588d57f9490001449bd62255a3b51b43661aa185a",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.002"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.003",
+   "size": 1800000000,
+   "sha256": "52b8435eaeffe1d4df4754c3fdb9a8c23045aa5850aaf12cee784bc70b58196b",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.003"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.004",
+   "size": 1800000000,
+   "sha256": "a623ddd8ff0929663287eb74375d3084317726a7a88e6950d98cb803b3b99ad4",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.004"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.005",
+   "size": 1800000000,
+   "sha256": "f7e13cd95b088b24f6c7d82c91f6764cdd3d353b01229cde96a50fef1fe739ea",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.005"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.006",
+   "size": 1800000000,
+   "sha256": "2b7ba78a1171cffbb2b91f5a9de0ae6b2ef3852ef07fe12ea109062d8c32ce7f",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.006"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.007",
+   "size": 1800000000,
+   "sha256": "aa7e01f12d37b5630fa8168e12c2217fe06654f2b94776459fba197fe136b2c1",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.007"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.008",
+   "size": 1800000000,
+   "sha256": "2c0f6b50c819a70893e987c86dc580bd1485da8662d8c87fa60ad9dad384d41a",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.008"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.009",
+   "size": 1800000000,
+   "sha256": "895d2d36748202d4828b0d9e0d05d5f3c218f9e24c07f603fb2a024742ce6388",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.009"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.010",
+   "size": 1800000000,
+   "sha256": "2c7cb47a4b6667d30f6b17abf192e53a27add7fe1ced57b6212479b55a6ad768",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.010"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.011",
+   "size": 1800000000,
+   "sha256": "ec097e228b355ad5eff63f9b5d586bb41d32265117279ff58c82bcb882eca753",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.011"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.012",
+   "size": 1800000000,
+   "sha256": "767233653a5d6c46de5a5199bebb63b3da6972471b413f9e468b821536f44d91",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.012"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.013",
+   "size": 1800000000,
+   "sha256": "77225314827e07b3ca24553cc76dfec8dbab1ec12a6727ad468d85dafbf48bbb",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.013"
+  },
+  {
+   "name": "ann_extended_diagnostic_v1.tar.zst.014",
+   "size": 636967017,
+   "sha256": "fd75ed871e6d6d9c51986605b8a0e5a04e75cf8a7a10f227aad129667975831c",
+   "archive": "ann_extended_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_extended_diagnostic_v1.tar.zst.014"
+  },
+  {
+   "name": "ann_minimal_diagnostic_v1.index.jsonl",
+   "archive": "ann_minimal_diagnostic_v1",
+   "role": "index",
+   "size": 114559,
+   "sha256": "7ece8411259d133a4494391092bc0d1ea8c821bf30c8043d51fa4d08265f5c3e",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_minimal_diagnostic_v1.index.jsonl"
+  },
+  {
+   "name": "ann_minimal_diagnostic_v1.tar.zst.000",
+   "size": 1792494214,
+   "sha256": "4b57d39176688d58c27c9dd2fc4ed5a660fc1e025dd6934a127ff8e79367fb0a",
+   "archive": "ann_minimal_diagnostic_v1",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/ann_minimal_diagnostic_v1.tar.zst.000"
+  },
+  {
+   "name": "large_results_files.index.jsonl",
+   "archive": "large_results_files",
+   "role": "index",
+   "size": 528,
+   "sha256": "7b9dd695374c417456a16e9dfb9c4a7103b0522d1a9d0b82f04ac53dddad6296",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.index.jsonl"
+  },
+  {
+   "name": "large_results_files.tar.zst.000",
+   "size": 6960579,
+   "sha256": "63efe1f266b2b1bbceaabd7ca2391bc0dfaddddfbe6cb78b26458c74209b2984",
+   "archive": "large_results_files",
+   "role": "part",
+   "url": "https://github.com/writerslogic/holographic-memory/releases/download/evidence-v1/large_results_files.tar.zst.000"
+  }
+ ]
+}
