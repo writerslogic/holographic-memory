@@ -44,6 +44,7 @@ pub mod encoding;
 pub mod engine;
 pub mod entangled;
 pub(crate) mod error;
+pub mod format;
 pub(crate) mod graph;
 pub mod hardware;
 pub mod hopfield;

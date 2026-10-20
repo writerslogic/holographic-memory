@@ -1,0 +1,571 @@
+{
+  "comment": "Length and CRC32 of every golden file. Golden stores are append-only: CI rejects a change to an existing entry (scripts/format-gate.sh).",
+  "corpus": {
+    "embed.json": [
+      446,
+      "d1e5ac32"
+    ],
+    "text.json": [
+      1778,
+      "36d3d2ea"
+    ]
+  },
+  "goldens": {
+    "rejected-pre-schema": {
+      "golden.json": [
+        3716,
+        "e8253b56"
+      ],
+      "indices.json": [
+        120,
+        "7a91a0b6"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "69f30504"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4627,
+        "24dfa518"
+      ]
+    },
+    "v061-encrypted": {
+      "encryption.salt": [
+        16,
+        "da2d7ea9"
+      ],
+      "golden.json": [
+        3585,
+        "13e97c93"
+      ],
+      "indices.json": [
+        120,
+        "a178727b"
+      ],
+      "store.json": [
+        224,
+        "0a530e38"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "69f30504"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        6383,
+        "de387779"
+      ]
+    },
+    "v061-plain": {
+      "golden.json": [
+        3644,
+        "22fd4e75"
+      ],
+      "indices.json": [
+        120,
+        "7a91a0b6"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "69f30504"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4627,
+        "24dfa518"
+      ]
+    },
+    "v1-premanifest": {
+      "golden.json": [
+        3650,
+        "2600fbbe"
+      ],
+      "indices.json": [
+        120,
+        "7a91a0b6"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4627,
+        "24dfa518"
+      ]
+    },
+    "v2-marker": {
+      "golden.json": [
+        3423,
+        "ef83cd86"
+      ],
+      "indices.json": [
+        120,
+        "2d6c0806"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "185b0bc7"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "3c41170e"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4752,
+        "8ced5710"
+      ]
+    },
+    "v3-fixed64": {
+      "documents.text": [
+        734,
+        "40421edc"
+      ],
+      "golden.json": [
+        3423,
+        "b1bb6f61"
+      ],
+      "indices.json": [
+        120,
+        "2d6c0806"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/format.json": [
+        70,
+        "7376097f"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "c6a84bc0"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4752,
+        "8ced5710"
+      ]
+    },
+    "v4-audit": {
+      "audit.bin": [
+        420,
+        "95074fc8"
+      ],
+      "documents.text": [
+        926,
+        "b8514631"
+      ],
+      "golden.json": [
+        3288,
+        "e5daaa58"
+      ],
+      "indices.json": [
+        120,
+        "2d6c0806"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4752,
+        "8ced5710"
+      ]
+    },
+    "v4-capped-union": {
+      "documents.text": [
+        926,
+        "b8514631"
+      ],
+      "golden.json": [
+        3361,
+        "9ad2f4fb"
+      ],
+      "indices.json": [
+        120,
+        "d6662300"
+      ],
+      "store.json": [
+        232,
+        "fb0cd639"
+      ],
+      "store.json.crc32": [
+        9,
+        "0c33da7d"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4894,
+        "5636c34c"
+      ]
+    },
+    "v4-compacted": {
+      "documents.text": [
+        1001,
+        "a0c1bdc9"
+      ],
+      "golden.json": [
+        3659,
+        "7211a17b"
+      ],
+      "indices.json": [
+        133,
+        "41f5ff77"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/CURRENT": [
+        29,
+        "1b9e945f"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-34219-1792532169402249000/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/gen-34219-1792532169402249000/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-34219-1792532169402249000/seg_0.bin": [
+        4155,
+        "1524474d"
+      ]
+    },
+    "v4-embeddings": {
+      "documents.text": [
+        150,
+        "5304a247"
+      ],
+      "golden.json": [
+        1793,
+        "bc33e7fb"
+      ],
+      "indices.json": [
+        120,
+        "f465df27"
+      ],
+      "store.json": [
+        347,
+        "ff792d8b"
+      ],
+      "store.json.crc32": [
+        9,
+        "638657a4"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        1165,
+        "0ce50f74"
+      ]
+    },
+    "v4-encrypted": {
+      "documents.text": [
+        1262,
+        "535609f5"
+      ],
+      "encryption.salt": [
+        16,
+        "2ca41808"
+      ],
+      "golden.json": [
+        3376,
+        "c75d39cb"
+      ],
+      "indices.json": [
+        120,
+        "25f40458"
+      ],
+      "store.json": [
+        224,
+        "0a530e38"
+      ],
+      "store.json.crc32": [
+        9,
+        "d0723a34"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        6477,
+        "525f2009"
+      ]
+    },
+    "v4-indices": {
+      "documents.text": [
+        926,
+        "b8514631"
+      ],
+      "golden.json": [
+        3337,
+        "b6d96222"
+      ],
+      "indices.json": [
+        130,
+        "27285a1f"
+      ],
+      "ivf_index.bin": [
+        6103,
+        "bdaf4b0c"
+      ],
+      "nsg_index.bin": [
+        3454,
+        "3a791714"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        17086,
+        "0066baae"
+      ]
+    },
+    "v4-memory": {
+      "documents.text": [
+        123,
+        "b4f652a6"
+      ],
+      "golden.json": [
+        1249,
+        "eb857398"
+      ],
+      "indices.json": [
+        120,
+        "fd39b05c"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        2306,
+        "d83a6037"
+      ]
+    },
+    "v4-plain": {
+      "documents.text": [
+        926,
+        "b8514631"
+      ],
+      "golden.json": [
+        3367,
+        "94abfe44"
+      ],
+      "indices.json": [
+        120,
+        "2d6c0806"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        4752,
+        "8ced5710"
+      ]
+    },
+    "v4-sharded": {
+      "documents.text": [
+        926,
+        "b8514631"
+      ],
+      "golden.json": [
+        3310,
+        "449c717c"
+      ],
+      "indices.json": [
+        259,
+        "3baa2742"
+      ],
+      "ivf_index_0.bin": [
+        5461,
+        "b2b73703"
+      ],
+      "ivf_index_1.bin": [
+        5327,
+        "9eefb497"
+      ],
+      "ivf_index_2.bin": [
+        5447,
+        "63ef541c"
+      ],
+      "nsg_index_0.bin": [
+        1177,
+        "ec6f5dba"
+      ],
+      "nsg_index_1.bin": [
+        996,
+        "bd9724d7"
+      ],
+      "nsg_index_2.bin": [
+        1303,
+        "e12bb14b"
+      ],
+      "shard_meta.json": [
+        17,
+        "862cc752"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        17086,
+        "0066baae"
+      ]
+    },
+    "v4-snapshot": {
+      "documents.text": [
+        1001,
+        "a0c1bdc9"
+      ],
+      "golden.json": [
+        3625,
+        "bd055326"
+      ],
+      "indices.json": [
+        133,
+        "ef23ff7d"
+      ],
+      "store.json": [
+        225,
+        "ffa3c225"
+      ],
+      "store.json.crc32": [
+        9,
+        "9160500f"
+      ],
+      "vectors_data.bin/CURRENT": [
+        29,
+        "ca3dbe7b"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-34219-1792532171243253000/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/gen-34219-1792532171243253000/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-34219-1792532171243253000/seg_0.bin": [
+        4155,
+        "1524474d"
+      ]
+    }
+  }
+}

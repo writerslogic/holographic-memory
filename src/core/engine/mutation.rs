@@ -12,7 +12,7 @@ use crate::core::{
     types::{Relation, RelationType},
 };
 
-pub(super) const TRANSACTION_MAGIC: &[u8] = b"HMS-TXN-2\0";
+pub(super) const TRANSACTION_MAGIC: &[u8] = crate::core::format::TRANSACTION_MAGIC;
 pub(super) const MEANING_PREFIX: &str = "hms:meaning:";
 
 #[derive(Clone, Serialize, Deserialize)]

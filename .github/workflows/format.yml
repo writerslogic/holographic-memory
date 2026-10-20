@@ -1,0 +1,24 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Format drift
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  golden:
+    name: golden stores are append-only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Existing golden files must not change
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: bash scripts/format-gate.sh "$BASE"
