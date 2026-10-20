@@ -32,3 +32,21 @@ __pycache__/
 
 # Claude Code
 .claude/
+
+# uv script lockfiles written beside the benchmark scripts
+benchmarks/public/*.py.lock
+
+# A build driver that joins an absolute path under the cwd recreates this tree at the repo root
+/Volumes/
+
+# Evidence kept off git: benchmarks/evidence/MANIFEST.json lists the release archives and
+# scripts/fetch_evidence.py restores them to these paths.
+/benchmarks/results/superiority_v2/
+/benchmarks/results/superiority_v3/
+/benchmarks/results/native_harness_v1/
+/benchmarks/results/native_harness_gce_v1/
+/benchmarks/results/ann_extended_diagnostic_v1/
+/benchmarks/results/ann_minimal_diagnostic_v1/
+/benchmarks/results/algebraic_codebook_synthetic.json
+/benchmarks/results/longmemeval_dev_answers_v2.json
+/benchmarks/results/longmemeval_dev_answers_v2b.json
