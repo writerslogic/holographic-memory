@@ -1,0 +1,2 @@
+# Golden stores are byte-exact fixtures (checksums cover their text files): no EOL conversion.
+tests/golden/** -text

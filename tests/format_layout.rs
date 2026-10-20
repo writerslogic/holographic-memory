@@ -70,7 +70,7 @@ fn read_segment(seg: &[u8]) -> Result<(Vec<Frame>, usize, &'static str)> {
 fn open_envelope(salt: &[u8], sealed: &[u8]) -> Result<Vec<u8>> {
     use aes_gcm::aead::{Aead, KeyInit};
     use argon2::{Algorithm, Argon2, Params, Version};
-    let mut key = [0u8; 32];
+    let mut key = [0u8; 32]; // codeql[rust/hard-coded-cryptographic-value] Fixed passphrase of the committed golden fixture stores
     Argon2::new(
         Algorithm::Argon2id,
         Version::V0x13,
