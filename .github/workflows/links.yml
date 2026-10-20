@@ -1,0 +1,49 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Weekly external link check. Third-party hosts flake, so pull requests only report; this run
+# retries, tolerates rate limiting, and opens (or updates) one issue when links are really dead.
+name: Links
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external-links:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check every external link in the README and the docs
+        id: lychee
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --config .lychee.toml --no-progress --max-retries 5 --retry-wait-time 10
+            README.md CONTRIBUTING.md 'docs/**/*.md'
+          output: lychee-report.md
+          fail: false
+
+      - name: Open or update the link-rot issue
+        if: steps.lychee.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          existing=$(gh issue list --repo "$REPO" --label link-rot --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$REPO" --body-file lychee-report.md
+          else
+            gh label create link-rot --repo "$REPO" --description "Dead external links found by the weekly check" 2>/dev/null || true
+            gh issue create --repo "$REPO" --title "Dead external links found by the weekly check" --label link-rot --body-file lychee-report.md
+          fi

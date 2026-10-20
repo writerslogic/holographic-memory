@@ -55,13 +55,17 @@ jobs:
             '_site/dev/**/*.html'
           fail: true
 
-      - name: Check external links in the README and the dev site
+      # Informational on pull requests: third-party hosts flake. links.yml runs the same check
+      # weekly and opens an issue on real rot. Internal links above are strict and blocking.
+      - name: Check external links in the README and the dev site (non-blocking)
+        continue-on-error: true
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
           # 403 and 429 are bot-blocking from busy hosts, not broken links. Badge and
           # not-yet-published URLs are excluded in .lychee.toml.
           args: >-
             --config .lychee.toml --no-progress --max-retries 3 --retry-wait-time 5
+            --cache --max-cache-age 1d
             README.md CONTRIBUTING.md '_site/dev/**/*.html'
           fail: true
 
