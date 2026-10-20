@@ -21,8 +21,15 @@
 //! of one 1-bit code per edge (see `vertex.rs`).
 
 mod build_kernels;
-mod kernels;
+mod fastscan;
+pub(crate) mod kernels;
 mod vertex;
+
+#[cfg(feature = "experimental")]
+pub mod diagnostics;
+
+#[cfg(feature = "experimental")]
+pub mod ivf;
 
 use std::cell::RefCell;
 
@@ -64,6 +71,11 @@ pub struct BuildParams {
     /// least the dimension. 0 picks the smallest such length.
     pub code_bits: usize,
     pub seed: u64,
+    /// Score the construction search's candidates with the 8-bit codes (one SDOT over a
+    /// `dim`-byte row) instead of exact float distances, at every dimension; the expanded
+    /// set is re-scored exactly before the prune, which stays exact. The cache header does
+    /// not record this yet: build with a fresh cache path when it changes.
+    pub quantized_search: bool,
 }
 
 impl Default for BuildParams {
@@ -74,6 +86,7 @@ impl Default for BuildParams {
             alpha: 1.0,
             code_bits: 0,
             seed: 0x5EED,
+            quantized_search: false,
         }
     }
 }
@@ -232,8 +245,10 @@ fn d2(a: &[f32], b: &[f32]) -> f32 {
 struct Rows<'a> {
     data: &'a [f32],
     dim: usize,
-    /// Bounds that let construction skip exact distances whose outcome they already decide.
+    /// Bounds that let construction skip exact distances whose outcome they already decide,
+    /// or, with `quantized`, the estimates that order the construction search's pool.
     codes: Option<&'a BuildCodes>,
+    quantized: bool,
 }
 
 /// One 8-bit code per row (`x = scale q + e` with `|e| <= err`), giving bounds on the
@@ -299,6 +314,13 @@ impl BuildCodes {
 
     /// `(lower, upper)` bounds on the computed `d2` of the unit rows `p` and `u`, from the
     /// two-sided form of the inequality in [`Self::d2_lower`].
+    /// The 8-bit estimate of the computed `d2` of the unit rows `p` and `u`.
+    #[inline]
+    fn d2_est(&self, p: u32, u: u32) -> f32 {
+        let raw = (self.dot)(self.code(p), self.code(u)) as f32;
+        (2.0 - 2.0 * self.scale[p as usize] * self.scale[u as usize] * raw).max(0.0)
+    }
+
     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
         const SLACK: f32 = 1e-4;
         let (pi, ui) = (p as usize, u as usize);
@@ -420,7 +442,16 @@ impl Rows<'_> {
             fresh.clear();
             // With a full pool, a neighbour at or beyond the pool bound is discarded below; the
             // codes rule most of them out without loading their rows.
-            match self.codes.filter(|_| pool.len() >= l) {
+            match self.codes.filter(|_| self.quantized || pool.len() >= l) {
+                Some(codes) if self.quantized => {
+                    for &u in &graph[v as usize] {
+                        if visited.insert(u) {
+                            prefetch_bytes(codes.code(u));
+                            fresh.push(u);
+                        }
+                    }
+                    n_fresh += fresh.len() as u64;
+                }
                 Some(codes) => {
                     for &u in &graph[v as usize] {
                         if visited.insert(u) {
@@ -445,8 +476,16 @@ impl Rows<'_> {
                     n_fresh += fresh.len() as u64;
                 }
             }
-            n_exact += fresh.len() as u64;
-            self.d2_many(target, &fresh, &mut dists);
+            match self.codes.filter(|_| self.quantized) {
+                Some(codes) => {
+                    dists.clear();
+                    dists.extend(fresh.iter().map(|&u| codes.d2_est(p, u)));
+                }
+                None => {
+                    n_exact += fresh.len() as u64;
+                    self.d2_many(target, &fresh, &mut dists);
+                }
+            }
             let mut best = usize::MAX;
             for (&u, &du) in fresh.iter().zip(&dists) {
                 if pool.len() >= l && du >= pool[l - 1].dist {
@@ -470,6 +509,16 @@ impl Rows<'_> {
             }
             if let Some(c) = pool.get(cur) {
                 build_kernels::prefetch_ids(&graph[c.id as usize]);
+            }
+        }
+        if self.quantized {
+            // Exact distances of the expanded set, which the prune scores exactly.
+            let ids: Vec<u32> = expanded.iter().map(|e| e.1).collect();
+            let mut d = Vec::with_capacity(ids.len());
+            self.d2_stream(target, &ids, &mut d);
+            n_exact += ids.len() as u64;
+            for (e, d) in expanded.iter_mut().zip(d) {
+                e.0 = d;
             }
         }
         prof::count(&prof::FRESH, n_fresh);
@@ -781,6 +830,7 @@ impl Graph {
             data: &self.unit,
             dim: self.dim,
             codes: None,
+            quantized: false,
         }
     }
 
@@ -807,6 +857,17 @@ impl Graph {
     /// stay zero. Uses the rayon pool; the result depends only on the data and `params`
     /// (`code_bits` is not used).
     pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, HmsError> {
+        Self::build_owned(data.to_vec(), dim, params)
+    }
+
+    /// [`Graph::build`] over an owned matrix, normalized in place: the caller's copy is the
+    /// one the graph keeps, so the vectors are resident once during construction instead of
+    /// twice (the build's own copy next to the caller's).
+    pub fn build_owned(
+        mut data: Vec<f32>,
+        dim: usize,
+        params: &BuildParams,
+    ) -> Result<Self, HmsError> {
         if dim == 0 || !data.len().is_multiple_of(dim) {
             return Err(invalid(format!(
                 "ragged data: {} values are not a multiple of dimension {dim}",
@@ -839,18 +900,20 @@ impl Graph {
                 "degree must be positive and even, not {r}"
             )));
         }
-        let mut unit = data.to_vec();
-        unit.par_chunks_mut(dim).for_each(|x| {
+        data.par_chunks_mut(dim).for_each(|x| {
             let norm = dot(x, x).sqrt();
             if norm > 0.0 {
                 x.iter_mut().for_each(|o| *o /= norm);
             }
         });
-        let codes = (dim >= BUILD_CODES_MIN_DIM).then(|| BuildCodes::new(&unit, dim));
+        let unit = data;
+        let codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
+            .then(|| BuildCodes::new(&unit, dim));
         let rows = Rows {
             data: &unit,
             dim,
             codes: codes.as_ref(),
+            quantized: params.quantized_search,
         };
 
         let mut centroid = vec![0f32; dim];
@@ -897,11 +960,13 @@ impl Graph {
                 .iter()
                 .flat_map(|&g| rows.row(g).iter().copied())
                 .collect();
-            let sub_codes = (dim >= BUILD_CODES_MIN_DIM).then(|| BuildCodes::new(&sub, dim));
+            let sub_codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
+                .then(|| BuildCodes::new(&sub, dim));
             let sub_rows = Rows {
                 data: &sub,
                 dim,
                 codes: sub_codes.as_ref(),
+                quantized: params.quantized_search,
             };
             let local: Vec<u32> = (0..size as u32).collect();
             let mut g: Vec<Vec<u32>> = vec![Vec::new(); size];
@@ -1285,6 +1350,7 @@ mod tests {
         let rows = Rows {
             data: &data,
             dim: d,
+            quantized: false,
             codes: None,
         };
         let mut rng = SplitMix(11);
@@ -1342,6 +1408,7 @@ mod tests {
                     data: &data,
                     dim: d,
                     codes,
+                    quantized: false,
                 };
                 let order: Vec<u32> = (0..n as u32).rev().collect();
                 let mut graph = vec![Vec::new(); n];

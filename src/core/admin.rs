@@ -1,21 +1,27 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use crc32fast::Hasher;
 use memmap2::Mmap;
 use serde::Serialize;
+use serde_json::Value;
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::storage::{
-    FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE, MAX_RAW_FRAME_SIZE, SEGMENT_SIZE,
-    STORAGE_FORMAT_VERSION,
+    is_log_end, FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE, MAX_RAW_FRAME_SIZE,
+    SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
 };
 use super::store_lock::{StoreLock, LOCK_FILE};
+use super::{HmsConfig, HmsCore};
 
 const ARENA_DIRECTORY: &str = "vectors_data.bin";
+/// Mirrors `engine::mutation::TRANSACTION_MAGIC` (private to the engine); the
+/// `verify_cross_checks_logged_documents` test pins the two together.
+const TRANSACTION_MAGIC: &[u8] = b"HMS-TXN-2\0";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,6 +33,26 @@ pub struct StoreInspection {
     pub logical_bytes: u64,
     pub allocated_bytes: u64,
     pub checksums_verified: bool,
+    /// Manifests whose checksum sidecar was verified (`verify` only).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub manifests_verified: Vec<String>,
+    /// Document cross-check against the opened store (`verify` only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub documents: Option<DocumentCheck>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentCheck {
+    /// False when the store was not opened; `reason` says why.
+    pub checked: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// Documents the transaction log says are live; absent when the frames are encrypted.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected: Option<usize>,
+    pub present: usize,
+    pub missing: Vec<String>,
 }
 
 /// Inspect storage framing without opening or changing the HMS engine.
@@ -108,7 +134,155 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
         logical_bytes,
         allocated_bytes: segment_count as u64 * SEGMENT_SIZE as u64,
         checksums_verified: verify_checksums,
+        manifests_verified: Vec::new(),
+        documents: None,
     })
+}
+
+/// `inspect_store(path, true)` plus the manifest checksums and a document cross-check: the
+/// store is opened through the engine, which authenticates and replays every frame, and
+/// every document the log says is live must resolve there. Corruption fails the verify
+/// instead of being served as a shorter store.
+pub fn verify_store(
+    path: impl AsRef<Path>,
+    encryption_passphrase_env: Option<String>,
+) -> Result<StoreInspection> {
+    let store = path.as_ref();
+    let mut inspection = inspect_store(store, true)?;
+    let arena_path = store.join(ARENA_DIRECTORY);
+    inspection.manifests_verified = super::durable_file::verify_manifests(store, &arena_path)?;
+    let schema_path = store.join("store.json");
+    let schema: Value = serde_json::from_slice(
+        &std::fs::read(&schema_path)
+            .with_context(|| format!("missing store schema {}", schema_path.display()))?,
+    )
+    .with_context(|| format!("invalid store schema {}", schema_path.display()))?;
+    let dimensions = u32::try_from(
+        schema["dimensions"]
+            .as_u64()
+            .context("store.json lacks dimensions")?,
+    )?;
+    let mut config = HmsConfig::default();
+    config.meaning.enabled = schema["meaning_enabled"].as_bool().unwrap_or(false);
+    config.embedding_space = serde_json::from_value(schema["embedding_space"].clone())
+        .context("store.json embedding_space")?;
+    let expected = if schema["encrypted"].as_bool().unwrap_or(false) {
+        let Some(env) = encryption_passphrase_env else {
+            inspection.documents = Some(DocumentCheck {
+                checked: false,
+                reason: Some(
+                    "encrypted store: pass --encryption-passphrase-env to open it and \
+                     authenticate every frame"
+                        .into(),
+                ),
+                expected: None,
+                present: 0,
+                missing: Vec::new(),
+            });
+            return Ok(inspection);
+        };
+        config.security.encryption_enabled = true;
+        config.security.encryption_passphrase_env = Some(env);
+        None
+    } else {
+        Some(live_document_ids(&arena_path)?)
+    };
+    let core = HmsCore::new(dimensions, Some(store.display().to_string()), Some(config))
+        .context("opening the store for the document cross-check")?;
+    inspection.documents = Some(match expected {
+        Some(ids) => {
+            let missing = missing_documents(&ids, &core);
+            DocumentCheck {
+                checked: true,
+                reason: None,
+                expected: Some(ids.len()),
+                present: ids.len() - missing.len(),
+                missing,
+            }
+        }
+        None => DocumentCheck {
+            checked: true,
+            reason: Some(
+                "every frame authenticated on open; the presence cross-check needs plaintext \
+                 frames"
+                    .into(),
+            ),
+            expected: None,
+            present: 0,
+            missing: Vec::new(),
+        },
+    });
+    Ok(inspection)
+}
+
+/// Document ids the plaintext transaction log leaves live: every `Document` id minus later
+/// `DeleteDocument`s. Frame bounds and checksums were validated by `inspect_store` first.
+fn live_document_ids(arena_path: &Path) -> Result<BTreeSet<String>> {
+    let generation = super::durable_file::arena_generation(arena_path)?;
+    let mut live = BTreeSet::new();
+    for segment in 0usize.. {
+        let segment_path = generation.join(format!("seg_{segment}.bin"));
+        if !segment_path.exists() {
+            break;
+        }
+        let mmap = unsafe { Mmap::map(&File::open(&segment_path)?)? };
+        let mut offset = 0usize;
+        while offset + HEADER_SIZE <= mmap.len() {
+            let header = &mmap[offset..offset + HEADER_SIZE];
+            if is_log_end(header) {
+                break;
+            }
+            let raw_len = u32::from_le_bytes(header[4..8].try_into()?) as usize;
+            let comp_len = u32::from_le_bytes(header[8..12].try_into()?) as usize;
+            let frame_end = offset + HEADER_SIZE + comp_len;
+            ensure!(
+                frame_end <= mmap.len(),
+                "truncated frame in {} at byte {offset}",
+                segment_path.display()
+            );
+            let payload = &mmap[offset + HEADER_SIZE..frame_end];
+            let decoded = if comp_len < raw_len {
+                lz4_flex::decompress(payload, raw_len)?
+            } else {
+                payload.to_vec()
+            };
+            let json = decoded.strip_prefix(TRANSACTION_MAGIC).with_context(|| {
+                format!(
+                    "frame at byte {offset} of {} is not a transaction frame",
+                    segment_path.display()
+                )
+            })?;
+            let mutations: Vec<Value> = serde_json::from_slice(json).with_context(|| {
+                format!(
+                    "frame at byte {offset} of {} is not a transaction",
+                    segment_path.display()
+                )
+            })?;
+            for mutation in &mutations {
+                let id_of = |variant: &str| {
+                    mutation
+                        .get(variant)
+                        .and_then(|m| m.get("id"))
+                        .and_then(Value::as_str)
+                };
+                if let Some(id) = id_of("Document") {
+                    live.insert(id.to_string());
+                } else if let Some(id) = id_of("DeleteDocument") {
+                    live.remove(id);
+                }
+            }
+            offset = frame_end;
+        }
+    }
+    Ok(live)
+}
+
+fn missing_documents(expected: &BTreeSet<String>, core: &HmsCore) -> Vec<String> {
+    expected
+        .iter()
+        .filter(|id| !core.has_document(id))
+        .cloned()
+        .collect()
 }
 
 pub(crate) fn inspect_segment(
@@ -123,7 +297,14 @@ pub(crate) fn inspect_segment(
         let raw_len = u32::from_le_bytes(data[offset + 4..offset + 8].try_into()?) as usize;
         let comp_len = u32::from_le_bytes(data[offset + 8..offset + 12].try_into()?) as usize;
         if raw_len == 0 && comp_len == 0 {
-            return Ok((frames, offset));
+            if is_log_end(&data[offset..offset + HEADER_SIZE]) {
+                return Ok((frames, offset));
+            }
+            bail!(
+                "invalid end-of-log header in {} at byte {}",
+                path.display(),
+                offset
+            );
         }
         if raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE || comp_len == 0 || comp_len > SEGMENT_SIZE
         {
@@ -298,8 +479,63 @@ pub fn reencode_documents(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::documents::DocumentInput;
     use crate::core::entangled::EntangledHVec;
     use crate::core::HmsCore;
+
+    /// `verify` cross-checks the opened store against the log: a healthy store reports every
+    /// live document present, and a logged document the store cannot resolve is named.
+    #[test]
+    fn verify_cross_checks_logged_documents() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let store = root.path().join("store");
+        {
+            let hms = HmsCore::new(256, Some(store.display().to_string()), None)?;
+            for n in 0..3 {
+                hms.memorize_document(DocumentInput {
+                    id: format!("doc{n}"),
+                    text: format!("document {n} about harbors and ledgers"),
+                    source_uri: None,
+                    version: None,
+                    metadata: None,
+                    chunk_words: None,
+                    overlap_words: None,
+                    store_text: None,
+                    embeddings: None,
+                })?;
+            }
+            assert!(hms.delete_document("doc1")?);
+            hms.flush()?;
+        }
+        let verified = verify_store(&store, None)?;
+        assert!(verified
+            .manifests_verified
+            .iter()
+            .any(|m| m == "store.json"));
+        assert!(verified
+            .manifests_verified
+            .iter()
+            .any(|m| m == "format.json"));
+        let documents = verified
+            .documents
+            .expect("plaintext stores are cross-checked");
+        assert_eq!(
+            (documents.checked, documents.expected, documents.present),
+            (true, Some(2), 2)
+        );
+        assert!(documents.missing.is_empty());
+
+        let core = HmsCore::new(256, Some(store.display().to_string()), None)?;
+        let expected: BTreeSet<String> = ["doc0", "doc2", "doc9"]
+            .into_iter()
+            .map(String::from)
+            .collect();
+        assert_eq!(
+            missing_documents(&expected, &core),
+            vec!["doc9".to_string()]
+        );
+        Ok(())
+    }
 
     #[test]
     fn inspect_verify_and_migrate_roundtrip() -> Result<()> {

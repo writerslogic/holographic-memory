@@ -1,0 +1,359 @@
+--- src/core/documents/search.rs	2026-10-19 12:22:14
++++ /private/tmp/claude-501/-Volumes-A-holographic-memory/a0cd4892-08c7-440d-8666-077f15cd8df8/scratchpad/search_with_daat.rs	2026-10-19 12:20:31
+@@ -99,6 +99,8 @@
+     use_postings: bool,
+     dense: Option<Arc<DenseIndex>>,
+     dfs: Option<[BTreeMap<String, usize>; 2]>,
++    /// Lexical scores per captured chunk when the capture already ranked them.
++    lexical_scores: Option<Vec<f64>>,
+     /// The store's text segment, read for result text after the store lock is released.
+     text: Option<Arc<super::text::TextSegment>>,
+ }
+@@ -202,6 +204,15 @@
+             return capture_indexed_query(store, prepared, Arc::clone(index));
+         }
+     }
++    if prepared.lexical_only && prepared.lexical_weight > 0.0 && prepared.embedding.is_none() {
++        #[cfg(test)]
++        let ranked = RANKED.load(std::sync::atomic::Ordering::Relaxed);
++        #[cfg(not(test))]
++        let ranked = true;
++        if ranked {
++            return capture_ranked_lexical(store, prepared);
++        }
++    }
+     let mut chunks = Vec::new();
+     let mut positions = SlotPositions::new(store.slot_count);
+     let (count, words, use_postings) = if prepared.lexical_only {
+@@ -295,6 +306,7 @@
+         use_postings,
+         dense: None,
+         dfs: None,
++        lexical_scores: None,
+         text: store.text_segment(),
+     }
+ }
+@@ -340,7 +352,210 @@
+         words: store.word_count,
+         use_postings: false,
+         dense: Some(dense),
++        dfs: Some(dfs),
++        lexical_scores: None,
++        text: store.text_segment(),
++    }
++}
++
++/// Advances `cursor` to the first posting at or after `slot`, galloping from its current
++/// position, and returns that posting's frequency when it is exactly `slot`.
++fn gallop(postings: &[(u32, u32)], cursor: &mut usize, slot: u32) -> Option<u32> {
++    let mut low = *cursor;
++    if postings[low].0 < slot {
++        let mut step = 1;
++        let mut high = low + 1;
++        while high < postings.len() && postings[high].0 < slot {
++            low = high;
++            step *= 2;
++            high = low + step;
++        }
++        let high = high.min(postings.len());
++        low += postings[low..high].partition_point(|p| p.0 < slot);
++    }
++    *cursor = low;
++    let (found, tf) = postings[low];
++    (found == slot).then_some(tf)
++}
++
++/// Exact top-`limit` lexical ranking under the store lock. A document-at-a-time pass merges
++/// the posting lists whose score bounds can still reach the current `limit`-th score (the
++/// essential lists) and probes the rest by galloping only for candidates that survive the
++/// bound, so common terms cost a sequential decode and no per-chunk work. Contributions are
++/// summed in the same (form, word) order as [`execute_chunks`], which makes the captured
++/// scores bit-identical to scoring every candidate.
++#[cfg(test)]
++pub(super) static RANKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
++
++#[cfg(test)]
++pub(super) static RANKED_NS: [std::sync::atomic::AtomicU64; 3] = [
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++];
++
++fn capture_ranked_lexical(store: &DocumentStore, prepared: PreparedSearch) -> CapturedQuery {
++    #[cfg(test)]
++    let t0 = std::time::Instant::now();
++    struct TermList {
++        /// Position in the (form, word) summation order.
++        order: usize,
++        idf: f64,
++        bound: f64,
++        postings: Vec<(u32, u32)>,
++        cursor: usize,
++    }
++    let n = store.chunk_count as f64;
++    let average = (store.word_count as f64 / n).max(1.0);
++    let mut dfs: [BTreeMap<String, usize>; 2] = Default::default();
++    let mut lists = Vec::new();
++    let mut order = 0;
++    for (form, terms) in prepared.query_terms.iter().enumerate() {
++        for word in terms.keys() {
++            let source = store.postings[form].get(word);
++            let df = source.map_or(0, PostingList::len);
++            dfs[form].insert(word.clone(), df);
++            if let Some(source) = source {
++                let idf = (1.0 + (n - df as f64 + 0.5) / (df as f64 + 0.5)).ln();
++                let mut postings = Vec::with_capacity(df + 1);
++                let mut max_tf = 0u32;
++                source.for_each(|slot, tf| {
++                    max_tf = max_tf.max(tf);
++                    postings.push((slot as u32, tf));
++                });
++                // The sentinel keeps every cursor in bounds without a check per step.
++                postings.push((u32::MAX, 0));
++                // Every chunk norm is at least 1.2 * 0.25 and the term weight grows with the
++                // frequency, so this bounds the term's contribution to any chunk.
++                let tf = f64::from(max_tf);
++                let bound = (idf * tf * 2.2 / (tf + 0.3)).max(0.0) * (1.0 + 1e-9);
++                lists.push(TermList {
++                    order,
++                    idf,
++                    bound,
++                    postings,
++                    cursor: 0,
++                });
++            }
++            order += 1;
++        }
++    }
++    #[cfg(test)]
++    let t1 = std::time::Instant::now();
++    lists.sort_by(|a, b| a.bound.total_cmp(&b.bound));
++    let prefix: Vec<f64> = lists
++        .iter()
++        .scan(0.0, |total, list| {
++            *total += list.bound;
++            Some(*total)
++        })
++        .collect();
++    let compare = |a: &(f64, u32), b: &(f64, u32)| {
++        b.0.total_cmp(&a.0).then_with(|| {
++            let (da, ia) = store.slot_owner(a.1 as usize);
++            let (db, ib) = store.slot_owner(b.1 as usize);
++            (da.id.as_str(), ia).cmp(&(db.id.as_str(), ib))
++        })
++    };
++    let limit = prepared.limit;
++    let mut kept: Vec<(f64, u32)> = Vec::with_capacity(2 * limit + 1);
++    // Candidates scoring below this cannot enter the top `limit`; lists[..essential] cannot
++    // lift a candidate over it on their own.
++    let mut threshold = 0.0f64;
++    let mut essential = 0;
++    // Per query word in summation order: its idf and the current candidate's term frequency.
++    let mut idf_by_order = vec![0.0f64; order];
++    for list in &lists {
++        idf_by_order[list.order] = list.idf;
++    }
++    let mut hits = vec![0u32; order];
++    loop {
++        let mut slot = u32::MAX;
++        for list in &lists[essential..] {
++            slot = slot.min(list.postings[list.cursor].0);
++        }
++        if slot == u32::MAX {
++            break;
++        }
++        let norm = 1.2 * (0.25 + 0.75 * f64::from(store.slot_word_count(slot as usize)) / average);
++        let mut partial = 0.0;
++        for list in &mut lists[essential..] {
++            let (next, tf) = list.postings[list.cursor];
++            let hit = next == slot;
++            hits[list.order] = if hit { tf } else { 0 };
++            if hit {
++                let tf = f64::from(tf);
++                partial += list.idf * tf * 2.2 / (tf + norm);
++                list.cursor += 1;
++            }
++        }
++        let rest = if essential == 0 {
++            0.0
++        } else {
++            prefix[essential - 1]
++        };
++        if (partial + rest) * (1.0 + 1e-9) < threshold {
++            continue;
++        }
++        for list in &mut lists[..essential] {
++            hits[list.order] = gallop(&list.postings, &mut list.cursor, slot).unwrap_or(0);
++        }
++        // The exact score sums the contributions in (form, word) order, as execution does.
++        let mut score = 0.0;
++        for (&tf, &idf) in hits.iter().zip(&idf_by_order) {
++            if tf > 0 {
++                let tf = f64::from(tf);
++                score += idf * tf * 2.2 / (tf + norm);
++            }
++        }
++        if score < threshold {
++            continue;
++        }
++        kept.push((score, slot));
++        if kept.len() >= 2 * limit {
++            kept.select_nth_unstable_by(limit - 1, compare);
++            kept.truncate(limit);
++            threshold = kept[limit - 1].0;
++            while essential < lists.len() && prefix[essential] < threshold {
++                essential += 1;
++            }
++        }
++    }
++    #[cfg(test)]
++    let t2 = std::time::Instant::now();
++    kept.sort_unstable_by(compare);
++    kept.truncate(limit);
++    #[cfg(test)]
++    {
++        use std::sync::atomic::Ordering::Relaxed;
++        RANKED_NS[0].fetch_add((t1 - t0).as_nanos() as u64, Relaxed);
++        RANKED_NS[1].fetch_add((t2 - t1).as_nanos() as u64, Relaxed);
++        RANKED_NS[2].fetch_add(kept.len() as u64, Relaxed);
++    }
++    let mut lexical_scores = Vec::with_capacity(kept.len());
++    let chunks = kept
++        .iter()
++        .map(|&(score, slot)| {
++            lexical_scores.push(score);
++            let (document, index) = store.owned_chunk(slot as usize);
++            CapturedChunk {
++                document,
++                index,
++                word_count: store.slot_word_count(slot as usize),
++                semantic_cache: None,
++            }
++        })
++        .collect();
++    CapturedQuery {
++        prepared,
++        chunks,
++        postings: Default::default(),
++        count: store.chunk_count,
++        words: store.word_count,
++        use_postings: false,
++        dense: None,
+         dfs: Some(dfs),
++        lexical_scores: Some(lexical_scores),
+         text: store.text_segment(),
+     }
+ }
+@@ -418,9 +633,12 @@
+     });
+     let mut scores: Vec<(f64, Option<f64>)> = chunks
+         .iter()
+-        .map(|captured_chunk| {
++        .enumerate()
++        .map(|(i, captured_chunk)| {
+             let norm = 1.2 * (0.25 + 0.75 * captured_chunk.word_count as f64 / average);
+-            let lexical = if captured.use_postings {
++            let lexical = if let Some(ranked) = &captured.lexical_scores {
++                ranked.get(i).copied().unwrap_or(0.0)
++            } else if captured.use_postings {
+                 norms.push(norm);
+                 0.0
+             } else {
+@@ -758,8 +976,11 @@
+         );
+         assert_eq!(captured.queries[0].count, 240);
+         assert_eq!(captured.queries[0].chunks.len(), 1);
+-        assert!(captured.queries[0].postings[0].is_empty());
+-        assert_eq!(captured.queries[0].postings[1].len(), 1);
++        assert!(captured.queries[0].postings.iter().all(BTreeMap::is_empty));
++        assert_eq!(
++            captured.queries[0].lexical_scores.as_ref().map(Vec::len),
++            Some(1)
++        );
+         assert!(Arc::ptr_eq(
+             &captured.queries[0].chunks[0].document,
+             &store.documents["d007"]
+@@ -977,6 +1198,37 @@
+     }
+ 
+     #[test]
++    fn ranked_lexical_capture_matches_the_scan_reference_bit_for_bit() {
++        let mut rng = Rng(0x2545_F491_4F6C_DD1D);
++        let store = zipf_store(1200, 6000, &mut rng);
++        let queries = zipf_queries(48, 6000, &mut rng);
++        for (k, candidate_limit) in [(10, 10), (10, 100), (100, 100), (3, 4096)] {
++            for fusion in ["blend", "rrf"] {
++                let options = SearchOptions {
++                    k: Some(k),
++                    candidate_limit: Some(candidate_limit),
++                    lexical_weight: Some(1.0),
++                    semantic_weight: Some(0.0),
++                    fusion: Some(fusion.into()),
++                    ..Default::default()
++                };
++                for text in &queries {
++                    let expected =
++                        super::super::search_impl(&store, text, &options, None, false).unwrap();
++                    let prepared = prepare_search(text, &options, None).unwrap();
++                    let captured = capture_search(&store, vec![prepared]);
++                    assert!(captured.queries[0].lexical_scores.is_some());
++                    assert_eq!(
++                        serde_json::to_value(execute_search(&captured, 0)).unwrap(),
++                        serde_json::to_value(&expected).unwrap(),
++                        "{text} k={k} limit={candidate_limit} {fusion}"
++                    );
++                }
++            }
++        }
++    }
++
++    #[test]
+     #[ignore]
+     fn lexical_latency_microbench() {
+         let documents = 3633;
+@@ -1010,7 +1262,13 @@
+                 zipf_queries(324, vocabulary, &mut rng),
+             ),
+         };
+-        {
++        let ranked_paths: Vec<bool> = match std::env::var("HMS_LEX_BENCH_PATH").as_deref() {
++            Ok("materialized") => vec![false],
++            Ok("ranked") => vec![true],
++            _ => vec![false, true],
++        };
++        for ranked in ranked_paths {
++            RANKED.store(ranked, std::sync::atomic::Ordering::Relaxed);
+             let k: u32 = std::env::var("HMS_LEX_BENCH_K")
+                 .ok()
+                 .and_then(|v| v.parse().ok())
+@@ -1059,7 +1317,7 @@
+                    "p99_ns": percentile(values, 0.99)})
+             };
+             let report = json!({
+-                "store_chunks": store.chunk_count,
++                "ranked": ranked, "store_chunks": store.chunk_count,
+                 "documents": documents, "vocabulary": vocabulary, "queries": queries.len(),
+                 "passes": passes, "postings_per_query": postings as f64 / queries.len() as f64,
+                 "results_per_query": results as f64 / queries.len() as f64,
+@@ -1067,7 +1325,21 @@
+                            summary("execute", &mut execute_ns), summary("total", &mut total_ns)],
+             });
+             println!("{report}");
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let calls = (passes * queries.len()) as u64;
++                println!(
++                    "ranked decode_ns/query {} daat_ns/query {} kept/query {}",
++                    RANKED_NS[0].load(Relaxed) / calls,
++                    RANKED_NS[1].load(Relaxed) / calls,
++                    RANKED_NS[2].load(Relaxed) / calls
++                );
++            }
+             if let Ok(path) = std::env::var("HMS_LEX_BENCH_OUT") {
++                let path = format!(
++                    "{path}.{}.json",
++                    if ranked { "ranked" } else { "materialized" }
++                );
+                 std::fs::write(path, serde_json::to_string_pretty(&report).unwrap()).unwrap();
+             }
+         }

@@ -1,0 +1,427 @@
+diff --git a/src/core/qgraph/mod.rs b/src/core/qgraph/mod.rs
+index 5b7c7a0..3d26f58 100644
+--- a/src/core/qgraph/mod.rs
++++ b/src/core/qgraph/mod.rs
+@@ -74,6 +74,21 @@ pub struct BuildParams {
+     /// least the dimension. 0 picks the smallest such length.
+     pub code_bits: usize,
+     pub seed: u64,
++    /// Rounds of NN-descent that build the initial graph in place of the first insertion
++    /// pass (0 keeps the two insertion passes). The graph cache header does not record this
++    /// yet: build with a fresh cache path when it changes.
++    pub nn_descent_rounds: usize,
++    /// Score the construction search's candidates with the 8-bit codes (one SDOT over a
++    /// `dim`-byte row) instead of exact float distances, at every dimension; the expanded
++    /// set is re-scored exactly before the prune, which stays exact. The cache header does
++    /// not record this yet: build with a fresh cache path when it changes.
++    pub quantized_search: bool,
++    /// Insert vertices in a locality order (sorted by a seeded 256-centroid k-means cluster,
++    /// then by a seeded projection) instead of a uniform shuffle, so that a batch's
++    /// construction searches share their working set of rows and codes. 0 keeps the
++    /// shuffle; otherwise the number of k-means centroids. The cache header does not record
++    /// this yet: build with a fresh cache path when it changes.
++    pub locality_clusters: usize,
+ }
+ 
+ impl Default for BuildParams {
+@@ -84,6 +99,9 @@ impl Default for BuildParams {
+             alpha: 1.0,
+             code_bits: 0,
+             seed: 0x5EED,
++            nn_descent_rounds: 0,
++            quantized_search: false,
++            locality_clusters: 0,
+         }
+     }
+ }
+@@ -242,8 +260,10 @@ fn d2(a: &[f32], b: &[f32]) -> f32 {
+ struct Rows<'a> {
+     data: &'a [f32],
+     dim: usize,
+-    /// Bounds that let construction skip exact distances whose outcome they already decide.
++    /// Bounds that let construction skip exact distances whose outcome they already decide,
++    /// or, with `quantized`, the estimates that order the construction search's pool.
+     codes: Option<&'a BuildCodes>,
++    quantized: bool,
+ }
+ 
+ /// One 8-bit code per row (`x = scale q + e` with `|e| <= err`), giving bounds on the
+@@ -309,6 +329,13 @@ impl BuildCodes {
+ 
+     /// `(lower, upper)` bounds on the computed `d2` of the unit rows `p` and `u`, from the
+     /// two-sided form of the inequality in [`Self::d2_lower`].
++    /// The 8-bit estimate of the computed `d2` of the unit rows `p` and `u`.
++    #[inline]
++    fn d2_est(&self, p: u32, u: u32) -> f32 {
++        let raw = (self.dot)(self.code(p), self.code(u)) as f32;
++        (2.0 - 2.0 * self.scale[p as usize] * self.scale[u as usize] * raw).max(0.0)
++    }
++
+     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
+         const SLACK: f32 = 1e-4;
+         let (pi, ui) = (p as usize, u as usize);
+@@ -430,7 +457,16 @@ impl Rows<'_> {
+             fresh.clear();
+             // With a full pool, a neighbour at or beyond the pool bound is discarded below; the
+             // codes rule most of them out without loading their rows.
+-            match self.codes.filter(|_| pool.len() >= l) {
++            match self.codes.filter(|_| self.quantized || pool.len() >= l) {
++                Some(codes) if self.quantized => {
++                    for &u in &graph[v as usize] {
++                        if visited.insert(u) {
++                            prefetch_bytes(codes.code(u));
++                            fresh.push(u);
++                        }
++                    }
++                    n_fresh += fresh.len() as u64;
++                }
+                 Some(codes) => {
+                     for &u in &graph[v as usize] {
+                         if visited.insert(u) {
+@@ -455,8 +491,16 @@ impl Rows<'_> {
+                     n_fresh += fresh.len() as u64;
+                 }
+             }
+-            n_exact += fresh.len() as u64;
+-            self.d2_many(target, &fresh, &mut dists);
++            match self.codes.filter(|_| self.quantized) {
++                Some(codes) => {
++                    dists.clear();
++                    dists.extend(fresh.iter().map(|&u| codes.d2_est(p, u)));
++                }
++                None => {
++                    n_exact += fresh.len() as u64;
++                    self.d2_many(target, &fresh, &mut dists);
++                }
++            }
+             let mut best = usize::MAX;
+             for (&u, &du) in fresh.iter().zip(&dists) {
+                 if pool.len() >= l && du >= pool[l - 1].dist {
+@@ -482,6 +526,16 @@ impl Rows<'_> {
+                 build_kernels::prefetch_ids(&graph[c.id as usize]);
+             }
+         }
++        if self.quantized {
++            // Exact distances of the expanded set, which the prune scores exactly.
++            let ids: Vec<u32> = expanded.iter().map(|e| e.1).collect();
++            let mut d = Vec::with_capacity(ids.len());
++            self.d2_stream(target, &ids, &mut d);
++            n_exact += ids.len() as u64;
++            for (e, d) in expanded.iter_mut().zip(d) {
++                e.0 = d;
++            }
++        }
+         prof::count(&prof::FRESH, n_fresh);
+         prof::count(&prof::EXACT, n_exact);
+         expanded
+@@ -620,6 +674,198 @@ impl Rows<'_> {
+         }
+     }
+ 
++    /// `k`-nearest-neighbour lists by NN-descent (Dong, Moses and Li, WWW 2011): every vertex
++    /// starts with `k` seeded random neighbours and each round scores, for every vertex, the
++    /// neighbours of its neighbours and of its reverse neighbours (through entries new since
++    /// the last round only), keeping the `k` nearest. A round reads a frozen graph and writes
++    /// each vertex's own list, so the result depends only on the data, `k` and `seed`. Stops
++    /// after `rounds` or once a round changes fewer than one entry per thousand.
++    fn nn_descent(&self, k: usize, rounds: usize, seed: u64) -> Vec<Vec<(f32, u32)>> {
++        const NEW: u32 = 1 << 31;
++        let n = self.data.len() / self.dim;
++        let k = k.min(n - 1).max(1);
++        let mut lists: Vec<Vec<(f32, u32)>> = (0..n as u32)
++            .into_par_iter()
++            .map(|v| {
++                let mut rng = SplitMix(seed ^ (u64::from(v).wrapping_mul(0x9E37_79B9_7F4A_7C15)));
++                let mut ids: Vec<u32> = Vec::with_capacity(k);
++                while ids.len() < k {
++                    let u = (rng.next_u64() % n as u64) as u32;
++                    if u != v && !ids.contains(&u) {
++                        ids.push(u);
++                    }
++                }
++                let mut d = Vec::new();
++                self.d2_stream(self.row(v), &ids, &mut d);
++                let mut l: Vec<(f32, u32)> =
++                    d.into_iter().zip(ids).map(|(d, u)| (d, u | NEW)).collect();
++                l.sort_by(|a, b| a.0.total_cmp(&b.0).then((a.1 & !NEW).cmp(&(b.1 & !NEW))));
++                l
++            })
++            .collect();
++        for _ in 0..rounds {
++            // Reverse neighbours as (target, source | NEW when the edge is new), sorted.
++            let mut rev: Vec<(u32, u32)> = lists
++                .iter()
++                .enumerate()
++                .flat_map(|(v, l)| {
++                    l.iter()
++                        .map(move |&(_, u)| (u & !NEW, v as u32 | (u & NEW)))
++                })
++                .collect();
++            rev.par_sort_unstable();
++            let mut rev_off = vec![0u32; n + 1];
++            for &(t, _) in &rev {
++                rev_off[t as usize + 1] += 1;
++            }
++            for i in 0..n {
++                rev_off[i + 1] += rev_off[i];
++            }
++            let frozen = &lists;
++            let updates: Vec<Vec<(f32, u32)>> = (0..n)
++                .into_par_iter()
++                .map(|v| {
++                    let list = &frozen[v];
++                    let mut cands: Vec<u32> = Vec::new();
++                    let push_from = |u: u32, edge_new: bool, cands: &mut Vec<u32>| {
++                        for &(_, w) in &frozen[u as usize] {
++                            if edge_new || w & NEW != 0 {
++                                let w = w & !NEW;
++                                if w as usize != v {
++                                    cands.push(w);
++                                }
++                            }
++                        }
++                    };
++                    for &(_, u) in list {
++                        push_from(u & !NEW, u & NEW != 0, &mut cands);
++                    }
++                    for &(_, s) in rev[rev_off[v] as usize..rev_off[v + 1] as usize]
++                        .iter()
++                        .take(k)
++                    {
++                        let s_new = s & NEW != 0;
++                        let s = s & !NEW;
++                        if s_new {
++                            cands.push(s);
++                        }
++                        push_from(s, s_new, &mut cands);
++                    }
++                    cands.sort_unstable();
++                    cands.dedup();
++                    let mut have: Vec<u32> = list.iter().map(|e| e.1 & !NEW).collect();
++                    have.sort_unstable();
++                    cands.retain(|c| have.binary_search(c).is_err());
++                    if cands.is_empty() {
++                        return Vec::new();
++                    }
++                    let mut d = Vec::new();
++                    self.d2_stream(self.row(v as u32), &cands, &mut d);
++                    let bound = list[list.len() - 1].0;
++                    let mut out: Vec<(f32, u32)> = d
++                        .into_iter()
++                        .zip(cands)
++                        .filter(|&(d, _)| d < bound)
++                        .collect();
++                    out.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
++                    out.truncate(k);
++                    out
++                })
++                .collect();
++            let changed: usize = lists
++                .par_iter_mut()
++                .zip(updates)
++                .map(|(list, up)| {
++                    for e in list.iter_mut() {
++                        e.1 &= !NEW;
++                    }
++                    let mut c = 0;
++                    for (d, u) in up {
++                        let pos =
++                            list.partition_point(|e| e.0 < d || (e.0 == d && (e.1 & !NEW) < u));
++                        if pos < k {
++                            list.insert(pos, (d, u | NEW));
++                            list.truncate(k);
++                            c += 1;
++                        }
++                    }
++                    c
++                })
++                .sum();
++            prof::count(&prof::EXACT, changed as u64);
++            if changed * 1000 < n * k {
++                break;
++            }
++        }
++        lists
++            .par_iter_mut()
++            .for_each(|l| l.iter_mut().for_each(|e| e.1 &= !NEW));
++        lists
++    }
++
++    /// `shuffled` reordered for locality: a seeded k-means over `clusters` centroids (three
++    /// Lloyd rounds, seeded from the first centroids of the shuffle) assigns every row, and
++    /// rows are sorted by cluster, then by their projection on a seeded direction, then by
++    /// their shuffle position. Deterministic for a given shuffle and seed.
++    fn locality_order(&self, shuffled: &[u32], clusters: usize, seed: u64) -> Vec<u32> {
++        let n = shuffled.len();
++        let k = clusters.min(n).max(1);
++        let dim = self.dim;
++        let mut centroids: Vec<f32> = shuffled[..k]
++            .iter()
++            .flat_map(|&v| self.row(v).iter().copied())
++            .collect();
++        let mut assign = vec![0u32; n];
++        for _ in 0..3 {
++            let c = &centroids;
++            assign = (0..n as u32)
++                .into_par_iter()
++                .map(|v| {
++                    let x = self.row(v);
++                    let mut best = (f32::NEG_INFINITY, 0u32);
++                    for (j, cj) in c.chunks_exact(dim).enumerate() {
++                        let s = dot(x, cj);
++                        if s > best.0 {
++                            best = (s, j as u32);
++                        }
++                    }
++                    best.1
++                })
++                .collect();
++            let mut sums = vec![0f64; k * dim];
++            let mut counts = vec![0u32; k];
++            for (v, &a) in assign.iter().enumerate() {
++                counts[a as usize] += 1;
++                let s = &mut sums[a as usize * dim..(a as usize + 1) * dim];
++                for (o, &x) in s.iter_mut().zip(self.row(v as u32)) {
++                    *o += f64::from(x);
++                }
++            }
++            for (j, cj) in centroids.chunks_exact_mut(dim).enumerate() {
++                if counts[j] > 0 {
++                    let s = &sums[j * dim..(j + 1) * dim];
++                    let norm = s.iter().map(|x| x * x).sum::<f64>().sqrt().max(1e-12);
++                    cj.iter_mut()
++                        .zip(s)
++                        .for_each(|(c, &x)| *c = (x / norm) as f32);
++                }
++            }
++        }
++        let mut rng = SplitMix(seed ^ 0x10CA_1170);
++        let dir: Vec<f32> = (0..dim)
++            .map(|_| (rng.next_u64() >> 40) as f32 / (1u64 << 24) as f32 - 0.5)
++            .collect();
++        let mut keyed: Vec<(u32, f32, u32, u32)> = shuffled
++            .iter()
++            .enumerate()
++            .map(|(pos, &v)| (assign[v as usize], dot(self.row(v), &dir), pos as u32, v))
++            .collect();
++        keyed.par_sort_unstable_by(|a, b| {
++            a.0.cmp(&b.0).then(a.1.total_cmp(&b.1)).then(a.2.cmp(&b.2))
++        });
++        keyed.into_iter().map(|e| e.3).collect()
++    }
++
+     /// Fill every adjacency list up to `r` with the nearest two-hop neighbours; the
+     /// search estimates a full batch per expansion anyway, so the extra edges are free.
+     fn fill(&self, graph: &mut [Vec<u32>], r: usize) {
+@@ -791,6 +1037,7 @@ impl Graph {
+             data: &self.unit,
+             dim: self.dim,
+             codes: None,
++            quantized: false,
+         }
+     }
+ 
+@@ -817,6 +1064,17 @@ impl Graph {
+     /// stay zero. Uses the rayon pool; the result depends only on the data and `params`
+     /// (`code_bits` is not used).
+     pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, HmsError> {
++        Self::build_owned(data.to_vec(), dim, params)
++    }
++
++    /// [`Graph::build`] over an owned matrix, normalized in place: the caller's copy is the
++    /// one the graph keeps, so the vectors are resident once during construction instead of
++    /// twice (the build's own copy next to the caller's).
++    pub fn build_owned(
++        mut data: Vec<f32>,
++        dim: usize,
++        params: &BuildParams,
++    ) -> Result<Self, HmsError> {
+         if dim == 0 || !data.len().is_multiple_of(dim) {
+             return Err(invalid(format!(
+                 "ragged data: {} values are not a multiple of dimension {dim}",
+@@ -849,18 +1107,20 @@ impl Graph {
+                 "degree must be positive and even, not {r}"
+             )));
+         }
+-        let mut unit = data.to_vec();
+-        unit.par_chunks_mut(dim).for_each(|x| {
++        data.par_chunks_mut(dim).for_each(|x| {
+             let norm = dot(x, x).sqrt();
+             if norm > 0.0 {
+                 x.iter_mut().for_each(|o| *o /= norm);
+             }
+         });
+-        let codes = (dim >= BUILD_CODES_MIN_DIM).then(|| BuildCodes::new(&unit, dim));
++        let unit = data;
++        let codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
++            .then(|| BuildCodes::new(&unit, dim));
+         let rows = Rows {
+             data: &unit,
+             dim,
+             codes: codes.as_ref(),
++            quantized: params.quantized_search,
+         };
+ 
+         let mut centroid = vec![0f32; dim];
+@@ -887,8 +1147,29 @@ impl Graph {
+         for i in (1..n).rev() {
+             order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
+         }
++        if params.locality_clusters > 0 {
++            let t = prof::start();
++            order = rows.locality_order(&order, params.locality_clusters, params.seed);
++            prof::report("locality_order", t);
++        }
+         let mut graph: Vec<Vec<u32>> = vec![Vec::new(); n];
+-        for alpha in [1.0, params.alpha] {
++        let passes: &[f32] = if params.nn_descent_rounds > 0 {
++            // NN-descent lists pruned at alpha 1.0 stand in for the first insertion pass.
++            let t = prof::start();
++            let knn = rows.nn_descent(r, params.nn_descent_rounds, params.seed);
++            prof::report("nn_descent", t);
++            let t = prof::start();
++            graph = knn
++                .into_par_iter()
++                .enumerate()
++                .map(|(v, l)| rows.prune(v as u32, l, 1.0, r))
++                .collect();
++            prof::report("knn_prune", t);
++            std::slice::from_ref(&params.alpha)
++        } else {
++            &[1.0, params.alpha]
++        };
++        for &alpha in passes {
+             let t = prof::start();
+             rows.insert_pass(&mut graph, &order, entry, params.build_ef, alpha, r);
+             prof::report("pass", t);
+@@ -907,11 +1188,13 @@ impl Graph {
+                 .iter()
+                 .flat_map(|&g| rows.row(g).iter().copied())
+                 .collect();
+-            let sub_codes = (dim >= BUILD_CODES_MIN_DIM).then(|| BuildCodes::new(&sub, dim));
++            let sub_codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
++                .then(|| BuildCodes::new(&sub, dim));
+             let sub_rows = Rows {
+                 data: &sub,
+                 dim,
+                 codes: sub_codes.as_ref(),
++                quantized: params.quantized_search,
+             };
+             let local: Vec<u32> = (0..size as u32).collect();
+             let mut g: Vec<Vec<u32>> = vec![Vec::new(); size];
+@@ -1295,6 +1578,7 @@ mod tests {
+         let rows = Rows {
+             data: &data,
+             dim: d,
++            quantized: false,
+             codes: None,
+         };
+         let mut rng = SplitMix(11);
+@@ -1352,6 +1636,7 @@ mod tests {
+                     data: &data,
+                     dim: d,
+                     codes,
++                    quantized: false,
+                 };
+                 let order: Vec<u32> = (0..n as u32).rev().collect();
+                 let mut graph = vec![Vec::new(); n];

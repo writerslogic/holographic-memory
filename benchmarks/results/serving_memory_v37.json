@@ -1,0 +1,140 @@
+{
+ "schema_version": 1,
+ "category": "2A serving memory",
+ "candidate": "V37",
+ "mechanism": "compact term dictionary (sorted concatenated base + overlay) and delta-varint posting lists in src/core/documents/postings.rs; file-backed chunk text (src/core/documents/text.rs) which is inert in this protocol because the serving fixture stores no chunk text (documents.text stayed 0 bytes in every cell store)",
+ "protocol": "serving-v30 controller derived as serving-v37-monotonic-v1 on writerslogic-02 (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v37 / sqlite-full (Node 26.8.1 package with the node-api,security features; SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3",
+ "identities": {
+  "candidate_manifest_sha256_prefix": "4542abf20b68",
+  "candidate_native_sha256_prefix": "2d67f9493bc1",
+  "protocol_sha256_prefix": "dffb80cd3498",
+  "driver_sha256_prefix": "83f608739d03",
+  "capsule_files": 255,
+  "node_api_tests": "4 of 4 pass"
+ },
+ "run": "2026-10-17, attempt 4 of serving-v37-monotonic-v1/relaunch.sh; all 33 load gates met; the campaign's final timing-lock receipt write failed on a stale receipt file left by the aborted attempt 3, so completion.json is absent while measurements.json and analysis.json are complete",
+ "oracle": {
+  "complete_result_rows_per_cell": 324,
+  "exact_repeated_query_pairs_per_cell": 2268,
+  "cross_arm_rows_exact": "the driver asserts candidate rows == baseline rows (full JSON, f64 bits) every round and completed all 11",
+  "quality_ndcg_at_10": {
+   "baseline": 0.29158226275481797,
+   "candidate-v37": 0.29158226275481797,
+   "sqlite-full": 0.2914098101633803
+  },
+  "quality_recall_at_100": {
+   "baseline": 0.22742500506264263,
+   "candidate-v37": 0.22742500506264263,
+   "sqlite-full": 0.22713744545849537
+  }
+ },
+ "arm_medians_over_11_rounds": {
+  "baseline": {
+   "serving_max_rss_bytes": 199667712,
+   "static_median_rss_bytes": 125505536,
+   "qps": 3731,
+   "api_p99_ns": 591366
+  },
+  "candidate-v37": {
+   "serving_max_rss_bytes": 192880640,
+   "static_median_rss_bytes": 119930880,
+   "qps": 3536,
+   "api_p99_ns": 645731
+  },
+  "sqlite-full": {
+   "serving_max_rss_bytes": 181911552,
+   "static_median_rss_bytes": 102658048,
+   "qps": 886,
+   "api_p99_ns": 4822701
+  }
+ },
+ "paired_estimates": {
+  "candidate_over_baseline": {
+   "serving_max_rss": [
+    0.9702,
+    [
+     0.945,
+     0.9822
+    ]
+   ],
+   "api_p95": [
+    1.0674,
+    [
+     1.0565,
+     1.1117
+    ]
+   ],
+   "api_p99": [
+    1.1066,
+    [
+     1.0516,
+     1.1637
+    ]
+   ],
+   "qps": [
+    0.9573,
+    [
+     0.9344,
+     0.9605
+    ]
+   ]
+  },
+  "candidate_over_sqlite_full": {
+   "serving_max_rss": [
+    1.0605,
+    [
+     1.0383,
+     1.0711
+    ]
+   ],
+   "api_p95": [
+    0.1412,
+    [
+     0.1397,
+     0.1426
+    ]
+   ],
+   "api_p99": [
+    0.1297,
+    [
+     0.126,
+     0.1395
+    ]
+   ],
+   "qps": [
+    3.9931,
+    [
+     3.9646,
+     4.036
+    ]
+   ]
+  },
+  "format": "[paired median over 11 rounds, bootstrap 95% interval]"
+ },
+ "numerical_guards_family8": {
+  "sqlite_rss_upper_strictly_below_one": false,
+  "source_rss_upper_at_most_1_10": true,
+  "source_p95_upper_at_most_1_10": false,
+  "source_p99_upper_at_most_1_10": false,
+  "source_qps_lower_at_least_inverse_1_10": true,
+  "sqlite_qps_lower_at_least_1_20": true
+ },
+ "index_bytes": {
+  "on_disk_store_bytes_per_arm": 67109295,
+  "note": "a fixed 64 MiB arena segment plus store.json and indices.json for both arms; the candidate's documents.text is 0 bytes because the fixture stores no chunk text; in-memory bytes are the metric"
+ },
+ "ratio_to_previous_accepted": {
+  "accepted_rss_vs_sqlite": 1.092,
+  "this_row_rss_vs_sqlite": 1.0605,
+  "ratio": 0.971,
+  "previous_private_v30": 0.9133,
+  "note": "V30's 0.9133 included binding-side reductions (documents/metadata.rs, node_projection.rs, node_result_strings.rs) that exist only in the retained V30 capsule, not in the main tree; V37 is the main tree plus this mechanism"
+ },
+ "bound": "sqlite-full static RSS 102.7 MB and serving max 181.9 MB in this run; the HMS native footprint above the Node runtime (candidate static 119.9 MB) is about 17 MB, so a zero native footprint would give about 0.84 of sqlite-full's serving max here, which is below the 0.75 target",
+ "paths": {
+  "host": "writerslogic-02",
+  "build": "/home/davidcondrey/hms-retained-20261016/v37-build-v1",
+  "campaign": "/home/davidcondrey/hms-retained-20261016/serving-v37-monotonic-v1/serving-v37-monotonic-full11-v1 (analysis.json, measurements.json, cells/)",
+  "local_scripts": "/Volumes/A/.hms-target-2a/v37-build (compose.py, build_v37.py, stage_v37.py, extract_v37.py)"
+ }
+}

@@ -1,0 +1,15 @@
+{
+  "complete": false,
+  "preliminary": true,
+  "dev_questions_verified": 100,
+  "reader_arms_verified": 600,
+  "completed_readers": 467,
+  "completed_judges": 449,
+  "input_tokens_verified": {
+    "matched_gpt54": 1193156,
+    "weak_qwen4b": 1352470
+  },
+  "recorded_paid_calls_verified": 1050,
+  "report_sha256": "a1b160573686039a03bb02e61f76e19f05e8a7aa2243cf4fdc069e74b32c8453",
+  "checker_sha256": "4ff60e5aeb3fcfe41e86ad779bdef72350ce3eff530756aba96bf704d06b467e"
+}

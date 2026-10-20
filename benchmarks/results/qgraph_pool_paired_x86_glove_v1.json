@@ -1,0 +1,474 @@
+{
+ "schema_version": 1,
+ "tag": "x86gl1",
+ "dataset": {
+  "dim": 100,
+  "kind": "ann",
+  "metric": "angular",
+  "n_neighbors": 100,
+  "n_test": 10000,
+  "n_train": 1183514,
+  "name": "glove-100-angular",
+  "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+  "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+ },
+ "rounds": 11,
+ "selection_rule": "per process and threshold, the row with recall@10 >= threshold and the fewest estimates per query; paired ratio = candidate QPS / baseline QPS in the same round",
+ "load_1m_per_step": [
+  [
+   0,
+   "A",
+   12.1
+  ],
+  [
+   0,
+   "B",
+   11.3
+  ],
+  [
+   0,
+   "C",
+   10.4
+  ],
+  [
+   1,
+   "B",
+   10.4
+  ],
+  [
+   1,
+   "C",
+   9.7
+  ],
+  [
+   1,
+   "A",
+   9.0
+  ],
+  [
+   2,
+   "C",
+   8.4
+  ],
+  [
+   2,
+   "A",
+   7.8
+  ],
+  [
+   2,
+   "B",
+   7.4
+  ],
+  [
+   3,
+   "A",
+   7.4
+  ],
+  [
+   3,
+   "B",
+   6.9
+  ],
+  [
+   3,
+   "C",
+   6.5
+  ],
+  [
+   4,
+   "B",
+   6.1
+  ],
+  [
+   4,
+   "C",
+   5.7
+  ],
+  [
+   4,
+   "A",
+   5.7
+  ],
+  [
+   5,
+   "C",
+   5.4
+  ],
+  [
+   5,
+   "A",
+   5.0
+  ],
+  [
+   5,
+   "B",
+   4.8
+  ],
+  [
+   6,
+   "A",
+   4.5
+  ],
+  [
+   6,
+   "B",
+   4.3
+  ],
+  [
+   6,
+   "C",
+   4.0
+  ],
+  [
+   7,
+   "B",
+   4.0
+  ],
+  [
+   7,
+   "C",
+   3.8
+  ],
+  [
+   7,
+   "A",
+   3.6
+  ],
+  [
+   8,
+   "C",
+   3.4
+  ],
+  [
+   8,
+   "A",
+   3.4
+  ],
+  [
+   8,
+   "B",
+   3.3
+  ],
+  [
+   9,
+   "A",
+   3.1
+  ],
+  [
+   9,
+   "B",
+   3.0
+  ],
+  [
+   9,
+   "C",
+   2.9
+  ],
+  [
+   10,
+   "B",
+   2.7
+  ],
+  [
+   10,
+   "C",
+   2.6
+  ],
+  [
+   10,
+   "A",
+   2.6
+  ]
+ ],
+ "index_bytes": {
+  "A": 359620124,
+  "B": 359620124,
+  "C": 359620124
+ },
+ "build": {
+  "A": {
+   "build_secs": 2.643704138,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  },
+  "B": {
+   "build_secs": 2.700899889,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  },
+  "C": {
+   "build_secs": 2.833753949,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  }
+ },
+ "thresholds": {
+  "0.90": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 256,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.9005,
+    "evals_per_query": 5810.9095,
+    "qps_runs": [
+     2623.774980943555,
+     2872.142312641092,
+     2886.9248648256257,
+     2730.570178714562,
+     2916.5280258612975,
+     2874.0667334095856,
+     2894.529359193923,
+     2912.0816911133984,
+     2885.707228016445,
+     2914.290758340159,
+     2885.4511194639986
+    ],
+    "qps_median": 2885.707228016445
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9005,
+     "evals_per_query": 5810.9095,
+     "qps_runs": [
+      3094.540184695434,
+      3097.5907456478008,
+      3241.680274983828,
+      3138.764783219209,
+      3305.7469740076485,
+      3300.024317879199,
+      3328.644842760701,
+      3332.2630104543755,
+      3282.7704559148215,
+      3359.922217800658,
+      3327.370928636418
+     ],
+     "qps_median": 3300.024317879199,
+     "paired_ratios": [
+      1.1794,
+      1.0785,
+      1.1229,
+      1.1495,
+      1.1335,
+      1.1482,
+      1.15,
+      1.1443,
+      1.1376,
+      1.1529,
+      1.1532
+     ],
+     "paired_median_ratio": 1.1482,
+     "paired_min_ratio": 1.0785,
+     "rounds_above_1": 11,
+     "meets_min_ratio": true
+    },
+    "C": {
+     "params": {
+      "ef": 320,
+      "patience": 128,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.90365,
+     "evals_per_query": 5170.496,
+     "qps_runs": [
+      3545.299813100303,
+      3645.0093666261323,
+      3447.7776106486735,
+      3657.2886404298474,
+      3692.200120909216,
+      3652.7347351946028,
+      3630.187723396307,
+      3571.631401824716,
+      3552.840711539844,
+      3515.460037037762,
+      3653.416289021397
+     ],
+     "qps_median": 3630.187723396307,
+     "paired_ratios": [
+      1.3512,
+      1.2691,
+      1.1943,
+      1.3394,
+      1.266,
+      1.2709,
+      1.2542,
+      1.2265,
+      1.2312,
+      1.2063,
+      1.2662
+     ],
+     "paired_median_ratio": 1.266,
+     "paired_min_ratio": 1.1943,
+     "rounds_above_1": 11,
+     "meets_min_ratio": true
+    }
+   }
+  },
+  "0.95": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 736,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.95065,
+    "evals_per_query": 14341.2625,
+    "qps_runs": [
+     1153.33976161474,
+     1154.8459724068819,
+     1188.1661437147452,
+     1172.4921403220492,
+     1179.7104680365558,
+     1191.5125127395477,
+     1152.6801500435913,
+     1182.266688927566,
+     1166.369748682421,
+     1178.4054551292108,
+     1146.0613686856118
+    ],
+    "qps_median": 1172.4921403220492
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 736,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.95065,
+     "evals_per_query": 14341.2625,
+     "qps_runs": [
+      1322.2986514736208,
+      1324.6837094931138,
+      1319.3679850540093,
+      1278.156235294493,
+      1324.544181779511,
+      1325.9575363066947,
+      1320.827752899367,
+      1316.5098401527455,
+      1339.4273859388961,
+      1328.18362099246,
+      1337.2264175409214
+     ],
+     "qps_median": 1324.544181779511,
+     "paired_ratios": [
+      1.1465,
+      1.1471,
+      1.1104,
+      1.0901,
+      1.1228,
+      1.1128,
+      1.1459,
+      1.1135,
+      1.1484,
+      1.1271,
+      1.1668
+     ],
+     "paired_median_ratio": 1.1271,
+     "paired_min_ratio": 1.0901,
+     "rounds_above_1": 11,
+     "meets_min_ratio": true
+    }
+   }
+  }
+ },
+ "check": {
+  "passed": false,
+  "failures": [
+   "C: no row reaches recall 0.95"
+  ],
+  "min_ratio": 1.0
+ },
+ "measurement": {
+  "host": "writerslogic-02, Intel Core Ultra 9 185H (AVX2), Linux; 1-minute load 10-12 from a concurrent build",
+  "protocol": "as qgraph_pool_paired_x86_nytimes_v1.json on glove-100-angular degree 32 build_ef 200 (--holdout 2000), 11 paired rounds alternating A B C",
+  "arms": {
+   "A": "heap pools binary, accepted encoding, rerank 64, ef 256/736",
+   "B": "commit 7cbf2d3 sorted candidate pool, same encoding and ef",
+   "C": "B plus patience (ef 320 p128 at 0.90; no C row reached 0.95 in this grid)"
+  },
+  "outcome": "B 1.148x at 0.90 (11/11 rounds, min 1.079) and 1.127x at 0.95 (11/11, min 1.090); C 1.266x at 0.90 (11/11, min 1.194); the 0.95 patience point is bracketed next"
+ }
+}

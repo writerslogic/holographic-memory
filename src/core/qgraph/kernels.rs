@@ -74,7 +74,10 @@ impl Rotation {
 }
 
 /// Unnormalized in-place Walsh-Hadamard transform; `x.len()` must be a power of two.
-fn fwht(x: &mut [f32]) {
+pub(crate) fn fwht<T>(x: &mut [T])
+where
+    T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
+{
     let mut h = 1;
     while h < x.len() {
         for chunk in x.chunks_exact_mut(2 * h) {
@@ -272,7 +275,6 @@ mod neon {
     /// [`super::interleave_for_i4`].
     #[target_feature(enable = "dotprod")]
     #[inline]
-    #[cfg_attr(not(target_feature = "dotprod"), allow(dead_code))]
     pub(super) unsafe fn sdot4(q: &[i8], p: &[i8]) -> i32 {
         let (mut s0, mut s1) = (vdupq_n_s32(0), vdupq_n_s32(0));
         let mut i = 0;
@@ -375,8 +377,23 @@ pub(crate) fn dot_i8_kernel() -> DotI8 {
         }
         neon::dot_i8
     }
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") {
+            return dot_i8_avx2_checked;
+        }
+        dot_i8_scalar
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     dot_i8_scalar
+}
+
+/// [`DotI8`] with AVX2; handed out only by `dot_i8_kernel` after detecting the feature.
+#[cfg(target_arch = "x86_64")]
+fn dot_i8_avx2_checked(a: &[i8], b: &[i8]) -> i32 {
+    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+    // SAFETY: the only caller path checked `avx2` at runtime; lengths checked above.
+    unsafe { x86::dot_i8_avx2(a, b) }
 }
 
 /// [`DotI8`] resolved at compile time, so the search loop can inline it: SDOT when the build
@@ -421,7 +438,19 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
         unsafe { neon::sdot4(q, packed) }
     }
     #[cfg(not(all(target_arch = "aarch64", target_feature = "dotprod")))]
-    dot_i4_scalar(q, packed)
+    {
+        #[cfg(target_arch = "aarch64")]
+        if std::arch::is_aarch64_feature_detected!("dotprod") {
+            // SAFETY: `dotprod` was detected at runtime; the slice lengths were checked above.
+            return unsafe { neon::sdot4(q, packed) };
+        }
+        #[cfg(target_arch = "x86_64")]
+        if is_x86_feature_detected!("avx2") {
+            // SAFETY: `avx2` was detected at runtime; the slice lengths were checked above.
+            return unsafe { x86::dot_i4_avx2(q, packed) };
+        }
+        dot_i4_scalar(q, packed)
+    }
 }
 
 #[cfg(any(test, not(all(target_arch = "aarch64", target_feature = "dotprod"))))]
@@ -509,7 +538,17 @@ pub(crate) fn prefetch_bytes(bytes: &[i8]) {
             off += 128;
         }
     }
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(target_arch = "x86_64")]
+    for line in bytes.chunks(64) {
+        // SAFETY: PREFETCHT0 is a hint that never faults or writes; the address is inside
+        // the live slice.
+        unsafe {
+            std::arch::x86_64::_mm_prefetch::<{ std::arch::x86_64::_MM_HINT_T0 }>(
+                line.as_ptr().cast::<i8>(),
+            );
+        }
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     let _ = bytes;
 }
 
@@ -528,8 +567,75 @@ pub(crate) fn prefetch(words: &[u64]) {
             );
         }
     }
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(target_arch = "x86_64")]
+    for line in words.chunks(8) {
+        // SAFETY: as in `prefetch_bytes`.
+        unsafe {
+            std::arch::x86_64::_mm_prefetch::<{ std::arch::x86_64::_MM_HINT_T0 }>(
+                line.as_ptr().cast::<i8>(),
+            );
+        }
+    }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     let _ = words;
+}
+
+#[cfg(target_arch = "x86_64")]
+mod x86 {
+    use std::arch::x86_64::*;
+
+    /// Signed i8 dot product of two rows of equal length, a multiple of 16, exact over the
+    /// whole i8 range: the bytes widen to i16 lanes (`vpmovsxbw`) and `vpmaddwd` sums pairs
+    /// of products into i32 (the `maddubs` form would misread -128 after the sign trick).
+    #[target_feature(enable = "avx2")]
+    pub(super) unsafe fn dot_i8_avx2(a: &[i8], b: &[i8]) -> i32 {
+        let mut acc = _mm256_setzero_si256();
+        let mut i = 0;
+        // SAFETY (all loads): `i + 16 <= len` for both slices, whose lengths are equal.
+        while i + 16 <= a.len() {
+            let x = _mm256_cvtepi8_epi16(_mm_loadu_si128(a.as_ptr().add(i).cast()));
+            let y = _mm256_cvtepi8_epi16(_mm_loadu_si128(b.as_ptr().add(i).cast()));
+            acc = _mm256_add_epi32(acc, _mm256_madd_epi16(x, y));
+            i += 16;
+        }
+        horizontal_sum(acc)
+    }
+
+    /// [`super::dot_i4_inline`]: each 16 packed bytes become the 16 even and the 16 odd
+    /// coordinates of a 32-wide block, matched with the query laid out by
+    /// [`super::interleave_for_i4`].
+    #[target_feature(enable = "avx2")]
+    pub(super) unsafe fn dot_i4_avx2(q: &[i8], p: &[i8]) -> i32 {
+        let mask = _mm_set1_epi8(0x0f);
+        let eight = _mm_set1_epi8(8);
+        let mut acc = _mm256_setzero_si256();
+        let mut i = 0;
+        // SAFETY (all loads): the caller checked `q.len() == 2 * p.len()` and `p.len() % 16 == 0`,
+        // so `i + 16 <= p.len()` and `2 * i + 32 <= q.len()`.
+        while i + 16 <= p.len() {
+            let x = _mm_loadu_si128(p.as_ptr().add(i).cast());
+            // Sign-extend each nibble: ((n & 15) ^ 8) - 8.
+            let lo = _mm_sub_epi8(_mm_xor_si128(_mm_and_si128(x, mask), eight), eight);
+            let hi = _mm_sub_epi8(
+                _mm_xor_si128(_mm_and_si128(_mm_srli_epi16::<4>(x), mask), eight),
+                eight,
+            );
+            let qe = _mm256_cvtepi8_epi16(_mm_loadu_si128(q.as_ptr().add(2 * i).cast()));
+            let qo = _mm256_cvtepi8_epi16(_mm_loadu_si128(q.as_ptr().add(2 * i + 16).cast()));
+            acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_cvtepi8_epi16(lo), qe));
+            acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_cvtepi8_epi16(hi), qo));
+            i += 16;
+        }
+        horizontal_sum(acc)
+    }
+
+    #[target_feature(enable = "avx2")]
+    unsafe fn horizontal_sum(v: __m256i) -> i32 {
+        let s = _mm_add_epi32(_mm256_castsi256_si128(v), _mm256_extracti128_si256::<1>(v));
+        let s = _mm_add_epi32(s, _mm_shuffle_epi32::<0b01_00_11_10>(s));
+        let s = _mm_add_epi32(s, _mm_shuffle_epi32::<0b10_11_00_01>(s));
+        _mm_cvtsi128_si32(s)
+    }
 }
 
 pub(crate) fn as_f32(w: &[u64]) -> &[f32] {

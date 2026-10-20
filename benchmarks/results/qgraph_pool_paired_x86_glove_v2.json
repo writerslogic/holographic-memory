@@ -1,0 +1,347 @@
+{
+ "schema_version": 1,
+ "tag": "x86gl2",
+ "dataset": {
+  "dim": 100,
+  "kind": "ann",
+  "metric": "angular",
+  "n_neighbors": 100,
+  "n_test": 10000,
+  "n_train": 1183514,
+  "name": "glove-100-angular",
+  "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+  "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+ },
+ "rounds": 11,
+ "selection_rule": "per process and threshold, the row with recall@10 >= threshold and the fewest estimates per query; paired ratio = candidate QPS / baseline QPS in the same round",
+ "load_1m_per_step": [
+  [
+   0,
+   "A",
+   5.3
+  ],
+  [
+   0,
+   "C",
+   5.3
+  ],
+  [
+   1,
+   "C",
+   4.9
+  ],
+  [
+   1,
+   "A",
+   4.6
+  ],
+  [
+   2,
+   "A",
+   4.6
+  ],
+  [
+   2,
+   "C",
+   4.6
+  ],
+  [
+   3,
+   "C",
+   4.3
+  ],
+  [
+   3,
+   "A",
+   4.1
+  ],
+  [
+   4,
+   "A",
+   4.1
+  ],
+  [
+   4,
+   "C",
+   3.8
+  ],
+  [
+   5,
+   "C",
+   3.6
+  ],
+  [
+   5,
+   "A",
+   3.6
+  ],
+  [
+   6,
+   "A",
+   3.4
+  ],
+  [
+   6,
+   "C",
+   3.4
+  ],
+  [
+   7,
+   "C",
+   3.2
+  ],
+  [
+   7,
+   "A",
+   3.0
+  ],
+  [
+   8,
+   "A",
+   3.0
+  ],
+  [
+   8,
+   "C",
+   2.9
+  ],
+  [
+   9,
+   "C",
+   2.7
+  ],
+  [
+   9,
+   "A",
+   2.7
+  ],
+  [
+   10,
+   "A",
+   2.6
+  ],
+  [
+   10,
+   "C",
+   2.6
+  ]
+ ],
+ "index_bytes": {
+  "A": 359620124,
+  "C": 359620124
+ },
+ "build": {
+  "A": {
+   "build_secs": 2.746621309,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  },
+  "C": {
+   "build_secs": 2.74993659,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  }
+ },
+ "thresholds": {
+  "0.90": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 256,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.9005,
+    "evals_per_query": 5810.9095,
+    "qps_runs": [
+     3232.4162371010407,
+     2943.5517263663014,
+     3147.3465390926885,
+     3311.72672298726,
+     3089.7995073901748,
+     3119.936601265895,
+     3110.2074596861016,
+     3273.6732625186633,
+     3163.4681183231346,
+     3118.0990864382825,
+     3148.8573472116873
+    ],
+    "qps_median": 3147.3465390926885
+   },
+   "candidates": {
+    "C": {
+     "params": {
+      "ef": 320,
+      "patience": 128,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.90365,
+     "evals_per_query": 5170.496,
+     "qps_runs": [
+      3164.5711675449406,
+      3205.70204120561,
+      2980.543804360061,
+      3213.194507693054,
+      2861.5743320330766,
+      3133.155206462466,
+      3225.687772316493,
+      3308.074617804411,
+      3201.5926207234456,
+      3073.802991915958,
+      3144.993683083625
+     ],
+     "qps_median": 3164.5711675449406,
+     "paired_ratios": [
+      0.979,
+      1.0891,
+      0.947,
+      0.9702,
+      0.9261,
+      1.0042,
+      1.0371,
+      1.0105,
+      1.0121,
+      0.9858,
+      0.9988
+     ],
+     "paired_median_ratio": 0.9988,
+     "paired_min_ratio": 0.9261,
+     "rounds_above_1": 5,
+     "meets_min_ratio": false
+    }
+   }
+  },
+  "0.95": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 736,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.95065,
+    "evals_per_query": 14341.2625,
+    "qps_runs": [
+     1299.4565462211744,
+     1322.942356677581,
+     1287.3304070197667,
+     1295.5319866445886,
+     1281.1506766518687,
+     1331.651131256146,
+     1359.4190071545813,
+     1311.316136088357,
+     1345.8371428515384,
+     1317.450852015096,
+     1341.6165562373583
+    ],
+    "qps_median": 1317.450852015096
+   },
+   "candidates": {
+    "C": {
+     "params": {
+      "ef": 1024,
+      "patience": 384,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9529,
+     "evals_per_query": 11924.703,
+     "qps_runs": [
+      1285.1042870064425,
+      1305.7086197148403,
+      1293.232279016385,
+      1275.507392759216,
+      1298.7023022439867,
+      1303.2240191849694,
+      1305.5223290331398,
+      1242.3969530622232,
+      1324.4725782316582,
+      1276.9217873695864,
+      1276.7676166177357
+     ],
+     "qps_median": 1293.232279016385,
+     "paired_ratios": [
+      0.989,
+      0.987,
+      1.0046,
+      0.9845,
+      1.0137,
+      0.9787,
+      0.9604,
+      0.9474,
+      0.9841,
+      0.9692,
+      0.9517
+     ],
+     "paired_median_ratio": 0.9841,
+     "paired_min_ratio": 0.9474,
+     "rounds_above_1": 2,
+     "meets_min_ratio": false
+    }
+   }
+  }
+ },
+ "check": {
+  "passed": true,
+  "failures": [],
+  "min_ratio": 1.0
+ },
+ "measurement": {
+  "host": "writerslogic-02 (x86), 1-minute load 4.9-5.3 (quiet)",
+  "protocol": "glove-100-angular --holdout 2000, 11 paired rounds alternating A C",
+  "arms": {
+   "A": "heap pools binary, accepted encoding, rerank 64, ef 256/736",
+   "C": "commit 18a0eec sorted pool plus patience: ef 320 p128 at 0.90, ef 1024 p384 at 0.95"
+  },
+  "outcome": "C 0.999x at 0.90 (5 of 11 rounds above 1) and 0.984x at 0.95 (2 of 11): contradicts qgraph_pool_paired_x86_glove_v1.json (C 1.266x at 0.90 under load 10-12 with a concurrent build); a three-arm re-run at low load (x86gl3) and a nytimes re-run (x86ny2) decide which of the two is the artifact"
+ }
+}

@@ -44,6 +44,8 @@ struct Cli {
     mode: Mode,
 }
 
+// Parsed once; the ann-qgraph variant carries every sweep list, and boxing it buys nothing.
+#[allow(clippy::large_enum_variant)]
 #[derive(Subcommand)]
 enum Mode {
     Ann {
@@ -76,6 +78,9 @@ enum Mode {
         max_exact: Vec<usize>,
         #[arg(long, default_value_t = 128)]
         build_ef: usize,
+        /// Score the construction search with 8-bit codes (exact prune).
+        #[arg(long)]
+        quantized_search: bool,
         #[arg(long, default_value_t = 1.0)]
         alpha: f32,
         #[arg(long, default_value_t = 32)]
@@ -111,8 +116,9 @@ enum Mode {
         /// Vertex index only: bits per traversal code coordinate (8 or 4).
         #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u8).range(4..=8))]
         vertex_bits: u8,
-        /// Vertex index only: bytes per stored neighbour id (4, or 3 below 2^24 - 1 vertices).
-        #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(3..=4))]
+        /// Vertex index only: bytes per stored neighbour id (4, 3 below 2^24 - 1 vertices, or
+        /// 0 for sorted delta-coded varint lists).
+        #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(0..=4))]
         id_bytes: u8,
         /// Vertex index only: start every code row on a 128-byte cache line.
         #[arg(long)]
@@ -134,6 +140,18 @@ enum Mode {
         /// ef (a negative value searches without the screen).
         #[arg(long, value_delimiter = ',', default_value = "1.0")]
         screen_sigmas: Vec<f32>,
+        /// Vertex index only: bits per coordinate of the neighbour-block codes scanned with a
+        /// 16-entry lookup table per nibble (1, 2 or 4; 0 = no blocks, per-neighbour rows).
+        #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u8).range(0..=4))]
+        block_bits: u8,
+        /// Vertex index with blocks only: fuse repeated block estimates of a vertex and
+        /// re-admit it when the fused estimate qualifies.
+        #[arg(long)]
+        fuse: bool,
+        /// Vertex index, per-row search: estimate only the first N neighbours of each expanded
+        /// vertex (0 = all).
+        #[arg(long, default_value_t = 0)]
+        neighbour_cap: usize,
         /// Paired timing: after the build write `<SYNC>.ready`, then before timing round `r`
         /// block until `<SYNC>.go.<r>` exists and afterwards write `<SYNC>.done.<r>`, so an
         /// outside coordinator holding the timing lock can alternate two processes. The build
@@ -451,6 +469,7 @@ struct QgraphArgs {
     ef: Vec<usize>,
     max_exact: Vec<usize>,
     build_ef: usize,
+    quantized_search: bool,
     alpha: f32,
     code_bits: usize,
     degree: usize,
@@ -470,6 +489,9 @@ struct QgraphArgs {
     patience: Vec<usize>,
     screen: bool,
     screen_sigmas: Vec<f32>,
+    block_bits: u8,
+    fuse: bool,
+    neighbour_cap: usize,
     sync: Option<PathBuf>,
     graph_cache: Option<PathBuf>,
 }
@@ -498,7 +520,8 @@ fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize) -> Result<Split> {
     let mut keep = Vec::with_capacity(rows.len() - n);
     for (i, mut r) in rows.drain(..).enumerate() {
         normalize(&mut r);
-        if i % step == 0 && queries.len() < n {
+        // A zero row has no cosine neighbours, so it is never a query; it stays indexed.
+        if i % step == 0 && queries.len() < n && r.iter().any(|&v| v != 0.0) {
             queries.push(r);
         } else {
             keep.push(r);
@@ -533,7 +556,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     let d = m["dim"].as_u64().context("meta.dim")? as usize;
     let width = m["n_neighbors"].as_u64().context("meta.n_neighbors")? as usize;
     let rows = read_f32(&a.data.join("train.f32"), d)?;
-    let (train, mut test, truth) = match a.holdout {
+    let (mut train, mut test, truth) = match a.holdout {
         Some(n) => {
             let (keep, q, t) = holdout_split(rows, n, K)?;
             (keep.concat(), q, t)
@@ -553,6 +576,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     }
     let params = BuildParams {
         build_ef: a.build_ef,
+        quantized_search: a.quantized_search,
         alpha: a.alpha,
         code_bits: a.code_bits,
         degree: a.degree,
@@ -572,7 +596,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 Some(p) if p.exists() => Graph::load(&train, d, p, &params)
                     .with_context(|| format!("loading {}", p.display()))?,
                 cache => {
-                    let g = Graph::build(&train, d, &params)?;
+                    let g = Graph::build_owned(std::mem::take(&mut train), d, &params)?;
                     if let Some(p) = cache {
                         g.save(p)
                             .with_context(|| format!("saving {}", p.display()))?;
@@ -586,7 +610,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 "--residual-bits and --vertex-bits must be 4 or 8"
             );
             let bits = if a.residual { a.residual_bits } else { 0 };
-            Built::Vertex(Box::new(VGraph::from_graph_with(
+            let mut v = VGraph::from_graph_with(
                 &graph,
                 a.vertex_bits,
                 bits,
@@ -594,7 +618,11 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 a.reorder,
                 a.id_bytes,
                 a.screen,
-            )?))
+            )?;
+            if a.block_bits > 0 {
+                v = v.with_blocks(&graph, a.block_bits)?;
+            }
+            Built::Vertex(Box::new(v))
         }
     };
     let build_secs = t.elapsed().as_secs_f64();
@@ -661,6 +689,8 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                         patience,
                         screen_sigmas: sigmas.max(0.0),
                         screen: sigmas >= 0.0,
+                        fuse: a.fuse,
+                        neighbour_cap: a.neighbour_cap,
                     },
                     out,
                 )
@@ -757,10 +787,11 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "dataset": m,
         "environment": environment(),
         "n_queries": test.len(),
-        "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef,
+        "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef, "quantized_search": a.quantized_search,
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
                              "residual": a.residual, "residual_bits": a.residual_bits,
                              "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes, "screen": a.screen,
+                             "block_bits": a.block_bits, "fuse": a.fuse, "neighbour_cap": a.neighbour_cap,
                              "align_rows": a.align_rows, "reorder": a.reorder,
                              "graph_cache": a.graph_cache.as_ref().map(|p| p.display().to_string())},
                   "graph_hash": graph_hash,
@@ -1207,6 +1238,7 @@ fn main() -> Result<()> {
             ef,
             max_exact,
             build_ef,
+            quantized_search,
             alpha,
             code_bits,
             degree,
@@ -1226,6 +1258,9 @@ fn main() -> Result<()> {
             patience,
             screen,
             screen_sigmas,
+            block_bits,
+            fuse,
+            neighbour_cap,
             sync,
             graph_cache,
         } => ann_qgraph(&QgraphArgs {
@@ -1234,6 +1269,7 @@ fn main() -> Result<()> {
             ef,
             max_exact,
             build_ef,
+            quantized_search,
             alpha,
             code_bits,
             degree,
@@ -1253,6 +1289,9 @@ fn main() -> Result<()> {
             patience,
             screen,
             screen_sigmas,
+            block_bits,
+            fuse,
+            neighbour_cap,
             sync,
             graph_cache,
         }),

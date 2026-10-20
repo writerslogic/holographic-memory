@@ -61,6 +61,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Return query results best-first on exact-scan, multi-shard and federated paths
 
 ### Performance
+- Quantized construction search for the graph build; cache header records it
+- Quantized construction search and owned-input build for the proximity graph
+- Byte visited marks for the unfused block path; close the neighbour-block mechanism
+- Keep the default neighbour loop free of the delta decoder and the cap counter
+- Neighbour cap for the per-row search, lint fixes, x86 paired rows
+- Unbiasing scale for block codes, sorted candidate pool, delta-coded adjacency
+- Neighbour-block fast-scan codes with evidence fusion and a certified exit for the vertex graph
 - NEON per-row 1-bit screen kernel with its microbenchmark kill test (screen stays off)
 - Scan both planes of 2-bit qgraph edge codes in one NEON pass
 - Add FastScan edge kernel, batched pool merge and 2-bit qgraph edge codes
@@ -100,6 +107,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Add LongMemEval_S retrieval baseline (dense, lexical, hybrid)
 - Add public BEIR and ann-benchmarks comparisons
 - Report encoder candidate recall after exact rerank
+
+### Research
+- Durability matrix harness and first matrix against SQLite and Lucene
+- Record native benchmark gate checkpoint
+- Checkpoint native harness validation draft
+- Establish checked LongMemEval dev answer results
+- Checkpoint final local reader batch and faster validation
+- Preserve dev reader progress and speed pilot audits
+- Checkpoint local reader evidence and judge progress
+- Checkpoint judge instability and local evidence
+- Checkpoint dev answer scores and repeat study
+- Freeze dev reader protocol and checkpoint quota blocker
 ## [0.6.1] - 2026-10-05
 
 ### Documentation

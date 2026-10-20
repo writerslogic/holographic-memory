@@ -1,0 +1,514 @@
+{
+ "schema_version": 1,
+ "tag": "x86gl3",
+ "dataset": {
+  "dim": 100,
+  "kind": "ann",
+  "metric": "angular",
+  "n_neighbors": 100,
+  "n_test": 10000,
+  "n_train": 1183514,
+  "name": "glove-100-angular",
+  "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+  "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+ },
+ "rounds": 11,
+ "selection_rule": "per process and threshold, the row with recall@10 >= threshold and the fewest estimates per query; paired ratio = candidate QPS / baseline QPS in the same round",
+ "load_1m_per_step": [
+  [
+   0,
+   "A",
+   11.4
+  ],
+  [
+   0,
+   "B",
+   11.4
+  ],
+  [
+   0,
+   "C",
+   10.6
+  ],
+  [
+   1,
+   "B",
+   9.8
+  ],
+  [
+   1,
+   "C",
+   9.8
+  ],
+  [
+   1,
+   "A",
+   9.2
+  ],
+  [
+   2,
+   "C",
+   8.5
+  ],
+  [
+   2,
+   "A",
+   8.5
+  ],
+  [
+   2,
+   "B",
+   7.9
+  ],
+  [
+   3,
+   "A",
+   7.9
+  ],
+  [
+   3,
+   "B",
+   7.3
+  ],
+  [
+   3,
+   "C",
+   7.3
+  ],
+  [
+   4,
+   "B",
+   6.8
+  ],
+  [
+   4,
+   "C",
+   6.3
+  ],
+  [
+   4,
+   "A",
+   5.9
+  ],
+  [
+   5,
+   "C",
+   5.9
+  ],
+  [
+   5,
+   "A",
+   5.5
+  ],
+  [
+   5,
+   "B",
+   5.5
+  ],
+  [
+   6,
+   "A",
+   5.4
+  ],
+  [
+   6,
+   "B",
+   5.3
+  ],
+  [
+   6,
+   "C",
+   5.3
+  ],
+  [
+   7,
+   "B",
+   5.3
+  ],
+  [
+   7,
+   "C",
+   5.2
+  ],
+  [
+   7,
+   "A",
+   4.9
+  ],
+  [
+   8,
+   "C",
+   4.9
+  ],
+  [
+   8,
+   "A",
+   4.8
+  ],
+  [
+   8,
+   "B",
+   4.6
+  ],
+  [
+   9,
+   "A",
+   4.6
+  ],
+  [
+   9,
+   "B",
+   4.4
+  ],
+  [
+   9,
+   "C",
+   4.4
+  ],
+  [
+   10,
+   "B",
+   4.2
+  ],
+  [
+   10,
+   "C",
+   4.2
+  ],
+  [
+   10,
+   "A",
+   4.1
+  ]
+ ],
+ "index_bytes": {
+  "A": 359620124,
+  "B": 359620124,
+  "C": 359620124
+ },
+ "build": {
+  "A": {
+   "build_secs": 2.948456304,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  },
+  "B": {
+   "build_secs": 2.870407232,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  },
+  "C": {
+   "build_secs": 3.59981282,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": null,
+   "load_1m_before_build": null,
+   "load_gate_met": false,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 8
+  }
+ },
+ "thresholds": {
+  "0.90": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 256,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.9005,
+    "evals_per_query": 5810.9095,
+    "qps_runs": [
+     2870.531813066387,
+     2542.0500129986453,
+     2878.1570216554837,
+     3031.259332915942,
+     2907.157723205356,
+     2800.7320015565124,
+     2359.900762585884,
+     2623.933850249789,
+     2643.679562677451,
+     2947.5408354370616,
+     2659.731289661772
+    ],
+    "qps_median": 2800.7320015565124
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9005,
+     "evals_per_query": 5810.9095,
+     "qps_runs": [
+      2480.2559381063043,
+      2653.5156520420196,
+      2877.5699161471953,
+      2782.540110635687,
+      2922.728748293451,
+      2352.2446131916504,
+      2334.9010115564033,
+      2337.869719762117,
+      2554.4119700092315,
+      2644.907901576,
+      2770.2038097117083
+     ],
+     "qps_median": 2644.907901576,
+     "paired_ratios": [
+      0.864,
+      1.0438,
+      0.9998,
+      0.9179,
+      1.0054,
+      0.8399,
+      0.9894,
+      0.891,
+      0.9662,
+      0.8973,
+      1.0415
+     ],
+     "paired_median_ratio": 0.9662,
+     "paired_min_ratio": 0.8399,
+     "rounds_above_1": 3,
+     "meets_min_ratio": false
+    },
+    "C": {
+     "params": {
+      "ef": 320,
+      "patience": 128,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.90365,
+     "evals_per_query": 5170.496,
+     "qps_runs": [
+      2959.9275200180227,
+      2977.007904083997,
+      3141.8270562571593,
+      3039.1716647668195,
+      3285.4664526540105,
+      3119.596906900949,
+      2605.591114151581,
+      2538.7998626417875,
+      2540.799084564318,
+      2979.476160032116,
+      2862.485371214839
+     ],
+     "qps_median": 2977.007904083997,
+     "paired_ratios": [
+      1.0311,
+      1.1711,
+      1.0916,
+      1.0026,
+      1.1301,
+      1.1139,
+      1.1041,
+      0.9676,
+      0.9611,
+      1.0108,
+      1.0762
+     ],
+     "paired_median_ratio": 1.0762,
+     "paired_min_ratio": 0.9611,
+     "rounds_above_1": 9,
+     "meets_min_ratio": true
+    }
+   }
+  },
+  "0.95": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 736,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.95065,
+    "evals_per_query": 14341.2625,
+    "qps_runs": [
+     1168.9336875035638,
+     1223.9063300473942,
+     1227.877383825557,
+     1227.8983221284532,
+     1256.8845205459588,
+     1017.5050107008814,
+     986.1182881142523,
+     1038.3017971477286,
+     1137.0869341320772,
+     1152.5558037899511,
+     1231.6628404362586
+    ],
+    "qps_median": 1168.9336875035638
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 736,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.95065,
+     "evals_per_query": 14341.2625,
+     "qps_runs": [
+      1086.045044859669,
+      1072.5766164510715,
+      1143.124184505209,
+      1141.7758648020915,
+      1121.7641349182654,
+      890.8970809847123,
+      931.6216901421452,
+      945.5288690091655,
+      1101.5490290880764,
+      1086.4603476981558,
+      1110.0605245459687
+     ],
+     "qps_median": 1086.4603476981558,
+     "paired_ratios": [
+      0.9291,
+      0.8764,
+      0.931,
+      0.9299,
+      0.8925,
+      0.8756,
+      0.9447,
+      0.9106,
+      0.9687,
+      0.9427,
+      0.9013
+     ],
+     "paired_median_ratio": 0.9291,
+     "paired_min_ratio": 0.8756,
+     "rounds_above_1": 0,
+     "meets_min_ratio": false
+    },
+    "C": {
+     "params": {
+      "ef": 1024,
+      "patience": 384,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9529,
+     "evals_per_query": 11924.703,
+     "qps_runs": [
+      1240.399800925507,
+      1088.7420604934628,
+      1259.923138099178,
+      1272.9140309708741,
+      1230.3058862158123,
+      1328.0867752243248,
+      1058.9353486242574,
+      1177.2029213253445,
+      1087.248976350468,
+      1190.139100577939,
+      1236.6958081357723
+     ],
+     "qps_median": 1230.3058862158123,
+     "paired_ratios": [
+      1.0611,
+      0.8896,
+      1.0261,
+      1.0367,
+      0.9789,
+      1.3052,
+      1.0738,
+      1.1338,
+      0.9562,
+      1.0326,
+      1.0041
+     ],
+     "paired_median_ratio": 1.0326,
+     "paired_min_ratio": 0.8896,
+     "rounds_above_1": 8,
+     "meets_min_ratio": true
+    }
+   }
+  }
+ },
+ "check": {
+  "passed": true,
+  "failures": [],
+  "min_ratio": 1.0
+ },
+ "measurement": {
+  "host": "writerslogic-02 (x86), 1-minute load 10.6-11.4 (two concurrent nice'd builds)",
+  "protocol": "glove-100-angular --holdout 2000, 11 paired rounds alternating A B C",
+  "arms": {
+   "A": "heap pools binary, accepted encoding, rerank 64, ef 256/736",
+   "B": "commit 18a0eec sorted pool, same ef",
+   "C": "B plus patience ef 320 p128 / ef 1024 p384"
+  },
+  "outcome": "B 0.966x at 0.90 and 0.929x at 0.95 (0 of 11 rounds above 1 at 0.95); C 1.076x and 1.033x. The 7cbf2d3 pool binary measured 1.148x/1.127x in qgraph_pool_paired_x86_glove_v1.json; the search-path changes between the two builds (varint-list branch and neighbour-cap counter in the neighbour closure) are the suspects and are bisected next"
+ }
+}

@@ -97,6 +97,10 @@ required-features = ["experimental"]
 name = "zero_trust_demo"
 required-features = ["security"]
 
+[[bin]]
+name = "security-probe"
+required-features = ["security", "server"]
+
 [features]
 default = []
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
@@ -104,7 +108,7 @@ node-api = ["napi", "napi-derive", "tokio", "napi-build"]
 # wheels with `maturin build --features python`; publishing is wired in
 # .github/workflows/publish-pypi.yml and dormant until a `py-v*` tag is pushed.
 python = ["pyo3"]
-security = ["ed25519-dalek", "zeroize", "aes-gcm", "argon2", "sha2"]
+security = ["ed25519-dalek", "zeroize", "aes-gcm", "aes-gcm/zeroize", "argon2", "sha2"]
 provenance = ["security", "coset", "ciborium", "bs58", "multibase", "base64"]
 provenance-scitt = ["provenance", "ureq"]
 # Experimental VSA research modules (block_codes, bloom_memory, cls_memory,
@@ -198,3 +202,7 @@ harness = false
 [[bin]]
 name = "encoder-eval"
 path = "src/bin/encoder-eval.rs"
+
+[[bin]]
+name = "operand-retriever"
+required-features = ["experimental"]

@@ -1,0 +1,312 @@
+{
+ "schema_version": 1,
+ "host": "writerslogic-02 (x86), untimed single-process runs, 3 repeats for ny_B4 and ny_A2 back to back at load 1.5-3",
+ "protocol": "public-bench ann-qgraph --holdout 2000, accepted encoding; B4 = --block-bits 4 (4-bit per-edge residual neighbour blocks, unbiasing scale, byte visited marks), B4f = the same with --fuse (trace records), A2 = per-row path",
+ "outcome": "4-bit residual blocks carry no ef penalty (nytimes 0.9030 at ef 96 and 0.9497 at ef 384 against 0.9049 and 0.9498) yet run at 0.76x (ef 96) and 0.79x (ef 384) of the per-row path; with fusion trace records 0.37x. The neighbour-block layout is closed on both hosts.",
+ "runs": {
+  "ny_B4_untimed": {
+   "index_bytes": 2677383016,
+   "build": {
+    "build_secs": 19.410526613,
+    "graph_hash": "c279d454c4e33af0",
+    "load_1m_after_build": null,
+    "load_1m_before_build": null,
+    "load_gate_met": false,
+    "params": {
+     "align_rows": true,
+     "alpha": 1.0,
+     "block_bits": 4,
+     "build_ef": 200,
+     "code_bits": 0,
+     "degree": 64,
+     "fuse": false,
+     "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/nytimes-256-angular_d64_b200.graph",
+     "id_bytes": 3,
+     "index": "vertex",
+     "neighbour_cap": 0,
+     "reorder": true,
+     "residual": true,
+     "residual_bits": 8,
+     "screen": false,
+     "seed": 24301,
+     "vertex_bits": 4
+    },
+    "threads": 8
+   },
+   "sweep": [
+    {
+     "ef": 96,
+     "recall_at_10": 0.9030045067601402,
+     "evals_per_query": 4378.7195793690535,
+     "qps_runs": [
+      4023.2938276636733,
+      4177.41425195179,
+      4094.3473184640156
+     ]
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9497245868803205,
+     "evals_per_query": 15493.403104656985,
+     "qps_runs": [
+      1305.0788395839675,
+      1304.1819850552488,
+      1293.5605344005992
+     ]
+    }
+   ]
+  },
+  "ny_A2_untimed": {
+   "index_bytes": 170604904,
+   "build": {
+    "build_secs": 1.003904422,
+    "graph_hash": "c279d454c4e33af0",
+    "load_1m_after_build": null,
+    "load_1m_before_build": null,
+    "load_gate_met": false,
+    "params": {
+     "align_rows": true,
+     "alpha": 1.0,
+     "block_bits": 0,
+     "build_ef": 200,
+     "code_bits": 0,
+     "degree": 64,
+     "fuse": false,
+     "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/nytimes-256-angular_d64_b200.graph",
+     "id_bytes": 3,
+     "index": "vertex",
+     "neighbour_cap": 0,
+     "reorder": true,
+     "residual": true,
+     "residual_bits": 8,
+     "screen": false,
+     "seed": 24301,
+     "vertex_bits": 4
+    },
+    "threads": 8
+   },
+   "sweep": [
+    {
+     "ef": 96,
+     "recall_at_10": 0.9048572859288934,
+     "evals_per_query": 4235.585878818228,
+     "qps_runs": [
+      5247.573487990072,
+      5384.849678779829,
+      5422.7005535903845
+     ]
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9497746619929894,
+     "evals_per_query": 14872.463194792188,
+     "qps_runs": [
+      1647.3709687140272,
+      1659.3147170475143,
+      1648.0371322357482
+     ]
+    }
+   ]
+  },
+  "ny_B4f_untimed": {
+   "index_bytes": 2677383016,
+   "build": {
+    "build_secs": 19.317811114,
+    "graph_hash": "c279d454c4e33af0",
+    "load_1m_after_build": null,
+    "load_1m_before_build": null,
+    "load_gate_met": false,
+    "params": {
+     "align_rows": true,
+     "alpha": 1.0,
+     "block_bits": 4,
+     "build_ef": 200,
+     "code_bits": 0,
+     "degree": 64,
+     "fuse": true,
+     "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/nytimes-256-angular_d64_b200.graph",
+     "id_bytes": 3,
+     "index": "vertex",
+     "neighbour_cap": 0,
+     "reorder": true,
+     "residual": true,
+     "residual_bits": 8,
+     "screen": false,
+     "seed": 24301,
+     "vertex_bits": 4
+    },
+    "threads": 8
+   },
+   "sweep": [
+    {
+     "ef": 64,
+     "recall_at_10": 0.8839258888332499,
+     "evals_per_query": 4195.185778668002,
+     "qps_runs": [
+      4116.208611901152
+     ]
+    },
+    {
+     "ef": 80,
+     "recall_at_10": 0.8944917376064097,
+     "evals_per_query": 5090.047070605909,
+     "qps_runs": [
+      2591.7316420191864
+     ]
+    },
+    {
+     "ef": 96,
+     "recall_at_10": 0.9034051076614923,
+     "evals_per_query": 5988.198798197296,
+     "qps_runs": [
+      2238.085379888701
+     ]
+    },
+    {
+     "ef": 128,
+     "recall_at_10": 0.9137205808713069,
+     "evals_per_query": 7760.244366549825,
+     "qps_runs": [
+      1637.9580130764184
+     ]
+    },
+    {
+     "ef": 192,
+     "recall_at_10": 0.9266900350525789,
+     "evals_per_query": 11334.44616925388,
+     "qps_runs": [
+      1147.3116081218525
+     ]
+    },
+    {
+     "ef": 256,
+     "recall_at_10": 0.9389584376564847,
+     "evals_per_query": 14922.46920380571,
+     "qps_runs": [
+      949.2184287323261
+     ]
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9495743615423134,
+     "evals_per_query": 22134.778668002004,
+     "qps_runs": [
+      540.931713329838
+     ]
+    },
+    {
+     "ef": 448,
+     "recall_at_10": 0.9535302954431647,
+     "evals_per_query": 25761.71256885328,
+     "qps_runs": [
+      445.3361837554858
+     ]
+    },
+    {
+     "ef": 512,
+     "recall_at_10": 0.956084126189284,
+     "evals_per_query": 29391.53580370556,
+     "qps_runs": [
+      396.1727007186149
+     ]
+    }
+   ]
+  },
+  "glove_B4f_untimed": {
+   "index_bytes": 3081828380,
+   "build": {
+    "build_secs": 31.830366094,
+    "graph_hash": "f4728708cb2b4604",
+    "load_1m_after_build": null,
+    "load_1m_before_build": null,
+    "load_gate_met": false,
+    "params": {
+     "align_rows": true,
+     "alpha": 1.0,
+     "block_bits": 4,
+     "build_ef": 200,
+     "code_bits": 0,
+     "degree": 32,
+     "fuse": true,
+     "graph_cache": "/home/davidcondrey/hms-fastscan-check/cache/glove-100-angular_d32_b200.graph",
+     "id_bytes": 3,
+     "index": "vertex",
+     "neighbour_cap": 0,
+     "reorder": true,
+     "residual": true,
+     "residual_bits": 8,
+     "screen": false,
+     "seed": 24301,
+     "vertex_bits": 4
+    },
+    "threads": 8
+   },
+   "sweep": [
+    {
+     "ef": 192,
+     "recall_at_10": 0.88035,
+     "evals_per_query": 6275.0895,
+     "qps_runs": [
+      2309.4635338727626
+     ]
+    },
+    {
+     "ef": 256,
+     "recall_at_10": 0.89805,
+     "evals_per_query": 8170.2755,
+     "qps_runs": [
+      1859.3988591379389
+     ]
+    },
+    {
+     "ef": 272,
+     "recall_at_10": 0.90275,
+     "evals_per_query": 8653.514,
+     "qps_runs": [
+      1722.1479371317669
+     ]
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9203,
+     "evals_per_query": 11974.254,
+     "qps_runs": [
+      1202.9865314758742
+     ]
+    },
+    {
+     "ef": 512,
+     "recall_at_10": 0.93295,
+     "evals_per_query": 15748.1795,
+     "qps_runs": [
+      873.4109017939961
+     ]
+    },
+    {
+     "ef": 736,
+     "recall_at_10": 0.9495,
+     "evals_per_query": 22333.4095,
+     "qps_runs": [
+      658.7070240089212
+     ]
+    },
+    {
+     "ef": 768,
+     "recall_at_10": 0.95165,
+     "evals_per_query": 23267.9875,
+     "qps_runs": [
+      647.6289435743423
+     ]
+    },
+    {
+     "ef": 1024,
+     "recall_at_10": 0.96155,
+     "evals_per_query": 30733.7465,
+     "qps_runs": [
+      490.5419137267832
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,269 @@
+--- src/lib.rs	2026-10-19 13:06:46
++++ /private/tmp/claude-501/-Volumes-A-holographic-memory/a0cd4892-08c7-440d-8666-077f15cd8df8/scratchpad/transport/lib.rs	2026-10-19 13:06:46
+@@ -43,9 +43,114 @@
+ // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
+ pub struct HolographicMemorySystem {
+     core: Arc<HmsCore>,
++    /// Result strings already sent to this instance's JavaScript side, by table index.
++    strings: Arc<parking_lot::Mutex<ResultStrings>>,
+ }
+ 
++/// Search results packed for the JavaScript wrapper in `index.js`, which rebuilds the
++/// `DocumentResult` objects. The numbers of each result land in the caller's `Float64Array`,
++/// [`PACKED_STRIDE`] per result: chunk id, document id, source URI (-1 when absent), version
++/// and metadata JSON as indices into a string table the wrapper keeps per instance, then
++/// start byte, end byte, score, lexical score and semantic score (NaN when absent). Strings
++/// that repeat across queries travel once: `strings` carries the entries this call adds to
++/// that table.
+ #[cfg(feature = "node-api")]
++#[napi(object)]
++pub struct PackedDocumentResults {
++    pub count: u32,
++    /// The wrapper's table was emptied before this call's entries.
++    pub reset: bool,
++    pub strings: Vec<String>,
++    /// Chunk text per result, absent when no result carries text.
++    pub texts: Option<Vec<Option<String>>>,
++}
++
++/// Numbers per result in the packed layout.
++#[cfg(feature = "node-api")]
++pub const PACKED_STRIDE: usize = 10;
++
++/// Interning table mirrored by the JavaScript wrapper; bounded, and emptied on both sides
++/// when it fills.
++#[cfg(feature = "node-api")]
++#[derive(Default)]
++struct ResultStrings {
++    lookup: std::collections::HashMap<Arc<str>, u32>,
++    bytes: usize,
++}
++
++#[cfg(feature = "node-api")]
++impl ResultStrings {
++    const MAX_ENTRIES: usize = 1 << 16;
++    const MAX_BYTES: usize = 8 << 20;
++
++    /// Index of `value`, adding it to `added` (and the table) when it is new.
++    fn index(&mut self, value: &str, added: &mut Vec<String>) -> u32 {
++        if let Some(&index) = self.lookup.get(value) {
++            return index;
++        }
++        let index = u32::try_from(self.lookup.len()).expect("result string table index");
++        self.lookup.insert(Arc::from(value), index);
++        self.bytes += value.len();
++        added.push(value.to_owned());
++        index
++    }
++
++    fn full(&self) -> bool {
++        self.lookup.len() >= Self::MAX_ENTRIES || self.bytes >= Self::MAX_BYTES
++    }
++
++    /// Packs `results` into `numbers` (the caller's buffer, [`PACKED_STRIDE`] per result).
++    fn pack(
++        &mut self,
++        results: Vec<DocumentResult>,
++        numbers: &mut [f64],
++    ) -> Result<PackedDocumentResults> {
++        if numbers.len() < results.len() * PACKED_STRIDE {
++            return Err(napi::Error::from_reason(format!(
++                "packed result buffer holds {} results, {} returned",
++                numbers.len() / PACKED_STRIDE,
++                results.len()
++            )));
++        }
++        let reset = self.full();
++        if reset {
++            self.lookup.clear();
++            self.bytes = 0;
++        }
++        let mut strings = Vec::new();
++        let mut texts = Vec::with_capacity(results.len());
++        let count = results.len();
++        for (result, slot) in results
++            .into_iter()
++            .zip(numbers.chunks_exact_mut(PACKED_STRIDE))
++        {
++            let json = serde_json::to_string(&result.metadata)
++                .map_err(|e| napi::Error::from_reason(e.to_string()))?;
++            slot[0] = f64::from(self.index(&result.id, &mut strings));
++            slot[1] = f64::from(self.index(&result.document_id, &mut strings));
++            slot[2] = result
++                .source_uri
++                .as_deref()
++                .map_or(-1.0, |uri| f64::from(self.index(uri, &mut strings)));
++            slot[3] = f64::from(self.index(&result.version, &mut strings));
++            slot[4] = f64::from(self.index(&json, &mut strings));
++            slot[5] = f64::from(result.start_byte);
++            slot[6] = f64::from(result.end_byte);
++            slot[7] = result.score;
++            slot[8] = result.lexical_score;
++            slot[9] = result.semantic_score.unwrap_or(f64::NAN);
++            texts.push(result.text);
++        }
++        Ok(PackedDocumentResults {
++            count: u32::try_from(count).expect("packed result count"),
++            reset,
++            strings,
++            texts: texts.iter().any(Option::is_some).then_some(texts),
++        })
++    }
++}
++
++#[cfg(feature = "node-api")]
+ fn napi_err(e: anyhow::Error) -> napi::Error {
+     napi::Error::from_reason(e.to_string())
+ }
+@@ -263,6 +368,7 @@
+         let core = HmsCore::new(dimensions, storage_path, cfg).map_err(napi_err)?;
+         Ok(Self {
+             core: Arc::new(core),
++            strings: Arc::default(),
+         })
+     }
+ 
+@@ -294,6 +400,39 @@
+     ) -> Result<Vec<DocumentResult>> {
+         let core = self.core.clone();
+         run_async(move || core.search_documents(&text, &options.unwrap_or_default())).await
++    }
++
++    /// `searchDocuments` packed into `numbers` for `index.js`, which is the only intended
++    /// caller: the search runs on the same blocking pool as `searchDocuments`, and the results
++    /// are packed on the JavaScript thread when the promise resolves. The wrapper allocates
++    /// one `Float64Array` per call and keeps it referenced and untouched until then.
++    #[napi(ts_return_type = "Promise<PackedDocumentResults>")]
++    // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
++    pub fn search_documents_packed<'env>(
++        &self,
++        env: &'env Env,
++        text: String,
++        options: Option<SearchOptions>,
++        mut numbers: Float64Array,
++    ) -> Result<PromiseRaw<'env, PackedDocumentResults>> {
++        let core = self.core.clone();
++        let strings = self.strings.clone();
++        // SAFETY: only the pointer and length leave this frame; they are dereferenced once,
++        // in the callback below, which runs on the JavaScript thread while the wrapper still
++        // references the typed array, and a typed array this large is never allocated inside
++        // the V8 heap, so its backing store does not move.
++        let slice = unsafe { numbers.as_mut() };
++        let (pointer, len) = (slice.as_mut_ptr() as usize, slice.len());
++        env.spawn_future_with_callback(
++            async move {
++                run_async(move || core.search_documents(&text, &options.unwrap_or_default())).await
++            },
++            move |_env, results| {
++                // SAFETY: see above; `pointer` came from `Float64Array::as_mut`.
++                let numbers = unsafe { std::slice::from_raw_parts_mut(pointer as *mut f64, len) };
++                strings.lock().pack(results, numbers)
++            },
++        )
+     }
+ 
+     #[napi]
+--- index.js	2026-10-19 13:06:46
++++ /private/tmp/claude-501/-Volumes-A-holographic-memory/a0cd4892-08c7-440d-8666-077f15cd8df8/scratchpad/transport/index.js	2026-10-19 13:06:46
+@@ -32,4 +32,62 @@
+   )
+ }
+ 
++const { HolographicMemorySystem } = binding
++if (HolographicMemorySystem && typeof HolographicMemorySystem.prototype.searchDocumentsPacked === 'function') {
++  // The native side searches off-thread and packs the results by column into the typed
++  // array passed here, interning the strings that repeat across queries; this wrapper
++  // rebuilds the DocumentResult objects in the native property order. Each call owns its
++  // array and keeps it referenced until the promise settles, which the native side relies on.
++  const packed = HolographicMemorySystem.prototype.searchDocumentsPacked
++  const STRIDE = 10
++  const MAX_K = 1000
++  const states = new WeakMap()
++  HolographicMemorySystem.prototype.searchDocuments = async function searchDocuments(text, options) {
++    let state = states.get(this)
++    if (state === undefined) {
++      state = { table: [], spare: [] }
++      states.set(this, state)
++    }
++    // One buffer per in-flight call, reused afterwards so a steady stream of queries
++    // allocates nothing on the array-buffer side.
++    const numbers = state.spare.pop() ?? new Float64Array(MAX_K * STRIDE)
++    let p
++    try {
++      p = await packed.call(this, text, options ?? null, numbers)
++    } catch (error) {
++      state.spare.push(numbers)
++      throw error
++    }
++    if (p.reset) state.table = []
++    const table = state.table
++    for (const s of p.strings) table.push(s)
++    const texts = p.texts
++    const n = p.count
++    const out = new Array(n)
++    for (let i = 0, at = 0; i < n; i++, at += STRIDE) {
++      const hit = {
++        id: table[numbers[at]],
++        documentId: table[numbers[at + 1]],
++        version: table[numbers[at + 3]],
++        metadata: JSON.parse(table[numbers[at + 4]]),
++        startByte: numbers[at + 5],
++        endByte: numbers[at + 6],
++        score: numbers[at + 7],
++        lexicalScore: numbers[at + 8],
++      }
++      const uri = numbers[at + 2]
++      if (uri >= 0) hit.sourceUri = table[uri]
++      if (texts != null) {
++        const text = texts[i]
++        if (text != null) hit.text = text
++      }
++      const semantic = numbers[at + 9]
++      if (!Number.isNaN(semantic)) hit.semanticScore = semantic
++      out[i] = hit
++    }
++    if (state.spare.length < 8) state.spare.push(numbers)
++    return out
++  }
++}
++
+ module.exports = binding
+--- index.d.ts	2026-10-19 13:06:46
++++ /private/tmp/claude-501/-Volumes-A-holographic-memory/a0cd4892-08c7-440d-8666-077f15cd8df8/scratchpad/transport/index.d.ts	2026-10-19 13:06:46
+@@ -6,6 +6,12 @@
+   memorizeDocuments(inputs: Array<DocumentInput>): Promise<Array<number>>
+   chunkDocument(input: DocumentInput): Promise<Array<DocumentChunk>>
+   searchDocuments(text: string, options?: SearchOptions | undefined | null): Promise<Array<DocumentResult>>
++  /**
++   * `searchDocuments` packed into `numbers` for `index.js`, which is the only intended
++   * caller: the search runs off-thread like `searchDocuments`, and the results are packed
++   * on the JavaScript thread when the promise resolves.
++   */
++  searchDocumentsPacked(text: string, options: SearchOptions | undefined | null, numbers: Float64Array): Promise<PackedDocumentResults>
+   deleteDocument(id: string): Promise<boolean>
+   securityStatus(): any
+   get vectorCount(): number
+@@ -149,6 +155,23 @@
+   embeddings?: Array<Array<number>>
+ }
+ 
++/**
++ * Search results packed for the JavaScript wrapper in `index.js`, which rebuilds the
++ * `DocumentResult` objects. The numbers of each result land in the caller's `Float64Array`,
++ * ten per result: chunk id, document id, source URI (-1 when absent), version and metadata
++ * JSON as indices into a string table the wrapper keeps per instance, then start byte, end
++ * byte, score, lexical score and semantic score (NaN when absent). Strings that repeat across
++ * queries travel once: `strings` carries the entries this call adds to that table.
++ */
++export interface PackedDocumentResults {
++  count: number
++  /** The wrapper's table was emptied before this call's entries. */
++  reset: boolean
++  strings: Array<string>
++  /** Chunk text per result, absent when no result carries text. */
++  texts?: Array<string | undefined | null>
++}
++
+ export interface DocumentResult {
+   id: string
+   documentId: string

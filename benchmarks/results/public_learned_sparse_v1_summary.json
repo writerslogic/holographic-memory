@@ -1,0 +1,48 @@
+{
+ "results": "benchmarks/results/public_learned_sparse_v1.json",
+ "rows": 24,
+ "passed": true,
+ "failures": [],
+ "targets": {
+  "ndcg_within_0.005_of_splade_same_vectors": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true
+  },
+  "qps_at_least_2x_anserini": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": false
+  },
+  "bytes_at_most_0.7x_anserini": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": false,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": false,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": false,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": false
+  },
+  "blend_above_sparse_alone": {
+   "nfcorpus/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/splade-pp-ed/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "scifact/os-doc-v2-distill/writerslogic-02 (Intel Core Ultra 9 185H, Linux, quiet)": true,
+   "nfcorpus/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "nfcorpus/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/splade-pp-ed/Apple M4 (shared development host, load 5-90)": true,
+   "scifact/os-doc-v2-distill/Apple M4 (shared development host, load 5-90)": true
+  }
+ }
+}

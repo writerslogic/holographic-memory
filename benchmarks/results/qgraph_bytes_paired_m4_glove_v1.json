@@ -1,0 +1,514 @@
+{
+ "schema_version": 1,
+ "tag": "fsgl1",
+ "dataset": {
+  "dim": 100,
+  "kind": "ann",
+  "metric": "angular",
+  "n_neighbors": 100,
+  "n_test": 10000,
+  "n_train": 1183514,
+  "name": "glove-100-angular",
+  "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+  "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+ },
+ "rounds": 11,
+ "selection_rule": "per process and threshold, the row with recall@10 >= threshold and the fewest estimates per query; paired ratio = candidate QPS / baseline QPS in the same round",
+ "load_1m_per_step": [
+  [
+   0,
+   "A",
+   80.2
+  ],
+  [
+   0,
+   "B",
+   77.1
+  ],
+  [
+   0,
+   "C",
+   72.0
+  ],
+  [
+   1,
+   "B",
+   68.4
+  ],
+  [
+   1,
+   "C",
+   66.0
+  ],
+  [
+   1,
+   "A",
+   58.3
+  ],
+  [
+   2,
+   "C",
+   54.5
+  ],
+  [
+   2,
+   "A",
+   47.6
+  ],
+  [
+   2,
+   "B",
+   44.6
+  ],
+  [
+   3,
+   "A",
+   41.8
+  ],
+  [
+   3,
+   "B",
+   40.0
+  ],
+  [
+   3,
+   "C",
+   37.8
+  ],
+  [
+   4,
+   "B",
+   35.1
+  ],
+  [
+   4,
+   "C",
+   33.5
+  ],
+  [
+   4,
+   "A",
+   30.1
+  ],
+  [
+   5,
+   "C",
+   30.1
+  ],
+  [
+   5,
+   "A",
+   27.0
+  ],
+  [
+   5,
+   "B",
+   26.0
+  ],
+  [
+   6,
+   "A",
+   25.0
+  ],
+  [
+   6,
+   "B",
+   23.6
+  ],
+  [
+   6,
+   "C",
+   22.2
+  ],
+  [
+   7,
+   "B",
+   21.1
+  ],
+  [
+   7,
+   "C",
+   21.0
+  ],
+  [
+   7,
+   "A",
+   19.0
+  ],
+  [
+   8,
+   "C",
+   18.1
+  ],
+  [
+   8,
+   "A",
+   21.2
+  ],
+  [
+   8,
+   "B",
+   21.9
+  ],
+  [
+   9,
+   "A",
+   27.6
+  ],
+  [
+   9,
+   "B",
+   32.4
+  ],
+  [
+   9,
+   "C",
+   37.6
+  ],
+  [
+   10,
+   "B",
+   35.1
+  ],
+  [
+   10,
+   "C",
+   35.9
+  ],
+  [
+   10,
+   "A",
+   34.8
+  ]
+ ],
+ "index_bytes": {
+  "A": 359620124,
+  "B": 342209860,
+  "C": 266592964
+ },
+ "build": {
+  "A": {
+   "build_secs": 5.1853848750000004,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": 80.35,
+   "load_1m_before_build": 79.25,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  },
+  "B": {
+   "build_secs": 2.347235083,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": 80.16,
+   "load_1m_before_build": 80.16,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 0,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  },
+  "C": {
+   "build_secs": 4.049542583,
+   "graph_hash": "f4728708cb2b4604",
+   "load_1m_after_build": 80.35,
+   "load_1m_before_build": 79.25,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/glove-100-angular_d32_b200.graph",
+    "id_bytes": 0,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 4,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  }
+ },
+ "thresholds": {
+  "0.90": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 256,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.9005,
+    "evals_per_query": 5810.9095,
+    "qps_runs": [
+     2509.900119051841,
+     3186.2251026199865,
+     3321.700229801201,
+     3812.9245751091335,
+     2636.514318310115,
+     3239.2810352252413,
+     3099.0348863145164,
+     1576.172061246894,
+     987.19060562884,
+     813.1964296814053,
+     427.3717806892294
+    ],
+    "qps_median": 2636.514318310115
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.9005,
+     "evals_per_query": 5810.9095,
+     "qps_runs": [
+      2347.3583767184923,
+      2464.6006330326727,
+      2262.220907007204,
+      1519.983170867931,
+      3146.0461491653455,
+      2295.7801877342567,
+      3184.5716015082244,
+      2673.862326093615,
+      417.2135169414311,
+      506.0202706650105,
+      737.1818362495753
+     ],
+     "qps_median": 2295.7801877342567,
+     "paired_ratios": [
+      0.9352,
+      0.7735,
+      0.681,
+      0.3986,
+      1.1933,
+      0.7087,
+      1.0276,
+      1.6964,
+      0.4226,
+      0.6223,
+      1.7249
+     ],
+     "paired_median_ratio": 0.7735,
+     "paired_min_ratio": 0.3986,
+     "rounds_above_1": 4,
+     "meets_min_ratio": false
+    },
+    "C": {
+     "params": {
+      "ef": 320,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.90285,
+     "evals_per_query": 7006.764,
+     "qps_runs": [
+      1831.493445542832,
+      1873.2662774253502,
+      1775.0217606573972,
+      1972.5989573080594,
+      2199.607306747055,
+      2560.4916143899627,
+      2501.2249499069676,
+      2538.562484008167,
+      2547.2467855140185,
+      722.9254699018086,
+      1712.4386051052898
+     ],
+     "qps_median": 1972.5989573080594,
+     "paired_ratios": [
+      0.7297,
+      0.5879,
+      0.5344,
+      0.5173,
+      0.8343,
+      0.7905,
+      0.8071,
+      1.6106,
+      2.5803,
+      0.889,
+      4.0069
+     ],
+     "paired_median_ratio": 0.8071,
+     "paired_min_ratio": 0.5173,
+     "rounds_above_1": 3,
+     "meets_min_ratio": false
+    }
+   }
+  },
+  "0.95": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 736,
+     "patience": 0,
+     "rerank": 64,
+     "screen": false,
+     "screen_sigmas": 1.0
+    },
+    "recall_at_10": 0.95065,
+    "evals_per_query": 14341.2625,
+    "qps_runs": [
+     1009.5555696612903,
+     1096.236001010085,
+     1323.5823179776555,
+     1215.0289974264167,
+     1453.6339383194977,
+     1165.5838635404348,
+     1393.7673572643616,
+     1225.727248874342,
+     570.1717566498538,
+     454.0060859257035,
+     140.32325034160795
+    ],
+    "qps_median": 1165.5838635404348
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 736,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.95065,
+     "evals_per_query": 14341.2625,
+     "qps_runs": [
+      958.3453019880168,
+      916.2286253579454,
+      1049.8050936587238,
+      952.3597324455995,
+      913.8659972526345,
+      928.7556207129221,
+      1201.9476063333914,
+      926.7052236677124,
+      338.2705851117592,
+      170.48251463669638,
+      688.7465613251759
+     ],
+     "qps_median": 926.7052236677124,
+     "paired_ratios": [
+      0.9493,
+      0.8358,
+      0.7932,
+      0.7838,
+      0.6287,
+      0.7968,
+      0.8624,
+      0.756,
+      0.5933,
+      0.3755,
+      4.9083
+     ],
+     "paired_median_ratio": 0.7932,
+     "paired_min_ratio": 0.3755,
+     "rounds_above_1": 1,
+     "meets_min_ratio": false
+    },
+    "C": {
+     "params": {
+      "ef": 1024,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     "recall_at_10": 0.95135,
+     "evals_per_query": 19125.7405,
+     "qps_runs": [
+      630.8365605764725,
+      694.2035319556095,
+      723.9085814190724,
+      597.041309608823,
+      720.8509175663753,
+      663.5612918347127,
+      783.3238192127792,
+      737.2688301370507,
+      247.83799430278643,
+      249.33891421011862,
+      190.463860970475
+     ],
+     "qps_median": 663.5612918347127,
+     "paired_ratios": [
+      0.6249,
+      0.6333,
+      0.5469,
+      0.4914,
+      0.4959,
+      0.5693,
+      0.562,
+      0.6015,
+      0.4347,
+      0.5492,
+      1.3573
+     ],
+     "paired_median_ratio": 0.562,
+     "paired_min_ratio": 0.4347,
+     "rounds_above_1": 1,
+     "meets_min_ratio": false
+    }
+   }
+  }
+ },
+ "check": {
+  "passed": true,
+  "failures": [],
+  "min_ratio": 1.0
+ },
+ "measurement": {
+  "host": "Apple M4 (development host), shared machine, 1-minute load 72-80 during the window",
+  "protocol": "glove-100-angular --holdout 2000, 11 paired rounds under the timing lock, alternating A B C, all arms the commit 7cbf2d3 binary",
+  "arms": {
+   "A": "accepted encoding (3-byte ids, 8-bit residual), rerank 64",
+   "B": "delta-coded varint adjacency (id_bytes 0), 8-bit residual: 342.2 MB (-4.8%), results identical to A",
+   "C": "varint adjacency and 4-bit residual: 266.6 MB (-25.9%), recall -0.01 at equal ef"
+  },
+  "outcome": "B 0.774x at 0.90 and 0.793x at 0.95 (4 and 1 of 11 rounds above 1); C 0.807x at 0.90 (ef 320) and 0.562x at 0.95 (ef 1024): varint decoding per expansion costs more than the 15 B/vertex it saves, and the 4-bit residual's recall loss costs ef; bytes lever recorded as measured, not accepted"
+ }
+}

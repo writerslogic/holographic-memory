@@ -1,0 +1,125 @@
+{
+ "schema_version": 1,
+ "category": [
+  "2A_serving_memory",
+  "2B_lexical_speed"
+ ],
+ "candidate": "V38",
+ "date": "2026-10-19",
+ "mechanism": "V37 (compact term dictionary, delta-varint postings, file-backed text) + dense-slot posting capture, closure varint decode, slot word counts, packed selection (src/core/documents/search.rs, index.rs, postings.rs) + packed synchronous Node result path with per-instance string interning (src/lib.rs searchDocumentsPacked on the JavaScript thread, index.js wrapper)",
+ "protocol": "serving-v30 controller derived as serving-v38-monotonic-v1 on writerslogic-02 (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v38 / sqlite-full (Node 26.8.1, SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3; all 33 load gates met; oracle exact",
+ "identities": {
+  "candidate_manifest_sha256": "2158df77382f041469f123abb220d7dd9eb689fa6eb4384bcc240e9a780d7113",
+  "candidate_native_sha256": "be9ef2d54986efb42cc4da1aac163861fe5b77c3af7683f6580b04f27de5ffb4",
+  "protocol_sha256": "aaca966b719a2fb10e00d4666a2078025ece26c18bcc59c56132c7d43ae3ca10",
+  "driver_sha256": "950eed145ad56f8349fe79a6a467a92d6a00b03f94da8db0cd96e1c7eeab00ff"
+ },
+ "arm_medians_over_11_rounds": {
+  "baseline": {
+   "serving_max_rss_bytes": 173395968,
+   "static_median_rss_bytes": 105652224,
+   "qps": 3668,
+   "api_p99_ns": 612314
+  },
+  "candidate-v38": {
+   "serving_max_rss_bytes": 177156096,
+   "static_median_rss_bytes": 100306944,
+   "qps": 8880,
+   "api_p99_ns": 406475
+  },
+  "sqlite-full": {
+   "serving_max_rss_bytes": 158609408,
+   "static_median_rss_bytes": 82731008,
+   "qps": 863,
+   "api_p99_ns": 4985576
+  }
+ },
+ "paired_estimates": {
+  "candidate_over_baseline": {
+   "serving_max_rss": [
+    1.0027,
+    [
+     0.9368,
+     1.0325
+    ]
+   ],
+   "api_p95": [
+    0.533,
+    [
+     0.4907,
+     0.5727
+    ]
+   ],
+   "api_p99": [
+    0.6589,
+    [
+     0.6296,
+     0.6835
+    ]
+   ],
+   "qps": [
+    2.4044,
+    [
+     2.281,
+     2.4692
+    ]
+   ]
+  },
+  "candidate_over_sqlite_full": {
+   "serving_max_rss": [
+    1.1172,
+    [
+     1.0488,
+     1.1344
+    ]
+   ],
+   "api_p95": [
+    0.0694,
+    [
+     0.0663,
+     0.0726
+    ]
+   ],
+   "api_p99": [
+    0.0821,
+    [
+     0.0781,
+     0.0871
+    ]
+   ],
+   "qps": [
+    10.1198,
+    [
+     9.5955,
+     10.3684
+    ]
+   ]
+  },
+  "format": "[paired median over 11 rounds, bootstrap 95% interval]"
+ },
+ "numerical_guards_family8": {
+  "sqlite_rss_upper_strictly_below_one": false,
+  "source_rss_upper_at_most_1_10": true,
+  "source_p95_upper_at_most_1_10": true,
+  "source_p99_upper_at_most_1_10": true,
+  "source_qps_lower_at_least_inverse_1_10": true,
+  "sqlite_qps_lower_at_least_1_20": true
+ },
+ "ratio_to_previous_accepted": {
+  "accepted_rss_vs_sqlite": 1.092,
+  "this_row_rss_vs_sqlite": 1.1172,
+  "ratio": 1.0231,
+  "v37_row_rss_vs_sqlite": 1.0605,
+  "lexical_speed_private_best_vs_sqlite": 4.76,
+  "this_row_qps_vs_sqlite": 10.1198,
+  "qps_ratio_to_private_best": 2.126
+ },
+ "verdict": "2A not accepted: serving max RSS 1.0027x baseline (V37 was 0.970x) and 1.117x sqlite-full, above the accepted 1.092; the packed path run on the JavaScript thread leaves about 9 MB of native residency over the serving window (static RSS still improves 105.7 -> 100.3 MB). 2B measured: QPS 2.40x baseline and 10.12x sqlite-full [9.60, 10.37], p99 0.66x baseline; not accepted because production inputs change only through the 2A acceptance path. Follow-up candidate V39 moves the packed path off the JavaScript thread and reuses its buffers.",
+ "paths": {
+  "host": "writerslogic-02",
+  "build": "/home/davidcondrey/hms-retained-20261016/v38-build-v1",
+  "campaign": "/home/davidcondrey/hms-retained-20261016/serving-v38-monotonic-v1/serving-v38-monotonic-full11-v1 (analysis.json, measurements.json, cells/)",
+  "linux_ab": "/home/davidcondrey/hms-retained-20261016/ab-v38-v1/ab.log (v37 peak 122-123 MB, v38 134, v38 async path of the same binary 124)",
+  "local_scripts": "/Volumes/A/.hms-target-2a/v38-build"
+ }
+}

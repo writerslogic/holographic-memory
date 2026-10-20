@@ -1,0 +1,533 @@
+{
+ "schema_version": 1,
+ "note": "Lever measurements for 1A.4 on the M4 (5 rayon threads). graph_build_s sums the PHASE walls of Graph::build (passes, fill, upper layers); build_s_total_with_encoding adds the VGraph encoding; peak RSS is the whole public-bench process (data load, holdout truth, build, encoding, search), as ru_maxrss. The accepted GCE numbers (glove 1435 s, 4317 MiB on c4-standard-8) are from another host and the pre-AVX2 x86 build; ratios here are against the same-host baseline rows.",
+ "summary": {
+  "nytimes_graph_build_s": {
+   "baseline": 263.49,
+   "quantized": 74.34,
+   "ratio": 3.54
+  },
+  "glove_graph_build_s": {
+   "baseline": 238.69,
+   "quantized_owned": 184.54,
+   "ratio": 1.29
+  },
+  "glove_peak_rss_bytes": {
+   "baseline": 3775348736,
+   "quantized_owned": 2164604928,
+   "ratio": 0.573
+  },
+  "recall_change": "nytimes 0.9049/0.9498 -> 0.9048/0.9515 at ef 96/384; glove 0.9005/0.9518 -> 0.9005/0.9518 at ef 256/768 (within 0.002 both)",
+  "killed": [
+   "NN-descent initialization (parked: benchmarks/results/parked/1A4-nn-descent-init.*)",
+   "locality insertion order (parked: benchmarks/results/parked/1A4-locality-order.md)"
+  ]
+ },
+ "rows": [
+  {
+   "dataset": "nytimes-256-angular (held-out train split, 288,003 rows, degree 64, build_ef 200, alpha 1.0)",
+   "lever": "baseline: two insertion passes, exact float distances for every fresh neighbour not excluded by the 8-bit bounds",
+   "flags": "",
+   "binary": "7cbf2d3 build path",
+   "graph_build_s": 263.49,
+   "greedy_cpu_s": 955.5,
+   "build_s_total_with_encoding": 265.2,
+   "graph_phases": {
+    "pass": [
+     {
+      "wall_s": 198.73,
+      "greedy_cpu_s": 763.5,
+      "prune_cpu_s": 86.6,
+      "rev_wall_s": 25.14,
+      "fresh": 2149628803,
+      "exact": 286344318
+     },
+     {
+      "wall_s": 53.18,
+      "greedy_cpu_s": 188.5,
+      "prune_cpu_s": 26.7,
+      "rev_wall_s": 8.26,
+      "fresh": 1985219466,
+      "exact": 261994929
+     }
+    ],
+    "fill": [
+     {
+      "wall_s": 9.13,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "upper": [
+     {
+      "wall_s": 2.45,
+      "greedy_cpu_s": 3.5,
+      "prune_cpu_s": 0.2,
+      "rev_wall_s": 0.82,
+      "fresh": 38130292,
+      "exact": 12551398
+     }
+    ]
+   },
+   "peak_rss_bytes_process": 981680128,
+   "wall_s_process": 357.12,
+   "user_cpu_s_process": 10.0,
+   "structure_hash_profile": "e26c1ad565f48dda",
+   "graph_hash": "c279d454c4e33af0",
+   "recall": [
+    {
+     "ef": 96,
+     "recall_at_10": 0.9049,
+     "evals_per_query": 4236
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9498,
+     "evals_per_query": 14872
+    }
+   ],
+   "host": "Apple M4 (shared development host; 1-minute load at start recorded)",
+   "threads": 5,
+   "load_1m_at_start": 92.07
+  },
+  {
+   "dataset": "nytimes-256-angular (held-out train split, 288,003 rows, degree 64, build_ef 200, alpha 1.0)",
+   "lever": "lever 1, NN-descent initialization, 8 rounds: killed",
+   "flags": "--nn-descent-rounds 8",
+   "binary": "worktree, parked patch",
+   "graph_build_s": 360.36,
+   "greedy_cpu_s": 192.0,
+   "build_s_total_with_encoding": 361.8,
+   "graph_phases": {
+    "nn_descent": [
+     {
+      "wall_s": 295.84,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 47103210
+     }
+    ],
+    "knn_prune": [
+     {
+      "wall_s": 1.53,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "pass": [
+     {
+      "wall_s": 48.77,
+      "greedy_cpu_s": 188.5,
+      "prune_cpu_s": 25.9,
+      "rev_wall_s": 3.6,
+      "fresh": 1163046270,
+      "exact": 243628797
+     }
+    ],
+    "fill": [
+     {
+      "wall_s": 12.41,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "upper": [
+     {
+      "wall_s": 1.81,
+      "greedy_cpu_s": 3.5,
+      "prune_cpu_s": 0.2,
+      "rev_wall_s": 0.48,
+      "fresh": 38130292,
+      "exact": 12551398
+     }
+    ]
+   },
+   "peak_rss_bytes_process": 4294295552,
+   "wall_s_process": 387.87,
+   "user_cpu_s_process": 10.0,
+   "structure_hash_profile": "0ad2f631c5f29f14",
+   "graph_hash": "7649bcd8851d925b",
+   "recall": [
+    {
+     "ef": 96,
+     "recall_at_10": 0.8976,
+     "evals_per_query": 3740
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9396,
+     "evals_per_query": 13230
+    }
+   ],
+   "host": "Apple M4 (shared development host; 1-minute load at start recorded)",
+   "threads": 5,
+   "load_1m_at_start": 91.23
+  },
+  {
+   "dataset": "nytimes-256-angular (held-out train split, 288,003 rows, degree 64, build_ef 200, alpha 1.0)",
+   "lever": "locality insertion order, 256 k-means clusters: killed",
+   "flags": "--locality-clusters 256",
+   "binary": "worktree, parked patch",
+   "graph_build_s": 179.23,
+   "greedy_cpu_s": 605.7,
+   "build_s_total_with_encoding": 180.8,
+   "graph_phases": {
+    "locality_order": [
+     {
+      "wall_s": 2.25,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "pass": [
+     {
+      "wall_s": 78.23,
+      "greedy_cpu_s": 281.6,
+      "prune_cpu_s": 35.0,
+      "rev_wall_s": 13.59,
+      "fresh": 2564431392,
+      "exact": 324686274
+     },
+     {
+      "wall_s": 89.4,
+      "greedy_cpu_s": 324.1,
+      "prune_cpu_s": 41.9,
+      "rev_wall_s": 14.11,
+      "fresh": 2548602941,
+      "exact": 282954927
+     }
+    ],
+    "fill": [
+     {
+      "wall_s": 9.14,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "upper": [
+     {
+      "wall_s": 0.21,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.04,
+      "fresh": 22726,
+      "exact": 22726
+     }
+    ]
+   },
+   "peak_rss_bytes_process": 1077493760,
+   "wall_s_process": 207.88,
+   "user_cpu_s_process": 10.0,
+   "structure_hash_profile": "ce8bb3d81550ea58",
+   "graph_hash": "15d443329a156542",
+   "recall": [
+    {
+     "ef": 96,
+     "recall_at_10": 0.8926,
+     "evals_per_query": 4478
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9341,
+     "evals_per_query": 15672
+    }
+   ],
+   "host": "Apple M4 (shared development host; 1-minute load at start recorded)",
+   "threads": 5,
+   "load_1m_at_start": 112.52
+  },
+  {
+   "dataset": "nytimes-256-angular (held-out train split, 288,003 rows, degree 64, build_ef 200, alpha 1.0)",
+   "lever": "lever 2, quantized construction search (8-bit SDOT estimates order the pool; the expanded set is re-scored exactly before the exact prune)",
+   "flags": "--quantized-search",
+   "binary": "worktree before trimming",
+   "graph_build_s": 74.34,
+   "greedy_cpu_s": 211.9,
+   "build_s_total_with_encoding": 75.5,
+   "graph_phases": {
+    "pass": [
+     {
+      "wall_s": 36.0,
+      "greedy_cpu_s": 113.8,
+      "prune_cpu_s": 20.9,
+      "rev_wall_s": 7.85,
+      "fresh": 2149959226,
+      "exact": 58903652
+     },
+     {
+      "wall_s": 30.99,
+      "greedy_cpu_s": 96.0,
+      "prune_cpu_s": 18.8,
+      "rev_wall_s": 6.59,
+      "fresh": 1985295187,
+      "exact": 59176666
+     }
+    ],
+    "fill": [
+     {
+      "wall_s": 6.56,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "upper": [
+     {
+      "wall_s": 0.79,
+      "greedy_cpu_s": 2.1,
+      "prune_cpu_s": 0.1,
+      "rev_wall_s": 0.17,
+      "fresh": 38129435,
+      "exact": 3832200
+     }
+    ]
+   },
+   "peak_rss_bytes_process": 1102888960,
+   "wall_s_process": 96.37,
+   "user_cpu_s_process": 10.0,
+   "structure_hash_profile": "6dec4d55e3ba4b2d",
+   "graph_hash": "afbd432718415170",
+   "recall": [
+    {
+     "ef": 96,
+     "recall_at_10": 0.9048,
+     "evals_per_query": 4238
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9515,
+     "evals_per_query": 14895
+    }
+   ],
+   "host": "Apple M4 (shared development host; 1-minute load at start recorded)",
+   "threads": 5,
+   "load_1m_at_start": 139.45
+  },
+  {
+   "dataset": "nytimes-256-angular (held-out train split, 288,003 rows, degree 64, build_ef 200, alpha 1.0)",
+   "lever": "lever 2 confirmation with the trimmed source and lever 3 (owned input): same hash and counts",
+   "flags": "--quantized-search",
+   "binary": "worktree final",
+   "graph_build_s": 87.55,
+   "greedy_cpu_s": 251.6,
+   "build_s_total_with_encoding": 88.8,
+   "graph_phases": {
+    "pass": [
+     {
+      "wall_s": 42.21,
+      "greedy_cpu_s": 133.7,
+      "prune_cpu_s": 24.9,
+      "rev_wall_s": 8.82,
+      "fresh": 2149959226,
+      "exact": 58903652
+     },
+     {
+      "wall_s": 37.16,
+      "greedy_cpu_s": 115.8,
+      "prune_cpu_s": 22.8,
+      "rev_wall_s": 7.85,
+      "fresh": 1985295187,
+      "exact": 59176666
+     }
+    ],
+    "fill": [
+     {
+      "wall_s": 7.24,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "upper": [
+     {
+      "wall_s": 0.94,
+      "greedy_cpu_s": 2.1,
+      "prune_cpu_s": 0.2,
+      "rev_wall_s": 0.21,
+      "fresh": 38129435,
+      "exact": 3832200
+     }
+    ]
+   },
+   "peak_rss_bytes_process": 980385792,
+   "wall_s_process": 111.93,
+   "user_cpu_s_process": 10.0,
+   "structure_hash_profile": "6dec4d55e3ba4b2d",
+   "graph_hash": "afbd432718415170",
+   "recall": [
+    {
+     "ef": 96,
+     "recall_at_10": 0.9048,
+     "evals_per_query": 4238
+    },
+    {
+     "ef": 384,
+     "recall_at_10": 0.9515,
+     "evals_per_query": 14895
+    }
+   ],
+   "host": "Apple M4 (shared development host; 1-minute load at start recorded)",
+   "threads": 5,
+   "load_1m_at_start": 11.96
+  },
+  {
+   "dataset": "glove-100-angular (held-out train split, 1,181,514 rows, degree 32, build_ef 200, alpha 1.0)",
+   "lever": "baseline: two insertion passes, no codes at dim 100, exact float distances for every fresh neighbour",
+   "flags": "",
+   "binary": "/Volumes/A/.hms-target-fastscan-wt/release/public-bench (7cbf2d3 build path)",
+   "graph_build_s": 238.69,
+   "greedy_cpu_s": 878.1,
+   "build_s_total_with_encoding": 243.1,
+   "graph_phases": {
+    "pass": [
+     {
+      "wall_s": 107.53,
+      "greedy_cpu_s": 412.9,
+      "prune_cpu_s": 65.4,
+      "rev_wall_s": 9.79,
+      "fresh": 5101968263,
+      "exact": 5101968263
+     },
+     {
+      "wall_s": 116.53,
+      "greedy_cpu_s": 453.3,
+      "prune_cpu_s": 67.8,
+      "rev_wall_s": 10.49,
+      "fresh": 5348848882,
+      "exact": 5348848882
+     }
+    ],
+    "fill": [
+     {
+      "wall_s": 10.1,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "upper": [
+     {
+      "wall_s": 4.53,
+      "greedy_cpu_s": 11.9,
+      "prune_cpu_s": 1.4,
+      "rev_wall_s": 0.9,
+      "fresh": 157926096,
+      "exact": 157926096
+     }
+    ]
+   },
+   "peak_rss_bytes_process": 3775348736,
+   "wall_s_process": 269.21,
+   "user_cpu_s_process": 10.0,
+   "structure_hash_profile": "330155feb8e2c719",
+   "graph_hash": "f4728708cb2b4604",
+   "recall": [
+    {
+     "ef": 256,
+     "recall_at_10": 0.9005,
+     "evals_per_query": 5811
+    },
+    {
+     "ef": 768,
+     "recall_at_10": 0.9518,
+     "evals_per_query": 14882
+    }
+   ],
+   "host": "Apple M4 (shared development host; 1-minute load at start recorded)",
+   "threads": 5,
+   "load_1m_at_start": 34.73
+  },
+  {
+   "dataset": "glove-100-angular (held-out train split, 1,181,514 rows, degree 32, build_ef 200, alpha 1.0)",
+   "lever": "lever 2 + lever 3 (quantized search; owned input matrix normalized in place, no duplicate corpus)",
+   "flags": "--quantized-search",
+   "binary": "worktree",
+   "graph_build_s": 184.54,
+   "greedy_cpu_s": 665.9,
+   "build_s_total_with_encoding": 187.8,
+   "graph_phases": {
+    "pass": [
+     {
+      "wall_s": 84.01,
+      "greedy_cpu_s": 314.4,
+      "prune_cpu_s": 44.6,
+      "rev_wall_s": 10.63,
+      "fresh": 5101802088,
+      "exact": 243656615
+     },
+     {
+      "wall_s": 91.67,
+      "greedy_cpu_s": 342.6,
+      "prune_cpu_s": 49.1,
+      "rev_wall_s": 11.38,
+      "fresh": 5348769923,
+      "exact": 246167225
+     }
+    ],
+    "fill": [
+     {
+      "wall_s": 5.82,
+      "greedy_cpu_s": 0.0,
+      "prune_cpu_s": 0.0,
+      "rev_wall_s": 0.0,
+      "fresh": 0,
+      "exact": 0
+     }
+    ],
+    "upper": [
+     {
+      "wall_s": 3.04,
+      "greedy_cpu_s": 8.9,
+      "prune_cpu_s": 1.0,
+      "rev_wall_s": 0.54,
+      "fresh": 157921665,
+      "exact": 15984500
+     }
+    ]
+   },
+   "peak_rss_bytes_process": 2164604928,
+   "wall_s_process": 216.6,
+   "user_cpu_s_process": 10.0,
+   "structure_hash_profile": "55cc8a1c2db1e8a6",
+   "graph_hash": "ab219fa8bcbf09d7",
+   "recall": [
+    {
+     "ef": 256,
+     "recall_at_10": 0.9005,
+     "evals_per_query": 5815
+    },
+    {
+     "ef": 768,
+     "recall_at_10": 0.9518,
+     "evals_per_query": 14883
+    }
+   ],
+   "host": "Apple M4 (shared development host; 1-minute load at start recorded)",
+   "threads": 5,
+   "load_1m_at_start": 27.23
+  }
+ ]
+}

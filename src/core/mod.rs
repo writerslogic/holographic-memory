@@ -27,6 +27,7 @@ pub mod cognition;
 pub mod compose;
 #[cfg(feature = "experimental")]
 pub mod counting_bloom_memory;
+pub mod sparse;
 // Living connection-graph: plastic, event-sourced holographic relation store.
 // Experimental and opt-in; does not touch the sparse-binary core.
 pub(crate) mod composite_memory;
@@ -56,6 +57,8 @@ pub mod mask;
 pub mod models;
 pub(crate) mod nsg;
 #[cfg(feature = "experimental")]
+pub mod operand_retriever;
+#[cfg(feature = "experimental")]
 pub mod phase_graph;
 pub mod phase_hvec;
 pub mod phase_resonator;
@@ -68,6 +71,8 @@ pub mod qgraph;
 pub(crate) mod role;
 pub(crate) mod rules;
 pub(crate) mod security;
+#[cfg(feature = "security")]
+pub use security::scrub_stack;
 #[cfg(target_arch = "x86_64")]
 pub(crate) mod simd_math;
 #[cfg(feature = "experimental")]

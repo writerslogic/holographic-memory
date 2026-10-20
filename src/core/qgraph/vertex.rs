@@ -14,11 +14,11 @@
 //! (`dim / 2 + 4` with the 4-bit one), against `4 * dim` for the vectors alone in an HNSW
 //! index.
 
-use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
 use rayon::prelude::*;
 
+use super::fastscan::{pack32, scan32, BLOCK};
 use super::kernels::{
     dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i8_inline, interleave_for_i4, prefetch,
     prefetch_bytes, raw_one, QueryCode, Rotation, SplitMix,
@@ -43,6 +43,13 @@ pub struct VSearchParams {
     pub screen_sigmas: f32,
     /// Consult the screen when the index has one (false runs the plain search on it).
     pub screen: bool,
+    /// With neighbour blocks: fuse the block estimates a vertex receives from every expanded
+    /// vertex that lists it (precision-weighted by the edge residual's scale) and re-admit
+    /// it to the pool when the fused estimate qualifies, instead of keeping its first one.
+    pub fuse: bool,
+    /// Per-row search: estimate only the first this many neighbours of each expanded vertex
+    /// (lists keep the build's order, nearest first); 0 = all.
+    pub neighbour_cap: usize,
 }
 
 impl Default for VSearchParams {
@@ -53,6 +60,8 @@ impl Default for VSearchParams {
             patience: 0,
             screen_sigmas: 1.0,
             screen: true,
+            fuse: false,
+            neighbour_cap: 0,
         }
     }
 }
@@ -106,6 +115,11 @@ pub struct VGraph {
     adj: Vec<u32>,
     /// The same as 3-byte little-endian ids (padded with `NONE3`); empty with `u32` ids.
     adj3: Vec<u8>,
+    /// Delta-coded lists (`id_bytes` 0): per vertex, the sorted neighbour ids as LEB128
+    /// varints of the zigzag first difference to the vertex and the gaps less one after,
+    /// with `adjv_off[v]..adjv_off[v + 1]` the byte span of vertex `v`; empty otherwise.
+    adjv: Vec<u8>,
+    adjv_off: Vec<u32>,
     codes: Lines,
     scales: Vec<f32>,
     /// 0 (none), 4 or 8.
@@ -128,10 +142,234 @@ pub struct VGraph {
     /// Standard deviation of (screen estimate - 8-bit estimate), in estimate units, measured
     /// at build on index vectors used as queries.
     screen_sigma: f32,
+    /// Bits per coordinate of the neighbour-block codes (0 = no blocks; 1, 2 or 4). See
+    /// [`VGraph::with_blocks`].
+    block_bits: u8,
+    /// Coordinates of a block code: the block rotation's width.
+    block_dim: usize,
+    /// Nibble groups per block code: `block_dim * block_bits / 4`.
+    block_m: usize,
+    /// Blocks per vertex: `degree.div_ceil(32)`.
+    blocks_per_vertex: usize,
+    /// Per vertex, `blocks_per_vertex` records of `16 * block_m` code bytes in the fast-scan
+    /// layout followed by the 32 neighbours' scales as little-endian f32.
+    blocks: Lines,
+    block_rot: Option<Rotation>,
+    /// Error model of the block estimates: `var = block_kappa * s^2 * |q - x_v|^2` for an
+    /// edge of scale `s` seen from the expanded vertex `v`, calibrated at build.
+    block_kappa: f32,
 }
 
 /// Seed of the screen's rotation (fixed: the screen is a property of the encoding).
 const SCREEN_SEED: u64 = 0x5C12_EE00;
+/// Seed of the neighbour-block rotation.
+const BLOCK_SEED: u64 = 0xB10C_5CA0;
+
+/// Bytes of one block record: codes, then 32 scales, then 32 offsets (little-endian f32).
+fn block_record_bytes(m: usize) -> usize {
+    16 * m + 8 * BLOCK
+}
+
+/// Level of coordinate `i` of a block code (see [`encode_block_code`]).
+#[inline]
+fn block_level(nibbles: &[u8], bits: u8, i: usize) -> f32 {
+    match bits {
+        1 => {
+            if nibbles[i / 4] >> (i % 4) & 1 == 1 {
+                1.0
+            } else {
+                -1.0
+            }
+        }
+        2 => 2.0 * f32::from(nibbles[i / 2] >> (2 * (i % 2)) & 3) - 3.0,
+        _ => f32::from(nibbles[i]) - 7.0,
+    }
+}
+
+/// Little-endian f32 number `i` of `bytes`.
+#[inline]
+fn le_f32(bytes: &[u8], i: usize) -> f32 {
+    f32::from_le_bytes([
+        bytes[4 * i],
+        bytes[4 * i + 1],
+        bytes[4 * i + 2],
+        bytes[4 * i + 3],
+    ])
+}
+
+/// Encodes a rotated, centred vector as `m` nibbles for a `bits`-per-coordinate block code
+/// and returns its scale, so that coordinate `i ~= scale * level(i)` with the levels
+/// `{-1, 1}` (1 bit), `{-3, -1, 1, 3}` (2 bits) or `-7..=7` (4 bits; nibble `level + 7`).
+/// The levels of the 2- and 4-bit codes are chosen with the scale among eight candidates
+/// that minimizes the squared reconstruction error. The returned scale, for every width, is
+/// `|x|^2 / <levels, x>`: it makes the code error orthogonal to `x` itself (for one bit this
+/// is the RaBitQ factor `|x|^2 / sum |x_i|`), so inner products with queries that are
+/// correlated with `x` are unbiased, where the least-squares scale underestimates them by
+/// the relative error energy.
+fn encode_block_code(x: &[f32], bits: u8, nibbles: &mut [u8]) -> f32 {
+    nibbles.fill(0);
+    let m = x.iter().fold(0f32, |a, &v| a.max(v.abs()));
+    if m == 0.0 {
+        return 0.0;
+    }
+    match bits {
+        1 => {
+            let (mut norm2, mut abs) = (0f32, 0f32);
+            for (i, &v) in x.iter().enumerate() {
+                norm2 += v * v;
+                abs += v.abs();
+                if v >= 0.0 {
+                    nibbles[i / 4] |= 1 << (i % 4);
+                }
+            }
+            norm2 / abs
+        }
+        2 => {
+            // Levels {-3, -1, 1, 3} * s; index t = (level + 3) / 2.
+            let err = |s: f32| -> f32 {
+                x.iter()
+                    .map(|&v| {
+                        let t = ((v / s + 3.0) / 2.0).round().clamp(0.0, 3.0);
+                        let d = v - s * (2.0 * t - 3.0);
+                        d * d
+                    })
+                    .sum()
+            };
+            let (mut best, mut best_err) = (m / 3.0, f32::INFINITY);
+            for k in 0..8 {
+                let s = m / 3.0 * (1.0 - 0.1 * k as f32);
+                let e = err(s);
+                if e < best_err {
+                    (best, best_err) = (s, e);
+                }
+            }
+            let mut dot = 0f32;
+            for (i, &v) in x.iter().enumerate() {
+                let t = ((v / best + 3.0) / 2.0).round().clamp(0.0, 3.0) as u8;
+                nibbles[i / 2] |= t << (2 * (i % 2));
+                dot += v * (2.0 * f32::from(t) - 3.0);
+            }
+            unbiased_scale(x, dot, best)
+        }
+        _ => {
+            let err = |s: f32| -> f32 {
+                x.iter()
+                    .map(|&v| {
+                        let d = v - s * (v / s).round().clamp(-7.0, 7.0);
+                        d * d
+                    })
+                    .sum()
+            };
+            let (mut best, mut best_err) = (m / 7.0, f32::INFINITY);
+            for k in 0..8 {
+                let s = m / 7.0 * (1.0 - 0.06 * k as f32);
+                let e = err(s);
+                if e < best_err {
+                    (best, best_err) = (s, e);
+                }
+            }
+            let mut dot = 0f32;
+            for (i, &v) in x.iter().enumerate() {
+                let level = (v / best).round().clamp(-7.0, 7.0);
+                nibbles[i] = (level as i8 + 7) as u8;
+                dot += v * level;
+            }
+            unbiased_scale(x, dot, best)
+        }
+    }
+}
+
+/// `|x|^2 / <levels, x>` (see [`encode_block_code`]), or the least-squares scale when the
+/// levels do not correlate with `x`.
+fn unbiased_scale(x: &[f32], dot: f32, fallback: f32) -> f32 {
+    let norm2: f32 = x.iter().map(|v| v * v).sum();
+    if dot > 0.0 {
+        norm2 / dot
+    } else {
+        fallback
+    }
+}
+
+/// Fills the float lookup table `t` (`16 * m` entries) of a rotated query for `bits`-per-
+/// coordinate block codes: `t[16 * j + v] = sum over the coordinates of nibble j of
+/// q_i * level_i(v)`.
+fn block_table(q: &[f32], bits: u8, m: usize, t: &mut [f32]) {
+    match bits {
+        1 => {
+            for j in 0..m {
+                let qs = &q[4 * j..4 * j + 4];
+                let total: f32 = qs.iter().sum();
+                for v in 0..16usize {
+                    let on: f32 = (0..4).filter(|b| v >> b & 1 == 1).map(|b| qs[b]).sum();
+                    t[16 * j + v] = 2.0 * on - total;
+                }
+            }
+        }
+        2 => {
+            for j in 0..m {
+                let (qa, qb) = (q[2 * j], q[2 * j + 1]);
+                for v in 0..16usize {
+                    let (ta, tb) = ((v & 3) as f32, (v >> 2) as f32);
+                    t[16 * j + v] = qa * (2.0 * ta - 3.0) + qb * (2.0 * tb - 3.0);
+                }
+            }
+        }
+        _ => {
+            for j in 0..m {
+                for v in 0..16usize {
+                    t[16 * j + v] = q[j] * (v as f32 - 7.0);
+                }
+            }
+        }
+    }
+}
+
+/// Per-query block lookup table: `lut` as the scan reads it, with the affine map
+/// `entry ~= delta * lut + min_j` so that a code's inner product is
+/// `scale * (delta * sum + min_sum)`.
+pub struct BlockQuery {
+    table: Vec<f32>,
+    lut: Vec<u8>,
+    delta: f32,
+    min_sum: f32,
+    /// `1 / s_q`, which puts the block estimate in [`VGraph::est`] units.
+    inv_sq: f32,
+}
+
+impl BlockQuery {
+    fn new(m: usize) -> Self {
+        Self {
+            table: vec![0.0; 16 * m],
+            lut: vec![0; 16 * m],
+            delta: 1.0,
+            min_sum: 0.0,
+            inv_sq: 1.0,
+        }
+    }
+
+    /// Quantizes the float table to bytes: per group, entries are offset by the group's
+    /// minimum; one step `delta` serves every group.
+    fn quantize(&mut self, m: usize) {
+        let mut range = 0f32;
+        let mut min_sum = 0f32;
+        for g in self.table.as_chunks::<16>().0 {
+            let lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
+            let hi = g.iter().fold(f32::NEG_INFINITY, |a, &v| a.max(v));
+            min_sum += lo;
+            range = range.max(hi - lo);
+        }
+        let delta = if range > 0.0 { range / 255.0 } else { 1.0 };
+        for (j, g) in self.table.as_chunks::<16>().0.iter().enumerate() {
+            let lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
+            for (v, &e) in g.iter().enumerate() {
+                self.lut[16 * j + v] = ((e - lo) / delta).round().clamp(0.0, 255.0) as u8;
+            }
+        }
+        debug_assert_eq!(self.lut.len(), 16 * m);
+        self.delta = delta;
+        self.min_sum = min_sum;
+    }
+}
 
 /// One vertex as encoded in parallel: traversal code and scale, residual code and scale,
 /// screen row (empty without a screen).
@@ -146,7 +384,7 @@ fn key_dist(k: u64) -> f32 {
 
 /// Writes the symmetric 8-bit code of `x` into `code` (zero padded) and returns its scale, so
 /// that `x_i ~= scale * code_i`.
-fn quantize(x: &[f32], code: &mut [i8]) -> f32 {
+pub(super) fn quantize(x: &[f32], code: &mut [i8]) -> f32 {
     let m = x.iter().fold(0f32, |a, &v| a.max(v.abs()));
     code.fill(0);
     if m == 0.0 {
@@ -161,7 +399,7 @@ fn quantize(x: &[f32], code: &mut [i8]) -> f32 {
 
 /// [`quantize`] with 4-bit codes in `-7..=7`, packed two per byte as [`dot_f32_i4`] reads them
 /// (`code` holds `code.len() * 2 >= x.len()` values).
-fn quantize4(x: &[f32], code: &mut [i8]) -> f32 {
+pub(super) fn quantize4(x: &[f32], code: &mut [i8]) -> f32 {
     let m = x.iter().fold(0f32, |a, &v| a.max(v.abs()));
     code.fill(0);
     if m == 0.0 {
@@ -204,7 +442,7 @@ fn bfs_order(g: &Graph) -> Vec<u32> {
 }
 
 /// Coordinate `i` of a code row of `bits` bits (0 past its end).
-fn code_at(c: &[i8], bits: u8, i: usize) -> i8 {
+pub(super) fn code_at(c: &[i8], bits: u8, i: usize) -> i8 {
     if bits == 8 {
         c.get(i).copied().unwrap_or(0)
     } else {
@@ -222,6 +460,36 @@ fn code_at(c: &[i8], bits: u8, i: usize) -> i8 {
 const NONE3: u32 = 0x00FF_FFFF;
 
 #[inline]
+/// LEB128 varint (7 bits per byte, low bits first).
+fn put_varint(out: &mut Vec<u8>, mut v: u64) {
+    while v >= 0x80 {
+        out.push((v as u8) | 0x80);
+        v >>= 7;
+    }
+    out.push(v as u8);
+}
+
+/// Decodes one LEB128 varint; returns the value and the bytes used.
+#[inline]
+fn get_varint(bytes: &[u8]) -> (u64, usize) {
+    let mut v = 0u64;
+    for (i, &b) in bytes.iter().enumerate() {
+        v |= u64::from(b & 0x7f) << (7 * i);
+        if b & 0x80 == 0 {
+            return (v, i + 1);
+        }
+    }
+    (v, bytes.len())
+}
+
+fn zigzag(v: i64) -> u64 {
+    ((v << 1) ^ (v >> 63)) as u64
+}
+
+fn unzigzag(v: u64) -> i64 {
+    ((v >> 1) as i64) ^ -((v & 1) as i64)
+}
+
 fn prefetch_u8(bytes: &[u8]) {
     // SAFETY: any initialized `u8` slice is also initialized `i8`s.
     prefetch_bytes(unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<i8>(), bytes.len()) });
@@ -257,7 +525,8 @@ impl VGraph {
     /// (0, 4 or 8) the re-rank code of its residual; `align` keeps every code row inside as
     /// few 128-byte lines as its size allows; `reorder` renumbers the vertices in breadth-first
     /// order (search still returns the original ids); `id_bytes` 3 stores neighbour ids in
-    /// three bytes (graphs below 2^24 - 1 vertices) instead of 4; `screen` adds a 1-bit
+    /// three bytes (graphs below 2^24 - 1 vertices) instead of 4, and 0 stores each list
+    /// sorted and delta-coded as varints (sizes vary; `reorder` makes the deltas small); `screen` adds a 1-bit
     /// sign code of the rotated centred vector per vertex (RaBitQ-style, with a per-vertex
     /// factor) that the search consults before paying for the 8-bit estimate.
     pub fn from_graph_with(
@@ -274,9 +543,9 @@ impl VGraph {
                 "vertex code bits must be 4 or 8, not {bits}"
             )));
         }
-        if !(id_bytes == 4 || (id_bytes == 3 && (g.n as u64) < u64::from(NONE3))) {
+        if !(id_bytes == 4 || id_bytes == 0 || (id_bytes == 3 && (g.n as u64) < u64::from(NONE3))) {
             return Err(invalid(format!(
-                "id_bytes must be 4, or 3 below 2^24 - 1 vertices (got {id_bytes} for {} vertices)",
+                "id_bytes must be 4, 0 (delta varints), or 3 below 2^24 - 1 vertices (got {id_bytes} for {} vertices)",
                 g.n
             )));
         }
@@ -393,11 +662,33 @@ impl VGraph {
             }
         }
         let mut adj3 = Vec::new();
+        let (mut adjv, mut adjv_off) = (Vec::new(), Vec::new());
         if id_bytes == 3 {
             adj3 = adj
                 .iter()
                 .flat_map(|&u| (u.min(NONE3)).to_le_bytes()[..3].to_vec())
                 .collect();
+            adj = Vec::new();
+        } else if id_bytes == 0 {
+            adjv_off.reserve(n + 1);
+            let mut list: Vec<u32> = Vec::with_capacity(r);
+            for (v, row) in adj.chunks_exact(r).enumerate() {
+                adjv_off.push(adjv.len() as u32);
+                list.clear();
+                list.extend(row.iter().copied().take_while(|&u| u != NONE));
+                list.sort_unstable();
+                let mut prev = v as u32;
+                for (i, &u) in list.iter().enumerate() {
+                    let delta = if i == 0 {
+                        zigzag(i64::from(u) - i64::from(prev))
+                    } else {
+                        u64::from(u - prev - 1)
+                    };
+                    put_varint(&mut adjv, delta);
+                    prev = u;
+                }
+            }
+            adjv_off.push(adjv.len() as u32);
             adj = Vec::new();
         }
         let mut out = Self {
@@ -411,6 +702,8 @@ impl VGraph {
             mean,
             adj,
             adj3,
+            adjv,
+            adjv_off,
             codes,
             scales,
             res_bits: residual_bits,
@@ -425,11 +718,224 @@ impl VGraph {
             screen_words,
             screen_rot,
             screen_sigma: 0.0,
+            block_bits: 0,
+            block_dim: 0,
+            block_m: 0,
+            blocks_per_vertex: 0,
+            blocks: Lines::zeroed(0),
+            block_rot: None,
+            block_kappa: 0.0,
         };
         if screen {
             out.screen_sigma = out.measure_screen_sigma(g);
         }
         Ok(out)
+    }
+
+    /// Adds neighbour-block codes: every vertex stores, next to its neighbour list, a
+    /// `bits`-per-coordinate code of each neighbour's rotated centred vector in the fast-scan
+    /// layout (32 codes per block), so one streamed read and one table scan estimate all
+    /// neighbours of an expanded vertex instead of one random row fetch per neighbour
+    /// (SymphonyQG's layout; Gou et al., SIGMOD 2025). `bits` is 1, 2 or 4.
+    pub fn with_blocks(mut self, g: &Graph, bits: u8) -> Result<Self, HmsError> {
+        if !matches!(bits, 1 | 2 | 4) {
+            return Err(invalid(format!("block bits must be 1, 2 or 4, not {bits}")));
+        }
+        let (n, dim, r) = (self.n, self.dim, self.degree);
+        let rot = Rotation::new(dim, 0, BLOCK_SEED);
+        let bd = rot.padded();
+        let m = bd * usize::from(bits) / 4;
+        let per_vertex = r.div_ceil(BLOCK);
+        let record = block_record_bytes(m);
+        let ids = &self.ids;
+        let old = |v: usize| if ids.is_empty() { v } else { ids[v] as usize };
+        let row = |v: usize| &g.unit[old(v) * dim..(old(v) + 1) * dim];
+        let mut blocks = Lines::zeroed(n * per_vertex * record);
+        blocks
+            .bytes_mut()
+            .par_chunks_exact_mut(per_vertex * record)
+            .enumerate()
+            .for_each(|(v, dst)| {
+                // Codes are of the residual `r = x_u - x_v` of each neighbour `u` to the
+                // vertex `v` (as in SymphonyQG), so the code error scales with `|r|`; `e`
+                // folds in the query-independent terms `<x_v, r> - s * <levels, rot(x_v)>`,
+                // which makes the estimate's error `<rot(q - x_v), code error>`, scaled by
+                // the query's distance to `v` as well:
+                // `<q, x_u - mean> = <q, x_v - mean> + s * <levels, rot(q)> + e`.
+                let xv = row(v);
+                let mut xr = vec![0f32; bd];
+                rot.apply(xv, &mut xr);
+                let mut diff = vec![0f32; dim];
+                let mut rr = vec![0f32; bd];
+                let mut nibbles = vec![0u8; BLOCK * m];
+                let mut scales = [0f32; BLOCK];
+                let mut offsets = [0f32; BLOCK];
+                let mut list: Vec<u32> = Vec::with_capacity(r);
+                self.for_each_neighbour(v, |u| list.push(u));
+                for (b, rec) in dst.chunks_exact_mut(record).enumerate() {
+                    nibbles.fill(0);
+                    scales.fill(0.0);
+                    offsets.fill(0.0);
+                    for i in 0..BLOCK {
+                        let Some(&u) = list.get(b * BLOCK + i) else {
+                            break;
+                        };
+                        let xu = row(u as usize);
+                        for (d, (a, b)) in diff.iter_mut().zip(xu.iter().zip(xv)) {
+                            *d = a - b;
+                        }
+                        rot.apply(&diff, &mut rr);
+                        let nib = &mut nibbles[i * m..(i + 1) * m];
+                        let s = encode_block_code(&rr, bits, nib);
+                        let dot_lv: f32 = (0..bd).map(|j| block_level(nib, bits, j) * xr[j]).sum();
+                        let dot_vr: f32 = xv.iter().zip(&diff).map(|(a, b)| a * b).sum();
+                        scales[i] = s;
+                        offsets[i] = dot_vr - s * dot_lv;
+                    }
+                    // SAFETY-free reinterpretation: the record is plain bytes.
+                    let rec_u8 = unsafe {
+                        std::slice::from_raw_parts_mut(rec.as_mut_ptr().cast::<u8>(), rec.len())
+                    };
+                    pack32(&nibbles, m, &mut rec_u8[..16 * m]);
+                    for (i, (s, e)) in scales.iter().zip(&offsets).enumerate() {
+                        let at = 16 * m + 4 * i;
+                        rec_u8[at..at + 4].copy_from_slice(&s.to_le_bytes());
+                        let at = 16 * m + 4 * BLOCK + 4 * i;
+                        rec_u8[at..at + 4].copy_from_slice(&e.to_le_bytes());
+                    }
+                }
+            });
+        self.block_bits = bits;
+        self.block_dim = bd;
+        self.block_m = m;
+        self.blocks_per_vertex = per_vertex;
+        self.blocks = blocks;
+        self.block_rot = Some(rot);
+        self.block_kappa = self.measure_block_kappa(g);
+        Ok(self)
+    }
+
+    /// Unit row `v` (stored numbering) of the build data.
+    fn unit_row<'g>(&self, g: &'g Graph, v: usize) -> &'g [f32] {
+        let o = if self.ids.is_empty() {
+            v
+        } else {
+            self.ids[v] as usize
+        };
+        &g.unit[o * self.dim..(o + 1) * self.dim]
+    }
+
+    /// Fits `block_kappa` by least squares on a deterministic sample: the squared error of
+    /// the block estimate against the exact centred inner product, regressed on
+    /// `s^2 * |q - x_v|^2` (index vectors as queries, random expanded vertices).
+    fn measure_block_kappa(&self, g: &Graph) -> f32 {
+        let (nq, nv) = (32.min(self.n), 64.min(self.n));
+        let mut rng = SplitMix(BLOCK_SEED ^ 1);
+        let mut s = self.searcher();
+        let (mut num, mut den) = (0f64, 0f64);
+        let (mut diag_sum2, mut diag_n) = (0f64, 0f64);
+        let mut scan = [0u32; BLOCK];
+        for _ in 0..nq {
+            let qi = (rng.next_u64() % self.n as u64) as usize;
+            let q = self.unit_row(g, qi).to_vec();
+            s.qf[..self.dim].copy_from_slice(&q);
+            let sq = self.encode_query(&s.qf, &mut s.qc, &mut s.qtmp, &mut s.qrot, &mut s.qs);
+            if sq == 0.0 {
+                continue;
+            }
+            self.encode_block_query(&s.qf, sq, &mut s.bqrot, &mut s.bq);
+            let centred = |x: &[f32]| -> f32 {
+                q.iter()
+                    .zip(x)
+                    .zip(&self.mean)
+                    .map(|((a, b), m)| a * (b - m))
+                    .sum()
+            };
+            let mut list = Vec::with_capacity(self.degree);
+            for _ in 0..nv {
+                let v = (rng.next_u64() % self.n as u64) as usize;
+                let xv = self.unit_row(g, v);
+                let ip_v = centred(xv);
+                let d2: f32 = q.iter().zip(xv).map(|(a, b)| (a - b) * (a - b)).sum();
+                list.clear();
+                self.for_each_neighbour(v, |u| list.push(u));
+                for b in 0..self.blocks_per_vertex {
+                    let (codes, scales, offsets) = self.block(v, b);
+                    scan32(codes, &s.bq.lut, self.block_m, &mut scan);
+                    for (i, &sum) in scan.iter().enumerate() {
+                        let Some(&u) = list.get(b * BLOCK + i) else {
+                            break;
+                        };
+                        let sc = le_f32(scales, i);
+                        let est = ip_v
+                            + sc * (s.bq.delta * sum as f32 + s.bq.min_sum)
+                            + le_f32(offsets, i);
+                        let exact = centred(self.unit_row(g, u as usize));
+                        let err = f64::from(est - exact);
+                        num += err * err;
+                        den += f64::from(sc * sc * d2);
+                        diag_sum2 += f64::from(exact - ip_v).powi(2);
+                        diag_n += 1.0;
+                    }
+                }
+            }
+        }
+        if std::env::var_os("HMS_BLOCK_DIAG").is_some() && diag_n > 0.0 {
+            eprintln!(
+                "block diag: bits {} kappa {:.4} rms_err {:.5} rms_residual_ip {:.5} pairs {}",
+                self.block_bits,
+                num / den.max(1e-30),
+                (num / diag_n).sqrt(),
+                (diag_sum2 / diag_n).sqrt(),
+                diag_n
+            );
+        }
+        if den > 0.0 {
+            (num / den) as f32
+        } else {
+            0.0
+        }
+    }
+
+    /// True if the index carries neighbour-block codes.
+    pub fn has_blocks(&self) -> bool {
+        self.block_bits > 0
+    }
+
+    /// Bytes of the neighbour-block codes and scales.
+    pub fn block_bytes(&self) -> usize {
+        self.blocks.len
+    }
+
+    /// Block `b` of vertex `v`: its packed codes, its 32 scales and its 32 offsets (both as
+    /// little-endian f32 bytes).
+    #[inline]
+    fn block(&self, v: usize, b: usize) -> (&[u8], &[u8], &[u8]) {
+        let record = block_record_bytes(self.block_m);
+        let at = (v * self.blocks_per_vertex + b) * record;
+        let bytes = self.blocks.bytes();
+        // SAFETY: `i8` and `u8` have the same size and alignment; the slice stays in bounds.
+        let rec =
+            unsafe { std::slice::from_raw_parts(bytes.as_ptr().add(at).cast::<u8>(), record) };
+        let (codes, rest) = rec.split_at(16 * self.block_m);
+        let (scales, offsets) = rest.split_at(4 * BLOCK);
+        (codes, scales, offsets)
+    }
+
+    #[inline]
+    fn prefetch_blocks(&self, v: usize) {
+        let record = block_record_bytes(self.block_m) * self.blocks_per_vertex;
+        let at = v * record;
+        prefetch_bytes(&self.blocks.bytes()[at..at + record]);
+    }
+
+    /// Builds the block lookup table of a query (`qf` padded, `sq` its 8-bit code scale).
+    fn encode_block_query(&self, qf: &[f32], sq: f32, qrot: &mut [f32], bq: &mut BlockQuery) {
+        let rot = self.block_rot.as_ref().expect("blocks present");
+        rot.apply(&qf[..self.dim], qrot);
+        block_table(qrot, self.block_bits, self.block_m, &mut bq.table);
+        bq.quantize(self.block_m);
+        bq.inv_sq = if sq > 0.0 { 1.0 / sq } else { 1.0 };
     }
 
     /// Standard deviation of the screen estimate's error against the 8-bit estimate over
@@ -539,12 +1045,15 @@ impl VGraph {
     pub fn index_bytes(&self) -> usize {
         self.adj.len() * 4
             + self.adj3.len()
+            + self.adjv.len()
+            + self.adjv_off.len() * 4
             + self.n * self.stride
             + self.scales.len() * 4
             + self.residual_bytes()
             + self.mean.len() * 4
             + self.ids.len() * 4
             + self.screen_bytes()
+            + self.block_bytes()
             + upper_bytes(&self.upper_ids, &self.layers)
     }
 
@@ -563,6 +1072,9 @@ impl VGraph {
     #[inline]
     fn for_each_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
         let r = self.degree;
+        if !self.adjv_off.is_empty() {
+            return self.for_each_delta_neighbour(v, f);
+        }
         if self.adj3.is_empty() {
             for &u in &self.adj[v * r..(v + 1) * r] {
                 if u == NONE {
@@ -581,10 +1093,34 @@ impl VGraph {
         }
     }
 
+    /// [`VGraph::for_each_neighbour`] over a delta-coded list.
+    #[cold]
+    #[inline(never)]
+    fn for_each_delta_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
+        let span = &self.adjv[self.adjv_off[v] as usize..self.adjv_off[v + 1] as usize];
+        let mut at = 0;
+        let mut prev = v as u32;
+        let mut first = true;
+        while at < span.len() {
+            let (delta, used) = get_varint(&span[at..]);
+            at += used;
+            let u = if first {
+                (i64::from(prev) + unzigzag(delta)) as u32
+            } else {
+                prev + delta as u32 + 1
+            };
+            first = false;
+            prev = u;
+            f(u);
+        }
+    }
+
     #[inline]
     fn prefetch_neighbours(&self, v: usize) {
         let r = self.degree;
-        if self.adj3.is_empty() {
+        if !self.adjv_off.is_empty() {
+            prefetch_u8(&self.adjv[self.adjv_off[v] as usize..self.adjv_off[v + 1] as usize]);
+        } else if self.adj3.is_empty() {
             prefetch_ids(&self.adj[v * r..(v + 1) * r]);
         } else {
             prefetch_u8(&self.adj3[3 * v * r..3 * (v + 1) * r]);
@@ -668,19 +1204,27 @@ impl VGraph {
             visited: Marks {
                 marks: vec![0; self.n],
                 epoch: 0,
+                traces: vec![Trace::default(); if self.has_blocks() { self.n } else { 0 }],
             },
             qf: vec![0.0; self.padded],
             qc: vec![0; self.padded],
             qtmp: vec![0; self.padded],
             qrot: vec![0.0; self.screen_words * 64],
             qs: QueryCode::new(self.screen_words.max(1)),
+            bqrot: vec![0.0; self.block_dim],
+            bq: BlockQuery::new(self.block_m),
+            scan: [0; BLOCK],
             fresh: Vec::with_capacity(self.degree),
             survivors: Vec::with_capacity(self.degree),
             screened: 0,
-            cand: BinaryHeap::new(),
-            best: BinaryHeap::new(),
+            pool: Pool {
+                keys: Vec::new(),
+                expanded: Vec::new(),
+                cap: 1,
+                cursor: 0,
+            },
+            expanded: BinaryHeap::new(),
             keys: Vec::new(),
-            topk: Vec::new(),
             results: Vec::new(),
         }
     }
@@ -691,6 +1235,21 @@ impl VGraph {
 struct Marks {
     marks: Vec<u8>,
     epoch: u8,
+    /// With neighbour blocks, one record per vertex instead of the byte mark.
+    traces: Vec<Trace>,
+}
+
+/// What one search knows about a vertex met through neighbour blocks: the precision-weighted
+/// sum of the block estimates it received (one per expanded vertex listing it), their
+/// weight, and whether it was expanded itself.
+#[derive(Clone, Copy, Default)]
+struct Trace {
+    epoch: u8,
+    expanded: bool,
+    w: f32,
+    wsum: f32,
+    /// The vertex's key in the pool, or `u64::MAX` when it holds none.
+    key: u64,
 }
 
 impl Marks {
@@ -698,8 +1257,24 @@ impl Marks {
         self.epoch = self.epoch.wrapping_add(1);
         if self.epoch == 0 {
             self.marks.fill(0);
+            self.traces.fill(Trace::default());
             self.epoch = 1;
         }
+    }
+
+    /// The trace of `id` in this epoch, and whether it was just created (first encounter).
+    #[inline]
+    fn trace(&mut self, id: u32) -> (bool, &mut Trace) {
+        let t = &mut self.traces[id as usize];
+        let fresh = t.epoch != self.epoch;
+        if fresh {
+            *t = Trace {
+                epoch: self.epoch,
+                key: u64::MAX,
+                ..Trace::default()
+            };
+        }
+        (fresh, t)
     }
 
     /// True if `id` was not yet visited in this epoch.
@@ -709,6 +1284,93 @@ impl Marks {
         let fresh = *m != self.epoch;
         *m = self.epoch;
         fresh
+    }
+}
+
+/// Best-first candidate pool as one sorted array: the `ef` best keys seen, nearest first,
+/// each with an expanded flag, and a cursor at the nearest unexpanded entry. One insert is a
+/// binary search and a short move; one expansion step is a scan from the cursor; the pool
+/// rule ("the nearest unexpanded candidate is among the `ef` best seen") holds by
+/// construction, so the search ends when no unexpanded entry is left. Two binary heaps
+/// (queue and bounded pool) cost two sifts per admitted candidate and a pop per expansion,
+/// and their results came back unsorted; the array is cache-resident at any practical `ef`.
+struct Pool {
+    keys: Vec<u64>,
+    expanded: Vec<bool>,
+    cap: usize,
+    cursor: usize,
+}
+
+impl Pool {
+    fn reset(&mut self, cap: usize) {
+        self.keys.clear();
+        self.expanded.clear();
+        self.cap = cap.max(1);
+        self.cursor = 0;
+    }
+
+    fn is_full(&self) -> bool {
+        self.keys.len() >= self.cap
+    }
+
+    /// The worst key held, once the pool is full.
+    fn worst(&self) -> Option<u64> {
+        self.is_full().then(|| self.keys[self.keys.len() - 1])
+    }
+
+    /// Admits `key` unless the pool is full of better ones; returns its position and the
+    /// key evicted to make room.
+    #[inline]
+    fn insert(&mut self, key: u64) -> Option<(usize, Option<u64>)> {
+        let n = self.keys.len();
+        if n >= self.cap && key >= self.keys[n - 1] {
+            return None;
+        }
+        let pos = self.keys.partition_point(|&t| t < key);
+        let mut evicted = None;
+        if n >= self.cap {
+            evicted = self.keys.pop();
+            self.expanded.pop();
+        }
+        self.keys.insert(pos, key);
+        self.expanded.insert(pos, false);
+        if pos < self.cursor {
+            self.cursor = pos;
+        }
+        Some((pos, evicted))
+    }
+
+    /// Drops `key` if present (a re-admitted vertex's older entry).
+    fn remove(&mut self, key: u64) {
+        let pos = self.keys.partition_point(|&t| t < key);
+        if pos < self.keys.len() && self.keys[pos] == key {
+            self.keys.remove(pos);
+            self.expanded.remove(pos);
+            if pos < self.cursor {
+                self.cursor -= 1;
+            }
+        }
+    }
+
+    /// The nearest unexpanded key, now marked expanded.
+    #[inline]
+    fn next(&mut self) -> Option<u64> {
+        while self.cursor < self.keys.len() {
+            if !self.expanded[self.cursor] {
+                self.expanded[self.cursor] = true;
+                return Some(self.keys[self.cursor]);
+            }
+            self.cursor += 1;
+        }
+        None
+    }
+
+    /// The key [`Pool::next`] would return.
+    #[inline]
+    fn peek_next(&self) -> Option<u64> {
+        (self.cursor..self.keys.len())
+            .find(|&i| !self.expanded[i])
+            .map(|i| self.keys[i])
     }
 }
 
@@ -723,18 +1385,21 @@ pub struct VSearcher<'a> {
     /// Rotated, scaled query and its bit planes for the screen.
     qrot: Vec<f32>,
     qs: QueryCode,
+    /// Query rotated for the neighbour blocks, its lookup table, and one block's sums.
+    bqrot: Vec<f32>,
+    bq: BlockQuery,
+    scan: [u32; BLOCK],
     fresh: Vec<u32>,
     /// Fresh neighbours that passed the screen.
     survivors: Vec<u32>,
     /// Neighbours the screen skipped in the last search.
     screened: usize,
-    /// Unexpanded candidates, nearest on top.
-    cand: BinaryHeap<Reverse<u64>>,
-    /// The `ef` nearest seen so far, farthest on top.
-    best: BinaryHeap<u64>,
+    /// The `ef` best candidates seen, with their expansion state.
+    pool: Pool,
+    /// With blocks: the best `max(k, rerank)` expanded vertices by their own-code estimate,
+    /// farthest on top. Block estimates only order the exploration; results come from here.
+    expanded: BinaryHeap<u64>,
     keys: Vec<u64>,
-    /// The `k` best keys seen, sorted, when `patience` is set.
-    topk: Vec<u64>,
     results: Vec<(f32, u32)>,
 }
 
@@ -776,7 +1441,7 @@ impl VSearcher<'_> {
         // Only the order matters, so the query is used as given (no centring needed: the
         // `<q, mean>` term is common to all candidates) and its scale is dropped.
         self.qf[..g.dim].copy_from_slice(query);
-        g.encode_query(
+        let sq = g.encode_query(
             &self.qf,
             &mut self.qc,
             &mut self.qtmp,
@@ -784,40 +1449,159 @@ impl VSearcher<'_> {
             &mut self.qs,
         );
         let qc = &self.qc[..];
-        let screen = g.has_screen() && params.screen;
+        let blocks = g.has_blocks();
+        if blocks {
+            g.encode_block_query(&self.qf, sq, &mut self.bqrot, &mut self.bq);
+        }
+        let screen = g.has_screen() && params.screen && !blocks;
         let margin = params.screen_sigmas * g.screen_sigma;
         self.screened = 0;
 
         self.visited.next();
         let (entry, mut evals) = g.descend(qc);
         self.visited.insert(entry);
-        self.cand.clear();
-        self.best.clear();
+        let fuse = blocks && params.fuse;
+        if fuse {
+            self.visited.trace(entry);
+        }
+        // Query terms of the error model: `|q - x_v|^2 = |q|^2 + 1 - 2 (<q, x_v - mean> + <q, mean>)`
+        // for unit index rows.
+        let (qn2, qm) = if blocks {
+            let q = &self.qf[..g.dim];
+            (
+                q.iter().map(|a| a * a).sum::<f32>(),
+                q.iter().zip(&g.mean).map(|(a, m)| a * m).sum::<f32>(),
+            )
+        } else {
+            (0.0, 0.0)
+        };
+        self.pool.reset(ef);
+        self.expanded.clear();
+        let take = params.rerank.max(k).min(g.n);
         let k0 = key(g.est(qc, entry), entry);
-        self.cand.push(Reverse(k0));
-        self.best.push(k0);
+        self.pool.insert(k0);
+        if fuse {
+            self.visited.trace(entry).1.key = k0;
+        }
         evals += 1;
         // Best-first expansion of the nearest unexpanded candidate among the `ef` best seen;
-        // a candidate that fell out of those is farther than all of them, so it ends the search.
-        // With `patience`, the `k` best keys are tracked and the search also ends after that
-        // many expansions without a change to them.
+        // the pool holds exactly those, so the search ends when none is left. With
+        // `patience`, it also ends after that many expansions without an insert among the
+        // `k` best.
         let patience = params.patience;
-        self.topk.clear();
         let mut stale = 0usize;
-        while let Some(Reverse(c)) = self.cand.pop() {
-            if self.best.len() >= ef && self.best.peek().is_some_and(|&w| c > w) {
-                break;
-            }
+        while let Some(c) = self.pool.next() {
             if patience > 0 && stale >= patience {
                 break;
             }
+            if fuse {
+                // A re-admitted vertex may sit in the pool twice; expand it once.
+                let (_, t) = self.visited.trace(key_id(c));
+                if t.expanded {
+                    continue;
+                }
+                t.expanded = true;
+            }
             stale += 1;
-            if let Some(&Reverse(next)) = self.cand.peek() {
+            if let Some(next) = self.pool.peek_next() {
                 g.prefetch_neighbours(key_id(next) as usize);
+                if blocks {
+                    g.prefetch_blocks(key_id(next) as usize);
+                    prefetch_bytes(g.code(key_id(next)));
+                }
+            }
+            if blocks {
+                // The expanded vertex is scored with its own code (the per-row estimate the
+                // plain search uses everywhere) into the result pool. One table scan per
+                // block then estimates all its neighbours, ordering the exploration; list
+                // padding is skipped, and a vertex met again is re-admitted only when its
+                // fused estimate improves on the entry it holds.
+                let v = key_id(c) as usize;
+                let est_v = g.est(qc, v as u32);
+                let ek = key(est_v, v as u32);
+                evals += 1;
+                // `<q, x_v - mean>` in float units: the estimate dropped the query scale.
+                let ip_v = -est_v * sq;
+                let d2_v = (qn2 + 1.0 - 2.0 * (ip_v + qm)).max(1e-6);
+                if self.expanded.len() < take {
+                    self.expanded.push(ek);
+                } else if let Some(mut worst) = self.expanded.peek_mut() {
+                    if ek < *worst {
+                        *worst = ek;
+                    }
+                }
+                let (delta, min_sum, inv_sq) = (self.bq.delta, self.bq.min_sum, self.bq.inv_sq);
+                self.fresh.clear();
+                let list = &mut self.fresh;
+                g.for_each_neighbour(v, |u| list.push(u));
+                'blocks: for b in 0..g.blocks_per_vertex {
+                    let (codes, scales, offsets) = g.block(v, b);
+                    scan32(codes, &self.bq.lut, g.block_m, &mut self.scan);
+                    for i in 0..BLOCK {
+                        let Some(&u) = self.fresh.get(b * BLOCK + i) else {
+                            break 'blocks;
+                        };
+                        let s = le_f32(scales, i);
+                        let ip =
+                            ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
+                        if !fuse {
+                            // Without fusion the block path keeps the plain path's byte marks
+                            // (the per-vertex trace records would not stay in cache).
+                            if !self.visited.insert(u) {
+                                continue;
+                            }
+                            evals += 1;
+                            if let Some((pos, _)) = self.pool.insert(key(-ip * inv_sq, u)) {
+                                if patience > 0 && pos < k {
+                                    stale = 0;
+                                }
+                            }
+                            continue;
+                        }
+                        // Precision of this estimate under the calibrated error model.
+                        let w = 1.0 / (g.block_kappa * s * s * d2_v + 1e-12);
+                        let (fresh, t) = self.visited.trace(u);
+                        let ip = if fresh {
+                            t.w = w;
+                            t.wsum = w * ip;
+                            ip
+                        } else {
+                            if t.expanded {
+                                continue;
+                            }
+                            t.w += w;
+                            t.wsum += w * ip;
+                            t.wsum / t.w
+                        };
+                        let kk = key(-ip * inv_sq, u);
+                        let old = t.key;
+                        evals += 1;
+                        if !fresh && kk >= old {
+                            continue;
+                        }
+                        if old != u64::MAX {
+                            self.pool.remove(old);
+                        }
+                        let Some((pos, evicted)) = self.pool.insert(kk) else {
+                            if old != u64::MAX {
+                                self.visited.trace(u).1.key = u64::MAX;
+                            }
+                            continue;
+                        };
+                        self.visited.trace(u).1.key = kk;
+                        if let Some(e) = evicted {
+                            self.visited.trace(key_id(e)).1.key = u64::MAX;
+                        }
+                        if patience > 0 && pos < k {
+                            stale = 0;
+                        }
+                    }
+                }
+                continue;
             }
             self.fresh.clear();
             let (visited, fresh) = (&mut self.visited, &mut self.fresh);
-            g.for_each_neighbour(key_id(c) as usize, |u| {
+            let admit = |u: u32, visited: &mut Marks, fresh: &mut Vec<u32>| {
                 if visited.insert(u) {
                     if screen {
                         g.prefetch_screen(u);
@@ -826,15 +1610,22 @@ impl VSearcher<'_> {
                     }
                     fresh.push(u);
                 }
-            });
+            };
+            if params.neighbour_cap == 0 {
+                g.for_each_neighbour(key_id(c) as usize, |u| admit(u, visited, fresh));
+            } else {
+                let mut seen = 0usize;
+                g.for_each_neighbour(key_id(c) as usize, |u| {
+                    seen += 1;
+                    if seen <= params.neighbour_cap {
+                        admit(u, visited, fresh);
+                    }
+                });
+            }
             if screen {
                 // A neighbour whose optimistic 1-bit estimate cannot enter the full pool is
                 // skipped (it stays visited); the rest get the 8-bit estimate.
-                let worst = if self.best.len() >= ef {
-                    self.best.peek().map(|&w| key_dist(w))
-                } else {
-                    None
-                };
+                let worst = self.pool.worst().map(key_dist);
                 self.survivors.clear();
                 for &u in &self.fresh {
                     if let Some(w) = worst {
@@ -851,30 +1642,23 @@ impl VSearcher<'_> {
             for &u in &self.fresh {
                 let kk = key(g.est(qc, u), u);
                 evals += 1;
-                if self.best.len() < ef {
-                    self.best.push(kk);
-                } else {
-                    let mut worst = self.best.peek_mut().expect("ef >= 1");
-                    if kk >= *worst {
-                        continue;
+                if let Some((pos, _)) = self.pool.insert(kk) {
+                    if patience > 0 && pos < k {
+                        stale = 0;
                     }
-                    *worst = kk;
-                }
-                self.cand.push(Reverse(kk));
-                if patience > 0 && (self.topk.len() < k || kk < self.topk[self.topk.len() - 1]) {
-                    let at = self.topk.partition_point(|&t| t < kk);
-                    self.topk.insert(at, kk);
-                    self.topk.truncate(k);
-                    stale = 0;
                 }
             }
         }
 
         self.keys.clear();
-        self.keys.extend(self.best.drain());
-        self.keys.sort_unstable();
+        if blocks {
+            self.keys.extend(self.expanded.drain());
+            self.keys.sort_unstable();
+        } else {
+            self.keys.extend_from_slice(&self.pool.keys);
+        }
         self.results.clear();
-        let take = params.rerank.max(k).min(self.keys.len());
+        let take = take.min(self.keys.len());
         if params.rerank > 0 {
             // Ties (duplicate vectors) break by the original id, independent of the layout.
             self.results.extend(self.keys[..take].iter().map(|&c| {
@@ -899,7 +1683,7 @@ impl VSearcher<'_> {
 
 /// Format 02 adds the build parameters and a fingerprint of the vectors to the header, so a
 /// cache written for other data or parameters is rejected instead of silently reused.
-const CACHE_MAGIC: &[u8; 8] = b"HMSGRF02";
+const CACHE_MAGIC: &[u8; 8] = b"HMSGRF03";
 
 /// Fingerprint of the normalized vectors a graph was built over.
 fn data_fingerprint(unit: &[f32]) -> u64 {
@@ -961,7 +1745,8 @@ fn get_lists(r: &mut impl std::io::Read, n: u64) -> std::io::Result<Vec<Vec<u32>
 /// Benchmark support: the graph structure (not the vectors) on disk, so that search
 /// experiments on one graph need not rebuild it.
 impl Graph {
-    /// Writes the header (n, dim, degree, build_ef, alpha, seed, entry, data fingerprint),
+    /// Writes the header (n, dim, degree, build_ef, alpha, seed, entry, data fingerprint,
+    /// quantized_search),
     /// the adjacency and the upper layers; the vectors are not stored.
     pub fn save(&self, path: &std::path::Path) -> std::io::Result<()> {
         let mut w = std::io::BufWriter::new(std::fs::File::create(path)?);
@@ -976,6 +1761,7 @@ impl Graph {
             self.build.seed,
             u64::from(self.entry),
             data_fingerprint(&self.unit),
+            u64::from(self.build.quantized_search),
         ];
         for x in header {
             w.write_all(&x.to_le_bytes())?;
@@ -1009,11 +1795,11 @@ impl Graph {
                     .into(),
             ));
         }
-        let mut header = [0u64; 8];
+        let mut header = [0u64; 9];
         for x in &mut header {
             *x = get_u64(&mut r)?;
         }
-        let [n, d, degree, build_ef, alpha_bits, seed, entry, fingerprint] = header;
+        let [n, d, degree, build_ef, alpha_bits, seed, entry, fingerprint, quantized] = header;
         if dim == 0 || !data.len().is_multiple_of(dim) {
             return Err(bad("graph cache: ragged data".into()));
         }
@@ -1024,7 +1810,7 @@ impl Graph {
                 x.iter_mut().for_each(|o| *o /= norm);
             }
         });
-        let checks: [(&str, u64, u64); 7] = [
+        let checks: [(&str, u64, u64); 8] = [
             ("n", n, (data.len() / dim) as u64),
             ("dim", d, dim as u64),
             ("degree", degree, params.degree as u64),
@@ -1032,6 +1818,11 @@ impl Graph {
             ("alpha", alpha_bits, u64::from(params.alpha.to_bits())),
             ("seed", seed, params.seed),
             ("data fingerprint", fingerprint, data_fingerprint(&unit)),
+            (
+                "quantized_search",
+                quantized,
+                u64::from(params.quantized_search),
+            ),
         ];
         if let Some((what, file, want)) = checks.iter().find(|(_, a, b)| a != b) {
             let show = |x: u64| {
@@ -1239,6 +2030,165 @@ mod tests {
             r3 >= r0 - 0.05,
             "4-bit traversal with 8-bit residual {r3} vs {r0}"
         );
+    }
+
+    /// Neighbour-block codes estimate every neighbour from the expanded vertex's record; the
+    /// traversal must reach the same recall band as the per-row 8-bit estimates after the
+    /// residual re-rank, at every block width, with and without renumbering or 3-byte ids.
+    #[test]
+    fn block_codes_keep_recall() {
+        let d = 24;
+        let data = clustered(4000, d, 1);
+        let queries = clustered(100, d, 2);
+        let graph = Graph::build(&data, d, &BuildParams::default()).expect("build");
+        let plain = VGraph::from_graph(&graph, true).expect("encode");
+        let rr = VSearchParams {
+            ef: 96,
+            rerank: 64,
+            ..VSearchParams::default()
+        };
+        let r0 = recall(&plain, &data, &queries, d, rr);
+        for bits in [4u8, 2, 1] {
+            for (reorder, id_bytes) in [(false, 4u8), (true, 3)] {
+                let b = VGraph::from_graph_with(&graph, 8, 8, true, reorder, id_bytes, false)
+                    .expect("encode")
+                    .with_blocks(&graph, bits)
+                    .expect("blocks");
+                assert!(b.has_blocks());
+                assert!(b.index_bytes() > plain.index_bytes());
+                let r = recall(&b, &data, &queries, d, rr);
+                // 24 coordinates are few for 1-bit codes (a 1/sqrt(dim) relative error on
+                // this deliberately hard set), so the band widens with coarseness; the
+                // estimator itself is checked against exact inner products below.
+                let slack = match bits {
+                    4 => 0.03,
+                    2 => 0.06,
+                    _ => 0.30,
+                };
+                assert!(
+                    r >= r0 - slack,
+                    "{bits}-bit blocks (reorder {reorder}, ids {id_bytes}) recall {r} vs {r0}"
+                );
+            }
+        }
+        let e = match VGraph::from_graph(&graph, true)
+            .expect("encode")
+            .with_blocks(&graph, 3)
+        {
+            Ok(_) => panic!("3 bits accepted"),
+            Err(e) => e.to_string(),
+        };
+        assert!(e.contains("block bits"), "{e}");
+    }
+
+    /// The block estimate of a neighbour, in `est` units, must track the exact centred inner
+    /// product: Pearson correlation over the neighbours of 64 vertices above a per-width bar.
+    #[test]
+    fn block_estimates_track_exact_inner_products() {
+        let d = 64;
+        let data = clustered(3000, d, 5);
+        let graph = Graph::build(&data, d, &BuildParams::default()).expect("build");
+        // The index works on unit rows; so must the exact products.
+        let unit = &graph.unit;
+        for (bits, bar) in [(4u8, 0.998), (2, 0.98), (1, 0.90)] {
+            let g = VGraph::from_graph(&graph, false)
+                .expect("encode")
+                .with_blocks(&graph, bits)
+                .expect("blocks");
+            let mut s = g.searcher();
+            let q: Vec<f32> = unit[7 * d..8 * d].to_vec();
+            s.qf[..d].copy_from_slice(&q);
+            let sq = g.encode_query(&s.qf, &mut s.qc, &mut s.qtmp, &mut s.qrot, &mut s.qs);
+            g.encode_block_query(&s.qf, sq, &mut s.bqrot, &mut s.bq);
+            let centred =
+                |u: usize| -> f32 { (0..d).map(|j| q[j] * (unit[u * d + j] - g.mean[j])).sum() };
+            let (mut xs, mut ys) = (Vec::new(), Vec::new());
+            for v in 0..64usize {
+                // The exact `<q, x_v - mean>` stands in for the expanded vertex's estimate.
+                let ip_v = centred(v);
+                let mut list = Vec::new();
+                g.for_each_neighbour(v, |u| list.push(u));
+                for b in 0..g.blocks_per_vertex {
+                    let (codes, scales, offsets) = g.block(v, b);
+                    scan32(codes, &s.bq.lut, g.block_m, &mut s.scan);
+                    for i in 0..BLOCK {
+                        let Some(&u) = list.get(b * BLOCK + i) else {
+                            break;
+                        };
+                        let ip = ip_v
+                            + le_f32(scales, i) * (s.bq.delta * s.scan[i] as f32 + s.bq.min_sum)
+                            + le_f32(offsets, i);
+                        xs.push(f64::from(ip));
+                        ys.push(f64::from(centred(u as usize)));
+                    }
+                }
+            }
+            let n = xs.len() as f64;
+            let (mx, my) = (xs.iter().sum::<f64>() / n, ys.iter().sum::<f64>() / n);
+            let (mut sxy, mut sxx, mut syy) = (0.0, 0.0, 0.0);
+            for (x, y) in xs.iter().zip(&ys) {
+                sxy += (x - mx) * (y - my);
+                sxx += (x - mx) * (x - mx);
+                syy += (y - my) * (y - my);
+            }
+            let r = sxy / (sxx * syy).sqrt();
+            eprintln!(
+                "{bits}-bit block estimates: correlation {r:.4} over {} pairs",
+                xs.len()
+            );
+            assert!(
+                r > bar,
+                "{bits}-bit block estimates: correlation {r} below {bar}"
+            );
+        }
+    }
+
+    /// Delta-coded lists hold the same neighbour sets as the 4-byte ones, in fewer bytes,
+    /// and the search returns the same ids; the block index decodes them in the same order
+    /// it was built in.
+    #[test]
+    fn delta_coded_adjacency_round_trips() {
+        let d = 24;
+        let data = clustered(4000, d, 1);
+        let queries = clustered(50, d, 2);
+        let graph = Graph::build(&data, d, &BuildParams::default()).expect("build");
+        let wide = VGraph::from_graph_with(&graph, 4, 8, true, true, 4, false).expect("encode");
+        let delta = VGraph::from_graph_with(&graph, 4, 8, true, true, 0, false).expect("encode");
+        assert!(
+            delta.index_bytes() < wide.index_bytes(),
+            "{} vs {}",
+            delta.index_bytes(),
+            wide.index_bytes()
+        );
+        for v in 0..wide.n {
+            let (mut a, mut b) = (Vec::new(), Vec::new());
+            wide.for_each_neighbour(v, |u| a.push(u));
+            delta.for_each_neighbour(v, |u| b.push(u));
+            a.sort_unstable();
+            assert_eq!(a, b, "vertex {v}");
+        }
+        let p = VSearchParams {
+            ef: 48,
+            rerank: 16,
+            ..VSearchParams::default()
+        };
+        let (mut s1, mut s2) = (wide.searcher(), delta.searcher());
+        let (mut o1, mut o2) = (Vec::new(), Vec::new());
+        for q in queries.chunks_exact(d) {
+            s1.search(q, 10, p, &mut o1).expect("search");
+            s2.search(q, 10, p, &mut o2).expect("search");
+            assert_eq!(o1, o2);
+        }
+        let blocks = VGraph::from_graph_with(&graph, 8, 8, true, true, 0, false)
+            .expect("encode")
+            .with_blocks(&graph, 2)
+            .expect("blocks");
+        assert!(recall(&blocks, &data, &queries, d, p) > 0.8);
+        assert_eq!(zigzag(-1), 1);
+        assert_eq!(unzigzag(zigzag(-123_456)), -123_456);
+        let mut buf = Vec::new();
+        put_varint(&mut buf, 300);
+        assert_eq!(get_varint(&buf), (300, 2));
     }
 
     /// Renumbering and aligning the rows change the layout, not the search: the same ids come

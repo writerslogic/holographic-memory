@@ -13,13 +13,78 @@ pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Manifests that carry a `<name>.crc32` sidecar holding the CRC32 of their bytes, so a flip
+/// inside a value that still parses is caught at open and by `hms-admin verify`.
+pub(crate) const CHECKSUMMED_MANIFESTS: [&str; 3] = ["store.json", "indices.json", "format.json"];
+
+fn sidecar(path: &Path) -> Option<PathBuf> {
+    let name = path.file_name()?.to_str()?;
+    CHECKSUMMED_MANIFESTS
+        .contains(&name)
+        .then(|| path.with_file_name(format!("{name}.crc32")))
+}
+
 pub(crate) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
+    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    if let Some(side) = sidecar(path) {
+        // The sidecar lands first: a crash between the two writes leaves a sidecar that does
+        // not match the old manifest, which reads as a mismatch rather than a silent accept.
+        write_file(
+            &side,
+            format!("{:08x}\n", crc32fast::hash(bytes)).as_bytes(),
+        )?;
+    }
+    write_file(path, bytes)?;
+    sync_directory(parent)
+}
+
+fn write_file(path: &Path, bytes: &[u8]) -> Result<()> {
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
     let mut temp = tempfile::NamedTempFile::new_in(parent)?;
     temp.write_all(bytes)?;
     temp.as_file().sync_all()?;
     temp.persist(path)?;
-    sync_directory(parent)
+    Ok(())
+}
+
+/// Reads a checksummed manifest. A sidecar that does not match the bytes is an error; a
+/// manifest without a sidecar (written before sidecars existed) is returned unverified.
+pub(crate) fn read_manifest(path: &Path) -> Result<(Vec<u8>, bool)> {
+    let bytes = std::fs::read(path)?;
+    let Some(side) = sidecar(path) else {
+        return Ok((bytes, false));
+    };
+    if !side.exists() {
+        return Ok((bytes, false));
+    }
+    let recorded = std::fs::read_to_string(&side)?;
+    let recorded = u32::from_str_radix(recorded.trim(), 16)
+        .map_err(|e| anyhow::anyhow!("invalid checksum sidecar {}: {e}", side.display()))?;
+    let actual = crc32fast::hash(&bytes);
+    if recorded != actual {
+        bail!(
+            "manifest {} fails its checksum (recorded {recorded:08x}, actual {actual:08x}): the store is corrupt",
+            path.display()
+        );
+    }
+    Ok((bytes, true))
+}
+
+/// Verifies every checksummed manifest present under `store` (and `format.json` under its
+/// arena directory); returns the names verified.
+pub(crate) fn verify_manifests(store: &Path, arena: &Path) -> Result<Vec<String>> {
+    let mut verified = Vec::new();
+    for (dir, name) in [
+        (store, "store.json"),
+        (store, "indices.json"),
+        (arena, "format.json"),
+    ] {
+        let path = dir.join(name);
+        if path.exists() && read_manifest(&path)?.1 {
+            verified.push(name.to_string());
+        }
+    }
+    Ok(verified)
 }
 
 pub(crate) fn arena_generation(base: &Path) -> Result<PathBuf> {

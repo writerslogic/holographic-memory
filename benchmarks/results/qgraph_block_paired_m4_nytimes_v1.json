@@ -1,0 +1,352 @@
+{
+ "schema_version": 1,
+ "tag": "fsny1",
+ "dataset": {
+  "dim": 256,
+  "kind": "ann",
+  "metric": "angular",
+  "n_neighbors": 100,
+  "n_test": 10000,
+  "n_train": 290000,
+  "name": "nytimes-256-angular",
+  "sha256": "6ad5d2cde6d6a6f21528d541901304ebfd40885d6ce6afae37bccbe278254a93",
+  "source": "https://ann-benchmarks.com/nytimes-256-angular.hdf5"
+ },
+ "rounds": 11,
+ "selection_rule": "per process and threshold, the row with recall@10 >= threshold and the fewest estimates per query; paired ratio = candidate QPS / baseline QPS in the same round",
+ "load_1m_per_step": [
+  [
+   0,
+   "A",
+   20.6
+  ],
+  [
+   0,
+   "B",
+   24.6
+  ],
+  [
+   1,
+   "B",
+   23.7
+  ],
+  [
+   1,
+   "A",
+   22.7
+  ],
+  [
+   2,
+   "A",
+   22.7
+  ],
+  [
+   2,
+   "B",
+   22.0
+  ],
+  [
+   3,
+   "B",
+   24.5
+  ],
+  [
+   3,
+   "A",
+   24.2
+  ],
+  [
+   4,
+   "A",
+   23.0
+  ],
+  [
+   4,
+   "B",
+   23.3
+  ],
+  [
+   5,
+   "B",
+   24.1
+  ],
+  [
+   5,
+   "A",
+   22.8
+  ],
+  [
+   6,
+   "A",
+   22.8
+  ],
+  [
+   6,
+   "B",
+   21.7
+  ],
+  [
+   7,
+   "B",
+   20.8
+  ],
+  [
+   7,
+   "A",
+   20.8
+  ],
+  [
+   8,
+   "A",
+   19.9
+  ],
+  [
+   8,
+   "B",
+   19.9
+  ],
+  [
+   9,
+   "B",
+   19.3
+  ],
+  [
+   9,
+   "A",
+   18.3
+  ],
+  [
+   10,
+   "A",
+   18.3
+  ],
+  [
+   10,
+   "B",
+   17.5
+  ]
+ ],
+ "index_bytes": {
+  "A": 170604904,
+  "B": 1497722728
+ },
+ "build": {
+  "A": {
+   "build_secs": 3.037708459,
+   "graph_hash": "c279d454c4e33af0",
+   "load_1m_after_build": 69.06,
+   "load_1m_before_build": 68.89,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 64,
+    "fuse": false,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  },
+  "B": {
+   "build_secs": 43.546017791,
+   "graph_hash": "c279d454c4e33af0",
+   "load_1m_after_build": 45.3,
+   "load_1m_before_build": 69.06,
+   "load_gate_met": true,
+   "params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 2,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 64,
+    "fuse": true,
+    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
+    "id_bytes": 3,
+    "index": "vertex",
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "threads": 3
+  }
+ },
+ "thresholds": {
+  "0.90": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 88,
+     "patience": 0,
+     "rerank": 32,
+     "screen": false,
+     "screen_sigmas": 1.0,
+     "stop_z": 0.0
+    },
+    "recall_at_10": 0.900350525788683,
+    "evals_per_query": 3937.324486730095,
+    "qps_runs": [
+     4625.205676029245,
+     7196.391002344762,
+     5371.33523876318,
+     5376.408005066068,
+     6061.501328007557,
+     7518.433697244851,
+     6883.675958796184,
+     10270.047320078722,
+     9492.76645491919,
+     7273.164318154502,
+     7945.059590672201
+    ],
+    "qps_median": 7196.391002344762
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 160,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0,
+      "stop_z": 0.0
+     },
+     "recall_at_10": 0.9042063094641963,
+     "evals_per_query": 5339.691537305959,
+     "qps_runs": [
+      3647.0866788535486,
+      3931.8102273617596,
+      3487.569965333869,
+      3963.300928912597,
+      3762.558743278098,
+      4399.964967730101,
+      4860.885935431579,
+      4146.200459582133,
+      5854.251997018887,
+      2565.2568786451166,
+      6024.907425879421
+     ],
+     "qps_median": 3963.300928912597,
+     "paired_ratios": [
+      0.7885,
+      0.5464,
+      0.6493,
+      0.7372,
+      0.6207,
+      0.5852,
+      0.7061,
+      0.4037,
+      0.6167,
+      0.3527,
+      0.7583
+     ],
+     "paired_median_ratio": 0.6207,
+     "paired_min_ratio": 0.3527,
+     "rounds_above_1": 0,
+     "meets_min_ratio": false
+    }
+   }
+  },
+  "0.95": {
+   "baseline": {
+    "name": "A",
+    "params": {
+     "ef": 400,
+     "patience": 0,
+     "rerank": 32,
+     "screen": false,
+     "screen_sigmas": 1.0,
+     "stop_z": 0.0
+    },
+    "recall_at_10": 0.9508262393590385,
+    "evals_per_query": 15456.666499749625,
+    "qps_runs": [
+     840.267303343612,
+     1632.2723492497607,
+     1773.411067241995,
+     1667.8606889969421,
+     1284.5134260987145,
+     1617.508564566105,
+     1939.5575778839934,
+     2223.1008399631964,
+     2460.060208033384,
+     2213.97979949975,
+     2392.7940583968784
+    ],
+    "qps_median": 1773.411067241995
+   },
+   "candidates": {
+    "B": {
+     "params": {
+      "ef": 768,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0,
+      "stop_z": 0.0
+     },
+     "recall_at_10": 0.9540310465698548,
+     "evals_per_query": 22518.85478217326,
+     "qps_runs": [
+      1128.3440505771605,
+      1034.79393082053,
+      622.229224674216,
+      965.1389081272278,
+      863.9546035386693,
+      1195.71303621683,
+      1240.6197999598915,
+      1520.828767023383,
+      1068.8572620608393,
+      1421.0749254104671,
+      1203.1063275183149
+     ],
+     "qps_median": 1128.3440505771605,
+     "paired_ratios": [
+      1.3428,
+      0.634,
+      0.3509,
+      0.5787,
+      0.6726,
+      0.7392,
+      0.6396,
+      0.6841,
+      0.4345,
+      0.6419,
+      0.5028
+     ],
+     "paired_median_ratio": 0.6396,
+     "paired_min_ratio": 0.3509,
+     "rounds_above_1": 1,
+     "meets_min_ratio": false
+    }
+   }
+  }
+ },
+ "check": {
+  "passed": true,
+  "failures": [],
+  "min_ratio": 1.5
+ },
+ "measurement": {
+  "host": "Apple M4 (development host), shared machine, 1-minute load 25-35 during the window",
+  "protocol": "public-bench ann-qgraph --index vertex --holdout 2000 nytimes-256-angular degree 64 build_ef 200; graph cache shared by both arms; 11 paired rounds under /Volumes/A/.hms-target/timed.sh, alternating order; single-thread search over 2000 held-out queries per config per round",
+  "arms": {
+   "A": "accepted encoding: --residual --vertex-bits 4 --residual-bits 8 --align-rows --reorder --id-bytes 3, rerank 32",
+   "B": "A plus --block-bits 2 --fuse (2-bit per-edge residual neighbour blocks with the unbiasing scale, precision-weighted fusion; this build still admitted fused re-entries into the ef pool)"
+  },
+  "binary": "worktree commit f3539a9 plus the unbiasing-scale change (committed next)",
+  "outcome": "candidate loses: 0.62x at recall 0.90 (ef 160 vs 96), 0.64x at 0.95 (ef 768 vs 400); the block scan is 4.5x cheaper per estimate (kill test) but the 2-bit ordering needs 1.6-1.9x the ef and the per-candidate pool work is unchanged"
+ }
+}

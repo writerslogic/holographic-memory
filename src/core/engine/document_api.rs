@@ -59,6 +59,11 @@ impl HmsCore {
         )
     }
 
+    /// Whether a document with this id currently resolves in the opened store.
+    pub fn has_document(&self, id: &str) -> bool {
+        self.documents.read().contains_key(id)
+    }
+
     pub fn delete_document(&self, id: &str) -> Result<bool> {
         validate_id(id)?;
         let exists = self.documents.read().contains_key(id);

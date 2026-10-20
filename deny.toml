@@ -9,7 +9,14 @@ yanked = "warn"
 # bincode is unmaintained at every version (team ceased development); 2.x is the
 # latest release and there is no maintained successor (RUSTSEC-2025-0141).
 # TODO: paste comes from nalgebra/simba; upgrade path blocked on upstream (RUSTSEC-2024-0436)
+# zip 8 is pulled only by candle-core 0.11 (its newest release pins zip ^8.6); the three
+# advisories concern ZipArchive::extract (SUID bits, symlink targets, path traversal), which
+# neither HMS nor candle calls: candle reads .pth archives by entry name. Drop these when
+# candle moves to zip 9 (RUSTSEC-2026-0367, -0368, -0369).
 ignore = [
+    { id = "RUSTSEC-2026-0367", reason = "zip extract SUID bits; extract is never called; blocked on candle-core > 0.11" },
+    { id = "RUSTSEC-2026-0368", reason = "zip extract symlink targets; extract is never called; blocked on candle-core > 0.11" },
+    { id = "RUSTSEC-2026-0369", reason = "zip extract path handling; extract is never called; blocked on candle-core > 0.11" },
     { id = "RUSTSEC-2025-0057", reason = "fxhash has no safe upgrade; planned migration to rustc-hash" },
     { id = "RUSTSEC-2025-0141", reason = "bincode is unmaintained at all versions; on latest 2.x, no maintained successor" },
     { id = "RUSTSEC-2024-0436", reason = "paste is a transitive dep via nalgebra/simba; no upstream fix available" },
