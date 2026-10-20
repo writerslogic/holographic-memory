@@ -1,0 +1,31 @@
+== session 1: the agent learns ==
+stored 8 documents and 3 relations
+
+== recall by content ==
+recall "what does Mira drink in the morning" -> ["pref-drink", "bug-report", "trip-lisbon"]
+recall "peanut allergy" -> ["allergy"]
+recall "flaky test in the CI runner" -> ["bug-report", "api-key", "trip-lisbon"]
+
+== recall restricted by metadata ==
+recall "jazz music" -> ["pref-music"]
+recall "jazz music" -> []
+recall "Mira trip planning" -> ["trip-lisbon", "trip-berlin", "book"]
+
+== a fact changes: the same id replaces the old version ==
+pref-drink is now version 2
+recall "black" -> []
+
+== forgetting: the agent deletes a pasted secret ==
+recall "staging token deploy script" -> []
+
+== relations: structured multi-hop queries ==
+mira works_at -> acme
+mira works_at, based_in -> lisbon
+
+== session 2: the process restarted, the memory is still there ==
+reopened with 3 relations
+recall "green tea" -> ["pref-drink"]
+recall "lighthouse novel recommended" -> ["book"]
+recall "staging token deploy script" -> []
+
+ok

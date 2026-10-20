@@ -1,0 +1,108 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# The navigation is not listed here. docs/.nav.yml orders the top-level sections and each
+# docs/<area>/ folder lists itself, so a PR that adds a page under its own area never edits this file.
+
+site_name: Holographic Memory System
+site_description: Local-first document search and vector-symbolic associative memory. Runs on your machine, no service calls.
+site_url: !ENV [HMS_SITE_URL, "https://writerslogic.github.io/holographic-memory/dev/"]
+repo_url: https://github.com/writerslogic/holographic-memory
+repo_name: writerslogic/holographic-memory
+edit_uri: edit/main/docs/
+copyright: Copyright 2024-2026 WritersLogic Contributors. Apache-2.0.
+
+docs_dir: docs
+strict: true
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - toc.follow
+    - content.code.copy
+    - content.tabs.link
+    - content.action.edit
+
+plugins:
+  - search
+  - awesome-nav:
+      logs:
+        no_matches: info
+
+hooks:
+  - scripts/docs_hooks.py
+
+# Pages that are session logs or experiment protocols. They stay in the repository; links to them
+# from the site resolve to the file on GitHub (scripts/docs_hooks.py).
+exclude_docs: |
+  CONTINUATION.md
+  NEXT-SESSIONS.md
+  OVERNIGHT-LOG.md
+  PREREGISTRATION-*.md
+  CAPACITY-CAMPAIGN-LOG.md
+  RESEARCH-OPPORTUNITIES.md
+  review-improvements.md
+  research/
+  requirements.txt
+  versions.json
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+extra:
+  version:
+    provider: mike
+    default: latest
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/writerslogic/holographic-memory

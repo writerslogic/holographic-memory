@@ -1,0 +1,164 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Runs the code the documentation shows, so it cannot rot: the three quickstarts, the offline
+# agent demo, and the code blocks in the README. Each program's printed result table is diffed
+# against the committed expected output the docs include.
+name: Examples
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quickstart-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/quickstart/rust/target
+          key: ${{ runner.os }}-quickstart-rust-${{ hashFiles('Cargo.toml', 'examples/quickstart/rust/Cargo.toml') }}
+      - name: Format and lint the example crate
+        run: |
+          cargo fmt --manifest-path examples/quickstart/rust/Cargo.toml -- --check
+          cargo clippy --manifest-path examples/quickstart/rust/Cargo.toml -- -D warnings
+      - name: Run the quickstart
+        run: cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml | tee "$RUNNER_TEMP/rust.out"
+      - name: Result table matches the one in the docs
+        run: awk '/^query /,/^top-1 correct/' "$RUNNER_TEMP/rust.out" | diff - examples/quickstart/expected-search.txt
+      - name: Holographic demo output matches the docs
+        run: cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin holographic | diff - examples/quickstart/expected-holographic.txt
+
+  quickstart-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-quickstart-node-${{ hashFiles('Cargo.toml', 'package-lock.json') }}
+      - run: npm ci --omit=optional
+      - run: npm run build
+      - name: Run the quickstart
+        run: node examples/quickstart/node/quickstart.mjs | tee "$RUNNER_TEMP/node.out"
+      - name: Result table matches the one in the docs
+        run: awk '/^query /,/^top-1 correct/' "$RUNNER_TEMP/node.out" | diff - examples/quickstart/expected-search.txt
+      - name: README Node snippet runs
+        run: python3 scripts/check-readme-snippets.py js
+
+  quickstart-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-quickstart-python-${{ hashFiles('Cargo.toml') }}
+      - run: cargo build --release --features server --bin hms-server
+      - run: python -m pip install ./bindings/python/holographic-sdk
+      - name: Run the quickstart against a live hms-server
+        env:
+          HMS_API_KEY: quickstart-ci
+        run: |
+          cd "$RUNNER_TEMP"
+          "$GITHUB_WORKSPACE/target/release/hms-server" --input-dim 384 --data-dir "$RUNNER_TEMP/hms-data" > "$RUNNER_TEMP/server.log" 2>&1 &
+          server=$!
+          trap 'kill "$server"' EXIT
+          for _ in $(seq 1 60); do grep -q "listening on" "$RUNNER_TEMP/server.log" && break; sleep 1; done
+          grep -q "listening on" "$RUNNER_TEMP/server.log"
+          python "$GITHUB_WORKSPACE/examples/quickstart/python/quickstart.py" | tee "$RUNNER_TEMP/python.out"
+          awk '/^query /,/^top-1 correct/' "$RUNNER_TEMP/python.out" | diff - "$GITHUB_WORKSPACE/examples/quickstart/expected-search-python.txt"
+
+  demo-offline-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-demo-${{ hashFiles('Cargo.toml') }}
+      - name: Run the demo (no network, no model)
+        run: cargo run --release --example demo-offline-agent | tee "$RUNNER_TEMP/demo.out"
+      - name: Transcript is deterministic and matches the docs
+        run: diff "$RUNNER_TEMP/demo.out" examples/demo-offline-agent/expected-output.txt
+      - name: Run it twice more; every run must be identical
+        run: |
+          for _ in 1 2; do
+            cargo run --release --example demo-offline-agent | diff - examples/demo-offline-agent/expected-output.txt
+          done
+
+  readme-rust-snippet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/quickstart/rust/target
+          key: ${{ runner.os }}-readme-rust-${{ hashFiles('Cargo.toml', 'examples/quickstart/rust/Cargo.toml') }}
+      - name: README Rust snippet compiles and runs
+        run: python3 scripts/check-readme-snippets.py rust
+
+  docs-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Snippet extractor tests
+        run: python3 -m unittest scripts/check-readme-snippets.py

@@ -1,0 +1,10 @@
+[
+  {"query": "right to a fair trial", "expect": "udhr-10"},
+  {"query": "freedom of religion", "expect": "udhr-18"},
+  {"query": "paid holidays and rest from work", "expect": "udhr-24"},
+  {"query": "nobody may be tortured", "expect": "udhr-05"},
+  {"query": "everyone may take part in elections", "expect": "udhr-21"},
+  {"query": "protection of private correspondence and home", "expect": "udhr-12"},
+  {"query": "free education for children", "expect": "udhr-26"},
+  {"query": "escaping persecution by seeking asylum in another country", "expect": "udhr-14"}
+]

@@ -1,0 +1,99 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Builds the versioned documentation site (dev from main, one site per v* release tag, a `latest`
+# alias) into a single Pages artifact. There is no gh-pages branch: deploy-pages publishes the
+# artifact directly. Pull requests build and check links but never deploy.
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    # A tag push only re-dispatches this workflow on main (see `rebuild-for-tag`): the github-pages
+    # environment accepts deployments from main, and the build on main enumerates every tag itself.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install documentation tools
+        run: pip install -r docs/requirements.txt
+
+      - name: Unit-test the link rewriting hook
+        run: python -m unittest scripts/test_docs_hooks.py
+
+      - name: Build every version (strict, any warning fails)
+        run: bash scripts/build-docs-site.sh _site
+
+      - name: Check links inside the built site
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --offline --no-progress --include-fragments --exclude-path _site/dev/404.html
+            --root-dir ${{ github.workspace }}/_site
+            '_site/dev/**/*.html'
+          fail: true
+
+      # Informational on pull requests: third-party hosts flake. links.yml runs the same check
+      # weekly and opens an issue on real rot. Internal links above are strict and blocking.
+      - name: Check external links in the README and the dev site (non-blocking)
+        continue-on-error: true
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          # 403 and 429 are bot-blocking from busy hosts, not broken links. Badge and
+          # not-yet-published URLs are excluded in .lychee.toml.
+          args: >-
+            --config .lychee.toml --no-progress --max-retries 3 --retry-wait-time 5
+            --cache --max-cache-age 1d
+            README.md CONTRIBUTING.md '_site/dev/**/*.html'
+          fail: true
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  rebuild-for-tag:
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Rebuild the site from main so the new tag gets its own version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docs.yml --repo "$GITHUB_REPOSITORY" --ref main

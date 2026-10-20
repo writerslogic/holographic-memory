@@ -1,0 +1,9 @@
+bind(role, filler) unbound with role recovers the filler exactly
+100 items in one vector of 5299 active bits out of 16384
+
+bits kept  members (mean presence)  strangers (mean presence)
+     100%                    1.00                       0.32
+      75%                    0.75                       0.24
+      50%                    0.50                       0.16
+      25%                    0.25                       0.08
+      10%                    0.10                       0.03
