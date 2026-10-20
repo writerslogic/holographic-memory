@@ -166,3 +166,31 @@ fn purge_erases_a_generation_left_by_an_interrupted_compaction() {
     assert!(!orphan.exists());
     assert_clean(dir.path(), "after purge with an orphaned generation");
 }
+
+#[cfg(feature = "security")]
+#[test]
+fn encrypted_store_purges_and_keeps_survivors_readable() {
+    use holographic_memory::core::HmsConfig;
+    let dir = tempfile::tempdir().unwrap();
+    let mut config = HmsConfig::default();
+    config.security.encryption_enabled = true;
+    config.security.encryption_passphrase = Some("purge-fixture".into());
+    let open = |config: &HmsConfig| {
+        let core = HmsCore::new(
+            DIM,
+            Some(dir.path().display().to_string()),
+            Some(config.clone()),
+        )
+        .unwrap();
+        Memory::new(Arc::new(core)).with_clock(Arc::new(ManualClock::new(1)))
+    };
+    let memory = open(&config);
+    seed(&memory);
+    purge(&memory, &["d0", "d1", "d2"]);
+    assert_clean(dir.path(), "after an encrypted purge");
+    assert!(!memory.core().has_document("d0"));
+    drop(memory);
+    let memory = open(&config);
+    assert!(memory.core().has_document("keep"));
+    assert_clean(dir.path(), "after an encrypted restart");
+}
