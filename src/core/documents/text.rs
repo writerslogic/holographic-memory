@@ -102,6 +102,16 @@ impl TextSegment {
         positioned_write(&self.file, &vec![0u8; len as usize], at).context("scrubbing chunk text")
     }
 
+    /// Whether the record was scrubbed (see [`TextSegment::scrub`]). Looks at the first bytes
+    /// only: an encrypted record opens with a random nonce, a plaintext one with words.
+    pub(crate) fn is_scrubbed(&self, at: u64, len: u32) -> bool {
+        let mut head = [0u8; 16];
+        let n = (len as usize).min(head.len());
+        n > 0
+            && positioned_read(&self.file, &mut head[..n], at).is_ok()
+            && head[..n].iter().all(|&b| b == 0)
+    }
+
     /// Flushes scrubbed records to stable storage.
     pub(crate) fn sync(&self) -> Result<()> {
         self.file.sync_data().context("syncing text segment")

@@ -444,6 +444,19 @@ impl DocumentStore {
         self.documents.insert(id, document);
     }
 
+    /// Whether `document` is no longer a live document: absent from the store, or with chunk
+    /// text that a delete has zeroed since the caller captured it.
+    pub(crate) fn is_deleted(&self, document: &StoredDocument) -> bool {
+        !self.documents.contains_key(&document.id)
+            || self.text.as_deref().is_some_and(|segment| {
+                document
+                    .chunks
+                    .iter()
+                    .filter_map(|c| c.text_at)
+                    .any(|(at, len)| segment.is_scrubbed(at, len))
+            })
+    }
+
     /// Removes a document and zeroes its chunk text in the segment (see
     /// [`TextSegment::scrub`]); the caller syncs the segment once per transaction.
     pub(crate) fn remove_scrubbed(

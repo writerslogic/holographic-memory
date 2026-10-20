@@ -96,16 +96,26 @@ impl HmsCore {
             self.write_compaction_frame(&mut arena, &mut payload, &[mutation])?;
         }
         for document in &snapshot.documents {
-            self.write_compaction_frame(
-                &mut arena,
-                &mut payload,
-                &[DocumentMutation::Document(
-                    crate::core::documents::DocumentWithText {
-                        document,
-                        segment: snapshot.text.as_deref(),
-                    },
-                )],
-            )?;
+            // A document deleted since the snapshot has had its text zeroed; the delete is in
+            // the tail, which the replay below applies, so it is simply not carried over.
+            {
+                let store = self.documents.read();
+                if store.is_deleted(document) {
+                    continue;
+                }
+                payload.clear();
+                payload.extend_from_slice(super::mutation::TRANSACTION_MAGIC);
+                serde_json::to_writer(
+                    &mut payload,
+                    &[DocumentMutation::Document(
+                        crate::core::documents::DocumentWithText {
+                            document,
+                            segment: snapshot.text.as_deref(),
+                        },
+                    )],
+                )?;
+            }
+            arena.write_slice(&self.maybe_encrypt(&payload)?)?;
         }
         let mut prepared = arena.finish()?.prepare_compacted()?;
         for _ in 0..2 {
