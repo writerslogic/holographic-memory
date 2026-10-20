@@ -310,3 +310,10 @@ def on_post_build(config):
         seen.add(slug)
         docs_cards.render(out / f"{slug}.png", fonts, title, section, description)
     _state["pages"].clear()
+
+# mkdocstrings resolves its search paths when the plugin starts, before the generated pages exist, so
+# the stub package for the PyO3 module is written as soon as this hook is loaded.
+import docs_pyo3_stub  # noqa: E402
+
+if (Path(__file__).resolve().parents[1] / "src" / "python.rs").is_file():
+    docs_pyo3_stub.write(Path(__file__).resolve().parents[1], Path(__file__).resolve().parents[1] / ".docs-gen" / "pyi")
