@@ -1,0 +1,13 @@
+{
+  "name": "hms-docs-qa",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Browser checks for the documentation site: screenshots, axe and Lighthouse.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "lighthouse": "13.5.0",
+    "playwright": "1.64.1"
+  }
+}

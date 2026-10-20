@@ -1,0 +1,74 @@
+{#- Copyright 2024-2026 WritersLogic Contributors
+    SPDX-License-Identifier: Apache-2.0
+    The engine diagram. Surface names come from docs/_data/site.yml; the engine boxes mirror
+    docs/ARCHITECTURE.md and docs/concepts/holographic.md. -#}
+{% set surfaces = config.extra.hms.runtimes | selectattr("status", "equalto", "available") | list %}
+<svg class="ad" viewBox="0 0 960 470" role="img" aria-labelledby="ad-title ad-desc">
+  <title id="ad-title">HMS architecture</title>
+  <desc id="ad-desc">Applications reach one Rust engine through its language surfaces. The engine has two layers, document search and vector-symbolic memory, over one persistent store.</desc>
+  <defs>
+    <marker id="ad-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1 L9 5 L1 9" class="ad-head"/>
+    </marker>
+  </defs>
+
+  <text class="ad-col" x="20" y="24">Your application</text>
+  <text class="ad-col" x="256" y="24">HMS engine (Rust, in your process)</text>
+  <text class="ad-col" x="766" y="24">What comes back</text>
+
+  <g class="ad-box ad-soft">
+    <rect x="20" y="40" width="190" height="84" rx="10"/>
+    <text x="115" y="70" text-anchor="middle" class="ad-t">Text and metadata</text>
+    <text x="115" y="92" text-anchor="middle" class="ad-s">plus embeddings you supply</text>
+    <text x="115" y="110" text-anchor="middle" class="ad-s">(optional)</text>
+  </g>
+
+  {% for rt in surfaces %}
+  <g class="ad-box ad-surface">
+    <rect x="20" y="{{ 150 + loop.index0 * 44 }}" width="190" height="34" rx="8"/>
+    <text x="115" y="{{ 172 + loop.index0 * 44 }}" text-anchor="middle" class="ad-t">{{ rt.name }}</text>
+  </g>
+  {% endfor %}
+  {% set sy = 150 + surfaces | length * 44 %}
+  <g class="ad-box ad-surface">
+    <rect x="20" y="{{ sy }}" width="190" height="34" rx="8"/>
+    <text x="115" y="{{ sy + 22 }}" text-anchor="middle" class="ad-t">hms-server (HTTP)</text>
+  </g>
+
+  <path class="ad-line" d="M214 82 H246" marker-end="url(#ad-arrow)"/>
+  <path class="ad-line" d="M214 {{ 167 + 22 }} H246" marker-end="url(#ad-arrow)"/>
+
+  <g class="ad-engine">
+    <rect x="252" y="36" width="490" height="420" rx="14" class="ad-frame"/>
+
+    <text class="ad-lane" x="270" y="66">Document search</text>
+    <g class="ad-box"><rect x="270" y="86" width="72" height="62" rx="8"/><text x="306" y="114" text-anchor="middle" class="ad-t">Chunk</text><text x="306" y="132" text-anchor="middle" class="ad-s">256 words</text></g>
+    <g class="ad-box"><rect x="372" y="78" width="112" height="34" rx="8"/><text x="428" y="100" text-anchor="middle" class="ad-t">Stemmed BM25</text></g>
+    <g class="ad-box"><rect x="372" y="122" width="112" height="34" rx="8"/><text x="428" y="144" text-anchor="middle" class="ad-t">Exact cosine</text></g>
+    <g class="ad-box ad-hl"><rect x="514" y="86" width="72" height="62" rx="8"/><text x="550" y="114" text-anchor="middle" class="ad-t">Blend</text><text x="550" y="132" text-anchor="middle" class="ad-s">min-max</text></g>
+    <g class="ad-box ad-hl"><rect x="616" y="86" width="112" height="62" rx="8"/><text x="672" y="114" text-anchor="middle" class="ad-t">Ranked hits</text><text x="672" y="132" text-anchor="middle" class="ad-s">passage, byte range</text></g>
+    <path class="ad-line" d="M344 117 H368" marker-end="url(#ad-arrow)"/>
+    <path class="ad-line" d="M486 95 H510" marker-end="url(#ad-arrow)"/>
+    <path class="ad-line" d="M486 139 H510" marker-end="url(#ad-arrow)"/>
+    <path class="ad-line" d="M588 117 H612" marker-end="url(#ad-arrow)"/>
+
+    <text class="ad-lane" x="270" y="196">Vector-symbolic memory</text>
+    <g class="ad-box"><rect x="270" y="214" width="104" height="62" rx="8"/><text x="322" y="242" text-anchor="middle" class="ad-t">Atoms</text><text x="322" y="260" text-anchor="middle" class="ad-s">hash-seeded</text></g>
+    <g class="ad-box ad-hl"><rect x="400" y="214" width="116" height="62" rx="8"/><text x="458" y="242" text-anchor="middle" class="ad-t">Bind, bundle</text><text x="458" y="260" text-anchor="middle" class="ad-s">permute</text></g>
+    <g class="ad-box"><rect x="542" y="214" width="84" height="62" rx="8"/><text x="584" y="242" text-anchor="middle" class="ad-t">Triples</text><text x="584" y="260" text-anchor="middle" class="ad-s">multi-hop</text></g>
+    <g class="ad-box ad-hl"><rect x="652" y="214" width="76" height="62" rx="8"/><text x="690" y="242" text-anchor="middle" class="ad-t">Cleanup</text><text x="690" y="260" text-anchor="middle" class="ad-s">Hopfield</text></g>
+    <path class="ad-line" d="M376 245 H396" marker-end="url(#ad-arrow)"/>
+    <path class="ad-line" d="M518 245 H538" marker-end="url(#ad-arrow)"/>
+    <path class="ad-line" d="M628 245 H648" marker-end="url(#ad-arrow)"/>
+
+    <text class="ad-lane" x="270" y="318">Persistent store</text>
+    <g class="ad-box ad-soft"><rect x="270" y="336" width="458" height="46" rx="8"/><text x="499" y="364" text-anchor="middle" class="ad-t">Memory-mapped segmented log, atomic batches, replay</text></g>
+    <g class="ad-box ad-opt"><rect x="270" y="394" width="224" height="40" rx="8"/><text x="382" y="419" text-anchor="middle" class="ad-s">AES-256-GCM store (feature: security)</text></g>
+    <g class="ad-box ad-opt"><rect x="504" y="394" width="224" height="40" rx="8"/><text x="616" y="419" text-anchor="middle" class="ad-s">Signed audit log, provenance (features)</text></g>
+  </g>
+
+  <path class="ad-line" d="M746 117 H776" marker-end="url(#ad-arrow)"/>
+  <path class="ad-line" d="M746 245 H776" marker-end="url(#ad-arrow)"/>
+  <g class="ad-box ad-soft"><rect x="780" y="86" width="160" height="62" rx="10"/><text x="860" y="114" text-anchor="middle" class="ad-t">Passages</text><text x="860" y="132" text-anchor="middle" class="ad-s">with source offsets</text></g>
+  <g class="ad-box ad-soft"><rect x="780" y="214" width="160" height="62" rx="10"/><text x="860" y="242" text-anchor="middle" class="ad-t">Facts and answers</text><text x="860" y="260" text-anchor="middle" class="ad-s">recalled by resonance</text></g>
+</svg>

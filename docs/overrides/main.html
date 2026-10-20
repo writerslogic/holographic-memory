@@ -1,0 +1,68 @@
+{#- Copyright 2024-2026 WritersLogic Contributors
+    SPDX-License-Identifier: Apache-2.0 -#}
+{% extends "base.html" %}
+
+{% block site_meta %}
+  {{ super() }}
+  <link rel="preload" href="{{ 'assets/fonts/geist-latin-wght-normal.woff2' | url }}" as="font" type="font/woff2" crossorigin>
+{% endblock %}
+
+{% block extrahead %}
+  {% set hms = config.extra.hms %}
+  {% set page_title = (page.meta.title if page.meta and page.meta.title else page.title) if page and page.title else config.site_name %}
+  {% set page_desc = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
+  <style>{{ hms.inline_css }}</style>
+  <link rel="icon" type="image/svg+xml" href="{{ 'assets/favicon.svg' | url }}">
+  <link rel="mask-icon" href="{{ 'assets/logo.svg' | url }}" color="#0a7b8c">
+  <meta name="theme-color" content="#0a0d14" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#fcfcfa" media="(prefers-color-scheme: light)">
+  <meta property="og:type" content="{{ 'website' if page.is_homepage else 'article' }}">
+  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:title" content="{{ page_title if not page.is_homepage else config.site_name ~ ': ' ~ hms.tagline }}">
+  <meta property="og:description" content="{{ page_desc }}">
+  {% if page.canonical_url %}<meta property="og:url" content="{{ page.canonical_url }}">{% endif %}
+  {% if hms_og_url %}
+    <meta property="og:image" content="{{ hms_og_url }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ page_title }} - {{ config.site_name }}">
+    <meta name="twitter:image" content="{{ hms_og_url }}">
+  {% endif %}
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title if not page.is_homepage else config.site_name }}">
+  <meta name="twitter:description" content="{{ page_desc }}">
+  {% if not hms.is_latest and not hms.is_dev %}<meta name="robots" content="noindex, follow">{% endif %}
+  {% if page.is_homepage %}
+  <script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "SoftwareSourceCode", "name": config.site_name, "description": config.site_description, "codeRepository": config.repo_url, "license": "https://www.apache.org/licenses/LICENSE-2.0", "programmingLanguage": "Rust"} | tojson }}</script>
+  {% endif %}
+{% endblock %}
+
+{% block fonts %}{% endblock %}
+
+{% block announce %}{%- if config.extra.hms.announcement.text -%}
+  <a href="{{ config.extra.hms.announcement.url }}">{{ config.extra.hms.announcement.text }}</a>
+{%- endif -%}{% endblock %}
+
+{% block outdated %}
+  {% if config.extra.hms.is_dev %}
+    This is the development version of the documentation, built from <code>main</code>. It can describe work that is not in a release.
+    <a href="{{ '../' ~ base_url }}"><strong>Go to the latest release.</strong></a>
+  {% else %}
+    This is the documentation for <strong>{{ config.extra.hms.ref }}</strong>, not the latest release.
+    <a href="{{ '../' ~ base_url }}"><strong>Go to the latest release.</strong></a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {{ super() }}
+  {% if page.meta and page.meta.next_steps %}
+    <section class="hms-next" aria-labelledby="hms-next-title">
+      <h2 id="hms-next-title">Next steps</h2>
+      <ul>
+        {% for step in page.meta.next_steps %}
+          <li><a href="{{ step.url | url }}"><strong>{{ step.title }}</strong>{% if step.text %}<span>{{ step.text }}</span>{% endif %}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endblock %}

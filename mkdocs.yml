@@ -3,8 +3,9 @@
 
 # The navigation is not listed here. docs/.nav.yml orders the top-level sections and each
 # docs/<area>/ folder lists itself, so a PR that adds a page under its own area never edits this file.
+# Landing-page copy and the capability list live in docs/_data/site.yml (scripts/docs_site.py).
 
-site_name: Holographic Memory System
+site_name: Holographic Memory
 site_description: Local-first document search and vector-symbolic associative memory. Runs on your machine, no service calls.
 site_url: !ENV [HMS_SITE_URL, "https://writerslogic.github.io/holographic-memory/dev/"]
 repo_url: https://github.com/writerslogic/holographic-memory
@@ -17,8 +18,13 @@ strict: true
 
 theme:
   name: material
-  logo: assets/logo.png
-  favicon: assets/logo.png
+  custom_dir: docs/overrides
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  font: false
+  icon:
+    repo: fontawesome/brands/github
+  language: en
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
@@ -26,43 +32,80 @@ theme:
         name: Switch to light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to system preference
   features:
     - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
     - navigation.tracking
     - navigation.tabs
     - navigation.sections
     - navigation.indexes
+    - navigation.path
+    - navigation.footer
     - navigation.top
     - search.suggest
     - search.highlight
     - toc.follow
     - content.code.copy
+    - content.code.annotate
     - content.tabs.link
     - content.action.edit
 
 plugins:
-  - search
+  - gen-files:
+      scripts:
+        - scripts/docs_api.py
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [bindings/python/holographic-sdk, .docs-gen/pyi]
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: false
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+            members_order: source
+            heading_level: 2
+            show_if_no_docstring: true
+            inherited_members: false
+  - search:
+      separator: '[\s\-_/.]+'
+  - meta
   - awesome-nav:
       logs:
         no_matches: info
+  - minify:
+      minify_html: true
+      minify_css: true
+      minify_js: true
+      js_files: [javascripts/hms.js, javascripts/demo.js]
 
 hooks:
   - scripts/docs_hooks.py
+  - scripts/docs_site.py
+
+extra_javascript:
+  - javascripts/hms.js
+  - javascripts/demo.js
 
 # Pages that are session logs or experiment protocols. They stay in the repository; links to them
-# from the site resolve to the file on GitHub (scripts/docs_hooks.py).
+# from the site resolve to the file on GitHub (scripts/docs_hooks.py). _data and overrides are
+# build inputs, not pages.
 exclude_docs: |
   CONTINUATION.md
   NEXT-SESSIONS.md
@@ -74,10 +117,15 @@ exclude_docs: |
   research/
   requirements.txt
   versions.json
+  _data/
+  overrides/
 
 markdown_extensions:
+  - abbr
   - admonition
   - attr_list
+  - def_list
+  - footnotes
   - md_in_html
   - tables
   - toc:
@@ -86,6 +134,7 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  - pymdownx.keys
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -94,7 +143,7 @@ markdown_extensions:
       check_paths: true
 
 validation:
-  omitted_files: warn
+  omitted_files: info
   absolute_links: warn
   unrecognized_links: warn
   anchors: warn
@@ -106,3 +155,10 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/writerslogic/holographic-memory
+      name: GitHub
+    - icon: fontawesome/brands/rust
+      link: https://crates.io/crates/holographic-memory
+      name: crates.io
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/holographic-sdk/
+      name: PyPI

@@ -1,0 +1,115 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# The single source for the capability copy on the landing page and in the footer. Other work
+# updates this file when a runtime, a feature or a measured result lands; nothing on the landing
+# page names a runtime or feature that is not listed here.
+#
+# Contract, enforced by scripts/docs_site.py (a violation fails the strict docs build):
+#   runtimes[].status   "available" (shipped, install tab on the landing page) or "preview"
+#                       (shown as a chip, no tab). Planned work is not listed at all.
+#   runtimes[].requires paths that must exist in the repository for an "available" entry.
+#   runtimes[].snippets code sections included from the executed quickstart files, written
+#                       "path:section". They are read at build time, so they cannot drift.
+#   headline            names a committed results file and the dotted path of a metric in it.
+#   comparison          optional docs/_data/comparison.json written by the benchmark generator
+#                       fills the comparison table; without it the page derives a table from
+#                       the committed results named under comparison_fallback.
+
+tagline: Search and memory that run entirely on your machine.
+lede: >-
+  HMS is a local-first document search engine and a vector-symbolic associative memory in one
+  store. Hybrid BM25 and exact-cosine retrieval, byte-offset hits, crash-safe persistence, and
+  superposed memory you can bind, bundle and query. No service calls and no telemetry.
+license: Apache-2.0
+
+# The announcement bar. Leave `text` empty to hide it.
+announcement:
+  text: ""
+  url: ""
+
+runtimes:
+  - id: rust
+    name: Rust
+    status: available
+    install: cargo add holographic-memory --features security
+    requires: [Cargo.toml, examples/quickstart/rust/src/main.rs]
+    snippets:
+      - examples/quickstart/rust/src/main.rs:ingest
+      - examples/quickstart/rust/src/main.rs:hit
+    note: The engine itself. Every other runtime is a surface over it.
+  - id: python
+    name: Python
+    status: available
+    install: pip install holographic-sdk
+    requires: [bindings/python/holographic-sdk/pyproject.toml, examples/quickstart/python/quickstart.py]
+    snippets:
+      - examples/quickstart/python/quickstart.py:ingest
+      - examples/quickstart/python/quickstart.py:hit
+    note: An HTTP client for hms-server. The holographic-vsa wheel is the quantized-phase substrate, a different package.
+  - id: node
+    name: Node
+    status: available
+    install: |-
+      git clone https://github.com/writerslogic/holographic-memory
+      cd holographic-memory && npm ci --omit=optional && npm run build
+    requires: [index.d.ts, examples/quickstart/node/quickstart.mjs]
+    snippets:
+      - examples/quickstart/node/quickstart.mjs:ingest
+      - examples/quickstart/node/quickstart.mjs:hit
+    note: Built from source with a Rust toolchain. The npm package is deprecated until the next release.
+
+features:
+  - title: Hybrid search
+    body: Stemmed BM25 fused with exact cosine over embeddings you supply. Hits carry the passage and its byte range.
+    link: quickstart/index.md
+  - title: Vector-symbolic memory
+    body: Sparse binary hypervectors with bind, bundle and permute, a triple store with multi-hop queries, Hopfield cleanup and a resonator network.
+    link: concepts/holographic.md
+  - title: Crash-safe storage
+    body: Atomic batches, a mmap segmented log with generations, and replay. A store is a directory.
+    link: production-readiness.md
+  - title: Hardening you opt into
+    body: AES-256-GCM stores, signed audit logs, credential-gated agents and COSE/SCITT provenance behind Cargo features.
+    link: PRIVACY.md
+  - title: Local by construction
+    body: The engine makes no network calls and sends no telemetry. The optional HTTP server is yours to run.
+    link: concepts/privacy-limits.md
+  - title: Measured, including losses
+    body: Every number on this site traces to a committed results file, and the benchmark pages say where another system wins.
+    link: PUBLIC-BENCHMARKS.md
+
+# The headline result. `file` is relative to the repository root; each metric is a dotted path.
+headline:
+  title: Hybrid retrieval on SciFact
+  file: benchmarks/results/public_scifact.json
+  metric: metrics.hms_hybrid.ndcg_at_10
+  metric_label: nDCG@10
+  compare:
+    - label: HMS dense (exact cosine)
+      metric: metrics.hms_dense_exact.ndcg_at_10
+    - label: HMS lexical (stemmed BM25)
+      metric: metrics.hms_lexical.ndcg_at_10
+  context: BEIR SciFact test split, 300 queries over 5,183 documents, MiniLM-L6-v2 embeddings (384 dimensions).
+  caveat: The published BM25 figure (0.665, Thakur et al. 2021) is quoted from the BEIR paper, not re-run here.
+  published:
+    - label: BM25 as published in BEIR
+      value: 0.665
+      source: https://arxiv.org/abs/2104.08663
+  link: PUBLIC-BENCHMARKS.md
+
+# Vector-search chart: queries per second at each recall target, single thread, one query at a
+# time. Systems that do not reach a target are listed as such, never dropped.
+chart:
+  title: Vector search on nytimes-256-angular
+  file: benchmarks/results/public_qgraph_nytimes-256-angular.json
+  recall_targets: ["0.90", "0.95"]
+  hms_prefix: HMS
+  # Rows the benchmark page itself marks as unconfirmed. They stay on the chart, marked, and are
+  # left out of the "fastest HMS configuration" sentence.
+  annotations:
+    "HMS VGraph (4-bit codes, rerank)": opt-in encoding that ran at lower machine load than the other rows; the benchmark page treats it as unconfirmed.
+  link: PUBLIC-BENCHMARKS.md
+
+comparison_fallback:
+  - benchmarks/results/public_scifact.json
