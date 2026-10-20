@@ -3,10 +3,10 @@
 Scope: the integer and float distance kernels of `core::qgraph` (`src/core/qgraph/kernels.rs`):
 8-bit and 4-bit code dot products (`dot_i8`, `dot_i4`), the float re-rank dots (`dot_f32_i8`,
 `dot_f32_i4`) and the 1-bit screen popcount. Every kernel is checked bit for bit against the
-scalar reference (`every_integer_kernel_matches_scalar`, `every_float_kernel_matches_scalar`:
-lengths 16 to 512, extreme values, all-minimum nibbles). Kill rule: a kernel ships only if it beats the
-incumbent in `dot_kernel_microbench`; a loser stays in the tree as test-only code so the kill
-test reproduces, and is listed here.
+scalar reference (`every_integer_kernel_matches_scalar`: lengths 16 to 512, extreme values, all-minimum nibbles). Kill rule: a kernel ships only if it beats the
+incumbent in `dot_kernel_microbench`; a loser is removed from `src/` and parked as
+`benchmarks/results/parked/platform-killed-kernels.patch` (test-only code plus the extended
+microbenchmark, so the kill test reproduces) and is listed here.
 
 Run: `cargo test --release --lib dot_kernel_microbench -- --ignored --nocapture`.
 Raw data: `benchmarks/results/platform_aarch64_microbench_v1.json` (M4, 6 runs, min and median),
@@ -49,8 +49,8 @@ Float re-rank on x86 and aarch64: left autovectorized (no explicit kernel won).
   latency, not the dot product. Recall and exact evaluations per query were identical for both
   kernels at every ef (0.9005 / 5810.9, 0.95065 / 14341.3), as the bit-exactness implies.
   A 21-round rerun found no VNNI container in 24 attempts (`platform_x86_modal_e2e_v2.raw.json`).
-- The AVX512-VNNI kernels are therefore a per-call win (microbenchmark) with no measured QPS
-  change. They stay because they cost nothing and cannot change results.
+- The AVX512-VNNI gain is microbenchmark-only: end-to-end QPS was flat within noise. The kernels
+  ship because they are bit-exact and never slower per call.
 
 ## Recall gate
 
