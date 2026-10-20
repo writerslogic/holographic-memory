@@ -4,12 +4,13 @@
 
 usage: compare-hashes.py FIRST SECOND [--allow NAME ...]
 
-Exit 1 if any artefact differs, is missing from one side, or the sets differ. --allow names
+Exit 1 if any artefact differs, is missing from one side, or the sets differ. --allow names (shell patterns)
 artefacts whose difference is documented as expected (docs/RELEASING.md); they are reported
 but do not fail the comparison. A documented exception that has started to match is also
 reported so the exception list can shrink.
 """
 import argparse
+import fnmatch
 import pathlib
 import sys
 
@@ -32,7 +33,7 @@ def main() -> int:
     failed = False
     for name in sorted(first.keys() | second.keys()):
         a, b = first.get(name), second.get(name)
-        allowed = name in args.allow
+        allowed = any(fnmatch.fnmatch(name, pattern) for pattern in args.allow)
         if a is None or b is None:
             print(f"MISSING  {name} (first={a} second={b})")
             failed = failed or not allowed

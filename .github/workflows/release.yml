@@ -15,7 +15,6 @@ name: Release
 on:
   push:
     tags: ["v*"]
-    branches: [feat/ci-artefacts] # TEMPORARY dry-run trigger, removed before merge
   workflow_dispatch:
   pull_request:
     paths:

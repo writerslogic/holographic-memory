@@ -105,11 +105,16 @@ time), `maturin`, no incremental compilation, and `--remap-path-prefix` for the 
 and rustup home. The Rust toolchain is the runner's current `stable`, so both legs must run in the
 same workflow run.
 
-Documented exceptions: see the table below, filled from the workflow's output.
+Result of the first runs (two runners, different checkout directories): `hms-eval`, `hms-server`,
+the napi `cdylib` and the crate are bit-for-bit identical. The Python wheel is identical member for
+member except `*.dist-info/sboms/*`, the SBOM maturin embeds, whose `bom-ref`s contain the absolute
+checkout directory; the workflow therefore allows the wheel hash to differ and fails if any other
+member differs.
 
 | Artefact | Reproducible | Reason |
 | --- | --- | --- |
-| (set by the first green runs) | | |
+| `hms-eval`, `hms-server`, napi `cdylib`, `.crate` | yes | |
+| Python wheel (manylinux x86_64, built natively) | all members except the embedded SBOM | absolute checkout path in the SBOM bom-refs |
 
 Not covered: the per-platform npm bindings and the cross-compiled wheels, which depend on the zig
 and napi cross toolchains downloaded at build time (their SHA-256 are in `SHA256SUMS` and the
