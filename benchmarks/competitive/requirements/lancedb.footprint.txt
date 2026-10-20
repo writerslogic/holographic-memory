@@ -1,7 +1,5 @@
 annotated-types==0.8.0
     # via pydantic
-colorama==0.4.6 ; sys_platform == 'win32'
-    # via tqdm
 deprecation==2.1.0
     # via lancedb
 lance-namespace==0.13.0
@@ -9,14 +7,14 @@ lance-namespace==0.13.0
 lance-namespace-urllib3-client==0.13.0
     # via lance-namespace
 lancedb==0.40.0
-    # via -r requirements/lancedb.footprint.in
+    # via -r lancedb.footprint.in
 numpy==2.5.4
     # via lancedb
 packaging==26.3
     # via
     #   deprecation
     #   lancedb
-pyarrow==26.0.0
+pyarrow==23.0.1
     # via lancedb
 pydantic==2.14.1
     # via

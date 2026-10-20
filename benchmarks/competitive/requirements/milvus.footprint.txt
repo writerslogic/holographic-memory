@@ -13,7 +13,7 @@ grpcio==1.84.0
 idna==3.20
     # via requests
 milvus-lite==3.2.2
-    # via -r requirements/milvus.footprint.in
+    # via -r milvus.footprint.in
 numpy==2.5.4
     # via
     #   faiss-cpu
@@ -27,10 +27,10 @@ pandas==3.0.6
     # via pymilvus
 protobuf==7.36.2
     # via pymilvus
-pyarrow==26.0.0
+pyarrow==23.0.1
     # via milvus-lite
 pymilvus==3.0.2
-    # via -r requirements/milvus.footprint.in
+    # via -r milvus.footprint.in
 python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.2.4
@@ -41,7 +41,5 @@ six==1.17.0
     # via python-dateutil
 typing-extensions==4.16.0
     # via grpcio
-tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
-    # via pandas
 urllib3==2.8.0
     # via requests

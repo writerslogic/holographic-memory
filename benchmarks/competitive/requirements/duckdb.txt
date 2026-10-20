@@ -1,6 +1,6 @@
 duckdb==1.5.6
-    # via -r requirements/duckdb.in
+    # via -r duckdb.in
 numpy==2.5.4
-    # via -r requirements/duckdb.in
-pyarrow==21.0.0
-    # via -r requirements/duckdb.in
+    # via -r duckdb.in
+pyarrow==23.0.1
+    # via -r duckdb.in
