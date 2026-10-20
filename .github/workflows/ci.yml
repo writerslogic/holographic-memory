@@ -46,9 +46,9 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
       - run: cargo fmt -- --check
       - name: Clippy, all features
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - name: Clippy, default features
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --locked --all-targets -- -D warnings
 
   features:
     name: clippy (${{ matrix.features }})
@@ -70,7 +70,7 @@ jobs:
           shared-key: feature-${{ matrix.features }}
           save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
       - name: Clippy with only this feature
-        run: cargo clippy --all-targets --features ${{ matrix.features }} -- -D warnings
+        run: cargo clippy --locked --all-targets --features ${{ matrix.features }} -- -D warnings
 
   test:
     name: test (${{ matrix.set }})
@@ -123,7 +123,7 @@ jobs:
         with:
           shared-key: bench
           save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
-      - run: cargo bench --no-run --no-default-features
+      - run: cargo bench --locked --no-run --no-default-features
 
   deny:
     runs-on: ubuntu-latest
@@ -149,7 +149,7 @@ jobs:
         with:
           shared-key: msrv
           save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
-      - run: cargo check --no-default-features
+      - run: cargo check --locked --no-default-features
 
   retrieval-quality:
     runs-on: ubuntu-latest
@@ -165,9 +165,9 @@ jobs:
           shared-key: recall
           save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
       - name: Enforce deterministic recall floor
-        run: cargo run --release --bin hms-eval -- --vectors 1200 --queries 50 --dimensions 4096 --assert-min-recall 0.90
+        run: cargo run --locked --release --bin hms-eval -- --vectors 1200 --queries 50 --dimensions 4096 --assert-min-recall 0.90
       - name: Enforce document relevance floor
-        run: cargo run --release --bin hms-eval -- --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
+        run: cargo run --locked --release --bin hms-eval -- --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
 
   python-sdk:
     name: python sdk (live server)
@@ -185,7 +185,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
       - name: Build hms-server
-        run: cargo build --features server --bin hms-server
+        run: cargo build --locked --features server --bin hms-server
       - name: SDK tests against the real server
         working-directory: bindings/python/holographic-sdk
         env:
