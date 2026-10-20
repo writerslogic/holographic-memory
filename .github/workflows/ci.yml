@@ -238,7 +238,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: uv run --no-project python scripts/ci/verify-action-pins.py
       - name: actionlint
-        run: uvx --from 'actionlint-py==1.7.12' actionlint -color
+        run: uvx --from 'actionlint-py==1.7.12.25' actionlint -color
       - name: zizmor
         run: uvx 'zizmor==1.31.1' --min-severity medium --format plain .github/workflows
 
