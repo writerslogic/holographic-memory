@@ -54,6 +54,7 @@ pub mod intersection;
 pub(crate) mod ivf;
 #[cfg(feature = "security")]
 pub mod mask;
+pub mod memory_api;
 #[cfg(feature = "local-models")]
 pub mod models;
 pub(crate) mod nsg;

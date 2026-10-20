@@ -24,6 +24,7 @@ pub use crate::core::documents::{
 };
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::HmsError;
+pub use crate::core::memory_api::{Memory, MemoryConfig};
 pub use crate::core::types::{
     ConceptCandidate, HardwareCapabilities, IndexStatus, MemorizeBatchItem, QueryExplanation,
     RetrievalResult, StorageHealth, TextMetrics,
@@ -43,11 +44,26 @@ pub use crate::core::provenance::TripleProvenanceParams;
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
 pub struct HolographicMemorySystem {
     core: Arc<HmsCore>,
+    memory: parking_lot::RwLock<Arc<crate::core::memory_api::Memory>>,
 }
 
 #[cfg(feature = "node-api")]
 fn napi_err(e: anyhow::Error) -> napi::Error {
     napi::Error::from_reason(e.to_string())
+}
+
+/// Memory API errors carry their class in a `[code]` prefix; `memory.js` turns it into
+/// `error.code`.
+#[cfg(feature = "node-api")]
+fn memory_err(e: anyhow::Error) -> napi::Error {
+    use crate::core::memory_api::MemoryError;
+    let code = match e.downcast_ref::<MemoryError>() {
+        Some(MemoryError::Invalid(_)) => "invalid_request",
+        Some(MemoryError::NotFound(_)) => "not_found",
+        Some(MemoryError::Conflict(_)) => "conflict",
+        None => "internal",
+    };
+    napi::Error::from_reason(format!("[{code}] {e}"))
 }
 
 #[cfg(feature = "node-api")]
@@ -261,9 +277,44 @@ impl HolographicMemorySystem {
     ) -> Result<Self> {
         let cfg = config.map(|c| c.into_config());
         let core = HmsCore::new(dimensions, storage_path, cfg).map_err(napi_err)?;
+        let core = Arc::new(core);
         Ok(Self {
-            core: Arc::new(core),
+            memory: parking_lot::RwLock::new(Arc::new(crate::core::memory_api::Memory::new(
+                core.clone(),
+            ))),
+            core,
         })
+    }
+
+    /// Replaces the memory API's configuration (policies and defaults; see
+    /// docs/memory-api). Pass nothing to restore the defaults.
+    #[napi]
+    pub fn configure_memory(&self, config: Option<serde_json::Value>) -> Result<()> {
+        let config: crate::core::memory_api::MemoryConfig = match config {
+            Some(value) => serde_json::from_value(value)
+                .map_err(|e| napi::Error::from_reason(format!("invalid memory config: {e}")))?,
+            None => Default::default(),
+        };
+        let memory = crate::core::memory_api::Memory::with_config(self.core.clone(), config)
+            .map_err(napi_err)?;
+        *self.memory.write() = Arc::new(memory);
+        Ok(())
+    }
+
+    /// One memory API operation as JSON in and JSON out: `remember`, `recall`, `explain`,
+    /// `forget`, `get`, `history`, `applyForgetting` or `consolidate`. The typed wrapper is
+    /// `Memory` in `memory.js`.
+    #[napi]
+    pub async fn memory_call(
+        &self,
+        op: String,
+        request: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let memory = self.memory.read().clone();
+        tokio::task::spawn_blocking(move || memory.call(&op, request))
+            .await
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?
+            .map_err(memory_err)
     }
 
     #[napi]

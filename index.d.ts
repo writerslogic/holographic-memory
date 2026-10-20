@@ -7,6 +7,17 @@ export declare class HolographicMemorySystem {
   chunkDocument(input: DocumentInput): Promise<Array<DocumentChunk>>
   searchDocuments(text: string, options?: SearchOptions | undefined | null): Promise<Array<DocumentResult>>
   deleteDocument(id: string): Promise<boolean>
+  /**
+   * Replaces the memory API's configuration (policies and defaults; see
+   * docs/memory-api). Pass nothing to restore the defaults.
+   */
+  configureMemory(config?: any | undefined | null): void
+  /**
+   * One memory API operation as JSON in and JSON out: `remember`, `recall`, `explain`,
+   * `forget`, `get`, `history`, `applyForgetting` or `consolidate`. The typed wrapper is
+   * `Memory` in `memory.js`.
+   */
+  memoryCall(op: string, request: any): Promise<any>
   securityStatus(): any
   get vectorCount(): number
   get nsgTrained(): boolean

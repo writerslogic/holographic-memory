@@ -173,6 +173,11 @@ impl DocumentStore {
         self.documents.values().cloned()
     }
 
+    /// A chunk's text from its inline copy or this store's text segment.
+    pub(crate) fn chunk_text(&self, chunk: &StoredChunk) -> Option<String> {
+        text_of(chunk, self.text.as_deref())
+    }
+
     pub(crate) fn contains_key(&self, id: &str) -> bool {
         self.documents.contains_key(id)
     }

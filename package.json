@@ -36,6 +36,11 @@
       "types": "./semantic.d.ts",
       "require": "./semantic.js",
       "import": "./semantic.js"
+    },
+    "./memory": {
+      "types": "./memory.d.ts",
+      "require": "./memory.js",
+      "import": "./memory.js"
     }
   },
   "types": "index.d.ts",
@@ -61,7 +66,7 @@
     "version": "napi version",
     "test": "node --test tests/node/*.test.cjs",
     "test:package": "node scripts/test-package.cjs",
-    "test:types": "tsc --noEmit --strict --target es2022 --module nodenext --moduleResolution nodenext --types node tests/node/types.test.mts"
+    "test:types": "tsc --noEmit --strict --target es2022 --module nodenext --moduleResolution nodenext --types node tests/node/types.test.mts tests/node/memory-types.test.mts"
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.7.4",
@@ -92,12 +97,15 @@
     "index.d.ts",
     "semantic.js",
     "semantic.d.ts",
+    "memory.js",
+    "memory.d.ts",
     "*.node",
     "README.md",
     "LICENSE",
     "docs/production-readiness.md",
     "docs/PRIVACY.md",
     "docs/INTEGRATION.md",
-    "docs/evaluation.md"
+    "docs/evaluation.md",
+    "docs/memory-api/README.md"
   ]
 }
