@@ -1,0 +1,23 @@
+{
+  "name": "holographic-memory",
+  "displayName": "Holographic Memory",
+  "version": "0.1.0",
+  "description": "Persistent, private, on-device memory for Claude Code: an MCP server (remember, recall, search, list, forget, export), a session-start hook and a usage skill.",
+  "author": {
+    "name": "WritersLogic, Inc.",
+    "email": "david@writerslogic.com"
+  },
+  "homepage": "https://github.com/writerslogic/holographic-memory/tree/main/docs/integrations/editors",
+  "repository": "https://github.com/writerslogic/holographic-memory",
+  "license": "Apache-2.0",
+  "keywords": ["memory", "mcp", "local-first", "recall"],
+  "userConfig": {
+    "namespace_strategy": {
+      "type": "string",
+      "title": "Where memories are kept",
+      "description": "project keeps a separate memory store per project directory; global shares one store across all projects.",
+      "options": ["project", "global"],
+      "default": "project"
+    }
+  }
+}

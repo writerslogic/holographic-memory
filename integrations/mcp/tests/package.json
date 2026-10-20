@@ -1,0 +1,12 @@
+{
+  "name": "hms-mcp-e2e",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 e2e.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1"
+  }
+}

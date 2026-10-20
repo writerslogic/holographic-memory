@@ -143,6 +143,28 @@ impl HmsCore {
         self.documents.read().contains_key(id)
     }
 
+    /// Number of stored documents.
+    pub fn document_count(&self) -> usize {
+        documents::count(&self.documents.read())
+    }
+
+    /// One stored document with its text, metadata and version.
+    pub fn get_document(&self, id: &str) -> Option<documents::DocumentRecord> {
+        let _transaction = self.mutation_gate.read();
+        documents::get_record(&self.documents.read(), id)
+    }
+
+    /// Up to `limit` stored documents with ids at or after `from`, in id order. Resume after id
+    /// `X` with `from = X + "\0"` (document ids cannot contain NUL).
+    pub fn list_documents(
+        &self,
+        from: Option<&str>,
+        limit: usize,
+    ) -> Vec<documents::DocumentRecord> {
+        let _transaction = self.mutation_gate.read();
+        documents::list_records(&self.documents.read(), from, limit)
+    }
+
     pub fn delete_document(&self, id: &str) -> Result<bool> {
         validate_id(id)?;
         let exists = self.documents.read().contains_key(id);

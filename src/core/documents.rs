@@ -16,12 +16,15 @@ use packed_terms::StoredTerms;
 
 mod dense;
 mod index;
+mod listing;
 mod postings;
 mod search;
 mod text;
 pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
 pub(crate) use index::DocumentStore;
 pub(crate) use index::DocumentWithText;
+pub use listing::DocumentRecord;
+pub(crate) use listing::{count, get_record, list_records};
 pub(crate) use search::{CapturedSearch, PreparedSearch};
 pub(crate) use text::TextSegment;
 

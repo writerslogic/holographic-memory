@@ -20,7 +20,7 @@ pub mod core;
 mod python;
 
 pub use crate::core::documents::{
-    chunk_document, DocumentChunk, DocumentInput, DocumentResult, SearchOptions,
+    chunk_document, DocumentChunk, DocumentInput, DocumentRecord, DocumentResult, SearchOptions,
 };
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::HmsError;

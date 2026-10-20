@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "holographic-memory": {
+      "command": "npx",
+      "args": ["-y", "holographic-memory-mcp"],
+      "disabled": false,
+      "autoApprove": ["recall", "search", "get", "list", "stats"]
+    }
+  }
+}

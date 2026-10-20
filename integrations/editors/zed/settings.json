@@ -1,0 +1,9 @@
+{
+  "context_servers": {
+    "holographic-memory": {
+      "command": "npx",
+      "args": ["-y", "holographic-memory-mcp"],
+      "env": {}
+    }
+  }
+}

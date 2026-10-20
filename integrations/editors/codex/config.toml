@@ -1,0 +1,7 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+# Merge into ~/.codex/config.toml (or a trusted project's .codex/config.toml).
+[mcp_servers.holographic-memory]
+command = "npx"
+args = ["-y", "holographic-memory-mcp"]
+startup_timeout_sec = 60

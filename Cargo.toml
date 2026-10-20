@@ -60,6 +60,9 @@ candle-nn = { version = "0.11", optional = true }
 candle-transformers = { version = "0.11", optional = true }
 tokenizers = { version = "0.23", default-features = false, features = ["fancy-regex"], optional = true }
 rust-stemmers = "1.2.0"
+# MCP server (`hms-mcp`): the official Rust SDK; client + child-process transport serve the tests.
+rmcp = { version = "3.6", default-features = false, features = ["server", "client", "transport-io", "transport-child-process", "transport-streamable-http-server"], optional = true }
+tokio-util = { version = "0.7", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 candle-core = { version = "0.11", features = ["metal"], optional = true }
@@ -124,6 +127,9 @@ local-models = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "
 private-search = ["zeroize", "rand/chacha"]
 # HTTP service for the holographic-sdk Python client (`hms-server` binary).
 server = ["tokio", "axum", "subtle"]
+# MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
+# semantic recall needs `local-models`.
+mcp = ["dep:rmcp", "dep:tokio-util", "tokio", "axum", "subtle"]
 
 [[bin]]
 name = "hms-eval"
@@ -137,6 +143,11 @@ path = "src/bin/hms-admin.rs"
 name = "hms-server"
 path = "src/bin/hms-server.rs"
 required-features = ["server"]
+
+[[bin]]
+name = "hms-mcp"
+path = "src/bin/hms-mcp.rs"
+required-features = ["mcp"]
 
 # Experiment harnesses that depend on `experimental` modules. Declared
 # explicitly so they only build with `--features experimental`; the remaining
