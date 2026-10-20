@@ -3,6 +3,7 @@ name: Changelog
 on:
   push:
     branches: [main]
+    tags: ["v*"]
 
 permissions:
   contents: read
@@ -23,6 +24,12 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
       - name: Verify changelog is up to date
+        # CHANGELOG.md is regenerated when a release is prepared, so every squash-merge to main
+        # makes it stale by one commit. main only warns; a release tag must have it current.
+        env:
+          REF_TYPE: ${{ github.ref_type }}
         run: |
           set -euo pipefail
-          git diff --exit-code -- CHANGELOG.md
+          if git diff --exit-code -- CHANGELOG.md; then exit 0; fi
+          echo "::warning::CHANGELOG.md is stale; run git cliff -c cliff.toml -o CHANGELOG.md and commit it as chore: update changelog"
+          [ "$REF_TYPE" != "tag" ]

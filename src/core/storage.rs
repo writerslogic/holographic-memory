@@ -729,6 +729,26 @@ impl PersistentArena {
         Ok(PreparedCompaction { arena: staged })
     }
 
+    fn generation_path(&self) -> Result<(String, PathBuf)> {
+        let name = format!(
+            "gen-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)?
+                .as_nanos()
+        );
+        let path = self.base_path.join(&name);
+        Ok((name, path))
+    }
+
+    /// Creates the empty directory a compaction stages into, already named as the generation
+    /// it will become, so publishing it never renames a directory holding mapped files.
+    pub(crate) fn new_generation_dir(&self) -> Result<PathBuf> {
+        let (_, path) = self.generation_path()?;
+        std::fs::create_dir(&path)?;
+        Ok(path)
+    }
+
     pub(crate) fn replace_with_compacted(&self, prepared: PreparedCompaction) -> Result<()> {
         let staged = prepared.arena;
         ensure!(
@@ -739,15 +759,25 @@ impl PersistentArena {
         staged.flush()?;
         let temp_base = staged.base_path.clone();
         super::durable_file::sync_directory(&temp_base)?;
-        let generation = format!(
-            "gen-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)?
-                .as_nanos()
-        );
-        let new_path = self.base_path.join(&generation);
-        std::fs::rename(&temp_base, &new_path)?;
+        // A generation staged in place (see `new_generation_dir`) needs no rename: Windows
+        // refuses to rename a directory whose files are memory mapped.
+        let staged_in_place = temp_base.parent() == Some(self.base_path.as_path())
+            && temp_base
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("gen-"));
+        let (generation, new_path) = if staged_in_place {
+            let name = temp_base
+                .file_name()
+                .and_then(|n| n.to_str())
+                .context("staged generation name")?
+                .to_owned();
+            (name, temp_base.clone())
+        } else {
+            let (name, path) = self.generation_path()?;
+            std::fs::rename(&temp_base, &path)?;
+            (name, path)
+        };
         super::durable_file::sync_directory(&self.base_path)?;
         let replacement = staged;
         #[cfg(test)]
