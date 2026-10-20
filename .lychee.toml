@@ -1,0 +1,18 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# External link check for the README and the documentation site (docs.yml).
+accept = ["200..=299", "403", "429"]
+max_concurrency = 8
+timeout = 30
+exclude = [
+  # Badge services render images on demand and rate-limit CI runners.
+  "^https://img\\.shields\\.io/",
+  "^https://securityscorecards\\.dev/",
+  # Pages for this repository exist only after the first deploy.
+  "^https://writerslogic\\.github\\.io/holographic-memory/",
+  # Local addresses used in examples.
+  "^https?://(127\\.0\\.0\\.1|localhost)",
+  "^https?://0\\.0\\.0\\.0",
+]
+exclude_path = ["docs/research"]

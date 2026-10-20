@@ -1,22 +1,22 @@
-## Description
-<!-- Provide a brief summary of the changes and the problem they solve. -->
+## What and why
+<!-- The change and the problem it solves. Link the issue: "Closes #123". -->
 
-## Type of Change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Performance improvement
+## Type of change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation
+- [ ] Performance
+- [ ] Refactor or chore
 
 ## Checklist
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published in downstream modules
+- [ ] Every commit is signed off (`git commit -s`); see [CONTRIBUTING.md](../CONTRIBUTING.md#sign-off-your-commits-dco)
+- [ ] `cargo fmt -- --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` pass, and so do the same with `--all-features`
+- [ ] A bug fix or new logic has a test that fails without the change, or the description says why not
+- [ ] A change that depends on a Cargo feature builds under the feature combinations CI runs
+- [ ] Any number in the docs or README traces to a committed file under `benchmarks/results/`, with the tested range stated
+- [ ] Documentation updated where behavior changed
+- [ ] New files carry the Apache-2.0 header
 
-## Screenshots (if applicable)
-<!-- Add screenshots to help explain your changes. -->
+## How I verified it
+<!-- The command you ran and what it showed. For a UI or export change, the real surface. -->

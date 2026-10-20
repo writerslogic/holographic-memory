@@ -1,0 +1,54 @@
+# Top-level order of the site. Every area is a glob over its own folder, so a page added under
+# docs/<area>/ appears here with no edit to this file or to mkdocs.yml. Globs that match nothing
+# yet are silent (see `logs` in mkdocs.yml). Give a page's position inside an area with a
+# docs/<area>/.nav.yml of its own.
+nav:
+  - Home: index.md
+  - Quickstart:
+      - quickstart/index.md
+      - quickstart/offline-agent.md
+      - quickstart/**/*.md
+  - Concepts:
+      - concepts/index.md
+      - concepts/holographic.md
+      - concepts/lossy.md
+      - concepts/capacity.md
+      - concepts/privacy-limits.md
+      - concepts/**/*.md
+      - ARCHITECTURE.md
+      - production-readiness.md
+  - API:
+      - api/**/*.md
+      - INTEGRATION.md
+      - SERVER.md
+  - Embeddings:
+      - embeddings/**/*.md
+  - Memory API:
+      - memory-api/**/*.md
+  - File format:
+      - file-format/**/*.md
+  - Integrations:
+      - integrations/**/*.md
+  - Runtimes:
+      - runtimes/**/*.md
+  - Importers:
+      - importers/**/*.md
+  - Benchmarks:
+      - benchmarks/**/*.md
+      - PUBLIC-BENCHMARKS.md
+      - evaluation.md
+      - COMPARISON.md
+  - Security and privacy:
+      - security/**/*.md
+      - PRIVACY.md
+      - SECURITY.md
+      - PRIVATE-SEARCH.md
+  - Releasing:
+      - releasing/**/*.md
+  - Research:
+      - RESEARCH.md
+      - SUPERPOSITION-FLOOR.md
+      - DETERMINISTIC-RESONATOR.md
+      - SCOREBOARD.md
+      - COMPETITORS.md
+  - ...

@@ -1,0 +1,2 @@
+query                                                      HMS       FTS5      expected
+top-1 correct: HMS 0/0, FTS5 0/0
