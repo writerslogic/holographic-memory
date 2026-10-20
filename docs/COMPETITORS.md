@@ -9,7 +9,7 @@ HMS's repeatedly inspected 100-question S dev result and a vendor's full
 |---|---|---|---|
 | Zep managed memory | [Research page](https://www.getzep.com/research/), retrieved 2026-10-09; service revision undisclosed | LongMemEval 451/500; reader `gpt-5.4`, medium reasoning; judge `gpt-5.4`, chain-of-thought grading; median context 4,408 tokens; multi-scope retrieval | |
 | Mem0 managed v3, top-50 | [Benchmark README](https://github.com/mem0ai/memory-benchmarks/blob/4b61c5d31b9c668a12b4f5e78064248a02c82d2b/README.md); managed service revision undisclosed | S cleaned 474/500 at top-50; 472/500 at top-200; proprietary platform, distinct from OSS | |
-| FAISS HNSW, IVF-PQ | Cached `faiss-cpu==1.15.1`; [v1.15.1](https://github.com/facebookresearch/faiss/tree/7ea7339886edf8b4d9e719f593a5dfccff158274), commit `7ea7339886edf8b4d9e719f593a5dfccff158274` | | |
+| FAISS HNSW, IVF-PQ | Cached `faiss-cpu==1.15.1`; [v1.15.1](https://github.com/facebookresearch/faiss/tree/75c755c5a1fc854756aaf3bd1131213aeb21d8d1), commit `75c755c5a1fc854756aaf3bd1131213aeb21d8d1` | | |
 | hnswlib | Cached `hnswlib==0.8.0`; [v0.8.0](https://github.com/nmslib/hnswlib/tree/3f3429661187e4c24a490a0f148fc6bc89042b3d), commit `3f3429661187e4c24a490a0f148fc6bc89042b3d` | | |
 | SymphonyQG | [Author repository](https://github.com/gouyt13/SymphonyQG/tree/6124ddb34ee4d176edea1bd7ad38d1672343df28), commit `6124ddb34ee4d176edea1bd7ad38d1672343df28`; cached author library `rabitqlib==0.5.2` | | |
 | RaBitQ-Library | [Author repository](https://github.com/vectordb-ntu/RaBitQ-Library/tree/9454d54939858299fdf7ac05e7dd115a7199d561), commit `9454d54939858299fdf7ac05e7dd115a7199d561`; cached `rabitqlib==0.5.2` | | |
