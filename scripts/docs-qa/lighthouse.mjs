@@ -14,6 +14,8 @@ const port = Number(process.env.PORT ?? 8123)
 const debugPort = Number(process.env.DEBUG_PORT ?? 9333)
 const version = process.env.VERSION ?? 'dev'
 const threshold = Number(process.env.THRESHOLD ?? 95)
+// Shared CI runners are slower and noisier than a workstation: the performance floor can be set lower there.
+const floors = { performance: Number(process.env.PERF_THRESHOLD ?? threshold) }
 const paths = extra.length ? extra : ['/', '/concepts/holographic/']
 const categories = ['performance', 'accessibility', 'best-practices', 'seo']
 
@@ -28,7 +30,7 @@ try {
       const result = await lighthouse(url, { port: debugPort, output: 'json', logLevel: 'error', onlyCategories: categories }, config)
       const scores = Object.fromEntries(categories.map(c => [c, Math.round(result.lhr.categories[c].score * 100)]))
       rows.push({ path, name, ...scores })
-      if (Object.values(scores).some(s => s < threshold)) {
+      if (categories.some(c => scores[c] < (floors[c] ?? threshold))) {
         failed = true
         for (const audit of Object.values(result.lhr.audits)) {
           if (audit.score !== null && audit.score < 0.9 && audit.scoreDisplayMode !== 'informative' && audit.scoreDisplayMode !== 'notApplicable') {

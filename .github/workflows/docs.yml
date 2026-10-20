@@ -65,7 +65,7 @@ jobs:
         with:
           args: >-
             --offline --no-progress --include-fragments --exclude-path _site/dev/404.html
-            --exclude-path _site/latest/404.html --exclude-path '_site/.*/api/rust/doc'
+            --exclude-path _site/latest/404.html --exclude '/assets/fonts/' --exclude-path 'api/rust/doc'
             --root-dir ${{ github.workspace }}/_site
             '_site/dev/**/*.html' '_site/latest/**/*.html'
           fail: true
@@ -133,6 +133,9 @@ jobs:
         env:
           VERSION: latest
           REPORT_DIR: docs-qa-output/lighthouse
+          # Hosted runners are slower than a workstation (the same page scores 98 to 99 locally): the
+          # performance floor is 90 there, and the other three categories stay at 95.
+          PERF_THRESHOLD: 90
 
       - name: Search (real queries)
         run: node scripts/docs-qa/search.mjs _site

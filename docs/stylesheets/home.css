@@ -40,7 +40,7 @@
 .hms-field circle { fill: none; stroke-width: 1.5; }
 .hf-a circle { stroke: var(--hms-accent); }
 .hf-b circle { stroke: var(--hms-violet); }
-.hf-rim { stroke: url(#hf-rim-grad); stroke: var(--hms-border-strong) !important; stroke-width: 2 !important; }
+.hf-rim { stroke: var(--hms-border-strong) !important; stroke-width: 2 !important; }
 [data-md-color-scheme="slate"] .hf-b { mix-blend-mode: screen; }
 [data-md-color-scheme="default"] .hf-b { mix-blend-mode: multiply; }
 .hf-a { animation: hf-a 18s ease-in-out infinite alternate; }
