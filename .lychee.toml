@@ -15,4 +15,4 @@ exclude = [
   "^https?://(127\\.0\\.0\\.1|localhost)",
   "^https?://0\\.0\\.0\\.0",
 ]
-exclude_path = ["docs/research"]
+exclude_path = ["docs/research", "_site/dev/404.html"]
