@@ -100,7 +100,7 @@ class System:
                 for q in [p, *p.children(recursive=True)]:
                     total += q.memory_info().rss
             except psutil.Error:
-                pass
+                continue  # the process exited between listing and reading
         return total / 2**20
 
     def stop(self) -> None:
@@ -120,7 +120,7 @@ class System:
                         if r.status < 500:
                             return
                 except aiohttp.ClientError:
-                    pass
+                    await asyncio.sleep(0)  # not up yet; retried below
                 await asyncio.sleep(0.2)
         raise RuntimeError(f"{self.name} did not become ready")
 
@@ -147,10 +147,11 @@ class System:
         return {}
 
     async def start(self) -> None:
-        log = open(self.workdir / f"{self.name}-{self.variant}.log", "wb")
-        self.proc = subprocess.Popen(
-            self.command(), stdout=log, stderr=log, env={**os.environ, **self.env()}, cwd=self.workdir
-        )
+        with open(self.workdir / f"{self.name}-{self.variant}.log", "wb") as log:
+            # The child inherits the descriptor, so closing ours after the spawn is safe.
+            self.proc = subprocess.Popen(
+                self.command(), stdout=log, stderr=log, env={**os.environ, **self.env()}, cwd=self.workdir
+            )
         await self.wait_http(self.ready_path)
 
     ready_path = "/healthz"
@@ -393,7 +394,7 @@ async def compare(args: argparse.Namespace) -> None:
             lambda w: Hms(w, args.hms_bin, True, args.hms_work),
             lambda w: Qdrant(w, args.qdrant_bin, False),
             lambda w: Qdrant(w, args.qdrant_bin, True),
-            lambda w: SqliteFastApi(w),
+            SqliteFastApi,
         ]
         for make in factories:
             with tempfile.TemporaryDirectory(prefix="hmsbench-") as tmp:
@@ -454,8 +455,10 @@ async def soak(args: argparse.Namespace) -> None:
            "--tenant-idle-seconds", "4", "--compaction-interval-seconds", "20", "--log-level", "warn"]
     base = f"http://127.0.0.1:{port}"
 
+    server_log = open(work / "server.log", "ab")  # closed when the soak ends
+
     def launch() -> subprocess.Popen:
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=open(work / "server.log", "ab"))
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=server_log)
 
     proc = launch()
     proc.stdout.readline()
@@ -537,7 +540,7 @@ async def soak(args: argparse.Namespace) -> None:
                     "evictions": kv.get("hms_tenant_evictions_total"),
                 })
             except aiohttp.ClientError:
-                pass
+                continue  # a missed sample is not an error
 
     conn = aiohttp.TCPConnector(limit=64)
     async with aiohttp.ClientSession(connector=conn, timeout=aiohttp.ClientTimeout(total=60)) as s:
@@ -604,6 +607,7 @@ async def soak(args: argparse.Namespace) -> None:
         "restart_mismatch_tenants": restart_mismatches,
         "sigterm_exit_code": exit_code,
     }
+    server_log.close()
     Path(args.out).write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k not in ("samples", "environment")}, indent=2))
 
