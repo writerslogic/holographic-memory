@@ -32,7 +32,7 @@ pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig)
     let expected = StoreSchema {
         version: 2,
         dimensions,
-        text_encoder: "multiscale-words-v1".into(),
+        text_encoder: config.text_encoder.name().into(),
         vector_encoder: "signed-projection-v2".into(),
         metric: "jaccard".into(),
         encrypted: config.security.encryption_enabled,

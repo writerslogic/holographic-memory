@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, ensure, Context, Result};
 use crc32fast::Hasher;
 use memmap2::{Mmap, MmapMut};
 use parking_lot::RwLock;
@@ -10,12 +10,17 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
+mod staging;
+pub(crate) use staging::StagedArena;
+
 pub(crate) const FORMAT_MANIFEST: &str = "format.json";
 pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
-pub const STORAGE_FORMAT_VERSION: u32 = 2;
+pub const STORAGE_FORMAT_VERSION: u32 = 4;
 
-/// Fixed segment size for mmap arena (1 GB).
-pub(crate) const SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
+pub(crate) const SEGMENT_SIZE: usize = 64 * 1024 * 1024;
+pub(crate) const LEGACY_SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
+// Windows requires unmapping all views before extending a mapped file.
+const INCREMENTAL_ALLOCATION: bool = cfg!(unix);
 /// Frame header: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32]
 pub(crate) const HEADER_SIZE: usize = 16;
 /// Maximum decompressed frame payload (50 MB). Used consistently in
@@ -64,24 +69,43 @@ pub struct ArenaStats {
 /// Note: `version_counter` resets to 0 on restart (no WAL recovery).
 /// Every entry is framed: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32][Data: bytes]
 pub struct PersistentArena {
+    segment_size: usize,
+    format_version: u32,
     base_path: PathBuf,
     data_path: RwLock<PathBuf>,
     read_segments: RwLock<Vec<Arc<Mmap>>>,
     active_segment: Arc<RwLock<MmapMut>>,
     active_id: AtomicUsize,
     write_offset: AtomicUsize,
+    active_capacity: AtomicUsize,
     version_counter: AtomicUsize,
+}
+
+pub(crate) struct PreparedCompaction {
+    arena: PersistentArena,
+}
+
+impl PreparedCompaction {
+    pub(crate) fn append_frame(&mut self, data: &[u8]) -> Result<()> {
+        let offset = self.arena.write_frame(data, false)?;
+        let (written, _) = self.arena.read_frame(offset)?;
+        anyhow::ensure!(
+            written == data,
+            "compaction replay frame changed after writing"
+        );
+        Ok(())
+    }
 }
 
 impl PersistentArena {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
-        Self::validate_or_create_manifest(&base)?;
+        let manifest = Self::validate_or_create_manifest(&base)?;
+        let data_path = super::durable_file::arena_generation(&base)?;
         if let Some(store) = base.parent() {
             super::durable_file::verify_manifests(store, &base)?;
         }
-        let data_path = super::durable_file::arena_generation(&base)?;
 
         let mut id = 0;
         loop {
@@ -109,7 +133,21 @@ impl PersistentArena {
             .create(true)
             .truncate(false)
             .open(&active_path)?;
-        file.set_len(SEGMENT_SIZE as u64)?;
+        let active_capacity = if manifest.version >= 4 && INCREMENTAL_ALLOCATION {
+            let length = file.metadata()?.len();
+            ensure!(
+                length <= manifest.segment_size as u64,
+                "active segment exceeds its declared size"
+            );
+            usize::try_from(length)
+                .context("arena capacity exceeds address space")?
+                .max(SEGMENT_SIZE)
+                .div_ceil(SEGMENT_SIZE)
+                * SEGMENT_SIZE
+        } else {
+            manifest.segment_size
+        };
+        file.set_len(active_capacity as u64)?;
         file.sync_all()?;
         let mut mut_map = unsafe { MmapMut::map_mut(&file)? };
 
@@ -125,12 +163,15 @@ impl PersistentArena {
         }
 
         Ok(Self {
+            segment_size: manifest.segment_size,
+            format_version: manifest.version,
             base_path: base,
             data_path: RwLock::new(data_path),
             read_segments: RwLock::new(segments),
             active_segment: Arc::new(RwLock::new(mut_map)),
             active_id: AtomicUsize::new(active_id),
             write_offset: AtomicUsize::new(recovered_offset),
+            active_capacity: AtomicUsize::new(active_capacity),
             version_counter: AtomicUsize::new(if recovered_offset > 0 {
                 max_version as usize + 1
             } else {
@@ -139,12 +180,17 @@ impl PersistentArena {
         })
     }
 
-    fn validate_or_create_manifest(base: &Path) -> Result<()> {
+    fn validate_or_create_manifest(base: &Path) -> Result<FormatManifest> {
         let path = base.join(FORMAT_MANIFEST);
-        if path.exists() {
-            let bytes = std::fs::read(&path)?;
+        let source = if path.exists() {
+            path.clone()
+        } else {
+            super::durable_file::arena_generation(base)?.join(FORMAT_MANIFEST)
+        };
+        if source.exists() {
+            let bytes = std::fs::read(&source)?;
             let manifest: FormatManifest = serde_json::from_slice(&bytes)
-                .map_err(|e| anyhow!("Invalid HMS storage manifest {}: {}", path.display(), e))?;
+                .map_err(|e| anyhow!("Invalid HMS storage manifest {}: {}", source.display(), e))?;
             if manifest.magic != FORMAT_MAGIC {
                 return Err(anyhow!(
                     "Storage manifest has unknown magic: {}",
@@ -158,36 +204,46 @@ impl PersistentArena {
                     STORAGE_FORMAT_VERSION
                 ));
             }
-            if manifest.segment_size != SEGMENT_SIZE {
+            let expected = if manifest.version == 3 {
+                SEGMENT_SIZE
+            } else {
+                LEGACY_SEGMENT_SIZE
+            };
+            if manifest.segment_size != expected {
                 return Err(anyhow!(
                     "Storage segment size mismatch: manifest={}, runtime={}",
                     manifest.segment_size,
-                    SEGMENT_SIZE
+                    expected
                 ));
             }
-            return Ok(());
+            if source != path {
+                super::durable_file::atomic_write(&path, &bytes)?;
+            }
+            return Ok(manifest);
         }
 
         // Pre-manifest stores are format v1. Creating the manifest is a backward-compatible
         // migration and does not rewrite their framed data.
+        let legacy = source.with_file_name("seg_0.bin").exists();
         let manifest = FormatManifest {
             magic: FORMAT_MAGIC.to_string(),
-            version: STORAGE_FORMAT_VERSION,
-            segment_size: SEGMENT_SIZE,
+            version: if legacy { 2 } else { STORAGE_FORMAT_VERSION },
+            segment_size: LEGACY_SEGMENT_SIZE,
         };
         super::durable_file::atomic_write(&path, &serde_json::to_vec_pretty(&manifest)?)?;
-        Ok(())
+        Ok(manifest)
     }
 
     pub fn stats(&self) -> ArenaStats {
         let segment_count = self.active_id.load(Ordering::Acquire) + 1;
-        let used_bytes = self.active_id.load(Ordering::Acquire) * SEGMENT_SIZE
+        let used_bytes = self.active_id.load(Ordering::Acquire) * self.segment_size
             + self.write_offset.load(Ordering::Acquire);
         ArenaStats {
-            format_version: STORAGE_FORMAT_VERSION,
+            format_version: self.format_version.max(2),
             segment_count,
             used_bytes,
-            capacity_bytes: segment_count * SEGMENT_SIZE,
+            capacity_bytes: (segment_count - 1) * self.segment_size
+                + self.active_capacity.load(Ordering::Acquire),
         }
     }
 
@@ -199,8 +255,6 @@ impl PersistentArena {
             .map_err(|e| anyhow!("mmap flush failed: {}", e))
     }
 
-    /// Walk CRC32-framed entries in the active segment to find the first free offset
-    /// and the highest version number present.
     /// Walk CRC32-framed entries in the active segment to find the first free offset
     /// and the highest version number present. A frame that fails its checks ends the walk
     /// only when nothing valid follows it (a crash-truncated append); a bad frame with a
@@ -313,24 +367,29 @@ impl PersistentArena {
     }
 
     pub fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
-        let seg_idx = global_offset / SEGMENT_SIZE;
+        // Rotation and publication take active before segments; retain both to select one mapping.
+        let active = self.active_segment.read();
+        let reader = self.read_segments.read();
+        let seg_idx = global_offset / self.segment_size;
         if seg_idx > self.active_id.load(Ordering::Acquire) {
             return Err(anyhow!("read beyond final arena segment"));
         }
-        let local_offset = global_offset % SEGMENT_SIZE;
-
-        let reader = self.read_segments.read();
+        let local_offset = global_offset % self.segment_size;
+        let end = local_offset
+            .checked_add(len)
+            .ok_or_else(|| anyhow!("arena read length overflow"))?;
+        if end > self.segment_size {
+            return Err(anyhow!("read exceeds arena segment"));
+        }
         if seg_idx < reader.len() {
             let seg = &reader[seg_idx];
-            if local_offset + len <= seg.len() {
-                return Ok(seg[local_offset..local_offset + len].to_vec());
+            if end <= seg.len() {
+                return Ok(seg[local_offset..end].to_vec());
             }
+            return Err(anyhow!("read exceeds arena segment"));
         }
-        drop(reader);
-
-        let active = self.active_segment.read();
-        if local_offset + len <= active.len() {
-            Ok(active[local_offset..local_offset + len].to_vec())
+        if end <= active.len() {
+            Ok(active[local_offset..end].to_vec())
         } else {
             Err(anyhow!(
                 "Read out of bounds: offset {}, len {}",
@@ -364,7 +423,7 @@ impl PersistentArena {
             ));
         }
         // Compressed data cannot exceed a full segment; reject to prevent OOM.
-        if comp_len > SEGMENT_SIZE {
+        if comp_len > self.segment_size {
             return Err(anyhow!(
                 "Suspiciously large compressed frame length: {} at {}",
                 comp_len,
@@ -415,20 +474,24 @@ impl PersistentArena {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
         }
         let next = global_offset + HEADER_SIZE + comp_len;
-        let segment = global_offset / SEGMENT_SIZE;
+        let segment = global_offset / self.segment_size;
         if segment < self.active_id.load(Ordering::Acquire) {
-            if next % SEGMENT_SIZE + HEADER_SIZE > SEGMENT_SIZE {
-                return Ok((segment + 1) * SEGMENT_SIZE);
+            if next % self.segment_size + HEADER_SIZE > self.segment_size {
+                return Ok((segment + 1) * self.segment_size);
             }
             let header = self.read_slice(next, HEADER_SIZE)?;
             if is_log_end(&header) {
-                return Ok((segment + 1) * SEGMENT_SIZE);
+                return Ok((segment + 1) * self.segment_size);
             }
         }
         Ok(next)
     }
 
     pub fn write_slice(&self, data: &[u8]) -> Result<usize> {
+        self.write_frame(data, true)
+    }
+
+    fn write_frame(&self, data: &[u8], durable: bool) -> Result<usize> {
         let raw_len = data.len();
         if raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE {
             return Err(anyhow!(
@@ -468,18 +531,22 @@ impl PersistentArena {
 
         // Check-then-reserve under write lock to avoid wasting space at segment boundaries.
         let mut offset = self.write_offset.load(Ordering::Acquire);
-        if offset + total_frame_len > SEGMENT_SIZE {
+        if offset + total_frame_len > self.segment_size {
             self.rotate_segment_locked(&mut active)?;
             offset = 0;
+        }
+        if offset + total_frame_len > active.len() {
+            self.grow_segment_locked(&mut active, offset + total_frame_len)?;
         }
         self.write_offset
             .store(offset + total_frame_len, Ordering::Release);
 
         // SAFETY: we hold the exclusive write lock, so no concurrent writers.
-        // offset + total_frame_len <= SEGMENT_SIZE was verified above.
+        // Growth and rotation ensure offset + total_frame_len fits the guarded mapping.
         // Each copy_nonoverlapping targets a distinct, non-overlapping range:
         //   [offset..+4], [offset+4..+8], [offset+8..+12], [offset+12..+16], [offset+16..+16+comp_len]
-        debug_assert!(offset + total_frame_len <= SEGMENT_SIZE);
+        debug_assert!(offset + total_frame_len <= self.segment_size);
+        debug_assert!(offset + total_frame_len <= active.len());
         debug_assert!(total_frame_len == HEADER_SIZE + comp_len);
         unsafe {
             let ptr = active.as_ptr() as *mut u8;
@@ -511,11 +578,41 @@ impl PersistentArena {
         } else {
             0
         };
-        active
-            .flush_range(offset, total_frame_len + sentinel_len)
-            .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
-        let global = self.active_id.load(Ordering::SeqCst) * SEGMENT_SIZE + offset;
+        if durable {
+            active
+                .flush_range(offset, total_frame_len + sentinel_len)
+                .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
+        }
+        let global = self.active_id.load(Ordering::SeqCst) * self.segment_size + offset;
         Ok(global)
+    }
+
+    fn grow_segment_locked(
+        &self,
+        active: &mut parking_lot::RwLockWriteGuard<'_, MmapMut>,
+        required: usize,
+    ) -> Result<()> {
+        ensure!(
+            self.format_version >= 4
+                && INCREMENTAL_ALLOCATION
+                && required <= self.segment_size
+                && required > active.len(),
+            "invalid arena growth request"
+        );
+        let capacity = required.div_ceil(SEGMENT_SIZE) * SEGMENT_SIZE;
+        let path = self.data_path.read().join(format!(
+            "seg_{}.bin",
+            self.active_id.load(Ordering::Acquire)
+        ));
+        let file = OpenOptions::new().read(true).write(true).open(path)?;
+        active.flush()?;
+        file.set_len(capacity as u64)?;
+        file.sync_all()?;
+        // SAFETY: the writer guard excludes all readers and the file has its new durable length.
+        let mapping = unsafe { MmapMut::map_mut(&file)? };
+        **active = mapping;
+        self.active_capacity.store(capacity, Ordering::Release);
+        Ok(())
     }
 
     /// Rotate to a new segment. Caller must hold the write lock on active_segment
@@ -542,29 +639,106 @@ impl PersistentArena {
             .create(true)
             .truncate(false)
             .open(&next_path)?;
-        next_file.set_len(SEGMENT_SIZE as u64)?;
+        let capacity = if self.format_version >= 4 && INCREMENTAL_ALLOCATION {
+            SEGMENT_SIZE
+        } else {
+            self.segment_size
+        };
+        next_file.set_len(capacity as u64)?;
         next_file.sync_all()?;
         super::durable_file::sync_directory(&self.data_path.read())?;
         let next_map = unsafe { MmapMut::map_mut(&next_file)? };
 
         **active = next_map;
+        self.active_capacity.store(capacity, Ordering::Release);
         self.active_id.store(next_id, Ordering::SeqCst);
         self.write_offset.store(0, Ordering::SeqCst);
         Ok(())
     }
 
-    pub fn replace_with_compacted(&self, temp_base: &Path) -> Result<()> {
-        let staged = Self::new(temp_base)?;
+    pub(crate) fn replay_compaction_tail(
+        &self,
+        prepared: &mut PreparedCompaction,
+        cursor: &mut usize,
+        end: usize,
+    ) -> Result<()> {
+        ensure!(
+            *cursor <= end,
+            "compaction journal checkpoint moved backwards"
+        );
+        while *cursor < end {
+            let segment_end = (*cursor / self.segment_size)
+                .checked_add(1)
+                .and_then(|segment| segment.checked_mul(self.segment_size))
+                .context("compaction segment boundary overflow")?;
+            let header_end = cursor
+                .checked_add(HEADER_SIZE)
+                .context("compaction frame header overflow")?;
+            if header_end > segment_end {
+                ensure!(segment_end <= end, "truncated compaction replay header");
+                *cursor = segment_end;
+                continue;
+            }
+            ensure!(header_end <= end, "truncated compaction replay header");
+            let header = self.read_slice(*cursor, HEADER_SIZE)?;
+            if is_log_end(&header) {
+                ensure!(segment_end <= end, "empty compaction replay frame");
+                *cursor = segment_end;
+                continue;
+            }
+            let raw = u32::from_le_bytes(header[4..8].try_into()?) as usize;
+            let compressed = u32::from_le_bytes(header[8..12].try_into()?) as usize;
+            ensure!(
+                (1..=MAX_RAW_FRAME_SIZE).contains(&raw) && (1..=raw).contains(&compressed),
+                "invalid compaction replay frame lengths"
+            );
+            let next = header_end
+                .checked_add(compressed)
+                .context("compaction replay frame length overflow")?;
+            ensure!(
+                next <= end && next <= segment_end,
+                "compaction replay frame exceeds its captured boundary"
+            );
+            let (data, _) = self
+                .read_frame(*cursor)
+                .with_context(|| format!("cannot replay compaction frame at {}", *cursor))?;
+            prepared.append_frame(&data)?;
+            *cursor = next;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn prepare_compacted(self) -> Result<PreparedCompaction> {
+        let staged = self;
+        let temp_base = staged.base_path.clone();
         for i in 0..staged.stats().segment_count {
             let path = temp_base.join(format!("seg_{i}.bin"));
             let file = File::open(&path)?;
             // SAFETY: the staged arena has no concurrent writer.
             let map = unsafe { Mmap::map(&file)? };
-            super::admin::inspect_segment(&map, &path, true)?;
+            let (_, bytes) = super::admin::inspect_segment(&map, &path, true)?;
+            if i == staged.active_id.load(Ordering::Acquire) {
+                anyhow::ensure!(
+                    bytes == staged.write_offset.load(Ordering::Acquire),
+                    "staged arena length changed before publication"
+                );
+            }
         }
         staged.flush()?;
-        super::durable_file::sync_directory(temp_base)?;
-        drop(staged);
+        super::durable_file::sync_directory(&temp_base)?;
+        Ok(PreparedCompaction { arena: staged })
+    }
+
+    pub(crate) fn replace_with_compacted(&self, prepared: PreparedCompaction) -> Result<()> {
+        let staged = prepared.arena;
+        ensure!(
+            staged.segment_size == self.segment_size
+                && staged.format_version == self.format_version,
+            "compaction storage geometry differs from the live arena"
+        );
+        staged.flush()?;
+        let temp_base = staged.base_path.clone();
+        super::durable_file::sync_directory(&temp_base)?;
         let generation = format!(
             "gen-{}-{}",
             std::process::id(),
@@ -573,9 +747,9 @@ impl PersistentArena {
                 .as_nanos()
         );
         let new_path = self.base_path.join(&generation);
-        std::fs::rename(temp_base, &new_path)?;
+        std::fs::rename(&temp_base, &new_path)?;
         super::durable_file::sync_directory(&self.base_path)?;
-        let replacement = Self::new(&new_path)?;
+        let replacement = staged;
         #[cfg(test)]
         compaction_crash_point("staged");
         let mut active = self.active_segment.write();
@@ -597,6 +771,10 @@ impl PersistentArena {
         std::mem::swap(&mut *active, &mut *replacement.active_segment.write());
         std::mem::swap(&mut *segments, &mut *replacement.read_segments.write());
         let old_path = std::mem::replace(&mut *data_path, new_path);
+        self.active_capacity.store(
+            replacement.active_capacity.load(Ordering::Acquire),
+            Ordering::Release,
+        );
         self.active_id.store(
             replacement.active_id.load(Ordering::Acquire),
             Ordering::Release,
@@ -664,6 +842,37 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
+    fn reads_remain_on_the_requested_segment_during_rotation() -> Result<()> {
+        let root = tempdir()?;
+        let arena = Arc::new(PersistentArena::new(root.path())?);
+        let old = arena.write_slice(b"original segment")?;
+        let mut active = arena.active_segment.write();
+        let (started_tx, started_rx) = std::sync::mpsc::channel();
+        let reader_arena = Arc::clone(&arena);
+        let reader = std::thread::spawn(move || -> Result<()> {
+            started_tx.send(())?;
+            for _ in 0..128 {
+                anyhow::ensure!(reader_arena.read_frame(old)?.0 == b"original segment");
+            }
+            Ok(())
+        });
+        started_rx.recv()?;
+        arena.rotate_segment_locked(&mut active)?;
+        drop(active);
+        let new = arena.write_slice(b"replacement segment")?;
+        reader.join().unwrap()?;
+        assert_eq!(arena.read_frame(new)?.0, b"replacement segment");
+        for length in [1, 2, 3] {
+            assert_eq!(
+                arena.read_slice(new + SEGMENT_SIZE - 2, length).is_ok(),
+                length <= 2
+            );
+        }
+        assert!(arena.read_slice(new + 1, usize::MAX).is_err());
+        Ok(())
+    }
+
+    #[test]
     fn compaction_crash_child() -> Result<()> {
         let Ok(root) = std::env::var("HMS_TEST_COMPACTION_ROOT") else {
             return Ok(());
@@ -673,8 +882,102 @@ mod tests {
         arena.write_slice(b"old generation")?;
         let staged = PersistentArena::new(root.join("stage"))?;
         staged.write_slice(b"new generation")?;
-        drop(staged);
-        arena.replace_with_compacted(&root.join("stage"))?;
+        arena.replace_with_compacted(staged.prepare_compacted()?)?;
+        Ok(())
+    }
+
+    #[test]
+    fn compaction_tail_replay_crosses_rotated_padding_without_splitting_frames() -> Result<()> {
+        let root = tempdir()?;
+        let arena = PersistentArena::new(root.path().join("live"))?;
+        arena.write_slice(b"original segment")?;
+        let mut cursor = arena.stats().used_bytes;
+        {
+            let mut active = arena.active_segment.write();
+            arena.rotate_segment_locked(&mut active)?;
+        }
+        arena.write_slice(b"first replayed transaction")?;
+        arena.write_slice(b"second replayed transaction")?;
+        let end = arena.stats().used_bytes;
+        let staged = PersistentArena::new(root.path().join("stage"))?;
+        staged.write_slice(b"original segment")?;
+        let mut prepared = staged.prepare_compacted()?;
+        arena.replay_compaction_tail(&mut prepared, &mut cursor, end)?;
+        assert_eq!(cursor, end);
+        arena.replace_with_compacted(prepared)?;
+        drop(arena);
+        let restored = PersistentArena::new(root.path().join("live"))?;
+        let mut offset = 0;
+        for payload in [
+            b"original segment".as_slice(),
+            b"first replayed transaction",
+            b"second replayed transaction",
+        ] {
+            assert_eq!(restored.read_frame(offset)?.0, payload);
+            offset = restored.next_offset(offset)?;
+        }
+        assert_eq!(offset, restored.stats().used_bytes);
+        Ok(())
+    }
+
+    #[test]
+    fn compaction_replay_rejects_payload_length_mismatch_despite_valid_crc() -> Result<()> {
+        for delta in [-1_isize, 0, 1] {
+            let root = tempdir()?;
+            let arena = PersistentArena::new(root.path().join("live"))?;
+            arena.write_slice(b"distinct replay payload")?;
+            let end = arena.stats().used_bytes;
+            {
+                let mut map = arena.active_segment.write();
+                let raw = u32::from_le_bytes(map[4..8].try_into()?);
+                let compressed = u32::from_le_bytes(map[8..12].try_into()?);
+                assert_eq!(raw, compressed);
+                let declared = (raw as usize).checked_add_signed(delta).unwrap() as u32;
+                map[4..8].copy_from_slice(&declared.to_le_bytes());
+                map.flush()?;
+            }
+            let staged = PersistentArena::new(root.path().join("stage"))?;
+            let mut prepared = staged.prepare_compacted()?;
+            let mut cursor = 0;
+            let result = arena.replay_compaction_tail(&mut prepared, &mut cursor, end);
+            assert_eq!(result.is_ok(), delta == 0);
+            assert!(!root.path().join("live/CURRENT").exists());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn compaction_replay_enforces_raw_frame_limit_boundaries() -> Result<()> {
+        for length in [
+            MAX_RAW_FRAME_SIZE - 1,
+            MAX_RAW_FRAME_SIZE,
+            MAX_RAW_FRAME_SIZE + 1,
+        ] {
+            let root = tempdir()?;
+            let arena = PersistentArena::new(root.path().join("live"))?;
+            let payload = vec![7; length.min(MAX_RAW_FRAME_SIZE)];
+            arena.write_slice(&payload)?;
+            if length > MAX_RAW_FRAME_SIZE {
+                let mut map = arena.active_segment.write();
+                map[4..8].copy_from_slice(&(length as u32).to_le_bytes());
+                map.flush()?;
+            }
+            let staged = PersistentArena::new(root.path().join("stage"))?;
+            let mut prepared = staged.prepare_compacted()?;
+            let mut cursor = 0;
+            let result =
+                arena.replay_compaction_tail(&mut prepared, &mut cursor, arena.stats().used_bytes);
+            if length <= MAX_RAW_FRAME_SIZE {
+                result?;
+                assert_eq!(prepared.arena.read_frame(0)?.0, payload);
+            } else {
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "invalid compaction replay frame lengths"
+                );
+                assert_eq!(prepared.arena.stats().used_bytes, 0);
+            }
+        }
         Ok(())
     }
 
@@ -696,6 +999,41 @@ mod tests {
             };
             assert_eq!(arena.read_frame(0)?.0, expected);
             arena.write_slice(b"after recovery")?;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn compaction_rejects_corrupt_or_shortened_staging_without_publishing() -> Result<()> {
+        for frame in 0..3 {
+            for truncate in [false, true] {
+                let root = tempdir()?;
+                let arena = PersistentArena::new(root.path().join("live"))?;
+                arena.write_slice(b"acknowledged generation")?;
+                let staged = PersistentArena::new(root.path().join("stage"))?;
+                let mut offsets = Vec::new();
+                for payload in [b"first".as_slice(), b"middle", b"last"] {
+                    offsets.push(staged.write_slice(payload)?);
+                }
+                {
+                    let mut map = staged.active_segment.write();
+                    let offset = offsets[frame];
+                    if truncate {
+                        map[offset..offset + HEADER_SIZE].fill(0);
+                    } else {
+                        map[offset + HEADER_SIZE] ^= 1;
+                    }
+                    map.flush()?;
+                }
+                assert!(staged
+                    .prepare_compacted()
+                    .and_then(|prepared| arena.replace_with_compacted(prepared))
+                    .is_err());
+                assert_eq!(arena.read_frame(0)?.0, b"acknowledged generation");
+                drop(arena);
+                let restored = PersistentArena::new(root.path().join("live"))?;
+                assert_eq!(restored.read_frame(0)?.0, b"acknowledged generation");
+            }
         }
         Ok(())
     }
@@ -846,3 +1184,9 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod layout_tests;
+
+#[cfg(all(test, unix))]
+mod growth_tests;

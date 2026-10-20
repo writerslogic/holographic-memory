@@ -122,6 +122,11 @@ class HolographicClient:
         res = self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         res.raise_for_status()
 
+    def maintain_document_index(self) -> Dict[str, Any]:
+        res = self.client.post(f"{self.url}/api/v1/index/maintain", json={})
+        res.raise_for_status()
+        return res.json()
+
     def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         encrypted_query = self.encrypt_vector(query_vector) if query_vector else []
         payload = {"query_vector": encrypted_query, "top_k": top_k}
@@ -182,6 +187,11 @@ class AsyncHolographicClient:
     async def delete_document(self, doc_id: str) -> None:
         res = await self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         res.raise_for_status()
+
+    async def maintain_document_index(self) -> Dict[str, Any]:
+        res = await self.client.post(f"{self.url}/api/v1/index/maintain", json={})
+        res.raise_for_status()
+        return res.json()
 
     async def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         encrypted_query = self.encrypt_vector(query_vector) if query_vector else []

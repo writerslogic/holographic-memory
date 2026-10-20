@@ -871,6 +871,7 @@ fn beir(data: &Path, dim: u32, out: &Path) -> Result<()> {
             overlap_words: Some(0),
             store_text: Some(false),
             embeddings: Some(vec![emb.iter().map(|&x| f64::from(x)).collect()]),
+            title_weight: None,
         })?;
     }
     let doc_ingest_secs = t.elapsed().as_secs_f64();
@@ -989,6 +990,7 @@ fn lme_question(
                 .iter()
                 .map(|&x| f64::from(x))
                 .collect()]),
+            title_weight: None,
         })?;
     }
     let ingest = t.elapsed().as_secs_f64();
@@ -1182,6 +1184,7 @@ fn lme_scores(
                         .iter()
                         .map(|&x| f64::from(x))
                         .collect()]),
+                    title_weight: None,
                 })?;
             }
             // The API returns at most 1000 hits, so each search is restricted to one chunk of
@@ -1553,6 +1556,7 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
             overlap_words: Some(0),
             store_text: Some(true),
             embeddings: None,
+            title_weight: None,
         })?;
         ingest.push(t.elapsed().as_secs_f64());
     }

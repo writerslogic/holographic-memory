@@ -40,6 +40,9 @@ enum Command {
         dimensions: u32,
         #[arg(long)]
         encryption_passphrase_env: Option<String>,
+        /// Text encoder for the new store; capped union requires --features experimental.
+        #[arg(long, default_value = "multiscale-words-v1")]
+        text_encoder: holographic_memory::core::encoding::TextEncoder,
     },
 }
 
@@ -59,8 +62,12 @@ fn main() -> Result<()> {
             destination,
             dimensions,
             encryption_passphrase_env,
+            text_encoder,
         } => {
-            let mut config = holographic_memory::core::HmsConfig::default();
+            let mut config = holographic_memory::core::HmsConfig {
+                text_encoder,
+                ..Default::default()
+            };
             config.security.encryption_enabled = encryption_passphrase_env.is_some();
             config.security.encryption_passphrase_env = encryption_passphrase_env;
             serde_json::to_value(reencode_documents(input, destination, dimensions, config)?)?

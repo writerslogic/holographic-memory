@@ -13,6 +13,7 @@ import json
 import math
 import os
 import re
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 
@@ -147,6 +148,7 @@ def timing(row, locks):
     require(row['load_gate_met'] is True and row['preliminary'] is False
             and row['timing_claim'] is True, 'final row is not gated evidence')
     lock = locks[row['lock_id']]
+    require(lock['exit_code'] in (0, 124), 'retained timing has a failed worker')
     require(lock['timer']['start_ns'] <= samples[0]['monotonic_ns']
             and lock['timer']['end_ns'] >= samples[-1]['monotonic_ns'], 'timing outside held lock')
     return end - start
@@ -199,6 +201,36 @@ def measured_recall(row, dataset, files, overrides):
     return recall
 
 
+def check_attempt_selection(report, locks, maximum_attempts):
+    selected = {}
+    preliminary = []
+    identities = set()
+    ordered = sorted(report['attempt_rows'], key=lambda row: row['timer']['start_ns'])
+    require(report['attempt_rows'] == ordered, 'raw attempts not in recorded temporal order')
+    for row in ordered:
+        integer(row['attempt'], 'attempt number')
+        require(row['attempt'] < maximum_attempts, 'retry cap exceeded')
+        key = (row['point_id'], row['round'], row['mode'], row['query_start'], row['query_end'])
+        identity = key + (row['attempt'],)
+        require(identity not in identities, 'duplicate raw attempt identity')
+        identities.add(identity)
+        lock = locks[row['lock_id']]
+        samples = row['load_samples']
+        met = len(samples) >= 2 and all(0 <= finite(s['one_minute'], 'attempt load') < 3 for s in samples)
+        require(row['load_gate_met'] is met, 'raw attempt load label differs from samples')
+        valid = (all(field in row for field in ('recall_at_10', 'strict_id_recall_at_10', 'distances', 'hits'))
+                 and met and lock['exit_code'] in (0, 124)
+                 and lock['timer']['start_ns'] <= row['timer']['start_ns']
+                 < row['timer']['end_ns'] <= lock['timer']['end_ns'])
+        if valid and key not in selected:
+            selected[key] = row
+        else:
+            reason = 'earlier_valid_attempt_retained' if valid else 'incomplete_or_failed_gate'
+            preliminary.append({**row, 'preliminary': True, 'timing_claim': False, 'retention_reason': reason})
+    require(report['rows'] == list(selected.values()), 'retained row is not the first valid gated attempt')
+    require(report['preliminary_rows'] == preliminary, 'preliminary attempt accounting differs')
+
+
 def frontiers(observations, resources, curve):
     result = []
     resource_by_build = {r['build_id']: r for r in resources.values()}
@@ -249,6 +281,23 @@ def check_tuning(tuning, protocol, files, overrides):
         return files.tuning_cache[cache_key]
     require(tuning['complete'] is True and tuning['test_opened'] is False,
             'calibration incomplete or test-derived')
+    origin = tuning.get('calibration_origin')
+    if origin is not None:
+        experiment = protocol['experiment']
+        require(origin['reused_pretest_train_only_evidence'] is True
+                and origin['protocol'] == experiment['parent_mac_protocol']
+                and origin['curve'] == experiment['parent_mac_curve'],
+                'imported calibration parent differs from cloud freeze')
+        parent_tuning = json.loads(files.verify(origin['tuning'], overrides, read=True))
+        parent_curve = json.loads(files.verify(origin['curve'], overrides, read=True))
+        parent_protocol = json.loads(files.verify(origin['protocol'], overrides, read=True))
+        require(parent_tuning['complete'] is True and parent_tuning['test_opened'] is False
+                and parent_tuning['preregistration'] == origin['protocol']
+                and parent_curve['preregistration'] == origin['protocol']
+                and parent_curve['tuning'] == origin['tuning']
+                and parent_protocol['machine']['architecture'] == 'arm64'
+                and tuning['records'] == parent_tuning['records'],
+                'imported calibration changes the original train-only evidence')
     expected = {(name, variant['build_id']): variant for name, dataset in protocol['datasets'].items()
                 for variant in dataset['variants']}
     actual = {(item['dataset'], item['build_id']): item for item in tuning['records']}
@@ -264,6 +313,7 @@ def check_tuning(tuning, protocol, files, overrides):
         split = record['split']
         query_count = protocol['tuning']['holdout_queries']
         base_count = split['base_ids']['shape'][0]
+        require(base_count == protocol['tuning']['calibration_base_rows'], 'calibration base count differs')
         query_ids = files.array(split['query_ids'], '<i8', (query_count,), overrides)
         base_ids = files.array(split['base_ids'], '<i8', (base_count,), overrides)
         require(len(np.unique(query_ids)) == query_count and len(np.unique(base_ids)) == base_count
@@ -327,6 +377,28 @@ def check_tuning(tuning, protocol, files, overrides):
                     and abs(float(actual_hits.sum()) / (query_count * 10) - point['recall_at_10']) < 1e-12
                     and abs(strict - point['strict_id_recall_at_10']) < 1e-12,
                     'calibration distances or scores differ')
+        seeds = set()
+        ordered_points = record['points']
+        for target in protocol['targets']:
+            qualifying = [point for point in ordered_points
+                          if point['recall_at_10'] >= target + protocol['tuning']['calibration_cushion']]
+            seeds.update(point['point_id'] for point in qualifying[:3])
+        seeds.add(max(ordered_points, key=lambda point: point['recall_at_10'])['point_id'])
+        seeds.add([point for point in variant['search_grid']
+                   if point['search_config'].get('patience', 0) == 0][-1]['point_id'])
+        retained = set(seeds)
+        for identifier in seeds:
+            settings = points[identifier]['search_config']
+            depth_key = 'ef' if 'ef' in settings else 'nprobe'
+            siblings = [point for point in variant['search_grid']
+                        if point['search_config'][depth_key] > settings[depth_key]
+                        and {k: v for k, v in point['search_config'].items() if k != depth_key}
+                        == {k: v for k, v in settings.items() if k != depth_key}]
+            siblings.sort(key=lambda point: point['search_config'][depth_key])
+            retained.update(point['point_id'] for point in siblings[:2])
+        require(record['retained_point_ids'] == [point['point_id'] for point in variant['search_grid']
+                                                if point['point_id'] in retained],
+                'calibration selection or nonrecursive two-depth headroom differs')
     summary = {'calibration_builds_checked': len(actual), 'train_splits_checked': len(checked_splits)}
     if not overrides:
         files.tuning_cache[cache_key] = summary
@@ -349,12 +421,24 @@ def check(report, files, overrides=None, allow_incomplete=False):
             and prereg['timing']['max_lock_seconds'] == 900
             and set(prereg['timing']['modes']) == MODES,
             'native protocol differs from mandatory conditions')
+    require(prereg['machine']['architecture'] in {'arm64', 'x86_64'},
+            'unsupported frozen native architecture')
     require(prereg['commits']['ann_benchmarks'] == '2e081ad32c1eccab72dcb739ad886c310b90f715'
             and prereg['versions'] == {'numpy': '2.2.6', 'h5py': '3.14.0',
                                       'faiss-cpu': '1.15.1', 'hnswlib': '0.8.0'},
             'native implementation or recall pins differ')
     for metadata in prereg['producer_artifacts'] + prereg['references'] + [prereg['bridge']]:
         files.verify(metadata, overrides)
+    archive = json.loads(files.verify(prereg['archive_manifest'], overrides, read=True))
+    require(archive['mappings'] == prereg['archived_source_map'], 'frozen archive mapping differs')
+    archived_by_original = {}
+    for item in archive['mappings']:
+        original, archived = item['original'], item['archived']
+        require(original['sha256'] == archived['sha256'] and original['bytes'] == archived['bytes'],
+                'archived source bytes differ from build identity')
+        require(original['path'] not in archived_by_original, 'duplicate archived original identity')
+        files.verify(archived, overrides)
+        archived_by_original[original['path']] = archived
     receipt = json.loads(files.verify(prereg['bridge_build'], overrides, read=True))
     require(receipt['exit_code'] == 0 and receipt['source_identity_verified'] is True
             and receipt['source_before'] == receipt['source_after']
@@ -364,7 +448,10 @@ def check(report, files, overrides=None, allow_incomplete=False):
     original = {}
     helper = None
     for metadata in receipt['source_before']:
-        data = files.verify(metadata, overrides, read=True)
+        archived = archived_by_original[metadata['path']]
+        require(archived['sha256'] == metadata['sha256'] and archived['bytes'] == metadata['bytes'],
+                'archived source and release build receipt differ')
+        data = files.verify(archived, overrides, read=True)
         source = Path(metadata['path'])
         if source.parent.parts[-3:] == ('src', 'core', 'qgraph'):
             original[source.name] = data
@@ -372,12 +459,23 @@ def check(report, files, overrides=None, allow_incomplete=False):
             helper = data
     generated = {}
     for metadata in receipt['generated_sources']:
-        generated[Path(metadata['path']).name] = files.verify(metadata, overrides, read=True)
+        archived = archived_by_original[metadata['path']]
+        require(archived['sha256'] == metadata['sha256'] and archived['bytes'] == metadata['bytes'],
+                'archived generated source and receipt differ')
+        name = Path(metadata['path']).name
+        data = files.verify(archived, overrides, read=True)
+        require(name not in generated or generated[name] == data, 'compiled qgraph source versions differ')
+        generated[name] = data
     require(set(original) == set(generated) == {'mod.rs', 'vertex.rs', 'kernels.rs', 'build_kernels.rs'}
             and helper is not None, 'bridge omits or duplicates qgraph sources')
     for name, data in original.items():
         expected_source = data + b'\n' + helper if name == 'vertex.rs' else data
         require(generated[name] == expected_source, 'compiled bridge changes qgraph implementation')
+        commit = prereg['hms_source_commit']
+        require(re.fullmatch('[0-9a-f]{40}', commit), 'frozen HMS commit missing')
+        source = subprocess.run(['git', 'show', f'{commit}:src/core/qgraph/{name}'],
+                                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        require(source.stdout == data, 'compiled qgraph source differs from frozen HMS commit')
     tuning = json.loads(files.verify(report['tuning'], overrides, read=True))
     curve = json.loads(files.verify(report['frozen_curve'], overrides, read=True))
     require(tuning['test_opened'] is False and tuning['complete'] is True and curve['round_count'] == 11
@@ -386,6 +484,11 @@ def check(report, files, overrides=None, allow_incomplete=False):
             and curve['tuning'] == report['tuning']
             and curve['preregistration'] == report['preregistration']
             and tuning['preregistration'] == report['preregistration'], 'frozen lineage differs')
+    if 'calibration_origin' in tuning:
+        origin = tuning['calibration_origin']
+        parent_curve = json.loads(files.verify(origin['curve'], overrides, read=True))
+        require(curve['selection_origin'] == origin and curve['points'] == parent_curve['points'],
+                'cloud curve changes the original frozen train-selected points')
     tuning_summary = check_tuning(tuning, prereg, files, overrides)
     frozen = finite(curve['frozen_at_unix'], 'freeze timestamp', 0)
     points = {p['point_id']: p for p in curve['points']}
@@ -414,11 +517,14 @@ def check(report, files, overrides=None, allow_incomplete=False):
         require(source == (Path.home() / '.cache/hms-bench/downloads' / f'{name}.hdf5').resolve(),
                 'dataset source differs from pinned HDF5')
     for name, system in report['systems'].items():
-        require(system['architecture'] == 'arm64' and system['thread_environment']
+        require(system['architecture'] == prereg['machine']['architecture'] and system['thread_environment']
                 and all(str(value) == '1' for value in system['thread_environment'].values()),
                 f'{name}: architecture or thread settings differ')
         require(re.fullmatch('[0-9a-f]{40}', system['source_commit']), 'system source pin absent')
         require(name not in COMMITS or system['source_commit'] == COMMITS[name], 'competitor commit differs')
+        require(name != 'hms' or (system['source_commit'] == prereg['hms_source_commit']
+                                 and system['compile_options'] == '-C target-cpu=native'),
+                'HMS source commit or compile options differ')
         for item in system['module_artifacts']:
             files.verify(item, overrides)
     resources = {r['resource_id']: r for r in report['resources']}
@@ -461,15 +567,21 @@ def check(report, files, overrides=None, allow_incomplete=False):
         require(clock['elapsed_ns'] == clock['end_ns'] - clock['start_ns']
                 and clock['elapsed_ns'] < 900_000_000_000,
                 'timing lock held for 15 minutes or more')
-        require(lock['status'] == 'released' and lock['exit_code'] == 0
+        require(lock['status'] == 'released' and type(lock['exit_code']) is int
                 and lock['under_15_minutes'] is True
                 and abs(lock['hold_seconds'] - clock['elapsed_ns'] / 1e9) < 1e-9,
                 'timing lock incomplete or duration differs')
+        require(lock['exit_code'] != 124 or lock.get('timeout') is True,
+                'timing timeout lacks supervisor evidence')
         require(lock['path'] == '/Volumes/A/.hms-target/timing.lock' and lock['pid'] > 0,
                 'timing lock identity differs')
     chronological_locks = sorted(locks.values(), key=lambda item: item['timer']['start_ns'])
     require(all(a['timer']['end_ns'] <= b['timer']['start_ns']
                 for a, b in zip(chronological_locks, chronological_locks[1:])), 'timing locks overlap')
+    require(prereg['timing']['retry_policy']['maximum_attempts'] == 3
+            and prereg['timing']['retry_policy']['choose_attempt_by_qps'] is False,
+            'retry cap or selection condition differs')
+    check_attempt_selection(report, locks, 3)
     observations = defaultdict(dict)
     query_ranges = {}
     round_order = defaultdict(list)
@@ -586,6 +698,10 @@ def main():
         damaged = copy.deepcopy(report)
         damaged['rows'][0]['predictions']['sha256'] = '0' * 64
         mutations.append(('fingerprint', damaged, {}))
+        damaged = copy.deepcopy(report)
+        damaged['systems']['hms']['architecture'] = (
+            'arm64' if damaged['systems']['hms']['architecture'] == 'x86_64' else 'x86_64')
+        mutations.append(('architecture', damaged, {}))
         artifact = report['rows'][0]['predictions']
         raw = bytearray(path(artifact['path']).read_bytes())
         raw[0] ^= 1

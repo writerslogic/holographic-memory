@@ -102,6 +102,10 @@ impl HmsCore {
         if before.nsg_training_recommended {
             self.train_nsg()?;
         }
+        let document_training_recommended = self.documents.read().dense_index_recommended();
+        if document_training_recommended {
+            self.train_document_index()?;
+        }
         Ok(self.index_status())
     }
 
@@ -175,7 +179,10 @@ mod tests {
         let explanation = hms.explain_query(&query, 5);
         assert_eq!(explanation.route, "brute_force");
         assert_eq!(hms.index_status().vector_count, 0);
-        assert_eq!(hms.storage_health().format_version, 2);
+        assert_eq!(
+            hms.storage_health().format_version,
+            crate::core::storage::STORAGE_FORMAT_VERSION
+        );
         hms.flush()?;
         Ok(())
     }

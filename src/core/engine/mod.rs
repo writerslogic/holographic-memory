@@ -1,11 +1,20 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+mod compaction;
 pub(crate) mod concepts;
 mod document_api;
+mod document_batch;
 pub(crate) mod knowledge;
 pub(crate) mod multi_hop;
 mod mutation;
+mod mutation_gate;
+
+#[cfg(test)]
+mod document_snapshot_tests;
+
+#[cfg(all(test, feature = "local-models"))]
+mod document_stage_tests;
 pub(crate) mod query;
 pub(crate) mod router;
 pub(crate) mod shard;
@@ -29,7 +38,6 @@ use super::composite_memory::CompositeMemory;
 use super::config::HmsConfig;
 use super::decompose::Decomposer;
 use super::diffusion::DiffusionFactorizer;
-use super::encoding::encode_text_internal;
 use super::entangled::EntangledHVec;
 use super::graph::RelationStore;
 use super::ivf::IVFIndex;
@@ -49,14 +57,19 @@ type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 /// Persistent operations take mutation_gate before ShardSet and component locks.
 pub struct HmsCore {
     config: HmsConfig,
-    mutation_gate: RwLock<()>,
+    mutation_gate: mutation_gate::MutationGate,
+    compaction: parking_lot::Mutex<()>,
+    /// The index metadata (`indices.json`) last written by this process: identical metadata
+    /// means identical index files at the same checkpoint, so a repeated persist skips the
+    /// writes.
+    persisted_indices: parking_lot::Mutex<Vec<u8>>,
     revision: std::sync::atomic::AtomicU64,
     pub(crate) arena: Arc<PersistentArena>,
     pub(crate) dimensions: usize,
     pub(crate) storage_path: PathBuf,
     shards: RwLock<ShardSet>,
     graph: RelationStore,
-    documents: RwLock<std::collections::BTreeMap<String, super::documents::StoredDocument>>,
+    documents: RwLock<super::documents::DocumentStore>,
     #[cfg(feature = "local-models")]
     model_stages: RwLock<Option<Arc<crate::core::models::ModelStages>>>,
     derived: RwLock<std::collections::BTreeMap<String, Vec<String>>>,
@@ -221,14 +234,16 @@ impl HmsCore {
 
         let core = Self {
             config: config.clone(),
-            mutation_gate: RwLock::new(()),
+            mutation_gate: mutation_gate::MutationGate::default(),
+            compaction: parking_lot::Mutex::new(()),
+            persisted_indices: parking_lot::Mutex::new(Vec::new()),
             revision: std::sync::atomic::AtomicU64::new(0),
             arena,
             dimensions: dim,
             storage_path: base_path,
             shards: RwLock::new(shard_set),
             graph: RelationStore::new(),
-            documents: RwLock::new(std::collections::BTreeMap::new()),
+            documents: RwLock::new(super::documents::DocumentStore::default()),
             #[cfg(feature = "local-models")]
             model_stages: RwLock::new(None),
             derived: RwLock::new(std::collections::BTreeMap::new()),
@@ -266,6 +281,9 @@ impl HmsCore {
             _store_lock: store_lock,
         };
 
+        core.documents
+            .write()
+            .attach_text_segment(&core.storage_path.join("documents.text"))?;
         core.load_from_log()?;
         core.load_indices()?;
         {
@@ -388,42 +406,80 @@ impl HmsCore {
     /// Persist every shard's trained NSG/IVF index to disk. Applies to both
     /// single- and multi-shard stores; multi-shard indices are written to
     /// per-shard files so they reload after a restart.
-    fn persist_indices(&self, shards: &ShardSet) -> Result<()> {
+    pub(super) fn persist_indices(&self, shards: &ShardSet) -> Result<()> {
+        // The checkpoint is read before the encoding: an append in between leaves the
+        // metadata behind the arena, which the loader treats as stale (see `encode_indices`).
+        let checkpoint = self.arena.checkpoint();
+        let encoded = self.encode_indices(shards, checkpoint)?;
+        self.write_indices(encoded)
+    }
+
+    /// Serializes every shard's trained NSG/IVF index with the metadata that binds the files
+    /// to `checkpoint`. The caller holds `shards` while the encoding reads them; the files
+    /// are written by [`Self::write_indices`] without any lock. A checkpoint read before a
+    /// mutation that the encoded indices already include only makes the loader rebuild them;
+    /// a checkpoint read after a mutation they lack would make it trust stale indices, so the
+    /// checkpoint must be read while no writer can be in flight (under a writer lease or an
+    /// exclusive publication).
+    pub(super) fn encode_indices(
+        &self,
+        shards: &ShardSet,
+        checkpoint: (String, usize),
+    ) -> Result<EncodedIndices> {
         let multi = shards.shard_count() > 1;
+        let mut files = Vec::new();
         let mut states = Vec::new();
         shards.try_for_each_shard_indexed(|i, shard| {
             let mut nsg_crc = None;
             let mut ivf_crc = None;
             if let Some(ref nsg) = *shard.nsg.read() {
                 let data = bincode::serde::encode_to_vec(nsg, bincode::config::standard())?;
-                let data = self.maybe_encrypt(&data)?;
+                let data = self.maybe_encrypt(&data)?.into_owned();
                 nsg_crc = Some(crc32fast::hash(&data));
-                super::durable_file::atomic_write(
-                    &self.nsg_index_path(i, multi),
-                    &data,
-                )?;
+                files.push((self.nsg_index_path(i, multi), data));
             }
             if let Some(ref ivf) = *shard.ivf.read() {
                 let data = bincode::serde::encode_to_vec(ivf, bincode::config::standard())?;
-                let data = self.maybe_encrypt(&data)?;
+                let data = self.maybe_encrypt(&data)?.into_owned();
                 ivf_crc = Some(crc32fast::hash(&data));
-                super::durable_file::atomic_write(
-                    &self.ivf_index_path(i, multi),
-                    &data,
-                )?;
+                files.push((self.ivf_index_path(i, multi), data));
             }
             states
                 .push(serde_json::json!({"nsg": shard.nsg_trained(), "ivf": shard.ivf_trained(), "nsgCrc": nsg_crc, "ivfCrc": ivf_crc}));
             Ok(())
         })?;
-        super::durable_file::atomic_write(
-            &self.storage_path.join("indices.json"),
-            &serde_json::to_vec(
-                &serde_json::json!({"checkpoint": self.arena.checkpoint(), "shardCount": shards.shard_count(), "shards": states}),
-            )?,
-        )
+        let metadata = serde_json::to_vec(
+            &serde_json::json!({"checkpoint": checkpoint, "shardCount": shards.shard_count(), "shards": states}),
+        )?;
+        Ok(EncodedIndices { files, metadata })
     }
 
+    /// Writes the encoded index files and metadata, unless this process already wrote
+    /// byte-identical metadata (same checkpoint, same file checksums), which makes the
+    /// write a no-op.
+    pub(super) fn write_indices(&self, encoded: EncodedIndices) -> Result<()> {
+        if *self.persisted_indices.lock() == encoded.metadata {
+            return Ok(());
+        }
+        for (path, data) in &encoded.files {
+            super::durable_file::atomic_write(path, data)?;
+        }
+        super::durable_file::atomic_write(
+            &self.storage_path.join("indices.json"),
+            &encoded.metadata,
+        )?;
+        *self.persisted_indices.lock() = encoded.metadata;
+        Ok(())
+    }
+}
+
+/// Serialized index files and the metadata binding them to an arena checkpoint.
+pub(super) struct EncodedIndices {
+    files: Vec<(PathBuf, Vec<u8>)>,
+    metadata: Vec<u8>,
+}
+
+impl HmsCore {
     /// Bundle vectors respecting the PrivacyConfig.
     /// When dp_enabled, uses Laplace noise with the configured epsilon.
     pub fn bundle<V: std::borrow::Borrow<EntangledHVec>>(&self, vectors: &[V]) -> EntangledHVec {
@@ -434,12 +490,12 @@ impl HmsCore {
         }
     }
 
-    fn maybe_encrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
+    fn maybe_encrypt<'a>(&self, data: &'a [u8]) -> Result<std::borrow::Cow<'a, [u8]>> {
         #[cfg(feature = "security")]
         if let Some(ref enc) = self.encryption {
-            return enc.encrypt(data);
+            return enc.encrypt(data).map(std::borrow::Cow::Owned);
         }
-        Ok(data.to_vec())
+        Ok(std::borrow::Cow::Borrowed(data))
     }
 
     fn maybe_decrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
@@ -464,7 +520,7 @@ impl HmsCore {
             for mutation in &mutations {
                 self.validate_mutation(mutation)?;
             }
-            self.apply_mutations(&mutations, &shards)?;
+            self.apply_mutations(&self.prepare_mutations(&mutations), &shards)?;
             offset = self.arena.next_offset(offset)?;
         }
         if let Some(atoms) = &self.atom_memory {
@@ -483,7 +539,7 @@ impl HmsCore {
 
     /// Encode text into a sparse hypervector using multi-scale n-grams and word tokens.
     pub fn encode_text(&self, text: &str) -> EntangledHVec {
-        encode_text_internal(text, self.dimensions)
+        self.config.text_encoder.encode(text, self.dimensions)
     }
 
     /// Compute word, sentence, syllable, and character-class counts for text.
@@ -567,93 +623,6 @@ impl HmsCore {
             if self.config.provenance.auto_sign {
                 mgr.create_fact_provenance(id, text.as_bytes(), source_uri)?;
             }
-        }
-        Ok(())
-    }
-
-    /// Publish a verified generation while excluding every persistent mutation.
-    pub fn compact(&self) -> Result<()> {
-        let _transaction = self.mutation_gate.write();
-        let shards = self.shards.write();
-        let temporary = tempfile::Builder::new()
-            .prefix(".compact-")
-            .tempdir_in(&self.storage_path)?;
-        {
-            let arena = PersistentArena::new(temporary.path())?;
-            let write = |mutation: Mutation| -> Result<()> {
-                let mut payload = mutation::TRANSACTION_MAGIC.to_vec();
-                payload.extend(serde_json::to_vec(&[mutation])?);
-                arena.write_slice(&self.maybe_encrypt(&payload)?)?;
-                Ok(())
-            };
-            let composite_ids: std::collections::HashSet<_> = self
-                .composite_memory
-                .as_ref()
-                .map(|memory| {
-                    memory
-                        .inner()
-                        .all_vectors()
-                        .into_iter()
-                        .map(|(_, id, _)| id)
-                        .collect()
-                })
-                .unwrap_or_default();
-            shards.try_for_each_shard(|shard| {
-                for (id, vector) in shard.vectors.read().iter() {
-                    if !id.starts_with(super::documents::CHUNK_PREFIX)
-                        && !composite_ids.contains(id)
-                    {
-                        write(Mutation::Vector {
-                            id: id.clone(),
-                            vector: vector.clone(),
-                        })?;
-                    }
-                }
-                Ok(())
-            })?;
-            for doc in self.documents.read().values() {
-                write(Mutation::Document(doc.clone()))?;
-            }
-            for relation in self.graph.snapshot() {
-                write(Mutation::Relation(relation))?;
-            }
-            for relation_type in self.graph.type_snapshot() {
-                write(Mutation::RelationType(relation_type))?;
-            }
-            if let Some(atoms) = &self.atom_memory {
-                for (_, id, vector) in atoms.inner().all_vectors() {
-                    write(Mutation::Atom { id, vector })?;
-                }
-            }
-            if let Some(composites) = &self.composite_memory {
-                for (_, id, vector) in composites.inner().all_vectors() {
-                    write(Mutation::Composite { id, vector })?;
-                }
-            }
-            if let Some(triples) = &self.triple_store {
-                for record in triples.snapshot() {
-                    write(Mutation::StoredTriple(record))?;
-                }
-            }
-            if let Some(rules) = &self.rule_store {
-                for rule in rules.all_rules() {
-                    write(Mutation::Rule(rule))?;
-                }
-            }
-            for (id, children) in self.derived.read().iter() {
-                write(Mutation::Derived {
-                    id: id.clone(),
-                    children: children.clone(),
-                })?;
-            }
-            arena.flush()?;
-        }
-        self.arena.replace_with_compacted(temporary.path())?;
-        self.revision
-            .fetch_add(1, std::sync::atomic::Ordering::Release);
-        self.persist_indices(&shards)?;
-        if let Some(audit) = &self.audit {
-            audit.record(AuditOp::Compact, "", self.sign_fn().as_deref())?;
         }
         Ok(())
     }

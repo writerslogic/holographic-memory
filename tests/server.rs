@@ -205,6 +205,45 @@ fn cosine(a: &[f64], b: &[f64]) -> f64 {
 }
 
 #[test]
+fn finite_f64_extremes_preserve_cosine_and_survive_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut s = Server::start_in(dir.path(), &[], None);
+    let axis = |index: usize, magnitude: f64| {
+        let mut values = vec![0.0; DIM];
+        values[index] = magnitude;
+        values
+    };
+    let batch = json!([
+        {"id": "large", "vector": axis(0, f64::MAX)},
+        {"id": "tiny", "vector": axis(1, f64::from_bits(1))}
+    ]);
+    assert_eq!(
+        s.json("POST", "/api/v1/documents/batch", None, &batch).0,
+        200
+    );
+    let mut expected = Vec::new();
+    for magnitude in [f64::from_bits(1), 1e-300, 1e300, f64::MAX] {
+        for (index, id) in [(0, "large"), (1, "tiny")] {
+            let query = json!({"query_vector": axis(index, magnitude), "top_k": 2});
+            let (status, response) = s.json("POST", "/api/v1/query", None, &query);
+            assert_eq!(status, 200);
+            assert_eq!(response["matches"][0]["id"], id);
+            assert_eq!(response["matches"][0]["score"], 1.0);
+            assert_eq!(response["matches"][1]["score"], 0.0);
+            expected.push((query, response));
+        }
+    }
+    assert!(s.stop());
+    let reopened = Server::start_in(dir.path(), &[], None);
+    for (query, response) in expected {
+        assert_eq!(
+            reopened.json("POST", "/api/v1/query", None, &query),
+            (200, response)
+        );
+    }
+}
+
+#[test]
 fn scores_are_exact_cosine_and_documents_must_fit_one_chunk() {
     let s = Server::start(&[], None);
     let batch = json!([
@@ -376,18 +415,10 @@ fn malformed_and_invalid_requests_get_json_errors() {
     no_vec.as_object_mut().unwrap().remove("vector");
     assert_eq!(s.json("POST", "/api/v1/documents", None, &no_vec).0, 422);
 
-    // 1e300 is finite as f64 but overflows f32.
-    let mut huge = vec![0.0; DIM];
-    huge[0] = 1e300;
+    let (status, error) = s.request("POST", "/api/v1/query", &[], b"{\"query_vector\":[1e400]}");
     assert_eq!(
-        s.json(
-            "POST",
-            "/api/v1/query",
-            None,
-            &json!({"query_vector": huge})
-        )
-        .0,
-        422
+        (status, error["error"]["code"].as_str()),
+        (400, Some("invalid_json"))
     );
     assert_eq!(
         s.json(
@@ -562,4 +593,279 @@ fn graceful_shutdown_persists_data() {
     assert_eq!(ids(&r), vec!["keep"]);
     assert_eq!(r["matches"][0]["metadata"]["k"], "v");
     assert_eq!(r["matches"][0]["text"], "text of keep");
+}
+
+#[test]
+fn concurrent_first_access_opens_one_store_and_preserves_all_writes() {
+    let s = Server::start(&["--max-tenants", "1", "--max-concurrent-work", "8"], None);
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(8));
+    std::thread::scope(|scope| {
+        for index in 0..8 {
+            let server = &s;
+            let barrier = barrier.clone();
+            scope.spawn(move || {
+                barrier.wait();
+                let (status, _) = server.json(
+                    "POST",
+                    "/api/v1/documents",
+                    Some("first"),
+                    &doc(&format!("document-{index}"), index, json!({})),
+                );
+                assert_eq!(status, 200);
+            });
+        }
+    });
+    let (status, response) = s.json(
+        "POST",
+        "/api/v1/query",
+        Some("first"),
+        &json!({"query_vector": embedding(0), "top_k": 10}),
+    );
+    assert_eq!(status, 200);
+    assert_eq!(ids(&response).len(), 8);
+    assert_eq!(
+        std::fs::read_dir(s._dir.as_ref().unwrap().path().join("tenants"))
+            .unwrap()
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn concurrent_distinct_first_access_enforces_tenant_reservations_at_cap() {
+    let s = Server::start(&["--max-tenants", "3", "--max-concurrent-work", "4"], None);
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(4));
+    let results = std::thread::scope(|scope| {
+        let mut tasks = Vec::new();
+        for index in 0..4 {
+            let server = &s;
+            let barrier = barrier.clone();
+            tasks.push(scope.spawn(move || {
+                barrier.wait();
+                server.json(
+                    "POST",
+                    "/api/v1/query",
+                    Some(&format!("tenant-{index}")),
+                    &json!({"query_vector": embedding(index)}),
+                )
+            }));
+        }
+        tasks
+            .into_iter()
+            .map(|task| task.join().unwrap())
+            .collect::<Vec<_>>()
+    });
+    assert_eq!(
+        results.iter().filter(|(status, _)| *status == 200).count(),
+        3
+    );
+    let rejected = results.iter().find(|(status, _)| *status == 503).unwrap();
+    assert_eq!(rejected.1["error"]["code"], "tenant_limit");
+    assert_eq!(
+        std::fs::read_dir(s._dir.as_ref().unwrap().path().join("tenants"))
+            .unwrap()
+            .count(),
+        3
+    );
+}
+
+#[test]
+fn failed_tenant_initialization_releases_reservation_and_retries() {
+    let directory = tempfile::tempdir().unwrap();
+    let tenant_path = directory.path().join("tenants").join("626c6f636b6564");
+    std::fs::create_dir_all(tenant_path.parent().unwrap()).unwrap();
+    std::fs::write(&tenant_path, "not a directory").unwrap();
+    let s = Server::start_in(directory.path(), &["--max-tenants", "1"], None);
+    let query = json!({"query_vector": embedding(0)});
+    let (status, error) = s.json("POST", "/api/v1/query", Some("blocked"), &query);
+    assert_eq!(status, 500);
+    assert_eq!(
+        error,
+        json!({"error": {"code": "internal", "message": "internal server error"}})
+    );
+    std::fs::remove_file(&tenant_path).unwrap();
+    assert_eq!(
+        s.json("POST", "/api/v1/query", Some("blocked"), &query).0,
+        200
+    );
+    let (status, error) = s.json("POST", "/api/v1/query", Some("other"), &query);
+    assert_eq!(status, 503);
+    assert_eq!(error["error"]["code"], "tenant_limit");
+}
+
+#[test]
+fn batch_last_write_wins_and_aggregate_rejection_preserve_atomicity() {
+    let s = Server::start(&[], None);
+    assert_eq!(
+        s.json(
+            "POST",
+            "/api/v1/documents",
+            None,
+            &doc("keep", 1, json!({"version": "old"}))
+        )
+        .0,
+        200
+    );
+    let mut last = doc("keep", 3, json!({"version": "later"}));
+    last["text"] = json!("final source text");
+    let duplicate = json!([doc("keep", 2, json!({"version": "new"})), last]);
+    let (status, response) = s.json("POST", "/api/v1/documents/batch", None, &duplicate);
+    assert_eq!(status, 200);
+    assert_eq!(response["added"], 2);
+    let mut invalid = doc("keep", 4, json!({"version": "invalid"}));
+    invalid["vector"] = json!([0.5]);
+    let batch = json!([invalid, doc("keep", 5, json!({"version": "discarded"}))]);
+    assert_eq!(
+        s.json("POST", "/api/v1/documents/batch", None, &batch).0,
+        422
+    );
+    let mut large = vec![doc("keep", 2, json!({"version": "new"}))];
+    for index in 0..132 {
+        large.push(doc(
+            &format!("extra-{index}"),
+            index,
+            json!({"payload": "x".repeat(64_000)}),
+        ));
+    }
+    let (status, error) = s.json("POST", "/api/v1/documents/batch", None, &json!(large));
+    assert_eq!(status, 422);
+    assert_eq!(error["error"]["code"], "invalid_request");
+    let (status, response) = s.json(
+        "POST",
+        "/api/v1/query",
+        None,
+        &json!({"query_vector": embedding(3), "top_k": 10}),
+    );
+    assert_eq!(status, 200);
+    assert_eq!(ids(&response), vec!["keep"]);
+    assert_eq!(response["matches"][0]["metadata"]["version"], "later");
+    assert_eq!(response["matches"][0]["text"], "final source text");
+    assert!((response["matches"][0]["score"].as_f64().unwrap() - 1.0).abs() < 1e-9);
+}
+
+#[test]
+fn configured_work_and_batch_limits_reject_native_limit_overflow_at_startup() {
+    for (flag, invalid) in [
+        ("--max-concurrent-work", "0"),
+        ("--max-concurrent-work", "257"),
+        ("--max-batch", "4097"),
+        ("--body-timeout-seconds", "0"),
+        ("--body-timeout-seconds", "301"),
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_hms-server"))
+            .args([flag, invalid])
+            .env_remove("HMS_API_KEY")
+            .output()
+            .unwrap();
+        assert!(!output.status.success());
+    }
+    for limit in [255, 256] {
+        let s = Server::start(&["--max-concurrent-work", &limit.to_string()], None);
+        assert_eq!(
+            s.json(
+                "POST",
+                "/api/v1/query",
+                None,
+                &json!({"query_vector": embedding(0)})
+            )
+            .0,
+            200
+        );
+    }
+    for limit in [4095, 4096] {
+        let s = Server::start(&["--max-batch", &limit.to_string()], None);
+        assert_eq!(
+            s.json(
+                "POST",
+                "/api/v1/documents/batch",
+                None,
+                &json!([doc("one", 0, json!({}))])
+            )
+            .0,
+            200
+        );
+    }
+    for seconds in [299, 300] {
+        let s = Server::start(&["--body-timeout-seconds", &seconds.to_string()], None);
+        assert_eq!(
+            s.json(
+                "POST",
+                "/api/v1/query",
+                None,
+                &json!({"query_vector": embedding(0)})
+            )
+            .0,
+            200
+        );
+    }
+}
+
+#[test]
+fn explicit_index_maintenance_preserves_exact_queries_and_tenant_isolation() {
+    let s = Server::start(&[], None);
+    let documents: Vec<_> = (0..128)
+        .map(|index| {
+            doc(
+                &format!("vector-{index}"),
+                index,
+                json!({"parity": index % 2}),
+            )
+        })
+        .collect();
+    assert_eq!(
+        s.json(
+            "POST",
+            "/api/v1/documents/batch",
+            Some("indexed"),
+            &json!(documents)
+        )
+        .0,
+        200
+    );
+    let query = json!({"query_vector": embedding(12), "top_k": 10, "filter": {"parity": 0}});
+    let (status, before) = s.json("POST", "/api/v1/query", Some("indexed"), &query);
+    assert_eq!(status, 200);
+    let (status, maintained) = s.json(
+        "POST",
+        "/api/v1/index/maintain",
+        Some("indexed"),
+        &json!({}),
+    );
+    assert_eq!(status, 200);
+    assert_eq!(maintained, json!({"documentIndexTrained": true}));
+    let (status, after) = s.json("POST", "/api/v1/query", Some("indexed"), &query);
+    assert_eq!(status, 200);
+    assert_eq!(before, after);
+    assert_eq!(ids(&after)[0], "vector-12");
+    let (status, empty) = s.json("POST", "/api/v1/index/maintain", Some("other"), &json!({}));
+    assert_eq!(status, 200);
+    assert_eq!(empty, json!({"documentIndexTrained": false}));
+    assert_eq!(
+        s.json(
+            "POST",
+            "/api/v1/index/maintain",
+            Some("indexed"),
+            &json!({"unsupported": true})
+        )
+        .0,
+        422
+    );
+    let authenticated = Server::start(&[], Some("test-maintenance-key"));
+    assert_eq!(
+        authenticated
+            .request("POST", "/api/v1/index/maintain", &[], b"")
+            .0,
+        401
+    );
+    assert_eq!(
+        authenticated
+            .request(
+                "POST",
+                "/api/v1/index/maintain",
+                &[("Authorization", "Bearer test-maintenance-key")],
+                b""
+            )
+            .0,
+        200
+    );
 }

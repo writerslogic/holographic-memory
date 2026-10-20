@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "mechanism": "lossless factored source/session tables with canonical compact SHA-256 handles; retain frozen operand selection then append cached ranking candidates in order while exact bytes permit",
+  "baseline": "independently checked 79/84 frozen operand full-source packets",
+  "candidate_limit": 64,
+  "budget": "unchanged frozen first-five UTF-8 JSON bytes per question",
+  "inputs": "only 100 frozen dev questions and cached source rankings; selection receives opaque IDs and complete observed source groups, never labels or answers",
+  "primary": "complete labeled full user-turn support, independently reconstructed raw sources and every alias",
+  "not_proved": [
+    "answer accuracy",
+    "semantic entailment",
+    "vendor superiority",
+    "equal reader-token budget",
+    "latency superiority"
+  ],
+  "sweep": false,
+  "old_evidence": "immutable",
+  "paid_calls": 0,
+  "protected_heldout_questions": 0
+}

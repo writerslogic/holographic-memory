@@ -1,0 +1,154 @@
+diff --git a/bindings/python/holographic-sdk/README.md b/bindings/python/holographic-sdk/README.md
+index 3ffc72b..89843d3 100644
+--- a/bindings/python/holographic-sdk/README.md
++++ b/bindings/python/holographic-sdk/README.md
+@@ -22,6 +22,7 @@
+ <p align="center">
+   <a href="#installation">Install</a> &middot;
+   <a href="#quick-start">Quick Start</a> &middot;
++  <a href="#source-evidence">Source Evidence</a> &middot;
+   <a href="#integrations">Integrations</a> &middot;
+   <a href="#vector-masking">Vector Masking</a> &middot;
+   <a href="https://github.com/writerslogic/holographic-memory">Core Engine</a>
+@@ -64,6 +65,32 @@ client.close()
+ 
+ `AsyncHolographicClient` has the same methods as coroutines; close it with `await client.aclose()`. Embeddings come from your own model: the SDK sends vectors, it does not compute them.
+ 
++## Source Evidence
++
++`complete_evidence` packs complete source observations in your retrieval order. Each observation contains a turn handle, session handle, observation time, role, and verbatim text. Supply opaque caller IDs as lowercase SHA-256 hex handles, and keep their association with your original records.
++
++```python
++from hashlib import sha256
++from holographic_sdk import complete_evidence, decode_source_packet
++
++def handle(identity):
++    return sha256(identity.encode("utf-8")).hexdigest()
++
++session = handle("session-7")
++candidates = [
++    [(handle("turn-1"), session, "2026-10-13T10:00:00Z", "user",
++      "I have two aquarium tanks.")],
++    [(handle("turn-2"), session, "2026-10-13T10:00:00Z", "assistant",
++      "You mentioned two aquarium tanks.")],
++]
++
++selection = complete_evidence(candidates, selected=[0], budget_bytes=2048)
++observations = decode_source_packet(selection.packet)
++assert observations == [candidates[index] for index in selection.selected]
++```
++
++The indices in `selected` are mandatory; packing raises `ValueError` if they exceed the budget. Additional complete groups fit in candidate order, with shared text and session metadata stored once. Decoding preserves every occurrence, role, observation time, and source text. The budget counts UTF-8 packet bytes; measure reader tokens separately. Packets contain source observations and no inferred answer or event date. These helpers run locally and make no service calls.
++
+ ## Integrations
+ 
+ | Framework | Extra | Import |
+diff --git a/bindings/python/holographic-sdk/tests/test_evidence.py b/bindings/python/holographic-sdk/tests/test_evidence.py
+index e5b204f..d44675d 100644
+--- a/bindings/python/holographic-sdk/tests/test_evidence.py
++++ b/bindings/python/holographic-sdk/tests/test_evidence.py
+@@ -124,6 +124,104 @@ class EvidenceTests(unittest.TestCase):
+         with self.assertRaisesRegex(ValueError, "UTF-8"):
+             evidence.decode_source_packet("\ud800")
+ 
++    def test_max_packet_utf8_byte_boundary(self):
++        empty = source("one", text="")
++        value = json.loads(evidence.encode_source_packet([[empty]]))
++        overhead = len(json.dumps(value, separators=(",", ":")).encode())
++        limit = evidence.MAX_PACKET_BYTES
++        for delta in (-1, 0, 1):
++            text = "é" + "x" * (limit - overhead - 2 + delta)
++            record = source("one", text=text)
++            value["t"][0][2] = text
++            packet = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
++            self.assertEqual(len(packet.encode()), limit + delta)
++            self.assertLessEqual(len(packet), limit)
++            with self.subTest(packet_bytes=limit + delta):
++                if delta <= 0:
++                    self.assertEqual(evidence.encode_source_packet([[record]]), packet)
++                    self.assertEqual(evidence.decode_source_packet(packet), [[record]])
++                else:
++                    with self.assertRaisesRegex(ValueError, "source packet exceeds limit"):
++                        evidence.encode_source_packet([[record]])
++                    with self.assertRaisesRegex(ValueError, "source packet exceeds limit"):
++                        evidence.decode_source_packet(packet)
++
++    def test_group_count_boundary(self):
++        group = [source("one")]
++        for count in (evidence.MAX_GROUPS - 1, evidence.MAX_GROUPS):
++            groups = [group] * count
++            packet = evidence.encode_source_packet(groups)
++            self.assertEqual(evidence.decode_source_packet(packet), groups)
++        groups = [group] * (evidence.MAX_GROUPS + 1)
++        with self.assertRaisesRegex(ValueError, "source group count"):
++            evidence.encode_source_packet(groups)
++        value = json.loads(packet)
++        value["g"].append(value["g"][0])
++        with self.assertRaisesRegex(ValueError, "source group count"):
++            evidence.decode_source_packet(json.dumps(value, separators=(",", ":")))
++
++    def test_per_group_occurrence_boundary(self):
++        record = source("one")
++        for count in (15, 16):
++            groups = [[record] * count]
++            packet = evidence.encode_source_packet(groups)
++            self.assertEqual(evidence.decode_source_packet(packet), groups)
++        with self.assertRaisesRegex(ValueError, "1..=16 occurrences"):
++            evidence.encode_source_packet([[record] * 17])
++        value = json.loads(packet)
++        value["g"][0].append(value["g"][0][0])
++        with self.assertRaisesRegex(ValueError, "1..=16 occurrences"):
++            evidence.decode_source_packet(json.dumps(value, separators=(",", ":")))
++
++    def test_total_occurrence_boundary(self):
++        record = source("one", text="")
++        original = evidence.MAX_GROUPS
++        evidence.MAX_GROUPS += 1
++        try:
++            for count in (evidence.MAX_OCCURRENCES - 1, evidence.MAX_OCCURRENCES):
++                whole, remainder = divmod(count, 16)
++                groups = [[record] * 16] * whole
++                if remainder:
++                    groups.append([record] * remainder)
++                packet = evidence.encode_source_packet(groups)
++                self.assertEqual(evidence.decode_source_packet(packet), groups)
++            groups.append([record])
++            with self.assertRaisesRegex(ValueError, "too many source occurrences"):
++                evidence.encode_source_packet(groups)
++            value = json.loads(packet)
++            value["g"].append([[0, 0]])
++            with self.assertRaisesRegex(ValueError, "too many source occurrences"):
++                evidence.decode_source_packet(json.dumps(value, separators=(",", ":")))
++        finally:
++            evidence.MAX_GROUPS = original
++
++    def test_malformed_fields_and_unused_tables_fail(self):
++        value = json.loads(evidence.encode_source_packet([[source("one")]]))
++        mutations = []
++        for field in ("t", "s", "g"):
++            for malformed in (None, {}, 1):
++                changed = copy.deepcopy(value)
++                changed[field] = malformed
++                mutations.append(changed)
++        for field, malformed in (("v", True), ("v", 3.0), ("i", None), ("i", {})):
++            changed = copy.deepcopy(value)
++            changed[field] = malformed
++            mutations.append(changed)
++        for table, index, malformed in (("t", 0, None), ("t", 1, []), ("t", 2, {}),
++                                        ("s", 0, 1), ("s", 1, [])):
++            for unused in (False, True):
++                changed = copy.deepcopy(value)
++                if unused:
++                    changed[table].append(copy.deepcopy(changed[table][0]))
++                changed[table][-1][index] = malformed
++                mutations.append(changed)
++        changed = copy.deepcopy(value)
++        changed["s"].append(copy.deepcopy(changed["s"][0]))
++        mutations.append(changed)
++        for changed in mutations:
++            with self.subTest(packet=changed), self.assertRaises(ValueError):
++                evidence.decode_source_packet(json.dumps(changed, separators=(",", ":")))
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

@@ -2,6 +2,49 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use super::entangled::{hash_u64, EntangledHVec};
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TextEncoder {
+    #[default]
+    #[serde(rename = "multiscale-words-v1")]
+    MultiscaleWordsV1,
+    /// Experimental union within each level, capped by cross-level frequency.
+    #[serde(rename = "multiscale-capped-union-v1")]
+    MultiscaleCappedUnionV1,
+}
+
+impl TextEncoder {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::MultiscaleWordsV1 => "multiscale-words-v1",
+            Self::MultiscaleCappedUnionV1 => "multiscale-capped-union-v1",
+        }
+    }
+
+    pub(crate) fn encode(self, text: &str, dim: usize) -> EntangledHVec {
+        encode(text, dim, self)
+    }
+
+    fn bundle(self, vectors: &[EntangledHVec]) -> EntangledHVec {
+        match self {
+            Self::MultiscaleWordsV1 => EntangledHVec::bundle(vectors),
+            Self::MultiscaleCappedUnionV1 => EntangledHVec::bundle_bloom(vectors),
+        }
+    }
+}
+
+impl std::str::FromStr for TextEncoder {
+    type Err = anyhow::Error;
+
+    fn from_str(name: &str) -> Result<Self, Self::Err> {
+        match name {
+            "multiscale-words-v1" => Ok(Self::MultiscaleWordsV1),
+            "multiscale-capped-union-v1" => Ok(Self::MultiscaleCappedUnionV1),
+            _ => anyhow::bail!("unknown text encoder {name:?}"),
+        }
+    }
+}
 
 /// Multi-scale text encoding combining character n-grams, word tokens, and
 /// word bigrams into a single sparse hypervector.
@@ -34,6 +77,10 @@ const LEVEL_WORD: u64 = 0x02;
 const LEVEL_PHRASE: u64 = 0x03;
 
 pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
+    TextEncoder::MultiscaleWordsV1.encode(text, dim)
+}
+
+fn encode(text: &str, dim: usize, encoder: TextEncoder) -> EntangledHVec {
     let text = text.trim();
     if text.is_empty() {
         return EntangledHVec::from_indices(vec![], dim);
@@ -70,7 +117,7 @@ pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
                 chunk
             })
             .collect();
-        level_bundles.push(EntangledHVec::bundle(&ngrams));
+        level_bundles.push(encoder.bundle(&ngrams));
     }
 
     // --- Word-level encoding with positional binding ---
@@ -83,7 +130,7 @@ pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
                 EntangledHVec::new_deterministic(dim, word_hash).permute(pos)
             })
             .collect();
-        level_bundles.push(EntangledHVec::bundle(&word_vecs));
+        level_bundles.push(encoder.bundle(&word_vecs));
     }
 
     // --- Word bigrams for phrase structure ---
@@ -99,7 +146,7 @@ pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
                 v0.bind(&v1).permute(pos)
             })
             .collect();
-        level_bundles.push(EntangledHVec::bundle(&phrase_vecs));
+        level_bundles.push(encoder.bundle(&phrase_vecs));
     }
 
     if level_bundles.is_empty() {
