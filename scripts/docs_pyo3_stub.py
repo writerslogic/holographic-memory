@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Writes a .pyi stub for the PyO3 module from src/python.rs, with its doc comments as docstrings.
+"""Writes a stub package for the PyO3 module from src/python.rs, with its doc comments as docstrings.
 
 mkdocstrings reads the stub statically, so the Python reference for the compiled module needs no
 wheel and matches whichever source tree is being documented (a release tag included). Anything
@@ -94,7 +94,7 @@ def generate(rs_path: Path) -> str:
     classes = {}
     for m in re.finditer(r'#\[pyclass\(name\s*=\s*"(\w+)"[^\]]*\]\s*(?:#\[[^\]]*\]\s*)*struct\s+(\w+)', text):
         classes[m.group(2)] = m.group(1)
-    out = ['"""' + (module_doc.group(1) if module_doc else "") + '"""', "", "from typing import Final", ""]
+    out = ['"""' + (module_doc.group(1) if module_doc else "") + '"""', "", "from __future__ import annotations", ""]
     for rust_name, py_name in classes.items():
         decl = re.search(r"((?:[ \t]*///[^\n]*\n)*)[ \t]*#\[pyclass\(name\s*=\s*\"" + py_name, text)
         out.append(f"class {py_name}:")
@@ -141,7 +141,7 @@ def generate(rs_path: Path) -> str:
 
 
 def write(root: Path, out_dir: Path) -> Path:
-    stub = out_dir / "holographic_memory" / "__init__.pyi"
+    stub = out_dir / "holographic_memory" / "__init__.py"
     stub.parent.mkdir(parents=True, exist_ok=True)
     stub.write_text(generate(root / "src" / "python.rs"), encoding="utf-8")
     return stub
