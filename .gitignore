@@ -54,3 +54,6 @@ benchmarks/public/*.py.lock
 /benchmarks/results/algebraic_codebook_synthetic.json
 /benchmarks/results/longmemeval_dev_answers_v2.json
 /benchmarks/results/longmemeval_dev_answers_v2b.json
+
+# Golden stores are committed test data.
+!tests/golden/**/vectors_data.bin/
