@@ -1,0 +1,126 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# hms-server runs as ONE replica: each tenant store is owned by one process (an exclusive file
+# lock), so the workload is a StatefulSet with a PersistentVolumeClaim. Scale up the pod's
+# resources, not the replica count.
+
+image:
+  repository: ghcr.io/writerslogic/hms-server
+  # Defaults to the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Credentials. The server refuses to start without them. Provide ONE of:
+#   existingSecret: a Secret with key HMS_API_KEY (one all-tenant key) and/or keys.json
+#   apiKey:         a literal key; the chart creates the Secret (convenient, but it lands in
+#                   your values and Helm release; prefer existingSecret)
+auth:
+  existingSecret: ""
+  apiKey: ""
+  # Set true when the existing Secret carries a `keys.json` (per-tenant keys, docs/server/auth.md).
+  keysFile: false
+  # Unauthenticated mode needs a loopback or unix-socket listener, which a Service cannot reach.
+  # It is not offered by this chart.
+
+# TLS inside the pod. Leave empty to terminate TLS at an ingress or mesh.
+tls:
+  # A kubernetes.io/tls Secret (tls.crt, tls.key). After the Secret rotates (cert-manager), call
+  # POST /api/v1/admin/tls/reload with an admin key; the image has no shell for SIGHUP.
+  existingSecret: ""
+
+# Every server setting is an HMS_* variable (docs/server/configuration.md). Anything listed here
+# is passed through verbatim; the pod's own settings (bind address, data dir, TLS paths, key
+# file) are managed by the chart.
+config:
+  HMS_INPUT_DIM: "384"
+  HMS_DIM: "4096"
+  HMS_MAX_CONCURRENT_WORK: "4"
+  HMS_MAX_QUEUE: "64"
+  HMS_QUEUE_TIMEOUT_MS: "1000"
+  HMS_TENANT_IDLE_SECONDS: "900"
+  HMS_LOG_FORMAT: "json"
+  HMS_LOG_LEVEL: "info"
+  # Keep serving with /readyz failing for this long after SIGTERM so the endpoint controller
+  # removes the pod from the Service before the listener closes.
+  HMS_SHUTDOWN_DELAY_SECONDS: "5"
+  HMS_SHUTDOWN_GRACE_SECONDS: "30"
+
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+persistence:
+  enabled: true
+  size: 20Gi
+  storageClassName: ""
+  accessModes: [ReadWriteOnce]
+  # Used when persistence.enabled is false: an emptyDir, so data is lost with the pod.
+  emptyDirSizeLimit: 5Gi
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    memory: 2Gi
+
+# Must exceed HMS_SHUTDOWN_DELAY_SECONDS + HMS_SHUTDOWN_GRACE_SECONDS plus the final flush.
+terminationGracePeriodSeconds: 60
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: hms.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Only pods matching these selectors (and the namespaces below) may reach the server.
+networkPolicy:
+  enabled: false
+  allowFrom: []   # list of NetworkPolicyPeer objects; empty allows same-namespace pods
+
+# Prometheus Operator scrape config. /metrics needs the admin scope unless
+# HMS_METRICS_PUBLIC=true; the ServiceMonitor reads a bearer token from metrics.tokenSecret.
+metrics:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    tokenSecret:
+      name: ""
+      key: token

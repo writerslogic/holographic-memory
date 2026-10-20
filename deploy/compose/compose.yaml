@@ -1,0 +1,47 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# docker compose -f deploy/compose/compose.yaml up --build
+#
+# Set the key before starting (the server refuses to start without credentials):
+#   export HMS_API_KEY="$(openssl rand -hex 32)"
+# Per-tenant keys instead: mount a key file and set HMS_KEYS_FILE (see docs/server/auth.md).
+
+name: hms
+
+services:
+  hms-server:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: hms-server:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      HMS_API_KEY: ${HMS_API_KEY:?set HMS_API_KEY (openssl rand -hex 32)}
+      HMS_INPUT_DIM: ${HMS_INPUT_DIM:-384}
+      HMS_DIM: ${HMS_DIM:-4096}
+      HMS_MAX_CONCURRENT_WORK: ${HMS_MAX_CONCURRENT_WORK:-4}
+      HMS_SHUTDOWN_DELAY_SECONDS: "0"
+    volumes:
+      - hms-data:/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    user: "65532:65532"
+    stop_grace_period: 40s
+    healthcheck:
+      test: ["CMD", "/hms-server", "healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+volumes:
+  hms-data:

@@ -1,0 +1,64 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Install:
+#   install -m 0755 hms-server /usr/local/bin/hms-server
+#   install -d -m 0750 /etc/hms-server
+#   install -m 0640 hms-server.env /etc/hms-server/hms-server.env   # HMS_API_KEY=..., HMS_KEYS_FILE=...
+#   install -m 0644 hms-server.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now hms-server
+#
+# Reload keys and the TLS certificate without a restart: systemctl reload hms-server
+
+[Unit]
+Description=Holographic Memory HTTP server
+Documentation=https://github.com/writerslogic/holographic-memory/blob/main/docs/SERVER.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/hms-server
+ExecReload=/bin/kill -HUP $MAINPID
+EnvironmentFile=/etc/hms-server/hms-server.env
+Environment=HMS_DATA_DIR=/var/lib/hms-server
+Environment=HMS_BIND=127.0.0.1:8080
+Restart=on-failure
+RestartSec=2s
+# SIGTERM drains in-flight requests and flushes every store; give it the grace period plus margin.
+KillSignal=SIGTERM
+TimeoutStopSec=60s
+LimitNOFILE=65536
+
+DynamicUser=yes
+StateDirectory=hms-server
+StateDirectoryMode=0700
+UMask=0077
+
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+
+[Install]
+WantedBy=multi-user.target
