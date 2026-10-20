@@ -1,0 +1,363 @@
+{
+  "binarySizes": {
+    "android": {
+      "arm64-v8a": {
+        "staticLibBytes": 49011090,
+        "strippedSoBytes": 2133864,
+        "triple": "aarch64-linux-android"
+      },
+      "armeabi-v7a": {
+        "staticLibBytes": 42834720,
+        "strippedSoBytes": 1478812,
+        "triple": "armv7-linux-androideabi"
+      },
+      "x86": {
+        "staticLibBytes": 43165822,
+        "strippedSoBytes": 2632620,
+        "triple": "i686-linux-android"
+      },
+      "x86_64": {
+        "staticLibBytes": 49554278,
+        "strippedSoBytes": 2465264,
+        "triple": "x86_64-linux-android"
+      }
+    },
+    "apple": {
+      "aarch64-apple-darwin": {
+        "staticLibBytes": 40972448,
+        "strippedDylibBytes": 1971376
+      },
+      "aarch64-apple-ios": {
+        "staticLibBytes": 40719008,
+        "strippedDylibBytes": 1988340
+      },
+      "aarch64-apple-ios-macabi": {
+        "staticLibBytes": 40652456,
+        "strippedDylibBytes": 1971008
+      },
+      "aarch64-apple-ios-sim": {
+        "staticLibBytes": 40691816,
+        "strippedDylibBytes": 1971008
+      },
+      "x86_64-apple-darwin": {
+        "staticLibBytes": 41718448,
+        "strippedDylibBytes": 2195068
+      },
+      "x86_64-apple-ios": {
+        "staticLibBytes": 41013480,
+        "strippedDylibBytes": 2182180
+      },
+      "x86_64-apple-ios-macabi": {
+        "staticLibBytes": 41327472,
+        "strippedDylibBytes": 2178084
+      }
+    },
+    "releaseAarBytes": 5133309,
+    "xcframeworkBytes": 287224855
+  },
+  "commit": "b35f171dca24fa140c4f9f18500e31aee531c073",
+  "generatedUnix": 1792530850,
+  "host": {
+    "cpuBrand": "Apple M4",
+    "machine": "arm64",
+    "memBytes": 34359738368,
+    "system": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  },
+  "method": {
+    "corpus": "synthetic: Zipf(1.0) over 30000 pronounceable words, fixed seed; measures cost, not ranking quality",
+    "docs": 5000,
+    "notes": "Rust-level API calls (the same functions Swift and Kotlin call through UniFFI); FFI marshalling not included. The bench directory was a RAM disk so file system latency is excluded. The host was shared with other builds, see loadAverage fields; medians over repeats, raw runs kept.",
+    "queries": 500,
+    "repeats": 3,
+    "storage": "/Volumes/hmsram/bench",
+    "wordsPerDoc": 150
+  },
+  "runs": {
+    "1024": [
+      {
+        "chunks": 5000,
+        "compactMs": 98.521875,
+        "dimensions": 1024,
+        "diskAllocatedBytesAfterCompact": 70455296,
+        "diskBytesAfterCompact": 70412580,
+        "diskBytesBeforeCompact": 70412325,
+        "docs": 5000,
+        "ingestBatch100": {
+          "docs": 4500,
+          "docsPerSecond": 1811.8042066150388
+        },
+        "ingestSingle": {
+          "n": 500,
+          "p50Ms": 1.259125,
+          "p95Ms": 1.345417,
+          "p99Ms": 2.0427079999999997
+        },
+        "loadAverage1mAfter": 22.88134765625,
+        "loadAverage1mBefore": 24.658203125,
+        "openEmptyMs": 12.402208,
+        "reopenMs": 1809.465291,
+        "restoreMs": 1588.670333,
+        "rssBytes": {
+          "afterReopen": 35143680,
+          "beforeOpen": 2555904,
+          "loaded": 32325632,
+          "peak": 48463872
+        },
+        "search": {
+          "k": 10,
+          "meanHits": 10.0,
+          "p50Ms": 0.06145799999999999,
+          "p95Ms": 0.143125,
+          "p99Ms": 0.300417,
+          "queries": 500,
+          "termsPerQuery": 3
+        },
+        "snapshotBytes": 70412570,
+        "snapshotMs": 240.68349999999998,
+        "vocabulary": 30000,
+        "wordsPerDoc": 150
+      },
+      {
+        "chunks": 5000,
+        "compactMs": 63.916666,
+        "dimensions": 1024,
+        "diskAllocatedBytesAfterCompact": 70455296,
+        "diskBytesAfterCompact": 70412580,
+        "diskBytesBeforeCompact": 70412325,
+        "docs": 5000,
+        "ingestBatch100": {
+          "docs": 4500,
+          "docsPerSecond": 1733.3586298921398
+        },
+        "ingestSingle": {
+          "n": 500,
+          "p50Ms": 1.274959,
+          "p95Ms": 1.542291,
+          "p99Ms": 5.305833000000001
+        },
+        "loadAverage1mAfter": 22.169921875,
+        "loadAverage1mBefore": 22.88134765625,
+        "openEmptyMs": 10.990875,
+        "reopenMs": 1746.970334,
+        "restoreMs": 1482.5786249999999,
+        "rssBytes": {
+          "afterReopen": 35356672,
+          "beforeOpen": 2555904,
+          "loaded": 31899648,
+          "peak": 48037888
+        },
+        "search": {
+          "k": 10,
+          "meanHits": 10.0,
+          "p50Ms": 0.064375,
+          "p95Ms": 0.114958,
+          "p99Ms": 0.143625,
+          "queries": 500,
+          "termsPerQuery": 3
+        },
+        "snapshotBytes": 70412570,
+        "snapshotMs": 156.62366699999998,
+        "vocabulary": 30000,
+        "wordsPerDoc": 150
+      },
+      {
+        "chunks": 5000,
+        "compactMs": 66.911125,
+        "dimensions": 1024,
+        "diskAllocatedBytesAfterCompact": 70455296,
+        "diskBytesAfterCompact": 70412580,
+        "diskBytesBeforeCompact": 70412325,
+        "docs": 5000,
+        "ingestBatch100": {
+          "docs": 4500,
+          "docsPerSecond": 1888.8977287437015
+        },
+        "ingestSingle": {
+          "n": 500,
+          "p50Ms": 1.331917,
+          "p95Ms": 2.3435,
+          "p99Ms": 7.799542
+        },
+        "loadAverage1mAfter": 20.955078125,
+        "loadAverage1mBefore": 22.169921875,
+        "openEmptyMs": 11.194833,
+        "reopenMs": 1617.566042,
+        "restoreMs": 1587.890333,
+        "rssBytes": {
+          "afterReopen": 34013184,
+          "beforeOpen": 2555904,
+          "loaded": 31571968,
+          "peak": 47710208
+        },
+        "search": {
+          "k": 10,
+          "meanHits": 10.0,
+          "p50Ms": 0.066166,
+          "p95Ms": 0.174625,
+          "p99Ms": 0.486916,
+          "queries": 500,
+          "termsPerQuery": 3
+        },
+        "snapshotBytes": 70412570,
+        "snapshotMs": 181.04183300000003,
+        "vocabulary": 30000,
+        "wordsPerDoc": 150
+      }
+    ],
+    "4096": [
+      {
+        "chunks": 5000,
+        "compactMs": 76.134958,
+        "dimensions": 4096,
+        "diskAllocatedBytesAfterCompact": 70455296,
+        "diskBytesAfterCompact": 70412580,
+        "diskBytesBeforeCompact": 70412325,
+        "docs": 5000,
+        "ingestBatch100": {
+          "docs": 4500,
+          "docsPerSecond": 854.0850225757788
+        },
+        "ingestSingle": {
+          "n": 500,
+          "p50Ms": 3.950416,
+          "p95Ms": 6.9695,
+          "p99Ms": 10.893583
+        },
+        "loadAverage1mAfter": 21.48046875,
+        "loadAverage1mBefore": 20.955078125,
+        "openEmptyMs": 13.137125,
+        "reopenMs": 1383.289333,
+        "restoreMs": 1569.571667,
+        "rssBytes": {
+          "afterReopen": 39747584,
+          "beforeOpen": 2555904,
+          "loaded": 37142528,
+          "peak": 53280768
+        },
+        "search": {
+          "k": 10,
+          "meanHits": 10.0,
+          "p50Ms": 0.06387499999999999,
+          "p95Ms": 0.128916,
+          "p99Ms": 0.180959,
+          "queries": 500,
+          "termsPerQuery": 3
+        },
+        "snapshotBytes": 70412570,
+        "snapshotMs": 159.556333,
+        "vocabulary": 30000,
+        "wordsPerDoc": 150
+      },
+      {
+        "chunks": 5000,
+        "compactMs": 81.89637499999999,
+        "dimensions": 4096,
+        "diskAllocatedBytesAfterCompact": 70455296,
+        "diskBytesAfterCompact": 70412580,
+        "diskBytesBeforeCompact": 70412325,
+        "docs": 5000,
+        "ingestBatch100": {
+          "docs": 4500,
+          "docsPerSecond": 1013.6270614323603
+        },
+        "ingestSingle": {
+          "n": 500,
+          "p50Ms": 3.831042,
+          "p95Ms": 5.770916,
+          "p99Ms": 8.626916
+        },
+        "loadAverage1mAfter": 21.29345703125,
+        "loadAverage1mBefore": 21.48046875,
+        "openEmptyMs": 10.085291,
+        "reopenMs": 2522.462083,
+        "restoreMs": 1782.496875,
+        "rssBytes": {
+          "afterReopen": 41811968,
+          "beforeOpen": 2555904,
+          "loaded": 39190528,
+          "peak": 55328768
+        },
+        "search": {
+          "k": 10,
+          "meanHits": 10.0,
+          "p50Ms": 0.060125,
+          "p95Ms": 0.08604099999999999,
+          "p99Ms": 0.097125,
+          "queries": 500,
+          "termsPerQuery": 3
+        },
+        "snapshotBytes": 70412570,
+        "snapshotMs": 335.961959,
+        "vocabulary": 30000,
+        "wordsPerDoc": 150
+      },
+      {
+        "chunks": 5000,
+        "compactMs": 75.879458,
+        "dimensions": 4096,
+        "diskAllocatedBytesAfterCompact": 70455296,
+        "diskBytesAfterCompact": 70412580,
+        "diskBytesBeforeCompact": 70412325,
+        "docs": 5000,
+        "ingestBatch100": {
+          "docs": 4500,
+          "docsPerSecond": 1046.478641439996
+        },
+        "ingestSingle": {
+          "n": 500,
+          "p50Ms": 3.827,
+          "p95Ms": 6.101416,
+          "p99Ms": 9.876792
+        },
+        "loadAverage1mAfter": 21.50390625,
+        "loadAverage1mBefore": 21.29345703125,
+        "openEmptyMs": 12.530125,
+        "reopenMs": 1244.433,
+        "restoreMs": 1336.381208,
+        "rssBytes": {
+          "afterReopen": 41091072,
+          "beforeOpen": 2572288,
+          "loaded": 38486016,
+          "peak": 54624256
+        },
+        "search": {
+          "k": 10,
+          "meanHits": 10.0,
+          "p50Ms": 0.064292,
+          "p95Ms": 0.145042,
+          "p99Ms": 0.274459,
+          "queries": 500,
+          "termsPerQuery": 3
+        },
+        "snapshotBytes": 70412570,
+        "snapshotMs": 172.972958,
+        "vocabulary": 30000,
+        "wordsPerDoc": 150
+      }
+    ]
+  },
+  "schema": "mobile_v1",
+  "sizeNotes": "strippedSoBytes and strippedDylibBytes are the cdylib after rustc strip (what a linked app embeds is smaller: the linker drops unused code from the static library, whose size is not the app delta). The macOS dylib shown is not loadable on macOS 27 because of rustc strip; the JVM host library is built separately with strip=debuginfo. xcframeworkBytes is the sum of all static slices, an upper bound on download size, not on app size. releaseAarBytes holds the four ABIs. Bench disk bytes are dominated by the preallocated 64 MiB log segment (sparse where the file system supports it) and did not change between 1024 and 4096 dimensions.",
+  "summaryMedianByDimensions": {
+    "1024": {
+      "diskAllocatedBytesAfterCompact": 70455296,
+      "diskBytesAfterCompact": 70412580,
+      "ingestBatch100DocsPerSecond": 1811.8042066150388,
+      "ingestSingleP50Ms": 1.274959,
+      "peakRssBytes": 48037888,
+      "reopenMs": 1746.970334,
+      "searchP50Ms": 0.064375,
+      "searchP95Ms": 0.143125
+    },
+    "4096": {
+      "diskAllocatedBytesAfterCompact": 70455296,
+      "diskBytesAfterCompact": 70412580,
+      "ingestBatch100DocsPerSecond": 1013.6270614323603,
+      "ingestSingleP50Ms": 3.831042,
+      "peakRssBytes": 54624256,
+      "reopenMs": 1383.289333,
+      "searchP50Ms": 0.06387499999999999,
+      "searchP95Ms": 0.128916
+    }
+  }
+}

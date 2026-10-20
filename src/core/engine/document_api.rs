@@ -138,6 +138,11 @@ impl HmsCore {
         Ok(())
     }
 
+    /// Number of documents currently stored.
+    pub fn document_count(&self) -> usize {
+        self.documents.read().document_count()
+    }
+
     /// Whether a document with this id currently resolves in the opened store.
     pub fn has_document(&self, id: &str) -> bool {
         self.documents.read().contains_key(id)

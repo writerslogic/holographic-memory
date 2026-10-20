@@ -1,0 +1,7 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# curve25519-dalek 5 auto-selects its AVX-512 backend on some x86_64 targets and then fails to
+# build; the portable backend is the right one for phones, simulators and CI alike.
+[build]
+rustflags = ["--cfg", 'curve25519_dalek_backend="serial"']
