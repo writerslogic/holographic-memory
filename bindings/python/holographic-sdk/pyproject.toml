@@ -37,7 +37,7 @@ import-pgvector = ["psycopg[binary]>=3.1"]
 import-redis = ["redis>=5"]
 import-mongodb = ["pymongo>=4.6"]
 import-openai = ["openai>=1.40"]
-import-mem0 = ["mem0ai>=0.1"]
+import-mem0 = ["mem0ai>=0.1,<0.2"]
 import-zep = ["zep-cloud>=2"]
 import-letta = ["letta-client>=0.1"]
 import-llamaindex = ["llama-index-core>=0.10"]
@@ -78,7 +78,7 @@ importers-test = [
     "langchain-core>=0.3.86",
     "letta-client>=1.12.1",
     "llama-index-core>=0.14.25",
-    "mem0ai>=0.1.115",
+    "mem0ai>=0.1.115,<0.2",
     "milvus-lite>=3.2.2",
     "numpy>=2.2.6",
     "openai>=1.109.1",
