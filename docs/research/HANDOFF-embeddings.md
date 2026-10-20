@@ -22,7 +22,7 @@
    and check the pack hash equals the registry pin.
 3. Engine runs for gte-small / bge-small / all-MiniLM-L6 / e5 (`benchmarks/embedding/run_engine_eval.py
    --skip-lme`) and `bench_torch_cpu.py`; then rerun `assemble_selection.py`.
-4. Store gain/cost: `benchmarks/embedding/run_store_eval.py` (lexical vs semantic vs hybrid, RSS, cold start,
+4. Store gain/cost: done for SciFact and NFCorpus (`embedding_store_v1.json`); LongMemEval-dev was not run there (`run_store_eval.py --datasets lme-dev`). The remainder of this item is obsolete: rerun only for other models.
    ingest docs/s) writes `benchmarks/results/embedding_store_v1.json`; if absent it did not finish. LME-dev
    was not run in the store eval.
 5. Serving RSS gate and default-binary size/`nm` diff were not run; only the dependency-tree and diff

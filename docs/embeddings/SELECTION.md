@@ -37,3 +37,21 @@ stage-1 quality plus the layer count, not on a measured engine latency compariso
 * Agreement with the fp32 reference on the fixed 71-text sample: min cosine 0.99963 (passages), 0.99975 (queries); bar 0.999. int8 uses one scale per 64 weights: on all-MiniLM-L6-v2 per-row scales gave min cosine 0.9973, groups of 128/64/32/16 gave 0.9988/0.9994/0.9994/0.9995.
 * Pack: 34.1 MB. Peak RSS embedding 2000 passages: 182 MB. Cold start (process to first embedding): 396 ms wall, 280 ms of it loading and hashing the pack.
 * Latency per passage (SciFact docs, about 330 tokens, best of 2): 279 ms at 1 thread, 77 ms at 8; per query 13.8 / 3.8 ms. Measured on a shared machine at load average 20; indicative only. The engine does not use Apple's AMX, so PyTorch/Accelerate is faster per core.
+
+## Retrieval gain and cost through the document store (`embedding_store_v1.json`)
+
+`TextEncoder::LocalEmbedV1` (granite-embedding-30m-english int8, 8 threads) against the default lexical
+store, same documents and queries, nDCG@10 (SciFact-train / NFCorpus-dev; LongMemEval was not run here):
+
+| Variant | SciFact-train | NFCorpus-dev |
+|---|---|---|
+| lexical default | 0.7027 | 0.2916 |
+| semantic only | 0.7491 | 0.3151 |
+| hybrid (default blend) | **0.7681** | **0.3435** |
+
+Hybrid gains +0.065 and +0.052 nDCG@10 over the lexical default. Cost (shared machine, indicative):
+ingest 9.6 docs/s against 735 docs/s lexical on SciFact (7.1 against 282 on NFCorpus), peak process RSS
+368 MB / 345 MB against 97 MB / 80 MB, query latency about 12 ms / 8 ms (query embedding included)
+against 0.1 ms, process start to a working one-document store 0.31 s with the embedder (the
+default-encoder figure in the file, 0.75 s, is dominated by machine load). The embedder is opt-in; the
+default build and its memory are unaffected.

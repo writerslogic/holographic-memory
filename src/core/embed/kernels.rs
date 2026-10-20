@@ -122,10 +122,9 @@ const LANES: usize = 16;
 pub(crate) fn dot(a: &[f32], b: &[f32]) -> f32 {
     debug_assert_eq!(a.len(), b.len());
     let mut acc = [0f32; LANES];
-    let ca = a.chunks_exact(LANES);
-    let cb = b.chunks_exact(LANES);
-    let (ra, rb) = (ca.remainder(), cb.remainder());
-    for (x, y) in ca.zip(cb) {
+    let (ca, ra) = a.as_chunks::<LANES>();
+    let (cb, rb) = b.as_chunks::<LANES>();
+    for (x, y) in ca.iter().zip(cb) {
         for i in 0..LANES {
             acc[i] = fma(x[i], y[i], acc[i]);
         }
@@ -149,10 +148,9 @@ pub(crate) fn dot(a: &[f32], b: &[f32]) -> f32 {
 #[inline(always)]
 pub(crate) fn dot_head(a: &[f32], b: &[f32]) -> f32 {
     let mut acc = [0f32; 4];
-    let ca = a.chunks_exact(4);
-    let cb = b.chunks_exact(4);
-    let (ra, rb) = (ca.remainder(), cb.remainder());
-    for (x, y) in ca.zip(cb) {
+    let (ca, ra) = a.as_chunks::<4>();
+    let (cb, rb) = b.as_chunks::<4>();
+    for (x, y) in ca.iter().zip(cb) {
         for l in 0..4 {
             acc[l] = fma(x[l], y[l], acc[l]);
         }

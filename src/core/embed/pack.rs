@@ -362,12 +362,16 @@ pub(crate) fn read(path: &Path, expected_sha256: Option<&str>) -> Result<Loaded>
         let raw = t.exact(e.len, &e.name)?;
         let tensor = match e.dtype.as_str() {
             "f32" => Tensor::F32(
-                raw.chunks_exact(4)
+                raw.as_chunks::<4>()
+                    .0
+                    .iter()
                     .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
                     .collect(),
             ),
             "f16" => Tensor::F16(
-                raw.chunks_exact(2)
+                raw.as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|b| u16::from_le_bytes([b[0], b[1]]))
                     .collect(),
             ),
@@ -377,7 +381,9 @@ pub(crate) fn read(path: &Path, expected_sha256: Option<&str>) -> Result<Loaded>
                     group: e.group,
                     q: q.to_vec(),
                     scale: s
-                        .chunks_exact(4)
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
                         .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
                         .collect(),
                 }
@@ -563,15 +569,21 @@ pub(crate) fn read_safetensors(path: &Path) -> Result<NamedTensors> {
         let raw = &bytes[base + a..base + b];
         let values: Vec<f32> = match dtype {
             "F32" => raw
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
                 .collect(),
             "F16" => raw
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|c| f16_to_f32(u16::from_le_bytes([c[0], c[1]])))
                 .collect(),
             "BF16" => raw
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|c| f32::from_bits(u32::from(u16::from_le_bytes([c[0], c[1]])) << 16))
                 .collect(),
             // Index buffers such as position_ids carry no weights.
