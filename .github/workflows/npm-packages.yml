@@ -76,12 +76,12 @@ jobs:
         if: ${{ matrix.zig }}
         with:
           tool: cargo-zigbuild
-      - run: npm ci --omit=optional
+      - run: npm ci --ignore-scripts
       - name: Install the glibc 2.17 cross toolchain (an optional peer of @napi-rs/cross-toolchain)
         if: ${{ matrix.cross }}
         env:
           CROSS: ${{ matrix.cross }}
-        run: npm install --no-save --no-package-lock --ignore-scripts --omit=optional "$CROSS"
+        run: npm install --no-save --no-package-lock --ignore-scripts "$CROSS"
       - name: Build the binding
         shell: bash
         env:
