@@ -207,6 +207,52 @@ impl EncryptionManager {
         Ok(output)
     }
 
+    /// Like [`encrypt`](Self::encrypt), binding `aad` into the authentication tag.
+    pub fn encrypt_with_aad(&self, plaintext: &[u8], aad: &[u8]) -> Result<Vec<u8>> {
+        use aes_gcm::aead::Payload;
+        let mut nonce_bytes = [0u8; 12];
+        use rand::Rng;
+        rand::rng().fill_bytes(&mut nonce_bytes);
+        let nonce = Nonce::try_from(nonce_bytes.as_slice())
+            .map_err(|_| anyhow!("AES-256-GCM nonce construction failed"))?;
+        let ciphertext = self
+            .cipher
+            .encrypt(
+                &nonce,
+                Payload {
+                    msg: plaintext,
+                    aad,
+                },
+            )
+            .map_err(|e| anyhow!("Encryption failed: {}", e))?;
+        let mut output = Vec::with_capacity(12 + ciphertext.len());
+        output.extend_from_slice(&nonce_bytes);
+        output.extend_from_slice(&ciphertext);
+        Ok(output)
+    }
+
+    /// Decrypt data produced by `encrypt_with_aad()` with the same `aad`.
+    pub fn decrypt_with_aad(&self, encrypted: &[u8], aad: &[u8]) -> Result<Vec<u8>> {
+        use aes_gcm::aead::Payload;
+        if encrypted.len() < 12 {
+            return Err(anyhow!(
+                "Encrypted data too short: {} bytes",
+                encrypted.len()
+            ));
+        }
+        let nonce = Nonce::try_from(&encrypted[..12])
+            .map_err(|_| anyhow!("AES-256-GCM nonce construction failed"))?;
+        self.cipher
+            .decrypt(
+                &nonce,
+                Payload {
+                    msg: &encrypted[12..],
+                    aad,
+                },
+            )
+            .map_err(|e| anyhow!("Decryption failed: {}", e))
+    }
+
     /// Decrypt data produced by `encrypt()`. Input: `[nonce:12][ciphertext+tag]`.
     pub fn decrypt(&self, encrypted: &[u8]) -> Result<Vec<u8>> {
         if encrypted.len() < 12 {

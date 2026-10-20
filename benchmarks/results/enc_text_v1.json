@@ -1,0 +1,14 @@
+{
+  "what": "unencrypted document search QPS, before (main 3c364f1) vs after the text-segment encryption change, security-probe bench",
+  "command": "security-probe bench --docs 2000 --queries 2000 (release, features security,server), 5 alternating runs per binary on a shared, noisy machine",
+  "encrypted": false,
+  "docs": 2000,
+  "queries": 2000,
+  "before_qps": [508.20, 534.64, 517.79, 610.65, 870.82],
+  "after_qps": [522.74, 514.35, 558.81, 629.02, 728.94],
+  "before_median_qps": 534.64,
+  "after_median_qps": 558.81,
+  "store_bytes_before": 67687723,
+  "store_bytes_after": 67687731,
+  "note": "Run-to-run spread (about 1.7x) exceeds any before/after difference; the medians show no measurable regression. The unencrypted path adds one None check per text append and read and an 8-byte segment header."
+}

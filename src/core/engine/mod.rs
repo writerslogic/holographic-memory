@@ -88,7 +88,7 @@ pub struct HmsCore {
     signing: Option<super::security::SigningManager>,
     #[cfg(feature = "security")]
     #[allow(dead_code)]
-    encryption: Option<super::security::EncryptionManager>,
+    encryption: Option<std::sync::Arc<super::security::EncryptionManager>>,
     #[cfg(feature = "provenance")]
     agents: RwLock<super::provenance::access::AgentRegistry>,
     #[cfg(feature = "provenance")]
@@ -181,7 +181,7 @@ impl HmsCore {
                 })?;
             let manager = super::security::EncryptionManager::new(&passphrase, &base_path);
             passphrase.zeroize();
-            Some(manager?)
+            Some(std::sync::Arc::new(manager?))
         } else {
             None
         };
@@ -281,9 +281,11 @@ impl HmsCore {
             _store_lock: store_lock,
         };
 
-        core.documents
-            .write()
-            .attach_text_segment(&core.storage_path.join("documents.text"))?;
+        core.documents.write().attach_text_segment(
+            &core.storage_path.join("documents.text"),
+            #[cfg(feature = "security")]
+            core.encryption.clone(),
+        )?;
         core.load_from_log()?;
         core.load_indices()?;
         {

@@ -241,12 +241,20 @@ impl DocumentStore {
 
     /// Keeps chunk text in the segment at `path` (created or truncated now) instead of in
     /// memory; the caller replays the journal afterwards, which refills it.
-    pub(crate) fn attach_text_segment(&mut self, path: &std::path::Path) -> anyhow::Result<()> {
+    pub(crate) fn attach_text_segment(
+        &mut self,
+        path: &std::path::Path,
+        #[cfg(feature = "security")] cipher: Option<Arc<crate::core::security::EncryptionManager>>,
+    ) -> anyhow::Result<()> {
         assert!(
             self.documents.is_empty(),
             "text segment attached to a populated store"
         );
-        self.text = Some(Arc::new(TextSegment::create(path)?));
+        self.text = Some(Arc::new(TextSegment::create(
+            path,
+            #[cfg(feature = "security")]
+            cipher,
+        )?));
         Ok(())
     }
 

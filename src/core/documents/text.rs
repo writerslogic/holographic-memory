@@ -19,11 +19,28 @@ use anyhow::{ensure, Context, Result};
 pub(crate) struct TextSegment {
     file: File,
     len: AtomicU64,
+    #[cfg(feature = "security")]
+    cipher: Option<std::sync::Arc<crate::core::security::EncryptionManager>>,
 }
+
+/// Segment header: magic, format version, flags. Version 2 adds the header and, with
+/// `FLAG_ENCRYPTED`, stores every record as `[nonce:12][AES-256-GCM ciphertext+tag]`
+/// authenticated with the record's segment offset as AAD, so a record cannot be moved.
+/// Version 1 segments (no header, plaintext) are a cache truncated at open, so they are
+/// never read back.
+const MAGIC: &[u8; 4] = b"HMST";
+const VERSION: u8 = 2;
+const FLAG_ENCRYPTED: u8 = 1;
+const HEADER_LEN: u64 = 8;
 
 impl TextSegment {
     /// Creates or truncates the segment at `path`.
-    pub(crate) fn create(path: &Path) -> Result<Self> {
+    pub(crate) fn create(
+        path: &Path,
+        #[cfg(feature = "security")] cipher: Option<
+            std::sync::Arc<crate::core::security::EncryptionManager>,
+        >,
+    ) -> Result<Self> {
         let file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -31,17 +48,41 @@ impl TextSegment {
             .truncate(true)
             .open(path)
             .with_context(|| format!("creating text segment {}", path.display()))?;
+        #[cfg(feature = "security")]
+        let flags = if cipher.is_some() { FLAG_ENCRYPTED } else { 0 };
+        #[cfg(not(feature = "security"))]
+        let flags = 0;
+        let mut header = [0u8; HEADER_LEN as usize];
+        header[..4].copy_from_slice(MAGIC);
+        header[4] = VERSION;
+        header[5] = flags;
+        positioned_write(&file, &header, 0).context("writing text segment header")?;
         Ok(Self {
             file,
-            len: AtomicU64::new(0),
+            len: AtomicU64::new(HEADER_LEN),
+            #[cfg(feature = "security")]
+            cipher,
         })
     }
 
     /// Appends `text` and returns its location.
     pub(crate) fn append(&self, text: &str) -> Result<(u64, u32)> {
-        let len = u32::try_from(text.len()).context("chunk text over 4 GiB")?;
         let at = self.len.load(Ordering::Acquire);
-        positioned_write(&self.file, text.as_bytes(), at).context("appending chunk text")?;
+        #[cfg(feature = "security")]
+        let sealed;
+        let bytes = {
+            #[cfg(feature = "security")]
+            if let Some(cipher) = &self.cipher {
+                sealed = cipher.encrypt_with_aad(text.as_bytes(), &at.to_le_bytes())?;
+                sealed.as_slice()
+            } else {
+                text.as_bytes()
+            }
+            #[cfg(not(feature = "security"))]
+            text.as_bytes()
+        };
+        let len = u32::try_from(bytes.len()).context("chunk text over 4 GiB")?;
+        positioned_write(&self.file, bytes, at).context("appending chunk text")?;
         self.len.store(at + u64::from(len), Ordering::Release);
         Ok((at, len))
     }
@@ -53,8 +94,16 @@ impl TextSegment {
                 .is_some_and(|end| end <= self.len.load(Ordering::Acquire)),
             "chunk text location outside the text segment"
         );
+        ensure!(
+            at >= HEADER_LEN,
+            "chunk text location inside the segment header"
+        );
         let mut bytes = vec![0u8; len as usize];
         positioned_read(&self.file, &mut bytes, at).context("reading chunk text")?;
+        #[cfg(feature = "security")]
+        if let Some(cipher) = &self.cipher {
+            bytes = cipher.decrypt_with_aad(&bytes, &at.to_le_bytes())?;
+        }
         String::from_utf8(bytes).context("chunk text is not UTF-8")
     }
 
@@ -108,20 +157,51 @@ fn positioned_read(file: &File, buf: &mut [u8], at: u64) -> std::io::Result<()> 
 mod tests {
     use super::*;
 
+    fn create(path: &Path) -> TextSegment {
+        TextSegment::create(
+            path,
+            #[cfg(feature = "security")]
+            None,
+        )
+        .unwrap()
+    }
+
+    #[cfg(feature = "security")]
+    #[test]
+    fn encrypted_records_are_sealed_unique_and_bound_to_their_position() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("t");
+        let manager = crate::core::security::EncryptionManager::new("pw", dir.path()).unwrap();
+        let segment = TextSegment::create(&path, Some(std::sync::Arc::new(manager))).unwrap();
+        let a = segment.append("same text").unwrap();
+        let b = segment.append("same text").unwrap();
+        assert_eq!(segment.read(a.0, a.1).unwrap(), "same text");
+        let raw = std::fs::read(&path).unwrap();
+        assert!(!raw.windows(9).any(|w| w == b"same text"));
+        // Equal plaintexts never share a nonce or ciphertext.
+        let (ra, rb) = (a.0 as usize, b.0 as usize);
+        assert_ne!(raw[ra..ra + 12], raw[rb..rb + 12]);
+        // A record copied to another position fails authentication.
+        let mut moved = raw.clone();
+        moved.copy_within(ra..ra + a.1 as usize, rb);
+        std::fs::write(&path, &moved).unwrap();
+        assert!(segment.read(b.0, b.1).is_err());
+    }
+
     #[test]
     fn locations_round_trip_and_stay_inside_the_segment() {
         let dir = tempfile::tempdir().unwrap();
-        let segment = TextSegment::create(&dir.path().join("t")).unwrap();
+        let segment = create(&dir.path().join("t"));
         let a = segment.append("").unwrap();
         let b = segment.append("héllo wörld").unwrap();
         let c = segment.append(&"x".repeat(70_000)).unwrap();
-        assert_eq!(a, (0, 0));
-        assert_eq!(b, (0, "héllo wörld".len() as u32));
-        assert_eq!(c.0, u64::from(b.1));
+        assert_eq!(a, (HEADER_LEN, 0));
+        assert_eq!(b, (HEADER_LEN, "héllo wörld".len() as u32));
+        assert_eq!(c.0, HEADER_LEN + u64::from(b.1));
         assert_eq!(segment.read(a.0, a.1).unwrap(), "");
         assert_eq!(segment.read(b.0, b.1).unwrap(), "héllo wörld");
         assert_eq!(segment.read(c.0, c.1).unwrap().len(), 70_000);
-        assert_eq!(segment.len(), u64::from(b.1) + 70_000);
+        assert_eq!(segment.len(), HEADER_LEN + u64::from(b.1) + 70_000);
         // Past the end, and a length that overflows, are errors, never reads.
         assert!(segment.read(c.0, c.1 + 1).is_err());
         assert!(segment.read(segment.len(), 1).is_err());
@@ -129,7 +209,7 @@ mod tests {
         // A slice that splits a multi-byte character is rejected as text.
         assert!(segment.read(b.0 + 1, 1).is_err());
         // Reopening truncates: the journal replay rebuilds it.
-        let reopened = TextSegment::create(&dir.path().join("t")).unwrap();
-        assert_eq!(reopened.len(), 0);
+        let reopened = create(&dir.path().join("t"));
+        assert_eq!(reopened.len(), HEADER_LEN);
     }
 }
