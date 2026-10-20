@@ -15,9 +15,12 @@ First off, thank you for considering contributing to HMS! It's people like you t
 ### Pull Requests
 1. Fork the repo.
 2. Create your feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes.
+3. Commit your changes with a sign-off (`git commit -s`).
 4. Push to the branch.
 5. Open a Pull Request.
+
+### Developer Certificate of Origin
+HMS is Apache-2.0 and accepts contributions under the [Developer Certificate of Origin](https://developercertificate.org) 1.1; there is no CLA. Every commit needs a `Signed-off-by: Your Name <you@example.com>` line, which `git commit -s` adds, and the email must be the one on the commit. The DCO check on each pull request fails otherwise. To fix an existing branch: `git rebase --signoff origin/main && git push --force-with-lease`.
 
 ## Development Setup
 
