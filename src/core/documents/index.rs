@@ -178,10 +178,6 @@ impl DocumentStore {
         text_of(chunk, self.text.as_deref())
     }
 
-    pub(crate) fn document_count(&self) -> usize {
-        self.documents.len()
-    }
-
     pub(crate) fn contains_key(&self, id: &str) -> bool {
         self.documents.contains_key(id)
     }
