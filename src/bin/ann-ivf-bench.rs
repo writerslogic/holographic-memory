@@ -85,8 +85,10 @@ fn floats(path: &Path, dim: usize) -> Result<Vec<f32>> {
         bail!("invalid dimension or incomplete float input row");
     }
     Ok(bytes
-        .chunks_exact(4)
-        .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
         .collect())
 }
 
@@ -106,8 +108,10 @@ fn main() -> Result<()> {
     let queries = floats(&args.queries, args.dim)?;
     let centers = floats(&args.centroids, args.dim)?;
     let assignments = input(&args.assignments)?
-        .chunks_exact(4)
-        .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| u32::from_le_bytes(*b))
         .collect::<Vec<_>>();
     let start = Instant::now();
     let index = QuantizedIvf::build(

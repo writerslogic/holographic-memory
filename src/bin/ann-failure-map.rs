@@ -36,8 +36,10 @@ fn read_rows(path: PathBuf, dim: usize) -> Result<Vec<f32>> {
     );
     let bytes = fs::read(path)?;
     let rows: Vec<f32> = bytes
-        .chunks_exact(4)
-        .map(|v| f32::from_le_bytes(v.try_into().expect("four bytes")))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|v| f32::from_le_bytes(*v))
         .collect();
     ensure!(rows.iter().all(|v| v.is_finite()), "nonfinite input");
     Ok(rows)
