@@ -24,6 +24,7 @@ pub use crate::core::documents::{
 };
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::HmsError;
+#[cfg(not(target_arch = "wasm32"))]
 pub use crate::core::memory_api::{Memory, MemoryConfig};
 pub use crate::core::types::{
     ConceptCandidate, HardwareCapabilities, IndexStatus, MemorizeBatchItem, QueryExplanation,

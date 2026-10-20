@@ -68,6 +68,7 @@ pub mod intersection;
 pub(crate) mod ivf;
 #[cfg(feature = "security")]
 pub mod mask;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod memory_api;
 #[cfg(feature = "local-models")]
 pub mod models;

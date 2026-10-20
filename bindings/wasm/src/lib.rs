@@ -11,7 +11,6 @@ mod store;
 pub use crypto::*;
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
-use rand_chacha::ChaCha8Rng;
 use sha2::{Digest, Sha256};
 pub use store::HmsStore;
 use wasm_bindgen::prelude::*;
