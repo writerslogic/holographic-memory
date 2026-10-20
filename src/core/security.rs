@@ -284,30 +284,36 @@ mod tests {
                 if hi <= lo || hi - lo > 1 << 32 {
                     continue;
                 }
-                let mut buf = vec![0u8; (hi - lo) as usize];
-                let own = buf.as_ptr() as u64;
-                if (lo..hi).contains(&own)
-                    || mem.seek(SeekFrom::Start(lo)).is_err()
-                    || mem.read_exact(&mut buf).is_err()
-                {
-                    continue;
+                // Read in chunks so a page another test thread unmaps mid-scan costs one
+                // chunk, not the whole mapping; chunks overlap by the needle length so no
+                // occurrence straddles a boundary unseen.
+                const CHUNK: u64 = 1 << 16;
+                let overlap = masked.len() as u64 - 1;
+                let mut buf = vec![0u8; (CHUNK + overlap) as usize];
+                let mut at = lo;
+                while at < hi {
+                    let len = (CHUNK + overlap).min(hi - at) as usize;
+                    let chunk = &mut buf[..len];
+                    if mem.seek(SeekFrom::Start(at)).is_ok() && mem.read_exact(chunk).is_ok() {
+                        for (offset, w) in chunk.windows(masked.len()).enumerate() {
+                            if offset as u64 >= CHUNK && at + CHUNK < hi {
+                                break;
+                            }
+                            if w.iter()
+                                .zip(masked)
+                                .zip(mask)
+                                .all(|((b, n), m)| b ^ m == *n)
+                            {
+                                hits.push(format!(
+                                    "{range} {perms} {name:?} +{:#x}",
+                                    at - lo + offset as u64
+                                ));
+                            }
+                        }
+                    }
+                    chunk.zeroize();
+                    at += CHUNK;
                 }
-                let found = buf
-                    .windows(masked.len())
-                    .enumerate()
-                    .filter(|(_, w)| {
-                        w.iter()
-                            .zip(masked)
-                            .zip(mask)
-                            .all(|((b, n), m)| b ^ m == *n)
-                    })
-                    .map(|(at, _)| at)
-                    .collect::<Vec<_>>();
-                hits.extend(
-                    found
-                        .iter()
-                        .map(|at| format!("{range} {perms} {name:?} +{at:#x}")),
-                );
                 buf.zeroize();
             }
             Ok(hits)
@@ -329,8 +335,16 @@ mod tests {
         let ciphertext = manager.encrypt(b"payload")?;
         #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("aes") {
+            let mut live = false;
+            for _ in 0..20 {
+                if !heap_copies(&masked, &mask)?.is_empty() {
+                    live = true;
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
             assert!(
-                !heap_copies(&masked, &mask)?.is_empty(),
+                live,
                 "a live AES-NI cipher keeps round key 0 (the key) in its heap schedule"
             );
         }
