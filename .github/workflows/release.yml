@@ -36,6 +36,13 @@ jobs:
     permissions:
       contents: read
 
+  fuzz:
+    uses: ./.github/workflows/fuzz.yml
+    with:
+      seconds: "120"
+    permissions:
+      contents: read
+
   crate:
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +79,7 @@ jobs:
 
   collect:
     name: collect artefacts and SBOMs
-    needs: [python, npm, crate]
+    needs: [python, npm, crate, fuzz]
     runs-on: ubuntu-latest
     outputs:
       artefacts: ${{ steps.pair.outputs.artefacts }}
