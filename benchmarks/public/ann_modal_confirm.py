@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -61,8 +60,9 @@ def sh(cmd: list[str], **kw) -> subprocess.CompletedProcess:
 def run(archives: dict[str, bytes], lock: bytes, cap_usd: float) -> dict:
     started = time.time()
     env = {"PATH": "/root/.cargo/bin:/usr/bin:/bin", "HOME": "/root", "CARGO_BUILD_JOBS": str(CPU)}
-    cpu_model = next((l.split(":", 1)[1].strip() for l in open("/proc/cpuinfo") if l.startswith("model name")), "?")
-    flags = next((l for l in open("/proc/cpuinfo") if l.startswith("flags")), "")
+    cpuinfo = Path("/proc/cpuinfo").read_text().splitlines()
+    cpu_model = next((l.split(":", 1)[1].strip() for l in cpuinfo if l.startswith("model name")), "?")
+    flags = next((l for l in cpuinfo if l.startswith("flags")), "")
     out = Path("/vol/out")
     out.mkdir(exist_ok=True)
 
