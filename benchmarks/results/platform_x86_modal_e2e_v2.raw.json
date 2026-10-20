@@ -1,0 +1,126 @@
+{
+ "skipped": true,
+ "attempts": [
+  {
+   "attempt": 0,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 1,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 2,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 3,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 4,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 5,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 6,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 7,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 8,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 9,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 10,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 11,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 12,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 13,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 14,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 15,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 16,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 17,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 18,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 19,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 20,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 21,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 22,
+   "cpu_model": "unknown",
+   "skipped": true
+  },
+  {
+   "attempt": 23,
+   "cpu_model": "unknown",
+   "skipped": true
+  }
+ ],
+ "note": "no AVX512-VNNI container obtained"
+}

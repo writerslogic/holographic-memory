@@ -1,0 +1,288 @@
+{
+ "skipped": false,
+ "cpu_model": "unknown",
+ "have": {
+  "avx2": true,
+  "avx512f": true,
+  "avx512bw": true,
+  "avx512vl": true,
+  "avx512_vnni": true
+ },
+ "cpu": 8,
+ "mem_gib": 32,
+ "qgraph_tests_by_tier": {
+  "scalar": {
+   "exit": 0,
+   "summary": "test result: ok. 26 passed; 0 failed; 3 ignored; 0 measured; 389 filtered out; finished in 1.47s"
+  },
+  "avx2": {
+   "exit": 0,
+   "summary": "test result: ok. 26 passed; 0 failed; 3 ignored; 0 measured; 389 filtered out; finished in 1.53s"
+  },
+  "vnni": {
+   "exit": 0,
+   "summary": "test result: ok. 26 passed; 0 failed; 3 ignored; 0 measured; 389 filtered out; finished in 1.66s"
+  }
+ },
+ "warm_exit": 0,
+ "threads_1": {
+  "exit": 0,
+  "stderr_tail": "",
+  "result": {
+   "schema_version": 1,
+   "date": "2026-10-20",
+   "host": "x86_64",
+   "config": [
+    "--index",
+    "vertex",
+    "--vertex-bits",
+    "4",
+    "--residual",
+    "--residual-bits",
+    "8",
+    "--degree",
+    "32",
+    "--build-ef",
+    "200",
+    "--align-rows",
+    "--reorder",
+    "--id-bytes",
+    "3",
+    "--rerank",
+    "64",
+    "--holdout",
+    "2000",
+    "--max-load",
+    "100000",
+    "--max-wait-secs",
+    "0"
+   ],
+   "ef": "256,736",
+   "repeats": 7,
+   "tag": "modal",
+   "arms": {
+    "avx2": "/opt/public-bench",
+    "vnni": "/opt/public-bench"
+   },
+   "arm_env": {
+    "avx2": {
+     "HMS_QGRAPH_KERNEL": "avx2"
+    },
+    "vnni": {
+     "HMS_QGRAPH_KERNEL": "vnni"
+    }
+   },
+   "threads": {
+    "1": {
+     "rows": [
+      {
+       "ef": 256,
+       "recall_at_10": 0.9005,
+       "evals_per_query": 5810.909,
+       "qps_avx2_rounds": [
+        3914.6,
+        4203.6,
+        4184.1,
+        4331.4,
+        4144.2,
+        4167.6,
+        4200.4
+       ],
+       "qps_vnni_rounds": [
+        4091.2,
+        4325.4,
+        4214.1,
+        4323.1,
+        4098.3,
+        3482.4,
+        2730.6
+       ],
+       "qps_avx2_median": 4184.1,
+       "qps_vnni_median": 4098.3,
+       "ratio_median_of_rounds": 0.9981,
+       "ratio_min": 0.6501,
+       "ratio_max": 1.0451,
+       "rounds_new_faster": 3,
+       "rounds": 7
+      },
+      {
+       "ef": 736,
+       "recall_at_10": 0.95065,
+       "evals_per_query": 14341.263,
+       "qps_avx2_rounds": [
+        1505.6,
+        1525.1,
+        1531.9,
+        1610.3,
+        1497.5,
+        1597.7,
+        1439.7
+       ],
+       "qps_vnni_rounds": [
+        1592.3,
+        1592.0,
+        1628.2,
+        1596.0,
+        1407.7,
+        1494.9,
+        1491.4
+       ],
+       "qps_avx2_median": 1525.1,
+       "qps_vnni_median": 1592.0,
+       "ratio_median_of_rounds": 1.0359,
+       "ratio_min": 0.9357,
+       "ratio_max": 1.0629,
+       "rounds_new_faster": 4,
+       "rounds": 7
+      }
+     ],
+     "load_1m_before_round": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "result_mismatch": []
+    }
+   }
+  }
+ },
+ "threads_4": {
+  "exit": 0,
+  "stderr_tail": "",
+  "result": {
+   "schema_version": 1,
+   "date": "2026-10-20",
+   "host": "x86_64",
+   "config": [
+    "--index",
+    "vertex",
+    "--vertex-bits",
+    "4",
+    "--residual",
+    "--residual-bits",
+    "8",
+    "--degree",
+    "32",
+    "--build-ef",
+    "200",
+    "--align-rows",
+    "--reorder",
+    "--id-bytes",
+    "3",
+    "--rerank",
+    "64",
+    "--holdout",
+    "2000",
+    "--max-load",
+    "100000",
+    "--max-wait-secs",
+    "0"
+   ],
+   "ef": "256,736",
+   "repeats": 7,
+   "tag": "modal",
+   "arms": {
+    "avx2": "/opt/public-bench",
+    "vnni": "/opt/public-bench"
+   },
+   "arm_env": {
+    "avx2": {
+     "HMS_QGRAPH_KERNEL": "avx2"
+    },
+    "vnni": {
+     "HMS_QGRAPH_KERNEL": "vnni"
+    }
+   },
+   "threads": {
+    "4": {
+     "rows": [
+      {
+       "ef": 256,
+       "recall_at_10": 0.9005,
+       "evals_per_query": 5810.909,
+       "qps_avx2_rounds": [
+        11720.5,
+        14363.2,
+        15454.0,
+        14449.5,
+        15428.4,
+        12197.1,
+        13968.8
+       ],
+       "qps_vnni_rounds": [
+        13731.9,
+        13200.4,
+        15186.1,
+        16016.2,
+        15633.6,
+        12628.0,
+        10732.6
+       ],
+       "qps_avx2_median": 14363.2,
+       "qps_vnni_median": 13731.9,
+       "ratio_median_of_rounds": 1.0133,
+       "ratio_min": 0.7683,
+       "ratio_max": 1.1716,
+       "rounds_new_faster": 4,
+       "rounds": 7
+      },
+      {
+       "ef": 736,
+       "recall_at_10": 0.95065,
+       "evals_per_query": 14341.263,
+       "qps_avx2_rounds": [
+        5044.5,
+        5913.0,
+        5587.4,
+        3916.7,
+        6114.4,
+        5081.7,
+        5886.2
+       ],
+       "qps_vnni_rounds": [
+        5076.9,
+        5250.0,
+        5829.1,
+        5889.3,
+        5790.4,
+        4956.8,
+        5024.7
+       ],
+       "qps_avx2_median": 5587.4,
+       "qps_vnni_median": 5250.0,
+       "ratio_median_of_rounds": 0.9754,
+       "ratio_min": 0.8537,
+       "ratio_max": 1.5036,
+       "rounds_new_faster": 3,
+       "rounds": 7
+      }
+     ],
+     "load_1m_before_round": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "result_mismatch": []
+    }
+   }
+  }
+ },
+ "wall_s": 351.0,
+ "spent_usd_estimate": 0.062,
+ "attempts": [
+  {
+   "attempt": 0,
+   "cpu_model": "unknown",
+   "skipped": false
+  }
+ ],
+ "driver_spend_usd_estimate": 0.062
+}

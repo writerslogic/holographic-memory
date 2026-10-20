@@ -1,0 +1,179 @@
+{
+ "schema_version": 1,
+ "category": "platform_kernels",
+ "date": "2026-10-20",
+ "host": "Apple M4 (10 cores), macOS; shared with other agents' builds, 1-minute load 43-120 during the rounds",
+ "variant_measured": "sdot4_shl (low nibble shifted once, test-only, killed). The shipped aarch64 kernels are unchanged from the base binary, so the shipped ratio is 1.0 by construction.",
+ "protocol": "platform_paired.py: base vs new public-bench, glove-100-angular 1.18M train, holdout 2000, vertex 4-bit traversal, 8-bit residual, degree 32, build ef 200, rerank 64; ef 256 (recall 0.9005) and 768 (0.9518); 9 alternating rounds; threads = concurrent single-thread processes over one cached graph; QPS summed over processes",
+ "verdict": "noise-dominated (round ratios 0.71-2.3 as load fell); no detectable difference; recall and exact evaluations per query identical between arms",
+ "threads": {
+  "1": {
+   "rows": [
+    {
+     "ef": 256,
+     "recall_at_10": 0.9005,
+     "evals_per_query": 5810.909,
+     "qps_base_rounds": [
+      664.4,
+      2117.1,
+      2774.0,
+      4328.1,
+      4525.0,
+      4748.1,
+      4943.3,
+      6740.4,
+      6723.5
+     ],
+     "qps_new_rounds": [
+      1524.7,
+      1644.9,
+      3883.7,
+      3067.1,
+      4510.5,
+      4943.9,
+      4587.6,
+      4886.4,
+      6415.1
+     ],
+     "qps_base_median": 4525.0,
+     "qps_new_median": 4510.5,
+     "ratio_median_of_rounds": 0.9541,
+     "ratio_min": 0.7086,
+     "ratio_max": 2.2948,
+     "rounds_new_faster": 3,
+     "rounds": 9
+    },
+    {
+     "ef": 768,
+     "recall_at_10": 0.9518,
+     "evals_per_query": 14882.094,
+     "qps_base_rounds": [
+      309.2,
+      684.0,
+      1095.2,
+      1408.8,
+      1559.2,
+      1731.7,
+      1493.1,
+      2136.3,
+      2031.3
+     ],
+     "qps_new_rounds": [
+      643.4,
+      714.6,
+      1378.4,
+      1492.4,
+      1589.5,
+      1791.6,
+      1729.0,
+      1943.5,
+      1950.8
+     ],
+     "qps_base_median": 1493.1,
+     "qps_new_median": 1589.5,
+     "ratio_median_of_rounds": 1.0446,
+     "ratio_min": 0.9098,
+     "ratio_max": 2.0809,
+     "rounds_new_faster": 7,
+     "rounds": 9
+    }
+   ],
+   "load_1m_before_round": [
+    68.7,
+    64.5,
+    61.2,
+    57.2,
+    53.3,
+    49.8,
+    46.3,
+    46.3,
+    43.0
+   ],
+   "result_mismatch": []
+  },
+  "4": {
+   "rows": [
+    {
+     "ef": 256,
+     "recall_at_10": 0.9005,
+     "evals_per_query": 5810.909,
+     "qps_base_rounds": [
+      5726.4,
+      16649.0,
+      10522.1,
+      22760.9,
+      19256.0,
+      15823.4,
+      14044.5,
+      13853.6,
+      16554.7
+     ],
+     "qps_new_rounds": [
+      8829.6,
+      18519.9,
+      16885.2,
+      17707.6,
+      23454.2,
+      18937.4,
+      11929.0,
+      13138.2,
+      19915.1
+     ],
+     "qps_base_median": 15823.4,
+     "qps_new_median": 17707.6,
+     "ratio_median_of_rounds": 1.1968,
+     "ratio_min": 0.778,
+     "ratio_max": 1.6047,
+     "rounds_new_faster": 6,
+     "rounds": 9
+    },
+    {
+     "ef": 768,
+     "recall_at_10": 0.9518,
+     "evals_per_query": 14882.094,
+     "qps_base_rounds": [
+      3143.7,
+      4260.9,
+      4572.4,
+      7846.4,
+      6353.4,
+      5147.1,
+      2868.3,
+      5070.4,
+      5745.9
+     ],
+     "qps_new_rounds": [
+      5050.9,
+      6039.6,
+      5980.1,
+      6021.7,
+      8005.4,
+      6142.5,
+      5046.4,
+      4971.3,
+      5166.2
+     ],
+     "qps_base_median": 5070.4,
+     "qps_new_median": 5980.1,
+     "ratio_median_of_rounds": 1.26,
+     "ratio_min": 0.7674,
+     "ratio_max": 1.7594,
+     "rounds_new_faster": 6,
+     "rounds": 9
+    }
+   ],
+   "load_1m_before_round": [
+    120.5,
+    104.7,
+    96.9,
+    92.1,
+    72.7,
+    67.1,
+    62.4,
+    58.1,
+    54.2
+   ],
+   "result_mismatch": []
+  }
+ }
+}

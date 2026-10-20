@@ -270,8 +270,8 @@ mod neon {
         vaddvq_s32(vaddq_s32(s0, s1))
     }
 
-    /// [`super::dot_i4_inline`] with SDOT: each 16 packed bytes become the 16 even and the 16
-    /// odd coordinates of a 32-wide block, matched with the query laid out by
+    /// [`super::dot_i4_inline`] with SDOT: each 16 packed bytes become the 16 even and the 16 odd
+    /// coordinates of a 32-wide block, matched with the query laid out by
     /// [`super::interleave_for_i4`].
     #[target_feature(enable = "dotprod")]
     #[inline]
@@ -298,6 +298,34 @@ mod neon {
             i += 16;
         }
         vaddvq_s32(vaddq_s32(s0, s1))
+    }
+
+    /// [`sdot4`] with widening multiplies; for cores without `dotprod`. Each i16 lane holds one
+    /// product (|c * q| <= 8 * 128) and the pairwise adds go to i32.
+    #[cfg_attr(target_feature = "dotprod", allow(dead_code))]
+    pub(super) fn dot_i4(q: &[i8], p: &[i8]) -> i32 {
+        assert!(q.len() == 2 * p.len() && p.len().is_multiple_of(16));
+        let mut i = 0;
+        // SAFETY: NEON is part of the aarch64 baseline; `i + 16 <= p.len()` and
+        // `2 * i + 32 <= q.len()` by the assert above.
+        unsafe {
+            let mut s = vdupq_n_s32(0);
+            while i < p.len() {
+                let x = vld1q_s8(p.as_ptr().add(i));
+                let lo = vshrq_n_s8::<4>(vshlq_n_s8::<4>(x));
+                let hi = vshrq_n_s8::<4>(x);
+                let (qe, qo) = (
+                    vld1q_s8(q.as_ptr().add(2 * i)),
+                    vld1q_s8(q.as_ptr().add(2 * i + 16)),
+                );
+                s = vpadalq_s16(s, vmull_s8(vget_low_s8(lo), vget_low_s8(qe)));
+                s = vpadalq_s16(s, vmull_high_s8(lo, qe));
+                s = vpadalq_s16(s, vmull_s8(vget_low_s8(hi), vget_low_s8(qo)));
+                s = vpadalq_s16(s, vmull_high_s8(hi, qo));
+                i += 16;
+            }
+            vaddvq_s32(s)
+        }
     }
 
     /// [`super::DotI8`] with widening multiplies; for cores without `dotprod`.
@@ -378,11 +406,10 @@ pub(crate) fn dot_i8_kernel() -> DotI8 {
         neon::dot_i8
     }
     #[cfg(target_arch = "x86_64")]
-    {
-        if is_x86_feature_detected!("avx2") {
-            return dot_i8_avx2_checked;
-        }
-        dot_i8_scalar
+    match tier::get() {
+        tier::VNNI => dot_i8_vnni_checked,
+        tier::AVX2 => dot_i8_avx2_checked,
+        _ => dot_i8_scalar,
     }
     #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     dot_i8_scalar
@@ -394,6 +421,65 @@ fn dot_i8_avx2_checked(a: &[i8], b: &[i8]) -> i32 {
     assert!(a.len() == b.len() && a.len().is_multiple_of(16));
     // SAFETY: the only caller path checked `avx2` at runtime; lengths checked above.
     unsafe { x86::dot_i8_avx2(a, b) }
+}
+
+/// [`DotI8`] with AVX512-VNNI on 256-bit registers; handed out only by `dot_i8_kernel` after
+/// detecting the features.
+#[cfg(target_arch = "x86_64")]
+fn dot_i8_vnni_checked(a: &[i8], b: &[i8]) -> i32 {
+    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+    // SAFETY: the only caller path checked `avx512vnni`, `avx512vl` and `avx2` at runtime;
+    // lengths checked above.
+    unsafe { x86::dot_i8_vnni(a, b) }
+}
+
+/// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|vnni` (read once, at the
+/// first distance call) pins a lower tier than the CPU supports, so every tier can be run and
+/// compared on one machine; `auto` or unset takes the best detected tier, and a tier above
+/// what the CPU supports falls back to the best detected one.
+#[cfg(target_arch = "x86_64")]
+mod tier {
+    use std::sync::atomic::{AtomicU8, Ordering};
+
+    pub(super) const SCALAR: u8 = 1;
+    pub(super) const AVX2: u8 = 2;
+    pub(super) const VNNI: u8 = 3;
+    static TIER: AtomicU8 = AtomicU8::new(0);
+
+    #[inline(always)]
+    pub(super) fn get() -> u8 {
+        match TIER.load(Ordering::Relaxed) {
+            0 => detect(),
+            t => t,
+        }
+    }
+
+    #[cold]
+    fn detect() -> u8 {
+        let best = if is_x86_feature_detected!("avx512vnni")
+            && is_x86_feature_detected!("avx512vl")
+            && is_x86_feature_detected!("avx2")
+        {
+            VNNI
+        } else if is_x86_feature_detected!("avx2") {
+            AVX2
+        } else {
+            SCALAR
+        };
+        let want = match std::env::var("HMS_QGRAPH_KERNEL").as_deref() {
+            Ok("scalar") => SCALAR,
+            Ok("avx2") => AVX2,
+            Ok("vnni") => VNNI,
+            Ok("auto") | Err(_) => best,
+            Ok(other) => {
+                eprintln!("HMS_QGRAPH_KERNEL={other:?} is not scalar|avx2|vnni|auto; using auto");
+                best
+            }
+        };
+        let tier = want.min(best);
+        TIER.store(tier, Ordering::Relaxed);
+        tier
+    }
 }
 
 /// [`DotI8`] resolved at compile time, so the search loop can inline it: SDOT when the build
@@ -444,11 +530,20 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
             // SAFETY: `dotprod` was detected at runtime; the slice lengths were checked above.
             return unsafe { neon::sdot4(q, packed) };
         }
-        #[cfg(target_arch = "x86_64")]
-        if is_x86_feature_detected!("avx2") {
-            // SAFETY: `avx2` was detected at runtime; the slice lengths were checked above.
-            return unsafe { x86::dot_i4_avx2(q, packed) };
+        #[cfg(target_arch = "aarch64")]
+        {
+            neon::dot_i4(q, packed)
         }
+        #[cfg(target_arch = "x86_64")]
+        match tier::get() {
+            // SAFETY: the tier is VNNI only after detecting `avx512vnni`, `avx512vl` and `avx2`;
+            // the slice lengths were checked above.
+            tier::VNNI => return unsafe { x86::dot_i4_vnni(q, packed) },
+            // SAFETY: the tier is AVX2 or above only after detecting `avx2`.
+            tier::AVX2 => return unsafe { x86::dot_i4_avx2(q, packed) },
+            _ => {}
+        }
+        #[cfg(not(target_arch = "aarch64"))]
         dot_i4_scalar(q, packed)
     }
 }
@@ -627,6 +722,60 @@ mod x86 {
             i += 16;
         }
         horizontal_sum(acc)
+    }
+
+    /// [`dot_i8_avx2`] with `vpdpbusd` on 256-bit registers (AVX512-VNNI with VL): `a` is biased
+    /// by 128 into the unsigned operand, so `sum (a + 128) b = a.b + 128 sum b`, and a second
+    /// `vpdpbusd` against ones yields `sum b` to subtract. Exact over the whole i8 range. The
+    /// 512-bit forms measured no faster on 128 and 256-wide rows (kill test).
+    #[target_feature(enable = "avx512f,avx512vl,avx512vnni,avx2")]
+    pub(super) unsafe fn dot_i8_vnni(a: &[i8], b: &[i8]) -> i32 {
+        let (flip, ones) = (_mm256_set1_epi8(-128), _mm256_set1_epi8(1));
+        let (mut acc, mut sum_b) = (_mm256_setzero_si256(), _mm256_setzero_si256());
+        let mut i = 0;
+        // SAFETY (all loads): `i + 32 <= len` in the wide loop, `i + 16 <= len` after it.
+        while i + 32 <= a.len() {
+            let x = _mm256_xor_si256(_mm256_loadu_si256(a.as_ptr().add(i).cast()), flip);
+            let y = _mm256_loadu_si256(b.as_ptr().add(i).cast());
+            acc = _mm256_dpbusd_epi32(acc, x, y);
+            sum_b = _mm256_dpbusd_epi32(sum_b, ones, y);
+            i += 32;
+        }
+        let mut total = horizontal_sum(acc) - 128 * horizontal_sum(sum_b);
+        if i < a.len() {
+            total += super::x86::dot_i8_avx2(&a[i..], &b[i..]);
+        }
+        total
+    }
+
+    /// [`dot_i4_avx2`] with `vpdpbusd`: the nibbles are the unsigned operand, offset so that
+    /// `n ^ 8` is the signed nibble plus 8, in 0..=15; the query is the signed one. Then
+    /// `sum c q = sum (c + 8) q - 8 sum q`, with `sum q` from `vpdpbusd` against ones.
+    #[target_feature(enable = "avx512f,avx512vl,avx512vnni,avx2")]
+    pub(super) unsafe fn dot_i4_vnni(q: &[i8], p: &[i8]) -> i32 {
+        let mask = _mm_set1_epi8(0x0f);
+        let eight = _mm_set1_epi8(8);
+        let ones = _mm_set1_epi8(1);
+        let (mut acc, mut sum_q) = (_mm_setzero_si128(), _mm_setzero_si128());
+        let mut i = 0;
+        // SAFETY (all loads): as in `dot_i4_avx2`.
+        while i + 16 <= p.len() {
+            let x = _mm_loadu_si128(p.as_ptr().add(i).cast());
+            let lo = _mm_xor_si128(_mm_and_si128(x, mask), eight);
+            let hi = _mm_xor_si128(_mm_and_si128(_mm_srli_epi16::<4>(x), mask), eight);
+            let qe = _mm_loadu_si128(q.as_ptr().add(2 * i).cast());
+            let qo = _mm_loadu_si128(q.as_ptr().add(2 * i + 16).cast());
+            acc = _mm_dpbusd_epi32(acc, lo, qe);
+            acc = _mm_dpbusd_epi32(acc, hi, qo);
+            sum_q = _mm_dpbusd_epi32(sum_q, ones, qe);
+            sum_q = _mm_dpbusd_epi32(sum_q, ones, qo);
+            i += 16;
+        }
+        let h = |v: __m128i| {
+            let s = _mm_add_epi32(v, _mm_shuffle_epi32::<0b01_00_11_10>(v));
+            _mm_cvtsi128_si32(_mm_add_epi32(s, _mm_shuffle_epi32::<0b10_11_00_01>(s)))
+        };
+        h(acc) - 8 * h(sum_q)
     }
 
     #[target_feature(enable = "avx2")]
@@ -929,6 +1078,192 @@ mod tests {
         println!("{report}");
         if let Ok(path) = std::env::var("HMS_SCREEN_BENCH_OUT") {
             std::fs::write(path, format!("{report}\n")).unwrap();
+        }
+    }
+
+    type I8Kernel = fn(&[i8], &[i8]) -> i32;
+
+    /// Every integer kernel this CPU can run, by name: `(name, i8 dot, i4 dot)`.
+    fn int_variants() -> Vec<(&'static str, Option<I8Kernel>, Option<I8Kernel>)> {
+        let mut v: Vec<(&'static str, Option<I8Kernel>, Option<I8Kernel>)> =
+            vec![("scalar", Some(dot_i8_scalar), Some(dot_i4_scalar))];
+        #[cfg(target_arch = "aarch64")]
+        {
+            v.push(("neon_widening", Some(neon::dot_i8), Some(neon::dot_i4)));
+            if std::arch::is_aarch64_feature_detected!("dotprod") {
+                v.push((
+                    "sdot",
+                    Some(neon::dot_i8_sdot),
+                    Some(|q, p| unsafe { neon::sdot4(q, p) }),
+                ));
+            }
+        }
+        #[cfg(target_arch = "x86_64")]
+        {
+            if is_x86_feature_detected!("avx2") {
+                v.push((
+                    "avx2",
+                    Some(|a, b| unsafe { x86::dot_i8_avx2(a, b) }),
+                    Some(|q, p| unsafe { x86::dot_i4_avx2(q, p) }),
+                ));
+            }
+            if is_x86_feature_detected!("avx512vnni") && is_x86_feature_detected!("avx512vl") {
+                v.push((
+                    "vnni",
+                    Some(|a, b| unsafe { x86::dot_i8_vnni(a, b) }),
+                    Some(|q, p| unsafe { x86::dot_i4_vnni(q, p) }),
+                ));
+            }
+        }
+        v
+    }
+
+    fn random_i8(rng: &mut SplitMix, n: usize) -> Vec<i8> {
+        (0..n).map(|_| rng.next_u64() as i8).collect()
+    }
+
+    /// Packs signed nibbles (`x >> 4` of each byte) two per byte as [`dot_f32_i4`] reads them.
+    fn pack_nibbles(bytes: &[i8]) -> Vec<i8> {
+        bytes
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|p| (((p[0] >> 4) as u8 & 0x0F) | (((p[1] >> 4) as u8) << 4)) as i8)
+            .collect()
+    }
+
+    /// The tail, odd-dimension and extreme-value cases every integer kernel must match the
+    /// scalar reference on, bit for bit (lengths are the multiples of 16 the index produces).
+    #[test]
+    fn every_integer_kernel_matches_scalar() {
+        let mut rng = SplitMix(99);
+        for (name, i8k, i4k) in int_variants() {
+            for len in (16..=512).step_by(16) {
+                for round in 0..24 {
+                    let mut a = random_i8(&mut rng, len);
+                    let mut b = random_i8(&mut rng, len);
+                    match round {
+                        0 => {
+                            a.fill(-128);
+                            b.fill(-128);
+                        }
+                        1 => {
+                            a.fill(127);
+                            b.fill(-128);
+                        }
+                        2 => {
+                            a.fill(-128);
+                            b.fill(127);
+                        }
+                        3 => {
+                            a.fill(0);
+                            b.fill(-128);
+                        }
+                        _ => {}
+                    }
+                    if let Some(k) = i8k {
+                        assert_eq!(k(&a, &b), dot_i8_scalar(&a, &b), "{name} i8 len {len}");
+                    }
+                    if let (Some(k), true) = (i4k, len % 32 == 0) {
+                        let mut packed = pack_nibbles(&b);
+                        if round == 1 {
+                            packed.fill(-128); // both nibbles -8
+                        } else if round == 2 {
+                            packed.fill(0x77); // both nibbles 7
+                        }
+                        let mut q = vec![0i8; len];
+                        interleave_for_i4(&a, &mut q);
+                        assert_eq!(
+                            k(&q, &packed),
+                            dot_i4_scalar(&q, &packed),
+                            "{name} i4 len {len}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// Kill test for every distance kernel: ns per call with the search loop's access
+    /// pattern (random fresh rows, prefetched in batches of 64) on a working set far larger
+    /// than cache (`cold`), and over rows that stay in L1 (`hot`, the compute bound), for
+    /// the row widths the indexes use. A kernel that does not beat the incumbent is dropped.
+    /// `cargo test --release dot_kernel_microbench -- --ignored --nocapture`; writes JSON to
+    /// `$HMS_PLATFORM_BENCH_OUT` when set.
+    #[test]
+    #[ignore]
+    fn dot_kernel_microbench() {
+        use std::time::Instant;
+        const COLD_ROWS: usize = 400_000;
+        const CALLS: usize = 1 << 20;
+        let mut rng = SplitMix(3);
+        let mut report = Vec::new();
+        let mut push = |dim: usize, kind: &str, name: &str, cold: f64, hot: f64| {
+            report.push(format!(
+                "{{\"dim\": {dim}, \"kernel\": \"{kind}\", \"variant\": \"{name}\", \"ns_cold\": {cold:.3}, \"ns_hot\": {hot:.3}}}"
+            ));
+        };
+        for dim in [128usize, 256] {
+            let cold = random_i8(&mut rng, COLD_ROWS * dim);
+            let ids: Vec<u32> = (0..CALLS)
+                .map(|_| (rng.next_u64() % COLD_ROWS as u64) as u32)
+                .collect();
+            let hot = random_i8(&mut rng, 64 * dim);
+            let q = random_i8(&mut rng, dim);
+            let mut qi = vec![0i8; dim];
+            interleave_for_i4(&q, &mut qi);
+            let cold4 = pack_nibbles(&cold);
+            let hot4 = pack_nibbles(&hot);
+            for (kind, width) in [("i8", dim), ("i4", dim / 2)] {
+                let (rows_cold, rows_hot): (&[i8], &[i8]) = if kind == "i8" {
+                    (&cold, &hot)
+                } else {
+                    (&cold4, &hot4)
+                };
+                let query: &[i8] = if kind == "i8" { &q } else { &qi };
+                let mut ref_sum = None;
+                for (name, i8k, i4k) in int_variants() {
+                    let Some(k) = (if kind == "i8" { i8k } else { i4k }) else {
+                        continue;
+                    };
+                    let mut best = (f64::INFINITY, f64::INFINITY);
+                    let mut sum = 0i64;
+                    for _ in 0..7 {
+                        let t = Instant::now();
+                        let mut s = 0i64;
+                        for batch in ids.chunks(64) {
+                            for &v in batch {
+                                prefetch_bytes(&rows_cold[v as usize * width..][..width]);
+                            }
+                            for &v in batch {
+                                s += i64::from(k(query, &rows_cold[v as usize * width..][..width]));
+                            }
+                        }
+                        best.0 = best.0.min(t.elapsed().as_secs_f64() * 1e9 / CALLS as f64);
+                        sum = s;
+                        let t = Instant::now();
+                        let mut s = 0i64;
+                        for _ in 0..CALLS / 64 {
+                            for r in rows_hot.chunks_exact(width) {
+                                s += i64::from(k(query, r));
+                            }
+                        }
+                        best.1 = best.1.min(t.elapsed().as_secs_f64() * 1e9 / CALLS as f64);
+                        std::hint::black_box(s);
+                    }
+                    assert_eq!(*ref_sum.get_or_insert(sum), sum, "{name} {kind} dim {dim}");
+                    push(dim, kind, name, best.0, best.1);
+                }
+            }
+        }
+        let json = format!(
+            "{{\"arch\": \"{}\", \"results\": [\n  {}\n]}}\n",
+            std::env::consts::ARCH,
+            report.join(",\n  ").replace("NaN", "null")
+        );
+        println!("{json}");
+        if let Ok(path) = std::env::var("HMS_PLATFORM_BENCH_OUT") {
+            std::fs::write(path, json).unwrap();
         }
     }
 }
