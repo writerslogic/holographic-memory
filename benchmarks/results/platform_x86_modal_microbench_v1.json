@@ -1,0 +1,1589 @@
+{
+ "schema_version": 1,
+ "category": "platform_kernels",
+ "date": "2026-10-20",
+ "protocol": "dot_kernel_microbench (kernels.rs): 400k random rows, 64-row prefetched batches (cold) and 64 L1-resident rows (hot); best of 7 passes of 2^20 calls; fn-pointer calls for all variants",
+ "harness": "benchmarks/public/platform_modal_avx512.py",
+ "cap_usd": 2.0,
+ "spend_usd_estimate": 0.003,
+ "probes": [
+  {
+   "probe": 0,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2",
+    "avx512f",
+    "avx512dq",
+    "avx512cd",
+    "avx512bw",
+    "avx512vl",
+    "avx512vbmi",
+    "avx512_vbmi2",
+    "avx512_vnni",
+    "avx512_bitalg",
+    "avx512_vpopcntdq"
+   ],
+   "avx512bw": true,
+   "avx512vnni": true,
+   "avx512vl": true,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.01s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 43.378,
+      "ns_hot": 24.84
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 9.795,
+      "ns_hot": 4.393
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx512bw_zmm",
+      "ns_cold": 9.326,
+      "ns_hot": 3.925
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpwssd",
+      "ns_cold": 10.81,
+      "ns_hot": 4.383
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpbusd_bias",
+      "ns_cold": 10.433,
+      "ns_hot": 3.653
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 11.074,
+      "ns_hot": 3.864
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 22.234,
+      "ns_hot": 13.06
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 13.358,
+      "ns_hot": 7.076
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 9.363,
+      "ns_hot": 4.938
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "vnni_ymm_dpwssd",
+      "ns_cold": 11.399,
+      "ns_hot": 5.957
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 49.641,
+      "ns_hot": 29.068
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 57.271,
+      "ns_hot": 40.637
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 85.759,
+      "ns_hot": 48.891
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 33.494,
+      "ns_hot": 7.566
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx512bw_zmm",
+      "ns_cold": 25.505,
+      "ns_hot": 6.656
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpwssd",
+      "ns_cold": 23.825,
+      "ns_hot": 6.317
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpbusd_bias",
+      "ns_cold": 23.332,
+      "ns_hot": 5.514
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 25.495,
+      "ns_hot": 5.081
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 48.091,
+      "ns_hot": 25.55
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 25.543,
+      "ns_hot": 12.374
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 19.429,
+      "ns_hot": 10.228
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "vnni_ymm_dpwssd",
+      "ns_cold": 22.879,
+      "ns_hot": 11.497
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 82.943,
+      "ns_hot": 48.999
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 103.42,
+      "ns_hot": 71.665
+     }
+    ]
+   },
+   "wall_s": 6.8
+  },
+  {
+   "probe": 1,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.01s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 124.944,
+      "ns_hot": 32.609
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 54.774,
+      "ns_hot": 8.678
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 89.005,
+      "ns_hot": 17.726
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 66.123,
+      "ns_hot": 11.118
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 133.093,
+      "ns_hot": 36.238
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 111.742,
+      "ns_hot": 51.82
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 164.677,
+      "ns_hot": 65.483
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 70.985,
+      "ns_hot": 12.347
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 126.51,
+      "ns_hot": 33.556
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 97.808,
+      "ns_hot": 19.344
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 163.765,
+      "ns_hot": 62.335
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 168.255,
+      "ns_hot": 90.199
+     }
+    ]
+   },
+   "wall_s": 10.6
+  },
+  {
+   "probe": 2,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.00s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 54.018,
+      "ns_hot": 32.418
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 11.619,
+      "ns_hot": 5.688
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 23.277,
+      "ns_hot": 16.337
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 21.412,
+      "ns_hot": 10.124
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 56.331,
+      "ns_hot": 36.158
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 70.639,
+      "ns_hot": 51.011
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 110.98,
+      "ns_hot": 64.164
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 25.489,
+      "ns_hot": 8.387
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 41.774,
+      "ns_hot": 32.053
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 33.518,
+      "ns_hot": 18.739
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 121.027,
+      "ns_hot": 59.969
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 146.538,
+      "ns_hot": 89.64
+     }
+    ]
+   },
+   "wall_s": 8.6
+  },
+  {
+   "probe": 3,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.00s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 123.291,
+      "ns_hot": 31.013
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 39.879,
+      "ns_hot": 6.036
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 48.995,
+      "ns_hot": 15.603
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 29.411,
+      "ns_hot": 9.556
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 131.286,
+      "ns_hot": 34.624
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 99.156,
+      "ns_hot": 48.219
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 151.575,
+      "ns_hot": 61.087
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 62.202,
+      "ns_hot": 8.57
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 117.973,
+      "ns_hot": 30.589
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 90.586,
+      "ns_hot": 17.784
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 150.055,
+      "ns_hot": 61.952
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 169.118,
+      "ns_hot": 83.949
+     }
+    ]
+   },
+   "wall_s": 8.6
+  },
+  {
+   "probe": 4,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2",
+    "avx512f",
+    "avx512dq",
+    "avx512cd",
+    "avx512bw",
+    "avx512vl",
+    "avx512vbmi",
+    "avx512_vbmi2",
+    "avx512_vnni",
+    "avx512_bitalg",
+    "avx512_vpopcntdq"
+   ],
+   "avx512bw": true,
+   "avx512vnni": true,
+   "avx512vl": true,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.01s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 41.832,
+      "ns_hot": 25.136
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 10.139,
+      "ns_hot": 4.468
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx512bw_zmm",
+      "ns_cold": 8.991,
+      "ns_hot": 3.964
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpwssd",
+      "ns_cold": 8.253,
+      "ns_hot": 3.944
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpbusd_bias",
+      "ns_cold": 8.791,
+      "ns_hot": 3.649
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 8.781,
+      "ns_hot": 3.832
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 20.335,
+      "ns_hot": 13.002
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 12.348,
+      "ns_hot": 6.99
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 8.692,
+      "ns_hot": 4.939
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "vnni_ymm_dpwssd",
+      "ns_cold": 11.009,
+      "ns_hot": 5.952
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 48.611,
+      "ns_hot": 29.236
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 58.613,
+      "ns_hot": 40.893
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 81.372,
+      "ns_hot": 48.932
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 40.926,
+      "ns_hot": 7.67
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx512bw_zmm",
+      "ns_cold": 25.855,
+      "ns_hot": 6.516
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpwssd",
+      "ns_cold": 32.405,
+      "ns_hot": 6.426
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpbusd_bias",
+      "ns_cold": 26.14,
+      "ns_hot": 5.479
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 29.368,
+      "ns_hot": 5.138
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 45.142,
+      "ns_hot": 26.03
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 24.12,
+      "ns_hot": 12.545
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 18.841,
+      "ns_hot": 10.308
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "vnni_ymm_dpwssd",
+      "ns_cold": 23.198,
+      "ns_hot": 11.675
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 98.113,
+      "ns_hot": 50.26
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 105.387,
+      "ns_hot": 73.859
+     }
+    ]
+   },
+   "wall_s": 7.2
+  },
+  {
+   "probe": 5,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.01s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 70.4,
+      "ns_hot": 33.177
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 16.233,
+      "ns_hot": 6.807
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 29.219,
+      "ns_hot": 18.489
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 19.188,
+      "ns_hot": 10.122
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 56.886,
+      "ns_hot": 36.22
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 97.647,
+      "ns_hot": 60.427
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 111.194,
+      "ns_hot": 64.535
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 53.025,
+      "ns_hot": 10.421
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 55.143,
+      "ns_hot": 32.414
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 35.573,
+      "ns_hot": 19.086
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 146.291,
+      "ns_hot": 67.391
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 113.742,
+      "ns_hot": 91.845
+     }
+    ]
+   },
+   "wall_s": 7.6
+  },
+  {
+   "probe": 6,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.00s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 109.442,
+      "ns_hot": 31.001
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 42.903,
+      "ns_hot": 6.01
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 46.324,
+      "ns_hot": 15.578
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 33.978,
+      "ns_hot": 9.513
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 122.849,
+      "ns_hot": 34.79
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 102.004,
+      "ns_hot": 48.362
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 152.956,
+      "ns_hot": 60.963
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 61.993,
+      "ns_hot": 8.486
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 111.907,
+      "ns_hot": 30.481
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 106.092,
+      "ns_hot": 17.738
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 151.696,
+      "ns_hot": 61.099
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 176.47,
+      "ns_hot": 83.948
+     }
+    ]
+   },
+   "wall_s": 8.5
+  },
+  {
+   "probe": 7,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2",
+    "avx512f",
+    "avx512dq",
+    "avx512cd",
+    "avx512bw",
+    "avx512vl",
+    "avx512vbmi",
+    "avx512_vbmi2",
+    "avx512_vnni",
+    "avx512_bitalg",
+    "avx512_vpopcntdq"
+   ],
+   "avx512bw": true,
+   "avx512vnni": true,
+   "avx512vl": true,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.01s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 56.022,
+      "ns_hot": 27.733
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 10.899,
+      "ns_hot": 5.717
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx512bw_zmm",
+      "ns_cold": 10.133,
+      "ns_hot": 4.389
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpwssd",
+      "ns_cold": 9.75,
+      "ns_hot": 4.37
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpbusd_bias",
+      "ns_cold": 10.362,
+      "ns_hot": 3.974
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 10.109,
+      "ns_hot": 4.267
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 23.765,
+      "ns_hot": 14.45
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 14.652,
+      "ns_hot": 8.018
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 10.793,
+      "ns_hot": 5.755
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "vnni_ymm_dpwssd",
+      "ns_cold": 13.03,
+      "ns_hot": 7.022
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 59.316,
+      "ns_hot": 35.017
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 69.626,
+      "ns_hot": 48.981
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 100.658,
+      "ns_hot": 53.292
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 56.183,
+      "ns_hot": 7.356
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx512bw_zmm",
+      "ns_cold": 42.041,
+      "ns_hot": 7.027
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpwssd",
+      "ns_cold": 39.277,
+      "ns_hot": 6.697
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_zmm_dpbusd_bias",
+      "ns_cold": 26.471,
+      "ns_hot": 5.956
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 30.011,
+      "ns_hot": 5.411
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 51.944,
+      "ns_hot": 27.427
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 28.794,
+      "ns_hot": 13.313
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "vnni_ymm_shipped",
+      "ns_cold": 23.107,
+      "ns_hot": 11.223
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "vnni_ymm_dpwssd",
+      "ns_cold": 29.409,
+      "ns_hot": 12.796
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 82.323,
+      "ns_hot": 53.774
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 156.479,
+      "ns_hot": 75.826
+     }
+    ]
+   },
+   "wall_s": 8.6
+  },
+  {
+   "probe": 8,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.00s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 48.961,
+      "ns_hot": 34.482
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 17.399,
+      "ns_hot": 7.54
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 28.983,
+      "ns_hot": 17.565
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 20.189,
+      "ns_hot": 10.58
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 57.987,
+      "ns_hot": 36.561
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 68.411,
+      "ns_hot": 53.374
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 114.136,
+      "ns_hot": 66.371
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 37.46,
+      "ns_hot": 9.428
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 46.971,
+      "ns_hot": 32.96
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 33.906,
+      "ns_hot": 19.19
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 88.88,
+      "ns_hot": 60.438
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 111.143,
+      "ns_hot": 93.26
+     }
+    ]
+   },
+   "wall_s": 6.0
+  },
+  {
+   "probe": 9,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.00s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 45.037,
+      "ns_hot": 32.453
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 21.161,
+      "ns_hot": 5.683
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 25.368,
+      "ns_hot": 16.339
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 17.577,
+      "ns_hot": 9.958
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 61.209,
+      "ns_hot": 35.582
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 61.37,
+      "ns_hot": 50.507
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 98.711,
+      "ns_hot": 64.192
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 27.91,
+      "ns_hot": 8.492
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 40.648,
+      "ns_hot": 31.984
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 31.285,
+      "ns_hot": 18.651
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 77.508,
+      "ns_hot": 60.791
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 98.717,
+      "ns_hot": 89.688
+     }
+    ]
+   },
+   "wall_s": 5.4
+  },
+  {
+   "probe": 10,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.00s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 51.616,
+      "ns_hot": 32.934
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 23.476,
+      "ns_hot": 5.692
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 25.155,
+      "ns_hot": 16.425
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 18.563,
+      "ns_hot": 10.218
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 52.01,
+      "ns_hot": 36.275
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 67.616,
+      "ns_hot": 50.813
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 95.103,
+      "ns_hot": 64.303
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 30.969,
+      "ns_hot": 8.718
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 44.76,
+      "ns_hot": 32.109
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 32.029,
+      "ns_hot": 18.742
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 81.563,
+      "ns_hot": 61.157
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 112.293,
+      "ns_hot": 89.691
+     }
+    ]
+   },
+   "wall_s": 6.3
+  },
+  {
+   "probe": 11,
+   "cpu_model": "unknown",
+   "flags": [
+    "fma",
+    "avx",
+    "f16c",
+    "avx2",
+    "bmi2"
+   ],
+   "avx512bw": false,
+   "avx512vnni": false,
+   "avx512vl": false,
+   "tests_exit": 0,
+   "tests_tail": "ts::every_integer_kernel_matches_scalar ... ok\ntest core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok\ntest core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok\ntest core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok\ntest core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok\ntest core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored\ntest core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok\n\ntest result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 408 filtered out; finished in 0.00s\n\n",
+   "bench_exit": 0,
+   "bench_stderr_tail": "",
+   "results": {
+    "arch": "x86_64",
+    "results": [
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 42.594,
+      "ns_hot": 32.522
+     },
+     {
+      "dim": 128,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 10.666,
+      "ns_hot": 5.673
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 23.221,
+      "ns_hot": 16.326
+     },
+     {
+      "dim": 128,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 17.015,
+      "ns_hot": 9.975
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 50.879,
+      "ns_hot": 35.71
+     },
+     {
+      "dim": 128,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 59.235,
+      "ns_hot": 50.645
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "scalar",
+      "ns_cold": 95.909,
+      "ns_hot": 64.128
+     },
+     {
+      "dim": 256,
+      "kernel": "i8",
+      "variant": "avx2",
+      "ns_cold": 30.247,
+      "ns_hot": 8.462
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "scalar",
+      "ns_cold": 42.448,
+      "ns_hot": 31.973
+     },
+     {
+      "dim": 256,
+      "kernel": "i4",
+      "variant": "avx2",
+      "ns_cold": 33.88,
+      "ns_hot": 18.737
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i8",
+      "variant": "autovectorized",
+      "ns_cold": 90.668,
+      "ns_hot": 60.928
+     },
+     {
+      "dim": 256,
+      "kernel": "f32_i4",
+      "variant": "autovectorized",
+      "ns_cold": 100.604,
+      "ns_hot": 89.951
+     }
+    ]
+   },
+   "wall_s": 5.8
+  }
+ ]
+}
