@@ -6,6 +6,7 @@ pub(crate) mod concepts;
 mod document_api;
 mod document_batch;
 pub(crate) mod knowledge;
+pub(crate) mod memory_access;
 pub(crate) mod multi_hop;
 mod mutation;
 mod mutation_gate;

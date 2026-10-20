@@ -1,0 +1,139 @@
+{
+  "as_of_before_newest_evidence_excludes_it": "40/40",
+  "as_of_no_future_facts": "40/40",
+  "dataset": "LongMemEval_S (longmemeval_s_cleaned.json), dev ids only",
+  "dev_ids_in_split": 100,
+  "heldout_ids_read": 0,
+  "memory_default_ranks_identically_to_document_search": "40/40",
+  "note": "A sanity check on a small dev sample, not a benchmark claim. In this data some evidence sessions are dated after the question date, so evaluating as of the question date excludes them (see memory_as_of vs document_search on temporal-reasoning). Recency half-lives were tried on these same dev questions; they are not tuned values.",
+  "protocol": "retrieval only, lexical BM25 through document search; session-level facts of user turns; no LLM, no model; abstention questions excluded",
+  "questions_used": 40,
+  "rows": [
+    {
+      "config": "document_search",
+      "hits_at_10": 15,
+      "hits_at_5": 15,
+      "question_type": "knowledge-update",
+      "questions": 15,
+      "recall_any_at_10": 1.0,
+      "recall_any_at_5": 1.0
+    },
+    {
+      "config": "memory_as_of",
+      "hits_at_10": 15,
+      "hits_at_5": 15,
+      "question_type": "knowledge-update",
+      "questions": 15,
+      "recall_any_at_10": 1.0,
+      "recall_any_at_5": 1.0
+    },
+    {
+      "config": "memory_default",
+      "hits_at_10": 15,
+      "hits_at_5": 15,
+      "question_type": "knowledge-update",
+      "questions": 15,
+      "recall_any_at_10": 1.0,
+      "recall_any_at_5": 1.0
+    },
+    {
+      "config": "memory_recency_30d",
+      "hits_at_10": 14,
+      "hits_at_5": 14,
+      "question_type": "knowledge-update",
+      "questions": 15,
+      "recall_any_at_10": 0.9333333333333333,
+      "recall_any_at_5": 0.9333333333333333
+    },
+    {
+      "config": "memory_recency_365d",
+      "hits_at_10": 15,
+      "hits_at_5": 15,
+      "question_type": "knowledge-update",
+      "questions": 15,
+      "recall_any_at_10": 1.0,
+      "recall_any_at_5": 1.0
+    },
+    {
+      "config": "memory_recency_7d",
+      "hits_at_10": 14,
+      "hits_at_5": 14,
+      "question_type": "knowledge-update",
+      "questions": 15,
+      "recall_any_at_10": 0.9333333333333333,
+      "recall_any_at_5": 0.9333333333333333
+    },
+    {
+      "config": "memory_recency_90d",
+      "hits_at_10": 15,
+      "hits_at_5": 14,
+      "question_type": "knowledge-update",
+      "questions": 15,
+      "recall_any_at_10": 1.0,
+      "recall_any_at_5": 0.9333333333333333
+    },
+    {
+      "config": "document_search",
+      "hits_at_10": 24,
+      "hits_at_5": 22,
+      "question_type": "temporal-reasoning",
+      "questions": 25,
+      "recall_any_at_10": 0.96,
+      "recall_any_at_5": 0.88
+    },
+    {
+      "config": "memory_as_of",
+      "hits_at_10": 21,
+      "hits_at_5": 19,
+      "question_type": "temporal-reasoning",
+      "questions": 25,
+      "recall_any_at_10": 0.84,
+      "recall_any_at_5": 0.76
+    },
+    {
+      "config": "memory_default",
+      "hits_at_10": 24,
+      "hits_at_5": 22,
+      "question_type": "temporal-reasoning",
+      "questions": 25,
+      "recall_any_at_10": 0.96,
+      "recall_any_at_5": 0.88
+    },
+    {
+      "config": "memory_recency_30d",
+      "hits_at_10": 22,
+      "hits_at_5": 18,
+      "question_type": "temporal-reasoning",
+      "questions": 25,
+      "recall_any_at_10": 0.88,
+      "recall_any_at_5": 0.72
+    },
+    {
+      "config": "memory_recency_365d",
+      "hits_at_10": 21,
+      "hits_at_5": 19,
+      "question_type": "temporal-reasoning",
+      "questions": 25,
+      "recall_any_at_10": 0.84,
+      "recall_any_at_5": 0.76
+    },
+    {
+      "config": "memory_recency_7d",
+      "hits_at_10": 22,
+      "hits_at_5": 20,
+      "question_type": "temporal-reasoning",
+      "questions": 25,
+      "recall_any_at_10": 0.88,
+      "recall_any_at_5": 0.8
+    },
+    {
+      "config": "memory_recency_90d",
+      "hits_at_10": 21,
+      "hits_at_5": 18,
+      "question_type": "temporal-reasoning",
+      "questions": 25,
+      "recall_any_at_10": 0.84,
+      "recall_any_at_5": 0.72
+    }
+  ]
+}

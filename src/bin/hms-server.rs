@@ -4,7 +4,9 @@
 //! HTTP service for the `holographic-sdk` Python client.
 //!
 //! Endpoints: `POST /api/v1/documents/batch`, `POST /api/v1/documents`,
-//! `DELETE /api/v1/documents/{id}`, `POST /api/v1/query`. See docs/SERVER.md.
+//! `DELETE /api/v1/documents/{id}`, `POST /api/v1/query`, and the memory API under
+//! `POST /api/v1/memory/{remember,recall,explain,forget,get,history,applyForgetting,consolidate}`.
+//! See docs/SERVER.md and docs/memory-api.
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -22,6 +24,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, post};
 use axum::{Json, Router};
 use clap::Parser;
+use holographic_memory::core::memory_api::{Memory, MemoryConfig, MemoryError, OPERATIONS};
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{chunk_document, DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
 use parking_lot::{Condvar, Mutex};
@@ -83,6 +86,10 @@ struct Cli {
     /// Maximum number of tenant stores open at once.
     #[arg(long, default_value_t = 64)]
     max_tenants: usize,
+    /// JSON file holding the memory API configuration (policies and defaults) applied to
+    /// every tenant; see docs/memory-api. Absent: the conservative defaults.
+    #[arg(long, env = "HMS_MEMORY_CONFIG")]
+    memory_config: Option<PathBuf>,
     /// Maximum admitted requests reading bodies or executing blocking work.
     #[arg(long, env = "HMS_MAX_CONCURRENT_WORK", default_value_t = 4)]
     max_concurrent_work: usize,
@@ -149,8 +156,21 @@ fn load_stages(
     Ok(any.then(|| Arc::new(stages)))
 }
 
+fn load_memory_config(path: Option<&std::path::Path>) -> Result<MemoryConfig> {
+    let Some(path) = path else {
+        return Ok(MemoryConfig::default());
+    };
+    let config: MemoryConfig = serde_json::from_slice(
+        &std::fs::read(path).with_context(|| format!("cannot read {}", path.display()))?,
+    )
+    .with_context(|| format!("invalid memory config {}", path.display()))?;
+    config.validate()?;
+    Ok(config)
+}
+
 struct Tenant {
-    core: HmsCore,
+    core: Arc<HmsCore>,
+    memory: Memory,
 }
 
 enum TenantStatus {
@@ -347,7 +367,12 @@ impl AppState {
             let core = HmsCore::new(self.cli.dim, Some(dir.display().to_string()), Some(config))?;
             #[cfg(feature = "local-models")]
             core.set_model_stages(self.stages.clone())?;
-            Ok(Tenant { core })
+            let core = Arc::new(core);
+            let memory = Memory::with_config(
+                core.clone(),
+                load_memory_config(self.cli.memory_config.as_deref())?,
+            )?;
+            Ok(Tenant { core, memory })
         };
         open()
     }
@@ -847,6 +872,129 @@ fn vector_search(
         .collect())
 }
 
+/// Limits the memory routes share with the document routes, applied to the raw request before
+/// the memory API sees it.
+fn validate_memory_request(
+    op: &str,
+    request: &mut Value,
+    state: &AppState,
+) -> Result<(), ApiError> {
+    let cli = &state.cli;
+    let vector = |value: &Value, what: &str| -> Result<(), ApiError> {
+        match value {
+            Value::Null => Ok(()),
+            Value::Array(items) => {
+                let values: Option<Vec<f64>> = items.iter().map(Value::as_f64).collect();
+                dense(
+                    &values.ok_or_else(|| ApiError::bad(format!("{what} must be numbers")))?,
+                    cli.input_dim,
+                    what,
+                )
+            }
+            _ => Err(ApiError::bad(format!("{what} must be an array of numbers"))),
+        }
+    };
+    let fact = |fact: &Value| -> Result<(), ApiError> {
+        let Value::Object(map) = fact else {
+            return Err(ApiError::bad("a fact must be a JSON object"));
+        };
+        if let Some(Value::String(id)) = map.get("id") {
+            if id.len() > MAX_ID_BYTES {
+                return Err(ApiError::bad(format!("id exceeds {MAX_ID_BYTES} bytes")));
+            }
+        }
+        if let Some(Value::String(text)) = map.get("text") {
+            if text.len() > MAX_TEXT_BYTES {
+                return Err(ApiError::bad(format!(
+                    "text exceeds {MAX_TEXT_BYTES} bytes"
+                )));
+            }
+        }
+        if let Some(metadata) = map.get("metadata") {
+            if serde_json::to_vec(metadata).map_or(true, |v| v.len() > MAX_METADATA_BYTES) {
+                return Err(ApiError::bad(format!(
+                    "metadata exceeds {MAX_METADATA_BYTES} bytes"
+                )));
+            }
+        }
+        map.get("embedding")
+            .map_or(Ok(()), |v| vector(v, "embedding"))
+    };
+    match op {
+        "remember" => match request.get("facts") {
+            Some(Value::Array(facts)) => {
+                if facts.is_empty() || facts.len() > cli.max_batch {
+                    return Err(ApiError::bad(format!(
+                        "facts must contain 1..={} entries",
+                        cli.max_batch
+                    )));
+                }
+                facts.iter().try_for_each(fact)
+            }
+            Some(_) => Err(ApiError::bad("facts must be an array")),
+            None => fact(request),
+        },
+        "recall" | "explain" => {
+            if let Some(Value::String(query)) = request.get("query") {
+                if query.len() > 8192 {
+                    return Err(ApiError::bad("query requires at most 8192 bytes"));
+                }
+            }
+            if let Some(k) = request.get("k").and_then(Value::as_i64) {
+                if k < 1 || k > i64::from(cli.max_top_k) {
+                    return Err(ApiError::bad(format!("k must be 1..={}", cli.max_top_k)));
+                }
+            }
+            request
+                .get("embedding")
+                .map_or(Ok(()), |v| vector(v, "embedding"))
+        }
+        _ => Ok(()),
+    }
+}
+
+fn memory_error(error: anyhow::Error) -> ApiError {
+    match error.downcast_ref::<MemoryError>() {
+        Some(MemoryError::Invalid(message)) => ApiError::bad(message.clone()),
+        Some(MemoryError::NotFound(message)) => {
+            ApiError::new(StatusCode::NOT_FOUND, "not_found", message.clone())
+        }
+        Some(MemoryError::Conflict(message)) => {
+            ApiError::new(StatusCode::CONFLICT, "conflict", message.clone())
+        }
+        None => ApiError::internal(error),
+    }
+}
+
+async fn memory_op(
+    State(state): State<Arc<AppState>>,
+    UrlPath(op): UrlPath<String>,
+    req: Request,
+) -> ApiResult {
+    if !OPERATIONS.contains(&op.as_str()) {
+        return Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            "not_found",
+            "no such memory operation",
+        ));
+    }
+    let name = tenant_name(req.headers())?;
+    let permit = state.work.acquire()?;
+    let bytes = read_body(&state, req.into_body()).await?;
+    let response = blocking(permit, move || {
+        let mut request: Value = if bytes.is_empty() {
+            json!({})
+        } else {
+            parse(&bytes)?
+        };
+        validate_memory_request(&op, &mut request, &state)?;
+        let tenant = state.tenant(&name)?;
+        tenant.memory.call(&op, request).map_err(memory_error)
+    })
+    .await?;
+    Ok(Json(response).into_response())
+}
+
 async fn not_found() -> ApiError {
     ApiError::new(StatusCode::NOT_FOUND, "not_found", "no such route")
 }
@@ -866,6 +1014,7 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/api/v1/documents/{id}", delete(delete_doc))
         .route("/api/v1/query", post(query))
         .route("/api/v1/index/maintain", post(maintain_index))
+        .route("/api/v1/memory/{op}", post(memory_op))
         .fallback(not_found)
         .method_not_allowed_fallback(method_not_allowed)
         .layer(middleware::from_fn_with_state(state.clone(), auth))
@@ -922,6 +1071,7 @@ async fn main() -> Result<()> {
     #[cfg(feature = "local-models")]
     let stages = load_stages(&cli.models)?;
     let work = WorkLimit::new(cli.max_concurrent_work);
+    load_memory_config(cli.memory_config.as_deref())?;
     let state = Arc::new(AppState {
         cli,
         api_key,

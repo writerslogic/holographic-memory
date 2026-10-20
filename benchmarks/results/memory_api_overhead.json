@@ -1,0 +1,322 @@
+{
+  "description": "memory API recall against document search on the same synthetic fact store; see docs/memory-api",
+  "dimensions": 4096,
+  "host": {
+    "arch": "aarch64",
+    "cpus": 10,
+    "os": "macos"
+  },
+  "passes": 5,
+  "queries": 400,
+  "runs": [
+    {
+      "build_seconds": 0.311239833,
+      "compared_queries": 2000,
+      "identical_ranking_queries": 2000,
+      "kind": "raw",
+      "n": 1000,
+      "recall_default": {
+        "mean_ns": 16185.306,
+        "n": 2000,
+        "p50_ns": 11666,
+        "p95_ns": 27542,
+        "p99_ns": 42542
+      },
+      "recall_explain": {
+        "mean_ns": 123717.7015,
+        "n": 2000,
+        "p50_ns": 84833,
+        "p95_ns": 161708,
+        "p99_ns": 316917
+      },
+      "recall_history_all": null,
+      "rss_bytes_after_build": 12435456,
+      "rss_bytes_after_queries": 12910592,
+      "search_documents": {
+        "mean_ns": 14249.621,
+        "n": 2000,
+        "p50_ns": 10209,
+        "p95_ns": 25458,
+        "p99_ns": 40166
+      },
+      "store_dir_bytes": 146744
+    },
+    {
+      "build_seconds": 0.249487584,
+      "compared_queries": 2000,
+      "identical_ranking_queries": 2000,
+      "kind": "memory",
+      "n": 1000,
+      "recall_default": {
+        "mean_ns": 19457.675,
+        "n": 2000,
+        "p50_ns": 12958,
+        "p95_ns": 28208,
+        "p99_ns": 38666
+      },
+      "recall_explain": {
+        "mean_ns": 111696.656,
+        "n": 2000,
+        "p50_ns": 83917,
+        "p95_ns": 162542,
+        "p99_ns": 250875
+      },
+      "recall_history_all": null,
+      "rss_bytes_after_build": 14336000,
+      "rss_bytes_after_queries": 14778368,
+      "search_documents": {
+        "mean_ns": 17929.5215,
+        "n": 2000,
+        "p50_ns": 9000,
+        "p95_ns": 21666,
+        "p99_ns": 31917
+      },
+      "store_dir_bytes": 146744
+    },
+    {
+      "build_seconds": 0.225176375,
+      "compared_queries": 0,
+      "identical_ranking_queries": 0,
+      "kind": "history",
+      "n": 1000,
+      "recall_default": {
+        "mean_ns": 16444.5615,
+        "n": 2000,
+        "p50_ns": 14459,
+        "p95_ns": 31083,
+        "p99_ns": 40625
+      },
+      "recall_explain": {
+        "mean_ns": 66759.4885,
+        "n": 2000,
+        "p50_ns": 59250,
+        "p95_ns": 127875,
+        "p99_ns": 167541
+      },
+      "recall_history_all": {
+        "mean_ns": 14031.948,
+        "n": 2000,
+        "p50_ns": 12250,
+        "p95_ns": 26000,
+        "p99_ns": 40292
+      },
+      "rss_bytes_after_build": 14483456,
+      "rss_bytes_after_queries": 14794752,
+      "search_documents": {
+        "mean_ns": 11080.314,
+        "n": 2000,
+        "p50_ns": 9583,
+        "p95_ns": 22417,
+        "p99_ns": 26875
+      },
+      "store_dir_bytes": 146744
+    },
+    {
+      "build_seconds": 1.9200202499999999,
+      "compared_queries": 2000,
+      "identical_ranking_queries": 2000,
+      "kind": "raw",
+      "n": 10000,
+      "recall_default": {
+        "mean_ns": 24668.935,
+        "n": 2000,
+        "p50_ns": 22625,
+        "p95_ns": 52500,
+        "p99_ns": 72250
+      },
+      "recall_explain": {
+        "mean_ns": 117741.5865,
+        "n": 2000,
+        "p50_ns": 106875,
+        "p95_ns": 172750,
+        "p99_ns": 192167
+      },
+      "recall_history_all": null,
+      "rss_bytes_after_build": 30441472,
+      "rss_bytes_after_queries": 30752768,
+      "search_documents": {
+        "mean_ns": 22857.2485,
+        "n": 2000,
+        "p50_ns": 21417,
+        "p95_ns": 49916,
+        "p99_ns": 61000
+      },
+      "store_dir_bytes": 1463962
+    },
+    {
+      "build_seconds": 2.869293875,
+      "compared_queries": 2000,
+      "identical_ranking_queries": 2000,
+      "kind": "memory",
+      "n": 10000,
+      "recall_default": {
+        "mean_ns": 89786.08,
+        "n": 2000,
+        "p50_ns": 28875,
+        "p95_ns": 75208,
+        "p99_ns": 197500
+      },
+      "recall_explain": {
+        "mean_ns": 214407.493,
+        "n": 2000,
+        "p50_ns": 103917,
+        "p95_ns": 240041,
+        "p99_ns": 1678833
+      },
+      "recall_history_all": null,
+      "rss_bytes_after_build": 33538048,
+      "rss_bytes_after_queries": 33865728,
+      "search_documents": {
+        "mean_ns": 64769.3315,
+        "n": 2000,
+        "p50_ns": 23667,
+        "p95_ns": 64792,
+        "p99_ns": 192250
+      },
+      "store_dir_bytes": 1463962
+    },
+    {
+      "build_seconds": 3.068160541,
+      "compared_queries": 0,
+      "identical_ranking_queries": 0,
+      "kind": "history",
+      "n": 10000,
+      "recall_default": {
+        "mean_ns": 175002.447,
+        "n": 2000,
+        "p50_ns": 112167,
+        "p95_ns": 237916,
+        "p99_ns": 1099875
+      },
+      "recall_explain": {
+        "mean_ns": 336473.7415,
+        "n": 2000,
+        "p50_ns": 189375,
+        "p95_ns": 440250,
+        "p99_ns": 3629500
+      },
+      "recall_history_all": {
+        "mean_ns": 49984.218,
+        "n": 2000,
+        "p50_ns": 22042,
+        "p95_ns": 70291,
+        "p99_ns": 154583
+      },
+      "rss_bytes_after_build": 33538048,
+      "rss_bytes_after_queries": 33751040,
+      "search_documents": {
+        "mean_ns": 51091.286,
+        "n": 2000,
+        "p50_ns": 27333,
+        "p95_ns": 59458,
+        "p99_ns": 117541
+      },
+      "store_dir_bytes": 1463962
+    },
+    {
+      "build_seconds": 20.544165416,
+      "compared_queries": 2000,
+      "identical_ranking_queries": 2000,
+      "kind": "raw",
+      "n": 100000,
+      "recall_default": {
+        "mean_ns": 132267.3245,
+        "n": 2000,
+        "p50_ns": 88875,
+        "p95_ns": 228833,
+        "p99_ns": 789750
+      },
+      "recall_explain": {
+        "mean_ns": 222838.4915,
+        "n": 2000,
+        "p50_ns": 127917,
+        "p95_ns": 286750,
+        "p99_ns": 1498459
+      },
+      "recall_history_all": null,
+      "rss_bytes_after_build": 181633024,
+      "rss_bytes_after_queries": 181911552,
+      "search_documents": {
+        "mean_ns": 130873.5805,
+        "n": 2000,
+        "p50_ns": 86417,
+        "p95_ns": 217458,
+        "p99_ns": 460375
+      },
+      "store_dir_bytes": 14639309
+    },
+    {
+      "build_seconds": 18.894743208,
+      "compared_queries": 2000,
+      "identical_ranking_queries": 2000,
+      "kind": "memory",
+      "n": 100000,
+      "recall_default": {
+        "mean_ns": 76344.9595,
+        "n": 2000,
+        "p50_ns": 74917,
+        "p95_ns": 162417,
+        "p99_ns": 209083
+      },
+      "recall_explain": {
+        "mean_ns": 139322.8645,
+        "n": 2000,
+        "p50_ns": 127667,
+        "p95_ns": 223333,
+        "p99_ns": 248125
+      },
+      "recall_history_all": null,
+      "rss_bytes_after_build": 196427776,
+      "rss_bytes_after_queries": 196558848,
+      "search_documents": {
+        "mean_ns": 71900.512,
+        "n": 2000,
+        "p50_ns": 68916,
+        "p95_ns": 154458,
+        "p99_ns": 201417
+      },
+      "store_dir_bytes": 14639309
+    },
+    {
+      "build_seconds": 17.943403667,
+      "compared_queries": 0,
+      "identical_ranking_queries": 0,
+      "kind": "history",
+      "n": 100000,
+      "recall_default": {
+        "mean_ns": 194403.992,
+        "n": 2000,
+        "p50_ns": 183500,
+        "p95_ns": 331417,
+        "p99_ns": 389917
+      },
+      "recall_explain": {
+        "mean_ns": 230447.065,
+        "n": 2000,
+        "p50_ns": 210833,
+        "p95_ns": 380875,
+        "p99_ns": 450750
+      },
+      "recall_history_all": {
+        "mean_ns": 48906.9515,
+        "n": 2000,
+        "p50_ns": 43083,
+        "p95_ns": 91125,
+        "p99_ns": 142458
+      },
+      "rss_bytes_after_build": 205799424,
+      "rss_bytes_after_queries": 206077952,
+      "search_documents": {
+        "mean_ns": 69067.04,
+        "n": 2000,
+        "p50_ns": 67250,
+        "p95_ns": 141333,
+        "p99_ns": 193709
+      },
+      "store_dir_bytes": 14639309
+    }
+  ],
+  "synthetic": true,
+  "vocabulary": 20000,
+  "words_per_text": 24
+}

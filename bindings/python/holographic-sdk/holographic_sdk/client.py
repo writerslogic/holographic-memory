@@ -1,9 +1,12 @@
 import hashlib
 import struct
 from urllib.parse import quote
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import httpx
+
+if TYPE_CHECKING:
+    from .memory import AsyncMemoryClient, MemoryClient
 
 _DEFAULT_MASK_SALT = b"holographic-sdk-mask-v1"
 _MIN_SALT_LEN = 16
@@ -90,6 +93,13 @@ class HolographicClient:
         headers = _get_headers(api_key, tenant_id)
         self.client = httpx.Client(headers=headers, timeout=timeout, transport=transport)
 
+    @property
+    def memory(self) -> "MemoryClient":
+        """Agent memory (remember, recall, forget, explain) over this client's connection."""
+        from .memory import MemoryClient
+
+        return MemoryClient(self)
+
     def close(self) -> None:
         self.client.close()
 
@@ -155,6 +165,13 @@ class AsyncHolographicClient:
         self._mask = _make_mask(zero_trust_key, mask_salt)
         headers = _get_headers(api_key, tenant_id)
         self.client = httpx.AsyncClient(headers=headers, timeout=timeout, transport=transport)
+
+    @property
+    def memory(self) -> "AsyncMemoryClient":
+        """Agent memory (remember, recall, forget, explain) over this client's connection."""
+        from .memory import AsyncMemoryClient
+
+        return AsyncMemoryClient(self)
 
     async def aclose(self) -> None:
         await self.client.aclose()
