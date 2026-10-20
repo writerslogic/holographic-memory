@@ -171,8 +171,17 @@ impl AppState {
         }
         // Hex keeps the directory name safe and distinct on case-insensitive filesystems.
         let hex: String = name.bytes().map(|b| format!("{b:02x}")).collect();
-        let dir = self.cli.data_dir.join("tenants").join(hex);
+        let tenants_root = self.cli.data_dir.join("tenants");
         let open = || -> Result<Tenant> {
+            std::fs::create_dir_all(&tenants_root)?;
+            // The hex name cannot contain a separator or `..`; the containment check on the
+            // canonical root states that invariant where the path is built.
+            let root = tenants_root.canonicalize()?;
+            let dir = root.join(&hex);
+            anyhow::ensure!(
+                dir.starts_with(&root) && dir.parent() == Some(root.as_path()),
+                "tenant directory escapes the tenants root"
+            );
             std::fs::create_dir_all(&dir)?;
             let config = HmsConfig {
                 embedding_space: Some(EmbeddingSpace {
