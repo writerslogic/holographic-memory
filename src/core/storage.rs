@@ -759,24 +759,18 @@ impl PersistentArena {
         staged.flush()?;
         let temp_base = staged.base_path.clone();
         super::durable_file::sync_directory(&temp_base)?;
-        // A generation staged in place (see `new_generation_dir`) needs no rename: Windows
-        // refuses to rename a directory whose files are memory mapped.
-        let staged_in_place = temp_base.parent() == Some(self.base_path.as_path())
-            && temp_base
-                .file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with("gen-"));
-        let (generation, new_path) = if staged_in_place {
-            let name = temp_base
-                .file_name()
-                .and_then(|n| n.to_str())
-                .context("staged generation name")?
-                .to_owned();
-            (name, temp_base.clone())
-        } else {
-            let (name, path) = self.generation_path()?;
-            std::fs::rename(&temp_base, &path)?;
-            (name, path)
+        // A generation is staged in place (see `new_generation_dir`): Windows refuses to rename
+        // a directory whose files are memory mapped, so publication never moves one.
+        let generation = temp_base
+            .file_name()
+            .and_then(|n| n.to_str())
+            .filter(|n| n.starts_with("gen-"))
+            .map(str::to_owned);
+        let (generation, new_path) = match generation {
+            Some(name) if temp_base.parent() == Some(self.base_path.as_path()) => {
+                (name, temp_base.clone())
+            }
+            _ => anyhow::bail!("compaction must be staged in a directory from new_generation_dir"),
         };
         super::durable_file::sync_directory(&self.base_path)?;
         let replacement = staged;
@@ -894,7 +888,12 @@ mod tests {
         assert_eq!(arena.read_frame(new)?.0, b"replacement segment");
         for length in [1, 2, 3] {
             assert_eq!(
-                arena.read_slice(new + SEGMENT_SIZE - 2, length).is_ok(),
+                arena
+                    .read_slice(
+                        new + arena.active_capacity.load(Ordering::Acquire) - 2,
+                        length
+                    )
+                    .is_ok(),
                 length <= 2
             );
         }
@@ -910,7 +909,7 @@ mod tests {
         let root = PathBuf::from(root);
         let arena = PersistentArena::new(root.join("arena"))?;
         arena.write_slice(b"old generation")?;
-        let staged = PersistentArena::new(root.join("stage"))?;
+        let staged = PersistentArena::new(arena.new_generation_dir()?)?;
         staged.write_slice(b"new generation")?;
         arena.replace_with_compacted(staged.prepare_compacted()?)?;
         Ok(())
@@ -929,7 +928,7 @@ mod tests {
         arena.write_slice(b"first replayed transaction")?;
         arena.write_slice(b"second replayed transaction")?;
         let end = arena.stats().used_bytes;
-        let staged = PersistentArena::new(root.path().join("stage"))?;
+        let staged = PersistentArena::new(arena.new_generation_dir()?)?;
         staged.write_slice(b"original segment")?;
         let mut prepared = staged.prepare_compacted()?;
         arena.replay_compaction_tail(&mut prepared, &mut cursor, end)?;
@@ -966,7 +965,7 @@ mod tests {
                 map[4..8].copy_from_slice(&declared.to_le_bytes());
                 map.flush()?;
             }
-            let staged = PersistentArena::new(root.path().join("stage"))?;
+            let staged = PersistentArena::new(arena.new_generation_dir()?)?;
             let mut prepared = staged.prepare_compacted()?;
             let mut cursor = 0;
             let result = arena.replay_compaction_tail(&mut prepared, &mut cursor, end);
@@ -992,7 +991,7 @@ mod tests {
                 map[4..8].copy_from_slice(&(length as u32).to_le_bytes());
                 map.flush()?;
             }
-            let staged = PersistentArena::new(root.path().join("stage"))?;
+            let staged = PersistentArena::new(arena.new_generation_dir()?)?;
             let mut prepared = staged.prepare_compacted()?;
             let mut cursor = 0;
             let result =
@@ -1040,7 +1039,7 @@ mod tests {
                 let root = tempdir()?;
                 let arena = PersistentArena::new(root.path().join("live"))?;
                 arena.write_slice(b"acknowledged generation")?;
-                let staged = PersistentArena::new(root.path().join("stage"))?;
+                let staged = PersistentArena::new(arena.new_generation_dir()?)?;
                 let mut offsets = Vec::new();
                 for payload in [b"first".as_slice(), b"middle", b"last"] {
                     offsets.push(staged.write_slice(payload)?);
