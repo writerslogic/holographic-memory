@@ -65,7 +65,7 @@ if __name__ == "__main__":
     if a.child:
         child(a.child, a.revision, a.threads, a.n, a.repeats, a.max_len)
         sys.exit(0)
-    stage1 = json.load(open(a.stage1))
+    stage1 = json.loads(Path(a.stage1).read_text())
     res = {"load_average_1m": os.getloadavg()[0], "results": {}}
     for mid in a.models or [m for m, v in stage1.items() if v.get("engine_architecture") and "error" not in v
                             and "skipped" not in v]:

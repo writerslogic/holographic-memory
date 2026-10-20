@@ -39,11 +39,11 @@ def main():
     ap.add_argument("--rationale", default="")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    s1 = json.load(open(a.stage1))
-    torch = json.load(open(a.torch)) if a.torch else {}
+    s1 = json.loads(Path(a.stage1).read_text())
+    torch = json.loads(Path(a.torch).read_text()) if a.torch else {}
     engine = {}
     for f in sorted(a.stage2.glob("*-int8.json")):
-        d = json.load(open(f))
+        d = json.loads(Path(f).read_text())
         engine[d["model"]] = d
     default_repo = next(m for m in engine if m.split("/")[-1].lower() == a.default.lower()
                         or Path(engine[m]["pack"]).name.startswith(a.default))
@@ -93,7 +93,7 @@ def main():
                 short = Path(engine[mid]["pack"]).name.removesuffix("-int8.hmsemb")
                 f = a.agreement / f"agree-{short}-int8.json"
                 if f.exists():
-                    c["agreement_with_fp32_reference"] = json.load(open(f))
+                    c["agreement_with_fp32_reference"] = json.loads(Path(f).read_text())
         out["candidates"][mid] = c
     Path(a.out).write_text(json.dumps(out, indent=1))
     print("wrote", a.out)
