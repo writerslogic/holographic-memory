@@ -1124,6 +1124,56 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+/// Fuzzing entry point, compiled only by `cargo fuzz` (which sets `--cfg fuzzing`) when this
+/// file is included as a module of the fuzz crate: the header and body parsing of every
+/// endpoint, without sockets or a store. The first byte selects the surface.
+#[cfg(fuzzing)]
+pub fn fuzz_request(data: &[u8]) {
+    static CLI: std::sync::OnceLock<Cli> = std::sync::OnceLock::new();
+    let cli = CLI.get_or_init(|| Cli::parse_from(["hms-server"]));
+    let Some((&mode, body)) = data.split_first() else {
+        return;
+    };
+    match mode % 5 {
+        0 => {
+            if let Ok(doc) = parse::<DocIn>(body) {
+                let _ = validate_doc(doc, cli, mode & 0x80 != 0);
+            }
+        }
+        1 => {
+            if let Ok(docs) = parse::<Vec<DocIn>>(body) {
+                if docs.is_empty() || docs.len() > cli.max_batch {
+                    return;
+                }
+                let valid: Result<Vec<_>, _> = docs
+                    .into_iter()
+                    .map(|doc| validate_doc(doc, cli, false))
+                    .collect();
+                if let Ok(valid) = valid {
+                    let _ = validate_batch(&valid, cli.input_dim);
+                }
+            }
+        }
+        2 => {
+            if let Ok(query) = parse::<QueryIn>(body) {
+                if let Some(vector) = query.query_vector {
+                    let _ = dense(&vector, cli.input_dim, "query_vector");
+                }
+            }
+        }
+        3 => {
+            let mut headers = HeaderMap::new();
+            if let Ok(value) = header::HeaderValue::from_bytes(body) {
+                headers.insert("x-tenant-id", value);
+            }
+            let _ = tenant_name(&headers);
+        }
+        _ => {
+            let _ = valid_tenant(&String::from_utf8_lossy(body));
+        }
+    }
+}
+
 #[cfg(test)]
 #[path = "hms-server/concurrency_tests.rs"]
 mod concurrency_tests;

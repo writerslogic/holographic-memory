@@ -350,10 +350,23 @@ fn chain_step(prev: u64, ev: &Event) -> u64 {
     hash_u64(prev ^ tag, payload)
 }
 
+/// Largest encoded event the log accepts. Decoding enforces the same bound, so a corrupt
+/// length prefix inside a record cannot make the reader allocate more than this.
+const MAX_EVENT_BYTES: usize = 16 << 20;
+
 /// Append one length-framed, bincode-encoded event to the durable log.
 fn append_event(writer: &mut BufWriter<File>, ev: &Event) -> std::io::Result<()> {
     let bytes = bincode::serde::encode_to_vec(ev, bincode::config::standard())
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    if bytes.len() > MAX_EVENT_BYTES {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "event of {} bytes exceeds the {MAX_EVENT_BYTES} byte log limit",
+                bytes.len()
+            ),
+        ));
+    }
     writer.write_all(&(bytes.len() as u32).to_le_bytes())?;
     writer.write_all(&bytes)?;
     writer.flush()
@@ -370,12 +383,12 @@ fn read_events(path: &Path) -> std::io::Result<Vec<Event>> {
     while off + 4 <= buf.len() {
         let len = u32::from_le_bytes([buf[off], buf[off + 1], buf[off + 2], buf[off + 3]]) as usize;
         off += 4;
-        if off + len > buf.len() {
-            break; // truncated tail from an interrupted append
+        if len > MAX_EVENT_BYTES || off + len > buf.len() {
+            break; // truncated tail from an interrupted append, or a corrupt length
         }
         match bincode::serde::decode_from_slice::<Event, _>(
             &buf[off..off + len],
-            bincode::config::standard(),
+            bincode::config::standard().with_limit::<MAX_EVENT_BYTES>(),
         ) {
             Ok((ev, _)) => events.push(ev),
             Err(_) => break, // corrupt record: stop at last good event
@@ -404,6 +417,28 @@ mod tests {
         let present = g.score("paris", "capital_of", "france");
         let absent = g.score("berlin", "capital_of", "spain");
         assert!(present > absent, "present {present} !> absent {absent}");
+    }
+
+    #[test]
+    fn corrupt_string_length_stops_replay_without_allocating() {
+        // A record whose string length prefix claims 4 GiB inside a 20 byte frame, found by
+        // the `connection_graph_log` fuzz target; it used to abort in the allocator.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("cg.log");
+        let mut good = Vec::new();
+        {
+            let mut g = ConnectionGraph::open(64, no_plasticity(), &path).unwrap();
+            g.store("paris", "capital_of", "france");
+        }
+        good.extend(std::fs::read(&path).unwrap());
+        let mut bad = vec![0u8, 0xfd, 0xff, 0xff, 0xff, 0xff, b'x', b'y'];
+        let mut log = good.clone();
+        log.extend((bad.len() as u32).to_le_bytes());
+        log.append(&mut bad);
+        std::fs::write(&path, log).unwrap();
+        let g = ConnectionGraph::open(64, no_plasticity(), &path).unwrap();
+        assert_eq!(g.events().len(), 1, "replay stops at the last good event");
+        assert!(g.verify());
     }
 
     #[test]

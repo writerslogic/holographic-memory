@@ -10,6 +10,24 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 holographic-memory = { path = ".." }
+serde_json = "1.0"
+tempfile = "3"
+ed25519-dalek = { version = "3", optional = true }
+# The server_requests target compiles src/bin/hms-server.rs into the fuzz crate.
+anyhow = { version = "1.0", optional = true }
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json"], optional = true }
+clap = { version = "4.4", features = ["derive", "env"], optional = true }
+parking_lot = { version = "0.12", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+subtle = { version = "2.6", optional = true }
+tokio = { version = "1", features = ["full"], optional = true }
+
+[features]
+provenance = ["holographic-memory/provenance", "dep:ed25519-dalek"]
+private-search = ["holographic-memory/private-search"]
+experimental = ["holographic-memory/experimental"]
+local-models = ["holographic-memory/local-models"]
+server = ["holographic-memory/server", "dep:anyhow", "dep:axum", "dep:clap", "dep:parking_lot", "dep:serde", "dep:subtle", "dep:tokio"]
 
 [[bin]]
 name = "wire_inputs"
@@ -17,3 +35,117 @@ path = "fuzz_targets/wire_inputs.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "ivf_decode"
+path = "fuzz_targets/ivf_decode.rs"
+required-features = ["experimental"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "document_chunking"
+path = "fuzz_targets/document_chunking.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "document_engine"
+path = "fuzz_targets/document_engine.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "store_open"
+path = "fuzz_targets/store_open.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "jumbf_decode"
+path = "fuzz_targets/jumbf_decode.rs"
+required-features = ["provenance"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cose_envelopes"
+path = "fuzz_targets/cose_envelopes.rs"
+required-features = ["provenance"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cawg_identity"
+path = "fuzz_targets/cawg_identity.rs"
+required-features = ["provenance"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "did_parse"
+path = "fuzz_targets/did_parse.rs"
+required-features = ["provenance"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "provenance_json"
+path = "fuzz_targets/provenance_json.rs"
+required-features = ["provenance"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "private_query"
+path = "fuzz_targets/private_query.rs"
+required-features = ["private-search"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "operand_question"
+path = "fuzz_targets/operand_question.rs"
+required-features = ["experimental"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "connection_graph_log"
+path = "fuzz_targets/connection_graph_log.rs"
+required-features = ["experimental"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "llm_output"
+path = "fuzz_targets/llm_output.rs"
+required-features = ["local-models"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "server_requests"
+path = "fuzz_targets/server_requests.rs"
+required-features = ["server"]
+test = false
+doc = false
+bench = false
+
+[[example]]
+name = "gen_seeds"
+path = "examples/gen_seeds.rs"
+required-features = ["provenance", "experimental"]
