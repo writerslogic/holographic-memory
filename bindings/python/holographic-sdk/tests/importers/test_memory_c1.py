@@ -8,6 +8,7 @@ mapping, not that a live service behaves identically."""
 
 import json
 import os
+from pathlib import Path
 import tempfile
 from typing import Any, Dict, List
 
@@ -178,7 +179,7 @@ def test_mem0_platform_mock_bad_key_and_credentials_never_leak(mem0_api, server,
     assert code == 0, cap.err
     blob = cap.out + cap.err + report_path.read_text()
     for root, _, files in os.walk(tmp_path):
-        blob += "".join(open(os.path.join(root, f), errors="replace").read() for f in files)
+        blob += "".join(Path(root, f).read_text(errors="replace") for f in files)
     assert M0_KEY not in blob and "wrong-key-should-not-print" not in blob
 
 
@@ -450,7 +451,7 @@ def test_zep_mock_api_key_never_leaks_through_the_cli(server, tmp_path, capsys):
     assert code == 0, cap.err
     blob = cap.out + cap.err
     for root, _, files in os.walk(tmp_path):
-        blob += "".join(open(os.path.join(root, f), errors="replace").read() for f in files)
+        blob += "".join(Path(root, f).read_text(errors="replace") for f in files)
     assert ZEP_KEY not in blob
     assert json.loads(report_path.read_text())["counts"]["docs_acked"] == ZEP_EXPECTED
 
@@ -569,7 +570,7 @@ def test_letta_mock_key_never_leaks_through_the_cli(server, tmp_path, capsys):
     assert code == 0 and bad == 1 and "letta-wrong-key-1111" not in cap.out + cap.err
     blob = ""
     for root, _, files in os.walk(tmp_path):
-        blob += "".join(open(os.path.join(root, f), errors="replace").read() for f in files)
+        blob += "".join(Path(root, f).read_text(errors="replace") for f in files)
     assert LETTA_KEY not in blob
 
 

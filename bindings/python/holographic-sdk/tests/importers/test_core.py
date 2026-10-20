@@ -5,6 +5,7 @@
 import csv
 import json
 import os
+from pathlib import Path
 
 import pytest
 
@@ -44,7 +45,7 @@ def test_crash_then_resume_commits_every_record(tmp_path, server):
     with pytest.raises(ImporterError) as err:
         run_import(src, crashing, opts, tenant=tenant)
     assert err.value.report.error
-    ck = json.load(open(tmp_path / "ck.json"))
+    ck = json.loads((tmp_path / "ck.json").read_text())
     assert ck["position"] == 30 and not ck["complete"]
 
     sink = server.sink(tenant)
@@ -258,7 +259,7 @@ def test_credentials_never_reach_output_report_or_checkpoint(tmp_path, server, m
     blob = cap.out + cap.err + (report_path.read_text() if report_path.exists() else "")
     for root, _, files in os.walk(tmp_path):
         for f in files:
-            blob += open(os.path.join(root, f), errors="replace").read()
+            blob += Path(root, f).read_text(errors="replace")
     assert API_KEY not in blob
     assert "Traceback" not in blob
     assert "s3cr3t-pw" not in blob and "sk-live-abcdef123456" not in blob

@@ -7,6 +7,7 @@ Set HMS_SERVER_BIN to a binary built with `cargo build --release --features serv
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import random
 import subprocess
@@ -122,28 +123,21 @@ def assert_resumable(make_source, server, tmp_path, expected_docs: int, batch_si
     tenant = server.tenant("rs")
     ck = str(tmp_path / "resume-ck.json")
     options = ImportOptions(batch_size=batch_size, verify_sample=0, checkpoint_path=ck, **opts)
-    src = make_source()
-    try:
-        with pytest.raises(ImporterError):
-            run_import(src, CrashAfter(server.url, api_key=API_KEY, tenant=tenant, crash_after=2), options, tenant=tenant)
-    finally:
-        src.close()
-    saved = json.load(open(ck))
+    with make_source() as src, pytest.raises(ImporterError):
+        run_import(src, CrashAfter(server.url, api_key=API_KEY, tenant=tenant, crash_after=2), options, tenant=tenant)
+    saved = json.loads(Path(ck).read_text())
     assert 0 < saved["position"] < expected_docs and not saved["complete"], saved
-    src = make_source()
     sink = server.sink(tenant)
     try:
-        report = run_import(src, sink, options, tenant=tenant)
+        with make_source() as src:
+            report = run_import(src, sink, options, tenant=tenant)
     finally:
         sink.close()
-        src.close()
     assert report.resumed_from == saved["position"], report.resumed_from
     assert report.complete and report.stats.counts["docs_acked"] == expected_docs, report.stats.counts
     assert report.stats.rejected_total == 0
 
 
-try:  # the importer suite needs the `importers-test` group; the plain SDK test run skips it
-    import numpy  # noqa: F401
-    import pyarrow  # noqa: F401
-except ImportError:
+# the importer suite needs the `importers-test` group; the plain SDK test run skips it
+if not all(importlib.util.find_spec(m) for m in ("numpy", "pyarrow")):
     collect_ignore_glob = ["test_*.py"]

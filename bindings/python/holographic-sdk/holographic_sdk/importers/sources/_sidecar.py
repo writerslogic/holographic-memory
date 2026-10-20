@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, Optional
 
 from ..model import ImporterError
 
