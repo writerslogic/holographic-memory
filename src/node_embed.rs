@@ -76,6 +76,7 @@ async fn load(options: Option<EmbedOptionsJs>) -> Result<Arc<Embedder>> {
 
 #[napi]
 pub struct LocalEmbedder {
+    // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
     inner: Arc<Embedder>,
 }
 
@@ -163,6 +164,7 @@ pub struct SemanticHit {
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
 #[napi(js_name = "SemanticIndex")]
 pub struct JsSemanticIndex {
+    // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
     inner: Arc<RwLock<SemanticIndex>>,
 }
 
