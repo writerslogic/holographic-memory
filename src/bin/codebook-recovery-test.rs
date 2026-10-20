@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Codebook recovery experiment: three-arm test measuring whether Bloom-bundled
 //! codebook-composed facts (XOR triples) can be recovered via argmax query,

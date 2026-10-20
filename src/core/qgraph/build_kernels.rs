@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Inner loops used only while constructing the graph.
 
 /// Hint the cache to load `row`. A no-op where no prefetch instruction is wired up.

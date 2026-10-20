@@ -1,7 +1,7 @@
 {
   "name": "holographic-memory",
   "version": "0.6.0",
-  "license": "AGPL-3.0-or-later",
+  "license": "Apache-2.0",
   "author": "WritersLogic, Inc. <david@writerslogic.com>",
   "description": "Holographic Memory System (HMS): local document search (BM25 + embedding cosine) and vector-symbolic associative memory.",
   "repository": {

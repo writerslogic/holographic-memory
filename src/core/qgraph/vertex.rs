@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Graph index with one compact code per vertex instead of one code per edge.
 //!
 //! Every vertex stores its mean-centred vector as 8-bit integers with one scale (locally

@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // §20. The quantized-phase-FHRR substrate (§15-18) is published prior art (qFHRR,
 // arXiv 2604.25939) -- but qFHRR does NOT do resonators, and Frady/Kent resonator

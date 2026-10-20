@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Check a learned-sparse results file (benchmarks/results/public_learned_sparse_*.json).
 
 Usage: check_learned_sparse.py <results.json> [--summary OUT]

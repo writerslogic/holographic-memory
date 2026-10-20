@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Sweep of subset-union ("Bloom") bundle capacity: each item contributes a
 //! deterministic k'-subset of its 64 active indices. Items always have 64

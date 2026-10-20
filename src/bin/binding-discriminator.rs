@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Pre-registration step 1 (cheapest disconfirming test) from
 // docs/PREREGISTRATION-binding-readout.md.

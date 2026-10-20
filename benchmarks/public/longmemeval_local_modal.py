@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Run frozen LongMemEval reader prompts through the local open-weight reader on Modal.
 
   uv run --with modal python -I benchmarks/public/longmemeval_local_modal.py \

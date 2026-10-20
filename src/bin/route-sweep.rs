@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Measures recall@10 and latency of each retrieval route (exact scan, inverted,
 //! IVF, NSG) across store size, dimension and data distribution, so the query

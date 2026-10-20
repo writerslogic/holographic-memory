@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Subset-union ("Bloom") bundling: each item contributes only a
 //! deterministic `k'`-subset of its active indices to the union, and

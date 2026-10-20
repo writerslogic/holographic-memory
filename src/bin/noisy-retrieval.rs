@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // §22. A multi-model fusion pass concluded that 0.5·D well-posed retrieval from a
 // single dense superposition is information-theoretically impossible, so capacity

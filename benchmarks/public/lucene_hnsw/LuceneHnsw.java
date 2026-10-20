@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Lucene HNSW through its own graph API (no index files, no PyLucene): builds an on-heap HNSW
 // graph over train.f32 and times single-threaded, one-query-at-a-time searches over test.f32,

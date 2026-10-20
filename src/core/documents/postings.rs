@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Compact lexical postings: a two-level term dictionary and delta-varint posting lists.
 //!
 //! The dictionary keeps a sorted base of concatenated term bytes with one `u32` offset and

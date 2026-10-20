@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // §28. The real "combine both layers" fusion: base + residual. A HOLOGRAPHIC base
 // (Hebbian associative memory over a value codebook, partial-cue robust like §22) +

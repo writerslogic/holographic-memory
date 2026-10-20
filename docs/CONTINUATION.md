@@ -19,18 +19,7 @@ experiments in benchmarks/results/parked/2B-packed-node-results.{patch,md}); 2C 
 weighting (lexical_relevance_v1.json, both null; opt-in bm25K1/bm25B search options and titleWeight
 document option stay, defaults bit-identical); MaxScore ranking parked (2B-maxscore-daat).
 
-NOT COMMITTED: the V40 source set lives only in the main tree, together with other sessions'
-uncommitted work it depends on (HmsConfig.text_encoder / encoding::TextEncoder, storage.rs
-replay_compaction_tail and StagedArena plus src/core/storage/, StageParams::validate, serde "rc"):
-a worktree build of the documents + engine files alone fails on exactly those symbols. The campaign
-measured the composed main tree (candidate manifest in serving_memory_v40.json). Integration must be
-one commit from the main tree once the owning sessions land their parts, or by the user; the file
-set is src/core/documents/ (all), src/core/documents.rs, src/core/engine/{compaction,document_batch,
-document_snapshot_tests,document_stage_tests,mutation_gate,mod,mutation,query,document_api}.rs,
-src/lib.rs (memorize_documents, train_document_index, title_weight), index.d.ts, tests/documents.rs,
-tests/document_dense.rs, and `title_weight: None` in every DocumentInput literal (18 sites). Gates in
-the main tree: clippy all features and none clean, 427 lib tests, documents/document_dense/
-encoder_versions integration tests pass. Committed from the worktree: evidence, harnesses and docs only.
+COMMITTED: the V40 source set and the other sessions' dependent work merged together in PR #81 (b35f171). Evidence directories over 1 GB and three result files over 20 MB stay untracked on disk. Licence: Apache-2.0 from this change on (crate 0.6.1 and earlier were AGPL-3.0-or-later).
 
 Next: Lucene 2B row (java only when no campaign runs on writerslogic-02); 2A target 0.85 is below the
 measured Node-runtime bound (0.84, serving_memory_v37.json); 1A x86 confirmation is done on Modal (ann_modal_confirm_v1.json); 1B.4 event dates untouched. Constraints unchanged: tune on held-out/dev only;

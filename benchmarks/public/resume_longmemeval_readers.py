@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 # /// script
 # requires-python = "==3.13.9"
 # dependencies = ["openai==3.27.0", "python-dotenv==1.2.4", "tiktoken==0.14.0", "tokenizers==0.23.3"]

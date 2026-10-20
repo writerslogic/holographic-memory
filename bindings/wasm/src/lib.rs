@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Browser demo binding: a standalone reimplementation of the sparse
 //! hypervector set algebra and the keyed coordinate mask. It is not the HMS

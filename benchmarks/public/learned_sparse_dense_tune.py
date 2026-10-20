@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Embed the tuning-split queries of a cached BEIR dataset with the pinned MiniLM model (the
 model and revision recorded in <cache>/<dataset>/meta.json), L2-normalized, as f32 rows next to
 the learned-sparse encodings: <cache>/sparse/<dataset>/<model>/queries_tune_dense.f32.

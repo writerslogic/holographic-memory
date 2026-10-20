@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Capacity campaign, strongest cross-agent lead: the field Σ_i bind(key_i, obj_i)
 // is a Sparse Superposition Code (SPARC) — M sections, one object active per

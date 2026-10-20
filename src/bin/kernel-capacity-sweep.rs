@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Lane 1, §17. §15 recalls the nearest symbol only 85% of the time at 13 facts,
 // zero distractors, D=1024 -- far below the capacity knee (~100 facts), so the

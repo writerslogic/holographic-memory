@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 #
 # Attacking the assumptions behind the superposition floor (docs/SUPERPOSITION-FLOOR.md).
 # The claim "no poly-time decoder beats M/D~0.27" rests on AMP being optimal and on a

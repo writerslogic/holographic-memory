@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Encode a cached BEIR dataset into learned sparse vectors for the HMS sparse engine.
 
 Usage: learned_sparse_encode.py --dataset {nfcorpus,scifact} --model {splade-v3,splade-pp-ed,os-doc-v2-distill}

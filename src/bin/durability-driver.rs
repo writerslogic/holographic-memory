@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Driver for `benchmarks/public/durability_matrix.py`: writes deterministic documents in
 //! committed batches (announcing each commit on stdout), compacts on request, verifies a
 //! store after a crash, and exercises readers during compaction.

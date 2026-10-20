@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Capacity campaign — the nonlinear-escape lead (trigonometry lens). The linear
 // matched filter is SNR-limited (~√(D/M)) and every LINEAR decoder is capped at the

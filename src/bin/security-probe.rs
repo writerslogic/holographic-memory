@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Security-matrix probe (benchmarks/public/security_matrix.py drives it): seeds and opens
 //! stores with and without encryption at rest, verifies signed audit entries, scans its own
 //! memory for key material on Linux, and times the constant-time comparison the server uses.
