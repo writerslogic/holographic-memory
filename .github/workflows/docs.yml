@@ -45,7 +45,7 @@ jobs:
       - name: Unit-test the link rewriting hook
         run: python -m unittest scripts/test_docs_hooks.py
 
-      - name: Build every version (strict: any warning fails)
+      - name: Build every version (strict, any warning fails)
         run: bash scripts/build-docs-site.sh _site
 
       - name: Check links inside the built site

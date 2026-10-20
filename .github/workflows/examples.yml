@@ -131,7 +131,7 @@ jobs:
         run: diff "$RUNNER_TEMP/demo.out" examples/demo-offline-agent/expected-output.txt
       - name: Run it twice more; every run must be identical
         run: |
-          for run in 1 2; do
+          for _ in 1 2; do
             cargo run --release --example demo-offline-agent | diff - examples/demo-offline-agent/expected-output.txt
           done
 
