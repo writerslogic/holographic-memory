@@ -51,7 +51,7 @@ def main():
                 tag = f"{ds}_{m}"
                 h = hms_dir / f"hms_{tag}.json"
                 if h.exists():
-                    d = json.load(open(h))
+                    d = json.loads(h.read_text())
                     rows.append({"dataset": ds, "model": m, "model_id": d["model"], "license": d["license"],
                                  "system": "hms_impact_index", "host": host, "ndcg_at_10": d["ndcg_at_10"],
                                  "recall_at_100": d["recall_at_100"], "index_bytes": d["index_bytes"],
@@ -69,7 +69,7 @@ def main():
                 q = hms_dir / f"anserini_{tag}_quality.json"
                 t = ans_dir / tag / "timing.jsonl"
                 if q.exists() and t.exists():
-                    d = json.load(open(q))
+                    d = json.loads(q.read_text())
                     qps, rounds = anserini_qps(ans_dir / tag)
                     rows.append({"dataset": ds, "model": m, "system": "anserini_impact", "host": host,
                                  "ndcg_at_10": d["ndcg_at_10"], "recall_at_100": d["recall_at_100"],

@@ -419,7 +419,7 @@ class Writer:
         try:
             self.p.send_signal(signal.SIGKILL)
         except ProcessLookupError:
-            pass
+            pass  # the process already exited; wait() below reaps it
         self.p.wait()
         self.t.join(timeout=5)
 

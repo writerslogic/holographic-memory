@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests of security_matrix.py's verdict and injection logic."""
 import random
-import sqlite3
-from pathlib import Path
 
 import security_matrix as sm
 

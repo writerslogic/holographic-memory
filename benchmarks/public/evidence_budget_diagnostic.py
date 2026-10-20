@@ -9,7 +9,6 @@
 import argparse
 import hashlib
 import json
-import math
 import random
 import statistics
 import zipfile

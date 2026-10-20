@@ -132,7 +132,7 @@ class AnswerEvidence(unittest.TestCase):
         for invalid in (-1, 1.5, True):
             with self.subTest(invalid=invalid):
                 with self.assertRaisesRegex(ValueError, "invalid count"):
-                    cap_sources(arm, lambda groups: canonical(groups), lambda text: invalid, 32768)
+                    cap_sources(arm, canonical, lambda text: invalid, 32768)
 
 
 if __name__ == "__main__":

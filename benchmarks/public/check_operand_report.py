@@ -76,7 +76,6 @@ def main():
     args = p.parse_args()
     report = json.loads(args.report.read_text())
     repeat = json.loads(args.reproduction.read_text())
-    work = Path('target/conversation-geometry-validation')
     source_file = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
     input_file = Path('benchmarks/results/evidence_completeness_dev.json')
     validated = Path('benchmarks/results/evidence_completeness_summary.json')
