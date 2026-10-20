@@ -1,0 +1,6 @@
+faiss-cpu==1.12.0
+    # via -r requirements/faiss.footprint.in
+numpy==2.5.4
+    # via faiss-cpu
+packaging==26.3
+    # via faiss-cpu

@@ -1,0 +1,8 @@
+bm25s==0.3.14
+    # via -r requirements/bm25s.in
+numpy==2.5.4
+    # via
+    #   -r requirements/bm25s.in
+    #   bm25s
+pystemmer==3.1.0
+    # via -r requirements/bm25s.in
