@@ -1,0 +1,41 @@
+{
+  "worktree": "/Volumes/A/holographic-memory-memory-competition",
+  "patch": "/Volumes/A/holographic-memory-memory-competition/benchmarks/results/memory_competition_v1/integration.patch",
+  "code_files": {
+    "bindings/python/holographic-sdk/holographic_sdk/__init__.py": "6e6594908ccfb7057a7793a400baaa1cca1502681563372c5b6b408df17642b7",
+    "bindings/python/holographic-sdk/holographic_sdk/evidence.py": "953fff331b3c9d0353eef15b6557c3a659e38af6070d7d9e87a281a89bd03e34",
+    "bindings/python/holographic-sdk/tests/test_evidence.py": "ab4580a9fbe290ac1db8c5a6f17b8c32c6a0844371fb5a89c59b0be455f6c9b1",
+    "benchmarks/public/factored_evidence_diagnostic.py": "cec95f9cfcd4e07dd06956ed298e47c2ced052a49328bb39f27f4ffaee98c47b",
+    "benchmarks/public/check_factored_evidence.py": "e7009ee785a621403137bb983825154473d538ea5b19a8b0f3d61d49fa937fc7"
+  },
+  "artifacts": {
+    "benchmarks/results/memory_competition_v1/checked_summary.json": "cb69b7e3e6cb97873cbce735e3c5aa18bdaf35ba162bec81eccdf827ff3fee90",
+    "benchmarks/results/memory_competition_v1/codec_first.py": "83636b52c807f1d208897685c47a4c91e9351327066eb6df4fd1ce233f55058b",
+    "benchmarks/results/memory_competition_v1/integration.patch": "5164a4718c432ee4c64aae2629112ec695a0ed3ddf7994a483c5108db877fa7f",
+    "benchmarks/results/memory_competition_v1/protocol.json": "19f0a17645d477cd4fd1c1b58fbea9307ab92c7bf8dee57f530108a6b100931e",
+    "benchmarks/results/memory_competition_v1/report.json": "2900d7bdcc26453be6c512193dccfe17a884597d2200c6a24198ebda854d63e8",
+    "benchmarks/results/memory_competition_v1/report_first.json": "616d2f80050a5f662f60cdb92a0b2d7f3d48cc76a36e3931f63642379967a2ac",
+    "benchmarks/results/memory_competition_v1/report_repeat.json": "2900d7bdcc26453be6c512193dccfe17a884597d2200c6a24198ebda854d63e8",
+    "benchmarks/results/memory_competition_v1/snapshot.json": "9aaedeb4e6969f8a11035017ad7581577183f60727e2bfdcde331da0ca0845b2"
+  },
+  "verified": {
+    "sdk_tests_passed": 13,
+    "sdk_live_server_tests_skipped": 5,
+    "codec_regression_tests": 7,
+    "tamper_rejections": 9,
+    "raw_source_occurrences": 608,
+    "deterministic_reproduction": true,
+    "original_scored_dev_support": "79/84",
+    "new_scored_dev_support": "79/84",
+    "same_selection_packet_byte_ratio": 0.8707564173665029,
+    "additional_complete_groups": 98
+  },
+  "interpretation": "Optional lossless storage/transport representation improvement; no retrieval correctness, reader token-budget, answer accuracy, latency or vendor superiority claim. Existing frozen reader packets and results remain unchanged.",
+  "reproduce": [
+    "uv run --no-project python bindings/python/holographic-sdk/tests/test_evidence.py",
+    "cd bindings/python/holographic-sdk && PYTHONPATH=. uv run --no-project --with httpx --with pytest pytest -q tests",
+    "uv run --no-project benchmarks/public/factored_evidence_diagnostic.py",
+    "uv run --no-project benchmarks/public/factored_evidence_diagnostic.py --output benchmarks/results/memory_competition_v1/report_repeat.json",
+    "uv run --no-project benchmarks/public/check_factored_evidence.py benchmarks/results/memory_competition_v1/report.json --reproduction benchmarks/results/memory_competition_v1/report_repeat.json --tamper"
+  ]
+}

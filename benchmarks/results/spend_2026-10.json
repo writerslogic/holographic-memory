@@ -30254,11 +30254,6248 @@
     },
     "total_tokens": 234
    }
+  },
+  {
+   "cache_key": "660a5e090647a16c152fea1c2036d0988c8a11f9228889e579f132180900c5db",
+   "call_id": "e7890644b4eff22ba0db8e47fe442023e52704ec18a9eec2e4a68c272ab8d361",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.000535,
+   "unix_time": 1792187564.274256,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 134
+   }
+  },
+  {
+   "cache_key": "e7066e2b1fbf6d902708cb97d0b88d0142131e2ef97a90749444427e6c1f3a87",
+   "call_id": "9626cf7aa39c4091d33a758ec2d3b9dbe03cdb6bf4f0408fc579b0252992c6df",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323375,
+   "cost_usd": 0.0007875,
+   "unix_time": 1792187564.297966,
+   "usage": {
+    "input_tokens": 141,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 29,
+    "output_tokens_details": {
+     "reasoning_tokens": 22
+    },
+    "total_tokens": 170
+   }
+  },
+  {
+   "cache_key": "c65b1f8f0fcf0797fc8eea9bb18cf514e0f5af2c731c96bc84e68180ea1c1a45",
+   "call_id": "ca119e73e807129e899815be4419371c96a24487d300f3531672b1b739e428ce",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323125,
+   "cost_usd": 0.0004025000000000001,
+   "unix_time": 1792187564.342783,
+   "usage": {
+    "input_tokens": 131,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 136
+   }
+  },
+  {
+   "cache_key": "5cde47e0155835d1a11a8b01e52eea2944b974684b669cf1d210c781ff708619",
+   "call_id": "5f9a6f6c43419fe6a1c0639b2337204bbdf5b1407730e97eb3ccf3a7372a30c7",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324375,
+   "cost_usd": 0.0005275000000000001,
+   "unix_time": 1792187564.4144452,
+   "usage": {
+    "input_tokens": 181,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 186
+   }
+  },
+  {
+   "cache_key": "4197b4d7213434468a84ac6b932f10a4fa445a065674b5b5049dafa3f32d45f4",
+   "call_id": "98896b10b58bf0f9af0999d53aa21e5aef5869f55c2f3ee19634ace8463d6ae5",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032255,
+   "cost_usd": 0.00034500000000000004,
+   "unix_time": 1792187564.46574,
+   "usage": {
+    "input_tokens": 108,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 113
+   }
+  },
+  {
+   "cache_key": "98dad8a2ef6b6549f14f6cc638e9cb8b37fdde83a082035967609d6c77dafc1d",
+   "call_id": "7d0b8252909f331e3f57a3c5e5a884c8be20df5652d8a6f4b19d6a650f2801a0",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323625,
+   "cost_usd": 0.0004525,
+   "unix_time": 1792187564.5608761,
+   "usage": {
+    "input_tokens": 151,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 156
+   }
+  },
+  {
+   "cache_key": "97c811b961a03b1b9ec320e68e8904a2edfaf44a4bbfe3ecf3e1a3132c3a63d7",
+   "call_id": "de40d006374e2402bace0e327cd3cfa680c790c1aed943e67ac645a4f3c493c6",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032285,
+   "cost_usd": 0.000375,
+   "unix_time": 1792187564.657829,
+   "usage": {
+    "input_tokens": 120,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 125
+   }
+  },
+  {
+   "cache_key": "0cc08247b9a504b2552abf6f5c7fa0fbef9bc2a290467147e88d383f3f1f7c68",
+   "call_id": "e17ee4ed2863050b5ec6f6fa005c22a56f2ab2ecad1c1083655a31387ed7e803",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323,
+   "cost_usd": 0.00057,
+   "unix_time": 1792187564.67232,
+   "usage": {
+    "input_tokens": 126,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 143
+   }
+  },
+  {
+   "cache_key": "afe97ba9bb0f86e82c818f5fadda36a3c31db68c3180fc2600b9b1fe5260c18f",
+   "call_id": "9e9a7fc0df650fb53a11678b489a3f4c33bf8e6564a60bdb7a7f43ad2fa33830",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323175,
+   "cost_usd": 0.0006025,
+   "unix_time": 1792187566.5590148,
+   "usage": {
+    "input_tokens": 133,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 18,
+    "output_tokens_details": {
+     "reasoning_tokens": 11
+    },
+    "total_tokens": 151
+   }
+  },
+  {
+   "cache_key": "cba7088836009ff67e67824dc2469eef0c81c3b9051da2053c6fc255613005bb",
+   "call_id": "c03dfe5e240364013fa71660b16ba3a0923bd7974af8d53161960d26ce91507a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323575,
+   "cost_usd": 0.0009275000000000002,
+   "unix_time": 1792187566.58626,
+   "usage": {
+    "input_tokens": 149,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 37,
+    "output_tokens_details": {
+     "reasoning_tokens": 30
+    },
+    "total_tokens": 186
+   }
+  },
+  {
+   "cache_key": "d2248e83b3ce12c95d3f7151ef971ba03f9f0e2c6950825b5297f5e9319c0d5a",
+   "call_id": "c34b128c2639382d146559733ca10fea0f562702f9828c38336209644610d9ad",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324075,
+   "cost_usd": 0.0004975,
+   "unix_time": 1792187566.6413162,
+   "usage": {
+    "input_tokens": 169,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 174
+   }
+  },
+  {
+   "cache_key": "d56c046e882b696f5f93abf470161b9133e214a9332c3c7b35083220e3b1822c",
+   "call_id": "6212aedc5c050abc0a70f446dd6333d2b7e95485ed45f230bb16e052ef2d5355",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323,
+   "cost_usd": 0.000555,
+   "unix_time": 1792187566.668044,
+   "usage": {
+    "input_tokens": 126,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 142
+   }
+  },
+  {
+   "cache_key": "f6db047b76637d3d6b5799d87aec0132e6017576302761bf8296c1beab5a57b4",
+   "call_id": "f36a663aa1b66e1acfbe6ffc860d86089f7fbe6b9ac520decd34abced7c35315",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323625,
+   "cost_usd": 0.0004525,
+   "unix_time": 1792187566.747825,
+   "usage": {
+    "input_tokens": 151,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 156
+   }
+  },
+  {
+   "cache_key": "584b9248abe60179842d91602e94bcc75239370a3f23ecd39e26a549f95d59f5",
+   "call_id": "51d1a87253fcbea37b3b1d580fc10ec2e4477474346d7ca118f52ffba33a9d4d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322975,
+   "cost_usd": 0.0005675000000000001,
+   "unix_time": 1792187566.803159,
+   "usage": {
+    "input_tokens": 125,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 142
+   }
+  },
+  {
+   "cache_key": "5778a5c3bb66242418406764d2611dbc17093ec16e0f5f34aa332563e0dc9bc5",
+   "call_id": "460d7eb7aff5ab6b2f2ee663db466e1e8a08fd2ef14d40fd644ce93c14383df1",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.0008500000000000001,
+   "unix_time": 1792187566.842777,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 37,
+    "output_tokens_details": {
+     "reasoning_tokens": 30
+    },
+    "total_tokens": 155
+   }
+  },
+  {
+   "cache_key": "f0683f0c64552323291c31986281a01ee480751c063ded454148a7ecb5065dcd",
+   "call_id": "0fb8f17f2a86b8c1a1b4f94cc20cbad703898a008770a7f726d0115d2a022934",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0007225,
+   "unix_time": 1792187567.156384,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 209
+   }
+  },
+  {
+   "cache_key": "596c4432bdad5124d1090502bd77679f7f1e0f7db91dd2c3d00a78fdb8505454",
+   "call_id": "0849fc23fa66179c9720b72a2a97ed4eaf8a0ed21a421e262f1c17c1ab942639",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322975,
+   "cost_usd": 0.0008825,
+   "unix_time": 1792187567.4633758,
+   "usage": {
+    "input_tokens": 125,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 38,
+    "output_tokens_details": {
+     "reasoning_tokens": 31
+    },
+    "total_tokens": 163
+   }
+  },
+  {
+   "cache_key": "5f846dc19b47b54d567b90c8e31b08656b88dec68bdd47f3e6b0c45d7355a5b8",
+   "call_id": "643b4d20bba9c12e744aa97b2d8435ea23651a794222df1ad54a4fe17780610e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.00038250000000000003,
+   "unix_time": 1792187567.658328,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 128
+   }
+  },
+  {
+   "cache_key": "f3f5955c82c961386794b1188f405dfa535d104af1c5ceda060c11ea38c2e2d1",
+   "call_id": "9d2c97563280e838bc85dcc127d9b8ecfb29817f41ac01ae977f1770afd8f496",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032355,
+   "cost_usd": 0.0004450000000000001,
+   "unix_time": 1792187567.782022,
+   "usage": {
+    "input_tokens": 148,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 153
+   }
+  },
+  {
+   "cache_key": "fcd895844011ed017cac7240eb5c0325ec3646a8d919ce06e4c253aec8166065",
+   "call_id": "e95f13655b88b7a1f6d456be96808b59e13df48a7c9b8dc11499e0beefe970eb",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325225,
+   "cost_usd": 0.0007775,
+   "unix_time": 1792187567.989941,
+   "usage": {
+    "input_tokens": 215,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 231
+   }
+  },
+  {
+   "cache_key": "95dad2bc65b14227edf886635633a902e28d76b4aa2faa13b8eebead91cc5a77",
+   "call_id": "d7c98f9c49d25ea9bd61de087933b6a99e05b2c458c2c8899d563417a2126b99",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032425,
+   "cost_usd": 0.000515,
+   "unix_time": 1792187568.004554,
+   "usage": {
+    "input_tokens": 176,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 181
+   }
+  },
+  {
+   "cache_key": "6020704a97b9957f361793c5dc169dec63e441c761dcdff05aa8c691c549b79c",
+   "call_id": "19c6a00388d6a488b071d1408c0f19a0297d2226975408e9f4bd4ab1bb150c7c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032255,
+   "cost_usd": 0.00034500000000000004,
+   "unix_time": 1792187568.027262,
+   "usage": {
+    "input_tokens": 108,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 113
+   }
+  },
+  {
+   "cache_key": "be70ccef5d2a3fa11465a607741efa368f95b119bb90bf163fa805c7fb4d964f",
+   "call_id": "a8bd8535d299d19fc8f304cee69b74656f1179e1d6f4b69a78604c8db88c0e12",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323125,
+   "cost_usd": 0.0008075000000000001,
+   "unix_time": 1792187568.0765362,
+   "usage": {
+    "input_tokens": 131,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "reasoning_tokens": 25
+    },
+    "total_tokens": 163
+   }
+  },
+  {
+   "cache_key": "01128481d54ccbea700943d7822e696f05ca11f291d22c9864b8750963158a27",
+   "call_id": "3b7317a36681597da727ab7c5f362c8cb22bd07c34b9b31a97418a72b05d56fa",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032425,
+   "cost_usd": 0.00068,
+   "unix_time": 1792187568.181458,
+   "usage": {
+    "input_tokens": 176,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 192
+   }
+  },
+  {
+   "cache_key": "bd3103e29e9e0f0b655f0089a569d343598a58b4f58ca258149d6ed729e5e614",
+   "call_id": "b21164ea4e8462e8cbbbe220acb9be5ac3166203bdb6c0d182013234c9ce3915",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325125,
+   "cost_usd": 0.0006025000000000001,
+   "unix_time": 1792187568.5013618,
+   "usage": {
+    "input_tokens": 211,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 216
+   }
+  },
+  {
+   "cache_key": "ab29410a5e1b30dd0c2863383f45a5be5498ffd92896ffd50f392b1aadcf19de",
+   "call_id": "c93102d21dcb729199b7e6dcc07ea976fd382619cf2baf14cdd4761a80c8ec90",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03231,
+   "cost_usd": 0.0019450000000000001,
+   "unix_time": 1792187568.691443,
+   "usage": {
+    "input_tokens": 130,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 108,
+    "output_tokens_details": {
+     "reasoning_tokens": 101
+    },
+    "total_tokens": 238
+   }
+  },
+  {
+   "cache_key": "2d0bdf8ef66749457c0dc65bcd975ac6d044b569a64ba16de4a3a3e4eb3932f7",
+   "call_id": "40faafe69915dc945f92eae2b940afc72ea33640d94e04a6f73808382e8eaeca",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187568.8923452,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "8e71bf6f5506eb2e0ede49fbc230e7365b26e3fdca00933fdf6bdb22edd47e1d",
+   "call_id": "40130a0cd8cd33803752b263adf5b8acfcc4238cb4b67746b9754a9d388d431b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032625,
+   "cost_usd": 0.00412,
+   "unix_time": 1792187568.9247391,
+   "usage": {
+    "input_tokens": 256,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 232,
+    "output_tokens_details": {
+     "reasoning_tokens": 225
+    },
+    "total_tokens": 488
+   }
+  },
+  {
+   "cache_key": "6a238fbfeac355df906246c5572843e790fae4f25ad8631a5b980f532f61dea0",
+   "call_id": "4b06c54df1b786c78657078ebacc625062a091bea4218226477c66bfc8e123a7",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324975,
+   "cost_usd": 0.0015475000000000003,
+   "unix_time": 1792187569.002507,
+   "usage": {
+    "input_tokens": 205,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 69,
+    "output_tokens_details": {
+     "reasoning_tokens": 62
+    },
+    "total_tokens": 274
+   }
+  },
+  {
+   "cache_key": "ce40e265770d423b78e2429e074b936e3d80bc0d8c5d4a559c9eebb7dbe2bb6b",
+   "call_id": "54bc68307cfc1869b1243b0509c4dc5b9acf2ebc8ff3709686612afa2f8d839c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325175,
+   "cost_usd": 0.0006075000000000001,
+   "unix_time": 1792187569.136791,
+   "usage": {
+    "input_tokens": 213,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 218
+   }
+  },
+  {
+   "cache_key": "9ae3b8801115b2407b5c35d07b032ca40026627afc24dabab3dfb57b0eedbbaf",
+   "call_id": "20db51e513380a9667e6375abf09787c6dcd51b4317b1096570f4c8f04cf9e15",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032255,
+   "cost_usd": 0.00034500000000000004,
+   "unix_time": 1792187569.295313,
+   "usage": {
+    "input_tokens": 108,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 113
+   }
+  },
+  {
+   "cache_key": "6d252906f281ba13c40b9e374ef297489a743591a33e1a3c1d39518b1507e3e4",
+   "call_id": "60e648fcb5a16878fc744f1e3eeb202de12889bd7902b31a306163df63192987",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032322500000000004,
+   "cost_usd": 0.0009825,
+   "unix_time": 1792187569.364931,
+   "usage": {
+    "input_tokens": 135,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 43,
+    "output_tokens_details": {
+     "reasoning_tokens": 36
+    },
+    "total_tokens": 178
+   }
+  },
+  {
+   "cache_key": "72a6b3ac967de78aea78fdbac12f621dac5eb32806d99ec926fefa41be3b9ee3",
+   "call_id": "b4b5118d6f48d61c33fd2f98737c8097b09314b1a54d41556d26f0354950fc24",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032395,
+   "cost_usd": 0.0006500000000000001,
+   "unix_time": 1792187569.641689,
+   "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 180
+   }
+  },
+  {
+   "cache_key": "906b66cb658a616954703391eb096d978e2a7416f1605a14153075bee5399027",
+   "call_id": "aba6a0db5602f12a737dece141412f144fe8e8791af83de9af8596641c86097c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.0005625000000000001,
+   "unix_time": 1792187569.7867541,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 140
+   }
+  },
+  {
+   "cache_key": "0cdb76ef716d49f702054c46f89d5a362d68a71b1598e22db15d7e281b797942",
+   "call_id": "8b2bb095ba86b88aefbf00986cdbb89c01d45a3e05ec853bae545dd001ff703a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324575,
+   "cost_usd": 0.0005475,
+   "unix_time": 1792187570.445267,
+   "usage": {
+    "input_tokens": 189,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 194
+   }
+  },
+  {
+   "cache_key": "867785ba430bb65252f2bef564bece0095647ea54ea850d53626f5cc5876f61a",
+   "call_id": "4bb7c513e307cc4a1ba4ad9f6f244c64f2026c1135e3ff3ee55228e509b6c795",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0327625,
+   "cost_usd": 0.0041375000000000006,
+   "unix_time": 1792187570.538094,
+   "usage": {
+    "input_tokens": 311,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 224,
+    "output_tokens_details": {
+     "reasoning_tokens": 217
+    },
+    "total_tokens": 535
+   }
+  },
+  {
+   "cache_key": "3e4a39211e15a217203d2b851e90cfb05e52c48c2368343c1b4b00001b151fb6",
+   "call_id": "99a68fd9ea7e77a47b8c366f4138f34fc9fa765d03069ae51a63b861bb6fc0a8",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032325,
+   "cost_usd": 0.00103,
+   "unix_time": 1792187570.586192,
+   "usage": {
+    "input_tokens": 136,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 46,
+    "output_tokens_details": {
+     "reasoning_tokens": 39
+    },
+    "total_tokens": 182
+   }
+  },
+  {
+   "cache_key": "eb942913d1274b4417228eefe313555dd6c7775b981afeffbd96d2074a287cdd",
+   "call_id": "848eb6e6c82e3877b54107df102137ba49cb338bb8f35ce84bac4b4e598fdc6a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0008275,
+   "unix_time": 1792187570.732859,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 23,
+    "output_tokens_details": {
+     "reasoning_tokens": 16
+    },
+    "total_tokens": 216
+   }
+  },
+  {
+   "cache_key": "160505376465804c6c268b85632ea4d25427e530c6118083e0e3b6be14ffd4fa",
+   "call_id": "4316c24b5d9acb867986a62e877f7c00989c2fab39d83fafa1b66f98acc7d724",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.00103,
+   "unix_time": 1792187570.775978,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 49,
+    "output_tokens_details": {
+     "reasoning_tokens": 42
+    },
+    "total_tokens": 167
+   }
+  },
+  {
+   "cache_key": "b3b7df2b93e76ea9a3ddedb4a9b37fb5269f575d776067698ff9ba195202ce9f",
+   "call_id": "ff9ccc44ff383ea541bcb032c2961c753b94224b2c82abf7d52d84c03be40a35",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03233,
+   "cost_usd": 0.00042,
+   "unix_time": 1792187570.88259,
+   "usage": {
+    "input_tokens": 138,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 143
+   }
+  },
+  {
+   "cache_key": "6e66ec29fa40118a42d5db11e975ee12f98f1cb3dec89c0ad6a3eaeef38c8776",
+   "call_id": "e5d7b861c3982fbaa1a32401443504d324c1d0ea6579d3721091ab3289dd8bed",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032375,
+   "cost_usd": 0.000465,
+   "unix_time": 1792187571.317191,
+   "usage": {
+    "input_tokens": 156,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "9c06ae6bbef8697b7acf52153a12d9cd763a3ce00bf1504cf74c673ea53dadff",
+   "call_id": "9dfe2ccba626b40b878b1e358e7d9f5b4da32f8e83d172ef1a5d6a58c535f57f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322975,
+   "cost_usd": 0.0005825,
+   "unix_time": 1792187572.121933,
+   "usage": {
+    "input_tokens": 125,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 18,
+    "output_tokens_details": {
+     "reasoning_tokens": 11
+    },
+    "total_tokens": 143
+   }
+  },
+  {
+   "cache_key": "6b3cc34cf916a341a5eedd8b5ed183ba9140f751afe259302f4406a5abccd610",
+   "call_id": "3e4ab24cd5cefbc61929368a5352bdbc8c87eb48616150530cea8db1093fb7ae",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322825,
+   "cost_usd": 0.0009875,
+   "unix_time": 1792187572.3430872,
+   "usage": {
+    "input_tokens": 119,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 46,
+    "output_tokens_details": {
+     "reasoning_tokens": 39
+    },
+    "total_tokens": 165
+   }
+  },
+  {
+   "cache_key": "8c0021930dd636b523c66914432cd7bf42ccc22b4fb08d9ad4a716d2afe79474",
+   "call_id": "d4debc00fb33150c5e3a3facfb7e82065572ce17ea49fce42ad1aa232bcf6cce",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325125,
+   "cost_usd": 0.0006025000000000001,
+   "unix_time": 1792187572.549047,
+   "usage": {
+    "input_tokens": 211,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 216
+   }
+  },
+  {
+   "cache_key": "aeddf8a6abb771faed687dd4f880c6c3c9b4942e8b54bb372960981409e64b49",
+   "call_id": "a298fbc5e5802b9f83387657ea89c46f27d1141658764fc4f532936747b4ca9e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032275,
+   "cost_usd": 0.000365,
+   "unix_time": 1792187572.656749,
+   "usage": {
+    "input_tokens": 116,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 121
+   }
+  },
+  {
+   "cache_key": "535b20eac4bb3aac5f4547bdf0add9b89330948e507ad347db94ca356636014f",
+   "call_id": "004c4c4d5d829ad2509b4ace7202e881ba8ae572e5d726ffb02adc5f7dc8cded",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.0005725000000000001,
+   "unix_time": 1792187572.98526,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 144
+   }
+  },
+  {
+   "cache_key": "37cf2186dcd7f0b25b70f5f0d3de26f4dd7f8c6a3589c251ee59b08ca1659c17",
+   "call_id": "0a1d9211f9aec6df3e23733283c40b80b6e588eeedd9ab6560e01574e2d1ed64",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323525,
+   "cost_usd": 0.0004425000000000001,
+   "unix_time": 1792187573.054462,
+   "usage": {
+    "input_tokens": 147,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 152
+   }
+  },
+  {
+   "cache_key": "15b708de06b3a8053851b1bcfb040ecb7c3e5631cabeb8e41f115b93cfa79d08",
+   "call_id": "29adc61fe0a12378f6a8cad3a97532ea5b6700b87fbe3929be630b5cc8e5b37e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.0005575,
+   "unix_time": 1792187573.297796,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 143
+   }
+  },
+  {
+   "cache_key": "53f5f3b8ce9000ace02ce533c2cf4e8f5597f99914aebfccafaed082b5bcdaaa",
+   "call_id": "cd0cd4bfc16347c9b75c2b7388a29c61e89f106130cde832b93a4e531c93a2c4",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032510000000000004,
+   "cost_usd": 0.0006000000000000001,
+   "unix_time": 1792187573.440289,
+   "usage": {
+    "input_tokens": 210,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 215
+   }
+  },
+  {
+   "cache_key": "e26d51430cd7ddb12ca7572b2f4891d94218cbe5379c7881a14589a73854d55a",
+   "call_id": "5fd16c4824ec4d023c110abb0220e1aba7afefd532435c5cb54906415fb02dd0",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.000835,
+   "unix_time": 1792187574.093408,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 36,
+    "output_tokens_details": {
+     "reasoning_tokens": 29
+    },
+    "total_tokens": 154
+   }
+  },
+  {
+   "cache_key": "b735ae36569feaeb8a77eb9bf76f95f22ee27d55488a8f5518014d062c79bdbf",
+   "call_id": "84f508f02bcac5cee87fc3b06ced444df5774d8a61e7dc3975249679800d1db4",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032375,
+   "cost_usd": 0.000465,
+   "unix_time": 1792187574.422768,
+   "usage": {
+    "input_tokens": 156,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "2c28c7595cfe1c70fd5b0c32eb411e1b1a503332392f7115adb3119b2e23bcd5",
+   "call_id": "d305cd01e7dc642079373f2b7680fb798e9d8c4c15347d131a5b2918e6910987",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.00038250000000000003,
+   "unix_time": 1792187574.493309,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 128
+   }
+  },
+  {
+   "cache_key": "8db1706f85317a16e1344d8ec425bca7aa5cc139e1f32ea27dec3d051b783390",
+   "call_id": "eb0b17845307f3f570d0343f8bdb3d4d20ec3760dfa67bdb9d60f64fe3afd84b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032287500000000004,
+   "cost_usd": 0.0009625,
+   "unix_time": 1792187574.537632,
+   "usage": {
+    "input_tokens": 121,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 44,
+    "output_tokens_details": {
+     "reasoning_tokens": 37
+    },
+    "total_tokens": 165
+   }
+  },
+  {
+   "cache_key": "577932add93a93295a64cfb15b4cb4372a81641f70a2c8c2dcf88a04beb3e350",
+   "call_id": "9c8ff7d91fc17ac6dbde90a6c75d0e35664733bdb36039e4b1b1a90598a577a8",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03231,
+   "cost_usd": 0.001825,
+   "unix_time": 1792187574.547552,
+   "usage": {
+    "input_tokens": 130,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 100,
+    "output_tokens_details": {
+     "reasoning_tokens": 93
+    },
+    "total_tokens": 230
+   }
+  },
+  {
+   "cache_key": "d88eacd867383e648fecc2d4172a35bacea3dfb9202a38ba35bbc4b5c6701f1a",
+   "call_id": "d5139101e643bdbe83b9d023947679ddc737a4b229c54545c5c6c2d2b3e7788d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324975,
+   "cost_usd": 0.0005875,
+   "unix_time": 1792187574.574873,
+   "usage": {
+    "input_tokens": 205,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 210
+   }
+  },
+  {
+   "cache_key": "d09574c2a4e7a6f7e7d44253ce3c71bc9519490cbdaeeb21061b8adc9f5c2690",
+   "call_id": "55aacceb58f3db099f96a984fab759264d55f295769eef51529940031b992921",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325175,
+   "cost_usd": 0.0006075000000000001,
+   "unix_time": 1792187574.584976,
+   "usage": {
+    "input_tokens": 213,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 218
+   }
+  },
+  {
+   "cache_key": "986eb644f62ddcf6d511ff256045983b645d50eef4b98c768d9ef8a4e044dbe4",
+   "call_id": "c17d198d12761248ff2ab46824e4a9dc0ae0060aede31b0279875af5ea698516",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03232,
+   "cost_usd": 0.000575,
+   "unix_time": 1792187575.3337688,
+   "usage": {
+    "input_tokens": 134,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 150
+   }
+  },
+  {
+   "cache_key": "baba2470c0ab2f0e6eb2835c9bb64d3966e69f203dcf729a7cd77a44bbdf670a",
+   "call_id": "5bdabe8faddbb5e917609e99fd8991cbcba0bb8f7c521da64bc3988d063dba42",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03227,
+   "cost_usd": 0.0005250000000000001,
+   "unix_time": 1792187575.527255,
+   "usage": {
+    "input_tokens": 114,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 130
+   }
+  },
+  {
+   "cache_key": "ba69256878ef292d3b404fb55440929cd786e8c26dd552c3b34bf962241fe213",
+   "call_id": "50b6223861764685d83e11631b732b27eee82b82991a239a78458871c73a615a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323525,
+   "cost_usd": 0.0004425000000000001,
+   "unix_time": 1792187575.567932,
+   "usage": {
+    "input_tokens": 147,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 152
+   }
+  },
+  {
+   "cache_key": "df2d478878a900156a000c7b72612022c0cb9d625756e5dd7ec0487b4940450d",
+   "call_id": "bac3197042c08dad910466b682f8432e6b3bffcefa981d8594cf14cacf525f8f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325475,
+   "cost_usd": 0.0028725,
+   "unix_time": 1792187575.658846,
+   "usage": {
+    "input_tokens": 225,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 154,
+    "output_tokens_details": {
+     "reasoning_tokens": 147
+    },
+    "total_tokens": 379
+   }
+  },
+  {
+   "cache_key": "9d988295b555129fcb2b6937befa8c130d73a5c08ad0ea6951de9cbf7bf3c99d",
+   "call_id": "5e020b67fc3df29d15be5b33d8fa3738aabe2aff45731cbfd2662f30dd1d4df9",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03233,
+   "cost_usd": 0.00042,
+   "unix_time": 1792187575.772815,
+   "usage": {
+    "input_tokens": 138,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 143
+   }
+  },
+  {
+   "cache_key": "e6a771fb1b762f5496153a9b65f619d05594680d85db72d98063a57de04ee27a",
+   "call_id": "9493f9d5dc4c4e9dad57c22d5520bd0e5a758ee0c007d8360d15a7bbb47f192f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323125,
+   "cost_usd": 0.0008525,
+   "unix_time": 1792187576.0450718,
+   "usage": {
+    "input_tokens": 131,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 35,
+    "output_tokens_details": {
+     "reasoning_tokens": 28
+    },
+    "total_tokens": 166
+   }
+  },
+  {
+   "cache_key": "e1af4b4e7630dc055b72e2c99a294272be4267b0b6bdf5c4c68aa4f5bcb359fc",
+   "call_id": "15f6cfa2247a9e53065d14aa0a781708d3bc54cd9ad0761efbbbab7e9fe0b2ea",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032287500000000004,
+   "cost_usd": 0.0003775,
+   "unix_time": 1792187576.471019,
+   "usage": {
+    "input_tokens": 121,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 126
+   }
+  },
+  {
+   "cache_key": "0379661975f09c8086728dd569f137a5135442f164bd43963cd4d4afb8dcaee1",
+   "call_id": "cc9d7a626ccaeb5acf5a752dbf1b90cf50838a6a74a6626375f429210f39ee39",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032465,
+   "cost_usd": 0.000555,
+   "unix_time": 1792187576.834614,
+   "usage": {
+    "input_tokens": 192,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 197
+   }
+  },
+  {
+   "cache_key": "cdaa79c70b168f8c11704a1624bde17e3518f555034686a822476e89756d38d5",
+   "call_id": "e31143e8995a498dd9512ce3291e9f3c34d5bf5e5f6459320450fd4d26a4db01",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032465,
+   "cost_usd": 0.0018450000000000003,
+   "unix_time": 1792187576.846508,
+   "usage": {
+    "input_tokens": 192,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 91,
+    "output_tokens_details": {
+     "reasoning_tokens": 84
+    },
+    "total_tokens": 283
+   }
+  },
+  {
+   "cache_key": "928ad408faeb4c52608a15478102606bc8775ba97a13ad91f8390496f3b764cb",
+   "call_id": "749d499de52f3421aef2b8146b4b5a3d189c1f457a23cfd538d68cb3f456b9de",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323525,
+   "cost_usd": 0.0004425000000000001,
+   "unix_time": 1792187576.893146,
+   "usage": {
+    "input_tokens": 147,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 152
+   }
+  },
+  {
+   "cache_key": "b2a2189e7d7d6db9999d2c175fc1e3c6ac690814ba37bff64b5ad44a3de1effc",
+   "call_id": "1bfd0415e3311257d99238236d5f7a2bcd6d74c4b667daff00f8b62220d99170",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032285,
+   "cost_usd": 0.000375,
+   "unix_time": 1792187576.973662,
+   "usage": {
+    "input_tokens": 120,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 125
+   }
+  },
+  {
+   "cache_key": "f85584893a593c348e727f40b3c71a3fc81d06f8f042c2e73185c564cf2c44f1",
+   "call_id": "f2bfabe0f8c459e4927406b7f16e0914ea019c2ec50daefbb9ded62097011001",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0327475,
+   "cost_usd": 0.0010475,
+   "unix_time": 1792187577.345493,
+   "usage": {
+    "input_tokens": 305,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 19,
+    "output_tokens_details": {
+     "reasoning_tokens": 12
+    },
+    "total_tokens": 324
+   }
+  },
+  {
+   "cache_key": "237c3f4270e3a893b6a6fc377207b77328b960bc4241346719dd42a00ac3a550",
+   "call_id": "bd5e463d4dd4bc2f5f3f8e70dc8321afd76cf83d47eb54a2f86523d03c03d4dd",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03232,
+   "cost_usd": 0.00041,
+   "unix_time": 1792187577.365579,
+   "usage": {
+    "input_tokens": 134,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 139
+   }
+  },
+  {
+   "cache_key": "c2dd00fba408ac0ec54a9529bd08ce824ca49d2d9b8232465ec3e7e3ddfdcaaf",
+   "call_id": "ef659606e1c30793f08e9faff37bc15d8f47b7dbdd4c239f990c7229ec8d8527",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323625,
+   "cost_usd": 0.0016375,
+   "unix_time": 1792187577.503618,
+   "usage": {
+    "input_tokens": 151,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 84,
+    "output_tokens_details": {
+     "reasoning_tokens": 77
+    },
+    "total_tokens": 235
+   }
+  },
+  {
+   "cache_key": "5b38089e573d045542a870652aa021cc5d6f30487f231112f765eda893db0e5c",
+   "call_id": "f797051d093d883af3c3591fcca22d378344e5e2cbbdc9233ce388d946c9054e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03227,
+   "cost_usd": 0.0003600000000000001,
+   "unix_time": 1792187577.729564,
+   "usage": {
+    "input_tokens": 114,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 119
+   }
+  },
+  {
+   "cache_key": "3f8c48e36909c75f505fb5bbd896ff04f0158e77c855bd590befafb8d7336346",
+   "call_id": "01c00ccbe7e2ca86861ab2f2cb8822965b6f205679daf185afe96a7bd254600a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324875,
+   "cost_usd": 0.0010725,
+   "unix_time": 1792187577.895633,
+   "usage": {
+    "input_tokens": 201,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 38,
+    "output_tokens_details": {
+     "reasoning_tokens": 31
+    },
+    "total_tokens": 239
+   }
+  },
+  {
+   "cache_key": "e57eb77205a701717d5ed9e5ae9c8c5c2c127513467ca2937ca0857a2b04af7b",
+   "call_id": "ff1ac895375583219adacda263e8f55a582078119b0ac04a019397edd1180e96",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324975,
+   "cost_usd": 0.0008425,
+   "unix_time": 1792187577.9778078,
+   "usage": {
+    "input_tokens": 205,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 22,
+    "output_tokens_details": {
+     "reasoning_tokens": 15
+    },
+    "total_tokens": 227
+   }
+  },
+  {
+   "cache_key": "cedb266a10688cf000b115231dbbd73fe34d10fbd324480b3cf5ea055e084970",
+   "call_id": "2b8ebb66521182e94e2009f3ebb15bdd198f9ac429c3fc33f6935c7c5998815f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032285,
+   "cost_usd": 0.000375,
+   "unix_time": 1792187578.061631,
+   "usage": {
+    "input_tokens": 120,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 125
+   }
+  },
+  {
+   "cache_key": "0790c5836b3e1d8a87bf362f7b87d0083349d7b66a5ee301ecc60ce6c08a013d",
+   "call_id": "fec5060fed67d8ddcd5dbd4feb0affd522a4f1a073eab0f97e5deeba317cb33c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.00038250000000000003,
+   "unix_time": 1792187578.470772,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 128
+   }
+  },
+  {
+   "cache_key": "54da81f4d53d74d409915fe5355d317c08020c0f47e429f8dbc0738c0a40b203",
+   "call_id": "09115411d9f122e5998ba17154228dd89883ec43fa50552bc96e907a9f6e581f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187578.5941172,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "a60e5b1ce93848022d3fb3058e536a0f516ad161a623a988905652959e09c955",
+   "call_id": "1e888ca503320ac43593fb136803f69eec74f32a9c34ae350293071116582e75",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323575,
+   "cost_usd": 0.0008375000000000001,
+   "unix_time": 1792187578.742552,
+   "usage": {
+    "input_tokens": 149,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 180
+   }
+  },
+  {
+   "cache_key": "a009c778449027ec9207ff131a31099dde6e014fb9b8309c145ff4574daeab3d",
+   "call_id": "b2e89743b01d91b9406405495d1d8ecfdeb57f8440b15c9e34e0ab5c8ca45738",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325175,
+   "cost_usd": 0.0006075000000000001,
+   "unix_time": 1792187578.757918,
+   "usage": {
+    "input_tokens": 213,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 218
+   }
+  },
+  {
+   "cache_key": "857b8a0d52eade1c019bdd7f44e66a5e234a722e1aced01977f41c89ef7a60a1",
+   "call_id": "f3f20e3cfc8bf3d8a9af0774526839360f86626fd65118cc1cd23d9370be4837",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.00039250000000000005,
+   "unix_time": 1792187579.0116549,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 132
+   }
+  },
+  {
+   "cache_key": "d66f51487515d423dd98a32af00f55094e07da6b81192ede1851c1f2246c1fa5",
+   "call_id": "7c6ca19b0f98052cc1ded34bdcb82836fcc79a3499ca62ea40cfb6b6bc143a94",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0005575,
+   "unix_time": 1792187579.0973032,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 198
+   }
+  },
+  {
+   "cache_key": "35fa3fe4d2bf0d8ce4ef3cb2d1b453bccb225633cb32fb721d945b5c76426fc8",
+   "call_id": "02efc3637b05c5bdf81163123be505fe8343d0f11e853d1329897fe89b75c91e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0005575,
+   "unix_time": 1792187579.231581,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 198
+   }
+  },
+  {
+   "cache_key": "d253aaa1b9c395b9304d16cb8abad707fe1987c093a9930544a5f7129fa1c734",
+   "call_id": "97d21159727effd53477feb6db0a32d490abc623a1d9f63c28d137674e987240",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324575,
+   "cost_usd": 0.0005475,
+   "unix_time": 1792187579.393823,
+   "usage": {
+    "input_tokens": 189,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 194
+   }
+  },
+  {
+   "cache_key": "45268f9fd0651805cba651f592fa48b94de345f3d68a0829b4d39de4eabffe5e",
+   "call_id": "0795f7ffc5567c3532e46904784d893e720811690a62708002d79fdfb105f2ad",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325,
+   "cost_usd": 0.0008150000000000001,
+   "unix_time": 1792187579.729682,
+   "usage": {
+    "input_tokens": 206,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 20,
+    "output_tokens_details": {
+     "reasoning_tokens": 13
+    },
+    "total_tokens": 226
+   }
+  },
+  {
+   "cache_key": "ff1de554fb79abc2fc1bf5f42f01cf34ba556bc9bcb7fbf68d015b0e1aa654cf",
+   "call_id": "86232af02ffa463036a8fb98d08e5beaaa901c90af2138ce15096b7b5871c849",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322625,
+   "cost_usd": 0.00035250000000000006,
+   "unix_time": 1792187579.809948,
+   "usage": {
+    "input_tokens": 111,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 116
+   }
+  },
+  {
+   "cache_key": "7288160ea17508c7309a13444c82c21870041849d2344cf31b6dd21998ca1665",
+   "call_id": "9d772ef4b4d29f654ca47ffae3ae42b349c3d00b009402bbdbbb70b6487757ae",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324275,
+   "cost_usd": 0.0005175000000000001,
+   "unix_time": 1792187579.8552792,
+   "usage": {
+    "input_tokens": 177,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 182
+   }
+  },
+  {
+   "cache_key": "fd62bbbf52882937330ca6f76ceb4c6fa96a3d8db73aba004d28fa0a1cfa345e",
+   "call_id": "63fcc96176f9165b79f9caf72404c8a031e4d2cb6b002c7b2a73648e9ef315b4",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03229,
+   "cost_usd": 0.0009350000000000001,
+   "unix_time": 1792187580.023535,
+   "usage": {
+    "input_tokens": 122,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 42,
+    "output_tokens_details": {
+     "reasoning_tokens": 35
+    },
+    "total_tokens": 164
+   }
+  },
+  {
+   "cache_key": "15c9b35495a0bb9963331a435b7516038d4813904699bdb5e72e3aeeaea3a383",
+   "call_id": "ba1a63f18327c55a7f5625572d4d9fd9d83d39c866363bddd46d09a1bd2b1f78",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032465,
+   "cost_usd": 0.000915,
+   "unix_time": 1792187580.0613492,
+   "usage": {
+    "input_tokens": 192,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 29,
+    "output_tokens_details": {
+     "reasoning_tokens": 22
+    },
+    "total_tokens": 221
+   }
+  },
+  {
+   "cache_key": "ef0ad8aba492f70b0d1328439203defc82be9471dcbd0f7ea3f98b666420b4ea",
+   "call_id": "5d3be422b994707dbd8445f9c10c96666bd4a3b2952f9722d62432dbd556fbb7",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03252,
+   "cost_usd": 0.001045,
+   "unix_time": 1792187580.226177,
+   "usage": {
+    "input_tokens": 214,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 248
+   }
+  },
+  {
+   "cache_key": "090a47b6eb618042390fa7d064ba9ca873fec4485ceb61d3f430401e29c3afa9",
+   "call_id": "0948f15bee28cfa53045ba8c9169f52a95589085bb1d780d679dea2c89793a69",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323075,
+   "cost_usd": 0.0008475,
+   "unix_time": 1792187580.278402,
+   "usage": {
+    "input_tokens": 129,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 35,
+    "output_tokens_details": {
+     "reasoning_tokens": 28
+    },
+    "total_tokens": 164
+   }
+  },
+  {
+   "cache_key": "a11c685a19ff891911e5dda0dcfb31802ec644de5b9c2b8f596d7ac70241e4be",
+   "call_id": "57215ca938567ecf065654ef3b7ddd3865a18754eed4637287c7c61f84cb0807",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324225,
+   "cost_usd": 0.0009925000000000001,
+   "unix_time": 1792187580.4724128,
+   "usage": {
+    "input_tokens": 175,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 37,
+    "output_tokens_details": {
+     "reasoning_tokens": 30
+    },
+    "total_tokens": 212
+   }
+  },
+  {
+   "cache_key": "cc31cdacc209b55df00591a61c9a8c0a15db79f5e55b6ee61cb30881867f8bce",
+   "call_id": "e2ab80f432b2ace146edefd8bef421f06038b62cbed43ac3680e37ebf257b112",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324775,
+   "cost_usd": 0.0010025,
+   "unix_time": 1792187581.436144,
+   "usage": {
+    "input_tokens": 197,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 231
+   }
+  },
+  {
+   "cache_key": "a7f73b6d677b4ad9001d8a65593b3aeaa8189dc1b9438058d6158adca6beb7a7",
+   "call_id": "9e345634d003ffaef451a90a51847d26b2e4c1fb01df4ba08e399ac5c03c9d1b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187581.5816069,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "11bad10c720ca9a01ef6943a9510cd055b819285dc1c6acf01bf8784212bea56",
+   "call_id": "2b28e147dffa28742298b89c699cf73a4820d3ffa4aa1df863c149cd964cd177",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322625,
+   "cost_usd": 0.00035250000000000006,
+   "unix_time": 1792187581.620302,
+   "usage": {
+    "input_tokens": 111,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 116
+   }
+  },
+  {
+   "cache_key": "bdf46f3a76b296b1120ad63ec2f78d240e63e37b7a9c5ed412ca8586aa18301f",
+   "call_id": "ead50798f8a81712dafde58103023a952047d4a98ce65450923d8342e7a5f5fe",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032465,
+   "cost_usd": 0.0009600000000000001,
+   "unix_time": 1792187581.667161,
+   "usage": {
+    "input_tokens": 192,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "reasoning_tokens": 25
+    },
+    "total_tokens": 224
+   }
+  },
+  {
+   "cache_key": "b2ea45a9836e4710ffc2d0f7e19d260d89564f8f0678b59195ac8ba44f9b6d06",
+   "call_id": "40ea66466677ba12cf57b38e3d0a597f764e896cca9e078dc268e5b6faa84537",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.000535,
+   "unix_time": 1792187581.7308512,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 134
+   }
+  },
+  {
+   "cache_key": "45c849bc3eb41d92ccf17bb023241879e500fcf367890f15a5e73f89da92f81f",
+   "call_id": "456deb5c84dae6ea8f53f83d54c224a3224ae12227027a54fb40a5f35ebd0412",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03249,
+   "cost_usd": 0.000745,
+   "unix_time": 1792187581.773779,
+   "usage": {
+    "input_tokens": 202,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 218
+   }
+  },
+  {
+   "cache_key": "7d6f79e5863a7abc95c348c409b6a8a0e4811f1054dc498aaad4f3bc1b70d87b",
+   "call_id": "cbb3a50cc2f2a181068929c4481751a5ac8d649e561115e6aef3629d7b9576ba",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322825,
+   "cost_usd": 0.0029075,
+   "unix_time": 1792187581.9855711,
+   "usage": {
+    "input_tokens": 119,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 174,
+    "output_tokens_details": {
+     "reasoning_tokens": 167
+    },
+    "total_tokens": 293
+   }
+  },
+  {
+   "cache_key": "92bb1b1fb35225c7238012c9559d584593aa2d7066ca90378c7b3b599e59ca2d",
+   "call_id": "28ed33c6b377d0aad4eea181bfedb929440a2881783490988d4285ddeefb4da8",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032275,
+   "cost_usd": 0.00086,
+   "unix_time": 1792187582.052156,
+   "usage": {
+    "input_tokens": 116,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 38,
+    "output_tokens_details": {
+     "reasoning_tokens": 31
+    },
+    "total_tokens": 154
+   }
+  },
+  {
+   "cache_key": "c7131832ec85b4b0bca4f85069143a77c6f1410832390891bf42faeacf10eff8",
+   "call_id": "272fda2b95daaf933b73ff271a5f80f03401d959a80275129638f9909e32051b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032275,
+   "cost_usd": 0.000365,
+   "unix_time": 1792187582.3515542,
+   "usage": {
+    "input_tokens": 116,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 121
+   }
+  },
+  {
+   "cache_key": "d4e5a6e289ad089eef500d20c41c5cc799deb0f4ec621c4812371db3ef4012bc",
+   "call_id": "380559ceb7aa064d463c4614ce574ea9a7929762932cdc3143df372750268e65",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323,
+   "cost_usd": 0.00081,
+   "unix_time": 1792187582.8620539,
+   "usage": {
+    "input_tokens": 126,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 33,
+    "output_tokens_details": {
+     "reasoning_tokens": 26
+    },
+    "total_tokens": 159
+   }
+  },
+  {
+   "cache_key": "7d541746e39bd0cfd8853b0db7b4219a5296904c0589b0b8b703ebc51e341673",
+   "call_id": "9c705ddb45b1705ce0672bfddd14276a9d407cd6510df39f43ff0b29778d0818",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323725,
+   "cost_usd": 0.0004625,
+   "unix_time": 1792187583.03138,
+   "usage": {
+    "input_tokens": 155,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 160
+   }
+  },
+  {
+   "cache_key": "c267c2c7cde6245fe9907b5450c2681b4891fe1969463f635fa79bb7dba91fb6",
+   "call_id": "bc34d0ef05f96e1e25ef3dffbab707b016c242485a46e3b02f50a4e5301c8134",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323125,
+   "cost_usd": 0.0004025000000000001,
+   "unix_time": 1792187583.213975,
+   "usage": {
+    "input_tokens": 131,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 136
+   }
+  },
+  {
+   "cache_key": "b985163b51a30a860fab70953e9f2d84fffeca0bbebd0e560f6f0b57216d3591",
+   "call_id": "f4a450bb53fa160042a5c1fac8ba20ff33efcc11d90d00e04d8949c3007e708d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322825,
+   "cost_usd": 0.0035975,
+   "unix_time": 1792187583.363755,
+   "usage": {
+    "input_tokens": 119,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 220,
+    "output_tokens_details": {
+     "reasoning_tokens": 213
+    },
+    "total_tokens": 339
+   }
+  },
+  {
+   "cache_key": "b9fc3b1b1a9a43507ad36319572ebc2a4171ed5073af63fce619cdf1e5927661",
+   "call_id": "b7f7135921515a152ee5976f2e15406931fa5d06c6a0bd184e6be0fff673b733",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323125,
+   "cost_usd": 0.0008075000000000001,
+   "unix_time": 1792187583.461484,
+   "usage": {
+    "input_tokens": 131,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "reasoning_tokens": 25
+    },
+    "total_tokens": 163
+   }
+  },
+  {
+   "cache_key": "755e015c575b0fe60f72bac320514eb471aabc15e6934a38c713ab4add9fd910",
+   "call_id": "8657c03f5d73e985b76d248b8ec91860096f74b6864d25f4dce22788888aeb36",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032395,
+   "cost_usd": 0.001145,
+   "unix_time": 1792187583.660535,
+   "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 49,
+    "output_tokens_details": {
+     "reasoning_tokens": 42
+    },
+    "total_tokens": 213
+   }
+  },
+  {
+   "cache_key": "b453aa84e077c649b4f1b053b56dc932635eef4a7478cb5b524c49475951c28a",
+   "call_id": "347dbede59a2aedc846ec64c4338559297357672e4fa964f0d5230dc578a7c86",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325125,
+   "cost_usd": 0.0006025000000000001,
+   "unix_time": 1792187583.717685,
+   "usage": {
+    "input_tokens": 211,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 216
+   }
+  },
+  {
+   "cache_key": "a2454a989d39ee9e79a35e4a9d42450a4270b0cf188a1383e31c4345e4bf9479",
+   "call_id": "cee78faedb576c504f69c94ed5a124aa67f9e36483695e55f8eb5b564955110c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032335,
+   "cost_usd": 0.00042500000000000003,
+   "unix_time": 1792187584.341014,
+   "usage": {
+    "input_tokens": 140,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 145
+   }
+  },
+  {
+   "cache_key": "3ee4fef0dcbbfe95a78637550d7838f973394d5aba118ed4e25372dad362feb4",
+   "call_id": "89444db72cf86da257978318056b7d5ef66310b411597df3d6a76aa886259557",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032322500000000004,
+   "cost_usd": 0.0011175,
+   "unix_time": 1792187584.460574,
+   "usage": {
+    "input_tokens": 135,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 52,
+    "output_tokens_details": {
+     "reasoning_tokens": 45
+    },
+    "total_tokens": 187
+   }
+  },
+  {
+   "cache_key": "08560050b648d4e598ee4d5ab9c13ca27ff51052f71dadb54b62a113f6b23a4c",
+   "call_id": "e8a1234d9193355496472d57be461d33361c855c454b23e9db8abe541e1fa316",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.00037,
+   "unix_time": 1792187584.50761,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 123
+   }
+  },
+  {
+   "cache_key": "4929c871a4178871fb1fe50f0ef285a456923aff44cfcff0d388529af4ccc6d5",
+   "call_id": "17be99a7e3e0640d5fd32849a41c18907dd53ef27a1f7fdcf21b17f0035f6d3a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324875,
+   "cost_usd": 0.0005775,
+   "unix_time": 1792187584.625449,
+   "usage": {
+    "input_tokens": 201,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 206
+   }
+  },
+  {
+   "cache_key": "f7cbfa09bb1c324a33d87cac089b595a1d5eafb9a9455bffa518ffa843b00a03",
+   "call_id": "33c580efe87d9eb8cc94e1c29a7527a569295ad810fa6f53436ee2336be07ee1",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032322500000000004,
+   "cost_usd": 0.0004125,
+   "unix_time": 1792187584.6809468,
+   "usage": {
+    "input_tokens": 135,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 140
+   }
+  },
+  {
+   "cache_key": "32bb9353d2f27cd1623240aa6da03160aaf68f67617ffb96e805d0a0e86f5e4c",
+   "call_id": "9c2e7d18ebff92845cb91526cacd7fdf6ba73af6d69df86442896e70add8f000",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032510000000000004,
+   "cost_usd": 0.0007650000000000001,
+   "unix_time": 1792187585.099703,
+   "usage": {
+    "input_tokens": 210,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 226
+   }
+  },
+  {
+   "cache_key": "bbf24052ce13feb4e58959e035e33b792b738457b4de3e9772b0278b1e867f00",
+   "call_id": "339faecc531ca5ad4b4228d5981cec95e15841453e9d5b43aa4f678bc947a7ef",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.00038250000000000003,
+   "unix_time": 1792187585.2020328,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 128
+   }
+  },
+  {
+   "cache_key": "ae5bc3d41658b3dd0aade1206061bfac2225880b1a5617147e8de132d2fabb4c",
+   "call_id": "c3a12e6a05d429e6be3f97c382e393617039a6b337ffcec04a5235b85d6dc59a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187585.429009,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "f0ebf805df6fef4312c5d8672407a4e22dcea56a2ebbfb0dcfadf3f8249c0d81",
+   "call_id": "a71287e2c0a5ee0bc8c620176b7d94f4108fb30e81ca535764a1e0b2711e26e6",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322625,
+   "cost_usd": 0.00035250000000000006,
+   "unix_time": 1792187585.482324,
+   "usage": {
+    "input_tokens": 111,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 116
+   }
+  },
+  {
+   "cache_key": "7f899d405eb801507e91f7e3f779745ca75b6131b1c553075e93f8ea23bc720e",
+   "call_id": "dec09157939390fd28e71e8f439350403e96f54f4fa4da9e52170c842d19bb3c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032287500000000004,
+   "cost_usd": 0.0007675000000000001,
+   "unix_time": 1792187585.592188,
+   "usage": {
+    "input_tokens": 121,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 152
+   }
+  },
+  {
+   "cache_key": "fadf5cee2d5247e7c2bc5d1477b8f26eb955a976b3bf7ea0cf3fa61dd8b746e6",
+   "call_id": "7c73ae1bf3140e4958e655be9070fbb48bf5c9287f2f39675c433a47a53358c6",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032375,
+   "cost_usd": 0.000465,
+   "unix_time": 1792187585.865609,
+   "usage": {
+    "input_tokens": 156,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "16ebfdbe8e812ffcc15c002a13fb427c7d2b807d14818a763f23f3ef6610c404",
+   "call_id": "9f84a1117c8f612bd6c6dab8d593cbc3a3dc2edc11a47be57378d51bf3d41219",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032335,
+   "cost_usd": 0.00042500000000000003,
+   "unix_time": 1792187586.033765,
+   "usage": {
+    "input_tokens": 140,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 145
+   }
+  },
+  {
+   "cache_key": "0992eeac2f8ff46d04969dfaf33340a1bc8d72740b1d549da41a0222eae091ab",
+   "call_id": "acbbe6af1766b0ae48eeaf49cbee3d37e43bc39bde477a62b55500b3f8ee2c9a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324775,
+   "cost_usd": 0.0007475,
+   "unix_time": 1792187586.104811,
+   "usage": {
+    "input_tokens": 197,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 214
+   }
+  },
+  {
+   "cache_key": "19460aa5294c57284832448fdc1f0691e296c938043b09bee0b8ed1fa8ac3a15",
+   "call_id": "f915eb6320d317b2d1cfcb9ad9cd915ef79c0b46c8d0812fc83b5f0fe3d688d1",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323075,
+   "cost_usd": 0.0008025,
+   "unix_time": 1792187586.221876,
+   "usage": {
+    "input_tokens": 129,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "reasoning_tokens": 25
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "b8d94ff3eb7ffa17b2e55a3aa65eac0ae3885ee49b9ec7e32143cd8a3c69bf75",
+   "call_id": "c432d15b855b210da33454e7905f40242541ceabe1ac89818b247079bab0f115",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324875,
+   "cost_usd": 0.0005775,
+   "unix_time": 1792187586.450716,
+   "usage": {
+    "input_tokens": 201,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 206
+   }
+  },
+  {
+   "cache_key": "001dfa5dd414e4d5f520c8804f0e133135bbcd01b59400f1b81c18fdfd334ff0",
+   "call_id": "90d0eea4f7e10700d6d0a3e92a0bc8983a56bf389c8e5e07ba769c1419ae4bed",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032510000000000004,
+   "cost_usd": 0.0012000000000000001,
+   "unix_time": 1792187587.271432,
+   "usage": {
+    "input_tokens": 210,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 45,
+    "output_tokens_details": {
+     "reasoning_tokens": 38
+    },
+    "total_tokens": 255
+   }
+  },
+  {
+   "cache_key": "66aa972e6300a22aef462868c833998a531f162f9a01759bae717697c5cb0d02",
+   "call_id": "8f2659909a6b61bec0d42525d9f0cc28785dd19eb3ba67489c13007321530bd6",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323525,
+   "cost_usd": 0.0004425000000000001,
+   "unix_time": 1792187587.305939,
+   "usage": {
+    "input_tokens": 147,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 152
+   }
+  },
+  {
+   "cache_key": "18d089f87008c86eed752b9238f3d6a86b71b0f77597741f5cad6159483d2551",
+   "call_id": "4bd441eee111d5959a14500b63905b95989a275e881f2c161bc7690bb3dae301",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032355,
+   "cost_usd": 0.0009400000000000001,
+   "unix_time": 1792187587.3405151,
+   "usage": {
+    "input_tokens": 148,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 38,
+    "output_tokens_details": {
+     "reasoning_tokens": 31
+    },
+    "total_tokens": 186
+   }
+  },
+  {
+   "cache_key": "d8c0cf7e8138e1d5271b8226a0f52c0b09ccc1623f07f3948acd3a23969a526d",
+   "call_id": "53b785d3896dfdf97ffe57d5d8e3e7ee1551a00108ba577cdce7d5e36792fdc2",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0008125000000000001,
+   "unix_time": 1792187587.446667,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 22,
+    "output_tokens_details": {
+     "reasoning_tokens": 15
+    },
+    "total_tokens": 215
+   }
+  },
+  {
+   "cache_key": "2babb3c5e025997dfce697ad5a3fac483baf0e7699d3dff611d698cc1905e07f",
+   "call_id": "8b07b2b711854c26b10c3b0eef32ee52b21fb24568baf9bdda227827ff26241d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03255,
+   "cost_usd": 0.0011200000000000001,
+   "unix_time": 1792187587.5805628,
+   "usage": {
+    "input_tokens": 226,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 37,
+    "output_tokens_details": {
+     "reasoning_tokens": 30
+    },
+    "total_tokens": 263
+   }
+  },
+  {
+   "cache_key": "9980111728dd771698b1e4a0abf4f810a8df6ce48380b025d90667f8eff85b92",
+   "call_id": "afcb485ffbfec9907d1c152f842765e65691c14593993bb88a434d47528bc56d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032295000000000004,
+   "cost_usd": 0.00079,
+   "unix_time": 1792187587.660198,
+   "usage": {
+    "input_tokens": 124,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "reasoning_tokens": 25
+    },
+    "total_tokens": 156
+   }
+  },
+  {
+   "cache_key": "760a57d658dea17f6e5088ce6b4d006632c269d54a7f8ef9b37eae1e349e0ce9",
+   "call_id": "ee14739b8aee180c5e4b7ea34a52dfc1e0d6cdd8db9f52e385e4bc4b281be040",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03229,
+   "cost_usd": 0.000545,
+   "unix_time": 1792187587.701887,
+   "usage": {
+    "input_tokens": 122,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 138
+   }
+  },
+  {
+   "cache_key": "8fe7bdaa4e94f59145a279d31f35d3bf82938a879b68963169a729dae111fc87",
+   "call_id": "9fd6f2fb761cd38ed8f65523ccb0fa19519a5d67f0f582ab65a825ba0f530b7a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323,
+   "cost_usd": 0.000795,
+   "unix_time": 1792187587.71578,
+   "usage": {
+    "input_tokens": 126,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "reasoning_tokens": 25
+    },
+    "total_tokens": 158
+   }
+  },
+  {
+   "cache_key": "21dd31da8d445f34da05c8f5381b966398dc2e272bf06d043a9726ce2bfc6153",
+   "call_id": "f1728f2d5259186774b431e60c3529fb3555c757a8a3a2b13703ebd247f15bf5",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187588.751692,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "8714aba869392a744bddd7595d40b86bacffbecf5b02fa2e9c08fb681bcf1b9d",
+   "call_id": "1549a383f3344b5b36265680ec44f52aa6b0e72f41c4b4b8157aea18fe5d4c7b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323,
+   "cost_usd": 0.00039000000000000005,
+   "unix_time": 1792187588.765533,
+   "usage": {
+    "input_tokens": 126,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 131
+   }
+  },
+  {
+   "cache_key": "1bbd8f45ee7897e6977d2b6445276e0c808afea3d00577b730dbb4d6da08bd94",
+   "call_id": "b216b568faf5961bb1c36e506d17f63448fba0337d32501c13a7d333e52f3bbe",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03249,
+   "cost_usd": 0.00058,
+   "unix_time": 1792187588.9435258,
+   "usage": {
+    "input_tokens": 202,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 207
+   }
+  },
+  {
+   "cache_key": "7d29e84eb584556babc97bfb34d653890b835f7cb1315bb9839ab589e76d1e41",
+   "call_id": "725fec9d816af57ba5c27d0dac5603fb3079b2e9f585948c9e58fbeeafe10d36",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323575,
+   "cost_usd": 0.0008375000000000001,
+   "unix_time": 1792187589.05842,
+   "usage": {
+    "input_tokens": 149,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 180
+   }
+  },
+  {
+   "cache_key": "e24415a5fa5b4f31db4485efc4ef576a351373096ffce6d8541f80b26c6e5f7f",
+   "call_id": "1b050b6538cf5a3ec028a465be2952317def3fb86dd2fef1bdaa8e7ef5005d6e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03248,
+   "cost_usd": 0.0007199999999999999,
+   "unix_time": 1792187589.165052,
+   "usage": {
+    "input_tokens": 198,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 15,
+    "output_tokens_details": {
+     "reasoning_tokens": 8
+    },
+    "total_tokens": 213
+   }
+  },
+  {
+   "cache_key": "d0e3dbf6eb84b1b88ad9761a2a6a8cafbf54000fad4d2e184f31f29b91979a87",
+   "call_id": "98eec4284a260d84ac3119d0e9f360229f0ca1b835475ff5a041f4bcd9b8fb4e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032265,
+   "cost_usd": 0.001225,
+   "unix_time": 1792187589.322678,
+   "usage": {
+    "input_tokens": 112,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 63,
+    "output_tokens_details": {
+     "reasoning_tokens": 56
+    },
+    "total_tokens": 175
+   }
+  },
+  {
+   "cache_key": "51b653f0a44de1228201ad6895cd31b7bf48785662dacf49dc730b3a91802299",
+   "call_id": "2a2911f52092dac441e1ddfbaed12c26fd9a2c5306533c943a248bf781804756",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.000535,
+   "unix_time": 1792187589.365962,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 134
+   }
+  },
+  {
+   "cache_key": "18b28ba542986433aaf22890b16c6041534b0249c857769727fef211e64b7091",
+   "call_id": "810aaba705e36fda618bb95f042c87cd8d37bcecfbf3aef4aad7a4d73be89cf9",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.00039250000000000005,
+   "unix_time": 1792187589.406275,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 132
+   }
+  },
+  {
+   "cache_key": "8f114d2161a1d33a5164b1a73741d23fe07578e2e3218f5797cabffb24493973",
+   "call_id": "eed287b69fa7ad4ee527ecf4e124fd429ee8e56455d490a3d8d3debc197ad426",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324975,
+   "cost_usd": 0.0005875,
+   "unix_time": 1792187589.644753,
+   "usage": {
+    "input_tokens": 205,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 210
+   }
+  },
+  {
+   "cache_key": "a2272a91a3d2b680ddf32a7935edcd792eb2d79de488296ada8b46ef3bfbaf79",
+   "call_id": "02b95c26a97c2cdffc4167f8a85fcbe13de679375f67449c15fbdf718d3c2cce",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032375,
+   "cost_usd": 0.000465,
+   "unix_time": 1792187590.108126,
+   "usage": {
+    "input_tokens": 156,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "340e50beb0773d18044cfb97a8f232cb84944742189036e315b38e05376252d4",
+   "call_id": "26bc9eeeb85c542819f8924bfcdb9ff980a0dab5d757b06dacd5c0edac7d6d92",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032395,
+   "cost_usd": 0.0004850000000000001,
+   "unix_time": 1792187590.517011,
+   "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 169
+   }
+  },
+  {
+   "cache_key": "71070270b4ee8dbebb40d08d7eb9b18b2c24a468ac455f1ac9d86d93a5662950",
+   "call_id": "6afba5675763bd7004f5b370e037ee3ce58c049c5e77b4f156fba6a03ed6e7eb",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324075,
+   "cost_usd": 0.0004975,
+   "unix_time": 1792187590.60815,
+   "usage": {
+    "input_tokens": 169,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 174
+   }
+  },
+  {
+   "cache_key": "56daeba4a05a508e9ec3d2ced50eb7d436a5f0118d4f3e39acd3e48124b4aaa4",
+   "call_id": "96cac42946a1973d32f6711bdd7c978b1e78e44de29a1ee2449835be714f3a9b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323575,
+   "cost_usd": 0.0004475000000000001,
+   "unix_time": 1792187590.6449301,
+   "usage": {
+    "input_tokens": 149,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 154
+   }
+  },
+  {
+   "cache_key": "198312d8accc8b8e6724047a60dd8ed18f0396a4823d7e6ad5c561508c8c8fe0",
+   "call_id": "e6dee3f9678824f3cfbee2a87d460080e47293c433ff52a96a4669f02564d085",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.000535,
+   "unix_time": 1792187590.864495,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 134
+   }
+  },
+  {
+   "cache_key": "16ba45876344a3dd7473e3b4d6746ff65fd81731c4177a2be4f9fc267589d421",
+   "call_id": "d70efea1fb42488cfee8e949c8c8794ade0e3b6257e9dc416e9d3780ec453934",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322625,
+   "cost_usd": 0.00035250000000000006,
+   "unix_time": 1792187590.9007812,
+   "usage": {
+    "input_tokens": 111,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 116
+   }
+  },
+  {
+   "cache_key": "9d8c7e637c45f8877316a9d8728cf5e7e970f1d9fe4f6be91ee9326395cefc7c",
+   "call_id": "a4c2b01e115a633be0f91263bf93ef0c0d9801d6b5141309f8b2af30880bf8d6",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032515,
+   "cost_usd": 0.0018200000000000002,
+   "unix_time": 1792187590.92066,
+   "usage": {
+    "input_tokens": 212,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 86,
+    "output_tokens_details": {
+     "reasoning_tokens": 79
+    },
+    "total_tokens": 298
+   }
+  },
+  {
+   "cache_key": "501b2eb3b52890281721cb26e949f42d847fd8b1eb5ac9108d597ff44db128ac",
+   "call_id": "fdc36975ffb1355d34ba6ae3fc08487bb812d33de75760bffec78c3ed61aef9a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032515,
+   "cost_usd": 0.00221,
+   "unix_time": 1792187591.096291,
+   "usage": {
+    "input_tokens": 212,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 112,
+    "output_tokens_details": {
+     "reasoning_tokens": 105
+    },
+    "total_tokens": 324
+   }
+  },
+  {
+   "cache_key": "4c11c3db1f483726d71c15f651784ab69ad74f40a9da9cbf686d247bfb33b112",
+   "call_id": "ea3d1a298713a3b435e52604876d73257b3b3d54defd556da794a23817b8ebc5",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03233,
+   "cost_usd": 0.00042,
+   "unix_time": 1792187591.231897,
+   "usage": {
+    "input_tokens": 138,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 143
+   }
+  },
+  {
+   "cache_key": "e7db298e11ffa56b903b12508d2477eccb83b71a7d23f4a251e3da19217f610b",
+   "call_id": "74eca2bf3def8abe83a29c6265eb0b09562e3cdb8cd9e209b674f5501265f10a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323075,
+   "cost_usd": 0.0009075000000000001,
+   "unix_time": 1792187591.6864839,
+   "usage": {
+    "input_tokens": 129,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 39,
+    "output_tokens_details": {
+     "reasoning_tokens": 32
+    },
+    "total_tokens": 168
+   }
+  },
+  {
+   "cache_key": "47a874618f3a6a61e60430fb2d487dd2ef7d63d97ec75272179190e059bd9632",
+   "call_id": "8223d009f7e825983ed8d6d231573d71ddc305d8e406075340c424242cc2b099",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032285,
+   "cost_usd": 0.000375,
+   "unix_time": 1792187591.789922,
+   "usage": {
+    "input_tokens": 120,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 125
+   }
+  },
+  {
+   "cache_key": "5e5ca1e117a3f5b24604a27ab8e72a2f50a5159d6d38faf4a980e428b8de85ab",
+   "call_id": "3fd2ee85234a58b7b045b61a316ec1a10822ffcd1e0afb2f8d30e549e2daf5df",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.00039250000000000005,
+   "unix_time": 1792187591.817327,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 132
+   }
+  },
+  {
+   "cache_key": "4d9447cc7f0aa4390d21892194e6ae715e85b25e0ba0d12a310b7f1b5506b077",
+   "call_id": "c4f54740232cd1ffa384b74f43200d5bc39b868f7ed981d2359dae6dc655fbfe",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.00038250000000000003,
+   "unix_time": 1792187591.957094,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 128
+   }
+  },
+  {
+   "cache_key": "355e431197d837ee0e1bbba05a8efc5b5e242e16a36a1fa64957eb0aeaa88aac",
+   "call_id": "52b574ea8edecfd575b8bbd71852e8782ef02f0830b1f6e652d252919117c5e3",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03273,
+   "cost_usd": 0.0017050000000000001,
+   "unix_time": 1792187592.115639,
+   "usage": {
+    "input_tokens": 298,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 64,
+    "output_tokens_details": {
+     "reasoning_tokens": 57
+    },
+    "total_tokens": 362
+   }
+  },
+  {
+   "cache_key": "59d9cacaaf18beacc3f02453f92d848251ba691b56449bff2628196b0c3e4259",
+   "call_id": "182c61a6d58268a911b8102de687dbe99afc21a0d34cd7f57a2eeaaf2c48e317",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03227,
+   "cost_usd": 0.00063,
+   "unix_time": 1792187593.174966,
+   "usage": {
+    "input_tokens": 114,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 23,
+    "output_tokens_details": {
+     "reasoning_tokens": 16
+    },
+    "total_tokens": 137
+   }
+  },
+  {
+   "cache_key": "53b8ab7762b0739d490367840c65fa5e105fc3a4e28b5bbc9bf0a840bb3f9ae6",
+   "call_id": "4858082818f95e3f3fefa57f13b9f0c98efe5fed2b79caa099280b2ebbee564a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03232,
+   "cost_usd": 0.00041,
+   "unix_time": 1792187593.319723,
+   "usage": {
+    "input_tokens": 134,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 139
+   }
+  },
+  {
+   "cache_key": "81b91dd04899ec40a5a3a7029acde4aa4e1933e4f39e077bdb763b77e1ab895b",
+   "call_id": "665a86923c170db9870d4161eb836465ea6609f12a76e4b980629d0ec316a801",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03252,
+   "cost_usd": 0.00061,
+   "unix_time": 1792187593.4637299,
+   "usage": {
+    "input_tokens": 214,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 219
+   }
+  },
+  {
+   "cache_key": "c6f753d1776994d3fa72aba3671b0c58922e512eb78343840db245f9a5b127af",
+   "call_id": "2d36ff8b94d0a257f36c46f6c85124e275239c5f1fbf9aec832c7440fef0ac5f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324575,
+   "cost_usd": 0.0005475,
+   "unix_time": 1792187593.516042,
+   "usage": {
+    "input_tokens": 189,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 194
+   }
+  },
+  {
+   "cache_key": "e069079285c8655deaf7b593abeb40e7bfd4fcbf5d9aa0a8223b9f8d9dc6eb6f",
+   "call_id": "b25a2c031172ce045a57da27cc80caf9140644bd4f2b5c0c7f7f843d26115382",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03239,
+   "cost_usd": 0.00048000000000000007,
+   "unix_time": 1792187593.628266,
+   "usage": {
+    "input_tokens": 162,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 167
+   }
+  },
+  {
+   "cache_key": "943e5530945c8dcb6d99f73483894c46a808f105dad869f753e57caac8b64901",
+   "call_id": "8e71c78b52583f072bde98bcbad885416538b873b2386bdbed3b4c7c0b0125e0",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323175,
+   "cost_usd": 0.0004075,
+   "unix_time": 1792187593.6703959,
+   "usage": {
+    "input_tokens": 133,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 138
+   }
+  },
+  {
+   "cache_key": "80108292ea990a8621a0b21466ffc933e3f940e2a53bbd98b0483a95172ee137",
+   "call_id": "54d4d787b6d6e5d5fd250356a810c745cb9c8f0e968953e312c6e38718bbc592",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032510000000000004,
+   "cost_usd": 0.0009000000000000001,
+   "unix_time": 1792187593.861195,
+   "usage": {
+    "input_tokens": 210,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 25,
+    "output_tokens_details": {
+     "reasoning_tokens": 18
+    },
+    "total_tokens": 235
+   }
+  },
+  {
+   "cache_key": "0b094c21b7ae40fe14d6e771f12adb03f1a5cdde7d579b97f91b70e215450843",
+   "call_id": "b13708f00bb04678ee7c08bbe7e18de2f5c785eab0e558e9d241842e8dc80c45",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322975,
+   "cost_usd": 0.0007624999999999999,
+   "unix_time": 1792187594.7448142,
+   "usage": {
+    "input_tokens": 125,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 30,
+    "output_tokens_details": {
+     "reasoning_tokens": 23
+    },
+    "total_tokens": 155
+   }
+  },
+  {
+   "cache_key": "b5179512bdb4ba29c7933143f0717a55cb4afbf74938b7b1bf3b1f6a57aa30c5",
+   "call_id": "e112b45aa67f0fc96ab763f73c82ceb034ee421bb9fb0de2acad25c161ef36e0",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032275,
+   "cost_usd": 0.000365,
+   "unix_time": 1792187594.8853881,
+   "usage": {
+    "input_tokens": 116,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 121
+   }
+  },
+  {
+   "cache_key": "6ddd4bac8dd8180a32327e7655a6bc6645ab66df14b4b3b2ea26a18ca6eda2de",
+   "call_id": "01b16ee9d8caba5ce6dff90e6b77f111cdbe116b8ba99f14e005896961fb7d03",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323575,
+   "cost_usd": 0.0004475000000000001,
+   "unix_time": 1792187594.934249,
+   "usage": {
+    "input_tokens": 149,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 154
+   }
+  },
+  {
+   "cache_key": "b7d2397fcf933e246fa586c28c87000ea9aabc652928ef34a07845228fc6b1ed",
+   "call_id": "c6aae494d4ede1027c27f369d5fa0f4255123eb54e939c895c48efdf8d3ba831",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032465,
+   "cost_usd": 0.00099,
+   "unix_time": 1792187595.10482,
+   "usage": {
+    "input_tokens": 192,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 226
+   }
+  },
+  {
+   "cache_key": "afe2d7416258b73cf994bae38e5674b67b2b25b581fdd4c3c0633b883eafe65a",
+   "call_id": "955cb1855fcf1a76217247b0f1b1684d3ad8b396998256175b3d4b2862004329",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.0008275000000000001,
+   "unix_time": 1792187595.245068,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "919e152a1775b29fb2c281b1bdc88578ef775ab8f31d7e3e561e20eb5192f366",
+   "call_id": "37ac2ca98a8af87648a97f2b499d222206732bc27f6f33e73a25190687735633",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03255,
+   "cost_usd": 0.00064,
+   "unix_time": 1792187595.375885,
+   "usage": {
+    "input_tokens": 226,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 231
+   }
+  },
+  {
+   "cache_key": "27fa27fddf45c6d6308d208a2884e66f28804aa4434d7e5054128fa1cfc6f9ac",
+   "call_id": "42973c779fa9ad89c60c3d452d7bf8375bb4b0d5c2a86cdfd76a72bd03ad8109",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323875,
+   "cost_usd": 0.0013475,
+   "unix_time": 1792187595.40395,
+   "usage": {
+    "input_tokens": 161,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 63,
+    "output_tokens_details": {
+     "reasoning_tokens": 56
+    },
+    "total_tokens": 224
+   }
+  },
+  {
+   "cache_key": "7e10f579fed2cb765bb3a02a12683072712083f38611298209e6ef62c35090ba",
+   "call_id": "978b300bc5e0fb9688405a0f0443da7108761608bd664f7efd0cbcd1b98e1c29",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03225,
+   "cost_usd": 0.00034,
+   "unix_time": 1792187595.460447,
+   "usage": {
+    "input_tokens": 106,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 111
+   }
+  },
+  {
+   "cache_key": "336df5135a9feddf673ed913c02ea89f8477a93d3b01967e369e2fc98c70d93e",
+   "call_id": "5c6fc7c4af395eae519d2883ed3499f33db671dc758fd09eb6e1cdbbf2291dd1",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03248,
+   "cost_usd": 0.00057,
+   "unix_time": 1792187595.850111,
+   "usage": {
+    "input_tokens": 198,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 203
+   }
+  },
+  {
+   "cache_key": "d7a087f9dd99427ef50abf8179b3674aeddb316be791c4c93cb7ac31b03f6411",
+   "call_id": "ca400f6ef6f6225e8758b10ac604c8eb6cc2d565ccbf51dc00ca869b66f9ba22",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032515,
+   "cost_usd": 0.0006050000000000001,
+   "unix_time": 1792187596.06448,
+   "usage": {
+    "input_tokens": 212,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 217
+   }
+  },
+  {
+   "cache_key": "4770228a7f2d68f1e61b6ed2ab67c777c82dfc9f65d46bb1e80b33cccac8dd88",
+   "call_id": "a46293ea61b03d25df6f471de549d4e929422d1acaf260247df1eaa47b58e976",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03232,
+   "cost_usd": 0.00041,
+   "unix_time": 1792187596.1207318,
+   "usage": {
+    "input_tokens": 134,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 139
+   }
+  },
+  {
+   "cache_key": "325f33f5bf61fc5f452ecf4ff5b50048246b561aeef04489d0b9be54a6f35123",
+   "call_id": "e5aa18510befd13df06022fcc32b600299361184b357aab1d6a6f3445ba9e210",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.00037,
+   "unix_time": 1792187596.210912,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 123
+   }
+  },
+  {
+   "cache_key": "dc18b95656317c27c61c37cc524a68d97c5a5c3c2c86fa843bb5bf37e2785dc4",
+   "call_id": "76344deba5fc2168cbb75c71bfa29873f3658d072ec084b76edea090ee2240b3",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03225,
+   "cost_usd": 0.00034,
+   "unix_time": 1792187596.398156,
+   "usage": {
+    "input_tokens": 106,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 111
+   }
+  },
+  {
+   "cache_key": "3fc0dd1c44f2641cfde5a3fb0c63966886c0eb5deff98df8b15c0847a04df027",
+   "call_id": "489c6995a29f37344f24f419a437594a7d935b609cb944c6f0578419a583bdaa",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322725,
+   "cost_usd": 0.0005575,
+   "unix_time": 1792187596.451033,
+   "usage": {
+    "input_tokens": 115,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 18,
+    "output_tokens_details": {
+     "reasoning_tokens": 11
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "dfd629cd996a83d1e8e6efba7bab8385c3113d475232051f24655fca00b88d90",
+   "call_id": "47c342402c209a17325b0b061f65823ec9d85e2ac64bb9d1a01551e6be9d2f34",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323375,
+   "cost_usd": 0.0005925,
+   "unix_time": 1792187596.6102889,
+   "usage": {
+    "input_tokens": 141,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 157
+   }
+  },
+  {
+   "cache_key": "d4cd98d1eea82bcbcdfa11bbe1fd87bf394d51d962e220df7505004562447080",
+   "call_id": "6fa0e2904045fd83c418a7a6611a048689612971c33d81b37702d03548d7f56f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.00039250000000000005,
+   "unix_time": 1792187597.1138859,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 132
+   }
+  },
+  {
+   "cache_key": "b5dba184b4bb89f2fa08154c9e5c5e82cdb8081e6d297681efa2ebb9a703e120",
+   "call_id": "7d9def4beb8e00bcf0b4db89a97d39df2a53bba7303cf5141d0a779afd9f7c56",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0005575,
+   "unix_time": 1792187597.194159,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 198
+   }
+  },
+  {
+   "cache_key": "c8c16212d01a4452999a710dd6eab1594696e2e97361b0330f3f6fc19966fda9",
+   "call_id": "a24d97f3a30a25c1a437ca0fccdc13a526e33127968385439f4a0d84fa49c68c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032265,
+   "cost_usd": 0.0013150000000000002,
+   "unix_time": 1792187597.272772,
+   "usage": {
+    "input_tokens": 112,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 69,
+    "output_tokens_details": {
+     "reasoning_tokens": 62
+    },
+    "total_tokens": 181
+   }
+  },
+  {
+   "cache_key": "39f72f2abaca53661241d4efa66d604f05d4ad232a1352dffe8a85a3c49693fb",
+   "call_id": "5c9b4d49f34a6a8f0d15ec0af5620785e7777b6ff585eb4bcd8c1e3f801a0d96",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032325,
+   "cost_usd": 0.0008500000000000001,
+   "unix_time": 1792187597.548492,
+   "usage": {
+    "input_tokens": 136,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 170
+   }
+  },
+  {
+   "cache_key": "31a25d0393c68165c774f6a98e33e3bf4faaba815e63734da96b0632145bc3f7",
+   "call_id": "bf00b6ee9799910b04c3cb73edf830cfce71f0be398bae79d4a16ac6f075363b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.00039250000000000005,
+   "unix_time": 1792187597.682327,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 132
+   }
+  },
+  {
+   "cache_key": "b76cd036d37e6c87765b34e1141333b39f02a5e166245212e161e16711dd4722",
+   "call_id": "6c3743a33bf31cb5a51f9f87cea91445e31fc5ccbbe9ad3e64bab66e7be43e29",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03229,
+   "cost_usd": 0.000545,
+   "unix_time": 1792187597.7577112,
+   "usage": {
+    "input_tokens": 122,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 138
+   }
+  },
+  {
+   "cache_key": "c6ec476f64984e848ec41590837216f8d634a8e2f758bd5b712b76e2f43975fd",
+   "call_id": "07a61a0069dbf312eae01d23b53b207ba065950ad11d124a7eb9d0dd16331085",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032285,
+   "cost_usd": 0.000375,
+   "unix_time": 1792187597.8749151,
+   "usage": {
+    "input_tokens": 120,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 125
+   }
+  },
+  {
+   "cache_key": "60b16fda03f3913d7bb2271554d3fdcd0183b57c43c0be850213f2e12f9c21b8",
+   "call_id": "2839eeb0d64ec1e73b873b8d0319b1bdcdbb99e6ee63e002e44445de28a78797",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324975,
+   "cost_usd": 0.0009775,
+   "unix_time": 1792187597.887987,
+   "usage": {
+    "input_tokens": 205,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 236
+   }
+  },
+  {
+   "cache_key": "f031cbcda9fe148e80240162a8b08294327f9989b28b6469bf339a0f076d3beb",
+   "call_id": "bcbe5e19076043b1eba8596b93c2b41ec4285d15b97d172ef99d0e626c590cec",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323575,
+   "cost_usd": 0.0004475000000000001,
+   "unix_time": 1792187598.348282,
+   "usage": {
+    "input_tokens": 149,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 154
+   }
+  },
+  {
+   "cache_key": "5276deacb814b74ac9f72ab5e4538729402f25e74b11c5588a16977791d2722d",
+   "call_id": "596313744e3b4212424a25491e0ee9c77e1f0d6cd81c8a8d338047907e6c956a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323575,
+   "cost_usd": 0.0008675,
+   "unix_time": 1792187598.369819,
+   "usage": {
+    "input_tokens": 149,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 33,
+    "output_tokens_details": {
+     "reasoning_tokens": 26
+    },
+    "total_tokens": 182
+   }
+  },
+  {
+   "cache_key": "694438e5aabb09536dc7b4a56f814cdc16d9e104064dbf9f73475b334a503e89",
+   "call_id": "8db825baa61ae5504d048ebea8f9451263f0ed44ca9dcbe1afef3d70c06ffebc",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323375,
+   "cost_usd": 0.0005925,
+   "unix_time": 1792187599.276513,
+   "usage": {
+    "input_tokens": 141,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 157
+   }
+  },
+  {
+   "cache_key": "dfeddf94095ecadf500384a626c477c4aedc8d3a427d5d87682778fe16fffce9",
+   "call_id": "2d493c25b9bf081bab25738cff79c5877cb3408e417cda0d1310f2d17b5bcbce",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032465,
+   "cost_usd": 0.000555,
+   "unix_time": 1792187599.311996,
+   "usage": {
+    "input_tokens": 192,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 197
+   }
+  },
+  {
+   "cache_key": "12b680f5936592351856e6c5f5ce7fd6fb2570bc95895e153d0bc9e64fcfab22",
+   "call_id": "68ddf043b15e9ba30537550a44e4f033302fe8891b48ffa66b3b289cf1924438",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.0005875,
+   "unix_time": 1792187599.5079849,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 18,
+    "output_tokens_details": {
+     "reasoning_tokens": 11
+    },
+    "total_tokens": 145
+   }
+  },
+  {
+   "cache_key": "6df366ce1cb758f9007328bd1f285bed439182d74f291eab61b119f910d3499b",
+   "call_id": "937a0ba60ccc00e441b17a2536c46aa258897f2371bae4b5de955f82e8211aa8",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032425,
+   "cost_usd": 0.000515,
+   "unix_time": 1792187599.5731351,
+   "usage": {
+    "input_tokens": 176,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 181
+   }
+  },
+  {
+   "cache_key": "70bb420276c48c2d9052f31f549c946f4663d0b6d5cdb4eac904901a2901073c",
+   "call_id": "6af22f1f0d8b0ad0ca296266b6730631c96d16f85763df65fc96a379ddd98484",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322625,
+   "cost_usd": 0.00035250000000000006,
+   "unix_time": 1792187599.628463,
+   "usage": {
+    "input_tokens": 111,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 116
+   }
+  },
+  {
+   "cache_key": "0dff07505e35b27f6c480ea8c5ed41cc2a064a558fbab68453c578dbae26b3f2",
+   "call_id": "f9bf1e1279705e49bf488e3902a40499ca8a39a481ee959004a6d5f2504972c8",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032365,
+   "cost_usd": 0.001055,
+   "unix_time": 1792187599.695916,
+   "usage": {
+    "input_tokens": 152,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 45,
+    "output_tokens_details": {
+     "reasoning_tokens": 38
+    },
+    "total_tokens": 197
+   }
+  },
+  {
+   "cache_key": "54697f6eacb6e42c9282cff98012ad31412cbc9c6e7ea4b62a46918ba90d9464",
+   "call_id": "d97e6a13133767db372cb5fed96f19053b7eaee5c30ed81667c17951d7dfbf87",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323375,
+   "cost_usd": 0.0008625,
+   "unix_time": 1792187599.830423,
+   "usage": {
+    "input_tokens": 141,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 175
+   }
+  },
+  {
+   "cache_key": "855fe276615e4e3c9161527050ffa2e9e29eb24779dba51fce58cde37e825d17",
+   "call_id": "edc6f3aac4d4ebc4944efdc3fb71edf5fa29be9b6563fa60c436aaa8796132a3",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324075,
+   "cost_usd": 0.0043225,
+   "unix_time": 1792187599.8692129,
+   "usage": {
+    "input_tokens": 169,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 260,
+    "output_tokens_details": {
+     "reasoning_tokens": 253
+    },
+    "total_tokens": 429
+   }
+  },
+  {
+   "cache_key": "4d2a981f95fdd54d144e891429ea1eb566e29a7ac6f9bd1b6f3df533a586364c",
+   "call_id": "72aed3e4b86fded0c22ebe2ba51ca32b5fcbab0e3292dfc4f87256181b5cd073",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032325,
+   "cost_usd": 0.00127,
+   "unix_time": 1792187600.624415,
+   "usage": {
+    "input_tokens": 136,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 62,
+    "output_tokens_details": {
+     "reasoning_tokens": 55
+    },
+    "total_tokens": 198
+   }
+  },
+  {
+   "cache_key": "7d15cf69281941dc0c36598a75abad17a577f4394ff645c30ac991a658dfb917",
+   "call_id": "d17263b7fba793f8ad2e0e9a400e22897034f0d70da04dc9b93f7aa54eed640f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323375,
+   "cost_usd": 0.00042750000000000004,
+   "unix_time": 1792187600.6735418,
+   "usage": {
+    "input_tokens": 141,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 146
+   }
+  },
+  {
+   "cache_key": "378a712e53336e502784c7a94dc76927b1e2260c258f3512ee62adaf2be5be65",
+   "call_id": "2f37b63905d79bf782fd787f355c12741c25ca45270b12c0a07cffad0a34dcf3",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323075,
+   "cost_usd": 0.00039750000000000007,
+   "unix_time": 1792187600.724925,
+   "usage": {
+    "input_tokens": 129,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 134
+   }
+  },
+  {
+   "cache_key": "927a05a611574e8ffc18b9d86460e8aa3e0eaa6c63b27c75fb438b82cbbb8447",
+   "call_id": "451229cbec2c63d82390894eb1e86fa61b7b8a684d369763a525612c854f9a3c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323375,
+   "cost_usd": 0.0007875,
+   "unix_time": 1792187600.8403652,
+   "usage": {
+    "input_tokens": 141,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 29,
+    "output_tokens_details": {
+     "reasoning_tokens": 22
+    },
+    "total_tokens": 170
+   }
+  },
+  {
+   "cache_key": "08af048bacfb7f15e087b1ff22d816a0d54f5448525753626c9ed38416799e5b",
+   "call_id": "638b1bb695c9df4a6fa19d57845e5c8af8089cc601c473c3679ede66bbf286ca",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0005575,
+   "unix_time": 1792187601.069674,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 198
+   }
+  },
+  {
+   "cache_key": "4960951d3b3c387451ad0cb1bbf67e2abd490a00993ce51b84953e6802fc5e01",
+   "call_id": "b81e2fe0a60c8f39b4bc979bb729ef768c5043ee9cd40a24c64e933887fa5c41",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032420000000000004,
+   "cost_usd": 0.00051,
+   "unix_time": 1792187601.143678,
+   "usage": {
+    "input_tokens": 174,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 179
+   }
+  },
+  {
+   "cache_key": "8b65f17348691ee759ea4dd9d1667768cb40f0fe713dded847f834ad4224a9dc",
+   "call_id": "c120bf5db6812fc836ac906366ea7d169dbc9c562bf76bc7e76faad765ee9793",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032322500000000004,
+   "cost_usd": 0.0004125,
+   "unix_time": 1792187601.2169201,
+   "usage": {
+    "input_tokens": 135,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 140
+   }
+  },
+  {
+   "cache_key": "a67eedc2e060ea6b77068f8ef3dd0d34b5c360376282a7206b62ed5c1047b5a6",
+   "call_id": "662477560d843a00a7a230ce8895c2d35cd397708df0191ec07fce3007205491",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.000535,
+   "unix_time": 1792187601.6088588,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 134
+   }
+  },
+  {
+   "cache_key": "8a3d986736562be2e05ce1bfc6de8eb4bc3d4143f579369de9c5a547bd75342a",
+   "call_id": "c0f1c641eb398a798679b8c730edb1f4456faa92b9a1f56d39d9ef659c3dfee9",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.0005725000000000001,
+   "unix_time": 1792187601.742987,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 144
+   }
+  },
+  {
+   "cache_key": "3b4f5702acd514169f76b69aa01132c12f0b0d0be11410b7835a4c453264aeb0",
+   "call_id": "77c6afbfa111aaaddbbc899aaa8e61cc03351d78f5571b9fe57e946f9db8de88",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323875,
+   "cost_usd": 0.0014075000000000001,
+   "unix_time": 1792187601.962034,
+   "usage": {
+    "input_tokens": 161,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 67,
+    "output_tokens_details": {
+     "reasoning_tokens": 60
+    },
+    "total_tokens": 228
+   }
+  },
+  {
+   "cache_key": "3295540cbf0cb0f04db94724667b8293bb34ac61db8a77c69b00792c50154605",
+   "call_id": "98fbcebfdfa4e4a83f51a6a719e406e5ab48d2008a4965ec73a7c6b8f59a59e5",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323075,
+   "cost_usd": 0.0008475,
+   "unix_time": 1792187602.153781,
+   "usage": {
+    "input_tokens": 129,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 35,
+    "output_tokens_details": {
+     "reasoning_tokens": 28
+    },
+    "total_tokens": 164
+   }
+  },
+  {
+   "cache_key": "9ab2bac0304d59cbdc77d28d59f4dccd3aaa0ae4b56a5b013b1ad43585bb087d",
+   "call_id": "358f03e27d358156015d5f53fc4a02cf6aa8909c42cfbd3b4d7a4609ccff91ab",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032395,
+   "cost_usd": 0.00125,
+   "unix_time": 1792187602.24013,
+   "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 56,
+    "output_tokens_details": {
+     "reasoning_tokens": 49
+    },
+    "total_tokens": 220
+   }
+  },
+  {
+   "cache_key": "07a3ea886d91d57f21c757fd5a8153ee511db9370c1e76d141e4bfe70b119e4c",
+   "call_id": "c3c7aee652728a348a37e8e06c6672415a2c7250754d55d87ebc2c09efe94db4",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03248,
+   "cost_usd": 0.00057,
+   "unix_time": 1792187602.511243,
+   "usage": {
+    "input_tokens": 198,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 203
+   }
+  },
+  {
+   "cache_key": "be2c6b4f4425c29730f3f60151b6a1ce6e1db246d61c70d1c28d121906df026b",
+   "call_id": "a25fa5a440b274075fcdea9f02f079c0bf36b61a90f6fe4bdd2e3f260e090b98",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322825,
+   "cost_usd": 0.0005525,
+   "unix_time": 1792187602.6518028,
+   "usage": {
+    "input_tokens": 119,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 136
+   }
+  },
+  {
+   "cache_key": "87ced5b9c1cba1eae7a0764cdda47a1dcb0f896d9a47f215c5852b32c06973ac",
+   "call_id": "444eaadfbcb56f5b1ef3a65fc15a8a3c24b23546f3d5d82bb3ac9442431e668b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03229,
+   "cost_usd": 0.0008600000000000001,
+   "unix_time": 1792187602.795424,
+   "usage": {
+    "input_tokens": 122,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 37,
+    "output_tokens_details": {
+     "reasoning_tokens": 30
+    },
+    "total_tokens": 159
+   }
+  },
+  {
+   "cache_key": "5d58f7f711c7fdc8c7ca126e73801392ff9fe8341e72741cc5877f29ca16472f",
+   "call_id": "72994c05a540a44f91b77747767989291585e22ff060dd50e1af3212c4df49ec",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032515,
+   "cost_usd": 0.000755,
+   "unix_time": 1792187602.9753668,
+   "usage": {
+    "input_tokens": 212,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 15,
+    "output_tokens_details": {
+     "reasoning_tokens": 8
+    },
+    "total_tokens": 227
+   }
+  },
+  {
+   "cache_key": "aff52cf5a82b2526161c026047de68c82623d6519c93bbc891cf3ab874c01775",
+   "call_id": "869a3962dd1ed43d4234a4e9200a4830d9659b8e8ec30adad15339910e830069",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032285,
+   "cost_usd": 0.000375,
+   "unix_time": 1792187603.4189792,
+   "usage": {
+    "input_tokens": 120,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 125
+   }
+  },
+  {
+   "cache_key": "81e8ef32789dd4e8cf42c6ec84de66795669610b7a479932802c5c9be27e8bad",
+   "call_id": "bc0ec3fcfc1583784434f895024ee4cc3bb1224022dd11a6ab3f4b2a5753ccbd",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03227,
+   "cost_usd": 0.0005250000000000001,
+   "unix_time": 1792187603.7678132,
+   "usage": {
+    "input_tokens": 114,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 130
+   }
+  },
+  {
+   "cache_key": "e304998a833cb5ba97636753f75a3c0880cca2d1549d2de0862a307ab69dab54",
+   "call_id": "e570535761b18879865165d54061b480153a5857ba76ec127082467618c1f1c4",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324275,
+   "cost_usd": 0.0005175000000000001,
+   "unix_time": 1792187603.851688,
+   "usage": {
+    "input_tokens": 177,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 182
+   }
+  },
+  {
+   "cache_key": "abeb5c011a5ea6c4d014eda552c004eb66a8aca7bc3d3dbf06bdf4165f357f4d",
+   "call_id": "a27d50d6aae09922232ab1f705c38475a320314a7069a1a1d68aad880efc577b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03255,
+   "cost_usd": 0.00127,
+   "unix_time": 1792187604.112127,
+   "usage": {
+    "input_tokens": 226,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 47,
+    "output_tokens_details": {
+     "reasoning_tokens": 40
+    },
+    "total_tokens": 273
+   }
+  },
+  {
+   "cache_key": "4aa362fbe9bb869bd283dbb34c8057809ddac1505c41178e673d06048dbe2e31",
+   "call_id": "134277c43aba8311005bcdef5cc8833e788c9a1c507c9495be8a25a898f8f3ea",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032510000000000004,
+   "cost_usd": 0.0006000000000000001,
+   "unix_time": 1792187604.1545448,
+   "usage": {
+    "input_tokens": 210,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 215
+   }
+  },
+  {
+   "cache_key": "311235eab1c343e676852285df9334576cd5120e998a70d4030baf8000d52ee7",
+   "call_id": "84ca58f3a9240c315cc80305a7dafd1389fedb7bb1ee6ee00f68df2989122e38",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323075,
+   "cost_usd": 0.00039750000000000007,
+   "unix_time": 1792187604.216168,
+   "usage": {
+    "input_tokens": 129,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 134
+   }
+  },
+  {
+   "cache_key": "56cf4030196a10cbe48d29d59a6d0487585b03f24f2d48ca893d878fc21c55fb",
+   "call_id": "ed23fd48470f375ec832231d7afad78fdf1943e96c030bf1ea5e6f2517f8f370",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03227,
+   "cost_usd": 0.0005400000000000001,
+   "unix_time": 1792187604.2765481,
+   "usage": {
+    "input_tokens": 114,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 131
+   }
+  },
+  {
+   "cache_key": "542b5c9dc094a2f962af6424b403ebdda759ce3c01ac78687ed0dd9c61ccd4d6",
+   "call_id": "30862028ca2ba6dc2c6240aca6f4bd4fc1ff1c04aabb345ac9191821ed58e081",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032287500000000004,
+   "cost_usd": 0.0003775,
+   "unix_time": 1792187605.1500318,
+   "usage": {
+    "input_tokens": 121,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 126
+   }
+  },
+  {
+   "cache_key": "dcf23b8e1a20bab4018e1eff381473fa3548f50c96ffaf7b4058c54cedb113ee",
+   "call_id": "667b645bf741a82440a8480219c9b0e7c01b78063c2d853e0d55bf443848a2a4",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323625,
+   "cost_usd": 0.0004525,
+   "unix_time": 1792187605.184812,
+   "usage": {
+    "input_tokens": 151,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 156
+   }
+  },
+  {
+   "cache_key": "478407de5ed110a73967890f393b4469d98330a8e82cde8ad6f2f15b4c4d0987",
+   "call_id": "624e4f4b3377f3b730dffdac0e897870f1a9e192653d72fe6a705c7965089436",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323625,
+   "cost_usd": 0.0013825,
+   "unix_time": 1792187605.2702122,
+   "usage": {
+    "input_tokens": 151,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 67,
+    "output_tokens_details": {
+     "reasoning_tokens": 60
+    },
+    "total_tokens": 218
+   }
+  },
+  {
+   "cache_key": "9702adc18a5ee277cdbfd4eb81029af8405d9ecf41d4b720ee2b5d81014cd4d7",
+   "call_id": "b1d433690847fe20d6921a4a0ebd2b09c46ad51b99b293b577a6ae12eeb6ed82",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187605.304804,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "74b0a0017b92dc3fdf6f8ad2a68cde72ccd88f07ccd4a7233266b9bfebeba13b",
+   "call_id": "5e8babe2ca986bdbdc4a327374db4db010d5ef691807f0ab52cbbb8d2d3742e0",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032510000000000004,
+   "cost_usd": 0.00075,
+   "unix_time": 1792187605.514125,
+   "usage": {
+    "input_tokens": 210,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 15,
+    "output_tokens_details": {
+     "reasoning_tokens": 8
+    },
+    "total_tokens": 225
+   }
+  },
+  {
+   "cache_key": "3ff10a9b0146553562efff7601d4472510db0e889561d305e71bf42ff619d483",
+   "call_id": "3507d2e99d440a4fdaafb12e2b8a5f1fcc5b4658d44edf6fdfc9e334db455fb6",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032287500000000004,
+   "cost_usd": 0.0010675,
+   "unix_time": 1792187605.5439382,
+   "usage": {
+    "input_tokens": 121,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 51,
+    "output_tokens_details": {
+     "reasoning_tokens": 44
+    },
+    "total_tokens": 172
+   }
+  },
+  {
+   "cache_key": "1c36952b76a56a5d6979bbd18ff3f5b1a9e0f5051b72d8a10d40dcdacab158f8",
+   "call_id": "8b476408867efb48f72cf60aba52c1d830b2c7c39ff36fbe46024b658e14858a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03232,
+   "cost_usd": 0.00041,
+   "unix_time": 1792187605.644276,
+   "usage": {
+    "input_tokens": 134,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 139
+   }
+  },
+  {
+   "cache_key": "6d8a8db335eea983ffbb6c707bdfeffde45f05d34d776cf535aa84802543e6d6",
+   "call_id": "501e60f16e158ba4ad7603ecfbff594c3da02d93355fc5fc97d79de0e964a64a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187605.895413,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "d6d92aa47931e8b1786186f2ab1587bb02a12ba4c98656d2ac9046051d78a142",
+   "call_id": "3bddaa1d5c7a01c58c69f58d47c76c96896a637126aca5ac74a46de3294b4490",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032355,
+   "cost_usd": 0.0004450000000000001,
+   "unix_time": 1792187606.0325491,
+   "usage": {
+    "input_tokens": 148,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 153
+   }
+  },
+  {
+   "cache_key": "8085156456c7b08d29855d2584014c6f6b1449726e1cb34114f37d39a3d25b31",
+   "call_id": "dd51b2a74b3efaab5dc3798d8e0ce394d3d7b5ef90bf6206e2f5b411ccbf37bb",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032375,
+   "cost_usd": 0.000465,
+   "unix_time": 1792187606.71072,
+   "usage": {
+    "input_tokens": 156,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "0007cebbe8b8ebbfbb6e672bdd1eee0747bfb77a63a53b76fb426b65837449a3",
+   "call_id": "81642bd412fe71e8a930c02279cb189495e1318766de09d35d92afaa5c91dcdf",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323375,
+   "cost_usd": 0.00042750000000000004,
+   "unix_time": 1792187606.889028,
+   "usage": {
+    "input_tokens": 141,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 146
+   }
+  },
+  {
+   "cache_key": "0c095bd9dc17d85b42b3b3ccb21dd03cf0d4f2f6ec0797b6da61525024bb5082",
+   "call_id": "76e3f1ef80d09521650643e2792e49bc1eb4cbfbd6e4ec8e44d1636a2526e54c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323325,
+   "cost_usd": 0.0008125000000000001,
+   "unix_time": 1792187606.965203,
+   "usage": {
+    "input_tokens": 139,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 170
+   }
+  },
+  {
+   "cache_key": "32c85d26ac1395487e66fb3787183267724efb359cef2bd7de7e8de3dd3cc843",
+   "call_id": "312d6366c382af3b4532d938233a92ef59d033e68cd504a49cb6e454f66e3a39",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323725,
+   "cost_usd": 0.0004625,
+   "unix_time": 1792187607.058594,
+   "usage": {
+    "input_tokens": 155,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 160
+   }
+  },
+  {
+   "cache_key": "f4463656557aefc7f6eca1861a3491662688966b94b225b9674a2481101ad334",
+   "call_id": "67918925210124c8ffa1c480e709d320da8e36f8e4ea1db71d1c865b52386415",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324275,
+   "cost_usd": 0.0005175000000000001,
+   "unix_time": 1792187607.140728,
+   "usage": {
+    "input_tokens": 177,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 182
+   }
+  },
+  {
+   "cache_key": "725b57fc63f8b5542d9ac8c2277fd3e89735ab266965c59131f39d18cebeb397",
+   "call_id": "717c265fa252b8b82ecb3202fbe3479427c1f5719ae726f23da8d95059e1da5a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325,
+   "cost_usd": 0.00125,
+   "unix_time": 1792187607.2679749,
+   "usage": {
+    "input_tokens": 206,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 49,
+    "output_tokens_details": {
+     "reasoning_tokens": 42
+    },
+    "total_tokens": 255
+   }
+  },
+  {
+   "cache_key": "4873d0be942c5239bdd5a00ef41169fcfeae7a5e4b98b5789261547bd24ac2b7",
+   "call_id": "08aa21397fda64b39daf73a37b9bb7b1cac3dcd5cc0017897edd36b360647b7a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032305,
+   "cost_usd": 0.00039500000000000006,
+   "unix_time": 1792187607.309858,
+   "usage": {
+    "input_tokens": 128,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 133
+   }
+  },
+  {
+   "cache_key": "72a7d31358a7e4cb016c10c09e4b30a7fb251c154b9df5f57206889e3a11be9d",
+   "call_id": "cbc6d5e892184a6ed16614b504c8651dc11210131c9b6e1e333f391fa7667d5c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.00038250000000000003,
+   "unix_time": 1792187607.425143,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 128
+   }
+  },
+  {
+   "cache_key": "651b556bf80d25c7921fa0eadbaeb2bc08d2dd922a7badf6d20290f614ced6be",
+   "call_id": "3353b8c0178339b86c4e10a268fb00f8bc96d8db56ff469681f04c01c37965b7",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323875,
+   "cost_usd": 0.0014975000000000001,
+   "unix_time": 1792187607.606358,
+   "usage": {
+    "input_tokens": 161,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 73,
+    "output_tokens_details": {
+     "reasoning_tokens": 66
+    },
+    "total_tokens": 234
+   }
+  },
+  {
+   "cache_key": "e32b70c0ab6f340295fdef0c16281c9c0ee484cd2bd29e3abb18026bc8266545",
+   "call_id": "88ee54e4236d32d5703e0c64752ea87e492a64eb4d3aa21b1170adea4d8986b2",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03252,
+   "cost_usd": 0.001045,
+   "unix_time": 1792187607.935482,
+   "usage": {
+    "input_tokens": 214,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 248
+   }
+  },
+  {
+   "cache_key": "bdd7dd7cfe1051efa2f8fe0399f30a0d49acc24eeb8b1f2331c8ab4f8b0e7720",
+   "call_id": "3f29fd49963fb3fb980571912c183bf56c6ddfda50e008429a7b1e2a6e8e8e73",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323625,
+   "cost_usd": 0.0013825,
+   "unix_time": 1792187608.141341,
+   "usage": {
+    "input_tokens": 151,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 67,
+    "output_tokens_details": {
+     "reasoning_tokens": 60
+    },
+    "total_tokens": 218
+   }
+  },
+  {
+   "cache_key": "4ba8f96951863b10e74892878313d7a0a1bd7fb8cbabab324a990cc26e27dc14",
+   "call_id": "d39308eca2d86699b6a0f463cbe9c5b13d27121a6e25ad0a43652eb6e4bdee2b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032515,
+   "cost_usd": 0.0006050000000000001,
+   "unix_time": 1792187608.193464,
+   "usage": {
+    "input_tokens": 212,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 217
+   }
+  },
+  {
+   "cache_key": "cd5a60a89232405f5bd6c531b00dc9b83252bed073e8a289967a00cad932ac1f",
+   "call_id": "07a1d3a771342241b33db7e61d55e77dbd7aedd62a5ce47327f5603a9cdd4438",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322825,
+   "cost_usd": 0.0027125,
+   "unix_time": 1792187608.290624,
+   "usage": {
+    "input_tokens": 119,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 161,
+    "output_tokens_details": {
+     "reasoning_tokens": 154
+    },
+    "total_tokens": 280
+   }
+  },
+  {
+   "cache_key": "edd9a454b2ad454fe34d8ea1f6bbf57f53143b313fbd8dae42d3bb317da3a9ac",
+   "call_id": "c28e938fb180925381221566cc1fd58254e3d99e09da4a20ff40805da65f406e",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322975,
+   "cost_usd": 0.0005675000000000001,
+   "unix_time": 1792187608.392043,
+   "usage": {
+    "input_tokens": 125,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 142
+   }
+  },
+  {
+   "cache_key": "f1509869b489b2a9a8b6b384e688bb00cfce16e29fdec8a5f87b4a92548363e0",
+   "call_id": "3028798edb0df0283f0baf0d4bf673865a7eef3800f10e99cab145233618fbdd",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.00037,
+   "unix_time": 1792187608.69755,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 123
+   }
+  },
+  {
+   "cache_key": "64ee0549727a24a7b85fab4d371cf551565e424ad44ed5b9f9709829450452eb",
+   "call_id": "8570b6d1fc456a43a278ee4d14263e0f4bb5c4d63dd6e1952166454f652e8253",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324075,
+   "cost_usd": 0.0025825,
+   "unix_time": 1792187608.814801,
+   "usage": {
+    "input_tokens": 169,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 144,
+    "output_tokens_details": {
+     "reasoning_tokens": 137
+    },
+    "total_tokens": 313
+   }
+  },
+  {
+   "cache_key": "a6a945d8a9681a9c557f98570fe5c5fa3b87a85274c1d0814be0f0f0c64ebedf",
+   "call_id": "309997605a398af6f4c1887adcfcf5986405829da275fe032ef79caa7ba89a8f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032510000000000004,
+   "cost_usd": 0.0007650000000000001,
+   "unix_time": 1792187609.161655,
+   "usage": {
+    "input_tokens": 210,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 226
+   }
+  },
+  {
+   "cache_key": "e5caa496f231d1034cde01e7ceaca22cf0718b0349136a5c5fa4b422bf1052e4",
+   "call_id": "ff017eac5eeec40f349216ba543643e15b595eb7769c65d821f211a03e0afb27",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322825,
+   "cost_usd": 0.0010625,
+   "unix_time": 1792187609.199841,
+   "usage": {
+    "input_tokens": 119,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 51,
+    "output_tokens_details": {
+     "reasoning_tokens": 44
+    },
+    "total_tokens": 170
+   }
+  },
+  {
+   "cache_key": "39de0e5290246a09d35f36aeef18243c6c0a4bf4f495b6de9322c6038757d742",
+   "call_id": "8ea861c39482cebd34d2e909b9b910a4b09913901a7889210cbfc83122556825",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032315,
+   "cost_usd": 0.0009,
+   "unix_time": 1792187609.3053398,
+   "usage": {
+    "input_tokens": 132,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 38,
+    "output_tokens_details": {
+     "reasoning_tokens": 31
+    },
+    "total_tokens": 170
+   }
+  },
+  {
+   "cache_key": "d79b8d8352bb6937d3734f0db82a5de59558eefaa857218c9aadde2e65f4ded5",
+   "call_id": "1028a60fe9f936a3518187186a38ac45a9448eb861576029747d0072fad63331",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032395,
+   "cost_usd": 0.0004850000000000001,
+   "unix_time": 1792187609.876752,
+   "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 169
+   }
+  },
+  {
+   "cache_key": "ca2661394e470db3837c5875e8698b73b57732d951ade8edfbf584b1e0c3e8de",
+   "call_id": "be079996c22b9c02d896cf6e467ef2a3240fb50e62aef970d0006ac2c2de398f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325325,
+   "cost_usd": 0.0012075,
+   "unix_time": 1792187609.935501,
+   "usage": {
+    "input_tokens": 219,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 44,
+    "output_tokens_details": {
+     "reasoning_tokens": 37
+    },
+    "total_tokens": 263
+   }
+  },
+  {
+   "cache_key": "2856274a89c74533ae1760a20f6bb0f9f1a6adf22e455750efd0dad3e51bd8e3",
+   "call_id": "0b3b0d0fb24cd7c585ef0d6fb2da4fbddb1f1bd7dfcbfe78ef7e732310a8a9fc",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322975,
+   "cost_usd": 0.0007624999999999999,
+   "unix_time": 1792187610.012191,
+   "usage": {
+    "input_tokens": 125,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 30,
+    "output_tokens_details": {
+     "reasoning_tokens": 23
+    },
+    "total_tokens": 155
+   }
+  },
+  {
+   "cache_key": "f936a704ab0ed93b25c67c182ec61029b0e9eb3564d2dfbb8c9750b0e69131bd",
+   "call_id": "13c0a86b5ca001e1e28516420286e46c3d831f37a1a0743c273310e538cf8703",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03233,
+   "cost_usd": 0.000915,
+   "unix_time": 1792187610.1306822,
+   "usage": {
+    "input_tokens": 138,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 38,
+    "output_tokens_details": {
+     "reasoning_tokens": 31
+    },
+    "total_tokens": 176
+   }
+  },
+  {
+   "cache_key": "1b52f79b4ea0c5a4c45dfab0c7dac969db8786dc5c75d58bdd08f5d0adab84fb",
+   "call_id": "f7f3da4ad81da3ce5c0e2cfa38a7ea7c03485823bd32f1ae267cee1d082dc5f3",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032395,
+   "cost_usd": 0.0009500000000000001,
+   "unix_time": 1792187611.303784,
+   "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 36,
+    "output_tokens_details": {
+     "reasoning_tokens": 29
+    },
+    "total_tokens": 200
+   }
+  },
+  {
+   "cache_key": "06b479beb69cd07905ca78ee2b8e6c055ec5aeecdaeb24b12b0ceb03c7d3dfad",
+   "call_id": "9bdb0fa47dfd78081ce2871b55fd503eafdef89fd48f392542ed14082c8b6f4d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323,
+   "cost_usd": 0.000555,
+   "unix_time": 1792187611.359696,
+   "usage": {
+    "input_tokens": 126,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 142
+   }
+  },
+  {
+   "cache_key": "657557adc641584757e3361b7572ddf5c142a2d35e84922ada534dd6e5339382",
+   "call_id": "a097189b2a20f4f8a128532caa0b3a0b0acf9536222119f82a10f160079b8e16",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03255,
+   "cost_usd": 0.00064,
+   "unix_time": 1792187611.3962219,
+   "usage": {
+    "input_tokens": 226,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 231
+   }
+  },
+  {
+   "cache_key": "0af7900b12980c4bf5fdaf338a3c4b24ad8599138d272ea75e25787e3d112a23",
+   "call_id": "a658aac8ce062a1289b44d784e8314fb3b93f94899d635b58b5339079e95b02c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324775,
+   "cost_usd": 0.0010175,
+   "unix_time": 1792187611.45185,
+   "usage": {
+    "input_tokens": 197,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 35,
+    "output_tokens_details": {
+     "reasoning_tokens": 28
+    },
+    "total_tokens": 232
+   }
+  },
+  {
+   "cache_key": "0c98e02b0f98643d23be4d6b0774fa324217fff81eb85d9599092cb5ab502e66",
+   "call_id": "c355c17e1e875677fb5029e0ef062fd1f6c2499d0d6e36d571b0ddfa653da6da",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032287500000000004,
+   "cost_usd": 0.0005425,
+   "unix_time": 1792187611.5035489,
+   "usage": {
+    "input_tokens": 121,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 137
+   }
+  },
+  {
+   "cache_key": "a1b304dfc98f726a2e07100ec010152159d7eca9181e6d1c4de923e1ded2708a",
+   "call_id": "102b266445f872454c549631cad4cc55d5f655b087803a8582f00a9134c6e11f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323075,
+   "cost_usd": 0.0008475,
+   "unix_time": 1792187611.667179,
+   "usage": {
+    "input_tokens": 129,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 35,
+    "output_tokens_details": {
+     "reasoning_tokens": 28
+    },
+    "total_tokens": 164
+   }
+  },
+  {
+   "cache_key": "08058e4b27bfecc3fe14525659d3bf04beb5758c2517ed9cabab4ea19620b032",
+   "call_id": "23b07fe25205299c98b3c999f4af2f240391a06ef3014a9ec971b2c8f1f11b00",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03252,
+   "cost_usd": 0.00061,
+   "unix_time": 1792187611.6893172,
+   "usage": {
+    "input_tokens": 214,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 219
+   }
+  },
+  {
+   "cache_key": "d8782c0e895027367a60b6016bbe195c89f24e9a223d491b76ef30e746ee9f7f",
+   "call_id": "30eb87c317678bb9d9c29ff5344f71720a83d447dcc26eb2ae363cde3587afa3",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324375,
+   "cost_usd": 0.0006925000000000001,
+   "unix_time": 1792187611.907379,
+   "usage": {
+    "input_tokens": 181,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 197
+   }
+  },
+  {
+   "cache_key": "253fcaf7acb694217be6f97b8b268ee9d9d8683415b7bbc5fee76c6efc11bcfd",
+   "call_id": "80a112becf92802f2605b3a04003b64388e5a75a8801a40acb4a7899710445dd",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032355,
+   "cost_usd": 0.0004450000000000001,
+   "unix_time": 1792187612.580859,
+   "usage": {
+    "input_tokens": 148,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 153
+   }
+  },
+  {
+   "cache_key": "6c78f366fac40a4f1855c3db425b4c487efab18276d0626c01663842251bd372",
+   "call_id": "e99d2042dc8a3a5fd738af195395980967c628ed3c19cacef50f428fb4781ea9",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322725,
+   "cost_usd": 0.0005275000000000001,
+   "unix_time": 1792187612.8889642,
+   "usage": {
+    "input_tokens": 115,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 131
+   }
+  },
+  {
+   "cache_key": "237320c9a38123e9d5251918d346eb673aa79d73ee4c88fc7a06ab08dce28a29",
+   "call_id": "bb0be4f29a01b9f28a9bd25e7fbc83d2f72b8f62b6e13658088444785e839330",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324775,
+   "cost_usd": 0.0009575,
+   "unix_time": 1792187613.0442398,
+   "usage": {
+    "input_tokens": 197,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 228
+   }
+  },
+  {
+   "cache_key": "e90f41ec6ca5632b16650089dc1eae56b26f52286a856778b0c9be139eeccdff",
+   "call_id": "4ab2ce72bd49e75fe95348830b8a3653f39a47654e429db616d7dc0f7b6ac001",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032265,
+   "cost_usd": 0.00124,
+   "unix_time": 1792187613.208265,
+   "usage": {
+    "input_tokens": 112,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 64,
+    "output_tokens_details": {
+     "reasoning_tokens": 57
+    },
+    "total_tokens": 176
+   }
+  },
+  {
+   "cache_key": "d2cad184774c7173e795aa28bbc26b629153a7b87fd3ac61a60fed1f209060c7",
+   "call_id": "825ae117e9610c2d461268fa4ed763cca335e8bbe5146f0f404f698f1b30c2d9",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0327625,
+   "cost_usd": 0.004767500000000001,
+   "unix_time": 1792187613.356498,
+   "usage": {
+    "input_tokens": 311,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 266,
+    "output_tokens_details": {
+     "reasoning_tokens": 259
+    },
+    "total_tokens": 577
+   }
+  },
+  {
+   "cache_key": "fcae24e1a46e69349220cc28d2f1f2efda9658ab83a1a60871fcfdf790e068f2",
+   "call_id": "b132918687bcbf075b08c5c4e09208ad408f68783df298c47e34239971e8504c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322925,
+   "cost_usd": 0.0007275000000000001,
+   "unix_time": 1792187613.511012,
+   "usage": {
+    "input_tokens": 123,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 28,
+    "output_tokens_details": {
+     "reasoning_tokens": 21
+    },
+    "total_tokens": 151
+   }
+  },
+  {
+   "cache_key": "6ce4022e1cc72aa970ba0ae39c29fd2a6d01ae91416dc0530876b61d5c46a368",
+   "call_id": "768f1e7e1e34c01a3e75673fb65bf669ecf5fd077068a003926af524897a9f2b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03252,
+   "cost_usd": 0.00061,
+   "unix_time": 1792187613.558985,
+   "usage": {
+    "input_tokens": 214,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 219
+   }
+  },
+  {
+   "cache_key": "f416ed4fdf4d8c258db0be96d66bfc2234d888eef823bbfd1bc381e64a220ac7",
+   "call_id": "3e6348ef29e4638c186feef50bd7fcf8e10e5cfc7d87e9b14282982dbb3e72a4",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322625,
+   "cost_usd": 0.00035250000000000006,
+   "unix_time": 1792187613.622064,
+   "usage": {
+    "input_tokens": 111,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 116
+   }
+  },
+  {
+   "cache_key": "e08414e8beade3800746e5145532e96b6a987e080eab9ed7f1448966f15fdc35",
+   "call_id": "b750db092f8f5c8e5e86fc3852b55824cdf7cb3b14b21eb419bf08a2e3671cfc",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032345,
+   "cost_usd": 0.0014700000000000002,
+   "unix_time": 1792187614.030605,
+   "usage": {
+    "input_tokens": 144,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 74,
+    "output_tokens_details": {
+     "reasoning_tokens": 67
+    },
+    "total_tokens": 218
+   }
+  },
+  {
+   "cache_key": "b99fe4fe673d58b7248662d0756d384178a26742f98a524b9ed64b021bee41fc",
+   "call_id": "e1f15ee5ef24bbb4dfc42a966f8509602cbd92bc3a49b4a40562b4c1e93ef31d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03248,
+   "cost_usd": 0.000735,
+   "unix_time": 1792187614.08081,
+   "usage": {
+    "input_tokens": 198,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 16,
+    "output_tokens_details": {
+     "reasoning_tokens": 9
+    },
+    "total_tokens": 214
+   }
+  },
+  {
+   "cache_key": "bdf1da757c380d8156dafcb4481428a8d83579123e7f449f56b211b3e0e50ec2",
+   "call_id": "b306dae9ca153d89f02b7980834bff1fbbe55b668cfa081f0f05da41960eff7c",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325,
+   "cost_usd": 0.00128,
+   "unix_time": 1792187614.70189,
+   "usage": {
+    "input_tokens": 206,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 51,
+    "output_tokens_details": {
+     "reasoning_tokens": 44
+    },
+    "total_tokens": 257
+   }
+  },
+  {
+   "cache_key": "6750424ddd7ed852dfb43817a0153d6993c0cdd3a413921d4591c09e3f703f49",
+   "call_id": "069e9169283321bf26d07e66f222ea751d664ba7816bf6876abcd275ab4e662f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324375,
+   "cost_usd": 0.0006775,
+   "unix_time": 1792187614.7206411,
+   "usage": {
+    "input_tokens": 181,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 15,
+    "output_tokens_details": {
+     "reasoning_tokens": 8
+    },
+    "total_tokens": 196
+   }
+  },
+  {
+   "cache_key": "3414eea3bc1c8b87fa7ddd5b939af3c661da5e1dc7d778582a00fb4a9388ac55",
+   "call_id": "802e3d0d0cbdd3e68816769a42572afcf6136f35f9fed37946e4b6a869c54557",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325325,
+   "cost_usd": 0.0012675,
+   "unix_time": 1792187614.773289,
+   "usage": {
+    "input_tokens": 219,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 48,
+    "output_tokens_details": {
+     "reasoning_tokens": 41
+    },
+    "total_tokens": 267
+   }
+  },
+  {
+   "cache_key": "432b7aee14a410258b61490d7eeb84454d532956ce26b946a8aa5cb41ef19017",
+   "call_id": "be8d7959eadb7be4c17851745ae70a413dbd97c623da8e586f625510cea41563",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03231,
+   "cost_usd": 0.0009400000000000001,
+   "unix_time": 1792187615.141907,
+   "usage": {
+    "input_tokens": 130,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 41,
+    "output_tokens_details": {
+     "reasoning_tokens": 34
+    },
+    "total_tokens": 171
+   }
+  },
+  {
+   "cache_key": "c56797dcad496d4fa67789510c736e17effab64d38f5bae1ddb390238fa1df05",
+   "call_id": "f29ef5d0bdfc0815fe7b9954a7bfb210bb6d09faf5603bab1a38cda944764c84",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324075,
+   "cost_usd": 0.0004975,
+   "unix_time": 1792187615.154182,
+   "usage": {
+    "input_tokens": 169,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 174
+   }
+  },
+  {
+   "cache_key": "481c90f0fdae7d2dc87a1ba2cd162fc245664f9ed85b269a3bef52daa85266e0",
+   "call_id": "ae7e37d6aba92f6dd65eb6882d72816eff6d0f68e7c725233c17874e98b4c010",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032345,
+   "cost_usd": 0.0012150000000000002,
+   "unix_time": 1792187615.340887,
+   "usage": {
+    "input_tokens": 144,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 57,
+    "output_tokens_details": {
+     "reasoning_tokens": 50
+    },
+    "total_tokens": 201
+   }
+  },
+  {
+   "cache_key": "1e06b4341161ce3f2ed8b2101f7502433435046e66422d98f108b92325dfcde4",
+   "call_id": "85f9744001149f8913cdf71a2be26903baad469c37d0925ebdc15383355ccd68",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0322725,
+   "cost_usd": 0.0003625000000000001,
+   "unix_time": 1792187615.646875,
+   "usage": {
+    "input_tokens": 115,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 120
+   }
+  },
+  {
+   "cache_key": "6ede6543ffadca52f37889a7ef99c9de572cce72cd1da66c042c87744503d4da",
+   "call_id": "26155d5e8e1e68dd95a8172ff7dc13dfc1eccf47d46c29d2790424916b772f68",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03233,
+   "cost_usd": 0.0014700000000000002,
+   "unix_time": 1792187615.823551,
+   "usage": {
+    "input_tokens": 138,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 75,
+    "output_tokens_details": {
+     "reasoning_tokens": 68
+    },
+    "total_tokens": 213
+   }
+  },
+  {
+   "cache_key": "2b5cff2c7b336fc32d9943514be0ca2c92b136e791fd49c5010aa7b209330a6f",
+   "call_id": "5e501bfd4c37400605fa0d5828aeb1b8c80ad6b9c92e8788b1f4996d490f649f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324775,
+   "cost_usd": 0.0011225,
+   "unix_time": 1792187616.0856168,
+   "usage": {
+    "input_tokens": 197,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 42,
+    "output_tokens_details": {
+     "reasoning_tokens": 35
+    },
+    "total_tokens": 239
+   }
+  },
+  {
+   "cache_key": "c0806c9d13eea38576e4680343259b4dde3a9deb312cfbda6f70bd594e246e14",
+   "call_id": "6ecb7deec8e17bed652fde85ad574bc7afb43d5696addf7466509fe0c6f3385a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032495,
+   "cost_usd": 0.000585,
+   "unix_time": 1792187616.8135638,
+   "usage": {
+    "input_tokens": 204,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 209
+   }
+  },
+  {
+   "cache_key": "eed50e2f8a1521b50eaa114fbddc67568ded5394eefc4b05b34acc7fd3fe0534",
+   "call_id": "f93a4b67068c7f54b030f41d1e2572eb7fb7d55edc38d974683394ca9dee4a71",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323025,
+   "cost_usd": 0.00039250000000000005,
+   "unix_time": 1792187616.943159,
+   "usage": {
+    "input_tokens": 127,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 132
+   }
+  },
+  {
+   "cache_key": "98ffda77d9f59e76ece4ce4af10c7726487599f846cc8615ef686c23f202a43d",
+   "call_id": "5c8239a9f6339ec90f5211b9d7557fe96d9cbf3ee3fb5174f8b3021a5cbe02d9",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032375,
+   "cost_usd": 0.000465,
+   "unix_time": 1792187617.025207,
+   "usage": {
+    "input_tokens": 156,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 161
+   }
+  },
+  {
+   "cache_key": "172a16bf5b932f9e3521fcedc630617b3698b1ba62faded30cff35e06b4e2ddd",
+   "call_id": "9ae9fe0739062e717dc6a0acea06d2557702195a24763d187ba2ffb0935dee3d",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03228,
+   "cost_usd": 0.00037,
+   "unix_time": 1792187617.065803,
+   "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 123
+   }
+  },
+  {
+   "cache_key": "cb106b84c7b3006fa24773ab69edff045f378a93bb9194222b9e5f4efe35a66c",
+   "call_id": "a6203c5da6d5f52304e7e8b2f54643418b2e68cfc0a60ae68f4fc8fe49a22c1a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03227,
+   "cost_usd": 0.0005400000000000001,
+   "unix_time": 1792187617.099282,
+   "usage": {
+    "input_tokens": 114,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 131
+   }
+  },
+  {
+   "cache_key": "10b2e26d61f675b0d7f870a63862974383a0826a331dc2ac7bcae3df3ecb269a",
+   "call_id": "1e5c454ddc41da602fc27c0771911192e6f3b29c23dbbafee5c881b5b75a347b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032475000000000004,
+   "cost_usd": 0.0009700000000000002,
+   "unix_time": 1792187617.7188108,
+   "usage": {
+    "input_tokens": 196,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "reasoning_tokens": 25
+    },
+    "total_tokens": 228
+   }
+  },
+  {
+   "cache_key": "58f565887c97997560b77b959b71c8861e7ec6a9bac9f2c6b98d412eb2aaabf7",
+   "call_id": "ce6dec7b0b1d201f6603c20cb858bfa0f647b87c46f17da655cbc5415b87beea",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032475000000000004,
+   "cost_usd": 0.0009550000000000001,
+   "unix_time": 1792187617.7897952,
+   "usage": {
+    "input_tokens": 196,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 227
+   }
+  },
+  {
+   "cache_key": "0f0a5fa4222993bb385fe0dab576a28aaa19b9f151b3caeff100dcbc065959a6",
+   "call_id": "a10cbea4ba82396e9d7c39df0261ee94295a9c063ccb3b3b61461530d82de021",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323925,
+   "cost_usd": 0.0008125000000000001,
+   "unix_time": 1792187618.4113212,
+   "usage": {
+    "input_tokens": 163,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 27,
+    "output_tokens_details": {
+     "reasoning_tokens": 20
+    },
+    "total_tokens": 190
+   }
+  },
+  {
+   "cache_key": "6ab70f0ac803758aaf19f33cdd477e4354c69afa5339e264723888c2bf12290e",
+   "call_id": "e99b31815133954a16a3348bc256363baec62a55fd3aa899402099d4fa81311a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03273,
+   "cost_usd": 0.0017500000000000003,
+   "unix_time": 1792187618.54084,
+   "usage": {
+    "input_tokens": 298,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 67,
+    "output_tokens_details": {
+     "reasoning_tokens": 60
+    },
+    "total_tokens": 365
+   }
+  },
+  {
+   "cache_key": "65828fb9248fcd16f7dc8e76e7a85255d52b8dd431d49882558f33e27283b8d2",
+   "call_id": "9fa61c5a020f1e4c48789503d19ea21ea58baeb10308eb78b7d22b9b38c9ade8",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324675,
+   "cost_usd": 0.0005575,
+   "unix_time": 1792187618.559419,
+   "usage": {
+    "input_tokens": 193,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 198
+   }
+  },
+  {
+   "cache_key": "9940a0deaff64a896431f203b925f998d9981a917492b23bf158778e3b1ca569",
+   "call_id": "548bbd68cfe172300f7cd540c94c8caa04bb02b960d5c90142518413bfe2023f",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323175,
+   "cost_usd": 0.0004075,
+   "unix_time": 1792187618.610018,
+   "usage": {
+    "input_tokens": 133,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 138
+   }
+  },
+  {
+   "cache_key": "662056b3205ed7d45b3c6861695e985e5d3f0c30b4f8f449f96112e25f5a0b43",
+   "call_id": "8466c99ffb8efd08a172ae5cb7816dac73794f8d24c83cbcef3c2dd7bd435d8b",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323175,
+   "cost_usd": 0.0004075,
+   "unix_time": 1792187618.671647,
+   "usage": {
+    "input_tokens": 133,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 138
+   }
+  },
+  {
+   "cache_key": "d910dd07e6091d69cc109512a5086e7408a062440ae064fa03e13aa253be5eda",
+   "call_id": "37f7148adc7749c1b8738a9b27178c9df23e7a5b1098b3d098157cd38e333252",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323725,
+   "cost_usd": 0.0004625,
+   "unix_time": 1792187618.76252,
+   "usage": {
+    "input_tokens": 155,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 160
+   }
+  },
+  {
+   "cache_key": "d12f824a1acbfb04d63abdacb8f27c583c7e78fd7b54035f2716c57230958498",
+   "call_id": "25f0955d6e3f7e01c010f6c60c99c4cbce022f8f52736cfe5d0110ccb155f8ad",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323,
+   "cost_usd": 0.00057,
+   "unix_time": 1792187618.950069,
+   "usage": {
+    "input_tokens": 126,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 143
+   }
+  },
+  {
+   "cache_key": "8ff6b66f9ffd6cd6460d9a2a24be87ce7c2066e0e0e984eae9bfdcd1bb6557f3",
+   "call_id": "506654a0b8d181eec2e8e04c26d18a4735bdccd3f4aff2b0f4552d2f152dac49",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032395,
+   "cost_usd": 0.0004850000000000001,
+   "unix_time": 1792187619.735168,
+   "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 169
+   }
+  },
+  {
+   "cache_key": "d86332f77d4da909bd5347f9af81d6c00afd4c805acc30df5780f770d0305858",
+   "call_id": "90f373fc6559e71ce91ebb863fa2494238285c9f07d1dba50e977b53c70b3aa0",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323525,
+   "cost_usd": 0.0006225,
+   "unix_time": 1792187619.810844,
+   "usage": {
+    "input_tokens": 147,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 164
+   }
+  },
+  {
+   "cache_key": "02422c1648ee49c4f57f58e4a3b6abf77d06329e14e03ab4c12eca42651ac5ec",
+   "call_id": "85583bba0190b5d16fe27e2134f49a2396a5319ffd55005846de5900c86471d5",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032420000000000004,
+   "cost_usd": 0.00051,
+   "unix_time": 1792187620.0401149,
+   "usage": {
+    "input_tokens": 174,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+     "reasoning_tokens": 0
+    },
+    "total_tokens": 179
+   }
+  },
+  {
+   "cache_key": "b20208a26e03e9be19a40c5e544d26a2d655df17063e3b0fbca08718d47b7b87",
+   "call_id": "91591e44c4910332f9095e3b09a71f417887c69fc9767b76f78bccd20ec17ecd",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032345,
+   "cost_usd": 0.001245,
+   "unix_time": 1792187620.177858,
+   "usage": {
+    "input_tokens": 144,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 59,
+    "output_tokens_details": {
+     "reasoning_tokens": 52
+    },
+    "total_tokens": 203
+   }
+  },
+  {
+   "cache_key": "766202f0559ad31007deca1b00ff9c2e259a40f1306256ac61fba48bc141cedf",
+   "call_id": "b5852e8b825a6467398e8621d83a21b3fae0a2ad33c2a1b52818c83f4137ff48",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.032295000000000004,
+   "cost_usd": 0.000925,
+   "unix_time": 1792187620.295995,
+   "usage": {
+    "input_tokens": 124,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 41,
+    "output_tokens_details": {
+     "reasoning_tokens": 34
+    },
+    "total_tokens": 165
+   }
+  },
+  {
+   "cache_key": "33bc28c4175612c36cc53a54384a5e94aab182845d2f42d91d85e7233a0e5a8a",
+   "call_id": "41e389ae29b2b5b7facca80dfb9503994bb8572197619e2a1aeb8d1deefecddb",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0325325,
+   "cost_usd": 0.0011475,
+   "unix_time": 1792187620.428422,
+   "usage": {
+    "input_tokens": 219,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 40,
+    "output_tokens_details": {
+     "reasoning_tokens": 33
+    },
+    "total_tokens": 259
+   }
+  },
+  {
+   "cache_key": "69b5b1cc345fada08f3f4d61e2aed394c8ee469c30f487fd9a85e1570c2092b7",
+   "call_id": "20362df186cbd41229ae0c38687e4ea690dab1674ca8a8717a957fcb77a9b44a",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0323525,
+   "cost_usd": 0.0008325000000000001,
+   "unix_time": 1792187620.4792378,
+   "usage": {
+    "input_tokens": 147,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 31,
+    "output_tokens_details": {
+     "reasoning_tokens": 24
+    },
+    "total_tokens": 178
+   }
+  },
+  {
+   "cache_key": "120889ee88424f63a28dabd0855b4378f36419534fda9c0271ec008a2aed27c7",
+   "call_id": "d9ebacab73d4606817c840d9c8a786488580e416dd8ecc26a3cd71acd98f60f7",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.03227,
+   "cost_usd": 0.0005400000000000001,
+   "unix_time": 1792187620.535558,
+   "usage": {
+    "input_tokens": 114,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    },
+    "total_tokens": 131
+   }
+  },
+  {
+   "cache_key": "7bd8b2d9f98320252af78050973adce2a07997f02d26dd12f79aaf2901417ef0",
+   "call_id": "80e5ee8618a4b02ea14b0148cf385a9b989ad357dc267f060f8e015bb509afe6",
+   "category": "reader_judge_dev",
+   "status": "ok",
+   "reserved_usd": 0.0324775,
+   "cost_usd": 0.0010025,
+   "unix_time": 1792187620.8100638,
+   "usage": {
+    "input_tokens": 197,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0
+    },
+    "output_tokens": 34,
+    "output_tokens_details": {
+     "reasoning_tokens": 27
+    },
+    "total_tokens": 231
+   }
   }
  ],
- "total_usd": 27.677018000000043,
+ "total_usd": 27.910145500000045,
  "by_category_usd": {
-  "reader_judge_dev": 27.677018000000043,
+  "reader_judge_dev": 27.910145500000045,
   "qwen8b": 0,
   "x86": 0,
   "reserve": 0,

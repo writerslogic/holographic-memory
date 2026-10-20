@@ -1,7 +1,8 @@
 # Application review implementation
 
 These changes implement the ten review recommendations in the working tree. They are not a
-published release. Storage format 2 requires re-encoding legacy inputs; follow the
+published release. New stores use storage format 4; existing supported layouts are preserved.
+Stores without embedding schema 2 require re-encoding legacy inputs; follow the
 [migration guide](production-readiness.md) before using existing stores.
 
 | Recommendation | Implementation | Evidence |

@@ -510,6 +510,90 @@ compression claim that a quantized index can also make, and no variant beats the
 accuracy. Not verified: time codes bound into the query, re-ranking on top of the holographic
 candidates, and anything on the held-out split or on M.
 
+## Representation and evidence experiments (S dev)
+
+Measured 2026-10-08, cached dev inputs only; the 400 held-out IDs remain unused. Detailed
+protocols, all tried settings, accounting and decisions are in
+[the canonical research record, sections 14–16](research/IDEAS-2026-10.md).
+
+Conversation geometry: 45 representations, 100 questions, original and shuffled streams,
+9,000 result rows; 84 scorable questions per arm. Low-rank projection energy, weighted
+energy and signed per-turn coordinates are compared with pooling, equally budgeted
+representative turns and full float16/int8/four-bit scans. **No arm passes** the fixed
+4x coarse-index reduction plus quality/shortlist-coverage gate. Rank-one int8 energy
+reduces coarse bytes 9.83x but loses session recall_all@5 from 0.916667 to 0.869048.
+Rank-eight recovers quality with only 1.93x coarse reduction; retaining exact refinement
+vectors makes its full serving layout 48.4% larger than float16. Ordinary four-bit storage
+uses 159,718 bytes per scored question versus 531,447 for float16, including exact user
+source evidence and directories. These raw-dense controls are not the tuned HMS pipeline.
+Query workspace is separately charged; local NumPy timings are indicative, not vendor
+comparisons. Report: `benchmarks/results/geometry_dev.json.gz`; independent validation:
+`benchmarks/results/geometry_dev_summary.json`. No Rust integration follows.
+
+Evidence selection: a weakest-facet beam selector and ordinary mean-coverage controls use
+the tuned cached ablation run, which reproduces turn recall_all@5 0.809524; it is distinct
+from the separate Modal-final 0.821429 run. Alpha selection uses 40 calibration questions;
+on 44 internal confirmation questions, the selected proposal reaches 0.818182 versus
+0.863636 for the unchanged baseline, paired difference -0.045455, 95% CI
+[-0.113636, 0.000000]. It fails the fixed quality gate. Report/independent summary:
+`benchmarks/results/evidence_completeness_dev.json` and
+`benchmarks/results/evidence_completeness_summary.json`.
+
+Source-budget diagnosis on the same previously used dev set: tuned top-20 complete
+labeled-evidence coverage is 0.964286, versus 0.809524 at five. A gold-assisted oracle
+could fit all labeled turns for 0.940476 of questions into their original first-five
+UTF-8 source-packet budgets. Anchored relevance knapsack still obtains 0.809524; extra
+items alone do not improve quality. This is a diagnostic bound with exact user text,
+dates, identities and alias witnesses, not an implementable answer system. Reports:
+`benchmarks/results/evidence_budget_dev.json` and
+`benchmarks/results/evidence_budget_summary.json`. No tokenizer, reader, judge, answer
+accuracy, product capacity, or competitor-superiority result is established by these
+experiments. All source readouts and statistics are independently checked; all five
+repository gates pass on macOS aarch64, Rust 1.96.0. Other platforms/MSRV are untested.
+
+
+## Source operand retrieval (S dev, 2026-10-08)
+
+The implemented Rust operand retriever reaches **79/84 complete labeled evidence
+sets**, versus **68/84** for both tuned first-five retrieval and anchored relevance
+knapsack, at every question's original source-packet byte budget. It realizes
+all eleven oracle-feasible improvements and loses no first-five successes.
+Mean quoted packet size is 2,404 bytes against the original mean limit of
+2,444 bytes; complete original turns, roles, dates and every alias witness are
+retained. Partial gold-turn excerpts never count as faithful support.
+
+Two independent runs reproduce all selections and packet hashes. Warm Rust
+selector p95 is 46.346 µs versus knapsack 80.987 µs in the first run and
+55.844 µs versus 76.386 µs in the second. Both selectors share prepared source
+facts/costs; source indexing averages 0.668 ms in the first run and is charged
+separately. This measures warm selection, not cold indexing or end-to-end
+retrieval/answer latency, total serving memory, or tokenizer budgets.
+
+Acceptance criteria were recorded before measurement in the
+[operand protocol](research/PROTOCOL-2026-10-08-OPERAND.md). The final lexical
+mechanism incorporates disclosed dev-informed repairs; retained iterations
+score 59, 71, 71, 74 and 78 before reaching 79. A continuation wires literal
+quotation, name and calendar-date coverage and reproduces 79 again. Explicit
+calendar-date questions are absent from dev; that behavior is checked with
+synthetic source/alias fixtures. This is repeated-use dev analysis, not untouched
+confirmation. All 400 held-out IDs remain unused.
+No reader or answer judge is run: packet `q` contains verbatim quoted evidence,
+while inferred answers `i` remain empty. Full labeled-turn coverage does not
+establish answer entailment or competitor superiority.
+
+The [final report](../benchmarks/results/evidence_budget_dev.json),
+[independent summary](../benchmarks/results/evidence_budget_summary.json) and
+[fingerprints](../benchmarks/results/evidence_budget_dev.fingerprints.json)
+record the result. The original section-16 report is preserved as
+`evidence_budget_baseline_dev.json` with its baseline summary. Independent raw
+source validation checks 24,391 occurrences and passes five validation gates;
+four distinct packet-hash/budget/oracle/membership corruptions are rejected.
+All five repository Rust gates and an explicit no-default-features Clippy
+check pass. Logs: `target/conversation-geometry-validation/operand-independent.log`,
+`operand-tamper.log`, `operand-tamper-checks.json`, and `operand-gates.json`.
+Detailed mechanism and retained negative results are in section 17 of the
+[research record](research/IDEAS-2026-10.md).
+
 ## What this means
 
 - For semantic search over text, use the document API: exact cosine reproduces the embedding

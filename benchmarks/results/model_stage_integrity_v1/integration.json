@@ -1,0 +1,57 @@
+{
+  "worktree": "/Volumes/A/holographic-memory-model-integrity",
+  "target_directory": "/Volumes/A/.hms-target-model-integrity",
+  "patch": "/Volumes/A/holographic-memory-model-integrity/benchmarks/results/model_stage_integrity_v1/integration.patch",
+  "source_file": "src/core/models/stages.rs",
+  "base_sha256": "863a4072722aa310c89c7de8e887c0921892507bf78b24d171a0c0dc02d6a6e6",
+  "source_sha256": "7f17bb228c6bef187a8805e6846032d3e810d7caac2aae7cb1786f44dfec5a3a",
+  "native_result_limit": 1000,
+  "rerank_n_range": [
+    0,
+    1000
+  ],
+  "fusion_k_range": [
+    1,
+    1000
+  ],
+  "query_and_retrieval_weight_sums": "finite and positive",
+  "source_identity": [
+    "document_id",
+    "version",
+    "source_uri",
+    "metadata",
+    "text",
+    "start_byte",
+    "end_byte"
+  ],
+  "query_fields_excluded_from_identity": [
+    "score",
+    "lexical_score",
+    "semantic_score"
+  ],
+  "verification": {
+    "focused_local_models_tests_passed": 8,
+    "focused_local_models_tests_exit": 0,
+    "clippy_lib_tests_local_models_warnings_denied_exit": 0,
+    "rustfmt_touched_file_check_exit": 0,
+    "commands": [
+      "CARGO_TARGET_DIR=/Volumes/A/.hms-target-model-integrity CARGO_BUILD_JOBS=2 cargo test --locked --offline --features local-models --lib core::models::stages::tests",
+      "CARGO_TARGET_DIR=/Volumes/A/.hms-target-model-integrity CARGO_BUILD_JOBS=2 cargo clippy --locked --offline --features local-models --lib --tests -- -D warnings",
+      "rustfmt --edition 2021 --check src/core/models/stages.rs"
+    ]
+  },
+  "initial_failed_attempt": {
+    "log": "test.log",
+    "exit": 101,
+    "reason": "Current generated Cargo.lock was ignored by the dirty-file snapshot; it was copied explicitly before the successful locked/offline checks."
+  },
+  "logs": {
+    "clippy.log": "96bd2dec42a8c278e9bb221f70c8e9132e82f974d6a4aab1b644aba41981c2c4",
+    "test-locked.log": "c3861de747ad7203051e7f329e1eb27dbb195b7a43de00155d3637f92c3d887c",
+    "test.log": "677384e328286e9351c941833339066dcad1d3c2a98bd26540327dac8d5e679f"
+  },
+  "root_source_edited": false,
+  "models_loaded_or_called": false,
+  "benchmarks_run": false,
+  "commits": false
+}

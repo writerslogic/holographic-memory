@@ -12,8 +12,13 @@ from pathlib import Path
 
 from check_longmemeval_answers import (
     ROOT,
+    SYSTEMS,
     canonical,
+    recompute_summary,
+    report_systems,
     check_call,
+    check_local_call,
+    digest,
     check_source_groups,
     judge_score,
     paired_interval,
@@ -104,6 +109,49 @@ class AnswerChecks(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'official yes/no'):
                 judge_score(output)
         self.assertEqual(paired_interval([0] * 100), {'mean': 0.0, 'ci95': [0.0, 0.0]})
+
+    def test_declared_reader_system_subset(self):
+        self.assertEqual(report_systems({}), SYSTEMS)
+        self.assertEqual(report_systems({'reader_systems': ['matched_gpt54']}), ('matched_gpt54',))
+        for bad in ([], ['other'], ['matched_gpt54', 'matched_gpt54']):
+            with self.assertRaisesRegex(ValueError, 'unknown or duplicate reader system'):
+                report_systems({'reader_systems': bad})
+        arm = self.arm()
+        arm['scores'] = recompute_scores(arm)
+        rows = [{'qid': 'q', 'systems': {'matched_gpt54': {'arms': {name: copy.deepcopy(arm) for name in ('first_five', 'knapsack', 'operand')}}}}]
+        summary = recompute_summary(rows, ('matched_gpt54',))
+        self.assertEqual(list(summary), ['matched_gpt54'])
+        self.assertEqual(summary['matched_gpt54']['operand']['correct_count'], 1)
+        with self.assertRaises(KeyError):
+            recompute_summary(rows)
+
+    def test_local_reader_call_keeps_frozen_settings_and_gpu_cost(self):
+        local = {'name': 'local_qwen30b', 'reader_model': 'Qwen/Qwen3-30B-A3B-Instruct-2507', 'revision': 'r', 'engine': 'vllm==0.11.0',
+                 'gpu': 'H100', 'max_model_len': 12288, 'max_new_tokens': 1536, 'temperature': 0,
+                 'chat_template': 't', 'usd_per_hour': 3.95, 'overhead': 1.15}
+        raw = canonical(self.arm()['reader']['parsed'])
+        request = {key: local[key] for key in ('reader_model', 'revision', 'engine', 'gpu', 'max_model_len', 'max_new_tokens',
+                                               'temperature', 'chat_template')} | {'input': 'prompt'}
+        sha = digest(canonical(request))
+        call = {'status': 'completed', 'raw_text': raw, 'response': None, 'usage': None, 'request': request,
+                'request_sha256': sha, 'cache_key': sha, 'gpu_seconds': 2.0, 'batch_gpu_seconds': 200.0, 'batch_size': 100,
+                'cost_usd': 2.0 / 3600 * 3.95 * 1.15}
+        check_local_call(call, raw, 'ok', local, 'prompt')
+        self.assertIsNone(check_local_call(None, '', 'error', local, 'prompt'))
+        for field, value, reason in (('cost_usd', 0.001, 'cost differs'), ('usage', {'input_tokens': 1}, 'usage differs'),
+                                     ('batch_size', 50, 'batch share'), ('status', 'ok', 'status differs')):
+            bad = copy.deepcopy(call)
+            bad[field] = value
+            with self.assertRaisesRegex(ValueError, reason):
+                check_local_call(bad, raw, 'ok', local, 'prompt')
+        other = copy.deepcopy(call)
+        other['request']['reader_model'] = 'Qwen/Qwen3-4B-Instruct-2507'
+        other['request_sha256'] = other['cache_key'] = digest(canonical(other['request']))
+        with self.assertRaisesRegex(ValueError, 'generation settings differ'):
+            check_local_call(other, raw, 'ok', local, 'prompt')
+        with self.assertRaisesRegex(ValueError, 'status differs from its parsed output'):
+            check_local_call(call, raw, 'error', local, 'prompt')
+        self.assertEqual(report_systems({'reader_systems': ['matched_gpt54', 'local_qwen30b']}), ('matched_gpt54', 'local_qwen30b'))
 
     def test_rejected_real_credit_preflight_did_not_queue_other_readers(self):
         ledger = json.loads((ROOT / 'benchmarks/results/spend_2026-10.json').read_text())

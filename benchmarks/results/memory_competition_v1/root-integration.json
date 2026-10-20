@@ -1,0 +1,12 @@
+{
+  "sdk_tests_passed": 18,
+  "live_server_skipped": 5,
+  "independent_recheck": "root-recheck/checked_summary.json",
+  "source": {
+    "bindings/python/holographic-sdk/README.md": "2d273c99feed675fb95b9bffa7ef987a565a23eb1e94dc373b66e3321d194ae2",
+    "bindings/python/holographic-sdk/holographic_sdk/evidence.py": "953fff331b3c9d0353eef15b6557c3a659e38af6070d7d9e87a281a89bd03e34",
+    "bindings/python/holographic-sdk/tests/test_evidence.py": "284d2129c05fe223e2e603b1faa5b6bc1b9cb13ccca85b1e51a1097911b91cbc"
+  },
+  "codec_changed": false,
+  "original_evidence_preserved": true
+}

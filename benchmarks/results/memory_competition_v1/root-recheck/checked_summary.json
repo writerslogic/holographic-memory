@@ -1,0 +1,28 @@
+{
+  "questions_verified": 100,
+  "source_occurrences_verified": 608,
+  "heldout_questions_untouched": 400,
+  "summary": {
+    "scored_questions": 84,
+    "baseline_complete": 79,
+    "complete": 79,
+    "gains": [],
+    "losses": [],
+    "same_selection_bytes_ratio": 0.8707564173665029,
+    "additional_groups": 98
+  },
+  "reproduction_identical": true,
+  "tamper_rejections": {
+    "source_text": "complete observed source packet mismatch",
+    "observation_time": "complete observed source packet mismatch",
+    "source_handle": "complete observed source packet mismatch",
+    "membership": "report membership mismatch",
+    "byte_cap": "budget mismatch",
+    "score": "full-turn support score mismatch",
+    "hash": "packet hash mismatch",
+    "fingerprint": "fingerprint mismatch: codec_sha256",
+    "mandatory_evidence": "ranked complete-evidence selection mismatch"
+  },
+  "report_sha256": "2900d7bdcc26453be6c512193dccfe17a884597d2200c6a24198ebda854d63e8",
+  "checker_sha256": "e7009ee785a621403137bb983825154473d538ea5b19a8b0f3d61d49fa937fc7"
+}

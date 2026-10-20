@@ -18,7 +18,19 @@ from functools import lru_cache
 from pathlib import Path
 
 ARMS = ('first_five', 'knapsack', 'operand')
-SYSTEMS = ('matched_gpt54', 'weak_qwen4b')
+SYSTEMS = ('matched_gpt54', 'weak_qwen4b', 'local_qwen30b')
+# The frozen protocol defines the API and weak readers; the local reader's settings travel with its report.
+PROTOCOL_SYSTEMS = ('matched_gpt54', 'weak_qwen4b')
+LOCAL_REQUEST_KEYS = ('reader_model', 'revision', 'engine', 'gpu', 'max_model_len', 'max_new_tokens', 'temperature',
+                      'chat_template', 'input')
+
+
+def report_systems(report):
+    """Reader families the report carries: all of SYSTEMS unless it declares a subset."""
+    systems = tuple(report.get('reader_systems', SYSTEMS))
+    require(systems and set(systems) <= set(SYSTEMS) and len(set(systems)) == len(systems),
+            'unknown or duplicate reader system')
+    return systems
 SOURCE_SHA256 = 'd6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442'
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -163,9 +175,9 @@ def recompute_scores(arm, allow_incomplete=False):
             'abstain': parsed['abstain']}
 
 
-def recompute_summary(rows):
+def recompute_summary(rows, systems=SYSTEMS):
     result = {}
-    for system in SYSTEMS:
+    for system in systems:
         family = {}
         for name in ARMS:
             scores = [row['systems'][system]['arms'][name]['scores'] for row in rows]
@@ -351,7 +363,7 @@ def check_protocol(protocol, preregistration):
     require(protocol['schema_version'] == 1 and protocol['created_before_first_reader_call'] is True
             and protocol['complete_input_counting'] is True and protocol['token_cap'] == 8192,
             'reader protocol invariant mismatch')
-    require(tuple(protocol['arms']) == ARMS and set(protocol['systems']) == set(SYSTEMS),
+    require(tuple(protocol['arms']) == ARMS and set(protocol['systems']) == set(PROTOCOL_SYSTEMS),
             'frozen reader systems or arms differ')
     require(protocol['cost']['subcap_usd'] == 120 and protocol['cost']['automatic_retries'] == 0,
             'reader spend cap or retry policy differs')
@@ -361,7 +373,7 @@ def check_protocol(protocol, preregistration):
             and preregistration['spend_caps_usd']['heldout400'] == 0,
             'preregistered authorization or spend cap differs')
     require(protocol['systems']['matched_gpt54']['reader_model'] == 'gpt-5.4-2026-03-05'
-            and all(protocol['systems'][system]['judge_model'] == 'gpt-5.4-2026-03-05' for system in SYSTEMS),
+            and all(protocol['systems'][system]['judge_model'] == 'gpt-5.4-2026-03-05' for system in PROTOCOL_SYSTEMS),
             'reader or judge model is not the pinned matched model')
     judge_source = protocol['judge_source']
     path = artifact_path(judge_source['path'])
@@ -377,7 +389,7 @@ def check_protocol(protocol, preregistration):
     require(translated == literals, 'protocol judge templates differ from official source')
 
 
-def token_counters(protocol):
+def token_counters(protocol, local=None):
     import tiktoken
     from tokenizers import Tokenizer
 
@@ -388,10 +400,19 @@ def token_counters(protocol):
     tokenizer = Tokenizer.from_file(weak['tokenizer_path'])
     tokenizer.no_padding()
     tokenizer.no_truncation()
-    return {
+    counters = {
         'matched_gpt54': lru_cache(maxsize=None)(lambda text: len(matched.encode(text, disallowed_special=()))),
         'weak_qwen4b': lru_cache(maxsize=None)(lambda text: len(tokenizer.encode(weak['chat_template'].format(reader_input=text), add_special_tokens=False).ids)),
     }
+    if local is not None:
+        # The local open-weight reader counts with its own pinned tokenizer file.
+        require(file_digest(local['tokenizer_path']) == local['tokenizer_sha256'], 'local tokenizer fingerprint mismatch')
+        own = Tokenizer.from_file(local['tokenizer_path'])
+        own.no_padding()
+        own.no_truncation()
+        counters['local_qwen30b'] = lru_cache(maxsize=None)(
+            lambda text: len(own.encode(local['count_template'].format(reader_input=text), add_special_tokens=False).ids))
+    return counters
 
 
 def reader_input(question, groups, protocol):
@@ -468,6 +489,33 @@ def response_text(response):
     if 'choices' in response:
         return response['choices'][0]['message']['content'] or ''
     return response.get('text', '')
+
+
+def check_local_call(call, raw_text, status, local, expected_input):
+    """A local open-weight reader call: frozen generation settings, no API usage, and a cost
+    that is the call's share of its Modal batch at the recorded GPU rate."""
+    if call is None:
+        require(status != 'ok', 'successful stage has no recorded call')
+        return
+    request = call['request']
+    require(call['request_sha256'] == digest(canonical(request)), 'local reader request fingerprint mismatch')
+    expected = {key: local[key] for key in LOCAL_REQUEST_KEYS if key != 'input'} | {'input': expected_input}
+    same(request, expected, 'local reader generation settings differ')
+    require(call['raw_text'] == raw_text and call['response'] is None and call['usage'] is None,
+            'local reader text or usage differs')
+    require(call['cache_key'] == call['request_sha256'] and call['status'] in ('completed', 'reader_failure'),
+            'local reader cache identity or status differs')
+    try:
+        parsed = parse_answer(raw_text)
+    except ValueError:
+        parsed = None  # a cut-off or non-JSON reader output is a reader error, kept in the denominator
+    require(status in ('ok', 'error') and (status == 'ok') == (call['status'] == 'completed' and parsed is not None),
+            'local reader status differs from its parsed output')
+    seconds = call['gpu_seconds']
+    require(type(seconds) in (int, float) and math.isfinite(seconds) and seconds >= 0
+            and 0 < call['batch_size'] and abs(seconds * call['batch_size'] - call['batch_gpu_seconds']) < 1e-6 * max(1.0, call['batch_gpu_seconds']),
+            'local reader GPU time is not the batch share')
+    same(call['cost_usd'], seconds / 3600 * local['usd_per_hour'] * local['overhead'], 'local reader cost differs from its GPU time')
 
 
 def check_call(call, raw_text, status, protocol, expected_input=None, model=None, stage='judge'):
@@ -649,7 +697,15 @@ def check_report(report, allow_incomplete=False):
     require(preregistration['reader_protocol_path'] == report['protocol_path']
             and preregistration['reader_protocol_sha256'] == report['protocol_sha256'],
             'preregistered protocol fingerprint mismatch')
-    counters = token_counters(protocol)
+    local = report.get('local_reader_system')
+    systems = report_systems(report)
+    require(('local_qwen30b' in systems) == (local is not None), 'local reader system declared without its settings')
+    if local is not None:
+        require(set(LOCAL_REQUEST_KEYS) - {'input'} <= set(local) and local['name'] == 'local_qwen30b'
+                and local['temperature'] == 0 and type(local['max_new_tokens']) is int
+                and local['judge_model'] == protocol['systems']['matched_gpt54']['judge_model'],
+                'incomplete local reader settings')
+    counters = token_counters(protocol, local)
     evidence_path = artifact_path(report['evidence_report_path'])
     evidence = json.loads(evidence_path.read_text())
     require(file_digest(artifact_path(report['split_path'])) == evidence['split_sha256']
@@ -667,25 +723,27 @@ def check_report(report, allow_incomplete=False):
     ledger_times = {entry['cache_key']: entry['unix_time'] for entry in
                     json.loads(artifact_path(report['spend_ledger_path']).read_text())['entries']}
     blind_ids = set()
-    input_tokens = {system: 0 for system in SYSTEMS}
+    input_tokens = {system: 0 for system in systems}
     for row in report['rows']:
         question = raw[row['qid']]
         same({key: row[key] for key in ('qtype', 'question', 'question_date')},
              {'qtype': question['question_type'], 'question': question['question'], 'question_date': question['question_date']},
              'dev question metadata mismatch')
-        require(set(row['systems']) == set(SYSTEMS), 'reader system missing')
+        require(set(row['systems']) == set(systems), 'reader system missing')
         expected_groups = reconstruct_groups(question, frozen[row['qid']], historical[row['qid']])
-        for system in SYSTEMS:
+        for system in systems:
             require(set(row['systems'][system]['arms']) == set(ARMS), 'reader arm missing')
             for name in ARMS:
                 arm = row['systems'][system]['arms'][name]
                 input_tokens[system] += check_input(arm, question, expected_groups[name], protocol, counters, system)
                 same(arm['scores'], recompute_scores(arm, allow_incomplete), 'answer or citation score mismatch')
                 reader = arm['reader']
-                config = protocol['systems'][system]
-                stage = 'reader' if system == 'matched_gpt54' else 'weak_reader'
+                config = protocol['systems'].get(system, local)
+                stage = {'matched_gpt54': 'reader', 'weak_qwen4b': 'weak_reader'}.get(system, 'local_reader')
                 if stage == 'reader':
                     paid_calls.extend(reader_attempts(arm, row['qid'], name, report, protocol, ledger_times))
+                elif stage == 'local_reader':
+                    check_local_call(reader.get('call'), reader['raw_text'], reader['status'], local, arm['reader_input'])
                 else:
                     check_call(reader.get('call'), reader['raw_text'], reader['status'], protocol,
                                arm['reader_input'], config['reader_model'], stage)
@@ -702,17 +760,18 @@ def check_report(report, allow_incomplete=False):
                 if judge.get('call') is not None:
                     paid_calls.append((judge['call'], cost, expected_blind))
         for name in ARMS:
-            first = row['systems'][SYSTEMS[0]]['arms'][name]
-            second = row['systems'][SYSTEMS[1]]['arms'][name]
-            same(first['source_groups'], second['source_groups'], 'reader families retain different source groups')
-            same(first['reader_input'], second['reader_input'], 'reader families receive different evidence')
-    expected_summary = recompute_summary(report['rows'])
+            for other in systems[1:]:
+                first = row['systems'][systems[0]]['arms'][name]
+                second = row['systems'][other]['arms'][name]
+                same(first['source_groups'], second['source_groups'], 'reader families retain different source groups')
+                same(first['reader_input'], second['reader_input'], 'reader families receive different evidence')
+    expected_summary = recompute_summary(report['rows'], systems)
     same(report['summary'], expected_summary, 'answer summary or interval mismatch')
     if allow_incomplete and not report['complete']:
         return {'complete': False, 'preliminary': True, 'dev_questions_verified': 100,
-                'reader_arms_verified': 600, 'completed_readers': sum(
+                'reader_arms_verified': 100 * len(systems) * len(ARMS), 'completed_readers': sum(
                     row['systems'][system]['arms'][name]['reader']['status'] != 'pending'
-                    for row in report['rows'] for system in SYSTEMS for name in ARMS),
+                    for row in report['rows'] for system in systems for name in ARMS),
                 'completed_judges': len(blind_ids), 'input_tokens_verified': input_tokens,
                 'recorded_paid_calls_verified': len(paid_calls)}
     instability = check_instability(report, protocol)
@@ -731,7 +790,8 @@ def check_report(report, allow_incomplete=False):
     reservation_cost = sum(cost for call, cost, _ in paid_calls if call.get('cost_is_conservative_reservation') is True)
     require(cost_total <= protocol['cost']['subcap_usd'], 'reader and judge spend cap exceeded')
     check_spend(report, paid_calls, protocol, preregistration)
-    return {'schema_version': 1, 'dev_questions_verified': 100, 'reader_arms_verified': 600,
+    return {'schema_version': 1, 'dev_questions_verified': 100, 'reader_arms_verified': 100 * len(systems) * len(ARMS),
+            'reader_systems': list(systems),
             'heldout_questions_untouched': 400,
             'validation_gates_passed': ['frozen protocol and input fingerprints', 'complete chronological raw-source occurrences',
                                        'reader token caps and shared source selections', 'raw reader and official judge scores',
@@ -745,8 +805,9 @@ def check_report(report, allow_incomplete=False):
 
 def check_tampering(report):
     cases = {}
+    systems = report_systems(report)
     valid = next((row, system, name, index, citation_index)
-                 for row in report['rows'] for system in SYSTEMS for name in ARMS
+                 for row in report['rows'] for system in systems for name in ARMS
                  for index, claim in enumerate((row['systems'][system]['arms'][name]['reader'].get('parsed') or {}).get('claims', []))
                  for citation_index, citation in enumerate(claim['citations'])
                  if claim['text'].strip() and claim['citations'] and all(

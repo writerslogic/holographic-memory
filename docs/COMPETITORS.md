@@ -34,8 +34,11 @@ defaults reader/judge to `gpt-5`; its
 differs from the official prompt. Defaults do not prove the published run's
 model identifiers. Source hashes belong in the frozen reader protocol.
 
-x86: no x86 run. CPU, microcode, kernel, compiler and target flags remain empty.
-M4 measurements cannot populate the AVX-512 rows.
+x86 status at the October 9 freeze: no x86 run. Later, the October 11–12
+full-GloVe diagnostic ran on virtualized GCE C4 Intel Emerald Rapids;
+`benchmarks/results/ann_extended_diagnostic_v1/report.md` records its accepted
+results and exclusions. That separate diagnostic does not satisfy the original
+matched bare-metal campaign. M4, C3 pilot and C4 timings must remain separate.
 Provisioning probe 2026-10-09 20:49 UTC: no AWS CLI, shared credentials, SSO
 cache, environment authentication or connected compute provider; no authenticated
 AWS, Equinix Metal, Vultr or Hetzner Robot configuration in the private environment.

@@ -1,0 +1,717 @@
+diff --git a/bindings/python/holographic-sdk/holographic_sdk/__init__.py b/bindings/python/holographic-sdk/holographic_sdk/__init__.py
+index 9e13995..8f19f78 100644
+--- a/bindings/python/holographic-sdk/holographic_sdk/__init__.py
++++ b/bindings/python/holographic-sdk/holographic_sdk/__init__.py
+@@ -1,3 +1,17 @@
+ from .client import AsyncHolographicClient, HolographicClient, VectorMask
++from .evidence import (
++    EvidenceSelection,
++    complete_evidence,
++    decode_source_packet,
++    encode_source_packet,
++)
+ 
+-__all__ = ["HolographicClient", "AsyncHolographicClient", "VectorMask"]
++__all__ = [
++    "HolographicClient",
++    "AsyncHolographicClient",
++    "VectorMask",
++    "EvidenceSelection",
++    "complete_evidence",
++    "decode_source_packet",
++    "encode_source_packet",
++]
+diff --git a/bindings/python/holographic-sdk/holographic_sdk/evidence.py b/bindings/python/holographic-sdk/holographic_sdk/evidence.py
+new file mode 100644
+index 0000000..b7fb8a8
+--- /dev/null
++++ b/bindings/python/holographic-sdk/holographic_sdk/evidence.py
+@@ -0,0 +1,225 @@
++"""Lossless, bounded source packets for memory evidence.
++
++Packets preserve complete source text, roles, observation times and occurrence
++order. They assert no answer or temporal inference. IDs are lowercase SHA-256
++handles, encoded as base64url without padding in the packet.
++"""
++
++import base64
++import binascii
++import json
++import re
++from dataclasses import dataclass
++from typing import Sequence
++
++Source = tuple[str, str, str, str, str]
++MAX_PACKET_BYTES = 1_048_576
++MAX_SOURCE_BYTES = 4_194_304
++MAX_GROUPS = 4096
++MAX_OCCURRENCES = 65_536
++MAX_CANDIDATES = 64
++_HANDLE = re.compile(r"[0-9a-f]{64}\Z")
++_COMPACT_HANDLE = re.compile(r"[A-Za-z0-9_-]{43}\Z")
++
++
++def _require(condition: bool, message: str) -> None:
++    if not condition:
++        raise ValueError(message)
++
++
++def _handle(value: str) -> str:
++    _require(isinstance(value, str) and _HANDLE.fullmatch(value) is not None,
++             "source handles must be lowercase SHA-256 hex")
++    return base64.urlsafe_b64encode(bytes.fromhex(value)).decode().rstrip("=")
++
++
++def _expand_handle(value: str) -> str:
++    _require(isinstance(value, str) and _COMPACT_HANDLE.fullmatch(value) is not None,
++             "invalid compact source handle")
++    try:
++        decoded = base64.b64decode(value + "=", altchars=b"-_", validate=True)
++    except binascii.Error as error:
++        raise ValueError("invalid compact source handle") from error
++    result = decoded.hex()
++    _require(len(decoded) == 32 and _handle(result) == value,
++             "noncanonical compact source handle")
++    return result
++
++
++def _canonical(value: object) -> str:
++    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
++
++
++def _validate_groups(groups: Sequence[Sequence[Source]]) -> None:
++    _require(isinstance(groups, (list, tuple)) and len(groups) <= MAX_GROUPS,
++             "invalid source group count")
++    occurrences = 0
++    source_bytes = 0
++    sources: dict[str, tuple[str, str]] = {}
++    for group in groups:
++        _require(isinstance(group, (list, tuple)) and 1 <= len(group) <= 16,
++                 "source groups require 1..=16 occurrences")
++        occurrences += len(group)
++        _require(occurrences <= MAX_OCCURRENCES, "too many source occurrences")
++        for source in group:
++            _require(isinstance(source, (list, tuple)) and len(source) == 5,
++                     "invalid source observation")
++            turn, session, observed, role, text = source
++            _handle(turn)
++            _handle(session)
++            _require(isinstance(observed, str) and 1 <= len(observed) <= 64,
++                     "invalid observation time")
++            try:
++                observed.encode("utf-8")
++            except UnicodeEncodeError as error:
++                raise ValueError("observation time is not valid UTF-8") from error
++            _require(role in ("user", "assistant"), "invalid source role")
++            _require(isinstance(text, str), "source text must be a string")
++            _require(len(text) <= MAX_SOURCE_BYTES, "expanded source text exceeds limit")
++            try:
++                source_bytes += len(text.encode("utf-8"))
++            except UnicodeEncodeError as error:
++                raise ValueError("source text is not valid UTF-8") from error
++            _require(source_bytes <= MAX_SOURCE_BYTES, "expanded source text exceeds limit")
++            previous = sources.setdefault(turn, (role, text))
++            _require(previous == (role, text), "source handle has conflicting role or text")
++
++
++def encode_source_packet(groups: Sequence[Sequence[Source]]) -> str:
++    """Serialize complete observations, factoring shared text and session metadata."""
++    _validate_groups(groups)
++    turns: list[list[str]] = []
++    sessions: list[list[str]] = []
++    occurrences: list[list[list[int]]] = []
++    turn_indices: dict[str, int] = {}
++    session_indices: dict[tuple[str, str], int] = {}
++    for group in groups:
++        retained = []
++        for turn, session, observed, role, text in group:
++            if turn not in turn_indices:
++                turn_indices[turn] = len(turns)
++                turns.append([_handle(turn), role, text])
++            key = (session, observed)
++            if key not in session_indices:
++                session_indices[key] = len(sessions)
++                sessions.append([_handle(session), observed])
++            retained.append([turn_indices[turn], session_indices[key]])
++        occurrences.append(retained)
++    packet = _canonical({"v": 3, "t": turns, "s": sessions, "g": occurrences, "i": []})
++    _require(len(packet.encode("utf-8")) <= MAX_PACKET_BYTES, "source packet exceeds limit")
++    return packet
++
++
++def _unique_object(pairs: list[tuple[str, object]]) -> dict:
++    result = {}
++    for key, value in pairs:
++        _require(key not in result, "duplicate packet key")
++        result[key] = value
++    return result
++
++
++def decode_source_packet(packet: str) -> list[list[Source]]:
++    """Validate and reconstruct each original observation without interpretation."""
++    _require(isinstance(packet, str), "source packet must be text")
++    _require(len(packet) <= MAX_PACKET_BYTES, "source packet exceeds limit")
++    try:
++        size = len(packet.encode("utf-8"))
++    except UnicodeEncodeError as error:
++        raise ValueError("source packet is not valid UTF-8") from error
++    _require(size <= MAX_PACKET_BYTES, "source packet exceeds limit")
++    try:
++        value = json.loads(packet, object_pairs_hook=_unique_object)
++    except (json.JSONDecodeError, RecursionError) as error:
++        raise ValueError("invalid source packet JSON") from error
++    _require(isinstance(value, dict) and set(value) == {"v", "t", "s", "g", "i"},
++             "invalid source packet fields")
++    _require(type(value["v"]) is int and value["v"] == 3 and value["i"] == [],
++             "invalid packet version or inferred answers")
++    turns, sessions, groups = value["t"], value["s"], value["g"]
++    _require(all(isinstance(table, list) and len(table) <= MAX_OCCURRENCES
++                 for table in (turns, sessions)), "invalid source table size")
++    _require(isinstance(groups, list) and len(groups) <= MAX_GROUPS,
++             "invalid source group count")
++    decoded_turns = []
++    for turn in turns:
++        _require(isinstance(turn, list) and len(turn) == 3, "invalid source table row")
++        decoded_turns.append((_expand_handle(turn[0]), turn[1], turn[2]))
++    decoded_sessions = []
++    for session in sessions:
++        _require(isinstance(session, list) and len(session) == 2, "invalid session table row")
++        decoded_sessions.append((_expand_handle(session[0]), session[1]))
++    result = []
++    occurrences = 0
++    source_bytes = 0
++    for group in groups:
++        _require(isinstance(group, list) and 1 <= len(group) <= 16,
++                 "source groups require 1..=16 occurrences")
++        occurrences += len(group)
++        _require(occurrences <= MAX_OCCURRENCES, "too many source occurrences")
++        retained = []
++        for occurrence in group:
++            _require(isinstance(occurrence, list) and len(occurrence) == 2,
++                     "invalid source occurrence")
++            ti, si = occurrence
++            _require(type(ti) is int and 0 <= ti < len(decoded_turns)
++                     and type(si) is int and 0 <= si < len(decoded_sessions),
++                     "source table index out of range")
++            turn, role, text = decoded_turns[ti]
++            session, observed = decoded_sessions[si]
++            _require(isinstance(text, str), "source text must be a string")
++            try:
++                source_bytes += len(text.encode("utf-8"))
++            except UnicodeEncodeError as error:
++                raise ValueError("source text is not valid UTF-8") from error
++            _require(source_bytes <= MAX_SOURCE_BYTES, "expanded source text exceeds limit")
++            retained.append((turn, session, observed, role, text))
++        result.append(retained)
++    _validate_groups(result)
++    _require(encode_source_packet(result) == packet, "noncanonical or unused source table rows")
++    return result
++
++
++@dataclass(frozen=True)
++class EvidenceSelection:
++    selected: tuple[int, ...]
++    packet: str
++    packet_bytes: int
++
++
++def complete_evidence(
++    candidates: Sequence[Sequence[Source]],
++    selected: Sequence[int],
++    budget_bytes: int,
++) -> EvidenceSelection:
++    """Retain a source selection and append ranked complete groups within its byte cap.
++
++    Candidate order is the caller's retrieval order. Existing selected groups
++    remain mandatory; a budget that cannot contain them fails explicitly.
++    """
++    _require(type(budget_bytes) is int and 1 <= budget_bytes <= MAX_PACKET_BYTES,
++             "invalid evidence budget")
++    _require(isinstance(candidates, (list, tuple)) and 1 <= len(candidates) <= MAX_CANDIDATES,
++             "expected 1..=64 ranked candidates")
++    _validate_groups(candidates)
++    _require(isinstance(selected, (list, tuple))
++             and all(type(i) is int and 0 <= i < len(candidates) for i in selected)
++             and len(selected) == len(set(selected)),
++             "invalid mandatory selection")
++    retained = list(selected)
++    packet = encode_source_packet([candidates[i] for i in retained])
++    _require(len(packet.encode("utf-8")) <= budget_bytes, "mandatory evidence exceeds budget")
++    chosen = set(retained)
++    for index, group in enumerate(candidates):
++        if index in chosen:
++            continue
++        try:
++            trial = encode_source_packet([candidates[i] for i in retained] + [group])
++        except ValueError as error:
++            if str(error) == "source packet exceeds limit":
++                continue
++            raise
++        if len(trial.encode("utf-8")) <= budget_bytes:
++            retained.append(index)
++            chosen.add(index)
++            packet = trial
++    return EvidenceSelection(tuple(retained), packet, len(packet.encode("utf-8")))
+diff --git a/bindings/python/holographic-sdk/tests/test_evidence.py b/bindings/python/holographic-sdk/tests/test_evidence.py
+new file mode 100644
+index 0000000..e5b204f
+--- /dev/null
++++ b/bindings/python/holographic-sdk/tests/test_evidence.py
+@@ -0,0 +1,129 @@
++import base64
++import copy
++import hashlib
++import importlib.util
++import json
++import sys
++import unittest
++from pathlib import Path
++
++path = Path(__file__).parents[1] / "holographic_sdk/evidence.py"
++spec = importlib.util.spec_from_file_location("hms_source_evidence", path)
++evidence = importlib.util.module_from_spec(spec)
++sys.modules[spec.name] = evidence
++spec.loader.exec_module(evidence)
++
++
++def handle(value):
++    return hashlib.sha256(value.encode()).hexdigest()
++
++
++def source(turn, session="s", observed="2024-01-01", role="user", text="A factual source."):
++    return (handle(turn), handle(session), observed, role, text)
++
++
++class EvidenceTests(unittest.TestCase):
++    def test_lossless_repeated_occurrences_roles_unicode_and_distinct_dates(self):
++        groups = [[source("one", text="I visited café 🐈.")],
++                  [source("two", role="assistant", text="Your total was €25.")],
++                  [source("one", observed="2024-02-01", text="I visited café 🐈."),
++                   source("one", "other", text="I visited café 🐈.")]]
++        packet = evidence.encode_source_packet(groups)
++        self.assertEqual(evidence.decode_source_packet(packet), groups)
++        legacy = json.dumps({"v": 2, "q": groups, "i": []}, ensure_ascii=False,
++                            separators=(",", ":"))
++        self.assertLess(len(packet.encode()), len(legacy.encode()))
++        self.assertEqual(len(json.loads(packet)["t"]), 2)
++        self.assertEqual(len(json.loads(packet)["s"]), 3)
++
++    def test_budget_boundary_preserves_mandatory_evidence_and_skips_large_group(self):
++        candidates = [[source("a")], [source("large", text="x" * 2000)],
++                      [source("small", text="An earlier event.")]]
++        cap = len(evidence.encode_source_packet([candidates[0], candidates[2]]).encode())
++        for budget, expected in ((cap - 1, (0,)), (cap, (0, 2)), (cap + 1, (0, 2))):
++            with self.subTest(budget=budget):
++                chosen = evidence.complete_evidence(candidates, [0], budget)
++                self.assertEqual(chosen.selected, expected)
++                self.assertLessEqual(chosen.packet_bytes, budget)
++                self.assertEqual(evidence.decode_source_packet(chosen.packet),
++                                 [candidates[index] for index in chosen.selected])
++        with self.assertRaisesRegex(ValueError, "mandatory evidence"):
++            evidence.complete_evidence(candidates, [0],
++                                       len(evidence.encode_source_packet([candidates[0]]).encode()) - 1)
++
++    def test_candidate_count_boundary(self):
++        for count in (63, 64):
++            candidates = [[source(str(i))] for i in range(count)]
++            chosen = evidence.complete_evidence(candidates, [0], 100000)
++            self.assertEqual(len(chosen.selected), count)
++        with self.assertRaisesRegex(ValueError, "1..=64"):
++            evidence.complete_evidence([[source(str(i))] for i in range(65)], [0], 100000)
++
++    def test_source_size_boundary_including_repeated_expansion(self):
++        original = evidence.MAX_SOURCE_BYTES
++        evidence.MAX_SOURCE_BYTES = 100
++        try:
++            for size in (99, 100):
++                evidence.encode_source_packet([[source("one", text="x" * size)]])
++            with self.assertRaisesRegex(ValueError, "expanded source"):
++                evidence.encode_source_packet([[source("one", text="x" * 101)]])
++            packet = evidence.encode_source_packet([[source("one", text="x" * 60)]])
++            value = json.loads(packet)
++            value["g"].append(value["g"][0])
++            with self.assertRaisesRegex(ValueError, "expanded source"):
++                evidence.decode_source_packet(json.dumps(value, separators=(",", ":")))
++        finally:
++            evidence.MAX_SOURCE_BYTES = original
++
++    def test_bad_references_noncanonical_handles_and_inferences_fail(self):
++        packet = evidence.encode_source_packet([[source("one")]])
++        mutations = []
++        for changed_index in (-1, 1, True, 0.0):
++            value = json.loads(packet)
++            value["g"][0][0][0] = changed_index
++            mutations.append(value)
++        value = json.loads(packet)
++        value["i"] = ["invented answer"]
++        mutations.append(value)
++        value = json.loads(packet)
++        value["t"].append(copy.deepcopy(value["t"][0]))
++        mutations.append(value)
++        value = json.loads(packet)
++        compact = value["t"][0][0]
++        alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
++        value["t"][0][0] = compact[:-1] + alphabet[alphabet.index(compact[-1]) + 1]
++        self.assertEqual(base64.urlsafe_b64decode(value["t"][0][0] + "="),
++                         base64.urlsafe_b64decode(compact + "="))
++        mutations.append(value)
++        for value in mutations:
++            with self.subTest(value=value), self.assertRaises(ValueError):
++                evidence.decode_source_packet(json.dumps(value, separators=(",", ":")))
++        with self.assertRaisesRegex(ValueError, "duplicate packet key"):
++            evidence.decode_source_packet(packet.replace('"v":3', '"v":3,"v":3'))
++
++    def test_conflicting_identity_or_malformed_selection_fails(self):
++        with self.assertRaisesRegex(ValueError, "conflicting"):
++            evidence.encode_source_packet([[source("one")], [source("one", text="Different")]])
++        for selected in ([True], [-1], [1], [0, 0], [[0]]):
++            with self.subTest(selected=selected), self.assertRaises(ValueError):
++                evidence.complete_evidence([[source("one")]], selected, 1000)
++
++    def test_handles_observation_lengths_and_utf8_boundaries(self):
++        for size in (63, 64):
++            evidence.encode_source_packet([[source("one", observed="x" * size)]])
++        with self.assertRaisesRegex(ValueError, "observation time"):
++            evidence.encode_source_packet([[source("one", observed="x" * 65)]])
++        for invalid in ("0" * 63, "0" * 65, "A" * 64, 1):
++            record = list(source("one"))
++            record[0] = invalid
++            with self.subTest(handle=invalid), self.assertRaises(ValueError):
++                evidence.encode_source_packet([[record]])
++        for record in (source("one", text="\ud800"), source("one", observed="\ud800")):
++            with self.assertRaisesRegex(ValueError, "UTF-8"):
++                evidence.encode_source_packet([[record]])
++        with self.assertRaisesRegex(ValueError, "UTF-8"):
++            evidence.decode_source_packet("\ud800")
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/benchmarks/public/factored_evidence_diagnostic.py b/benchmarks/public/factored_evidence_diagnostic.py
+new file mode 100644
+index 0000000..df2508e
+--- /dev/null
++++ b/benchmarks/public/factored_evidence_diagnostic.py
+@@ -0,0 +1,110 @@
++# Copyright 2024-2026 WritersLogic Contributors
++# SPDX-License-Identifier: AGPL-3.0-or-later
++# /// script
++# requires-python = ">=3.10"
++# dependencies = []
++# ///
++"""Dev-only lossless evidence completion against the frozen full-turn selector."""
++
++import argparse
++import hashlib
++import importlib.util
++import json
++import sys
++from pathlib import Path
++
++from longmemeval_answer_evidence import _groups_for_question
++
++ROOT = Path(__file__).resolve().parents[2]
++MODULE = ROOT / "bindings/python/holographic-sdk/holographic_sdk/evidence.py"
++SOURCE_SHA256 = "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442"
++
++
++def sha(path):
++    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
++
++
++def load_module():
++    spec = importlib.util.spec_from_file_location("hms_source_evidence", MODULE)
++    module = importlib.util.module_from_spec(spec)
++    sys.modules[spec.name] = module
++    spec.loader.exec_module(module)
++    return module
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json")
++    parser.add_argument("--output", type=Path, default=ROOT / "benchmarks/results/memory_competition_v1/report.json")
++    args = parser.parse_args()
++    work = args.output.parent
++    protocol = work / "protocol.json"
++    baseline_path = ROOT / "benchmarks/results/evidence_budget_dev.json"
++    baseline_check = ROOT / "benchmarks/results/evidence_budget_summary.json"
++    historical_path = ROOT / "benchmarks/results/evidence_completeness_dev.json"
++    split_path = ROOT / "benchmarks/public/longmemeval_split.json"
++    assert protocol.is_file(), "freeze protocol before measurement"
++    assert sha(args.source) == SOURCE_SHA256
++    assert sha(baseline_path) == json.loads(baseline_check.read_text())["report_sha256"]
++    baseline = json.loads(baseline_path.read_text())
++    assert sha(historical_path) == baseline["input_sha256"]
++    assert sha(split_path) == baseline["split_sha256"]
++    split = json.loads(split_path.read_text())
++    dev = set(split["dev"])
++    assert len(dev) == 100 and len(split["heldout"]) == 400
++    historical = {row["qid"]: row for row in json.loads(historical_path.read_text())["rows"]}
++    raw_dev = {question["question_id"]: question for question in json.loads(args.source.read_text())
++               if question["question_id"] in dev}
++    assert set(historical) == set(raw_dev) == dev
++    evidence = load_module()
++    rows = []
++    for frozen in baseline["rows"]:
++        old = historical[frozen["qid"]]
++        groups, _ = _groups_for_question(raw_dev[frozen["qid"]], set(old["ids"]))
++        ranked = list(dict.fromkeys(old["baseline_ranking"]))[:64]
++        selected = frozen["arms"]["operand"]["selected"]
++        assert set(selected) <= set(ranked)
++        reconstructed = json.dumps({"v": 2, "q": [groups[item] for item in selected], "i": []},
++                                   ensure_ascii=False, separators=(",", ":"))
++        assert reconstructed == frozen["operand"]["packet"]
++        candidates = [groups[item] for item in ranked]
++        seed = [ranked.index(item) for item in selected]
++        result = evidence.complete_evidence(candidates, seed, frozen["budget"])
++        retained_ids = [ranked[index] for index in result.selected]
++        decoded = evidence.decode_source_packet(result.packet)
++        assert decoded == [[tuple(source) for source in groups[item]] for item in retained_ids]
++        base_packet = evidence.encode_source_packet([groups[item] for item in selected])
++        # Scoring occurs after source-only selection; labels never enter the codec or completer.
++        gold = {item for item in old["ids"] if "answer" in item}
++        rows.append({"qid": frozen["qid"], "qtype": frozen["qtype"], "scored": frozen["scored"],
++                     "budget_bytes": frozen["budget"], "baseline_selected": selected,
++                     "baseline_packet_bytes": len(reconstructed.encode()),
++                     "factored_baseline_bytes": len(base_packet.encode()),
++                     "selected": retained_ids, "packet": result.packet,
++                     "packet_bytes": result.packet_bytes,
++                     "packet_sha256": hashlib.sha256(result.packet.encode()).hexdigest(),
++                     "baseline_complete": gold <= set(selected),
++                     "complete": gold <= set(retained_ids)})
++    scored = [row for row in rows if row["scored"]]
++    report = {"schema_version": 1, "dev_only": True, "heldout_run": False,
++              "protocol_sha256": sha(protocol), "source_sha256": sha(args.source),
++              "split_sha256": sha(split_path), "baseline_sha256": sha(baseline_path),
++              "historical_sha256": sha(historical_path), "codec_sha256": sha(MODULE),
++              "producer_sha256": sha(__file__), "candidate_limit": 64,
++              "rows": rows, "summary": {"scored_questions": len(scored),
++                  "baseline_complete": sum(row["baseline_complete"] for row in scored),
++                  "complete": sum(row["complete"] for row in scored),
++                  "gains": [row["qid"] for row in scored if row["complete"] and not row["baseline_complete"]],
++                  "losses": [row["qid"] for row in scored if row["baseline_complete"] and not row["complete"]],
++                  "same_selection_bytes_ratio": sum(row["factored_baseline_bytes"] for row in scored) /
++                                                sum(row["baseline_packet_bytes"] for row in scored),
++                  "additional_groups": sum(len(row["selected"]) - len(row["baseline_selected"]) for row in scored)},
++              "answer_accuracy_measured": False, "reader_token_budget_matched": False,
++              "competitor_superiority_established": False}
++    work.mkdir(parents=True, exist_ok=True)
++    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1, allow_nan=False) + "\n")
++    print(json.dumps(report["summary"]))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/benchmarks/public/check_factored_evidence.py b/benchmarks/public/check_factored_evidence.py
+new file mode 100644
+index 0000000..42b0957
+--- /dev/null
++++ b/benchmarks/public/check_factored_evidence.py
+@@ -0,0 +1,206 @@
++# Copyright 2024-2026 WritersLogic Contributors
++# SPDX-License-Identifier: AGPL-3.0-or-later
++# /// script
++# requires-python = ">=3.10"
++# dependencies = []
++# ///
++"""Independent raw-source verification of bounded factored evidence packets."""
++
++import argparse
++import base64
++import copy
++import hashlib
++import json
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[2]
++SOURCE_SHA256 = "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442"
++
++
++def require(condition, message):
++    if not condition:
++        raise ValueError(message)
++
++
++def sha(path):
++    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
++
++
++def compact(value):
++    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
++
++
++def handle(value):
++    return base64.urlsafe_b64encode(bytes.fromhex(value)).decode().rstrip("=")
++
++
++def reconstruct(question, identities):
++    groups = {}
++    for sid, observed, turns in zip(question["haystack_session_ids"], question["haystack_dates"], question["haystack_sessions"]):
++        user_ids = []
++        for ordinal, source in enumerate(turns, 1):
++            if source["role"] == "user":
++                original = f"{sid}_{ordinal}"
++                matching = {original, original.replace("answer", "noans")} & identities
++                require(len(matching) == 1, "ambiguous observed source")
++                user_ids.append((original, next(iter(matching)), source["content"]))
++        observed_sid = sid if any(original == legacy for original, legacy, _ in user_ids) else sid.replace("answer", "noans")
++        for _, legacy, text in user_ids:
++            groups.setdefault(legacy, []).append([
++                hashlib.sha256(legacy.encode()).hexdigest(),
++                hashlib.sha256(observed_sid.encode()).hexdigest(), observed, "user", text])
++    require(set(groups) == identities, "observed source membership mismatch")
++    return groups
++
++
++def independent_packet(groups):
++    texts, sessions, occurrences = [], [], []
++    seen_texts, seen_sessions = {}, {}
++    for sources in groups:
++        references = []
++        for turn, session, observed, role, text in sources:
++            if turn not in seen_texts:
++                seen_texts[turn] = len(texts)
++                texts.append([handle(turn), role, text])
++            if (session, observed) not in seen_sessions:
++                seen_sessions[(session, observed)] = len(sessions)
++                sessions.append([handle(session), observed])
++            references.append([seen_texts[turn], seen_sessions[(session, observed)]])
++        occurrences.append(references)
++    return compact({"v": 3, "t": texts, "s": sessions, "g": occurrences, "i": []})
++
++
++def check(report, source, split, baseline, historical, fingerprints):
++    for key, expected in fingerprints.items():
++        require(report[key] == expected, "fingerprint mismatch: " + key)
++    dev = set(split["dev"])
++    require(len(dev) == 100 and len(split["heldout"]) == 400
++            and not dev & set(split["heldout"]), "invalid protected split")
++    require(report["dev_only"] is True and report["heldout_run"] is False
++            and report["answer_accuracy_measured"] is False
++            and report["reader_token_budget_matched"] is False
++            and report["competitor_superiority_established"] is False,
++            "unsupported evaluation claim")
++    require(report["candidate_limit"] == 64, "changed candidate limit")
++    require(len(report["rows"]) == 100 and {row["qid"] for row in report["rows"]} == dev,
++            "report membership mismatch")
++    frozen = {row["qid"]: row for row in baseline["rows"]}
++    old = {row["qid"]: row for row in historical["rows"]}
++    require(set(frozen) == set(old) == set(source) == dev, "input membership mismatch")
++    instances = 0
++    for row in report["rows"]:
++        qid = row["qid"]
++        base, ranked_row = frozen[qid], old[qid]
++        groups = reconstruct(source[qid], set(ranked_row["ids"]))
++        require(row["qtype"] == base["qtype"] and row["scored"] == base["scored"], "scoring membership mismatch")
++        budget = base["budget"]
++        require(row["budget_bytes"] == budget, "budget mismatch")
++        mandatory = base["arms"]["operand"]["selected"]
++        require(row["baseline_selected"] == mandatory, "changed baseline selection")
++        original = compact({"v": 2, "q": [groups[item] for item in mandatory], "i": []})
++        require(original == base["operand"]["packet"], "baseline raw-source mismatch")
++        require(row["baseline_packet_bytes"] == len(original.encode()), "baseline byte mismatch")
++        compressed = independent_packet([groups[item] for item in mandatory])
++        require(row["factored_baseline_bytes"] == len(compressed.encode()), "factored baseline byte mismatch")
++        retained = list(mandatory)
++        for candidate in list(dict.fromkeys(ranked_row["baseline_ranking"]))[:64]:
++            if candidate not in retained:
++                trial = independent_packet([groups[item] for item in retained + [candidate]])
++                if len(trial.encode()) <= budget:
++                    retained.append(candidate)
++        require(row["selected"] == retained, "ranked complete-evidence selection mismatch")
++        expected = independent_packet([groups[item] for item in retained])
++        require(row["packet"] == expected, "complete observed source packet mismatch")
++        require(row["packet_bytes"] == len(expected.encode()) <= budget, "packet byte cap mismatch")
++        require(row["packet_sha256"] == hashlib.sha256(expected.encode()).hexdigest(), "packet hash mismatch")
++        gold = {item for item in ranked_row["ids"] if "answer" in item}
++        require(row["baseline_complete"] == (gold <= set(mandatory))
++                and row["complete"] == (gold <= set(retained)), "full-turn support score mismatch")
++        instances += sum(len(groups[item]) for item in retained)
++    scored = [row for row in report["rows"] if row["scored"]]
++    summary = {"scored_questions": len(scored),
++               "baseline_complete": sum(row["baseline_complete"] for row in scored),
++               "complete": sum(row["complete"] for row in scored),
++               "gains": [row["qid"] for row in scored if row["complete"] and not row["baseline_complete"]],
++               "losses": [row["qid"] for row in scored if row["baseline_complete"] and not row["complete"]],
++               "same_selection_bytes_ratio": sum(row["factored_baseline_bytes"] for row in scored) /
++                                             sum(row["baseline_packet_bytes"] for row in scored),
++               "additional_groups": sum(len(row["selected"]) - len(row["baseline_selected"]) for row in scored)}
++    require(report["summary"] == summary, "summary mismatch")
++    return {"questions_verified": 100, "source_occurrences_verified": instances,
++            "heldout_questions_untouched": 400, "summary": summary}
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("report", type=Path)
++    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json")
++    parser.add_argument("--reproduction", type=Path)
++    parser.add_argument("--tamper", action="store_true")
++    args = parser.parse_args()
++    baseline_path = ROOT / "benchmarks/results/evidence_budget_dev.json"
++    historical_path = ROOT / "benchmarks/results/evidence_completeness_dev.json"
++    split_path = ROOT / "benchmarks/public/longmemeval_split.json"
++    require(sha(args.source) == SOURCE_SHA256, "pinned raw source changed")
++    baseline = json.loads(baseline_path.read_text())
++    require(sha(baseline_path) == json.loads((ROOT / "benchmarks/results/evidence_budget_summary.json").read_text())["report_sha256"],
++            "baseline validation fingerprint mismatch")
++    require(sha(historical_path) == baseline["input_sha256"], "historical input changed")
++    split = json.loads(split_path.read_text())
++    historical = json.loads(historical_path.read_text())
++    source = {question["question_id"]: question for question in json.loads(args.source.read_text())
++              if question["question_id"] in set(split["dev"])}
++    fingerprints = {"source_sha256": SOURCE_SHA256, "split_sha256": sha(split_path),
++                    "baseline_sha256": sha(baseline_path), "historical_sha256": sha(historical_path),
++                    "protocol_sha256": sha(args.report.parent / "protocol.json"),
++                    "codec_sha256": sha(ROOT / "bindings/python/holographic-sdk/holographic_sdk/evidence.py"),
++                    "producer_sha256": sha(ROOT / "benchmarks/public/factored_evidence_diagnostic.py")}
++    report = json.loads(args.report.read_text())
++    summary = check(report, source, split, baseline, historical, fingerprints)
++    if args.reproduction:
++        repeated = json.loads(args.reproduction.read_text())
++        check(repeated, source, split, baseline, historical, fingerprints)
++        require(repeated == report, "independent reproduction differs")
++        summary["reproduction_identical"] = True
++    if args.tamper:
++        tests = {}
++        for label in ("source_text", "observation_time", "source_handle", "membership", "byte_cap", "score", "hash", "fingerprint", "mandatory_evidence"):
++            changed = copy.deepcopy(report)
++            row = changed["rows"][0]
++            if label in ("source_text", "observation_time", "source_handle"):
++                packet = json.loads(row["packet"])
++                if label == "source_text":
++                    packet["t"][0][2] += " fabricated"
++                elif label == "observation_time":
++                    packet["s"][0][1] = "1900-01-01"
++                else:
++                    packet["t"][0][0] = handle("0" * 64)
++                row["packet"] = compact(packet)
++            elif label == "membership":
++                row["qid"] = split["heldout"][0]
++            elif label == "byte_cap":
++                row["budget_bytes"] += 1
++            elif label == "score":
++                row["complete"] = not row["complete"]
++            elif label == "hash":
++                row["packet_sha256"] = "0" * 64
++            elif label == "fingerprint":
++                changed["codec_sha256"] = "0" * 64
++            else:
++                row["selected"] = row["selected"][1:]
++            try:
++                check(changed, source, split, baseline, historical, fingerprints)
++            except ValueError as error:
++                tests[label] = str(error)
++            else:
++                raise ValueError("corruption was accepted: " + label)
++        summary["tamper_rejections"] = tests
++    summary["report_sha256"] = sha(args.report)
++    summary["checker_sha256"] = sha(__file__)
++    output = args.report.with_name("checked_summary.json")
++    output.write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
++    print(json.dumps(summary))
++
++
++if __name__ == "__main__":
++    main()
