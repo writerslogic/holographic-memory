@@ -5,6 +5,12 @@
 //! hypervector set algebra and the keyed coordinate mask. It is not the HMS
 //! engine and its vectors are not interchangeable with the engine's.
 
+mod crypto;
+mod store;
+
+pub use crypto::*;
+pub use store::HmsStore;
+
 use sha2::{Digest, Sha256};
 use wasm_bindgen::prelude::*;
 use rand::{RngExt, SeedableRng};
@@ -176,4 +182,16 @@ impl WasmEntangledHVec {
     pub fn indices(&self) -> Vec<u32> {
         self.indices.clone()
     }
+}
+
+/// Crate version of this build.
+#[wasm_bindgen]
+pub fn version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+/// Whether this build was compiled with WebAssembly SIMD (`+simd128`).
+#[wasm_bindgen(js_name = simdBuild)]
+pub fn simd_build() -> bool {
+    cfg!(target_feature = "simd128")
 }
