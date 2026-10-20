@@ -1,0 +1,15 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "hms-uniffi-bindgen"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Runs the UniFFI binding generator for hms-mobile on the build host."
+publish = false
+
+[workspace]
+
+[dependencies]
+uniffi = { version = "0.32", features = ["cli"] }

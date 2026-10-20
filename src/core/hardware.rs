@@ -16,7 +16,8 @@ pub fn capabilities() -> HardwareCapabilities {
     #[cfg(target_arch = "aarch64")]
     let neon = std::arch::is_aarch64_feature_detected!("neon");
     #[cfg(target_arch = "arm")]
-    let neon = std::arch::is_arm_feature_detected!("neon");
+    // Runtime detection on 32-bit ARM is unstable; report what the target was compiled with.
+    let neon = cfg!(target_feature = "neon");
     #[cfg(not(any(target_arch = "aarch64", target_arch = "arm")))]
     let neon = false;
 
