@@ -1,0 +1,110 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# cargo-fuzz over every untrusted-input parser (fuzz/, see fuzz/README.md). A short run on
+# pull requests that touch fuzzed code, a longer scheduled run that grows the corpus, and a
+# reusable entry point that release.yml calls so no release ships without a fuzz run. Corpora
+# are cached per target (restored from the newest saved one, saved by scheduled and manual
+# runs); a crashing input is uploaded as an artefact and reproduces with the command in
+# fuzz/README.md.
+name: Fuzz
+
+on:
+  pull_request:
+    paths:
+      - src/**
+      - fuzz/**
+      - Cargo.toml
+      - Cargo.lock
+      - .github/workflows/fuzz.yml
+  schedule:
+    - cron: "41 3 * * 0"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds per target
+        default: "900"
+  workflow_call:
+    inputs:
+      seconds:
+        type: string
+        default: "120"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # A dated nightly: cargo-fuzz needs the sanitizer flags; the date keeps runs comparable.
+  NIGHTLY: nightly-2026-05-27
+
+jobs:
+  fuzz:
+    name: fuzz ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: wire_inputs, features: "" }
+          - { target: document_chunking, features: "" }
+          - { target: document_engine, features: "" }
+          - { target: store_open, features: "" }
+          - { target: ivf_decode, features: experimental }
+          - { target: jumbf_decode, features: provenance }
+          - { target: cose_envelopes, features: provenance }
+          - { target: cawg_identity, features: provenance }
+          - { target: did_parse, features: provenance }
+          - { target: provenance_json, features: provenance }
+          - { target: private_query, features: private-search }
+          - { target: operand_question, features: experimental }
+          - { target: connection_graph_log, features: experimental }
+          - { target: llm_output, features: local-models }
+          - { target: server_requests, features: server }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: nightly-2026-05-27
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: fuzz
+          shared-key: fuzz-${{ matrix.target }}
+          save-if: ${{ github.event_name != 'pull_request' }}
+          cache-bin: "true"
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked --version 0.13.1
+      - name: Restore the corpus
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: fuzz-corpus-${{ matrix.target }}-
+      - name: Fuzz
+        env:
+          SECONDS_PER_TARGET: ${{ inputs.seconds || (github.event_name == 'pull_request' && '60') || '900' }}
+          TARGET: ${{ matrix.target }}
+          FEATURES: ${{ matrix.features }}
+        run: |
+          set -euo pipefail
+          mkdir -p "fuzz/corpus/$TARGET" "fuzz/artifacts/$TARGET"
+          args=()
+          if [ -n "$FEATURES" ]; then args+=(--features "$FEATURES"); fi
+          cargo +"$NIGHTLY" fuzz run "$TARGET" "${args[@]}" "fuzz/corpus/$TARGET" "fuzz/seeds/$TARGET" -- \
+            -max_total_time="$SECONDS_PER_TARGET" -rss_limit_mb=2048 -timeout=30 -print_final_stats=1
+      - name: Save the corpus
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+      - name: Upload crashing inputs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-crash-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: warn
