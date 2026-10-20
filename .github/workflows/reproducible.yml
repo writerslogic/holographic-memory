@@ -79,6 +79,6 @@ jobs:
           done
           # The embedded SBOM names the absolute checkout directory in its bom-refs, and the
           # two legs deliberately build from different directories.
-          others=$(diff -rq /tmp/first /tmp/second | grep -v '\.dist-info/sboms/' || true)
+          others=$(diff -rq /tmp/first /tmp/second | grep -vE '\.dist-info/(sboms/|RECORD)' || true)
           if [ -n "$others" ]; then echo "$others"; exit 1; fi
-          echo "wheel members identical except dist-info/sboms"
+          echo "wheel members identical except dist-info/sboms and RECORD (which lists the SBOM hash)"

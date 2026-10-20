@@ -107,7 +107,7 @@ same workflow run.
 
 Result of the first runs (two runners, different checkout directories): `hms-eval`, `hms-server`,
 the napi `cdylib` and the crate are bit-for-bit identical. The Python wheel is identical member for
-member except `*.dist-info/sboms/*`, the SBOM maturin embeds, whose `bom-ref`s contain the absolute
+member except `*.dist-info/sboms/*` (and `RECORD`, which lists its hash), the SBOM maturin embeds, whose `bom-ref`s contain the absolute
 checkout directory; the workflow therefore allows the wheel hash to differ and fails if any other
 member differs.
 
