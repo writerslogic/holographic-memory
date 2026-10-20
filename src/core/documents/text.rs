@@ -188,6 +188,16 @@ fn positioned_read(file: &File, buf: &mut [u8], at: u64) -> std::io::Result<()> 
     Ok(())
 }
 
+#[cfg(not(any(unix, windows)))]
+fn positioned_read(_: &File, _: &mut [u8], _: u64) -> std::io::Result<()> {
+    Err(std::io::ErrorKind::Unsupported.into())
+}
+
+#[cfg(not(any(unix, windows)))]
+fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()> {
+    Err(std::io::ErrorKind::Unsupported.into())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

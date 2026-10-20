@@ -30,6 +30,7 @@ pub use crate::core::types::{
     RetrievalResult, StorageHealth, TextMetrics,
 };
 pub use crate::core::EmbeddingSpace;
+#[cfg(not(target_arch = "wasm32"))]
 pub use crate::core::HmsCore;
 
 #[cfg(feature = "provenance")]
