@@ -706,6 +706,12 @@ async fn delete_doc(
     req: Request,
 ) -> ApiResult {
     let name = tenant_name(req.headers())?;
+    // `?purge=true` also rewrites the journal and scrubs what it replaced; without it the
+    // text segment is scrubbed but the deleted frame stays in the journal until compaction.
+    let purge = req
+        .uri()
+        .query()
+        .is_some_and(|q| q.split('&').any(|pair| pair == "purge=true"));
     let permit = state.work.acquire()?;
     blocking(permit, move || {
         if id.is_empty() || id.len() > MAX_ID_BYTES || id.starts_with("hms:") {
@@ -717,6 +723,12 @@ async fn delete_doc(
             .delete_document(&id)
             .map_err(ApiError::internal)?
         {
+            if purge {
+                tenant
+                    .core
+                    .compact_scrubbing()
+                    .map_err(ApiError::internal)?;
+            }
             Ok(())
         } else {
             Err(ApiError::new(

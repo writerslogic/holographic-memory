@@ -419,7 +419,8 @@ impl Memory {
     ///
     /// Without `include_chain` only the matched facts go, and a removed successor makes its
     /// predecessor current again. Deleted text stays in the append-only journal until the
-    /// store compacts; `purge` compacts afterwards.
+    /// store compacts. The text segment is zeroed and synced once before this returns; `purge`
+    /// then compacts and overwrites what the compaction replaced.
     pub fn forget(&self, scope: &ForgetScope, options: &ForgetOptions) -> Result<ForgetReport> {
         let _writer = self.writer.lock();
         self.ensure_fresh();
@@ -460,6 +461,7 @@ impl Memory {
         }
         let (_, delete_commits) = self.core.delete_documents(&forgotten)?;
         commits += delete_commits;
+        self.core.sync_text_segment()?;
         if rewrites.is_empty() {
             self.settle(before, commits, |index| {
                 for (id, stamp) in &stamps {
@@ -471,7 +473,7 @@ impl Memory {
         }
         let mut purged = false;
         if options.purge {
-            self.core.compact()?;
+            self.core.compact_scrubbing()?;
             self.index.write().revision = None;
             purged = true;
         }

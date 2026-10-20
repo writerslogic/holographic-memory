@@ -1,0 +1,459 @@
+{
+  "description": "Delete and search latency before and after the purge change (examples/purge_bench.rs).",
+  "host": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "documents": 5000,
+  "deletes": 500,
+  "searches": 500,
+  "repetitions": 5,
+  "baseline_commit": "origin/main at ca9511e (examples/purge_bench.rs with compact_scrubbing replaced by compact)",
+  "method": "each repetition runs before, after, after with scrubbing compaction in turn on a fresh tempdir store; values are the median, min and max over repetitions of each run's own p50/p95 (microseconds) or compaction time (ms)",
+  "variants": {
+    "before": {
+      "delete_p50_us": {
+        "median": 61.958000000000006,
+        "min": 61.12499999999999,
+        "max": 63.333
+      },
+      "delete_p95_us": {
+        "median": 73.416,
+        "min": 69.83399999999999,
+        "max": 77.792
+      },
+      "search_p50_us_before_deletes": {
+        "median": 1.042,
+        "min": 1.042,
+        "max": 1.0839999999999999
+      },
+      "search_p50_us_after_deletes": {
+        "median": 1.042,
+        "min": 1.042,
+        "max": 1.083
+      },
+      "compaction_ms": {
+        "median": 70.979417,
+        "min": 62.111917000000005,
+        "max": 74.267917
+      }
+    },
+    "after": {
+      "delete_p50_us": {
+        "median": 62.74999999999999,
+        "min": 62.583999999999996,
+        "max": 65.292
+      },
+      "delete_p95_us": {
+        "median": 75.333,
+        "min": 70.625,
+        "max": 91.5
+      },
+      "search_p50_us_before_deletes": {
+        "median": 1.042,
+        "min": 0.958,
+        "max": 1.083
+      },
+      "search_p50_us_after_deletes": {
+        "median": 1.0410000000000001,
+        "min": 1.0410000000000001,
+        "max": 1.083
+      },
+      "compaction_ms": {
+        "median": 68.784791,
+        "min": 61.881167,
+        "max": 74.471125
+      }
+    },
+    "after_scrubbing_compaction": {
+      "delete_p50_us": {
+        "median": 63.959,
+        "min": 62.62500000000001,
+        "max": 64.375
+      },
+      "delete_p95_us": {
+        "median": 75.417,
+        "min": 72.708,
+        "max": 77.917
+      },
+      "search_p50_us_before_deletes": {
+        "median": 1.0410000000000001,
+        "min": 0.958,
+        "max": 1.708
+      },
+      "search_p50_us_after_deletes": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.083
+      },
+      "compaction_ms": {
+        "median": 101.204875,
+        "min": 96.99237500000001,
+        "max": 113.193916
+      }
+    }
+  },
+  "rejected_variant_fsync_every_delete": {
+    "note": "An earlier design synced the text segment inside every delete_document; measured once per run, 3 runs.",
+    "delete_p50_us": [
+      3997.7090000000003,
+      3980.542,
+      3999.75
+    ],
+    "delete_p95_us": [
+      6187.4169999999995,
+      5984.5,
+      6440.417
+    ]
+  },
+  "raw": {
+    "before": [
+      {
+        "compact_ms": 71.87100000000001,
+        "delete": {
+          "max_us": 156.959,
+          "n": 500,
+          "p50_us": 61.958000000000006,
+          "p95_us": 74.125
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 8.459,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.167
+        },
+        "search_before_deletes": {
+          "max_us": 10.709,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.209
+        }
+      },
+      {
+        "compact_ms": 70.979417,
+        "delete": {
+          "max_us": 131.417,
+          "n": 500,
+          "p50_us": 61.709,
+          "p95_us": 73.416
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 7.917000000000001,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.167
+        },
+        "search_before_deletes": {
+          "max_us": 9.707999999999998,
+          "n": 500,
+          "p50_us": 1.083,
+          "p95_us": 1.209
+        }
+      },
+      {
+        "compact_ms": 64.036709,
+        "delete": {
+          "max_us": 4708.5419999999995,
+          "n": 500,
+          "p50_us": 63.333,
+          "p95_us": 77.792
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 10.708,
+          "n": 500,
+          "p50_us": 1.083,
+          "p95_us": 1.334
+        },
+        "search_before_deletes": {
+          "max_us": 9.125,
+          "n": 500,
+          "p50_us": 1.0839999999999999,
+          "p95_us": 1.292
+        }
+      },
+      {
+        "compact_ms": 74.267917,
+        "delete": {
+          "max_us": 128.916,
+          "n": 500,
+          "p50_us": 61.12499999999999,
+          "p95_us": 70.875
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 8.792,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.167
+        },
+        "search_before_deletes": {
+          "max_us": 10.458,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.208
+        }
+      },
+      {
+        "compact_ms": 62.111917000000005,
+        "delete": {
+          "max_us": 121.541,
+          "n": 500,
+          "p50_us": 62.5,
+          "p95_us": 69.83399999999999
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 8.542,
+          "n": 500,
+          "p50_us": 1.083,
+          "p95_us": 1.209
+        },
+        "search_before_deletes": {
+          "max_us": 7.583,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.167
+        }
+      }
+    ],
+    "after": [
+      {
+        "compact_ms": 68.784791,
+        "delete": {
+          "max_us": 159.0,
+          "n": 500,
+          "p50_us": 62.583999999999996,
+          "p95_us": 75.333
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 6.042,
+          "n": 500,
+          "p50_us": 1.0410000000000001,
+          "p95_us": 1.125
+        },
+        "search_before_deletes": {
+          "max_us": 6.832999999999999,
+          "n": 500,
+          "p50_us": 1.083,
+          "p95_us": 1.209
+        }
+      },
+      {
+        "compact_ms": 64.191208,
+        "delete": {
+          "max_us": 137.791,
+          "n": 500,
+          "p50_us": 62.708,
+          "p95_us": 74.0
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 8.625,
+          "n": 500,
+          "p50_us": 1.0410000000000001,
+          "p95_us": 1.333
+        },
+        "search_before_deletes": {
+          "max_us": 8.042,
+          "n": 500,
+          "p50_us": 1.0410000000000001,
+          "p95_us": 1.167
+        }
+      },
+      {
+        "compact_ms": 61.881167,
+        "delete": {
+          "max_us": 425.417,
+          "n": 500,
+          "p50_us": 65.292,
+          "p95_us": 91.5
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 18.417,
+          "n": 500,
+          "p50_us": 1.083,
+          "p95_us": 1.5
+        },
+        "search_before_deletes": {
+          "max_us": 9.707999999999998,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.208
+        }
+      },
+      {
+        "compact_ms": 69.18754100000001,
+        "delete": {
+          "max_us": 6849.709,
+          "n": 500,
+          "p50_us": 64.792,
+          "p95_us": 79.792
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 8.25,
+          "n": 500,
+          "p50_us": 1.083,
+          "p95_us": 1.167
+        },
+        "search_before_deletes": {
+          "max_us": 7.417000000000001,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.208
+        }
+      },
+      {
+        "compact_ms": 74.471125,
+        "delete": {
+          "max_us": 134.459,
+          "n": 500,
+          "p50_us": 62.74999999999999,
+          "p95_us": 70.625
+        },
+        "documents": 5000,
+        "scrubbing_compaction": false,
+        "search_after_deletes": {
+          "max_us": 7.666,
+          "n": 500,
+          "p50_us": 1.0410000000000001,
+          "p95_us": 1.167
+        },
+        "search_before_deletes": {
+          "max_us": 8.291,
+          "n": 500,
+          "p50_us": 0.958,
+          "p95_us": 1.0839999999999999
+        }
+      }
+    ],
+    "after_scrubbing_compaction": [
+      {
+        "compact_ms": 101.204875,
+        "delete": {
+          "max_us": 173.708,
+          "n": 500,
+          "p50_us": 63.959,
+          "p95_us": 75.417
+        },
+        "documents": 5000,
+        "scrubbing_compaction": true,
+        "search_after_deletes": {
+          "max_us": 9.125,
+          "n": 500,
+          "p50_us": 1.0,
+          "p95_us": 1.167
+        },
+        "search_before_deletes": {
+          "max_us": 11.75,
+          "n": 500,
+          "p50_us": 1.708,
+          "p95_us": 1.9580000000000002
+        }
+      },
+      {
+        "compact_ms": 96.99237500000001,
+        "delete": {
+          "max_us": 121.417,
+          "n": 500,
+          "p50_us": 62.62500000000001,
+          "p95_us": 72.708
+        },
+        "documents": 5000,
+        "scrubbing_compaction": true,
+        "search_after_deletes": {
+          "max_us": 7.208,
+          "n": 500,
+          "p50_us": 1.0,
+          "p95_us": 1.167
+        },
+        "search_before_deletes": {
+          "max_us": 7.417000000000001,
+          "n": 500,
+          "p50_us": 1.0410000000000001,
+          "p95_us": 1.167
+        }
+      },
+      {
+        "compact_ms": 100.893333,
+        "delete": {
+          "max_us": 142.166,
+          "n": 500,
+          "p50_us": 64.375,
+          "p95_us": 77.917
+        },
+        "documents": 5000,
+        "scrubbing_compaction": true,
+        "search_after_deletes": {
+          "max_us": 10.665999999999999,
+          "n": 500,
+          "p50_us": 1.083,
+          "p95_us": 1.25
+        },
+        "search_before_deletes": {
+          "max_us": 12.625,
+          "n": 500,
+          "p50_us": 1.042,
+          "p95_us": 1.208
+        }
+      },
+      {
+        "compact_ms": 110.185958,
+        "delete": {
+          "max_us": 134.334,
+          "n": 500,
+          "p50_us": 63.125,
+          "p95_us": 75.542
+        },
+        "documents": 5000,
+        "scrubbing_compaction": true,
+        "search_after_deletes": {
+          "max_us": 6.792000000000001,
+          "n": 500,
+          "p50_us": 1.0410000000000001,
+          "p95_us": 1.125
+        },
+        "search_before_deletes": {
+          "max_us": 7.125,
+          "n": 500,
+          "p50_us": 0.958,
+          "p95_us": 1.125
+        }
+      },
+      {
+        "compact_ms": 113.193916,
+        "delete": {
+          "max_us": 125.25000000000001,
+          "n": 500,
+          "p50_us": 64.292,
+          "p95_us": 74.83300000000001
+        },
+        "documents": 5000,
+        "scrubbing_compaction": true,
+        "search_after_deletes": {
+          "max_us": 7.167,
+          "n": 500,
+          "p50_us": 1.0,
+          "p95_us": 1.125
+        },
+        "search_before_deletes": {
+          "max_us": 9.75,
+          "n": 500,
+          "p50_us": 1.0410000000000001,
+          "p95_us": 1.167
+        }
+      }
+    ]
+  }
+}
