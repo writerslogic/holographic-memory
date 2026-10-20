@@ -11,6 +11,35 @@ use super::{mutation::Mutation, HmsCore};
 use crate::core::documents::StoredDocument;
 use crate::core::storage::StagedArena;
 
+/// Removes an abandoned staging generation; disarmed once publication begins.
+struct StagingDir {
+    path: std::path::PathBuf,
+    armed: std::cell::Cell<bool>,
+}
+
+impl StagingDir {
+    fn new(path: std::path::PathBuf) -> Self {
+        Self {
+            path,
+            armed: std::cell::Cell::new(true),
+        }
+    }
+    fn path(&self) -> &std::path::Path {
+        &self.path
+    }
+    fn disarm(&self) {
+        self.armed.set(false);
+    }
+}
+
+impl Drop for StagingDir {
+    fn drop(&mut self) {
+        if self.armed.get() {
+            let _ = std::fs::remove_dir_all(&self.path);
+        }
+    }
+}
+
 struct Snapshot {
     checkpoint: (String, usize),
     mutations: Vec<Mutation>,
@@ -40,13 +69,11 @@ impl HmsCore {
         before_publication: impl FnOnce(),
     ) -> Result<()> {
         let _compaction = self.compaction.lock();
-        let temporary = tempfile::Builder::new()
-            .prefix(".compact-")
-            .tempdir_in(&self.storage_path)?;
+        let staging = StagingDir::new(self.arena.new_generation_dir()?);
         let snapshot = self.compaction_snapshot()?;
         let (generation, mut cursor) = snapshot.checkpoint;
         after_snapshot();
-        let mut arena = StagedArena::new(temporary.path(), Some(&self.arena))?;
+        let mut arena = StagedArena::new(staging.path(), Some(&self.arena))?;
         let mut payload = Vec::new();
         for mutation in snapshot.mutations {
             self.write_compaction_frame(&mut arena, &mut payload, &[mutation])?;
@@ -77,6 +104,7 @@ impl HmsCore {
         let end = self.compaction_end(&generation)?;
         self.arena
             .replay_compaction_tail(&mut prepared, &mut cursor, end)?;
+        staging.disarm();
         self.arena.replace_with_compacted(prepared)?;
         self.revision
             .fetch_add(1, std::sync::atomic::Ordering::Release);
