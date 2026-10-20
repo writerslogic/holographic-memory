@@ -167,6 +167,35 @@ fn purge_erases_a_generation_left_by_an_interrupted_compaction() {
     assert_clean(dir.path(), "after purge with an orphaned generation");
 }
 
+#[test]
+fn replaced_text_is_zeroed_in_the_segment_at_once() {
+    let dir = tempfile::tempdir().unwrap();
+    let core = HmsCore::new(DIM, Some(dir.path().display().to_string()), None).unwrap();
+    let put = |id: &str, version: &str, text: &str| {
+        let input = serde_json::from_value(serde_json::json!({
+            "id": id, "version": version, "text": text,
+        }))
+        .unwrap();
+        core.memorize_document(input).unwrap();
+    };
+    let in_segment = |needle: &str| {
+        let bytes = std::fs::read(dir.path().join("documents.text")).unwrap();
+        bytes.windows(needle.len()).any(|w| w == needle.as_bytes())
+    };
+    put("a", "1", &format!("first draft {}", MARKERS[0]));
+    // Same chunk count, then a different one.
+    put("a", "2", "second draft with other words");
+    assert!(!in_segment(MARKERS[0]), "text survived a same-shape update");
+    assert!(in_segment("second draft"));
+    put("b", "1", &format!("draft {}", MARKERS[1]));
+    let long = vec!["filler"; 400].join(" ");
+    put("b", "2", &long);
+    assert!(!in_segment(MARKERS[1]), "text survived a reshaping update");
+    assert!(in_segment("filler filler"));
+    core.compact_scrubbing().unwrap();
+    assert_clean(dir.path(), "after the updates are purged");
+}
+
 #[cfg(feature = "security")]
 #[test]
 fn encrypted_store_purges_and_keeps_survivors_readable() {

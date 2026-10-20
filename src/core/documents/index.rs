@@ -297,7 +297,9 @@ impl DocumentStore {
             self.replace_shared(id, previous, document);
             return;
         }
-        self.remove(&id);
+        if let Some(old) = self.remove(&id) {
+            self.scrub_replaced(&old, &document);
+        }
         let mut slots = Vec::with_capacity(document.chunks.len());
         let mut embedded = false;
         for (chunk_index, chunk) in document.chunks.iter().enumerate() {
@@ -441,6 +443,7 @@ impl DocumentStore {
             );
         }
         self.invalidate_dense_index();
+        self.scrub_replaced(&previous, &document);
         self.documents.insert(id, document);
     }
 
@@ -455,6 +458,19 @@ impl DocumentStore {
                     .filter_map(|c| c.text_at)
                     .any(|(at, len)| segment.is_scrubbed(at, len))
             })
+    }
+
+    /// Zeroes the text records of `old` that its replacement `new` no longer uses, so updated
+    /// text does not outlive the update in the segment.
+    fn scrub_replaced(&self, old: &StoredDocument, new: &StoredDocument) {
+        let Some(segment) = self.text.as_deref() else {
+            return;
+        };
+        for span in old.chunks.iter().filter_map(|c| c.text_at) {
+            if new.chunks.iter().all(|c| c.text_at != Some(span)) {
+                segment.scrub(span.0, span.1).expect("text segment scrub");
+            }
+        }
     }
 
     /// Removes a document and zeroes its chunk text in the segment (see

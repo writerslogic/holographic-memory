@@ -171,6 +171,9 @@ the store directory, before reopen, after an abort in a child process, and after
   records too but leaves the fsync to the next `forget`, purge or compaction, like the journal
   frame that records the delete (syncing every delete costs about 4 ms instead of 60 us;
   `benchmarks/results/purge_v1.json`). `DELETE /api/v1/documents/{id}?purge=true` purges.
+- **Updates:** replacing a document zeroes the old text records in `documents.text` the same
+  way (synced by the next `forget`, purge or compaction); the journal keeps the old frame
+  until a purge.
 - **With `purge`, before it returns:** the journal is rewritten without the text, then the
   replaced generation and any unreferenced generation left by an interrupted compaction are
   overwritten with zeros, synced and unlinked.
