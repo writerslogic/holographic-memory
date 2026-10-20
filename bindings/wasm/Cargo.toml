@@ -3,15 +3,45 @@ name = "hms-wasm"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
+description = "WebAssembly build of the Holographic Memory System document store for browsers, Node, Deno and Bun."
+publish = false
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = []
+# AES-256-GCM inside the module. Production encryption uses WebCrypto; this exists so the
+# choice stays measurable (see docs/runtimes/wasm/ENCRYPTION.md).
+inwasm-aes = ["dep:aes-gcm"]
+
 [dependencies]
+holographic-memory = { path = "../..", default-features = false }
 wasm-bindgen = "0.2"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 rand = { version = "0.10", default-features = false }
 rand_chacha = { version = "0.10", default-features = false }
+js-sys = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+serde-wasm-bindgen = "0.6"
 fxhash = "0.2.1"
 argon2 = { version = "0.6", default-features = false, features = ["alloc"] }
 sha2 = "0.11"
+aes-gcm = { version = "0.11", optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+libc = "0.2"
+tempfile = "3"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+

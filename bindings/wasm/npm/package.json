@@ -1,0 +1,71 @@
+{
+  "name": "@holographic-memory/wasm",
+  "version": "0.1.0",
+  "description": "Local-first document search in WebAssembly: BM25 passages, metadata filters, optional dense embeddings, encrypted persistence. Runs in browsers, Node, Deno and Bun with no service calls.",
+  "license": "Apache-2.0",
+  "author": "WritersLogic Contributors",
+  "homepage": "https://github.com/writerslogic/holographic-memory/tree/main/docs/runtimes/wasm",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/writerslogic/holographic-memory.git",
+    "directory": "bindings/wasm/npm"
+  },
+  "bugs": "https://github.com/writerslogic/holographic-memory/issues",
+  "keywords": ["wasm", "webassembly", "search", "bm25", "local-first", "offline", "vector", "memory", "indexeddb", "opfs"],
+  "type": "module",
+  "sideEffects": false,
+  "engines": { "node": ">=20" },
+  "main": "./dist/node.js",
+  "module": "./dist/web.js",
+  "browser": "./dist/web.js",
+  "types": "./dist/node.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/node.d.ts",
+      "deno": "./dist/deno.js",
+      "bun": "./dist/node.js",
+      "node": "./dist/node.js",
+      "browser": "./dist/web.js",
+      "default": "./dist/web.js"
+    },
+    "./web": { "types": "./dist/web.d.ts", "default": "./dist/web.js" },
+    "./bundler": { "types": "./dist/bundler.d.ts", "default": "./dist/bundler.js" },
+    "./node": { "types": "./dist/node.d.ts", "default": "./dist/node.js" },
+    "./deno": { "types": "./dist/deno.d.ts", "default": "./dist/deno.js" },
+    "./storage/indexeddb": { "types": "./dist/indexeddb.d.ts", "default": "./dist/indexeddb.js" },
+    "./storage/opfs": { "types": "./dist/opfs.d.ts", "default": "./dist/opfs.js" },
+    "./storage/file": { "types": "./dist/file.d.ts", "default": "./dist/file.js" },
+    "./wasm/*": "./dist/wasm/*",
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "web": ["./dist/web.d.ts"],
+      "bundler": ["./dist/bundler.d.ts"],
+      "node": ["./dist/node.d.ts"],
+      "deno": ["./dist/deno.d.ts"],
+      "storage/indexeddb": ["./dist/indexeddb.d.ts"],
+      "storage/opfs": ["./dist/opfs.d.ts"],
+      "storage/file": ["./dist/file.d.ts"]
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:ts": "tsc -p tsconfig.json",
+    "test": "npm run test:node",
+    "test:node": "node --test test/node/",
+    "test:deno": "deno test --allow-read --allow-write --allow-env test/deno/",
+    "test:bun": "bun test test/bun/",
+    "test:browser": "node test/browser/run.mjs",
+    "pack:check": "node scripts/pack-check.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "binaryen": "^123.0.0",
+    "puppeteer-core": "^24.0.0",
+    "typescript": "^5.6.0",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
