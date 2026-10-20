@@ -1,0 +1,2361 @@
+{
+  "components": {
+    "schemas": {
+      "Added": {
+        "properties": {
+          "added": {
+            "description": "Incoming documents stored (a repeated id counts each occurrence).",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added"
+        ],
+        "type": "object"
+      },
+      "CompactionRun": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CompactionView"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "CompactionStatusBody": {
+        "properties": {
+          "scheduled_interval_seconds": {
+            "description": "0 when scheduled compaction is off.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CompactionView"
+          }
+        },
+        "required": [
+          "scheduled_interval_seconds",
+          "status"
+        ],
+        "type": "object"
+      },
+      "CompactionView": {
+        "properties": {
+          "failures": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "last_duration_ms": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "last_error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_started_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_trigger": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "running": {
+            "type": "boolean"
+          },
+          "runs": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "running",
+          "runs",
+          "failures"
+        ],
+        "type": "object"
+      },
+      "Deleted": {
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "type": "object"
+      },
+      "DocIn": {
+        "description": "One document. `vector` has exactly `--input-dim` finite numbers (omit it only when the server\nembeds text on-device).",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "metadata": {
+            "default": null
+          },
+          "text": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vector": {
+            "default": null,
+            "items": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "DocumentPage": {
+        "properties": {
+          "count": {
+            "description": "Total documents in the tenant.",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/ListedDocument"
+            },
+            "type": "array"
+          },
+          "next_cursor": {
+            "description": "Pass as `after` for the next page; null on the last page.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "documents",
+          "count"
+        ],
+        "type": "object"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "KeysReloaded": {
+        "properties": {
+          "keys": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "type": "object"
+      },
+      "LegacyError": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "LineError": {
+        "properties": {
+          "line": {
+            "description": "1-based line number in the stream.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line",
+          "message"
+        ],
+        "type": "object"
+      },
+      "ListedDocument": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "metadata": true
+        },
+        "required": [
+          "id",
+          "metadata"
+        ],
+        "type": "object"
+      },
+      "Maintained": {
+        "properties": {
+          "documentIndexTrained": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "documentIndexTrained"
+        ],
+        "type": "object"
+      },
+      "Match": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "metadata": true,
+          "score": {
+            "description": "Exact cosine similarity for vector queries; fused rank score for text queries.",
+            "format": "double",
+            "type": "number"
+          },
+          "text": {
+            "description": "Stored text, empty when the document was stored without text.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "metadata",
+          "score"
+        ],
+        "type": "object"
+      },
+      "Matches": {
+        "properties": {
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/Match"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "matches"
+        ],
+        "type": "object"
+      },
+      "Problem": {
+        "description": "RFC 9457 problem details, plus the deprecated `error` object kept for v1 SDK clients.",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/LegacyError"
+          },
+          "instance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "request_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "format": "uint16",
+            "maximum": 65535,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "code",
+          "error"
+        ],
+        "type": "object"
+      },
+      "QueryIn": {
+        "properties": {
+          "filter": {
+            "default": null,
+            "description": "Keep documents whose metadata contains every key with an equal JSON value."
+          },
+          "query": {
+            "default": null,
+            "description": "Text query; requires the on-device model stages (`local-models`).",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "query_vector": {
+            "default": null,
+            "description": "Query embedding: exactly `--input-dim` finite numbers.",
+            "items": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "today": {
+            "default": null,
+            "description": "Date relative times in `query` resolve against (query rewriting).",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "top_k": {
+            "default": null,
+            "description": "1..=`--max-top-k`, default 3.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "Restored": {
+        "properties": {
+          "previous_snapshot": {
+            "description": "The replaced store, kept as a snapshot with this id.",
+            "type": "string"
+          },
+          "restored": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "restored",
+          "previous_snapshot"
+        ],
+        "type": "object"
+      },
+      "Snapshot": {
+        "properties": {
+          "bytes": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "bytes",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "Snapshots": {
+        "properties": {
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/Snapshot"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "snapshots"
+        ],
+        "type": "object"
+      },
+      "Stats": {
+        "properties": {
+          "capacityBytes": {
+            "format": "double",
+            "type": "number"
+          },
+          "documentIndexTrained": {
+            "type": "boolean"
+          },
+          "documents": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tenant": {
+            "type": "string"
+          },
+          "usedBytes": {
+            "format": "double",
+            "type": "number"
+          },
+          "vectors": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tenant",
+          "documents",
+          "vectors",
+          "documentIndexTrained",
+          "usedBytes",
+          "capacityBytes"
+        ],
+        "type": "object"
+      },
+      "StreamResult": {
+        "properties": {
+          "added": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "errors": {
+            "description": "The first rejected lines (at most 100).",
+            "items": {
+              "$ref": "#/components/schemas/LineError"
+            },
+            "type": "array"
+          },
+          "errors_truncated": {
+            "type": "boolean"
+          },
+          "rejected": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added",
+          "rejected",
+          "errors",
+          "errors_truncated"
+        ],
+        "type": "object"
+      },
+      "Tenants": {
+        "properties": {
+          "open": {
+            "description": "Stores currently open.",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tenants": {
+            "description": "Tenants with a store on disk.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "tenants",
+          "open"
+        ],
+        "type": "object"
+      },
+      "TlsReloaded": {
+        "properties": {
+          "reloaded": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reloaded"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "description": "API key. Scopes: read, write, admin (admin includes read and write). Keys are bound to tenants.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "One engine store per tenant. The /api/v1 contract is stable: see docs/server/versioning.md. Errors are RFC 9457 problem details.",
+    "license": {
+      "identifier": "Apache-2.0",
+      "name": "Apache-2.0"
+    },
+    "summary": "Holographic Memory HTTP service",
+    "title": "hms-server",
+    "version": "0.6.1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/admin/keys/reload": {
+      "post": {
+        "operationId": "reloadKeys",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeysReloaded"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Re-read --keys-file. Needs an all-tenant admin key.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/tenants": {
+      "get": {
+        "operationId": "listTenants",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenants"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Tenants with a store on disk. Needs an all-tenant admin key.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/tls/reload": {
+      "post": {
+        "operationId": "reloadTls",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TlsReloaded"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Re-read --tls-cert and --tls-key. Needs an all-tenant admin key.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/compaction": {
+      "get": {
+        "operationId": "compactionStatus",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompactionStatusBody"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Compaction status and schedule for the tenant.",
+        "tags": [
+          "index"
+        ]
+      },
+      "post": {
+        "operationId": "runCompaction",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompactionRun"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Compact the tenant's store now.",
+        "tags": [
+          "index"
+        ]
+      }
+    },
+    "/api/v1/documents": {
+      "get": {
+        "operationId": "listDocuments",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size, 1..=1000 (default 100).",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The next_cursor of the previous page.",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPage"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "304": {
+            "description": "ETag matched If-None-Match"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List document ids and metadata, paginated by id cursor.",
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "operationId": "addDocument",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Added"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Store or replace one document.",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/batch": {
+      "post": {
+        "operationId": "addDocuments",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/DocIn"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Added"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Store or replace up to --max-batch documents in one atomic commit.",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/stream": {
+      "post": {
+        "operationId": "streamDocuments",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-ndjson": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "description": "One document object per line",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreamResult"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Bulk ingest newline-delimited documents, committed in batches; not atomic across batches.",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/{id}": {
+      "delete": {
+        "operationId": "deleteDocument",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Document id, percent-encoded.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "true also rewrites the journal and scrubs what the deleted document left behind.",
+            "in": "query",
+            "name": "purge",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Delete a document by id (percent-encoded).",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/index/maintain": {
+      "post": {
+        "operationId": "maintainIndex",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "maxProperties": 0,
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Maintained"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Train the tenant's document index over stored embeddings.",
+        "tags": [
+          "index"
+        ]
+      }
+    },
+    "/api/v1/memory/applyForgetting": {
+      "post": {
+        "operationId": "memoryApplyForgetting",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Apply the configured forgetting policy. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/consolidate": {
+      "post": {
+        "operationId": "memoryConsolidate",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Run the configured consolidation policy. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/explain": {
+      "post": {
+        "operationId": "memoryExplain",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Recall with the evidence behind each result and its supersession chain. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/forget": {
+      "post": {
+        "operationId": "memoryForget",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Forget facts by id, source or scope. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/get": {
+      "post": {
+        "operationId": "memoryGet",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Fetch one fact by id. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/history": {
+      "post": {
+        "operationId": "memoryHistory",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "A fact's version and supersession history. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/recall": {
+      "post": {
+        "operationId": "memoryRecall",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Retrieve facts for a query, honoring validity time and supersession. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/remember": {
+      "post": {
+        "operationId": "memoryRemember",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "See docs/memory-api/README.md for the request and response fields.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Store one fact or an array of facts with validity time, source and supersession. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/query": {
+      "post": {
+        "operationId": "query",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Matches"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Nearest documents to a vector, best first, with exact cosine scores.",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/restore": {
+      "put": {
+        "operationId": "restoreUpload",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-tar": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "description": "Tar produced by the archive endpoint",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Restored"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Replace the tenant's store with an uploaded snapshot archive after verifying it.",
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/snapshots": {
+      "get": {
+        "operationId": "listSnapshots",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshots"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "List the tenant's snapshots.",
+        "tags": [
+          "snapshots"
+        ]
+      },
+      "post": {
+        "operationId": "createSnapshot",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Snapshot the tenant's store on the server (the tenant pauses while it is copied).",
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/snapshots/{id}": {
+      "delete": {
+        "operationId": "deleteSnapshot",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Snapshot id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Delete a snapshot.",
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/snapshots/{id}/archive": {
+      "get": {
+        "operationId": "downloadSnapshot",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Snapshot id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/x-tar": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Uncompressed tar of the store directory"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Download a snapshot as a tar stream (the off-box backup format).",
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/snapshots/{id}/restore": {
+      "post": {
+        "operationId": "restoreSnapshot",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Snapshot id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Restored"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Replace the tenant's store with a snapshot; the replaced store is kept as a snapshot.",
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/stats": {
+      "get": {
+        "operationId": "stats",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Return 304 when the ETag still matches.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stats"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "304": {
+            "description": "ETag matched If-None-Match"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Document and vector counts and storage use for the tenant.",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [],
+        "summary": "Liveness: the process is serving.",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "operationId": "metrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Prometheus text exposition format 0.0.4"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "admin"
+            ]
+          }
+        ],
+        "summary": "Prometheus metrics. Needs the admin scope unless --metrics-public is set.",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "openapi",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OpenAPI 3.1 document"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [],
+        "summary": "This document.",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readyz",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [],
+        "summary": "Readiness: 200 while accepting work, 503 while starting or draining.",
+        "tags": [
+          "operations"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "documents"
+    },
+    {
+      "name": "memory"
+    },
+    {
+      "name": "index"
+    },
+    {
+      "name": "snapshots"
+    },
+    {
+      "name": "admin"
+    },
+    {
+      "name": "operations"
+    }
+  ]
+}
+

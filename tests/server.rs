@@ -33,9 +33,10 @@ impl Server {
             .args(extra)
             .env_remove("HMS_API_KEY")
             .stdout(Stdio::piped());
-        if let Some(key) = api_key {
-            cmd.env("HMS_API_KEY", key);
-        }
+        match api_key {
+            Some(key) => cmd.env("HMS_API_KEY", key),
+            None => cmd.arg("--no-auth"),
+        };
         let mut child = cmd.spawn().unwrap();
         let mut line = String::new();
         BufReader::new(child.stdout.as_mut().unwrap())
@@ -680,8 +681,12 @@ fn failed_tenant_initialization_releases_reservation_and_retries() {
     let (status, error) = s.json("POST", "/api/v1/query", Some("blocked"), &query);
     assert_eq!(status, 500);
     assert_eq!(
-        error,
-        json!({"error": {"code": "internal", "message": "internal server error"}})
+        error["error"],
+        json!({"code": "internal", "message": "internal server error"})
+    );
+    assert_eq!(
+        error["detail"], "internal server error",
+        "no internal detail leaks"
     );
     std::fs::remove_file(&tenant_path).unwrap();
     assert_eq!(
@@ -753,7 +758,7 @@ fn configured_work_and_batch_limits_reject_native_limit_overflow_at_startup() {
         ("--body-timeout-seconds", "301"),
     ] {
         let output = Command::new(env!("CARGO_BIN_EXE_hms-server"))
-            .args([flag, invalid])
+            .args(["--no-auth", flag, invalid])
             .env_remove("HMS_API_KEY")
             .output()
             .unwrap();

@@ -25,6 +25,7 @@ impl Server {
             .args(["--bind", "127.0.0.1:0", "--input-dim", &DIM.to_string()])
             .args(["--dim", "2048", "--data-dir"])
             .arg(dir)
+            .args(["--no-auth"])
             .args(extra)
             .env_remove("HMS_API_KEY")
             .stdout(Stdio::piped())
