@@ -75,7 +75,8 @@ async def run(tool: HolographicMemoryTool, **command: Any) -> str:
 
 def failing(tool: HolographicMemoryTool, pattern: str, **command: Any):
     class _Ctx:
-        async def __aenter__(self) -> None: ...
+        async def __aenter__(self) -> None:
+            return None
 
         async def __aexit__(self, exc_type, exc, tb) -> bool:  # type: ignore[no-untyped-def]
             assert exc_type is ToolError, f"expected ToolError, got {exc_type}"
@@ -421,8 +422,7 @@ async def test_async_tool_runner(tool: HolographicMemoryTool) -> None:
 
 def test_sync_tool_runner(tmp_path: Path) -> None:
     assert BIN
-    sync = HolographicMemoryToolSync.connect(command=BIN, args=["--data-dir", str(tmp_path / "data")], env=clean_env())
-    try:
+    with HolographicMemoryToolSync.connect(command=BIN, args=["--data-dir", str(tmp_path / "data")], env=clean_env()) as sync:
         replies, seen = scripted()
         calls = iter(replies)
 
@@ -443,5 +443,3 @@ def test_sync_tool_runner(tmp_path: Path) -> None:
         check_loop(seen)
         assert "Acme Corp" in sync.recall("email follow-ups")
         assert any(t.get("name") == "memory_recall" for t in seen[0]["tools"])
-    finally:
-        sync.close()

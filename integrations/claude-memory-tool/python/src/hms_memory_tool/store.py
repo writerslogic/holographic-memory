@@ -56,21 +56,28 @@ class HmsToolError(Exception):
 class FileStore(Protocol):
     max_file_bytes: int
 
-    async def get(self, path: str) -> Optional[StoredFile]: ...
+    async def get(self, path: str) -> Optional[StoredFile]:
+        """The file at ``path``, or None."""
 
     async def put(
         self, path: str, text: str, *, create_only: bool = False, if_version: Optional[str] = None
-    ) -> str: ...
+    ) -> str:
+        """Create (``create_only``) or replace (``if_version``) a file; returns its new version."""
 
-    async def list(self, prefix: str) -> list[FileEntry]: ...
+    async def list(self, prefix: str) -> list[FileEntry]:
+        """Every file whose path starts with ``prefix``, in path order."""
 
-    async def delete(self, paths: Sequence[str]) -> int: ...
+    async def delete(self, paths: Sequence[str]) -> int:
+        """Delete the given files; returns how many existed."""
 
-    async def delete_prefix(self, prefix: str) -> int: ...
+    async def delete_prefix(self, prefix: str) -> int:
+        """Delete every file under ``prefix``."""
 
-    async def recall(self, query: str, k: int) -> list[RecallHit]: ...
+    async def recall(self, query: str, k: int) -> list[RecallHit]:
+        """The files most relevant to ``query``, best first."""
 
-    async def close(self) -> None: ...
+    async def close(self) -> None:
+        """Release the connection."""
 
 
 class McpFileStore:
@@ -114,10 +121,10 @@ class McpFileStore:
             stack = AsyncExitStack()
             try:
                 store = await cls._open(stack, command, args, env, url, token, namespace, max_file_bytes, request_timeout)
-            except BaseException as error:  # noqa: BLE001 - handed to the caller below
+            except Exception as error:  # handed to the caller below
                 try:
                     await stack.aclose()
-                except BaseException:  # noqa: BLE001 - the open failure is the useful one
+                except Exception:  # the open failure is the useful one
                     pass
                 if not ready.done():
                     ready.set_exception(error)
@@ -129,7 +136,7 @@ class McpFileStore:
         task = loop.create_task(owner())
         try:
             store = await ready
-        except BaseException:
+        except (Exception, asyncio.CancelledError):
             task.cancel()
             raise
         store._stop, store._owner = stop, task

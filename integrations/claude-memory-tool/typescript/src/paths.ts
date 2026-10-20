@@ -38,7 +38,8 @@ export function normalizePath(input: unknown): string {
   if (input !== ROOT && !input.startsWith(`${ROOT}/`)) {
     throw new MemoryPathError(`Path must start with /memories, got: ${input}`);
   }
-  const trimmed = input.length > ROOT.length ? input.replace(/\/+$/, "") : input;
+  let trimmed = input;
+  while (trimmed.length > ROOT.length && trimmed.endsWith("/")) trimmed = trimmed.slice(0, -1);
   if (trimmed === ROOT) return ROOT;
   const segments = trimmed.slice(ROOT.length + 1).split("/");
   if (segments.length > MAX_DEPTH) {
