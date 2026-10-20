@@ -42,8 +42,7 @@ fn legacy_frames_geometry_and_compaction_survive_reopening() -> Result<()> {
         drop(arena);
         let arena = PersistentArena::new(&live)?;
         assert_eq!(arena.write_slice(b"after restart")?, length);
-        let stage = root.path().join("stage");
-        std::fs::create_dir(&stage)?;
+        let stage = arena.new_generation_dir()?;
         let mut staged = StagedArena::new(&stage, Some(&arena))?;
         for payload in [b"first".as_slice(), &[17; 4097], b"last", b"after restart"] {
             staged.write_slice(payload)?;
@@ -213,8 +212,8 @@ fn compacted_store_without_root_manifest_keeps_published_generation_geometry() -
         let arena = PersistentArena::new(root.path())?;
         arena.write_slice(b"durable frame")?;
         let expected_capacity = arena.stats().capacity_bytes;
-        let stage = tempfile::tempdir()?;
-        let mut staged = StagedArena::new(stage.path(), Some(&arena))?;
+        let stage = arena.new_generation_dir()?;
+        let mut staged = StagedArena::new(&stage, Some(&arena))?;
         staged.write_slice(b"durable frame")?;
         arena.replace_with_compacted(staged.finish()?.prepare_compacted()?)?;
         drop(arena);
