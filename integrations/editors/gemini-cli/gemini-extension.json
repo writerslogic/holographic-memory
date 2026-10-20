@@ -1,0 +1,12 @@
+{
+  "name": "holographic-memory",
+  "version": "0.1.0",
+  "description": "Persistent, private, on-device memory over MCP: remember, recall, search, list, forget, export.",
+  "mcpServers": {
+    "holographic-memory": {
+      "command": "npx",
+      "args": ["-y", "holographic-memory-mcp"]
+    }
+  },
+  "contextFileName": "HOLOGRAPHIC-MEMORY.md"
+}

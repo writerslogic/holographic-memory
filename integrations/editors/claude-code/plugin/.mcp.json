@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "holographic-memory": {
+      "command": "npx",
+      "args": ["-y", "holographic-memory-mcp"],
+      "env": {
+        "HMS_MCP_NAMESPACE_STRATEGY": "${user_config.namespace_strategy}",
+        "HMS_MCP_PROJECT": "${CLAUDE_PROJECT_DIR}"
+      }
+    }
+  }
+}

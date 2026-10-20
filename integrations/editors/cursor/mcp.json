@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "holographic-memory": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "holographic-memory-mcp"],
+      "env": {
+        "HMS_MCP_NAMESPACE_STRATEGY": "project",
+        "HMS_MCP_PROJECT": "${workspaceFolder}"
+      }
+    }
+  }
+}
