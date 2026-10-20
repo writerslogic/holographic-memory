@@ -9,7 +9,6 @@
 import argparse
 import fcntl
 import gzip
-import hashlib
 import json
 import os
 from pathlib import Path

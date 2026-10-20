@@ -44,15 +44,15 @@ def remote_run(source, baseline, manifest, work_root):
                 try:
                     os.killpg(process.pid, signal.SIGTERM)
                 except ProcessLookupError:
-                    pass
+                    pass  # the group already exited
                 try:
                     process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
-                    pass
+                    pass  # still running: the SIGKILL below ends it
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
-                    pass
+                    pass  # the group already exited
                 process.wait()
                 raise
         receipt.setdefault("commands", []).append({"argv": command, "exit_code": code,
@@ -144,7 +144,6 @@ def remote_run(source, baseline, manifest, work_root):
 
 if __name__ == "__main__":
     import argparse
-    import json
     from pathlib import Path
 
     parser = argparse.ArgumentParser(description=__doc__)

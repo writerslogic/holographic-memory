@@ -41,6 +41,10 @@ class CompetitiveOracleTests(unittest.TestCase):
                 restore(receipt_path)
             self.assertEqual((campaign / "complete-validation.json").read_bytes(), b"concurrent change")
 
+    @staticmethod
+    def _abort_campaign():
+        raise RuntimeError("abort campaign")
+
     def test_campaign_lock_excludes_other_openers_and_releases_on_error(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "timing.lock"
@@ -51,7 +55,7 @@ class CompetitiveOracleTests(unittest.TestCase):
                         with path.open("a+b") as competing:
                             with self.assertRaises(BlockingIOError):
                                 fcntl.flock(competing.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    raise RuntimeError("abort campaign")
+                    self._abort_campaign()
             with path.open("a+b") as next_campaign:
                 fcntl.flock(next_campaign.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
 

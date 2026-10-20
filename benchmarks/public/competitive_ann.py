@@ -34,7 +34,7 @@ DATASETS = {"glove-100-angular": 100, "nytimes-256-angular": 256}
 SCALES = {10000: 128, 100000: 512, 250000: 1024}
 SYSTEMS = ("faiss_hnsw", "hnswlib", "rabitq_ivf", "symphonyqg", "faiss_ivfsq", "rabitq_ivf_current")
 LOCK_PATH = Path("/Volumes/A/.hms-target/timing.lock")
-_CAMPAIGN_LOCK = None
+_CAMPAIGN = {"lock": None}
 
 
 def sha(path):
@@ -83,18 +83,17 @@ def worker_command(system, *arguments):
 
 @contextmanager
 def timing_lock(path=LOCK_PATH):
-    global _CAMPAIGN_LOCK
-    if _CAMPAIGN_LOCK is not None:
-        yield _CAMPAIGN_LOCK
+    if _CAMPAIGN["lock"] is not None:
+        yield _CAMPAIGN["lock"]
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a+b") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        _CAMPAIGN_LOCK = lock
+        _CAMPAIGN["lock"] = lock
         try:
             yield lock
         finally:
-            _CAMPAIGN_LOCK = None
+            _CAMPAIGN["lock"] = None
             fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
 
