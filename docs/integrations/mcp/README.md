@@ -86,7 +86,7 @@ export HMS_MCP_PASSPHRASE='correct horse battery staple'
 hms-mcp --encrypt            # needs a build with --features security
 ```
 
-`--encrypt` (`HMS_MCP_ENCRYPT`) encrypts the store with a key derived from the passphrase in the environment variable named by `--passphrase-env` (default `HMS_MCP_PASSPHRASE`). The server refuses to start without the variable, never logs it, and a wrong passphrase fails the open. Reopening an encrypted store without `--encrypt`, or the reverse, fails rather than mixing modes. The end-to-end test stores a distinctive string and confirms it appears in no file under the data directory. The end-to-end test found that the document store's file-backed text segment (`documents.text`) was written in plaintext even with encryption on; an encrypted store now keeps document text in memory and rebuilds it from the encrypted journal instead (`src/core/engine/mod.rs`). What encryption does not cover: process memory while running, and the passphrase itself, which lives in whatever sets the environment.
+`--encrypt` (`HMS_MCP_ENCRYPT`) encrypts the store with a key derived from the passphrase in the environment variable named by `--passphrase-env` (default `HMS_MCP_PASSPHRASE`). The server refuses to start without the variable, never logs it, and a wrong passphrase fails the open. Reopening an encrypted store without `--encrypt`, or the reverse, fails rather than mixing modes. The end-to-end test stores a distinctive string and confirms it appears in no file under the data directory. What encryption does not cover: process memory while running, and the passphrase itself, which lives in whatever sets the environment.
 
 ## Recall: what "semantic" means for each build
 
