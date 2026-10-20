@@ -7,7 +7,7 @@
 
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
 import { startServer } from "../../../../../examples/wasm/serve.mjs";

@@ -52,7 +52,7 @@ for (const documents of sizes) {
   point.nativeMemoryStore = json(nativeBin, ["--engine", "memory", "--documents", documents, "--queries", QUERIES]);
   if (documents <= HMS_ENGINE_MAX) point.nativeEngineHmsCore = json(nativeBin, ["--engine", "hms", "--documents", documents, "--queries", QUERIES]);
   for (const variant of ["simd", "scalar"]) {
-    if ((nodeFailed && variant === "simd") || (variant === "scalar" && documents > SCALAR_MAX)) continue;
+    if (variant === "scalar" && documents > SCALAR_MAX) continue;
     point[`nodeWasm_${variant}`] = json(process.execPath, [join(here, "wasm-one.mjs"), documents, QUERIES, variant]);
   }
   if (point.nodeWasm_simd?.failed) nodeFailed = true;
