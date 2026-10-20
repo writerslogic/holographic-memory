@@ -33,8 +33,7 @@ the main tree: clippy all features and none clean, 427 lib tests, documents/docu
 encoder_versions integration tests pass. Committed from the worktree: evidence, harnesses and docs only.
 
 Next: Lucene 2B row (java only when no campaign runs on writerslogic-02); 2A target 0.85 is below the
-measured Node-runtime bound (0.84, serving_memory_v37.json); 1A GCE confirmation needs
-`! gcloud auth login`; 1B.4 event dates untouched. Constraints unchanged: tune on held-out/dev only;
+measured Node-runtime bound (0.84, serving_memory_v37.json); 1A x86 confirmation is done on Modal (ann_modal_confirm_v1.json); 1B.4 event dates untouched. Constraints unchanged: tune on held-out/dev only;
 private CARGO_TARGET_DIR; one lock hold under 14 minutes; keep keep-awake.ps1 alive on
 writerslogic-02 (no rule30 process visible 2026-10-19); the three stop questions are the only stops.
 
