@@ -50,6 +50,7 @@ fn encoders_match_prechange_vectors_at_density_boundaries() -> Result<()> {
                 let expected = match encoder {
                     TextEncoder::MultiscaleWordsV1 => &row.majority,
                     TextEncoder::MultiscaleCappedUnionV1 => &row.capped_union,
+                    TextEncoder::LocalEmbedV1 => unreachable!("not in the golden list"),
                 };
                 let actual = hms.encode_text(&row.text);
                 assert_eq!(actual.indices(), expected, "{encoder:?}, D{dim}");
@@ -112,7 +113,9 @@ fn incompatible_encoders_preserve_schema_and_recover_after_compaction() -> Resul
             let schema = std::fs::read(dir.path().join("store.json"))?;
             let other = match encoder {
                 TextEncoder::MultiscaleWordsV1 => TextEncoder::MultiscaleCappedUnionV1,
-                TextEncoder::MultiscaleCappedUnionV1 => TextEncoder::MultiscaleWordsV1,
+                TextEncoder::MultiscaleCappedUnionV1 | TextEncoder::LocalEmbedV1 => {
+                    TextEncoder::MultiscaleWordsV1
+                }
             };
             assert!(HmsCore::new(dim, Some(path.clone()), Some(config(other))).is_err());
             assert_eq!(std::fs::read(dir.path().join("store.json"))?, schema);

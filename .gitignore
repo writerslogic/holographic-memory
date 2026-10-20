@@ -62,3 +62,6 @@ benchmarks/public/*.py.lock
 /_site/
 !/scripts/docs-qa/package-lock.json
 !/scripts/docs-api/package-lock.json
+# Local embedder model packs are build products (see bindings/embed-models)
+*.hmsemb
+bindings/embed-models/**/packs/

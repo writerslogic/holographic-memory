@@ -49,6 +49,8 @@ pub(crate) mod decompose;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod diffusion;
 pub mod documents;
+#[cfg(feature = "local-embed")]
+pub mod embed;
 pub mod encoding;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod engine;

@@ -5,6 +5,8 @@ mod compaction;
 pub(crate) mod concepts;
 mod document_api;
 mod document_batch;
+#[cfg(feature = "local-embed")]
+mod embed_api;
 pub(crate) mod knowledge;
 pub(crate) mod memory_access;
 pub(crate) mod multi_hop;
@@ -73,6 +75,8 @@ pub struct HmsCore {
     documents: RwLock<super::documents::DocumentStore>,
     #[cfg(feature = "local-models")]
     model_stages: RwLock<Option<Arc<crate::core::models::ModelStages>>>,
+    #[cfg(feature = "local-embed")]
+    text_embedder: RwLock<Option<Arc<crate::core::embed::Embedder>>>,
     derived: RwLock<std::collections::BTreeMap<String, Vec<String>>>,
     atom_memory: Option<Arc<AtomMemory>>,
     composite_memory: Option<Arc<CompositeMemory>>,
@@ -122,6 +126,8 @@ impl HmsCore {
         }
         let dim = dimensions as usize;
         let config = config.unwrap_or_default();
+        #[cfg(feature = "local-embed")]
+        let (config, text_embedder) = embed_api::prepare(config)?;
         config.validate()?;
         anyhow::ensure!(
             ((dim / 256).max(1) as f64 / config.privacy.epsilon).is_finite(),
@@ -247,6 +253,8 @@ impl HmsCore {
             documents: RwLock::new(super::documents::DocumentStore::default()),
             #[cfg(feature = "local-models")]
             model_stages: RwLock::new(None),
+            #[cfg(feature = "local-embed")]
+            text_embedder: RwLock::new(text_embedder),
             derived: RwLock::new(std::collections::BTreeMap::new()),
             atom_memory: atom_mem,
             composite_memory: comp_mem,
@@ -542,6 +550,10 @@ impl HmsCore {
 
     /// Encode text into a sparse hypervector using multi-scale n-grams and word tokens.
     pub fn encode_text(&self, text: &str) -> EntangledHVec {
+        #[cfg(feature = "local-embed")]
+        if self.config.text_encoder == super::encoding::TextEncoder::LocalEmbedV1 {
+            return self.encode_text_with_embedder(text);
+        }
         self.config.text_encoder.encode(text, self.dimensions)
     }
 
