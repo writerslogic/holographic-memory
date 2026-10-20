@@ -68,7 +68,7 @@ dev = [
 ]
 importers-test = [
     "annoy>=1.17.3",
-    "chromadb>=0.5.23",
+    "chromadb>=1.0.0",
     "duckdb>=1.5.6",
     "elasticsearch>=9.5.1",
     "faiss-cpu>=1.15.1",
@@ -96,4 +96,11 @@ importers-test = [
     "sqlite-vec>=0.1.9",
     "weaviate-client>=4.23.1",
     "zep-cloud>=4.0.0",
+]
+
+[tool.uv]
+# embedchain pins chromadb<0.6, which has known advisories; the importer tests use current chromadb.
+conflicts = [
+    [{ extra = "embedchain" }, { group = "importers-test" }],
+    [{ extra = "all" }, { group = "importers-test" }],
 ]
