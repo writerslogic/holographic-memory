@@ -54,3 +54,6 @@ benchmarks/public/*.py.lock
 /benchmarks/results/algebraic_codebook_synthetic.json
 /benchmarks/results/longmemeval_dev_answers_v2.json
 /benchmarks/results/longmemeval_dev_answers_v2b.json
+# Local embedder model packs are build products (see bindings/embed-models)
+*.hmsemb
+bindings/embed-models/**/packs/

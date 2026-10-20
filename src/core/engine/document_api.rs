@@ -31,6 +31,12 @@ impl HmsCore {
         if let Some(stages) = self.model_stages() {
             return self.memorize_document_with_models(input, &stages);
         }
+        #[cfg(feature = "local-embed")]
+        let input = {
+            let mut input = input;
+            self.embed_document_inputs(std::slice::from_mut(&mut input))?;
+            input
+        };
         let document = documents::prepare(
             input,
             self.dimensions,
@@ -52,7 +58,16 @@ impl HmsCore {
             .map(|embedder| embedder.dimensions());
         #[cfg(not(feature = "local-models"))]
         let inferred_dimensions = None;
+        #[cfg(feature = "local-embed")]
+        let inferred_dimensions =
+            inferred_dimensions.or_else(|| self.text_embedder().map(|e| e.dimensions()));
         super::document_batch::validate_inputs(&inputs, inferred_dimensions)?;
+        #[cfg(feature = "local-embed")]
+        let inputs = {
+            let mut inputs = inputs;
+            self.embed_document_inputs(&mut inputs)?;
+            inputs
+        };
         let mutations = inputs
             .into_par_iter()
             .map(|input| {
@@ -93,6 +108,15 @@ impl HmsCore {
         if let Some(stages) = self.model_stages().filter(|_| !text.trim().is_empty()) {
             return self.search_documents_with_models(text, "", options, &stages);
         }
+        #[cfg(feature = "local-embed")]
+        let embedded = self
+            .embed_search_text(text, options)?
+            .map(|embedding| SearchOptions {
+                embedding: Some(embedding),
+                ..options.clone()
+            });
+        #[cfg(feature = "local-embed")]
+        let options = embedded.as_ref().unwrap_or(options);
         let prepared = documents::prepare_search(
             text,
             options,

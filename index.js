@@ -1,5 +1,12 @@
 'use strict'
 
+// Offline model packs for the local embedder, when the optional package is installed.
+if (!process.env.HMS_EMBED_MODEL_DIR) {
+  try {
+    process.env.HMS_EMBED_MODEL_DIR = require('holographic-memory-models').packDir
+  } catch {}
+}
+
 // Loads the native binding. Order: a locally built `holographic-memory.node` (development
 // and the packed tarball used by `npm run test:package`), then the per-platform
 // `holographic-memory.<suffix>.node` next to this file, then the optional dependency

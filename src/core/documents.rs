@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use anyhow::{ensure, Result};
+use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -473,8 +473,19 @@ pub(crate) fn prepare_with_keys(
             .as_ref()
             .map(|all| normalize_embedding(&all[i], embedding_dimensions.unwrap_or(0)))
             .transpose()?;
+        let vector = match (encoder.is_embedding(), &embedding) {
+            (false, _) => encoder.encode(&chunk.text, dimensions),
+            (true, Some(e)) => {
+                let dense: Vec<f32> = e.iter().map(|&x| x as f32).collect();
+                EntangledHVec::from_dense(&dense, dimensions)
+            }
+            (true, None) => bail!(
+                "the {} text encoder needs a dense embedding for every chunk; install a text embedder",
+                encoder.name()
+            ),
+        };
         stored.push(StoredChunk {
-            vector: encoder.encode(&chunk.text, dimensions),
+            vector,
             text: input.store_text.unwrap_or(true).then_some(chunk.text),
             text_at: None,
             id: chunk.id,

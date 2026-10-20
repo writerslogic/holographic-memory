@@ -63,6 +63,7 @@ rust-stemmers = "1.2.0"
 # MCP server (`hms-mcp`): the official Rust SDK; client + child-process transport serve the tests.
 rmcp = { version = "3.6", default-features = false, features = ["server", "client", "transport-io", "transport-child-process", "transport-streamable-http-server"], optional = true }
 tokio-util = { version = "0.7", optional = true }
+libm = { version = "0.2", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 candle-core = { version = "0.11", features = ["metal"], optional = true }
@@ -122,6 +123,11 @@ experimental = []
 # On-device embedding, re-ranking, fact extraction and query rewriting (candle, Qwen3).
 # Weights load from local directories only; the library never downloads.
 local-models = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers"]
+# Pure-Rust local text embeddings: int8/f16 BERT-family inference, tokenizer from the model
+# pack, sha256-pinned packs. No network code; packs load from a path, an env var or the cache.
+local-embed = ["dep:tokenizers", "sha2", "dep:libm"]
+# First-use download of the pinned upstream model files into the cache (adds ureq).
+local-embed-download = ["local-embed", "ureq"]
 # Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
@@ -130,6 +136,16 @@ server = ["tokio", "axum", "subtle"]
 # MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.
 mcp = ["dep:rmcp", "dep:tokio-util", "tokio", "axum", "subtle"]
+
+[[bin]]
+name = "hms-embed"
+path = "src/bin/hms-embed.rs"
+required-features = ["local-embed"]
+
+[[bin]]
+name = "embed-store-bench"
+path = "benchmarks/embedding/embed_store_bench.rs"
+required-features = ["local-embed"]
 
 [[bin]]
 name = "hms-eval"

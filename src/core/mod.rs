@@ -40,6 +40,8 @@ pub(crate) mod decompose;
 // histogram field -- relation algebra + retrieval the sparse core cannot do.
 pub(crate) mod diffusion;
 pub mod documents;
+#[cfg(feature = "local-embed")]
+pub mod embed;
 pub mod encoding;
 pub mod engine;
 pub mod entangled;
