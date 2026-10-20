@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .common import CACHE, ROOT, log
+from .common import CACHE, log
 
 DATA = CACHE / "competitive" / "data"
 ANN_URL = "https://ann-benchmarks.com/{name}.hdf5"

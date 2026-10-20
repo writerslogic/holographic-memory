@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Statistics, ground truth and quality metrics that every verdict rests on."""
 
-import os
 import sys
 from pathlib import Path
 

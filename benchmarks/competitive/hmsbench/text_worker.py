@@ -11,8 +11,6 @@ its own documented analyzer (stemmer, stop words) and default BM25 parameters.
 import argparse
 import itertools
 import json
-import os
-import shutil
 import sqlite3
 import sys
 import time

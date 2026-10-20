@@ -12,7 +12,6 @@ memory        Agent-memory-shaped: every session of the 100 LongMemEval_S dev qu
 import json
 import urllib.request
 import zipfile
-from pathlib import Path
 
 from .common import CACHE, ROOT
 

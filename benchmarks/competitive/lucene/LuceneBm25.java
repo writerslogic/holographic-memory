@@ -139,7 +139,11 @@ public final class LuceneBm25 {
           case 'b' -> b.append('\b');
           case 'f' -> b.append('\f');
           case 'u' -> {
-            b.append((char) Integer.parseInt(s.substring(p, p + 4), 16));
+            try {
+              b.append((char) Integer.parseInt(s.substring(p, p + 4), 16));
+            } catch (NumberFormatException e) {
+              throw new IllegalStateException("bad unicode escape at " + p, e);
+            }
             p += 4;
           }
           default -> b.append(e);
@@ -213,7 +217,6 @@ public final class LuceneBm25 {
   }
 
   public static void main(String[] a) throws Exception {
-    long loaded = System.nanoTime();
     String phase = a[0];
     Path input = Paths.get(a[1]), store = Paths.get(a[2]), out = Paths.get(a[3]);
     long t0 = Long.parseLong(a[4]);

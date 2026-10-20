@@ -13,7 +13,6 @@ import re
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 from .common import CACHE, ROOT, dir_bytes, log
 
