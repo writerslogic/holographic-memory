@@ -30,6 +30,7 @@ pub(crate) struct TextSegment {
 /// never read back.
 const MAGIC: &[u8; 4] = b"HMST";
 const VERSION: u8 = 2;
+#[cfg(feature = "security")]
 const FLAG_ENCRYPTED: u8 = 1;
 const HEADER_LEN: u64 = 8;
 
