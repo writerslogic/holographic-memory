@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   build:
+    # Data releases (e.g. evidence-v1) are marked prerelease and must never publish a package.
+    if: ${{ !github.event.release.prerelease }}
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +63,8 @@ jobs:
         if-no-files-found: error
 
   publish:
+    # Data releases (e.g. evidence-v1) are marked prerelease and must never publish a package.
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     needs: build
     steps:

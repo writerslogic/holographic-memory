@@ -12,6 +12,8 @@ permissions:
 
 jobs:
   publish:
+    # Data releases (e.g. evidence-v1) are marked prerelease and must never publish a package.
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

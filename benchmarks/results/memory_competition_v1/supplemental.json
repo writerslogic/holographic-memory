@@ -1,0 +1,43 @@
+{
+  "patch": "/Volumes/A/holographic-memory-memory-competition/benchmarks/results/memory_competition_v1/supplemental.patch",
+  "base_sha256": {
+    "bindings/python/holographic-sdk/README.md": "8b18209238ce2412c6c0e50e3f1d8948e167198b0fd43dfac24f4307d6f4b593",
+    "bindings/python/holographic-sdk/tests/test_evidence.py": "ab4580a9fbe290ac1db8c5a6f17b8c32c6a0844371fb5a89c59b0be455f6c9b1"
+  },
+  "result_sha256": {
+    "bindings/python/holographic-sdk/README.md": "2d273c99feed675fb95b9bffa7ef987a565a23eb1e94dc373b66e3321d194ae2",
+    "bindings/python/holographic-sdk/tests/test_evidence.py": "284d2129c05fe223e2e603b1faa5b6bc1b9cb13ccca85b1e51a1097911b91cbc"
+  },
+  "unchanged_codec_sha256": "953fff331b3c9d0353eef15b6557c3a659e38af6070d7d9e87a281a89bd03e34",
+  "verification": {
+    "codec_regression_tests": 12,
+    "sdk_tests_passed": 18,
+    "sdk_live_server_tests_skipped": 5,
+    "readme_example": "executed successfully",
+    "actual_boundaries": {
+      "MAX_PACKET_BYTES": [
+        1048575,
+        1048576,
+        1048577
+      ],
+      "MAX_GROUPS": [
+        4095,
+        4096,
+        4097
+      ],
+      "per_group_occurrences": [
+        15,
+        16,
+        17
+      ],
+      "MAX_OCCURRENCES": [
+        65535,
+        65536,
+        65537
+      ]
+    },
+    "malformed_used_and_unused_tables": "rejected",
+    "codec_changes": false,
+    "original_measurements_unchanged": true
+  }
+}
