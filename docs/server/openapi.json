@@ -1059,6 +1059,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "true also rewrites the journal and scrubs what the deleted document left behind.",
+            "in": "query",
+            "name": "purge",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
