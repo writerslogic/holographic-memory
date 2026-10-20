@@ -66,6 +66,7 @@ for (const documents of sizes) {
     }
   }
   points.push(point);
+  writeFileSync(`${out}.partial.json`, JSON.stringify(points));
   console.error(`done ${documents}`);
   if (nodeFailed) break;
 }
@@ -77,7 +78,8 @@ const server = await new Promise((res) =>
     const path = new URL(req.url, "http://x").pathname;
     const file = path.startsWith("/pkg/") ? join(pkg, "dist", path.slice(5)) : join(here, path.replace(/^\//, ""));
     try {
-      resp.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream" }).end(readFileSync(file));
+      const body = readFileSync(file);
+      resp.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream" }).end(body);
     } catch {
       resp.writeHead(404).end();
     }
