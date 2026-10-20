@@ -45,6 +45,7 @@ def type_of(schema, spec) -> str:
 def _properties(schema, spec, required=()):
     rows = []
     for name, prop in (schema.get("properties") or {}).items():
+        prop = prop if isinstance(prop, dict) else {}  # `true` is a schema that accepts anything
         need = "required" if name in required else ""
         rows.append(f"| `{name}` | {type_of(prop, spec)} | {need} | {_cell(prop.get('description'))} |")
     return rows
