@@ -1,0 +1,42 @@
+annotated-types==0.8.0
+    # via pydantic
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via tqdm
+deprecation==2.1.0
+    # via lancedb
+lance-namespace==0.13.0
+    # via lancedb
+lance-namespace-urllib3-client==0.13.0
+    # via lance-namespace
+lancedb==0.40.0
+    # via -r requirements/lancedb.footprint.in
+numpy==2.5.4
+    # via lancedb
+packaging==26.3
+    # via
+    #   deprecation
+    #   lancedb
+pyarrow==26.0.0
+    # via lancedb
+pydantic==2.14.1
+    # via
+    #   lance-namespace-urllib3-client
+    #   lancedb
+pydantic-core==2.50.1
+    # via pydantic
+python-dateutil==2.9.0.post0
+    # via lance-namespace-urllib3-client
+six==1.17.0
+    # via python-dateutil
+tqdm==4.70.1
+    # via lancedb
+typing-extensions==4.16.0
+    # via
+    #   lance-namespace-urllib3-client
+    #   pydantic
+    #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via pydantic
+urllib3==2.8.0
+    # via lance-namespace-urllib3-client

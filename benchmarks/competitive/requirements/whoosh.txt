@@ -1,0 +1,6 @@
+cached-property==2.0.1
+    # via whoosh-reloaded
+numpy==2.5.4
+    # via -r requirements/whoosh.in
+whoosh-reloaded==2.7.5
+    # via -r requirements/whoosh.in

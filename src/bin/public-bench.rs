@@ -162,6 +162,10 @@ enum Mode {
         /// (benchmark support for search experiments; the file must match data and params).
         #[arg(long)]
         graph_cache: Option<PathBuf>,
+        /// After the throughput repeats, time every query of every configuration once more
+        /// individually and record p50/p99 latency (the throughput runs are unchanged).
+        #[arg(long)]
+        latency: bool,
     },
     Beir {
         #[arg(long)]
@@ -494,6 +498,7 @@ struct QgraphArgs {
     neighbour_cap: usize,
     sync: Option<PathBuf>,
     graph_cache: Option<PathBuf>,
+    latency: bool,
 }
 
 enum Built {
@@ -633,6 +638,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         Built::Vertex(g) => (g.index_bytes(), g.residual_bytes()),
     };
     eprintln!("built in {build_secs:.1}s, {index_bytes} bytes");
+    let rss_after_build = rss_bytes();
 
     // (sweep label, search) pairs; the second parameter is max_exact or rerank.
     let seconds: &[usize] = match &index {
@@ -760,9 +766,25 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
             fs::write(&done, "")?;
         }
     }
+    let rss_end = rss_bytes();
+    let mut latency: Vec<Option<(f64, f64)>> = vec![None; configs.len()];
+    if a.latency {
+        for (slot, &cfg) in latency.iter_mut().zip(&configs) {
+            let mut us = Vec::with_capacity(test.len());
+            for q in &test {
+                let t = Instant::now();
+                search(q, cfg, &mut out);
+                us.push(t.elapsed().as_secs_f64() * 1e6);
+            }
+            us.sort_by(f64::total_cmp);
+            *slot = Some((percentile(&us, 0.5), percentile(&us, 0.99)));
+        }
+    }
     let mut rows = Vec::new();
-    for (&(second, ef, patience, sigmas), (qps, loads, gate, recall, exact_mean, screen_mean)) in
-        configs.iter().zip(&acc)
+    for (
+        (&(second, ef, patience, sigmas), (qps, loads, gate, recall, exact_mean, screen_mean)),
+        lat,
+    ) in configs.iter().zip(&acc).zip(&latency)
     {
         let mut sorted = qps.clone();
         sorted.sort_by(f64::total_cmp);
@@ -774,6 +796,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
             "recall_at_10": recall,
             "qps_single_thread": median,
             "qps_runs": qps,
+            "latency_us": lat.map(|(p50, p99)| json!({"p50": p50, "p99": p99})),
             "load_1m_before_runs": loads,
             "load_gate_met": gate,
             "mean_exact_evals_per_query": exact_mean,
@@ -800,6 +823,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                   "threads": rayon::current_num_threads()},
         "index_bytes": index_bytes,
         "residual_bytes": residual_bytes,
+        "rss_bytes": {"after_build": rss_after_build, "end": rss_end},
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
             "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read.",
@@ -1266,6 +1290,7 @@ fn main() -> Result<()> {
             neighbour_cap,
             sync,
             graph_cache,
+            latency,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1297,6 +1322,7 @@ fn main() -> Result<()> {
             neighbour_cap,
             sync,
             graph_cache,
+            latency,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {

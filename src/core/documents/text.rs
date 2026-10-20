@@ -88,6 +88,35 @@ impl TextSegment {
         Ok((at, len))
     }
 
+    /// Overwrites the record at a location returned by [`TextSegment::append`] with zeros, so a
+    /// deleted chunk's text is gone from the file. Readers that captured the chunk before its
+    /// deletion read the zeroed record as empty text. Durable only after [`TextSegment::sync`].
+    pub(crate) fn scrub(&self, at: u64, len: u32) -> Result<()> {
+        ensure!(
+            at >= HEADER_LEN
+                && at
+                    .checked_add(u64::from(len))
+                    .is_some_and(|end| end <= self.len.load(Ordering::Acquire)),
+            "chunk text location outside the text segment"
+        );
+        positioned_write(&self.file, &vec![0u8; len as usize], at).context("scrubbing chunk text")
+    }
+
+    /// Whether the record was scrubbed (see [`TextSegment::scrub`]). Looks at the first bytes
+    /// only: an encrypted record opens with a random nonce, a plaintext one with words.
+    pub(crate) fn is_scrubbed(&self, at: u64, len: u32) -> bool {
+        let mut head = [0u8; 16];
+        let n = (len as usize).min(head.len());
+        n > 0
+            && positioned_read(&self.file, &mut head[..n], at).is_ok()
+            && head[..n].iter().all(|&b| b == 0)
+    }
+
+    /// Flushes scrubbed records to stable storage.
+    pub(crate) fn sync(&self) -> Result<()> {
+        self.file.sync_data().context("syncing text segment")
+    }
+
     /// Reads the text stored at a location returned by [`TextSegment::append`].
     pub(crate) fn read(&self, at: u64, len: u32) -> Result<String> {
         ensure!(
@@ -101,6 +130,11 @@ impl TextSegment {
         );
         let mut bytes = vec![0u8; len as usize];
         positioned_read(&self.file, &mut bytes, at).context("reading chunk text")?;
+        // A scrubbed record is all zeros. A live one never is: an encrypted record starts with
+        // a random nonce, and a plaintext chunk is words, not NUL bytes.
+        if !bytes.is_empty() && bytes.iter().all(|&b| b == 0) {
+            return Ok(String::new());
+        }
         #[cfg(feature = "security")]
         if let Some(cipher) = &self.cipher {
             bytes = cipher.decrypt_with_aad(&bytes, &at.to_le_bytes())?;
@@ -187,6 +221,24 @@ mod tests {
         moved.copy_within(ra..ra + a.1 as usize, rb);
         std::fs::write(&path, &moved).unwrap();
         assert!(segment.read(b.0, b.1).is_err());
+    }
+
+    #[test]
+    fn scrubbed_records_are_gone_from_the_file_and_read_as_empty() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("t");
+        let segment = create(&path);
+        let a = segment.append("deleted passage").unwrap();
+        let b = segment.append("kept passage").unwrap();
+        segment.scrub(a.0, a.1).unwrap();
+        segment.sync().unwrap();
+        let raw = std::fs::read(&path).unwrap();
+        assert!(!raw.windows(7).any(|w| w == b"deleted"));
+        assert_eq!(segment.read(a.0, a.1).unwrap(), "");
+        assert_eq!(segment.read(b.0, b.1).unwrap(), "kept passage");
+        // limit+1 stays an error; the header is never scrubbed.
+        assert!(segment.scrub(b.0, b.1 + 1).is_err());
+        assert!(segment.scrub(0, 4).is_err());
     }
 
     #[test]

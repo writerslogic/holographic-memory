@@ -1,0 +1,4 @@
+annoy==1.17.3
+    # via -r requirements/annoy.in
+numpy==2.5.4
+    # via -r requirements/annoy.in

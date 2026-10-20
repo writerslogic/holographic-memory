@@ -32,12 +32,6 @@ Dictionaries are in `fuzz/dictionaries/` (`-dict=fuzz/dictionaries/server.dict`)
 | `operand_question` | free-text question parsing | `experimental` |
 | `connection_graph_log` | the append-only bincode event log replayed on open | `experimental` |
 | `llm_output` | text produced by an on-device model (JSON extraction, facts, query plan, dates) | `local-models` |
-| `server_requests` | hms-server document, batch and query bodies and the tenant header, through the server's own validation | `server` |
-
-`server_requests` compiles `src/bin/hms-server.rs` into the fuzz crate as a module; its
-`fuzz_request` entry point exists only under `--cfg fuzzing`, which cargo-fuzz sets.
-Its first input byte selects the surface (`0` single document, `1` batch, `2` query,
-`3` tenant header, `4` tenant name), so the seeds start with that digit.
 
 ## Reproduce a crash from CI
 

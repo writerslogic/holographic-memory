@@ -1,0 +1,4 @@
+numpy==2.5.4
+    # via -r requirements/sqlite-vec.in
+sqlite-vec==0.1.9
+    # via -r requirements/sqlite-vec.in

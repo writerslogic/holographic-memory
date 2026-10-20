@@ -3,7 +3,7 @@
 
 # Builds the versioned documentation site (dev from main, one site per v* release tag, a `latest`
 # alias) into a single Pages artifact. There is no gh-pages branch: deploy-pages publishes the
-# artifact directly. Pull requests build and check links but never deploy.
+# artifact directly. Pull requests build, check links and run the browser checks but never deploy.
 name: Docs
 
 on:
@@ -27,6 +27,10 @@ jobs:
     # environment accepts deployments from main, and the build on main enumerates every tag itself.
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
+    env:
+      # Every generated reference must exist: a missing rustdoc or typedoc output fails the build.
+      HMS_BUILD_RUSTDOC: '1'
+      HMS_DOCS_REQUIRE_API: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -37,11 +41,22 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install documentation tools
-        run: pip install -r docs/requirements.txt
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
 
-      - name: Unit-test the link rewriting hook
-        run: python -m unittest scripts/test_docs_hooks.py
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+
+      # No rust-cache here: this job produces the Pages artifact, and a poisoned cache must not be
+      # able to reach what is published (zizmor cache-poisoning).
+      - name: Install documentation tools
+        run: |
+          pip install -r docs/requirements.txt
+          npm ci --prefix scripts/docs-api
+
+      - name: Unit-test the docs generators
+        run: python -m unittest scripts/test_docs_hooks.py scripts/test_docs_site.py
 
       - name: Build every version (strict, any warning fails)
         run: bash scripts/build-docs-site.sh _site
@@ -51,8 +66,9 @@ jobs:
         with:
           args: >-
             --offline --no-progress --include-fragments --exclude-path _site/dev/404.html
+            --exclude-path _site/latest/404.html --exclude '/assets/fonts/' --exclude-path 'api/rust/doc'
             --root-dir ${{ github.workspace }}/_site
-            '_site/dev/**/*.html'
+            '_site/dev/**/*.html' '_site/latest/**/*.html'
           fail: true
 
       # Informational on pull requests: third-party hosts flake. links.yml runs the same check
@@ -73,8 +89,76 @@ jobs:
         with:
           path: _site
 
+  # axe, Lighthouse, real search queries and screenshots, run against a build served locally.
+  # Thresholds: zero serious or critical axe violations, Lighthouse at least 95 in every
+  # category on the landing page and a documentation page, and every query in
+  # scripts/docs-qa/queries.txt finds its page in the first five.
+  browser-checks:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Install tools
+        run: |
+          pip install -r docs/requirements.txt
+          npm ci --prefix scripts/docs-api
+          npm ci --prefix scripts/docs-qa
+          npm exec --prefix scripts/docs-qa -- playwright install --with-deps chromium
+
+      # The site is served at the root of 127.0.0.1:8123, so its absolute URLs resolve. The rust
+      # reference is built and checked by the `build` job; this build skips it.
+      - name: Build the site for local serving
+        env:
+          HMS_SITE_BASE: http://127.0.0.1:8123
+        run: bash scripts/build-docs-site.sh _site
+
+      - name: axe (serious and critical violations fail)
+        run: node scripts/docs-qa/axe.mjs _site
+        env:
+          VERSION: latest
+
+      - name: Lighthouse (every category at least 95)
+        run: node scripts/docs-qa/lighthouse.mjs _site
+        env:
+          VERSION: latest
+          REPORT_DIR: docs-qa-output/lighthouse
+          # Hosted runners are slower than a workstation (the same page scores 98 to 99 locally): the
+          # performance floor is 90 there, and the other three categories stay at 95.
+          PERF_THRESHOLD: 90
+
+      - name: Search (real queries)
+        run: node scripts/docs-qa/search.mjs _site
+        env:
+          VERSION: latest
+
+      - name: Screenshots at desktop, tablet and phone, light and dark
+        if: ${{ always() }}
+        run: node scripts/docs-qa/shots.mjs _site docs-qa-output/screenshots / /quickstart/ /concepts/holographic/ /api/
+        env:
+          VERSION: latest
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ always() }}
+        with:
+          name: docs-qa-output
+          path: docs-qa-output
+          if-no-files-found: ignore
+
   deploy:
-    needs: build
+    needs: [build, browser-checks]
     if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:

@@ -13,6 +13,45 @@ pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Overwrites a file with zeros, syncs it, then unlinks it, so the bytes are not left in the
+/// freed blocks of a filesystem that does not zero them. Copy-on-write and wear-levelled
+/// media can still keep prior copies, which no file API controls.
+pub(crate) fn scrub_remove_file(path: &Path) -> Result<()> {
+    use std::io::{Seek, SeekFrom};
+    if path.symlink_metadata()?.file_type().is_symlink() {
+        // Never write through a link; the target is not ours to overwrite.
+        return Ok(std::fs::remove_file(path)?);
+    }
+    let mut file = std::fs::OpenOptions::new().write(true).open(path)?;
+    let mut remaining = file.metadata()?.len();
+    let zeros = vec![0u8; 1 << 20];
+    file.seek(SeekFrom::Start(0))?;
+    while remaining > 0 {
+        let n = remaining.min(zeros.len() as u64) as usize;
+        file.write_all(&zeros[..n])?;
+        remaining -= n as u64;
+    }
+    file.sync_all()?;
+    drop(file);
+    std::fs::remove_file(path)?;
+    Ok(())
+}
+
+/// [`scrub_remove_file`] for every file under `dir`, then removes the directory tree.
+pub(crate) fn scrub_remove_dir(dir: &Path) -> Result<()> {
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let kind = entry.file_type()?;
+        if kind.is_dir() {
+            scrub_remove_dir(&entry.path())?;
+        } else {
+            scrub_remove_file(&entry.path())?;
+        }
+    }
+    std::fs::remove_dir(dir)?;
+    sync_directory(dir.parent().unwrap_or_else(|| Path::new(".")))
+}
+
 /// Manifests that carry a `<name>.crc32` sidecar holding the CRC32 of their bytes, so a flip
 /// inside a value that still parses is caught at open and by `hms-admin verify`. Both are
 /// written once; `indices.json`, which every flush rewrites, is not on the list: a crash

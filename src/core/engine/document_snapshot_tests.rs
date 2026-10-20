@@ -84,10 +84,8 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
     let second = documents::execute_search(&captured, 1);
     assert_eq!(second.len(), 1);
     assert_eq!(second[0].document_id, "b");
-    assert_eq!(
-        second[0].text.as_deref(),
-        Some("needleold needleoldremoved")
-    );
+    // The delete zeroed the text on disk, so a query captured before it reads none.
+    assert_eq!(second[0].text.as_deref(), Some(""));
     let restored = HmsCore::new(1024, Some(path), Some(config))?;
     let current = restored.search_documents("needleold", &options)?;
     assert_eq!(current.len(), 1);

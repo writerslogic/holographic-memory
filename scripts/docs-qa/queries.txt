@@ -1,0 +1,45 @@
+# One search per line: query | fragments (comma separated; any one) that must appear in the URL of one of the top five pages.
+# These are the questions a reader types; a line that returns nothing is a defect in the docs, not in this file.
+quickstart | quickstart
+install | install
+getting started | quickstart
+sqlite comparison | quickstart
+offline agent | offline-agent
+encrypt a store | quickstart
+passphrase | faq
+wrong passphrase | faq
+holographic | concepts/holographic,faq
+bind bundle permute | concepts/holographic
+hypervector | concepts/holographic
+capacity | concepts/capacity
+how many items fit | concepts/capacity
+lossy | concepts/lossy
+privacy limits | concepts/privacy-limits
+what does encryption protect | concepts/privacy-limits
+bm25 | glossary,quickstart,PUBLIC-BENCHMARKS
+ndcg | glossary
+recall@k | glossary
+hopfield | glossary
+resonator network | glossary,RESEARCH,DETERMINISTIC-RESONATOR
+hms-server | SERVER
+api key | SERVER,SECURITY
+python client | api/python
+phase vector | api/python
+typescript | api/node
+HolographicMemorySystem | api/node
+changelog | changelog
+release notes | changelog
+contributing | community
+governance | GOVERNANCE
+security policy | SECURITY
+benchmark | PUBLIC-BENCHMARKS
+hnsw | PUBLIC-BENCHMARKS
+scifact | PUBLIC-BENCHMARKS
+msrv | faq
+telemetry | faq
+network calls | faq
+license | faq
+architecture | ARCHITECTURE
+production readiness | production-readiness
+avx512 | platforms
+how docs are built | docs-pipeline

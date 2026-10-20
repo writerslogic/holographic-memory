@@ -172,8 +172,16 @@ impl HmsCore {
         Ok(exists)
     }
 
+    /// Makes scrubbed text records durable. Deleting zeroes them in the page cache, like the
+    /// journal frame that records the delete; `forget` and a scrubbing compaction call this so
+    /// the zeros are on stable storage before they return.
+    pub(crate) fn sync_text_segment(&self) -> Result<()> {
+        let segment = self.documents.read().text_segment();
+        segment.map_or(Ok(()), |segment| segment.sync())
+    }
+
     pub(super) fn remove_document_from_memory(&self, id: &str, shards: &ShardSet) -> Result<()> {
-        if let Some(old) = self.documents.write().remove(id) {
+        if let Some(old) = self.documents.write().remove_scrubbed(id)? {
             for chunk in &old.chunks {
                 shards.remove(&chunk.id, self.dimensions)?;
             }

@@ -1,0 +1,2 @@
+annoy==1.17.3
+    # via -r requirements/annoy.footprint.in

@@ -59,6 +59,14 @@ impl HmsCore {
         self.compact_with_hook(|| {})
     }
 
+    /// Compacts and then physically erases what the compaction replaced: the old generation
+    /// and any unreferenced leftovers are overwritten with zeros and synced before they are
+    /// unlinked. The text segment is scrubbed per deleted document at delete time.
+    pub fn compact_scrubbing(&self) -> Result<()> {
+        self.sync_text_segment()?;
+        self.compact_impl(|| {}, || {}, true)
+    }
+
     fn compact_with_hook(&self, after_snapshot: impl FnOnce()) -> Result<()> {
         self.compact_with_hooks(after_snapshot, || {})
     }
@@ -67,6 +75,15 @@ impl HmsCore {
         &self,
         after_snapshot: impl FnOnce(),
         before_publication: impl FnOnce(),
+    ) -> Result<()> {
+        self.compact_impl(after_snapshot, before_publication, false)
+    }
+
+    fn compact_impl(
+        &self,
+        after_snapshot: impl FnOnce(),
+        before_publication: impl FnOnce(),
+        scrub: bool,
     ) -> Result<()> {
         let _compaction = self.compaction.lock();
         let staging = StagingDir::new(self.arena.new_generation_dir()?);
@@ -79,16 +96,26 @@ impl HmsCore {
             self.write_compaction_frame(&mut arena, &mut payload, &[mutation])?;
         }
         for document in &snapshot.documents {
-            self.write_compaction_frame(
-                &mut arena,
-                &mut payload,
-                &[DocumentMutation::Document(
-                    crate::core::documents::DocumentWithText {
-                        document,
-                        segment: snapshot.text.as_deref(),
-                    },
-                )],
-            )?;
+            // A document deleted since the snapshot has had its text zeroed; the delete is in
+            // the tail, which the replay below applies, so it is simply not carried over.
+            {
+                let store = self.documents.read();
+                if store.is_deleted(document) {
+                    continue;
+                }
+                payload.clear();
+                payload.extend_from_slice(super::mutation::TRANSACTION_MAGIC);
+                serde_json::to_writer(
+                    &mut payload,
+                    &[DocumentMutation::Document(
+                        crate::core::documents::DocumentWithText {
+                            document,
+                            segment: snapshot.text.as_deref(),
+                        },
+                    )],
+                )?;
+            }
+            arena.write_slice(&self.maybe_encrypt(&payload)?)?;
         }
         let mut prepared = arena.finish()?.prepare_compacted()?;
         for _ in 0..2 {
@@ -105,7 +132,11 @@ impl HmsCore {
         self.arena
             .replay_compaction_tail(&mut prepared, &mut cursor, end)?;
         staging.disarm();
-        self.arena.replace_with_compacted(prepared)?;
+        if scrub {
+            self.arena.replace_with_compacted_scrubbing(prepared)?;
+        } else {
+            self.arena.replace_with_compacted(prepared)?;
+        }
         self.revision
             .fetch_add(1, std::sync::atomic::Ordering::Release);
         // The arena pointer has moved, so writers may continue: the lease ends here. Index

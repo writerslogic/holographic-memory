@@ -1,0 +1,115 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Self-updating HMS comparison. The `test` job guards the generator on every relevant PR. The
+# `run` job re-runs the lightweight reproducible suite on a GitHub-hosted runner (weekly, on
+# demand, and on release tags), uploads the raw results as artefacts, and `land` regenerates
+# docs/benchmarks/COMPARISON.md and lands it through a short-lived signed bot branch that is
+# merged and deleted (the remote keeps only `main` at rest).
+#
+# Hosted runners are shared, noisy virtual machines: the table's ratios are meaningful, its
+# absolute numbers are not, and rows from different hardware classes are never compared. The
+# heavy suite (full GloVe-100 and SIFT-1M) runs on a self-hosted machine or Modal; see
+# docs/benchmarks/README.md.
+name: bench-refresh
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Suite to run (light is the hosted-runner subset)"
+        default: light
+        type: choice
+        options: [light, smoke]
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "benchmarks/competitive/**"
+      - "benchmarks/results/competitive/**"
+      - "docs/benchmarks/**"
+      - ".github/workflows/bench-refresh.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench-refresh-${{ github.event_name == 'pull_request' && github.ref || 'refresh' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  HMS_BENCH_DATA: ${{ github.workspace }}/.bench-data
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Generator tests (every table cell traces to a committed results file)
+        run: uv run --no-project --python 3.13 --with pytest --with numpy==2.5.4 pytest -q benchmarks/competitive/tests
+
+  run:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'push' && github.ref || github.event.repository.default_branch }}
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - name: Build the HMS benchmark binaries
+        run: cargo build --locked --release --bin public-bench --example competitive_text
+      - name: Run the suite
+        run: ./benchmarks/competitive/hms-bench run --suite "$SUITE"
+        env:
+          SUITE: ${{ github.event.inputs.suite || 'light' }}
+          HMS_BENCH_HW_CLASS: github-hosted-ubuntu-24.04-x86_64
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      - name: Upload raw results
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: bench-results-${{ github.run_id }}
+          path: benchmarks/results/competitive/*.json
+          if-no-files-found: error
+
+  land:
+    needs: run
+    if: github.event_name != 'pull_request' && github.event.inputs.suite != 'smoke'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: bench-results-${{ github.run_id }}
+          path: benchmarks/results/competitive
+      - name: Regenerate the table and the README block
+        run: |
+          uv run --no-project --python 3.13 --with numpy==2.5.4 python benchmarks/competitive/hms-bench table
+      - name: Land through a signed bot branch
+        env:
+          # A token that may bypass the review requirement (BENCH_BOT_TOKEN) merges the PR; the
+          # default workflow token can only open it, and PRs it opens do not trigger checks.
+          GH_TOKEN: ${{ secrets.BENCH_BOT_TOKEN || github.token }}
+          MERGE: ${{ secrets.BENCH_BOT_TOKEN != '' && 'yes' || 'no' }}
+        run: |
+          flags=""
+          if [ "$MERGE" = "yes" ]; then flags="--merge"; fi
+          uv run --no-project --python 3.13 python benchmarks/competitive/hmsbench/land.py $flags \
+            --branch "bot/bench-refresh-${GITHUB_RUN_ID}" \
+            --title "bench: refresh the comparison table" \
+            --body "Automated weekly refresh from run ${GITHUB_RUN_ID} on a GitHub-hosted runner (hardware class github-hosted-ubuntu-24.04-x86_64; ratios, not absolutes)." \
+            benchmarks/results/competitive docs/benchmarks README.md

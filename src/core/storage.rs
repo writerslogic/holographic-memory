@@ -750,6 +750,20 @@ impl PersistentArena {
     }
 
     pub(crate) fn replace_with_compacted(&self, prepared: PreparedCompaction) -> Result<()> {
+        self.replace_compacted(prepared, false)
+    }
+
+    /// Like [`Self::replace_with_compacted`], but overwrites the replaced generation with
+    /// zeros and syncs it before unlinking, then does the same for every unreferenced
+    /// generation or legacy segment left by an interrupted compaction.
+    pub(crate) fn replace_with_compacted_scrubbing(
+        &self,
+        prepared: PreparedCompaction,
+    ) -> Result<()> {
+        self.replace_compacted(prepared, true)
+    }
+
+    fn replace_compacted(&self, prepared: PreparedCompaction, scrub: bool) -> Result<()> {
         let staged = prepared.arena;
         ensure!(
             staged.segment_size == self.segment_size
@@ -794,6 +808,7 @@ impl PersistentArena {
         compaction_crash_point("published");
         std::mem::swap(&mut *active, &mut *replacement.active_segment.write());
         std::mem::swap(&mut *segments, &mut *replacement.read_segments.write());
+        let live_path = new_path.clone();
         let old_path = std::mem::replace(&mut *data_path, new_path);
         self.active_capacity.store(
             replacement.active_capacity.load(Ordering::Acquire),
@@ -816,7 +831,15 @@ impl PersistentArena {
         compaction_crash_point("mapped");
         publication?;
         if old_path != self.base_path {
-            if let Err(error) = std::fs::remove_dir_all(old_path) {
+            let removed = if scrub {
+                super::durable_file::scrub_remove_dir(&old_path)
+            } else {
+                std::fs::remove_dir_all(&old_path).map_err(Into::into)
+            };
+            if let Err(error) = removed {
+                if scrub {
+                    return Err(error.context("old arena generation could not be scrubbed"));
+                }
                 tracing::warn!(%error, "old arena generation could not be removed");
             }
         } else {
@@ -825,13 +848,47 @@ impl PersistentArena {
                 let name = entry.file_name();
                 let name = name.to_string_lossy();
                 if name.starts_with("seg_") && name.ends_with(".bin") {
-                    if let Err(error) = std::fs::remove_file(entry.path()) {
+                    let removed = if scrub {
+                        super::durable_file::scrub_remove_file(&entry.path())
+                    } else {
+                        std::fs::remove_file(entry.path()).map_err(Into::into)
+                    };
+                    if let Err(error) = removed {
+                        if scrub {
+                            return Err(error.context("legacy arena segment could not be scrubbed"));
+                        }
                         tracing::warn!(%error, "legacy arena segment cleanup failed");
                     }
                 }
             }
         }
+        if scrub {
+            self.scrub_unreferenced(&live_path)?;
+        }
         Ok(())
+    }
+
+    /// Scrubs and removes generations and legacy segments that the live pointer does not
+    /// reference: leftovers of a compaction that died before publishing. The caller holds
+    /// the compaction lock, so no staging generation is in progress.
+    fn scrub_unreferenced(&self, live: &Path) -> Result<()> {
+        for entry in std::fs::read_dir(&self.base_path)? {
+            let entry = entry?;
+            let path = entry.path();
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            let meta = entry.file_type()?;
+            if meta.is_dir() && name.starts_with("gen-") && path != live {
+                super::durable_file::scrub_remove_dir(&path)?;
+            } else if meta.is_file()
+                && live != self.base_path.as_path()
+                && name.starts_with("seg_")
+                && name.ends_with(".bin")
+            {
+                super::durable_file::scrub_remove_file(&path)?;
+            }
+        }
+        super::durable_file::sync_directory(&self.base_path)
     }
 
     pub(crate) fn checkpoint(&self) -> (String, usize) {

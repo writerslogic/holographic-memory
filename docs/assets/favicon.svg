@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Holographic Memory</title>
+  <defs>
+    <clipPath id="disc"><circle cx="32" cy="32" r="28"/></clipPath>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0a0d14"/>
+  <g clip-path="url(#disc)" stroke-width="3">
+    <g stroke="#5ce1e6">
+      <circle cx="22" cy="32" r="6"/>
+      <circle cx="22" cy="32" r="14"/>
+      <circle cx="22" cy="32" r="22"/>
+      <circle cx="22" cy="32" r="30"/>
+    </g>
+    <g stroke="#a78bfa">
+      <circle cx="42" cy="32" r="6"/>
+      <circle cx="42" cy="32" r="14"/>
+      <circle cx="42" cy="32" r="22"/>
+      <circle cx="42" cy="32" r="30"/>
+    </g>
+  </g>
+</svg>
