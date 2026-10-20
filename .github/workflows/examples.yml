@@ -43,6 +43,8 @@ jobs:
         run: cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml | tee "$RUNNER_TEMP/rust.out"
       - name: Result table matches the one in the docs
         run: awk '/^query /,/^top-1 correct/' "$RUNNER_TEMP/rust.out" | diff - examples/quickstart/expected-search.txt
+      - name: Holographic demo output matches the docs
+        run: cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin holographic | diff - examples/quickstart/expected-holographic.txt
 
   quickstart-node:
     runs-on: ubuntu-latest

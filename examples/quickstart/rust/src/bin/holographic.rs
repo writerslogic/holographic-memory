@@ -1,70 +1,65 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! The "holographic" part in 40 lines: bind roles to fillers, superpose them in one vector,
-//! recall by unbinding, and damage the vector to watch recall degrade instead of fail.
+//! The "holographic" part in a few lines: bind a role to a filler, superpose many items in ONE
+//! vector, test membership, and damage the vector to watch the signal degrade gradually.
 //! Run: `cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin holographic`
 
 use holographic_memory::EntangledHVec;
 
 const DIM: usize = 16_384;
+const ITEMS: u64 = 100;
 
-fn atom(name: &str) -> EntangledHVec {
-    let seed = name.bytes().fold(0xcbf2_9ce4_8422_2325u64, |h, b| {
-        (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
-    });
+fn atom(seed: u64) -> EntangledHVec {
     EntangledHVec::new_deterministic(DIM, seed)
 }
 
-fn main() {
-    let roles = ["capital", "language", "currency", "continent", "river"];
-    let fillers = ["paris", "french", "euro", "europe", "seine"];
-    let codebook: Vec<(&str, EntangledHVec)> = fillers.iter().map(|f| (*f, atom(f))).collect();
-
-    // Superpose five role-filler bindings into ONE vector about "france".
-    let bound: Vec<EntangledHVec> = roles
+/// Share of `item`'s active bits that are set in `memory` (1.0 = fully present).
+fn presence(memory: &EntangledHVec, item: &EntangledHVec) -> f64 {
+    let hits = item
+        .indices()
         .iter()
-        .zip(&fillers)
-        .map(|(r, f)| atom(r).bind(&atom(f)))
-        .collect();
-    let france = EntangledHVec::bundle(&bound);
+        .filter(|bit| memory.indices().binary_search(bit).is_ok())
+        .count();
+    hits as f64 / item.indices().len() as f64
+}
 
-    // Recall by unbinding a role and finding the nearest known filler.
-    let recall = |memory: &EntangledHVec, role: &str| {
-        let noisy = memory.bind(&atom(role));
-        codebook
-            .iter()
-            .max_by(|a, b| a.1.similarity(&noisy).total_cmp(&b.1.similarity(&noisy)))
-            .map(|(name, _)| *name)
-            .unwrap_or("-")
-    };
-    for (role, filler) in roles.iter().zip(&fillers) {
-        let got = recall(&france, role);
-        println!(
-            "france.{role:<9} -> {got:<7} {}",
-            if got == *filler { "ok" } else { "WRONG" }
-        );
-        assert_eq!(got, *filler);
-    }
+fn main() {
+    // Bind is its own inverse: unbinding a role from role (x) filler returns the filler.
+    let (role, filler) = (atom(1), atom(2));
+    let bound = role.bind(&filler);
+    assert_eq!(role.bind(&bound).indices(), filler.indices());
+    println!("bind(role, filler) unbound with role recovers the filler exactly");
 
-    // Damage: drop a growing share of the superposed vector's active bits. Recall degrades
-    // gradually; no single bit held any one fact.
-    let bits: Vec<u32> = france.indices().to_vec();
-    println!("\nbits kept  recalled of {}", roles.len());
-    for keep_percent in [100usize, 75, 50, 35, 25] {
+    // Superpose {ITEMS} atoms into ONE fixed-size vector (a union bundle).
+    let members: Vec<EntangledHVec> = (100..100 + ITEMS).map(atom).collect();
+    let strangers: Vec<EntangledHVec> = (10_000..10_000 + ITEMS).map(atom).collect();
+    let memory = EntangledHVec::bundle_bloom(&members);
+    println!(
+        "{ITEMS} items in one vector of {} active bits out of {DIM}\n",
+        memory.indices().len()
+    );
+
+    // Damage: keep only a share of the bundle's bits. No single bit held any one item, so every
+    // member degrades together and gradually; strangers stay near the noise floor.
+    println!("bits kept  members (mean presence)  strangers (mean presence)");
+    let bits = memory.indices().to_vec();
+    for keep_percent in [100usize, 75, 50, 25, 10] {
         let kept: Vec<u32> = bits
             .iter()
             .copied()
             .enumerate()
-            .filter(|(i, _)| i * 100 / bits.len() < keep_percent)
-            .map(|(_, b)| b)
+            .filter(|(i, _)| (i * 7919) % 100 < keep_percent)
+            .map(|(_, bit)| bit)
             .collect();
         let damaged = EntangledHVec::from_indices(kept, DIM);
-        let right = roles
-            .iter()
-            .zip(&fillers)
-            .filter(|(r, f)| recall(&damaged, r) == **f)
-            .count();
-        println!("{keep_percent:>8}%  {right}");
+        let mean = |set: &[EntangledHVec]| {
+            set.iter().map(|v| presence(&damaged, v)).sum::<f64>() / set.len() as f64
+        };
+        println!(
+            "{keep_percent:>8}%  {:>22.2}  {:>25.2}",
+            mean(&members),
+            mean(&strangers)
+        );
     }
 }

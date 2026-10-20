@@ -66,3 +66,23 @@ level tested, at each of the nine dimension and density settings in the file. Th
 codebook size (100), 30 probes, and uniform random corruption of a single stored vector. It says
 nothing about a codebook of 10,000, about a vector that is itself a superposition, or about
 adversarial noise; for superpositions see [Capacity limits](capacity.md).
+
+## Try it
+
+`examples/quickstart/rust/src/bin/holographic.rs` binds a role to a filler, superposes 100 items into
+one vector, and damages the vector step by step. CI runs it and diffs the output with the table below.
+
+```rust
+--8<-- "examples/quickstart/rust/src/bin/holographic.rs"
+```
+
+```text
+--8<-- "examples/quickstart/expected-holographic.txt"
+```
+
+Read the table for what it shows and no more. Members of the bundle keep a presence equal to the
+share of bits kept (1.00 down to 0.10), so degradation is gradual and proportional, with no cliff.
+Strangers stay at a fixed fraction of that, so members remain separable from non-members at every
+damage level tested (100 items, D = 16,384, a fixed deterministic bit-dropping pattern). It does
+not show recall of structured records from a bundle; for that, see the meaning memory and the
+[capacity page](capacity.md).

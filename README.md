@@ -53,7 +53,7 @@ Representations** and **Vector Symbolic Architectures** (VSA) give memory that p
   search, Hopfield cleanup). Damaging the vector degrades every item a little instead of
   deleting a few, so recall falls off gradually under noise.
 
-You can watch it happen in 40 lines:
+You can watch it happen in a few lines (a union bundle of 100 items, damaged step by step):
 `cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin holographic`.
 
 **What is literally that in HMS:** the sparse hypervector type and its bind, bundle and permute
