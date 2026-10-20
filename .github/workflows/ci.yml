@@ -4,8 +4,9 @@
 # Every check runs as its own job so they execute in parallel; the `check` job at the
 # end is the single aggregate (required-status-check target) and fails if any of them
 # did not succeed. Rust build caches (Swatinem/rust-cache) are written only from main;
-# pull requests restore them. Tests build with CARGO_PROFILE_*_OPT_LEVEL=2 because the
-# numeric tests are 10x slower unoptimized than the compile time they save.
+# pull requests restore them. Tests build with opt-level 1 and no debuginfo: measured on
+# these runners, the all-features suite takes 22 s to run at opt-level 2, ~170 s at opt-level 0,
+# and opt-level 1 compiles ~25% faster than 2 (2 min warm in total instead of 5).
 name: CI
 
 on:
@@ -43,7 +44,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: lint
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo fmt -- --check
       - name: Clippy, all features
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
@@ -68,7 +69,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: feature-${{ matrix.features }}
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Clippy with only this feature
         run: cargo clippy --locked --all-targets --features ${{ matrix.features }} -- -D warnings
 
@@ -76,8 +77,10 @@ jobs:
     name: test (${{ matrix.set }})
     runs-on: ubuntu-latest
     env:
-      CARGO_PROFILE_DEV_OPT_LEVEL: "2"
-      CARGO_PROFILE_TEST_OPT_LEVEL: "2"
+      CARGO_PROFILE_DEV_OPT_LEVEL: "1"
+      CARGO_PROFILE_TEST_OPT_LEVEL: "1"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     strategy:
       fail-fast: false
       matrix:
@@ -96,7 +99,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: test-${{ matrix.set }}
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
         with:
           tool: nextest
@@ -122,7 +125,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: bench
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo bench --locked --no-run --no-default-features
 
   deny:
@@ -148,7 +151,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: msrv
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo check --locked --no-default-features
 
   retrieval-quality:
@@ -163,7 +166,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: recall
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Enforce deterministic recall floor
         run: cargo run --locked --release --bin hms-eval -- --vectors 1200 --queries 50 --dimensions 4096 --assert-min-recall 0.90
       - name: Enforce document relevance floor
@@ -182,7 +185,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: server
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
       - name: Build hms-server
         run: cargo build --locked --features server --bin hms-server
@@ -213,7 +216,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: node-${{ matrix.os }}
-          save-if: ${{ github.ref == 'refs/heads/main' || github.head_ref == 'feat/ci-release' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
@@ -257,32 +260,3 @@ jobs:
         run: |
           echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
           echo "$RESULTS" | jq -e 'all(.[]; .result == "success")' > /dev/null
-
-  tune:
-    name: tune ${{ matrix.variant }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { variant: o1-debug0, opt: "1", cmd: "cargo nextest run --locked --all-features" }
-    env:
-      CARGO_PROFILE_DEV_OPT_LEVEL: ${{ matrix.opt }}
-      CARGO_PROFILE_TEST_OPT_LEVEL: ${{ matrix.opt }}
-      CARGO_PROFILE_DEV_DEBUG: "0"
-      CARGO_PROFILE_TEST_DEBUG: "0"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
-        with:
-          toolchain: stable
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          shared-key: tune-${{ matrix.variant }}
-          save-if: true
-      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
-        with:
-          tool: nextest
-      - run: ${{ matrix.cmd }}
