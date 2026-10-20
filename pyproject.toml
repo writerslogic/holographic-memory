@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "holographic-vsa"
 description = "Deterministic, verifiable vector-symbolic (VSA) memory on a quantized-phase substrate."
 requires-python = ">=3.9"
-license = { text = "AGPL-3.0-or-later" }
+license = { text = "Apache-2.0" }
 authors = [{ name = "WritersLogic, Inc.", email = "david@writerslogic.com" }]
 readme = "README.md"
 keywords = ["vsa", "hdc", "hyperdimensional", "vector-symbolic", "holographic-memory", "resonator"]
@@ -14,7 +14,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Rust",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "License :: OSI Approved :: Apache Software License",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Intended Audience :: Science/Research",
 ]

@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Lane 1 (research): does fractional-power encoding (VFA/FPE) give the phasor
 // substrate a notion of CONTINUOUS closeness -- the thing neither the sparse nor

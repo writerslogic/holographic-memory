@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Lane 1, §16. §15 left single-pass associative recall on the fixed-point complex
 // substrate at 85% (zero load) -> 45% (400 distractors). The field superposes

@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """x86 confirmation of the 1A kernel and build levers on Modal (1A, replaces the blocked GCE run).
 
   modal volume create hms-ann-confirm

@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // FUSION experiment: the exact coded store (§26) and the holographic superposition
 // store are two ends of ONE spectrum — regularized least squares. Store one vector x

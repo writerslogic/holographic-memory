@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Lane 1, §18. §17 fixed the ZERO-load recall ceiling by tuning the FPE kernel
 // bandwidth (W=4->16 lifts 85%->100% at 13 facts). This tests the FULL associative

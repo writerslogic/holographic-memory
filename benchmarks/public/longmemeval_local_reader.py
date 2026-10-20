@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Lever 1B.5: the local open-weight reader row on the frozen LongMemEval dev 100.
 
 The report starts as the v3 report (matched gpt-5.4 arms, instability and paid calls carried

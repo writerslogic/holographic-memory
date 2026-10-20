@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Learned sparse retrieval benchmark: serves encoded BEIR corpora with the HMS impact index
 //! and reports nDCG@10, R@100, single-thread QPS, serving RSS and index bytes; evaluates a
 //! TREC run file (an external system's output) with the same metric code; tunes and reports

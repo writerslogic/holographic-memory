@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // §19. The Bloom membership store (core::bloom_memory) bundles by OR set-union and
 // reads out with density-corrected containment. Members score EXACTLY 1.0 (all k

@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Client-side vector masking: a store ranks masked vectors without seeing the
 //! original coordinates. This is keyed obfuscation, not encryption; the store

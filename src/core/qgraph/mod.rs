@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Quantized graph index for approximate nearest-neighbour search on angular data.
 //!
 //! Vectors are normalized and rotated (random sign flips and fast Walsh-Hadamard transforms),

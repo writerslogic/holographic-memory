@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Frozen, resumable LongMemEval dev readers and blinded judging for the v2 operand arm.
 
 Same protocol, prompts, reader and judge as v1 (benchmarks/public/longmemeval_reader_api.py, whose

@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // §23. The naive superposition + linear-cleanup readout tops out near the Plate SNR
 // limit (~0.1-0.2·D); the counting ceiling (V=64, N=256, D=1024) is ~1.33·D. That

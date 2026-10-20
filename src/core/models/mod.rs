@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! On-device model stages (feature `local-models`): Qwen3 embedding, Qwen3 re-ranking and a
 //! Qwen3 instruct LLM for fact extraction and query rewriting, run with candle on the CPU, Metal

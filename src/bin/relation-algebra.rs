@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //
 // Does phase-ROTATION binding buy relation algebra that the current permutation-
 // union substrate provably lacks? Three relation patterns the connection graph

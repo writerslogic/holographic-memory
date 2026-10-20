@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 //! Batched 4-bit lookup-table scan over a block of 32 codes (the FastScan form of André,
 //! Kermarrec and Le Scouarnec, 2015, as used by FAISS, RaBitQ and SymphonyQG).
 //!

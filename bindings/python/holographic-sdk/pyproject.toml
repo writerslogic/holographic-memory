@@ -10,7 +10,7 @@ dependencies = [
 ]
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "AGPL-3.0-or-later"}
+license = {text = "Apache-2.0"}
 
 [project.optional-dependencies]
 langchain = ["langchain-core>=0.1.0"]

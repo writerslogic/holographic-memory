@@ -1,5 +1,5 @@
 # Copyright 2024-2026 WritersLogic Contributors
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Assemble benchmarks/results/public_learned_sparse_v1.json from sparse-bench and Anserini runs.
 
 Usage: learned_sparse_results.py --out FILE --host NAME --hms-dir DIR --anserini-dir DIR

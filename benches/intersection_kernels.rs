@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Sorted-u32 intersection kernels: |a| = 64 against |b| in 64..16384.
 //! Group names are `b{|b|}_ov{overlap%}`. Rejected candidate kernels and their

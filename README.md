@@ -391,11 +391,6 @@ cargo test --lib
 
 Lossy vectors are not encryption or anonymization. Document ingestion stores source passages by default. Enable encryption when required, inspect `securityStatus()`, and read [PRIVACY.md](docs/PRIVACY.md) for precise guarantees and limitations. For vulnerability reporting see [SECURITY.md](.github/SECURITY.md).
 
-## Licensing (Dual-License Model)
+## License
 
-Holographic Memory System (HMS) uses a **Dual-Licensing** model:
-
-1. **Open Source (AGPL-3.0):** The core engine is free to use and modify for open-source projects, personal use, or internal evaluation, provided you comply with the [GNU Affero General Public License v3.0](LICENSE). Note that using HMS as a backend for a proprietary service over a network requires you to open-source your service under AGPL, or purchase a commercial license.
-2. **Commercial License (WritersLogic Enterprise):** For companies building closed-source, proprietary software, you must purchase a Commercial License. This bypasses the AGPL restrictions and provides production SLA support.
-
-Contact licensing@writerslogic.com for enterprise inquiries.
+Apache-2.0. See [LICENSE](LICENSE). Use, modify and embed HMS in open-source or proprietary software, including network services, with no copyleft obligation. Releases up to and including crate 0.6.1 were published under AGPL-3.0-or-later and stay available under those terms.

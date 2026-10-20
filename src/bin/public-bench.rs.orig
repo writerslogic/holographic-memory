@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Public-benchmark driver. Reads data written by benchmarks/public/prepare.py and
 //! writes machine-readable results; benchmarks/public/evaluate.py scores them and runs

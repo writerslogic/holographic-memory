@@ -22,4 +22,4 @@ We will acknowledge your report within 48 hours and provide a timeline for a fix
 
 - All dependencies are audited with `cargo-deny`
 - CI runs `cargo clippy` with `-D warnings`
-- AGPL-3.0-or-later licensed with full provenance tracking
+- Apache-2.0 licensed with full provenance tracking

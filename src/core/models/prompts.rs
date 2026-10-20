@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 //! Prompts and output parsing of the tuned LongMemEval pipeline
 //! (`benchmarks/public/longmemeval_pipeline.py`). The text and the parsing rules are part of the

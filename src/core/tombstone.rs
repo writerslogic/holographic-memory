@@ -1,5 +1,5 @@
 // Copyright 2024-2026 WritersLogic Contributors
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 /// Bitset tracking deleted vector IDs. Bit-packed, 64 IDs per u64.
 pub struct TombstoneMap {
