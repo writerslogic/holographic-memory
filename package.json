@@ -64,7 +64,7 @@
     "test:types": "tsc --noEmit --strict --target es2022 --module nodenext --moduleResolution nodenext --types node tests/node/types.test.mts"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^3.7.4",
+    "@napi-rs/cli": "^3.10.8",
     "@types/node": "^22.20.2",
     "typescript": "^6.0.3"
   },
