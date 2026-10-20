@@ -1,67 +1,73 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Dormant until a `py-v*` tag is pushed. The wheels, the sdist and the SDK are built and
+# smoke-tested by every other trigger (workflow_dispatch, a pull request touching this file)
+# WITHOUT publishing: the publish jobs run only on a `py-v*` tag, inside the `pypi`
+# environment (add required reviewers there), through PyPI Trusted Publishing (OIDC, no
+# token). The trusted publisher on PyPI is bound to this file name and the `pypi` environment,
+# so keep both. PyPI attestations (PEP 740) are produced by the publish action.
 name: publish-pypi
 
-# Dormant until a `py-v*` tag is pushed. `workflow_dispatch` builds wheels, the
-# sdist and the SDK for verification WITHOUT publishing (publish jobs are gated
-# on the tag ref). Publishing uses PyPI Trusted Publishing (OIDC).
 on:
   push:
-    tags: ['py-v*']
+    tags: ["py-v*"]
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/publish-pypi.yml
+      - bindings/python/holographic-sdk/**
 
 permissions:
   contents: read
 
 jobs:
   wheels:
-    name: wheels-${{ matrix.platform.runner }}-${{ matrix.platform.target }}
-    runs-on: ${{ matrix.platform.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - { runner: ubuntu-latest,  target: x86_64 }
-          - { runner: ubuntu-latest,  target: aarch64 }
-          - { runner: macos-latest,   target: aarch64 }
-          - { runner: macos-latest,   target: x86_64 }
-          - { runner: windows-latest, target: x64 }
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.x'
-      - name: Build wheels
-        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
-        with:
-          target: ${{ matrix.platform.target }}
-          args: --release --out dist
-          manylinux: auto
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: wheels-${{ matrix.platform.runner }}-${{ matrix.platform.target }}
-          path: dist
+    uses: ./.github/workflows/python-wheels.yml
+    permissions:
+      contents: read
 
-  sdist:
+  holographic-sdk-build:
+    name: Build and test Holographic SDK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build sdist
-        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          command: sdist
-          args: --out dist
+          enable-cache: false
+      - name: Build SDK
+        working-directory: bindings/python/holographic-sdk
+        run: uv build
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - name: Build hms-server for the live tests
+        run: cargo build --locked --features server --bin hms-server
+      - name: Test SDK against the real server
+        working-directory: bindings/python/holographic-sdk
+        env:
+          HMS_SERVER_BIN: ${{ github.workspace }}/target/debug/hms-server
+          PYTHONPATH: .
+        run: uv run --no-project --with 'httpx>=0.27' --with pytest pytest -q -rs tests
+      - name: Install the built wheel in a clean environment
+        working-directory: bindings/python/holographic-sdk
+        run: |
+          set -euo pipefail
+          uv venv /tmp/sdk-venv
+          uv pip install --python /tmp/sdk-venv/bin/python dist/*.whl
+          /tmp/sdk-venv/bin/python -I -c "import holographic_sdk; print(holographic_sdk.__name__, 'imports')"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: wheels-sdist
-          path: dist
+          name: sdk-dist
+          path: bindings/python/holographic-sdk/dist
+          if-no-files-found: error
 
   publish:
-    name: Publish to PyPI
+    name: Publish holographic-vsa to PyPI
     if: startsWith(github.ref, 'refs/tags/py-v')
-    needs: [wheels, sdist]
+    needs: [wheels, holographic-sdk-build]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -72,36 +78,19 @@ jobs:
           path: dist
           pattern: wheels-*
           merge-multiple: true
+      - name: Keep only distributions (SBOMs are attached to the GitHub release)
+        run: |
+          set -euo pipefail
+          find dist -name '*.cdx.json' -delete
+          ls -l dist
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist
           skip-existing: true
 
-  holographic-sdk-build:
-    name: Build Holographic SDK
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Install uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-      - name: Build SDK
-        run: |
-          cd bindings/python/holographic-sdk
-          uv build
-      - name: Test SDK
-        run: |
-          cd bindings/python/holographic-sdk
-          PYTHONPATH=. uv run --no-project --with 'httpx>=0.27' --with pytest pytest -q tests
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: sdk-dist
-          path: bindings/python/holographic-sdk/dist
-
   holographic-sdk-publish:
-    name: Publish Holographic SDK to PyPI
+    name: Publish holographic-sdk to PyPI
     if: startsWith(github.ref, 'refs/tags/py-v')
     needs: [holographic-sdk-build]
     runs-on: ubuntu-latest

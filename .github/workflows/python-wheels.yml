@@ -1,0 +1,137 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Builds every Python artefact (abi3 wheels for manylinux2014 x86_64/aarch64, musllinux_1_2
+# x86_64/aarch64, macOS arm64/x86_64 and Windows x64, plus the sdist), installs each wheel
+# into a clean environment and runs a search through it, and writes a CycloneDX SBOM next to
+# every wheel. It publishes nothing: publish-pypi.yml and release.yml call it as a reusable
+# workflow and own the publishing jobs. Release builds use no build cache (cache poisoning).
+name: Python wheels
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/python-wheels.yml
+      - scripts/ci/smoke-wheel.sh
+      - scripts/ci/smoke_python.py
+      - src/python.rs
+      - pyproject.toml
+      - Cargo.toml
+      - Cargo.lock
+
+permissions:
+  contents: read
+
+jobs:
+  versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Crate, npm and tag versions agree
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            python3 scripts/ci/check-versions.py --tag "$GITHUB_REF_NAME"
+          else
+            python3 scripts/ci/check-versions.py
+          fi
+
+  wheels:
+    name: wheel ${{ matrix.name }}
+    needs: versions
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: manylinux2014-x86_64, os: ubuntu-latest, target: x86_64, triple: x86_64-unknown-linux-gnu, linux: manylinux2014, python: "3.9", container: "python:3.9-slim-bullseye@sha256:b9e06687fbfc57f6fe563e94e4c8751e39513dde89afc120dc6f56afe5ffc761" }
+          - { name: manylinux2014-aarch64, os: ubuntu-24.04-arm, target: aarch64, triple: aarch64-unknown-linux-gnu, linux: manylinux2014, python: "3.12", container: "python:3.9-slim-bullseye@sha256:b9e06687fbfc57f6fe563e94e4c8751e39513dde89afc120dc6f56afe5ffc761" }
+          - { name: musllinux-x86_64, os: ubuntu-latest, target: x86_64, triple: x86_64-unknown-linux-musl, linux: musllinux_1_2, python: "3.12", container: "python:3.12-alpine@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4" }
+          - { name: musllinux-aarch64, os: ubuntu-24.04-arm, target: aarch64, triple: aarch64-unknown-linux-musl, linux: musllinux_1_2, python: "3.12", container: "python:3.12-alpine@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4" }
+          - { name: macos-arm64, os: macos-latest, target: aarch64, triple: aarch64-apple-darwin, python: "3.12" }
+          - { name: macos-x86_64, os: macos-15-intel, target: x86_64, triple: x86_64-apple-darwin, python: "3.9" }
+          - { name: windows-x64, os: windows-latest, target: x64, triple: x86_64-pc-windows-msvc, python: "3.9" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: ${{ !matrix.container }}
+        with:
+          python-version: ${{ matrix.python }}
+          update-environment: false
+        id: python
+      - name: Build wheel
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.linux || 'auto' }}
+          args: --release --locked --out dist
+      - name: Smoke test in a clean environment
+        if: ${{ !matrix.container }}
+        shell: bash
+        run: scripts/ci/smoke-wheel.sh "$PYTHON" dist
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+      - name: Smoke test in a clean container (${{ matrix.container }})
+        if: ${{ matrix.container }}
+        env:
+          IMAGE: ${{ matrix.container }}
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" sh -c '
+            if ! command -v bash >/dev/null; then apk add --no-cache bash >/dev/null; fi
+            bash scripts/ci/smoke-wheel.sh python /w/dist'
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: cargo-cyclonedx
+      - name: CycloneDX SBOM
+        shell: bash
+        env:
+          TRIPLE: ${{ matrix.triple }}
+          NAME: ${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --format json --spec-version 1.5 --target "$TRIPLE" --features python \
+            --override-filename "holographic-vsa-${NAME}.cdx"
+          mv "holographic-vsa-${NAME}.cdx.json" dist/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wheels-${{ matrix.name }}
+          path: dist
+          if-no-files-found: error
+
+  sdist:
+    needs: versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build sdist
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          command: sdist
+          args: --out dist
+      - name: Install the sdist from source and run the smoke test
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/sdist-venv
+          /tmp/sdist-venv/bin/pip install --quiet dist/*.tar.gz
+          /tmp/sdist-venv/bin/python -I scripts/ci/smoke_python.py
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: cargo-cyclonedx
+      - name: CycloneDX SBOM
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --format json --spec-version 1.5 --features python --override-filename holographic-vsa-sdist.cdx
+          mv holographic-vsa-sdist.cdx.json dist/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wheels-sdist
+          path: dist
+          if-no-files-found: error

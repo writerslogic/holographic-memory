@@ -1,0 +1,187 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Builds the napi-rs native binding for eight targets (linux gnu and musl x64/arm64, darwin
+# x64/arm64, win32 x64/arm64), lays each out as its own npm package, packs them with the
+# JavaScript-only root package, then installs the tarballs into an empty project on a machine
+# of every target (Alpine containers for musl, an old Debian for glibc) and runs a document
+# search. It publishes nothing: release.yml calls it and owns the npm publish job. No build
+# cache is used (cache poisoning), so what is smoke-tested is what a clean build produces.
+name: npm packages
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/npm-packages.yml
+      - scripts/ci/npm-platform-packages.cjs
+      - scripts/ci/smoke-node.cjs
+      - index.js
+      - package.json
+      - Cargo.toml
+      - Cargo.lock
+
+permissions:
+  contents: read
+
+jobs:
+  versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Crate, npm and tag versions agree
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            python3 scripts/ci/check-versions.py --tag "$GITHUB_REF_NAME"
+          else
+            python3 scripts/ci/check-versions.py
+          fi
+
+  build:
+    name: build ${{ matrix.suffix }}
+    needs: versions
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { suffix: darwin-arm64, os: macos-latest, target: aarch64-apple-darwin, flags: "" }
+          - { suffix: darwin-x64, os: macos-latest, target: x86_64-apple-darwin, flags: "" }
+          - { suffix: linux-x64-gnu, os: ubuntu-latest, target: x86_64-unknown-linux-gnu, flags: "--use-napi-cross" }
+          - { suffix: linux-arm64-gnu, os: ubuntu-latest, target: aarch64-unknown-linux-gnu, flags: "--use-napi-cross" }
+          - { suffix: linux-x64-musl, os: ubuntu-latest, target: x86_64-unknown-linux-musl, flags: "-x", zig: true }
+          - { suffix: linux-arm64-musl, os: ubuntu-latest, target: aarch64-unknown-linux-musl, flags: "-x", zig: true }
+          - { suffix: win32-x64-msvc, os: windows-latest, target: x86_64-pc-windows-msvc, flags: "" }
+          - { suffix: win32-arm64-msvc, os: windows-latest, target: aarch64-pc-windows-msvc, flags: "" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        if: ${{ matrix.zig }}
+        with:
+          version: 0.15.2
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        if: ${{ matrix.zig }}
+        with:
+          tool: cargo-zigbuild
+      - run: npm ci --omit=optional
+      - name: Build the binding
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          FLAGS: ${{ matrix.flags }}
+        run: |
+          # FLAGS is a trusted matrix constant; it must word-split into napi options.
+          # shellcheck disable=SC2086
+          npm run build:platform -- --target "$TARGET" $FLAGS
+          ls -l ./*.node
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: cargo-cyclonedx
+      - name: CycloneDX SBOM
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          SUFFIX: ${{ matrix.suffix }}
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --format json --spec-version 1.5 --target "$TARGET" --features node-api,security \
+            --override-filename "holographic-memory-${SUFFIX}.cdx"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: binding-${{ matrix.suffix }}
+          path: |
+            holographic-memory.*.node
+            holographic-memory-${{ matrix.suffix }}.cdx.json
+          if-no-files-found: error
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: binding-*
+          path: bindings
+          merge-multiple: true
+      - name: Lay out and pack the packages
+        run: |
+          set -euo pipefail
+          node scripts/ci/npm-platform-packages.cjs bindings staging
+          mkdir -p tarballs
+          for dir in staging/*/; do
+            (cd "$dir" && npm pack --ignore-scripts --pack-destination ../../tarballs)
+          done
+          # The root package ships JavaScript only; the bindings come from the platform packages.
+          npm pack --ignore-scripts --pack-destination tarballs
+          cp bindings/*.cdx.json tarballs/
+          npm sbom --sbom-format cyclonedx --omit dev --omit optional --omit peer > "tarballs/holographic-memory-root-$(node -p 'require("./package.json").version').cdx.json"
+          ls -l tarballs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-tarballs
+          path: tarballs
+          if-no-files-found: error
+
+  smoke:
+    name: install and search ${{ matrix.suffix }}
+    needs: package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { suffix: darwin-arm64, os: macos-latest }
+          - { suffix: darwin-x64, os: macos-15-intel }
+          - { suffix: linux-x64-gnu, os: ubuntu-latest }
+          - { suffix: linux-x64-gnu, os: ubuntu-latest, image: "node:22-bullseye-slim@sha256:5736e7ef1f3f2109be7ef8aea0cbdf931804aee9a18c6760507b8ded078b25a9" }
+          - { suffix: linux-arm64-gnu, os: ubuntu-24.04-arm }
+          - { suffix: linux-arm64-gnu, os: ubuntu-24.04-arm, image: "node:22-bullseye-slim@sha256:5736e7ef1f3f2109be7ef8aea0cbdf931804aee9a18c6760507b8ded078b25a9" }
+          - { suffix: linux-x64-musl, os: ubuntu-latest, image: "node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402" }
+          - { suffix: linux-arm64-musl, os: ubuntu-24.04-arm, image: "node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402" }
+          - { suffix: win32-x64-msvc, os: windows-latest }
+          - { suffix: win32-arm64-msvc, os: windows-11-arm }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-tarballs
+          path: tarballs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: ${{ !matrix.image }}
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Install the tarballs and search
+        if: ${{ !matrix.image }}
+        shell: bash
+        env:
+          SUFFIX: ${{ matrix.suffix }}
+        run: node scripts/ci/smoke-node.cjs tarballs --expect "$SUFFIX"
+      - name: Install the tarballs and search in ${{ matrix.image }}
+        if: ${{ matrix.image }}
+        env:
+          SUFFIX: ${{ matrix.suffix }}
+          IMAGE: ${{ matrix.image }}
+        run: docker run --rm -v "$PWD:/w" -w /w "$IMAGE" node scripts/ci/smoke-node.cjs tarballs --expect "$SUFFIX"
