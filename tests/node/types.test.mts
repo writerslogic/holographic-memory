@@ -7,6 +7,11 @@ const input: DocumentInput = {
 const hms = new HolographicMemorySystem(16384, './types-only')
 const memory = new DocumentMemory(hms, { maxPending: 16 })
 await memory.memorize(input)
+const chunks: number[] = await hms.memorizeDocuments([input])
+await hms.trainDocumentIndex()
+const documentIndexTrained: boolean = hms.documentIndexTrained
+void chunks
+void documentIndexTrained
 const results = await memory.search('backups', { filter: { project: 'alpha' }, k: 3 })
 const documentId: string | undefined = results[0]?.documentId
 void documentId

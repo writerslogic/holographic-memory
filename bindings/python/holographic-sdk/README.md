@@ -22,6 +22,7 @@
 <p align="center">
   <a href="#installation">Install</a> &middot;
   <a href="#quick-start">Quick Start</a> &middot;
+  <a href="#source-evidence">Source Evidence</a> &middot;
   <a href="#integrations">Integrations</a> &middot;
   <a href="#vector-masking">Vector Masking</a> &middot;
   <a href="https://github.com/writerslogic/holographic-memory">Core Engine</a>
@@ -63,6 +64,40 @@ client.close()
 ```
 
 `AsyncHolographicClient` has the same methods as coroutines; close it with `await client.aclose()`. Embeddings come from your own model: the SDK sends vectors, it does not compute them.
+
+After bulk ingestion, `client.maintain_document_index()` explicitly builds the server's
+exact dense document index and returns `{"documentIndexTrained": true}` when the
+store is eligible. Smaller or unsupported stores return `false` and use exact scanning.
+Use `await client.maintain_document_index()` with the async client. Rebuild after updates
+or restart; the index is a runtime cache. Searches preserve the existing cosine results,
+and metadata filters continue to apply before ranking. This method requires an
+`hms-server` version exposing `POST /api/v1/index/maintain`.
+
+## Source Evidence
+
+`complete_evidence` packs complete source observations in your retrieval order. Each observation contains a turn handle, session handle, observation time, role, and verbatim text. Supply opaque caller IDs as lowercase SHA-256 hex handles, and keep their association with your original records.
+
+```python
+from hashlib import sha256
+from holographic_sdk import complete_evidence, decode_source_packet
+
+def handle(identity):
+    return sha256(identity.encode("utf-8")).hexdigest()
+
+session = handle("session-7")
+candidates = [
+    [(handle("turn-1"), session, "2026-10-13T10:00:00Z", "user",
+      "I have two aquarium tanks.")],
+    [(handle("turn-2"), session, "2026-10-13T10:00:00Z", "assistant",
+      "You mentioned two aquarium tanks.")],
+]
+
+selection = complete_evidence(candidates, selected=[0], budget_bytes=2048)
+observations = decode_source_packet(selection.packet)
+assert observations == [candidates[index] for index in selection.selected]
+```
+
+The indices in `selected` are mandatory; packing raises `ValueError` if they exceed the budget. Additional complete groups fit in candidate order, with shared text and session metadata stored once. Decoding preserves every occurrence, role, observation time, and source text. The budget counts UTF-8 packet bytes; measure reader tokens separately. Packets contain source observations and no inferred answer or event date. These helpers run locally and make no service calls.
 
 ## Integrations
 

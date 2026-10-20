@@ -105,6 +105,35 @@ def test_async_client_end_to_end(server):
     asyncio.run(run())
 
 
+def test_sync_and_async_document_maintenance_preserves_query_results(server):
+    indexed = [
+        {"id": f"indexed{i}", "text": f"document {i}", "vector": embedding(i), "metadata": {"even": i % 2 == 0}}
+        for i in range(128)
+    ]
+    with HolographicClient(url=server, api_key=API_KEY, tenant_id="indexed") as client:
+        client.add_documents(indexed)
+        before = [client.query(embedding(i), top_k=10) for i in (0, 11, 127)]
+        filtered = client.query(embedding(11), top_k=10, filter={"even": True})
+        assert client.maintain_document_index() == {"documentIndexTrained": True}
+        assert [client.query(embedding(i), top_k=10) for i in (0, 11, 127)] == before
+        assert client.query(embedding(11), top_k=10, filter={"even": True}) == filtered
+        client.delete_document("indexed0")
+        after_delete = client.query(embedding(0), top_k=10)
+        assert all(hit["id"] != "indexed0" for hit in after_delete["matches"])
+
+    async def run():
+        async with AsyncHolographicClient(url=server, api_key=API_KEY, tenant_id="indexed") as client:
+            assert await client.maintain_document_index() == {"documentIndexTrained": False}
+            assert await client.query(embedding(0), top_k=10) == after_delete
+        async with AsyncHolographicClient(url=server, api_key=API_KEY, tenant_id="async-indexed") as client:
+            await client.add_documents(indexed)
+            expected = await client.query(embedding(11), top_k=10)
+            assert await client.maintain_document_index() == {"documentIndexTrained": True}
+            assert await client.query(embedding(11), top_k=10) == expected
+
+    asyncio.run(run())
+
+
 def test_masked_vectors_still_rank_nearest_first(server):
     kwargs = dict(url=server, api_key=API_KEY, tenant_id="masked", zero_trust_key="pass", mask_salt=SALT)
     with HolographicClient(**kwargs) as client:

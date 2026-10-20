@@ -77,6 +77,47 @@ test('document queue bounds work and recovers after a rejected operation', async
   await failing.flush()
 })
 
+test('native document batches and exact index survive invalid updates and restart', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hms-document-index-'))
+  const setup = `
+    const assert = require('node:assert/strict');
+    const { HolographicMemorySystem } = require('./index.js');
+    const config = { embeddingModel: 'fixture', embeddingRevision: '1', embeddingDimensions: 2 };
+    const options = { embedding: [1, 0], k: 5, candidateLimit: 16 };
+  `
+  try {
+    run(`${setup}
+      (async () => {
+        const hms = new HolographicMemorySystem(1024, process.argv[1], config);
+        const inputs = Array.from({ length: 128 }, (_, i) => ({ id: 'doc-' + i, text: 'needle ' + i, embeddings: [[Math.cos(i / 100), Math.sin(i / 100)]] }));
+        assert.deepEqual(await hms.memorizeDocuments(inputs), Array(128).fill(1));
+        const expected = await hms.searchDocuments('', options);
+        await hms.trainDocumentIndex();
+        assert.equal(hms.documentIndexTrained, true);
+        assert.deepEqual(await hms.searchDocuments('', options), expected);
+        await assert.rejects(hms.memorizeDocuments([{ ...inputs[0], text: 'uncommitted' }, { id: 'bad', text: 'invalid', embeddings: [[0, 0]] }]));
+        assert.deepEqual(await hms.searchDocuments('', options), expected);
+        await hms.deleteDocument('doc-0');
+        assert.equal(hms.documentIndexTrained, false);
+        await hms.compact();
+        await hms.flush();
+      })().catch(e => { console.error(e); process.exitCode = 1; });
+    `, directory)
+    run(`${setup}
+      (async () => {
+        const hms = new HolographicMemorySystem(1024, process.argv[1], config);
+        assert.equal(hms.documentIndexTrained, false);
+        const expected = await hms.searchDocuments('', options);
+        assert.equal(expected[0].documentId, 'doc-1');
+        assert.ok(expected.every(hit => hit.documentId !== 'doc-0'));
+        await hms.trainDocumentIndex();
+        assert.equal(hms.documentIndexTrained, false);
+        assert.deepEqual(await hms.searchDocuments('', options), expected);
+      })().catch(e => { console.error(e); process.exitCode = 1; });
+    `, directory)
+  } finally { rmSync(directory, { recursive: true, force: true }) }
+})
+
 test('a requested security capability is active or construction fails', () => {
   const directory = mkdtempSync(join(tmpdir(), 'hms-security-'))
   try {

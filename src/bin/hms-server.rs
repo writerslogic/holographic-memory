@@ -9,7 +9,9 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use axum::body::{to_bytes, Body};
@@ -22,10 +24,11 @@ use axum::{Json, Router};
 use clap::Parser;
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{chunk_document, DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
-use parking_lot::Mutex;
+use parking_lot::{Condvar, Mutex};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use subtle::ConstantTimeEq;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 const MAX_ID_BYTES: usize = 256;
 /// One client vector describes one stored chunk, so a document must fit in one
@@ -34,6 +37,11 @@ const MAX_TEXT_BYTES: usize = 64 * 1024;
 const CHUNK_WORDS: u32 = 4096;
 const MAX_METADATA_BYTES: usize = 64 * 1024;
 const MAX_TENANT_BYTES: usize = 64;
+const MAX_BATCH_DOCUMENTS: usize = 4096;
+const MAX_BATCH_SOURCE_BYTES: usize = 8 * 1024 * 1024;
+const MAX_BATCH_METADATA_BYTES: usize = 8 * 1024 * 1024;
+const MAX_BATCH_EMBEDDING_VALUES: usize = 1_048_576;
+const MAX_CONCURRENT_WORK: usize = 256;
 
 #[derive(Parser)]
 #[command(
@@ -63,6 +71,9 @@ struct Cli {
     /// Maximum request body in bytes.
     #[arg(long, default_value_t = 16 * 1024 * 1024)]
     max_body_bytes: usize,
+    /// Maximum time to read an admitted request body.
+    #[arg(long, env = "HMS_BODY_TIMEOUT_SECONDS", default_value_t = 30)]
+    body_timeout_seconds: u64,
     /// Maximum documents per batch request.
     #[arg(long, default_value_t = 1000)]
     max_batch: usize,
@@ -72,6 +83,9 @@ struct Cli {
     /// Maximum number of tenant stores open at once.
     #[arg(long, default_value_t = 64)]
     max_tenants: usize,
+    /// Maximum admitted requests reading bodies or executing blocking work.
+    #[arg(long, env = "HMS_MAX_CONCURRENT_WORK", default_value_t = 4)]
+    max_concurrent_work: usize,
     #[cfg(feature = "local-models")]
     #[command(flatten)]
     models: ModelArgs,
@@ -139,10 +153,121 @@ struct Tenant {
     core: HmsCore,
 }
 
+enum TenantStatus {
+    Opening,
+    Ready(Arc<Tenant>),
+    Failed(ApiError),
+}
+
+struct TenantSlot {
+    status: Mutex<TenantStatus>,
+    ready: Condvar,
+}
+
+impl TenantSlot {
+    fn wait(&self) -> Result<Arc<Tenant>, ApiError> {
+        let mut status = self.status.lock();
+        loop {
+            match &*status {
+                TenantStatus::Opening => self.ready.wait(&mut status),
+                TenantStatus::Ready(tenant) => return Ok(tenant.clone()),
+                TenantStatus::Failed(error) => return Err(error.clone()),
+            }
+        }
+    }
+}
+
+struct TenantInitialization<'a> {
+    state: &'a AppState,
+    name: &'a str,
+    slot: Arc<TenantSlot>,
+    completed: bool,
+}
+
+impl TenantInitialization<'_> {
+    fn publish(&self, result: &Result<Arc<Tenant>, ApiError>) {
+        *self.slot.status.lock() = match result {
+            Ok(tenant) => TenantStatus::Ready(tenant.clone()),
+            Err(error) => TenantStatus::Failed(error.clone()),
+        };
+        self.slot.ready.notify_all();
+        if result.is_err() {
+            let mut tenants = self.state.tenants.lock();
+            if tenants
+                .get(self.name)
+                .is_some_and(|slot| Arc::ptr_eq(slot, &self.slot))
+            {
+                tenants.remove(self.name);
+            }
+        }
+    }
+
+    fn finish(mut self, result: Result<Arc<Tenant>, ApiError>) -> Result<Arc<Tenant>, ApiError> {
+        self.publish(&result);
+        self.completed = true;
+        result
+    }
+}
+
+impl Drop for TenantInitialization<'_> {
+    fn drop(&mut self) {
+        if !self.completed {
+            self.publish(&Err(ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal",
+                "internal server error",
+            )));
+        }
+    }
+}
+
+struct WorkLimit {
+    slots: Arc<Semaphore>,
+    accepting: AtomicBool,
+}
+
+impl WorkLimit {
+    fn new(limit: usize) -> Self {
+        Self {
+            slots: Arc::new(Semaphore::new(limit)),
+            accepting: AtomicBool::new(true),
+        }
+    }
+
+    fn acquire(&self) -> Result<OwnedSemaphorePermit, ApiError> {
+        let closed = || {
+            ApiError::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "shutting_down",
+                "server is shutting down",
+            )
+        };
+        if !self.accepting.load(Ordering::Acquire) {
+            return Err(closed());
+        }
+        let permit = self.slots.clone().try_acquire_owned().map_err(|_| {
+            ApiError::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "server_busy",
+                "server work capacity is full; retry later",
+            )
+        })?;
+        if !self.accepting.load(Ordering::Acquire) {
+            return Err(closed());
+        }
+        Ok(permit)
+    }
+
+    fn stop(&self) {
+        self.accepting.store(false, Ordering::Release);
+    }
+}
+
 struct AppState {
     cli: Cli,
     api_key: Option<Vec<u8>>,
-    tenants: Mutex<HashMap<String, Arc<Tenant>>>,
+    tenants: Mutex<HashMap<String, Arc<TenantSlot>>>,
+    work: WorkLimit,
     #[cfg(feature = "local-models")]
     stages: Option<Arc<holographic_memory::core::models::ModelStages>>,
 }
@@ -158,17 +283,43 @@ impl AppState {
     }
 
     fn tenant(&self, name: &str) -> Result<Arc<Tenant>, ApiError> {
-        let mut tenants = self.tenants.lock();
-        if let Some(t) = tenants.get(name) {
-            return Ok(t.clone());
+        let (slot, initialize) = {
+            let mut tenants = self.tenants.lock();
+            if let Some(slot) = tenants.get(name) {
+                (slot.clone(), false)
+            } else {
+                if tenants.len() >= self.cli.max_tenants {
+                    return Err(ApiError::new(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "tenant_limit",
+                        "too many tenants are open on this server",
+                    ));
+                }
+                let slot = Arc::new(TenantSlot {
+                    status: Mutex::new(TenantStatus::Opening),
+                    ready: Condvar::new(),
+                });
+                tenants.insert(name.to_string(), slot.clone());
+                (slot, true)
+            }
+        };
+        if !initialize {
+            return slot.wait();
         }
-        if tenants.len() >= self.cli.max_tenants {
-            return Err(ApiError::new(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "tenant_limit",
-                "too many tenants are open on this server",
-            ));
-        }
+        let reservation = TenantInitialization {
+            state: self,
+            name,
+            slot,
+            completed: false,
+        };
+        reservation.finish(
+            self.open_tenant(name)
+                .map(Arc::new)
+                .map_err(ApiError::internal),
+        )
+    }
+
+    fn open_tenant(&self, name: &str) -> Result<Tenant> {
         // Hex keeps the directory name safe and distinct on case-insensitive filesystems.
         let hex: String = name.bytes().map(|b| format!("{b:02x}")).collect();
         let tenants_root = self.cli.data_dir.join("tenants");
@@ -198,12 +349,11 @@ impl AppState {
             core.set_model_stages(self.stages.clone())?;
             Ok(Tenant { core })
         };
-        let tenant = Arc::new(open().map_err(ApiError::internal)?);
-        tenants.insert(name.to_string(), tenant.clone());
-        Ok(tenant)
+        open()
     }
 }
 
+#[derive(Clone, Debug)]
 struct ApiError {
     status: StatusCode,
     code: &'static str,
@@ -236,22 +386,34 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        (
+        let retry = matches!(self.code, "server_busy" | "shutting_down");
+        let mut response = (
             self.status,
             Json(json!({"error": {"code": self.code, "message": self.message}})),
         )
-            .into_response()
+            .into_response();
+        if retry {
+            response.headers_mut().insert(
+                header::RETRY_AFTER,
+                "1".parse().expect("static retry header"),
+            );
+        }
+        response
     }
 }
 
 type ApiResult = Result<Response, ApiError>;
 
 async fn blocking<T: Send + 'static>(
+    permit: OwnedSemaphorePermit,
     f: impl FnOnce() -> Result<T, ApiError> + Send + 'static,
 ) -> Result<T, ApiError> {
-    tokio::task::spawn_blocking(f)
-        .await
-        .map_err(ApiError::internal)?
+    tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        f()
+    })
+    .await
+    .map_err(ApiError::internal)?
 }
 
 fn valid_tenant(name: &str) -> bool {
@@ -301,16 +463,26 @@ async fn auth(State(state): State<Arc<AppState>>, req: Request, next: Next) -> R
 }
 
 async fn read_body(state: &AppState, body: Body) -> Result<Vec<u8>, ApiError> {
-    to_bytes(body, state.cli.max_body_bytes)
-        .await
-        .map(|b| b.to_vec())
-        .map_err(|_| {
-            ApiError::new(
-                StatusCode::PAYLOAD_TOO_LARGE,
-                "payload_too_large",
-                format!("request body exceeds {} bytes", state.cli.max_body_bytes),
-            )
-        })
+    tokio::time::timeout(
+        Duration::from_secs(state.cli.body_timeout_seconds),
+        to_bytes(body, state.cli.max_body_bytes),
+    )
+    .await
+    .map_err(|_| {
+        ApiError::new(
+            StatusCode::REQUEST_TIMEOUT,
+            "request_timeout",
+            "request body timed out",
+        )
+    })?
+    .map(|b| b.to_vec())
+    .map_err(|_| {
+        ApiError::new(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "payload_too_large",
+            format!("request body exceeds {} bytes", state.cli.max_body_bytes),
+        )
+    })
 }
 
 fn parse<T: for<'de> Deserialize<'de>>(bytes: &[u8]) -> Result<T, ApiError> {
@@ -338,21 +510,20 @@ struct ValidDoc {
     input: DocumentInput,
 }
 
-fn dense(values: &[f64], input_dim: usize, what: &str) -> Result<Vec<f32>, ApiError> {
+fn dense(values: &[f64], input_dim: usize, what: &str) -> Result<(), ApiError> {
     if values.len() != input_dim {
         return Err(ApiError::bad(format!(
             "{what} must have exactly {input_dim} values (got {})",
             values.len()
         )));
     }
-    let out: Vec<f32> = values.iter().map(|&v| v as f32).collect();
-    if !out.iter().all(|v| v.is_finite()) {
+    if !values.iter().all(|v| v.is_finite()) {
         return Err(ApiError::bad(format!("{what} values must be finite")));
     }
-    if out.iter().all(|&v| v == 0.0) {
+    if values.iter().all(|&v| v == 0.0) {
         return Err(ApiError::bad(format!("{what} must not be all zeros")));
     }
-    Ok(out)
+    Ok(())
 }
 
 fn validate_doc(doc: DocIn, cli: &Cli, server_embeds: bool) -> Result<ValidDoc, ApiError> {
@@ -404,6 +575,7 @@ fn validate_doc(doc: DocIn, cli: &Cli, server_embeds: bool) -> Result<ValidDoc, 
         overlap_words: Some(0),
         store_text: Some(has_text),
         embeddings,
+        title_weight: None,
     };
     match chunk_document(&input) {
         Ok(chunks) if chunks.len() == 1 => Ok(ValidDoc { input }),
@@ -416,30 +588,72 @@ fn validate_doc(doc: DocIn, cli: &Cli, server_embeds: bool) -> Result<ValidDoc, 
 
 fn store_docs(tenant: &Tenant, docs: Vec<ValidDoc>) -> Result<usize, ApiError> {
     let n = docs.len();
+    let mut positions = HashMap::with_capacity(n);
+    let mut final_docs: Vec<Option<ValidDoc>> = Vec::with_capacity(n);
     for doc in docs {
-        tenant
-            .core
-            .memorize_document(doc.input)
-            .map_err(ApiError::internal)?;
+        if let Some(previous) = positions.insert(doc.input.id.clone(), final_docs.len()) {
+            final_docs[previous] = None;
+        }
+        final_docs.push(Some(doc));
     }
+    tenant
+        .core
+        .memorize_documents(
+            final_docs
+                .into_iter()
+                .flatten()
+                .map(|doc| doc.input)
+                .collect(),
+        )
+        .map_err(ApiError::internal)?;
     Ok(n)
+}
+
+fn validate_batch(docs: &[ValidDoc], input_dim: usize) -> Result<(), ApiError> {
+    let mut source_bytes = 0usize;
+    let mut metadata_bytes = 0usize;
+    let mut embedding_values = 0usize;
+    for doc in docs {
+        source_bytes += doc.input.id.len() + doc.input.text.len();
+        metadata_bytes += serde_json::to_vec(&doc.input.metadata)
+            .map_err(ApiError::internal)?
+            .len();
+        embedding_values += doc
+            .input
+            .embeddings
+            .as_ref()
+            .map_or(input_dim, |embeddings| {
+                embeddings.iter().map(Vec::len).sum()
+            });
+        if source_bytes > MAX_BATCH_SOURCE_BYTES
+            || metadata_bytes > MAX_BATCH_METADATA_BYTES
+            || embedding_values > MAX_BATCH_EMBEDDING_VALUES
+        {
+            return Err(ApiError::bad(
+                "batch exceeds 8 MiB ids/text, 8 MiB metadata or 1048576 embedding values",
+            ));
+        }
+    }
+    Ok(())
 }
 
 async fn add_batch(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
     let name = tenant_name(req.headers())?;
+    let permit = state.work.acquire()?;
     let bytes = read_body(&state, req.into_body()).await?;
-    let docs: Vec<DocIn> = parse(&bytes)?;
-    if docs.is_empty() || docs.len() > state.cli.max_batch {
-        return Err(ApiError::bad(format!(
-            "batch must contain 1..={} documents",
-            state.cli.max_batch
-        )));
-    }
-    let n = blocking(move || {
+    let n = blocking(permit, move || {
+        let docs: Vec<DocIn> = parse(&bytes)?;
+        if docs.is_empty() || docs.len() > state.cli.max_batch {
+            return Err(ApiError::bad(format!(
+                "batch must contain 1..={} documents",
+                state.cli.max_batch
+            )));
+        }
         let valid = docs
             .into_iter()
             .map(|d| validate_doc(d, &state.cli, state.server_embeds()))
             .collect::<Result<Vec<_>, _>>()?;
+        validate_batch(&valid, state.cli.input_dim)?;
         let tenant = state.tenant(&name)?;
         store_docs(&tenant, valid)
     })
@@ -449,9 +663,10 @@ async fn add_batch(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
 
 async fn add_one(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
     let name = tenant_name(req.headers())?;
+    let permit = state.work.acquire()?;
     let bytes = read_body(&state, req.into_body()).await?;
-    let doc: DocIn = parse(&bytes)?;
-    let n = blocking(move || {
+    let n = blocking(permit, move || {
+        let doc: DocIn = parse(&bytes)?;
         let valid = validate_doc(doc, &state.cli, state.server_embeds())?;
         let tenant = state.tenant(&name)?;
         store_docs(&tenant, vec![valid])
@@ -466,7 +681,8 @@ async fn delete_doc(
     req: Request,
 ) -> ApiResult {
     let name = tenant_name(req.headers())?;
-    blocking(move || {
+    let permit = state.work.acquire()?;
+    blocking(permit, move || {
         if id.is_empty() || id.len() > MAX_ID_BYTES || id.starts_with("hms:") {
             return Err(ApiError::bad("invalid id"));
         }
@@ -498,6 +714,7 @@ struct QueryIn {
     query: Option<String>,
     /// Date relative times in `query` resolve against (query rewriting).
     #[serde(default)]
+    #[cfg_attr(not(feature = "local-models"), allow(dead_code))]
     today: Option<String>,
     #[serde(default)]
     top_k: Option<i64>,
@@ -507,22 +724,23 @@ struct QueryIn {
 
 async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
     let name = tenant_name(req.headers())?;
+    let permit = state.work.acquire()?;
     let bytes = read_body(&state, req.into_body()).await?;
-    let q: QueryIn = parse(&bytes)?;
-    let top_k = q.top_k.unwrap_or(3);
-    if top_k < 1 || top_k > i64::from(state.cli.max_top_k) {
-        return Err(ApiError::bad(format!(
-            "top_k must be 1..={}",
-            state.cli.max_top_k
-        )));
-    }
-    let filter = match q.filter {
-        None | Some(Value::Null) => None,
-        Some(Value::Object(m)) if m.is_empty() => None,
-        Some(Value::Object(m)) => Some(m),
-        Some(_) => return Err(ApiError::bad("filter must be a JSON object")),
-    };
-    let matches = blocking(move || {
+    let matches = blocking(permit, move || {
+        let q: QueryIn = parse(&bytes)?;
+        let top_k = q.top_k.unwrap_or(3);
+        if top_k < 1 || top_k > i64::from(state.cli.max_top_k) {
+            return Err(ApiError::bad(format!(
+                "top_k must be 1..={}",
+                state.cli.max_top_k
+            )));
+        }
+        let filter = match q.filter {
+            None | Some(Value::Null) => None,
+            Some(Value::Object(m)) if m.is_empty() => None,
+            Some(Value::Object(m)) => Some(m),
+            Some(_) => return Err(ApiError::bad("filter must be a JSON object")),
+        };
         let tenant = state.tenant(&name)?;
         let hits = match (q.query_vector, q.query) {
             (Some(v), None) => {
@@ -578,13 +796,33 @@ async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
     Ok(Json(json!({"matches": matches})).into_response())
 }
 
+async fn maintain_index(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
+    let name = tenant_name(req.headers())?;
+    let permit = state.work.acquire()?;
+    let bytes = read_body(&state, req.into_body()).await?;
+    let trained = blocking(permit, move || {
+        if !bytes.is_empty() && parse::<Value>(&bytes)? != json!({}) {
+            return Err(ApiError::bad(
+                "index maintenance accepts an empty body or {}",
+            ));
+        }
+        let tenant = state.tenant(&name)?;
+        tenant
+            .core
+            .train_document_index()
+            .map_err(ApiError::internal)?;
+        Ok(tenant.core.document_index_trained())
+    })
+    .await?;
+    Ok(Json(json!({"documentIndexTrained": trained})).into_response())
+}
+
 fn vector_search(
     tenant: &Tenant,
     query_vector: Vec<f64>,
     top_k: u32,
     filter: Option<serde_json::Map<String, Value>>,
 ) -> Result<Vec<holographic_memory::DocumentResult>, ApiError> {
-    // Exact cosine over every stored embedding (a linear scan); no lexical term.
     let options = SearchOptions {
         k: Some(top_k),
         candidate_limit: Some(top_k.max(100)),
@@ -627,6 +865,7 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/api/v1/documents", post(add_one))
         .route("/api/v1/documents/{id}", delete(delete_doc))
         .route("/api/v1/query", post(query))
+        .route("/api/v1/index/maintain", post(maintain_index))
         .fallback(not_found)
         .method_not_allowed_fallback(method_not_allowed)
         .layer(middleware::from_fn_with_state(state.clone(), auth))
@@ -661,6 +900,15 @@ async fn main() -> Result<()> {
     if cli.dim < 256 || cli.input_dim == 0 || cli.input_dim > 65536 {
         bail!("--dim must be >= 256 and --input-dim 1..=65536");
     }
+    if !(1..=MAX_CONCURRENT_WORK).contains(&cli.max_concurrent_work) {
+        bail!("--max-concurrent-work must be 1..=256");
+    }
+    if cli.max_batch > MAX_BATCH_DOCUMENTS {
+        bail!("--max-batch must not exceed the native 4096-document transaction limit");
+    }
+    if !(1..=300).contains(&cli.body_timeout_seconds) {
+        bail!("--body-timeout-seconds must be 1..=300");
+    }
     let api_key = match std::env::var("HMS_API_KEY") {
         Ok(k) if k.is_empty() => bail!("HMS_API_KEY is set but empty"),
         Ok(k) => Some(k.into_bytes()),
@@ -673,10 +921,12 @@ async fn main() -> Result<()> {
     let bind = cli.bind;
     #[cfg(feature = "local-models")]
     let stages = load_stages(&cli.models)?;
+    let work = WorkLimit::new(cli.max_concurrent_work);
     let state = Arc::new(AppState {
         cli,
         api_key,
         tenants: Mutex::new(HashMap::new()),
+        work,
         #[cfg(feature = "local-models")]
         stages,
     });
@@ -684,20 +934,46 @@ async fn main() -> Result<()> {
         .await
         .with_context(|| format!("cannot bind {bind}"))?;
     println!("hms-server listening on {}", listener.local_addr()?);
-    axum::serve(listener, router(state.clone()))
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
-
-    let tenants: Vec<_> = state.tenants.lock().drain().collect();
-    let mut failed = false;
-    for (name, tenant) in tenants {
-        if let Err(e) = tenant.core.flush() {
-            eprintln!("flush failed for tenant {name}: {e:#}");
-            failed = true;
+    let shutdown_state = state.clone();
+    let served = axum::serve(listener, router(state.clone()))
+        .with_graceful_shutdown(async move {
+            shutdown_signal().await;
+            shutdown_state.work.stop();
+        })
+        .await;
+    state.work.stop();
+    let drained = state
+        .work
+        .slots
+        .clone()
+        .acquire_many_owned(state.cli.max_concurrent_work as u32)
+        .await
+        .context("cannot drain server work")?;
+    tokio::task::spawn_blocking(move || -> Result<()> {
+        let _drained = drained;
+        let tenants: Vec<_> = state.tenants.lock().drain().collect();
+        let mut failed = false;
+        for (name, slot) in tenants {
+            let tenant = match &*slot.status.lock() {
+                TenantStatus::Ready(tenant) => tenant.clone(),
+                _ => bail!("tenant initialization remained incomplete at shutdown"),
+            };
+            if let Err(error) = tenant.core.flush() {
+                eprintln!("flush failed for tenant {name}: {error:#}");
+                failed = true;
+            }
         }
-    }
-    if failed {
-        bail!("shutdown flush failed");
-    }
+        if failed {
+            bail!("shutdown flush failed");
+        }
+        Ok(())
+    })
+    .await
+    .context("server shutdown worker failed")??;
+    served?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "hms-server/concurrency_tests.rs"]
+mod concurrency_tests;

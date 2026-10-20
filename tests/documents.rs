@@ -147,3 +147,63 @@ fn bounded_document_inputs_fail_without_committing() -> anyhow::Result<()> {
     assert_eq!(hms.vector_count(), 0);
     Ok(())
 }
+
+#[test]
+fn document_readers_observe_atomic_versions_during_compaction() -> anyhow::Result<()> {
+    let dir = tempfile::tempdir()?;
+    let path = dir.path().display().to_string();
+    let hms = HmsCore::new(4096, Some(path.clone()), None)?;
+    let mut first = input("changing", "current revision1");
+    first.version = Some("1".into());
+    hms.memorize_document(first)?;
+    let barrier = std::sync::Barrier::new(2);
+    std::thread::scope(|scope| -> anyhow::Result<()> {
+        let reader = scope.spawn(|| {
+            let mut observations = Vec::new();
+            for _ in 0..20 {
+                barrier.wait();
+                observations.push(
+                    hms.search_documents("current revision1 revision2", &SearchOptions::default()),
+                );
+                barrier.wait();
+            }
+            observations
+        });
+        let mut updates = Vec::new();
+        for i in 0usize..20 {
+            barrier.wait();
+            let version = 1 + i % 2;
+            let mut replacement = input("changing", &format!("current revision{version}"));
+            replacement.version = Some(version.to_string());
+            updates.push(hms.memorize_document(replacement));
+            let compacted = if i.is_multiple_of(5) {
+                hms.compact()
+            } else {
+                Ok(())
+            };
+            barrier.wait();
+            updates.push(compacted.map(|()| 0));
+        }
+        for observation in reader.join().unwrap() {
+            let found = observation?;
+            assert_eq!(found.len(), 1);
+            assert!(found[0]
+                .text
+                .as_ref()
+                .unwrap()
+                .contains(&format!("revision{}", found[0].version)));
+        }
+        for update in updates {
+            update?;
+        }
+        Ok(())
+    })?;
+    assert!(hms.delete_document("changing")?);
+    hms.compact()?;
+    drop(hms);
+    let restored = HmsCore::new(4096, Some(path), None)?;
+    assert!(restored
+        .search_documents("current revision2", &SearchOptions::default())?
+        .is_empty());
+    Ok(())
+}

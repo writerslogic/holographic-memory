@@ -118,6 +118,7 @@ fn document(number: usize, rng: &mut SplitMix) -> DocumentInput {
         overlap_words: None,
         store_text: None,
         embeddings: Some(vec![rng.unit()]),
+        title_weight: None,
     }
 }
 

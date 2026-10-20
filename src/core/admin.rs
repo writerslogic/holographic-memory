@@ -12,8 +12,8 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::storage::{
-    is_log_end, FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE, MAX_RAW_FRAME_SIZE,
-    SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
+    is_log_end, FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE, LEGACY_SEGMENT_SIZE,
+    MAX_RAW_FRAME_SIZE, SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
 };
 use super::store_lock::{StoreLock, LOCK_FILE};
 use super::{HmsConfig, HmsCore};
@@ -76,11 +76,16 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
             STORAGE_FORMAT_VERSION
         );
     }
-    if manifest.segment_size != SEGMENT_SIZE {
+    let expected = if manifest.version == 3 {
+        SEGMENT_SIZE
+    } else {
+        LEGACY_SEGMENT_SIZE
+    };
+    if manifest.segment_size != expected {
         bail!(
             "storage segment size mismatch: manifest={}, runtime={}",
             manifest.segment_size,
-            SEGMENT_SIZE
+            expected
         );
     }
 
@@ -88,6 +93,7 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
     let mut segment_count = 0usize;
     let mut frame_count = 0usize;
     let mut logical_bytes = 0u64;
+    let mut allocated_bytes = 0u64;
     loop {
         let segment_path = arena_path.join(format!("seg_{segment_count}.bin"));
         if !segment_path.exists() {
@@ -95,14 +101,26 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
         }
         let file = File::open(&segment_path)?;
         let metadata = file.metadata()?;
-        if metadata.len() != SEGMENT_SIZE as u64 {
+        let final_segment = !arena_path
+            .join(format!("seg_{}.bin", segment_count + 1))
+            .exists();
+        let valid_size = if manifest.version >= 4 && final_segment {
+            (SEGMENT_SIZE as u64..=manifest.segment_size as u64).contains(&metadata.len())
+                && metadata.len() % SEGMENT_SIZE as u64 == 0
+        } else {
+            metadata.len() == manifest.segment_size as u64
+        };
+        if !valid_size {
             bail!(
                 "segment {} has size {}, expected {}",
                 segment_path.display(),
                 metadata.len(),
-                SEGMENT_SIZE
+                manifest.segment_size
             );
         }
+        allocated_bytes = allocated_bytes
+            .checked_add(metadata.len())
+            .context("arena allocated byte count overflow")?;
         let mmap = unsafe { Mmap::map(&file)? };
         let (frames, bytes) = inspect_segment(&mmap, &segment_path, verify_checksums)?;
         frame_count += frames;
@@ -132,7 +150,7 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
         segment_count,
         frame_count,
         logical_bytes,
-        allocated_bytes: segment_count as u64 * SEGMENT_SIZE as u64,
+        allocated_bytes,
         checksums_verified: verify_checksums,
         manifests_verified: Vec::new(),
         documents: None,
@@ -163,6 +181,11 @@ pub fn verify_store(
             .context("store.json lacks dimensions")?,
     )?;
     let mut config = HmsConfig::default();
+    if let Some(name) = schema["text_encoder"].as_str() {
+        config.text_encoder = name
+            .parse()
+            .map_err(|e| anyhow!("store.json text encoder {name}: {e}"))?;
+    }
     config.meaning.enabled = schema["meaning_enabled"].as_bool().unwrap_or(false);
     config.embedding_space = serde_json::from_value(schema["embedding_space"].clone())
         .context("store.json embedding_space")?;
@@ -306,8 +329,7 @@ pub(crate) fn inspect_segment(
                 offset
             );
         }
-        if raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE || comp_len == 0 || comp_len > SEGMENT_SIZE
-        {
+        if raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE || comp_len == 0 || comp_len > data.len() {
             bail!(
                 "invalid frame header in {} at byte {}",
                 path.display(),
@@ -502,6 +524,7 @@ mod tests {
                     overlap_words: None,
                     store_text: None,
                     embeddings: None,
+                    title_weight: None,
                 })?;
             }
             assert!(hms.delete_document("doc1")?);

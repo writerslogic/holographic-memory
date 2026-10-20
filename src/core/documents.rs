@@ -7,11 +7,42 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
-use super::{encoding::encode_text_internal, entangled::EntangledHVec};
+use super::{encoding::TextEncoder, entangled::EntangledHVec};
+
+#[cfg(test)]
+mod compact_term_tests;
+mod packed_terms;
+use packed_terms::StoredTerms;
+
+mod dense;
+mod index;
+mod postings;
+mod search;
+mod text;
+pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
+pub(crate) use index::DocumentStore;
+pub(crate) use index::DocumentWithText;
+pub(crate) use search::{CapturedSearch, PreparedSearch};
+pub(crate) use text::TextSegment;
 
 pub(crate) const MAX_DOCUMENT_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const MAX_CHUNK_BYTES: usize = 64 * 1024;
 pub(crate) const CHUNK_PREFIX: &str = "hms:chunk:";
+
+pub(crate) fn capture_dense_index(
+    store: &DocumentStore,
+    dimensions: usize,
+) -> Result<Option<DenseIndexSnapshot>> {
+    dense::capture_dense_index(store, dimensions)
+}
+
+pub(crate) fn build_dense_index(snapshot: DenseIndexSnapshot) -> Result<Option<TrainedDenseIndex>> {
+    dense::build_dense_index(snapshot)
+}
+
+pub(crate) fn publish_dense_index(store: &mut DocumentStore, trained: &TrainedDenseIndex) -> bool {
+    dense::publish_dense_index(store, trained)
+}
 
 #[cfg_attr(feature = "node-api", napi_derive::napi(object))]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -26,6 +57,10 @@ pub struct DocumentInput {
     pub overlap_words: Option<u32>,
     pub store_text: Option<bool>,
     pub embeddings: Option<Vec<Vec<f64>>>,
+    /// Counts the terms of the text's first line this many times in the first chunk's term
+    /// frequencies and word count, as if the title were repeated; 1 or absent leaves the
+    /// document exactly as before this option existed.
+    pub title_weight: Option<u32>,
 }
 
 #[cfg_attr(feature = "node-api", napi_derive::napi(object))]
@@ -55,6 +90,65 @@ pub struct SearchOptions {
     /// min-max normalized scores over its top `candidateLimit`, weighted by `lexicalWeight`
     /// and `semanticWeight`; `"rrf"` is reciprocal rank fusion with k = 60.
     pub fusion: Option<String>,
+    /// BM25 term-frequency saturation `k1`; the default scores exactly as before this option
+    /// existed (1.2).
+    pub bm25_k1: Option<f64>,
+    /// BM25 length normalization `b` in `[0, 1]`; the default scores exactly as before (0.75).
+    pub bm25_b: Option<f64>,
+}
+
+/// BM25 constants as the scorer multiplies them: `k1 + 1`, `k1`, `1 - b` and `b`. The default
+/// keeps the literal constants the scorer always used, so default scores stay bit-identical.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Bm25 {
+    pub(crate) k1_plus_one: f64,
+    pub(crate) k1: f64,
+    pub(crate) one_minus_b: f64,
+    pub(crate) b: f64,
+}
+
+impl Bm25 {
+    pub(crate) const DEFAULT: Self = Self {
+        k1_plus_one: 2.2,
+        k1: 1.2,
+        one_minus_b: 0.25,
+        b: 0.75,
+    };
+
+    pub(crate) fn from_options(options: &SearchOptions) -> Result<Self> {
+        let (Some(k1), Some(b)) = (
+            options.bm25_k1.or(Some(Self::DEFAULT.k1)),
+            options.bm25_b.or(Some(Self::DEFAULT.b)),
+        ) else {
+            unreachable!("defaults fill both parameters");
+        };
+        if options.bm25_k1.is_none() && options.bm25_b.is_none() {
+            return Ok(Self::DEFAULT);
+        }
+        ensure!(
+            k1.is_finite() && k1 >= 0.0 && (0.0..=1.0).contains(&b),
+            "bm25K1 must be finite and nonnegative and bm25B in [0, 1]"
+        );
+        Ok(Self {
+            k1_plus_one: k1 + 1.0,
+            k1,
+            one_minus_b: 1.0 - b,
+            b,
+        })
+    }
+
+    /// The length normalization of a chunk of `word_count` words against `average`.
+    #[inline]
+    pub(crate) fn norm(self, word_count: f64, average: f64) -> f64 {
+        self.k1 * (self.one_minus_b + self.b * word_count / average)
+    }
+
+    /// The weight of a term with inverse document frequency `idf` seen `tf` times in a chunk
+    /// whose length normalization is `norm`.
+    #[inline]
+    pub(crate) fn weight(self, idf: f64, tf: f64, norm: f64) -> f64 {
+        idf * tf * self.k1_plus_one / (tf + norm)
+    }
 }
 
 #[cfg_attr(feature = "node-api", napi_derive::napi(object))]
@@ -77,12 +171,17 @@ pub struct DocumentResult {
 #[derive(Clone, Serialize, Deserialize)]
 pub(crate) struct StoredChunk {
     pub id: String,
+    /// Inline text, or none when the store moved it to its text segment (`text_at`) or the
+    /// document was stored without text.
     pub text: Option<String>,
+    /// Location of the text in the store's text segment, for the process that installed it.
+    #[serde(skip)]
+    pub text_at: Option<(u64, u32)>,
     pub start_byte: u32,
     pub end_byte: u32,
     pub vector: EntangledHVec,
     pub embedding: Option<Vec<f64>>,
-    pub terms: BTreeMap<String, u32>,
+    pub terms: StoredTerms,
     pub word_count: usize,
     /// Whether `terms` were stemmed at ingest; chunks stored before stemming existed match
     /// the unstemmed query terms.
@@ -92,11 +191,107 @@ pub(crate) struct StoredChunk {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(crate) struct StoredDocument {
+    #[serde(deserialize_with = "deserialize_compact_string")]
     pub id: String,
+    #[serde(default, deserialize_with = "deserialize_compact_uri")]
     pub source_uri: Option<String>,
+    #[serde(deserialize_with = "deserialize_compact_string")]
     pub version: String,
+    #[serde(deserialize_with = "deserialize_compact_metadata")]
     pub metadata: Value,
+    #[serde(deserialize_with = "deserialize_compact_chunks")]
     pub chunks: Vec<StoredChunk>,
+}
+
+fn deserialize_compact_chunks<'de, D>(deserializer: D) -> Result<Vec<StoredChunk>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut chunks = Vec::<StoredChunk>::deserialize(deserializer)?;
+    compact_chunks(&mut chunks);
+    Ok(chunks)
+}
+
+fn deserialize_compact_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut value = String::deserialize(deserializer)?;
+    compact_string(&mut value);
+    Ok(value)
+}
+
+fn deserialize_compact_uri<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut value = Option::<String>::deserialize(deserializer)?;
+    if let Some(value) = &mut value {
+        compact_string(value);
+    }
+    Ok(value)
+}
+
+fn deserialize_compact_metadata<'de, D>(deserializer: D) -> Result<Value, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut value = Value::deserialize(deserializer)?;
+    compact_metadata(&mut value);
+    Ok(value)
+}
+
+fn compact_vec<T>(values: &mut Vec<T>) {
+    if values.capacity() != values.len() {
+        *values = std::mem::take(values).into_boxed_slice().into_vec();
+    }
+}
+
+fn compact_string(value: &mut String) {
+    if value.capacity() != value.len() {
+        *value = std::mem::take(value).into_boxed_str().into_string();
+    }
+}
+
+fn compact_metadata(value: &mut Value) {
+    match value {
+        Value::Array(values) => {
+            for value in values.iter_mut() {
+                compact_metadata(value);
+            }
+            compact_vec(values);
+        }
+        Value::Object(values) => {
+            if values.keys().any(|key| key.capacity() != key.len()) {
+                *values = std::mem::take(values)
+                    .into_iter()
+                    .map(|(mut key, value)| {
+                        compact_string(&mut key);
+                        (key, value)
+                    })
+                    .collect();
+            }
+            for value in values.values_mut() {
+                compact_metadata(value);
+            }
+        }
+        Value::String(value) => compact_string(value),
+        _ => {}
+    }
+}
+
+fn compact_chunks(chunks: &mut Vec<StoredChunk>) {
+    for chunk in chunks.iter_mut() {
+        compact_string(&mut chunk.id);
+        if let Some(text) = &mut chunk.text {
+            compact_string(text);
+        }
+        compact_vec(&mut chunk.vector.indices);
+        if let Some(embedding) = &mut chunk.embedding {
+            compact_vec(embedding);
+        }
+    }
+    compact_vec(chunks);
 }
 
 pub fn chunk_document(input: &DocumentInput) -> Result<Vec<DocumentChunk>> {
@@ -206,8 +401,9 @@ pub(crate) fn prepare(
     input: DocumentInput,
     dimensions: usize,
     embedding_dimensions: Option<usize>,
+    encoder: TextEncoder,
 ) -> Result<StoredDocument> {
-    prepare_with_keys(input, dimensions, embedding_dimensions, None)
+    prepare_with_keys(input, dimensions, embedding_dimensions, None, encoder)
 }
 
 /// `keys` replaces each chunk's text as its lexical key (for example the chunk prefixed with
@@ -217,6 +413,7 @@ pub(crate) fn prepare_with_keys(
     dimensions: usize,
     embedding_dimensions: Option<usize>,
     keys: Option<&[String]>,
+    encoder: TextEncoder,
 ) -> Result<StoredDocument> {
     let chunks = chunk_document(&input)?;
     ensure!(
@@ -253,8 +450,20 @@ pub(crate) fn prepare_with_keys(
         );
     }
     let mut stored = Vec::with_capacity(chunks.len());
+    let title_weight = input.title_weight.unwrap_or(1);
+    ensure!(
+        (1..=16).contains(&title_weight),
+        "titleWeight must be between 1 and 16"
+    );
     for (i, chunk) in chunks.into_iter().enumerate() {
-        let terms = terms(keys.map_or(chunk.text.as_str(), |k| k[i].as_str()), true);
+        let source = keys.map_or(chunk.text.as_str(), |k| k[i].as_str());
+        let mut terms = terms(source, true);
+        if i == 0 && title_weight > 1 {
+            let title = source.lines().next().unwrap_or_default();
+            for (term, count) in self::terms(title, true) {
+                *terms.entry(term).or_insert(0) += count * (title_weight - 1);
+            }
+        }
         let word_count = terms.values().map(|&n| n as usize).sum();
         let embedding = input
             .embeddings
@@ -262,32 +471,120 @@ pub(crate) fn prepare_with_keys(
             .map(|all| normalize_embedding(&all[i], embedding_dimensions.unwrap_or(0)))
             .transpose()?;
         stored.push(StoredChunk {
-            vector: encode_text_internal(&chunk.text, dimensions),
+            vector: encoder.encode(&chunk.text, dimensions),
             text: input.store_text.unwrap_or(true).then_some(chunk.text),
+            text_at: None,
             id: chunk.id,
             start_byte: chunk.start_byte,
             end_byte: chunk.end_byte,
             embedding,
-            terms,
+            terms: terms.into(),
             word_count,
             stemmed: true,
         });
     }
-    Ok(StoredDocument {
+    let mut document = StoredDocument {
         id: input.id,
         source_uri: input.source_uri,
         version: input.version.unwrap_or_else(|| "1".into()),
         metadata: input.metadata.unwrap_or_else(|| serde_json::json!({})),
         chunks: stored,
-    })
+    };
+    compact_string(&mut document.id);
+    compact_string(&mut document.version);
+    if let Some(uri) = &mut document.source_uri {
+        compact_string(uri);
+    }
+    compact_metadata(&mut document.metadata);
+    compact_chunks(&mut document.chunks);
+    Ok(document)
 }
 
+pub(crate) fn prepare_search(
+    text: &str,
+    options: &SearchOptions,
+    embedding_dimensions: Option<usize>,
+) -> Result<PreparedSearch> {
+    search::prepare_search(text, options, embedding_dimensions)
+}
+
+pub(crate) fn capture_search(
+    store: &DocumentStore,
+    prepared: Vec<PreparedSearch>,
+) -> CapturedSearch {
+    search::capture_search(store, prepared)
+}
+
+pub(crate) fn execute_search(captured: &CapturedSearch, query: usize) -> Vec<DocumentResult> {
+    search::execute_search(captured, query)
+}
+
+#[cfg(test)]
 pub(crate) fn search(
-    documents: &BTreeMap<String, StoredDocument>,
+    store: &DocumentStore,
     text: &str,
     options: &SearchOptions,
     embedding_dimensions: Option<usize>,
 ) -> Result<Vec<DocumentResult>> {
+    let prepared: PreparedSearch = prepare_search(text, options, embedding_dimensions)?;
+    let captured: CapturedSearch = capture_search(store, vec![prepared]);
+    Ok(execute_search(&captured, 0))
+}
+
+#[cfg(test)]
+fn eligible_chunks<'a>(
+    documents: impl Iterator<Item = &'a StoredDocument>,
+    options: &SearchOptions,
+) -> Vec<(&'a StoredDocument, &'a StoredChunk)> {
+    documents
+        .filter(|document| matches_document(document, options))
+        .flat_map(|d| d.chunks.iter().map(move |chunk| (d, chunk)))
+        .collect()
+}
+
+fn matches_document(document: &StoredDocument, options: &SearchOptions) -> bool {
+    options
+        .source_uri
+        .as_ref()
+        .is_none_or(|uri| document.source_uri.as_ref() == Some(uri))
+        && options
+            .document_ids
+            .as_ref()
+            .is_none_or(|ids| ids.contains(&document.id))
+        && options
+            .filter
+            .as_ref()
+            .and_then(Value::as_object)
+            .is_none_or(|filter| {
+                filter
+                    .iter()
+                    .all(|(key, value)| document.metadata.get(key) == Some(value))
+            })
+}
+
+fn top_ranked<T>(
+    values: &mut Vec<T>,
+    limit: usize,
+    mut compare: impl FnMut(&T, &T) -> std::cmp::Ordering,
+) {
+    if values.len() > limit {
+        values.select_nth_unstable_by(limit - 1, &mut compare);
+        values.truncate(limit);
+    }
+    values.sort_unstable_by(compare);
+}
+
+#[cfg(test)]
+fn search_impl(
+    store: &DocumentStore,
+    text: &str,
+    options: &SearchOptions,
+    embedding_dimensions: Option<usize>,
+    indexed: bool,
+) -> Result<Vec<DocumentResult>> {
+    if indexed {
+        return search(store, text, options, embedding_dimensions);
+    }
     ensure!(text.len() <= MAX_DOCUMENT_BYTES, "query exceeds 8 MiB");
     let k = options.k.unwrap_or(10) as usize;
     let limit = options.candidate_limit.unwrap_or(100.max(k as u32)) as usize;
@@ -308,6 +605,7 @@ pub(crate) fn search(
             && lexical_weight + semantic_weight > 0.0,
         "search weights must be finite, nonnegative and not both zero"
     );
+    let bm25 = Bm25::from_options(options)?;
     let minimum = options.min_semantic_score.unwrap_or(0.0);
     ensure!(
         minimum.is_finite() && (-1.0..=1.0).contains(&minimum),
@@ -331,58 +629,93 @@ pub(crate) fn search(
         .transpose()?;
     // Unstemmed and stemmed query forms: a chunk is scored with the form it was stored in.
     let query_terms = [terms(text, false), terms(text, true)];
-    let eligible: Vec<_> = documents
-        .values()
-        .filter(|d| {
-            options
-                .source_uri
-                .as_ref()
-                .is_none_or(|uri| d.source_uri.as_ref() == Some(uri))
-                && options
-                    .document_ids
+    let candidates = if indexed {
+        store.candidate_ids(options)
+    } else {
+        None
+    };
+    let eligible = match candidates {
+        Some(ids) => eligible_chunks(
+            ids.into_iter().map(|id| {
+                store
+                    .documents
+                    .get(id)
+                    .expect("document candidate is absent from store")
                     .as_ref()
-                    .is_none_or(|ids| ids.contains(&d.id))
-                && options
-                    .filter
-                    .as_ref()
-                    .and_then(Value::as_object)
-                    .is_none_or(|filter| {
-                        filter
-                            .iter()
-                            .all(|(key, value)| d.metadata.get(key) == Some(value))
-                    })
-        })
-        .flat_map(|d| d.chunks.iter().map(move |chunk| (d, chunk)))
-        .collect();
+            }),
+            options,
+        ),
+        None => eligible_chunks(store.values(), options),
+    };
     if eligible.is_empty() {
         return Ok(Vec::new());
     }
     let n = eligible.len() as f64;
     let average = eligible.iter().map(|(_, c)| c.word_count).sum::<usize>() as f64 / n;
+    let posting_work: usize = query_terms
+        .iter()
+        .enumerate()
+        .map(|(form, terms)| {
+            terms
+                .keys()
+                .map(|word| store.postings[form].get(word).map_or(0, |p| p.len()))
+                .sum::<usize>()
+        })
+        .sum();
+    let scan_work = eligible
+        .len()
+        .saturating_mul(query_terms.iter().map(BTreeMap::len).sum());
+    let use_postings = indexed && posting_work.saturating_add(store.slot_count) < scan_work;
+    let mut positions = Vec::new();
+    if use_postings {
+        positions.resize(store.slot_count, usize::MAX);
+        let mut previous = "";
+        let mut chunk = 0;
+        for (i, (document, _)) in eligible.iter().enumerate() {
+            if document.id != previous {
+                previous = &document.id;
+                chunk = 0;
+            }
+            positions[store.slots[&document.id][chunk]] = i;
+            chunk += 1;
+        }
+    }
     let idf: [BTreeMap<&String, f64>; 2] = std::array::from_fn(|form| {
         let stemmed = form == 1;
         query_terms[form]
             .keys()
             .map(|word| {
-                let df = eligible
-                    .iter()
-                    .filter(|(_, c)| c.stemmed == stemmed && c.terms.contains_key(word))
-                    .count() as f64;
+                let df = if use_postings {
+                    store.postings[form].get(word).map_or(0, |posting| {
+                        posting
+                            .iter()
+                            .filter(|&(slot, _)| positions[slot] != usize::MAX)
+                            .count()
+                    })
+                } else {
+                    eligible
+                        .iter()
+                        .filter(|(_, c)| c.stemmed == stemmed && c.terms.contains_key(word))
+                        .count()
+                } as f64;
                 (word, (1.0 + (n - df + 0.5) / (df + 0.5)).ln())
             })
             .collect()
     });
-    let scores: Vec<(f64, Option<f64>)> = eligible
+    let mut scores: Vec<(f64, Option<f64>)> = eligible
         .iter()
         .map(|(_, c)| {
-            let lexical = idf[usize::from(c.stemmed)]
-                .iter()
-                .map(|(word, idf)| {
-                    let tf = c.terms.get(*word).copied().unwrap_or(0) as f64;
-                    idf * tf * 2.2
-                        / (tf + 1.2 * (0.25 + 0.75 * c.word_count as f64 / average.max(1.0)))
-                })
-                .sum();
+            let lexical = if use_postings {
+                0.0
+            } else {
+                idf[usize::from(c.stemmed)]
+                    .iter()
+                    .map(|(word, idf)| {
+                        let tf = c.terms.get(word).copied().unwrap_or(0) as f64;
+                        bm25.weight(*idf, tf, bm25.norm(c.word_count as f64, average.max(1.0)))
+                    })
+                    .sum()
+            };
             let semantic = query_embedding
                 .as_ref()
                 .zip(c.embedding.as_ref())
@@ -396,14 +729,34 @@ pub(crate) fn search(
             (lexical, semantic)
         })
         .collect();
+    if use_postings {
+        for (form, weights) in idf.iter().enumerate() {
+            for (word, idf) in weights {
+                if let Some(posting) = store.postings[form].get(word) {
+                    for (slot, frequency) in posting.iter() {
+                        let i = positions[slot];
+                        if i == usize::MAX {
+                            continue;
+                        }
+                        let c = eligible[i].1;
+                        let tf = f64::from(frequency);
+                        scores[i].0 +=
+                            bm25.weight(*idf, tf, bm25.norm(c.word_count as f64, average.max(1.0)));
+                    }
+                }
+            }
+        }
+    }
     let mut lexical: Vec<usize> = (0..scores.len())
         .filter(|&i| scores[i].0 > 0.0 && lexical_weight > 0.0)
         .collect();
     let mut semantic: Vec<usize> = (0..scores.len())
         .filter(|&i| semantic_weight > 0.0 && scores[i].1.is_some_and(|s| s >= minimum))
         .collect();
-    lexical.sort_unstable_by(|&a, &b| scores[b].0.total_cmp(&scores[a].0).then(a.cmp(&b)));
-    semantic.sort_unstable_by(|&a, &b| {
+    top_ranked(&mut lexical, limit, |&a, &b| {
+        scores[b].0.total_cmp(&scores[a].0).then(a.cmp(&b))
+    });
+    top_ranked(&mut semantic, limit, |&a, &b| {
         scores[b]
             .1
             .unwrap_or(-1.0)
@@ -465,4 +818,345 @@ pub(crate) fn search(
             }
         })
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn document(i: usize, revision: usize) -> StoredDocument {
+        let input: DocumentInput = serde_json::from_value(json!({
+            "id":format!("d{i:03}"), "version":revision.to_string(),
+            "text":format!("running common topic{} rare{i} shared birds fly distant place revision{revision}",i%7),
+            "sourceUri":format!("source{}",i%3), "metadata":{"group":i%5,"empty":null,"flag":i.is_multiple_of(2),"text":"n","fraction":-0.0,"nested":{"key":i%5}},
+            "chunkWords":5,"overlapWords":1,
+            "embeddings":[[1.0,0.1,0.0],[0.0,1.0,0.1],[0.1,0.0,1.0]]
+        })).unwrap();
+        let mut doc = prepare(input, 1024, Some(3), TextEncoder::default()).unwrap();
+        if i.is_multiple_of(2) {
+            for chunk in &mut doc.chunks {
+                chunk.terms = terms(chunk.text.as_deref().unwrap(), false).into();
+                chunk.stemmed = false;
+            }
+        }
+        doc
+    }
+
+    #[test]
+    fn bm25_options_change_scores_only_when_set() {
+        let mut store = DocumentStore::default();
+        for i in 0..12 {
+            let doc = document(i, 1);
+            store.insert(doc.id.clone(), doc);
+        }
+        let lexical = |k1: Option<f64>, b: Option<f64>| {
+            let options = SearchOptions {
+                k: Some(5),
+                lexical_weight: Some(1.0),
+                semantic_weight: Some(0.0),
+                bm25_k1: k1,
+                bm25_b: b,
+                ..Default::default()
+            };
+            search_impl(&store, "rare3 shared", &options, Some(3), true).map(|hits| {
+                hits.into_iter()
+                    .map(|h| (h.id, h.lexical_score))
+                    .collect::<Vec<_>>()
+            })
+        };
+        let default = lexical(None, None).unwrap();
+        assert_eq!(default, lexical(Some(1.2), Some(0.75)).unwrap());
+        // k1 = 0 saturates every term at its idf, so the top hit scores the sum of its idfs.
+        let flat = lexical(Some(0.0), Some(0.5)).unwrap();
+        assert_ne!(flat, default);
+        let n = store.chunk_count as f64;
+        let idf = |word: &str| {
+            let df = store.postings[1].get(word).map_or(0, |list| list.len()) as f64;
+            (1.0 + (n - df + 0.5) / (df + 0.5)).ln()
+        };
+        let stem = |word: &str| terms(word, true).into_keys().next().unwrap();
+        assert!((flat[0].1 - (idf(&stem("rare3")) + idf(&stem("shared")))).abs() < 1e-12);
+        assert!(lexical(Some(-1.0), None).is_err());
+        assert!(lexical(None, Some(1.5)).is_err());
+        assert!(lexical(Some(f64::NAN), None).is_err());
+        assert_scan_parity(&store);
+    }
+
+    fn assert_scan_parity(store: &DocumentStore) {
+        for query in [
+            "running rare3 missing absent unknown extra terms for selective postings",
+            "running rare3",
+            "birds distant",
+            "common",
+            "missing token",
+            "",
+        ] {
+            for fusion in ["blend", "rrf"] {
+                for filter in [
+                    None,
+                    Some(json!({"group":3})),
+                    Some(json!({"group":99})),
+                    Some(json!({"empty":null,"flag":true,"text":"n"})),
+                    Some(json!({"fraction":0.0,"nested":{"key":3}})),
+                ] {
+                    for limit in [9, 10, 11, 100] {
+                        for embedding in [None, Some(vec![1., 0., 0.])] {
+                            let opts = SearchOptions {
+                                k: Some(9),
+                                candidate_limit: Some(limit),
+                                filter: filter.clone(),
+                                fusion: Some(fusion.into()),
+                                embedding,
+                                min_semantic_score: Some(-1.),
+                                ..Default::default()
+                            };
+                            let indexed = search_impl(store, query, &opts, Some(3), true).unwrap();
+                            let scanned = search_impl(store, query, &opts, Some(3), false).unwrap();
+                            assert_eq!(
+                                serde_json::to_value(indexed).unwrap(),
+                                serde_json::to_value(scanned).unwrap()
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        let opts = SearchOptions {
+            source_uri: Some("source1".into()),
+            document_ids: Some(vec![
+                "d010".into(),
+                "d003".into(),
+                "d010".into(),
+                "absent".into(),
+            ]),
+            ..Default::default()
+        };
+        assert_eq!(
+            serde_json::to_value(search_impl(store, "running", &opts, Some(3), true).unwrap())
+                .unwrap(),
+            serde_json::to_value(search_impl(store, "running", &opts, Some(3), false).unwrap())
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn postings_preserve_filtered_mixed_tokenization_scores_after_slot_reuse() {
+        let mut store = DocumentStore::default();
+        for i in 0..40 {
+            let doc = document(i, 1);
+            store.insert(doc.id.clone(), doc);
+        }
+        let query = "running rare3 missing absent unknown extra terms for selective postings";
+        let forms = [terms(query, false), terms(query, true)];
+        let posting_work: usize = forms
+            .iter()
+            .enumerate()
+            .map(|(form, terms)| {
+                terms
+                    .keys()
+                    .map(|word| store.postings[form].get(word).map_or(0, |p| p.len()))
+                    .sum::<usize>()
+            })
+            .sum();
+        let eligible = store
+            .values()
+            .filter(|d| d.metadata["group"] == 3)
+            .map(|d| d.chunks.len())
+            .sum::<usize>();
+        assert!(
+            posting_work + store.slot_count
+                < eligible * forms.iter().map(BTreeMap::len).sum::<usize>()
+        );
+        assert_scan_parity(&store);
+        for i in (0..40).step_by(2) {
+            store.remove(&format!("d{i:03}"));
+        }
+        for i in 0..20 {
+            let mut doc = document(i, 2);
+            if i == 3 {
+                doc.metadata["group"] = json!(22);
+                doc.source_uri = Some("replacement-source".into());
+            }
+            store.insert(doc.id.clone(), doc);
+        }
+        assert_scan_parity(&store);
+        let ids: Vec<_> = store.values().map(|doc| doc.id.clone()).collect();
+        for id in ids {
+            store.remove(&id);
+        }
+        assert_eq!(store.slot_count, 0);
+        assert!(store.postings.iter().all(|p| p.term_count() == 0));
+        let doc = document(0, 3);
+        store.insert(doc.id.clone(), doc);
+        assert_scan_parity(&store);
+    }
+
+    #[test]
+    fn deleting_low_slots_reclaims_postings_with_high_slot_survivors() {
+        for n in [1023, 1024, 1025] {
+            let mut store = DocumentStore::default();
+            for i in 0..n {
+                let mut doc = document(i, 1);
+                doc.chunks.truncate(1);
+                store.insert(doc.id.clone(), doc);
+            }
+            for i in 0..n - 1 {
+                store.remove(&format!("d{i:03}"));
+            }
+            assert!(store.slot_count <= 1024);
+            assert_eq!(store.values().count(), 1);
+            for form in &store.postings {
+                form.assert_valid();
+            }
+            assert_scan_parity(&store);
+        }
+    }
+
+    #[test]
+    fn restored_zero_frequency_terms_do_not_become_lexical_candidates() {
+        let mut store = DocumentStore::default();
+        let mut document = document(0, 1);
+        for chunk in &mut document.chunks {
+            chunk.terms.insert("ghost".into(), 0);
+        }
+        store.insert(document.id.clone(), document);
+        for fusion in ["blend", "rrf"] {
+            let options = SearchOptions {
+                fusion: Some(fusion.into()),
+                ..Default::default()
+            };
+            assert!(search_impl(&store, "ghost", &options, None, true)
+                .unwrap()
+                .is_empty());
+            for query in ["ghost common", "ghost rare0"] {
+                assert_eq!(
+                    serde_json::to_value(search_impl(&store, query, &options, None, true).unwrap())
+                        .unwrap(),
+                    serde_json::to_value(
+                        search_impl(&store, query, &options, None, false).unwrap()
+                    )
+                    .unwrap()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn replacements_preserve_frequency_filters_embeddings_and_retained_views() {
+        for chunks in [1, 2, 3] {
+            for change_tokenization in [false, true] {
+                let mut store = DocumentStore::default();
+                for i in 0..20 {
+                    let mut doc = document(i, 1);
+                    if i == 3 {
+                        doc.chunks.truncate(2);
+                    }
+                    store.insert(doc.id.clone(), doc);
+                }
+                store.remove("d000");
+                let options = SearchOptions {
+                    k: Some(100),
+                    candidate_limit: Some(100),
+                    embedding: Some(vec![1.0, 0.0, 0.0]),
+                    ..Default::default()
+                };
+                let prepared = prepare_search("running common ghost", &options, Some(3)).unwrap();
+                let retained = capture_search(&store, vec![prepared]);
+                let old = serde_json::to_value(execute_search(&retained, 0)).unwrap();
+                let mut replacement = document(3, 2);
+                replacement.chunks.truncate(chunks);
+                replacement.metadata = json!({"group":99, "flag":false});
+                replacement.source_uri = Some("replacement-source".into());
+                for chunk in &mut replacement.chunks {
+                    chunk.terms.insert("common".into(), (chunks - 1) as u32);
+                    chunk.terms.insert("ghost".into(), 2);
+                    chunk.terms.remove("run");
+                    chunk.word_count += 1;
+                    chunk.embedding = None;
+                    if change_tokenization {
+                        chunk.stemmed = !chunk.stemmed;
+                    }
+                }
+                store.insert(replacement.id.clone(), replacement);
+                assert_scan_parity(&store);
+                let captured = capture_search(
+                    &store,
+                    vec![prepare_search("running common ghost", &options, Some(3)).unwrap()],
+                );
+                assert_eq!(
+                    serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                    serde_json::to_value(
+                        search_impl(&store, "running common ghost", &options, Some(3), false)
+                            .unwrap()
+                    )
+                    .unwrap()
+                );
+                assert_eq!(
+                    serde_json::to_value(execute_search(&retained, 0)).unwrap(),
+                    old
+                );
+                assert_eq!(
+                    store.embedded_count(),
+                    store
+                        .values()
+                        .flat_map(|d| &d.chunks)
+                        .filter(|c| c.embedding.is_some())
+                        .count()
+                );
+                assert_eq!(
+                    store.word_count,
+                    store
+                        .values()
+                        .flat_map(|d| &d.chunks)
+                        .map(|c| c.word_count)
+                        .sum::<usize>()
+                );
+                assert_eq!(
+                    store.chunk_count,
+                    store.values().map(|d| d.chunks.len()).sum::<usize>()
+                );
+                for form in &store.postings {
+                    form.assert_valid();
+                }
+                let selected = search_impl(
+                    &store,
+                    "ghost",
+                    &SearchOptions {
+                        source_uri: Some("replacement-source".into()),
+                        filter: Some(json!({"group":99})),
+                        k: Some(100),
+                        candidate_limit: Some(100),
+                        ..Default::default()
+                    },
+                    Some(3),
+                    true,
+                )
+                .unwrap();
+                assert_eq!(selected.len(), chunks);
+                assert!(selected.iter().all(|r| r.document_id == "d003"
+                    && r.version == "2"
+                    && r.semantic_score.is_none()));
+                let mut embedded = document(3, 3);
+                embedded.chunks.truncate(chunks);
+                store.insert(embedded.id.clone(), embedded);
+                assert_scan_parity(&store);
+                assert!(store.embedded_documents.contains("d003"));
+                assert_eq!(
+                    store.embedded_count(),
+                    store
+                        .values()
+                        .flat_map(|d| &d.chunks)
+                        .filter(|c| c.embedding.is_some())
+                        .count()
+                );
+                store.remove("d003");
+                assert_scan_parity(&store);
+                assert_eq!(
+                    serde_json::to_value(execute_search(&retained, 0)).unwrap(),
+                    old
+                );
+            }
+        }
+    }
 }

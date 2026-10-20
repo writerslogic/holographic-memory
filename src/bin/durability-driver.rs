@@ -102,6 +102,7 @@ fn input(n: usize, revision: usize) -> DocumentInput {
         overlap_words: None,
         store_text: Some(true),
         embeddings: Some(vec![embedding(n)]),
+        title_weight: None,
     }
 }
 

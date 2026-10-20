@@ -12,6 +12,8 @@ pub(crate) mod schema;
 // published public API. See CONTRIBUTING for the codebook-first roadmap.
 #[cfg(feature = "experimental")]
 pub mod algebra;
+#[cfg(feature = "experimental")]
+pub mod algebraic_codebook;
 pub(crate) mod atom_memory;
 pub(crate) mod audit;
 #[cfg(feature = "experimental")]
@@ -27,7 +29,6 @@ pub mod cognition;
 pub mod compose;
 #[cfg(feature = "experimental")]
 pub mod counting_bloom_memory;
-pub mod sparse;
 // Living connection-graph: plastic, event-sourced holographic relation store.
 // Experimental and opt-in; does not touch the sparse-binary core.
 pub(crate) mod composite_memory;
@@ -75,6 +76,7 @@ pub(crate) mod security;
 pub use security::scrub_stack;
 #[cfg(target_arch = "x86_64")]
 pub(crate) mod simd_math;
+pub mod sparse;
 #[cfg(feature = "experimental")]
 pub mod sparse_autoencoder;
 pub(crate) mod storage;

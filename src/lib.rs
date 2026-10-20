@@ -274,6 +274,12 @@ impl HolographicMemorySystem {
     }
 
     #[napi]
+    pub async fn memorize_documents(&self, inputs: Vec<DocumentInput>) -> Result<Vec<u32>> {
+        let core = self.core.clone();
+        run_async(move || core.memorize_documents(inputs)).await
+    }
+
+    #[napi]
     // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
     pub async fn chunk_document(&self, input: DocumentInput) -> Result<Vec<DocumentChunk>> {
         run_async(move || chunk_document(&input)).await
@@ -470,6 +476,7 @@ impl HolographicMemorySystem {
                 chunk_words: None,
                 overlap_words: None,
                 store_text: None,
+                title_weight: None,
                 embeddings: None,
             })?;
             Ok(())
@@ -700,6 +707,17 @@ impl HolographicMemorySystem {
     pub async fn train_ivf(&self) -> Result<()> {
         let core = self.core.clone();
         run_async(move || core.train_ivf()).await
+    }
+
+    #[napi]
+    pub async fn train_document_index(&self) -> Result<()> {
+        let core = self.core.clone();
+        run_async(move || core.train_document_index()).await
+    }
+
+    #[napi(getter)]
+    pub fn document_index_trained(&self) -> bool {
+        self.core.document_index_trained()
     }
 
     #[napi]

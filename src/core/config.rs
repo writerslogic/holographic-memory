@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default)]
 pub struct HmsConfig {
+    pub text_encoder: super::encoding::TextEncoder,
     pub ivf: IVFConfig,
     pub nsg: NSGConfig,
     pub shard: ShardConfig,
@@ -236,6 +237,11 @@ impl Default for CognitionConfig {
 
 impl HmsConfig {
     pub(crate) fn validate(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            cfg!(feature = "experimental")
+                || self.text_encoder == super::encoding::TextEncoder::MultiscaleWordsV1,
+            "capped-union text encoding requires a build with the experimental feature"
+        );
         anyhow::ensure!(
             cfg!(feature = "security")
                 || !(self.security.signing_enabled || self.security.encryption_enabled),
