@@ -49,7 +49,9 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: repro-${{ matrix.builder }}
-          path: out-${{ matrix.builder }}/SHA256SUMS
+          path: |
+            out-${{ matrix.builder }}/SHA256SUMS
+            out-${{ matrix.builder }}/*.whl
           if-no-files-found: error
 
   compare:
@@ -64,4 +66,15 @@ jobs:
           pattern: repro-*
           path: hashes
       - name: Hashes must match
-        run: python3 scripts/ci/compare-hashes.py hashes/repro-first/SHA256SUMS hashes/repro-second/SHA256SUMS
+        run: python3 scripts/ci/compare-hashes.py hashes/repro-first/out-first/SHA256SUMS hashes/repro-second/out-second/SHA256SUMS
+      - name: Which wheel members differ
+        if: failure()
+        run: |
+          for side in first second; do
+            (cd "hashes/repro-$side/out-$side" && for w in *.whl; do
+              unzip -Z -v "$w" | grep -E "^Central directory entry|last modified" | paste - - | head -0
+              mkdir -p "/tmp/$side" && unzip -q -o "$w" -d "/tmp/$side"
+            done)
+          done
+          diff -r /tmp/first /tmp/second && echo "unpacked wheel contents identical (zip metadata differs)" || true
+          for side in first second; do unzip -Z -T hashes/repro-$side/out-$side/*.whl | head -5; done
