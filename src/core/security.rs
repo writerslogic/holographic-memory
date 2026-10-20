@@ -333,6 +333,9 @@ mod tests {
         // The test's own derivation left the key in callee frames, like the manager's did.
         scrub_stack();
         let ciphertext = manager.encrypt(b"payload")?;
+        // encrypt leaves key-schedule temporaries in the frames it used; like the derivation
+        // above, they are stack residue of this thread, not state the manager owns.
+        scrub_stack();
         #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("aes") {
             let mut live = false;

@@ -1,0 +1,99 @@
+{
+ "schema_version": 1,
+ "category": "1A_vector_search",
+ "date": "2026-10-20",
+ "host": "Modal x86 container (cpu=8 reserved, 32 GiB; Linux; AVX2 yes, AVX-512F no; rayon saw 24 threads; shared hardware, no load gate)",
+ "protocol": "public-bench ann-qgraph on glove-100-angular 1,183,514 train vectors, --holdout 2000 (train only), vertex index: 4-bit traversal, 8-bit residual, degree 32, build ef 200, aligned rows, BFS reorder, 3-byte ids, rerank 64; arms A baseline commit a46108c, B tip df7df97, C tip with --quantized-search; round 1 cold build, round 2 graph from cache; 5 timed repeats per row; QPS = median over both rounds at the row selected by the fewest exact evaluations per query reaching the recall threshold",
+ "harness": "benchmarks/public/ann_modal_confirm.py",
+ "raw": "benchmarks/results/ann_modal_confirm_v1.raw.json",
+ "spend_usd_estimate": 0.21,
+ "cap_usd": 10,
+ "arms": {
+  "A": {
+   "build_s": 274.5,
+   "peak_rss_mib": 4788,
+   "index_bytes": 359620124,
+   "0.9": {
+    "ef": 256,
+    "recall": 0.9005,
+    "evals": 5810.9095,
+    "qps_median": 990.0,
+    "qps_per_round_median": [
+     795.0,
+     1009.0
+    ]
+   },
+   "0.95": {
+    "ef": 736,
+    "recall": 0.95065,
+    "evals": 14341.2625,
+    "qps_median": 426.0,
+    "qps_per_round_median": [
+     427.0,
+     425.0
+    ]
+   }
+  },
+  "B": {
+   "build_s": 249.6,
+   "peak_rss_mib": 4310,
+   "index_bytes": 359620124,
+   "0.9": {
+    "ef": 256,
+    "recall": 0.9005,
+    "evals": 5810.9095,
+    "qps_median": 2457.0,
+    "qps_per_round_median": [
+     1547.0,
+     2870.0
+    ]
+   },
+   "0.95": {
+    "ef": 736,
+    "recall": 0.95065,
+    "evals": 14341.2625,
+    "qps_median": 799.0,
+    "qps_per_round_median": [
+     552.0,
+     1030.0
+    ]
+   }
+  },
+  "C": {
+   "build_s": 106.5,
+   "peak_rss_mib": 1950,
+   "index_bytes": 359619200,
+   "0.9": {
+    "ef": 256,
+    "recall": 0.90055,
+    "evals": 5814.7895,
+    "qps_median": 3019.0,
+    "qps_per_round_median": [
+     2587.0,
+     3348.0
+    ]
+   },
+   "0.95": {
+    "ef": 736,
+    "recall": 0.95065,
+    "evals": 14340.551,
+    "qps_median": 1165.0,
+    "qps_per_round_median": [
+     1172.0,
+     1163.0
+    ]
+   }
+  }
+ },
+ "ratios": {
+  "kernel_fix_B_over_A_qps_at_0.95": 1.88,
+  "kernel_fix_B_over_A_qps_at_0.90": 2.48,
+  "build_lever_C_over_B_build_time": 2.34,
+  "build_lever_C_over_B_peak_rss": 0.452,
+  "build_lever_C_over_A_build_time": 2.58,
+  "build_lever_C_over_A_peak_rss": 0.407,
+  "recall_change_C_vs_B": "0.90055 vs 0.9005 at ef 256; 0.95065 both at ef 736"
+ },
+ "caveats": "shared cloud hardware: per-round QPS medians differ by up to 2x for the same binary (B at 0.95: 552 then 1030), so the QPS ratios carry that spread; build seconds and RSS come from one cold run per arm; the container is not the GCE C4 host of the accepted rows and its numbers are not comparable to 877 QPS / 1435 s / 4317 MiB, only to each other",
+ "finding": "On x86 the AVX2 kernels raise single-thread QPS at recall 0.95 from 426 to 799 (1.88x, per-round ratios 1.29 and 2.42) and the quantized construction search cuts the glove build from 249.6 s to 106.5 s (2.34x) and its peak RSS from 4310 to 1950 MiB (0.45x) at equal recall. This confirms on x86 the same-host build lever measured on the M4 and the kernel fix measured on writerslogic-02."
+}

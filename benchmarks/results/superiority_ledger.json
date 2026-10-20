@@ -151,6 +151,14 @@
      "status": "killed",
      "hours": 1.0,
      "row": "benchmarks/results/qgraph_block4_untimed_x86_v1.json: zero ef penalty, 0.76x/0.79x of the per-row path on x86 back to back"
+    },
+    {
+     "name": "1A.7 x86 confirmation on Modal (GCE blocked by the Workspace admin): kernel fix and quantized construction search, three arms on one container",
+     "status": "measured",
+     "hours": 1.0,
+     "results_file": "benchmarks/results/ann_modal_confirm_v1.json",
+     "result": "glove-100 1.18M, recall 0.95: AVX2 kernels 426 -> 799 QPS single-thread (1.88x; per-round 1.29x and 2.42x on shared hardware); quantized construction search build 249.6 -> 106.5 s (2.34x), peak RSS 4310 -> 1950 MiB (0.45x), recall unchanged; spend $0.21 of the $10 cap; not comparable to the GCE rows",
+     "harness": "benchmarks/public/ann_modal_confirm.py"
     }
    ],
    "measurement_note": "writerslogic-02 paired ratios are reproducible only when nothing else runs there (the 2A and 1C forks build on it); GCE C4 is the confirmation host and needs gcloud auth"
@@ -1005,6 +1013,13 @@
    "file": "benchmarks/results/lexical_capture_microbench_v1.json",
    "category": "2B_lexical_speed",
    "positive": true
+  },
+  {
+   "date": "2026-10-20",
+   "file": "benchmarks/results/ann_modal_confirm_v1.json",
+   "category": "1A_vector_search",
+   "positive": true,
+   "note": "build 2.34x, RSS 0.45x, QPS 1.88x on x86"
   }
  ]
 }
