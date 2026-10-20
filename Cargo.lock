@@ -1842,6 +1842,7 @@ dependencies = [
  "ed25519-dalek",
  "fs2",
  "fxhash",
+ "libm",
  "lz4_flex",
  "memmap2",
  "multibase",
