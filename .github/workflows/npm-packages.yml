@@ -50,8 +50,8 @@ jobs:
         include:
           - { suffix: darwin-arm64, os: macos-latest, target: aarch64-apple-darwin, flags: "" }
           - { suffix: darwin-x64, os: macos-latest, target: x86_64-apple-darwin, flags: "" }
-          - { suffix: linux-x64-gnu, os: ubuntu-latest, target: x86_64-unknown-linux-gnu, flags: "--use-napi-cross" }
-          - { suffix: linux-arm64-gnu, os: ubuntu-latest, target: aarch64-unknown-linux-gnu, flags: "--use-napi-cross" }
+          - { suffix: linux-x64-gnu, os: ubuntu-latest, target: x86_64-unknown-linux-gnu, flags: "--use-napi-cross", cross: "@napi-rs/cross-toolchain-x64-target-x86_64@1.0.3" }
+          - { suffix: linux-arm64-gnu, os: ubuntu-latest, target: aarch64-unknown-linux-gnu, flags: "--use-napi-cross", cross: "@napi-rs/cross-toolchain-x64-target-aarch64@1.0.3" }
           - { suffix: linux-x64-musl, os: ubuntu-latest, target: x86_64-unknown-linux-musl, flags: "-x", zig: true }
           - { suffix: linux-arm64-musl, os: ubuntu-latest, target: aarch64-unknown-linux-musl, flags: "-x", zig: true }
           - { suffix: win32-x64-msvc, os: windows-latest, target: x86_64-pc-windows-msvc, flags: "" }
@@ -77,6 +77,11 @@ jobs:
         with:
           tool: cargo-zigbuild
       - run: npm ci --omit=optional
+      - name: Install the glibc 2.17 cross toolchain (an optional peer of @napi-rs/cross-toolchain)
+        if: ${{ matrix.cross }}
+        env:
+          CROSS: ${{ matrix.cross }}
+        run: npm install --no-save --no-package-lock --ignore-scripts --omit=optional "$CROSS"
       - name: Build the binding
         shell: bash
         env:
