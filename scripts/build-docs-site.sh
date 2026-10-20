@@ -5,12 +5,19 @@
 # Builds the whole versioned documentation site into one directory, with no gh-pages branch:
 #   <out>/dev/       the current checkout (main in CI)
 #   <out>/vX.Y.Z/    one site per release tag that carries a mkdocs.yml
-#   <out>/latest/    a copy of the newest tag's site (of dev until a tag carries docs)
-#   <out>/versions.json, <out>/index.html (redirect to latest/)
+#   <out>/latest/    its own build of the newest tag (of dev until a tag carries docs), so its
+#                    URLs, sitemap and canonical links say /latest/ and not a version
+#   <out>/versions.json, <out>/index.html (redirect to latest/), <out>/404.html, <out>/robots.txt
+# Every version names the matching page under latest/ as its canonical URL; scripts/docs_finalize.py
+# repairs the pages that have no counterpart there and writes the root files.
 # versions.json uses the format the Material version selector reads, so no mike is needed.
 #
 # Usage: scripts/build-docs-site.sh [out-dir]     (needs mkdocs and the packages in docs/requirements.txt)
+# Environment: HMS_SITE_BASE (public base URL), MKDOCS and PYTHON (executables), HMS_DOCS_TAGS
+# (space-separated tag list that replaces `git tag --list 'v*'`, used to test the tag path).
 set -euo pipefail
+export DISABLE_MKDOCS_2_WARNING=true
+export HMS_DOCS_API_TOOLS="${HMS_DOCS_API_TOOLS:-$(git rev-parse --show-toplevel)/scripts/docs-api}"
 
 out="${1:-_site}"
 base="${HMS_SITE_BASE:-https://writerslogic.github.io/holographic-memory}"
@@ -22,38 +29,56 @@ mkdir -p "$out"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
-build() { # name ref source-dir
-  HMS_SITE_URL="$base/$1/" HMS_DOCS_REF="$2" "${MKDOCS:-mkdocs}" build --quiet --site-dir "$out/$1" --config-file "$3/mkdocs.yml"
+# rustdoc for one source tree, built once and shared with the `latest` build of the same tree.
+# HMS_BUILD_RUSTDOC=1 (CI) enables it; the API reference page needs it, so CI also sets
+# HMS_DOCS_REQUIRE_API=1.
+rustdoc() { # key source-dir
+  [ "${HMS_BUILD_RUSTDOC:-0}" = 1 ] || return 0
+  [ -d "$scratch/rustdoc/$1" ] || "$repo_root/scripts/build-rustdoc.sh" "$2" "$scratch/rustdoc/$1"
+}
+
+build() { # name ref source-dir is-latest rustdoc-key
+  HMS_SITE_URL="$base/$1/" HMS_DOCS_REF="$2" HMS_CANONICAL_BASE="$base/latest/" HMS_IS_LATEST="${4:-0}" \
+    HMS_RUSTDOC_DIR="$scratch/rustdoc/${5:-$1}" \
+    "${MKDOCS:-mkdocs}" build --quiet --site-dir "$out/$1" --config-file "$3/mkdocs.yml"
 }
 
 # The current checkout is dev. A failure here is a real docs error and fails the build.
-build dev main "$repo_root"
+rustdoc dev "$repo_root"
+build dev main "$repo_root" 0 dev
 
 # Release tags, newest first. A tag cut before the docs site existed has no mkdocs.yml and is skipped.
 # A tag whose own docs no longer build is reported and left out so it cannot block every later deploy.
+if [ -n "${HMS_DOCS_TAGS:-}" ]; then
+  tags="$(printf '%s\n' $HMS_DOCS_TAGS)"
+else
+  tags="$(git tag --list 'v*' --sort=-v:refname)"
+fi
 versions=()
-while IFS= read -r tag; do
-  [ -n "$tag" ] || continue
-  if ! git cat-file -e "$tag:mkdocs.yml" 2>/dev/null; then
+while IFS= read -r entry; do
+  [ -n "$entry" ] || continue
+  tag="${entry%%=*}" # the version name; HMS_DOCS_TAGS may say name=rev to build any revision as a version
+  rev="${entry#*=}"
+  if ! git cat-file -e "$rev:mkdocs.yml" 2>/dev/null; then
     echo "skip $tag: no mkdocs.yml at that tag"
     continue
   fi
   src="$scratch/$tag"
   mkdir -p "$src"
-  git archive "$tag" | tar -x -C "$src"
-  if build "$tag" "$tag" "$src"; then
+  git archive "$rev" | tar -x -C "$src"
+  if rustdoc "$tag" "$src" && build "$tag" "$tag" "$src" 0 "$tag"; then
     versions+=("$tag")
   else
     echo "::warning::docs for $tag do not build and are left out of the site"
     rm -rf "${out:?}/$tag"
   fi
-done < <(git tag --list 'v*' --sort=-v:refname)
+done <<< "$tags"
 
 if [ "${#versions[@]}" -gt 0 ]; then
-  cp -R "$out/${versions[0]}" "$out/latest"
+  build latest "${versions[0]}" "$scratch/${versions[0]}" 1 "${versions[0]}"
   latest_title="${versions[0]}"
 else
-  cp -R "$out/dev" "$out/latest"
+  build latest main "$repo_root" 1 dev
   latest_title="dev"
 fi
 
@@ -73,13 +98,6 @@ fi
   printf '%s  {"version": "dev", "title": "dev", "aliases": %s}\n]\n' "$sep" "$dev_alias"
 } > "$out/versions.json"
 
-cat > "$out/index.html" <<'HTML'
-<!doctype html>
-<meta charset="utf-8">
-<title>Holographic Memory System</title>
-<link rel="canonical" href="latest/">
-<meta http-equiv="refresh" content="0; url=latest/">
-<a href="latest/">Holographic Memory System documentation</a>
-HTML
 touch "$out/.nojekyll"
+"${PYTHON:-python3}" "$repo_root/scripts/docs_finalize.py" "$out" "$base"
 echo "built dev ${versions[*]:-} latest=$latest_title into $out"

@@ -1,0 +1,14 @@
+{#- Copyright 2024-2026 WritersLogic Contributors
+    SPDX-License-Identifier: Apache-2.0
+    The repository link without data-md-component="source": the theme's script uses that hook to
+    fetch star and release counts from api.github.com on every page view, a third-party call that
+    does not belong on the documentation site of a product with no service calls. -#}
+<a href="{{ config.repo_url }}" title="{{ lang.t('source') }}" class="md-source">
+  <div class="md-source__icon md-icon">
+    {% set icon = config.theme.icon.repo or "fontawesome/brands/git-alt" %}
+    {% include ".icons/" ~ icon ~ ".svg" %}
+  </div>
+  <div class="md-source__repository">
+    {{ config.repo_name }}
+  </div>
+</a>

@@ -1,0 +1,12 @@
+{
+  "name": "hms-docs-api",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Generates the Node and TypeScript API reference from the package's .d.ts files.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "typedoc": "0.28.20",
+    "typedoc-plugin-markdown": "4.14.1",
+    "typescript": "6.0.3"
+  }
+}

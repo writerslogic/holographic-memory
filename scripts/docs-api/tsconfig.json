@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "skipLibCheck": true,
+    "strict": true,
+    "types": [],
+    "noEmit": true
+  },
+  "include": ["../../index.d.ts", "../../semantic.d.ts"]
+}

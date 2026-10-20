@@ -1,13 +1,30 @@
-# Top-level order of the site. Every area is a glob over its own folder, so a page added under
-# docs/<area>/ appears here with no edit to this file or to mkdocs.yml. Globs that match nothing
-# yet are silent (see `logs` in mkdocs.yml). Give a page's position inside an area with a
-# docs/<area>/.nav.yml of its own.
+# Top-level order of the site: seven tabs on Diataxis lines. Every area is a glob over its own
+# folder, so a page added under docs/<area>/ appears here with no edit to this file or to
+# mkdocs.yml. Globs that match nothing yet are silent (see `logs` in mkdocs.yml). Give a page's
+# position inside an area with a docs/<area>/.nav.yml of its own.
+#
+# The home page is reached through the logo, not a tab. scripts/docs_site.py fails the build for
+# any other page that is missing from this tree, so nothing is published without navigation.
+#
+#   Get started   learn by doing           Guides       solve a task
+#   Concepts      understand               Reference    look something up
+#   Integrations  connect it to things     Operations   run it, secure it, release it
+#   Benchmarks    the evidence and the research behind it
 nav:
-  - Home: index.md
-  - Quickstart:
+  - Get started:
+      - get-started/install.md
       - quickstart/index.md
       - quickstart/offline-agent.md
       - quickstart/**/*.md
+      - get-started/**/*.md
+  - Guides:
+      - guides/**/*.md
+      - Memory API:
+          - memory-api/**/*.md
+      - Embeddings:
+          - embeddings/**/*.md
+      - Importers: importers/
+      - INTEGRATION.md
   - Concepts:
       - concepts/index.md
       - concepts/holographic.md
@@ -16,39 +33,56 @@ nav:
       - concepts/privacy-limits.md
       - concepts/**/*.md
       - ARCHITECTURE.md
-      - production-readiness.md
-  - API:
-      - api/**/*.md
-      - INTEGRATION.md
-      - SERVER.md
-  - Embeddings:
-      - embeddings/**/*.md
-  - Memory API:
-      - memory-api/**/*.md
-  - File format:
-      - file-format/**/*.md
+  - Reference:
+      - API:
+          - api/index.md
+          - Rust: api/rust/index.md
+          - Python:
+              - api/python/**/*.md
+          - Node and TypeScript:
+              - api/node/index.md
+              - api/node/**/*.md
+          - api/http.md
+          - api/c.md
+          - api/**/*.md
+      - File format:
+          - file-format/**/*.md
+      - Project:
+          - STABILITY.md
+          - reference/changelog.md
+          - reference/glossary.md
+          - reference/faq.md
+          - reference/**/*.md
+      - Community:
+          - community/index.md
+          - GOVERNANCE.md
+          - community/**/*.md
   - Integrations:
       - integrations/**/*.md
-  - Runtimes:
-      - runtimes/**/*.md
-  - Importers:
-      - importers/**/*.md
+      - Runtimes:
+          - runtimes/**/*.md
+  - Operations:
+      - SERVER.md
+      - server/**/*.md
+      - production-readiness.md
+      - Security and privacy:
+          - SECURITY.md
+          - PRIVACY.md
+          - PRIVATE-SEARCH.md
+          - security/**/*.md
+      - Performance:
+          - performance/**/*.md
+      - Releasing:
+          - RELEASING.md
+          - releasing/**/*.md
   - Benchmarks:
       - benchmarks/**/*.md
       - PUBLIC-BENCHMARKS.md
       - evaluation.md
       - COMPARISON.md
-  - Security and privacy:
-      - security/**/*.md
-      - PRIVACY.md
-      - SECURITY.md
-      - PRIVATE-SEARCH.md
-  - Releasing:
-      - releasing/**/*.md
-  - Research:
-      - RESEARCH.md
-      - SUPERPOSITION-FLOOR.md
-      - DETERMINISTIC-RESONATOR.md
-      - SCOREBOARD.md
       - COMPETITORS.md
-  - ...
+      - SCOREBOARD.md
+      - Research:
+          - RESEARCH.md
+          - SUPERPOSITION-FLOOR.md
+          - DETERMINISTIC-RESONATOR.md

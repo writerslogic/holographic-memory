@@ -1,0 +1,84 @@
+{#- Copyright 2024-2026 WritersLogic Contributors
+    SPDX-License-Identifier: Apache-2.0 -#}
+<footer class="md-footer hms-footer">
+  {% if "navigation.footer" in features %}
+    {% if page.previous_page or page.next_page %}
+      {% if page.meta and page.meta.hide %}
+        {% set hidden = "hidden" if "footer" in page.meta.hide %}
+      {% endif %}
+      <nav class="md-footer__inner md-grid" aria-label="{{ lang.t('footer') }}" {{ hidden }}>
+        {% if page.previous_page %}
+          {% set direction = lang.t("footer.previous") %}
+          <a href="{{ page.previous_page.url | url }}" class="md-footer__link md-footer__link--prev" aria-label="{{ direction }}: {{ page.previous_page.title | e }}">
+            <div class="md-footer__button md-icon">
+              {% include ".icons/material/arrow-left.svg" %}
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">{{ direction }}</span>
+              <div class="md-ellipsis">{{ page.previous_page.title }}</div>
+            </div>
+          </a>
+        {% endif %}
+        {% if page.next_page %}
+          {% set direction = lang.t("footer.next") %}
+          <a href="{{ page.next_page.url | url }}" class="md-footer__link md-footer__link--next" aria-label="{{ direction }}: {{ page.next_page.title | e }}">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">{{ direction }}</span>
+              <div class="md-ellipsis">{{ page.next_page.title }}</div>
+            </div>
+            <div class="md-footer__button md-icon">
+              {% include ".icons/material/arrow-right.svg" %}
+            </div>
+          </a>
+        {% endif %}
+      </nav>
+    {% endif %}
+  {% endif %}
+  <div class="hms-footer__cols md-grid">
+    <div class="hms-footer__brand">
+      <a class="hms-footer__logo" href="{{ base_url }}/" aria-label="Holographic Memory home">
+        <img src="{{ 'assets/logo.svg' | url }}" alt="" width="28" height="28">
+        <span>Holographic Memory</span>
+      </a>
+      <p>{{ config.extra.hms.tagline }}</p>
+      <p class="hms-footer__ver">Documentation for <code>{{ config.extra.hms.ref }}</code>{% if config.extra.hms.is_latest %} (latest){% endif %}</p>
+    </div>
+    <nav aria-label="Documentation">
+      <h2>Documentation</h2>
+      <ul>
+        <li><a href="{{ 'quickstart/' | url }}">Get started</a></li>
+        <li><a href="{{ 'concepts/' | url }}">Concepts</a></li>
+        <li><a href="{{ 'PUBLIC-BENCHMARKS/' | url }}">Benchmarks</a></li>
+        <li><a href="{{ 'SECURITY/' | url }}">Security</a></li>
+        <li><a href="{{ 'reference/changelog/' | url }}">Changelog</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Help">
+      <h2>Help</h2>
+      <ul>
+        <li><a href="{{ 'reference/faq/' | url }}">FAQ</a></li>
+        <li><a href="{{ 'reference/glossary/' | url }}">Glossary</a></li>
+        <li><a href="{{ 'community/' | url }}">Community</a></li>
+        <li><a href="{{ 'community/docs-pipeline/' | url }}">How these docs are built</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Project">
+      <h2>Project</h2>
+      <ul>
+        <li><a href="{{ config.repo_url }}">GitHub</a></li>
+        <li><a href="{{ config.repo_url }}/issues">Issues</a></li>
+        <li><a href="https://crates.io/crates/holographic-memory">crates.io</a></li>
+        <li><a href="https://pypi.org/project/holographic-sdk/">PyPI</a></li>
+        <li><a href="{{ config.repo_url }}/blob/main/LICENSE">{{ config.extra.hms.license }} license</a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      {% include "partials/copyright.html" %}
+      {% if config.extra.social %}
+        {% include "partials/social.html" %}
+      {% endif %}
+    </div>
+  </div>
+</footer>
