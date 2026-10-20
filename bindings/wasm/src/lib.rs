@@ -7,7 +7,7 @@
 
 use sha2::{Digest, Sha256};
 use wasm_bindgen::prelude::*;
-use rand::{SeedableRng, Rng};
+use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 const DEFAULT_RHO_DENOM: usize = 256;
@@ -26,13 +26,13 @@ impl WasmEntangledHVec {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let mut indices = Vec::with_capacity(active_count);
         for _ in 0..active_count {
-            indices.push(rng.gen_range(0..dim as u32));
+            indices.push(rng.random_range(0..dim as u32));
         }
         indices.sort_unstable();
         indices.dedup();
         // Simplified fill for demo purposes
         while indices.len() < active_count {
-             indices.push(rng.gen_range(0..dim as u32));
+             indices.push(rng.random_range(0..dim as u32));
              indices.sort_unstable();
              indices.dedup();
         }
