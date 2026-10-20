@@ -19,7 +19,7 @@ from .common import RESULTS, ROOT
 DOCS = ROOT / "docs/benchmarks"
 COMPARISON = DOCS / "COMPARISON.md"
 CELLS = DOCS / "comparison.cells.json"
-BLOCK = DOCS / "README-block.md"
+BLOCK = ROOT / "benchmarks/competitive/README-block.md"
 GAPS_MD = DOCS / "GAPS.md"
 GAPS_JSON = ROOT / "benchmarks/competitive/GAPS.json"
 README = ROOT / "README.md"

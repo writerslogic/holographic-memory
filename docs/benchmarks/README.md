@@ -149,4 +149,4 @@ Full GloVe-100 and SIFT-1M do not fit a hosted runner. Two supported ways to run
 | `benchmarks/competitive/requirements/` | pinned, locked comparator environments |
 | `benchmarks/competitive/tests/` | generator and traceability tests |
 | `benchmarks/results/competitive/*.json` | raw results (one file per suite, dataset and hardware class) |
-| `docs/benchmarks/COMPARISON.md`, `comparison.cells.json`, `README-block.md` | generated |
+| `docs/benchmarks/COMPARISON.md`, `GAPS.md`, `comparison.cells.json`, `benchmarks/competitive/README-block.md` | generated |
