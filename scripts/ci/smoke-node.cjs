@@ -37,7 +37,9 @@ const work = fs.mkdtempSync(path.join(os.tmpdir(), 'hms-smoke-'))
 try {
   const unpacked = path.join(work, 'root')
   fs.mkdirSync(unpacked)
-  execFileSync('tar', ['-xzf', path.join(tarballs, rootTarball), '-C', unpacked])
+  // Relative names with a fixed cwd: GNU tar on Windows reads `C:` as a remote host.
+  fs.copyFileSync(path.join(tarballs, rootTarball), path.join(work, 'root.tgz'))
+  execFileSync('tar', ['-xzf', 'root.tgz', '-C', 'root'], { cwd: work })
   const manifestPath = path.join(unpacked, 'package', 'package.json')
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
   const local = {}
@@ -50,7 +52,7 @@ try {
   manifest.optionalDependencies = local
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
   const repacked = path.join(work, 'holographic-memory-smoke.tgz')
-  execFileSync('tar', ['-czf', repacked, '-C', unpacked, 'package'])
+  execFileSync('tar', ['-czf', 'holographic-memory-smoke.tgz', '-C', 'root', 'package'], { cwd: work })
 
   const project = path.join(work, 'project')
   fs.mkdirSync(project)

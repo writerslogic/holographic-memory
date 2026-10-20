@@ -66,15 +66,17 @@ jobs:
           pattern: repro-*
           path: hashes
       - name: Hashes must match
-        run: python3 scripts/ci/compare-hashes.py hashes/repro-first/out-first/SHA256SUMS hashes/repro-second/out-second/SHA256SUMS
+        run: |
+          first=$(find hashes/repro-first -name SHA256SUMS)
+          second=$(find hashes/repro-second -name SHA256SUMS)
+          python3 scripts/ci/compare-hashes.py "$first" "$second"
       - name: Which wheel members differ
         if: failure()
         run: |
+          set -x
           for side in first second; do
-            (cd "hashes/repro-$side/out-$side" && for w in *.whl; do
-              unzip -Z -v "$w" | grep -E "^Central directory entry|last modified" | paste - - | head -0
-              mkdir -p "/tmp/$side" && unzip -q -o "$w" -d "/tmp/$side"
-            done)
+            mkdir -p "/tmp/$side"
+            unzip -q -o "$(find "hashes/repro-$side" -name '*.whl')" -d "/tmp/$side"
           done
-          diff -r /tmp/first /tmp/second && echo "unpacked wheel contents identical (zip metadata differs)" || true
-          for side in first second; do unzip -Z -T hashes/repro-$side/out-$side/*.whl | head -5; done
+          diff -r /tmp/first /tmp/second && echo "unpacked wheel contents identical, only zip metadata differs"
+          for side in first second; do zipinfo -v "$(find "hashes/repro-$side" -name '*.whl')" | grep -E "^Central directory entry|file last modified" | paste - - | head -4; done
