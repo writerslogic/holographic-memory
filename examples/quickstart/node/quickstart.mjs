@@ -86,12 +86,10 @@ const sealedDir = mkdtempSync(join(tmpdir(), 'hms-sealed-'))
 execFileSync(process.execPath, [fileURLToPath(import.meta.url), '--ingest', sealedDir, 'encrypted'], { stdio: 'inherit' })
 const leaks = filesHolding(sealedDir)
 console.log(`\nencrypted store, files holding the passage: ${JSON.stringify(leaks)}`)
-// Pins the current behaviour: `documents.text`, the engine's file-backed passage cache, is
-// written in plaintext even when encryption is on, so encryption does not yet keep passages
-// off the disk. A new leak, or the engine fixing this, fails the assertion and forces the docs
-// (docs/concepts/privacy-limits.md, README) to be updated.
-assert.deepEqual(leaks, ['documents.text'])
-console.log('note: passage text in documents.text is not yet encrypted at rest')
+// With encryption on, no store file may hold the passage text, the file-backed text segment
+// (`documents.text`) included.
+assert.deepEqual(leaks, [])
+console.log('no store file holds the passage text')
 
 // A wrong passphrase must not open the store; the right one must.
 const wrong = { ...sealedConfig, encryptionPassphrase: 'wrong passphrase' }
