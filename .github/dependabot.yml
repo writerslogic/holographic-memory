@@ -1,31 +1,88 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Version updates for every manifest the project ships or builds from. Security
+# updates are separate (repository setting) and are not limited by the groups or
+# the open-PR caps below. Minor and patch bumps are grouped per ecosystem so a week
+# of churn is one PR; majors arrive one dependency per PR because they need review.
+# A 3-day cooldown keeps a freshly published (possibly yanked) release out of PRs.
 version: 2
 
 updates:
   - package-ecosystem: "cargo"
-    directory: "/"
+    directories:
+      - "/"
+      - "/fuzz"
+      - "/bindings/wasm"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "06:00"
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "rust"
-      - "automated"
+    cooldown:
+      default-days: 3
+    labels: ["dependencies", "rust", "automated"]
     commit-message:
       prefix: "deps(rust)"
       include: "scope"
     groups:
-      all-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      rust-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
+    labels: ["dependencies", "python", "automated"]
+    commit-message:
+      prefix: "deps(python)"
+      include: "scope"
+    groups:
+      python-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "pip"
+    directory: "/bindings/python/holographic-sdk"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
+    labels: ["dependencies", "python", "automated"]
+    commit-message:
+      prefix: "deps(sdk)"
+      include: "scope"
+    groups:
+      sdk-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
+    labels: ["dependencies", "javascript", "automated"]
+    commit-message:
+      prefix: "deps(npm)"
+      include: "scope"
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -35,17 +92,13 @@ updates:
       time: "06:00"
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "ci"
-      - "automated"
+    cooldown:
+      default-days: 3
+    labels: ["dependencies", "ci", "automated"]
     commit-message:
       prefix: "ci(deps)"
       include: "scope"
     groups:
       github-actions:
-        patterns:
-          - "actions/*"
-        update-types:
-          - "minor"
-          - "patch"
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
