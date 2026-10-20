@@ -10,6 +10,7 @@ serves the same vectors on the same host must exist for every HMS row that claim
 bytes ratio, and the ratios must be recomputed from the rows (a ratio that does not match its
 rows within 0.5% fails). The targets are evaluated and reported, never enforced.
 """
+from pathlib import Path
 import argparse
 import json
 import sys
@@ -60,13 +61,13 @@ def main():
     p.add_argument("results")
     p.add_argument("--summary")
     a = p.parse_args()
-    doc = json.load(open(a.results))
+    doc = json.loads(Path(a.results).read_text())
     failures = check(doc)
     out = {"results": a.results, "rows": len(doc.get("rows", [])), "passed": not failures, "failures": failures,
            "targets": doc.get("targets")}
     text = json.dumps(out, indent=1)
     if a.summary:
-        open(a.summary, "w").write(text + "\n")
+        Path(a.summary).write_text(text + "\n")
     print(text)
     return 0 if not failures else 1
 

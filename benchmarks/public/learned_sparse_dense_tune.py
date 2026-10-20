@@ -23,9 +23,9 @@ def main():
     a = p.parse_args()
     from sentence_transformers import SentenceTransformer
     cache = Path(a.cache)
-    meta = json.load(open(cache / a.dataset / "meta.json"))
+    meta = json.loads((cache / a.dataset / "meta.json").read_text())
     out = cache / "sparse" / a.dataset / a.model
-    ids = json.load(open(out / "queries_tune_ids.json"))
+    ids = json.loads((out / "queries_tune_ids.json").read_text())
     import zipfile, io
     texts = {}
     with zipfile.ZipFile(cache / "downloads" / f"{a.dataset}.zip") as z:

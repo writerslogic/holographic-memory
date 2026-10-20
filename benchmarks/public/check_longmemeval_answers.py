@@ -753,7 +753,8 @@ def check_tampering(report):
                      item['quote'] and any(source['source_id'] == item['source_id'] and item['quote'] in source['text']
                                            for source in row['systems'][system]['arms'][name]['retained_sources'])
                      for item in claim['citations']))
-    qid, system, name, claim_index, citation_index = valid[0]['qid'], *valid[1:]
+    row, system, name, claim_index, citation_index = valid
+    qid = row['qid']
     for corruption in ('citation', 'score', 'interval', 'fingerprint', 'prediction', 'source_bytes'):
         changed = copy.deepcopy(report)
         row = next(row for row in changed['rows'] if row['qid'] == qid)

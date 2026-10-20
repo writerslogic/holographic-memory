@@ -134,7 +134,7 @@ def main():
         qs_tune = encode_model(model, tokenizer, [q["text"] for q in tune_queries], device, a.batch, 64, False)
     else:
         from huggingface_hub import hf_hub_download
-        table = json.load(open(hf_hub_download(repo, "idf.json"), encoding="utf-8"))
+        table = json.loads(Path(hf_hub_download(repo, "idf.json")).read_text(encoding="utf-8"))
         idf = [0.0] * vocab
         for token, weight in table.items():
             idf[tokenizer.convert_tokens_to_ids(token)] = float(weight)
@@ -143,9 +143,9 @@ def main():
     write_sparse(out / "corpus.sparse", vocab, docs)
     write_sparse(out / "queries_test.sparse", vocab, qs_test)
     write_sparse(out / "queries_tune.sparse", vocab, qs_tune)
-    json.dump([d["id"] for d in corpus], open(out / "corpus_ids.json", "w"))
-    json.dump([q["id"] for q in test_queries], open(out / "queries_test_ids.json", "w"))
-    json.dump([q["id"] for q in tune_queries], open(out / "queries_tune_ids.json", "w"))
+    (out / "corpus_ids.json").write_text(json.dumps([d["id"] for d in corpus]))
+    (out / "queries_test_ids.json").write_text(json.dumps([q["id"] for q in test_queries]))
+    (out / "queries_tune_ids.json").write_text(json.dumps([q["id"] for q in tune_queries]))
     (out / "qrels_test.tsv").write_bytes((data / "qrels.tsv").read_bytes())
     (out / "qrels_tune.tsv").write_text(tune_qrels)
     # Anserini: JsonVectorCollection documents and JsonIntVector topics, weights quantized by 100.
@@ -163,11 +163,10 @@ def main():
                 vec = {t: w for t, w in vec.items() if w > 0}
                 f.write(json.dumps({"id": q["id"], "vector": vec}) + "\n")
     nnz = sum(len(ids) for ids, _ in docs) / max(1, len(docs))
-    json.dump({"model": repo, "license": license_, "url": url, "dataset": a.dataset, "device": device,
+    (out / "meta.json").write_text(json.dumps({"model": repo, "license": license_, "url": url, "dataset": a.dataset, "device": device,
                "documents": len(corpus), "test_queries": len(test_queries), "tune_queries": len(tune_queries),
                "tune_split": split, "vocab": vocab, "mean_doc_nonzeros": nnz, "document_encode_seconds": doc_seconds,
-               "max_length": {"document": 256, "query": 64}, "anserini_quantization": 100},
-              open(out / "meta.json", "w"), indent=1)
+               "max_length": {"document": 256, "query": 64}, "anserini_quantization": 100}, indent=1))
     print(json.dumps({"out": str(out), "mean_doc_nonzeros": nnz, "doc_seconds": doc_seconds}), flush=True)
     return 0
 
