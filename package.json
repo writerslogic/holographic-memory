@@ -1,6 +1,6 @@
 {
   "name": "holographic-memory",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "license": "Apache-2.0",
   "author": "WritersLogic, Inc. <david@writerslogic.com>",
   "description": "Holographic Memory System (HMS): local document search (BM25 + embedding cosine) and vector-symbolic associative memory.",
@@ -42,15 +42,20 @@
   "napi": {
     "binaryName": "holographic-memory",
     "targets": [
-      "x86_64-apple-darwin",
       "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
     ]
   },
   "scripts": {
     "build": "napi build --release --features node-api,security",
     "build:debug": "napi build --features node-api,security",
+    "build:platform": "napi build --platform --no-js --release --features node-api,security",
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version",
@@ -64,10 +69,14 @@
     "typescript": "^6.0.3"
   },
   "optionalDependencies": {
-    "holographic-memory-darwin-arm64": "0.6.0",
-    "holographic-memory-darwin-x64": "0.6.0",
-    "holographic-memory-linux-x64-gnu": "0.6.0",
-    "holographic-memory-win32-x64-msvc": "0.6.0"
+    "holographic-memory-darwin-arm64": "0.6.1",
+    "holographic-memory-darwin-x64": "0.6.1",
+    "holographic-memory-linux-arm64-gnu": "0.6.1",
+    "holographic-memory-linux-arm64-musl": "0.6.1",
+    "holographic-memory-linux-x64-gnu": "0.6.1",
+    "holographic-memory-linux-x64-musl": "0.6.1",
+    "holographic-memory-win32-arm64-msvc": "0.6.1",
+    "holographic-memory-win32-x64-msvc": "0.6.1"
   },
   "peerDependencies": {
     "@huggingface/transformers": "^3.8.1 || ^4.2.0"
