@@ -35,7 +35,7 @@ export async function serve(root, port = 0, prefix = '') {
     try {
       if ((await stat(target)).isDirectory()) {
         if (!path.endsWith('/')) {
-          res.writeHead(301, { location: req.url.split('?')[0] + '/' }).end()
+          res.writeHead(301, { location: '/' + path.replace(/^\/+/, '') + '/' }).end()
           return
         }
         target = join(target, 'index.html')

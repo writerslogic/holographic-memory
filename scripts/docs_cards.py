@@ -35,6 +35,7 @@ def _font(fonts_dir, size, weight):
     try:
         font.set_variation_by_axes([weight])
     except (OSError, AttributeError):
+        # A static font has no variation axes; the default weight is the right fallback.
         pass
     return font
 

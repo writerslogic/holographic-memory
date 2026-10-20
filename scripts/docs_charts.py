@@ -11,7 +11,6 @@ palettes.
 
 import json
 from html import escape
-from pathlib import Path
 
 
 def _fmt_qps(value):

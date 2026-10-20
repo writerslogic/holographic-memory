@@ -149,7 +149,7 @@ def node_pages() -> list[str]:
         lines = [front("The Node and TypeScript API of the holographic-memory package, generated from its type declarations.").rstrip(), "",
                  "# Node and TypeScript API", "",
                  "Generated from the package's `.d.ts` files, one page per exported symbol. "
-                 "The package is built from source with a Rust toolchain; the [quickstart](../../quickstart/index.md) shows how.", ""]
+                 + "The package is built from source with a Rust toolchain; the [quickstart](../../quickstart/index.md) shows how.", ""]
         for module, listing in modules.items():
             lines += [f"## `{label.get(module, 'holographic-memory/' + module)}`", ""]
             for line in listing.splitlines():
@@ -210,8 +210,8 @@ def overview(pages: list[str]) -> None:
     lines = [front("The API reference for Holographic Memory in every language, generated from the source so it cannot drift").rstrip(), "",
              "# API reference", "",
              "Every page in this section is generated at build time from the source of the version you are reading: "
-             "rustdoc for Rust, typedoc for Node and TypeScript, mkdocstrings for Python, the server's OpenAPI document for HTTP and the "
-             "shipped header for C. Nothing here is written by hand, so a signature in the docs is a signature in the code.", "",
+             + "rustdoc for Rust, typedoc for Node and TypeScript, mkdocstrings for Python, the server's OpenAPI document for HTTP and the "
+             + "shipped header for C. Nothing here is written by hand, so a signature in the docs is a signature in the code.", "",
              "| Surface | What it covers |", "| --- | --- |"]
     for page, (name, text) in rows.items():
         if page in pages:
