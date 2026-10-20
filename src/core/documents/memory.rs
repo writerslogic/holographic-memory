@@ -13,8 +13,8 @@ use std::sync::Arc;
 
 use super::{
     build_dense_index, capture_dense_index, capture_search, execute_search, prepare,
-    prepare_search, publish_dense_index, DocumentChunk, DocumentInput, DocumentResult,
-    DocumentStore, SearchOptions, StoredDocument,
+    prepare_search, publish_dense_index, DocumentInput, DocumentResult, DocumentStore,
+    SearchOptions, StoredDocument,
 };
 use crate::core::encoding::TextEncoder;
 
@@ -28,6 +28,10 @@ const HEADER_BYTES: usize = 4 + 1 + 4 + 4 + 4 + 8 + 4;
 const MAX_SNAPSHOT_BYTES: usize = 1 << 30;
 const MAX_DIMENSIONS: usize = 1 << 20;
 const MAX_BATCH: usize = 4096;
+/// A chunk is at most 64 KiB of text, so no honest chunk counts more words than this.
+const MAX_CHUNK_WORDS: u64 = 1 << 16;
+/// Keeps word totals inside a 32-bit `usize`.
+const MAX_STORE_WORDS: u64 = (i32::MAX / 2) as u64;
 
 #[derive(Serialize, Deserialize)]
 struct Snapshot {
@@ -252,8 +256,9 @@ impl MemoryDocumentStore {
         let mut store = Self::new(dimensions, embedding_dimensions)?;
         store.encoder = encoder;
         let mut seen = BTreeSet::new();
+        let mut total_words = 0u64;
         for document in snapshot.documents {
-            store.validate_imported(&document)?;
+            store.validate_imported(&document, &mut total_words)?;
             if !seen.insert(document.id.clone()) {
                 bail!("snapshot holds document {:?} twice", document.id);
             }
@@ -262,7 +267,9 @@ impl MemoryDocumentStore {
         Ok(store)
     }
 
-    fn validate_imported(&self, document: &StoredDocument) -> Result<()> {
+    /// Every field the store's own invariants assert on is checked here, because a forged
+    /// snapshot can carry a valid checksum and an assertion failure would abort the module.
+    fn validate_imported(&self, document: &StoredDocument, total_words: &mut u64) -> Result<()> {
         ensure!(
             !document.id.is_empty() && document.id.len() <= 4096 && !document.id.contains('\0'),
             "snapshot holds an invalid document id"
@@ -272,10 +279,27 @@ impl MemoryDocumentStore {
             "snapshot document {:?} has an invalid chunk count",
             document.id
         );
-        for chunk in &document.chunks {
+        for (index, chunk) in document.chunks.iter().enumerate() {
             ensure!(
-                chunk.vector.dim == self.dimensions,
-                "snapshot chunk dimension differs from the store"
+                chunk.id
+                    == format!(
+                        "{}{}:{}:{}",
+                        super::CHUNK_PREFIX,
+                        document.id.len(),
+                        document.id,
+                        index
+                    ),
+                "snapshot chunk id does not match its document and position"
+            );
+            ensure!(
+                chunk.vector.dim == self.dimensions
+                    && chunk.vector.indices.windows(2).all(|w| w[0] < w[1])
+                    && chunk
+                        .vector
+                        .indices
+                        .last()
+                        .is_none_or(|&i| (i as usize) < self.dimensions),
+                "snapshot chunk vector is malformed"
             );
             ensure!(
                 chunk.embedding.as_ref().is_none_or(|e| {
@@ -286,6 +310,20 @@ impl MemoryDocumentStore {
             ensure!(
                 chunk.start_byte <= chunk.end_byte,
                 "snapshot chunk has inverted byte offsets"
+            );
+            let mut words = 0u64;
+            for (_, &frequency) in &chunk.terms {
+                ensure!(frequency > 0, "snapshot term has a zero frequency");
+                words += u64::from(frequency);
+            }
+            ensure!(
+                words == chunk.word_count as u64 && words <= MAX_CHUNK_WORDS,
+                "snapshot chunk word count disagrees with its terms"
+            );
+            *total_words += words;
+            ensure!(
+                *total_words <= MAX_STORE_WORDS,
+                "snapshot exceeds the store word limit"
             );
         }
         Ok(())
@@ -431,12 +469,8 @@ mod tests {
     #[test]
     fn matches_the_engine_document_path() {
         let dir = tempfile::tempdir().unwrap();
-        let engine = crate::core::HmsCore::new(
-            1024,
-            Some(dir.path().display().to_string()),
-            None,
-        )
-        .unwrap();
+        let engine =
+            crate::core::HmsCore::new(1024, Some(dir.path().display().to_string()), None).unwrap();
         let mut store = MemoryDocumentStore::new(1024, None).unwrap();
         corpus(&mut store);
         for (id, text) in [
@@ -447,7 +481,12 @@ mod tests {
         ] {
             engine.memorize_document(input(id, text)).unwrap();
         }
-        for query in ["BM25 term frequency", "holographic trace", "frost", "memory threads"] {
+        for query in [
+            "BM25 term frequency",
+            "holographic trace",
+            "frost",
+            "memory threads",
+        ] {
             let options = SearchOptions::default();
             assert_eq!(
                 rendered(&store.search(query, &options).unwrap()),
@@ -474,6 +513,83 @@ mod tests {
         let mut wrong_magic = bytes;
         wrong_magic[0] = b'X';
         assert!(MemoryDocumentStore::import(&wrong_magic).is_err());
+    }
+
+    fn reseal(original: &[u8], edit: impl FnOnce(&mut serde_json::Value)) -> Vec<u8> {
+        let length = u64::from_le_bytes(original[17..25].try_into().unwrap()) as usize;
+        let payload = lz4_flex::block::decompress(&original[HEADER_BYTES..], length).unwrap();
+        let mut json: serde_json::Value = serde_json::from_slice(&payload).unwrap();
+        edit(&mut json);
+        let payload = serde_json::to_vec(&json).unwrap();
+        let mut out = original[..17].to_vec();
+        out.extend_from_slice(&(payload.len() as u64).to_le_bytes());
+        out.extend_from_slice(&crc32fast::hash(&payload).to_le_bytes());
+        out.extend_from_slice(&lz4_flex::block::compress(&payload));
+        out
+    }
+
+    fn first_term(
+        json: &mut serde_json::Value,
+    ) -> (&mut serde_json::Map<String, serde_json::Value>, String) {
+        let terms = json["documents"][0]["chunks"][0]["terms"]
+            .as_object_mut()
+            .unwrap();
+        let first = terms.keys().next().unwrap().clone();
+        (terms, first)
+    }
+
+    #[test]
+    fn forged_snapshots_with_valid_checksums_are_rejected_not_asserted() {
+        let mut store = MemoryDocumentStore::new(1024, Some(3)).unwrap();
+        corpus(&mut store);
+        let mut embedded = input("e", "dense vector document");
+        embedded.embeddings = Some(vec![vec![0.2, 0.5, 0.1]]);
+        store.memorize(embedded).unwrap();
+        let good = store.export().unwrap();
+        assert!(MemoryDocumentStore::import(&reseal(&good, |_| {})).is_ok());
+        type Edit = fn(&mut serde_json::Value);
+        let cases: [(&str, Edit); 9] = [
+            ("huge word count", |j| {
+                j["documents"][0]["chunks"][0]["word_count"] = 4_000_000_000u64.into()
+            }),
+            ("word count mismatch", |j| {
+                j["documents"][0]["chunks"][0]["word_count"] = 1.into()
+            }),
+            ("zero term frequency", |j| {
+                let (terms, first) = first_term(j);
+                terms.insert(first, 0.into());
+            }),
+            ("term frequency over u32", |j| {
+                let (terms, first) = first_term(j);
+                terms.insert(first, 4_000_000_000u64.into());
+            }),
+            ("foreign chunk id", |j| {
+                j["documents"][0]["chunks"][0]["id"] = "other".into()
+            }),
+            ("vector index past dimension", |j| {
+                j["documents"][0]["chunks"][0]["vector"]["indices"] = serde_json::json!([5000]);
+            }),
+            ("unsorted vector", |j| {
+                j["documents"][0]["chunks"][0]["vector"]["indices"] = serde_json::json!([9, 3]);
+            }),
+            ("duplicate document", |j| {
+                let first = j["documents"][0].clone();
+                j["documents"].as_array_mut().unwrap().push(first);
+            }),
+            ("wrong embedding length", |j| {
+                let docs = j["documents"].as_array_mut().unwrap();
+                let last = docs.last_mut().unwrap();
+                last["chunks"][0]["embedding"] = serde_json::json!([1.0]);
+            }),
+        ];
+        for (name, edit) in cases {
+            let forged = reseal(&good, edit);
+            let outcome = std::panic::catch_unwind(|| MemoryDocumentStore::import(&forged));
+            match outcome {
+                Ok(result) => assert!(result.is_err(), "{name}: accepted"),
+                Err(_) => panic!("{name}: import panicked"),
+            }
+        }
     }
 
     #[test]

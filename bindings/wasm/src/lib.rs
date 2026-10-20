@@ -9,12 +9,12 @@ mod crypto;
 mod store;
 
 pub use crypto::*;
-pub use store::HmsStore;
-
-use sha2::{Digest, Sha256};
-use wasm_bindgen::prelude::*;
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use rand_chacha::ChaCha8Rng;
+use sha2::{Digest, Sha256};
+pub use store::HmsStore;
+use wasm_bindgen::prelude::*;
 
 const DEFAULT_RHO_DENOM: usize = 256;
 
@@ -38,9 +38,9 @@ impl WasmEntangledHVec {
         indices.dedup();
         // Simplified fill for demo purposes
         while indices.len() < active_count {
-             indices.push(rng.random_range(0..dim as u32));
-             indices.sort_unstable();
-             indices.dedup();
+            indices.push(rng.random_range(0..dim as u32));
+            indices.sort_unstable();
+            indices.dedup();
         }
         Self { dim, indices }
     }
@@ -49,7 +49,7 @@ impl WasmEntangledHVec {
         let mut result = Vec::new();
         let mut i = 0;
         let mut j = 0;
-        
+
         while i < self.indices.len() && j < other.indices.len() {
             if self.indices[i] < other.indices[j] {
                 result.push(self.indices[i]);
@@ -93,7 +93,9 @@ impl WasmEntangledHVec {
             }
         }
         let union = self.indices.len() + other.indices.len() - intersection;
-        if union == 0 { return 1.0; }
+        if union == 0 {
+            return 1.0;
+        }
         intersection as f64 / union as f64
     }
 }
@@ -194,4 +196,18 @@ pub fn version() -> String {
 #[wasm_bindgen(js_name = simdBuild)]
 pub fn simd_build() -> bool {
     cfg!(target_feature = "simd128")
+}
+
+/// Current size of the module's linear memory in bytes. Memory never shrinks, so this is the
+/// high-water mark.
+#[wasm_bindgen(js_name = memoryBytes)]
+pub fn memory_bytes() -> usize {
+    #[cfg(target_arch = "wasm32")]
+    {
+        core::arch::wasm32::memory_size(0) * 65536
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        0
+    }
 }

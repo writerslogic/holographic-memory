@@ -1,0 +1,105 @@
+<!doctype html>
+<!-- Copyright 2024-2026 WritersLogic Contributors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Holographic Memory, offline in the browser</title>
+  <style>
+    :root { color-scheme: light dark; --gap: 1rem; --accent: #2f6fed; --line: color-mix(in srgb, currentColor 18%, transparent); }
+    * { box-sizing: border-box; }
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 0 auto; padding: var(--gap); max-width: 60rem; }
+    h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+    h2 { font-size: 1rem; margin: 0 0 .5rem; }
+    p.lead { margin: 0 0 var(--gap); opacity: .75; }
+    section { border: 1px solid var(--line); border-radius: 8px; padding: var(--gap); margin-bottom: var(--gap); }
+    label { display: block; font-size: .85rem; margin: .5rem 0 .15rem; opacity: .8; }
+    input, textarea, select, button { font: inherit; padding: .4rem .6rem; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; }
+    input[type=text], input[type=password], textarea { width: 100%; }
+    textarea { min-height: 6rem; resize: vertical; }
+    button { cursor: pointer; background: var(--accent); color: white; border-color: transparent; }
+    button.secondary { background: transparent; color: inherit; border-color: var(--line); }
+    button:disabled { opacity: .5; cursor: default; }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: end; }
+    .row > * { flex: 1 1 auto; }
+    .row > button { flex: 0 0 auto; }
+    #status { font-size: .85rem; opacity: .75; }
+    #results { list-style: none; padding: 0; margin: .75rem 0 0; }
+    #results li { border-top: 1px solid var(--line); padding: .6rem 0; }
+    #results .meta { font-size: .8rem; opacity: .7; }
+    #results mark { background: color-mix(in srgb, var(--accent) 30%, transparent); color: inherit; }
+    .pill { display: inline-block; font-size: .75rem; padding: 0 .5rem; border: 1px solid var(--line); border-radius: 999px; margin-right: .25rem; }
+    @media (max-width: 30rem) { body { padding: .75rem; } }
+  </style>
+</head>
+<body>
+  <h1>Holographic Memory in the browser</h1>
+  <p class="lead">Ingest and search documents entirely on this device. Nothing leaves the page; after the first load it works offline.</p>
+
+  <section>
+    <h2>Store</h2>
+    <div class="row">
+      <div>
+        <label for="backend">Persistence</label>
+        <select id="backend" data-testid="backend">
+          <option value="opfs">Origin private file system</option>
+          <option value="indexeddb">IndexedDB</option>
+          <option value="memory">Memory only</option>
+        </select>
+      </div>
+      <div>
+        <label for="passphrase">Passphrase (encrypts the saved copy; empty for none)</label>
+        <input id="passphrase" type="password" autocomplete="off" data-testid="passphrase">
+      </div>
+      <button id="open" data-testid="open">Open store</button>
+    </div>
+    <p id="status" data-testid="status" role="status">Not opened.</p>
+  </section>
+
+  <section>
+    <h2>Add documents</h2>
+    <label for="docId">Id</label>
+    <input id="docId" type="text" placeholder="note-1" data-testid="doc-id">
+    <label for="docText">Text (the first line is the title)</label>
+    <textarea id="docText" data-testid="doc-text"></textarea>
+    <div class="row">
+      <div>
+        <label for="titleWeight">Title weight</label>
+        <input id="titleWeight" type="number" min="1" max="16" value="1" data-testid="title-weight">
+      </div>
+      <button id="add" data-testid="add" disabled>Add</button>
+      <button id="sample" class="secondary" data-testid="sample" disabled>Load sample notes</button>
+      <label class="secondary" style="margin:0;align-self:end">
+        <input id="files" type="file" multiple accept=".txt,.md,text/plain,text/markdown" data-testid="files" disabled>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Search</h2>
+    <div class="row">
+      <input id="query" type="text" placeholder="Search your documents" data-testid="query" disabled>
+      <button id="search" data-testid="search" disabled>Search</button>
+    </div>
+    <div class="row">
+      <div><label for="k">Results</label><input id="k" type="number" min="1" max="50" value="5" data-testid="k"></div>
+      <div><label for="k1">BM25 k1</label><input id="k1" type="number" step="0.1" min="0" value="1.2" data-testid="bm25-k1"></div>
+      <div><label for="b">BM25 b</label><input id="b" type="number" step="0.05" min="0" max="1" value="0.75" data-testid="bm25-b"></div>
+    </div>
+    <p id="count" data-testid="count" aria-live="polite"></p>
+    <ul id="results" data-testid="results"></ul>
+  </section>
+
+  <section>
+    <h2>Snapshot</h2>
+    <div class="row">
+      <button id="download" class="secondary" data-testid="download" disabled>Download snapshot</button>
+      <input id="restore" type="file" data-testid="restore" disabled>
+      <button id="clear" class="secondary" data-testid="clear" disabled>Delete all documents</button>
+    </div>
+  </section>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

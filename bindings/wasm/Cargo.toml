@@ -31,6 +31,10 @@ argon2 = { version = "0.6", default-features = false, features = ["alloc"] }
 sha2 = "0.11"
 aes-gcm = { version = "0.11", optional = true }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+libc = "0.2"
+tempfile = "3"
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 
@@ -41,5 +45,3 @@ codegen-units = 1
 panic = "abort"
 strip = true
 
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-Oz", "--all-features"]
