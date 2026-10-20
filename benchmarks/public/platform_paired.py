@@ -80,8 +80,10 @@ def main() -> None:
                 cmd = [arms[n], "ann-qgraph", "--data", a.data, "--out", str(work / f"{n}-{t}.json"),
                        "--graph-cache", a.cache, "--sync", str(work / f"{n}-{t}"), "--ef", a.ef,
                        "--repeats", str(a.repeats), *CONFIG]
-                procs[n].append(subprocess.Popen(cmd, stdout=subprocess.DEVNULL, env=os.environ | envs[n],
-                                                 stderr=open(work / f"{n}-{t}.log", "w")))
+                # The child owns its duplicated descriptor; the parent's handle closes at once.
+                with open(work / f"{n}-{t}.log", "w") as log:
+                    procs[n].append(subprocess.Popen(cmd, stdout=subprocess.DEVNULL, env=os.environ | envs[n],
+                                                     stderr=log))
             # The first process of the first arm builds the cache if it is missing; wait for it
             # to be ready before the others read the file.
             wait_for(work / f"{n}-0.ready", procs[n], 7200)
