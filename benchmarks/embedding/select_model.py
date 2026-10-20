@@ -106,9 +106,9 @@ def eval_beir(model, qp, pp, name, split, max_len, cache, batch):
 
 
 def lme_dev():
-    split = json.load(open(ROOT / "benchmarks/public/longmemeval_split.json"))
+    split = json.loads(Path(ROOT / "benchmarks/public/longmemeval_split.json").read_text())
     dev = set(split["dev"])
-    data = json.load(open(DL / "longmemeval_s_cleaned.json"))
+    data = json.loads(Path(DL / "longmemeval_s_cleaned.json").read_text())
     rows = []
     for item in data:
         qid = item["question_id"]
@@ -175,7 +175,7 @@ def main():
     args = ap.parse_args()
     from sentence_transformers import SentenceTransformer
 
-    results = json.load(open(args.out)) if args.out.exists() else {}
+    results = json.loads(Path(args.out).read_text()) if args.out.exists() else {}
     for mid in args.models:
         if mid in results:
             continue

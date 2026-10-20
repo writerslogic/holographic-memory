@@ -54,10 +54,10 @@ def pick(items, n, salt):
 def make_sample():
     sci = [(d.get("title") or "") + " " + d["text"] for d in jsonl(DL / "scifact/corpus.jsonl")]
     nfq = [q["text"] for q in jsonl(DL / "nfcorpus/queries.jsonl")]
-    split = json.load(open(ROOT / "benchmarks/public/longmemeval_split.json"))
+    split = json.loads(Path(ROOT / "benchmarks/public/longmemeval_split.json").read_text())
     dev = set(split["dev"])
     turns = []
-    for item in json.load(open(DL / "longmemeval_s_cleaned.json")):
+    for item in json.loads(Path(DL / "longmemeval_s_cleaned.json").read_text()):
         if item["question_id"] in dev:
             for s in item["haystack_sessions"][:3]:
                 turns += [t["content"] for t in s if len(t["content"]) > 20]
@@ -72,7 +72,7 @@ def make_sample():
 def reference(model_id, revision, out):
     from sentence_transformers import SentenceTransformer
 
-    sample = json.load(open(SAMPLE))
+    sample = json.loads(Path(SAMPLE).read_text())
     from select_model import CANDIDATES  # prefixes live with the candidate table
 
     qp, pp, _ = CANDIDATES[model_id]
@@ -88,8 +88,8 @@ def reference(model_id, revision, out):
 
 
 def compare(ref_path, binary, model, extra):
-    ref = json.load(open(ref_path))
-    sample = json.load(open(SAMPLE))
+    ref = json.loads(Path(ref_path).read_text())
+    sample = json.loads(Path(SAMPLE).read_text())
     out = {}
     for kind in ("passage", "query"):
         texts = sample[kind]
