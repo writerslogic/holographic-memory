@@ -9,8 +9,22 @@ use super::postings::PostingLists;
 use super::text::TextSegment;
 use super::{SearchOptions, StoredChunk, StoredDocument, VectorState};
 
+/// Tells store instances apart for caches keyed by `generation`, which counts per instance.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct StoreIdentity(u64);
+
+impl Default for StoreIdentity {
+    fn default() -> Self {
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        Self(NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct DocumentStore {
+    /// With `generation`, names one state of the lexical index (every mutation advances
+    /// `generation`).
+    pub(super) identity: StoreIdentity,
     pub(super) documents: BTreeMap<String, Arc<StoredDocument>>,
     pub(super) postings: [PostingLists; 2],
     pub(super) slots: BTreeMap<String, Vec<usize>>,
@@ -319,6 +333,14 @@ impl DocumentStore {
     /// Word count of the chunk occupying `slot`.
     pub(super) fn slot_word_count(&self, slot: usize) -> u32 {
         self.word_counts[slot]
+    }
+
+    /// The `(document id, chunk index)` ranking ties are broken by, for the chunk in `slot`.
+    pub(super) fn slot_order(&self, slot: usize) -> (&str, usize) {
+        let (document, chunk) = self.owners[slot]
+            .as_ref()
+            .expect("unoccupied document slot");
+        (&document.id, *chunk)
     }
 
     pub(super) fn owned_chunk(&self, slot: usize) -> (Arc<StoredDocument>, usize) {
