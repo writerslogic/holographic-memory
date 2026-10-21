@@ -247,8 +247,18 @@ fn prefetch_and_batched_estimation_keep_results_identical() {
     for (name, index) in &indexes {
         for p in [params(96, 64), params(40, 0)] {
             let base = run(index, SearchKnobs::OFF, p);
+            // The floor only rules out a broken search, against which identical results would
+            // prove nothing (chance is K/N). Clustered rows with this much noise are hard: the
+            // release fixture (50k rows) measures 0.63-0.66 at ef 96 with rerank and 0.39-0.46
+            // at ef 40 ranked by the codes alone.
             let r = recall(&base);
-            assert!(r > 0.5, "{name}, ef {}: baseline recall {r}", p.ef);
+            let floor = if p.rerank > 0 { 0.5 } else { 0.3 };
+            assert!(
+                r > floor,
+                "{name}, ef {}, rerank {}: baseline recall {r}",
+                p.ef,
+                p.rerank
+            );
             for (kname, k) in knobs {
                 let what = format!("{name}, ef {}, {kname}", p.ef);
                 assert_identical(&what, &base, &run(index, k, p));
