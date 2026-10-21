@@ -69,7 +69,12 @@ def install(systems):
 def _worker(args, threads, timeout):
     python = envs.ensure(ENV)
     env = {"RAYON_NUM_THREADS": str(threads), "CARGO_TARGET_DIR": str(hms_server_binary().parents[1])}
-    stdout, stderr, wall, client_peak = run_measured([str(python), "-I", str(WORKER), *args], env=env, timeout=timeout)
+    workdir = Path(args[args.index("--workdir") + 1])
+    try:
+        stdout, stderr, wall, client_peak = run_measured([str(python), "-I", str(WORKER), *args], env=env, timeout=timeout)
+    finally:
+        # A client killed by the timeout never stopped its server.
+        server_proc.kill_orphans(workdir / "logs")
     result = _parse_result(stdout)
     result["client_peak_rss_wait4_bytes"] = client_peak
     result["wall_s"] = wall

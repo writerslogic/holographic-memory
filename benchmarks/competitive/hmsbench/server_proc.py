@@ -41,6 +41,36 @@ def free_ports(count):
             s.close()
 
 
+def stable_ports(path, count):
+    """Ports recorded in `path` if all are still free, else fresh ones (recorded). Servers that
+    store their own address (Typesense's raft peer list) restart on the address they were built
+    with, as a deployed server would; a changed address costs a leader-election timeout."""
+    path = Path(path)
+    try:
+        saved = [int(p) for p in path.read_text().split()]
+    except (OSError, ValueError):
+        saved = []
+    if len(saved) == count:
+        held = []
+        try:
+            for port in saved:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                held.append(s)
+                # Connections of the previous run may linger in TIME_WAIT; servers bind with
+                # SO_REUSEADDR, so the probe does too.
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(("127.0.0.1", port))
+            return saved
+        except OSError:
+            pass
+        finally:
+            for s in held:
+                s.close()
+    ports = free_ports(count)
+    path.write_text(" ".join(map(str, ports)))
+    return ports
+
+
 def _group_pids(pgid):
     if LINUX:
         pids = []
@@ -107,6 +137,22 @@ def as_server_user(argv, **kwargs):
     return subprocess.run(argv, **kwargs)
 
 
+def kill_orphans(log_dir):
+    """SIGKILL every server group recorded under `log_dir` whose client died before stopping it.
+    A recorded group is only signalled while its leader still runs in that group."""
+    killed = []
+    for marker in Path(log_dir).glob("*.pgid"):
+        try:
+            pgid = int(marker.read_text())
+            if pgid in _group_pids(pgid):
+                os.killpg(pgid, signal.SIGKILL)
+                killed.append(pgid)
+        except (ValueError, ProcessLookupError, PermissionError, OSError):
+            pass
+        marker.unlink(missing_ok=True)
+    return killed
+
+
 class Server:
     """One server process tree. `argv` runs in the foreground (no daemonizing); stdout and stderr
     go to `<log_dir>/<name>.log`. Use as a context manager so the tree is killed on every path."""
@@ -131,6 +177,8 @@ class Server:
         self.proc = subprocess.Popen(self.argv, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                      env={**os.environ, **(self.env or {})}, cwd=self.cwd, start_new_session=True, **kwargs)
         log.close()
+        # Lets the orchestrator kill this tree if the client process itself is killed.
+        self.log_path.with_suffix(".pgid").write_text(str(self.proc.pid))
         self._thread = threading.Thread(target=self._sample_loop, daemon=True)
         self._thread.start()
         self.sampling(True)
@@ -208,6 +256,7 @@ class Server:
             pass
         if self.proc.poll() is None:
             self.proc.wait(timeout=10)
+        self.log_path.with_suffix(".pgid").unlink(missing_ok=True)
         return self.proc.returncode
 
     def __enter__(self):

@@ -122,6 +122,9 @@ class ServerSystem:
     def ready(self):
         raise NotImplementedError
 
+    def ports(self, count):
+        return server_proc.stable_ports(self.workdir / "ports.txt", count)
+
     def after_start(self, params):
         """Work a restarted server needs before its index answers (loading, warm-up)."""
 
@@ -183,7 +186,7 @@ class HmsServer(ServerSystem):
     SWEEPS = {"graph": [{"ef": e} for e in EF_SWEEP]}
 
     def command(self):
-        (self.port,) = server_proc.free_ports(1)
+        (self.port,) = self.ports(1)
         argv = [hms_server_binary(), "--bind", f"127.0.0.1:{self.port}", "--data-dir", self.data, "--no-auth",
                 "--input-dim", self.dim, "--ingest-encode", "lexical", "--graph-min-rows", "1", "--tenant-idle-seconds", "0",
                 "--max-top-k", "100", "--log-level", "warn", "--compaction-interval-seconds", "0"]
@@ -234,7 +237,7 @@ class QdrantServer(ServerSystem):
     SWEEPS = {k: [{"ef": e} for e in EF_SWEEP] for k in BUILDS}
 
     def command(self):
-        self.port, grpc = server_proc.free_ports(2)
+        self.port, grpc = self.ports(2)
         env = {"QDRANT__SERVICE__HOST": "127.0.0.1", "QDRANT__SERVICE__HTTP_PORT": str(self.port), "QDRANT__SERVICE__GRPC_PORT": str(grpc),
                "QDRANT__STORAGE__STORAGE_PATH": str(self.data / "storage"), "QDRANT__STORAGE__SNAPSHOTS_PATH": str(self.data / "snapshots"),
                "QDRANT__TELEMETRY_DISABLED": "true", "QDRANT__CLUSTER__ENABLED": "false", "QDRANT__LOG_LEVEL": "WARN",
@@ -251,9 +254,11 @@ class QdrantServer(ServerSystem):
     def create(self, params):
         self.http.call("PUT", "/collections/c", {
             "vectors": {"size": self.dim, "distance": "Dot" if self.angular else "Euclid"},
-            "hnsw_config": {"m": params["m"], "ef_construct": params["ef_construct"], "max_indexing_threads": self.threads},
-            # One segment holds one graph, as in every other row; the threshold (KB) is lowered so
-            # a small benchmark collection is indexed instead of answered by a scan.
+            # full_scan_threshold and indexing_threshold (KB) are lowered so a small benchmark
+            # collection is indexed and searched through the graph instead of a plain scan; one
+            # target segment holds one graph, as in every other row.
+            "hnsw_config": {"m": params["m"], "ef_construct": params["ef_construct"], "max_indexing_threads": self.threads,
+                            "full_scan_threshold": 10},
             "optimizers_config": {"default_segment_number": 1, "indexing_threshold": 1}})
 
     def ingest(self, train, params):
@@ -261,15 +266,28 @@ class QdrantServer(ServerSystem):
             hi = min(lo + 1000, len(train))
             self.http.call("PUT", "/collections/c/points?wait=true", {"batch": {"ids": list(range(lo, hi)), "vectors": train[lo:hi].tolist()}})
 
-    def _indexed(self):
-        info = self.http.call("GET", "/collections/c")["result"]
-        return info["status"] == "green" and (info.get("indexed_vectors_count") or 0) >= (info.get("points_count") or 0) and \
-            info.get("optimizer_status") == "ok"
+    def _info(self):
+        return self.http.call("GET", "/collections/c")["result"]
 
     def wait_queryable(self, params):
-        wait_until(self._indexed, 7200, 0.1, "qdrant optimizer idle with every vector indexed")
+        # Green with the optimizer idle, then an explicit optimizer trigger (an empty optimizers
+        # PATCH, Qdrant's documented way to run pending optimizations) until the segment count is
+        # stable, so the stopped collection holds no pending merge.
+        previous = None
+        while True:
+            wait_until(lambda: self._info()["status"] == "green", 7200, 0.1, "qdrant collection green")
+            segments = self._info()["segments_count"]
+            if segments == previous:
+                break
+            previous = segments
+            self.http.call("PATCH", "/collections/c", {"optimizers_config": {}})
+            time.sleep(0.5)
+        self.segments = segments
 
-    after_start = wait_queryable
+    def after_start(self, params):
+        # A restarted collection reports grey (pending work waits for an update) or green;
+        # either serves every point. Optimizations are not triggered while serving.
+        wait_until(lambda: self._info()["status"] in ("green", "grey"), 7200, 0.05, "qdrant collection loaded")
 
     def configure(self, sp):
         self.ef = sp["ef"]
@@ -297,12 +315,15 @@ class WeaviateServer(ServerSystem):
     SWEEPS = {k: [{"ef": e} for e in EF_SWEEP] for k in BUILDS}
 
     def command(self):
-        self.port, grpc, gossip, data, raft, raft_rpc = server_proc.free_ports(6)
+        self.port, grpc, gossip, data, raft, raft_rpc = self.ports(6)
         env = {"PERSISTENCE_DATA_PATH": str(self.data), "AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED": "true",
                "DEFAULT_VECTORIZER_MODULE": "none", "ENABLE_MODULES": "", "DISABLE_TELEMETRY": "true", "LOG_LEVEL": "warning",
                "CLUSTER_HOSTNAME": "node1", "CLUSTER_GOSSIP_BIND_PORT": str(gossip), "CLUSTER_DATA_BIND_PORT": str(data),
                "RAFT_PORT": str(raft), "RAFT_INTERNAL_RPC_PORT": str(raft_rpc), "RAFT_BOOTSTRAP_EXPECT": "1", "RAFT_JOIN": f"node1:{raft}",
-               "GRPC_PORT": str(grpc), "QUERY_DEFAULTS_LIMIT": "10", "ASYNC_INDEXING": "false"}
+               "GRPC_PORT": str(grpc), "QUERY_DEFAULTS_LIMIT": "10", "ASYNC_INDEXING": "false",
+               # The read-only guard trips on a nearly full host disk; it is a safety stop, not a
+               # performance setting, so it is lifted for the benchmark.
+               "DISK_USE_READONLY_PERCENTAGE": "100", "DISK_USE_WARNING_PERCENTAGE": "100"}
         return [servers.artifact_binary("weaviate"), "--host", "127.0.0.1", "--port", str(self.port), "--scheme", "http"], env, self.workdir
 
     def ready(self):
@@ -369,7 +390,7 @@ class OpenSearchBase(ServerSystem):
     INDEX = "idx"
 
     def command(self):
-        self.port, transport = server_proc.free_ports(2)
+        self.port, transport = self.ports(2)
         home = servers.artifact_binary("opensearch").parents[1]
         conf = self.workdir / "config"
         if not conf.exists():
@@ -475,7 +496,7 @@ class Postgres(ServerSystem):
                                         "-E", "UTF8", "--locale=C", "--no-instructions"], check=True, capture_output=True)
 
     def command(self):
-        (self.port,) = server_proc.free_ports(1)
+        (self.port,) = self.ports(1)
         pg = self.pg
         settings = {"listen_addresses": "127.0.0.1", "port": self.port, "unix_socket_directories": "",
                     "max_parallel_workers_per_gather": 0, "max_parallel_maintenance_workers": max(self.threads - 1, 0),
@@ -613,7 +634,7 @@ class RedisVss(ServerSystem):
     SWEEPS = {"hnsw_m16": [{"ef": e} for e in EF_SWEEP], "hnsw_m32e500": [{"ef": e} for e in EF_SWEEP], "flat": [{}]}
 
     def command(self):
-        (self.port,) = server_proc.free_ports(1)
+        (self.port,) = self.ports(1)
         pkg = servers.system_package("redis")
         # WORKERS 0: queries and index updates run on the main thread (one query, one thread).
         argv = [Path(pkg["bin"]) / "redis-server", "--port", str(self.port), "--bind", "127.0.0.1", "--dir", self.data,
@@ -653,7 +674,8 @@ class RedisVss(ServerSystem):
 
     def _indexed(self):
         raw = self.r.execute_command("FT.INFO", "idx")
-        info = {raw[i].decode() if isinstance(raw[i], bytes) else raw[i]: raw[i + 1] for i in range(0, len(raw) - 1, 2)}
+        pairs = raw.items() if isinstance(raw, dict) else zip(raw[::2], raw[1::2])
+        info = {k.decode() if isinstance(k, bytes) else k: v for k, v in pairs}
         indexing = int(info.get("indexing", 0))
         pct = float(info.get("percent_indexed", b"1"))
         return indexing == 0 and pct >= 1.0
@@ -675,11 +697,12 @@ class RedisVss(ServerSystem):
 
     def prepare(self, q):
         params = ["B", q.astype(np.float32).tobytes()] + (["EF", max(self.ef, K)] if self.ef else [])
-        return ("FT.SEARCH", "idx", self.q, "PARAMS", len(params), *params, "NOCONTENT", "LIMIT", 0, K, "DIALECT", 2)
+        return ("FT.SEARCH", "idx", self.q, "PARAMS", len(params), *params, "NOCONTENT", "SORTBY", "__vec_score", "LIMIT", 0, K, "DIALECT", 2)
 
     def query(self, args):
         out = self.r.execute_command(*args)
-        return [int(key[2:]) for key in out[1:]]
+        keys = [r[b"id"] for r in out[b"results"]] if isinstance(out, dict) else out[1:]  # RESP3 map or RESP2 array
+        return [int(key[2:]) for key in keys]
 
     def replace(self, ids, vectors):
         for i, v in zip(ids, vectors):
@@ -697,7 +720,7 @@ class Meilisearch(ServerSystem):
     BUILDS = {"default": {}}
 
     def command(self):
-        (self.port,) = server_proc.free_ports(1)
+        (self.port,) = self.ports(1)
         argv = [servers.artifact_binary("meilisearch"), "--db-path", self.data / "ms", "--http-addr", f"127.0.0.1:{self.port}",
                 "--no-analytics", "--env", "development", "--max-indexing-threads", str(self.threads),
                 "--dump-dir", self.data / "dumps", "--snapshot-dir", self.data / "snapshots", "--log-level", "WARN"]
@@ -749,7 +772,7 @@ class Typesense(ServerSystem):
     KEY = "hms-bench-local"
 
     def command(self):
-        self.port, peering = server_proc.free_ports(2)
+        self.port, peering = self.ports(2)
         argv = [servers.artifact_binary("typesense"), "--data-dir", self.data / "ts", "--api-key", self.KEY,
                 "--api-address", "127.0.0.1", "--api-port", str(self.port), "--peering-address", "127.0.0.1",
                 "--peering-port", str(peering), "--enable-cors=false", "--log-dir", self.logs]
@@ -778,6 +801,20 @@ class Typesense(ServerSystem):
             bad = [line for line in out.decode().splitlines() if not json.loads(line).get("success")]
             if bad:
                 raise RuntimeError(f"typesense import errors: {bad[:2]}")
+        (self.workdir / "documents.txt").write_text(str(len(documents)))
+
+    def after_start(self, params):
+        # /health turns ok before the raft log replay has re-indexed every document (searches
+        # in that window miss stored documents), so the restarted server is ready when the
+        # collection holds the built document count again.
+        expected = int((self.workdir / "documents.txt").read_text())
+
+        def loaded():
+            try:
+                return self.http.call("GET", "/collections/docs")["num_documents"] >= expected
+            except HttpError:
+                return False
+        wait_until(loaded, 7200, 0.02, "typesense collection reloaded")
 
     def prepare(self, text):
         q = " ".join(words(text))
@@ -855,9 +892,10 @@ def ann_build(a, sysm, meta):
         sysm.wait_queryable(params)
         build_s = time.perf_counter() - start
         rss_after = server.sample()
+        extra = {"segments": sysm.segments} if hasattr(sysm, "segments") else {}
     finally:
         sysm.stop()
-    return {"build_s": build_s, "peak_rss_bytes": server.peak, "rss_after_build": rss_after, "n": len(train)}
+    return {"build_s": build_s, "peak_rss_bytes": server.peak, "rss_after_build": rss_after, "n": len(train), **extra}
 
 
 def ann_serve(a, sysm, meta):
