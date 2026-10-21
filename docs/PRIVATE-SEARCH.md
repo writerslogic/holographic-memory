@@ -8,7 +8,7 @@ Code: `src/core/private_query.rs`, behind the Cargo feature `private-search` (of
 Measurement: `src/bin/private-query-bench.rs`, results in `benchmarks/results/private_query.json`.
 
 This is unrelated to `src/core/mask.rs`, which is a keyed permutation of index labels
-(obfuscation; see section 3 of `docs/RESEARCH-OPPORTUNITIES.md`).
+(obfuscation).
 
 ## What it does
 

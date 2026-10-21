@@ -128,14 +128,14 @@ Read as the file reads it:
   is scripted in `/Volumes/A/.hms-target/logs/merge_verify/test/run_step4b.sh`.
 - Memory: RaBitQ IVF (1+4: 55.5 MB, 1+8: 92.6 MB) and RaBitQ HNSW (95.3 MB) are 2.4-4.1x SMALLER
   than the 8-bit VGraph (226 MB) and 1.8-3.1x smaller than the 4-bit one (172 MB). That is a loss
-  on index bytes at equal recall, one of the falsifiers listed in `docs/NEXT-SESSIONS.md`.
+  on index bytes at equal recall.
 - Build time: FAISS 51-93 s, SymphonyQG 17 s, RaBitQ 12-29 s, Lucene 243-851 s, VGraph 111 s for
   the full nytimes graph (measured once at load 47 while building the checked cache; the paired
   build numbers are in `qgraph_vertex_build_heldout.json`). Build time is the one metric where
   losing is accepted; it is still a loss against SymphonyQG and RaBitQ here.
 - Not run on this machine: NGT (its quantized graph needs the `qbg` command, which the macOS
   Homebrew build lacks; the ONNG stand-in did not build within its 30-minute cap), Glass, DiskANN
-  and ScaNN (x86-only builds). They run in the x86 session (`docs/NEXT-SESSIONS.md`, spec X).
+  and ScaNN (x86-only builds). They need an x86 machine.
 - glove-100-angular was not run in this pass (the run was stopped so that the search-path changes
   of the parallel session can be timed and the whole comparison rerun once).
 
