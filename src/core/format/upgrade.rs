@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! The migration framework behind `hms-format upgrade`.
 //!
-//! A [`Migration`] moves one artefact from one version to the next. [`MIGRATIONS`] is the
+//! A `Migration` moves one artefact from one version to the next. `MIGRATIONS` is the
 //! registry; a format change adds an entry (and a golden store, see `tests/golden/`). The
 //! planner chains entries until the artefact reaches the version this build writes, so a
 //! store several versions behind upgrades in one run.

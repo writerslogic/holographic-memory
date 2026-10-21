@@ -3,14 +3,14 @@
 
 //! Text encoders: text in, sparse hypervector out.
 //!
-//! `multiscale-words-v1` is specified by [`encode_reference`]: character n-grams at scales
+//! `multiscale-words-v1` is specified by `encode_reference`: character n-grams at scales
 //! 2-5 (one hypervector per character, permuted by its offset in the window and bound by
 //! symmetric difference), word tokens permuted by position, and word bigrams, each level
 //! bundled by majority vote, the levels combined by cross-level support. That function is the
 //! contract (`docs/file-format/ENCODERS.md`: same text and dimension, same indices forever) and
 //! stays reachable for the equivalence test in `tests/ingest_encode.rs`.
 //!
-//! [`TextEncoder::encode`] computes the same function through per-thread memo tables and
+//! `TextEncoder::encode` computes the same function through per-thread memo tables and
 //! reused scratch buffers, which is where ingest spends its time (`new_deterministic` per
 //! character of every n-gram, a sort of every level's concatenated indices, and one heap
 //! allocation per intermediate vector). It produces identical indices because:
@@ -19,13 +19,13 @@
 //!    base vector is memoized by seed (`EncodeState::terms`); two words with equal seeds share
 //!    a vector in the reference as well, so keying by seed adds no collision.
 //! 2. `permute(shift)` maps a sorted index set through `(idx + shift) % dim`, a bijection; the
-//!    sorted result is the rotation [`rotate_sorted`] computes without sorting, and a multiset
+//!    sorted result is the rotation `rotate_sorted` computes without sorting, and a multiset
 //!    that is only counted needs no order at all.
 //! 3. `bind` is the symmetric difference of two sorted sets: set-valued, so any correct
 //!    implementation yields the same indices. A character n-gram's bound vector depends only on
 //!    `(scale, characters)` and is memoized by that exact key (`EncodeState::ngrams`).
 //! 4. `EntangledHVec::bundle` depends on its inputs only through the ascending run-length list
-//!    `(index, count)` of the concatenated indices. [`EncodeState::bundle_flat`] builds the same
+//!    `(index, count)` of the concatenated indices. `EncodeState::bundle_flat` builds the same
 //!    list from a histogram over `[0, dim)` (or by sorting when `dim` dwarfs the index total)
 //!    and then calls the identical `select_nth_unstable_by` on the identical slice; that call's
 //!    comparator has ties, so the retained set depends on input order and algorithm, both kept.

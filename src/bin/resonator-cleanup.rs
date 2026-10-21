@@ -75,7 +75,7 @@ fn field_score(probe: &[u32], re: &[i64], im: &[i64], cos: &[i64], sin: &[i64]) 
     s
 }
 
-/// argmax over a codebook of the field score of bind(fixed, book[j]).
+/// argmax over a codebook of the field score of `bind(fixed, book[j])`.
 fn best(
     book: &[Vec<u32>],
     fixed: &[u32],
