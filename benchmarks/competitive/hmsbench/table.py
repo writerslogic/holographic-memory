@@ -21,6 +21,9 @@ COMPARISON = DOCS / "COMPARISON.md"
 CELLS = DOCS / "comparison.cells.json"
 BLOCK = ROOT / "benchmarks/competitive/README-block.md"
 GAPS_MD = DOCS / "GAPS.md"
+# The gap ledger is a long generated table; keep it out of the docs search index so it
+# does not crowd prose pages out of the top results (scripts/docs-qa/queries.txt).
+GAPS_FRONT_MATTER = "---\nsearch:\n  exclude: true\n---\n\n"
 GAPS_JSON = ROOT / "benchmarks/competitive/GAPS.json"
 README = ROOT / "README.md"
 START, END = "<!-- BENCH:START -->", "<!-- BENCH:END -->"
@@ -430,7 +433,7 @@ def update_readme(block, path=README):
 def main(check=False):
     markdown, cells, block, gaps = build()
     index = json.dumps(cells, indent=1, allow_nan=False) + "\n"
-    targets = {COMPARISON: markdown + "\n", CELLS: index, BLOCK: block, GAPS_MD: gaps_markdown(gaps), GAPS_JSON: json.dumps(gaps, indent=1, allow_nan=False) + "\n"}
+    targets = {COMPARISON: markdown + "\n", CELLS: index, BLOCK: block, GAPS_MD: GAPS_FRONT_MATTER + gaps_markdown(gaps), GAPS_JSON: json.dumps(gaps, indent=1, allow_nan=False) + "\n"}
     if check:
         stale = [rel(p) for p, text in targets.items() if not p.exists() or p.read_text() != text]
         if stale:
