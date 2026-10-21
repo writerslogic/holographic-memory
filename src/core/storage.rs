@@ -147,8 +147,12 @@ impl PersistentArena {
         } else {
             manifest.segment_size
         };
-        file.set_len(active_capacity as u64)?;
-        file.sync_all()?;
+        // A reopened segment already has its durable length (growth syncs it); only a new or
+        // resized file needs the length change and the full sync.
+        if file.metadata()?.len() != active_capacity as u64 {
+            file.set_len(active_capacity as u64)?;
+            file.sync_all()?;
+        }
         let mut mut_map = unsafe { MmapMut::map_mut(&file)? };
 
         let (recovered_offset, max_version) = Self::discover_offset(&mut_map)

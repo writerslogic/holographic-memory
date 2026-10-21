@@ -125,20 +125,28 @@ fn can_pack(count: usize, bytes: usize) -> bool {
 
 impl From<BTreeMap<String, u32>> for StoredTerms {
     fn from(map: BTreeMap<String, u32>) -> Self {
-        if map.is_empty() {
+        Self::from_sorted(map.into_iter().collect())
+    }
+}
+
+impl StoredTerms {
+    /// Builds the table from entries whose keys are strictly ascending (the order of a
+    /// `BTreeMap` and of every serialized table), without an intermediate tree.
+    fn from_sorted(entries: Vec<(String, u32)>) -> Self {
+        debug_assert!(entries.windows(2).all(|pair| pair[0].0 < pair[1].0));
+        if entries.is_empty() {
             return Self::default();
         }
-        let count = map.len();
-        let bytes = map
-            .keys()
-            .try_fold(0usize, |total, key| total.checked_add(key.len()))
+        let count = entries.len();
+        let bytes = entries
+            .iter()
+            .try_fold(0usize, |total, (key, _)| total.checked_add(key.len()))
             .expect("term byte length overflow");
-        let pack = can_pack(count, bytes);
-        let data = if pack {
+        let data = if can_pack(count, bytes) {
             let mut text = String::with_capacity(bytes);
             let mut starts = Vec::with_capacity(count);
             let mut frequencies = Vec::with_capacity(count);
-            for (key, frequency) in map {
+            for (key, frequency) in entries {
                 starts.push(u32::try_from(text.len()).expect("packed term offset overflow"));
                 text.push_str(&key);
                 frequencies.push(frequency);
@@ -150,7 +158,8 @@ impl From<BTreeMap<String, u32>> for StoredTerms {
             })
         } else {
             TermData::Tree(
-                map.into_iter()
+                entries
+                    .into_iter()
                     .map(|(mut key, frequency)| {
                         super::compact_string(&mut key);
                         (key, frequency)
@@ -223,7 +232,38 @@ impl Serialize for StoredTerms {
 
 impl<'de> Deserialize<'de> for StoredTerms {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        BTreeMap::<String, u32>::deserialize(deserializer).map(Self::from)
+        struct TermsVisitor;
+        impl<'de> serde::de::Visitor<'de> for TermsVisitor {
+            type Value = StoredTerms;
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a map")
+            }
+            fn visit_map<A: serde::de::MapAccess<'de>>(
+                self,
+                mut access: A,
+            ) -> Result<StoredTerms, A::Error> {
+                // Stored tables are written in key order, so the common case is a straight
+                // append; any other order (or a repeated key) takes the map's insert
+                // semantics, where the last value for a key wins.
+                let mut entries: Vec<(String, u32)> =
+                    Vec::with_capacity(access.size_hint().unwrap_or(0).min(1 << 16));
+                let mut ascending = true;
+                while let Some((key, frequency)) = access.next_entry::<String, u32>()? {
+                    ascending &= entries.last().is_none_or(|(last, _)| *last < key);
+                    entries.push((key, frequency));
+                }
+                Ok(if ascending {
+                    StoredTerms::from_sorted(entries)
+                } else {
+                    let mut map = BTreeMap::new();
+                    for (key, frequency) in entries {
+                        map.insert(key, frequency);
+                    }
+                    StoredTerms::from(map)
+                })
+            }
+        }
+        deserializer.deserialize_map(TermsVisitor)
     }
 }
 
@@ -359,6 +399,27 @@ mod tests {
                 (Err(old), Err(new)) => assert_eq!(old.to_string(), new.to_string()),
                 _ => panic!("legacy term parsing changed"),
             }
+        }
+    }
+
+    /// Deserialization matches a `BTreeMap` for ordered, unordered and repeated keys.
+    #[test]
+    fn deserialize_matches_btreemap_for_any_key_order() {
+        for json in [
+            r#"{"a":1,"b":2,"c":3}"#,
+            r#"{"c":3,"a":1,"b":2}"#,
+            r#"{"a":1,"a":5,"b":2}"#,
+            r#"{}"#,
+            r#"{"µ":1,"z":2}"#,
+        ] {
+            let tree: BTreeMap<String, u32> = serde_json::from_str(json).unwrap();
+            let table: StoredTerms = serde_json::from_str(json).unwrap();
+            table.assert_valid_storage();
+            assert_eq!(
+                serde_json::to_vec(&table).unwrap(),
+                serde_json::to_vec(&tree).unwrap(),
+                "{json}"
+            );
         }
     }
 }

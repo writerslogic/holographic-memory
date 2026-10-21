@@ -1315,8 +1315,12 @@ impl HmsCore {
 
     fn arena_read_frame(&self, offset: usize) -> Result<(Vec<u8>, u32)> {
         let (data, version) = self.arena.read_frame(offset)?;
-        let payload = self.maybe_decrypt(&data)?;
-        Ok((payload, version))
+        #[cfg(feature = "security")]
+        if self.encryption.is_some() {
+            return Ok((self.maybe_decrypt(&data)?, version));
+        }
+        // Unencrypted frames are already an owned buffer; no second copy.
+        Ok((data, version))
     }
 
     fn sign_fn(&self) -> Option<SignFn<'_>> {
