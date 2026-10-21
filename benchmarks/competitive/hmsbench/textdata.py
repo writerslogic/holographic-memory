@@ -3,7 +3,7 @@
 """Text datasets as the `{documents, queries}` input JSON plus qrels, identical for every system.
 
 beir:<name>   BEIR train/dev qrels (the existing document-competition protocol: SciFact train,
-              NFCorpus dev; the test qrels stay unread). One chunk per document.
+              NFCorpus dev, FiQA dev; the test qrels stay unread). One chunk per document.
 memory        Agent-memory-shaped: every session of the 100 LongMemEval_S dev questions as one
               searchable memory (answer sessions are the relevant documents); the 400 held-out
               questions are never read.
@@ -19,7 +19,7 @@ DATA = CACHE / "competitive" / "data"
 BEIR_URL = "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{name}.zip"
 LME_URL = ("https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/"
            "98d7416c24c778c2fee6e6f3006e7a073259d48f/longmemeval_s_cleaned.json")
-BEIR_SPLITS = {"scifact": "train", "nfcorpus": "dev"}
+BEIR_SPLITS = {"scifact": "train", "nfcorpus": "dev", "fiqa": "dev"}
 MAX_WORDS = 4000
 K = 100
 
@@ -62,9 +62,15 @@ def beir(name):
             qid, did, grade = line.rstrip().split("\t")
             qrels.setdefault(qid, {})[did] = int(grade)
     documents = []
+    # FiQA has whitespace-only documents; no lexical system can match them, so every system
+    # gets the corpus without them and meta.json records how many were left out.
+    empty = 0
     for line in (source / "corpus.jsonl").open():
         row = json.loads(line)
         text = (row.get("title", "") + "\n" + row["text"]).strip()
+        if not text:
+            empty += 1
+            continue
         if len(text.split()) > 4096:
             raise ValueError("one complete chunk per document is required")
         documents.append(_document(row["_id"], text, len(row["_id"]) % 17))
@@ -74,7 +80,8 @@ def beir(name):
     (folder / "input.json").write_text(json.dumps({"documents": documents, "queries": queries}) + "\n")
     (folder / "qrels.json").write_text(json.dumps(qrels) + "\n")
     (folder / "meta.json").write_text(json.dumps({"dataset": name, "split": split, "documents": len(documents),
-                                                  "queries": len(queries), "source": BEIR_URL.format(name=name)}) + "\n")
+                                                  "empty_documents_skipped": empty, "queries": len(queries),
+                                                  "source": BEIR_URL.format(name=name)}) + "\n")
     return folder
 
 

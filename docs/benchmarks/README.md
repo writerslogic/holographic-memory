@@ -45,6 +45,8 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
   --metric euclidean` (vertex index on the vectors as given, Euclidean truth).
 * **BEIR SciFact (train qrels) and NFCorpus (dev qrels)**, the existing document-competition
   protocol: lexical only, top 100, one chunk per document, test qrels never read.
+* **BEIR FiQA (dev qrels)**, `standard` and `heavy` only: 57,600 documents (the 38 empty ones
+  are left out for every system), 500 queries, same protocol.
 * **memory** (agent-memory-shaped): all sessions of the 100 LongMemEval_S dev questions as one
   searchable memory (about 5,000 sessions, truncated to 4,000 words), relevant documents are the
   answer sessions. The 400 held-out questions are never read.
