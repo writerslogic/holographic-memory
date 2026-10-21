@@ -46,7 +46,7 @@ def test_server_and_embedded_files_render_in_separate_sections(monkeypatch):
     results_at, server_at = markdown.index("## Results"), markdown.index("## Server mode results")
     embedded_title, server_title = markdown.index("### d (1 vectors, 1 queries)\n"), markdown.index("### d (1 vectors, 1 queries), server mode")
     assert results_at < embedded_title < server_at < server_title
-    verdicts = {c["file"]: c for c in cells if c.get("derived") and c["metric"] == "qps@recall0.95"}
+    verdicts = {Path(c["file"]).name: c for c in cells if c.get("derived") and c["metric"] == "qps@recall0.95"}
     assert verdicts["embedded.json"]["hms"] == registry.HMS and verdicts["embedded.json"]["verdict"] == "WIN"
     assert verdicts["server.json"]["hms"] == "hms-server" and verdicts["server.json"]["other"] == "qdrant-server"
     assert verdicts["server.json"]["verdict"] == "LOSS"
