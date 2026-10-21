@@ -99,18 +99,18 @@ SYSTEMS.update({
     "ngt": {"display": "NGT (ONNG)", "kind": "ann", "env": "ngt", "package": "ngt", "family": "graph"},
     "scann": {"display": "ScaNN", "kind": "ann", "env": "scann", "package": "scann", "family": "ivf"},
     "pynndescent": {"display": "PyNNDescent", "kind": "ann", "env": "pynndescent", "package": "pynndescent", "family": "graph"},
+    "voyager": {"display": "Voyager", "kind": "ann", "env": "voyager", "package": "voyager", "family": "hnsw"},
+    "diskann": {"display": "DiskANN (in-memory Vamana)", "kind": "ann", "env": "diskann", "package": "diskannpy", "family": "graph"},
 })
 TIMING_BOUNDARY.update({
     "ngt": "CPython (pybind11) call per query", "scann": "CPython (pybind11) call per query; the ScaNN searcher runs its own thread pool for training only",
     "pynndescent": "CPython + numba-compiled kernel per query (JIT compile inside cold start)",
+    "voyager": "CPython 3.12 binding call per query", "diskann": "CPython 3.11 binding call per query (diskannpy StaticMemoryIndex)",
 })
-FACTS.update({k: {"service_needed": {"value": "no", "basis": _DOC}, "encrypted_at_rest": {"value": "no", "basis": _DOC}} for k in ("ngt", "scann", "pynndescent")})
-NOT_RUN.update({
-    "diskannpy": "no CPython 3.13 wheel on any platform (0.7.0 ships cp39-cp311 only); building from source needs MKL and a C++ toolchain",
-    "voyager": "wheels are tagged cp312-abi3 but the extension is named cpython-312, so it does not import on CPython 3.13 (verified on macOS arm64)",
-})
+FACTS.update({k: {"service_needed": {"value": "no", "basis": _DOC}, "encrypted_at_rest": {"value": "no", "basis": _DOC}} for k in ("ngt", "scann", "pynndescent", "voyager", "diskann")})
 # Reasons that apply to one OS only, recorded in results files produced on that OS.
-_PLATFORM_NOT_RUN = {"scann": {"Darwin": "no macOS wheel for scann 1.4.2 (manylinux_2_27 x86_64 and aarch64 only); Linux x86_64 runs it"}}
+_PLATFORM_NOT_RUN = {"scann": {"Darwin": "no macOS wheel for scann 1.4.2 (manylinux_2_27 x86_64 and aarch64 only); Linux x86_64 runs it"},
+                     "diskann": {"Darwin": "no macOS wheel for diskannpy 0.7.0 (manylinux_2_28 x86_64 and win_amd64, CPython 3.9-3.11 only); Linux x86_64 runs it"}}
 NOT_RUN.update({k: v[platform.system()] for k, v in _PLATFORM_NOT_RUN.items() if platform.system() in v})
 
 ANN_SYSTEMS = [k for k, v in SYSTEMS.items() if v["kind"] == "ann"]

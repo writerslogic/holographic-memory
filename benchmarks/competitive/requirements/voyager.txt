@@ -1,0 +1,4 @@
+numpy==2.5.4
+    # via -r benchmarks/competitive/requirements/voyager.in
+voyager==2.2.2
+    # via -r benchmarks/competitive/requirements/voyager.in

@@ -23,6 +23,13 @@ REQUIREMENTS = ROOT / "benchmarks/competitive/requirements"
 # the CPU that built it; a fleet with mixed CPUs points this at machine-local storage.
 ENV_ROOT = Path(os.environ["HMS_BENCH_ENVS"]) if os.environ.get("HMS_BENCH_ENVS") else CACHE / "competitive" / "envs"
 PYTHON = "3.13"
+# A package whose wheels do not cover CPython 3.13 gets its own interpreter; the version is
+# recorded in every results file next to the package versions.
+PYTHON_FOR = {"voyager": "3.12", "diskann": "3.11"}
+
+
+def python_for(name):
+    return PYTHON_FOR.get(name, PYTHON)
 
 # Pins: library name -> (requirement lines, importable distributions that report the version).
 PINS = {
@@ -43,8 +50,12 @@ PINS = {
     "scann": ["scann==1.4.2"],
     "ngt": ["ngt==2.3.12"],
     "pynndescent": ["pynndescent==0.6.0"],
+    "voyager": ["voyager==2.2.2"],
+    "diskann": ["diskannpy==0.7.0"],
 }
 BASE = ["numpy==2.5.4"]
+# diskannpy 0.7.0 is built against NumPy 1.x.
+BASE_FOR = {"diskann": ["numpy==1.25.0"]}
 # Needed by the benchmark adapter only; excluded from the footprint.
 RUNTIME_EXTRA = {"duckdb": ["pyarrow==21.0.0"]}
 
@@ -52,7 +63,7 @@ RUNTIME_EXTRA = {"duckdb": ["pyarrow==21.0.0"]}
 def write_inputs():
     REQUIREMENTS.mkdir(parents=True, exist_ok=True)
     for name, lines in PINS.items():
-        (REQUIREMENTS / f"{name}.in").write_text("\n".join([*lines, *RUNTIME_EXTRA.get(name, []), *BASE]) + "\n")
+        (REQUIREMENTS / f"{name}.in").write_text("\n".join([*lines, *RUNTIME_EXTRA.get(name, []), *BASE_FOR.get(name, BASE)]) + "\n")
         (REQUIREMENTS / f"{name}.footprint.in").write_text("\n".join(lines) + "\n" if lines else "")
 
 
@@ -65,7 +76,7 @@ def lock(names=None):
             if not src.read_text().strip():
                 (REQUIREMENTS / f"{name}{suffix}.txt").write_text("")
                 continue
-            subprocess.run(["uv", "pip", "compile", "--universal", "--python-version", PYTHON, "-q",
+            subprocess.run(["uv", "pip", "compile", "--universal", "--python-version", python_for(name), "-q",
                             "--no-header", "-o", str(REQUIREMENTS / f"{name}{suffix}.txt"), str(src)], check=True)
 
 
@@ -78,13 +89,13 @@ def ensure(name):
     python = env_python(name)
     marker = ENV_ROOT / name / ".installed"
     lock_file = REQUIREMENTS / f"{name}.txt"
-    wanted = lock_file.read_text() if lock_file.exists() else ""
+    wanted = (f"# python {PYTHON_FOR[name]}\n" if name in PYTHON_FOR else "") + (lock_file.read_text() if lock_file.exists() else "")
     if python.exists() and marker.exists() and marker.read_text() == wanted:
         return python
     log(f"creating environment {name}")
     shutil.rmtree(ENV_ROOT / name, ignore_errors=True)
-    subprocess.run(["uv", "venv", "--python", PYTHON, "-q", str(ENV_ROOT / name)], check=True)
-    if wanted.strip():
+    subprocess.run(["uv", "venv", "--python", python_for(name), "-q", str(ENV_ROOT / name)], check=True)
+    if lock_file.exists() and lock_file.read_text().strip():
         subprocess.run(["uv", "pip", "install", "-q", "--python", str(python), "-r", str(lock_file)], check=True)
     marker.write_text(wanted)
     return python
@@ -97,7 +108,7 @@ def footprint(name):
         return {"bytes": 0, "distributions": 0, "ships_with_interpreter": True, "note": "standard library or already-installed dependency"}
     target = ENV_ROOT / f"{name}-footprint"
     shutil.rmtree(target, ignore_errors=True)
-    subprocess.run(["uv", "pip", "install", "-q", "--python-version", PYTHON, "--target", str(target), "-r", str(lock_file)], check=True)
+    subprocess.run(["uv", "pip", "install", "-q", "--python-version", python_for(name), "--target", str(target), "-r", str(lock_file)], check=True)
     dists = sorted(p.name for p in target.glob("*.dist-info"))
     size = dir_bytes(target)
     shutil.rmtree(target, ignore_errors=True)
@@ -106,8 +117,8 @@ def footprint(name):
 
 def versions(name, packages):
     """Installed versions of `packages` as reported by the environment itself."""
-    code = ("import importlib.metadata as m, json, sys;"
-            "print(json.dumps({p: m.version(p) for p in sys.argv[1:]}))")
+    code = ("import importlib.metadata as m, json, platform, sys;"
+            "print(json.dumps({**{p: m.version(p) for p in sys.argv[1:]}, 'python': platform.python_version()}))")
     out = subprocess.run([str(ensure(name)), "-I", "-c", code, *packages], capture_output=True, text=True, check=True).stdout
     return json.loads(out)
 

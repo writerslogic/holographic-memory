@@ -33,6 +33,7 @@ def test_every_ann_system_is_wired_end_to_end():
         assert name in registry.TIMING_BOUNDARY and name in registry.FACTS, name
 
 
-def test_unavailable_packages_are_recorded_not_silently_dropped():
-    for name in ("diskannpy", "voyager"):
-        assert name in registry.NOT_RUN and name not in registry.SYSTEMS
+def test_interpreter_override_is_per_env_and_defaults_to_the_shared_python():
+    assert envs.python_for("hnswlib") == envs.PYTHON
+    assert all(name in envs.PINS for name in envs.PYTHON_FOR)
+    assert envs.python_for("voyager") != envs.PYTHON

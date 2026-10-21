@@ -661,7 +661,83 @@ class Pynndescent(Adapter):
         raise Unsupported("PyNNDescent has no deletion")
 
 
-SYSTEMS.update({"ngt": Ngt, "scann": Scann, "pynndescent": Pynndescent})
+class Voyager(Adapter):
+    """Spotify Voyager: an hnswlib-derived graph (own file format, auto-growing, optional float8/E4M3
+    storage left at float32 here). m16e500 is the ann-benchmarks efConstruction; m32e500 and m48e500
+    match the HMS build effort like the hnswlib rows. Cosine space normalises on insert."""
+    BUILDS = {"m16": {"M": 16, "ef_construction": 200}, "m16e500": {"M": 16, "ef_construction": 500},
+              "m32e500": {"M": 32, "ef_construction": 500}, "m48e500": {"M": 48, "ef_construction": 500}}
+    SWEEPS = {k: [{"ef": e} for e in EF_SWEEP] for k in BUILDS}
+    PERSISTENT_FLUSH = True
+
+    def _space(self):
+        import voyager
+        return voyager.Space.Cosine if self.angular else voyager.Space.Euclidean
+
+    def build(self, train, params):
+        import voyager
+        index = voyager.Index(self._space(), self.dim, M=params["M"], ef_construction=params["ef_construction"], random_seed=100, max_elements=len(train))
+        index.add_items(train, num_threads=self.threads)
+        index.save(str(self.workdir / "index.voyager"))
+
+    def open(self, params, n):
+        import voyager
+        self.index = voyager.Index.load(str(self.workdir / "index.voyager"))
+
+    def configure(self, sp):
+        self.ef = max(sp["ef"], K)
+
+    def query(self, q):
+        return self.index.query(q[0], k=K, query_ef=self.ef)[0]
+
+    def replace(self, ids, vectors):
+        for i in ids:
+            self.index.mark_deleted(int(i))
+        self.index.add_items(vectors, ids=list(range(10**7, 10**7 + len(ids))), num_threads=1)
+
+    def delete(self, ids):
+        for i in ids:
+            self.index.mark_deleted(int(i))
+
+    def flush(self):
+        self.index.save(str(self.workdir / "index.voyager"))
+
+
+class Diskann(Adapter):
+    """diskannpy in-memory Vamana (StaticMemoryIndex; no SSD/PQ). r64_l100 and r64_l500 use degree 64
+    with alpha 1.2; ab_r32_l125 is the ann-benchmarks glove-100-angular `vamana_125_32_1-2` group.
+    The search list size L is the sweep axis."""
+    BUILDS = {"r64_l100": {"R": 64, "L": 100, "alpha": 1.2}, "r64_l500": {"R": 64, "L": 500, "alpha": 1.2},
+              "ab_r32_l125": {"R": 32, "L": 125, "alpha": 1.2}}
+    SWEEPS = {k: [{"L": e} for e in EF_SWEEP] for k in BUILDS}
+
+    def _metric(self):
+        return "cosine" if self.angular else "l2"
+
+    def build(self, train, params):
+        import diskannpy
+        diskannpy.build_memory_index(data=train, distance_metric=self._metric(), index_directory=str(self.workdir), complexity=params["L"],
+                                     graph_degree=params["R"], alpha=params["alpha"], num_threads=self.threads, use_pq_build=False)
+
+    def open(self, params, n):
+        import diskannpy
+        self.index = diskannpy.StaticMemoryIndex(index_directory=str(self.workdir), num_threads=1, initial_search_complexity=64,
+                                                 distance_metric=self._metric(), vector_dtype=np.float32, dimensions=self.dim)
+
+    def configure(self, sp):
+        self.L = max(sp["L"], K)
+
+    def query(self, q):
+        return self.index.search(q[0], K, self.L).identifiers
+
+    def replace(self, ids, vectors):
+        raise Unsupported("StaticMemoryIndex is read-only; updates need the separate DynamicMemoryIndex build type")
+
+    def delete(self, ids):
+        raise Unsupported("StaticMemoryIndex is read-only; updates need the separate DynamicMemoryIndex build type")
+
+
+SYSTEMS.update({"ngt": Ngt, "scann": Scann, "pynndescent": Pynndescent, "voyager": Voyager, "diskann": Diskann})
 
 
 def wait_for_idle(max_load, max_wait):
