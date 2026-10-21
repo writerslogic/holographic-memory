@@ -133,17 +133,19 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
             if only_builds is None or build_id in only_builds.get(system, cls.BUILDS):
                 plan.append((system, build_id))
     state = {}
-    # --- builds (python systems; HMS builds inside its serve process)
+    # --- builds: every system builds and persists its index in a build process; serve rounds
+    # open the persisted index in fresh processes, so build memory never counts as serving memory
     for system, build_id in plan:
-        if system == registry.HMS:
-            continue
         key = (system, build_id)
         workdir = WORK / f"{dataset}-{n_train}" / f"{system}-{build_id}"
         builds = []
         try:
             for _ in range(spec["build_repeats"]):
-                result = _worker(system, ["build", "--system", system, "--build", build_id, "--data", str(directory), "--workdir", str(workdir),
-                                          "--threads", str(threads)], envb)
+                if system == registry.HMS:
+                    result = _hms_ann_build(directory, meta, threads, workdir)
+                else:
+                    result = _worker(system, ["build", "--system", system, "--build", build_id, "--data", str(directory), "--workdir", str(workdir),
+                                              "--threads", str(threads)], envb)
                 builds.append(result | {"index_bytes": dir_bytes(workdir)})
             state[key] = {"builds": builds, "workdir": workdir, "serves": []}
         except Exception as error:  # a system that cannot run is recorded, never silently dropped
@@ -152,20 +154,15 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
     # --- serve rounds
     for r in range(rounds):
         for system, build_id in _rotate(plan, r):
+            key = (system, build_id)
+            if key not in state:
+                continue
             if system == registry.HMS:
                 try:
-                    state.setdefault((system, build_id), {"serves": [], "builds": []})
-                    cache = WORK / f"hms-{dataset}-{meta['n_train']}.graph"
-                    fresh = r < spec["build_repeats"]
-                    if fresh:
-                        cache.unlink(missing_ok=True)
-                    state[(system, build_id)]["serves"].append(_hms_ann_round(directory, meta, threads, cache, fresh))
+                    state[key]["serves"].append(_hms_ann_round(directory, meta, state[key]["workdir"]))
                 except Exception as error:
                     results["skipped"][f"{system}:{build_id}"] = str(error)[-600:]
                     log(f"hms round failed: {str(error)[-300:]}")
-                continue
-            key = (system, build_id)
-            if key not in state:
                 continue
             try:
                 merged = None
@@ -245,27 +242,50 @@ def _hms_ann_args(build):
             "--rerank", build["rerank"], *(["--quantized-search"] if build["quantized_search"] else []), "--ef", build["ef"]]
 
 
-def _hms_ann_round(directory, meta, threads, cache, fresh):
-    """One `public-bench ann-qgraph` process. Rounds with `fresh` build the graph (build time and
-    build RSS are taken from those only); later rounds load the saved graph structure, so a
-    heavy dataset does not pay a full build per serve round."""
+def _hms_ann_command(directory, meta, out):
+    return [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--metric", meta["metric"],
+            *_hms_ann_args(HMS_ANN_BUILDS[meta["metric"]]), "--max-load", "1000000", "--max-wait-secs", "0"]
+
+
+def _hms_ann_build(directory, meta, threads, workdir):
+    """One `public-bench ann-qgraph --save-index` process: builds and encodes the index on
+    `threads` threads and writes it to `workdir` (the index file and its build record), as each
+    comparator's build process persists its index. Build time and build peak RSS come from here."""
+    shutil.rmtree(workdir, ignore_errors=True)
+    workdir.mkdir(parents=True)
+    out = WORK / "hms-ann-build.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.unlink(missing_ok=True)
+    cmd = [*_hms_ann_command(directory, meta, out), "--save-index", str(workdir / "index.vgraph")]
+    stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
+    raw = json.loads(out.read_text())
+    out.unlink()
+    return {"build_s": raw["build"]["build_secs"], "peak_rss_bytes": peak, "wall_s": wall, "n": meta["n_train"],
+            "in_memory_index_bytes": raw["index_bytes"], "residual_bytes": raw["residual_bytes"], "graph_hash": raw["build"]["graph_hash"],
+            "memory_phases": raw["memory_phases"], "hms_threads": raw["build"]["threads"]}
+
+
+def _hms_ann_round(directory, meta, workdir):
+    """One serving process, single-threaded like every comparator's: `public-bench ann-qgraph
+    --load-index` opens the saved index (memory-mapped and prefaulted before the timer, so its
+    file-backed pages count in RSS) and runs the sweep. It never reads the train vectors."""
     out = WORK / "hms-ann-out.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
-    cmd = [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--metric", meta["metric"],
-           *_hms_ann_args(HMS_ANN_BUILDS[meta["metric"]]), "--repeats", "2", "--latency",
-           "--max-load", "1000000", "--max-wait-secs", "0", "--graph-cache", str(cache)]
-    stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
+    t0 = time.time_ns()
+    cmd = [*_hms_ann_command(directory, meta, out), "--repeats", "2", "--latency", "--load-index", str(workdir / "index.vgraph")]
+    stdout, stderr, wall, peak = run_measured(cmd, env=SINGLE_THREAD, timeout=14400)
     raw = json.loads(out.read_text())
     out.unlink()
     configs = [{"params": row["params"], "recall_at_10": row["recall_at_10"],
                 "repeats": [{"qps": q, **({"p50_us": row["latency_us"]["p50"], "p99_us": row["latency_us"]["p99"]} if row.get("latency_us") else {})}
                             for q in row["qps_runs"]],
                 "load_1m": row["load_1m_before_runs"][0], "load_gate_met": None} for row in raw["sweep"]]
-    return {"build_s": raw["build"]["build_secs"], "index_bytes": raw["index_bytes"], "residual_bytes": raw["residual_bytes"],
-            "rss_after_build": raw["rss_bytes"]["after_build"], "rss_steady": raw["rss_bytes"]["end"], "peak_rss_bytes": peak,
-            "wall_s": wall, "n_queries": raw["n_queries"], "n": meta["n_train"], "configs": configs, "open_s": None, "cold_start_s": None,
-            "hms_threads": raw["build"]["threads"], "graph_built": fresh}
+    return {"index_bytes": raw["index_file"]["bytes"], "in_memory_index_bytes": raw["index_bytes"], "residual_bytes": raw["residual_bytes"],
+            "rss_after_open": raw["rss_bytes"]["after_build"], "rss_steady": raw["rss_bytes"]["end"], "peak_rss_bytes": peak,
+            "memory_phases": raw["memory_phases"], "graph_hash": raw["build"]["graph_hash"],
+            "wall_s": wall, "n_queries": raw["n_queries"], "n": meta["n_train"], "configs": configs,
+            "open_s": raw["index_file"]["open_secs"], "cold_start_s": (raw["first_query_unix_ns"] - t0) / 1e9}
 
 
 def _adapter_class(system):

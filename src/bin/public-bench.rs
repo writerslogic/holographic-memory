@@ -32,7 +32,7 @@ use std::time::Instant;
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
 use holographic_memory::core::qgraph::{
-    BuildParams, Graph, Metric, QGraph, SearchParams, VGraph, VSearchParams,
+    BuildParams, Graph, Metric, QGraph, Residency, SearchParams, VGraph, VSearchParams,
 };
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
@@ -172,6 +172,23 @@ enum Mode {
         /// individually and record p50/p99 latency (the throughput runs are unchanged).
         #[arg(long)]
         latency: bool,
+        /// Build and encode the vertex index, write it to this file (and the build record to
+        /// `<file>.json`), then exit without searching: the build half of a two-process run
+        /// whose serving process passes `--load-index`.
+        #[arg(long, conflicts_with = "load_index")]
+        save_index: Option<PathBuf>,
+        /// Serve a vertex index written by `--save-index` instead of building one. The train
+        /// vectors are not read; the build parameters and dataset must match the saved ones.
+        #[arg(long)]
+        load_index: Option<PathBuf>,
+        /// Where a loaded index lives: `prefaulted` (mapped, every page touched while
+        /// opening), `mapped` (pages read on first touch) or `heap` (read into owned memory).
+        #[arg(long, default_value = "prefaulted")]
+        residency: String,
+        /// With `--load-index` (Linux): drop the index file's cached pages before opening it,
+        /// so the first queries read it from disk.
+        #[arg(long)]
+        cold: bool,
     },
     Beir {
         #[arg(long)]
@@ -322,6 +339,120 @@ impl Drop for TempStore {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.0);
     }
+}
+
+/// `path` as one row-major matrix of `dim` little-endian floats per row, read in 1 MiB chunks
+/// so the data is resident once (not as the file's bytes and again as rows).
+fn read_f32_flat(path: &Path, dim: usize) -> Result<Vec<f32>> {
+    use std::io::Read;
+    let mut file = fs::File::open(path).with_context(|| path.display().to_string())?;
+    let len = usize::try_from(file.metadata()?.len())?;
+    ensure!(
+        len.is_multiple_of(4 * dim),
+        "{} is not a multiple of {dim} floats",
+        path.display()
+    );
+    let mut out = Vec::with_capacity(len / 4);
+    let mut buf = vec![0u8; 1 << 20];
+    let mut left = len;
+    while left > 0 {
+        let take = left.min(buf.len());
+        file.read_exact(&mut buf[..take])?;
+        out.extend(
+            buf[..take]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_le_bytes(*b)),
+        );
+        left -= take;
+    }
+    Ok(out)
+}
+
+/// Memory of this process. Linux: the resident set and its anonymous and file-backed parts
+/// with the peak so far (`/proc/self/status`), and `Rss`, `Anonymous` and `Pss_File` from
+/// `/proc/self/smaps_rollup`, in bytes. Elsewhere: the resident set from `ps`.
+fn memory() -> Value {
+    #[cfg(target_os = "linux")]
+    {
+        let mut out = serde_json::Map::new();
+        let sources: [(&str, &str, &[&str]); 2] = [
+            (
+                "/proc/self/status",
+                "",
+                &["VmRSS", "VmHWM", "RssAnon", "RssFile", "RssShmem"],
+            ),
+            (
+                "/proc/self/smaps_rollup",
+                "smaps_",
+                &["Rss", "Anonymous", "Pss_File"],
+            ),
+        ];
+        for (file, prefix, keys) in sources {
+            let Ok(text) = fs::read_to_string(file) else {
+                continue;
+            };
+            for line in text.lines() {
+                let Some((k, v)) = line.split_once(':') else {
+                    continue;
+                };
+                let kb = v.trim().strip_suffix("kB").map(|n| n.trim().parse::<u64>());
+                if let (true, Some(Ok(kb))) = (keys.contains(&k), kb) {
+                    out.insert(format!("{prefix}{k}"), json!(kb * 1024));
+                }
+            }
+        }
+        Value::Object(out)
+    }
+    #[cfg(not(target_os = "linux"))]
+    json!({ "VmRSS": rss_bytes() })
+}
+
+/// Records the memory at the end of phase `name`. Peaks are never reset: the harness reads the
+/// process peak from `wait4`, which the same counter feeds.
+fn phase(phases: &mut Vec<Value>, name: &str) {
+    let m = memory();
+    let mib = |k: &str| m[k].as_u64().map_or(-1.0, |b| b as f64 / (1 << 20) as f64);
+    eprintln!(
+        "phase {name}: rss {:.0} MiB (anon {:.0}, file {:.0}), peak {:.0} MiB",
+        mib("VmRSS"),
+        mib("RssAnon"),
+        mib("RssFile"),
+        mib("VmHWM")
+    );
+    phases.push(json!({"phase": name, "memory": m}));
+}
+
+/// Drops the page-cache pages of `path` that no process maps (Linux
+/// `posix_fadvise(POSIX_FADV_DONTNEED)`), so the next reads of it come from disk.
+fn evict(path: &Path) -> Result<()> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::fd::AsRawFd;
+        extern "C" {
+            fn posix_fadvise(fd: i32, offset: i64, len: i64, advice: i32) -> i32;
+        }
+        const POSIX_FADV_DONTNEED: i32 = 4;
+        let file = fs::File::open(path).with_context(|| path.display().to_string())?;
+        // SAFETY: `file` is open for the duration of the call, which only advises the kernel
+        // about its cached pages.
+        let rc = unsafe { posix_fadvise(file.as_raw_fd(), 0, 0, POSIX_FADV_DONTNEED) };
+        ensure!(rc == 0, "posix_fadvise({}) failed: {rc}", path.display());
+        Ok(())
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = path;
+        anyhow::bail!("--cold needs Linux (posix_fadvise)")
+    }
+}
+
+/// The build record written next to a saved index.
+fn index_record(path: &Path) -> PathBuf {
+    let mut s = path.as_os_str().to_owned();
+    s.push(".json");
+    PathBuf::from(s)
 }
 
 fn rss_bytes() -> Option<u64> {
@@ -506,6 +637,10 @@ struct QgraphArgs {
     sync: Option<PathBuf>,
     graph_cache: Option<PathBuf>,
     latency: bool,
+    save_index: Option<PathBuf>,
+    load_index: Option<PathBuf>,
+    residency: String,
+    cold: bool,
 }
 
 enum Built {
@@ -591,9 +726,29 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     );
     let d = m["dim"].as_u64().context("meta.dim")? as usize;
     let width = m["n_neighbors"].as_u64().context("meta.n_neighbors")? as usize;
-    let rows = read_f32(&a.data.join("train.f32"), d)?;
+    let load = a.load_index.as_deref();
+    ensure!(
+        load.is_none() || (a.holdout.is_none() && a.index == "vertex"),
+        "--load-index serves a saved vertex index on the dataset's test queries (no --holdout)"
+    );
+    ensure!(
+        a.save_index.is_none() || a.index == "vertex",
+        "--save-index writes the vertex index (--index vertex)"
+    );
+    ensure!(
+        !a.cold || load.is_some(),
+        "--cold applies to an index opened with --load-index"
+    );
+    let residency = match a.residency.as_str() {
+        "prefaulted" => Residency::Prefaulted,
+        "mapped" => Residency::Mapped,
+        "heap" => Residency::Heap,
+        other => anyhow::bail!("--residency is prefaulted, mapped or heap, not {other}"),
+    };
+    let mut phases = Vec::new();
     let (mut train, mut test, truth) = match a.holdout {
         Some(n) => {
+            let rows = read_f32(&a.data.join("train.f32"), d)?;
             let (keep, q, t) = holdout_split(rows, n, K, metric)?;
             (keep.concat(), q, t)
         }
@@ -603,9 +758,14 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
             if let Some(q) = a.queries {
                 test.truncate(q);
             }
-            (rows.concat(), test, truth)
+            let train = match load {
+                Some(_) => Vec::new(),
+                None => read_f32_flat(&a.data.join("train.f32"), d)?,
+            };
+            (train, test, truth)
         }
     };
+    phase(&mut phases, "input");
     // Angular queries are normalized outside the timer, as evaluate.py does for the other
     // systems; Euclidean ones are used as given.
     if metric == Metric::Angular {
@@ -622,13 +782,56 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         degree: a.degree,
         ..BuildParams::default()
     };
+    let build_params = json!({"index": a.index, "metric": metric_name, "degree": a.degree, "build_ef": a.build_ef, "quantized_search": a.quantized_search,
+                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
+                              "residual": a.residual, "residual_bits": a.residual_bits,
+                              "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes, "screen": a.screen,
+                              "block_bits": a.block_bits, "align_rows": a.align_rows, "reorder": a.reorder});
     let wait = if a.sync.is_some() { 0 } else { a.max_wait_secs };
     let deadline = Instant::now() + std::time::Duration::from_secs(wait);
     let (load_before_build, build_gate) = wait_for_idle(a.max_load, deadline);
     let t = Instant::now();
     let mut graph_hash = None;
-    let index = match a.index.as_str() {
-        "edge" => Built::Edge(QGraph::build(&train, d, &params)?),
+    let (mut open_secs, mut index_file_bytes, mut saved_build_secs) = (None, None, None);
+    let index = match (a.index.as_str(), load) {
+        (_, Some(p)) => {
+            let record: Value = serde_json::from_str(
+                &fs::read_to_string(index_record(p))
+                    .with_context(|| format!("reading the build record of {}", p.display()))?,
+            )?;
+            ensure!(
+                record["build_params"] == build_params,
+                "{} was built with {} but {build_params} was requested",
+                p.display(),
+                record["build_params"]
+            );
+            ensure!(
+                record["dataset"] == m,
+                "{} was built for another dataset ({})",
+                p.display(),
+                record["dataset"]
+            );
+            graph_hash = record["graph_hash"].as_str().map(String::from);
+            saved_build_secs = record["build_secs"].as_f64();
+            if a.cold {
+                evict(p)?;
+            }
+            let t = Instant::now();
+            let v =
+                VGraph::open(p, residency).with_context(|| format!("opening {}", p.display()))?;
+            open_secs = Some(t.elapsed().as_secs_f64());
+            ensure!(
+                v.metric() == metric && v.dim() == d,
+                "{} indexes {:?} vectors of dimension {}, the dataset is {metric:?} in {d}",
+                p.display(),
+                v.metric(),
+                v.dim()
+            );
+            index_file_bytes = Some(fs::metadata(p)?.len());
+            phase(&mut phases, "open");
+            Built::Vertex(Box::new(v))
+        }
+        ("edge", None) => Built::Edge(QGraph::build(&train, d, &params)?),
         _ => {
             // The cache header records n, dim, degree, build_ef, alpha, seed and a data
             // fingerprint; a mismatch is an error, never a silent reuse.
@@ -645,6 +848,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 }
             };
             graph_hash = Some(format!("{:016x}", graph.structure_hash()));
+            phase(&mut phases, "graph");
             anyhow::ensure!(
                 matches!(a.residual_bits, 4 | 8) && matches!(a.vertex_bits, 4 | 8),
                 "--residual-bits and --vertex-bits must be 4 or 8"
@@ -662,17 +866,32 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
             if a.block_bits > 0 {
                 v = v.with_blocks(&graph, a.block_bits)?;
             }
+            phase(&mut phases, "encode");
             Built::Vertex(Box::new(v))
         }
     };
-    let build_secs = t.elapsed().as_secs_f64();
+    let build_secs = saved_build_secs.unwrap_or_else(|| t.elapsed().as_secs_f64());
     let load_after_build = load_1m();
+    if load.is_none() {
+        phase(&mut phases, "drop_graph");
+    }
     drop(train);
     let (index_bytes, residual_bytes) = match &index {
         Built::Edge(g) => (g.index_bytes(), 0),
         Built::Vertex(g) => (g.index_bytes(), g.residual_bytes()),
     };
     eprintln!("built in {build_secs:.1}s, {index_bytes} bytes");
+    if let (Some(p), Built::Vertex(v)) = (&a.save_index, &index) {
+        v.save(p)
+            .with_context(|| format!("saving {}", p.display()))?;
+        let record = json!({"graph_hash": graph_hash, "build_params": build_params, "dataset": m, "build_secs": build_secs});
+        fs::write(
+            index_record(p),
+            serde_json::to_string_pretty(&record)? + "\n",
+        )?;
+        index_file_bytes = Some(fs::metadata(p)?.len());
+    }
+    phase(&mut phases, "serve_start");
     let rss_after_build = rss_bytes();
 
     // (sweep label, search) pairs; the second parameter is max_exact or rerank.
@@ -693,8 +912,10 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         Built::Edge(_) => (&[0], &[1.0]),
         Built::Vertex(_) => (&a.patience, &a.screen_sigmas),
     };
+    // A build-only run (`--save-index`) searches nothing.
     let configs: Vec<(usize, usize, usize, f32)> = seconds
         .iter()
+        .filter(|_| a.save_index.is_none())
         .flat_map(|&second| {
             a.ef.iter().flat_map(move |&ef| {
                 pat.iter()
@@ -754,6 +975,19 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     let mut acc: Vec<Acc> = vec![(Vec::new(), Vec::new(), true, 0.0, 0.0, 0.0); configs.len()];
     let mut ids: Vec<u32> = Vec::with_capacity(test.len() * K);
     let mut out = Vec::with_capacity(K);
+    // The first query alone, before the timed rounds: after `--cold` it pays the first page
+    // faults of the index.
+    // Also its wall-clock end, from which a harness measures the cold start of the process.
+    let (first_query_us, first_query_unix_ns) = match (configs.first(), test.first()) {
+        (Some(&cfg), Some(q)) => {
+            let t = Instant::now();
+            search(q, cfg, &mut out);
+            let us = t.elapsed().as_secs_f64() * 1e6;
+            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?;
+            (Some(us), Some(now.as_nanos() as u64))
+        }
+        _ => (None, None),
+    };
     // Round-major, so one round of every configuration is a unit a coordinator can pair.
     for rep in 0..a.repeats {
         if let Some(go) = sync_path(format!(".go.{rep}")) {
@@ -802,6 +1036,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         }
     }
     let rss_end = rss_bytes();
+    phase(&mut phases, "serve_end");
     let mut latency: Vec<Option<(f64, f64)>> = vec![None; configs.len()];
     if a.latency {
         for (slot, &cfg) in latency.iter_mut().zip(&configs) {
@@ -859,6 +1094,13 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "index_bytes": index_bytes,
         "residual_bytes": residual_bytes,
         "rss_bytes": {"after_build": rss_after_build, "end": rss_end},
+        "memory_phases": phases,
+        "index_file": {"saved": a.save_index.as_ref().map(|p| p.display().to_string()),
+                       "loaded": load.map(|p| p.display().to_string()),
+                       "bytes": index_file_bytes, "residency": load.map(|_| a.residency.as_str()),
+                       "cold": a.cold, "open_secs": open_secs},
+        "first_query_us": first_query_us,
+        "first_query_unix_ns": first_query_unix_ns,
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
             "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read.",
@@ -1327,6 +1569,10 @@ fn main() -> Result<()> {
             sync,
             graph_cache,
             latency,
+            save_index,
+            load_index,
+            residency,
+            cold,
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
@@ -1360,6 +1606,10 @@ fn main() -> Result<()> {
             sync,
             graph_cache,
             latency,
+            save_index,
+            load_index,
+            residency,
+            cold,
         }),
         Mode::Beir { data, dim, out } => beir(&data, dim, &out),
         Mode::Longmemeval {

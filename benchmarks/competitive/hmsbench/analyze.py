@@ -124,10 +124,10 @@ def ann_metrics(path, results, level=0.95):
         steady = [r["rss_steady"] / 2**20 for r in build["serve_rounds"] if r.get("rss_steady")]
         if steady:
             put("serving_rss_mib", system, cell(_med(steady), ci(steady), len(steady), src + ".serve_rounds[*].rss_steady", "MiB",
-                                                "HMS: same process as the build" if system in ("hms", "hms-eager") else "fresh serving process"))
+                                                "fresh serving process"))
         cold = [r["cold_start_s"] for r in build["serve_rounds"] if r.get("cold_start_s") is not None]
         put("cold_start_s", system, cell(_med(cold) if cold else None, ci(cold) if cold else None, len(cold), src + ".serve_rounds[*].cold_start_s", "s",
-                                         "" if cold else "not measured: HMS has no persisted ANN index to reopen"))
+                                         "" if cold else "not measured"))
         ops = entry.get("ops", {})
         for name in ("replace", "delete"):
             o = ops.get(name)
