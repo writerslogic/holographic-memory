@@ -215,9 +215,10 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
     return out_path
 
 
-HMS_ANN_BUILD = {"index": "vertex", "degree": 32, "build_ef": 200, "residual": True, "residual_bits": 8, "vertex_bits": 4,
-                 "id_bytes": 3, "align_rows": True, "reorder": True, "rerank": 64,
-                 "source": "accepted configuration in benchmarks/results/qgraph_pool_paired_x86_glove_v4.json (tuned on a train holdout, not on these queries)"}
+HMS_ANN_BUILD = {"index": "vertex", "degree": 64, "build_ef": 500, "residual": True, "residual_bits": 8, "vertex_bits": 4,
+                 "id_bytes": 3, "align_rows": True, "reorder": True, "rerank": 64, "quantized_search": True,
+                 "source": "accepted configuration in benchmarks/results/qgraph_pool_paired_x86_glove_v4.json (tuned on a train holdout, not on these queries); "
+                           "quantized construction search per benchmarks/results/ann_modal_confirm_v1.json (equal recall, 2.3x faster build)"}
 
 
 def _hms_ann_round(directory, meta, threads, cache, fresh):
@@ -229,9 +230,9 @@ def _hms_ann_round(directory, meta, threads, cache, fresh):
     out.unlink(missing_ok=True)
     efs = "64,96,128,192,256,384,512,736,1024"
     cmd = [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--index", "vertex",
-           "--degree", "32", "--build-ef", "200", "--residual", "--residual-bits", "8", "--vertex-bits", "4", "--id-bytes", "3",
-           "--align-rows", "--reorder", "--rerank", "64", "--ef", efs, "--repeats", "2", "--latency", "--max-load", "1000000",
-           "--max-wait-secs", "0", "--graph-cache", str(cache)]
+           "--degree", "64", "--build-ef", "500", "--residual", "--residual-bits", "8", "--vertex-bits", "4", "--id-bytes", "3",
+           "--align-rows", "--reorder", "--rerank", "64", "--quantized-search", "--ef", efs, "--repeats", "2", "--latency",
+           "--max-load", "1000000", "--max-wait-secs", "0", "--graph-cache", str(cache)]
     stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
     raw = json.loads(out.read_text())
     out.unlink()
@@ -257,7 +258,7 @@ def _attach_versions_and_footprints(results):
     cache = {}
     for system, entry in results["systems"].items():
         reg = registry.SYSTEMS[system]
-        if system == registry.HMS:
+        if reg["family"] == "hms":
             entry["version"] = _hms_version()
             continue
         if system == "lucene":
@@ -297,9 +298,14 @@ def run_text(dataset, spec, systems, out_path=None):
                "protocol": {"rounds": spec["rounds"], "build_repeats": spec["build_repeats"], "k": 100, "passes_per_round": 3,
                             "retrieval": "lexical only, OR over the lowercase alphanumeric query word set, top 100; each system's own analyzer and default BM25",
                             "timing": "one query at a time, single client thread; HMS timed inside its process, Python systems inside their worker",
+                            "hms_rows": "hms = `--encode lexical` (BM25 index only, like-for-like); hms-eager = default eager encoding (chunk hypervectors at ingest); every build repeat is one cold process",
                             "interleaving": "each round runs HMS and every comparator once, order rotated per round"},
                "facts": registry.FACTS, "timing_boundary": registry.TIMING_BOUNDARY, "not_run": registry.NOT_RUN, "systems": {}, "skipped": {}}
     input_path = folder / "input.json"
+    # Every system's serve phase reads the queries alone, so no worker's serving RSS includes
+    # the parsed corpus it does not need.
+    serve_input_path = folder / "serve-input.json"
+    serve_input_path.write_text(json.dumps({"documents": [], "queries": json.loads(input_path.read_text())["queries"]}))
     qrels = json.loads((folder / "qrels.json").read_text())
     results["qrels_queries"] = len(qrels)
     threads = {k: "1" for k in SINGLE_THREAD}
@@ -325,7 +331,7 @@ def run_text(dataset, spec, systems, out_path=None):
             out = stores[system].with_suffix(".serve.json")
             try:
                 t0 = time.time_ns()
-                stdout, stderr, wall, peak = _text_cmd(system, "serve", input_path, stores[system], out, threads, t0=t0)
+                stdout, stderr, wall, peak = _text_cmd(system, "serve", serve_input_path, stores[system], out, threads, t0=t0)
                 body = json.loads(out.read_text())
                 body["quality"] = _quality(body.pop("rows"), qrels) if r == 0 else None
                 runs[system]["serve_rounds"].append(body | {"peak_rss_bytes": peak, "wall_s": wall})
@@ -346,8 +352,10 @@ def run_text(dataset, spec, systems, out_path=None):
         if system in stores:
             results["systems"][system] = {"display": registry.SYSTEMS[system]["display"], **body}
     _attach_versions_and_footprints(results)
-    if registry.HMS in results["systems"]:
-        results["systems"][registry.HMS]["install"] = hms_install_facts([hms_binary("competitive_text", example=True)])
+    for system in registry.HMS_TEXT_ENCODE:
+        if system in results["systems"]:
+            results["systems"][system]["install"] = hms_install_facts([hms_binary("competitive_text", example=True)])
+            results["systems"][system]["encode"] = registry.HMS_TEXT_ENCODE[system]
     out_path = out_path or _out_dir(spec) / f"{spec['name']}-text-{dataset.replace(':', '-')}-{hw['class']}.json"
     write_json(out_path, results)
     return out_path
@@ -355,9 +363,9 @@ def run_text(dataset, spec, systems, out_path=None):
 
 def _text_cmd(system, phase, input_path, store, out, env, t0=None):
     t0 = t0 or time.time_ns()
-    if system == registry.HMS:
+    if system in registry.HMS_TEXT_ENCODE:
         cmd = [str(hms_binary("competitive_text", example=True)), phase, "--input", str(input_path), "--store", str(store),
-               "--out", str(out), "--t0-ns", str(t0)]
+               "--out", str(out), "--t0-ns", str(t0), "--encode", registry.HMS_TEXT_ENCODE[system]]
     elif system == "lucene":
         classpath, _ = jars.ensure()
         cmd = ["java", "-cp", classpath, "LuceneBm25", phase, str(input_path), str(store), str(out), str(t0), "3", "100"]

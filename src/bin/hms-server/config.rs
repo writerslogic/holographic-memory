@@ -158,6 +158,13 @@ pub struct Config {
     /// stores answer from the exact scan, which is faster at that size.
     #[arg(long, env = "HMS_GRAPH_MIN_ROWS", default_value_t = 4096)]
     pub graph_min_rows: usize,
+    /// When ingest computes chunk hypervectors (the text-vector channel of `HmsCore::query`):
+    /// `eager` (at ingest, as before this flag), `deferred` (on the first vector query or
+    /// index maintenance; needs stored text and a text encoder) or `lexical` (never: an
+    /// embedding-only workload skips the channel's encoding time and memory). Text search and
+    /// `query_vector` search see every document in every mode.
+    #[arg(long, env = "HMS_INGEST_ENCODE", default_value = "eager")]
+    pub ingest_encode: String,
     /// Maximum number of tenant stores open at once.
     #[arg(long, env = "HMS_MAX_TENANTS", default_value_t = 64)]
     pub max_tenants: usize,
@@ -272,6 +279,13 @@ impl Config {
             .contains(&self.graph_min_rows)
         {
             bail!("--graph-min-rows must be 128..=4194304");
+        }
+        if self
+            .ingest_encode
+            .parse::<holographic_memory::core::documents::EncodeMode>()
+            .is_err()
+        {
+            bail!("--ingest-encode must be eager, deferred or lexical");
         }
         if self.max_batch == 0 || self.max_batch > MAX_BATCH_DOCUMENTS {
             bail!("--max-batch must be 1..=4096 (the native transaction limit)");

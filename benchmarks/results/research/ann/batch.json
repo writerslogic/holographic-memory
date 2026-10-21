@@ -1,0 +1,274 @@
+{
+  "build": {
+    "build_secs": 1.02454,
+    "graph_hash": "f4728708cb2b4604",
+    "load_1m_after_build": 19.99,
+    "load_1m_before_build": 19.99,
+    "load_gate_met": true,
+    "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 32,
+      "fuse": false,
+      "graph_cache": "benchmarks/results/research/ann/glove-100.graph",
+      "id_bytes": 3,
+      "index": "vertex",
+      "neighbour_cap": 0,
+      "quantized_search": false,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 4
+    },
+    "threads": 10
+  },
+  "dataset": {
+    "dim": 100,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1183514,
+    "name": "glove-100-angular",
+    "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+    "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+  },
+  "environment": {
+    "arch": "aarch64",
+    "cpu": "Apple M4",
+    "hms_version": "0.6.1",
+    "load_average": "{ 16.09 13.27 8.47 }",
+    "os": "macos",
+    "rayon_threads": 10
+  },
+  "holdout": {
+    "n_queries": 2000,
+    "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read."
+  },
+  "index_bytes": 359620124,
+  "max_load": 1000.0,
+  "n_queries": 2000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": false,
+  "repeats": 5,
+  "residual_bytes": 155959848,
+  "rss_bytes": {
+    "after_build": 2501476352,
+    "end": 2502819840
+  },
+  "sweep": [
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        19.99,
+        18.55,
+        18.55,
+        17.14,
+        17.14
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3306.4845,
+      "params": {
+        "ef": 128,
+        "patience": 0,
+        "rerank": 64,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        13306.483865030046,
+        14489.503039676772,
+        14715.895762571794,
+        14934.92580265388,
+        14366.048717066957
+      ],
+      "qps_single_thread": 14489.503039676772,
+      "recall_at_10": 0.85355,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        19.99,
+        18.55,
+        18.55,
+        17.14,
+        17.14
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4581.902,
+      "params": {
+        "ef": 192,
+        "patience": 0,
+        "rerank": 64,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        10119.750396558864,
+        10507.091958725516,
+        10575.904256338768,
+        10447.526319604196,
+        10364.401526885706
+      ],
+      "qps_single_thread": 10447.526319604196,
+      "recall_at_10": 0.8827,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        19.99,
+        18.55,
+        18.55,
+        17.14,
+        17.14
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5810.9095,
+      "params": {
+        "ef": 256,
+        "patience": 0,
+        "rerank": 64,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        7558.051751627999,
+        7824.624102221704,
+        8148.535580835255,
+        7847.176242673926,
+        7451.007280066271
+      ],
+      "qps_single_thread": 7824.624102221704,
+      "recall_at_10": 0.9005,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        19.99,
+        18.55,
+        18.55,
+        17.14,
+        17.14
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 7006.764,
+      "params": {
+        "ef": 320,
+        "patience": 0,
+        "rerank": 64,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        6260.875826093217,
+        6369.412389987349,
+        6344.321402992371,
+        6298.104231263239,
+        6271.30855421632
+      ],
+      "qps_single_thread": 6298.104231263239,
+      "recall_at_10": 0.9129,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        19.99,
+        18.55,
+        18.55,
+        17.14,
+        17.14
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 8183.8455,
+      "params": {
+        "ef": 384,
+        "patience": 0,
+        "rerank": 64,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        5106.592131699012,
+        5324.466917433795,
+        4842.891561149099,
+        5382.301512494004,
+        5303.655843120512
+      ],
+      "qps_single_thread": 5303.655843120512,
+      "recall_at_10": 0.9222,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        19.99,
+        18.55,
+        18.55,
+        17.14,
+        17.14
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 10473.654,
+      "params": {
+        "ef": 512,
+        "patience": 0,
+        "rerank": 64,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        4033.972771333263,
+        4005.461775578867,
+        3912.403882726734,
+        3363.738490712269,
+        4032.5568477099864
+      ],
+      "qps_single_thread": 4005.461775578867,
+      "recall_at_10": 0.93685,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        19.99,
+        18.55,
+        18.55,
+        17.14,
+        17.14
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 14341.2625,
+      "params": {
+        "ef": 736,
+        "patience": 0,
+        "rerank": 64,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        2697.8004856920356,
+        2741.6545748276353,
+        2753.796638083001,
+        2379.1122282766555,
+        2647.898510307921
+      ],
+      "qps_single_thread": 2697.8004856920356,
+      "recall_at_10": 0.95065,
+      "screened_per_query": 0.0
+    }
+  ],
+  "system": "hms qgraph-vertex"
+}

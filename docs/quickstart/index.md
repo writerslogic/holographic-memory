@@ -1,7 +1,7 @@
 # Quickstart
 
-Five minutes, one small public corpus, four steps: **ingest** documents, **search** them,
-**compare** with SQLite FTS5, and **encrypt** the store. Pick Rust, Python or Node.
+Five minutes, one small public corpus: **ingest** documents, **search** them,
+**compare** with SQLite FTS5, **encrypt** the store, and **remember** facts that change. Pick Rust, Python or Node.
 
 The corpus is the 30 articles of the Universal Declaration of Human Rights, a United Nations
 document in the public domain (`examples/quickstart/corpus.jsonl`). The queries are eight
@@ -186,12 +186,27 @@ every pairwise similarity and stores text and metadata in plaintext
 - [Concepts](../concepts/index.md): what is lossy, and the tested capacity range.
 - [Production readiness](../production-readiness.md): storage format, locking, migration, limits.
 
-<!-- COORDINATOR-FILL: embeddings-and-memory-api
-     The bundled embeddings and the memory API are being added by other work. When both have
-     merged, add the following here, with executed code in examples/quickstart/ like the rest:
-     (a) a "Add embeddings" step that swaps toy_embed for the bundled model, and
-     (b) a "Memory API" step. Then delete this comment and the notice below. -->
+## 4. Remember what changed
 
-!!! note "Embeddings and the memory API"
-    The bundled embedding models and the high-level memory API are not part of this quickstart
-    yet. This section will show them, with executed code, after they are released.
+Agents need facts that change. The memory API keeps old facts as history, lets a newer fact
+replace an older one, and answers "what was true as of" a date.
+
+```rust
+--8<-- "examples/quickstart/rust/src/bin/memory.rs:memory"
+```
+
+Output (CI diffs it):
+
+```text
+--8<-- "examples/quickstart/expected-memory.txt"
+```
+
+`forget` and `explain` complete the set; see the [memory API](../memory-api/README.md).
+
+## 5. Use real embeddings
+
+The Python script above uses a toy hashed embedding. For semantic search on your machine with no
+API key and no service, build with the `local-embed` feature and set
+`text_encoder: TextEncoder::LocalEmbedV1`: chunks and queries are embedded by a bundled model and
+search fuses cosine with BM25. Options, model choice and offline packs are in
+[local embeddings](../embeddings/README.md).

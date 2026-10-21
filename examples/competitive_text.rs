@@ -12,6 +12,7 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
+use holographic_memory::core::documents::{EncodeMode, IngestOptions};
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
 use serde_json::json;
@@ -37,6 +38,13 @@ struct Args {
     /// Unix epoch nanoseconds taken by the orchestrator just before spawning this process.
     #[arg(long, default_value_t = 0)]
     t0_ns: u128,
+    /// `build` only: eager (chunk hypervectors at ingest, the default) | deferred | lexical
+    /// (BM25 index only, like-for-like with the lexical comparators).
+    #[arg(long, default_value = "eager")]
+    encode: String,
+    /// `build` only: documents per atomic batch (0 = the whole corpus in one batch).
+    #[arg(long, default_value_t = 0)]
+    batch: usize,
 }
 
 #[derive(Deserialize)]
@@ -66,12 +74,21 @@ fn main() -> Result<()> {
     let report = match args.phase.as_str() {
         "build" => {
             ensure!(!args.store.exists(), "store exists; remove it first");
+            let mode: EncodeMode = args.encode.parse()?;
+            let options = IngestOptions { encode: mode };
             let start = Instant::now();
             let core = HmsCore::new(1024, Some(store), None)?;
-            for chunk in input.documents.chunks(512) {
-                core.memorize_documents(chunk.to_vec())?;
+            // One atomic batch, as the comparators load the corpus in one transaction.
+            let count = input.documents.len();
+            if args.batch == 0 {
+                core.memorize_documents_with(input.documents, &options)?;
+            } else {
+                for chunk in input.documents.chunks(args.batch) {
+                    core.memorize_documents_with(chunk.to_vec(), &options)?;
+                }
             }
-            json!({"documents": input.documents.len(), "ingest_s": start.elapsed().as_secs_f64()})
+            json!({"documents": count, "ingest_s": start.elapsed().as_secs_f64(),
+                "encode": mode.name()})
         }
         "serve" => {
             ensure!(
@@ -96,7 +113,12 @@ fn main() -> Result<()> {
                     let results = core.search_documents(&query.text, &query.options)?;
                     ns.push(t.elapsed().as_nanos() as u64);
                     if pass == 0 {
-                        rows.push(json!({"id": query.id, "results": results}));
+                        // The same fields the Python workers keep: id and score per hit.
+                        let hits: Vec<_> = results
+                            .iter()
+                            .map(|r| json!({"documentId": r.document_id, "lexicalScore": r.score}))
+                            .collect();
+                        rows.push(json!({"id": query.id, "results": hits}));
                     }
                 }
                 passes.push(ns);

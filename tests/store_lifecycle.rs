@@ -59,3 +59,48 @@ fn compact_reopen_and_delete_with_live_readers() -> anyhow::Result<()> {
     assert!(!path.exists());
     Ok(())
 }
+
+/// One committed batch larger than the replay chunk (512 mutations) reopens to the same
+/// documents and the same ranked results: chunked replay applies the frame in order.
+#[test]
+fn large_single_batch_reopens_identically() -> anyhow::Result<()> {
+    let dir = tempfile::tempdir()?;
+    let path = dir.path().join("store");
+    let open = || HmsCore::new(1024, Some(path.display().to_string()), None);
+    let documents: Vec<DocumentInput> = (0..1_300)
+        .map(|n| {
+            serde_json::from_value(serde_json::json!({
+                "id": format!("doc{n}"),
+                "text": format!("shared topic{} item{n} word{} common", n % 37, n % 101),
+            }))
+            .unwrap()
+        })
+        .collect();
+    let queries = ["topic5 common", "item1299", "word7 topic11", "shared"];
+    let snapshot = |hms: &HmsCore| -> anyhow::Result<Vec<Vec<(String, u64)>>> {
+        queries
+            .iter()
+            .map(|q| {
+                let options = SearchOptions {
+                    k: Some(50),
+                    ..Default::default()
+                };
+                Ok(hms
+                    .search_documents(q, &options)?
+                    .into_iter()
+                    .map(|r| (r.document_id, r.score.to_bits()))
+                    .collect())
+            })
+            .collect()
+    };
+    let before = {
+        let hms = open()?;
+        hms.memorize_documents(documents)?;
+        hms.flush()?;
+        snapshot(&hms)?
+    };
+    let hms = open()?;
+    assert_eq!(snapshot(&hms)?, before);
+    assert!(before.iter().all(|hits| !hits.is_empty()));
+    Ok(())
+}

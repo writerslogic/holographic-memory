@@ -84,7 +84,7 @@ impl HmsCore {
             text: chunk.and_then(|chunk| store.chunk_text(chunk)),
             source_uri: document.source_uri.clone(),
             version: document.version.clone(),
-            embedding: chunk.and_then(|chunk| chunk.embedding.clone()),
+            embedding: chunk.and_then(|chunk| chunk.embedding.as_ref().map(|e| e.to_f64())),
         })
     }
 

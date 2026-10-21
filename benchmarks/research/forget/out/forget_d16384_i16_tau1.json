@@ -1,0 +1,1790 @@
+{
+  "schema": "hms-research-forget/v1",
+  "generated_unix_s": 1792563503,
+  "config": {
+    "dim": 16384,
+    "ns": [
+      100,
+      1000,
+      10000
+    ],
+    "delete_fracs": [
+      0.01,
+      0.1
+    ],
+    "tau": "1",
+    "counter": "i16",
+    "probes": 2000,
+    "survivor_sample": 2000,
+    "runs": 5,
+    "warmup": 1,
+    "seed": 42,
+    "sigma": 3.0,
+    "z_threshold": 3.0,
+    "policy": {
+      "max_items": 18446744073709551615,
+      "max_view_density": 1.0
+    },
+    "threads": 1
+  },
+  "shards": {
+    "per_document": true,
+    "deletion_already_exact": true,
+    "note": "The engine's document-store shards keep one EntangledHVec per id (no superposition); remove() drops the map entry, removes the id's postings from the inverted index and invalidates the IVF/NSG snapshots, so deletion there is already exact. Counter bundles apply to the engine's superposition stores (bloom / counting-bloom / composite memories), which have no delete today.",
+    "evidence": [
+      "src/core/engine/shard.rs:24-35 Shard { vectors: RwLock<FxHashMap<String, EntangledHVec>>, inverted, nsg, ivf, .. }",
+      "src/core/engine/shard.rs:100-116 Shard::remove: vectors.remove(id); inverted.remove_doc(slot, old.indices()); ivf = None; nsg = None",
+      "src/core/engine/mutation.rs:451-454,600 shards.remove(chunk, dims) / shards.insert(chunk, vector, dims)",
+      "src/core/counting_bloom_memory.rs:31-61 CountingBloomMemory { counts: Vec<u32> } insert only, saturating_add, no delete",
+      "src/core/entangled.rs:356-443 bundle (majority threshold, top-k truncation) and bundle_bloom (union)"
+    ]
+  },
+  "rows": [
+    {
+      "n": 100,
+      "delete_frac": 0.01,
+      "k_deleted": 1,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "bafe278e35f2ac6c78fe39fa5c4db51f4a616c9ca915c480dec92a8e69b144f1",
+        "rebuild_state_digest": "bafe278e35f2ac6c78fe39fa5c4db51f4a616c9ca915c480dec92a8e69b144f1",
+        "view_digest_after": "c93237be6ac6fa551266f21569f201720ecc272483064a3feb34126802b542c4",
+        "rebuild_view_digest": "c93237be6ac6fa551266f21569f201720ecc272483064a3feb34126802b542c4",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 0.3231201171875,
+        "view_density_after": 0.32061767578125,
+        "lambda_full": 0.390625,
+        "lambda_after": 0.38671875,
+        "certificates": {
+          "issued": 1,
+          "verified": 1,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 1,
+          "max_abs_view_z": 0.6656248985483498,
+          "max_abs_count_z": 0.2513129747175485,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "80e4359164fd5d4f40710024e7b387f4348dff6f9d8c36a66696db6d1209522c",
+            "state_before": "068ad990c9728a32aca363f9b226572975ddeebaa2313bc25bba09e99602cb5a",
+            "state_after": "bafe278e35f2ac6c78fe39fa5c4db51f4a616c9ca915c480dec92a8e69b144f1",
+            "view_after": "c93237be6ac6fa551266f21569f201720ecc272483064a3feb34126802b542c4",
+            "items_before": 100,
+            "items_after": 99,
+            "residual": {
+              "active": 64,
+              "view_size": 5253,
+              "view_density": 0.32061767578125,
+              "view_overlap": 23,
+              "overlap_fraction": 0.359375,
+              "cosine": 0.039667437727165696,
+              "view_null_mean": 20.51953125,
+              "view_null_sd": 3.7265263895770917,
+              "view_z": 0.6656248985483498,
+              "count_dot": 26,
+              "count_null_mean": 24.75,
+              "count_null_sd": 4.9738776973408525,
+              "count_z": 0.2513129747175485,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 1,
+              "mean": 0.359375,
+              "sd": 0.0,
+              "min": 0.359375,
+              "max": 0.359375
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.3218984375,
+              "sd": 0.05978276359376131,
+              "min": 0.125,
+              "max": 0.5625
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 0.6267223965412222,
+            "z_survivors_vs_random": 110.1653791599772,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 1,
+              "mean": 0.034629379356596476,
+              "sd": 0.0,
+              "min": 0.034629379356596476,
+              "max": 0.034629379356596476
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.03306772753753431,
+              "sd": 0.0067149984610687784,
+              "min": 0.011987092854206472,
+              "max": 0.05860356506500942
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 0.11849866875404114,
+              "sd": 0.006757858951194207,
+              "min": 0.10788383568785825,
+              "max": 0.14118131583843177
+            },
+            "z_deleted_vs_random": 0.2325036351836768,
+            "z_survivors_vs_random": 123.56505007252498,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 99,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 99,
+          "ledger_payload_bytes": 1188,
+          "view_size": 5253,
+          "view_density": 0.32061767578125,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 21012,
+          "bytes_per_item_counter": 330.989898989899,
+          "bytes_per_item_total": 342.989898989899,
+          "per_document_store_bytes": 25344,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 306.25,
+            "runs": [
+              282.91,
+              305.0,
+              306.25,
+              314.59,
+              337.08
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 333.0,
+            "runs": [
+              333.0,
+              333.0,
+              333.0,
+              334.0,
+              375.0
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 76292.0,
+            "runs": [
+              71458.0,
+              76167.0,
+              76292.0,
+              76292.0,
+              76333.0
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 85.208,
+            "runs": [
+              78.125,
+              82.708,
+              85.208,
+              85.375,
+              85.708
+            ]
+          },
+          "state_digest_us": {
+            "median": 19.666,
+            "runs": [
+              19.291,
+              19.625,
+              19.666,
+              19.667,
+              19.667
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.030958,
+            "runs": [
+              0.030375,
+              0.030459,
+              0.030958,
+              0.031042,
+              0.031209
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 84.58,
+            "runs": [
+              78.75,
+              79.59,
+              84.58,
+              92.08,
+              117.5
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.3231201171875,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 1,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.32440625,
+              "sd": 0.059953427071739125,
+              "min": 0.125,
+              "max": 0.5625
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 11.265826623469492,
+            "z_survivors_vs_random": 109.44551915115535,
+            "frac_deleted_over_threshold": 1.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": true,
+          "distinguishable": true
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.3192138671875,
+          "bits_cleared": 64,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 1,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.3205390625,
+              "sd": 0.05977273610350488,
+              "min": 0.125,
+              "max": 0.546875
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 0.9958964646464646,
+              "sd": 0.007918873581659753,
+              "min": 0.96875,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -5.361289756210539,
+            "z_survivors_vs_random": 109.73796540752684,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.004103535353535359,
+          "leaks": false,
+          "distinguishable": true
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": true,
+        "pass": true
+      }
+    },
+    {
+      "n": 100,
+      "delete_frac": 0.1,
+      "k_deleted": 10,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "47c63454ac2f290ca4d761e21b03b3a5f53ba9d384085f4a060e49fa323e3e0f",
+        "rebuild_state_digest": "47c63454ac2f290ca4d761e21b03b3a5f53ba9d384085f4a060e49fa323e3e0f",
+        "view_digest_after": "7a8ab2c4dd02eb7fbf80f24e9829badd48d8cc20000b590f58675514594d7b93",
+        "rebuild_view_digest": "7a8ab2c4dd02eb7fbf80f24e9829badd48d8cc20000b590f58675514594d7b93",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 0.3231201171875,
+        "view_density_after": 0.29449462890625,
+        "lambda_full": 0.390625,
+        "lambda_after": 0.3515625,
+        "certificates": {
+          "issued": 10,
+          "verified": 10,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 10,
+          "max_abs_view_z": 1.4733539827448623,
+          "max_abs_count_z": 1.5559394197463814,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "79ac6a87a100fa7f7f9f3706047890fa51190292e313fa00b6129ef3f71ab0a6",
+            "state_before": "068ad990c9728a32aca363f9b226572975ddeebaa2313bc25bba09e99602cb5a",
+            "state_after": "939f27c6241c10806b17a2216dfc8c1ddb1629009379b81649981e25d0a8a735",
+            "view_after": "86c88c8baf2ce42245a186cda99f72bcaafc9eec10297a282aa1566a801e3377",
+            "items_before": 100,
+            "items_after": 99,
+            "residual": {
+              "active": 64,
+              "view_size": 5245,
+              "view_density": 0.32012939453125,
+              "view_overlap": 15,
+              "overlap_fraction": 0.234375,
+              "cosine": 0.025889789883460305,
+              "view_null_mean": 20.48828125,
+              "view_null_sd": 3.725025563629534,
+              "view_z": -1.4733539827448623,
+              "count_dot": 17,
+              "count_null_mean": 24.75,
+              "count_null_sd": 4.9809137178767875,
+              "count_z": -1.5559394197463814,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 0.253125,
+              "sd": 0.04588065738655258,
+              "min": 0.171875,
+              "max": 0.3125
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.2968046875,
+              "sd": 0.05856458441211322,
+              "min": 0.125,
+              "max": 0.546875
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -2.352672228256542,
+            "z_survivors_vs_random": 111.43048243455897,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 10,
+              "mean": 0.027758044840500158,
+              "sd": 0.005315889649112528,
+              "min": 0.01831749151911178,
+              "max": 0.03522594522906111
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.03189145725367818,
+              "sd": 0.006822551788968631,
+              "min": 0.011272302473299555,
+              "max": 0.05917958798482267
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 0.12321252842342706,
+              "sd": 0.007128951914692586,
+              "min": 0.10990494911467066,
+              "max": 0.14794896996205667
+            },
+            "z_deleted_vs_random": -1.9110799999265582,
+            "z_survivors_vs_random": 124.2187816919081,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 90,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 90,
+          "ledger_payload_bytes": 1080,
+          "view_size": 4825,
+          "view_density": 0.29449462890625,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 19300,
+          "bytes_per_item_counter": 364.0888888888889,
+          "bytes_per_item_total": 376.0888888888889,
+          "per_document_store_bytes": 23040,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 291.67,
+            "runs": [
+              279.58,
+              286.67,
+              291.67,
+              321.25,
+              504.16
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 300.0,
+            "runs": [
+              291.7,
+              295.9,
+              300.0,
+              358.4,
+              541.7
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 83287.5,
+            "runs": [
+              70529.2,
+              77491.6,
+              83287.5,
+              106700.0,
+              130820.9
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 79.792,
+            "runs": [
+              74.459,
+              75.75,
+              79.792,
+              87.833,
+              175.584
+            ]
+          },
+          "state_digest_us": {
+            "median": 20.584,
+            "runs": [
+              18.125,
+              18.208,
+              20.584,
+              20.625,
+              29.458
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.029958,
+            "runs": [
+              0.026125,
+              0.02725,
+              0.029958,
+              0.031291,
+              0.049
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 142.09,
+            "runs": [
+              75.0,
+              75.83,
+              142.09,
+              159.17,
+              222.5
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.3231201171875,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.32440625,
+              "sd": 0.059953427071739125,
+              "min": 0.125,
+              "max": 0.5625
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 35.54582340501606,
+            "z_survivors_vs_random": 104.57664849599615,
+            "frac_deleted_over_threshold": 1.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": true,
+          "distinguishable": true
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.28466796875,
+          "bits_cleared": 630,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.2868203125,
+              "sd": 0.05779824438827753,
+              "min": 0.125,
+              "max": 0.515625
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 0.9659722222222222,
+              "sd": 0.021155629661027735,
+              "min": 0.90625,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -15.653527724082032,
+            "z_survivors_vs_random": 109.04741845629738,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.03402777777777777,
+          "leaks": false,
+          "distinguishable": true
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": true,
+        "pass": true
+      }
+    },
+    {
+      "n": 1000,
+      "delete_frac": 0.01,
+      "k_deleted": 10,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "e122544ea2f97cfaadec76e1ae1959460e0eaa9912c68038b83ebe49f9b26398",
+        "rebuild_state_digest": "e122544ea2f97cfaadec76e1ae1959460e0eaa9912c68038b83ebe49f9b26398",
+        "view_digest_after": "451e3370da77333494e7e8762bbd22b7bbeba18f188c899faa4e8bffd635b71d",
+        "rebuild_view_digest": "451e3370da77333494e7e8762bbd22b7bbeba18f188c899faa4e8bffd635b71d",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 0.980224609375,
+        "view_density_after": 0.9793701171875,
+        "lambda_full": 3.90625,
+        "lambda_after": 3.8671875,
+        "certificates": {
+          "issued": 10,
+          "verified": 10,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 10,
+          "max_abs_view_z": 1.5368224648620221,
+          "max_abs_count_z": 2.5479925481999945,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "80e4359164fd5d4f40710024e7b387f4348dff6f9d8c36a66696db6d1209522c",
+            "state_before": "a5bc24f35bfb5a0577dae8ec15a96083ce19ae9bc346cbc7e56c559618601daa",
+            "state_after": "7fc410e1a74268e1a6b4a6fee1e29106d823980101e6241e09dcdac8326395ba",
+            "view_after": "80fc894c5ca7fa7abd280727a34f302e78f5094e3220d9884ddc970a0d48264a",
+            "items_before": 1000,
+            "items_after": 999,
+            "residual": {
+              "active": 64,
+              "view_size": 16060,
+              "view_density": 0.980224609375,
+              "view_overlap": 64,
+              "overlap_fraction": 1.0,
+              "cosine": 0.06312730027373704,
+              "view_null_mean": 62.734375,
+              "view_null_sd": 1.1116771648922383,
+              "view_z": 1.1384825019075433,
+              "count_dot": 253,
+              "count_null_mean": 249.75,
+              "count_null_sd": 15.738705937441006,
+              "count_z": 0.20649728210935905,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 0.978125,
+              "sd": 0.01317615691736825,
+              "min": 0.953125,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.9790078125,
+              "sd": 0.017843721472140556,
+              "min": 0.90625,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 990,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -0.15606302021657076,
+            "z_survivors_vs_random": 30.27396204861868,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 10,
+              "mean": 0.05759598041120122,
+              "sd": 0.004505027794275987,
+              "min": 0.05180710009611372,
+              "max": 0.06464625098949843
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.055700178420074624,
+              "sd": 0.0035438495332557668,
+              "min": 0.04347291442847804,
+              "max": 0.06599774055722313
+            },
+            "survivors": {
+              "n": 990,
+              "mean": 0.07006859095212645,
+              "sd": 0.003473932998102749,
+              "min": 0.058564547934737254,
+              "max": 0.08244086363120705
+            },
+            "z_deleted_vs_random": 1.687464596977444,
+            "z_survivors_vs_random": 104.33511892979799,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 990,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 990,
+          "ledger_payload_bytes": 11880,
+          "view_size": 16046,
+          "view_density": 0.9793701171875,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 64184,
+          "bytes_per_item_counter": 33.0989898989899,
+          "bytes_per_item_total": 45.0989898989899,
+          "per_document_store_bytes": 253440,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 312.25,
+            "runs": [
+              296.125,
+              298.541,
+              312.25,
+              495.375,
+              514.834
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 350.0,
+            "runs": [
+              308.3,
+              316.6,
+              350.0,
+              512.5,
+              704.2
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 144183.3,
+            "runs": [
+              96991.7,
+              99195.9,
+              144183.3,
+              146883.4,
+              162079.2
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 108.125,
+            "runs": [
+              101.917,
+              102.0,
+              108.125,
+              115.542,
+              155.542
+            ]
+          },
+          "state_digest_us": {
+            "median": 18.833,
+            "runs": [
+              18.791,
+              18.792,
+              18.833,
+              19.667,
+              28.042
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.315083,
+            "runs": [
+              0.29375,
+              0.30025,
+              0.315083,
+              0.324959,
+              0.491291
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 127.292,
+            "runs": [
+              113.0,
+              118.083,
+              127.292,
+              144.167,
+              190.667
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 0.980224609375,
+          "view_density_after": 0.980224609375,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.980078125,
+              "sd": 0.017406246477704303,
+              "min": 0.90625,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 990,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 3.61028968834763,
+            "z_survivors_vs_random": 29.45249444726984,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": true,
+          "distinguishable": true
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 0.980224609375,
+          "view_density_after": 0.9415283203125,
+          "bits_cleared": 634,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.9412890625,
+              "sd": 0.029254433730291924,
+              "min": 0.828125,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 990,
+              "mean": 0.9600378787878788,
+              "sd": 0.024643857682630676,
+              "min": 0.859375,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -101.49585010134747,
+            "z_survivors_vs_random": 16.492221484021545,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.03996212121212117,
+          "leaks": false,
+          "distinguishable": true
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": true,
+        "pass": true
+      }
+    },
+    {
+      "n": 1000,
+      "delete_frac": 0.1,
+      "k_deleted": 100,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "c7b961c75cee11e83f6da2d297aa67b0c906a6a117edb3986e475491415731f9",
+        "rebuild_state_digest": "c7b961c75cee11e83f6da2d297aa67b0c906a6a117edb3986e475491415731f9",
+        "view_digest_after": "2c547517ae353fc9ea9aed46d0d6969ba721e11ec3fda6fc26e5e6c547a21d6a",
+        "rebuild_view_digest": "2c547517ae353fc9ea9aed46d0d6969ba721e11ec3fda6fc26e5e6c547a21d6a",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 0.980224609375,
+        "view_density_after": 0.97039794921875,
+        "lambda_full": 3.90625,
+        "lambda_after": 3.515625,
+        "certificates": {
+          "issued": 100,
+          "verified": 100,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 100,
+          "max_abs_view_z": 2.989284167998013,
+          "max_abs_count_z": 2.5330290991993873,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "79ac6a87a100fa7f7f9f3706047890fa51190292e313fa00b6129ef3f71ab0a6",
+            "state_before": "a5bc24f35bfb5a0577dae8ec15a96083ce19ae9bc346cbc7e56c559618601daa",
+            "state_after": "7edb0f4eff5fa9e88c1d6e05377a4c4362e9d4ad8babbb6aa176860518ab598d",
+            "view_after": "d0e1e055234d1ad58dfc06e30934951799e3c3f014d5056d89bde0bb06eea80e",
+            "items_before": 1000,
+            "items_after": 999,
+            "residual": {
+              "active": 64,
+              "view_size": 16059,
+              "view_density": 0.98016357421875,
+              "view_overlap": 63,
+              "overlap_fraction": 0.984375,
+              "cosine": 0.06214287094663398,
+              "view_null_mean": 62.73046875,
+              "view_null_sd": 1.1133567303511365,
+              "view_z": 0.24208884955947027,
+              "count_dot": 242,
+              "count_null_mean": 249.75,
+              "count_null_sd": 15.741425336255926,
+              "count_z": -0.4923315287180548,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 0.97078125,
+              "sd": 0.02091072273839237,
+              "min": 0.921875,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.969859375,
+              "sd": 0.02121136446520139,
+              "min": 0.875,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 900,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 0.4241395602934671,
+            "z_survivors_vs_random": 35.40143780457457,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 100,
+              "mean": 0.055203140580055356,
+              "sd": 0.0037697077641698474,
+              "min": 0.04781084793742302,
+              "max": 0.06595445177008612
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.055143438316092426,
+              "sd": 0.0037101203608998832,
+              "min": 0.04364272273262204,
+              "max": 0.0666900032768157
+            },
+            "survivors": {
+              "n": 900,
+              "mean": 0.07080854686153347,
+              "sd": 0.003721032342998246,
+              "min": 0.05786338519606068,
+              "max": 0.08336250409601963
+            },
+            "z_deleted_vs_random": 0.1570392280817648,
+            "z_survivors_vs_random": 105.1919880950875,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 900,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 900,
+          "ledger_payload_bytes": 10800,
+          "view_size": 15899,
+          "view_density": 0.97039794921875,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 63596,
+          "bytes_per_item_counter": 36.40888888888889,
+          "bytes_per_item_total": 48.40888888888889,
+          "per_document_store_bytes": 230400,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 302.375,
+            "runs": [
+              289.208,
+              298.042,
+              302.375,
+              305.041,
+              483.167
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 334.58,
+            "runs": [
+              321.67,
+              325.42,
+              334.58,
+              340.0,
+              477.08
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 101735.83,
+            "runs": [
+              99173.33,
+              101607.5,
+              101735.83,
+              110182.09,
+              125051.66
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 109.666,
+            "runs": [
+              102.875,
+              108.583,
+              109.666,
+              115.792,
+              156.625
+            ]
+          },
+          "state_digest_us": {
+            "median": 19.708,
+            "runs": [
+              18.791,
+              19.625,
+              19.708,
+              19.75,
+              27.958
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.275667,
+            "runs": [
+              0.267667,
+              0.274958,
+              0.275667,
+              0.277834,
+              0.448584
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 130.541,
+            "runs": [
+              114.042,
+              122.125,
+              130.541,
+              134.708,
+              195.958
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 0.980224609375,
+          "view_density_after": 0.980224609375,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.980078125,
+              "sd": 0.017406246477704303,
+              "min": 0.90625,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 900,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 11.169415123860578,
+            "z_survivors_vs_random": 28.51427510946216,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": true,
+          "distinguishable": true
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 0.980224609375,
+          "view_density_after": 0.65521240234375,
+          "bits_cleared": 5325,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.655859375,
+              "sd": 0.05881616065641762,
+              "min": 0.46875,
+              "max": 0.828125
+            },
+            "survivors": {
+              "n": 900,
+              "mean": 0.6738715277777778,
+              "sd": 0.05730529287767138,
+              "min": 0.46875,
+              "max": 0.828125
+            },
+            "z_deleted_vs_random": -108.82267811485262,
+            "z_survivors_vs_random": 7.629677901117219,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.3261284722222222,
+          "leaks": false,
+          "distinguishable": true
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": true,
+        "pass": true
+      }
+    },
+    {
+      "n": 10000,
+      "delete_frac": 0.01,
+      "k_deleted": 100,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "294ee10e073b07c716fa924f9c2a6708d276683f5d66277c309363fafc66e6e5",
+        "rebuild_state_digest": "294ee10e073b07c716fa924f9c2a6708d276683f5d66277c309363fafc66e6e5",
+        "view_digest_after": "ef1dbadb40cc4f722acf4a194027648e52789affede2360f84cab30a4ac04dd7",
+        "rebuild_view_digest": "ef1dbadb40cc4f722acf4a194027648e52789affede2360f84cab30a4ac04dd7",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 1.0,
+        "view_density_after": 1.0,
+        "lambda_full": 39.0625,
+        "lambda_after": 38.671875,
+        "certificates": {
+          "issued": 100,
+          "verified": 100,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 100,
+          "max_abs_view_z": 0.0,
+          "max_abs_count_z": 2.8633422791250447,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "80e4359164fd5d4f40710024e7b387f4348dff6f9d8c36a66696db6d1209522c",
+            "state_before": "982a00c30d9365878268708ec328e8dc5582746bf6f850fb2ee1f0347c877415",
+            "state_after": "671f64e609b76e0f1c5a488bcca1e73b5b45d33b1bbe0e73f9488fca794b3a1c",
+            "view_after": "ef1dbadb40cc4f722acf4a194027648e52789affede2360f84cab30a4ac04dd7",
+            "items_before": 10000,
+            "items_after": 9999,
+            "residual": {
+              "active": 64,
+              "view_size": 16384,
+              "view_density": 1.0,
+              "view_overlap": 64,
+              "overlap_fraction": 1.0,
+              "cosine": 0.0625,
+              "view_null_mean": 64.0,
+              "view_null_sd": 0.0,
+              "view_z": 0.0,
+              "count_dot": 2502,
+              "count_null_mean": 2499.75,
+              "count_null_sd": 49.710399527529404,
+              "count_z": 0.045262158851770234,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 0.0,
+            "z_survivors_vs_random": 0.0,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": false
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 100,
+              "mean": 0.06182791970765298,
+              "sd": 0.0013270155374760025,
+              "min": 0.05824848074734421,
+              "max": 0.06513057864386262
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.06177342396507016,
+              "sd": 0.0012481059607576102,
+              "min": 0.05807393478620063,
+              "max": 0.06580382735113073
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.06331072505027366,
+              "sd": 0.0012369536363492563,
+              "min": 0.05934562678881816,
+              "max": 0.06784850861024128
+            },
+            "z_deleted_vs_random": 0.4261048407274616,
+            "z_survivors_vs_random": 38.95000129428714,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 9900,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 9900,
+          "ledger_payload_bytes": 118800,
+          "view_size": 16384,
+          "view_density": 1.0,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 65536,
+          "bytes_per_item_counter": 3.30989898989899,
+          "bytes_per_item_total": 15.30989898989899,
+          "per_document_store_bytes": 2534400,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 307.9291,
+            "runs": [
+              290.8375,
+              300.3416,
+              307.9291,
+              315.9333,
+              344.8042
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 442.5,
+            "runs": [
+              352.92,
+              425.41,
+              442.5,
+              471.67,
+              474.17
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 106571.66,
+            "runs": [
+              98753.75,
+              100537.92,
+              106571.66,
+              107222.08,
+              119977.08
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 106.458,
+            "runs": [
+              103.292,
+              106.209,
+              106.458,
+              111.333,
+              158.583
+            ]
+          },
+          "state_digest_us": {
+            "median": 19.667,
+            "runs": [
+              18.834,
+              19.625,
+              19.667,
+              20.625,
+              28.875
+            ]
+          },
+          "rebuild_ms": {
+            "median": 3.061084,
+            "runs": [
+              3.05775,
+              3.0595,
+              3.061084,
+              3.247583,
+              3.38325
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 65.0166,
+            "runs": [
+              62.4542,
+              64.1291,
+              65.0166,
+              65.2375,
+              66.3125
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 1.0,
+          "view_density_after": 1.0,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 0.0,
+            "z_survivors_vs_random": 0.0,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": false
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": false,
+          "distinguishable": false
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 1.0,
+          "view_density_after": 0.677490234375,
+          "bits_cleared": 5284,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.67746875,
+              "sd": 0.059158741655774345,
+              "min": 0.453125,
+              "max": 0.859375
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.67515625,
+              "sd": 0.06013149887031511,
+              "min": 0.453125,
+              "max": 0.84375
+            },
+            "z_deleted_vs_random": -111.7572456818508,
+            "z_survivors_vs_random": -1.2361262062823821,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": false
+          },
+          "survivor_bits_lost_frac": 0.32484375,
+          "leaks": false,
+          "distinguishable": false
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": null,
+        "pass": true
+      }
+    },
+    {
+      "n": 10000,
+      "delete_frac": 0.1,
+      "k_deleted": 1000,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "af7baf535d17743381a82c340ecb4b65a88fa8b86c302e6886f299cc9ae41144",
+        "rebuild_state_digest": "af7baf535d17743381a82c340ecb4b65a88fa8b86c302e6886f299cc9ae41144",
+        "view_digest_after": "ef1dbadb40cc4f722acf4a194027648e52789affede2360f84cab30a4ac04dd7",
+        "rebuild_view_digest": "ef1dbadb40cc4f722acf4a194027648e52789affede2360f84cab30a4ac04dd7",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 1.0,
+        "view_density_after": 1.0,
+        "lambda_full": 39.0625,
+        "lambda_after": 35.15625,
+        "certificates": {
+          "issued": 1000,
+          "verified": 1000,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 999,
+          "max_abs_view_z": 0.0,
+          "max_abs_count_z": 3.4568300330952666,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "79ac6a87a100fa7f7f9f3706047890fa51190292e313fa00b6129ef3f71ab0a6",
+            "state_before": "982a00c30d9365878268708ec328e8dc5582746bf6f850fb2ee1f0347c877415",
+            "state_after": "d7b4979f4f8e8d688082cb3fe06f55dbec1d70b2a541aead59338c36a6a76d01",
+            "view_after": "ef1dbadb40cc4f722acf4a194027648e52789affede2360f84cab30a4ac04dd7",
+            "items_before": 10000,
+            "items_after": 9999,
+            "residual": {
+              "active": 64,
+              "view_size": 16384,
+              "view_density": 1.0,
+              "view_overlap": 64,
+              "overlap_fraction": 1.0,
+              "cosine": 0.0625,
+              "view_null_mean": 64.0,
+              "view_null_sd": 0.0,
+              "view_z": 0.0,
+              "count_dot": 2443,
+              "count_null_mean": 2499.75,
+              "count_null_sd": 49.71501771270622,
+              "count_z": -1.1415061808475584,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 1000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 0.0,
+            "z_survivors_vs_random": 0.0,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": false
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 1000,
+              "mean": 0.061629009344230705,
+              "sd": 0.0013077407994493008,
+              "min": 0.05725372870595322,
+              "max": 0.06703343260452992
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.06171028772369041,
+              "sd": 0.0012961519305517831,
+              "min": 0.057281122834520665,
+              "max": 0.06607463810466946
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.06341980461987724,
+              "sd": 0.001269871743129161,
+              "min": 0.05944525899134856,
+              "max": 0.06771828581871596
+            },
+            "z_deleted_vs_random": -1.6190993387642512,
+            "z_survivors_vs_random": 41.70781960869854,
+            "frac_deleted_over_threshold": 0.001,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 9000,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 9000,
+          "ledger_payload_bytes": 108000,
+          "view_size": 16384,
+          "view_density": 1.0,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 65536,
+          "bytes_per_item_counter": 3.640888888888889,
+          "bytes_per_item_total": 15.640888888888888,
+          "per_document_store_bytes": 2304000,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 322.9667,
+            "runs": [
+              295.9291,
+              307.6458,
+              322.9667,
+              323.8834,
+              345.4541
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 401.334,
+            "runs": [
+              394.542,
+              396.125,
+              401.334,
+              427.125,
+              432.792
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 107037.667,
+            "runs": [
+              103943.833,
+              105993.084,
+              107037.667,
+              107542.792,
+              108017.416
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 113.5,
+            "runs": [
+              106.875,
+              107.708,
+              113.5,
+              113.791,
+              118.375
+            ]
+          },
+          "state_digest_us": {
+            "median": 19.666,
+            "runs": [
+              18.75,
+              19.583,
+              19.666,
+              19.667,
+              20.667
+            ]
+          },
+          "rebuild_ms": {
+            "median": 2.802417,
+            "runs": [
+              2.788,
+              2.792125,
+              2.802417,
+              2.857917,
+              2.865042
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 67.9458,
+            "runs": [
+              65.3,
+              66.5666,
+              67.9458,
+              70.0333,
+              74.0916
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 1.0,
+          "view_density_after": 1.0,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 1000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 0.0,
+            "z_survivors_vs_random": 0.0,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": false
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": false,
+          "distinguishable": false
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 1.0,
+          "view_density_after": 0.02008056640625,
+          "bits_cleared": 16055,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 1000,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.02046875,
+              "sd": 0.017472951072932834,
+              "min": 0.0,
+              "max": 0.09375
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.0199921875,
+              "sd": 0.01746232168818669,
+              "min": 0.0,
+              "max": 0.09375
+            },
+            "z_deleted_vs_random": -30.24679976755132,
+            "z_survivors_vs_random": -0.8624890787672985,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": false
+          },
+          "survivor_bits_lost_frac": 0.9800078125,
+          "leaks": false,
+          "distinguishable": false
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": null,
+        "pass": true
+      }
+    }
+  ],
+  "overall": {
+    "pass": true,
+    "rows_pass": 6,
+    "rows_total": 6,
+    "rows_baseline_not_applicable": 2
+  }
+}

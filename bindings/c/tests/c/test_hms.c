@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "holographic_memory.h"
 
@@ -46,10 +49,80 @@ static void make_dir(char *buffer, size_t size, const char *tag) {
   snprintf(buffer, size, "%s/hms-c-test-%d-%s", base ? base : "/tmp", (int)getpid(), tag);
 }
 
+/* Whether the open stream contains the bytes of `needle`; closes the stream. */
+static int stream_contains(FILE *file, const char *needle) {
+  if (!file) return 0;
+  size_t length = strlen(needle), held = 0, capacity = 1 << 16;
+  char *buffer = malloc(capacity);
+  int found = 0;
+  size_t n;
+  while (buffer && !found && (n = fread(buffer + held, 1, capacity - held, file)) > 0) {
+    held += n;
+    for (size_t i = 0; i + length <= held; i++)
+      if (!memcmp(buffer + i, needle, length)) { found = 1; break; }
+    /* Keep the last length - 1 bytes so a match across reads is still seen. */
+    if (held >= length) {
+      memmove(buffer, buffer + held - (length - 1), length - 1);
+      held = length - 1;
+    }
+  }
+  free(buffer);
+  fclose(file);
+  return found;
+}
+
+static int file_contains(const char *path, const char *needle) {
+  return stream_contains(fopen(path, "rb"), needle);
+}
+
+/* Walks the directory open on `fd` (consumed) without following symlinks and without a
+   check-then-use gap: every entry is opened or removed relative to its parent descriptor.
+   With `needle`, returns 1 as soon as a file not named `skip` contains it; with `remove`,
+   deletes entries after visiting them. */
+static int walk_dir(int fd, const char *needle, const char *skip, int remove) {
+  DIR *dir = fdopendir(fd);
+  if (!dir) {
+    close(fd);
+    return 0;
+  }
+  int found = 0;
+  struct dirent *entry;
+  while (!found && (entry = readdir(dir)) != NULL) {
+    const char *name = entry->d_name;
+    if (!strcmp(name, ".") || !strcmp(name, "..")) continue;
+    int child = openat(dirfd(dir), name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (child >= 0) {
+      found = walk_dir(child, needle, skip, remove);
+      if (remove && unlinkat(dirfd(dir), name, AT_REMOVEDIR) != 0) fprintf(stderr, "cleanup of %s failed\n", name);
+      continue;
+    }
+    if (needle && !(skip && !strcmp(name, skip))) {
+      int file = openat(dirfd(dir), name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+      if (file >= 0) {
+        FILE *stream = fdopen(file, "rb");
+        if (!stream) close(file);
+        found = stream_contains(stream, needle);
+      }
+    }
+    if (remove && unlinkat(dirfd(dir), name, 0) != 0) fprintf(stderr, "cleanup of %s failed\n", name);
+  }
+  closedir(dir);
+  return found;
+}
+
+static int open_dir(const char *path) { return open(path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC); }
+
 static void remove_tree(const char *path) {
-  char command[1024];
-  snprintf(command, sizeof command, "rm -rf '%s'", path);
-  if (system(command) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
+  int fd = open_dir(path);
+  if (fd < 0) return;
+  walk_dir(fd, NULL, NULL, 1);
+  if (rmdir(path) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
+}
+
+/* Whether any file under `dir`, other than ones named `skip`, contains `needle`. */
+static int tree_contains(const char *dir, const char *needle, const char *skip) {
+  int fd = open_dir(dir);
+  return fd >= 0 && walk_dir(fd, needle, skip, 0);
 }
 
 static hms_store_t *open_store(const char *path, const char *key) {
@@ -305,14 +378,13 @@ static void test_encryption(void) {
   CHECK(hms_store_close(store) == HMS_OK);
 
   /* The transaction log, indices and keys hold no plaintext at rest. */
-  char command[1200];
-  snprintf(command, sizeof command, "grep -rlq swordfish '%s' --exclude=documents.text", dir);
-  CHECK(system(command) != 0);
+  CHECK(!tree_contains(dir, "swordfish", "documents.text"));
   /* ENGINE GAP (not the ABI): the engine writes chunk text to the documents.text sidecar
      unencrypted even when encryption is on. Reported, not hidden: it fails only under
      HMS_STRICT_AT_REST=1 until the engine encrypts that segment. */
-  snprintf(command, sizeof command, "grep -q swordfish '%s/documents.text'", dir);
-  if (system(command) == 0) {
+  char text_segment[1100];
+  snprintf(text_segment, sizeof text_segment, "%s/documents.text", dir);
+  if (file_contains(text_segment, "swordfish")) {
     fprintf(stderr, "WARNING: documents.text holds plaintext in an encrypted store (engine gap)\n");
     if (getenv("HMS_STRICT_AT_REST")) CHECK(0 && "documents.text must be encrypted");
   }
@@ -345,7 +417,11 @@ static void test_encryption(void) {
 static void test_chunking(void) {
   char text[4096];
   size_t used = 0;
-  for (int i = 0; i < 400; i++) used += (size_t)snprintf(text + used, sizeof text - used, "word%d ", i);
+  for (int i = 0; i < 400; i++) {
+    int n = snprintf(text + used, sizeof text - used, "word%d ", i);
+    if (n < 0 || (size_t)n >= sizeof text - used) break;
+    used += (size_t)n;
+  }
   hms_document_t d = doc("long", text, NULL);
   d.chunk_words = 100;
   d.overlap_words = 10;
@@ -410,7 +486,28 @@ static void test_concurrency(void) {
   remove_tree(dir);
 }
 
+/* The at-rest scan must find what is there, honour `skip`, and cleanup must remove the tree. */
+static void test_tree_helpers(void) {
+  char dir[512], sub[600], file[700];
+  make_dir(dir, sizeof dir, "helpers");
+  snprintf(sub, sizeof sub, "%s/nested", dir);
+  snprintf(file, sizeof file, "%s/plain.txt", sub);
+  CHECK(mkdir(dir, 0700) == 0 && mkdir(sub, 0700) == 0);
+  FILE *out = fopen(file, "wb");
+  CHECK(out != NULL);
+  if (out) {
+    fputs("prefix swordfish suffix", out);
+    fclose(out);
+  }
+  CHECK(tree_contains(dir, "swordfish", NULL));
+  CHECK(!tree_contains(dir, "swordfish", "plain.txt"));
+  CHECK(!tree_contains(dir, "unicorn", NULL));
+  remove_tree(dir);
+  CHECK(access(dir, F_OK) != 0);
+}
+
 int main(void) {
+  test_tree_helpers();
   test_versions();
   test_argument_validation();
   test_lifecycle_and_search();

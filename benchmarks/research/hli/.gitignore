@@ -1,0 +1,4 @@
+# token-embedding caches, model tables and resume state written by hli.py (regenerated on demand; ~2 GB)
+out/*.npy
+out/*.cache.json
+out/*.partial.json

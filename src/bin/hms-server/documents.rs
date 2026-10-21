@@ -14,7 +14,7 @@ use axum::extract::{Path as UrlPath, Query, Request, State};
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use holographic_memory::core::documents::{
-    GraphUnavailable, VectorIndexMode, VectorQueryOptions, MAX_EF,
+    GraphUnavailable, IngestOptions, VectorIndexMode, VectorQueryOptions, MAX_EF,
 };
 use holographic_memory::{chunk_document, DocumentInput, SearchOptions};
 use http_body_util::BodyExt;
@@ -150,7 +150,16 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
             .retry_after(60));
         }
     }
-    core.memorize_documents(inputs)
+    // Validated at startup (`Config::validate`); parsed per batch so the engine's error text
+    // is the one reported should the two ever disagree.
+    let options = IngestOptions {
+        encode: state
+            .cfg
+            .ingest_encode
+            .parse()
+            .map_err(ApiError::internal)?,
+    };
+    core.memorize_documents_with(inputs, &options)
         .map_err(ApiError::internal)?;
     core.bump();
     state

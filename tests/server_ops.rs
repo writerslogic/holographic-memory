@@ -192,7 +192,7 @@ fn snapshot_restore_and_off_box_backup_round_trip() {
         .send()
         .json();
     assert_eq!(hit["matches"][0]["id"], "a");
-    assert!((hit["matches"][0]["score"].as_f64().unwrap() - 1.0).abs() < 1e-9);
+    assert!((hit["matches"][0]["score"].as_f64().unwrap() - 1.0).abs() < 1e-6);
 
     // Delete.
     ok(

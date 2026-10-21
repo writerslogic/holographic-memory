@@ -1,0 +1,1448 @@
+{
+ "schema": "hms.research.relevance/1",
+ "generated_utc": "2026-10-21T05:59:06+00:00",
+ "protocol": {
+  "inputs": "NFCorpus cache; queries with IDCG@10 = 0 dropped; BM25 k1=1.2 b=0.75 HMS tokenizer (roc.py); cosine = Q D^T on l2-normalised f32 rows cast to f64.",
+  "pool": "BM25 top-200 (positive scores only) | cosine top-200; PRF adds | cos' top-200. Channels z-scored over the pool; fused = (1-w) z(BM25) + w z(dense); top-100 by score, ties to the lower document index.",
+  "metrics": "nDCG@10 linear gain over judged grades (1, 2); recall@100 = judged-relevant in the fused top-100 / judged-relevant.",
+  "folds": "primary: tune = odd 0-based query index in queries.jsonl order, eval = even; swapped: mirrored. Every parameter chosen by tune-fold mean nDCG@10; eval reported once per family.",
+  "prf_dense": "seed = baseline (zsum, tune weight w0) fused top-m; q' = normalize(q + alpha mean(D[seed])); cos' over the corpus; second-stage weight w' from the 21-point grid; grid m x alpha x w' = 189.",
+  "gates": "statistic computed from first-pass channels; tune-fold quantile edges (2,3,4 buckets; 2x2 or 3x3 for margin_2d); per-bucket weight = argmax tune mean nDCG@10 over its members; empty bucket -> global tune-best weight; margin_diff = ECDF_tune(cos_margin) - ECDF_tune(bm25_margin).",
+  "centroid_rerank": "c_b = normalize(mean D[positive BM25 top-m]) or q when none; score = fused + beta z(cos(doc, c_b)) over the baseline pool; grid m x beta x w = 168.",
+  "two_stage_prf": "baseline fused top-100 at w0; score = (1-lambda) z(fused) + lambda z(cos'); top-10 by score; recall@100 equals zsum's; grid (m, alpha) x lambda = 27.",
+  "prf_gate": "prf_dense tables (all m, alpha) with w' chosen per bucket by the gate; grid (m, alpha) x gate variants.",
+  "selection": "chosen = non-baseline family with the highest tune-fold nDCG@10 (ties: first in insertion order).",
+  "bootstrap": "paired percentile bootstrap of per-query (family - zsum) on the eval fold; 2000 resamples; numpy default_rng(0).",
+  "oracle_gap": "(family_eval - zsum_eval) / (oracle_eval - zsum_eval); oracles: best channel per query, best z-sum weight per query; null if the oracle does not exceed zsum.",
+  "verdict": "WIN iff chosen family on the primary fold has delta_vs_zsum_eval >= 0.01 and the bootstrap CI95 lower bound > 0; swapped fold reported as a replication check.",
+  "cost": "extra dim-384 dot products per query beyond the baseline (one corpus pass for cosine + BM25 postings)."
+ },
+ "constants": {
+  "ndcg_k": 10,
+  "recall_k": 100,
+  "candidate_k": 200,
+  "rrf_k": 60,
+  "weights": [
+   0.0,
+   0.05,
+   0.1,
+   0.15,
+   0.2,
+   0.25,
+   0.3,
+   0.35,
+   0.4,
+   0.45,
+   0.5,
+   0.55,
+   0.6,
+   0.65,
+   0.7,
+   0.75,
+   0.8,
+   0.85,
+   0.9,
+   0.95,
+   1.0
+  ],
+  "agreement_top": 20,
+  "prf_m": [
+   3,
+   5,
+   10
+  ],
+  "prf_alpha": [
+   0.5,
+   1.0,
+   2.0
+  ],
+  "buckets_1d": [
+   2,
+   3,
+   4
+  ],
+  "buckets_2d": [
+   2,
+   3
+  ],
+  "centroid_m": [
+   3,
+   5
+  ],
+  "centroid_beta": [
+   0.25,
+   0.5,
+   1.0,
+   2.0
+  ],
+  "stage2_lambda": [
+   0.5,
+   0.75,
+   1.0
+  ],
+  "stage2_top": 100,
+  "bootstrap": {
+   "n": 2000,
+   "seed": 0
+  },
+  "win_margin": 0.01,
+  "tie_eps": "1e-12"
+ },
+ "data": {
+  "n_corpus": 3633,
+  "n_queries_file": 323,
+  "n_queries_scored": 323,
+  "n_queries_dropped_no_relevant": 0,
+  "dim": 384,
+  "qrels": {
+   "judgments_kept": 12334,
+   "dropped_unknown_query": 0,
+   "dropped_unknown_doc": 0,
+   "grade_counts": {
+    "1": 11758,
+    "2": 576
+   }
+  },
+  "bm25_vocab": 27687,
+  "bm25_postings": 478542,
+  "pool_width_mean": 286.352941,
+  "pool_width_max": 393,
+  "corpus_row_norm_range": [
+   1.0,
+   1.0
+  ],
+  "input_sha256": {
+   "meta.json": "0737a428a4f9334c7daa67d75b7a12182186b64a7511aeb6283fcec486c3b496",
+   "corpus.jsonl": "ca2073ddc83589ff750d5c18a0e46bae7ce6b815bfc20c08e195ee9dde34814d",
+   "queries.jsonl": "3fb1c30be16affd2e6ae28c2069a4782a4a9f9d819bb98387433c5ad9ff9598c",
+   "qrels.tsv": "d32d000be0bc8259f5e358a35219abf575099ae7b00c9a918dab0cc3a5c6cfd7",
+   "corpus.f32": "7feee41cc0096b06ff0191bdf045ddc3365d9b60afe55a210b86c1f25397cfc7",
+   "queries.f32": "3d142bb2ca94d6c9e6a645722dca80aaf41f96d19d12bda46822d628694054d7"
+  },
+  "reference": "benchmarks/research/roc/out/roc_v1.json (round 1: zsum w=0.7 eval 0.3459, oracles 0.3774 / 0.3970 on all queries)"
+ },
+ "all_queries": {
+  "bm25_ndcg10": 0.304511,
+  "cosine_ndcg10": 0.316673,
+  "bm25_recall100": 0.237296,
+  "cosine_recall100": 0.31145,
+  "pool_recall100_union_top100": 0.357433,
+  "zsum_curve_ndcg10": [
+   0.304716,
+   0.321361,
+   0.324417,
+   0.327963,
+   0.331842,
+   0.33536,
+   0.338756,
+   0.341562,
+   0.344129,
+   0.345886,
+   0.346115,
+   0.347393,
+   0.346372,
+   0.347318,
+   0.345298,
+   0.342762,
+   0.336533,
+   0.32867,
+   0.326842,
+   0.321842,
+   0.316673
+  ],
+  "zsum_curve_recall100": [
+   0.255588,
+   0.290646,
+   0.293736,
+   0.299251,
+   0.303997,
+   0.308401,
+   0.31048,
+   0.314035,
+   0.319201,
+   0.318999,
+   0.318197,
+   0.319592,
+   0.319309,
+   0.32212,
+   0.32509,
+   0.320571,
+   0.318837,
+   0.318348,
+   0.317782,
+   0.315956,
+   0.31145
+  ],
+  "rrf_k60_ndcg10": 0.338332,
+  "oracle_best_channel": 0.377357,
+  "oracle_best_weight_z": 0.397052,
+  "stat_quantiles_10_50_90": {
+   "jaccard20": [
+    0.0,
+    0.125,
+    0.37931
+   ],
+   "cos_margin": [
+    0.003435,
+    0.025458,
+    0.107611
+   ],
+   "bm25_margin": [
+    0.0007,
+    0.071087,
+    0.344524
+   ]
+  }
+ },
+ "folds": {
+  "primary": {
+   "fold": "primary: tune=odd, eval=even",
+   "n_tune": 161,
+   "n_eval": 162,
+   "bm25": {
+    "ndcg10_tune": 0.300718,
+    "ndcg10_eval": 0.308281,
+    "recall100_eval": 0.256474
+   },
+   "cosine": {
+    "ndcg10_tune": 0.320122,
+    "ndcg10_eval": 0.313245,
+    "recall100_eval": 0.314224
+   },
+   "oracle_eval": {
+    "best_channel": 0.37519,
+    "best_weight_z": 0.39731,
+    "headroom_best_channel": 0.029302,
+    "headroom_best_weight": 0.051422
+   },
+   "families": {
+    "zsum": {
+     "params": {
+      "dense_weight": 0.7,
+      "norm": "z"
+     },
+     "ndcg10_tune": 0.344705,
+     "ndcg10_eval": 0.345888,
+     "recall100_tune": 0.321218,
+     "recall100_eval": 0.328937,
+     "delta_vs_zsum_eval": 0.0,
+     "gap_closed_best_weight_eval": 0.0,
+     "gap_closed_best_channel_eval": 0.0,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "p_mean_le_0": 1.0,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 21,
+     "cost": {
+      "extra_dots": 0,
+      "note": "baseline"
+     }
+    },
+    "rrf_k60": {
+     "params": {
+      "k": 60,
+      "dense_weight": 0.5
+     },
+     "ndcg10_tune": 0.33631,
+     "ndcg10_eval": 0.34034,
+     "recall100_tune": 0.312143,
+     "recall100_eval": 0.329287,
+     "delta_vs_zsum_eval": -0.005548,
+     "gap_closed_best_weight_eval": -0.107882,
+     "gap_closed_best_channel_eval": -0.189321,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.005548,
+      "ci95": [
+       -0.019888,
+       0.007837
+      ],
+      "p_mean_le_0": 0.7935,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 1,
+     "cost": {
+      "extra_dots": 0,
+      "note": "competitor baseline, untuned"
+     }
+    },
+    "prf_dense": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 1.0,
+      "dense_weight": 0.8,
+      "seed_weight": 0.7,
+      "seed": "baseline fused top-m",
+      "mean_pool_width": 348.402477
+     },
+     "ndcg10_tune": 0.368172,
+     "ndcg10_eval": 0.357472,
+     "recall100_tune": 0.343579,
+     "recall100_eval": 0.363634,
+     "delta_vs_zsum_eval": 0.011584,
+     "gap_closed_best_weight_eval": 0.225268,
+     "gap_closed_best_channel_eval": 0.39532,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.011584,
+      "ci95": [
+       0.000744,
+       0.022072
+      ],
+      "p_mean_le_0": 0.017,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 189,
+     "cost": {
+      "extra_dots": 3633,
+      "note": "one centroid (m vector adds) + full-corpus re-score with q'; pool-restricted variant would cost mean_pool_width"
+     }
+    },
+    "gate_jaccard20": {
+     "params": {
+      "channel": "cos",
+      "statistic": "jaccard20",
+      "buckets": 3,
+      "edges": [
+       0.081081,
+       0.212121
+      ],
+      "weight_per_cell": [
+       0.55,
+       0.9,
+       0.35
+      ],
+      "tune_members_per_cell": [
+       51,
+       54,
+       56
+      ]
+     },
+     "ndcg10_tune": 0.351258,
+     "ndcg10_eval": 0.341028,
+     "recall100_tune": 0.311067,
+     "recall100_eval": 0.327342,
+     "delta_vs_zsum_eval": -0.00486,
+     "gap_closed_best_weight_eval": -0.094512,
+     "gap_closed_best_channel_eval": -0.165858,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.00486,
+      "ci95": [
+       -0.01696,
+       0.00747
+      ],
+      "p_mean_le_0": 0.787,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "set overlap of two top-20 lists"
+     }
+    },
+    "gate_cos_margin": {
+     "params": {
+      "channel": "cos",
+      "statistic": "cos_margin",
+      "buckets": 4,
+      "edges": [
+       0.009826,
+       0.024499,
+       0.051289
+      ],
+      "weight_per_cell": [
+       0.5,
+       0.55,
+       0.75,
+       0.75
+      ],
+      "tune_members_per_cell": [
+       40,
+       40,
+       40,
+       41
+      ]
+     },
+     "ndcg10_tune": 0.348717,
+     "ndcg10_eval": 0.345275,
+     "recall100_tune": 0.316988,
+     "recall100_eval": 0.327385,
+     "delta_vs_zsum_eval": -0.000613,
+     "gap_closed_best_weight_eval": -0.011925,
+     "gap_closed_best_channel_eval": -0.020927,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.000613,
+      "ci95": [
+       -0.006081,
+       0.00529
+      ],
+      "p_mean_le_0": 0.5795,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "gate_bm25_margin": {
+     "params": {
+      "channel": "cos",
+      "statistic": "bm25_margin",
+      "buckets": 4,
+      "edges": [
+       0.022124,
+       0.071087,
+       0.16012
+      ],
+      "weight_per_cell": [
+       0.75,
+       0.45,
+       0.65,
+       0.55
+      ],
+      "tune_members_per_cell": [
+       40,
+       40,
+       40,
+       41
+      ]
+     },
+     "ndcg10_tune": 0.347121,
+     "ndcg10_eval": 0.34685,
+     "recall100_tune": 0.311676,
+     "recall100_eval": 0.330837,
+     "delta_vs_zsum_eval": 0.000962,
+     "gap_closed_best_weight_eval": 0.018709,
+     "gap_closed_best_channel_eval": 0.032833,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.000962,
+      "ci95": [
+       -0.006237,
+       0.008239
+      ],
+      "p_mean_le_0": 0.409,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "gate_margin_diff": {
+     "params": {
+      "channel": "cos",
+      "statistic": "margin_diff",
+      "buckets": 4,
+      "edges": [
+       -0.242236,
+       0.043478,
+       0.236025
+      ],
+      "weight_per_cell": [
+       0.5,
+       0.7,
+       0.6,
+       0.75
+      ],
+      "tune_members_per_cell": [
+       40,
+       40,
+       40,
+       41
+      ]
+     },
+     "ndcg10_tune": 0.350659,
+     "ndcg10_eval": 0.347553,
+     "recall100_tune": 0.313519,
+     "recall100_eval": 0.327736,
+     "delta_vs_zsum_eval": 0.001665,
+     "gap_closed_best_weight_eval": 0.032388,
+     "gap_closed_best_channel_eval": 0.056838,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.001665,
+      "ci95": [
+       -0.003621,
+       0.007604
+      ],
+      "p_mean_le_0": 0.2915,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "gate_margin_2d": {
+     "params": {
+      "channel": "cos",
+      "statistic": "margin_2d",
+      "buckets_per_axis": 3,
+      "edges_cos": [
+       0.016188,
+       0.034525
+      ],
+      "edges_bm25": [
+       0.038863,
+       0.117546
+      ],
+      "weight_per_cell": [
+       0.5,
+       0.8,
+       0.65,
+       0.75,
+       1.0,
+       0.5,
+       0.75,
+       0.45,
+       0.7
+      ],
+      "tune_members_per_cell": [
+       22,
+       17,
+       15,
+       21,
+       21,
+       11,
+       11,
+       15,
+       28
+      ]
+     },
+     "ndcg10_tune": 0.356537,
+     "ndcg10_eval": 0.343581,
+     "recall100_tune": 0.314863,
+     "recall100_eval": 0.326604,
+     "delta_vs_zsum_eval": -0.002306,
+     "gap_closed_best_weight_eval": -0.044854,
+     "gap_closed_best_channel_eval": -0.078713,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.002306,
+      "ci95": [
+       -0.01045,
+       0.004963
+      ],
+      "p_mean_le_0": 0.72,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 2,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "centroid_rerank": {
+     "params": {
+      "centroid_m": 5,
+      "beta": 0.25,
+      "dense_weight": 0.75
+     },
+     "ndcg10_tune": 0.354375,
+     "ndcg10_eval": 0.353586,
+     "recall100_tune": 0.324676,
+     "recall100_eval": 0.340411,
+     "delta_vs_zsum_eval": 0.007698,
+     "gap_closed_best_weight_eval": 0.149713,
+     "gap_closed_best_channel_eval": 0.262729,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.007698,
+      "ci95": [
+       0.000294,
+       0.015673
+      ],
+      "p_mean_le_0": 0.0195,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 168,
+     "cost": {
+      "extra_dots": 286,
+      "note": "one centroid + one dot product per pool document (mean pool width)"
+     }
+    },
+    "two_stage_prf": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 2.0,
+      "lambda": 0.5,
+      "seed_weight": 0.7,
+      "rerank_depth": 100
+     },
+     "ndcg10_tune": 0.361452,
+     "ndcg10_eval": 0.352207,
+     "recall100_tune": 0.321218,
+     "recall100_eval": 0.328937,
+     "delta_vs_zsum_eval": 0.006319,
+     "gap_closed_best_weight_eval": 0.122884,
+     "gap_closed_best_channel_eval": 0.215647,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.006319,
+      "ci95": [
+       -0.001735,
+       0.014512
+      ],
+      "p_mean_le_0": 0.065,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 27,
+     "cost": {
+      "extra_dots": 100,
+      "note": "one centroid + 100 dot products with q'"
+     }
+    },
+    "prf_gate_jaccard20": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 1.0,
+      "statistic": "jaccard20",
+      "buckets": 4,
+      "edges": [
+       0.05,
+       0.111111,
+       0.25
+      ],
+      "weight_per_cell": [
+       0.55,
+       0.85,
+       0.8,
+       0.75
+      ],
+      "tune_members_per_cell": [
+       39,
+       29,
+       47,
+       46
+      ],
+      "seed_weight": 0.7
+     },
+     "ndcg10_tune": 0.372081,
+     "ndcg10_eval": 0.35621,
+     "recall100_tune": 0.342716,
+     "recall100_eval": 0.363474,
+     "delta_vs_zsum_eval": 0.010323,
+     "gap_closed_best_weight_eval": 0.200743,
+     "gap_closed_best_channel_eval": 0.352282,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.010323,
+      "ci95": [
+       -0.000662,
+       0.020734
+      ],
+      "p_mean_le_0": 0.0345,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 27,
+     "cost": {
+      "extra_dots": 3633,
+      "note": "prf_dense cost; gate is free"
+     }
+    },
+    "prf_gate_margin": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 1.0,
+      "statistic": "margin_2d",
+      "buckets_per_axis": 3,
+      "edges_cos": [
+       0.016188,
+       0.034525
+      ],
+      "edges_bm25": [
+       0.038863,
+       0.117546
+      ],
+      "weight_per_cell": [
+       0.8,
+       0.95,
+       0.8,
+       0.25,
+       1.0,
+       0.35,
+       0.8,
+       0.45,
+       0.75
+      ],
+      "tune_members_per_cell": [
+       22,
+       17,
+       15,
+       21,
+       21,
+       11,
+       11,
+       15,
+       28
+      ],
+      "seed_weight": 0.7
+     },
+     "ndcg10_tune": 0.372385,
+     "ndcg10_eval": 0.35691,
+     "recall100_tune": 0.32984,
+     "recall100_eval": 0.355609,
+     "delta_vs_zsum_eval": 0.011022,
+     "gap_closed_best_weight_eval": 0.214341,
+     "gap_closed_best_channel_eval": 0.376145,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.011022,
+      "ci95": [
+       -0.001461,
+       0.023339
+      ],
+      "p_mean_le_0": 0.0375,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 162
+     },
+     "n_configs": 99,
+     "cost": {
+      "extra_dots": 3633,
+      "note": "prf_dense cost; gate is free"
+     }
+    }
+   },
+   "chosen": {
+    "family": "prf_gate_margin",
+    "rule": "highest ndcg10_tune among non-baseline families",
+    "params": {
+     "prf_m": 3,
+     "prf_alpha": 1.0,
+     "statistic": "margin_2d",
+     "buckets_per_axis": 3,
+     "edges_cos": [
+      0.016188,
+      0.034525
+     ],
+     "edges_bm25": [
+      0.038863,
+      0.117546
+     ],
+     "weight_per_cell": [
+      0.8,
+      0.95,
+      0.8,
+      0.25,
+      1.0,
+      0.35,
+      0.8,
+      0.45,
+      0.75
+     ],
+     "tune_members_per_cell": [
+      22,
+      17,
+      15,
+      21,
+      21,
+      11,
+      11,
+      15,
+      28
+     ],
+     "seed_weight": 0.7
+    },
+    "ndcg10_tune": 0.372385,
+    "ndcg10_eval": 0.35691,
+    "recall100_tune": 0.32984,
+    "recall100_eval": 0.355609,
+    "delta_vs_zsum_eval": 0.011022,
+    "gap_closed_best_weight_eval": 0.214341,
+    "gap_closed_best_channel_eval": 0.376145,
+    "bootstrap_vs_zsum_eval": {
+     "mean": 0.011022,
+     "ci95": [
+      -0.001461,
+      0.023339
+     ],
+     "p_mean_le_0": 0.0375,
+     "n_resamples": 2000,
+     "seed": 0,
+     "n_queries": 162
+    },
+    "n_configs": 99,
+    "cost": {
+     "extra_dots": 3633,
+     "note": "prf_dense cost; gate is free"
+    },
+    "bootstrap_vs_rrf_eval": {
+     "mean": 0.016569,
+     "ci95": [
+      0.001584,
+      0.032036
+     ],
+     "p_mean_le_0": 0.0145,
+     "n_resamples": 2000,
+     "seed": 0,
+     "n_queries": 162
+    },
+    "passes_win_rule": false
+   },
+   "best_family_by_eval_info_only": "prf_dense"
+  },
+  "swapped": {
+   "fold": "swapped: tune=even, eval=odd",
+   "n_tune": 162,
+   "n_eval": 161,
+   "bm25": {
+    "ndcg10_tune": 0.308281,
+    "ndcg10_eval": 0.300718,
+    "recall100_eval": 0.217998
+   },
+   "cosine": {
+    "ndcg10_tune": 0.313245,
+    "ndcg10_eval": 0.320122,
+    "recall100_eval": 0.30866
+   },
+   "oracle_eval": {
+    "best_channel": 0.379537,
+    "best_weight_z": 0.396792,
+    "headroom_best_channel": 0.040184,
+    "headroom_best_weight": 0.057439
+   },
+   "families": {
+    "zsum": {
+     "params": {
+      "dense_weight": 0.45,
+      "norm": "z"
+     },
+     "ndcg10_tune": 0.352379,
+     "ndcg10_eval": 0.339353,
+     "recall100_tune": 0.329425,
+     "recall100_eval": 0.308508,
+     "delta_vs_zsum_eval": 0.0,
+     "gap_closed_best_weight_eval": 0.0,
+     "gap_closed_best_channel_eval": 0.0,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "p_mean_le_0": 1.0,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 21,
+     "cost": {
+      "extra_dots": 0,
+      "note": "baseline"
+     }
+    },
+    "rrf_k60": {
+     "params": {
+      "k": 60,
+      "dense_weight": 0.5
+     },
+     "ndcg10_tune": 0.34034,
+     "ndcg10_eval": 0.33631,
+     "recall100_tune": 0.329287,
+     "recall100_eval": 0.312143,
+     "delta_vs_zsum_eval": -0.003043,
+     "gap_closed_best_weight_eval": -0.052978,
+     "gap_closed_best_channel_eval": -0.075728,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.003043,
+      "ci95": [
+       -0.014654,
+       0.00871
+      ],
+      "p_mean_le_0": 0.694,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 1,
+     "cost": {
+      "extra_dots": 0,
+      "note": "competitor baseline, untuned"
+     }
+    },
+    "prf_dense": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 1.0,
+      "dense_weight": 0.65,
+      "seed_weight": 0.45,
+      "seed": "baseline fused top-m",
+      "mean_pool_width": 351.55418
+     },
+     "ndcg10_tune": 0.367213,
+     "ndcg10_eval": 0.359558,
+     "recall100_tune": 0.361086,
+     "recall100_eval": 0.35214,
+     "delta_vs_zsum_eval": 0.020204,
+     "gap_closed_best_weight_eval": 0.351752,
+     "gap_closed_best_channel_eval": 0.502797,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.020204,
+      "ci95": [
+       0.008486,
+       0.032902
+      ],
+      "p_mean_le_0": 0.0005,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 189,
+     "cost": {
+      "extra_dots": 3633,
+      "note": "one centroid (m vector adds) + full-corpus re-score with q'; pool-restricted variant would cost mean_pool_width"
+     }
+    },
+    "gate_jaccard20": {
+     "params": {
+      "channel": "cos",
+      "statistic": "jaccard20",
+      "buckets": 4,
+      "edges": [
+       0.052632,
+       0.13961,
+       0.25
+      ],
+      "weight_per_cell": [
+       0.6,
+       0.45,
+       0.45,
+       0.45
+      ],
+      "tune_members_per_cell": [
+       33,
+       48,
+       39,
+       42
+      ]
+     },
+     "ndcg10_tune": 0.354369,
+     "ndcg10_eval": 0.341299,
+     "recall100_tune": 0.330676,
+     "recall100_eval": 0.311021,
+     "delta_vs_zsum_eval": 0.001946,
+     "gap_closed_best_weight_eval": 0.03388,
+     "gap_closed_best_channel_eval": 0.048428,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.001946,
+      "ci95": [
+       -0.002938,
+       0.006772
+      ],
+      "p_mean_le_0": 0.214,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "set overlap of two top-20 lists"
+     }
+    },
+    "gate_cos_margin": {
+     "params": {
+      "channel": "cos",
+      "statistic": "cos_margin",
+      "buckets": 4,
+      "edges": [
+       0.011271,
+       0.025695,
+       0.057707
+      ],
+      "weight_per_cell": [
+       0.45,
+       0.8,
+       0.65,
+       0.25
+      ],
+      "tune_members_per_cell": [
+       41,
+       40,
+       40,
+       41
+      ]
+     },
+     "ndcg10_tune": 0.35771,
+     "ndcg10_eval": 0.338238,
+     "recall100_tune": 0.328106,
+     "recall100_eval": 0.31893,
+     "delta_vs_zsum_eval": -0.001115,
+     "gap_closed_best_weight_eval": -0.019417,
+     "gap_closed_best_channel_eval": -0.027755,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.001115,
+      "ci95": [
+       -0.011871,
+       0.008724
+      ],
+      "p_mean_le_0": 0.5595,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "gate_bm25_margin": {
+     "params": {
+      "channel": "cos",
+      "statistic": "bm25_margin",
+      "buckets": 4,
+      "edges": [
+       0.026667,
+       0.070294,
+       0.191777
+      ],
+      "weight_per_cell": [
+       0.45,
+       0.65,
+       0.45,
+       0.55
+      ],
+      "tune_members_per_cell": [
+       41,
+       40,
+       40,
+       41
+      ]
+     },
+     "ndcg10_tune": 0.355575,
+     "ndcg10_eval": 0.338813,
+     "recall100_tune": 0.329036,
+     "recall100_eval": 0.313979,
+     "delta_vs_zsum_eval": -0.00054,
+     "gap_closed_best_weight_eval": -0.009399,
+     "gap_closed_best_channel_eval": -0.013436,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.00054,
+      "ci95": [
+       -0.006935,
+       0.004467
+      ],
+      "p_mean_le_0": 0.543,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "gate_margin_diff": {
+     "params": {
+      "channel": "cos",
+      "statistic": "margin_diff",
+      "buckets": 4,
+      "edges": [
+       -0.233025,
+       0.003086,
+       0.24537
+      ],
+      "weight_per_cell": [
+       0.55,
+       0.8,
+       0.45,
+       0.5
+      ],
+      "tune_members_per_cell": [
+       41,
+       40,
+       40,
+       41
+      ]
+     },
+     "ndcg10_tune": 0.356232,
+     "ndcg10_eval": 0.339141,
+     "recall100_tune": 0.331062,
+     "recall100_eval": 0.30594,
+     "delta_vs_zsum_eval": -0.000213,
+     "gap_closed_best_weight_eval": -0.003705,
+     "gap_closed_best_channel_eval": -0.005296,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.000213,
+      "ci95": [
+       -0.011725,
+       0.008951
+      ],
+      "p_mean_le_0": 0.489,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 3,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "gate_margin_2d": {
+     "params": {
+      "channel": "cos",
+      "statistic": "margin_2d",
+      "buckets_per_axis": 3,
+      "edges_cos": [
+       0.014095,
+       0.048654
+      ],
+      "edges_bm25": [
+       0.036955,
+       0.154505
+      ],
+      "weight_per_cell": [
+       0.35,
+       0.6,
+       0.3,
+       0.4,
+       0.65,
+       0.95,
+       0.45,
+       0.5,
+       0.55
+      ],
+      "tune_members_per_cell": [
+       20,
+       21,
+       13,
+       21,
+       18,
+       15,
+       13,
+       15,
+       26
+      ]
+     },
+     "ndcg10_tune": 0.36202,
+     "ndcg10_eval": 0.332972,
+     "recall100_tune": 0.330943,
+     "recall100_eval": 0.308734,
+     "delta_vs_zsum_eval": -0.006382,
+     "gap_closed_best_weight_eval": -0.111103,
+     "gap_closed_best_channel_eval": -0.158812,
+     "bootstrap_vs_zsum_eval": {
+      "mean": -0.006382,
+      "ci95": [
+       -0.021634,
+       0.005566
+      ],
+      "p_mean_le_0": 0.8125,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 2,
+     "cost": {
+      "extra_dots": 0,
+      "note": "two scalar reads per channel"
+     }
+    },
+    "centroid_rerank": {
+     "params": {
+      "centroid_m": 3,
+      "beta": 0.25,
+      "dense_weight": 0.65
+     },
+     "ndcg10_tune": 0.361589,
+     "ndcg10_eval": 0.351976,
+     "recall100_tune": 0.34416,
+     "recall100_eval": 0.326145,
+     "delta_vs_zsum_eval": 0.012622,
+     "gap_closed_best_weight_eval": 0.219753,
+     "gap_closed_best_channel_eval": 0.314117,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.012622,
+      "ci95": [
+       0.002549,
+       0.022744
+      ],
+      "p_mean_le_0": 0.007,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 168,
+     "cost": {
+      "extra_dots": 286,
+      "note": "one centroid + one dot product per pool document (mean pool width)"
+     }
+    },
+    "two_stage_prf": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 2.0,
+      "lambda": 0.75,
+      "seed_weight": 0.45,
+      "rerank_depth": 100
+     },
+     "ndcg10_tune": 0.361521,
+     "ndcg10_eval": 0.363185,
+     "recall100_tune": 0.329425,
+     "recall100_eval": 0.308508,
+     "delta_vs_zsum_eval": 0.023831,
+     "gap_closed_best_weight_eval": 0.414898,
+     "gap_closed_best_channel_eval": 0.593059,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.023831,
+      "ci95": [
+       0.007945,
+       0.039121
+      ],
+      "p_mean_le_0": 0.0015,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 27,
+     "cost": {
+      "extra_dots": 100,
+      "note": "one centroid + 100 dot products with q'"
+     }
+    },
+    "prf_gate_jaccard20": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 1.0,
+      "statistic": "jaccard20",
+      "buckets": 4,
+      "edges": [
+       0.052632,
+       0.13961,
+       0.25
+      ],
+      "weight_per_cell": [
+       0.75,
+       0.7,
+       0.8,
+       0.6
+      ],
+      "tune_members_per_cell": [
+       33,
+       48,
+       39,
+       42
+      ],
+      "seed_weight": 0.45
+     },
+     "ndcg10_tune": 0.371132,
+     "ndcg10_eval": 0.364301,
+     "recall100_tune": 0.364909,
+     "recall100_eval": 0.351242,
+     "delta_vs_zsum_eval": 0.024947,
+     "gap_closed_best_weight_eval": 0.434324,
+     "gap_closed_best_channel_eval": 0.620826,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.024947,
+      "ci95": [
+       0.011493,
+       0.038473
+      ],
+      "p_mean_le_0": 0.0,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 27,
+     "cost": {
+      "extra_dots": 3633,
+      "note": "prf_dense cost; gate is free"
+     }
+    },
+    "prf_gate_margin": {
+     "params": {
+      "prf_m": 3,
+      "prf_alpha": 1.0,
+      "statistic": "margin_2d",
+      "buckets_per_axis": 3,
+      "edges_cos": [
+       0.014095,
+       0.048654
+      ],
+      "edges_bm25": [
+       0.036955,
+       0.154505
+      ],
+      "weight_per_cell": [
+       0.95,
+       0.45,
+       0.8,
+       1.0,
+       0.65,
+       1.0,
+       0.5,
+       0.7,
+       0.65
+      ],
+      "tune_members_per_cell": [
+       20,
+       21,
+       13,
+       21,
+       18,
+       15,
+       13,
+       15,
+       26
+      ],
+      "seed_weight": 0.45
+     },
+     "ndcg10_tune": 0.376804,
+     "ndcg10_eval": 0.355145,
+     "recall100_tune": 0.36057,
+     "recall100_eval": 0.354058,
+     "delta_vs_zsum_eval": 0.015792,
+     "gap_closed_best_weight_eval": 0.274928,
+     "gap_closed_best_channel_eval": 0.392984,
+     "bootstrap_vs_zsum_eval": {
+      "mean": 0.015792,
+      "ci95": [
+       -0.002671,
+       0.032617
+      ],
+      "p_mean_le_0": 0.046,
+      "n_resamples": 2000,
+      "seed": 0,
+      "n_queries": 161
+     },
+     "n_configs": 99,
+     "cost": {
+      "extra_dots": 3633,
+      "note": "prf_dense cost; gate is free"
+     }
+    }
+   },
+   "chosen": {
+    "family": "prf_gate_margin",
+    "rule": "highest ndcg10_tune among non-baseline families",
+    "params": {
+     "prf_m": 3,
+     "prf_alpha": 1.0,
+     "statistic": "margin_2d",
+     "buckets_per_axis": 3,
+     "edges_cos": [
+      0.014095,
+      0.048654
+     ],
+     "edges_bm25": [
+      0.036955,
+      0.154505
+     ],
+     "weight_per_cell": [
+      0.95,
+      0.45,
+      0.8,
+      1.0,
+      0.65,
+      1.0,
+      0.5,
+      0.7,
+      0.65
+     ],
+     "tune_members_per_cell": [
+      20,
+      21,
+      13,
+      21,
+      18,
+      15,
+      13,
+      15,
+      26
+     ],
+     "seed_weight": 0.45
+    },
+    "ndcg10_tune": 0.376804,
+    "ndcg10_eval": 0.355145,
+    "recall100_tune": 0.36057,
+    "recall100_eval": 0.354058,
+    "delta_vs_zsum_eval": 0.015792,
+    "gap_closed_best_weight_eval": 0.274928,
+    "gap_closed_best_channel_eval": 0.392984,
+    "bootstrap_vs_zsum_eval": {
+     "mean": 0.015792,
+     "ci95": [
+      -0.002671,
+      0.032617
+     ],
+     "p_mean_le_0": 0.046,
+     "n_resamples": 2000,
+     "seed": 0,
+     "n_queries": 161
+    },
+    "n_configs": 99,
+    "cost": {
+     "extra_dots": 3633,
+     "note": "prf_dense cost; gate is free"
+    },
+    "bootstrap_vs_rrf_eval": {
+     "mean": 0.018835,
+     "ci95": [
+      0.000507,
+      0.036121
+     ],
+     "p_mean_le_0": 0.0225,
+     "n_resamples": 2000,
+     "seed": 0,
+     "n_queries": 161
+    },
+    "passes_win_rule": false
+   },
+   "best_family_by_eval_info_only": "prf_gate_jaccard20"
+  }
+ },
+ "verdict": {
+  "result": "NO_WIN",
+  "rule": "chosen family (by primary tune fold) beats zsum by >= 0.01 on the primary eval fold with bootstrap CI95 excluding 0",
+  "chosen_family": "prf_gate_margin",
+  "delta_vs_zsum_eval": 0.011022,
+  "ci95": [
+   -0.001461,
+   0.023339
+  ],
+  "swapped_fold": {
+   "chosen_family": "prf_gate_margin",
+   "same_family": true,
+   "delta_vs_zsum_eval": 0.015792,
+   "ci95": [
+    -0.002671,
+    0.032617
+   ],
+   "passes_win_rule": false
+  },
+  "cross_fit_delta_vs_zsum": 0.013399
+ },
+ "timing_s": {
+  "load": 0.027327,
+  "channels_and_baseline": 0.370761,
+  "centroid_tables": 0.457216,
+  "folds": 2.156675,
+  "total": 3.01413
+ }
+}

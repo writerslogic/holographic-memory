@@ -1,4 +1,4 @@
-# Go
+# Go runtime
 
 Module `github.com/writerslogic/holographic-memory/bindings/go`, package `hms` (cgo, Go 1.24+). Links the static C ABI library, so binaries need no runtime library path.
 

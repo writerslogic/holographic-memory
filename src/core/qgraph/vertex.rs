@@ -15,13 +15,14 @@
 //! index.
 
 use std::collections::BinaryHeap;
+use std::sync::OnceLock;
 
 use rayon::prelude::*;
 
 use super::fastscan::{pack32, scan32, BLOCK};
 use super::kernels::{
-    dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i8_inline, interleave_for_i4, prefetch,
-    prefetch_bytes, raw_one, QueryCode, Rotation, SplitMix,
+    dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i4_inline_x4, dot_i8_inline, interleave_for_i4,
+    prefetch, prefetch_bytes, raw_one, QueryCode, Rotation, SplitMix,
 };
 use super::{invalid, upper_bytes, BuildParams, Graph, NONE};
 use crate::core::error::HmsError;
@@ -66,6 +67,127 @@ impl Default for VSearchParams {
     }
 }
 
+/// Runtime knobs of the search loop, each off by default so that the results are those of the
+/// plain search. [`VGraph::searcher`] reads them once per process from the environment
+/// ([`SearchKnobs::from_env`]); [`VGraph::searcher_with`] takes them explicitly.
+///
+/// Mechanisms, and what they may change:
+/// * `prefetch` (`HMS_QGRAPH_PREFETCH`, 0..=3, results never change): 0 prefetches the next
+///   candidate's neighbour list and the code row of every admitted neighbour; 1 adds the
+///   admitted neighbours' scales and the rows the re-rank reads; 2 adds the neighbour list of
+///   the second-nearest unexpanded candidate; 3 adds a lookahead that, after an expansion,
+///   prefetches the code rows (or screen rows) of the next candidate's unvisited neighbours.
+/// * `batch_est` (`HMS_QGRAPH_BATCH_EST`, results never change): the admitted neighbours'
+///   4-bit rows are estimated four at a time with shared query loads (`dot_i4_inline_x4` in
+///   the kernels module); the integer sums are the same.
+/// * `frontier` (`HMS_QGRAPH_FRONTIER`, `0.0..=1.0`, 1.0 = off): with a full pool, stop when
+///   the nearest unexpanded estimate is past the point `frontier` of the way from the `k`-th
+///   best to the `ef`-th best. Fewer expansions, so lower recall at a given `ef`; the
+///   recall/QPS curve over `ef` is what to compare.
+/// * `block_screen` (`HMS_QGRAPH_BLOCK_SCREEN`, needs [`VGraph::with_blocks`]): the neighbour
+///   block screens instead of ordering; survivors fetch their code row and the pool holds row
+///   estimates, as in the plain search. A fresh neighbour is skipped when its block estimate,
+///   improved by `screen_sigmas` deviations of the calibrated edge error, could not enter the
+///   full pool. Off, the block search is the existing one.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SearchKnobs {
+    /// Prefetch depth, 0 to 3 (values above 3 act as 3).
+    pub prefetch: u8,
+    /// Estimate admitted neighbours four rows at a time.
+    pub batch_est: bool,
+    /// Frontier stop fraction in `0.0..=1.0`; 1.0 (or a non-finite value) is off.
+    pub frontier: f32,
+    /// Screen with the neighbour blocks and estimate survivors from their rows.
+    pub block_screen: bool,
+}
+
+impl SearchKnobs {
+    /// Every knob off: the plain search.
+    pub const OFF: Self = Self {
+        prefetch: 0,
+        batch_est: false,
+        frontier: 1.0,
+        block_screen: false,
+    };
+
+    /// The knobs set in the environment, read once per process; unset or invalid values
+    /// (reported once) take the [`SearchKnobs::OFF`] value.
+    pub fn from_env() -> Self {
+        static KNOBS: OnceLock<SearchKnobs> = OnceLock::new();
+        *KNOBS.get_or_init(|| Self {
+            prefetch: env_knob::<u8>("HMS_QGRAPH_PREFETCH").unwrap_or(0).min(3),
+            batch_est: env_knob::<u8>("HMS_QGRAPH_BATCH_EST").unwrap_or(0) != 0,
+            frontier: env_knob::<f32>("HMS_QGRAPH_FRONTIER")
+                .filter(|f| f.is_finite())
+                .map_or(1.0, |f| f.clamp(0.0, 1.0)),
+            block_screen: env_knob::<u8>("HMS_QGRAPH_BLOCK_SCREEN").unwrap_or(0) != 0,
+        })
+    }
+}
+
+impl Default for SearchKnobs {
+    fn default() -> Self {
+        Self::OFF
+    }
+}
+
+/// `name` parsed as `T`: `None` when unset, and when the value does not parse, which is
+/// reported.
+fn env_knob<T: std::str::FromStr>(name: &str) -> Option<T> {
+    let value = std::env::var(name).ok()?;
+    match value.trim().parse::<T>() {
+        Ok(v) => Some(v),
+        Err(_) => {
+            eprintln!("{name}={value:?} is not a valid value; using the default");
+            None
+        }
+    }
+}
+
+/// `HMS_QGRAPH_HUGEPAGES` set to a non-zero value: the large arrays of an index built in this
+/// process (code rows, neighbour lists, scales, residual rows, neighbour blocks) are advised
+/// into transparent huge pages before they are first touched, so each random row fetch costs
+/// one TLB entry per 2 MiB instead of per 4 KiB. Linux only; a no-op elsewhere. Read once.
+fn huge_pages() -> bool {
+    static HUGE: OnceLock<bool> = OnceLock::new();
+    *HUGE.get_or_init(|| env_knob::<u8>("HMS_QGRAPH_HUGEPAGES").unwrap_or(0) != 0)
+}
+
+/// Asks the kernel to back the 2 MiB-aligned interior of `[ptr, ptr + len)` with transparent
+/// huge pages (Linux `MADV_HUGEPAGE`). Must run before the pages are first touched, so the
+/// page-fault path allocates them huge where THP is `always` or `madvise`; afterwards only
+/// `khugepaged` could collapse them, slowly. A no-op outside Linux. Errors are ignored: the
+/// advice changes paging policy only, never the mapping or its contents.
+fn advise_huge_pages(ptr: *const u8, len: usize) {
+    #[cfg(target_os = "linux")]
+    {
+        const HUGE: usize = 2 << 20;
+        const MADV_HUGEPAGE: i32 = 14;
+        extern "C" {
+            fn madvise(addr: *mut std::ffi::c_void, len: usize, advice: i32) -> i32;
+        }
+        let start = (ptr as usize).next_multiple_of(HUGE);
+        let end = (ptr as usize + len) & !(HUGE - 1);
+        if start < end {
+            // SAFETY: `[start, end)` lies inside the live allocation `[ptr, ptr + len)` and
+            // `madvise` with `MADV_HUGEPAGE` reads or writes nothing in it.
+            unsafe {
+                madvise(start as *mut std::ffi::c_void, end - start, MADV_HUGEPAGE);
+            }
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = (ptr, len);
+}
+
+/// [`advise_huge_pages`] over the capacity of a freshly allocated, still untouched vector when
+/// [`huge_pages`] is on.
+fn huge_capacity<T>(ptr: *const T, capacity: usize) {
+    if huge_pages() {
+        advise_huge_pages(ptr.cast::<u8>(), capacity * std::mem::size_of::<T>());
+    }
+}
+
 /// One 128-byte cache line (the line size of Apple cores).
 #[repr(C, align(128))]
 #[derive(Clone, Copy)]
@@ -79,10 +201,11 @@ struct Lines {
 
 impl Lines {
     fn zeroed(len: usize) -> Self {
-        Self {
-            lines: vec![Line([0; 128]); len.div_ceil(128)],
-            len,
-        }
+        let count = len.div_ceil(128);
+        let mut lines = Vec::with_capacity(count);
+        huge_capacity(lines.as_ptr(), count);
+        lines.resize(count, Line([0; 128]));
+        Self { lines, len }
     }
 
     fn bytes(&self) -> &[i8] {
@@ -496,6 +619,12 @@ fn prefetch_u8(bytes: &[u8]) {
 }
 
 #[inline]
+fn prefetch_f32(x: &f32) {
+    // SAFETY: an initialized `f32` is four initialized bytes.
+    prefetch_bytes(unsafe { std::slice::from_raw_parts((x as *const f32).cast::<i8>(), 4) });
+}
+
+#[inline]
 fn prefetch_ids(ids: &[u32]) {
     // SAFETY: any initialized `u32` slice is also `4 * len` initialized bytes.
     prefetch_bytes(unsafe { std::slice::from_raw_parts(ids.as_ptr().cast::<i8>(), ids.len() * 4) });
@@ -638,7 +767,9 @@ impl VGraph {
             .collect();
         let mut codes = Lines::zeroed(n * stride);
         let mut scales = Vec::with_capacity(n);
+        huge_capacity(scales.as_ptr(), n);
         let mut residual = Vec::with_capacity(n * res_stride);
+        huge_capacity(residual.as_ptr(), n * res_stride);
         let mut res_scales = Vec::with_capacity(if residual_bits > 0 { n } else { 0 });
         let mut screen_rows = Vec::with_capacity(if screen { n * (screen_words + 1) } else { 0 });
         for ((c, s, r, sr, srow), dst) in rows
@@ -664,10 +795,11 @@ impl VGraph {
         let mut adj3 = Vec::new();
         let (mut adjv, mut adjv_off) = (Vec::new(), Vec::new());
         if id_bytes == 3 {
-            adj3 = adj
-                .iter()
-                .flat_map(|&u| (u.min(NONE3)).to_le_bytes()[..3].to_vec())
-                .collect();
+            adj3 = Vec::<u8>::with_capacity(3 * adj.len());
+            huge_capacity(adj3.as_ptr(), adj3.capacity());
+            for &u in &adj {
+                adj3.extend_from_slice(&u.min(NONE3).to_le_bytes()[..3]);
+            }
             adj = Vec::new();
         } else if id_bytes == 0 {
             adjv_off.reserve(n + 1);
@@ -1127,6 +1259,24 @@ impl VGraph {
         }
     }
 
+    /// Prefetches the scale of `v` (its own array, one line per random vertex).
+    #[inline]
+    fn prefetch_scale(&self, v: u32) {
+        prefetch_f32(&self.scales[v as usize]);
+    }
+
+    /// Prefetches what [`VGraph::fine`] reads for `v`.
+    #[inline]
+    fn prefetch_rerank_rows(&self, v: u32) {
+        prefetch_bytes(self.code(v));
+        self.prefetch_scale(v);
+        if self.has_residual() {
+            let v = v as usize;
+            prefetch_bytes(&self.residual[v * self.res_stride..(v + 1) * self.res_stride]);
+            prefetch_f32(&self.res_scales[v]);
+        }
+    }
+
     #[inline]
     fn original(&self, v: u32) -> u32 {
         if self.ids.is_empty() {
@@ -1146,6 +1296,18 @@ impl VGraph {
             dot_i4_inline(qc, self.code(v))
         };
         -(self.scales[v as usize] * dot as f32)
+    }
+
+    /// [`VGraph::est`] of four vertices with shared query loads; the same integer sums, so
+    /// the same values.
+    #[inline]
+    fn est4(&self, qc: &[i8], v: [u32; 4]) -> [f32; 4] {
+        let dots = if self.bits == 8 {
+            v.map(|u| dot_i8_inline(qc, self.code(u)))
+        } else {
+            dot_i4_inline_x4(qc, v.map(|u| self.code(u)))
+        };
+        std::array::from_fn(|i| -(self.scales[v[i] as usize] * dots[i] as f32))
     }
 
     /// Re-rank score with the float (centred) query: negative estimated inner product.
@@ -1198,8 +1360,15 @@ impl VGraph {
         (self.upper_ids[p as usize], evals)
     }
 
+    /// A searcher with the knobs of the environment ([`SearchKnobs::from_env`]).
     pub fn searcher(&self) -> VSearcher<'_> {
+        self.searcher_with(SearchKnobs::from_env())
+    }
+
+    /// A searcher with explicit [`SearchKnobs`].
+    pub fn searcher_with(&self, knobs: SearchKnobs) -> VSearcher<'_> {
         VSearcher {
+            knobs,
             index: self,
             visited: Marks {
                 marks: vec![0; self.n],
@@ -1275,6 +1444,12 @@ impl Marks {
             };
         }
         (fresh, t)
+    }
+
+    /// True if `id` was visited in this epoch (no mark is set).
+    #[inline]
+    fn seen(&self, id: u32) -> bool {
+        self.marks[id as usize] == self.epoch
     }
 
     /// True if `id` was not yet visited in this epoch.
@@ -1368,8 +1543,15 @@ impl Pool {
     /// The key [`Pool::next`] would return.
     #[inline]
     fn peek_next(&self) -> Option<u64> {
+        self.peek_unexpanded(0)
+    }
+
+    /// The `n`-th (from 0) unexpanded key in pool order.
+    #[inline]
+    fn peek_unexpanded(&self, n: usize) -> Option<u64> {
         (self.cursor..self.keys.len())
-            .find(|&i| !self.expanded[i])
+            .filter(|&i| !self.expanded[i])
+            .nth(n)
             .map(|i| self.keys[i])
     }
 }
@@ -1401,12 +1583,57 @@ pub struct VSearcher<'a> {
     expanded: BinaryHeap<u64>,
     keys: Vec<u64>,
     results: Vec<(f32, u32)>,
+    knobs: SearchKnobs,
 }
 
 impl VSearcher<'_> {
     /// Neighbours the screen skipped (no 8-bit estimate) in the last search.
     pub fn last_screened(&self) -> usize {
         self.screened
+    }
+
+    /// The knobs this searcher runs with.
+    pub fn knobs(&self) -> SearchKnobs {
+        self.knobs
+    }
+
+    /// Row estimates of the admitted neighbours in `fresh`, inserted into the pool in list
+    /// order (four rows at a time with `batch_est`; the same values either way); returns the
+    /// number of estimates. `stale` resets on an insert among the `k` best when `patience`
+    /// is on.
+    #[inline]
+    fn score_fresh(&mut self, k: usize, patience: usize, stale: &mut usize) -> usize {
+        let g = self.index;
+        let qc = &self.qc[..];
+        let n = self.fresh.len();
+        let mut i = 0;
+        if self.knobs.batch_est {
+            while i + 4 <= n {
+                let ids = [
+                    self.fresh[i],
+                    self.fresh[i + 1],
+                    self.fresh[i + 2],
+                    self.fresh[i + 3],
+                ];
+                for (e, u) in g.est4(qc, ids).into_iter().zip(ids) {
+                    if let Some((pos, _)) = self.pool.insert(key(e, u)) {
+                        if patience > 0 && pos < k {
+                            *stale = 0;
+                        }
+                    }
+                }
+                i += 4;
+            }
+        }
+        for &u in &self.fresh[i..] {
+            let kk = key(g.est(qc, u), u);
+            if let Some((pos, _)) = self.pool.insert(kk) {
+                if patience > 0 && pos < k {
+                    *stale = 0;
+                }
+            }
+        }
+        n
     }
 
     /// Writes the ids of the (approximate) `k` nearest vectors by cosine into `out`, nearest
@@ -1453,6 +1680,8 @@ impl VSearcher<'_> {
         if blocks {
             g.encode_block_query(&self.qf, sq, &mut self.bqrot, &mut self.bq);
         }
+        let knobs = self.knobs;
+        let block_screen = blocks && knobs.block_screen;
         let screen = g.has_screen() && params.screen && !blocks;
         let margin = params.screen_sigmas * g.screen_sigma;
         self.screened = 0;
@@ -1460,7 +1689,7 @@ impl VSearcher<'_> {
         self.visited.next();
         let (entry, mut evals) = g.descend(qc);
         self.visited.insert(entry);
-        let fuse = blocks && params.fuse;
+        let fuse = blocks && params.fuse && !block_screen;
         if fuse {
             self.visited.trace(entry);
         }
@@ -1489,10 +1718,26 @@ impl VSearcher<'_> {
         // `patience`, it also ends after that many expansions without an insert among the
         // `k` best.
         let patience = params.patience;
+        let frontier = if knobs.frontier.is_finite() {
+            knobs.frontier.clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
         let mut stale = 0usize;
         while let Some(c) = self.pool.next() {
             if patience > 0 && stale >= patience {
                 break;
+            }
+            if frontier < 1.0 && k > 0 && self.pool.is_full() {
+                // Frontier rule: the nearest unexpanded candidate already lies past the point
+                // `frontier` of the way from the `k`-th best estimate to the `ef`-th. At 1.0
+                // it never fires (every pool key is at most the `ef`-th).
+                let len = self.pool.keys.len();
+                let kth = key_dist(self.pool.keys[k.min(len) - 1]);
+                let worst = key_dist(self.pool.keys[len - 1]);
+                if key_dist(c) > kth + frontier * (worst - kth) {
+                    break;
+                }
             }
             if fuse {
                 // A re-admitted vertex may sit in the pool twice; expand it once.
@@ -1507,8 +1752,65 @@ impl VSearcher<'_> {
                 g.prefetch_neighbours(key_id(next) as usize);
                 if blocks {
                     g.prefetch_blocks(key_id(next) as usize);
-                    prefetch_bytes(g.code(key_id(next)));
+                    if !block_screen {
+                        prefetch_bytes(g.code(key_id(next)));
+                    }
                 }
+            }
+            if knobs.prefetch >= 2 {
+                if let Some(second) = self.pool.peek_unexpanded(1) {
+                    g.prefetch_neighbours(key_id(second) as usize);
+                    if blocks {
+                        g.prefetch_blocks(key_id(second) as usize);
+                    }
+                }
+            }
+            if block_screen {
+                // The neighbour block screens and the pool holds row estimates, so the popped
+                // key carries the row estimate of `v` (`key` round-trips the f32 bits). A fresh
+                // neighbour whose block estimate, improved by `screen_sigmas` deviations of
+                // the calibrated edge error, could not enter the full pool is skipped (it
+                // stays visited); the survivors' rows are prefetched together, then estimated.
+                let v = key_id(c) as usize;
+                let ip_v = -key_dist(c) * sq;
+                let d2_v = (qn2 + 1.0 - 2.0 * (ip_v + qm)).max(1e-6);
+                let (delta, min_sum, inv_sq) = (self.bq.delta, self.bq.min_sum, self.bq.inv_sq);
+                let worst = self.pool.worst().map(key_dist);
+                let sigmas = params.screen_sigmas;
+                self.fresh.clear();
+                let list = &mut self.fresh;
+                g.for_each_neighbour(v, |u| list.push(u));
+                self.survivors.clear();
+                'screen: for b in 0..g.blocks_per_vertex {
+                    let (codes, scales, offsets) = g.block(v, b);
+                    scan32(codes, &self.bq.lut, g.block_m, &mut self.scan);
+                    for i in 0..BLOCK {
+                        let Some(&u) = self.fresh.get(b * BLOCK + i) else {
+                            break 'screen;
+                        };
+                        if !self.visited.insert(u) {
+                            continue;
+                        }
+                        let s = le_f32(scales, i);
+                        let ip =
+                            ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
+                        if let Some(w) = worst {
+                            let sigma = (g.block_kappa * s * s * d2_v).sqrt();
+                            if -(ip + sigmas * sigma) * inv_sq >= w {
+                                self.screened += 1;
+                                continue;
+                            }
+                        }
+                        prefetch_bytes(g.code(u));
+                        if knobs.prefetch >= 1 {
+                            g.prefetch_scale(u);
+                        }
+                        self.survivors.push(u);
+                    }
+                }
+                std::mem::swap(&mut self.fresh, &mut self.survivors);
+                evals += self.score_fresh(k, patience, &mut stale);
+                continue;
             }
             if blocks {
                 // The expanded vertex is scored with its own code (the per-row estimate the
@@ -1517,7 +1819,7 @@ impl VSearcher<'_> {
                 // padding is skipped, and a vertex met again is re-admitted only when its
                 // fused estimate improves on the entry it holds.
                 let v = key_id(c) as usize;
-                let est_v = g.est(qc, v as u32);
+                let est_v = g.est(&self.qc, v as u32);
                 let ek = key(est_v, v as u32);
                 evals += 1;
                 // `<q, x_v - mean>` in float units: the estimate dropped the query scale.
@@ -1601,12 +1903,16 @@ impl VSearcher<'_> {
             }
             self.fresh.clear();
             let (visited, fresh) = (&mut self.visited, &mut self.fresh);
+            let scale_too = knobs.prefetch >= 1;
             let admit = |u: u32, visited: &mut Marks, fresh: &mut Vec<u32>| {
                 if visited.insert(u) {
                     if screen {
                         g.prefetch_screen(u);
                     } else {
                         prefetch_bytes(g.code(u));
+                        if scale_too {
+                            g.prefetch_scale(u);
+                        }
                     }
                     fresh.push(u);
                 }
@@ -1635,23 +1941,35 @@ impl VSearcher<'_> {
                         }
                     }
                     prefetch_bytes(g.code(u));
+                    if scale_too {
+                        g.prefetch_scale(u);
+                    }
                     self.survivors.push(u);
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
             }
-            for &u in &self.fresh {
-                let kk = key(g.est(qc, u), u);
-                evals += 1;
-                if let Some((pos, _)) = self.pool.insert(kk) {
-                    if patience > 0 && pos < k {
-                        stale = 0;
-                    }
+            evals += self.score_fresh(k, patience, &mut stale);
+            if knobs.prefetch >= 3 {
+                // Lookahead: what the next expansion's admission touches for its unvisited
+                // neighbours, one expansion early (its list was prefetched above).
+                if let Some(next) = self.pool.peek_next() {
+                    let visited = &self.visited;
+                    g.for_each_neighbour(key_id(next) as usize, |u| {
+                        if !visited.seen(u) {
+                            if screen {
+                                g.prefetch_screen(u);
+                            } else {
+                                prefetch_bytes(g.code(u));
+                                g.prefetch_scale(u);
+                            }
+                        }
+                    });
                 }
             }
         }
 
         self.keys.clear();
-        if blocks {
+        if blocks && !block_screen {
             self.keys.extend(self.expanded.drain());
             self.keys.sort_unstable();
         } else {
@@ -1660,6 +1978,11 @@ impl VSearcher<'_> {
         self.results.clear();
         let take = take.min(self.keys.len());
         if params.rerank > 0 {
+            if knobs.prefetch >= 1 {
+                for &c in &self.keys[..take] {
+                    g.prefetch_rerank_rows(key_id(c));
+                }
+            }
             // Ties (duplicate vectors) break by the original id, independent of the layout.
             self.results.extend(self.keys[..take].iter().map(|&c| {
                 let id = key_id(c);
