@@ -25,17 +25,10 @@ vectors_data.bin/
 
 # Environment / Private
 .cargo_home/
-GEMINI.md
-todo.md
-tasks/
-devplan/
 
 # Python
 __pycache__/
 .venv/
-
-# Claude Code
-.claude/
 
 # uv script lockfiles written beside the benchmark scripts
 benchmarks/public/*.py.lock
