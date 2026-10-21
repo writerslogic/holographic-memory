@@ -1,0 +1,32 @@
+{
+  "name": "@holographic-memory/llamaindex",
+  "version": "0.1.0",
+  "description": "LlamaIndex.TS vector store and key-value store (doc store, index store) backed by Holographic Memory",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "tsup && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@holographic-memory/core": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@llamaindex/core": ">=0.6.22 <0.7.0"
+  },
+  "devDependencies": {
+    "@llamaindex/core": "0.6.22",
+    "llamaindex": "0.12.1"
+  }
+}

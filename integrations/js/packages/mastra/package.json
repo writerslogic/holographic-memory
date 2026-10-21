@@ -1,0 +1,33 @@
+{
+  "name": "@holographic-memory/mastra",
+  "version": "0.1.0",
+  "description": "Mastra vector store backed by Holographic Memory",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "test": "tsup && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@holographic-memory/core": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@mastra/core": ">=1.78.0 <2"
+  },
+  "devDependencies": {
+    "@mastra/core": "1.78.0",
+    "@mastra/libsql": "1.26.2",
+    "@mastra/memory": "1.38.0",
+    "zod": "^4.1.8"
+  }
+}
