@@ -99,21 +99,30 @@ fn cycle(path: &str) {
 
 #[test]
 fn live_heap_is_flat_across_cycles() {
+    // Each rayon worker fills its thread-local encoder and stemming memo tables the first
+    // time it runs ingest or search work. Which workers get work in a cycle depends on
+    // scheduling, so with the default pool those one-time fills (9 to 27 KiB each, about
+    // 150 KiB in all on a 10-core machine) land at random cycles after any warm-up and read as
+    // growth. With one worker the warm-up fills every thread-local, and the heap is then flat
+    // to the byte, so any growth is a leak.
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(1)
+        .build_global()
+        .expect("the global pool must not be initialised before this test");
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().to_str().unwrap().to_owned();
-    // Warm up thread pools, thread-locals and lazily initialised statics.
     for _ in 0..3 {
         cycle(&path);
     }
+    const CYCLES: isize = 100;
     let before = LIVE.load(Ordering::Relaxed);
-    for _ in 0..25 {
+    for _ in 0..CYCLES {
         cycle(&path);
     }
     let growth = LIVE.load(Ordering::Relaxed) - before;
-    // One leaked search result alone is far above this; 25 cycles of any leak would be
-    // many times over it. The slack covers allocator and pool bookkeeping noise.
+    // Below 40 bytes a cycle: one leaked error string or search result per cycle exceeds it.
     assert!(
-        growth < 64 * 1024,
-        "live heap grew by {growth} bytes over 25 cycles"
+        growth < 40 * CYCLES,
+        "live heap grew by {growth} bytes over {CYCLES} cycles"
     );
 }
