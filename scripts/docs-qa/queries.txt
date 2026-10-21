@@ -5,7 +5,7 @@ install | install
 getting started | quickstart
 sqlite comparison | quickstart
 offline agent | offline-agent
-encrypt a store | quickstart
+encrypt a store | quickstart,ENCRYPTION,privacy-limits
 passphrase | faq
 wrong passphrase | faq
 holographic | concepts/holographic,faq
@@ -22,7 +22,7 @@ recall@k | glossary
 hopfield | glossary
 resonator network | glossary,RESEARCH,DETERMINISTIC-RESONATOR
 hms-server | SERVER
-api key | SERVER,SECURITY
+api key | SERVER,SECURITY,api/http,server/auth
 python client | api/python
 phase vector | api/python
 typescript | api/node

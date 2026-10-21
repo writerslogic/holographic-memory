@@ -125,6 +125,12 @@ class OpenApiTests(unittest.TestCase):
         self.assertIn("[`Q`](#schema-q)", text)
 
 
+    def test_a_boolean_property_schema_means_any_value(self):
+        spec = {"info": {"title": "t", "version": "1"}, "paths": {},
+                "components": {"schemas": {"Free": {"type": "object", "properties": {"anything": True}}}}}
+        self.assertIn("| `anything` |", docs_openapi.render(spec))
+
+
 class Pyo3StubTests(unittest.TestCase):
     def test_the_real_module_is_described(self):
         stub = docs_pyo3_stub.generate(ROOT / "src" / "python.rs")
