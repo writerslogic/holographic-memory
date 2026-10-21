@@ -32,6 +32,8 @@ use zeroize::Zeroize;
 
 use super::entangled::EntangledHVec;
 
+pub mod clustered;
+
 /// LWE secret dimension `n`. SimplePIR (USENIX Security 2023), Section 4.2.
 pub const LWE_DIM: usize = 1024;
 /// Standard deviation of the discrete Gaussian error. SimplePIR, Section 4.2.
@@ -77,6 +79,18 @@ pub enum PrivateQueryError {
     },
     #[error("hint was built for a different matrix or parameter set")]
     HintMismatch,
+    #[error("{what} has an entry outside [-{bound}, {bound}]")]
+    EntryBound { what: &'static str, bound: u32 },
+    #[error("row {row} has squared norm {norm_sq}, over the limit {limit}")]
+    RowNorm {
+        row: usize,
+        norm_sq: u64,
+        limit: u64,
+    },
+    #[error("parameters exceed the decoding-failure budget")]
+    NoiseBudget,
+    #[error("invalid layout: {0}")]
+    Layout(&'static str),
 }
 
 /// Validated scheme parameters. `n`, `q` and `σ` are fixed to the SimplePIR
@@ -171,10 +185,27 @@ fn check_code(code: &EntangledHVec, dim: usize) -> Result<(), PrivateQueryError>
     }
 }
 
+#[inline(always)]
 fn dot(a: &[u32], b: &[u32]) -> u32 {
     a.iter()
         .zip(b)
         .fold(0u32, |acc, (&x, &y)| acc.wrapping_add(x.wrapping_mul(y)))
+}
+
+/// `rows x LWE_DIM` words of `A`. One independent ChaCha20 stream per row keeps
+/// the expansion parallel and independent of the thread count.
+fn expand_words(rows: usize, seed: [u8; SEED_LEN]) -> Vec<u32> {
+    let mut data = vec![0u32; rows * LWE_DIM];
+    data.par_chunks_mut(LWE_DIM)
+        .enumerate()
+        .for_each(|(row, chunk)| {
+            let mut rng = ChaCha20Rng::from_seed(seed);
+            rng.set_stream(row as u64);
+            for word in chunk {
+                *word = rng.next_u32();
+            }
+        });
+    data
 }
 
 /// The public matrix `A` in `Z_q^(D x n)`, expanded from a public seed with
@@ -189,18 +220,7 @@ pub struct PublicMatrix {
 
 impl PublicMatrix {
     pub fn expand(params: Params, seed: [u8; SEED_LEN]) -> Arc<Self> {
-        let mut data = vec![0u32; params.dim * LWE_DIM];
-        // One independent stream per row keeps the expansion parallel and
-        // independent of the thread count.
-        data.par_chunks_mut(LWE_DIM)
-            .enumerate()
-            .for_each(|(row, chunk)| {
-                let mut rng = ChaCha20Rng::from_seed(seed);
-                rng.set_stream(row as u64);
-                for word in chunk {
-                    *word = rng.next_u32();
-                }
-            });
+        let data = expand_words(params.dim, seed);
         Arc::new(Self { params, seed, data })
     }
 
