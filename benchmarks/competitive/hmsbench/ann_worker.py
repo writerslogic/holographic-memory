@@ -542,6 +542,128 @@ SYSTEMS = {
 }
 
 
+class Ngt(Adapter):
+    """NGT through ngtpy: ANNG built with batch_insert, then the ONNG optimiser (out/in degree
+    pruning). The Python binding exposes no QG builder (QuantizedIndex only opens a `qg` directory
+    written by the NGT command-line tool), so ONNG is the strongest graph the binding can build."""
+    # onng_default: creation edges 10, outgoing 10, incoming 120 (the NGT README ONNG example).
+    # onng_d64: creation edges 64 and 16+48 optimised edges, matching the degree-64 build effort of HMS.
+    BUILDS = {"onng_default": {"creation": 10, "out": 10, "inn": 120}, "onng_d64": {"creation": 64, "out": 16, "inn": 48}}
+    SWEEPS = {k: [{"epsilon": e} for e in (0.0, 0.02, 0.05, 0.08, 0.1, 0.15, 0.2, 0.3, 0.5, 1.0)] for k in BUILDS}
+    PERSISTENT_FLUSH = True
+
+    def build(self, train, params):
+        import ngtpy
+        anng, onng = self.workdir / "anng", self.workdir / "onng"
+        ngtpy.create(str(anng), self.dim, edge_size_for_creation=params["creation"], edge_size_for_search=40,
+                     distance_type="Cosine" if self.angular else "L2", object_type="Float")
+        index = ngtpy.Index(str(anng))
+        index.batch_insert(train, num_threads=self.threads)
+        index.save()
+        index.close()
+        ngtpy.Optimizer(num_of_outgoings=params["out"], num_of_incomings=params["inn"]).execute(str(anng), str(onng))
+        shutil.rmtree(anng)
+
+    def open(self, params, n):
+        import ngtpy
+        self.index = ngtpy.Index(str(self.workdir / "onng"))
+
+    def configure(self, sp):
+        self.eps = sp["epsilon"]
+
+    def query(self, q):
+        return self.index.search(q[0], K, epsilon=self.eps, with_distance=False)
+
+    def replace(self, ids, vectors):
+        for i in ids:
+            self.index.remove(int(i))
+        self.index.batch_insert(vectors, num_threads=1)
+        self.index.build_index(num_threads=1)
+
+    def delete(self, ids):
+        for i in ids:
+            self.index.remove(int(i))
+
+    def flush(self):
+        self.index.save()
+
+
+class Scann(Adapter):
+    """ScaNN: spherical k-means tree + anisotropic 4-bit-LUT scoring + exact reorder; the
+    ann-benchmarks glove-100-angular scann1 and scann4 build arguments, with the leaf count scaled
+    by sqrt(n) from its 2000 at 1.18M rows so subsets keep the same rows per leaf."""
+    BUILDS = {"ab_scann1": {"leaf_scale": 1.84, "avq": 0.2, "dims": 2}, "ab_scann4": {"leaf_scale": 1.29, "avq": 0.15, "dims": 3}}
+    _SWEEP = [{"leaves": a, "reorder": b} for a, b in ((1, 30), (2, 30), (4, 30), (8, 30), (16, 32), (30, 120), (50, 80), (75, 110),
+                                                         (110, 120), (150, 200), (200, 300), (250, 500), (400, 300), (500, 500), (800, 1000))]
+    SWEEPS = {"ab_scann1": _SWEEP, "ab_scann4": _SWEEP}
+
+    def build(self, train, params):
+        import scann
+        leaves = max(8, int(params["leaf_scale"] * len(train) ** 0.5))
+        searcher = (scann.scann_ops_pybind.builder(train, K, "dot_product")
+                    .set_n_training_threads(self.threads)
+                    .tree(leaves, 1, training_sample_size=len(train), spherical=True, quantize_centroids=True)
+                    .score_ah(params["dims"], anisotropic_quantization_threshold=params["avq"])
+                    .reorder(1).build())
+        searcher.serialize(str(self.workdir / "searcher"))
+
+    def open(self, params, n):
+        import scann
+        self.searcher = scann.scann_ops_pybind.load_searcher(str(self.workdir / "searcher"))
+
+    def configure(self, sp):
+        self.sp = sp
+
+    def query(self, q):
+        return self.searcher.search(q[0], K, self.sp["reorder"], self.sp["leaves"])[0]
+
+    def replace(self, ids, vectors):
+        raise Unsupported("the ScaNN searcher is immutable; there is no update or delete API")
+
+    def delete(self, ids):
+        raise Unsupported("the ScaNN searcher is immutable; there is no update or delete API")
+
+
+class Pynndescent(Adapter):
+    """PyNNDescent: NN-descent graph with diversification and degree pruning. The ann-benchmarks
+    glove-100-angular NN-80-fast and NN-120-fast groups, plus a degree-64 build (n_neighbors 64,
+    no extra pruning headroom). The pickle holds the prepared search graph; numba compiles on the
+    first query of every process and that time is inside cold_start_s."""
+    BUILDS = {"ab_nn80_fast": {"n": 80, "leaf": 20, "div": 1.0, "prune": 2.0}, "ab_nn120_fast": {"n": 120, "leaf": 20, "div": 1.0, "prune": 2.5},
+              "d64": {"n": 64, "leaf": 20, "div": 1.0, "prune": 1.0}}
+    SWEEPS = {k: [{"epsilon": e} for e in (0.0, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24, 0.28, 0.32, 0.4)] for k in BUILDS}
+    PERSISTENT_FLUSH = False
+
+    def build(self, train, params):
+        import pickle
+        from pynndescent import NNDescent
+        index = NNDescent(train, metric="cosine" if self.angular else "euclidean", n_neighbors=params["n"], leaf_size=params["leaf"],
+                          diversify_prob=params["div"], pruning_degree_multiplier=params["prune"], n_jobs=self.threads, random_state=100)
+        index.prepare()
+        with open(self.workdir / "index.pkl", "wb") as f:
+            pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def open(self, params, n):
+        import pickle
+        with open(self.workdir / "index.pkl", "rb") as f:
+            self.index = pickle.load(f)
+
+    def configure(self, sp):
+        self.eps = sp["epsilon"]
+
+    def query(self, q):
+        return self.index.query(q, k=K, epsilon=self.eps)[0][0]
+
+    def replace(self, ids, vectors):
+        raise Unsupported("PyNNDescent has no deletion; update() appends new rows and cannot replace existing ids")
+
+    def delete(self, ids):
+        raise Unsupported("PyNNDescent has no deletion")
+
+
+SYSTEMS.update({"ngt": Ngt, "scann": Scann, "pynndescent": Pynndescent})
+
+
 def wait_for_idle(max_load, max_wait):
     """(1-minute load, gate met). No gate configured (the default) records the load and None."""
     if max_load >= 1e8:

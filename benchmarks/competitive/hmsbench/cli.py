@@ -58,7 +58,7 @@ def main(argv=None):
                     raise SystemExit(f"--builds expects SYSTEM:BUILD, got {item!r}")
                 only_builds.setdefault(system, []).append(build)
         if a.only in ("ann", "both"):
-            systems = [registry.HMS] + [s for s in registry.ANN_SYSTEMS if wanted is None or s in wanted]
+            systems = [registry.HMS] + [s for s in registry.ANN_SYSTEMS if s not in registry.NOT_RUN and (wanted is None or s in wanted)]
             for dataset, n_train, n_test in spec["ann"]:
                 if a.datasets and dataset not in a.datasets:
                     continue

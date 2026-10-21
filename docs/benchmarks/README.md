@@ -24,7 +24,7 @@ for the first run (datasets, pinned wheels, two Lucene jars with pinned sha256).
 
 | Family | Systems (version pinned in `benchmarks/competitive/requirements/*.txt`) |
 |---|---|
-| Vector / ANN | hnswlib, FAISS (HNSW, IVF-PQ with and without exact refine, Flat), USearch (f32, int8), Annoy, sqlite-vec, LanceDB (IVF-PQ, IVF-HNSW-SQ), Chroma, Qdrant embedded local mode, Milvus Lite (HNSW, IVF-Flat), DuckDB vss |
+| Vector / ANN | hnswlib, FAISS (HNSW, IVF-PQ with and without exact refine, Flat), USearch (f32, int8), Annoy, sqlite-vec, LanceDB (IVF-PQ, IVF-HNSW-SQ), Chroma, Qdrant embedded local mode, Milvus Lite (HNSW, IVF-Flat), DuckDB vss, NGT (ONNG), PyNNDescent, ScaNN (Linux only) |
 | Text (BM25) | SQLite FTS5, tantivy, Apache Lucene 9.12.3 (JVM), Whoosh, bm25s |
 | Agent-memory systems | Mem0, Zep, Letta, LangMem: not run here; see "Plugging in more systems" |
 | Not run, with reasons | pgvector (needs a PostgreSQL server; not installable from pip/cargo/npm) |

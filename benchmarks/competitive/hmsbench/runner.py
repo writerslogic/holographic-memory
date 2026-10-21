@@ -24,7 +24,7 @@ _LIMITS = {"timeout": 7200}
 # (a prefix of the same query file); recall and QPS are computed over that prefix and the row records it.
 QUERY_CAPS = {"qdrant-local": 100, "sqlite-vec": 200, "faiss-flat": 1000, "duckdb-vss": 2000, "chroma": 2000, "milvus-lite": 2000, "lancedb": 2000}
 SINGLE_THREAD = {name: "1" for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
-                                        "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS", "RAYON_NUM_THREADS")}
+                                        "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS", "RAYON_NUM_THREADS", "NUMBA_NUM_THREADS")}
 
 SUITES = {
     # smoke: plumbing check only; its results are never committed.

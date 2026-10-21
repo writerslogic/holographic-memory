@@ -7,6 +7,8 @@ Facts are recorded into every results file next to the measurements, each with a
 carries a claim that has no source in the results directory.
 """
 
+import platform
+
 HMS = "hms"
 # The HMS text arm runs twice: `hms` ingests with `--encode lexical` (BM25 index only, the
 # like-for-like row against the lexical comparators) and `hms-eager` with the default eager
@@ -92,6 +94,24 @@ NOT_RUN = {
 }
 
 FACTS[HMS_EAGER] = FACTS[HMS]
+
+SYSTEMS.update({
+    "ngt": {"display": "NGT (ONNG)", "kind": "ann", "env": "ngt", "package": "ngt", "family": "graph"},
+    "scann": {"display": "ScaNN", "kind": "ann", "env": "scann", "package": "scann", "family": "ivf"},
+    "pynndescent": {"display": "PyNNDescent", "kind": "ann", "env": "pynndescent", "package": "pynndescent", "family": "graph"},
+})
+TIMING_BOUNDARY.update({
+    "ngt": "CPython (pybind11) call per query", "scann": "CPython (pybind11) call per query; the ScaNN searcher runs its own thread pool for training only",
+    "pynndescent": "CPython + numba-compiled kernel per query (JIT compile inside cold start)",
+})
+FACTS.update({k: {"service_needed": {"value": "no", "basis": _DOC}, "encrypted_at_rest": {"value": "no", "basis": _DOC}} for k in ("ngt", "scann", "pynndescent")})
+NOT_RUN.update({
+    "diskannpy": "no CPython 3.13 wheel on any platform (0.7.0 ships cp39-cp311 only); building from source needs MKL and a C++ toolchain",
+    "voyager": "wheels are tagged cp312-abi3 but the extension is named cpython-312, so it does not import on CPython 3.13 (verified on macOS arm64)",
+})
+# Reasons that apply to one OS only, recorded in results files produced on that OS.
+_PLATFORM_NOT_RUN = {"scann": {"Darwin": "no macOS wheel for scann 1.4.2 (manylinux_2_27 x86_64 and aarch64 only); Linux x86_64 runs it"}}
+NOT_RUN.update({k: v[platform.system()] for k, v in _PLATFORM_NOT_RUN.items() if platform.system() in v})
 
 ANN_SYSTEMS = [k for k, v in SYSTEMS.items() if v["kind"] == "ann"]
 TEXT_SYSTEMS = [k for k, v in SYSTEMS.items() if v["kind"] == "text"]

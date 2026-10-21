@@ -40,6 +40,9 @@ PINS = {
     "bm25s": ["bm25s==0.3.14", "PyStemmer==3.1.0"],
     "whoosh": ["whoosh-reloaded==2.7.5"],
     "stdlib": [],
+    "scann": ["scann==1.4.2"],
+    "ngt": ["ngt==2.3.12"],
+    "pynndescent": ["pynndescent==0.6.0"],
 }
 BASE = ["numpy==2.5.4"]
 # Needed by the benchmark adapter only; excluded from the footprint.
