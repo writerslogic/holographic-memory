@@ -302,6 +302,10 @@ def run_text(dataset, spec, systems, out_path=None):
                             "interleaving": "each round runs HMS and every comparator once, order rotated per round"},
                "facts": registry.FACTS, "timing_boundary": registry.TIMING_BOUNDARY, "not_run": registry.NOT_RUN, "systems": {}, "skipped": {}}
     input_path = folder / "input.json"
+    # Every system's serve phase reads the queries alone, so no worker's serving RSS includes
+    # the parsed corpus it does not need.
+    serve_input_path = folder / "serve-input.json"
+    serve_input_path.write_text(json.dumps({"documents": [], "queries": json.loads(input_path.read_text())["queries"]}))
     qrels = json.loads((folder / "qrels.json").read_text())
     results["qrels_queries"] = len(qrels)
     threads = {k: "1" for k in SINGLE_THREAD}
@@ -327,7 +331,7 @@ def run_text(dataset, spec, systems, out_path=None):
             out = stores[system].with_suffix(".serve.json")
             try:
                 t0 = time.time_ns()
-                stdout, stderr, wall, peak = _text_cmd(system, "serve", input_path, stores[system], out, threads, t0=t0)
+                stdout, stderr, wall, peak = _text_cmd(system, "serve", serve_input_path, stores[system], out, threads, t0=t0)
                 body = json.loads(out.read_text())
                 body["quality"] = _quality(body.pop("rows"), qrels) if r == 0 else None
                 runs[system]["serve_rounds"].append(body | {"peak_rss_bytes": peak, "wall_s": wall})

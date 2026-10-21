@@ -563,8 +563,9 @@ fn stemmer() -> &'static rust_stemmers::Stemmer {
 pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
     // Counted in a hash map keyed by borrowed text (one allocation per distinct term, not per
     // occurrence), then sorted once into the ordered map the postings expect.
-    let mut counts: fxhash::FxHashMap<String, u32> =
-        fxhash::FxHashMap::with_capacity_and_hasher(text.len() / 16, Default::default());
+    // Seeded per process: the keys are caller text.
+    let mut counts: std::collections::HashMap<String, u32, foldhash::fast::RandomState> =
+        std::collections::HashMap::with_capacity_and_hasher(text.len() / 16, Default::default());
     let mut lower = String::new();
     let mut add = |key: &str| match counts.get_mut(key) {
         Some(count) => *count += 1,
@@ -597,19 +598,52 @@ pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
     sorted.into_iter().collect()
 }
 
-/// Entries kept in each thread's stem memo before it is cleared; bounds memory on corpora with
-/// unbounded vocabularies while keeping the common-word hit rate.
-const STEM_MEMO_CAPACITY: usize = 1 << 17;
+/// Entries a stem memo holds before it is cleared; bounds memory on corpora with unbounded
+/// vocabularies while keeping the common-word hit rate.
+const STEM_MEMO_CAPACITY: usize = 1 << 16;
 
-/// Calls `f` with the Snowball stem of `lower`, memoized per thread: a corpus repeats a small
-/// vocabulary, and stemming each occurrence dominated single-threaded ingest.
-fn with_stem(lower: &str, f: &mut impl FnMut(&str)) {
-    thread_local! {
-        static MEMO: std::cell::RefCell<fxhash::FxHashMap<Box<str>, Box<str>>> =
-            std::cell::RefCell::new(fxhash::FxHashMap::default());
+type StemTable = std::collections::HashMap<Box<str>, Box<str>, foldhash::fast::RandomState>;
+
+thread_local! {
+    static ACTIVE_STEM_MEMO: std::cell::RefCell<Option<StemTable>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// A stem cache for one ingest batch. It is installed on a thread only while that thread
+/// prepares documents for the batch and is freed with the batch, so no thread keeps it and
+/// queries never use it. The table hashes with a per-process random seed because its keys
+/// are caller text.
+#[derive(Default)]
+pub(crate) struct StemMemo(StemTable);
+
+pub(crate) struct StemMemoGuard<'a>(&'a mut StemMemo);
+
+impl StemMemo {
+    pub(crate) fn install(&mut self) -> StemMemoGuard<'_> {
+        let table = std::mem::take(&mut self.0);
+        ACTIVE_STEM_MEMO.with(|active| *active.borrow_mut() = Some(table));
+        StemMemoGuard(self)
     }
-    MEMO.with(|memo| {
-        let mut memo = memo.borrow_mut();
+}
+
+impl Drop for StemMemoGuard<'_> {
+    fn drop(&mut self) {
+        if let Some(table) = ACTIVE_STEM_MEMO.with(|active| active.borrow_mut().take()) {
+            self.0 .0 = table;
+        }
+    }
+}
+
+/// Calls `f` with the Snowball stem of `lower`, through the installed batch memo when there is
+/// one: a corpus repeats a small vocabulary, and stemming each occurrence dominated
+/// single-threaded ingest.
+fn with_stem(lower: &str, f: &mut impl FnMut(&str)) {
+    ACTIVE_STEM_MEMO.with(|active| {
+        let mut active = active.borrow_mut();
+        let Some(memo) = active.as_mut() else {
+            f(&stemmer().stem(lower));
+            return;
+        };
         if let Some(stem) = memo.get(lower) {
             f(stem);
             return;

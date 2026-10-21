@@ -49,16 +49,7 @@ struct Args {
 
 #[derive(Deserialize)]
 struct Input {
-    /// Absent in the serve phase, which reads only the queries: building 3,633 document
-    /// values there would count harness memory against the engine's serving RSS.
-    #[serde(default)]
     documents: Vec<DocumentInput>,
-    queries: Vec<Query>,
-}
-
-/// The serve phase's view of the same file: `documents` is skipped without allocating.
-#[derive(Deserialize)]
-struct QueriesOnly {
     queries: Vec<Query>,
 }
 
@@ -78,17 +69,7 @@ fn epoch_ns() -> u128 {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let raw = std::fs::read(&args.input)?;
-    let input: Input = if args.phase == "serve" {
-        let QueriesOnly { queries } = serde_json::from_slice(&raw)?;
-        Input {
-            documents: Vec::new(),
-            queries,
-        }
-    } else {
-        serde_json::from_slice(&raw)?
-    };
-    drop(raw);
+    let input: Input = serde_json::from_slice(&std::fs::read(&args.input)?)?;
     let store = args.store.display().to_string();
     let report = match args.phase.as_str() {
         "build" => {

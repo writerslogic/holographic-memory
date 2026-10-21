@@ -555,8 +555,6 @@ impl HmsCore {
         if let Some(composites) = &self.composite_memory {
             composites.rebuild_indices();
         }
-        // Replay decoded every frame into transient buffers; hand their pages back.
-        super::os_memory::release_free_heap();
         Ok(())
     }
 

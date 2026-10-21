@@ -100,7 +100,8 @@ impl HmsCore {
         };
         let mutations = inputs
             .into_par_iter()
-            .map(|input| {
+            .map_init(documents::StemMemo::default, |memo, input| {
+                let _memo = memo.install();
                 #[cfg(feature = "local-models")]
                 if let Some(stages) = stages.as_deref() {
                     return self

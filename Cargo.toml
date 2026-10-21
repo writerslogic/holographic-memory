@@ -37,6 +37,7 @@ thiserror = "2.0"
 tracing = "0.1"
 clap = { version = "4.4", features = ["derive", "env"] }
 fxhash = "0.2"
+foldhash = "0.2"
 nalgebra = { version = "0.35", features = ["serde-serialize"] }
 ed25519-dalek = { version = "3", features = ["rand_core"], optional = true }
 zeroize = { version = "1", features = ["derive"], optional = true }

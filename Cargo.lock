@@ -1960,6 +1960,7 @@ dependencies = [
  "crc32fast",
  "criterion",
  "ed25519-dalek",
+ "foldhash",
  "fs2",
  "futures-util",
  "fxhash",
