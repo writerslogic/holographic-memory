@@ -27,6 +27,10 @@ use super::kernels::{
 use super::{invalid, prepare_rows, upper_bytes, BuildParams, Graph, Metric, NONE};
 use crate::core::error::HmsError;
 
+mod file;
+pub use file::Residency;
+use file::Slab;
+
 /// Search parameters of a [`VGraph`].
 #[derive(Clone, Copy, Debug)]
 pub struct VSearchParams {
@@ -193,9 +197,10 @@ fn huge_capacity<T>(ptr: *const T, capacity: usize) {
 #[derive(Clone, Copy)]
 struct Line([i8; 128]);
 
-/// Zeroed bytes starting on a cache-line boundary.
+/// Bytes starting on a cache-line boundary (zeroed when built here).
 struct Lines {
-    lines: Vec<Line>,
+    /// `len.div_ceil(128)` lines.
+    lines: Slab<Line>,
     len: usize,
 }
 
@@ -205,9 +210,13 @@ impl Lines {
         let mut lines = Vec::with_capacity(count);
         huge_capacity(lines.as_ptr(), count);
         lines.resize(count, Line([0; 128]));
-        Self { lines, len }
+        Self {
+            lines: lines.into(),
+            len,
+        }
     }
 
+    #[inline(always)]
     fn bytes(&self) -> &[i8] {
         // SAFETY: `Line` is `repr(C)` around `[i8; 128]` (size 128, no padding), so `lines` is
         // `128 * lines.len() >= len` initialized, contiguous bytes.
@@ -215,8 +224,10 @@ impl Lines {
     }
 
     fn bytes_mut(&mut self) -> &mut [i8] {
+        let len = self.len;
+        let lines = self.lines.as_mut_slice();
         // SAFETY: as in `bytes`, with the exclusive borrow of `lines`.
-        unsafe { std::slice::from_raw_parts_mut(self.lines.as_mut_ptr().cast::<i8>(), self.len) }
+        unsafe { std::slice::from_raw_parts_mut(lines.as_mut_ptr().cast::<i8>(), len) }
     }
 }
 
@@ -236,33 +247,33 @@ pub struct VGraph {
     mean: Vec<f32>,
     /// Euclidean: `|x|^2 / 2` per stored vertex, the norm term of the distance order; empty
     /// for angular.
-    half_norms: Vec<f32>,
+    half_norms: Slab<f32>,
     /// Neighbour ids, `degree` per vertex padded with `NONE`; empty with 3-byte ids.
-    adj: Vec<u32>,
+    adj: Slab<u32>,
     /// The same as 3-byte little-endian ids (padded with `NONE3`); empty with `u32` ids.
-    adj3: Vec<u8>,
+    adj3: Slab<u8>,
     /// Delta-coded lists (`id_bytes` 0): per vertex, the sorted neighbour ids as LEB128
     /// varints of the zigzag first difference to the vertex and the gaps less one after,
     /// with `adjv_off[v]..adjv_off[v + 1]` the byte span of vertex `v`; empty otherwise.
-    adjv: Vec<u8>,
-    adjv_off: Vec<u32>,
+    adjv: Slab<u8>,
+    adjv_off: Slab<u32>,
     codes: Lines,
-    scales: Vec<f32>,
+    scales: Slab<f32>,
     /// 0 (none), 4 or 8.
     res_bits: u8,
     /// Bytes per residual row: `padded` (8-bit) or `padded / 2` (4-bit, two per byte).
     res_stride: usize,
-    residual: Vec<i8>,
-    res_scales: Vec<f32>,
+    residual: Slab<i8>,
+    res_scales: Slab<f32>,
     entry: u32,
     upper_ids: Vec<u32>,
     layers: Vec<Vec<Vec<u32>>>,
     /// Original id of each stored vertex when the vertices were renumbered; empty otherwise.
-    ids: Vec<u32>,
+    ids: Slab<u32>,
     /// 1-bit screen rows: `screen_words` u64 of sign bits of the rotated centred vector, then
     /// one u64 holding the f32 factor (low half) and the popcount (high half); empty without
     /// a screen.
-    screen: Vec<u64>,
+    screen: Slab<u64>,
     screen_words: usize,
     screen_rot: Option<Rotation>,
     /// Standard deviation of (screen estimate - 8-bit estimate), in estimate units, measured
@@ -497,10 +508,6 @@ impl BlockQuery {
     }
 }
 
-/// One vertex as encoded in parallel: traversal code and scale, residual code and scale,
-/// screen row (empty without a screen).
-type EncodedRow = (Vec<i8>, f32, Vec<i8>, f32, Vec<u64>);
-
 /// Inverse of [`key`] for the distance part.
 #[inline]
 fn key_dist(k: u64) -> f32 {
@@ -728,22 +735,68 @@ impl VGraph {
 
         let screen_rot = screen.then(|| Rotation::new(dim, 0, SCREEN_SEED));
         let screen_words = screen_rot.as_ref().map_or(0, |r| r.padded() / 64);
-        let rows: Vec<EncodedRow> = (0..n)
-            .into_par_iter()
-            .map(|v| {
-                let o = old(v);
-                let mut x: Vec<f32> = g.vectors[o * dim..(o + 1) * dim]
-                    .iter()
-                    .zip(&mean)
-                    .map(|(a, m)| a - m)
-                    .collect();
-                let mut srow = Vec::new();
-                if let Some(rot) = &screen_rot {
+        // The centred row of stored vertex `v`, which every code below encodes.
+        let centred = |v: usize| -> Vec<f32> {
+            let o = old(v);
+            g.vectors[o * dim..(o + 1) * dim]
+                .iter()
+                .zip(&mean)
+                .map(|(a, m)| a - m)
+                .collect()
+        };
+        // Codes are written in place, so no per-vertex buffers sit next to the final arrays.
+        let mut codes = Lines::zeroed(n * stride);
+        let mut scales = Vec::with_capacity(n);
+        huge_capacity(scales.as_ptr(), n);
+        scales.resize(n, 0f32);
+        codes
+            .bytes_mut()
+            .par_chunks_exact_mut(stride)
+            .zip(scales.par_iter_mut())
+            .enumerate()
+            .for_each(|(v, (dst, s))| {
+                let x = centred(v);
+                *s = if bits == 8 {
+                    quantize(&x, &mut dst[..cbytes])
+                } else {
+                    quantize4(&x, &mut dst[..cbytes])
+                };
+            });
+        let mut residual = Vec::with_capacity(n * res_stride);
+        huge_capacity(residual.as_ptr(), n * res_stride);
+        residual.resize(n * res_stride, 0i8);
+        let mut res_scales = vec![0f32; if residual_bits > 0 { n } else { 0 }];
+        if residual_bits > 0 {
+            let code_bytes = codes.bytes();
+            residual
+                .par_chunks_exact_mut(res_stride)
+                .zip(res_scales.par_iter_mut())
+                .enumerate()
+                .for_each(|(v, (r, sr))| {
+                    let mut x = centred(v);
+                    let c = &code_bytes[v * stride..v * stride + cbytes];
+                    let s = scales[v];
+                    x.iter_mut()
+                        .enumerate()
+                        .for_each(|(i, a)| *a -= s * f32::from(code_at(c, bits, i)));
+                    *sr = if residual_bits == 8 {
+                        quantize(&x, r)
+                    } else {
+                        quantize4(&x, r)
+                    };
+                });
+        }
+        let mut screen_rows = vec![0u64; if screen { n * (screen_words + 1) } else { 0 }];
+        if let Some(rot) = &screen_rot {
+            screen_rows
+                .par_chunks_exact_mut(screen_words + 1)
+                .enumerate()
+                .for_each(|(v, srow)| {
+                    let x = centred(v);
                     let mut xr = vec![0f32; rot.padded()];
                     rot.apply(&x, &mut xr);
                     let (mut norm2, mut abs) = (0f32, 0f32);
                     let mut pop = 0u32;
-                    srow = vec![0u64; screen_words + 1];
                     for (i, &a) in xr.iter().enumerate() {
                         norm2 += a * a;
                         abs += a.abs();
@@ -755,72 +808,43 @@ impl VGraph {
                     // x_r ~= f * sign(x_r) with f = |x_r|^2 / sum |x_r,i| (the RaBitQ factor).
                     let f = if abs > 0.0 { norm2 / abs } else { 0.0 };
                     srow[screen_words] = u64::from(f.to_bits()) | (u64::from(pop) << 32);
-                }
-                let mut c = vec![0i8; cbytes];
-                let s = if bits == 8 {
-                    quantize(&x, &mut c)
-                } else {
-                    quantize4(&x, &mut c)
-                };
-                let mut r = vec![0i8; res_stride];
-                let mut sr = 0.0;
-                if residual_bits > 0 {
-                    x.iter_mut()
-                        .enumerate()
-                        .for_each(|(i, a)| *a -= s * f32::from(code_at(&c, bits, i)));
-                    sr = if residual_bits == 8 {
-                        quantize(&x, &mut r)
-                    } else {
-                        quantize4(&x, &mut r)
-                    };
-                }
-                (c, s, r, sr, srow)
-            })
-            .collect();
-        let mut codes = Lines::zeroed(n * stride);
-        let mut scales = Vec::with_capacity(n);
-        huge_capacity(scales.as_ptr(), n);
-        let mut residual = Vec::with_capacity(n * res_stride);
-        huge_capacity(residual.as_ptr(), n * res_stride);
-        let mut res_scales = Vec::with_capacity(if residual_bits > 0 { n } else { 0 });
-        let mut screen_rows = Vec::with_capacity(if screen { n * (screen_words + 1) } else { 0 });
-        for ((c, s, r, sr, srow), dst) in rows
-            .into_iter()
-            .zip(codes.bytes_mut().chunks_exact_mut(stride))
-        {
-            dst[..cbytes].copy_from_slice(&c);
-            scales.push(s);
-            if residual_bits > 0 {
-                residual.extend_from_slice(&r);
-                res_scales.push(sr);
-            }
-            screen_rows.extend_from_slice(&srow);
+                });
         }
 
         let r = g.degree;
-        let mut adj = vec![NONE; n * r];
-        for (v, dst) in adj.chunks_exact_mut(r).enumerate() {
-            for (d, &u) in dst.iter_mut().zip(&g.adj[old(v)]) {
-                *d = new(u);
-            }
-        }
-        let mut adj3 = Vec::new();
+        // Stored vertex `v`'s list: the build's list of the vertex, renumbered, at most `r`.
+        let list = |v: usize| g.adj[old(v)].iter().take(r).map(|&u| new(u));
+        let (mut adj, mut adj3) = (Vec::new(), Vec::new());
         let (mut adjv, mut adjv_off) = (Vec::new(), Vec::new());
         if id_bytes == 3 {
-            adj3 = Vec::<u8>::with_capacity(3 * adj.len());
+            adj3 = Vec::<u8>::with_capacity(3 * n * r);
             huge_capacity(adj3.as_ptr(), adj3.capacity());
-            for &u in &adj {
-                adj3.extend_from_slice(&u.min(NONE3).to_le_bytes()[..3]);
+            for v in 0..n {
+                let mut count = 0;
+                for u in list(v) {
+                    adj3.extend_from_slice(&u.min(NONE3).to_le_bytes()[..3]);
+                    count += 1;
+                }
+                for _ in count..r {
+                    adj3.extend_from_slice(&NONE3.to_le_bytes()[..3]);
+                }
             }
-            adj = Vec::new();
-        } else if id_bytes == 0 {
+        } else if id_bytes == 4 {
+            adj = vec![NONE; n * r];
+            for (v, dst) in adj.chunks_exact_mut(r).enumerate() {
+                for (d, u) in dst.iter_mut().zip(list(v)) {
+                    *d = u;
+                }
+            }
+        } else {
             adjv_off.reserve(n + 1);
-            let mut list: Vec<u32> = Vec::with_capacity(r);
-            for (v, row) in adj.chunks_exact(r).enumerate() {
+            let mut sorted: Vec<u32> = Vec::with_capacity(r);
+            for v in 0..n {
                 adjv_off.push(adjv.len() as u32);
-                list.clear();
-                list.extend(row.iter().copied().take_while(|&u| u != NONE));
-                list.sort_unstable();
+                sorted.clear();
+                sorted.extend(list(v).take_while(|&u| u != NONE));
+                sorted.sort_unstable();
+                let list = &sorted;
                 let mut prev = v as u32;
                 for (i, &u) in list.iter().enumerate() {
                     let delta = if i == 0 {
@@ -833,8 +857,9 @@ impl VGraph {
                 }
             }
             adjv_off.push(adjv.len() as u32);
-            adj = Vec::new();
         }
+        let entry = new(g.entry);
+        let upper_ids = g.upper_ids.iter().map(|&u| new(u)).collect();
         let mut out = Self {
             n,
             dim,
@@ -844,22 +869,22 @@ impl VGraph {
             stride,
             degree: r,
             mean,
-            half_norms,
-            adj,
-            adj3,
-            adjv,
-            adjv_off,
+            half_norms: half_norms.into(),
+            adj: adj.into(),
+            adj3: adj3.into(),
+            adjv: adjv.into(),
+            adjv_off: adjv_off.into(),
             codes,
-            scales,
+            scales: scales.into(),
             res_bits: residual_bits,
             res_stride,
-            residual,
-            res_scales,
-            entry: new(g.entry),
-            upper_ids: g.upper_ids.iter().map(|&u| new(u)).collect(),
+            residual: residual.into(),
+            res_scales: res_scales.into(),
+            entry,
+            upper_ids,
             layers: g.layers.clone(),
-            ids,
-            screen: screen_rows,
+            ids: ids.into(),
+            screen: screen_rows.into(),
             screen_words,
             screen_rot,
             screen_sigma: 0.0,
@@ -2714,8 +2739,12 @@ mod tests {
             .expect("encode");
         let b = VGraph::from_graph(&Graph::build(&data, d, &params).expect("build"), true)
             .expect("encode");
-        assert!(a.codes.bytes() == b.codes.bytes() && a.residual == b.residual && a.adj == b.adj);
-        assert!(a.scales == b.scales && a.res_scales == b.res_scales);
+        assert!(
+            a.codes.bytes() == b.codes.bytes()
+                && a.residual[..] == b.residual[..]
+                && a.adj[..] == b.adj[..]
+        );
+        assert!(a.scales[..] == b.scales[..] && a.res_scales[..] == b.res_scales[..]);
         assert_eq!((a.entry, &a.mean), (b.entry, &b.mean));
         let (mut sa, mut sb) = (a.searcher(), b.searcher());
         let (mut oa, mut ob) = (Vec::new(), Vec::new());
