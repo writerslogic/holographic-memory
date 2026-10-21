@@ -13,6 +13,13 @@ impl HmsCore {
         if query_vec.dim != self.dimensions || k == 0 {
             return Vec::new();
         }
+        // Documents memorized with deferred encoding join the vector index on first use; a
+        // failure leaves them pending (and absent from this query) and the next call retries.
+        if self.documents.read().pending_vector_count() > 0 {
+            if let Err(error) = self.encode_pending_documents() {
+                tracing::warn!(%error, "deferred document encoding failed; pending chunks stay outside this query");
+            }
+        }
 
         let _transaction = self.mutation_gate.read();
         self.shards
@@ -44,9 +51,22 @@ impl HmsCore {
     }
 
     pub fn explain_query(&self, query_vec: &EntangledHVec, k: u32) -> QueryExplanation {
-        self.shards
+        let mut explanation = self
+            .shards
             .read()
-            .explain_query(query_vec, k, self.dimensions)
+            .explain_query(query_vec, k, self.dimensions);
+        let (pending, lexical) = {
+            let store = self.documents.read();
+            (store.pending_vector_count(), store.lexical_vector_count())
+        };
+        if pending > 0 || lexical > 0 {
+            explanation.rationale.push_str(&format!(
+                " {pending} document chunk(s) await deferred encoding (a query, \
+                 encode_pending_documents or maintain_indices installs them); {lexical} \
+                 lexical-only chunk(s) are outside vector search."
+            ));
+        }
+        explanation
     }
 
     pub fn index_status(&self) -> IndexStatus {
@@ -95,6 +115,7 @@ impl HmsCore {
     /// the resulting lifecycle state. Calls are idempotent when indices are current.
     pub fn maintain_indices(&self) -> anyhow::Result<IndexStatus> {
         self.maybe_auto_shard(self.vector_count())?;
+        self.encode_pending_documents()?;
         let before = self.index_status();
         if before.ivf_training_recommended {
             self.train_ivf()?;

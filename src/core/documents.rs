@@ -68,6 +68,75 @@ pub struct DocumentInput {
     pub title_weight: Option<u32>,
 }
 
+/// When a document's chunk hypervectors are computed. Terms, postings and text are stored at
+/// ingest in every mode, so lexical search sees the document at once; only the vector side
+/// (`HmsCore::query` over chunk vectors) differs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EncodeMode {
+    /// Encode at ingest: the behavior before this option existed.
+    #[default]
+    Eager,
+    /// Commit the document lexically searchable now; its vectors are encoded from the stored
+    /// text on the first vector query, by `maintain_indices`, `train_document_index` or
+    /// `encode_pending_documents`, and persisted then. Needs a text encoder and the chunk text
+    /// (`storeText` not false).
+    Deferred,
+    /// Never encode: the document stays outside vector search until memorized again.
+    Lexical,
+}
+
+impl EncodeMode {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Eager => "eager",
+            Self::Deferred => "deferred",
+            Self::Lexical => "lexical",
+        }
+    }
+}
+
+impl std::str::FromStr for EncodeMode {
+    type Err = anyhow::Error;
+
+    fn from_str(name: &str) -> Result<Self> {
+        match name {
+            "eager" => Ok(Self::Eager),
+            "deferred" => Ok(Self::Deferred),
+            "lexical" => Ok(Self::Lexical),
+            _ => bail!("encode mode must be \"eager\", \"deferred\" or \"lexical\", not {name:?}"),
+        }
+    }
+}
+
+/// Options of one `memorize_documents_with` call; the default is exactly `memorize_documents`.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct IngestOptions {
+    pub encode: EncodeMode,
+}
+
+/// Persisted state of a chunk's hypervector. Written only when not `Encoded`, so a store
+/// without deferred or lexical documents serializes byte for byte as before the flag existed,
+/// and a chunk without the field reads as `Encoded`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum VectorState {
+    #[default]
+    Encoded,
+    /// Memorized with [`EncodeMode::Deferred`]; `vector` is empty and the chunk is not in the
+    /// vector index until `HmsCore::encode_pending_documents` installs its encoding.
+    Pending,
+    /// Memorized with [`EncodeMode::Lexical`]; `vector` is empty for good.
+    Lexical,
+}
+
+impl VectorState {
+    pub(crate) fn is_encoded(&self) -> bool {
+        *self == Self::Encoded
+    }
+}
+
 #[cfg_attr(feature = "node-api", napi_derive::napi(object))]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -192,6 +261,11 @@ pub(crate) struct StoredChunk {
     /// the unstemmed query terms.
     #[serde(default)]
     pub stemmed: bool,
+    /// Whether `vector` is the chunk's encoding, awaits deferred encoding, or is deliberately
+    /// absent; `Pending` and `Lexical` chunks carry an empty vector and are not in the vector
+    /// index. Absent from the serialized form when `Encoded`.
+    #[serde(default, skip_serializing_if = "VectorState::is_encoded")]
+    pub vector_state: VectorState,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -408,7 +482,14 @@ pub(crate) fn prepare(
     embedding_dimensions: Option<usize>,
     encoder: TextEncoder,
 ) -> Result<StoredDocument> {
-    prepare_with_keys(input, dimensions, embedding_dimensions, None, encoder)
+    prepare_with_options(
+        input,
+        dimensions,
+        embedding_dimensions,
+        None,
+        encoder,
+        EncodeMode::Eager,
+    )
 }
 
 /// `keys` replaces each chunk's text as its lexical key (for example the chunk prefixed with
@@ -420,6 +501,35 @@ pub(crate) fn prepare_with_keys(
     keys: Option<&[String]>,
     encoder: TextEncoder,
 ) -> Result<StoredDocument> {
+    prepare_with_options(
+        input,
+        dimensions,
+        embedding_dimensions,
+        keys,
+        encoder,
+        EncodeMode::Eager,
+    )
+}
+
+/// [`prepare_with_keys`] with the chunk vectors encoded now, later or never (`mode`). The
+/// lexical side of the document is the same in every mode.
+pub(crate) fn prepare_with_options(
+    input: DocumentInput,
+    dimensions: usize,
+    embedding_dimensions: Option<usize>,
+    keys: Option<&[String]>,
+    encoder: TextEncoder,
+    mode: EncodeMode,
+) -> Result<StoredDocument> {
+    ensure!(
+        mode != EncodeMode::Deferred || !encoder.is_embedding(),
+        "deferred encoding applies to text encoders; {} vectors come from embeddings",
+        encoder.name()
+    );
+    ensure!(
+        mode != EncodeMode::Deferred || input.store_text.unwrap_or(true),
+        "deferred encoding needs the chunk text; set storeText or encode eagerly"
+    );
     let chunks = chunk_document(&input)?;
     ensure!(
         keys.is_none_or(|k| k.len() == chunks.len()),
@@ -475,19 +585,34 @@ pub(crate) fn prepare_with_keys(
             .as_ref()
             .map(|all| normalize_embedding(&all[i], embedding_dimensions.unwrap_or(0)))
             .transpose()?;
-        let vector = match (encoder.is_embedding(), &embedding) {
-            (false, _) => encoder.encode(&chunk.text, dimensions),
-            (true, Some(e)) => {
+        let (vector, vector_state) = match (mode, encoder.is_embedding(), &embedding) {
+            (EncodeMode::Lexical, _, _) => (
+                EntangledHVec::from_indices(Vec::new(), dimensions),
+                VectorState::Lexical,
+            ),
+            (EncodeMode::Deferred, _, _) => (
+                EntangledHVec::from_indices(Vec::new(), dimensions),
+                VectorState::Pending,
+            ),
+            (EncodeMode::Eager, false, _) => (
+                encoder.encode(&chunk.text, dimensions),
+                VectorState::Encoded,
+            ),
+            (EncodeMode::Eager, true, Some(e)) => {
                 let dense: Vec<f32> = e.iter().map(|&x| x as f32).collect();
-                EntangledHVec::from_dense(&dense, dimensions)
+                (
+                    EntangledHVec::from_dense(&dense, dimensions),
+                    VectorState::Encoded,
+                )
             }
-            (true, None) => bail!(
+            (EncodeMode::Eager, true, None) => bail!(
                 "the {} text encoder needs a dense embedding for every chunk; install a text embedder",
                 encoder.name()
             ),
         };
         stored.push(StoredChunk {
             vector,
+            vector_state,
             text: input.store_text.unwrap_or(true).then_some(chunk.text),
             text_at: None,
             id: chunk.id,
@@ -514,6 +639,21 @@ pub(crate) fn prepare_with_keys(
     compact_metadata(&mut document.metadata);
     compact_chunks(&mut document.chunks);
     Ok(document)
+}
+
+/// Identity of the content deferred encoding reads: the version, byte spans and text of every
+/// chunk, mixed with the crate's splitmix64 chain. `None` when a chunk's text is unavailable.
+/// `Mutation::EncodeDocument` carries it so vectors computed for one revision of a document
+/// are never installed on another that reused its id, version and chunk count.
+pub(crate) fn document_fingerprint(store: &DocumentStore, document: &StoredDocument) -> Option<u64> {
+    let mut h = super::encoding::hash_str_seed(&document.version, 0x5EED_D0C5_F1A6_0001);
+    for chunk in &document.chunks {
+        let text = store.chunk_text(chunk)?;
+        h = super::entangled::hash_u64(h, u64::from(chunk.start_byte));
+        h = super::entangled::hash_u64(h, u64::from(chunk.end_byte));
+        h = super::encoding::hash_str_seed(&text, h);
+    }
+    Some(h)
 }
 
 pub(crate) fn prepare_search(

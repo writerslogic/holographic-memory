@@ -1,0 +1,22 @@
+[package]
+name = "hms-research-ingest"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "Apache-2.0"
+description = "Ingest timing of the eager, deferred and lexical encode modes with search parity checks"
+
+# Standalone: the root crate is a dependency, not a workspace member.
+[workspace]
+
+[dependencies]
+holographic-memory = { path = "../../.." }
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+tempfile = "3"
+
+[profile.release]
+lto = true
+opt-level = 3

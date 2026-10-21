@@ -7,7 +7,7 @@ use std::sync::Arc;
 use super::dense::{DenseIndex, MAX_ROWS, MIN_ROWS};
 use super::postings::PostingLists;
 use super::text::TextSegment;
-use super::{SearchOptions, StoredChunk, StoredDocument};
+use super::{SearchOptions, StoredChunk, StoredDocument, VectorState};
 
 #[derive(Default)]
 pub(crate) struct DocumentStore {
@@ -29,6 +29,12 @@ pub(crate) struct DocumentStore {
     metadata: BTreeMap<(String, String), BTreeSet<String>>,
     /// Chunk text lives here, not in the documents, once attached.
     text: Option<Arc<TextSegment>>,
+    /// Chunks memorized with deferred encoding whose vectors are not installed yet.
+    pending_chunks: usize,
+    /// Chunks memorized lexical-only (never in the vector index).
+    lexical_chunks: usize,
+    /// Serializes the store's lazy encoders, so a backlog is encoded once, not per caller.
+    encode_gate: Arc<parking_lot::Mutex<()>>,
 }
 
 /// A chunk's word count is bounded by the 8 MiB document limit, so it fits a `u32`.
@@ -95,6 +101,9 @@ impl serde::Serialize for ChunkWithText<'_> {
         s.serialize_field("terms", &c.terms)?;
         s.serialize_field("word_count", &c.word_count)?;
         s.serialize_field("stemmed", &c.stemmed)?;
+        if !c.vector_state.is_encoded() {
+            s.serialize_field("vector_state", &c.vector_state)?;
+        }
         s.end()
     }
 }
@@ -144,6 +153,47 @@ fn replace_postings(
 impl DocumentStore {
     pub(crate) fn embedded_count(&self) -> usize {
         self.embedded_count
+    }
+
+    /// Chunks whose deferred encoding has not been installed yet.
+    pub(crate) fn pending_vector_count(&self) -> usize {
+        self.pending_chunks
+    }
+
+    /// Chunks memorized lexical-only.
+    pub(crate) fn lexical_vector_count(&self) -> usize {
+        self.lexical_chunks
+    }
+
+    /// The lock lazy encoders of this store take for the duration of a backlog.
+    pub(crate) fn encode_gate(&self) -> Arc<parking_lot::Mutex<()>> {
+        Arc::clone(&self.encode_gate)
+    }
+
+    fn count_vector_state(&mut self, state: VectorState, added: bool) {
+        let counter = match state {
+            VectorState::Encoded => return,
+            VectorState::Pending => &mut self.pending_chunks,
+            VectorState::Lexical => &mut self.lexical_chunks,
+        };
+        let next = if added {
+            counter.checked_add(1)
+        } else {
+            counter.checked_sub(1)
+        };
+        *counter = next.expect("document vector state count out of range");
+    }
+
+    /// Applies the net change of pending and lexical chunk counts of a replacement.
+    fn shift_vector_states(&mut self, pending: isize, lexical: isize) {
+        self.pending_chunks = self
+            .pending_chunks
+            .checked_add_signed(pending)
+            .expect("document vector state count out of range");
+        self.lexical_chunks = self
+            .lexical_chunks
+            .checked_add_signed(lexical)
+            .expect("document vector state count out of range");
     }
 
     pub(crate) fn dense_index_trained(&self) -> bool {
@@ -303,6 +353,7 @@ impl DocumentStore {
         let mut slots = Vec::with_capacity(document.chunks.len());
         let mut embedded = false;
         for (chunk_index, chunk) in document.chunks.iter().enumerate() {
+            self.count_vector_state(chunk.vector_state, true);
             if chunk.embedding.is_some() {
                 self.embedded_count = self
                     .embedded_count
@@ -394,6 +445,8 @@ impl DocumentStore {
         self.insert_filters(&document);
         let mut old_embedded = false;
         let mut new_embedded = false;
+        let mut pending_delta: isize = 0;
+        let mut lexical_delta: isize = 0;
         let slots = self.slots.get(&id).expect("document missing slot map");
         assert_eq!(
             slots.len(),
@@ -416,6 +469,13 @@ impl DocumentStore {
             );
             assert_eq!(owner.1, index, "document slot chunk mismatch");
             *owner = (Arc::clone(&document), index);
+            for (state, delta) in [(old.vector_state, -1), (new.vector_state, 1)] {
+                match state {
+                    VectorState::Encoded => {}
+                    VectorState::Pending => pending_delta += delta,
+                    VectorState::Lexical => lexical_delta += delta,
+                }
+            }
             self.word_counts[slot] = slot_words(new.word_count);
             self.word_count = self
                 .word_count
@@ -431,6 +491,7 @@ impl DocumentStore {
             new_embedded |= new.embedding.is_some();
             replace_postings(&mut self.postings, old, new, slot);
         }
+        self.shift_vector_states(pending_delta, lexical_delta);
         if old_embedded && !new_embedded {
             assert!(
                 self.embedded_documents.remove(&id),
@@ -509,6 +570,7 @@ impl DocumentStore {
             "document slot count mismatch"
         );
         for (index, (chunk, slot)) in document.chunks.iter().zip(slots).enumerate() {
+            self.count_vector_state(chunk.vector_state, false);
             if chunk.embedding.is_some() {
                 self.embedded_count = self
                     .embedded_count
@@ -542,10 +604,12 @@ impl DocumentStore {
         if self.slot_count > 1024 && self.free.len() > self.slot_count / 2 {
             let generation = self.generation;
             let text = self.text.take();
+            let encode_gate = Arc::clone(&self.encode_gate);
             let documents = std::mem::take(&mut self.documents);
             *self = Self::default();
             self.generation = generation;
             self.text = text;
+            self.encode_gate = encode_gate;
             for (id, document) in documents {
                 self.insert_shared(id, document);
             }
