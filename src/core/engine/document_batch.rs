@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use super::mutation::{transaction_payload, Mutation, TRANSACTION_MAGIC};
 use crate::core::documents::{
-    chunk_document, BatchTooLarge, DocumentInput, MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
+    chunk_spans, BatchTooLarge, DocumentInput, MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
 };
 
 const MAX_EMBEDDING_VALUES: usize = 1_048_576;
@@ -58,27 +58,49 @@ fn add_size(total: &mut usize, size: usize, limit: usize, message: &'static str)
     Ok(())
 }
 
+fn source_sizes(input: &DocumentInput) -> [usize; 4] {
+    [
+        input.id.len(),
+        input.text.len(),
+        input.source_uri.as_ref().map_or(0, String::len),
+        input.version.as_ref().map_or(0, String::len),
+    ]
+}
+
+/// Checks a batch against every limit and returns each input's chunk spans
+/// ([`chunk_spans`]), which preparation then reuses.
 pub(super) fn validate_inputs(
     inputs: &[DocumentInput],
     inferred_dimensions: Option<usize>,
-) -> Result<()> {
+) -> Result<Vec<Vec<(u32, u32)>>> {
     const ITEMS: &str = "document batch requires 1..=4096 items";
     ensure!(!inputs.is_empty(), ITEMS);
     if inputs.len() > MAX_ITEMS {
         return Err(BatchTooLarge(ITEMS).into());
     }
-    // The per-input measures (metadata size, chunk count) are computed in parallel; the
+    // The fold below stops at the input whose source bytes overflow the budget, if any, so no
+    // input after it can be the one reported: only the inputs up to it are measured.
+    let mut total = 0usize;
+    let measured_len = inputs
+        .iter()
+        .position(|input| {
+            source_sizes(input).into_iter().any(|size| {
+                total = total.saturating_add(size);
+                total > MAX_DOCUMENT_BYTES
+            })
+        })
+        .map_or(inputs.len(), |at| at + 1);
+    // The per-input measures (metadata size, chunk spans) are computed in parallel; the
     // budgets then fold in input order, so the first input over a limit is the one reported,
     // as it is when everything runs serially.
-    let measured: Vec<(Option<Result<usize>>, Result<usize>)> = inputs
+    let measured: Vec<(Option<Result<usize>>, Result<Vec<(u32, u32)>>)> = inputs[..measured_len]
         .par_iter()
         .map(|input| {
             let metadata = input
                 .metadata
                 .as_ref()
                 .map(|metadata| serialized_size(metadata, MAX_DOCUMENT_BYTES));
-            let chunks = chunk_document(input).map(|chunks| chunks.len());
-            (metadata, chunks)
+            (metadata, chunk_spans(input))
         })
         .collect();
     let mut ids = HashSet::with_capacity(inputs.len());
@@ -86,17 +108,13 @@ pub(super) fn validate_inputs(
     let mut metadata_bytes = 0;
     let mut embedding_values = 0;
     let mut chunks = 0;
-    for (input, (metadata_size, chunk_count)) in inputs.iter().zip(measured) {
+    let mut spans = Vec::with_capacity(inputs.len());
+    for (input, (metadata_size, chunk_spans)) in inputs.iter().zip(measured) {
         ensure!(
             ids.insert(input.id.as_str()),
             "document batch IDs must be unique"
         );
-        for size in [
-            input.id.len(),
-            input.text.len(),
-            input.source_uri.as_ref().map_or(0, String::len),
-            input.version.as_ref().map_or(0, String::len),
-        ] {
+        for size in source_sizes(input) {
             add_size(
                 &mut source_bytes,
                 size,
@@ -112,7 +130,8 @@ pub(super) fn validate_inputs(
                 "document batch metadata exceeds 8 MiB",
             )?;
         }
-        let chunk_count = chunk_count?;
+        let chunk_spans = chunk_spans?;
+        let chunk_count = chunk_spans.len();
         if let Some(embeddings) = &input.embeddings {
             for embedding in embeddings {
                 add_size(
@@ -139,8 +158,9 @@ pub(super) fn validate_inputs(
             MAX_ITEMS,
             "document batch exceeds 4096 chunks",
         )?;
+        spans.push(chunk_spans);
     }
-    Ok(())
+    Ok(spans)
 }
 
 /// The journal payload of a prepared document batch, serialized once (in parallel for a

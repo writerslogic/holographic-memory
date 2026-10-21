@@ -473,6 +473,25 @@ fn compact_chunks(chunks: &mut Vec<StoredChunk>) {
 }
 
 pub fn chunk_document(input: &DocumentInput) -> Result<Vec<DocumentChunk>> {
+    Ok(chunk_spans(input)?
+        .into_iter()
+        .enumerate()
+        .map(|(index, (start_byte, end_byte))| DocumentChunk {
+            id: chunk_id(&input.id, index),
+            text: input.text[start_byte as usize..end_byte as usize].into(),
+            start_byte,
+            end_byte,
+        })
+        .collect())
+}
+
+fn chunk_id(document: &str, index: usize) -> String {
+    format!("{CHUNK_PREFIX}{}:{document}:{index}", document.len())
+}
+
+/// The byte span of every chunk [`chunk_document`] cuts `input` into, with the same checks and
+/// errors, without copying any text.
+pub(crate) fn chunk_spans(input: &DocumentInput) -> Result<Vec<(u32, u32)>> {
     ensure!(
         !input.id.is_empty() && input.id.len() <= 4096 && !input.id.contains('\0'),
         "document id must contain 1..=4096 bytes"
@@ -527,17 +546,7 @@ pub fn chunk_document(input: &DocumentInput) -> Result<Vec<DocumentChunk>> {
             end_byte - start_byte <= MAX_CHUNK_BYTES,
             "chunk exceeds 64 KiB; reduce chunkWords or split long tokens"
         );
-        chunks.push(DocumentChunk {
-            id: format!(
-                "{CHUNK_PREFIX}{}:{}:{}",
-                input.id.len(),
-                input.id,
-                chunks.len()
-            ),
-            text: input.text[start_byte..end_byte].into(),
-            start_byte: start_byte as u32,
-            end_byte: end_byte as u32,
-        });
+        chunks.push((start_byte as u32, end_byte as u32));
         if end_word == words.len() {
             break;
         }
@@ -601,7 +610,7 @@ pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
             lower.push_str(&word.to_lowercase());
         }
         if stem {
-            with_stem(&lower, &mut add);
+            add(&stemmer().stem(&lower));
         } else {
             add(&lower);
         }
@@ -613,23 +622,163 @@ pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
     sorted.into_iter().collect()
 }
 
-/// Entries a stem memo holds before it is cleared; bounds memory on corpora with unbounded
-/// vocabularies while keeping the common-word hit rate.
+/// Words a batch interner maps before it starts over; bounds memory on corpora with
+/// unbounded vocabularies while keeping the common-word hit rate.
 const STEM_MEMO_CAPACITY: usize = 1 << 16;
 
-type StemTable = std::collections::HashMap<Box<str>, Box<str>, foldhash::fast::RandomState>;
+/// Hash map keyed by caller text, so seeded per process.
+type SeededMap<K, V> = std::collections::HashMap<K, V, foldhash::fast::RandomState>;
+
+/// The lexical state of one ingest batch on one thread: every distinct word seen maps to the id
+/// of its term (lowercased, Snowball-stemmed), so a repeated word costs one hash lookup and no
+/// copy, stemming runs once per distinct word, and a chunk's counts accumulate in an array by
+/// term id.
+#[derive(Default)]
+struct Interner {
+    /// Word exactly as it appears in the text -> term id.
+    words: SeededMap<Box<str>, u32>,
+    /// Term -> id, so the words of one stem count as one term.
+    ids: SeededMap<Box<str>, u32>,
+    /// Term by id, and its first eight bytes big-endian (zero-padded): a term never contains
+    /// a NUL byte, so comparing keys orders terms as their bytes do except on equal keys.
+    terms: Vec<Box<str>>,
+    keys: Vec<u64>,
+    /// Count per term id for the chunk being counted, and the ids counted so far. Zero and
+    /// empty between chunks.
+    counts: Vec<u32>,
+    counted: Vec<u32>,
+    lower: String,
+}
+
+impl Interner {
+    fn term_id(&mut self, word: &str, ascii: bool) -> u32 {
+        if let Some(&id) = self.words.get(word) {
+            return id;
+        }
+        self.lower.clear();
+        if ascii {
+            self.lower.push_str(word);
+            self.lower.make_ascii_lowercase();
+        } else {
+            // `str::to_lowercase`, not per-char mapping: it applies the final-sigma rule.
+            self.lower.push_str(&word.to_lowercase());
+        }
+        let stem = stemmer().stem(&self.lower);
+        let id = match self.ids.get(stem.as_ref()) {
+            Some(&id) => id,
+            None => {
+                let id = u32::try_from(self.terms.len()).expect("batch vocabulary over u32");
+                let term: Box<str> = stem.into();
+                let mut key = [0u8; 8];
+                let prefix = term.len().min(8);
+                key[..prefix].copy_from_slice(&term.as_bytes()[..prefix]);
+                self.keys.push(u64::from_be_bytes(key));
+                self.ids.insert(term.clone(), id);
+                self.terms.push(term);
+                self.counts.push(0);
+                id
+            }
+        };
+        self.words.insert(word.into(), id);
+        id
+    }
+
+    /// Counts the words of `text` `weight` times each, as `terms(text, true)` splits them
+    /// (maximal runs of alphanumeric characters); returns how many were counted, weighted.
+    fn count(&mut self, text: &str, weight: u32) -> usize {
+        let bytes = text.as_bytes();
+        let mut counted = 0;
+        let mut at = 0;
+        let char_at = |at: usize| text[at..].chars().next().expect("char boundary");
+        while at < bytes.len() {
+            if bytes[at] < 0x80 {
+                if !bytes[at].is_ascii_alphanumeric() {
+                    at += 1;
+                    continue;
+                }
+            } else {
+                let c = char_at(at);
+                if !c.is_alphanumeric() {
+                    at += c.len_utf8();
+                    continue;
+                }
+            }
+            let start = at;
+            let mut ascii = true;
+            while at < bytes.len() {
+                if bytes[at] < 0x80 {
+                    if !bytes[at].is_ascii_alphanumeric() {
+                        break;
+                    }
+                    at += 1;
+                } else {
+                    let c = char_at(at);
+                    if !c.is_alphanumeric() {
+                        break;
+                    }
+                    ascii = false;
+                    at += c.len_utf8();
+                }
+            }
+            let id = self.term_id(&text[start..at], ascii);
+            let count = &mut self.counts[id as usize];
+            if *count == 0 {
+                self.counted.push(id);
+            }
+            *count += weight;
+            counted += weight as usize;
+        }
+        counted
+    }
+
+    /// The term table of `text` with its first line's terms counted `title_weight` times in
+    /// total, and the weighted word count: what `terms(text, true)` plus the title weighting
+    /// produce.
+    fn chunk_terms(&mut self, text: &str, title_weight: u32) -> (StoredTerms, usize) {
+        if self.words.len() >= STEM_MEMO_CAPACITY {
+            *self = Self::default();
+        }
+        let mut words = self.count(text, 1);
+        if title_weight > 1 {
+            words += self.count(text.lines().next().unwrap_or_default(), title_weight - 1);
+        }
+        let (terms, keys, counts) = (&self.terms, &self.keys, &mut self.counts);
+        self.counted.sort_unstable_by(|&a, &b| {
+            let (a, b) = (a as usize, b as usize);
+            keys[a]
+                .cmp(&keys[b])
+                .then_with(|| terms[a].as_bytes().cmp(terms[b].as_bytes()))
+        });
+        let bytes = self
+            .counted
+            .iter()
+            .map(|&id| terms[id as usize].len())
+            .sum();
+        let table = StoredTerms::from_sorted_refs(
+            self.counted.len(),
+            bytes,
+            self.counted
+                .iter()
+                .map(|&id| (&*terms[id as usize], counts[id as usize])),
+        );
+        for &id in &self.counted {
+            counts[id as usize] = 0;
+        }
+        self.counted.clear();
+        (table, words)
+    }
+}
 
 thread_local! {
-    static ACTIVE_STEM_MEMO: std::cell::RefCell<Option<StemTable>> =
+    static ACTIVE_STEM_MEMO: std::cell::RefCell<Option<Interner>> =
         const { std::cell::RefCell::new(None) };
 }
 
-/// A stem cache for one ingest batch. It is installed on a thread only while that thread
+/// The word interner of one ingest batch. It is installed on a thread only while that thread
 /// prepares documents for the batch and is freed with the batch, so no thread keeps it and
-/// queries never use it. The table hashes with a per-process random seed because its keys
-/// are caller text.
+/// queries never use it.
 #[derive(Default)]
-pub(crate) struct StemMemo(StemTable);
+pub(crate) struct StemMemo(Interner);
 
 pub(crate) struct StemMemoGuard<'a>(&'a mut StemMemo);
 
@@ -649,27 +798,13 @@ impl Drop for StemMemoGuard<'_> {
     }
 }
 
-/// Calls `f` with the Snowball stem of `lower`, through the installed batch memo when there is
-/// one: a corpus repeats a small vocabulary, and stemming each occurrence dominated
-/// single-threaded ingest.
-fn with_stem(lower: &str, f: &mut impl FnMut(&str)) {
-    ACTIVE_STEM_MEMO.with(|active| {
-        let mut active = active.borrow_mut();
-        let Some(memo) = active.as_mut() else {
-            f(&stemmer().stem(lower));
-            return;
-        };
-        if let Some(stem) = memo.get(lower) {
-            f(stem);
-            return;
-        }
-        let stem: Box<str> = stemmer().stem(lower).into();
-        f(&stem);
-        if memo.len() >= STEM_MEMO_CAPACITY {
-            memo.clear();
-        }
-        memo.insert(lower.into(), stem);
-    });
+/// [`Interner::chunk_terms`] through the batch interner installed on this thread, or a
+/// one-off one.
+fn chunk_terms(text: &str, title_weight: u32) -> (StoredTerms, usize) {
+    ACTIVE_STEM_MEMO.with(|active| match active.borrow_mut().as_mut() {
+        Some(interner) => interner.chunk_terms(text, title_weight),
+        None => Interner::default().chunk_terms(text, title_weight),
+    })
 }
 
 pub(crate) fn prepare(
@@ -699,6 +834,20 @@ pub(crate) fn prepare_with_options(
     encoder: TextEncoder,
     mode: EncodeMode,
 ) -> Result<StoredDocument> {
+    check_mode(&input, encoder, mode)?;
+    let spans = chunk_spans(&input)?;
+    prepare_spans(
+        input,
+        spans,
+        dimensions,
+        embedding_dimensions,
+        keys,
+        encoder,
+        mode,
+    )
+}
+
+fn check_mode(input: &DocumentInput, encoder: TextEncoder, mode: EncodeMode) -> Result<()> {
     ensure!(
         mode != EncodeMode::Deferred || !encoder.is_embedding(),
         "deferred encoding applies to text encoders; {} vectors come from embeddings",
@@ -708,7 +857,20 @@ pub(crate) fn prepare_with_options(
         mode != EncodeMode::Deferred || input.store_text.unwrap_or(true),
         "deferred encoding needs the chunk text; set storeText or encode eagerly"
     );
-    let chunks = chunk_document(&input)?;
+    Ok(())
+}
+
+/// [`prepare_with_options`] of an input whose chunk spans ([`chunk_spans`]) are known.
+pub(crate) fn prepare_spans(
+    input: DocumentInput,
+    chunks: Vec<(u32, u32)>,
+    dimensions: usize,
+    embedding_dimensions: Option<usize>,
+    keys: Option<&[String]>,
+    encoder: TextEncoder,
+    mode: EncodeMode,
+) -> Result<StoredDocument> {
+    check_mode(&input, encoder, mode)?;
     ensure!(
         keys.is_none_or(|k| k.len() == chunks.len()),
         "provide one key per chunk"
@@ -748,16 +910,10 @@ pub(crate) fn prepare_with_options(
         (1..=16).contains(&title_weight),
         "titleWeight must be between 1 and 16"
     );
-    for (i, chunk) in chunks.into_iter().enumerate() {
-        let source = keys.map_or(chunk.text.as_str(), |k| k[i].as_str());
-        let mut terms = terms(source, true);
-        if i == 0 && title_weight > 1 {
-            let title = source.lines().next().unwrap_or_default();
-            for (term, count) in self::terms(title, true) {
-                *terms.entry(term).or_insert(0) += count * (title_weight - 1);
-            }
-        }
-        let word_count = terms.values().map(|&n| n as usize).sum();
+    for (i, &(start_byte, end_byte)) in chunks.iter().enumerate() {
+        let text = &input.text[start_byte as usize..end_byte as usize];
+        let source = keys.map_or(text, |k| k[i].as_str());
+        let (terms, word_count) = chunk_terms(source, if i == 0 { title_weight } else { 1 });
         let embedding = input
             .embeddings
             .as_ref()
@@ -775,10 +931,9 @@ pub(crate) fn prepare_with_options(
                 EntangledHVec::from_indices(Vec::new(), dimensions),
                 VectorState::Pending,
             ),
-            (EncodeMode::Eager, false, _) => (
-                encoder.encode(&chunk.text, dimensions),
-                VectorState::Encoded,
-            ),
+            (EncodeMode::Eager, false, _) => {
+                (encoder.encode(text, dimensions), VectorState::Encoded)
+            }
             (EncodeMode::Eager, true, Some(e)) => (
                 EntangledHVec::from_dense(e, dimensions),
                 VectorState::Encoded,
@@ -791,13 +946,13 @@ pub(crate) fn prepare_with_options(
         stored.push(StoredChunk {
             vector,
             vector_state,
-            text: input.store_text.unwrap_or(true).then_some(chunk.text),
+            text: input.store_text.unwrap_or(true).then(|| text.to_owned()),
             text_at: None,
-            id: chunk.id,
-            start_byte: chunk.start_byte,
-            end_byte: chunk.end_byte,
+            id: chunk_id(&input.id, i),
+            start_byte,
+            end_byte,
             embedding,
-            terms: terms.into(),
+            terms,
             word_count,
             stemmed: true,
         });

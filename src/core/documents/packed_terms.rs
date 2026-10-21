@@ -169,6 +169,36 @@ impl StoredTerms {
         };
         Self(Some(Box::new(data)))
     }
+
+    /// [`Self::from_sorted`] from `count` borrowed entries whose keys total `bytes`, without
+    /// an owned string per key unless the table cannot be packed.
+    pub(crate) fn from_sorted_refs<'a>(
+        count: usize,
+        bytes: usize,
+        entries: impl Iterator<Item = (&'a str, u32)>,
+    ) -> Self {
+        if count == 0 {
+            return Self::default();
+        }
+        if !can_pack(count, bytes) {
+            return Self::from_sorted(entries.map(|(key, f)| (key.to_owned(), f)).collect());
+        }
+        let mut text = String::with_capacity(bytes);
+        let mut starts = Vec::with_capacity(count);
+        let mut frequencies = Vec::with_capacity(count);
+        for (key, frequency) in entries {
+            debug_assert!(text.is_empty() || &text[*starts.last().unwrap() as usize..] < key);
+            starts.push(u32::try_from(text.len()).expect("packed term offset overflow"));
+            text.push_str(key);
+            frequencies.push(frequency);
+        }
+        debug_assert_eq!((text.len(), frequencies.len()), (bytes, count));
+        Self(Some(Box::new(TermData::Packed(PackedTerms {
+            text: text.into_boxed_str(),
+            starts: starts.into_boxed_slice(),
+            frequencies: frequencies.into_boxed_slice(),
+        }))))
+    }
 }
 
 pub(crate) struct TermIter<'a>(TermIterData<'a>);
