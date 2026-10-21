@@ -104,6 +104,7 @@ def _error(res: httpx.Response) -> HmsError:
         err = body.get("error", {})
         code, message = err.get("code"), err.get("message", message)
     except (ValueError, AttributeError):
+        # Not a JSON problem document: keep the raw status text as the message.
         pass
     return HmsError(f"hms-server returned {res.status_code}: {message}", res.status_code, code)
 

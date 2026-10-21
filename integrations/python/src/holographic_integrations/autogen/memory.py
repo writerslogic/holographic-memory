@@ -118,6 +118,7 @@ class HolographicMemory(Memory, Component[HolographicMemoryConfig]):
         try:
             mime = MemoryMimeType(mime)
         except ValueError:
+            # An unknown MIME string is passed through as-is; AutoGen accepts both forms.
             pass
         user = {k[len(_M):]: v for k, v in hit.metadata.items() if k.startswith(_M)}
         body: Any = hit.text
