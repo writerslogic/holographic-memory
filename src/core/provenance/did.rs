@@ -107,8 +107,8 @@ pub fn did_web_from_domain(domain: &str, path: Option<&[&str]>) -> String {
 
 /// Convert a did:web URI to the HTTPS URL where its DID document should be hosted.
 /// Per the did:web spec:
-///   did:web:example.com → https://example.com/.well-known/did.json
-///   did:web:example.com:path:to → https://example.com/path/to/did.json
+///   did:web:example.com → <https://example.com/.well-known/did.json>
+///   did:web:example.com:path:to → <https://example.com/path/to/did.json>
 pub fn did_web_to_url(did: &str) -> Result<String> {
     let domain_path = did
         .strip_prefix("did:web:")

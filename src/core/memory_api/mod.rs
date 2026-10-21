@@ -7,7 +7,7 @@
 //! # Design
 //!
 //! A fact is an ordinary document. Its memory fields live in one reserved metadata key
-//! (`_mem`, see [`stamp`]), so the API adds no persisted structure: stores written before it
+//! (`_mem`, see `stamp`), so the API adds no persisted structure: stores written before it
 //! open unchanged, and journaling, replay and encryption apply as for any document. The
 //! engine's documents, vectors and raw search stay reachable through [`Memory::core`];
 //! nothing here is required to use them.

@@ -73,6 +73,25 @@ jobs:
       - name: Clippy with only this feature
         run: cargo clippy --locked --all-targets --features ${{ matrix.features }} -- -D warnings
 
+  docs-rs:
+    name: docs (rustdoc, warnings denied)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: docs
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Rustdoc, all features
+        run: cargo doc --locked --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: -D warnings
+
   test:
     name: test (${{ matrix.set }})
     runs-on: ubuntu-latest
@@ -276,7 +295,7 @@ jobs:
   check:
     name: check
     if: always()
-    needs: [lint, features, test, bench-build, deny, msrv, retrieval-quality, python-sdk, node, workflows]
+    needs: [lint, features, docs-rs, test, bench-build, deny, msrv, retrieval-quality, python-sdk, node, workflows]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded

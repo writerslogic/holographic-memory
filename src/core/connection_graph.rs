@@ -27,7 +27,7 @@
 //!
 //! # Honest scope
 //! Plasticity is a **working-set** mechanism: it keeps frequently-queried
-//! relations sharp *by forgetting the rest* (see [`tests::forgetting_is_real`]),
+//! relations sharp *by forgetting the rest* (see the `tests::forgetting_is_real` test),
 //! and its generalization *is* inductive inference — the same mechanism that can
 //! surface relations that were never asserted. It helps under load and is
 //! neutral-to-slightly-negative without it. Use accordingly.

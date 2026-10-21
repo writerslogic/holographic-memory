@@ -24,7 +24,7 @@ use crate::core::types::RetrievalResult;
 #[derive(Clone, Debug)]
 pub struct HopfieldConfig {
     /// Inverse temperature. Higher β = sharper retrieval (fewer results).
-    /// Must be > 0. Typical range: 10.0–500.0 (scores are Jaccard in [0,1]).
+    /// Must be > 0. Typical range: 10.0–500.0 (scores are Jaccard in `[0, 1]`).
     pub beta: f64,
     /// Tsallis entropy parameter controlling sparsity of attention weights.
     /// α=1: softmax (dense, no exact zeros — equivalent to standard attention).

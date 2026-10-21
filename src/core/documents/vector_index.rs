@@ -167,7 +167,7 @@ impl std::fmt::Display for GraphUnavailable {
 
 impl std::error::Error for GraphUnavailable {}
 
-/// A nearest-neighbour index over the rows of one [`VectorSnapshot`].
+/// A nearest-neighbour index over the rows of one `VectorSnapshot`.
 pub trait VectorIndex: Send + Sync {
     fn kind(&self) -> VectorIndexKind;
     fn rows(&self) -> usize;
