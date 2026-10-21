@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 
 #include "holographic_memory.h"
@@ -48,41 +49,8 @@ static void make_dir(char *buffer, size_t size, const char *tag) {
   snprintf(buffer, size, "%s/hms-c-test-%d-%s", base ? base : "/tmp", (int)getpid(), tag);
 }
 
-/* Calls `visit` for every regular file under `path` (no shell, no symlink following); stops
-   and returns 1 as soon as `visit` does. Directories are removed after their contents when
-   `remove` is set. */
-static int walk_tree(const char *path, int (*visit)(const char *, void *), void *context, int remove) {
-  struct stat st;
-  if (lstat(path, &st) != 0) return 0;
-  if (!S_ISDIR(st.st_mode)) {
-    if (visit && visit(path, context)) return 1;
-    if (remove && unlink(path) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
-    return 0;
-  }
-  DIR *dir = opendir(path);
-  if (dir) {
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-      if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) continue;
-      char child[1024];
-      int n = snprintf(child, sizeof child, "%s/%s", path, entry->d_name);
-      if (n < 0 || (size_t)n >= sizeof child) continue;
-      if (walk_tree(child, visit, context, remove)) {
-        closedir(dir);
-        return 1;
-      }
-    }
-    closedir(dir);
-  }
-  if (remove && rmdir(path) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
-  return 0;
-}
-
-static void remove_tree(const char *path) { walk_tree(path, NULL, NULL, 1); }
-
-/* Whether the file at `path` contains the bytes of `needle`. */
-static int file_contains(const char *path, const char *needle) {
-  FILE *file = fopen(path, "rb");
+/* Whether the open stream contains the bytes of `needle`; closes the stream. */
+static int stream_contains(FILE *file, const char *needle) {
   if (!file) return 0;
   size_t length = strlen(needle), held = 0, capacity = 1 << 16;
   char *buffer = malloc(capacity);
@@ -103,20 +71,58 @@ static int file_contains(const char *path, const char *needle) {
   return found;
 }
 
-struct needle_search { const char *needle; const char *skip; };
+static int file_contains(const char *path, const char *needle) {
+  return stream_contains(fopen(path, "rb"), needle);
+}
 
-static int visit_contains(const char *path, void *context) {
-  const struct needle_search *search = context;
-  const char *name = strrchr(path, '/');
-  name = name ? name + 1 : path;
-  if (search->skip && !strcmp(name, search->skip)) return 0;
-  return file_contains(path, search->needle);
+/* Walks the directory open on `fd` (consumed) without following symlinks and without a
+   check-then-use gap: every entry is opened or removed relative to its parent descriptor.
+   With `needle`, returns 1 as soon as a file not named `skip` contains it; with `remove`,
+   deletes entries after visiting them. */
+static int walk_dir(int fd, const char *needle, const char *skip, int remove) {
+  DIR *dir = fdopendir(fd);
+  if (!dir) {
+    close(fd);
+    return 0;
+  }
+  int found = 0;
+  struct dirent *entry;
+  while (!found && (entry = readdir(dir)) != NULL) {
+    const char *name = entry->d_name;
+    if (!strcmp(name, ".") || !strcmp(name, "..")) continue;
+    int child = openat(dirfd(dir), name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (child >= 0) {
+      found = walk_dir(child, needle, skip, remove);
+      if (remove && unlinkat(dirfd(dir), name, AT_REMOVEDIR) != 0) fprintf(stderr, "cleanup of %s failed\n", name);
+      continue;
+    }
+    if (needle && !(skip && !strcmp(name, skip))) {
+      int file = openat(dirfd(dir), name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+      if (file >= 0) {
+        FILE *stream = fdopen(file, "rb");
+        if (!stream) close(file);
+        found = stream_contains(stream, needle);
+      }
+    }
+    if (remove && unlinkat(dirfd(dir), name, 0) != 0) fprintf(stderr, "cleanup of %s failed\n", name);
+  }
+  closedir(dir);
+  return found;
+}
+
+static int open_dir(const char *path) { return open(path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC); }
+
+static void remove_tree(const char *path) {
+  int fd = open_dir(path);
+  if (fd < 0) return;
+  walk_dir(fd, NULL, NULL, 1);
+  if (rmdir(path) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
 }
 
 /* Whether any file under `dir`, other than ones named `skip`, contains `needle`. */
 static int tree_contains(const char *dir, const char *needle, const char *skip) {
-  struct needle_search search = {needle, skip};
-  return walk_tree(dir, visit_contains, &search, 0);
+  int fd = open_dir(dir);
+  return fd >= 0 && walk_dir(fd, needle, skip, 0);
 }
 
 static hms_store_t *open_store(const char *path, const char *key) {
@@ -480,7 +486,28 @@ static void test_concurrency(void) {
   remove_tree(dir);
 }
 
+/* The at-rest scan must find what is there, honour `skip`, and cleanup must remove the tree. */
+static void test_tree_helpers(void) {
+  char dir[512], sub[600], file[700];
+  make_dir(dir, sizeof dir, "helpers");
+  snprintf(sub, sizeof sub, "%s/nested", dir);
+  snprintf(file, sizeof file, "%s/plain.txt", sub);
+  CHECK(mkdir(dir, 0700) == 0 && mkdir(sub, 0700) == 0);
+  FILE *out = fopen(file, "wb");
+  CHECK(out != NULL);
+  if (out) {
+    fputs("prefix swordfish suffix", out);
+    fclose(out);
+  }
+  CHECK(tree_contains(dir, "swordfish", NULL));
+  CHECK(!tree_contains(dir, "swordfish", "plain.txt"));
+  CHECK(!tree_contains(dir, "unicorn", NULL));
+  remove_tree(dir);
+  CHECK(access(dir, F_OK) != 0);
+}
+
 int main(void) {
+  test_tree_helpers();
   test_versions();
   test_argument_validation();
   test_lifecycle_and_search();
