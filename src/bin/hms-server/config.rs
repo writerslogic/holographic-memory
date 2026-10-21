@@ -145,6 +145,19 @@ pub struct Config {
     /// Maximum top_k.
     #[arg(long, env = "HMS_MAX_TOP_K", default_value_t = 100)]
     pub max_top_k: u32,
+    /// Route of unfiltered vector queries: `auto` (the graph index once maintenance built one,
+    /// the exact scan otherwise), `exact` (always the exact scan) or `graph` (409 until a graph
+    /// index is built). A request's `index` field overrides it.
+    #[arg(long, env = "HMS_QUERY_INDEX", default_value = "auto")]
+    pub query_index: String,
+    /// Beam width of graph-index queries, 1..=4096: the recall knob. A request's `ef` field
+    /// overrides it.
+    #[arg(long, env = "HMS_QUERY_EF", default_value_t = 128)]
+    pub query_ef: u32,
+    /// Fewest embedded chunks for which index maintenance builds the graph index; smaller
+    /// stores answer from the exact scan, which is faster at that size.
+    #[arg(long, env = "HMS_GRAPH_MIN_ROWS", default_value_t = 4096)]
+    pub graph_min_rows: usize,
     /// Maximum number of tenant stores open at once.
     #[arg(long, env = "HMS_MAX_TENANTS", default_value_t = 64)]
     pub max_tenants: usize,
@@ -247,6 +260,18 @@ impl Config {
         }
         if !(1..=MAX_CONCURRENT_WORK).contains(&self.max_concurrent_work) {
             bail!("--max-concurrent-work must be 1..=256");
+        }
+        if holographic_memory::core::documents::VectorIndexMode::parse(&self.query_index).is_none()
+        {
+            bail!("--query-index must be auto, exact or graph");
+        }
+        if !(1..=holographic_memory::core::documents::MAX_EF as u32).contains(&self.query_ef) {
+            bail!("--query-ef must be 1..=4096");
+        }
+        if !(holographic_memory::core::documents::SNAPSHOT_MIN_ROWS..=(1 << 22))
+            .contains(&self.graph_min_rows)
+        {
+            bail!("--graph-min-rows must be 128..=4194304");
         }
         if self.max_batch == 0 || self.max_batch > MAX_BATCH_DOCUMENTS {
             bail!("--max-batch must be 1..=4096 (the native transaction limit)");

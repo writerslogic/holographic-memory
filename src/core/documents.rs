@@ -21,7 +21,17 @@ mod memory;
 mod postings;
 mod search;
 mod text;
+mod vector_index;
 pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
+pub use vector_index::{
+    GraphUnavailable, VectorIndex, VectorIndexKind, VectorIndexMode, VectorIndexStatus,
+    VectorQueryOptions, DEFAULT_EF, DEFAULT_GRAPH_MIN_ROWS, MAX_EF, MAX_K,
+    REBUILD_AFTER_MUTATIONS, SNAPSHOT_MIN_ROWS,
+};
+pub(crate) use vector_index::{
+    build_vector_snapshot, capture_vector_rows, search_vector_snapshot, vector_index_status,
+    VectorIndexSlot, VectorSnapshot,
+};
 pub(crate) use index::DocumentStore;
 pub(crate) use index::DocumentWithText;
 pub use listing::DocumentRecord;

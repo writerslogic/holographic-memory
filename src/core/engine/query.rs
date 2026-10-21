@@ -106,6 +106,7 @@ impl HmsCore {
         if document_training_recommended {
             self.train_document_index()?;
         }
+        self.maintain_vector_index(crate::core::documents::DEFAULT_GRAPH_MIN_ROWS)?;
         Ok(self.index_status())
     }
 
