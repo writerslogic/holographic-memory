@@ -92,7 +92,10 @@ fn fixture() -> &'static Fixture {
     FIXTURE.get_or_init(|| {
         let rows = clustered(N, 0x5EED_0001);
         let mut unit = rows.clone();
-        unit.as_chunks_mut::<DIM>().0.iter_mut().for_each(|row| normalize(row));
+        unit.as_chunks_mut::<DIM>()
+            .0
+            .iter_mut()
+            .for_each(|row| normalize(row));
         let mut queries: Vec<Vec<f32>> = clustered(QUERIES, 0x5EED_0002)
             .as_chunks::<DIM>()
             .0

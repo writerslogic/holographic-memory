@@ -75,10 +75,10 @@ fn main() -> Result<()> {
             let options = IngestOptions { encode: mode };
             let start = Instant::now();
             let core = HmsCore::new(1024, Some(store), None)?;
-            for chunk in input.documents.chunks(512) {
-                core.memorize_documents_with(chunk.to_vec(), &options)?;
-            }
-            json!({"documents": input.documents.len(), "ingest_s": start.elapsed().as_secs_f64(),
+            // One atomic batch, as the comparators load the corpus in one transaction.
+            let count = input.documents.len();
+            core.memorize_documents_with(input.documents, &options)?;
+            json!({"documents": count, "ingest_s": start.elapsed().as_secs_f64(),
                 "encode": mode.name()})
         }
         "serve" => {
