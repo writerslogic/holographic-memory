@@ -3,3 +3,4 @@
 build/
 local.properties
 android/src/main/jniLibs/
+gradle/wrapper/gradle-wrapper.jar
