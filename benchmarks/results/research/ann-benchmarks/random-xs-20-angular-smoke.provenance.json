@@ -1,7 +1,7 @@
 {
   "purpose": "correctness smoke of benchmarks/ann-benchmarks/hms through the ann-benchmarks harness; QPS is not comparable (local mode, no CPU pinning, no competitors)",
   "harness": "github.com/erikbern/ann-benchmarks @ 2e081ad",
-  "hms": "holographic-vsa wheel built from this branch (base 15b87db) with maturin 1.15.0, rustc 1.96.0",
+  "hms": "holographic-vsa wheel built from this branch (a7479e1) with maturin 1.15.0, rustc 1.96.0",
   "machine": "Apple M4, macOS 27.0, Python 3.12, upstream requirements.txt",
   "dataset": "random-xs-20-angular (9,000 train, 1,000 test, k=10)",
   "commands": [
