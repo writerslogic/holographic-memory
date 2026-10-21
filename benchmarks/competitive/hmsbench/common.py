@@ -172,7 +172,7 @@ def timing_lock():
     """Exclusive timing lock shared with the other harnesses on this host (one phase at a time,
     never held across a suite, so each hold stays far below the 14 minute rule). A no-op on CI
     and wherever the lock directory does not exist."""
-    path = Path(os.environ.get("HMS_BENCH_LOCK", "/Volumes/A/.hms-target/timing.lock"))
+    path = Path(os.environ.get("HMS_BENCH_LOCK", "./.hms-target/timing.lock"))
     if os.environ.get("GITHUB_ACTIONS") or not path.parent.exists():
         yield
         return

@@ -18,11 +18,11 @@ image = (
         "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
     )
     .env({"PATH": "/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"})
-    .add_local_dir("/Volumes/A/HMS/src", "/app/src", copy=True)
-    .add_local_file("/Volumes/A/HMS/Cargo.toml", "/app/Cargo.toml", copy=True)
-    .add_local_file("/Volumes/A/HMS/Cargo.lock", "/app/Cargo.lock", copy=True)
-    .add_local_file("/Volumes/A/HMS/build.rs", "/app/build.rs", copy=True)
-    .add_local_dir("/Volumes/A/HMS/benches", "/app/benches", copy=True)
+    .add_local_dir("./HMS/src", "/app/src", copy=True)
+    .add_local_file("./HMS/Cargo.toml", "/app/Cargo.toml", copy=True)
+    .add_local_file("./HMS/Cargo.lock", "/app/Cargo.lock", copy=True)
+    .add_local_file("./HMS/build.rs", "/app/build.rs", copy=True)
+    .add_local_dir("./HMS/benches", "/app/benches", copy=True)
     .run_commands(
         "cd /app && cargo build --release --bin hms-scaling",
     )

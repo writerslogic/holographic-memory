@@ -6,7 +6,7 @@
   "date": "cached parsed time range: sessions inside it get one reciprocal-rank unit"
  },
  "dev_only": true,
- "run": "/Users/davidcondrey/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2",
+ "run": "~/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2",
  "config_sha256": "30240fa754dc89b85c8e398351edc5b0b9464cd43b38534b0026584b41a50a41",
  "completeness_sha256": "d7ab07c08502b307102571e87b0208688a2ac384c787668ee3c130d357785be4",
  "n_dev": 100,

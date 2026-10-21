@@ -4,12 +4,12 @@
   "checker_sha256": "5e4cce7baa9cbba14c17a8b5e20e80ffe935e7e874ea0b30885de28a6b639699",
   "frozen_binary_sha256": "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec",
   "frozen_protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
-  "archive_manifest_path": "/Volumes/A/holographic-memory/benchmarks/results/metal_sdpa_draft_2026-10-09/manifest.json",
+  "archive_manifest_path": "./benchmarks/results/metal_sdpa_draft_2026-10-09/manifest.json",
   "archive_manifest_sha256": "0c7772db9091709f0b4d0afb1e7b46e2d19e28d39ae19223a0775b05ee15b916",
   "archived_artifact_identities": 55,
   "persistent_binary_resources": [
     {
-      "path": "/Volumes/A/.hms-target-gpubatch/release/public-bench",
+      "path": "./.hms-target-gpubatch/release/public-bench",
       "sha256": "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec",
       "bytes": 7406992,
       "archived": false,
@@ -17,7 +17,7 @@
       "timing_claim": false
     },
     {
-      "path": "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-control",
+      "path": "./.hms-target-metal-sdpa/release/public-bench-control",
       "sha256": "0039628291b4cb5eeec8e5315afedfdcde50ecc3e7ecebe6bad38842314fa623",
       "bytes": 7605520,
       "archived": false,
@@ -25,7 +25,7 @@
       "timing_claim": false
     },
     {
-      "path": "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-sdpa",
+      "path": "./.hms-target-metal-sdpa/release/public-bench-sdpa",
       "sha256": "4771dc6cbd48282336343cb6b86171b90860e7427a373c93e405326f163ee317",
       "bytes": 7721152,
       "archived": false,
@@ -37,11 +37,11 @@
   "evidence_limit": "Journals record successful SIGCONT return PID sets; historical OS suspension states were unobserved.",
   "journal_artifacts": [
     {
-      "path": "/Volumes/A/holographic-memory/benchmarks/results/weak_reader_suspension_pilot_2026-10-09.json",
+      "path": "./benchmarks/results/weak_reader_suspension_pilot_2026-10-09.json",
       "sha256": "329e4a210e4b527acb6d14a74fe0f761143a2c1becb6cbe972ba4f00323ed055"
     },
     {
-      "path": "/Volumes/A/holographic-memory/benchmarks/results/weak_reader_suspension_functional_2026-10-09.json",
+      "path": "./benchmarks/results/weak_reader_suspension_functional_2026-10-09.json",
       "sha256": "c2a063a62a2964850184a77cbb820a12ce8f7043620ed8ac134b503e8c2aec2a"
     }
   ],
@@ -87,19 +87,19 @@
       "native_checks": [
         {
           "name": "unmodified_control",
-          "report_path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/report.json",
-          "archived_report_path": "/Volumes/A/holographic-memory/benchmarks/results/metal_sdpa_draft_2026-10-09/isolated/target/sdpa-validation/functional_unmodified_control/report.json",
+          "report_path": "./hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/report.json",
+          "archived_report_path": "./benchmarks/results/metal_sdpa_draft_2026-10-09/isolated/target/sdpa-validation/functional_unmodified_control/report.json",
           "report_sha256": "fa87231eab171b7e4343af2e504d3d5dd09880461672ce646c402bd9d37a32b3",
           "native_runs": 0,
-          "checker_path": "/Volumes/A/hms-metal-sdpa/benchmarks/public/check_metal_sdpa_pairs.py",
+          "checker_path": "./hms-metal-sdpa/benchmarks/public/check_metal_sdpa_pairs.py",
           "checker_sha256": "70e3b21005404b2b2e9210a082772baf3c2a4f21dfe15f70e94ad0aedcd55608",
           "output_agreement": false,
           "returncode": 1,
           "independent_check": {
             "argv": [
-              "/Users/davidcondrey/.cache/uv/environments-v2/check-reader-suspensions-a77592e32054f229/bin/python3",
-              "/Volumes/A/holographic-memory/benchmarks/results/metal_sdpa_draft_2026-10-09/isolated/benchmarks/public/check_metal_sdpa_pairs.py",
-              "/Volumes/A/holographic-memory/benchmarks/results/metal_sdpa_draft_2026-10-09/verification_views/functional_report.json",
+              "~/.cache/uv/environments-v2/check-reader-suspensions-a77592e32054f229/bin/python3",
+              "./benchmarks/results/metal_sdpa_draft_2026-10-09/isolated/benchmarks/public/check_metal_sdpa_pairs.py",
+              "./benchmarks/results/metal_sdpa_draft_2026-10-09/verification_views/functional_report.json",
               "--allow-incomplete"
             ],
             "stdout": {

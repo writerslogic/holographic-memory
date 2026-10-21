@@ -6,7 +6,7 @@
  "protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
  "preregistration_path": "benchmarks/results/preregistration_2026-10.json",
  "preregistration_sha256": "763ad08d4c59bca813a1c2893d78530285368658b860595f040d21f2c298db78",
- "source_path": "/Users/davidcondrey/.cache/hms-bench/downloads/longmemeval_s_cleaned.json",
+ "source_path": "~/.cache/hms-bench/downloads/longmemeval_s_cleaned.json",
  "split_path": "benchmarks/public/longmemeval_split.json",
  "evidence_report_path": "benchmarks/results/evidence_budget_dev.json",
  "evidence_report_sha256": "4e8f5346d10bb187ac11378bfe677e31cc9a96763079b80a9d4da3953ea8178e",
@@ -24,7 +24,7 @@
    "sha256": "ef9c00e7bc8d029a4f4cf2c177098c35e3ee347893680e1fe26ee98ed9d16ba7"
   },
   {
-   "path": "/Users/davidcondrey/.cache/hms-bench/downloads/longmemeval_s_cleaned.json",
+   "path": "~/.cache/hms-bench/downloads/longmemeval_s_cleaned.json",
    "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442"
   },
   {
@@ -32,7 +32,7 @@
    "sha256": "4e8f5346d10bb187ac11378bfe677e31cc9a96763079b80a9d4da3953ea8178e"
   },
   {
-   "path": "/Volumes/A/holographic-memory/benchmarks/public/longmemeval_reader_api.py",
+   "path": "./benchmarks/public/longmemeval_reader_api.py",
    "sha256": "d7048a845767e34bcb87b0dc6dedb60041102bef87359189ff7103e1482e11bb"
   },
   {
@@ -48,7 +48,7 @@
    "sha256": "8b4a027f2b848a74d05c0accb65f37f79aa9739d3d635e87fe48a74f62c01872"
   },
   {
-   "path": "/Users/davidcondrey/.cache/hms-bench/downloads/longmemeval_evaluate_qa_9e0b455f4ef0.py",
+   "path": "~/.cache/hms-bench/downloads/longmemeval_evaluate_qa_9e0b455f4ef0.py",
    "sha256": "ecce9c4c79dc89d99534ac17b383a5cbb5b9f0c69ee98adaf0684742e3d95251"
   },
   {
@@ -56,11 +56,11 @@
    "sha256": "707e04e226c23d2ba515d4f4b250ec7ae13cb84f0f42b2c7533ee9ae93b6b885"
   },
   {
-   "path": "/Volumes/A/holographic-memory/benchmarks/public/resume_longmemeval_readers.py",
+   "path": "./benchmarks/public/resume_longmemeval_readers.py",
    "sha256": "6abc4e8139c9be9e12067b12f3c6bcad383482aa6eedcf0b2d539ffcd8a3dc8f"
   },
   {
-   "path": "/Volumes/A/holographic-memory/benchmarks/public/longmemeval_incremental_judges.py",
+   "path": "./benchmarks/public/longmemeval_incremental_judges.py",
    "sha256": "924f6225c81b375ce28151b2002449999cdabc44b4d0372e5e6073217a11425b"
   },
   {

@@ -1,6 +1,6 @@
 {
   "workstream": "qgraph PARETO: per-vertex 8-bit LVQ code graph (VGraph) with optional 8-bit residual re-rank (LVQ-8x8)",
-  "method": "public-bench ann-qgraph --index vertex --holdout 2000 (train vectors held out, exact cosine truth; test.f32/neighbors.i32 not read). Single-thread, one query at a time. Timed runs under /Volumes/A/.hms-target/timed.sh with --max-load 3 (untimed rows) and paired runs under --max-load 8.",
+  "method": "public-bench ann-qgraph --index vertex --holdout 2000 (train vectors held out, exact cosine truth; test.f32/neighbors.i32 not read). Single-thread, one query at a time. Timed runs under ./.hms-target/timed.sh with --max-load 3 (untimed rows) and paired runs under --max-load 8.",
   "selection_rule": "Timed: best QPS among rows with recall >= threshold and load_gate_met. Untimed: lowest code estimates per query among rows with recall >= threshold. No interpolation.",
   "configs": [
     {
@@ -232,25 +232,25 @@
     }
   },
   "edge_index_baseline_heldout_nytimes": {
-    "file": "/Volumes/A/.hms-target/logs/tune/nytimes/d64_b512_a1.0.json",
+    "file": "./.hms-target/logs/tune/nytimes/d64_b512_a1.0.json",
     "qps_at_0.90": 7715,
     "qps_at_0.95": 2087,
     "index_gb": 1.77,
     "build_secs": 227
   },
   "paired_timing": {
-    "method": "Both indexes built in one process each with --sync; one /Volumes/A/.hms-target/timed.sh lock holds a coordinator that alternates A (edge baseline) and B (vertex candidate) round by round on the same 2,000 held-out queries. Selection: baseline = first ef reaching the threshold (as in the clean file); candidate = best QPS with recall >= threshold. Anchored = ratio x clean-file baseline QPS at the same baseline params.",
+    "method": "Both indexes built in one process each with --sync; one ./.hms-target/timed.sh lock holds a coordinator that alternates A (edge baseline) and B (vertex candidate) round by round on the same 2,000 held-out queries. Selection: baseline = first ef reaching the threshold (as in the clean file); candidate = best QPS with recall >= threshold. Anchored = ratio x clean-file baseline QPS at the same baseline params.",
     "environment": {
       "cpu": "Apple M4",
       "os": "Darwin",
-      "binary": "/Volumes/A/.hms-target-qgpareto/release/public-bench"
+      "binary": "./.hms-target-qgpareto/release/public-bench"
     },
     "pairs": [
       {
         "dataset": "nytimes-256-angular",
         "baseline_files": {
           "paired_edge": "benchmarks/results/pareto_raw/nytimes_A.json",
-          "clean_edge": "benchmarks/results/pareto_raw/clean_edge_nytimes_d64_b512.json (copy of /Volumes/A/.hms-target/logs/tune/nytimes/d64_b512_a1.0.json)"
+          "clean_edge": "benchmarks/results/pareto_raw/clean_edge_nytimes_d64_b512.json (copy of ./.hms-target/logs/tune/nytimes/d64_b512_a1.0.json)"
         },
         "candidate_file": "benchmarks/results/pareto_raw/nytimes_B.json",
         "coordinator_file": "benchmarks/results/pareto_raw/nytimes_coord.json",
@@ -360,7 +360,7 @@
         "dataset": "glove-100-angular",
         "baseline_files": {
           "paired_edge": "benchmarks/results/pareto_raw/glove_A.json",
-          "clean_edge": "benchmarks/results/pareto_raw/clean_edge_glove_d64_b128.json (copy of /Volumes/A/.hms-target/logs/tune/glove/d64_b128_a1.0.json)"
+          "clean_edge": "benchmarks/results/pareto_raw/clean_edge_glove_d64_b128.json (copy of ./.hms-target/logs/tune/glove/d64_b128_a1.0.json)"
         },
         "candidate_file": "benchmarks/results/pareto_raw/glove_B.json",
         "coordinator_file": "benchmarks/results/pareto_raw/glove_coord.json",

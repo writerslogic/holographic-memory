@@ -4,7 +4,7 @@
 the repeated runs of the `mobile_bench` example.
 
     uv run python bindings/uniffi/scripts/collect_mobile_bench.py \
-        --target-dir /Volumes/A/.hms-target-mobile --bench-dir /Volumes/hmsram/bench
+        --target-dir ./.hms-target-mobile --bench-dir /Volumes/hmsram/bench
 
 The bench directory should be on a RAM disk or fast flash: on spinning disks the numbers
 measure the disk. Run the Rust example binaries are built first with

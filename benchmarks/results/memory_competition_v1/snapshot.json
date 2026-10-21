@@ -1,5 +1,5 @@
 {
-  "root": "/Volumes/A/holographic-memory",
+  "root": ".",
   "head": "648ac99e8d936df50665688b2a877804e4dac33f",
   "files": {
     "benchmarks/public/ann_failure_map.py": "f2f86878e5341d7d07e7dd9edc3b4af285c4aa0a366238c0bb1c228dc4c9921a",

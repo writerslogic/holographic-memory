@@ -1,7 +1,7 @@
 {
-  "worktree": "/Volumes/A/holographic-memory-model-integrity",
-  "target_directory": "/Volumes/A/.hms-target-model-integrity",
-  "patch": "/Volumes/A/holographic-memory-model-integrity/benchmarks/results/model_stage_integrity_v1/integration.patch",
+  "worktree": ".-model-integrity",
+  "target_directory": "./.hms-target-model-integrity",
+  "patch": ".-model-integrity/benchmarks/results/model_stage_integrity_v1/integration.patch",
   "source_file": "src/core/models/stages.rs",
   "base_sha256": "863a4072722aa310c89c7de8e887c0921892507bf78b24d171a0c0dc02d6a6e6",
   "source_sha256": "7f17bb228c6bef187a8805e6846032d3e810d7caac2aae7cb1786f44dfec5a3a",
@@ -35,8 +35,8 @@
     "clippy_lib_tests_local_models_warnings_denied_exit": 0,
     "rustfmt_touched_file_check_exit": 0,
     "commands": [
-      "CARGO_TARGET_DIR=/Volumes/A/.hms-target-model-integrity CARGO_BUILD_JOBS=2 cargo test --locked --offline --features local-models --lib core::models::stages::tests",
-      "CARGO_TARGET_DIR=/Volumes/A/.hms-target-model-integrity CARGO_BUILD_JOBS=2 cargo clippy --locked --offline --features local-models --lib --tests -- -D warnings",
+      "CARGO_TARGET_DIR=./.hms-target-model-integrity CARGO_BUILD_JOBS=2 cargo test --locked --offline --features local-models --lib core::models::stages::tests",
+      "CARGO_TARGET_DIR=./.hms-target-model-integrity CARGO_BUILD_JOBS=2 cargo clippy --locked --offline --features local-models --lib --tests -- -D warnings",
       "rustfmt --edition 2021 --check src/core/models/stages.rs"
     ]
   },

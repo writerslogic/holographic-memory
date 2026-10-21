@@ -362,7 +362,7 @@ def main():
                 rc, out, err, _ = run([probe, "memscan", "--store", str(store)], stdin=PASSPHRASE + "\n", timeout=600)
                 result["cells"]["memscan"] = {"hms": json.loads(out.strip().splitlines()[-1]) if out.strip() else {"error": err[-300:]}}
         else:
-            exclude("key zeroization scan: /proc/self/mem is Linux only; run on writerslogic-02 and merged")
+            exclude("key zeroization scan: /proc/self/mem is Linux only; run on a Linux host and merged")
     if "ct" in cells:
         rc, out, err, _ = run([probe, "ct", "--iters", "300000"], timeout=600)
         result["cells"]["constant_time"] = {"hms_server_ct_eq": json.loads(out.strip().splitlines()[-1]) if out.strip() else {"error": err[-300:]}}

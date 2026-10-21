@@ -6,11 +6,11 @@
       "--",
       "--check"
     ],
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 0.5573989580152556,
     "environment": {
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "log": {
@@ -39,11 +39,11 @@
       "-D",
       "warnings"
     ],
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 173.9446909580147,
     "environment": {
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "log": {
@@ -73,11 +73,11 @@
       "-D",
       "warnings"
     ],
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 35.94761654105969,
     "environment": {
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "log": {
@@ -103,14 +103,14 @@
       "test",
       "--locked"
     ],
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 226.7687044169288,
     "environment": {
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "log": {
@@ -137,14 +137,14 @@
       "--locked",
       "--all-features"
     ],
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 292.6134352500085,
     "environment": {
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "log": {

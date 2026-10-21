@@ -462,7 +462,7 @@ def stage_check(args):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("stage", choices=("candidates", "budget", "check"))
-    p.add_argument("--binary", type=Path, default=Path("/Volumes/A/.hms-target-1b/release/operand-retriever"))
+    p.add_argument("--binary", type=Path, default=Path("./.hms-target-1b/release/operand-retriever"))
     p.add_argument("--variant", choices=tuple(VARIANTS), default="v2")
     args = p.parse_args()
     global variant

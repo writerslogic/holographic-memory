@@ -136,7 +136,7 @@ Stage 2 (printed per timed configuration): recall@10 >= 0.95 and mean
 complete-query latency <= 70 us (median of 5 passes over the 1,000 reporting
 queries after 100 warmup queries, i.e. >= ~14,300 QPS). The baseline row
 (`public-bench ann-qgraph`, 1,165 QPS at recall 0.95) is supplied by the
-mediator; the binary prints only the witness numbers.
+operator; the binary prints only the witness numbers.
 
 ## Memory arithmetic (glove, N = 1,183,514, D = 100)
 

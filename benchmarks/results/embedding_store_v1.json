@@ -1,5 +1,5 @@
 {
- "model": "/Volumes/A/.hms-embed-work/pins/granite-embedding-30m-english/granite-embedding-30m-english-int8.hmsemb",
+ "model": "./.hms-embed-work/pins/granite-embedding-30m-english/granite-embedding-30m-english-int8.hmsemb",
  "threads": 8,
  "load_average_1m": 9.48876953125,
  "datasets": {

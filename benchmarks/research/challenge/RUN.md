@@ -236,5 +236,5 @@ runs. **Replace them with a real agent trace before reading the audit's pass/fai
   `k` (`recall.rs:253-265`), which is more than the 10 records of a family.
 - Latency of the engine baselines includes the engine's own search cost; the local BM25 variant
   exists so the verdict's ratio cannot be won on engine overhead alone.
-- Gold and contract agree by design on the two semantic decisions above; if the panel rejects
+- Gold and contract agree by design on the two semantic decisions above; if a reviewer rejects
   either, `synth::realize`'s `gold_for` and `contract::Family::answer` both need the change.

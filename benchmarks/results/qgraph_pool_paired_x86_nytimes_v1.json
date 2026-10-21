@@ -502,7 +502,7 @@
   "min_ratio": 1.0
  },
  "measurement": {
-  "host": "writerslogic-02, Intel Core Ultra 9 185H (AVX2), Linux, otherwise quiet (1-minute load 7.5-8.1 from a concurrent build)",
+  "host": "linux-host, Intel Core Ultra 9 185H (AVX2), Linux, otherwise quiet (1-minute load 7.5-8.1 from a concurrent build)",
   "protocol": "public-bench ann-qgraph --index vertex --holdout 2000 nytimes-256-angular degree 64 build_ef 200; shared graph cache; 11 paired rounds, alternating A B C, single-thread search, 2000 held-out queries per config per round (~/hms-fastscan-check/runs/paired.py)",
   "arms": {
    "A": "heap pools binary (sources at commit f3539a9 plus the unbiasing scale; x86 AVX2 kernels and prefetch in both arms), accepted encoding, rerank 32",

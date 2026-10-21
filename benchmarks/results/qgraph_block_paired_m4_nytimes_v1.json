@@ -145,7 +145,7 @@
     "code_bits": 0,
     "degree": 64,
     "fuse": false,
-    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
+    "graph_cache": "./.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
     "id_bytes": 3,
     "index": "vertex",
     "reorder": true,
@@ -171,7 +171,7 @@
     "code_bits": 0,
     "degree": 64,
     "fuse": true,
-    "graph_cache": "/Volumes/A/.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
+    "graph_cache": "./.hms-target-fastscan/cache/nytimes-256-angular_d64_b200.graph",
     "id_bytes": 3,
     "index": "vertex",
     "reorder": true,
@@ -341,7 +341,7 @@
  },
  "measurement": {
   "host": "Apple M4 (development host), shared machine, 1-minute load 25-35 during the window",
-  "protocol": "public-bench ann-qgraph --index vertex --holdout 2000 nytimes-256-angular degree 64 build_ef 200; graph cache shared by both arms; 11 paired rounds under /Volumes/A/.hms-target/timed.sh, alternating order; single-thread search over 2000 held-out queries per config per round",
+  "protocol": "public-bench ann-qgraph --index vertex --holdout 2000 nytimes-256-angular degree 64 build_ef 200; graph cache shared by both arms; 11 paired rounds under ./.hms-target/timed.sh, alternating order; single-thread search over 2000 held-out queries per config per round",
   "arms": {
    "A": "accepted encoding: --residual --vertex-bits 4 --residual-bits 8 --align-rows --reorder --id-bytes 3, rerank 32",
    "B": "A plus --block-bits 2 --fuse (2-bit per-edge residual neighbour blocks with the unbiasing scale, precision-weighted fusion; this build still admitted fused re-entries into the ef pool)"

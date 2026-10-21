@@ -1,6 +1,6 @@
 # roc: dense-channel relevance gate on NFCorpus
 
-Prerequisite measurement for the panel: may a MiniLM-L6 cosine channel vote next to BM25 on
+Prerequisite measurement: may a MiniLM-L6 cosine channel vote next to BM25 on
 NFCorpus, and by how much. Standalone Python (numpy only), no Rust, no network, no root-crate API.
 
 ## Command

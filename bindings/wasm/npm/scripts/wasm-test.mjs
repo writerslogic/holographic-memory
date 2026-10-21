@@ -14,7 +14,7 @@ const crate = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const browsers = process.argv.slice(2).length ? process.argv.slice(2) : ["chrome", "firefox"];
 const env = {
   ...process.env,
-  CARGO_TARGET_DIR: process.env.HMS_WASM_TARGET_DIR ? `${process.env.HMS_WASM_TARGET_DIR}-test` : "/Volumes/A/.hms-target-wasm-test",
+  CARGO_TARGET_DIR: process.env.HMS_WASM_TARGET_DIR ? `${process.env.HMS_WASM_TARGET_DIR}-test` : "./.hms-target-wasm-test",
   RUSTFLAGS: '--cfg getrandom_backend="wasm_js"',
 };
 let failed = false;

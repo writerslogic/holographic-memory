@@ -22,7 +22,7 @@
       0.04,
       0.12
     ],
-    "out": "/Volumes/A/holographic-memory/benchmarks/results/manifold_curvature_synthetic.json",
+    "out": "./benchmarks/results/manifold_curvature_synthetic.json",
     "phase_noise": 0.05,
     "phases": 16,
     "queries": 128,

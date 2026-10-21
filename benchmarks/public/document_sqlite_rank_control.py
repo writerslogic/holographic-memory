@@ -78,7 +78,7 @@ def main():
                 "candidate_binary_sha256": sha(campaign / "candidate-probe")}
     write(folder / "protocol.json", protocol)
     records, summary = [], {}
-    with Path("/Volumes/A/.hms-target/timing.lock").open("a") as lock:
+    with Path("./.hms-target/timing.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         started = time.monotonic()
         for dataset, split in [("scifact", "train"), ("nfcorpus", "dev")]:

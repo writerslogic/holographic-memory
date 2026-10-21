@@ -156,6 +156,6 @@
   ],
   "note": "v37 = V37 capsule package (async napi path); v38 = this tree (packed synchronous path through index.js); v38raw = this tree through the untouched async native method; after_gc fields from node --expose-gc"
  },
- "finding": "Rust search time drops about 1.5x; end-to-end Node query time drops 2.2-2.6x with the packed synchronous result path (p50 97 us -> 33-40 us). Peak RSS on macOS is 6-7 MB higher on the packed path than on the async path of the same binary (117 vs 110-111 MB; JS heap after GC identical at 11 MB), so the delta is native allocator residency on the main thread; the Linux campaign (serving-v38-monotonic-v1 on writerslogic-02) is the matched measurement that decides acceptance.",
+ "finding": "Rust search time drops about 1.5x; end-to-end Node query time drops 2.2-2.6x with the packed synchronous result path (p50 97 us -> 33-40 us). Peak RSS on macOS is 6-7 MB higher on the packed path than on the async path of the same binary (117 vs 110-111 MB; JS heap after GC identical at 11 MB), so the delta is native allocator residency on the main thread; the Linux campaign (serving-v38-monotonic-v1 on linux-host) is the matched measurement that decides acceptance.",
  "parked": "2B-maxscore-daat.patch and .md in this directory (exact MaxScore ranking, slower p99 on this workload)."
 }

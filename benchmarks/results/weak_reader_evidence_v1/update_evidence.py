@@ -10,7 +10,7 @@ from pathlib import Path
 import tokenizers
 
 
-ROOT = Path('/Volumes/A/holographic-memory')
+ROOT = Path('.')
 SOURCE = ROOT / 'target/superiority-validation/weak-reader'
 DEST = ROOT / 'benchmarks/results/weak_reader_evidence_v1'
 REPORT = ROOT / 'benchmarks/results/weak_reader_evidence_v1.json'

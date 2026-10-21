@@ -40,10 +40,10 @@ function json(cmd, cmdArgs, options = {}) {
 const build = spawnSync(
   "cargo",
   ["build", "--release", "--example", "native_bench", "--manifest-path", join(crate, "Cargo.toml"), "--config", "profile.release.opt-level=3"],
-  { env: { ...process.env, CARGO_TARGET_DIR: "/Volumes/A/.hms-target-wasm-native" }, stdio: ["ignore", "ignore", "inherit"] },
+  { env: { ...process.env, CARGO_TARGET_DIR: "./.hms-target-wasm-native" }, stdio: ["ignore", "ignore", "inherit"] },
 );
 if (build.status !== 0) throw new Error("native bench build failed");
-const nativeBin = "/Volumes/A/.hms-target-wasm-native/release/examples/native_bench";
+const nativeBin = "./.hms-target-wasm-native/release/examples/native_bench";
 
 const points = [];
 let nodeFailed = false;

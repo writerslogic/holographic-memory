@@ -4,7 +4,7 @@
   "dataset": {
     "kind": "nfcorpus",
     "name": "nfcorpus_minilm",
-    "source": "/Users/davidcondrey/.cache/hms-bench/nfcorpus (BEIR NFCorpus, MiniLM-L6 384-d) + 46367 on-manifold distractors (noise=0.6)",
+    "source": "~/.cache/hms-bench/nfcorpus (BEIR NFCorpus, MiniLM-L6 384-d) + 46367 on-manifold distractors (noise=0.6)",
     "n_docs": 50000,
     "n_real_docs": 3633,
     "dim": 384,

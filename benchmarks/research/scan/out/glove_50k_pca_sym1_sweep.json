@@ -4,7 +4,7 @@
   "dataset": {
     "kind": "glove",
     "name": "glove100",
-    "source": "/Users/davidcondrey/.cache/hms-bench/glove-100-angular (ann-benchmarks glove-100-angular, seeded 50000-row subset of 1183514)",
+    "source": "~/.cache/hms-bench/glove-100-angular (ann-benchmarks glove-100-angular, seeded 50000-row subset of 1183514)",
     "n_docs": 50000,
     "n_real_docs": 50000,
     "dim": 100,

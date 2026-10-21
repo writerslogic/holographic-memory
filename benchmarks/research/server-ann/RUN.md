@@ -1,7 +1,7 @@
 # server-ann: the vertex graph index on the hms-server vector query path
 
 Round-2 package. Nothing here was built, tested or run by the author (round rules); every
-command below is for the mediator. Expected numbers are inferences from the committed
+command below reproduces it. Expected numbers are inferences from the committed
 measurements, labelled as such.
 
 ## 1. Why the index path was not used, and what `exact+index` did

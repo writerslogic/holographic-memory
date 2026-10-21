@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "host": "writerslogic-02 (x86), untimed single-process runs, 3 repeats for ny_B4 and ny_A2 back to back at load 1.5-3",
+ "host": "linux-host (x86), untimed single-process runs, 3 repeats for ny_B4 and ny_A2 back to back at load 1.5-3",
  "protocol": "public-bench ann-qgraph --holdout 2000, accepted encoding; B4 = --block-bits 4 (4-bit per-edge residual neighbour blocks, unbiasing scale, byte visited marks), B4f = the same with --fuse (trace records), A2 = per-row path",
  "outcome": "4-bit residual blocks carry no ef penalty (nytimes 0.9030 at ef 96 and 0.9497 at ef 384 against 0.9049 and 0.9498) yet run at 0.76x (ef 96) and 0.79x (ef 384) of the per-row path; with fusion trace records 0.37x. The neighbour-block layout is closed on both hosts.",
  "runs": {

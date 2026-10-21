@@ -2,12 +2,12 @@
   "control": {
     "batch": 1,
     "binary": {
-      "path": "/Volumes/A/.hms-target-gpubatch/release/public-bench",
+      "path": "./.hms-target-gpubatch/release/public-bench",
       "sha256": "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec",
       "size": 7406992
     },
     "candle_primary_api": {
-      "path": "/Users/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/candle-nn-0.11.0/src/ops.rs",
+      "path": "~/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/candle-nn-0.11.0/src/ops.rs",
       "sha256": "5f3342ddd29441833f3739931b532c5f66ff45b107fd4f867d198370f17887e5",
       "size": 47415
     },
@@ -15,22 +15,22 @@
       {
         "chunk": 1,
         "completion": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_001.completion.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_001.completion.json",
           "sha256": "558918751be816ff1bd8e4aa6031cf58689506e51a8e5a9fa85ccff37c1e3b46",
           "size": 169
         },
         "input": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_001.input.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_001.input.json",
           "sha256": "5847b6d042cf466966b747b648dc616c2b55f1288b5089f3f865a925a8898a52",
           "size": 164131
         },
         "manifest": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_001.manifest.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_001.manifest.json",
           "sha256": "6538b558fed922868725075a2d7ab82125835980adb496bcabaf3eadea88cb79",
           "size": 170154
         },
         "native_output": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_001.output.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_001.output.json",
           "sha256": "f22ee6018819a82d0178119886408b44308268ee4423b66478a1db85c9928ab7",
           "size": 4657
         },
@@ -110,22 +110,22 @@
       {
         "chunk": 2,
         "completion": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_002.completion.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_002.completion.json",
           "sha256": "958dcd154e1ff0ff13c3501ee09c29ce3407c2852605d15080dd877ae3cd63ce",
           "size": 169
         },
         "input": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_002.input.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_002.input.json",
           "sha256": "aed706f294c17ef33a6cedabb1171820adf8d4970589af28cdfe0176d1f12a8d",
           "size": 144750
         },
         "manifest": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_002.manifest.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_002.manifest.json",
           "sha256": "20b6865c0b0b0d68348964868cc63685ecdc7e74f30d78e3eab80a68336f10d6",
           "size": 150768
         },
         "native_output": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_002.output.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_002.output.json",
           "sha256": "36798cc3586089ca3e4949e4b5f05edddd05c330b8503d405ea9bb4ea5577007",
           "size": 3190
         },
@@ -205,22 +205,22 @@
       {
         "chunk": 3,
         "completion": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_003.completion.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_003.completion.json",
           "sha256": "9bea37817911a5bea91f7f61ac1f36db47daa42691ad6d52b9526151cb192b88",
           "size": 169
         },
         "input": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_003.input.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_003.input.json",
           "sha256": "385018f9c6d915d45d136071da802a990fd6a0bedecd529d30db22767582d2fa",
           "size": 161297
         },
         "manifest": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_003.manifest.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_003.manifest.json",
           "sha256": "51ef4c59133895ee80c145fe0978ddb0db382ea61d8956e6239dfa5afb155cb9",
           "size": 167332
         },
         "native_output": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_003.output.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_003.output.json",
           "sha256": "f11ec10b84ad4a22538f769962beb737fc5729f48dd69f8f6ac92dd95b80abe5",
           "size": 6501
         },
@@ -300,22 +300,22 @@
       {
         "chunk": 4,
         "completion": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_004.completion.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_004.completion.json",
           "sha256": "9f7120b3fc273a613f839bb22b85c177bfae40bd96f278641b57663aec82d21d",
           "size": 169
         },
         "input": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_004.input.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_004.input.json",
           "sha256": "12b10fc900930552740fefc21d407604f23ec8cb8fc006b0249e8c454cbd14e2",
           "size": 161778
         },
         "manifest": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_004.manifest.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_004.manifest.json",
           "sha256": "040ee0a88907dfe45c2904f25a930a0fb03f7d9cb6f48bd8b639b51a8dc98f44",
           "size": 167809
         },
         "native_output": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_004.output.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_004.output.json",
           "sha256": "f886c56ab7aa07a44d6c53fc39262e6e2360df9a32d1db9d49d345d2e7011727",
           "size": 10643
         },
@@ -395,22 +395,22 @@
       {
         "chunk": 5,
         "completion": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_005.completion.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_005.completion.json",
           "sha256": "a5e72edfa95c71750c90ba2f5c78125e7a766d601ebba8f8898e3bfdd8ca9e2e",
           "size": 170
         },
         "input": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_005.input.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_005.input.json",
           "sha256": "5c91500c8523ab212f13abbb9badcd62e1155cfd0f0dc9a6dd8b0033eb81257c",
           "size": 162523
         },
         "manifest": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_005.manifest.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_005.manifest.json",
           "sha256": "2d29c331a1e017892a74a816ddbebf07cee91015bc1d46a48e5635bc0a1e0928",
           "size": 168551
         },
         "native_output": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_005.output.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_005.output.json",
           "sha256": "9790d821cd12ae3b9c63f7aae59870068a0e9b4af835eee68d8f0971a2255740",
           "size": 3941
         },
@@ -490,22 +490,22 @@
       {
         "chunk": 6,
         "completion": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_006.completion.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_006.completion.json",
           "sha256": "5f9658ab28bf07c474e301aa8e5b71ae51d0615125a868f92e3631fd925919f2",
           "size": 170
         },
         "input": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_006.input.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_006.input.json",
           "sha256": "7dfbc54ea7c9025e38c6d089b3b1bc1a33e39575fa2510fdf2bd7e5e38448ef1",
           "size": 162986
         },
         "manifest": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_006.manifest.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_006.manifest.json",
           "sha256": "57f729976cf343d2f7dd4a3a77a851d8f416015c1bcbc53d62105b22fb557d47",
           "size": 169011
         },
         "native_output": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_006.output.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_006.output.json",
           "sha256": "27d5fc45722a889f341efb4ed63bae5bbad5abee31748503ff058f321b776bcd",
           "size": 4984
         },
@@ -585,22 +585,22 @@
       {
         "chunk": 7,
         "completion": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_007.completion.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_007.completion.json",
           "sha256": "f52011ddce0b0c012190eb55c3ba6803126bb4f27f73e5bab2730ab23311a5dc",
           "size": 170
         },
         "input": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_007.input.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_007.input.json",
           "sha256": "b0a05579c85db21c1f26c0cc1fd5dd5f06718b48f2bfecc5a87c28d45e65b0e5",
           "size": 166169
         },
         "manifest": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_007.manifest.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_007.manifest.json",
           "sha256": "0638f4b7cb54fec54e5ec52798c50d41a179e30e817c5a056d0b9c8f927cfa94",
           "size": 172194
         },
         "native_output": {
-          "path": "/Volumes/A/holographic-memory/target/superiority-validation/weak-reader/chunk_007.output.json",
+          "path": "./target/superiority-validation/weak-reader/chunk_007.output.json",
           "sha256": "f21eb10a6dcdb129236df0de94f5a5a2adb4cf12234710711c26b3ffad23d4a9",
           "size": 4132
         },
@@ -689,22 +689,22 @@
     "max_context": 12288,
     "max_new_tokens": 1536,
     "model": "Qwen/Qwen3-4B-Instruct-2507",
-    "model_directory": "/Volumes/A/hms-models/Qwen3-4B-Instruct-2507",
+    "model_directory": "./hms-models/Qwen3-4B-Instruct-2507",
     "prompt_changes": false,
     "protocol": {
-      "path": "/Volumes/A/holographic-memory/benchmarks/public/reader_protocol_v1.json",
+      "path": "./benchmarks/public/reader_protocol_v1.json",
       "sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
       "size": 10076
     },
     "qwen_source_before": {
-      "path": "/Volumes/A/hms-metal-sdpa/src/core/models/qwen3.rs",
+      "path": "./hms-metal-sdpa/src/core/models/qwen3.rs",
       "sha256": "006f0ea505752a2cf89e70225e180de72df0ba18ed84f5a21d6c6f9e6a7dc6b1",
       "size": 18971
     },
     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
     "temperature": 0,
     "weights_manifest": {
-      "path": "/Volumes/A/holographic-memory/benchmarks/results/weak_reader_evidence_v1/model_manifest.json",
+      "path": "./benchmarks/results/weak_reader_evidence_v1/model_manifest.json",
       "sha256": "22495f8b644115cc34b4331532de26c1968534951694e9b475b9d1ed822a0548",
       "size": 2408
     }
@@ -718,7 +718,7 @@
     "failure_action": "Retain frozen weak arm; record drift or absent complete-query improvement and do not activate candidate.",
     "quality": "Exact raw generated text equality on completed real dev inputs; any changed text rejects mixing candidate with the frozen weak arm. Full-arm activation requires equality across every distinct request or a separately frozen complete weak-arm restart.",
     "speed": "Faster complete-query loop with the same real input, weights, batch and cap, warmed model separately from load time; 11 alternating paired rounds, positive paired 95% lower bound. No benchmark admission from operation counts or attention-only timings.",
-    "timing_gate": "No GPU execution while frozen reader runs. Root approval of suspension required before GPU checks; /Volumes/A/.hms-target/timed.sh, load below 3, no concurrent build/GPU workload, each lock hold under 15 minutes."
+    "timing_gate": "No GPU execution while frozen reader runs. Root approval of suspension required before GPU checks; ./.hms-target/timed.sh, load below 3, no concurrent build/GPU workload, each lock hold under 15 minutes."
   },
   "lever": "Metal fused scaled dot-product attention for compatible Qwen3 prefill and decode",
   "mechanism": "Use Candle 0.11 Metal SDPA with unexpanded grouped-query keys/values, existing cache and rotary positions. Broadcast the existing additive full-attention mask to exact expected shape; do_causal=false, softcapping=1.0. Masked single-token rows retain the current path.",
@@ -727,7 +727,7 @@
     "no_commit": true,
     "no_root_source_changes": true,
     "paid_compute_usd": 0,
-    "target_directory": "/Volumes/A/.hms-target-metal-sdpa"
+    "target_directory": "./.hms-target-metal-sdpa"
   },
   "schema_version": 1,
   "status": "preregistered_before_implementation",

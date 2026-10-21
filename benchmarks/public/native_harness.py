@@ -732,11 +732,11 @@ def score_round(args):
 def verify_inherited_lock(path, lock_id):
     lock = json.loads(Path(path).read_text())
     fd = int(os.environ["HMS_NATIVE_LOCK_FD"])
-    expected = os.stat("/Volumes/A/.hms-target/timing.lock")
+    expected = os.stat("./.hms-target/timing.lock")
     current = os.fstat(fd)
     if lock["status"] != "held" or lock["lock_id"] != lock_id or (expected.st_dev, expected.st_ino) != (current.st_dev, current.st_ino):
         raise ValueError("timing lock proof differs")
-    probe = os.open("/Volumes/A/.hms-target/timing.lock", os.O_RDWR)
+    probe = os.open("./.hms-target/timing.lock", os.O_RDWR)
     try:
         try:
             fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -756,7 +756,7 @@ def lock_run(args):
     if command[:1] != ["round-point"]:
         raise ValueError("lock-run accepts only a round-point invocation")
     idle_sample(args.max_wait)
-    lock_path = "/Volumes/A/.hms-target/timing.lock"
+    lock_path = "./.hms-target/timing.lock"
     fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
     lock_id = str(uuid.uuid4())
     lock = None

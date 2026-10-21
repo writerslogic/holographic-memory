@@ -502,7 +502,7 @@
   "min_ratio": 1.0
  },
  "measurement": {
-  "host": "writerslogic-02 (x86), 1-minute load 10.6-11.4 (two concurrent nice'd builds)",
+  "host": "linux-host (x86), 1-minute load 10.6-11.4 (two concurrent nice'd builds)",
   "protocol": "glove-100-angular --holdout 2000, 11 paired rounds alternating A B C",
   "arms": {
    "A": "heap pools binary, accepted encoding, rerank 64, ef 256/736",

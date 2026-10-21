@@ -49,7 +49,7 @@ Everything below that is a number is an estimate unless it cites `INGEST-PROFILE
 ## Commands
 
 ```sh
-cd /Volumes/A/holographic-memory            # or the worktree holding this branch
+cd .            # or the worktree holding this branch
 cargo fmt --all                               # rustfmt was not run on the new code
 cargo clippy --all-targets -- -D warnings
 cargo clippy --all-targets --all-features -- -D warnings
@@ -93,7 +93,7 @@ like-for-like deferred comparison also run `--encode eager --store-text true`. O
 in the crate's module head.
 
 Serving RSS of a lexical or deferred store through the existing orchestrator needs a mode
-switch in the example; a mediator-owned 3-line change would be, in
+switch in the example; a 3-line change would be, in
 `examples/competitive_text.rs:71-73`:
 
 ```rust
@@ -129,7 +129,7 @@ for chunk in input.documents.chunks(512) { core.memorize_documents_with(chunk.to
   400, `check_mutation` 437, `vector_total` 278 (used by verify.rs:700 and :1173).
 - Harness: `examples/competitive_text.rs:42-53` input schema, 67-75 build phase.
 
-## Mediator levers
+## Further levers
 
 (a) Parallel encode with order-stable merge: already the shape of the batch path.
 `memorize_documents` prepares documents with `into_par_iter().map(..).collect::<Result<Vec<_>>>()`
@@ -188,7 +188,7 @@ journal is not smaller (`"vector":{"dim":1024,"indices":[]}` plus `"vector_state
 is ~10 B longer than four indices). Whether that flips 1.07x SQLite depends on the absolute
 RSS; measure with the `HMS_ENCODE` switch above through the orchestrator's `serve` phase.
 
-## Format notes for the mediator
+## Format notes
 
 - Eager stores serialize byte for byte as before (`vector_state` is skipped when encoded;
   `tests/format_golden.rs` is the check). A store that holds deferred or lexical documents

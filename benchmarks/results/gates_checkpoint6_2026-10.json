@@ -1,6 +1,6 @@
 [
   {
-    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "cargo_target_dir": "./.hms-target",
     "command": [
       "cargo",
       "fmt",
@@ -8,11 +8,11 @@
       "--check"
     ],
     "compiler_seconds": null,
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 0.34230483300052583,
     "environment": {
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "preliminary": true,
@@ -24,7 +24,7 @@
     "timing_claim": false
   },
   {
-    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "cargo_target_dir": "./.hms-target",
     "command": [
       "cargo",
       "clippy",
@@ -34,11 +34,11 @@
       "warnings"
     ],
     "compiler_seconds": 8.91,
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 8.969602832919918,
     "environment": {
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "preliminary": true,
@@ -50,7 +50,7 @@
     "timing_claim": false
   },
   {
-    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "cargo_target_dir": "./.hms-target",
     "command": [
       "cargo",
       "clippy",
@@ -61,11 +61,11 @@
       "warnings"
     ],
     "compiler_seconds": 4.27,
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 4.349736875039525,
     "environment": {
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "preliminary": true,
@@ -77,21 +77,21 @@
     "timing_claim": false
   },
   {
-    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "cargo_target_dir": "./.hms-target",
     "command": [
       "cargo",
       "test",
       "--locked"
     ],
     "compiler_seconds": 93.0,
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 115.64662304206286,
     "environment": {
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "preliminary": true,
@@ -609,7 +609,7 @@
     "timing_claim": false
   },
   {
-    "cargo_target_dir": "/Volumes/A/.hms-target",
+    "cargo_target_dir": "./.hms-target",
     "command": [
       "cargo",
       "test",
@@ -617,14 +617,14 @@
       "--all-features"
     ],
     "compiler_seconds": 302.0,
-    "cwd": "/Volumes/A/holographic-memory",
+    "cwd": ".",
     "duration_scope": "operational validation runtime; no ANN query claim",
     "elapsed_seconds": 318.2114433750976,
     "environment": {
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
-      "CARGO_TARGET_DIR": "/Volumes/A/.hms-target"
+      "CARGO_TARGET_DIR": "./.hms-target"
     },
     "exit_code": 0,
     "preliminary": true,

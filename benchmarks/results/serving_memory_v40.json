@@ -7,7 +7,7 @@
  "candidate": "V40",
  "date": "2026-10-19",
  "mechanism": "V37 (compact term dictionary, delta-varint postings, file-backed text) + dense-slot posting capture, closure varint decode with a single-byte fast path, u32 captured postings, slot word counts kept by the store, packed (score, index) selection (src/core/documents/search.rs, index.rs, postings.rs); no binding change",
- "protocol": "serving-v30 controller derived as serving-v40-monotonic-v1 on writerslogic-02 (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v40 / sqlite-full (Node 26.8.1, SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3; all 33 load gates met; oracle exact",
+ "protocol": "serving-v30 controller derived as serving-v40-monotonic-v1 on linux-host (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v40 / sqlite-full (Node 26.8.1, SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3; all 33 load gates met; oracle exact",
  "identities": {
   "candidate_manifest_sha256": "68aed64047e7c1d186c5422cafeee75aa0b44871fd76db2d36a39737ef0c03f5",
   "candidate_native_sha256": "64107573e80f3e7355e405456b5716fc135771e323f2c70f8e2408ae36aeefd4",
@@ -116,9 +116,9 @@
  },
  "verdict": "accepted: serving max RSS 0.964x the accepted build [0.959, 0.970] and 1.0725x sqlite-full [1.042, 1.079] (accepted row 1.092); QPS 1.057x the accepted build, 4.48x sqlite-full [4.44, 4.53]; p95 0.867x, p99 0.854x; every family-8 guard passes except strictly-below-one versus sqlite, which the accepted row also fails. This is the first accepted 2B SQLite row; the 6x target is not met.",
  "paths": {
-  "host": "writerslogic-02",
+  "host": "linux-host",
   "build": "/home/davidcondrey/hms-retained-20261016/v40-build-v1",
   "campaign": "/home/davidcondrey/hms-retained-20261016/serving-v40-monotonic-v1/serving-v40-monotonic-full11-v1 (analysis.json, measurements.json, cells/)",
-  "local_scripts": "/Volumes/A/.hms-target-2a/v40-build"
+  "local_scripts": "./.hms-target-2a/v40-build"
  }
 }
