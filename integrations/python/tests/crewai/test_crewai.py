@@ -99,12 +99,17 @@ def test_delete_variants_and_reset(server):
     base = datetime.utcnow()
     old = rec("old", "/a", ["x"], {"k": 1}, created_at=base - timedelta(days=10))
     s.save([old, rec("new", "/a", ["x"], {"k": 2}), rec("other", "/b", ["y"]), rec("more", "/b/c", ["y"])])
-    assert s.delete(record_ids=[old.id, "ghost"]) == 1
-    assert s.delete(scope_prefix="/b") == 2
-    assert s.delete(categories=["x"], metadata_filter={"k": 1}) == 0
+    deleted = s.delete(record_ids=[old.id, "ghost"])
+    assert deleted == 1
+    deleted = s.delete(scope_prefix="/b")
+    assert deleted == 2
+    deleted = s.delete(categories=["x"], metadata_filter={"k": 1})
+    assert deleted == 0
     s.save([old])
-    assert s.delete(scope_prefix="/a", older_than=base - timedelta(days=1)) == 1
-    assert s.delete(categories=["x"]) == 1
+    deleted = s.delete(scope_prefix="/a", older_than=base - timedelta(days=1))
+    assert deleted == 1
+    deleted = s.delete(categories=["x"])
+    assert deleted == 1
     s.save([rec("a", "/p"), rec("b", "/q")])
     s.reset("/p")
     assert s.count() == 1
