@@ -1,0 +1,85 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Bindings
+
+on:
+  pull_request:
+    paths:
+      - "bindings/c/**"
+      - "bindings/go/**"
+      - "bindings/java/**"
+      - "bindings/dotnet/**"
+      - "src/**"
+      - "Cargo.toml"
+      - ".github/workflows/bindings.yml"
+  push:
+    branches: [main]
+    paths:
+      - "bindings/c/**"
+      - "bindings/go/**"
+      - "bindings/java/**"
+      - "bindings/dotnet/**"
+
+permissions:
+  contents: read
+
+jobs:
+  bindings:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target-bindings
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.24"
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: C crate tests
+        run: cargo test --manifest-path bindings/c/Cargo.toml
+
+      - name: Build release library
+        run: cargo build --release --manifest-path bindings/c/Cargo.toml
+
+      - name: C program (shared and static)
+        if: runner.os != 'Windows'
+        env:
+          PROFILE: release
+        run: bindings/c/tests/c/run.sh
+
+      - name: Go
+        if: runner.os != 'Windows'
+        working-directory: bindings/go
+        run: |
+          mkdir -p "lib/$(go env GOOS)_$(go env GOARCH)"
+          cp "$CARGO_TARGET_DIR/release/libholographic_memory_c.a" "lib/$(go env GOOS)_$(go env GOARCH)/"
+          go vet ./...
+          go test -race ./...
+
+      - name: Java
+        working-directory: bindings/java
+        shell: bash
+        run: mvn -B -Dhms.native.dir="$CARGO_TARGET_DIR/release" test
+
+      - name: .NET
+        shell: bash
+        env:
+          HMS_LIBRARY_PATH: ${{ github.workspace }}/target-bindings/release
+        run: dotnet test bindings/dotnet/tests/HolographicMemory.Tests

@@ -1,0 +1,39 @@
+<!-- Copyright 2024-2026 WritersLogic Contributors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>WritersLogic.HolographicMemory</RootNamespace>
+    <AssemblyName>WritersLogic.HolographicMemory</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+
+    <PackageId>WritersLogic.HolographicMemory</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>WritersLogic Contributors</Authors>
+    <Company>WritersLogic, Inc.</Company>
+    <Description>.NET binding for the Holographic Memory System document store: hybrid BM25 and semantic search, encryption at rest, snapshots. Wraps the stable C ABI with SafeHandle and async-friendly methods.</Description>
+    <PackageTags>vector-search;bm25;semantic-search;memory;vsa;holographic</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/writerslogic/holographic-memory</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/writerslogic/holographic-memory</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- The native libraries ride in the package under runtimes/<rid>/native/. -->
+    <NoWarn>$(NoWarn);NU5100;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="HolographicMemory.Tests" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <!-- Populate natives/<rid>/<library> (see docs/runtimes/dotnet) before `dotnet pack`. -->
+    <None Include="natives/**/*" Pack="true" PackagePath="runtimes/%(RecursiveDir)%(Filename)%(Extension)" Condition="Exists('natives')" />
+  </ItemGroup>
+
+</Project>
