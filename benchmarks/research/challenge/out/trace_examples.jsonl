@@ -1,0 +1,100 @@
+{"id":"synthetic-000","text":"what is acct204 billing cycle","entity_id":"acct204","attribute_key":"billing_cycle","scope":null,"as_of":1702678400000}
+{"id":"synthetic-001","text":"what is user_42 default branch","entity_id":"user_42","attribute_key":"default_branch","scope":null,"as_of":1702678400000}
+{"id":"synthetic-002","text":"what is acct017 billing cycle","entity_id":"acct017","attribute_key":"billing_cycle","scope":null,"as_of":1700777600000}
+{"id":"synthetic-003","text":"What is svc9's billing cycle?","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1701382400000}
+{"id":"synthetic-004","text":"Current data region of user_42","entity_id":null,"attribute_key":null,"scope":null,"as_of":1705788800000}
+{"id":"synthetic-005","text":"Tell me the data region for order7731 please.","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1706048000000}
+{"id":"synthetic-006","text":"order7731: seat count?","entity_id":null,"attribute_key":null,"scope":{"region":"apac"},"as_of":1704665600000}
+{"id":"synthetic-007","text":"lookup entity=acct017 attribute=api_version","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1706652800000}
+{"id":"synthetic-008","text":"who owns the billing service","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1707516800000}
+{"id":"synthetic-009","text":"what happened in the retro","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1700172800000}
+{"id":"synthetic-010","text":"what is acct204 payment terms","entity_id":"acct204","attribute_key":"payment_terms","scope":null,"as_of":1705443200000}
+{"id":"synthetic-011","text":"what is team.core payment terms","entity_id":"team.core","attribute_key":"payment_terms","scope":{"region":"us"},"as_of":1701123200000}
+{"id":"synthetic-012","text":"what is svc9 support tier","entity_id":"svc9","attribute_key":"support_tier","scope":{"region":"apac"},"as_of":1702505600000}
+{"id":"synthetic-013","text":"What is user_42's api version?","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1703974400000}
+{"id":"synthetic-014","text":"Current default branch of user_42","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1706652800000}
+{"id":"synthetic-015","text":"Tell me the billing cycle for acct017 please.","entity_id":null,"attribute_key":null,"scope":null,"as_of":1707603200000}
+{"id":"synthetic-016","text":"user_42: support tier?","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1701468800000}
+{"id":"synthetic-017","text":"lookup entity=team.core attribute=data_region","entity_id":null,"attribute_key":null,"scope":null,"as_of":1703628800000}
+{"id":"synthetic-018","text":"anything new on the roadmap?","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1702678400000}
+{"id":"synthetic-019","text":"find the notes from the kickoff","entity_id":null,"attribute_key":null,"scope":null,"as_of":1704320000000}
+{"id":"synthetic-020","text":"what is order7731 support tier","entity_id":"order7731","attribute_key":"support_tier","scope":{"region":"apac"},"as_of":1705788800000}
+{"id":"synthetic-021","text":"what is order7731 timezone","entity_id":"order7731","attribute_key":"timezone","scope":null,"as_of":1706652800000}
+{"id":"synthetic-022","text":"what is user_42 rate limit","entity_id":"user_42","attribute_key":"rate_limit","scope":null,"as_of":1703542400000}
+{"id":"synthetic-023","text":"What is team.core's support tier?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1701641600000}
+{"id":"synthetic-024","text":"Current support tier of svc9","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1705961600000}
+{"id":"synthetic-025","text":"Tell me the payment terms for acct204 please.","entity_id":null,"attribute_key":null,"scope":{"region":"apac"},"as_of":1702332800000}
+{"id":"synthetic-026","text":"acct017: timezone?","entity_id":null,"attribute_key":null,"scope":{"region":"apac"},"as_of":1701296000000}
+{"id":"synthetic-027","text":"lookup entity=acct017 attribute=payment_terms","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1703283200000}
+{"id":"synthetic-028","text":"anything new on the roadmap?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706393600000}
+{"id":"synthetic-029","text":"find the notes from the kickoff","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706739200000}
+{"id":"synthetic-030","text":"what is user_42 timezone","entity_id":"user_42","attribute_key":"timezone","scope":{"region":"eu"},"as_of":1703542400000}
+{"id":"synthetic-031","text":"what is order7731 contact channel","entity_id":"order7731","attribute_key":"contact_channel","scope":null,"as_of":1703456000000}
+{"id":"synthetic-032","text":"what is acct999 timezone","entity_id":"acct999","attribute_key":"timezone","scope":{"region":"apac"},"as_of":1703369600000}
+{"id":"synthetic-033","text":"What is user_42's default branch?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1707084800000}
+{"id":"synthetic-034","text":"Current contact channel of user_42","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706739200000}
+{"id":"synthetic-035","text":"Tell me the api version for proj-alpha please.","entity_id":null,"attribute_key":null,"scope":null,"as_of":1704924800000}
+{"id":"synthetic-036","text":"acct017: seat count?","entity_id":null,"attribute_key":null,"scope":{"region":"apac"},"as_of":1700518400000}
+{"id":"synthetic-037","text":"lookup entity=acct204 attribute=support_tier","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706825600000}
+{"id":"synthetic-038","text":"status of the audit findings","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706825600000}
+{"id":"synthetic-039","text":"who owns the billing service","entity_id":null,"attribute_key":null,"scope":null,"as_of":1703974400000}
+{"id":"synthetic-040","text":"what is svc9 seat count","entity_id":"svc9","attribute_key":"seat_count","scope":null,"as_of":1700432000000}
+{"id":"synthetic-041","text":"what is acct204 api version","entity_id":"acct204","attribute_key":"api_version","scope":{"region":"us"},"as_of":1703456000000}
+{"id":"synthetic-042","text":"what is proj-alpha payment terms","entity_id":"proj-alpha","attribute_key":"payment_terms","scope":null,"as_of":1704752000000}
+{"id":"synthetic-043","text":"What is order7731's timezone?","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1700777600000}
+{"id":"synthetic-044","text":"Current billing cycle of proj-alpha","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1701123200000}
+{"id":"synthetic-045","text":"Tell me the payment terms for acct999 please.","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706652800000}
+{"id":"synthetic-046","text":"order7731: support tier?","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1700777600000}
+{"id":"synthetic-047","text":"lookup entity=proj-alpha attribute=default_branch","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706307200000}
+{"id":"synthetic-048","text":"anything new on the roadmap?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1701296000000}
+{"id":"synthetic-049","text":"what were the action items","entity_id":null,"attribute_key":null,"scope":null,"as_of":1700345600000}
+{"id":"synthetic-050","text":"what is svc9 data region","entity_id":"svc9","attribute_key":"data_region","scope":null,"as_of":1701641600000}
+{"id":"synthetic-051","text":"what is proj-alpha timezone","entity_id":"proj-alpha","attribute_key":"timezone","scope":null,"as_of":1707257600000}
+{"id":"synthetic-052","text":"what is proj-alpha data region","entity_id":"proj-alpha","attribute_key":"data_region","scope":null,"as_of":1701382400000}
+{"id":"synthetic-053","text":"What is proj-alpha's rate limit?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1703715200000}
+{"id":"synthetic-054","text":"Current api version of acct204","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706998400000}
+{"id":"synthetic-055","text":"Tell me the data region for acct017 please.","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1701814400000}
+{"id":"synthetic-056","text":"acct999: seat count?","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1705097600000}
+{"id":"synthetic-057","text":"lookup entity=svc9 attribute=support_tier","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706998400000}
+{"id":"synthetic-058","text":"what happened in the retro","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706998400000}
+{"id":"synthetic-059","text":"what did we decide about the launch last week","entity_id":null,"attribute_key":null,"scope":null,"as_of":1705011200000}
+{"id":"synthetic-060","text":"what is user_42 data region","entity_id":"user_42","attribute_key":"data_region","scope":null,"as_of":1705356800000}
+{"id":"synthetic-061","text":"what is proj-alpha default branch","entity_id":"proj-alpha","attribute_key":"default_branch","scope":{"region":"apac"},"as_of":1706048000000}
+{"id":"synthetic-062","text":"what is acct999 rate limit","entity_id":"acct999","attribute_key":"rate_limit","scope":null,"as_of":1707603200000}
+{"id":"synthetic-063","text":"What is team.core's api version?","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1704492800000}
+{"id":"synthetic-064","text":"Current seat count of acct204","entity_id":null,"attribute_key":null,"scope":null,"as_of":1701987200000}
+{"id":"synthetic-065","text":"Tell me the payment terms for user_42 please.","entity_id":null,"attribute_key":null,"scope":{"region":"apac"},"as_of":1701468800000}
+{"id":"synthetic-066","text":"acct017: billing cycle?","entity_id":null,"attribute_key":null,"scope":{"region":"apac"},"as_of":1707603200000}
+{"id":"synthetic-067","text":"lookup entity=svc9 attribute=contact_channel","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1700691200000}
+{"id":"synthetic-068","text":"anything new on the roadmap?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1700777600000}
+{"id":"synthetic-069","text":"remind me how the migration went","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1700259200000}
+{"id":"synthetic-070","text":"what is order7731 data region","entity_id":"order7731","attribute_key":"data_region","scope":null,"as_of":1705875200000}
+{"id":"synthetic-071","text":"what is svc9 support tier","entity_id":"svc9","attribute_key":"support_tier","scope":null,"as_of":1703628800000}
+{"id":"synthetic-072","text":"what is team.core payment terms","entity_id":"team.core","attribute_key":"payment_terms","scope":null,"as_of":1704752000000}
+{"id":"synthetic-073","text":"What is order7731's payment terms?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1703628800000}
+{"id":"synthetic-074","text":"Current payment terms of team.core","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1703715200000}
+{"id":"synthetic-075","text":"Tell me the contact channel for acct204 please.","entity_id":null,"attribute_key":null,"scope":null,"as_of":1700345600000}
+{"id":"synthetic-076","text":"team.core: billing cycle?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1700172800000}
+{"id":"synthetic-077","text":"lookup entity=acct999 attribute=contact_channel","entity_id":null,"attribute_key":null,"scope":null,"as_of":1706220800000}
+{"id":"synthetic-078","text":"what were the action items","entity_id":null,"attribute_key":null,"scope":null,"as_of":1700777600000}
+{"id":"synthetic-079","text":"what were the action items","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1701987200000}
+{"id":"synthetic-080","text":"what is user_42 payment terms","entity_id":"user_42","attribute_key":"payment_terms","scope":null,"as_of":1701900800000}
+{"id":"synthetic-081","text":"what is order7731 payment terms","entity_id":"order7731","attribute_key":"payment_terms","scope":{"region":"us"},"as_of":1707689600000}
+{"id":"synthetic-082","text":"what is acct204 data region","entity_id":"acct204","attribute_key":"data_region","scope":{"region":"eu"},"as_of":1705356800000}
+{"id":"synthetic-083","text":"What is svc9's default branch?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1700691200000}
+{"id":"synthetic-084","text":"Current seat count of proj-alpha","entity_id":null,"attribute_key":null,"scope":null,"as_of":1704320000000}
+{"id":"synthetic-085","text":"Tell me the api version for team.core please.","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1701468800000}
+{"id":"synthetic-086","text":"proj-alpha: api version?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1701123200000}
+{"id":"synthetic-087","text":"lookup entity=acct017 attribute=rate_limit","entity_id":null,"attribute_key":null,"scope":null,"as_of":1701382400000}
+{"id":"synthetic-088","text":"status of the audit findings","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1704320000000}
+{"id":"synthetic-089","text":"summarize the open issues with the vendor","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1703369600000}
+{"id":"synthetic-090","text":"what is acct017 api version","entity_id":"acct017","attribute_key":"api_version","scope":null,"as_of":1700000000000}
+{"id":"synthetic-091","text":"what is user_42 support tier","entity_id":"user_42","attribute_key":"support_tier","scope":null,"as_of":1704665600000}
+{"id":"synthetic-092","text":"what is acct204 payment terms","entity_id":"acct204","attribute_key":"payment_terms","scope":{"region":"eu"},"as_of":1703024000000}
+{"id":"synthetic-093","text":"What is order7731's api version?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1703024000000}
+{"id":"synthetic-094","text":"Current payment terms of team.core","entity_id":null,"attribute_key":null,"scope":null,"as_of":1704492800000}
+{"id":"synthetic-095","text":"Tell me the timezone for acct999 please.","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1700604800000}
+{"id":"synthetic-096","text":"svc9: rate limit?","entity_id":null,"attribute_key":null,"scope":null,"as_of":1702764800000}
+{"id":"synthetic-097","text":"lookup entity=proj-alpha attribute=rate_limit","entity_id":null,"attribute_key":null,"scope":{"region":"us"},"as_of":1704320000000}
+{"id":"synthetic-098","text":"what did we decide about the launch last week","entity_id":null,"attribute_key":null,"scope":{"region":"eu"},"as_of":1705875200000}
+{"id":"synthetic-099","text":"anything new on the roadmap?","entity_id":null,"attribute_key":null,"scope":{"region":"apac"},"as_of":1705443200000}
