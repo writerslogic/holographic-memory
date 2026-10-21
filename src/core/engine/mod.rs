@@ -24,6 +24,9 @@ pub(crate) mod shard;
 pub(crate) mod structural;
 
 use anyhow::{Context, Result};
+
+/// Mutations decoded and applied together while replaying a journal frame.
+const REPLAY_CHUNK: usize = 512;
 use parking_lot::RwLock;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -539,12 +542,12 @@ impl HmsCore {
                         _ => "unsupported transaction format; re-encode original sources into a new store".to_string(),
                     }
                 })?;
-            let mutations: Vec<Mutation> = serde_json::from_slice(json)?;
-            for mutation in &mutations {
-                self.validate_mutation(mutation)?;
-            }
-            self.apply_mutations(&self.prepare_mutations(&mutations), &shards)?;
-            offset = self.arena.next_offset(offset)?;
+            self.replay_frame(json, &shards)?;
+            let next = self.arena.next_offset(offset)?;
+            // The frame is applied; its pages stay on disk for the next replay or compaction.
+            self.arena
+                .release_pages(offset, next.saturating_sub(offset));
+            offset = next;
         }
         if let Some(atoms) = &self.atom_memory {
             atoms.rebuild_indices();
@@ -552,6 +555,63 @@ impl HmsCore {
         if let Some(composites) = &self.composite_memory {
             composites.rebuild_indices();
         }
+        Ok(())
+    }
+
+    /// Decodes one committed journal frame and applies it in order, `REPLAY_CHUNK` mutations
+    /// at a time, so a frame written by one large batch is never held decoded in full. The
+    /// frame passed its checksum; an invalid mutation still fails the open, as before.
+    fn replay_frame(&self, json: &[u8], shards: &ShardSet) -> Result<()> {
+        struct Chunked<'a, F> {
+            apply: F,
+            failure: &'a mut Option<anyhow::Error>,
+        }
+        impl<'de, F: FnMut(&[Mutation]) -> Result<()>> serde::de::Visitor<'de> for Chunked<'_, F> {
+            type Value = ();
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a sequence")
+            }
+            fn visit_seq<A: serde::de::SeqAccess<'de>>(
+                mut self,
+                mut seq: A,
+            ) -> std::result::Result<(), A::Error> {
+                let mut chunk = Vec::with_capacity(REPLAY_CHUNK);
+                loop {
+                    let next = seq.next_element::<Mutation>()?;
+                    let done = next.is_none();
+                    chunk.extend(next);
+                    if chunk.len() == REPLAY_CHUNK || (done && !chunk.is_empty()) {
+                        if let Err(error) = (self.apply)(&chunk) {
+                            *self.failure = Some(error);
+                            return Err(serde::de::Error::custom("journal replay failed"));
+                        }
+                        chunk.clear();
+                    }
+                    if done {
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        let mut failure = None;
+        let mut decoder = serde_json::Deserializer::from_slice(json);
+        let decoded = serde::Deserializer::deserialize_seq(
+            &mut decoder,
+            Chunked {
+                apply: |chunk: &[Mutation]| {
+                    for mutation in chunk {
+                        self.validate_mutation(mutation)?;
+                    }
+                    self.apply_mutations(&self.prepare_mutations(chunk), shards)
+                },
+                failure: &mut failure,
+            },
+        );
+        if let Some(error) = failure {
+            return Err(error);
+        }
+        decoded?;
+        decoder.end()?;
         Ok(())
     }
 
@@ -1311,8 +1371,12 @@ impl HmsCore {
 
     fn arena_read_frame(&self, offset: usize) -> Result<(Vec<u8>, u32)> {
         let (data, version) = self.arena.read_frame(offset)?;
-        let payload = self.maybe_decrypt(&data)?;
-        Ok((payload, version))
+        #[cfg(feature = "security")]
+        if self.encryption.is_some() {
+            return Ok((self.maybe_decrypt(&data)?, version));
+        }
+        // Unencrypted frames are already an owned buffer; no second copy.
+        Ok((data, version))
     }
 
     fn sign_fn(&self) -> Option<SignFn<'_>> {

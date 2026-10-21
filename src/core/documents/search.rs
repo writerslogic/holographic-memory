@@ -440,13 +440,11 @@ fn execute_chunks(captured: &CapturedQuery, chunks: &[CapturedChunk]) -> Vec<Doc
             };
             let semantic = captured_chunk.semantic_cache.or_else(|| {
                 prepared.embedding.as_ref().and_then(|q| {
-                    captured_chunk.chunk().embedding.as_ref().map(|values| {
-                        q.iter()
-                            .zip(values)
-                            .map(|(a, b)| a * b)
-                            .sum::<f64>()
-                            .clamp(-1.0, 1.0)
-                    })
+                    captured_chunk
+                        .chunk()
+                        .embedding
+                        .as_ref()
+                        .map(|values| values.cosine(q))
                 })
             });
             (lexical, semantic)

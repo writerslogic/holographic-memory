@@ -37,6 +37,7 @@ thiserror = "2.0"
 tracing = "0.1"
 clap = { version = "4.4", features = ["derive", "env"] }
 fxhash = "0.2"
+foldhash = "0.2"
 nalgebra = { version = "0.35", features = ["serde-serialize"] }
 ed25519-dalek = { version = "3", features = ["rand_core"], optional = true }
 zeroize = { version = "1", features = ["derive"], optional = true }
@@ -242,6 +243,9 @@ required-features = ["private-search"]
 
 [profile.release]
 lto = true
+# One unit lets LLVM inline across the whole crate: about 2% faster single-thread ingest,
+# measured interleaved on NFCorpus (0.166 s vs 0.170 s), for a slower release build.
+codegen-units = 1
 # "debuginfo" keeps the symbol table: a fully stripped .node/.dylib fails to load on macOS 27 (mis-aligned LINKEDIT)
 strip = "debuginfo"
 opt-level = 3

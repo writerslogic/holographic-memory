@@ -1,3 +1,6 @@
+---
+description: "What holographic means in Holographic Memory: superposed hypervectors that degrade gracefully, and which parts of the engine have that property."
+---
 # What "holographic" means here
 
 In a hologram every part of the plate carries a degraded copy of the whole image. A

@@ -147,8 +147,12 @@ impl PersistentArena {
         } else {
             manifest.segment_size
         };
-        file.set_len(active_capacity as u64)?;
-        file.sync_all()?;
+        // A reopened segment already has its durable length (growth syncs it); only a new or
+        // resized file needs the length change and the full sync.
+        if file.metadata()?.len() != active_capacity as u64 {
+            file.set_len(active_capacity as u64)?;
+            file.sync_all()?;
+        }
         let mut mut_map = unsafe { MmapMut::map_mut(&file)? };
 
         let (recovered_offset, max_version) = Self::discover_offset(&mut_map)
@@ -160,6 +164,11 @@ impl PersistentArena {
             mut_map[recovered_offset..recovered_offset + HEADER_SIZE]
                 .copy_from_slice(&end_marker_bytes());
             mut_map.flush_range(recovered_offset, HEADER_SIZE)?;
+        }
+        // `discover_offset` touched every written page and the zero tail up to the segment's
+        // capacity; none of it needs to stay resident (replay copies each frame out).
+        if super::os_memory::release_journal_pages_enabled() {
+            super::os_memory::release_file_pages(mut_map.as_ptr(), mut_map.len());
         }
 
         Ok(Self {
@@ -582,9 +591,56 @@ impl PersistentArena {
             active
                 .flush_range(offset, total_frame_len + sentinel_len)
                 .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
+            // The frame is on disk and applied in memory by the caller; its pages are only
+            // needed again by replay or compaction, which read them back from the file.
+            if super::os_memory::release_journal_pages_enabled() {
+                let released = total_frame_len + sentinel_len;
+                super::os_memory::release_file_pages(
+                    active[offset..offset + released].as_ptr(),
+                    released,
+                );
+            }
         }
         let global = self.active_id.load(Ordering::SeqCst) * self.segment_size + offset;
         Ok(global)
+    }
+
+    /// Drops the resident pages of `[global_offset, global_offset + len)` once their bytes
+    /// are copied out (replay) or committed; the next read refaults them from the file. A
+    /// hint, so an out-of-range span is ignored. Off with `HMS_RELEASE_JOURNAL_PAGES=0`.
+    pub(crate) fn release_pages(&self, global_offset: usize, len: usize) {
+        if len == 0 || !super::os_memory::release_journal_pages_enabled() {
+            return;
+        }
+        let active = self.active_segment.read();
+        let reader = self.read_segments.read();
+        let seg_idx = global_offset / self.segment_size;
+        let local = global_offset % self.segment_size;
+        let Some(end) = local.checked_add(len) else {
+            return;
+        };
+        let bytes: &[u8] = if seg_idx < reader.len() {
+            &reader[seg_idx][..]
+        } else if seg_idx == self.active_id.load(Ordering::Acquire) {
+            &active[..]
+        } else {
+            return;
+        };
+        if end <= bytes.len() {
+            super::os_memory::release_file_pages(bytes[local..end].as_ptr(), len);
+        }
+    }
+
+    /// [`Self::release_pages`] over every mapping of the arena: after a compacted
+    /// generation is published, its freshly written pages are all resident.
+    fn release_all_pages(active: &MmapMut, segments: &[Arc<Mmap>]) {
+        if !super::os_memory::release_journal_pages_enabled() {
+            return;
+        }
+        super::os_memory::release_file_pages(active.as_ptr(), active.len());
+        for segment in segments {
+            super::os_memory::release_file_pages(segment.as_ptr(), segment.len());
+        }
     }
 
     fn grow_segment_locked(
@@ -808,6 +864,7 @@ impl PersistentArena {
         compaction_crash_point("published");
         std::mem::swap(&mut *active, &mut *replacement.active_segment.write());
         std::mem::swap(&mut *segments, &mut *replacement.read_segments.write());
+        Self::release_all_pages(&active, &segments);
         let live_path = new_path.clone();
         let old_path = std::mem::replace(&mut *data_path, new_path);
         self.active_capacity.store(

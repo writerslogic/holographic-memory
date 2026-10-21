@@ -46,6 +46,8 @@ jobs:
         run: awk '/^query /,/^top-1 correct/' "$RUNNER_TEMP/rust.out" | diff - examples/quickstart/expected-search.txt
       - name: Holographic demo output matches the docs
         run: cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin holographic | diff - examples/quickstart/expected-holographic.txt
+      - name: Memory API demo output matches the docs
+        run: cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin memory | diff - examples/quickstart/expected-memory.txt
 
   quickstart-node:
     runs-on: ubuntu-latest

@@ -99,6 +99,7 @@ pub(crate) mod rules;
 pub(crate) mod security;
 #[cfg(feature = "security")]
 pub use security::scrub_stack;
+pub(crate) mod os_memory;
 #[cfg(target_arch = "x86_64")]
 pub(crate) mod simd_math;
 pub mod sparse;

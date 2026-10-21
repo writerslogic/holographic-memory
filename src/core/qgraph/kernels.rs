@@ -548,6 +548,32 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
     }
 }
 
+/// [`dot_i4_inline`] of one query against four rows of equal length. On AVX2 the query's
+/// widened halves are loaded once per 16 packed bytes and the four row loads are in flight
+/// together; the sums are the same integers, so every result equals the single call's.
+#[inline(always)]
+pub(crate) fn dot_i4_inline_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
+    #[cfg(target_arch = "x86_64")]
+    {
+        let len = rows[0].len();
+        if rows.iter().all(|r| r.len() == len)
+            && q.len() == 2 * len
+            && len.is_multiple_of(16)
+            && tier::get() >= tier::AVX2
+        {
+            // SAFETY: the tier is AVX2 or VNNI only after detecting `avx2`; the lengths were
+            // checked above.
+            return unsafe { x86::dot_i4_avx2_x4(q, rows) };
+        }
+    }
+    [
+        dot_i4_inline(q, rows[0]),
+        dot_i4_inline(q, rows[1]),
+        dot_i4_inline(q, rows[2]),
+        dot_i4_inline(q, rows[3]),
+    ]
+}
+
 #[cfg(any(test, not(all(target_arch = "aarch64", target_feature = "dotprod"))))]
 pub(crate) fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
     let mut s = 0i32;
@@ -722,6 +748,41 @@ mod x86 {
             i += 16;
         }
         horizontal_sum(acc)
+    }
+
+    /// [`dot_i4_avx2`] of four rows against one query: the query's widened halves are loaded
+    /// once per 16 packed bytes and each row keeps its own accumulator, so the four row loads
+    /// are in flight together. Lane by lane the same integer sums as four single calls.
+    #[target_feature(enable = "avx2")]
+    pub(super) unsafe fn dot_i4_avx2_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
+        let mask = _mm_set1_epi8(0x0f);
+        let eight = _mm_set1_epi8(8);
+        let mut acc = [_mm256_setzero_si256(); 4];
+        let mut i = 0;
+        // SAFETY (all loads): the caller checked that every row has the same length, a
+        // multiple of 16, and that `q.len()` is twice it, so `i + 16 <= row.len()` and
+        // `2 * i + 32 <= q.len()`.
+        while i + 16 <= rows[0].len() {
+            let qe = _mm256_cvtepi8_epi16(_mm_loadu_si128(q.as_ptr().add(2 * i).cast()));
+            let qo = _mm256_cvtepi8_epi16(_mm_loadu_si128(q.as_ptr().add(2 * i + 16).cast()));
+            for (a, row) in acc.iter_mut().zip(rows) {
+                let x = _mm_loadu_si128(row.as_ptr().add(i).cast());
+                let lo = _mm_sub_epi8(_mm_xor_si128(_mm_and_si128(x, mask), eight), eight);
+                let hi = _mm_sub_epi8(
+                    _mm_xor_si128(_mm_and_si128(_mm_srli_epi16::<4>(x), mask), eight),
+                    eight,
+                );
+                *a = _mm256_add_epi32(*a, _mm256_madd_epi16(_mm256_cvtepi8_epi16(lo), qe));
+                *a = _mm256_add_epi32(*a, _mm256_madd_epi16(_mm256_cvtepi8_epi16(hi), qo));
+            }
+            i += 16;
+        }
+        [
+            horizontal_sum(acc[0]),
+            horizontal_sum(acc[1]),
+            horizontal_sum(acc[2]),
+            horizontal_sum(acc[3]),
+        ]
     }
 
     /// [`dot_i8_avx2`] with `vpdpbusd` on 256-bit registers (AVX512-VNNI with VL): `a` is biased

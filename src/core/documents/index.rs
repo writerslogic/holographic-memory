@@ -136,9 +136,13 @@ fn replace_postings(
     new: &StoredChunk,
     slot: usize,
 ) {
-    for term in old.terms.keys() {
+    for (term, &old_frequency) in &old.terms {
         if let Some(&frequency) = new.terms.get(term).filter(|_| old.stemmed == new.stemmed) {
-            postings[usize::from(old.stemmed)].set_frequency(term, slot, frequency);
+            // Unchanged terms (a deferred encoding landing, a re-memorized document) leave
+            // the list alone; rewriting it would decode and encode the whole list.
+            if frequency != old_frequency {
+                postings[usize::from(old.stemmed)].set_frequency(term, slot, frequency);
+            }
         } else {
             postings[usize::from(old.stemmed)].remove(term, slot);
         }
@@ -279,7 +283,37 @@ impl DocumentStore {
     }
 
     pub(crate) fn insert(&mut self, id: String, document: impl Into<Arc<StoredDocument>>) {
-        self.insert_shared(id, document.into());
+        let document = document.into();
+        assert_eq!(id, document.id, "document key differs from document ID");
+        self.insert_batch(vec![document]);
+    }
+
+    /// Inserts `documents` in order, reaching the state the same inserts one at a time
+    /// reach: slots are assigned in document and chunk order, chunk text goes to the segment
+    /// in that order, and a document that replaces a stored one (or repeats an id earlier in
+    /// the batch) takes the replacement path at its turn. The maximal runs of new, distinct
+    /// documents between those are indexed in bulk (`postings::index_chunks`).
+    pub(crate) fn insert_batch(&mut self, documents: Vec<Arc<StoredDocument>>) {
+        let documents: Vec<Arc<StoredDocument>> = documents
+            .into_iter()
+            .map(|document| self.stripped(document))
+            .collect();
+        let mut group: Vec<Arc<StoredDocument>> = Vec::with_capacity(documents.len());
+        let mut grouped: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for document in documents {
+            if !grouped.insert(document.id.clone()) {
+                self.install_new(std::mem::take(&mut group));
+                grouped.clear();
+                grouped.insert(document.id.clone());
+            }
+            if self.documents.contains_key(&document.id) {
+                self.install_new(std::mem::take(&mut group));
+                self.replace(document);
+            } else {
+                group.push(document);
+            }
+        }
+        self.install_new(group);
     }
 
     /// Word count of the chunk occupying `slot`.
@@ -335,9 +369,10 @@ impl DocumentStore {
         Arc::new(owned)
     }
 
-    fn insert_shared(&mut self, id: String, document: Arc<StoredDocument>) {
-        assert_eq!(id, document.id, "document key differs from document ID");
-        let document = self.stripped(document);
+    /// Installs `document` (text already stripped) over the stored document with its id: in
+    /// place when the chunk count matches, otherwise by removal and a fresh insert.
+    fn replace(&mut self, document: Arc<StoredDocument>) {
+        let id = document.id.clone();
         if let Some(previous) = self
             .documents
             .get(&id)
@@ -350,57 +385,82 @@ impl DocumentStore {
         if let Some(old) = self.remove(&id) {
             self.scrub_replaced(&old, &document);
         }
-        let mut slots = Vec::with_capacity(document.chunks.len());
-        let mut embedded = false;
-        for (chunk_index, chunk) in document.chunks.iter().enumerate() {
-            self.count_vector_state(chunk.vector_state, true);
-            if chunk.embedding.is_some() {
-                self.embedded_count = self
-                    .embedded_count
-                    .checked_add(1)
-                    .expect("document embedded count overflow");
-                embedded = true;
-            }
-            let slot = self.free.pop_first().unwrap_or_else(|| {
-                let slot = self.slot_count;
-                self.slot_count = self
-                    .slot_count
-                    .checked_add(1)
-                    .expect("document slot overflow");
-                self.owners.push(None);
-                self.word_counts.push(0);
-                slot
-            });
-            assert!(
-                self.owners[slot]
-                    .replace((Arc::clone(&document), chunk_index))
-                    .is_none(),
-                "document slot already owned"
-            );
-            self.word_counts[slot] = slot_words(chunk.word_count);
-            self.chunk_count = self
-                .chunk_count
-                .checked_add(1)
-                .expect("document chunk count overflow");
-            self.word_count = self
-                .word_count
-                .checked_add(chunk.word_count)
-                .expect("document word count overflow");
-            for (term, &frequency) in &chunk.terms {
-                self.postings[usize::from(chunk.stemmed)].insert(term, slot, frequency);
-            }
-            slots.push(slot);
+        self.install_new(vec![document]);
+    }
+
+    /// Indexes documents absent from the store, with distinct ids and text already stripped,
+    /// in order: slots are assigned chunk by chunk exactly as single inserts assign them (the
+    /// smallest free slots, then new ones), so the group's chunks are in ascending slot order
+    /// and their postings build in one bulk pass.
+    fn install_new(&mut self, group: Vec<Arc<StoredDocument>>) {
+        if group.is_empty() {
+            return;
         }
-        self.slots.insert(id.clone(), slots);
-        if embedded {
-            assert!(
-                self.embedded_documents.insert(id.clone()),
-                "duplicate embedded document"
+        let total = group.iter().map(|document| document.chunks.len()).sum();
+        let mut indexed: Vec<(usize, &StoredChunk)> = Vec::with_capacity(total);
+        for document in &group {
+            debug_assert!(
+                !self.documents.contains_key(&document.id),
+                "bulk insert over a stored document"
             );
+            let mut slots = Vec::with_capacity(document.chunks.len());
+            let mut embedded = false;
+            for (chunk_index, chunk) in document.chunks.iter().enumerate() {
+                self.count_vector_state(chunk.vector_state, true);
+                if chunk.embedding.is_some() {
+                    self.embedded_count = self
+                        .embedded_count
+                        .checked_add(1)
+                        .expect("document embedded count overflow");
+                    embedded = true;
+                }
+                let slot = self.free.pop_first().unwrap_or_else(|| {
+                    let slot = self.slot_count;
+                    self.slot_count = self
+                        .slot_count
+                        .checked_add(1)
+                        .expect("document slot overflow");
+                    self.owners.push(None);
+                    self.word_counts.push(0);
+                    slot
+                });
+                assert!(
+                    self.owners[slot]
+                        .replace((Arc::clone(document), chunk_index))
+                        .is_none(),
+                    "document slot already owned"
+                );
+                self.word_counts[slot] = slot_words(chunk.word_count);
+                self.chunk_count = self
+                    .chunk_count
+                    .checked_add(1)
+                    .expect("document chunk count overflow");
+                self.word_count = self
+                    .word_count
+                    .checked_add(chunk.word_count)
+                    .expect("document word count overflow");
+                indexed.push((slot, chunk));
+                slots.push(slot);
+            }
+            self.slots.insert(document.id.clone(), slots);
+            if embedded {
+                assert!(
+                    self.embedded_documents.insert(document.id.clone()),
+                    "duplicate embedded document"
+                );
+            }
+            self.insert_filters(document);
         }
-        self.insert_filters(&document);
-        self.invalidate_dense_index();
-        self.documents.insert(id, document);
+        super::postings::index_chunks(&mut self.postings, &indexed);
+        // One generation step per document, as single inserts take.
+        self.generation = self
+            .generation
+            .checked_add(group.len() as u64)
+            .expect("document generation overflow");
+        self.dense_index = None;
+        for document in group {
+            self.documents.insert(document.id.clone(), document);
+        }
     }
 
     fn insert_filters(&mut self, document: &StoredDocument) {
@@ -610,9 +670,7 @@ impl DocumentStore {
             self.generation = generation;
             self.text = text;
             self.encode_gate = encode_gate;
-            for (id, document) in documents {
-                self.insert_shared(id, document);
-            }
+            self.insert_batch(documents.into_values().collect());
         }
         Some(document)
     }

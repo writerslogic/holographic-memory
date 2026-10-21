@@ -54,6 +54,7 @@ With neither `HMS_API_KEY` nor `--keys-file`, the server only starts if `--no-au
 | `--query-index` | `HMS_QUERY_INDEX` | `auto` | Route of unfiltered vector queries: `auto` (the graph index once maintenance built one, else the exact scan), `exact`, or `graph` (409 until a graph index exists). A request's `index` field overrides it. |
 | `--query-ef` | `HMS_QUERY_EF` | `128` | Beam width of graph-index queries, 1..=4096: the recall knob. A request's `ef` field overrides it. |
 | `--graph-min-rows` | `HMS_GRAPH_MIN_ROWS` | `4096` | Fewest embedded chunks for which index maintenance builds the graph index; smaller stores answer from the exact scan. |
+| `--ingest-encode` | `HMS_INGEST_ENCODE` | `eager` | When ingest computes chunk hypervectors (the text-vector channel): `eager` (at ingest), `deferred` (on the first vector query or maintenance; needs stored text and a text encoder) or `lexical` (never: embedding-only workloads skip the channel's time and memory). Text and `query_vector` search see every document in every mode. |
 | `--max-tenants` | `HMS_MAX_TENANTS` | `64` | Stores open at once (503 `tenant_limit` above it). |
 | `--max-concurrent-work` | `HMS_MAX_CONCURRENT_WORK` | `4` | Requests reading bodies or running engine work at once, 1..=256. |
 | `--max-queue` | `HMS_MAX_QUEUE` | `0` | Requests allowed to wait for a work slot. 0 answers 503 `server_busy` immediately. |

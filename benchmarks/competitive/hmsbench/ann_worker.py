@@ -100,7 +100,10 @@ class Adapter:
 
 
 class Hnswlib(Adapter):
-    BUILDS = {"m16": {"M": 16, "ef_construction": 200}, "m32": {"M": 32, "ef_construction": 200}}
+    # m32e500 and m48e500 match the build effort of the HMS graph (degree 64 at level 0 for
+    # M=32, construction ef 500); analysis reports the best build per target recall.
+    BUILDS = {"m16": {"M": 16, "ef_construction": 200}, "m32": {"M": 32, "ef_construction": 200},
+              "m32e500": {"M": 32, "ef_construction": 500}, "m48e500": {"M": 48, "ef_construction": 500}}
     SWEEPS = {k: [{"ef": e} for e in EF_SWEEP] for k in BUILDS}
     PERSISTENT_FLUSH = True
 
@@ -157,7 +160,8 @@ class FaissBase(Adapter):
 
 
 class FaissHnsw(FaissBase):
-    BUILDS = {"m16": {"M": 16, "efConstruction": 200}, "m32": {"M": 32, "efConstruction": 200}}
+    BUILDS = {"m16": {"M": 16, "efConstruction": 200}, "m32": {"M": 32, "efConstruction": 200},
+              "m32e500": {"M": 32, "efConstruction": 500}, "m48e500": {"M": 48, "efConstruction": 500}}
     SWEEPS = {k: [{"ef": e} for e in EF_SWEEP] for k in BUILDS}
 
     def build(self, train, params):

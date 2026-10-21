@@ -100,7 +100,8 @@ impl HmsCore {
         };
         let mutations = inputs
             .into_par_iter()
-            .map(|input| {
+            .map_init(documents::StemMemo::default, |memo, input| {
+                let _memo = memo.install();
                 #[cfg(feature = "local-models")]
                 if let Some(stages) = stages.as_deref() {
                     return self
@@ -118,7 +119,7 @@ impl HmsCore {
                 .map(|document| Mutation::Document(Arc::new(document)))
             })
             .collect::<Result<Vec<_>>>()?;
-        super::document_batch::validate_prepared(&mutations)?;
+        let payload = super::document_batch::serialize_transaction(&mutations)?;
         let counts = mutations
             .iter()
             .map(|mutation| match mutation {
@@ -126,7 +127,7 @@ impl HmsCore {
                 _ => unreachable!("document preparation produced a non-document mutation"),
             })
             .collect();
-        self.commit(&mutations)?;
+        self.commit_serialized(&mutations, &payload)?;
         Ok(counts)
     }
 

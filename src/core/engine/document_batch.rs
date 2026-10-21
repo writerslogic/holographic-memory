@@ -5,9 +5,10 @@ use std::collections::HashSet;
 use std::io::{self, Write};
 
 use anyhow::{ensure, Result};
+use rayon::prelude::*;
 use serde::Serialize;
 
-use super::mutation::Mutation;
+use super::mutation::{transaction_payload, Mutation, TRANSACTION_MAGIC};
 use crate::core::documents::{chunk_document, DocumentInput, MAX_DOCUMENT_BYTES};
 
 const MAX_ITEMS: usize = 4096;
@@ -64,12 +65,26 @@ pub(super) fn validate_inputs(
         !inputs.is_empty() && inputs.len() <= MAX_ITEMS,
         "document batch requires 1..=4096 items"
     );
+    // The per-input measures (metadata size, chunk count) are computed in parallel; the
+    // budgets then fold in input order, so the first input over a limit is the one reported,
+    // as it is when everything runs serially.
+    let measured: Vec<(Option<Result<usize>>, Result<usize>)> = inputs
+        .par_iter()
+        .map(|input| {
+            let metadata = input
+                .metadata
+                .as_ref()
+                .map(|metadata| serialized_size(metadata, MAX_DOCUMENT_BYTES));
+            let chunks = chunk_document(input).map(|chunks| chunks.len());
+            (metadata, chunks)
+        })
+        .collect();
     let mut ids = HashSet::with_capacity(inputs.len());
     let mut source_bytes = 0;
     let mut metadata_bytes = 0;
     let mut embedding_values = 0;
     let mut chunks = 0;
-    for input in inputs {
+    for (input, (metadata_size, chunk_count)) in inputs.iter().zip(measured) {
         ensure!(
             ids.insert(input.id.as_str()),
             "document batch IDs must be unique"
@@ -87,15 +102,15 @@ pub(super) fn validate_inputs(
                 "document batch source exceeds 8 MiB",
             )?;
         }
-        if let Some(metadata) = &input.metadata {
+        if let Some(metadata_size) = metadata_size {
             add_size(
                 &mut metadata_bytes,
-                serialized_size(metadata, MAX_DOCUMENT_BYTES)?,
+                metadata_size?,
                 MAX_DOCUMENT_BYTES,
                 "document batch metadata exceeds 8 MiB",
             )?;
         }
-        let chunk_count = chunk_document(input)?.len();
+        let chunk_count = chunk_count?;
         if let Some(embeddings) = &input.embeddings {
             for embedding in embeddings {
                 add_size(
@@ -126,9 +141,16 @@ pub(super) fn validate_inputs(
     Ok(())
 }
 
-pub(super) fn validate_prepared(mutations: &[Mutation]) -> Result<()> {
-    serialized_size(&mutations, MAX_TRANSACTION_BYTES)?;
-    Ok(())
+/// The journal payload of a prepared document batch, serialized once (in parallel for a
+/// large batch) and checked against the transaction limit; `HmsCore::commit_serialized`
+/// appends it as is.
+pub(super) fn serialize_transaction(mutations: &[Mutation]) -> Result<Vec<u8>> {
+    let payload = transaction_payload(mutations)?;
+    ensure!(
+        payload.len() - TRANSACTION_MAGIC.len() <= MAX_TRANSACTION_BYTES,
+        "document batch size limit exceeded"
+    );
+    Ok(payload)
 }
 
 #[cfg(test)]
