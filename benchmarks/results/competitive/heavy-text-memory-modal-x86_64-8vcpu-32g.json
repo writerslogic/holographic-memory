@@ -1,0 +1,4418 @@
+{
+  "schema_version": 1,
+  "kind": "text",
+  "suite": "heavy",
+  "commit": "d5f3f3b8cbf963003d282181409e6a0203f9e96d",
+  "date": "2026-10-21T18:23:45+0000",
+  "hardware": {
+    "class": "modal-x86_64-8vcpu-32g",
+    "cpu": "unknown",
+    "logical_cores": 24,
+    "memory_bytes": 425706950656,
+    "os": "Linux 4.19.0-gvisor",
+    "machine": "x86_64",
+    "hosted_runner": false,
+    "load_1m": 0.0
+  },
+  "dataset": {
+    "dataset": "longmemeval-s-dev-sessions",
+    "documents": 4559,
+    "queries": 100,
+    "truncated_words": 4000,
+    "source": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/98d7416c24c778c2fee6e6f3006e7a073259d48f/longmemeval_s_cleaned.json",
+    "id": "memory"
+  },
+  "protocol": {
+    "rounds": 10,
+    "build_repeats": 2,
+    "k": 100,
+    "passes_per_round": 3,
+    "retrieval": "lexical only, OR over the lowercase alphanumeric query word set, top 100; each system's own analyzer and default BM25",
+    "timing": "one query at a time, single client thread; HMS timed inside its process, Python systems inside their worker",
+    "hms_rows": "hms = `--encode lexical` (BM25 index only, like-for-like); hms-eager = default eager encoding (chunk hypervectors at ingest); every build repeat is one cold process",
+    "interleaving": "each round runs HMS and every comparator once, order rotated per round",
+    "peak_rss": "wait4 rusage of that phase's own process, forked from a small helper so it never inherits the orchestrator's RSS (Linux)",
+    "disk": "allocated bytes of the store directory (du); where the filesystem reports sparse files as fully allocated, only non-zero 4 KiB blocks count",
+    "passes": "per timed pass: queries, total_ns and p50/p90/p99/max ns of the per-query latencies"
+  },
+  "facts": {
+    "hms": {
+      "service_needed": {
+        "value": "no",
+        "basis": "measured",
+        "source": "benchmarks/results/security_matrix_v2.json",
+        "note": "in-process library; 0 egress sockets in the security matrix"
+      },
+      "encrypted_at_rest": {
+        "value": "yes",
+        "basis": "measured",
+        "source": "benchmarks/results/security_matrix_v2.json",
+        "note": "AES-GCM with Argon2id (feature `security`); encrypted QPS ratio 0.929 of plain; not enabled in the rows above"
+      }
+    },
+    "hnswlib": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "faiss-hnsw": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "faiss-flat": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "faiss-ivfpq": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "usearch": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "annoy": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "sqlite-vec": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no (SQLCipher is a separate build)",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "lancedb": {
+      "service_needed": {
+        "value": "no (embedded)",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no built-in",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "chroma": {
+      "service_needed": {
+        "value": "no (PersistentClient)",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no built-in",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "qdrant-local": {
+      "service_needed": {
+        "value": "no (local mode; server needed for indexed ANN)",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no built-in",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "milvus-lite": {
+      "service_needed": {
+        "value": "no (embedded)",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no built-in",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "duckdb-vss": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "database-file encryption (DuckDB 1.4+); not exercised with the vss index",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "sqlite-fts5": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no (SQLCipher is a separate build)",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "tantivy": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "whoosh": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "bm25s": {
+      "service_needed": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "lucene": {
+      "service_needed": {
+        "value": "no (library; needs a JVM)",
+        "basis": "documentation, not exercised here"
+      },
+      "encrypted_at_rest": {
+        "value": "no (filesystem-level only)",
+        "basis": "documentation, not exercised here"
+      }
+    },
+    "hms-eager": {
+      "service_needed": {
+        "value": "no",
+        "basis": "measured",
+        "source": "benchmarks/results/security_matrix_v2.json",
+        "note": "in-process library; 0 egress sockets in the security matrix"
+      },
+      "encrypted_at_rest": {
+        "value": "yes",
+        "basis": "measured",
+        "source": "benchmarks/results/security_matrix_v2.json",
+        "note": "AES-GCM with Argon2id (feature `security`); encrypted QPS ratio 0.929 of plain; not enabled in the rows above"
+      }
+    }
+  },
+  "timing_boundary": {
+    "hms": "native Rust API call in the engine process (no language binding); text: BM25 index only (`--encode lexical`); ANN: public-bench loop",
+    "hms-eager": "native Rust API call in the engine process (no language binding); text: BM25 index plus chunk hypervectors at ingest (`--encode eager`)",
+    "hnswlib": "CPython binding call per query",
+    "faiss-hnsw": "CPython (SWIG) call per query",
+    "faiss-flat": "CPython (SWIG) call per query",
+    "faiss-ivfpq": "CPython (SWIG) call per query",
+    "usearch": "CPython binding call per query",
+    "annoy": "CPython binding call per query",
+    "sqlite-vec": "CPython sqlite3 call per query",
+    "lancedb": "CPython + Arrow call per query (multi-threaded Rust runtime inside)",
+    "chroma": "CPython client call per query (Rust core inside)",
+    "qdrant-local": "CPython client call per query (embedded local mode)",
+    "milvus-lite": "CPython client call per query (embedded server process)",
+    "duckdb-vss": "CPython duckdb call per query",
+    "sqlite-fts5": "CPython sqlite3 call per query (query string built outside the timer)",
+    "tantivy": "CPython tantivy-py call per query (stored id fetched per hit)",
+    "whoosh": "pure Python",
+    "bm25s": "CPython + NumPy (single-threaded retrieve)",
+    "lucene": "in-process JVM API call, after a full untimed JIT warm-up pass"
+  },
+  "not_run": {
+    "pgvector": "needs a PostgreSQL server with the extension; not installable from pip/cargo/npm (service required)",
+    "mem0": "agent-memory systems belong to the next harness stage (plug in through the same adapter interface)",
+    "zep": "agent-memory systems belong to the next harness stage",
+    "letta": "agent-memory systems belong to the next harness stage",
+    "langmem": "agent-memory systems belong to the next harness stage"
+  },
+  "systems": {
+    "hms": {
+      "display": "HMS",
+      "build_runs": [
+        {
+          "documents": 4559,
+          "encode": "lexical",
+          "ingest_s": 2.452041575,
+          "peak_rss_bytes": 139661312,
+          "wall_s": 2.6466664619999847,
+          "disk_bytes": 10269005
+        },
+        {
+          "documents": 4559,
+          "encode": "lexical",
+          "ingest_s": 2.578856015,
+          "peak_rss_bytes": 138817536,
+          "wall_s": 2.7299974689999544,
+          "disk_bytes": 10269005
+        }
+      ],
+      "serve_rounds": [
+        {
+          "cold_start_s": 0.594086714,
+          "open_s": 0.582937624,
+          "quality": {
+            "ndcg_at_10": 0.4561419499447157,
+            "recall_at_10": 0.5701666666666667,
+            "recall_at_100": 0.8203333333333334,
+            "per_query_ndcg_at_10": [
+              1.0,
+              0.6309297535714575,
+              0.5,
+              1.0,
+              0.0,
+              0.5,
+              1.0,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.0,
+              0.3333333333333333,
+              0.6309297535714575,
+              0.0,
+              0.0,
+              0.0,
+              0.3065735963827292,
+              0.431733884398313,
+              0.0,
+              0.38268031849431083,
+              0.0,
+              0.5307212739772434,
+              1.0,
+              0.0,
+              0.0,
+              0.3903800499921017,
+              0.17723928678404774,
+              0.0,
+              0.0,
+              0.14126697285982898,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.3562071871080222,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.9197207891481876,
+              0.6131471927654584,
+              0.0,
+              0.0,
+              0.8772153153380493,
+              0.7903864795495061,
+              0.46845052016107697,
+              1.0,
+              0.6131471927654584,
+              0.0,
+              0.0,
+              0.9197207891481876,
+              0.7903864795495061,
+              0.0,
+              0.7903864795495061,
+              0.45560514958746035,
+              0.3065735963827292,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.18154179253735267,
+              0.0,
+              0.448643819352159,
+              0.6108377030333358,
+              0.6131471927654584,
+              0.8315546295836225,
+              0.6240505200038379,
+              0.5012658353418871,
+              0.0,
+              0.6131471927654584,
+              0.2640681225725909,
+              0.8772153153380493,
+              0.8503449055347546,
+              0.8503449055347546,
+              0.9197207891481876,
+              0.20438239758848611,
+              1.0,
+              1.0,
+              0.5802792108518124,
+              0.6131471927654584,
+              1.0,
+              1.0,
+              0.6131471927654584,
+              0.38685280723454163,
+              0.0,
+              1.0,
+              0.3065735963827292,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.2890648263178879,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "per_query_recall_at_100": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.25,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.6666666666666666,
+              0.6666666666666666,
+              1.0,
+              0.4,
+              1.0,
+              0.25,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              0.5,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.6666666666666666,
+              0.0,
+              1.0,
+              0.8,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "queries": 100
+          },
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 45504713,
+              "p50_ns": 415843,
+              "p90_ns": 625667,
+              "p99_ns": 1106736,
+              "max_ns": 1211168
+            },
+            {
+              "queries": 100,
+              "total_ns": 41139683,
+              "p50_ns": 390524,
+              "p90_ns": 563918,
+              "p99_ns": 699620,
+              "max_ns": 814652
+            },
+            {
+              "queries": 100,
+              "total_ns": 43116576,
+              "p50_ns": 424579,
+              "p90_ns": 543850,
+              "p99_ns": 737363,
+              "max_ns": 761659
+            }
+          ],
+          "peak_rss_bytes": 69783552,
+          "wall_s": 0.7679557000001296
+        },
+        {
+          "cold_start_s": 0.585356987,
+          "open_s": 0.573443888,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 53270432,
+              "p50_ns": 450760,
+              "p90_ns": 878486,
+              "p99_ns": 1603214,
+              "max_ns": 2229773
+            },
+            {
+              "queries": 100,
+              "total_ns": 47541057,
+              "p50_ns": 454567,
+              "p90_ns": 594376,
+              "p99_ns": 791528,
+              "max_ns": 840882
+            },
+            {
+              "queries": 100,
+              "total_ns": 46627594,
+              "p50_ns": 444798,
+              "p90_ns": 592453,
+              "p99_ns": 799874,
+              "max_ns": 862104
+            }
+          ],
+          "peak_rss_bytes": 68792320,
+          "wall_s": 0.7974199480001971
+        },
+        {
+          "cold_start_s": 0.641814565,
+          "open_s": 0.629429917,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 52101515,
+              "p50_ns": 467703,
+              "p90_ns": 680944,
+              "p99_ns": 1261936,
+              "max_ns": 1449167
+            },
+            {
+              "queries": 100,
+              "total_ns": 47212485,
+              "p50_ns": 446873,
+              "p90_ns": 608725,
+              "p99_ns": 801657,
+              "max_ns": 897562
+            },
+            {
+              "queries": 100,
+              "total_ns": 44677182,
+              "p50_ns": 436202,
+              "p90_ns": 551605,
+              "p99_ns": 721492,
+              "max_ns": 757391
+            }
+          ],
+          "peak_rss_bytes": 70021120,
+          "wall_s": 0.840067729999646
+        },
+        {
+          "cold_start_s": 0.609462174,
+          "open_s": 0.594865469,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 48272136,
+              "p50_ns": 418448,
+              "p90_ns": 670865,
+              "p99_ns": 1454427,
+              "max_ns": 1486048
+            },
+            {
+              "queries": 100,
+              "total_ns": 42266753,
+              "p50_ns": 400032,
+              "p90_ns": 523140,
+              "p99_ns": 753504,
+              "max_ns": 869318
+            },
+            {
+              "queries": 100,
+              "total_ns": 41118596,
+              "p50_ns": 391706,
+              "p90_ns": 509814,
+              "p99_ns": 676375,
+              "max_ns": 716904
+            }
+          ],
+          "peak_rss_bytes": 68603904,
+          "wall_s": 0.789281022999603
+        },
+        {
+          "cold_start_s": 0.638658722,
+          "open_s": 0.625172156,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 50556833,
+              "p50_ns": 441202,
+              "p90_ns": 732163,
+              "p99_ns": 1366538,
+              "max_ns": 1434990
+            },
+            {
+              "queries": 100,
+              "total_ns": 44504138,
+              "p50_ns": 432023,
+              "p90_ns": 554410,
+              "p99_ns": 769415,
+              "max_ns": 792329
+            },
+            {
+              "queries": 100,
+              "total_ns": 46246714,
+              "p50_ns": 454447,
+              "p90_ns": 562305,
+              "p99_ns": 769616,
+              "max_ns": 790656
+            }
+          ],
+          "peak_rss_bytes": 70107136,
+          "wall_s": 0.8411264440001105
+        },
+        {
+          "cold_start_s": 0.645934083,
+          "open_s": 0.63117183,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 47798789,
+              "p50_ns": 438727,
+              "p90_ns": 625938,
+              "p99_ns": 1210546,
+              "max_ns": 1244632
+            },
+            {
+              "queries": 100,
+              "total_ns": 41739388,
+              "p50_ns": 401735,
+              "p90_ns": 538128,
+              "p99_ns": 693888,
+              "max_ns": 784765
+            },
+            {
+              "queries": 100,
+              "total_ns": 41723340,
+              "p50_ns": 397628,
+              "p90_ns": 516646,
+              "p99_ns": 725490,
+              "max_ns": 968008
+            }
+          ],
+          "peak_rss_bytes": 68378624,
+          "wall_s": 0.8267673349996585
+        },
+        {
+          "cold_start_s": 0.629664056,
+          "open_s": 0.616577663,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 49954223,
+              "p50_ns": 446602,
+              "p90_ns": 678208,
+              "p99_ns": 1275030,
+              "max_ns": 1453164
+            },
+            {
+              "queries": 100,
+              "total_ns": 44097323,
+              "p50_ns": 423938,
+              "p90_ns": 558357,
+              "p99_ns": 857224,
+              "max_ns": 868696
+            },
+            {
+              "queries": 100,
+              "total_ns": 44239778,
+              "p50_ns": 429008,
+              "p90_ns": 547717,
+              "p99_ns": 719649,
+              "max_ns": 754796
+            }
+          ],
+          "peak_rss_bytes": 67702784,
+          "wall_s": 0.8201186520000192
+        },
+        {
+          "cold_start_s": 0.607698335,
+          "open_s": 0.595376264,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 47990546,
+              "p50_ns": 425421,
+              "p90_ns": 643722,
+              "p99_ns": 1158225,
+              "max_ns": 1354013
+            },
+            {
+              "queries": 100,
+              "total_ns": 41477444,
+              "p50_ns": 394060,
+              "p90_ns": 535253,
+              "p99_ns": 707586,
+              "max_ns": 1072079
+            },
+            {
+              "queries": 100,
+              "total_ns": 42870878,
+              "p50_ns": 415533,
+              "p90_ns": 518400,
+              "p99_ns": 707154,
+              "max_ns": 736151
+            }
+          ],
+          "peak_rss_bytes": 69869568,
+          "wall_s": 0.7862261119998948
+        },
+        {
+          "cold_start_s": 0.604288863,
+          "open_s": 0.592581612,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 47725724,
+              "p50_ns": 440199,
+              "p90_ns": 661056,
+              "p99_ns": 1156913,
+              "max_ns": 1247097
+            },
+            {
+              "queries": 100,
+              "total_ns": 43160200,
+              "p50_ns": 413678,
+              "p90_ns": 534702,
+              "p99_ns": 780306,
+              "max_ns": 851183
+            },
+            {
+              "queries": 100,
+              "total_ns": 42056738,
+              "p50_ns": 402928,
+              "p90_ns": 539060,
+              "p99_ns": 695311,
+              "max_ns": 731532
+            }
+          ],
+          "peak_rss_bytes": 69435392,
+          "wall_s": 0.7890368990001662
+        },
+        {
+          "cold_start_s": 0.635555393,
+          "open_s": 0.623420795,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 51088200,
+              "p50_ns": 424590,
+              "p90_ns": 751742,
+              "p99_ns": 1848448,
+              "max_ns": 2254110
+            },
+            {
+              "queries": 100,
+              "total_ns": 44038196,
+              "p50_ns": 424419,
+              "p90_ns": 544861,
+              "p99_ns": 802218,
+              "max_ns": 892222
+            },
+            {
+              "queries": 100,
+              "total_ns": 45196575,
+              "p50_ns": 445690,
+              "p90_ns": 556294,
+              "p99_ns": 764545,
+              "max_ns": 781549
+            }
+          ],
+          "peak_rss_bytes": 68055040,
+          "wall_s": 0.8319338119999884
+        }
+      ],
+      "ops": {
+        "count": 100,
+        "delete": {
+          "per_op_ms_durable": 3.1620943699999997,
+          "supported": true
+        },
+        "replace": {
+          "per_op_ms_durable": 3.9187444300000003,
+          "supported": true
+        }
+      },
+      "version": {
+        "holographic-memory": "0.6.1",
+        "commit": "d5f3f3b8cbf963003d282181409e6a0203f9e96d"
+      },
+      "install": {
+        "competitive_text": {
+          "bytes": 2491848,
+          "non_system_dynamic_libraries": 0
+        },
+        "_crate_dependencies": {
+          "count": 92,
+          "note": "unique crates in the default-feature normal dependency tree, including CLI-only crates; compiled in, not installed"
+        }
+      },
+      "encode": "lexical"
+    },
+    "hms-eager": {
+      "display": "HMS (eager hypervectors)",
+      "build_runs": [
+        {
+          "documents": 4559,
+          "encode": "eager",
+          "ingest_s": 16.402460064,
+          "peak_rss_bytes": 174006272,
+          "wall_s": 16.569642284999873,
+          "disk_bytes": 10260813
+        },
+        {
+          "documents": 4559,
+          "encode": "eager",
+          "ingest_s": 16.745247729,
+          "peak_rss_bytes": 175702016,
+          "wall_s": 16.89531072700015,
+          "disk_bytes": 10260813
+        }
+      ],
+      "serve_rounds": [
+        {
+          "cold_start_s": 0.581830842,
+          "open_s": 0.568620818,
+          "quality": {
+            "ndcg_at_10": 0.4561419499447157,
+            "recall_at_10": 0.5701666666666667,
+            "recall_at_100": 0.8203333333333334,
+            "per_query_ndcg_at_10": [
+              1.0,
+              0.6309297535714575,
+              0.5,
+              1.0,
+              0.0,
+              0.5,
+              1.0,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.0,
+              0.3333333333333333,
+              0.6309297535714575,
+              0.0,
+              0.0,
+              0.0,
+              0.3065735963827292,
+              0.431733884398313,
+              0.0,
+              0.38268031849431083,
+              0.0,
+              0.5307212739772434,
+              1.0,
+              0.0,
+              0.0,
+              0.3903800499921017,
+              0.17723928678404774,
+              0.0,
+              0.0,
+              0.14126697285982898,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.3562071871080222,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.9197207891481876,
+              0.6131471927654584,
+              0.0,
+              0.0,
+              0.8772153153380493,
+              0.7903864795495061,
+              0.46845052016107697,
+              1.0,
+              0.6131471927654584,
+              0.0,
+              0.0,
+              0.9197207891481876,
+              0.7903864795495061,
+              0.0,
+              0.7903864795495061,
+              0.45560514958746035,
+              0.3065735963827292,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.18154179253735267,
+              0.0,
+              0.448643819352159,
+              0.6108377030333358,
+              0.6131471927654584,
+              0.8315546295836225,
+              0.6240505200038379,
+              0.5012658353418871,
+              0.0,
+              0.6131471927654584,
+              0.2640681225725909,
+              0.8772153153380493,
+              0.8503449055347546,
+              0.8503449055347546,
+              0.9197207891481876,
+              0.20438239758848611,
+              1.0,
+              1.0,
+              0.5802792108518124,
+              0.6131471927654584,
+              1.0,
+              1.0,
+              0.6131471927654584,
+              0.38685280723454163,
+              0.0,
+              1.0,
+              0.3065735963827292,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.2890648263178879,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "per_query_recall_at_100": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.25,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.6666666666666666,
+              0.6666666666666666,
+              1.0,
+              0.4,
+              1.0,
+              0.25,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              0.5,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.6666666666666666,
+              0.0,
+              1.0,
+              0.8,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "queries": 100
+          },
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 46700720,
+              "p50_ns": 411274,
+              "p90_ns": 621700,
+              "p99_ns": 1122186,
+              "max_ns": 1330528
+            },
+            {
+              "queries": 100,
+              "total_ns": 42053712,
+              "p50_ns": 401736,
+              "p90_ns": 510005,
+              "p99_ns": 782922,
+              "max_ns": 971224
+            },
+            {
+              "queries": 100,
+              "total_ns": 43374123,
+              "p50_ns": 425441,
+              "p90_ns": 543639,
+              "p99_ns": 756961,
+              "max_ns": 778383
+            }
+          ],
+          "peak_rss_bytes": 78598144,
+          "wall_s": 0.7599506020001172
+        },
+        {
+          "cold_start_s": 0.654545512,
+          "open_s": 0.64062379,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 48907738,
+              "p50_ns": 433437,
+              "p90_ns": 670935,
+              "p99_ns": 1220135,
+              "max_ns": 1229332
+            },
+            {
+              "queries": 100,
+              "total_ns": 48381414,
+              "p50_ns": 470759,
+              "p90_ns": 618494,
+              "p99_ns": 845602,
+              "max_ns": 1053123
+            },
+            {
+              "queries": 100,
+              "total_ns": 46967272,
+              "p50_ns": 445449,
+              "p90_ns": 547507,
+              "p99_ns": 841043,
+              "max_ns": 933372
+            }
+          ],
+          "peak_rss_bytes": 77524992,
+          "wall_s": 0.8575857480000195
+        },
+        {
+          "cold_start_s": 0.642595953,
+          "open_s": 0.6292017,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 50514777,
+              "p50_ns": 449277,
+              "p90_ns": 686876,
+              "p99_ns": 1278788,
+              "max_ns": 1455519
+            },
+            {
+              "queries": 100,
+              "total_ns": 42377543,
+              "p50_ns": 404631,
+              "p90_ns": 518450,
+              "p99_ns": 698258,
+              "max_ns": 1037693
+            },
+            {
+              "queries": 100,
+              "total_ns": 43539145,
+              "p50_ns": 426333,
+              "p90_ns": 537598,
+              "p99_ns": 731141,
+              "max_ns": 768783
+            }
+          ],
+          "peak_rss_bytes": 78749696,
+          "wall_s": 0.8337492910000037
+        },
+        {
+          "cold_start_s": 0.617740104,
+          "open_s": 0.603655765,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 47490815,
+              "p50_ns": 424169,
+              "p90_ns": 629755,
+              "p99_ns": 1206108,
+              "max_ns": 1344865
+            },
+            {
+              "queries": 100,
+              "total_ns": 41779046,
+              "p50_ns": 399762,
+              "p90_ns": 503531,
+              "p99_ns": 700051,
+              "max_ns": 1031000
+            },
+            {
+              "queries": 100,
+              "total_ns": 44198670,
+              "p50_ns": 428297,
+              "p90_ns": 535193,
+              "p99_ns": 776419,
+              "max_ns": 793030
+            }
+          ],
+          "peak_rss_bytes": 78794752,
+          "wall_s": 0.8006582849998267
+        },
+        {
+          "cold_start_s": 0.642003314,
+          "open_s": 0.626240974,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 51366077,
+              "p50_ns": 463735,
+              "p90_ns": 690082,
+              "p99_ns": 1231627,
+              "max_ns": 1441662
+            },
+            {
+              "queries": 100,
+              "total_ns": 45783602,
+              "p50_ns": 431303,
+              "p90_ns": 575110,
+              "p99_ns": 815193,
+              "max_ns": 1182502
+            },
+            {
+              "queries": 100,
+              "total_ns": 47003461,
+              "p50_ns": 462433,
+              "p90_ns": 570380,
+              "p99_ns": 758293,
+              "max_ns": 811536
+            }
+          ],
+          "peak_rss_bytes": 78258176,
+          "wall_s": 0.8468902319996232
+        },
+        {
+          "cold_start_s": 0.636754858,
+          "open_s": 0.621437842,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 53228928,
+              "p50_ns": 461791,
+              "p90_ns": 718626,
+              "p99_ns": 1438987,
+              "max_ns": 1469105
+            },
+            {
+              "queries": 100,
+              "total_ns": 47994955,
+              "p50_ns": 456460,
+              "p90_ns": 600629,
+              "p99_ns": 806316,
+              "max_ns": 1195958
+            },
+            {
+              "queries": 100,
+              "total_ns": 48253607,
+              "p50_ns": 469927,
+              "p90_ns": 605649,
+              "p99_ns": 783141,
+              "max_ns": 833319
+            }
+          ],
+          "peak_rss_bytes": 77750272,
+          "wall_s": 0.8494828899997628
+        },
+        {
+          "cold_start_s": 0.615489714,
+          "open_s": 0.601873401,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 51420969,
+              "p50_ns": 447073,
+              "p90_ns": 807158,
+              "p99_ns": 1457292,
+              "max_ns": 1725930
+            },
+            {
+              "queries": 100,
+              "total_ns": 45407640,
+              "p50_ns": 428386,
+              "p90_ns": 572545,
+              "p99_ns": 783171,
+              "max_ns": 895378
+            },
+            {
+              "queries": 100,
+              "total_ns": 45417242,
+              "p50_ns": 436783,
+              "p90_ns": 544962,
+              "p99_ns": 776047,
+              "max_ns": 782630
+            }
+          ],
+          "peak_rss_bytes": 76627968,
+          "wall_s": 0.8170246599997881
+        },
+        {
+          "cold_start_s": 0.615162647,
+          "open_s": 0.60326589,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 48732373,
+              "p50_ns": 411905,
+              "p90_ns": 715500,
+              "p99_ns": 1307875,
+              "max_ns": 1667668
+            },
+            {
+              "queries": 100,
+              "total_ns": 42670697,
+              "p50_ns": 402997,
+              "p90_ns": 532628,
+              "p99_ns": 777050,
+              "max_ns": 1163015
+            },
+            {
+              "queries": 100,
+              "total_ns": 44188918,
+              "p50_ns": 426393,
+              "p90_ns": 562476,
+              "p99_ns": 728616,
+              "max_ns": 762902
+            }
+          ],
+          "peak_rss_bytes": 77656064,
+          "wall_s": 0.8004842180002925
+        },
+        {
+          "cold_start_s": 0.591178799,
+          "open_s": 0.579432198,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 46166732,
+              "p50_ns": 416895,
+              "p90_ns": 624776,
+              "p99_ns": 1086186,
+              "max_ns": 1361247
+            },
+            {
+              "queries": 100,
+              "total_ns": 40459855,
+              "p50_ns": 381175,
+              "p90_ns": 492370,
+              "p99_ns": 680693,
+              "max_ns": 763554
+            },
+            {
+              "queries": 100,
+              "total_ns": 42956044,
+              "p50_ns": 417947,
+              "p90_ns": 509393,
+              "p99_ns": 697586,
+              "max_ns": 857405
+            }
+          ],
+          "peak_rss_bytes": 77852672,
+          "wall_s": 0.7612967350000872
+        },
+        {
+          "cold_start_s": 0.649707937,
+          "open_s": 0.635039241,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 50803703,
+              "p50_ns": 449848,
+              "p90_ns": 677688,
+              "p99_ns": 1320068,
+              "max_ns": 1391806
+            },
+            {
+              "queries": 100,
+              "total_ns": 45940595,
+              "p50_ns": 436452,
+              "p90_ns": 595429,
+              "p99_ns": 771579,
+              "max_ns": 887984
+            },
+            {
+              "queries": 100,
+              "total_ns": 47259844,
+              "p50_ns": 460980,
+              "p90_ns": 568748,
+              "p99_ns": 777631,
+              "max_ns": 789954
+            }
+          ],
+          "peak_rss_bytes": 77135872,
+          "wall_s": 0.851099892000093
+        }
+      ],
+      "ops": {
+        "count": 100,
+        "delete": {
+          "per_op_ms_durable": 3.2690420799999997,
+          "supported": true
+        },
+        "replace": {
+          "per_op_ms_durable": 3.8050166800000005,
+          "supported": true
+        }
+      },
+      "version": {
+        "holographic-memory": "0.6.1",
+        "commit": "d5f3f3b8cbf963003d282181409e6a0203f9e96d"
+      },
+      "install": {
+        "competitive_text": {
+          "bytes": 2491848,
+          "non_system_dynamic_libraries": 0
+        },
+        "_crate_dependencies": {
+          "count": 92,
+          "note": "unique crates in the default-feature normal dependency tree, including CLI-only crates; compiled in, not installed"
+        }
+      },
+      "encode": "eager"
+    },
+    "sqlite-fts5": {
+      "display": "SQLite FTS5",
+      "build_runs": [
+        {
+          "documents": 4559,
+          "ingest_s": 2.032452352000064,
+          "peak_rss_bytes_self": 126410752,
+          "peak_rss_bytes": 126410752,
+          "wall_s": 2.3074127550000867,
+          "disk_bytes": 66101248
+        },
+        {
+          "documents": 4559,
+          "ingest_s": 2.0897353630000453,
+          "peak_rss_bytes_self": 126394368,
+          "peak_rss_bytes": 126394368,
+          "wall_s": 2.3820484760001364,
+          "disk_bytes": 66101248
+        }
+      ],
+      "serve_rounds": [
+        {
+          "open_s": 0.0002621259998250025,
+          "cold_start_s": 0.086029671,
+          "peak_rss_bytes_self": 25964544,
+          "quality": {
+            "ndcg_at_10": 0.45009623895127726,
+            "recall_at_10": 0.5468333333333333,
+            "recall_at_100": 0.8391666666666667,
+            "per_query_ndcg_at_10": [
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              0.0,
+              0.43067655807339306,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.6309297535714575,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.46927872602275644,
+              0.0,
+              0.4441228664487979,
+              0.0,
+              0.36926780146674987,
+              0.8503449055347546,
+              0.0,
+              0.17723928678404774,
+              0.3903800499921017,
+              0.0,
+              0.0,
+              0.0,
+              0.14126697285982898,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.38685280723454163,
+              0.31546487678572877,
+              0.0,
+              0.0,
+              0.9197207891481876,
+              0.38685280723454163,
+              0.0,
+              0.18457569677956817,
+              0.8315546295836225,
+              0.7903864795495061,
+              0.5249810332008933,
+              1.0,
+              0.5640920940185894,
+              0.0,
+              0.0,
+              1.0,
+              0.7977228895450266,
+              0.0,
+              0.7903864795495061,
+              0.46845052016107697,
+              0.38685280723454163,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.1480409554829326,
+              0.0,
+              0.2640681225725909,
+              0.48160565320269266,
+              0.6131471927654584,
+              0.8175295903539445,
+              0.5437713091520254,
+              0.5437713091520254,
+              0.0,
+              0.6131471927654584,
+              0.3065735963827292,
+              0.8772153153380493,
+              0.9197207891481876,
+              0.8772153153380493,
+              1.0,
+              0.18457569677956817,
+              1.0,
+              1.0,
+              0.4911492931622974,
+              0.6131471927654584,
+              1.0,
+              1.0,
+              0.6131471927654584,
+              0.6131471927654584,
+              0.0,
+              1.0,
+              0.3065735963827292,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.43067655807339306,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "per_query_recall_at_100": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.25,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              0.8,
+              1.0,
+              0.6666666666666666,
+              0.6666666666666666,
+              1.0,
+              0.4,
+              1.0,
+              0.5,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              1.0,
+              0.8,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "queries": 100
+          },
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3035966409,
+              "p50_ns": 24165230,
+              "p90_ns": 49514386,
+              "p99_ns": 117000749,
+              "max_ns": 120929602
+            },
+            {
+              "queries": 100,
+              "total_ns": 3034802174,
+              "p50_ns": 24386866,
+              "p90_ns": 50641948,
+              "p99_ns": 118172374,
+              "max_ns": 122836340
+            },
+            {
+              "queries": 100,
+              "total_ns": 3100537554,
+              "p50_ns": 24624494,
+              "p90_ns": 50243860,
+              "p99_ns": 116710374,
+              "max_ns": 122805793
+            }
+          ],
+          "peak_rss_bytes": 27418624,
+          "wall_s": 9.50432916800014
+        },
+        {
+          "open_s": 0.0002679369999896153,
+          "cold_start_s": 0.087956956,
+          "peak_rss_bytes_self": 24375296,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3126807452,
+              "p50_ns": 24838433,
+              "p90_ns": 49606060,
+              "p99_ns": 120633178,
+              "max_ns": 124373116
+            },
+            {
+              "queries": 100,
+              "total_ns": 3158526579,
+              "p50_ns": 25381140,
+              "p90_ns": 51502138,
+              "p99_ns": 119157529,
+              "max_ns": 125211721
+            },
+            {
+              "queries": 100,
+              "total_ns": 3095354648,
+              "p50_ns": 24229965,
+              "p90_ns": 51896319,
+              "p99_ns": 117338447,
+              "max_ns": 123297196
+            }
+          ],
+          "peak_rss_bytes": 25829376,
+          "wall_s": 9.718759764000197
+        },
+        {
+          "open_s": 0.0002932760000931012,
+          "cold_start_s": 0.093196773,
+          "peak_rss_bytes_self": 25649152,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3131877044,
+              "p50_ns": 25426924,
+              "p90_ns": 50555159,
+              "p99_ns": 118519406,
+              "max_ns": 128526197
+            },
+            {
+              "queries": 100,
+              "total_ns": 3074288250,
+              "p50_ns": 24739114,
+              "p90_ns": 49601418,
+              "p99_ns": 117987831,
+              "max_ns": 125663213
+            },
+            {
+              "queries": 100,
+              "total_ns": 3069132886,
+              "p50_ns": 24810644,
+              "p90_ns": 50070994,
+              "p99_ns": 118789010,
+              "max_ns": 124164261
+            }
+          ],
+          "peak_rss_bytes": 27103232,
+          "wall_s": 9.622538279000082
+        },
+        {
+          "open_s": 0.000302154000110022,
+          "cold_start_s": 0.091039448,
+          "peak_rss_bytes_self": 25608192,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3144995423,
+              "p50_ns": 25605933,
+              "p90_ns": 50482542,
+              "p99_ns": 118192413,
+              "max_ns": 124561554
+            },
+            {
+              "queries": 100,
+              "total_ns": 3106740933,
+              "p50_ns": 24863145,
+              "p90_ns": 50458659,
+              "p99_ns": 119354506,
+              "max_ns": 123114359
+            },
+            {
+              "queries": 100,
+              "total_ns": 3135153940,
+              "p50_ns": 25361698,
+              "p90_ns": 51295938,
+              "p99_ns": 120673841,
+              "max_ns": 122483454
+            }
+          ],
+          "peak_rss_bytes": 27062272,
+          "wall_s": 9.735847312999795
+        },
+        {
+          "open_s": 0.0003240760001972376,
+          "cold_start_s": 0.092307714,
+          "peak_rss_bytes_self": 24813568,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3179071771,
+              "p50_ns": 25147863,
+              "p90_ns": 50624666,
+              "p99_ns": 119228648,
+              "max_ns": 125790313
+            },
+            {
+              "queries": 100,
+              "total_ns": 3097075970,
+              "p50_ns": 24706671,
+              "p90_ns": 49817557,
+              "p99_ns": 119982077,
+              "max_ns": 127911044
+            },
+            {
+              "queries": 100,
+              "total_ns": 3101363814,
+              "p50_ns": 25315932,
+              "p90_ns": 49606776,
+              "p99_ns": 116179779,
+              "max_ns": 125819661
+            }
+          ],
+          "peak_rss_bytes": 26267648,
+          "wall_s": 9.729483612999957
+        },
+        {
+          "open_s": 0.000283367000065482,
+          "cold_start_s": 0.089825096,
+          "peak_rss_bytes_self": 26058752,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3084317021,
+              "p50_ns": 24721076,
+              "p90_ns": 49799994,
+              "p99_ns": 118568319,
+              "max_ns": 122542541
+            },
+            {
+              "queries": 100,
+              "total_ns": 3027503265,
+              "p50_ns": 24206354,
+              "p90_ns": 50194216,
+              "p99_ns": 116834557,
+              "max_ns": 121933747
+            },
+            {
+              "queries": 100,
+              "total_ns": 3052038259,
+              "p50_ns": 24669997,
+              "p90_ns": 48995703,
+              "p99_ns": 116205436,
+              "max_ns": 123079504
+            }
+          ],
+          "peak_rss_bytes": 27512832,
+          "wall_s": 9.4987662059998
+        },
+        {
+          "open_s": 0.00027812700000140467,
+          "cold_start_s": 0.088283859,
+          "peak_rss_bytes_self": 25989120,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3078061143,
+              "p50_ns": 24752816,
+              "p90_ns": 49547851,
+              "p99_ns": 116344188,
+              "max_ns": 121447232
+            },
+            {
+              "queries": 100,
+              "total_ns": 3098261725,
+              "p50_ns": 24903409,
+              "p90_ns": 50352735,
+              "p99_ns": 119657056,
+              "max_ns": 122439280
+            },
+            {
+              "queries": 100,
+              "total_ns": 3137927637,
+              "p50_ns": 25366266,
+              "p90_ns": 50220563,
+              "p99_ns": 119894089,
+              "max_ns": 124424043
+            }
+          ],
+          "peak_rss_bytes": 27443200,
+          "wall_s": 9.652269067999896
+        },
+        {
+          "open_s": 0.00026340900012655766,
+          "cold_start_s": 0.089424216,
+          "peak_rss_bytes_self": 26312704,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3074000542,
+              "p50_ns": 24449904,
+              "p90_ns": 53466570,
+              "p99_ns": 120952173,
+              "max_ns": 124969095
+            },
+            {
+              "queries": 100,
+              "total_ns": 3093747095,
+              "p50_ns": 24863320,
+              "p90_ns": 50248455,
+              "p99_ns": 118252804,
+              "max_ns": 129395116
+            },
+            {
+              "queries": 100,
+              "total_ns": 3097137826,
+              "p50_ns": 24537211,
+              "p90_ns": 49131889,
+              "p99_ns": 116783450,
+              "max_ns": 124721190
+            }
+          ],
+          "peak_rss_bytes": 27766784,
+          "wall_s": 9.602937941999699
+        },
+        {
+          "open_s": 0.00025284799994551577,
+          "cold_start_s": 0.084785115,
+          "peak_rss_bytes_self": 24842240,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3033661899,
+              "p50_ns": 24396103,
+              "p90_ns": 48738001,
+              "p99_ns": 115156285,
+              "max_ns": 121184799
+            },
+            {
+              "queries": 100,
+              "total_ns": 3048296253,
+              "p50_ns": 24594516,
+              "p90_ns": 49087205,
+              "p99_ns": 117579238,
+              "max_ns": 125529722
+            },
+            {
+              "queries": 100,
+              "total_ns": 3048496281,
+              "p50_ns": 24606087,
+              "p90_ns": 51047267,
+              "p99_ns": 118330348,
+              "max_ns": 129782860
+            }
+          ],
+          "peak_rss_bytes": 26296320,
+          "wall_s": 9.459697853999842
+        },
+        {
+          "open_s": 0.0002564050000728457,
+          "cold_start_s": 0.08669318,
+          "peak_rss_bytes_self": 25227264,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 3060645830,
+              "p50_ns": 24782561,
+              "p90_ns": 48884472,
+              "p99_ns": 118431193,
+              "max_ns": 122289738
+            },
+            {
+              "queries": 100,
+              "total_ns": 3051324873,
+              "p50_ns": 24596672,
+              "p90_ns": 48359294,
+              "p99_ns": 114885901,
+              "max_ns": 124041770
+            },
+            {
+              "queries": 100,
+              "total_ns": 3047759379,
+              "p50_ns": 24483253,
+              "p90_ns": 48942429,
+              "p99_ns": 117621789,
+              "max_ns": 123447414
+            }
+          ],
+          "peak_rss_bytes": 26681344,
+          "wall_s": 9.494326115999684
+        }
+      ],
+      "ops": {
+        "count": 100,
+        "replace": {
+          "supported": true,
+          "per_op_ms_durable": 4.625860979999743
+        },
+        "delete": {
+          "supported": true,
+          "per_op_ms_durable": 6.417760269996506
+        },
+        "peak_rss_bytes_self": 125939712
+      },
+      "version": {
+        "python-sqlite3": "3.40.1"
+      },
+      "install": {
+        "bytes": 0,
+        "distributions": 0,
+        "ships_with_interpreter": true,
+        "note": "standard library or already-installed dependency"
+      }
+    },
+    "lucene": {
+      "display": "Apache Lucene 9.12.3 (JVM)",
+      "build_runs": [
+        {
+          "documents": 4559,
+          "ingest_s": 4.141492699,
+          "peak_rss_bytes_self": 0,
+          "peak_rss_bytes": 801390592,
+          "wall_s": 4.761853958999836,
+          "disk_bytes": 10814982
+        },
+        {
+          "documents": 4559,
+          "ingest_s": 4.042061258,
+          "peak_rss_bytes_self": 0,
+          "peak_rss_bytes": 809451520,
+          "wall_s": 4.6747176110000055,
+          "disk_bytes": 10814982
+        }
+      ],
+      "serve_rounds": [
+        {
+          "open_s": 0.223333635,
+          "cold_start_s": 0.443504794,
+          "peak_rss_bytes_self": 0,
+          "quality": {
+            "ndcg_at_10": 0.46265299364569407,
+            "recall_at_10": 0.5771666666666667,
+            "recall_at_100": 0.8236666666666665,
+            "per_query_ndcg_at_10": [
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              0.0,
+              0.5,
+              1.0,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.0,
+              0.3333333333333333,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.3065735963827292,
+              0.23463936301137822,
+              0.09803928583135704,
+              0.4441228664487979,
+              0.0,
+              0.5307212739772434,
+              1.0,
+              0.0,
+              0.17723928678404774,
+              0.3903800499921017,
+              0.0,
+              0.0,
+              0.0,
+              0.14126697285982898,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.3562071871080222,
+              0.6309297535714575,
+              0.0,
+              0.0,
+              0.9197207891481876,
+              0.6131471927654584,
+              0.0,
+              0.17723928678404774,
+              0.8315546295836225,
+              0.7903864795495061,
+              0.46845052016107697,
+              1.0,
+              0.38685280723454163,
+              0.0,
+              0.0,
+              1.0,
+              0.7977228895450266,
+              0.0,
+              0.8065735963827293,
+              0.4415801103577823,
+              0.3065735963827292,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.3171937659698004,
+              0.0,
+              0.44130740935663865,
+              0.48160565320269266,
+              0.6131471927654584,
+              0.8503449055347546,
+              0.6240505200038379,
+              0.5012658353418871,
+              0.0,
+              0.6131471927654584,
+              0.2640681225725909,
+              0.8772153153380493,
+              0.9197207891481876,
+              0.8503449055347546,
+              0.9197207891481876,
+              0.20438239758848611,
+              1.0,
+              1.0,
+              0.5802792108518124,
+              0.6131471927654584,
+              1.0,
+              1.0,
+              0.6131471927654584,
+              0.38685280723454163,
+              0.0,
+              1.0,
+              0.3065735963827292,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.31546487678572877,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "per_query_recall_at_100": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.25,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.6666666666666666,
+              0.6666666666666666,
+              1.0,
+              0.4,
+              1.0,
+              0.25,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              0.5,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              1.0,
+              0.8,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "queries": 100
+          },
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 129751900,
+              "p50_ns": 1129500,
+              "p90_ns": 1759766,
+              "p99_ns": 2520169,
+              "max_ns": 9087689
+            },
+            {
+              "queries": 100,
+              "total_ns": 99993576,
+              "p50_ns": 916458,
+              "p90_ns": 1398950,
+              "p99_ns": 2068636,
+              "max_ns": 2209835
+            },
+            {
+              "queries": 100,
+              "total_ns": 100818360,
+              "p50_ns": 875350,
+              "p90_ns": 1466120,
+              "p99_ns": 2268904,
+              "max_ns": 6109316
+            }
+          ],
+          "peak_rss_bytes": 464560128,
+          "wall_s": 1.1804604330000075
+        },
+        {
+          "open_s": 0.24595154,
+          "cold_start_s": 0.462248527,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 130784578,
+              "p50_ns": 1166681,
+              "p90_ns": 1676445,
+              "p99_ns": 2319230,
+              "max_ns": 8581239
+            },
+            {
+              "queries": 100,
+              "total_ns": 101020054,
+              "p50_ns": 927781,
+              "p90_ns": 1341558,
+              "p99_ns": 1736406,
+              "max_ns": 1897476
+            },
+            {
+              "queries": 100,
+              "total_ns": 103423905,
+              "p50_ns": 905387,
+              "p90_ns": 1436592,
+              "p99_ns": 2920692,
+              "max_ns": 5821016
+            }
+          ],
+          "peak_rss_bytes": 457129984,
+          "wall_s": 1.2054243049999513
+        },
+        {
+          "open_s": 0.228153474,
+          "cold_start_s": 0.44310911,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 132086220,
+              "p50_ns": 1134089,
+              "p90_ns": 1612342,
+              "p99_ns": 2660729,
+              "max_ns": 9023503
+            },
+            {
+              "queries": 100,
+              "total_ns": 97804523,
+              "p50_ns": 916819,
+              "p90_ns": 1324396,
+              "p99_ns": 1685443,
+              "max_ns": 1748134
+            },
+            {
+              "queries": 100,
+              "total_ns": 98119406,
+              "p50_ns": 854389,
+              "p90_ns": 1217058,
+              "p99_ns": 3028118,
+              "max_ns": 5401418
+            }
+          ],
+          "peak_rss_bytes": 459665408,
+          "wall_s": 1.1476266269999087
+        },
+        {
+          "open_s": 0.269262377,
+          "cold_start_s": 0.516897699,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 129292501,
+              "p50_ns": 1110123,
+              "p90_ns": 1723516,
+              "p99_ns": 2482441,
+              "max_ns": 9273191
+            },
+            {
+              "queries": 100,
+              "total_ns": 104323876,
+              "p50_ns": 978238,
+              "p90_ns": 1426923,
+              "p99_ns": 1965157,
+              "max_ns": 2039021
+            },
+            {
+              "queries": 100,
+              "total_ns": 99702801,
+              "p50_ns": 856753,
+              "p90_ns": 1353372,
+              "p99_ns": 2451707,
+              "max_ns": 6305865
+            }
+          ],
+          "peak_rss_bytes": 461312000,
+          "wall_s": 1.2424569360000532
+        },
+        {
+          "open_s": 0.233995776,
+          "cold_start_s": 0.451416493,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 135746397,
+              "p50_ns": 1147835,
+              "p90_ns": 1906699,
+              "p99_ns": 2529933,
+              "max_ns": 10845173
+            },
+            {
+              "queries": 100,
+              "total_ns": 99089796,
+              "p50_ns": 933461,
+              "p90_ns": 1332090,
+              "p99_ns": 1731652,
+              "max_ns": 1939513
+            },
+            {
+              "queries": 100,
+              "total_ns": 97919809,
+              "p50_ns": 877694,
+              "p90_ns": 1387041,
+              "p99_ns": 1854138,
+              "max_ns": 5030949
+            }
+          ],
+          "peak_rss_bytes": 459567104,
+          "wall_s": 1.1860500130001128
+        },
+        {
+          "open_s": 0.216435856,
+          "cold_start_s": 0.435699565,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 125805149,
+              "p50_ns": 1093901,
+              "p90_ns": 1604897,
+              "p99_ns": 2946632,
+              "max_ns": 9120359
+            },
+            {
+              "queries": 100,
+              "total_ns": 97839131,
+              "p50_ns": 931768,
+              "p90_ns": 1364102,
+              "p99_ns": 1649683,
+              "max_ns": 1660795
+            },
+            {
+              "queries": 100,
+              "total_ns": 99496575,
+              "p50_ns": 871251,
+              "p90_ns": 1339534,
+              "p99_ns": 2609766,
+              "max_ns": 5836252
+            }
+          ],
+          "peak_rss_bytes": 455163904,
+          "wall_s": 1.1345513609999216
+        },
+        {
+          "open_s": 0.24407644,
+          "cold_start_s": 0.479147153,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 128328915,
+              "p50_ns": 1125091,
+              "p90_ns": 1654042,
+              "p99_ns": 2121164,
+              "max_ns": 9726421
+            },
+            {
+              "queries": 100,
+              "total_ns": 99835315,
+              "p50_ns": 898143,
+              "p90_ns": 1451762,
+              "p99_ns": 2404225,
+              "max_ns": 2583496
+            },
+            {
+              "queries": 100,
+              "total_ns": 97832805,
+              "p50_ns": 864228,
+              "p90_ns": 1365686,
+              "p99_ns": 2095448,
+              "max_ns": 5175032
+            }
+          ],
+          "peak_rss_bytes": 460525568,
+          "wall_s": 1.2511201229999642
+        },
+        {
+          "open_s": 0.222004996,
+          "cold_start_s": 0.433207579,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 144901047,
+              "p50_ns": 1252327,
+              "p90_ns": 1829872,
+              "p99_ns": 2706694,
+              "max_ns": 11691840
+            },
+            {
+              "queries": 100,
+              "total_ns": 99708733,
+              "p50_ns": 928582,
+              "p90_ns": 1372289,
+              "p99_ns": 1671352,
+              "max_ns": 1784404
+            },
+            {
+              "queries": 100,
+              "total_ns": 95048530,
+              "p50_ns": 865540,
+              "p90_ns": 1203052,
+              "p99_ns": 1763088,
+              "max_ns": 5016812
+            }
+          ],
+          "peak_rss_bytes": 459309056,
+          "wall_s": 1.1696296290001555
+        },
+        {
+          "open_s": 0.245579935,
+          "cold_start_s": 0.465904555,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 129995025,
+              "p50_ns": 1107678,
+              "p90_ns": 1695943,
+              "p99_ns": 2416784,
+              "max_ns": 9921562
+            },
+            {
+              "queries": 100,
+              "total_ns": 104937203,
+              "p50_ns": 947398,
+              "p90_ns": 1516016,
+              "p99_ns": 1987997,
+              "max_ns": 2674667
+            },
+            {
+              "queries": 100,
+              "total_ns": 103857825,
+              "p50_ns": 934113,
+              "p90_ns": 1290140,
+              "p99_ns": 2156702,
+              "max_ns": 6100699
+            }
+          ],
+          "peak_rss_bytes": 453390336,
+          "wall_s": 1.2184928000001491
+        },
+        {
+          "open_s": 0.220361586,
+          "cold_start_s": 0.430343559,
+          "peak_rss_bytes_self": 0,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 125919844,
+              "p50_ns": 1077490,
+              "p90_ns": 1591952,
+              "p99_ns": 2183218,
+              "max_ns": 8790070
+            },
+            {
+              "queries": 100,
+              "total_ns": 96421555,
+              "p50_ns": 931528,
+              "p90_ns": 1228651,
+              "p99_ns": 1648712,
+              "max_ns": 1650665
+            },
+            {
+              "queries": 100,
+              "total_ns": 97294431,
+              "p50_ns": 875059,
+              "p90_ns": 1232959,
+              "p99_ns": 2092008,
+              "max_ns": 5508180
+            }
+          ],
+          "peak_rss_bytes": 458969088,
+          "wall_s": 1.150591317999897
+        }
+      ],
+      "ops": {
+        "count": 100,
+        "replace": {
+          "supported": true,
+          "per_op_ms_durable": 18.03878455
+        },
+        "delete": {
+          "supported": true,
+          "per_op_ms_durable": 1.48195727
+        },
+        "peak_rss_bytes_self": 0
+      },
+      "version": {
+        "lucene": "9.12.3",
+        "jvm": "openjdk version \"17.0.20.1\" 2026-08-18"
+      },
+      "install": {
+        "bytes": 5992790,
+        "distributions": 2,
+        "note": "two jars; also requires a JVM (not counted)"
+      }
+    },
+    "tantivy": {
+      "display": "tantivy",
+      "build_runs": [
+        {
+          "documents": 4559,
+          "ingest_s": 3.4579393139999866,
+          "peak_rss_bytes_self": 256126976,
+          "peak_rss_bytes": 256126976,
+          "wall_s": 3.7517211809999935,
+          "disk_bytes": 14372815
+        },
+        {
+          "documents": 4559,
+          "ingest_s": 3.4945631440000398,
+          "peak_rss_bytes_self": 256610304,
+          "peak_rss_bytes": 256610304,
+          "wall_s": 3.777156332000004,
+          "disk_bytes": 14372815
+        }
+      ],
+      "serve_rounds": [
+        {
+          "open_s": 0.006604852999998911,
+          "cold_start_s": 0.075533866,
+          "peak_rss_bytes_self": 38301696,
+          "quality": {
+            "ndcg_at_10": 0.4491250108653578,
+            "recall_at_10": 0.5668333333333333,
+            "recall_at_100": 0.8203333333333334,
+            "per_query_ndcg_at_10": [
+              1.0,
+              0.6309297535714575,
+              0.5,
+              1.0,
+              0.0,
+              0.5,
+              1.0,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.0,
+              0.3333333333333333,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.3065735963827292,
+              0.2960819109658652,
+              0.0,
+              0.37590633587120725,
+              0.0,
+              0.5307212739772434,
+              0.9197207891481876,
+              0.0,
+              0.0,
+              0.3903800499921017,
+              0.17723928678404774,
+              0.0,
+              0.0,
+              0.14126697285982898,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.3562071871080222,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.9197207891481876,
+              0.6131471927654584,
+              0.0,
+              0.0,
+              0.8175295903539445,
+              0.7977228895450266,
+              0.46845052016107697,
+              1.0,
+              0.6131471927654584,
+              0.0,
+              0.0,
+              0.9197207891481876,
+              0.8065735963827293,
+              0.0,
+              0.7977228895450266,
+              0.45560514958746035,
+              0.3065735963827292,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.1480409554829326,
+              0.0,
+              0.448643819352159,
+              0.4856637624942473,
+              0.6131471927654584,
+              0.8315546295836225,
+              0.5437713091520254,
+              0.5012658353418871,
+              0.0,
+              0.6131471927654584,
+              0.2640681225725909,
+              0.8772153153380493,
+              0.8503449055347546,
+              0.8503449055347546,
+              0.9197207891481876,
+              0.20438239758848611,
+              1.0,
+              1.0,
+              0.5,
+              0.6131471927654584,
+              1.0,
+              1.0,
+              0.6131471927654584,
+              0.38685280723454163,
+              0.0,
+              1.0,
+              0.3065735963827292,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.2890648263178879,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "per_query_recall_at_100": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.25,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.6666666666666666,
+              0.6666666666666666,
+              1.0,
+              0.4,
+              1.0,
+              0.25,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              0.5,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.6666666666666666,
+              0.0,
+              1.0,
+              0.8,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "queries": 100
+          },
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 50068378,
+              "p50_ns": 471530,
+              "p90_ns": 704530,
+              "p99_ns": 1057681,
+              "max_ns": 1133407
+            },
+            {
+              "queries": 100,
+              "total_ns": 40667396,
+              "p50_ns": 389252,
+              "p90_ns": 531545,
+              "p99_ns": 709008,
+              "max_ns": 737503
+            },
+            {
+              "queries": 100,
+              "total_ns": 40785261,
+              "p50_ns": 393820,
+              "p90_ns": 490406,
+              "p99_ns": 690603,
+              "max_ns": 734397
+            }
+          ],
+          "peak_rss_bytes": 39661568,
+          "wall_s": 0.24776404500016724
+        },
+        {
+          "open_s": 0.0057998220001991285,
+          "cold_start_s": 0.077803712,
+          "peak_rss_bytes_self": 39301120,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 52578923,
+              "p50_ns": 489625,
+              "p90_ns": 707214,
+              "p99_ns": 1026331,
+              "max_ns": 1088911
+            },
+            {
+              "queries": 100,
+              "total_ns": 44613305,
+              "p50_ns": 432234,
+              "p90_ns": 537477,
+              "p99_ns": 752321,
+              "max_ns": 810874
+            },
+            {
+              "queries": 100,
+              "total_ns": 44944833,
+              "p50_ns": 434689,
+              "p90_ns": 563438,
+              "p99_ns": 805384,
+              "max_ns": 828830
+            }
+          ],
+          "peak_rss_bytes": 40660992,
+          "wall_s": 0.2605851349999284
+        },
+        {
+          "open_s": 0.00479381100012688,
+          "cold_start_s": 0.065457379,
+          "peak_rss_bytes_self": 38211584,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 49198019,
+              "p50_ns": 451111,
+              "p90_ns": 705761,
+              "p99_ns": 1089468,
+              "max_ns": 1098039
+            },
+            {
+              "queries": 100,
+              "total_ns": 39526842,
+              "p50_ns": 372820,
+              "p90_ns": 488583,
+              "p99_ns": 737834,
+              "max_ns": 999479
+            },
+            {
+              "queries": 100,
+              "total_ns": 39064713,
+              "p50_ns": 365706,
+              "p90_ns": 479425,
+              "p99_ns": 679110,
+              "max_ns": 975072
+            }
+          ],
+          "peak_rss_bytes": 39452672,
+          "wall_s": 0.23043099900019115
+        },
+        {
+          "open_s": 0.004917110000405955,
+          "cold_start_s": 0.070414014,
+          "peak_rss_bytes_self": 39084032,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 50943722,
+              "p50_ns": 479255,
+              "p90_ns": 779094,
+              "p99_ns": 1029371,
+              "max_ns": 1101872
+            },
+            {
+              "queries": 100,
+              "total_ns": 39881084,
+              "p50_ns": 381346,
+              "p90_ns": 517118,
+              "p99_ns": 692567,
+              "max_ns": 713437
+            },
+            {
+              "queries": 100,
+              "total_ns": 39950806,
+              "p50_ns": 377438,
+              "p90_ns": 503993,
+              "p99_ns": 684171,
+              "max_ns": 787630
+            }
+          ],
+          "peak_rss_bytes": 40443904,
+          "wall_s": 0.24046093100014332
+        },
+        {
+          "open_s": 0.005466879999858065,
+          "cold_start_s": 0.080987015,
+          "peak_rss_bytes_self": 38539264,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 50535421,
+              "p50_ns": 465508,
+              "p90_ns": 684380,
+              "p99_ns": 918983,
+              "max_ns": 972938
+            },
+            {
+              "queries": 100,
+              "total_ns": 42859291,
+              "p50_ns": 407315,
+              "p90_ns": 549400,
+              "p99_ns": 734197,
+              "max_ns": 764324
+            },
+            {
+              "queries": 100,
+              "total_ns": 42266361,
+              "p50_ns": 405332,
+              "p90_ns": 504173,
+              "p99_ns": 732082,
+              "max_ns": 753925
+            }
+          ],
+          "peak_rss_bytes": 39915520,
+          "wall_s": 0.253088623000167
+        },
+        {
+          "open_s": 0.005420048999894789,
+          "cold_start_s": 0.073369839,
+          "peak_rss_bytes_self": 39038976,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 48489020,
+              "p50_ns": 461781,
+              "p90_ns": 675924,
+              "p99_ns": 821525,
+              "max_ns": 1055216
+            },
+            {
+              "queries": 100,
+              "total_ns": 39063839,
+              "p50_ns": 373991,
+              "p90_ns": 468454,
+              "p99_ns": 696985,
+              "max_ns": 706373
+            },
+            {
+              "queries": 100,
+              "total_ns": 39367619,
+              "p50_ns": 373111,
+              "p90_ns": 487030,
+              "p99_ns": 666696,
+              "max_ns": 726372
+            }
+          ],
+          "peak_rss_bytes": 40398848,
+          "wall_s": 0.23990693199993984
+        },
+        {
+          "open_s": 0.004942017999837844,
+          "cold_start_s": 0.070481365,
+          "peak_rss_bytes_self": 37883904,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 52999817,
+              "p50_ns": 496178,
+              "p90_ns": 740389,
+              "p99_ns": 1203071,
+              "max_ns": 1391440
+            },
+            {
+              "queries": 100,
+              "total_ns": 44060194,
+              "p50_ns": 416904,
+              "p90_ns": 581592,
+              "p99_ns": 730089,
+              "max_ns": 805685
+            },
+            {
+              "queries": 100,
+              "total_ns": 41120501,
+              "p50_ns": 386696,
+              "p90_ns": 546705,
+              "p99_ns": 718907,
+              "max_ns": 768202
+            }
+          ],
+          "peak_rss_bytes": 39243776,
+          "wall_s": 0.24842996799998218
+        },
+        {
+          "open_s": 0.005125798000335635,
+          "cold_start_s": 0.065463099,
+          "peak_rss_bytes_self": 37789696,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 47107225,
+              "p50_ns": 438376,
+              "p90_ns": 646158,
+              "p99_ns": 826776,
+              "max_ns": 990361
+            },
+            {
+              "queries": 100,
+              "total_ns": 38452591,
+              "p50_ns": 365055,
+              "p90_ns": 470738,
+              "p99_ns": 662138,
+              "max_ns": 691114
+            },
+            {
+              "queries": 100,
+              "total_ns": 38705112,
+              "p50_ns": 367089,
+              "p90_ns": 479455,
+              "p99_ns": 680774,
+              "max_ns": 689491
+            }
+          ],
+          "peak_rss_bytes": 39149568,
+          "wall_s": 0.23259036499985086
+        },
+        {
+          "open_s": 0.0056310280001525825,
+          "cold_start_s": 0.073161918,
+          "peak_rss_bytes_self": 37298176,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 49734200,
+              "p50_ns": 464877,
+              "p90_ns": 694279,
+              "p99_ns": 860902,
+              "max_ns": 958570
+            },
+            {
+              "queries": 100,
+              "total_ns": 39717420,
+              "p50_ns": 377849,
+              "p90_ns": 499344,
+              "p99_ns": 699820,
+              "max_ns": 924995
+            },
+            {
+              "queries": 100,
+              "total_ns": 39397602,
+              "p50_ns": 367800,
+              "p90_ns": 474977,
+              "p99_ns": 710652,
+              "max_ns": 906028
+            }
+          ],
+          "peak_rss_bytes": 38539264,
+          "wall_s": 0.23954877699998178
+        },
+        {
+          "open_s": 0.004926397999952314,
+          "cold_start_s": 0.066304289,
+          "peak_rss_bytes_self": 37625856,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 51062712,
+              "p50_ns": 485407,
+              "p90_ns": 706003,
+              "p99_ns": 886902,
+              "max_ns": 904997
+            },
+            {
+              "queries": 100,
+              "total_ns": 39927676,
+              "p50_ns": 376747,
+              "p90_ns": 485878,
+              "p99_ns": 718477,
+              "max_ns": 909876
+            },
+            {
+              "queries": 100,
+              "total_ns": 39542563,
+              "p50_ns": 366728,
+              "p90_ns": 485437,
+              "p99_ns": 741160,
+              "max_ns": 1062551
+            }
+          ],
+          "peak_rss_bytes": 38866944,
+          "wall_s": 0.23137516900033006
+        }
+      ],
+      "ops": {
+        "count": 100,
+        "replace": {
+          "supported": true,
+          "per_op_ms_durable": 163.8972191999983
+        },
+        "delete": {
+          "supported": true,
+          "per_op_ms_durable": 176.53093911999804
+        },
+        "peak_rss_bytes_self": 741011456
+      },
+      "version": {
+        "tantivy": "0.26.2"
+      },
+      "install": {
+        "bytes": 14471402,
+        "distributions": 1,
+        "dists": [
+          "tantivy-0.26.2"
+        ]
+      }
+    },
+    "whoosh": {
+      "display": "Whoosh",
+      "build_runs": [
+        {
+          "documents": 4559,
+          "ingest_s": 40.822708994000095,
+          "peak_rss_bytes_self": 562130944,
+          "peak_rss_bytes": 562130944,
+          "wall_s": 41.134240457999795,
+          "disk_bytes": 50925283
+        },
+        {
+          "documents": 4559,
+          "ingest_s": 41.40427049699997,
+          "peak_rss_bytes_self": 562479104,
+          "peak_rss_bytes": 562479104,
+          "wall_s": 41.73188087499989,
+          "disk_bytes": 50925283
+        }
+      ],
+      "serve_rounds": [
+        {
+          "open_s": 0.15299354600006154,
+          "cold_start_s": 0.291918371,
+          "peak_rss_bytes_self": 145432576,
+          "quality": {
+            "ndcg_at_10": 0.4401216437164885,
+            "recall_at_10": 0.5421666666666667,
+            "recall_at_100": 0.8206666666666667,
+            "per_query_ndcg_at_10": [
+              1.0,
+              0.3562071871080222,
+              0.5,
+              1.0,
+              0.0,
+              0.43067655807339306,
+              1.0,
+              0.0,
+              0.3010299956639812,
+              0.0,
+              0.0,
+              0.6309297535714575,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.3065735963827292,
+              0.2836929289153804,
+              0.10699313236726378,
+              0.43734888382569426,
+              0.0,
+              0.7653606369886217,
+              1.0,
+              0.0,
+              0.17723928678404774,
+              0.3903800499921017,
+              0.2640681225725909,
+              0.0,
+              0.0,
+              0.15642624200758548,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.19342640361727081,
+              1.0,
+              0.8175295903539445,
+              0.0,
+              0.18457569677956817,
+              0.8503449055347546,
+              0.6131471927654584,
+              0.2640681225725909,
+              1.0,
+              0.21840743681816419,
+              0.0,
+              0.0,
+              1.0,
+              0.6131471927654584,
+              0.0,
+              0.7977228895450266,
+              0.39780880120575696,
+              0.3065735963827292,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.16716045496620227,
+              0.0,
+              0.44130740935663865,
+              0.615733440277688,
+              0.21840743681816419,
+              0.8772153153380493,
+              0.5437713091520254,
+              0.8503449055347546,
+              0.0,
+              0.6131471927654584,
+              0.21840743681816419,
+              0.8315546295836225,
+              0.9197207891481876,
+              0.8175295903539445,
+              0.8772153153380493,
+              0.19342640361727081,
+              1.0,
+              1.0,
+              0.38685280723454163,
+              0.6131471927654584,
+              1.0,
+              0.9197207891481876,
+              0.6131471927654584,
+              0.6131471927654584,
+              0.0,
+              1.0,
+              0.38685280723454163,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.43067655807339306
+            ],
+            "per_query_recall_at_100": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.25,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              0.4,
+              1.0,
+              0.25,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              0.5,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.3333333333333333,
+              0.5,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.6666666666666666,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "queries": 100
+          },
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7392629947,
+              "p50_ns": 69002185,
+              "p90_ns": 103261717,
+              "p99_ns": 130538806,
+              "max_ns": 135140226
+            },
+            {
+              "queries": 100,
+              "total_ns": 7349382818,
+              "p50_ns": 69261097,
+              "p90_ns": 102745108,
+              "p99_ns": 131932560,
+              "max_ns": 137526418
+            },
+            {
+              "queries": 100,
+              "total_ns": 7416759561,
+              "p50_ns": 70402548,
+              "p90_ns": 103778815,
+              "p99_ns": 131659395,
+              "max_ns": 137640515
+            }
+          ],
+          "peak_rss_bytes": 146821120,
+          "wall_s": 23.385737517000052
+        },
+        {
+          "open_s": 0.1545744499999273,
+          "cold_start_s": 0.285932646,
+          "peak_rss_bytes_self": 146993152,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7352838682,
+              "p50_ns": 69063819,
+              "p90_ns": 102590122,
+              "p99_ns": 132665115,
+              "max_ns": 134661588
+            },
+            {
+              "queries": 100,
+              "total_ns": 7352445030,
+              "p50_ns": 68986272,
+              "p90_ns": 103843606,
+              "p99_ns": 134614785,
+              "max_ns": 136699425
+            },
+            {
+              "queries": 100,
+              "total_ns": 7355945516,
+              "p50_ns": 69447965,
+              "p90_ns": 103449239,
+              "p99_ns": 131456643,
+              "max_ns": 133669001
+            }
+          ],
+          "peak_rss_bytes": 148799488,
+          "wall_s": 23.25970514300002
+        },
+        {
+          "open_s": 0.15070272200000545,
+          "cold_start_s": 0.285093654,
+          "peak_rss_bytes_self": 148111360,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7314639383,
+              "p50_ns": 68508418,
+              "p90_ns": 103820477,
+              "p99_ns": 133581530,
+              "max_ns": 138710989
+            },
+            {
+              "queries": 100,
+              "total_ns": 7336811863,
+              "p50_ns": 68473696,
+              "p90_ns": 102651597,
+              "p99_ns": 132569501,
+              "max_ns": 137743815
+            },
+            {
+              "queries": 100,
+              "total_ns": 7336096842,
+              "p50_ns": 68219415,
+              "p90_ns": 103128975,
+              "p99_ns": 131935055,
+              "max_ns": 138005122
+            }
+          ],
+          "peak_rss_bytes": 149987328,
+          "wall_s": 23.19885993400021
+        },
+        {
+          "open_s": 0.1561719430001176,
+          "cold_start_s": 0.288046183,
+          "peak_rss_bytes_self": 145846272,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7370667737,
+              "p50_ns": 68963913,
+              "p90_ns": 103923383,
+              "p99_ns": 134072557,
+              "max_ns": 134764743
+            },
+            {
+              "queries": 100,
+              "total_ns": 7323485672,
+              "p50_ns": 68225095,
+              "p90_ns": 102318777,
+              "p99_ns": 128826473,
+              "max_ns": 135997522
+            },
+            {
+              "queries": 100,
+              "total_ns": 7353357956,
+              "p50_ns": 68932988,
+              "p90_ns": 102364834,
+              "p99_ns": 130879515,
+              "max_ns": 138028022
+            }
+          ],
+          "peak_rss_bytes": 147234816,
+          "wall_s": 23.37642284599997
+        },
+        {
+          "open_s": 0.16617292299997644,
+          "cold_start_s": 0.308810586,
+          "peak_rss_bytes_self": 146280448,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7458095016,
+              "p50_ns": 70809147,
+              "p90_ns": 104262211,
+              "p99_ns": 131714800,
+              "max_ns": 141718978
+            },
+            {
+              "queries": 100,
+              "total_ns": 7468680479,
+              "p50_ns": 69646362,
+              "p90_ns": 106033306,
+              "p99_ns": 134098054,
+              "max_ns": 138246500
+            },
+            {
+              "queries": 100,
+              "total_ns": 7399335830,
+              "p50_ns": 69688196,
+              "p90_ns": 106286265,
+              "p99_ns": 132579185,
+              "max_ns": 136815464
+            }
+          ],
+          "peak_rss_bytes": 147668992,
+          "wall_s": 23.59563200499997
+        },
+        {
+          "open_s": 0.1632228070002384,
+          "cold_start_s": 0.293884625,
+          "peak_rss_bytes_self": 146931712,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7368417842,
+              "p50_ns": 68893118,
+              "p90_ns": 103783735,
+              "p99_ns": 137860662,
+              "max_ns": 146785629
+            },
+            {
+              "queries": 100,
+              "total_ns": 7343840822,
+              "p50_ns": 68870063,
+              "p90_ns": 102859596,
+              "p99_ns": 130704962,
+              "max_ns": 135581944
+            },
+            {
+              "queries": 100,
+              "total_ns": 7354978786,
+              "p50_ns": 69174191,
+              "p90_ns": 102944239,
+              "p99_ns": 132121905,
+              "max_ns": 135855299
+            }
+          ],
+          "peak_rss_bytes": 148320256,
+          "wall_s": 23.302941674000067
+        },
+        {
+          "open_s": 0.16552494699999443,
+          "cold_start_s": 0.305334852,
+          "peak_rss_bytes_self": 146690048,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7380427596,
+              "p50_ns": 68358713,
+              "p90_ns": 104575627,
+              "p99_ns": 134632082,
+              "max_ns": 134753238
+            },
+            {
+              "queries": 100,
+              "total_ns": 7294533303,
+              "p50_ns": 68760699,
+              "p90_ns": 102047067,
+              "p99_ns": 131838912,
+              "max_ns": 138354443
+            },
+            {
+              "queries": 100,
+              "total_ns": 7319452287,
+              "p50_ns": 68491700,
+              "p90_ns": 102063569,
+              "p99_ns": 129523622,
+              "max_ns": 136436874
+            }
+          ],
+          "peak_rss_bytes": 148078592,
+          "wall_s": 23.25060688800022
+        },
+        {
+          "open_s": 0.14827947899993887,
+          "cold_start_s": 0.279255388,
+          "peak_rss_bytes_self": 146894848,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7354015755,
+              "p50_ns": 68994609,
+              "p90_ns": 102713788,
+              "p99_ns": 128303451,
+              "max_ns": 132089448
+            },
+            {
+              "queries": 100,
+              "total_ns": 7304444978,
+              "p50_ns": 67785599,
+              "p90_ns": 100780978,
+              "p99_ns": 130557602,
+              "max_ns": 135453675
+            },
+            {
+              "queries": 100,
+              "total_ns": 7255703579,
+              "p50_ns": 67597871,
+              "p90_ns": 102664015,
+              "p99_ns": 130129863,
+              "max_ns": 136441344
+            }
+          ],
+          "peak_rss_bytes": 148283392,
+          "wall_s": 23.119720025999868
+        },
+        {
+          "open_s": 0.15868341299983513,
+          "cold_start_s": 0.293353927,
+          "peak_rss_bytes_self": 148119552,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7213280237,
+              "p50_ns": 67533003,
+              "p90_ns": 100620220,
+              "p99_ns": 129717812,
+              "max_ns": 133680596
+            },
+            {
+              "queries": 100,
+              "total_ns": 7216455474,
+              "p50_ns": 67102168,
+              "p90_ns": 100356163,
+              "p99_ns": 128571896,
+              "max_ns": 135014558
+            },
+            {
+              "queries": 100,
+              "total_ns": 7273530841,
+              "p50_ns": 68045517,
+              "p90_ns": 102837797,
+              "p99_ns": 132300502,
+              "max_ns": 132566084
+            }
+          ],
+          "peak_rss_bytes": 149995520,
+          "wall_s": 22.904608471999836
+        },
+        {
+          "open_s": 0.14567083100018863,
+          "cold_start_s": 0.275073641,
+          "peak_rss_bytes_self": 144990208,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 7862431138,
+              "p50_ns": 73443044,
+              "p90_ns": 110695707,
+              "p99_ns": 144594164,
+              "max_ns": 148380679
+            },
+            {
+              "queries": 100,
+              "total_ns": 7661195792,
+              "p50_ns": 71702649,
+              "p90_ns": 104649930,
+              "p99_ns": 129425941,
+              "max_ns": 136129822
+            },
+            {
+              "queries": 100,
+              "total_ns": 7262077593,
+              "p50_ns": 68266565,
+              "p90_ns": 102430908,
+              "p99_ns": 129144740,
+              "max_ns": 136854308
+            }
+          ],
+          "peak_rss_bytes": 146378752,
+          "wall_s": 23.97909417300025
+        }
+      ],
+      "ops": {
+        "count": 100,
+        "replace": {
+          "supported": true,
+          "per_op_ms_durable": 146.63095731999874
+        },
+        "delete": {
+          "supported": true,
+          "per_op_ms_durable": 16.973000140001204
+        },
+        "peak_rss_bytes_self": 1002901504
+      },
+      "version": {
+        "whoosh-reloaded": "2.7.5"
+      },
+      "install": {
+        "bytes": 2068671,
+        "distributions": 2,
+        "dists": [
+          "Whoosh_Reloaded-2.7.5",
+          "cached_property-2.0.1"
+        ]
+      }
+    },
+    "bm25s": {
+      "display": "bm25s",
+      "build_runs": [
+        {
+          "documents": 4559,
+          "ingest_s": 5.174186453999937,
+          "peak_rss_bytes_self": 247599104,
+          "peak_rss_bytes": 247599104,
+          "wall_s": 5.4636927609999475,
+          "disk_bytes": 14906942
+        },
+        {
+          "documents": 4559,
+          "ingest_s": 5.13049070399984,
+          "peak_rss_bytes_self": 248815616,
+          "peak_rss_bytes": 248815616,
+          "wall_s": 5.4192611640000905,
+          "disk_bytes": 14906942
+        }
+      ],
+      "serve_rounds": [
+        {
+          "open_s": 0.17948672800002896,
+          "cold_start_s": 0.240395987,
+          "peak_rss_bytes_self": 87515136,
+          "quality": {
+            "ndcg_at_10": 0.44175557833638,
+            "recall_at_10": 0.5631666666666667,
+            "recall_at_100": 0.8311666666666666,
+            "per_query_ndcg_at_10": [
+              1.0,
+              0.6309297535714575,
+              0.5,
+              1.0,
+              0.0,
+              0.5,
+              0.6309297535714575,
+              0.0,
+              0.2890648263178879,
+              0.0,
+              0.0,
+              0.31546487678572877,
+              0.6309297535714575,
+              0.0,
+              0.0,
+              0.0,
+              0.3065735963827292,
+              0.43734888382569426,
+              0.0,
+              0.39106560501896365,
+              0.0,
+              0.5307212739772434,
+              0.8503449055347546,
+              0.0,
+              0.0,
+              0.3903800499921017,
+              0.19342640361727081,
+              0.0,
+              0.0,
+              0.13565197343244778,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.3562071871080222,
+              0.0,
+              0.3333333333333333,
+              0.0,
+              0.9197207891481876,
+              0.38685280723454163,
+              0.0,
+              0.17723928678404774,
+              0.8503449055347546,
+              0.7977228895450266,
+              0.46845052016107697,
+              1.0,
+              0.3065735963827292,
+              0.0,
+              0.0,
+              1.0,
+              0.7977228895450266,
+              0.0,
+              0.7903864795495061,
+              0.5706417189553201,
+              0.3065735963827292,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.13565197343244778,
+              0.0,
+              0.2640681225725909,
+              0.38356636737133565,
+              0.6131471927654584,
+              0.8772153153380493,
+              0.6240505200038379,
+              0.5437713091520254,
+              0.0,
+              0.6131471927654584,
+              0.2640681225725909,
+              0.8772153153380493,
+              0.6240505200038379,
+              0.8772153153380493,
+              0.8772153153380493,
+              0.19342640361727081,
+              1.0,
+              1.0,
+              0.38685280723454163,
+              0.6131471927654584,
+              1.0,
+              1.0,
+              0.6131471927654584,
+              0.3065735963827292,
+              0.0,
+              1.0,
+              0.3065735963827292,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.38685280723454163,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "per_query_recall_at_100": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.25,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              0.4,
+              1.0,
+              0.5,
+              1.0,
+              0.6666666666666666,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              0.5,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.3333333333333333,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.6666666666666666,
+              0.0,
+              1.0,
+              0.8,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "queries": 100
+          },
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 96761921,
+              "p50_ns": 930821,
+              "p90_ns": 1055978,
+              "p99_ns": 1820143,
+              "max_ns": 3848602
+            },
+            {
+              "queries": 100,
+              "total_ns": 91134758,
+              "p50_ns": 895027,
+              "p90_ns": 1083646,
+              "p99_ns": 1206569,
+              "max_ns": 1246545
+            },
+            {
+              "queries": 100,
+              "total_ns": 95690385,
+              "p50_ns": 931258,
+              "p90_ns": 1090559,
+              "p99_ns": 1258028,
+              "max_ns": 1364574
+            }
+          ],
+          "peak_rss_bytes": 87515136,
+          "wall_s": 0.58467513100004
+        },
+        {
+          "open_s": 0.17241226100009044,
+          "cold_start_s": 0.232979786,
+          "peak_rss_bytes_self": 87486464,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 87522464,
+              "p50_ns": 829125,
+              "p90_ns": 983914,
+              "p99_ns": 1384242,
+              "max_ns": 4113038
+            },
+            {
+              "queries": 100,
+              "total_ns": 79946387,
+              "p50_ns": 801017,
+              "p90_ns": 906039,
+              "p99_ns": 990047,
+              "max_ns": 1094858
+            },
+            {
+              "queries": 100,
+              "total_ns": 81201575,
+              "p50_ns": 799183,
+              "p90_ns": 910312,
+              "p99_ns": 1011664,
+              "max_ns": 1021817
+            }
+          ],
+          "peak_rss_bytes": 87486464,
+          "wall_s": 0.5358800289998271
+        },
+        {
+          "open_s": 0.178467671999897,
+          "cold_start_s": 0.240275321,
+          "peak_rss_bytes_self": 87941120,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 97834681,
+              "p50_ns": 913098,
+              "p90_ns": 1143297,
+              "p99_ns": 1758855,
+              "max_ns": 3756701
+            },
+            {
+              "queries": 100,
+              "total_ns": 90158671,
+              "p50_ns": 877388,
+              "p90_ns": 1061668,
+              "p99_ns": 1301768,
+              "max_ns": 1381686
+            },
+            {
+              "queries": 100,
+              "total_ns": 90197370,
+              "p50_ns": 897085,
+              "p90_ns": 1037111,
+              "p99_ns": 1195848,
+              "max_ns": 1294733
+            }
+          ],
+          "peak_rss_bytes": 87941120,
+          "wall_s": 0.574610365999888
+        },
+        {
+          "open_s": 0.1784846049999942,
+          "cold_start_s": 0.243753165,
+          "peak_rss_bytes_self": 87502848,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 116771035,
+              "p50_ns": 1097313,
+              "p90_ns": 1365285,
+              "p99_ns": 2128422,
+              "max_ns": 4837936
+            },
+            {
+              "queries": 100,
+              "total_ns": 117780211,
+              "p50_ns": 1117477,
+              "p90_ns": 1491097,
+              "p99_ns": 1840412,
+              "max_ns": 2250729
+            },
+            {
+              "queries": 100,
+              "total_ns": 106000304,
+              "p50_ns": 1052411,
+              "p90_ns": 1219463,
+              "p99_ns": 1429189,
+              "max_ns": 1443857
+            }
+          ],
+          "peak_rss_bytes": 87502848,
+          "wall_s": 0.6530024030003005
+        },
+        {
+          "open_s": 0.18432013000028746,
+          "cold_start_s": 0.248742769,
+          "peak_rss_bytes_self": 87076864,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 97355907,
+              "p50_ns": 921124,
+              "p90_ns": 1097357,
+              "p99_ns": 1690862,
+              "max_ns": 4415482
+            },
+            {
+              "queries": 100,
+              "total_ns": 89950728,
+              "p50_ns": 882046,
+              "p90_ns": 998147,
+              "p99_ns": 1217540,
+              "max_ns": 1285842
+            },
+            {
+              "queries": 100,
+              "total_ns": 88113704,
+              "p50_ns": 859485,
+              "p90_ns": 982852,
+              "p99_ns": 1246695,
+              "max_ns": 1394872
+            }
+          ],
+          "peak_rss_bytes": 87076864,
+          "wall_s": 0.5831443740003124
+        },
+        {
+          "open_s": 0.18786109200027568,
+          "cold_start_s": 0.260378999,
+          "peak_rss_bytes_self": 87019520,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 100615456,
+              "p50_ns": 954618,
+              "p90_ns": 1104155,
+              "p99_ns": 1871982,
+              "max_ns": 3690977
+            },
+            {
+              "queries": 100,
+              "total_ns": 97089625,
+              "p50_ns": 944883,
+              "p90_ns": 1149468,
+              "p99_ns": 1277356,
+              "max_ns": 1290932
+            },
+            {
+              "queries": 100,
+              "total_ns": 94369206,
+              "p50_ns": 922645,
+              "p90_ns": 1087118,
+              "p99_ns": 1180122,
+              "max_ns": 1259671
+            }
+          ],
+          "peak_rss_bytes": 87019520,
+          "wall_s": 0.6154976620000525
+        },
+        {
+          "open_s": 0.1736130160002176,
+          "cold_start_s": 0.24018293,
+          "peak_rss_bytes_self": 87977984,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 106950083,
+              "p50_ns": 1043729,
+              "p90_ns": 1238900,
+              "p99_ns": 1780115,
+              "max_ns": 4323323
+            },
+            {
+              "queries": 100,
+              "total_ns": 94717926,
+              "p50_ns": 929890,
+              "p90_ns": 1070521,
+              "p99_ns": 1160379,
+              "max_ns": 1353437
+            },
+            {
+              "queries": 100,
+              "total_ns": 95627760,
+              "p50_ns": 947889,
+              "p90_ns": 1083917,
+              "p99_ns": 1251350,
+              "max_ns": 1282536
+            }
+          ],
+          "peak_rss_bytes": 87977984,
+          "wall_s": 0.6029710779998823
+        },
+        {
+          "open_s": 0.16844568999977128,
+          "cold_start_s": 0.228328559,
+          "peak_rss_bytes_self": 87891968,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 91759214,
+              "p50_ns": 869938,
+              "p90_ns": 1011573,
+              "p99_ns": 1474707,
+              "max_ns": 3460308
+            },
+            {
+              "queries": 100,
+              "total_ns": 90170925,
+              "p50_ns": 902232,
+              "p90_ns": 1019347,
+              "p99_ns": 1140540,
+              "max_ns": 1141343
+            },
+            {
+              "queries": 100,
+              "total_ns": 91031728,
+              "p50_ns": 915437,
+              "p90_ns": 1030569,
+              "p99_ns": 1165850,
+              "max_ns": 1270543
+            }
+          ],
+          "peak_rss_bytes": 87891968,
+          "wall_s": 0.5616511630000787
+        },
+        {
+          "open_s": 0.1620790140000281,
+          "cold_start_s": 0.222866404,
+          "peak_rss_bytes_self": 88330240,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 96788813,
+              "p50_ns": 914816,
+              "p90_ns": 1094362,
+              "p99_ns": 2085089,
+              "max_ns": 4198097
+            },
+            {
+              "queries": 100,
+              "total_ns": 90428262,
+              "p50_ns": 893961,
+              "p90_ns": 1049191,
+              "p99_ns": 1165844,
+              "max_ns": 1192542
+            },
+            {
+              "queries": 100,
+              "total_ns": 83524261,
+              "p50_ns": 830032,
+              "p90_ns": 916258,
+              "p99_ns": 1042101,
+              "max_ns": 1073555
+            }
+          ],
+          "peak_rss_bytes": 88330240,
+          "wall_s": 0.5479497249998531
+        },
+        {
+          "open_s": 0.1645675630002188,
+          "cold_start_s": 0.224627369,
+          "peak_rss_bytes_self": 88154112,
+          "quality": null,
+          "passes": [
+            {
+              "queries": 100,
+              "total_ns": 89024727,
+              "p50_ns": 852345,
+              "p90_ns": 999880,
+              "p99_ns": 1403684,
+              "max_ns": 3083737
+            },
+            {
+              "queries": 100,
+              "total_ns": 84089738,
+              "p50_ns": 825674,
+              "p90_ns": 951687,
+              "p99_ns": 1023686,
+              "max_ns": 1044501
+            },
+            {
+              "queries": 100,
+              "total_ns": 87030404,
+              "p50_ns": 848974,
+              "p90_ns": 1000090,
+              "p99_ns": 1130652,
+              "max_ns": 1165414
+            }
+          ],
+          "peak_rss_bytes": 88154112,
+          "wall_s": 0.5387770239999554
+        }
+      ],
+      "ops": {
+        "count": 100,
+        "replace": {
+          "supported": false,
+          "reason": "immutable index; any change is a full rebuild"
+        },
+        "delete": {
+          "supported": false,
+          "reason": "immutable index; any change is a full rebuild"
+        },
+        "peak_rss_bytes_self": 143884288
+      },
+      "version": {
+        "bm25s": "0.3.14",
+        "PyStemmer": "3.1.0"
+      },
+      "install": {
+        "bytes": 59286854,
+        "distributions": 3,
+        "dists": [
+          "bm25s-0.3.14",
+          "numpy-2.5.4",
+          "pystemmer-3.1.0"
+        ]
+      }
+    }
+  },
+  "skipped": {},
+  "qrels_queries": 100
+}

@@ -151,3 +151,12 @@ def test_a_comparator_that_ships_with_the_interpreter_draws_no_install_verdict()
     name, best = table.best_other("install_mib", put["install_mib"])
     assert name == "tantivy" and best["value"] == 3.0
     assert put["install_mib"]["sqlite-fts5"]["informational"]
+
+
+def test_raw_pass_timings_from_older_files_summarise_like_stored_summaries():
+    from hmsbench.common import pass_summary
+
+    raw = [[5_000, 1_000, 3_000, 9_000], [2_000, 2_000, 4_000, 8_000]]
+    old = {"passes_ns": raw}
+    new = {"passes": [pass_summary(ns) for ns in raw]}
+    assert analyze._passes(old) == analyze._passes(new) == new["passes"]

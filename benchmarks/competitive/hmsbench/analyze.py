@@ -11,7 +11,7 @@ is the verdict-bearing metrics of one section).
 
 import statistics
 
-from .common import bootstrap_ci
+from .common import bootstrap_ci, pass_summary
 
 TARGETS = (0.90, 0.95, 0.99)
 HIGHER = "higher"
@@ -139,6 +139,14 @@ def ann_metrics(path, results, level=0.95):
     return out
 
 
+def _passes(serve_round):
+    """Pass summaries of a serve round. Files written before summaries were stored carry the raw
+    per-query nanoseconds as `passes_ns`; they are summarised the same way on read."""
+    if "passes" in serve_round:
+        return serve_round["passes"]
+    return [pass_summary(ns) for ns in serve_round["passes_ns"]]
+
+
 def text_metrics(path, results, level=0.95):
     out = {}
 
@@ -160,7 +168,7 @@ def text_metrics(path, results, level=0.95):
                                            q["queries"], qsrc, "recall"))
         qps, p50, p99 = [], [], []
         for r in rounds:
-            for p in r["passes"]:
+            for p in _passes(r):
                 qps.append(p["queries"] / (p["total_ns"] / 1e9))
                 p50.append(p["p50_ns"] / 1e3)
                 p99.append(p["p99_ns"] / 1e3)
