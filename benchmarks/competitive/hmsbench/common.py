@@ -258,17 +258,36 @@ def _data_bytes(path):
     return total
 
 
+_SPARSE_MISREPORTED = {}
+
+
+def _misreports_sparse(directory):
+    """True when the filesystem of `directory` reports a freshly truncated (hole-only) file as fully allocated."""
+    dev = os.stat(directory).st_dev
+    if dev not in _SPARSE_MISREPORTED:
+        try:
+            with tempfile.TemporaryFile(dir=directory) as probe:
+                probe.truncate(1 << 20)
+                probe.flush()
+                st = os.fstat(probe.fileno())
+                _SPARSE_MISREPORTED[dev] = st.st_blocks * 512 >= st.st_size
+        except OSError:
+            _SPARSE_MISREPORTED[dev] = False
+    return _SPARSE_MISREPORTED[dev]
+
+
 def dir_bytes(path):
     """Allocated bytes (du semantics): sparse or preallocated files count what they occupy.
-    Some sandboxes (gVisor) report every file as fully allocated, sparse ones included; for a
-    file of 1 MiB or more reported that way, only its non-zero 4 KiB blocks are counted."""
+    Some sandboxes (gVisor) report every file as fully allocated, sparse ones included; on such
+    a filesystem only the non-zero 4 KiB blocks of a file of 1 MiB or more are counted."""
     path = Path(path)
     files = [path] if path.is_file() else [p for p in path.rglob("*") if p.is_file()]
+    scan = bool(files) and _misreports_sparse(path.parent if path.is_file() else path)
     total = 0
     for p in files:
         st = p.stat()
         allocated = min(st.st_size, st.st_blocks * 512)
-        if allocated >= st.st_size >= 1 << 20:
+        if scan and allocated >= st.st_size >= 1 << 20:
             allocated = _data_bytes(p)
         total += allocated
     return total

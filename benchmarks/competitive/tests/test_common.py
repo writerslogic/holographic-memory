@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from hmsbench import data  # noqa: E402
+from hmsbench import common  # noqa: E402
 from hmsbench.common import _Spawner, bootstrap_ci, dir_bytes, ndcg_at, pass_summary, quantile, recall_at, run_measured, timing_lock  # noqa: E402
 
 
@@ -71,7 +72,8 @@ def test_dir_bytes_counts_allocated_not_apparent_size(tmp_path):
     assert dir_bytes(tmp_path) < 2**20
 
 
-def test_dir_bytes_ignores_zero_blocks_of_a_file_reported_fully_allocated(tmp_path):
+def test_dir_bytes_ignores_zero_blocks_of_a_file_reported_fully_allocated(tmp_path, monkeypatch):
+    monkeypatch.setattr(common, "_misreports_sparse", lambda directory: True)
     arena = tmp_path / "arena"
     arena.write_bytes(bytes(4 * 2**20) + b"x" + bytes(4095))
     assert dir_bytes(tmp_path) == 4096

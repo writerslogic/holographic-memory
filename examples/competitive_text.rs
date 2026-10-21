@@ -12,9 +12,7 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::core::documents::{
-    chunk_document, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
-};
+use holographic_memory::core::documents::{EncodeMode, IngestOptions, MAX_BATCH_ITEMS};
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
 use serde_json::json;
@@ -44,8 +42,7 @@ struct Args {
     /// (BM25 index only, like-for-like with the lexical comparators).
     #[arg(long, default_value = "eager")]
     encode: String,
-    /// `build` only: documents per atomic batch (0 = as many documents per batch as the engine
-    /// accepts, bounded by both its item and chunk limits).
+    /// `build` only: documents per atomic batch (0 = as many per batch as the engine accepts).
     #[arg(long, default_value_t = 0)]
     batch: usize,
 }
@@ -70,32 +67,31 @@ fn epoch_ns() -> u128 {
         .unwrap_or(0)
 }
 
-/// Documents per batch. A fixed `fixed` size when non-zero; otherwise greedy: as many consecutive
-/// documents as fit the engine's per-batch item and chunk limits. Chunk counts come from the
-/// engine's own chunker, before the timer starts.
-fn plan_batches(documents: &[DocumentInput], fixed: usize) -> Result<Vec<usize>> {
-    if fixed > 0 {
-        return Ok(documents.chunks(fixed).map(|chunk| chunk.len()).collect());
-    }
-    let mut sizes = Vec::new();
-    let (mut items, mut chunks) = (0, 0);
-    for document in documents {
-        let n = chunk_document(document)?.len();
-        ensure!(
-            n <= MAX_BATCH_ITEMS,
-            "document exceeds the batch chunk limit"
-        );
-        if items == MAX_BATCH_ITEMS || chunks + n > MAX_BATCH_ITEMS {
-            sizes.push(items);
-            (items, chunks) = (0, 0);
+/// Ingests `documents` in the fewest atomic batches the engine accepts. The engine bounds a
+/// batch by items, chunks, source and metadata bytes, embedding values and transaction bytes, and
+/// rejects an oversized batch before writing anything; so start at `MAX_BATCH_ITEMS` documents and
+/// halve on a batch-limit error, keeping the size that worked. A fixed size takes `fixed`.
+fn ingest(
+    core: &HmsCore,
+    documents: &[DocumentInput],
+    options: &IngestOptions,
+    fixed: usize,
+) -> Result<()> {
+    let mut size = if fixed > 0 { fixed } else { MAX_BATCH_ITEMS };
+    let mut at = 0;
+    while at < documents.len() {
+        let end = (at + size).min(documents.len());
+        match core.memorize_documents_with(documents[at..end].to_vec(), options) {
+            Ok(_) => at = end,
+            Err(error)
+                if fixed == 0 && size > 1 && error.to_string().starts_with("document batch") =>
+            {
+                size /= 2
+            }
+            Err(error) => return Err(error),
         }
-        items += 1;
-        chunks += n;
     }
-    if items > 0 {
-        sizes.push(items);
-    }
-    Ok(sizes)
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -108,14 +104,9 @@ fn main() -> Result<()> {
             let mode: EncodeMode = args.encode.parse()?;
             let options = IngestOptions { encode: mode };
             let count = input.documents.len();
-            let batches = plan_batches(&input.documents, args.batch)?;
             let start = Instant::now();
             let core = HmsCore::new(1024, Some(store), None)?;
-            let mut documents = input.documents.into_iter();
-            for size in batches {
-                let batch: Vec<_> = documents.by_ref().take(size).collect();
-                core.memorize_documents_with(batch, &options)?;
-            }
+            ingest(&core, &input.documents, &options, args.batch)?;
             json!({"documents": count, "ingest_s": start.elapsed().as_secs_f64(),
                 "encode": mode.name()})
         }
