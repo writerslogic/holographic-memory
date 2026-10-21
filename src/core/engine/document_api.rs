@@ -215,7 +215,24 @@ impl HmsCore {
             None if options.mode == VectorIndexMode::Graph => {
                 return Err(anyhow::Error::new(documents::GraphUnavailable));
             }
-            None => {}
+            None => {
+                // First vector query over a store without a snapshot: publish one now so an
+                // unfiltered query answers from the same scan before and after maintenance
+                // (the fallback below scores `f64` rows and would differ in the last digits).
+                if self.rebuild_vector_index(documents::DEFAULT_GRAPH_MIN_ROWS)? {
+                    if let Some(snapshot) = self.vector_index.get() {
+                        if let Some(results) = documents::search_vector_snapshot(
+                            &snapshot,
+                            &self.documents,
+                            &query,
+                            k,
+                            options,
+                        )? {
+                            return Ok(results);
+                        }
+                    }
+                }
+            }
         }
         let fallback = SearchOptions {
             k: Some(k as u32),

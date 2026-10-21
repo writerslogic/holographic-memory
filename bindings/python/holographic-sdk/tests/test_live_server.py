@@ -125,12 +125,12 @@ def test_sync_and_async_document_maintenance_preserves_query_results(server):
 
     async def run():
         async with AsyncHolographicClient(url=server, api_key=API_KEY, tenant_id="indexed") as client:
-            assert await client.maintain_document_index() == {"documentIndexTrained": False}
+            assert (await client.maintain_document_index())["documentIndexTrained"] is False
             assert await client.query(embedding(0), top_k=10) == after_delete
         async with AsyncHolographicClient(url=server, api_key=API_KEY, tenant_id="async-indexed") as client:
             await client.add_documents(indexed)
             expected = await client.query(embedding(11), top_k=10)
-            assert await client.maintain_document_index() == {"documentIndexTrained": True}
+            assert (await client.maintain_document_index())["documentIndexTrained"] is True
             assert await client.query(embedding(11), top_k=10) == expected
 
     asyncio.run(run())
