@@ -1,0 +1,10 @@
+numpy==2.5.4
+    # via -r requirements/server-clients.in
+psycopg==3.3.6
+    # via -r requirements/server-clients.in
+psycopg-binary==3.3.6 ; implementation_name != 'pypy'
+    # via psycopg
+redis==8.1.0
+    # via -r requirements/server-clients.in
+tzdata==2026.5 ; sys_platform == 'win32'
+    # via psycopg
