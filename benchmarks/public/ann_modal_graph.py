@@ -30,11 +30,13 @@ SEARCH = [
     "--ef", "64,96,128,192,256,320,384,512,736,1024", "--repeats", "5",
     "--holdout", "2000", "--max-load", "1000", "--max-wait-secs", "0", "--quantized-search",
 ]
+# name -> extra arguments; an arm may name the graph cache it shares with another arm
+# ("cache": the other arm's name) when its arguments do not change the graph structure.
 ARMS = {
-    "d32e200": ["--degree", "32", "--build-ef", "200"],
-    "d32e500": ["--degree", "32", "--build-ef", "500"],
-    "d48e400": ["--degree", "48", "--build-ef", "400"],
-    "d64e500": ["--degree", "64", "--build-ef", "500"],
+    "d32e200": {"args": ["--degree", "32", "--build-ef", "200"]},
+    "d32e500": {"args": ["--degree", "32", "--build-ef", "500"]},
+    "d48e400": {"args": ["--degree", "48", "--build-ef", "400"]},
+    "d64e500": {"args": ["--degree", "64", "--build-ef", "500"]},
 }
 
 VOL = modal.Volume.from_name("hms-ann-confirm", create_if_missing=True)
@@ -51,7 +53,7 @@ def sh(cmd: list[str], **kw) -> subprocess.CompletedProcess:
 
 
 @app.function(image=image, volumes={"/vol": VOL}, cpu=CPU, memory=MEM_GIB * 1024, timeout=6 * 3600)
-def run(archive: bytes, lock: bytes, cap_usd: float) -> dict:
+def run(archive: bytes, lock: bytes, cap_usd: float, arms: dict) -> dict:
     started = time.time()
     env = {"PATH": "/root/.cargo/bin:/usr/bin:/bin", "HOME": "/root", "CARGO_BUILD_JOBS": str(CPU)}
     cpuinfo = Path("/proc/cpuinfo").read_text().splitlines()
@@ -75,11 +77,12 @@ def run(archive: bytes, lock: bytes, cap_usd: float) -> dict:
 
     rows = []
     for rnd in (1, 2):
-        for name, extra in ARMS.items():
+        for name, arm in arms.items():
+            extra = arm["args"]
             if spent() > cap_usd * 0.9:
                 rows.append({"arm": name, "round": rnd, "skipped": "spend cap"})
                 continue
-            cache = f"/vol/graph-cache-{name}.graph"
+            cache = f"/vol/graph-cache-{arm.get('cache', name)}.graph"
             result = out / f"{name}-r{rnd}.json"
             cmd = ["/usr/bin/time", "-v", str(binary), "ann-qgraph", "--data", "/vol/glove-100-angular",
                    "--out", str(result), "--graph-cache", cache, *SEARCH, *extra]
@@ -93,7 +96,7 @@ def run(archive: bytes, lock: bytes, cap_usd: float) -> dict:
             (out / "rows.json").write_text(json.dumps(rows))
             VOL.commit()
     report = {"cpu_model": cpu_model, "avx2": " avx2" in flags, "avx512f": " avx512f" in flags,
-              "search": SEARCH, "arms": ARMS, "cpu": CPU, "mem_gib": MEM_GIB, "wall_s": round(time.time() - started, 1),
+              "search": SEARCH, "arms": arms, "cpu": CPU, "mem_gib": MEM_GIB, "wall_s": round(time.time() - started, 1),
               "spent_usd_estimate": round(spent(), 2), "rows": rows}
     (out / "report.json").write_text(json.dumps(report))
     VOL.commit()
@@ -101,9 +104,11 @@ def run(archive: bytes, lock: bytes, cap_usd: float) -> dict:
 
 
 @app.local_entrypoint()
-def main(rev: str = "HEAD", cap_usd: float = 5.0, out: str = "benchmarks/results/ann_modal_graph_v1.raw.json"):
+def main(rev: str = "HEAD", cap_usd: float = 5.0, out: str = "benchmarks/results/ann_modal_graph_v1.raw.json", arms: str = ""):
+    """`arms`: a JSON object in the shape of ARMS to run instead of the default arms."""
+    chosen = json.loads(arms) if arms else ARMS
     archive = subprocess.run(["git", "archive", "--format=tar", rev], cwd=REPO, check=True, capture_output=True).stdout
-    report = run.remote(archive, (REPO / "Cargo.lock").read_bytes(), cap_usd)
+    report = run.remote(archive, (REPO / "Cargo.lock").read_bytes(), cap_usd, chosen)
     Path(out).write_text(json.dumps(report, indent=1))
     print(json.dumps({k: report[k] for k in ("cpu_model", "avx2", "avx512f", "wall_s", "spent_usd_estimate")}))
     for row in report["rows"]:
