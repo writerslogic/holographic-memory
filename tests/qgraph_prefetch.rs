@@ -69,7 +69,7 @@ fn normalize(v: &mut [f32]) {
 /// Exact cosine top-`K` of `q` over the unit rows.
 fn top_k(q: &[f32], unit: &[f32]) -> Vec<u32> {
     let mut best: Vec<(f32, u32)> = Vec::with_capacity(K + 1);
-    for (i, row) in unit.chunks_exact(DIM).enumerate() {
+    for (i, row) in unit.as_chunks::<DIM>().0.iter().enumerate() {
         let s: f32 = q.iter().zip(row).map(|(a, b)| a * b).sum();
         if best.len() < K || s > best[K - 1].0 {
             let pos = best.partition_point(|t| t.0 >= s);
@@ -92,10 +92,12 @@ fn fixture() -> &'static Fixture {
     FIXTURE.get_or_init(|| {
         let rows = clustered(N, 0x5EED_0001);
         let mut unit = rows.clone();
-        unit.chunks_exact_mut(DIM).for_each(normalize);
+        unit.as_chunks_mut::<DIM>().0.iter_mut().for_each(|row| normalize(row));
         let mut queries: Vec<Vec<f32>> = clustered(QUERIES, 0x5EED_0002)
-            .chunks_exact(DIM)
-            .map(<[f32]>::to_vec)
+            .as_chunks::<DIM>()
+            .0
+            .iter()
+            .map(|row| row.to_vec())
             .collect();
         queries.iter_mut().for_each(|q| normalize(q));
         let truth = queries.iter().map(|q| top_k(q, &unit)).collect();
