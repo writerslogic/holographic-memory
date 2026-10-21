@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "dimensions": 1024,
+  "text_encoder": "multiscale-words-v1",
+  "vector_encoder": "signed-projection-v2",
+  "metric": "jaccard",
+  "encrypted": false,
+  "meaning_enabled": false,
+  "embedding_space": null
+}

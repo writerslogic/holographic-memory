@@ -50,6 +50,9 @@ struct Spec {
     encoder: &'static str,
     /// Arena manifest version to seed before the first open (the writer honours it).
     manifest: Option<u32>,
+    /// `store.json` schema the store is created with: 2 writes `HMS-TXN-2` frames, 3
+    /// `HMS-TXN-3` (the writer keeps the schema it finds).
+    schema: u32,
     compact: bool,
     snapshot: bool,
     /// Train and persist the IVF and NSG caches.
@@ -70,6 +73,7 @@ const BASE: Spec = Spec {
     encrypted: false,
     encoder: "multiscale-words-v1",
     manifest: None,
+    schema: 2,
     compact: false,
     snapshot: false,
     caches: false,
@@ -152,6 +156,45 @@ fn specs() -> Vec<Spec> {
             ..BASE
         },
         Spec {
+            name: "v4-txn3-plain",
+            description: "Schema 3: binary HMS-TXN-3 journal frames with a per-frame term \
+                          dictionary; the v4-plain corpus and operations.",
+            schema: 3,
+            ..BASE
+        },
+        Spec {
+            name: "v4-txn3-encrypted",
+            description: "Schema 3 with AES-256-GCM frames and text segment; passphrase \
+                          golden-passphrase-1.",
+            schema: 3,
+            encrypted: true,
+            ..BASE
+        },
+        Spec {
+            name: "v4-txn3-embeddings",
+            kind: Kind::Embed,
+            description: "Schema 3 with a client embedding space (3 dimensions): chunk \
+                          embeddings in the binary frames.",
+            schema: 3,
+            ..BASE
+        },
+        Spec {
+            name: "v4-txn3-memory",
+            kind: Kind::Memory,
+            description: "Schema 3: facts written by the memory API (version stamps, \
+                          supersession, entities) in binary frames.",
+            schema: 3,
+            ..BASE
+        },
+        Spec {
+            name: "v4-txn3-compacted",
+            description: "Schema 3 after compaction: one binary frame per document in the new \
+                          generation, then the journal tail.",
+            schema: 3,
+            compact: true,
+            ..BASE
+        },
+        Spec {
             name: "v3-fixed64",
             description: "Storage format 3: 64 MiB fixed segments, headerless version-1 text \
                           segment. Written by current code with a format-3 manifest seeded \
@@ -183,6 +226,25 @@ fn seed_manifest(store: &Path, version: u32) -> Result<()> {
     std::fs::write(arena.join("format.json"), &bytes)?;
     std::fs::write(
         arena.join("format.json.crc32"),
+        format!("{:08x}\n", crc32fast::hash(&bytes)),
+    )?;
+    Ok(())
+}
+
+/// Rewrites the `store.json` schema version of a store with an empty journal (and its
+/// checksum sidecar), so the engine writes that schema's journal format from then on.
+fn seed_schema(store: &Path, version: u32) -> Result<()> {
+    let path = store.join("store.json");
+    // A textual edit keeps the field order the engine writes.
+    let current = format!("\"version\": {},", format::STORE_SCHEMA_VERSION);
+    let text = std::fs::read_to_string(&path)?;
+    ensure!(text.contains(&current), "store.json without {current}");
+    let bytes = text
+        .replacen(&current, &format!("\"version\": {version},"), 1)
+        .into_bytes();
+    std::fs::write(&path, &bytes)?;
+    std::fs::write(
+        store.join("store.json.crc32"),
         format!("{:08x}\n", crc32fast::hash(&bytes)),
     )?;
     Ok(())
@@ -308,6 +370,14 @@ fn expected_documents(name: &str, deleted: &[&str]) -> Result<Vec<Value>> {
 
 /// Builds the store of `spec` in `store` with the current code and returns its `expect`.
 fn build(spec: &Spec, store: &Path) -> Result<Value> {
+    if spec.schema != format::STORE_SCHEMA_VERSION {
+        drop(HmsCore::new(
+            DIM,
+            Some(store.display().to_string()),
+            Some(config_for(spec)?),
+        )?);
+        seed_schema(store, spec.schema)?;
+    }
     if let Some(version) = spec.manifest {
         // The engine refuses an arena without a store.json, so let it write the schema first,
         // then swap the empty current-format arena for one with an older manifest.
@@ -422,8 +492,8 @@ fn meta_for(spec: &Spec, expect: Value) -> Value {
         "description": spec.description,
         "provenance": spec.provenance,
         "storageFormat": format_version,
-        "schema": format::STORE_SCHEMA_VERSION,
-        "transaction": "HMS-TXN-2",
+        "schema": spec.schema,
+        "transaction": if spec.schema >= 3 { "HMS-TXN-3" } else { "HMS-TXN-2" },
         "textSegment": if spec.no_text { Value::Null } else if spec.text_v1 { json!(1) } else { json!(format::TEXT_SEGMENT_VERSION) },
         "dimensions": DIM,
         "textEncoder": spec.encoder,
@@ -860,7 +930,7 @@ fn verify_agrees_with_every_golden() -> Result<()> {
             v.storage_format
         );
         ensure!(
-            v.store_schema == Some(2),
+            v.store_schema.map(u64::from) == golden.meta["schema"].as_u64(),
             "{}: schema {:?}",
             golden.name,
             v.store_schema

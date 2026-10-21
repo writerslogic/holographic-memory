@@ -91,10 +91,10 @@ impl HmsCore {
         let (generation, mut cursor) = snapshot.checkpoint;
         after_snapshot();
         let mut arena = StagedArena::new(staging.path(), Some(&self.arena))?;
-        let mut payload = Vec::new();
         for mutation in snapshot.mutations {
-            self.write_compaction_frame(&mut arena, &mut payload, &[mutation])?;
+            self.write_compaction_frame(&mut arena, &[mutation])?;
         }
+        let mut payload = Vec::new();
         for document in &snapshot.documents {
             // A document deleted since the snapshot has had its text zeroed; the delete is in
             // the tail, which the replay below applies, so it is simply not carried over.
@@ -103,17 +103,28 @@ impl HmsCore {
                 if store.is_deleted(document) {
                     continue;
                 }
-                payload.clear();
-                payload.extend_from_slice(super::mutation::TRANSACTION_MAGIC);
-                serde_json::to_writer(
-                    &mut payload,
-                    &[DocumentMutation::Document(
-                        crate::core::documents::DocumentWithText {
-                            document,
-                            segment: snapshot.text.as_deref(),
-                        },
-                    )],
-                )?;
+                let binary = match self.journal {
+                    super::journal::JournalFormat::Binary => {
+                        super::journal::binary_document_payload(document, snapshot.text.as_deref())?
+                    }
+                    super::journal::JournalFormat::Json => None,
+                };
+                if let Some(binary) = binary {
+                    payload = binary;
+                } else {
+                    // The JSON form carries any document; a binary store reads both.
+                    payload.clear();
+                    payload.extend_from_slice(super::mutation::TRANSACTION_MAGIC);
+                    serde_json::to_writer(
+                        &mut payload,
+                        &[DocumentMutation::Document(
+                            crate::core::documents::DocumentWithText {
+                                document,
+                                segment: snapshot.text.as_deref(),
+                            },
+                        )],
+                    )?;
+                }
             }
             arena.write_slice(&self.maybe_encrypt(&payload)?)?;
         }
@@ -238,16 +249,13 @@ impl HmsCore {
         })
     }
 
-    fn write_compaction_frame<T: Serialize>(
+    fn write_compaction_frame(
         &self,
         arena: &mut StagedArena,
-        payload: &mut Vec<u8>,
-        transaction: &T,
+        mutations: &[Mutation],
     ) -> Result<()> {
-        payload.clear();
-        payload.extend_from_slice(super::mutation::TRANSACTION_MAGIC);
-        serde_json::to_writer(&mut *payload, transaction)?;
-        arena.write_slice(&self.maybe_encrypt(payload)?)?;
+        let payload = self.transaction_payload(mutations)?;
+        arena.write_slice(&self.maybe_encrypt(&payload)?)?;
         Ok(())
     }
 
@@ -391,10 +399,7 @@ mod tests {
             let mut batch_frames = 0;
             while offset < core.arena.stats().used_bytes {
                 let (data, _) = core.arena_read_frame(offset)?;
-                let operations: Vec<Mutation> = serde_json::from_slice(
-                    data.strip_prefix(super::super::mutation::TRANSACTION_MAGIC)
-                        .unwrap(),
-                )?;
+                let operations = super::super::journal::decode(&data)?;
                 if operations.len() == 2 {
                     batch_frames += 1;
                     assert!(operations

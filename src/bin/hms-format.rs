@@ -222,26 +222,22 @@ fn dump(path: &std::path::Path, only: Option<usize>) -> Result<()> {
         let scan = scan::scan_segment(&map, true, |frame, payload| {
             if only.is_none_or(|n| n == index) {
                 if only.is_some() {
-                    match scan::classify_payload(payload) {
-                        scan::PayloadKind::Transaction(json) => {
-                            println!("{}", String::from_utf8_lossy(json))
-                        }
+                    match scan::transaction_json(payload) {
+                        Some(Ok(json)) => println!("{}", String::from_utf8_lossy(&json)),
                         _ => println!("<{} bytes, not a plaintext transaction>", payload.len()),
                     }
                 } else {
-                    let kinds = match scan::classify_payload(payload) {
-                        scan::PayloadKind::Transaction(json) => {
-                            serde_json::from_slice::<Vec<serde_json::Value>>(json)
-                                .map(|ms| {
-                                    ms.iter()
-                                        .filter_map(|m| {
-                                            m.as_object().and_then(|o| o.keys().next().cloned())
-                                        })
-                                        .collect::<Vec<_>>()
-                                        .join(",")
-                                })
-                                .unwrap_or_default()
-                        }
+                    let kinds = match scan::transaction_json(payload) {
+                        Some(Ok(json)) => serde_json::from_slice::<Vec<serde_json::Value>>(&json)
+                            .map(|ms| {
+                                ms.iter()
+                                    .filter_map(|m| {
+                                        m.as_object().and_then(|o| o.keys().next().cloned())
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(",")
+                            })
+                            .unwrap_or_default(),
                         _ => "(opaque)".to_owned(),
                     };
                     println!(

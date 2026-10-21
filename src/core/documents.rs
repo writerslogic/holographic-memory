@@ -10,6 +10,7 @@ use std::sync::{Arc, OnceLock};
 
 use super::{encoding::TextEncoder, entangled::EntangledHVec};
 
+pub(crate) mod binary;
 #[cfg(test)]
 mod compact_term_tests;
 mod packed_terms;

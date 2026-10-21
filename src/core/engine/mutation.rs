@@ -22,8 +22,8 @@ const PARALLEL_VALIDATION: usize = 64;
 /// Batches of at least this many mutations are serialized on the thread pool.
 const PARALLEL_SERIALIZATION: usize = 16;
 
-/// The journal payload of a transaction: the magic, then the batch as one JSON array. A
-/// large batch serializes its elements in parallel and joins them with the separators
+/// The `HMS-TXN-2` journal payload of a transaction: the magic, then the batch as one JSON
+/// array. A large batch serializes its elements in parallel and joins them with the separators
 /// `serde_json` writes for a slice, so the bytes are exactly those of serializing the slice.
 pub(super) fn transaction_payload(mutations: &[Mutation]) -> Result<Vec<u8>> {
     let mut payload = Vec::with_capacity(TRANSACTION_MAGIC.len() + 128);
@@ -187,10 +187,10 @@ impl HmsCore {
     }
 
     /// [`Self::commit`] of a batch whose journal payload the caller built with
-    /// [`transaction_payload`] already (a document batch serializes once, where its size is
-    /// checked).
+    /// [`HmsCore::transaction_payload`] already (a document batch serializes once, where its
+    /// size is checked).
     pub(super) fn commit_serialized(&self, mutations: &[Mutation], payload: &[u8]) -> Result<()> {
-        debug_assert!(payload.starts_with(TRANSACTION_MAGIC));
+        debug_assert!(payload.starts_with(crate::core::format::TRANSACTION_MAGIC_PREFIX));
         self.validate_transaction(mutations)?;
         self.commit_payload(mutations, payload, |payload| {
             self.arena_write(payload).map(|_| ())
@@ -203,7 +203,7 @@ impl HmsCore {
         append: impl FnOnce(&[u8]) -> Result<()>,
     ) -> Result<()> {
         self.validate_transaction(mutations)?;
-        let payload = transaction_payload(mutations)?;
+        let payload = self.transaction_payload(mutations)?;
         self.commit_payload(mutations, &payload, append)
     }
 
@@ -1206,9 +1206,7 @@ mod tests {
             paused_rx.recv_timeout(Duration::from_secs(10))?;
             if after_append {
                 let (payload, _) = core.arena_read_frame(checkpoint.1)?;
-                assert!(payload.starts_with(TRANSACTION_MAGIC));
-                let decoded: Vec<Mutation> =
-                    serde_json::from_slice(&payload[TRANSACTION_MAGIC.len()..])?;
+                let decoded = crate::core::engine::journal::decode(&payload)?;
                 assert_eq!(decoded.len(), 2);
                 assert!(decoded.iter().all(|mutation| matches!(mutation,
                     Mutation::Document(document) if document.version == "new")));
@@ -1302,7 +1300,7 @@ mod tests {
             let before = current(&core, "old")?;
             let checkpoint = core.arena.checkpoint();
             let mutations = replacements(&core)?;
-            let expected = [TRANSACTION_MAGIC, &serde_json::to_vec(&mutations)?].concat();
+            let expected = core.transaction_payload(&mutations)?;
             let revision = core.revision.load(std::sync::atomic::Ordering::Acquire);
             assert!(core
                 .commit_with_append(&mutations, |payload| {
@@ -1411,7 +1409,7 @@ mod tests {
                     output_relation: "rr".into(),
                 }),
             ];
-            let expected = [TRANSACTION_MAGIC, &serde_json::to_vec(&mutations)?].concat();
+            let expected = core.transaction_payload(&mutations)?;
             let checkpoint = core.arena.checkpoint();
             core.commit_with_append(&mutations, |payload| {
                 assert_eq!(payload, expected);
@@ -1438,9 +1436,10 @@ mod tests {
                 serde_json::to_value(core.search_documents("needle", &options)?)?,
                 before
             );
+            // The payload, in either journal format, reads back as these mutations.
             assert_eq!(
                 serde_json::to_vec(&mutations)?,
-                &expected[TRANSACTION_MAGIC.len()..]
+                &*crate::core::engine::journal::payload_json(&expected).unwrap()?
             );
         }
         Ok(())
@@ -1459,7 +1458,7 @@ mod tests {
                 };
                 count
             ];
-            let expected = [TRANSACTION_MAGIC, &serde_json::to_vec(&mutations)?].concat();
+            let expected = core.transaction_payload(&mutations)?;
             let called = std::cell::Cell::new(false);
             let error = core
                 .commit_with_append(&mutations, |payload| {

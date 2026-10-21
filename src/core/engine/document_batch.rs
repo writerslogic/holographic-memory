@@ -8,7 +8,8 @@ use anyhow::{ensure, Result};
 use rayon::prelude::*;
 use serde::Serialize;
 
-use super::mutation::{transaction_payload, Mutation, TRANSACTION_MAGIC};
+use super::mutation::{Mutation, TRANSACTION_MAGIC};
+use super::HmsCore;
 use crate::core::documents::{
     chunk_spans, BatchTooLarge, DocumentInput, MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
 };
@@ -58,6 +59,9 @@ fn add_size(total: &mut usize, size: usize, limit: usize, message: &'static str)
     Ok(())
 }
 
+/// Per input: its serialized metadata size, if it has metadata, and its chunk spans.
+type Measured = (Option<Result<usize>>, Result<Vec<(u32, u32)>>);
+
 fn source_sizes(input: &DocumentInput) -> [usize; 4] {
     [
         input.id.len(),
@@ -93,7 +97,7 @@ pub(super) fn validate_inputs(
     // The per-input measures (metadata size, chunk spans) are computed in parallel; the
     // budgets then fold in input order, so the first input over a limit is the one reported,
     // as it is when everything runs serially.
-    let measured: Vec<(Option<Result<usize>>, Result<Vec<(u32, u32)>>)> = inputs[..measured_len]
+    let measured: Vec<Measured> = inputs[..measured_len]
         .par_iter()
         .map(|input| {
             let metadata = input
@@ -163,11 +167,11 @@ pub(super) fn validate_inputs(
     Ok(spans)
 }
 
-/// The journal payload of a prepared document batch, serialized once (in parallel for a
-/// large batch) and checked against the transaction limit; `HmsCore::commit_serialized`
-/// appends it as is.
-pub(super) fn serialize_transaction(mutations: &[Mutation]) -> Result<Vec<u8>> {
-    let payload = transaction_payload(mutations)?;
+/// The journal payload of a prepared document batch in the store's format, serialized once
+/// and checked against the transaction limit; `HmsCore::commit_serialized` appends it as is.
+pub(super) fn serialize_transaction(core: &HmsCore, mutations: &[Mutation]) -> Result<Vec<u8>> {
+    let payload = core.transaction_payload(mutations)?;
+    // Both magics are the same length.
     if payload.len() - TRANSACTION_MAGIC.len() > MAX_TRANSACTION_BYTES {
         return Err(BatchTooLarge("document batch size limit exceeded").into());
     }

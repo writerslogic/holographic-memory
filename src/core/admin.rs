@@ -19,9 +19,6 @@ use super::store_lock::{StoreLock, LOCK_FILE};
 use super::{HmsConfig, HmsCore};
 
 const ARENA_DIRECTORY: &str = "vectors_data.bin";
-/// Mirrors `engine::mutation::TRANSACTION_MAGIC` (private to the engine); the
-/// `verify_cross_checks_logged_documents` test pins the two together.
-const TRANSACTION_MAGIC: &[u8] = b"HMS-TXN-2\0";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -269,13 +266,20 @@ fn live_document_ids(arena_path: &Path) -> Result<BTreeSet<String>> {
             } else {
                 payload.to_vec()
             };
-            let json = decoded.strip_prefix(TRANSACTION_MAGIC).with_context(|| {
-                format!(
-                    "frame at byte {offset} of {} is not a transaction frame",
-                    segment_path.display()
-                )
-            })?;
-            let mutations: Vec<Value> = serde_json::from_slice(json).with_context(|| {
+            let json = super::engine::journal::payload_json(&decoded)
+                .with_context(|| {
+                    format!(
+                        "frame at byte {offset} of {} is not a transaction frame",
+                        segment_path.display()
+                    )
+                })?
+                .with_context(|| {
+                    format!(
+                        "frame at byte {offset} of {} is not a transaction",
+                        segment_path.display()
+                    )
+                })?;
+            let mutations: Vec<Value> = serde_json::from_slice(&json).with_context(|| {
                 format!(
                     "frame at byte {offset} of {} is not a transaction",
                     segment_path.display()

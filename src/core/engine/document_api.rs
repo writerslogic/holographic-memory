@@ -121,7 +121,7 @@ impl HmsCore {
                 .map(|document| Mutation::Document(Arc::new(document)))
             })
             .collect::<Result<Vec<_>>>()?;
-        let payload = super::document_batch::serialize_transaction(&mutations)?;
+        let payload = super::document_batch::serialize_transaction(self, &mutations)?;
         let counts = mutations
             .iter()
             .map(|mutation| match mutation {
