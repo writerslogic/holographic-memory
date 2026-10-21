@@ -202,7 +202,7 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
     for (system, build_id), st in state.items():
         entry = results["systems"].setdefault(system, {"display": registry.SYSTEMS[system]["display"], "builds": {}})
         entry["builds"][build_id] = {"build_runs": st["builds"], "serve_rounds": st["serves"],
-                                      "params": _adapter_class(system).BUILDS[build_id] if system != registry.HMS else HMS_ANN_BUILD}
+                                      "params": _adapter_class(system).BUILDS[build_id] if system != registry.HMS else HMS_ANN_BUILDS[meta["metric"]]}
         if "ops" in st:
             entry["ops"] = st["ops"]
     _attach_versions_and_footprints(results)
@@ -213,10 +213,30 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
     return out_path
 
 
-HMS_ANN_BUILD = {"index": "vertex", "degree": 64, "build_ef": 500, "residual": True, "residual_bits": 8, "vertex_bits": 4,
-                 "id_bytes": 3, "align_rows": True, "reorder": True, "rerank": 64, "quantized_search": True,
-                 "source": "accepted configuration in benchmarks/results/qgraph_pool_paired_x86_glove_v4.json (tuned on a train holdout, not on these queries); "
-                           "quantized construction search per benchmarks/results/ann_modal_confirm_v1.json (equal recall, 2.3x faster build)"}
+# HMS configuration per dataset metric, each tuned on a train holdout (never on the benchmark queries).
+HMS_ANN_BUILDS = {
+    "angular": {"index": "vertex", "degree": 64, "build_ef": 500, "residual": True, "residual_bits": 8, "vertex_bits": 4,
+                "id_bytes": 3, "align_rows": True, "reorder": True, "rerank": "64", "quantized_search": True,
+                "ef": "64,96,128,192,256,384,512,736,1024",
+                "source": "accepted configuration in benchmarks/results/qgraph_pool_paired_x86_glove_v4.json (tuned on a train holdout, not on these queries); "
+                          "quantized construction search per benchmarks/results/ann_modal_confirm_v1.json (equal recall, 2.3x faster build)"},
+    # 8-bit vertex codes: with 4-bit codes the traversal misses true SIFT neighbours (recall stops
+    # at 0.990 even re-ranking 128 candidates; 8-bit reaches 0.9999). Degree and build_ef by the
+    # fewest estimates per query at recall 0.99 over degree {32, 48, 64} x build_ef {200, 500}.
+    "euclidean": {"index": "vertex", "degree": 64, "build_ef": 500, "residual": True, "residual_bits": 8, "vertex_bits": 8,
+                  "id_bytes": 3, "align_rows": True, "reorder": True, "rerank": "32,64", "quantized_search": True,
+                  "ef": "10,16,24,32,48,64,96,128,192,256",
+                  "source": "SIFT-1M train-holdout sweeps in benchmarks/results/qgraph_l2_sweep_m4_sift1m_v1.json (4-bit and 8-bit codes, degree x build_ef)"},
+}
+
+
+def _hms_ann_args(build):
+    """`public-bench ann-qgraph` arguments of one HMS_ANN_BUILDS entry."""
+    return ["--index", build["index"], "--degree", str(build["degree"]), "--build-ef", str(build["build_ef"]),
+            *(["--residual", "--residual-bits", str(build["residual_bits"])] if build["residual"] else []),
+            "--vertex-bits", str(build["vertex_bits"]), "--id-bytes", str(build["id_bytes"]),
+            *(["--align-rows"] if build["align_rows"] else []), *(["--reorder"] if build["reorder"] else []),
+            "--rerank", build["rerank"], *(["--quantized-search"] if build["quantized_search"] else []), "--ef", build["ef"]]
 
 
 def _hms_ann_round(directory, meta, threads, cache, fresh):
@@ -226,10 +246,8 @@ def _hms_ann_round(directory, meta, threads, cache, fresh):
     out = WORK / "hms-ann-out.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
-    efs = "64,96,128,192,256,384,512,736,1024"
-    cmd = [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--index", "vertex", "--metric", meta["metric"],
-           "--degree", "64", "--build-ef", "500", "--residual", "--residual-bits", "8", "--vertex-bits", "4", "--id-bytes", "3",
-           "--align-rows", "--reorder", "--rerank", "64", "--quantized-search", "--ef", efs, "--repeats", "2", "--latency",
+    cmd = [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--metric", meta["metric"],
+           *_hms_ann_args(HMS_ANN_BUILDS[meta["metric"]]), "--repeats", "2", "--latency",
            "--max-load", "1000000", "--max-wait-secs", "0", "--graph-cache", str(cache)]
     stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
     raw = json.loads(out.read_text())

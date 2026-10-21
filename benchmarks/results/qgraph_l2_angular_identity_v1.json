@@ -1,0 +1,421 @@
+{
+ "description": "Angular results before (main 15b87db) and after the Euclidean change, same machine: graph structure hash, index bytes, and per sweep row recall@10 and estimates per query (deterministic). glove-100 100k (harness config with quantized search; and exact construction, 8-bit), nytimes-256 (dimension >= 128: construction bounds active), and the edge index on glove 20k.",
+ "all_identical": true,
+ "runs": {
+  "angular": {
+   "build_params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 500,
+    "code_bits": 0,
+    "degree": 64,
+    "fuse": false,
+    "graph_cache": null,
+    "id_bytes": 3,
+    "index": "vertex",
+    "neighbour_cap": 0,
+    "quantized_search": true,
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "dataset": "glove-100-angular",
+   "n_queries": 1000,
+   "graph_hash": [
+    "cca5e7d9b3683ed5",
+    "cca5e7d9b3683ed5"
+   ],
+   "index_bytes": [
+    40034272,
+    40034272
+   ],
+   "sweep_identical": true,
+   "sweep_before": [
+    [
+     {
+      "ef": 16,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.6917,
+     1149.705
+    ],
+    [
+     {
+      "ef": 64,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.7995,
+     3229.459
+    ],
+    [
+     {
+      "ef": 128,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8223,
+     5726.873
+    ],
+    [
+     {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8296,
+     10166.896
+    ],
+    [
+     {
+      "ef": 512,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8307,
+     17635.333
+    ],
+    [
+     {
+      "ef": 16,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.7521,
+     1165.705
+    ],
+    [
+     {
+      "ef": 64,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.9261,
+     3293.459
+    ],
+    [
+     {
+      "ef": 128,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.9721,
+     5790.873
+    ],
+    [
+     {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.9919,
+     10230.896
+    ],
+    [
+     {
+      "ef": 512,
+      "patience": 0,
+      "rerank": 64,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.9975,
+     17699.333
+    ]
+   ]
+  },
+  "glove-exact": {
+   "build_params": {
+    "align_rows": false,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": null,
+    "id_bytes": 4,
+    "index": "vertex",
+    "neighbour_cap": 0,
+    "quantized_search": false,
+    "reorder": false,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 8
+   },
+   "dataset": "glove-100-angular",
+   "n_queries": 1000,
+   "graph_hash": [
+    "6fca3019e955959b",
+    "6fca3019e955959b"
+   ],
+   "index_bytes": [
+    36432176,
+    36432176
+   ],
+   "sweep_identical": true,
+   "sweep_before": [
+    [
+     {
+      "ef": 16,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.6748,
+     643.682
+    ],
+    [
+     {
+      "ef": 64,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8501,
+     1703.514
+    ],
+    [
+     {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.9525,
+     5331.012
+    ],
+    [
+     {
+      "ef": 16,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.6773,
+     659.682
+    ],
+    [
+     {
+      "ef": 64,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8569,
+     1735.514
+    ],
+    [
+     {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.9639,
+     5363.012
+    ]
+   ]
+  },
+  "nyt": {
+   "build_params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 128,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": null,
+    "id_bytes": 3,
+    "index": "vertex",
+    "neighbour_cap": 0,
+    "quantized_search": false,
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 4
+   },
+   "dataset": "nytimes-256-angular",
+   "n_queries": 500,
+   "graph_hash": [
+    "bd2aed22bd18f4a9",
+    "bd2aed22bd18f4a9"
+   ],
+   "index_bytes": [
+    143949336,
+    143949336
+   ],
+   "sweep_identical": true,
+   "sweep_before": [
+    [
+     {
+      "ef": 16,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.6426,
+     634.928
+    ],
+    [
+     {
+      "ef": 64,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.7796,
+     1629.464
+    ],
+    [
+     {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8308,
+     5142.492
+    ],
+    [
+     {
+      "ef": 16,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.6794,
+     650.9
+    ],
+    [
+     {
+      "ef": 64,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8316,
+     1661.404
+    ],
+    [
+     {
+      "ef": 256,
+      "patience": 0,
+      "rerank": 32,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8922,
+     5174.432
+    ]
+   ]
+  },
+  "edge": {
+   "build_params": {
+    "align_rows": false,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 128,
+    "code_bits": 0,
+    "degree": 32,
+    "fuse": false,
+    "graph_cache": null,
+    "id_bytes": 4,
+    "index": "edge",
+    "neighbour_cap": 0,
+    "quantized_search": false,
+    "reorder": false,
+    "residual": false,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 8
+   },
+   "dataset": "glove-100-angular",
+   "n_queries": 200,
+   "graph_hash": [
+    null,
+    null
+   ],
+   "index_bytes": [
+    28559624,
+    28559624
+   ],
+   "sweep_identical": true,
+   "sweep_before": [
+    [
+     {
+      "ef": 16,
+      "max_exact": 0,
+      "patience": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.722,
+     162.72
+    ],
+    [
+     {
+      "ef": 64,
+      "max_exact": 0,
+      "patience": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.8915,
+     400.775
+    ],
+    [
+     {
+      "ef": 256,
+      "max_exact": 0,
+      "patience": 0,
+      "screen": false,
+      "screen_sigmas": 1.0
+     },
+     0.9655,
+     1016.84
+    ]
+   ]
+  }
+ }
+}

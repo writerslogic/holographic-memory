@@ -1,0 +1,2872 @@
+{
+ "description": "Centering A/B of the Euclidean vertex codes (code of x - mean vs code of x) on SIFT 100k (first 100,000 train vectors), train holdout 2,000, one cached d64e500 graph, 4-bit codes + 8-bit residual, 3 interleaved rounds x 3 repeats under the bench lock, Apple M4.",
+ "decision": "Centering kept (the vertex index's existing behaviour): traversal recall without re-rank is +0.012 at every ef (0.7573 vs 0.7448 at ef 64), with re-rank 64 recall is equal within 0.001; QPS differed by 0-45% between rounds at load 3-7 with equal estimate counts, so it is not used.",
+ "raw": {
+  "on": [
+   {
+    "build": {
+     "build_secs": 0.099188167,
+     "graph_hash": "c9f92c10ee277700",
+     "load_1m_after_build": 2.96,
+     "load_1m_before_build": 2.96,
+     "load_gate_met": true,
+     "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 500,
+      "code_bits": 0,
+      "degree": 64,
+      "fuse": false,
+      "graph_cache": "sift100k-d64e500.graph",
+      "id_bytes": 3,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 4
+     },
+     "threads": 10
+    },
+    "dataset": {
+     "dim": 128,
+     "kind": "ann",
+     "metric": "euclidean",
+     "n_neighbors": 100,
+     "n_test": 10000,
+     "n_train": 100000,
+     "name": "sift-128-euclidean",
+     "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+     "source_sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "subset_of": "sift-128-euclidean",
+     "test_sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+     "train_sha256": "d0ad618c42429e9e2261e37e7ecaf042af58e47117ad62d5935457e129d0ab21",
+     "truth": "exact, recomputed by hmsbench.data"
+    },
+    "environment": {
+     "arch": "aarch64",
+     "cpu": "Apple M4",
+     "hms_version": "0.6.1",
+     "load_average": "{ 3.05 4.83 5.23 }",
+     "os": "macos",
+     "rayon_threads": 10
+    },
+    "holdout": {
+     "n_queries": 2000,
+     "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read."
+    },
+    "index_bytes": 39551484,
+    "max_load": 1000000.0,
+    "n_queries": 2000,
+    "notes": [
+     "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+     "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+     "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+    ],
+    "paired_sync": false,
+    "repeats": 3,
+    "residual_bytes": 12936000,
+    "rss_bytes": {
+     "after_build": 201146368,
+     "end": 201342976
+    },
+    "sweep": [
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.96,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 744.957,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       80633.64498505899,
+       81925.38080657912,
+       83667.27382612828
+      ],
+      "qps_single_thread": 81925.38080657912,
+      "recall_at_10": 0.7516,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.96,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1165.3685,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       49213.96077032152,
+       42918.454935622314,
+       47873.94789519196
+      ],
+      "qps_single_thread": 47873.94789519196,
+      "recall_at_10": 0.756,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.96,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1854.1665,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       26791.784299344607,
+       24133.37298929183,
+       27105.519850734236
+      ],
+      "qps_single_thread": 26791.784299344607,
+      "recall_at_10": 0.7573,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.96,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2433.9415,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       18918.865537038862,
+       17698.103433185177,
+       18926.10139997602
+      ],
+      "qps_single_thread": 18918.865537038862,
+      "recall_at_10": 0.75755,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.96,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2944.9715,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       15054.176216659702,
+       14752.349542170052,
+       15156.021771625276
+      ],
+      "qps_single_thread": 15054.176216659702,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.96,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3833.4735,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       10816.9891826809,
+       11171.475870659446,
+       11337.482852057186
+      ],
+      "qps_single_thread": 11171.475870659446,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4603.87,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       8239.92462083997,
+       8811.01743012209,
+       9140.689493634367
+      ],
+      "qps_single_thread": 8811.01743012209,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       2.88
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5926.7025,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6309.319930234695,
+       6396.038733655838,
+       6497.303618998116
+      ],
+      "qps_single_thread": 6396.038733655838,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 760.957,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       70357.19468275501,
+       73879.57105373287,
+       77563.09777394685
+      ],
+      "qps_single_thread": 73879.57105373287,
+      "recall_at_10": 0.88355,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1197.3685,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       43744.810361763244,
+       43620.46167809399,
+       44209.153505233255
+      ],
+      "qps_single_thread": 43744.810361763244,
+      "recall_at_10": 0.97335,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1918.1665,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       25253.57461507649,
+       24128.108190437124,
+       24107.28958874386
+      ],
+      "qps_single_thread": 24128.108190437124,
+      "recall_at_10": 0.9948,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2497.9415,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       18357.11477665775,
+       17614.93095096794,
+       18112.264287784972
+      ],
+      "qps_single_thread": 18112.264287784972,
+      "recall_at_10": 0.9954,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3008.9715,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       15290.52958038192,
+       14254.384370671924,
+       14797.195191651423
+      ],
+      "qps_single_thread": 14797.195191651423,
+      "recall_at_10": 0.9956,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3897.4735,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       10859.0553632812,
+       10586.363201649068,
+       10790.36505213114
+      ],
+      "qps_single_thread": 10790.36505213114,
+      "recall_at_10": 0.9957,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4667.87,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       8649.331244519837,
+       8629.12041740367,
+       8732.845858017978
+      ],
+      "qps_single_thread": 8649.331244519837,
+      "recall_at_10": 0.9957,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       2.88,
+       2.88,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5990.7025,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       5974.511985057745,
+       6271.619939831646,
+       6261.980107242171
+      ],
+      "qps_single_thread": 6261.980107242171,
+      "recall_at_10": 0.99575,
+      "screened_per_query": 0.0
+     }
+    ],
+    "system": "hms qgraph-vertex"
+   },
+   {
+    "build": {
+     "build_secs": 0.099854041,
+     "graph_hash": "c9f92c10ee277700",
+     "load_1m_after_build": 3.95,
+     "load_1m_before_build": 3.95,
+     "load_gate_met": true,
+     "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 500,
+      "code_bits": 0,
+      "degree": 64,
+      "fuse": false,
+      "graph_cache": "sift100k-d64e500.graph",
+      "id_bytes": 3,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 4
+     },
+     "threads": 10
+    },
+    "dataset": {
+     "dim": 128,
+     "kind": "ann",
+     "metric": "euclidean",
+     "n_neighbors": 100,
+     "n_test": 10000,
+     "n_train": 100000,
+     "name": "sift-128-euclidean",
+     "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+     "source_sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "subset_of": "sift-128-euclidean",
+     "test_sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+     "train_sha256": "d0ad618c42429e9e2261e37e7ecaf042af58e47117ad62d5935457e129d0ab21",
+     "truth": "exact, recomputed by hmsbench.data"
+    },
+    "environment": {
+     "arch": "aarch64",
+     "cpu": "Apple M4",
+     "hms_version": "0.6.1",
+     "load_average": "{ 4.03 3.87 4.33 }",
+     "os": "macos",
+     "rayon_threads": 10
+    },
+    "holdout": {
+     "n_queries": 2000,
+     "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read."
+    },
+    "index_bytes": 39551484,
+    "max_load": 1000000.0,
+    "n_queries": 2000,
+    "notes": [
+     "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+     "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+     "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+    ],
+    "paired_sync": false,
+    "repeats": 3,
+    "residual_bytes": 12936000,
+    "rss_bytes": {
+     "after_build": 200998912,
+     "end": 201195520
+    },
+    "sweep": [
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 744.957,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       72914.97443163507,
+       85475.25781902016,
+       80019.2046091062
+      ],
+      "qps_single_thread": 80019.2046091062,
+      "recall_at_10": 0.7516,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1165.3685,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       41267.673603404946,
+       47028.485176985945,
+       46061.19229396253
+      ],
+      "qps_single_thread": 46061.19229396253,
+      "recall_at_10": 0.756,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1854.1665,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       23043.266613475127,
+       27165.393223209627,
+       24719.790972413914
+      ],
+      "qps_single_thread": 24719.790972413914,
+      "recall_at_10": 0.7573,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2433.9415,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       16845.36212773971,
+       20365.42351471428,
+       18281.201440558674
+      ],
+      "qps_single_thread": 18281.201440558674,
+      "recall_at_10": 0.75755,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2944.9715,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       13171.199468009985,
+       16012.473717025563,
+       14808.461765332868
+      ],
+      "qps_single_thread": 14808.461765332868,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3833.4735,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       9736.541361436237,
+       11457.367590625645,
+       10737.102056155045
+      ],
+      "qps_single_thread": 10737.102056155045,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4603.87,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       7875.8942728454,
+       9104.096208738427,
+       7903.610194071686
+      ],
+      "qps_single_thread": 7903.610194071686,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5926.7025,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       5869.697838109872,
+       6491.555148889919,
+       5492.313231643575
+      ],
+      "qps_single_thread": 5869.697838109872,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 760.957,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       73245.6521838649,
+       78393.96786639097,
+       67680.08112946685
+      ],
+      "qps_single_thread": 73245.6521838649,
+      "recall_at_10": 0.88355,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1197.3685,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       41076.899941149124,
+       44464.61754737438,
+       34636.78302010684
+      ],
+      "qps_single_thread": 41076.899941149124,
+      "recall_at_10": 0.97335,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1918.1665,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       22671.72057104396,
+       24605.64320338556,
+       20794.325993667524
+      ],
+      "qps_single_thread": 22671.72057104396,
+      "recall_at_10": 0.9948,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2497.9415,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       16891.885899837773,
+       18587.58361124946,
+       15234.927301821554
+      ],
+      "qps_single_thread": 16891.885899837773,
+      "recall_at_10": 0.9954,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3008.9715,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       13955.98753244645,
+       14987.415217316173,
+       12617.308081296875
+      ],
+      "qps_single_thread": 13955.98753244645,
+      "recall_at_10": 0.9956,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3897.4735,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       10223.794621387402,
+       10842.770139540164,
+       7849.945682104604
+      ],
+      "qps_single_thread": 10223.794621387402,
+      "recall_at_10": 0.9957,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4667.87,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       8440.366286406925,
+       8471.982623963639,
+       6633.653185977783
+      ],
+      "qps_single_thread": 8440.366286406925,
+      "recall_at_10": 0.9957,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.95,
+       3.95,
+       3.95
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5990.7025,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6249.761552066284,
+       5803.460022865633,
+       4868.244018297295
+      ],
+      "qps_single_thread": 5803.460022865633,
+      "recall_at_10": 0.99575,
+      "screened_per_query": 0.0
+     }
+    ],
+    "system": "hms qgraph-vertex"
+   },
+   {
+    "build": {
+     "build_secs": 0.1257025,
+     "graph_hash": "c9f92c10ee277700",
+     "load_1m_after_build": 7.39,
+     "load_1m_before_build": 7.39,
+     "load_gate_met": true,
+     "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 500,
+      "code_bits": 0,
+      "degree": 64,
+      "fuse": false,
+      "graph_cache": "sift100k-d64e500.graph",
+      "id_bytes": 3,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 4
+     },
+     "threads": 10
+    },
+    "dataset": {
+     "dim": 128,
+     "kind": "ann",
+     "metric": "euclidean",
+     "n_neighbors": 100,
+     "n_test": 10000,
+     "n_train": 100000,
+     "name": "sift-128-euclidean",
+     "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+     "source_sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "subset_of": "sift-128-euclidean",
+     "test_sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+     "train_sha256": "d0ad618c42429e9e2261e37e7ecaf042af58e47117ad62d5935457e129d0ab21",
+     "truth": "exact, recomputed by hmsbench.data"
+    },
+    "environment": {
+     "arch": "aarch64",
+     "cpu": "Apple M4",
+     "hms_version": "0.6.1",
+     "load_average": "{ 7.01 4.75 4.62 }",
+     "os": "macos",
+     "rayon_threads": 10
+    },
+    "holdout": {
+     "n_queries": 2000,
+     "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read."
+    },
+    "index_bytes": 39551484,
+    "max_load": 1000000.0,
+    "n_queries": 2000,
+    "notes": [
+     "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+     "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+     "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+    ],
+    "paired_sync": false,
+    "repeats": 3,
+    "residual_bytes": 12936000,
+    "rss_bytes": {
+     "after_build": 200572928,
+     "end": 200949760
+    },
+    "sweep": [
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.39,
+       7.36,
+       7.36
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 744.957,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       50251.414106200085,
+       76083.83708441867,
+       81621.26939275449
+      ],
+      "qps_single_thread": 76083.83708441867,
+      "recall_at_10": 0.7516,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.39,
+       7.36,
+       7.36
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1165.3685,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       31085.344814187356,
+       40292.15194702355,
+       47802.00409902185
+      ],
+      "qps_single_thread": 40292.15194702355,
+      "recall_at_10": 0.756,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.39,
+       7.36,
+       7.36
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1854.1665,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       19036.431427518768,
+       23339.02708348224,
+       26853.928058326732
+      ],
+      "qps_single_thread": 23339.02708348224,
+      "recall_at_10": 0.7573,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.39,
+       7.36,
+       7.36
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2433.9415,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       13350.07290074309,
+       16420.411803402516,
+       18494.67956155181
+      ],
+      "qps_single_thread": 16420.411803402516,
+      "recall_at_10": 0.75755,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.39,
+       7.36,
+       7.36
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2944.9715,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       11301.37445903499,
+       13311.343703473527,
+       13884.357188973043
+      ],
+      "qps_single_thread": 13311.343703473527,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.39,
+       7.36,
+       7.36
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3833.4735,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       8760.956227358432,
+       9262.23230718775,
+       10619.694539991311
+      ],
+      "qps_single_thread": 9262.23230718775,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.39,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4603.87,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6714.87199407622,
+       7648.129946377851,
+       8385.146551398851
+      ],
+      "qps_single_thread": 7648.129946377851,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5926.7025,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       4926.750514426039,
+       5894.513270042156,
+       5653.9739662768725
+      ],
+      "qps_single_thread": 5653.9739662768725,
+      "recall_at_10": 0.7575,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 760.957,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       56898.801924601976,
+       74294.09189978574,
+       72279.1420465839
+      ],
+      "qps_single_thread": 72279.1420465839,
+      "recall_at_10": 0.88355,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1197.3685,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       33416.08492604419,
+       40751.38794642814,
+       41974.25928549317
+      ],
+      "qps_single_thread": 40751.38794642814,
+      "recall_at_10": 0.97335,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1918.1665,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       17054.036020102343,
+       23052.607098291926,
+       21058.237946885816
+      ],
+      "qps_single_thread": 21058.237946885816,
+      "recall_at_10": 0.9948,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2497.9415,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       12315.498439010571,
+       17590.110839685927,
+       16628.772603937497
+      ],
+      "qps_single_thread": 16628.772603937497,
+      "recall_at_10": 0.9954,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3008.9715,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       10408.51918143325,
+       14035.851072602196,
+       12914.724076920096
+      ],
+      "qps_single_thread": 12914.724076920096,
+      "recall_at_10": 0.9956,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3897.4735,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       8632.972402713815,
+       10547.883435340156,
+       9346.258429886997
+      ],
+      "qps_single_thread": 9346.258429886997,
+      "recall_at_10": 0.9957,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4667.87,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       7045.610928393564,
+       8334.968480504032,
+       7425.895356540108
+      ],
+      "qps_single_thread": 7425.895356540108,
+      "recall_at_10": 0.9957,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.36,
+       7.36,
+       7.01
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5990.7025,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       5094.333791071112,
+       6152.16613924659,
+       5558.354681213518
+      ],
+      "qps_single_thread": 5558.354681213518,
+      "recall_at_10": 0.99575,
+      "screened_per_query": 0.0
+     }
+    ],
+    "system": "hms qgraph-vertex"
+   }
+  ],
+  "off": [
+   {
+    "build": {
+     "build_secs": 0.081387292,
+     "graph_hash": "c9f92c10ee277700",
+     "load_1m_after_build": 3.05,
+     "load_1m_before_build": 3.05,
+     "load_gate_met": true,
+     "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 500,
+      "code_bits": 0,
+      "degree": 64,
+      "fuse": false,
+      "graph_cache": "sift100k-d64e500.graph",
+      "id_bytes": 3,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 4
+     },
+     "threads": 10
+    },
+    "dataset": {
+     "dim": 128,
+     "kind": "ann",
+     "metric": "euclidean",
+     "n_neighbors": 100,
+     "n_test": 10000,
+     "n_train": 100000,
+     "name": "sift-128-euclidean",
+     "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+     "source_sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "subset_of": "sift-128-euclidean",
+     "test_sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+     "train_sha256": "d0ad618c42429e9e2261e37e7ecaf042af58e47117ad62d5935457e129d0ab21",
+     "truth": "exact, recomputed by hmsbench.data"
+    },
+    "environment": {
+     "arch": "aarch64",
+     "cpu": "Apple M4",
+     "hms_version": "0.6.1",
+     "load_average": "{ 2.88 4.74 5.20 }",
+     "os": "macos",
+     "rayon_threads": 10
+    },
+    "holdout": {
+     "n_queries": 2000,
+     "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read."
+    },
+    "index_bytes": 39551484,
+    "max_load": 1000000.0,
+    "n_queries": 2000,
+    "notes": [
+     "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+     "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+     "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+    ],
+    "paired_sync": false,
+    "repeats": 3,
+    "residual_bytes": 12936000,
+    "rss_bytes": {
+     "after_build": 201015296,
+     "end": 201179136
+    },
+    "sweep": [
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 748.6365,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       83182.277782808,
+       86977.47953006763,
+       84204.76493713589
+      ],
+      "qps_single_thread": 84204.76493713589,
+      "recall_at_10": 0.73945,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1169.9105,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       48470.74790364016,
+       49709.201173137146,
+       47685.65539665477
+      ],
+      "qps_single_thread": 48470.74790364016,
+      "recall_at_10": 0.74395,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1865.072,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       27082.5491806906,
+       27651.569485801785,
+       27215.589873688637
+      ],
+      "qps_single_thread": 27215.589873688637,
+      "recall_at_10": 0.74475,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2447.873,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       19034.899021669004,
+       20028.52402305792,
+       19539.645941615538
+      ],
+      "qps_single_thread": 19539.645941615538,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2963.993,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       15755.645690978612,
+       16053.517031802307,
+       15881.734062697737
+      ],
+      "qps_single_thread": 15881.734062697737,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3858.776,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       10941.662268164026,
+       11521.276557442565,
+       11315.521288385253
+      ],
+      "qps_single_thread": 11315.521288385253,
+      "recall_at_10": 0.7447,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4634.003,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       8763.238652016722,
+       9083.049156894347,
+       8971.637290161814
+      ],
+      "qps_single_thread": 8971.637290161814,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5965.1965,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6063.195173558401,
+       6468.367205364038,
+       6503.447287181101
+      ],
+      "qps_single_thread": 6468.367205364038,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 764.6365,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       69622.32707267322,
+       78055.63415324272,
+       75829.62251596848
+      ],
+      "qps_single_thread": 75829.62251596848,
+      "recall_at_10": 0.87675,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1201.9105,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       42352.95303529744,
+       40530.61300505374,
+       44135.94302985437
+      ],
+      "qps_single_thread": 42352.95303529744,
+      "recall_at_10": 0.9732,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1929.072,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       24140.740517215363,
+       23647.42856915842,
+       24451.858111980342
+      ],
+      "qps_single_thread": 24140.740517215363,
+      "recall_at_10": 0.9956,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2511.873,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       17729.428915946835,
+       18127.853539415366,
+       18232.710982230965
+      ],
+      "qps_single_thread": 18127.853539415366,
+      "recall_at_10": 0.99595,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3027.993,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       14282.19902847055,
+       14745.655940819077,
+       14675.613899273923
+      ],
+      "qps_single_thread": 14675.613899273923,
+      "recall_at_10": 0.9961,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3922.776,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       10669.15141245188,
+       10796.748250477369,
+       10757.355939156652
+      ],
+      "qps_single_thread": 10757.355939156652,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4698.003,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       8997.986111239521,
+       8595.854600981891,
+       8680.593231741457
+      ],
+      "qps_single_thread": 8680.593231741457,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       3.05,
+       3.05,
+       3.05
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 6029.1965,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6501.413373134899,
+       6339.820737701351,
+       6237.379870324748
+      ],
+      "qps_single_thread": 6339.820737701351,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     }
+    ],
+    "system": "hms qgraph-vertex"
+   },
+   {
+    "build": {
+     "build_secs": 0.100997666,
+     "graph_hash": "c9f92c10ee277700",
+     "load_1m_after_build": 4.03,
+     "load_1m_before_build": 4.03,
+     "load_gate_met": true,
+     "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 500,
+      "code_bits": 0,
+      "degree": 64,
+      "fuse": false,
+      "graph_cache": "sift100k-d64e500.graph",
+      "id_bytes": 3,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 4
+     },
+     "threads": 10
+    },
+    "dataset": {
+     "dim": 128,
+     "kind": "ann",
+     "metric": "euclidean",
+     "n_neighbors": 100,
+     "n_test": 10000,
+     "n_train": 100000,
+     "name": "sift-128-euclidean",
+     "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+     "source_sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "subset_of": "sift-128-euclidean",
+     "test_sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+     "train_sha256": "d0ad618c42429e9e2261e37e7ecaf042af58e47117ad62d5935457e129d0ab21",
+     "truth": "exact, recomputed by hmsbench.data"
+    },
+    "environment": {
+     "arch": "aarch64",
+     "cpu": "Apple M4",
+     "hms_version": "0.6.1",
+     "load_average": "{ 4.86 4.06 4.39 }",
+     "os": "macos",
+     "rayon_threads": 10
+    },
+    "holdout": {
+     "n_queries": 2000,
+     "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read."
+    },
+    "index_bytes": 39551484,
+    "max_load": 1000000.0,
+    "n_queries": 2000,
+    "notes": [
+     "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+     "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+     "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+    ],
+    "paired_sync": false,
+    "repeats": 3,
+    "residual_bytes": 12936000,
+    "rss_bytes": {
+     "after_build": 200949760,
+     "end": 201146368
+    },
+    "sweep": [
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.67
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 748.6365,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       54475.50304722345,
+       58949.95278698281,
+       52297.77874075421
+      ],
+      "qps_single_thread": 54475.50304722345,
+      "recall_at_10": 0.73945,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.67
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1169.9105,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       30894.83013636206,
+       29958.3952785569,
+       33107.39851365659
+      ],
+      "qps_single_thread": 30894.83013636206,
+      "recall_at_10": 0.74395,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.67
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1865.072,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       17824.484581856486,
+       18515.053974761333,
+       19489.504964917283
+      ],
+      "qps_single_thread": 18515.053974761333,
+      "recall_at_10": 0.74475,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.67
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2447.873,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       13016.596160104133,
+       14575.882840453014,
+       13491.460809235628
+      ],
+      "qps_single_thread": 13491.460809235628,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.67
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2963.993,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       11449.870870932538,
+       11777.210508804936,
+       10879.252067956792
+      ],
+      "qps_single_thread": 11449.870870932538,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.67
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3858.776,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       7909.356152585132,
+       8562.019523545017,
+       7915.539859884337
+      ],
+      "qps_single_thread": 7915.539859884337,
+      "recall_at_10": 0.7447,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.67
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4634.003,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6142.557229867871,
+       6272.480472004156,
+       5866.091084245189
+      ],
+      "qps_single_thread": 6142.557229867871,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5965.1965,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       4488.660664633112,
+       4758.089318053319,
+       4512.786423000448
+      ],
+      "qps_single_thread": 4512.786423000448,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 764.6365,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       56141.07263470222,
+       55311.519594672754,
+       47842.263673928945
+      ],
+      "qps_single_thread": 55311.519594672754,
+      "recall_at_10": 0.87675,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1201.9105,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       28549.08198142962,
+       32568.913786014095,
+       29135.212412742585
+      ],
+      "qps_single_thread": 29135.212412742585,
+      "recall_at_10": 0.9732,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1929.072,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       16486.01878036153,
+       16205.168189510885,
+       17139.619028089677
+      ],
+      "qps_single_thread": 16486.01878036153,
+      "recall_at_10": 0.9956,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2511.873,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       11083.888895252889,
+       11730.073392664553,
+       12342.022116903634
+      ],
+      "qps_single_thread": 11730.073392664553,
+      "recall_at_10": 0.99595,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3027.993,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       10010.21251891392,
+       11011.300765840371,
+       9730.586384256118
+      ],
+      "qps_single_thread": 10010.21251891392,
+      "recall_at_10": 0.9961,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.03,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3922.776,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6869.701637419834,
+       7407.894407873111,
+       7217.999508050026
+      ],
+      "qps_single_thread": 7217.999508050026,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.67,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4698.003,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       5906.41580075141,
+       6391.658466408541,
+       5794.707277783218
+      ],
+      "qps_single_thread": 5906.41580075141,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       4.67,
+       4.67,
+       4.86
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 6029.1965,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       4426.455819821116,
+       4635.774885788762,
+       4521.897852195063
+      ],
+      "qps_single_thread": 4521.897852195063,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     }
+    ],
+    "system": "hms qgraph-vertex"
+   },
+   {
+    "build": {
+     "build_secs": 0.118564166,
+     "graph_hash": "c9f92c10ee277700",
+     "load_1m_after_build": 7.01,
+     "load_1m_before_build": 7.01,
+     "load_gate_met": true,
+     "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 500,
+      "code_bits": 0,
+      "degree": 64,
+      "fuse": false,
+      "graph_cache": "sift100k-d64e500.graph",
+      "id_bytes": 3,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 4
+     },
+     "threads": 10
+    },
+    "dataset": {
+     "dim": 128,
+     "kind": "ann",
+     "metric": "euclidean",
+     "n_neighbors": 100,
+     "n_test": 10000,
+     "n_train": 100000,
+     "name": "sift-128-euclidean",
+     "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+     "source_sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+     "subset_of": "sift-128-euclidean",
+     "test_sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+     "train_sha256": "d0ad618c42429e9e2261e37e7ecaf042af58e47117ad62d5935457e129d0ab21",
+     "truth": "exact, recomputed by hmsbench.data"
+    },
+    "environment": {
+     "arch": "aarch64",
+     "cpu": "Apple M4",
+     "hms_version": "0.6.1",
+     "load_average": "{ 7.24 4.87 4.67 }",
+     "os": "macos",
+     "rayon_threads": 10
+    },
+    "holdout": {
+     "n_queries": 2000,
+     "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read."
+    },
+    "index_bytes": 39551484,
+    "max_load": 1000000.0,
+    "n_queries": 2000,
+    "notes": [
+     "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+     "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+     "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+    ],
+    "paired_sync": false,
+    "repeats": 3,
+    "residual_bytes": 12936000,
+    "rss_bytes": {
+     "after_build": 201048064,
+     "end": 201228288
+    },
+    "sweep": [
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.01,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 748.6365,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       60737.73633736508,
+       44394.25427364064,
+       62748.54305726589
+      ],
+      "qps_single_thread": 60737.73633736508,
+      "recall_at_10": 0.73945,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.01,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1169.9105,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       41297.107455610465,
+       26603.48339360685,
+       35284.6217251262
+      ],
+      "qps_single_thread": 35284.6217251262,
+      "recall_at_10": 0.74395,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.01,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1865.072,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       22979.987303557013,
+       19148.795996951856,
+       19638.761479150664
+      ],
+      "qps_single_thread": 19638.761479150664,
+      "recall_at_10": 0.74475,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.01,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2447.873,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       15236.26212712191,
+       13954.721547590898,
+       14374.097841192335
+      ],
+      "qps_single_thread": 14374.097841192335,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.01,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2963.993,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       11170.7998598221,
+       11115.49555658065,
+       11255.855661930646
+      ],
+      "qps_single_thread": 11170.7998598221,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.01,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3858.776,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       6926.4199276869285,
+       8093.64073622945,
+       8190.969740088203
+      ],
+      "qps_single_thread": 8093.64073622945,
+      "recall_at_10": 0.7447,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4634.003,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       5528.818847993355,
+       6539.799996566605,
+       6340.143968819172
+      ],
+      "qps_single_thread": 6340.143968819172,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5965.1965,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 0,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       4532.6429580234635,
+       4633.901958515883,
+       4620.508499851628
+      ],
+      "qps_single_thread": 4620.508499851628,
+      "recall_at_10": 0.74465,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 764.6365,
+      "params": {
+       "ef": 16,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       46967.788903272776,
+       68363.99190611354,
+       49049.31152914859
+      ],
+      "qps_single_thread": 49049.31152914859,
+      "recall_at_10": 0.87675,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1201.9105,
+      "params": {
+       "ef": 32,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       31529.205897537966,
+       33098.358159253345,
+       27351.596222060773
+      ],
+      "qps_single_thread": 31529.205897537966,
+      "recall_at_10": 0.9732,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1929.072,
+      "params": {
+       "ef": 64,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       18197.12030571162,
+       16126.718334091935,
+       15779.777426239401
+      ],
+      "qps_single_thread": 16126.718334091935,
+      "recall_at_10": 0.9956,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2511.873,
+      "params": {
+       "ef": 96,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       13747.88948415341,
+       11971.265921087845,
+       13620.491059019332
+      ],
+      "qps_single_thread": 13620.491059019332,
+      "recall_at_10": 0.99595,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3027.993,
+      "params": {
+       "ef": 128,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       11383.482041640707,
+       10072.638429126106,
+       11439.171749514877
+      ],
+      "qps_single_thread": 11383.482041640707,
+      "recall_at_10": 0.9961,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.09,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3922.776,
+      "params": {
+       "ef": 192,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       9169.805892402643,
+       7506.808929053453,
+       7382.293937106547
+      ],
+      "qps_single_thread": 7506.808929053453,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.24,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4698.003,
+      "params": {
+       "ef": 256,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       5305.644940934908,
+       6050.726251427389,
+       5997.140125796791
+      ],
+      "qps_single_thread": 5997.140125796791,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     },
+     {
+      "latency_us": null,
+      "load_1m_before_runs": [
+       7.09,
+       7.24,
+       7.24
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 6029.1965,
+      "params": {
+       "ef": 384,
+       "patience": 0,
+       "rerank": 64,
+       "screen": false,
+       "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+       3948.296403183114,
+       4605.921215252415,
+       4327.680414753812
+      ],
+      "qps_single_thread": 4327.680414753812,
+      "recall_at_10": 0.99615,
+      "screened_per_query": 0.0
+     }
+    ],
+    "system": "hms qgraph-vertex"
+   }
+  ]
+ }
+}
