@@ -76,8 +76,10 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
   because the two sides measure different things (HMS reports its in-memory index, comparators the
   persisted directory; Python wheels versus statically linked crates).
 * **Durability rows.** Replace/delete cost is one durable commit per operation on a persisted store
-  (SQLite runs with `fullfsync` so macOS flushes the drive cache as Rust's `sync_all` does;
-  libraries that need an explicit save to be durable include that save in the figure).
+  (on macOS every system's commit ends in `fcntl(F_FULLFSYNC)`, which flushes the drive cache:
+  HMS after each journal frame, tantivy through Rust's `sync_all`/`sync_data`, Lucene through the
+  JDK's `FileChannel.force`, and SQLite because it runs with `fullfsync`; libraries that need an
+  explicit save to be durable include that save in the figure).
 * **Hardware classes.** Each file records its class (`hardware.class`) and the table has one
   section per file; rows from different classes are never put side by side. Hosted-runner rows are
   shared virtual machines: read the ratios, not the absolute numbers.

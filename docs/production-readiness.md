@@ -108,6 +108,15 @@ pause depends on outstanding writes and filesystem costs and has no fixed latenc
 Snapshot memory and rebuild costs can still affect serving latency; no throughput improvement
 has been measured for this implementation.
 
+A mutation returns only after its journal frame is synced: `msync(MS_SYNC)` on Linux,
+`msync` followed by `fcntl(F_FULLFSYNC)` on macOS (plain `msync`/`fsync` there leaves data in
+the drive cache), `FlushViewOfFile` and `FlushFileBuffers` on Windows. The per-platform
+guarantee is in [file-format/CRASH-CONSISTENCY.md](file-format/CRASH-CONSISTENCY.md).
+On macOS the drive-cache flush dominates a single-document commit: a replace took 4.6 ms and a
+delete 4.0 ms (median of 7 runs, Apple M4 internal SSD) against 0.51 and 0.23 ms without it
+(`benchmarks/results/durable_commit_macos_v1.json`). Batch APIs commit many documents in one
+transaction and pay the flush once.
+
 Files are flushed before publication; directory entries are synced on Unix. Windows uses file
 flushes and atomic replacement without directory fsync. Power-loss guarantees still depend on
 the filesystem and hardware. The tests exercise process interruption, not a simulated disk

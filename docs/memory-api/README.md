@@ -168,9 +168,11 @@ the store directory, before reopen, after an abort in a child process, and after
 - **Always, before `forget` returns:** the deleted chunks' records in `documents.text` are
   overwritten with zeros and synced. Postings and the memory-API index live in memory and are
   rebuilt from the journal; no file stores terms. A bare `HmsCore::delete_document` zeroes the
-  records too but leaves the fsync to the next `forget`, purge or compaction, like the journal
-  frame that records the delete (syncing every delete costs about 4 ms instead of 60 us;
-  `benchmarks/results/purge_v1.json`). `DELETE /api/v1/documents/{id}?purge=true` purges.
+  records too but leaves their fsync to the next `forget`, purge or compaction (a design that
+  synced the text segment in every delete measured about 4 ms instead of 60 us on macOS;
+  `benchmarks/results/purge_v1.json`, recorded before journal commits used `F_FULLFSYNC`). The
+  journal frame that records the delete is durable when the call returns.
+  `DELETE /api/v1/documents/{id}?purge=true` purges.
 - **Updates:** replacing a document zeroes the old text records in `documents.text` the same
   way (synced by the next `forget`, purge or compaction); the journal keeps the old frame
   until a purge.

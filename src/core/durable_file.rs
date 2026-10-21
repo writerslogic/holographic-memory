@@ -13,6 +13,60 @@ pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Completes the durability of a range of a `MAP_SHARED` mapping of `file` whose `msync`
+/// (memmap2 `flush_range`/`flush`) has just returned.
+///
+/// - macOS: `msync(MS_SYNC)` and `fsync` hand the pages to the drive, whose write cache can
+///   still lose them on power failure. `fcntl(F_FULLFSYNC)` also flushes that cache. A
+///   filesystem that refuses it (some network and FAT volumes) gets `fsync`, as SQLite does,
+///   which is the strongest request such a volume accepts.
+/// - Linux: `msync(MS_SYNC)` on a shared file mapping runs `vfs_fsync_range` with `datasync`,
+///   the same durability point as `fdatasync` of that range (data written, drive cache flushed
+///   on filesystems with write barriers). The arena makes the file length durable when a
+///   segment is created or grown, so a data sync suffices; nothing further is done.
+/// - Windows: memmap2's flush is `FlushViewOfFile` followed by `FlushFileBuffers`; nothing
+///   further is done.
+pub(crate) fn sync_mapped_file(file: &std::fs::File) -> std::io::Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::os::fd::AsRawFd;
+        use std::os::raw::c_int;
+        extern "C" {
+            fn fcntl(fd: c_int, cmd: c_int, ...) -> c_int;
+            fn fsync(fd: c_int) -> c_int;
+        }
+        // <sys/fcntl.h>: "fsync + ask the drive to flush to the media".
+        const F_FULLFSYNC: c_int = 51;
+        let fd = file.as_raw_fd();
+        loop {
+            // SAFETY: `fd` is open for the lifetime of `file`; F_FULLFSYNC takes no argument.
+            if unsafe { fcntl(fd, F_FULLFSYNC) } == 0 {
+                return Ok(());
+            }
+            let error = std::io::Error::last_os_error();
+            if error.kind() != std::io::ErrorKind::Interrupted {
+                tracing::debug!(%error, "F_FULLFSYNC refused; falling back to fsync");
+                break;
+            }
+        }
+        loop {
+            // SAFETY: as above.
+            if unsafe { fsync(fd) } == 0 {
+                return Ok(());
+            }
+            let error = std::io::Error::last_os_error();
+            if error.kind() != std::io::ErrorKind::Interrupted {
+                return Err(error);
+            }
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = file;
+        Ok(())
+    }
+}
+
 /// Overwrites a file with zeros, syncs it, then unlinks it, so the bytes are not left in the
 /// freed blocks of a filesystem that does not zero them. Copy-on-write and wear-levelled
 /// media can still keep prior copies, which no file API controls.
