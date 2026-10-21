@@ -42,3 +42,12 @@ air-gapped install). Link it from the site nav under "Guides"; the install line 
 `pip install holographic-vsa[embed]` (offline packs) or plain `pip install holographic-vsa` (first-use
 download, `HMS_EMBED_OFFLINE=1` to forbid). The `Docs` workflow failure on this PR is pre-existing on main
 (`scripts/docs_openapi.py` crashes on a boolean JSON-schema property), not caused by this change.
+
+## Closed after the merge
+- Main CI for the #132 content (run on a68d600, includes Windows) is green.
+- Default build unchanged: `benchmarks/results/embed_default_build_check.json` (binary sizes, RSS microcheck).
+- `hms-embed fetch granite-embedding-30m-english` re-run: pack sha256 equals the registry pin.
+- Node smoke test (`LocalEmbedder` + `SemanticIndex`, offline, strip=false build) passes. The default strip=true
+  `.node` still failed to dlopen on the dev Mac ("mis-aligned LINKEDIT"); CI platform builds are unaffected.
+- Still open: items 3 (other-model engine runs), LongMemEval store eval, the V38 transport serving-RSS gate
+  proper, and an int8 SIMD kernel.
