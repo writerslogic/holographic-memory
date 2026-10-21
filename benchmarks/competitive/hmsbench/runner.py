@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 
 from . import SCHEMA_VERSION, data, envs, jars, registry, textdata
-from .common import CACHE, RESULTS, ROOT, commit, dir_bytes, hardware, log, run_measured, write_json
+from .common import CACHE, RESULTS, ROOT, commit, dir_bytes, hardware, log, pass_summary, run_measured, write_json
 
 WORK = Path(os.environ.get("HMS_BENCH_WORK", CACHE / "competitive" / "work"))
 WORKER_DIR = Path(__file__).resolve().parent
@@ -315,7 +315,10 @@ def run_text(dataset, spec, systems, out_path=None):
                             "retrieval": "lexical only, OR over the lowercase alphanumeric query word set, top 100; each system's own analyzer and default BM25",
                             "timing": "one query at a time, single client thread; HMS timed inside its process, Python systems inside their worker",
                             "hms_rows": "hms = `--encode lexical` (BM25 index only, like-for-like); hms-eager = default eager encoding (chunk hypervectors at ingest); every build repeat is one cold process",
-                            "interleaving": "each round runs HMS and every comparator once, order rotated per round"},
+                            "interleaving": "each round runs HMS and every comparator once, order rotated per round",
+                            "peak_rss": "wait4 rusage of that phase's own process, forked from a small helper so it never inherits the orchestrator's RSS (Linux)",
+                            "disk": "allocated bytes of the store directory (du); where the filesystem reports sparse files as fully allocated, only non-zero 4 KiB blocks count",
+                            "passes": "per timed pass: queries, total_ns and p50/p90/p99/max ns of the per-query latencies"},
                "facts": registry.FACTS, "timing_boundary": registry.TIMING_BOUNDARY, "not_run": registry.NOT_RUN, "systems": {}, "skipped": {}}
     input_path = folder / "input.json"
     # Every system's serve phase reads the queries alone, so no worker's serving RSS includes
@@ -349,7 +352,9 @@ def run_text(dataset, spec, systems, out_path=None):
                 t0 = time.time_ns()
                 stdout, stderr, wall, peak = _text_cmd(system, "serve", serve_input_path, stores[system], out, threads, t0=t0)
                 body = json.loads(out.read_text())
-                body["quality"] = _quality(body.pop("rows"), qrels) if r == 0 else None
+                rows = body.pop("rows")
+                body["quality"] = _quality(rows, qrels) if r == 0 else None
+                body["passes"] = [pass_summary(ns) for ns in body.pop("passes_ns")]
                 runs[system]["serve_rounds"].append(body | {"peak_rss_bytes": peak, "wall_s": wall})
             except Exception as error:
                 results["skipped"][system] = str(error)[-600:]

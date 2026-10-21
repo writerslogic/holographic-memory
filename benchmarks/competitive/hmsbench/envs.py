@@ -9,15 +9,19 @@ what the benchmark runtime (which also needs numpy) holds.
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 from .common import CACHE, ROOT, dir_bytes, log
 
 REQUIREMENTS = ROOT / "benchmarks/competitive/requirements"
-ENV_ROOT = CACHE / "competitive" / "envs"
+# Source-built packages (hnswlib) compile with -march=native, so an environment is only valid on
+# the CPU that built it; a fleet with mixed CPUs points this at machine-local storage.
+ENV_ROOT = Path(os.environ["HMS_BENCH_ENVS"]) if os.environ.get("HMS_BENCH_ENVS") else CACHE / "competitive" / "envs"
 PYTHON = "3.13"
 
 # Pins: library name -> (requirement lines, importable distributions that report the version).
@@ -87,7 +91,7 @@ def footprint(name):
     """Install size in bytes and number of distributions for `name` alone."""
     lock_file = REQUIREMENTS / f"{name}.footprint.txt"
     if not lock_file.exists() or not lock_file.read_text().strip():
-        return {"bytes": 0, "distributions": 0, "note": "standard library or already-installed dependency"}
+        return {"bytes": 0, "distributions": 0, "ships_with_interpreter": True, "note": "standard library or already-installed dependency"}
     target = ENV_ROOT / f"{name}-footprint"
     shutil.rmtree(target, ignore_errors=True)
     subprocess.run(["uv", "pip", "install", "-q", "--python-version", PYTHON, "--target", str(target), "-r", str(lock_file)], check=True)

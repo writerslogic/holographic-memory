@@ -1,1 +1,5063 @@
-[]
+[
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "hms",
+  "value": 0.4561419499447157,
+  "ci": [
+   0.3383549497121346,
+   0.5719627171884742
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.4561"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "hms-eager",
+  "value": 0.4561419499447157,
+  "ci": [
+   0.3383549497121346,
+   0.5719627171884742
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[0].quality",
+  "text": "0.4561"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "sqlite-fts5",
+  "value": 0.45009623895127726,
+  "ci": [
+   0.32554655664914095,
+   0.5727626155385812
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.4501"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "lucene",
+  "value": 0.46265299364569407,
+  "ci": [
+   0.33417139599958345,
+   0.5770370040492443
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.4627"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "tantivy",
+  "value": 0.4491250108653578,
+  "ci": [
+   0.330732032158942,
+   0.5639818248756597
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.4491"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "whoosh",
+  "value": 0.4401216437164885,
+  "ci": [
+   0.32375533581527266,
+   0.5533866550934479
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[0].quality",
+  "text": "0.4401"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "bm25s",
+  "value": 0.44175557833638,
+  "ci": [
+   0.3274657829342999,
+   0.5567388238726183
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[0].quality",
+  "text": "0.4418"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.9859267230723582,
+  "factor_infinite": false,
+  "ci": [
+   0.5863661209554932,
+   1.7115849053375807
+  ],
+  "verdict": "TIE",
+  "text": "0.99x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "hms",
+  "value": 0.8203333333333334,
+  "ci": [
+   0.7175,
+   0.914
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.8203"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "hms-eager",
+  "value": 0.8203333333333334,
+  "ci": [
+   0.7175,
+   0.914
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[0].quality",
+  "text": "0.8203"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "sqlite-fts5",
+  "value": 0.8391666666666667,
+  "ci": [
+   0.738,
+   0.922
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.8392"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "lucene",
+  "value": 0.8236666666666665,
+  "ci": [
+   0.7241666666666667,
+   0.9173333333333333
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.8237"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "tantivy",
+  "value": 0.8203333333333334,
+  "ci": [
+   0.7175,
+   0.914
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.8203"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "whoosh",
+  "value": 0.8206666666666667,
+  "ci": [
+   0.7188333333333334,
+   0.909
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[0].quality",
+  "text": "0.8207"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "bm25s",
+  "value": 0.8311666666666666,
+  "ci": [
+   0.7254999999999999,
+   0.9175
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[0].quality",
+  "text": "0.8312"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.9775571002979145,
+  "factor_infinite": false,
+  "ci": [
+   0.7781995661605206,
+   1.2384823848238482
+  ],
+  "verdict": "TIE",
+  "text": "0.98x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "hms",
+  "value": 2225.4180373733425,
+  "ci": [
+   2092.1032120709165,
+   2348.516954397966
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "2,225"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "hms-eager",
+  "value": 2153.67826310528,
+  "ci": [
+   2066.9094127757407,
+   2301.1529265358863
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "2,154"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "sqlite-fts5",
+  "value": 32.37267568174836,
+  "ci": [
+   32.102948277561545,
+   32.76881915869885
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "32"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "lucene",
+  "value": 990.8926440241676,
+  "ci": [
+   786.7018052639303,
+   1014.1760149817079
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "991"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "tantivy",
+  "value": 2398.9123473654536,
+  "ci": [
+   2036.5056923495285,
+   2523.35372564303
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "2,399"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "whoosh",
+  "value": 13.600553655426165,
+  "ci": [
+   13.549350454192846,
+   13.671213953815773
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "14"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "bm25s",
+  "value": 1093.5425008123116,
+  "ci": [
+   1031.576711291381,
+   1123.283422144052
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "1,094"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.9276779286318456,
+  "factor_infinite": false,
+  "ci": [
+   0.8290962899138458,
+   1.1532091283714843
+  ],
+  "verdict": "TIE",
+  "text": "0.93x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "hms",
+  "value": 425.0055,
+  "ci": [
+   408.303,
+   444.798
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "425"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "hms-eager",
+  "value": 429.84450000000004,
+  "ci": [
+   417.421,
+   451.76649999999995
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "430"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "sqlite-fts5",
+  "value": 24730.095,
+  "ci": [
+   24565.8635,
+   25005.504
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "24,730"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "lucene",
+  "value": 931.648,
+  "ci": [
+   876.5219999999999,
+   1100.7895
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "932"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "tantivy",
+  "value": 399.576,
+  "ci": [
+   375.91999999999996,
+   456.446
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "400"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "whoosh",
+  "value": 68913.053,
+  "ci": [
+   68291.90400000001,
+   69261.097
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "68,913"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "bm25s",
+  "value": 907.665,
+  "ci": [
+   864.7115,
+   931.258
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "908"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.9401666566667962,
+  "factor_infinite": false,
+  "ci": [
+   0.8451476850165692,
+   1.1179099835171429
+  ],
+  "verdict": "TIE",
+  "text": "0.94x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "hms",
+  "value": 785.917,
+  "ci": [
+   720.5705,
+   1158.225
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "786"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "hms-eager",
+  "value": 783.156,
+  "ci": [
+   764.9359999999999,
+   1164.147
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "783"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "sqlite-fts5",
+  "value": 118222.6085,
+  "ci": [
+   116834.557,
+   119228.648
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "118,223"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "lucene",
+  "value": 2169.96,
+  "ci": [
+   1921.0675,
+   2501.305
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "2,170"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "tantivy",
+  "value": 733.1395,
+  "ci": [
+   696.985,
+   856.8389999999999
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "733"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "whoosh",
+  "value": 131776.856,
+  "ci": [
+   130128.30900000001,
+   132622.15
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "131,777"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "bm25s",
+  "value": 1254.6889999999999,
+  "ci": [
+   1165.847,
+   1627.411
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "1,255"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.9328459621054132,
+  "factor_infinite": false,
+  "ci": [
+   0.6017699497075266,
+   1.1891119605923361
+  ],
+  "verdict": "TIE",
+  "text": "0.93x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 2.515448795,
+  "ci": [
+   2.452041575,
+   2.578856015
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs",
+  "text": "2.52"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "hms-eager",
+  "value": 16.573853896499998,
+  "ci": [
+   16.402460064,
+   16.745247729
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs",
+  "text": "16.57"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "sqlite-fts5",
+  "value": 2.0610938575000546,
+  "ci": [
+   2.032452352000064,
+   2.0897353630000453
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs",
+  "text": "2.06"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "lucene",
+  "value": 4.0917769785,
+  "ci": [
+   4.042061258,
+   4.141492699
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs",
+  "text": "4.09"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "tantivy",
+  "value": 3.476251229000013,
+  "ci": [
+   3.4579393139999866,
+   3.4945631440000398
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs",
+  "text": "3.48"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "whoosh",
+  "value": 41.11348974550003,
+  "ci": [
+   40.822708994000095,
+   41.40427049699997
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs",
+  "text": "41.11"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "bm25s",
+  "value": 5.152338578999888,
+  "ci": [
+   5.13049070399984,
+   5.174186453999937
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs",
+  "text": "5.15"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.8193742053493299,
+  "factor_infinite": false,
+  "ci": [
+   0.7881216865843764,
+   0.8522430387421328
+  ],
+  "verdict": "LOSS",
+  "text": "0.82x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 132.7890625,
+  "ci": [
+   132.38671875,
+   133.19140625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs",
+  "text": "133"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms-eager",
+  "value": 166.75390625,
+  "ci": [
+   165.9453125,
+   167.5625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs",
+  "text": "167"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 120.546875,
+  "ci": [
+   120.5390625,
+   120.5546875
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs",
+  "text": "121"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "lucene",
+  "value": 768.109375,
+  "ci": [
+   764.265625,
+   771.953125
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs",
+  "text": "768"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "tantivy",
+  "value": 244.4921875,
+  "ci": [
+   244.26171875,
+   244.72265625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs",
+  "text": "244"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "whoosh",
+  "value": 536.255859375,
+  "ci": [
+   536.08984375,
+   536.421875
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs",
+  "text": "536"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "bm25s",
+  "value": 236.708984375,
+  "ci": [
+   236.12890625,
+   237.2890625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs",
+  "text": "237"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.9078072601047243,
+  "factor_infinite": false,
+  "ci": [
+   0.9050063055400769,
+   0.9106252397391638
+  ],
+  "verdict": "LOSS",
+  "text": "0.91x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 65.912109375,
+  "ci": [
+   64.90234375,
+   66.77734375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].peak_rss_bytes",
+  "text": "66"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "hms-eager",
+  "value": 74.197265625,
+  "ci": [
+   73.5625,
+   75.1015625
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].peak_rss_bytes",
+  "text": "74"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 25.828125,
+  "ci": [
+   25.05078125,
+   26.359375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].peak_rss_bytes",
+  "text": "26"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "lucene",
+  "value": 438.154296875,
+  "ci": [
+   434.078125,
+   441.490234375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].peak_rss_bytes",
+  "text": "438"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "tantivy",
+  "value": 37.724609375,
+  "ci": [
+   37.06640625,
+   38.5703125
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].peak_rss_bytes",
+  "text": "38"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "whoosh",
+  "value": 141.31640625,
+  "ci": [
+   140.01953125,
+   143.0390625
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].peak_rss_bytes",
+  "text": "141"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "bm25s",
+  "value": 83.640625,
+  "ci": [
+   83.04296875,
+   84.0703125
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].peak_rss_bytes",
+  "text": "84"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.39185705396035203,
+  "factor_infinite": false,
+  "ci": [
+   0.3751389295115531,
+   0.4061390309960879
+  ],
+  "verdict": "LOSS",
+  "text": "0.39x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "hms",
+  "value": 9.793286323547363,
+  "ci": [
+   9.793286323547363,
+   9.793286323547363
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs[0].disk_bytes",
+  "text": "9.8"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "hms-eager",
+  "value": 9.785473823547363,
+  "ci": [
+   9.785473823547363,
+   9.785473823547363
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs[0].disk_bytes",
+  "text": "9.8"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "sqlite-fts5",
+  "value": 63.0390625,
+  "ci": [
+   63.0390625,
+   63.0390625
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs[0].disk_bytes",
+  "text": "63.0"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "lucene",
+  "value": 10.313970565795898,
+  "ci": [
+   10.313970565795898,
+   10.313970565795898
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs[0].disk_bytes",
+  "text": "10.3"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "tantivy",
+  "value": 13.706984519958496,
+  "ci": [
+   13.706984519958496,
+   13.706984519958496
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs[0].disk_bytes",
+  "text": "13.7"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "whoosh",
+  "value": 48.566134452819824,
+  "ci": [
+   48.566134452819824,
+   48.566134452819824
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs[0].disk_bytes",
+  "text": "48.6"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "bm25s",
+  "value": 14.216367721557617,
+  "ci": [
+   14.216367721557617,
+   14.216367721557617
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs[0].disk_bytes",
+  "text": "14.2"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 1.053167468513259,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "1.05x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": 0.619563115,
+  "ci": [
+   0.594086714,
+   0.641814565
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].cold_start_s",
+  "text": "0.62"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "hms-eager",
+  "value": 0.6272474809999999,
+  "ci": [
+   0.591178799,
+   0.649707937
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].cold_start_s",
+  "text": "0.63"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "sqlite-fts5",
+  "value": 0.08885403750000001,
+  "ci": [
+   0.086029671,
+   0.0927522435
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].cold_start_s",
+  "text": "0.09"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "lucene",
+  "value": 0.4474606435,
+  "ci": [
+   0.433207579,
+   0.479147153
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].cold_start_s",
+  "text": "0.45"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "tantivy",
+  "value": 0.0718216415,
+  "ci": [
+   0.065463099,
+   0.0782604405
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].cold_start_s",
+  "text": "0.07"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "whoosh",
+  "value": 0.289982277,
+  "ci": [
+   0.279255388,
+   0.305334852
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].cold_start_s",
+  "text": "0.29"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "bm25s",
+  "value": 0.24022912549999997,
+  "ci": [
+   0.224627369,
+   0.248742769
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].cold_start_s",
+  "text": "0.24"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.11592304280412175,
+  "factor_infinite": false,
+  "ci": [
+   0.10199690466669294,
+   0.13173235262756608
+  ],
+  "verdict": "LOSS",
+  "text": "0.12x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": 3.9187444300000003,
+  "ci": [
+   3.9187444300000003,
+   3.9187444300000003
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.ops.replace",
+  "text": "3.919"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "hms-eager",
+  "value": 3.8050166800000005,
+  "ci": [
+   3.8050166800000005,
+   3.8050166800000005
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.ops.replace",
+  "text": "3.805"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 4.625860979999743,
+  "ci": [
+   4.625860979999743,
+   4.625860979999743
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.ops.replace",
+  "text": "4.626"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "lucene",
+  "value": 18.03878455,
+  "ci": [
+   18.03878455,
+   18.03878455
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.ops.replace",
+  "text": "18.039"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "tantivy",
+  "value": 163.8972191999983,
+  "ci": [
+   163.8972191999983,
+   163.8972191999983
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.ops.replace",
+  "text": "163.897"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "whoosh",
+  "value": 146.63095731999874,
+  "ci": [
+   146.63095731999874,
+   146.63095731999874
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.ops.replace",
+  "text": "146.631"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "bm25s",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.1804446711519134,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "1.18x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": 3.1620943699999997,
+  "ci": [
+   3.1620943699999997,
+   3.1620943699999997
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.ops.delete",
+  "text": "3.162"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "hms-eager",
+  "value": 3.2690420799999997,
+  "ci": [
+   3.2690420799999997,
+   3.2690420799999997
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.ops.delete",
+  "text": "3.269"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 6.417760269996506,
+  "ci": [
+   6.417760269996506,
+   6.417760269996506
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.ops.delete",
+  "text": "6.418"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "lucene",
+  "value": 1.48195727,
+  "ci": [
+   1.48195727,
+   1.48195727
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.ops.delete",
+  "text": "1.482"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "tantivy",
+  "value": 176.53093911999804,
+  "ci": [
+   176.53093911999804,
+   176.53093911999804
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.ops.delete",
+  "text": "176.531"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "whoosh",
+  "value": 16.973000140001204,
+  "ci": [
+   16.973000140001204,
+   16.973000140001204
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.ops.delete",
+  "text": "16.973"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "bm25s",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.4686632012187543,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.47x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 2.3764114379882812,
+  "ci": [
+   2.3764114379882812,
+   2.3764114379882812
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.install",
+  "text": "2.4"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "hms-eager",
+  "value": 2.3764114379882812,
+  "ci": [
+   2.3764114379882812,
+   2.3764114379882812
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.install",
+  "text": "2.4"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "sqlite-fts5",
+  "value": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.install",
+  "text": "0.0"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "lucene",
+  "value": 5.715169906616211,
+  "ci": [
+   5.715169906616211,
+   5.715169906616211
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.install",
+  "text": "5.7"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "tantivy",
+  "value": 13.801004409790039,
+  "ci": [
+   13.801004409790039,
+   13.801004409790039
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.install",
+  "text": "13.8"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "whoosh",
+  "value": 1.9728384017944336,
+  "ci": [
+   1.9728384017944336,
+   1.9728384017944336
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.install",
+  "text": "2.0"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "bm25s",
+  "value": 56.54034996032715,
+  "ci": [
+   56.54034996032715,
+   56.54034996032715
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.install",
+  "text": "56.5"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "whoosh",
+  "factor": 0.8301754360619107,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.83x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "hms-eager",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.hms-eager.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "sqlite-fts5",
+  "value": 0,
+  "ci": [
+   0,
+   0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.install",
+  "text": "0"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "lucene",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.lucene.install",
+  "text": "2"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "tantivy",
+  "value": 1,
+  "ci": [
+   1,
+   1
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.tantivy.install",
+  "text": "1"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "whoosh",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.whoosh.install",
+  "text": "2"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "bm25s",
+  "value": 3,
+  "ci": [
+   3,
+   3
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json#systems.bm25s.install",
+  "text": "3"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.010869565217391304,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.01x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "hms",
+  "value": 0.29158226275481797,
+  "ci": [
+   0.23886320107734008,
+   0.3411719935240954
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.2916"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "hms-eager",
+  "value": 0.29158226275481797,
+  "ci": [
+   0.23886320107734008,
+   0.3411719935240954
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[0].quality",
+  "text": "0.2916"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "sqlite-fts5",
+  "value": 0.29140981016338025,
+  "ci": [
+   0.23737701726378196,
+   0.3425518570467957
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.2914"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "lucene",
+  "value": 0.28972271928920523,
+  "ci": [
+   0.2354374337831947,
+   0.34013480906506466
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.2897"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "tantivy",
+  "value": 0.29006819680247453,
+  "ci": [
+   0.2369758611545306,
+   0.3396545165744922
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.2901"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "whoosh",
+  "value": 0.2873130912847506,
+  "ci": [
+   0.23047737253654677,
+   0.3349286489586968
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[0].quality",
+  "text": "0.2873"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "bm25s",
+  "value": 0.287785039883203,
+  "ci": [
+   0.23275715786454518,
+   0.3359121310836772
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[0].quality",
+  "text": "0.2878"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0005917871856855,
+  "factor_infinite": false,
+  "ci": [
+   0.697305228868484,
+   1.4372579007721404
+  ],
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "hms",
+  "value": 0.22742500506264265,
+  "ci": [
+   0.18025102198000628,
+   0.271293273499347
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.2274"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "hms-eager",
+  "value": 0.22742500506264265,
+  "ci": [
+   0.18025102198000628,
+   0.271293273499347
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[0].quality",
+  "text": "0.2274"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "sqlite-fts5",
+  "value": 0.22713744545849535,
+  "ci": [
+   0.18038212850278756,
+   0.2710244800674338
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.2271"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "lucene",
+  "value": 0.22757113786424402,
+  "ci": [
+   0.1809647707555367,
+   0.27166470060864706
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.2276"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "tantivy",
+  "value": 0.22689859592232703,
+  "ci": [
+   0.18035440689654195,
+   0.2709681788324846
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.2269"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "whoosh",
+  "value": 0.2251819508302511,
+  "ci": [
+   0.1787470187781305,
+   0.2659732113081941
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[0].quality",
+  "text": "0.2252"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "bm25s",
+  "value": 0.22715065794318523,
+  "ci": [
+   0.18163441365369665,
+   0.2699809985466637
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[0].quality",
+  "text": "0.2272"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.9993578588085782,
+  "factor_infinite": false,
+  "ci": [
+   0.6635054962097233,
+   1.4991496541933793
+  ],
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "hms",
+  "value": 9532.397213390766,
+  "ci": [
+   6789.815051342701,
+   10985.767497420124
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "9,532"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "hms-eager",
+  "value": 10532.17989287798,
+  "ci": [
+   6979.977149529682,
+   11098.174278398592
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "10,532"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "sqlite-fts5",
+  "value": 484.4822783381612,
+  "ci": [
+   476.8859070455528,
+   490.99023285001624
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "484"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "lucene",
+  "value": 2997.009305711693,
+  "ci": [
+   2642.8841921356156,
+   3062.6257411597558
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "2,997"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "tantivy",
+  "value": 7104.529336208195,
+  "ci": [
+   6493.631040662696,
+   7354.111786040016
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "7,105"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "whoosh",
+  "value": 131.52658571947273,
+  "ci": [
+   130.33867698498966,
+   132.28075106399135
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "132"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "bm25s",
+  "value": 1229.3458267777783,
+  "ci": [
+   1177.8034777243208,
+   1277.848950875269
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "1,229"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 1.3417352173927914,
+  "factor_infinite": false,
+  "ci": [
+   0.9232678600604773,
+   1.691775745900554
+  ],
+  "verdict": "TIE",
+  "text": "1.34x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "hms",
+  "value": 66.4785,
+  "ci": [
+   56.715,
+   69.724
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "66"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "hms-eager",
+  "value": 60.221000000000004,
+  "ci": [
+   55.172,
+   65.798
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "60"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "sqlite-fts5",
+  "value": 776.9495,
+  "ci": [
+   757.447,
+   788.0315
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "777"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "lucene",
+  "value": 406.06399999999996,
+  "ci": [
+   395.514,
+   419.0135
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "406"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "tantivy",
+  "value": 158.3105,
+  "ci": [
+   156.01100000000002,
+   173.375
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "158"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "whoosh",
+  "value": 2984.6265000000003,
+  "ci": [
+   2931.569,
+   3032.8895
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "2,985"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "bm25s",
+  "value": 798.914,
+  "ci": [
+   773.5485,
+   843.713
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "799"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.3813789420639755,
+  "factor_infinite": false,
+  "ci": [
+   2.2375509150364294,
+   3.0569514237855944
+  ],
+  "verdict": "WIN",
+  "text": "2.38x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "hms",
+  "value": 298.151,
+  "ci": [
+   265.052,
+   649.543
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "298"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "hms-eager",
+  "value": 280.696,
+  "ci": [
+   265.011,
+   653.5215000000001
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "281"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "sqlite-fts5",
+  "value": 6965.061,
+  "ci": [
+   6812.1835,
+   7065.115
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "6,965"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "lucene",
+  "value": 711.293,
+  "ci": [
+   672.8085,
+   898.8245
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "711"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "tantivy",
+  "value": 300.3295,
+  "ci": [
+   280.491,
+   352.3355
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "300"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "whoosh",
+  "value": 33190.8265,
+  "ci": [
+   32689.243,
+   33896.412
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "33,191"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "bm25s",
+  "value": 1077.906,
+  "ci": [
+   1030.955,
+   1140.847
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "1,078"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 1.0073067002961587,
+  "factor_infinite": false,
+  "ci": [
+   0.43182822384353303,
+   1.3293070793655584
+  ],
+  "verdict": "TIE",
+  "text": "1.01x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 0.5921563255,
+  "ci": [
+   0.58976631,
+   0.594546341
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs",
+  "text": "0.59"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "hms-eager",
+  "value": 2.179494596,
+  "ci": [
+   2.170529804,
+   2.188459388
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs",
+  "text": "2.18"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "sqlite-fts5",
+  "value": 0.285780587999966,
+  "ci": [
+   0.2805567420000443,
+   0.2910044339998876
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs",
+  "text": "0.29"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "lucene",
+  "value": 0.966967628,
+  "ci": [
+   0.965895586,
+   0.96803967
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs",
+  "text": "0.97"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "tantivy",
+  "value": 0.485183013999972,
+  "ci": [
+   0.4764130700000351,
+   0.4939529579999089
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs",
+  "text": "0.49"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "whoosh",
+  "value": 7.334148889499943,
+  "ci": [
+   7.328755410999975,
+   7.339542367999911
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs",
+  "text": "7.33"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "bm25s",
+  "value": 0.8843612315000655,
+  "ci": [
+   0.8741987220000738,
+   0.8945237410000573
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs",
+  "text": "0.88"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.48261004010834635,
+  "factor_infinite": false,
+  "ci": [
+   0.4718837248719092,
+   0.4934232916761346
+  ],
+  "verdict": "LOSS",
+  "text": "0.48x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 57.302734375,
+  "ci": [
+   56.78125,
+   57.82421875
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs",
+  "text": "57"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms-eager",
+  "value": 86.779296875,
+  "ci": [
+   86.75390625,
+   86.8046875
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs",
+  "text": "87"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 33.82421875,
+  "ci": [
+   33.7890625,
+   33.859375
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs",
+  "text": "34"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "lucene",
+  "value": 454.845703125,
+  "ci": [
+   448.98828125,
+   460.703125
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs",
+  "text": "455"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "tantivy",
+  "value": 77.69140625,
+  "ci": [
+   75.26171875,
+   80.12109375
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs",
+  "text": "78"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "whoosh",
+  "value": 144.1953125,
+  "ci": [
+   143.53125,
+   144.859375
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs",
+  "text": "144"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "bm25s",
+  "value": 91.8046875,
+  "ci": [
+   91.703125,
+   91.90625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs",
+  "text": "92"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.5902723337537067,
+  "factor_infinite": false,
+  "ci": [
+   0.5843410119570357,
+   0.5963126031920748
+  ],
+  "verdict": "LOSS",
+  "text": "0.59x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 56.791015625,
+  "ci": [
+   56.126953125,
+   57.99609375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].peak_rss_bytes",
+  "text": "57"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "hms-eager",
+  "value": 58.37109375,
+  "ci": [
+   57.453125,
+   58.87890625
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].peak_rss_bytes",
+  "text": "58"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 29.9296875,
+  "ci": [
+   28.984375,
+   30.296875
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].peak_rss_bytes",
+  "text": "30"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "lucene",
+  "value": 441.1484375,
+  "ci": [
+   435.97265625,
+   444.203125
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].peak_rss_bytes",
+  "text": "441"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "tantivy",
+  "value": 41.001953125,
+  "ci": [
+   39.96484375,
+   41.75390625
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].peak_rss_bytes",
+  "text": "41"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "whoosh",
+  "value": 69.625,
+  "ci": [
+   68.90625,
+   70.130859375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].peak_rss_bytes",
+  "text": "70"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "bm25s",
+  "value": 70.138671875,
+  "ci": [
+   69.5078125,
+   70.76171875
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].peak_rss_bytes",
+  "text": "70"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.5270144787976752,
+  "factor_infinite": false,
+  "ci": [
+   0.49976426214049974,
+   0.5397919059052789
+  ],
+  "verdict": "LOSS",
+  "text": "0.53x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "hms",
+  "value": 2.0628175735473633,
+  "ci": [
+   2.0628175735473633,
+   2.0628175735473633
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs[0].disk_bytes",
+  "text": "2.1"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "hms-eager",
+  "value": 2.0628175735473633,
+  "ci": [
+   2.0628175735473633,
+   2.0628175735473633
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs[0].disk_bytes",
+  "text": "2.1"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "sqlite-fts5",
+  "value": 9.3046875,
+  "ci": [
+   9.3046875,
+   9.3046875
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs[0].disk_bytes",
+  "text": "9.3"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "lucene",
+  "value": 1.4865388870239258,
+  "ci": [
+   1.4865388870239258,
+   1.4865388870239258
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs[0].disk_bytes",
+  "text": "1.5"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "tantivy",
+  "value": 1.9688215255737305,
+  "ci": [
+   1.9688215255737305,
+   1.9688215255737305
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs[0].disk_bytes",
+  "text": "2.0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "whoosh",
+  "value": 9.888919830322266,
+  "ci": [
+   9.888919830322266,
+   9.888919830322266
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs[0].disk_bytes",
+  "text": "9.9"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "bm25s",
+  "value": 3.3759756088256836,
+  "ci": [
+   3.3759756088256836,
+   3.3759756088256836
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs[0].disk_bytes",
+  "text": "3.4"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.7206351672036472,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.72x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": 0.175434672,
+  "ci": [
+   0.1697335205,
+   0.187209304
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].cold_start_s",
+  "text": "0.18"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "hms-eager",
+  "value": 0.181669582,
+  "ci": [
+   0.176235174,
+   0.189533834
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].cold_start_s",
+  "text": "0.18"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "sqlite-fts5",
+  "value": 0.068488589,
+  "ci": [
+   0.065624187,
+   0.06911327
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].cold_start_s",
+  "text": "0.07"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "lucene",
+  "value": 0.4379882085,
+  "ci": [
+   0.4092496725,
+   0.454283894
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].cold_start_s",
+  "text": "0.44"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "tantivy",
+  "value": 0.068223135,
+  "ci": [
+   0.06575376499999999,
+   0.072269295
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].cold_start_s",
+  "text": "0.07"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "whoosh",
+  "value": 0.241962255,
+  "ci": [
+   0.2306955165,
+   0.258533869
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].cold_start_s",
+  "text": "0.24"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "bm25s",
+  "value": 0.20877574,
+  "ci": [
+   0.197067149,
+   0.219764162
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].cold_start_s",
+  "text": "0.21"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.38888056860276743,
+  "factor_infinite": false,
+  "ci": [
+   0.3512312881629002,
+   0.4257809228672659
+  ],
+  "verdict": "LOSS",
+  "text": "0.39x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": 1.07312056,
+  "ci": [
+   1.07312056,
+   1.07312056
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.ops.replace",
+  "text": "1.073"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "hms-eager",
+  "value": 1.06455452,
+  "ci": [
+   1.06455452,
+   1.06455452
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.ops.replace",
+  "text": "1.065"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 3.140645449998374,
+  "ci": [
+   3.140645449998374,
+   3.140645449998374
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.ops.replace",
+  "text": "3.141"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "lucene",
+  "value": 18.21623659,
+  "ci": [
+   18.21623659,
+   18.21623659
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.ops.replace",
+  "text": "18.216"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "tantivy",
+  "value": 55.32423113999812,
+  "ci": [
+   55.32423113999812,
+   55.32423113999812
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.ops.replace",
+  "text": "55.324"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "whoosh",
+  "value": 53.212382009999146,
+  "ci": [
+   53.212382009999146,
+   53.212382009999146
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.ops.replace",
+  "text": "53.212"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "bm25s",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 2.9266473563775293,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "2.93x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": 0.72923147,
+  "ci": [
+   0.72923147,
+   0.72923147
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.ops.delete",
+  "text": "0.729"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "hms-eager",
+  "value": 0.7055342400000001,
+  "ci": [
+   0.7055342400000001,
+   0.7055342400000001
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.ops.delete",
+  "text": "0.706"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 8.833210899999813,
+  "ci": [
+   8.833210899999813,
+   8.833210899999813
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.ops.delete",
+  "text": "8.833"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "lucene",
+  "value": 1.3494846699999998,
+  "ci": [
+   1.3494846699999998,
+   1.3494846699999998
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.ops.delete",
+  "text": "1.349"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "tantivy",
+  "value": 50.4753322800002,
+  "ci": [
+   50.4753322800002,
+   50.4753322800002
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.ops.delete",
+  "text": "50.475"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "whoosh",
+  "value": 6.140949739999542,
+  "ci": [
+   6.140949739999542,
+   6.140949739999542
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.ops.delete",
+  "text": "6.141"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "bm25s",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 1.8505573682934993,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "1.85x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 2.3764114379882812,
+  "ci": [
+   2.3764114379882812,
+   2.3764114379882812
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.install",
+  "text": "2.4"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "hms-eager",
+  "value": 2.3764114379882812,
+  "ci": [
+   2.3764114379882812,
+   2.3764114379882812
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.install",
+  "text": "2.4"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "sqlite-fts5",
+  "value": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.install",
+  "text": "0.0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "lucene",
+  "value": 5.715169906616211,
+  "ci": [
+   5.715169906616211,
+   5.715169906616211
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.install",
+  "text": "5.7"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "tantivy",
+  "value": 13.801004409790039,
+  "ci": [
+   13.801004409790039,
+   13.801004409790039
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.install",
+  "text": "13.8"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "whoosh",
+  "value": 1.9728384017944336,
+  "ci": [
+   1.9728384017944336,
+   1.9728384017944336
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.install",
+  "text": "2.0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "bm25s",
+  "value": 56.54034996032715,
+  "ci": [
+   56.54034996032715,
+   56.54034996032715
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.install",
+  "text": "56.5"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "whoosh",
+  "factor": 0.8301754360619107,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.83x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "hms-eager",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.hms-eager.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "sqlite-fts5",
+  "value": 0,
+  "ci": [
+   0,
+   0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.install",
+  "text": "0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "lucene",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.lucene.install",
+  "text": "2"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "tantivy",
+  "value": 1,
+  "ci": [
+   1,
+   1
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.tantivy.install",
+  "text": "1"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "whoosh",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.whoosh.install",
+  "text": "2"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "bm25s",
+  "value": 3,
+  "ci": [
+   3,
+   3
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json#systems.bm25s.install",
+  "text": "3"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.010869565217391304,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.01x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "hms",
+  "value": 0.7026997341473034,
+  "ci": [
+   0.6658698690249654,
+   0.7429302255190232
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.7027"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "hms-eager",
+  "value": 0.7026997341473034,
+  "ci": [
+   0.6658698690249654,
+   0.7429302255190232
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[0].quality",
+  "text": "0.7027"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "sqlite-fts5",
+  "value": 0.7009278481912261,
+  "ci": [
+   0.6640612884177873,
+   0.7444364735259774
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.7009"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "lucene",
+  "value": 0.7021782838562147,
+  "ci": [
+   0.6658209083576906,
+   0.7423305918449589
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.7022"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "tantivy",
+  "value": 0.701325671999324,
+  "ci": [
+   0.6628589508331748,
+   0.7413639093332942
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.7013"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "whoosh",
+  "value": 0.6907626470247572,
+  "ci": [
+   0.6514303162779078,
+   0.7301624502085383
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[0].quality",
+  "text": "0.6908"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "system": "bm25s",
+  "value": 0.700081542866468,
+  "ci": [
+   0.6612760640153167,
+   0.7415526723787638
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[0].quality",
+  "text": "0.7001"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "ndcg@10",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 1.0007426180830101,
+  "factor_infinite": false,
+  "ci": [
+   0.8969990949315977,
+   1.1158108977856072
+  ],
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "hms",
+  "value": 0.9264112072517512,
+  "ci": [
+   0.8990523279769262,
+   0.9504532344458179
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.9264"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "hms-eager",
+  "value": 0.9264112072517512,
+  "ci": [
+   0.8990523279769262,
+   0.9504532344458179
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[0].quality",
+  "text": "0.9264"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "sqlite-fts5",
+  "value": 0.9321796456530697,
+  "ci": [
+   0.9065306963329213,
+   0.9562422744128554
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.9322"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "lucene",
+  "value": 0.9295014421096004,
+  "ci": [
+   0.9019983518747425,
+   0.9530284301606922
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.9295"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "tantivy",
+  "value": 0.9282653481664607,
+  "ci": [
+   0.9015451174289246,
+   0.9526782035434693
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.9283"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "whoosh",
+  "value": 0.9185826122785331,
+  "ci": [
+   0.8886073341573959,
+   0.946229913473424
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[0].quality",
+  "text": "0.9186"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "system": "bm25s",
+  "value": 0.9282653481664607,
+  "ci": [
+   0.9007622579316028,
+   0.9501648125257519
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[0].quality",
+  "text": "0.9283"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "recall@100",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.9938118811881188,
+  "factor_infinite": false,
+  "ci": [
+   0.9401930368838332,
+   1.0484512419607754
+  ],
+  "verdict": "TIE",
+  "text": "0.99x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "hms",
+  "value": 2711.3249243811115,
+  "ci": [
+   1877.2398552697891,
+   2776.3243542473742
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "2,711"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "hms-eager",
+  "value": 2694.8424391598082,
+  "ci": [
+   1880.8008189504285,
+   2762.396598782657
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "2,695"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "sqlite-fts5",
+  "value": 99.04202598585175,
+  "ci": [
+   97.44837377735257,
+   101.36288070176607
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "99"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "lucene",
+  "value": 1460.112650082861,
+  "ci": [
+   1428.8655533873361,
+   1493.4780866783203
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "1,460"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "tantivy",
+  "value": 2878.759871806599,
+  "ci": [
+   2776.8507172322343,
+   3006.2210475498246
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "2,879"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "whoosh",
+  "value": 23.376787666963295,
+  "ci": [
+   23.11935694523165,
+   23.75594990629404
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "23"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "system": "bm25s",
+  "value": 1110.6760231933476,
+  "ci": [
+   1064.4720426825868,
+   1178.6018789466873
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "1,111"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "qps",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.9418378208390087,
+  "factor_infinite": false,
+  "ci": [
+   0.6244517038425386,
+   0.9998104460633791
+  ],
+  "verdict": "LOSS",
+  "text": "0.94x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "hms",
+  "value": 373.98199999999997,
+  "ci": [
+   364.483,
+   473.54449999999997
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "374"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "hms-eager",
+  "value": 377.018,
+  "ci": [
+   367.45,
+   472.3515
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "377"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "sqlite-fts5",
+  "value": 9931.3925,
+  "ci": [
+   9789.61,
+   10113.66
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "9,931"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "lucene",
+  "value": 641.318,
+  "ci": [
+   632.371,
+   651.177
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "641"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "tantivy",
+  "value": 337.5965,
+  "ci": [
+   327.582,
+   349.9105
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "338"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "whoosh",
+  "value": 36111.589,
+  "ci": [
+   35338.968,
+   36528.2385
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "36,112"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "system": "bm25s",
+  "value": 877.145,
+  "ci": [
+   831.8834999999999,
+   913.445
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "877"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p50_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.9027078843366794,
+  "factor_infinite": false,
+  "ci": [
+   0.6917660325481555,
+   0.9600187114351012
+  ],
+  "verdict": "LOSS",
+  "text": "0.90x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "hms",
+  "value": 526.3005,
+  "ci": [
+   510.285,
+   1127.4605000000001
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].passes",
+  "text": "526"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "hms-eager",
+  "value": 533.234,
+  "ci": [
+   521.998,
+   1179.812
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].passes",
+  "text": "533"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "sqlite-fts5",
+  "value": 17790.1745,
+  "ci": [
+   17512.067000000003,
+   18274.318
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "17,790"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "lucene",
+  "value": 1127.601,
+  "ci": [
+   1045.728,
+   1209.0335
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "1,128"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "tantivy",
+  "value": 520.043,
+  "ci": [
+   481.229,
+   602.3175
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "520"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "whoosh",
+  "value": 128762.058,
+  "ci": [
+   127744.844,
+   130882.26449999999
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].passes",
+  "text": "128,762"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "system": "bm25s",
+  "value": 1297.492,
+  "ci": [
+   1180.2885,
+   1403.67
+  ],
+  "n": 30,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].passes",
+  "text": "1,297"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "p99_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.9881104046072537,
+  "factor_infinite": false,
+  "ci": [
+   0.42682559610735804,
+   1.1803550956818247
+  ],
+  "verdict": "TIE",
+  "text": "0.99x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 1.4185485660000001,
+  "ci": [
+   1.327840441,
+   1.509256691
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs",
+  "text": "1.42"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "hms-eager",
+  "value": 3.6037260925,
+  "ci": [
+   3.56142862,
+   3.646023565
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs",
+  "text": "3.60"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "sqlite-fts5",
+  "value": 0.42722204650000606,
+  "ci": [
+   0.4247947750000094,
+   0.4296493180000027
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs",
+  "text": "0.43"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "lucene",
+  "value": 1.5220980705,
+  "ci": [
+   1.384241498,
+   1.659954643
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs",
+  "text": "1.52"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "tantivy",
+  "value": 0.7557944099999929,
+  "ci": [
+   0.7396925189999877,
+   0.7718963009999982
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs",
+  "text": "0.76"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "whoosh",
+  "value": 11.381427306000006,
+  "ci": [
+   11.27367346600002,
+   11.489181145999993
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs",
+  "text": "11.38"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "system": "bm25s",
+  "value": 1.4012112320000085,
+  "ci": [
+   1.306480692000008,
+   1.495941772000009
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs",
+  "text": "1.40"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.3011684314092113,
+  "factor_infinite": false,
+  "ci": [
+   0.28145959367491674,
+   0.3235699898373578
+  ],
+  "verdict": "LOSS",
+  "text": "0.30x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 65.451171875,
+  "ci": [
+   65.1484375,
+   65.75390625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs",
+  "text": "65"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms-eager",
+  "value": 95.69140625,
+  "ci": [
+   95.4140625,
+   95.96875
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs",
+  "text": "96"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 39.20703125,
+  "ci": [
+   38.671875,
+   39.7421875
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs",
+  "text": "39"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "lucene",
+  "value": 504.421875,
+  "ci": [
+   502.16796875,
+   506.67578125
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs",
+  "text": "504"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "tantivy",
+  "value": 90.45703125,
+  "ci": [
+   84.25,
+   96.6640625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs",
+  "text": "90"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "whoosh",
+  "value": 178.310546875,
+  "ci": [
+   178.03125,
+   178.58984375
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs",
+  "text": "178"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "system": "bm25s",
+  "value": 104.4609375,
+  "ci": [
+   104.28125,
+   104.640625
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs",
+  "text": "104"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.5990271851033989,
+  "factor_infinite": false,
+  "ci": [
+   0.5881304580288719,
+   0.6100251828756446
+  ],
+  "verdict": "LOSS",
+  "text": "0.60x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 159.7421875,
+  "ci": [
+   158.19921875,
+   160.828125
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].peak_rss_bytes",
+  "text": "160"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "hms-eager",
+  "value": 160.318359375,
+  "ci": [
+   158.751953125,
+   161.94140625
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].peak_rss_bytes",
+  "text": "160"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 54.490234375,
+  "ci": [
+   53.89453125,
+   54.88671875
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].peak_rss_bytes",
+  "text": "54"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "lucene",
+  "value": 951.931640625,
+  "ci": [
+   935.44140625,
+   971.6015625
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].peak_rss_bytes",
+  "text": "952"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "tantivy",
+  "value": 65.037109375,
+  "ci": [
+   64.04296875,
+   65.734375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].peak_rss_bytes",
+  "text": "65"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "whoosh",
+  "value": 101.42578125,
+  "ci": [
+   100.703125,
+   102.3984375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].peak_rss_bytes",
+  "text": "101"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "system": "bm25s",
+  "value": 95.208984375,
+  "ci": [
+   94.09375,
+   96.24609375
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].peak_rss_bytes",
+  "text": "95"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.34111361079865016,
+  "factor_infinite": false,
+  "ci": [
+   0.3351063829787234,
+   0.34694683819353567
+  ],
+  "verdict": "LOSS",
+  "text": "0.34x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "hms",
+  "value": 2.910472869873047,
+  "ci": [
+   2.910472869873047,
+   2.910472869873047
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.build_runs[0].disk_bytes",
+  "text": "2.9"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "hms-eager",
+  "value": 2.906566619873047,
+  "ci": [
+   2.906566619873047,
+   2.906566619873047
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.build_runs[0].disk_bytes",
+  "text": "2.9"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "sqlite-fts5",
+  "value": 12.4375,
+  "ci": [
+   12.4375,
+   12.4375
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.build_runs[0].disk_bytes",
+  "text": "12.4"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "lucene",
+  "value": 1.9866113662719727,
+  "ci": [
+   1.9866113662719727,
+   1.9866113662719727
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.build_runs[0].disk_bytes",
+  "text": "2.0"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "tantivy",
+  "value": 2.6494836807250977,
+  "ci": [
+   2.6494836807250977,
+   2.6494836807250977
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.build_runs[0].disk_bytes",
+  "text": "2.6"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "whoosh",
+  "value": 13.159749031066895,
+  "ci": [
+   13.159749031066895,
+   13.159749031066895
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.build_runs[0].disk_bytes",
+  "text": "13.2"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "system": "bm25s",
+  "value": 4.487649917602539,
+  "ci": [
+   4.487649917602539,
+   4.487649917602539
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.build_runs[0].disk_bytes",
+  "text": "4.5"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "disk_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.6825734013313883,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.68x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": 0.23930724650000001,
+  "ci": [
+   0.225467531,
+   0.268876353
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.serve_rounds[*].cold_start_s",
+  "text": "0.24"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "hms-eager",
+  "value": 0.2479915995,
+  "ci": [
+   0.241085405,
+   0.2885006055
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.serve_rounds[*].cold_start_s",
+  "text": "0.25"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "sqlite-fts5",
+  "value": 0.0766115495,
+  "ci": [
+   0.073073611,
+   0.0841732025
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.serve_rounds[*].cold_start_s",
+  "text": "0.08"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "lucene",
+  "value": 0.4577830215,
+  "ci": [
+   0.446489742,
+   0.514178286
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.serve_rounds[*].cold_start_s",
+  "text": "0.46"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "tantivy",
+  "value": 0.080238569,
+  "ci": [
+   0.075746264,
+   0.085537997
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.serve_rounds[*].cold_start_s",
+  "text": "0.08"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "whoosh",
+  "value": 0.2392416195,
+  "ci": [
+   0.226745583,
+   0.28622070850000003
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.serve_rounds[*].cold_start_s",
+  "text": "0.24"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "system": "bm25s",
+  "value": 0.23249816099999998,
+  "ci": [
+   0.227895618,
+   0.2446611695
+  ],
+  "n": 10,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.serve_rounds[*].cold_start_s",
+  "text": "0.23"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.32013886173731054,
+  "factor_infinite": false,
+  "ci": [
+   0.2717740336205765,
+   0.37332737945314176
+  ],
+  "verdict": "LOSS",
+  "text": "0.32x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": 1.01634077,
+  "ci": [
+   1.01634077,
+   1.01634077
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.ops.replace",
+  "text": "1.016"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "hms-eager",
+  "value": 0.9228250499999999,
+  "ci": [
+   0.9228250499999999,
+   0.9228250499999999
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.ops.replace",
+  "text": "0.923"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 3.199492190001365,
+  "ci": [
+   3.199492190001365,
+   3.199492190001365
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.ops.replace",
+  "text": "3.199"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "lucene",
+  "value": 16.97920893,
+  "ci": [
+   16.97920893,
+   16.97920893
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.ops.replace",
+  "text": "16.979"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "tantivy",
+  "value": 73.3689347099994,
+  "ci": [
+   73.3689347099994,
+   73.3689347099994
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.ops.replace",
+  "text": "73.369"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "whoosh",
+  "value": 48.78160093999895,
+  "ci": [
+   48.78160093999895,
+   48.78160093999895
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.ops.replace",
+  "text": "48.782"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "system": "bm25s",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 3.14805061888973,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "3.15x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": 0.79275055,
+  "ci": [
+   0.79275055,
+   0.79275055
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.ops.delete",
+  "text": "0.793"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "hms-eager",
+  "value": 0.71397007,
+  "ci": [
+   0.71397007,
+   0.71397007
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.ops.delete",
+  "text": "0.714"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 6.279815929999586,
+  "ci": [
+   6.279815929999586,
+   6.279815929999586
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.ops.delete",
+  "text": "6.280"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "lucene",
+  "value": 1.26921317,
+  "ci": [
+   1.26921317,
+   1.26921317
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.ops.delete",
+  "text": "1.269"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "tantivy",
+  "value": 63.29283183000144,
+  "ci": [
+   63.29283183000144,
+   63.29283183000144
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.ops.delete",
+  "text": "63.293"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "whoosh",
+  "value": 6.582569769998372,
+  "ci": [
+   6.582569769998372,
+   6.582569769998372
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.ops.delete",
+  "text": "6.583"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "system": "bm25s",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 1.601024647665019,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "1.60x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 2.3764114379882812,
+  "ci": [
+   2.3764114379882812,
+   2.3764114379882812
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.install",
+  "text": "2.4"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "hms-eager",
+  "value": 2.3764114379882812,
+  "ci": [
+   2.3764114379882812,
+   2.3764114379882812
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.install",
+  "text": "2.4"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "sqlite-fts5",
+  "value": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.install",
+  "text": "0.0"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "lucene",
+  "value": 5.715169906616211,
+  "ci": [
+   5.715169906616211,
+   5.715169906616211
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.install",
+  "text": "5.7"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "tantivy",
+  "value": 13.801004409790039,
+  "ci": [
+   13.801004409790039,
+   13.801004409790039
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.install",
+  "text": "13.8"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "whoosh",
+  "value": 1.9728384017944336,
+  "ci": [
+   1.9728384017944336,
+   1.9728384017944336
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.install",
+  "text": "2.0"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "system": "bm25s",
+  "value": 56.54034996032715,
+  "ci": [
+   56.54034996032715,
+   56.54034996032715
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.install",
+  "text": "56.5"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "whoosh",
+  "factor": 0.8301754360619107,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.83x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "hms-eager",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.hms-eager.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "sqlite-fts5",
+  "value": 0,
+  "ci": [
+   0,
+   0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.sqlite-fts5.install",
+  "text": "0"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "lucene",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.lucene.install",
+  "text": "2"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "tantivy",
+  "value": 1,
+  "ci": [
+   1,
+   1
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.tantivy.install",
+  "text": "1"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "whoosh",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.whoosh.install",
+  "text": "2"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "system": "bm25s",
+  "value": 3,
+  "ci": [
+   3,
+   3
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json#systems.bm25s.install",
+  "text": "3"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
+  "hardware_class": "modal-x86_64-8vcpu-32g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.010869565217391304,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.01x"
+ }
+]

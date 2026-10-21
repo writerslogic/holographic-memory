@@ -10,6 +10,8 @@ import os
 import platform
 import random
 import resource
+import select
+import signal
 import statistics
 import subprocess
 import sys
@@ -69,6 +71,8 @@ def hardware():
 
 
 def commit():
+    if os.environ.get("HMS_BENCH_COMMIT"):  # a shipped source tree has no .git
+        return os.environ["HMS_BENCH_COMMIT"]
     try:
         return subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
@@ -81,6 +85,14 @@ def quantile(values, q):
     low = int(at)
     high = min(low + 1, len(values) - 1)
     return values[low] + (values[high] - values[low]) * (at - low)
+
+
+def pass_summary(ns):
+    """Compact record of one timed pass over the queries (per-query nanoseconds in): what the
+    table's QPS and latency intervals are computed from, with the same order statistics."""
+    srt = sorted(ns)
+    at = lambda q: srt[int((len(srt) - 1) * q)]  # noqa: E731
+    return {"queries": len(srt), "total_ns": sum(srt), "p50_ns": srt[(len(srt) - 1) // 2], "p90_ns": at(0.90), "p99_ns": at(0.99), "max_ns": srt[-1]}
 
 
 def bootstrap_ci(values, statistic=statistics.median, rounds=2000, seed=24731, level=0.95):
@@ -140,31 +152,80 @@ def current_rss_bytes(pid=None):
         return 0
 
 
-def run_measured(command, env=None, timeout=3600, cwd=None):
-    """Run `command`; return (stdout, stderr, wall_s, peak_rss_bytes). The child's own wait4
-    rusage gives its peak RSS, identically for Python workers and Rust binaries. Raises on a
-    non-zero exit with the stderr tail."""
-    with timing_lock(), tempfile.TemporaryFile("w+") as out, tempfile.TemporaryFile("w+") as err:
-        start = time.perf_counter()
-        proc = subprocess.Popen(command, stdout=out, stderr=err, env={**os.environ, **(env or {})}, cwd=cwd)
+class _Spawner:
+    """Client of `_spawner.py`: runs measured commands from a small process, so each child's
+    `ru_maxrss` is its own rather than at least the orchestrator's RSS (see that module)."""
+
+    def __init__(self):
+        self.proc = subprocess.Popen([sys.executable, "-I", "-S", str(Path(__file__).with_name("_spawner.py"))],
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.pending = b""
+
+    def _line(self, deadline=None):
+        fd = self.proc.stdout.fileno()
+        while b"\n" not in self.pending:
+            wait = None if deadline is None else max(0.0, deadline - time.monotonic())
+            if not select.select([fd], [], [], wait)[0]:
+                return None
+            chunk = os.read(fd, 4096)
+            if not chunk:
+                raise RuntimeError("measurement helper exited")
+            self.pending += chunk
+        line, _, self.pending = self.pending.partition(b"\n")
+        return line.decode()
+
+    def run(self, job, timeout):
         deadline = time.monotonic() + timeout
-        while True:
-            pid, status, ru = os.wait4(proc.pid, os.WNOHANG)
-            if pid:
-                break
-            if time.monotonic() > deadline:
-                proc.kill()
-                os.wait4(proc.pid, 0)
-                raise TimeoutError(f"{command[0]} exceeded {timeout}s")
-            time.sleep(0.05)
+        self.proc.stdin.write((json.dumps(job) + "\n").encode())
+        self.proc.stdin.flush()
+        pid = int(self._line().split()[1])
+        line = self._line(deadline)
+        if line is None:
+            os.kill(pid, signal.SIGKILL)
+            self._line()
+            raise TimeoutError(f"{job['argv'][0]} exceeded {timeout}s")
+        _, code, peak = line.split()
+        return int(code), int(peak)
+
+
+_SPAWNER = None
+
+
+def run_measured(command, env=None, timeout=3600, cwd=None):
+    """Run `command`; return (stdout, stderr, wall_s, peak_rss_bytes) of that child alone: its
+    own wait4 rusage, from a small helper on Linux (see `_Spawner`) and directly elsewhere.
+    Raises on a non-zero exit with the stderr tail."""
+    global _SPAWNER
+    with timing_lock(), tempfile.TemporaryDirectory() as tmp:
+        out_path, err_path = Path(tmp) / "out", Path(tmp) / "err"
+        full_env = {**os.environ, **(env or {})}
+        start = time.perf_counter()
+        if platform.system() == "Linux":
+            if _SPAWNER is None or _SPAWNER.proc.poll() is not None:
+                _SPAWNER = _Spawner()
+            out_path.touch()
+            err_path.touch()
+            code, peak = _SPAWNER.run({"argv": [str(c) for c in command], "env": full_env, "cwd": str(cwd) if cwd else "",
+                                       "stdout": str(out_path), "stderr": str(err_path)}, timeout)
+        else:
+            with out_path.open("w") as out, err_path.open("w") as err:
+                proc = subprocess.Popen(command, stdout=out, stderr=err, env=full_env, cwd=cwd)
+                deadline = time.monotonic() + timeout
+                while True:
+                    pid, status, ru = os.wait4(proc.pid, os.WNOHANG)
+                    if pid:
+                        break
+                    if time.monotonic() > deadline:
+                        proc.kill()
+                        os.wait4(proc.pid, 0)
+                        raise TimeoutError(f"{command[0]} exceeded {timeout}s")
+                    time.sleep(0.05)
+            code, peak = os.waitstatus_to_exitcode(status), max_rss_bytes(ru)
         wall = time.perf_counter() - start
-        out.seek(0)
-        err.seek(0)
-        stdout, stderr = out.read(), err.read()
-    code = os.waitstatus_to_exitcode(status)
+        stdout, stderr = out_path.read_text(errors="replace"), err_path.read_text(errors="replace")
     if code:
         raise RuntimeError(f"{command[0]} exited {code}: {stderr[-2000:]}")
-    return stdout, stderr, wall, max_rss_bytes(ru)
+    return stdout, stderr, wall, peak
 
 
 @contextlib.contextmanager
@@ -184,14 +245,51 @@ def timing_lock():
             fcntl.flock(handle, fcntl.LOCK_UN)
 
 
+_BLOCK = 4096
+
+
+def _data_bytes(path):
+    """Bytes in 4 KiB blocks that hold a non-zero byte: what a sparse-capable filesystem would allocate."""
+    zero = bytes(_BLOCK)
+    total = 0
+    with open(path, "rb") as handle:
+        while chunk := handle.read(1 << 20):
+            total += sum(len(chunk[i:i + _BLOCK]) for i in range(0, len(chunk), _BLOCK) if chunk[i:i + _BLOCK] != zero)
+    return total
+
+
+_SPARSE_MISREPORTED = {}
+
+
+def _misreports_sparse(directory):
+    """True when the filesystem of `directory` reports a freshly truncated (hole-only) file as fully allocated."""
+    dev = os.stat(directory).st_dev
+    if dev not in _SPARSE_MISREPORTED:
+        try:
+            with tempfile.TemporaryFile(dir=directory) as probe:
+                probe.truncate(1 << 20)
+                probe.flush()
+                st = os.fstat(probe.fileno())
+                _SPARSE_MISREPORTED[dev] = st.st_blocks * 512 >= st.st_size
+        except OSError:
+            _SPARSE_MISREPORTED[dev] = False
+    return _SPARSE_MISREPORTED[dev]
+
+
 def dir_bytes(path):
-    """Allocated bytes (du semantics): sparse or preallocated files count what they occupy."""
+    """Allocated bytes (du semantics): sparse or preallocated files count what they occupy.
+    Some sandboxes (gVisor) report every file as fully allocated, sparse ones included; on such
+    a filesystem only the non-zero 4 KiB blocks of a file of 1 MiB or more are counted."""
     path = Path(path)
     files = [path] if path.is_file() else [p for p in path.rglob("*") if p.is_file()]
+    scan = bool(files) and _misreports_sparse(path.parent if path.is_file() else path)
     total = 0
     for p in files:
         st = p.stat()
-        total += min(st.st_size, st.st_blocks * 512)
+        allocated = min(st.st_size, st.st_blocks * 512)
+        if scan and allocated >= st.st_size >= 1 << 20:
+            allocated = _data_bytes(p)
+        total += allocated
     return total
 
 

@@ -141,8 +141,8 @@ public final class LuceneBm25 {
           case 'u' -> {
             try {
               b.append((char) Integer.parseInt(s.substring(p, p + 4), 16));
-            } catch (NumberFormatException e) {
-              throw new IllegalStateException("bad unicode escape at " + p, e);
+            } catch (NumberFormatException bad) {
+              throw new IllegalStateException("bad unicode escape at " + p, bad);
             }
             p += 4;
           }

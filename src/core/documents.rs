@@ -41,6 +41,21 @@ pub use vector_index::{
     SNAPSHOT_MIN_ROWS,
 };
 
+/// Documents, and chunks, one `memorize_documents_with` call accepts.
+pub const MAX_BATCH_ITEMS: usize = 4096;
+
+/// A document batch over one of the engine's batch limits (items, chunks, source or metadata
+/// bytes, embedding values, transaction bytes). Nothing was written; a smaller batch can succeed.
+#[derive(Debug, Clone, Copy)]
+pub struct BatchTooLarge(pub &'static str);
+
+impl std::fmt::Display for BatchTooLarge {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
+impl std::error::Error for BatchTooLarge {}
 pub(crate) const MAX_DOCUMENT_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const MAX_CHUNK_BYTES: usize = 64 * 1024;
 pub(crate) const CHUNK_PREFIX: &str = "hms:chunk:";

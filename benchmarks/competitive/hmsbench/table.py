@@ -152,7 +152,8 @@ def verdict(adv):
 def best_other(metric, cells):
     sign = 1 if analyze.direction(metric) == analyze.HIGHER else -1
     # The eager HMS row is reported, never a comparator.
-    others = {s: c for s, c in cells.items() if registry.SYSTEMS[s]["family"] != "hms" and c["value"] is not None}
+    others = {s: c for s, c in cells.items()
+              if registry.SYSTEMS[s]["family"] != "hms" and c["value"] is not None and not c.get("informational")}
     if not others:
         return None, None
     best = max(others, key=lambda s: sign * others[s]["value"])

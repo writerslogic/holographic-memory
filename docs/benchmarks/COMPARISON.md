@@ -8,23 +8,204 @@ Rows are never compared across hardware classes: each section is one dataset on 
 
 | Dataset | Hardware class | Suite | HMS wins | Ties | Losses | Not measured | Informational (no verdict) |
 |---|---|---|---|---|---|---|---|
+| memory (4,559 documents, 100 queries) | `modal-x86_64-8vcpu-32g` | heavy | 2 | 5 | 6 | 0 | 1 |
+| beir:nfcorpus (3,633 documents, 324 queries) | `modal-x86_64-8vcpu-32g` | heavy | 3 | 4 | 6 | 0 | 1 |
+| beir:scifact (5,183 documents, 809 queries) | `modal-x86_64-8vcpu-32g` | heavy | 2 | 3 | 8 | 0 | 1 |
 
 ## Where HMS loses
 
-No metric in the committed results is lost.
+| Dataset | Metric | Best other | HMS disadvantage | Candidate lever (hypothesis unless a file is cited) |
+|---|---|---|---|---|
+| memory (4,559 documents, 100 queries) (modal-x86_64-8vcpu-32g) | Ingest/build time | SQLite FTS5 | 1.22x worse | unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever |
+| memory (4,559 documents, 100 queries) (modal-x86_64-8vcpu-32g) | Peak RSS, build | SQLite FTS5 | 1.10x worse | unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch |
+| memory (4,559 documents, 100 queries) (modal-x86_64-8vcpu-32g) | Peak RSS, serving | SQLite FTS5 | 2.55x worse | the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers |
+| memory (4,559 documents, 100 queries) (modal-x86_64-8vcpu-32g) | Cold start to first answer | tantivy | 8.63x worse | the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever |
+| memory (4,559 documents, 100 queries) (modal-x86_64-8vcpu-32g) | Delete one document (durable) | Apache Lucene 9.12.3 (JVM) | 2.13x worse | batching commits (memorize_batch) or a group commit; the per-op figure is one durable commit |
+| memory (4,559 documents, 100 queries) (modal-x86_64-8vcpu-32g) | Install size | Whoosh | 1.20x worse | strip symbols, split optional features out of the default binary |
+| beir:nfcorpus (3,633 documents, 324 queries) (modal-x86_64-8vcpu-32g) | Ingest/build time | SQLite FTS5 | 2.07x worse | unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever |
+| beir:nfcorpus (3,633 documents, 324 queries) (modal-x86_64-8vcpu-32g) | Peak RSS, build | SQLite FTS5 | 1.69x worse | unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch |
+| beir:nfcorpus (3,633 documents, 324 queries) (modal-x86_64-8vcpu-32g) | Peak RSS, serving | SQLite FTS5 | 1.90x worse | the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers |
+| beir:nfcorpus (3,633 documents, 324 queries) (modal-x86_64-8vcpu-32g) | On-disk size | Apache Lucene 9.12.3 (JVM) | 1.39x worse | compact postings and file-backed text (ledger 2B/2C) and removing preallocated arena slack |
+| beir:nfcorpus (3,633 documents, 324 queries) (modal-x86_64-8vcpu-32g) | Cold start to first answer | tantivy | 2.57x worse | the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever |
+| beir:nfcorpus (3,633 documents, 324 queries) (modal-x86_64-8vcpu-32g) | Install size | Whoosh | 1.20x worse | strip symbols, split optional features out of the default binary |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | QPS (single thread) | tantivy | 1.06x worse |  |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | p50 latency | tantivy | 1.11x worse | none identified; the median is within noise of the leader |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | Ingest/build time | SQLite FTS5 | 3.32x worse | unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | Peak RSS, build | SQLite FTS5 | 1.67x worse | unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | Peak RSS, serving | SQLite FTS5 | 2.93x worse | the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | On-disk size | Apache Lucene 9.12.3 (JVM) | 1.47x worse | compact postings and file-backed text (ledger 2B/2C) and removing preallocated arena slack |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | Cold start to first answer | SQLite FTS5 | 3.12x worse | the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever |
+| beir:scifact (5,183 documents, 809 queries) (modal-x86_64-8vcpu-32g) | Install size | Whoosh | 1.20x worse | strip symbols, split optional features out of the default binary |
 
 ## Results
+
+### memory (4,559 documents, 100 queries)
+
+Suite `heavy`, hardware class `modal-x86_64-8vcpu-32g` (unknown, 24 logical cores, 396 GiB, Linux 4.19.0-gvisor), commit `d5f3f3b8cb`, 2026-10-21. Raw results: [heavy-text-memory-modal-x86_64-8vcpu-32g.json](../../benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json). Intervals: 99.62% bootstrap (Bonferroni family of 13 verdict metrics).
+
+Timing boundary (where each query is timed): HMS: native Rust API call in the engine process (no language binding); text: BM25 index only (`--encode lexical`); ANN: public-bench loop; HMS (eager hypervectors): native Rust API call in the engine process (no language binding); text: BM25 index plus chunk hypervectors at ingest (`--encode eager`); SQLite FTS5: CPython sqlite3 call per query (query string built outside the timer); Apache Lucene 9.12.3 (JVM): in-process JVM API call, after a full untimed JIT warm-up pass; tantivy: CPython tantivy-py call per query (stored id fetched per hit); Whoosh: pure Python; bm25s: CPython + NumPy (single-threaded retrieve).
+
+| Metric | HMS | Best other | Advantage (HMS vs best other) | Verdict |
+|---|---|---|---|---|
+| nDCG@10 | 0.4561 | Apache Lucene 9.12.3 (JVM) 0.4627 | 0.99x [0.59, 1.71] | **TIE** |
+| recall@100 | 0.8203 | SQLite FTS5 0.8392 | 0.98x [0.78, 1.24] | **TIE** |
+| QPS (single thread) (QPS) | 2,225 | tantivy 2,399 | 0.93x [0.83, 1.15] | **TIE** |
+| p50 latency (us) | 425 | tantivy 400 | 0.94x [0.85, 1.12] | **TIE** |
+| p99 latency (us) | 786 | tantivy 733 | 0.93x [0.60, 1.19] | **TIE** |
+| Ingest/build time (s) | 2.52 | SQLite FTS5 2.06 | 0.82x [0.79, 0.85] | **LOSS** |
+| Peak RSS, build (MiB) | 133 | SQLite FTS5 121 | 0.91x [0.91, 0.91] | **LOSS** |
+| Peak RSS, serving (MiB) | 66 | SQLite FTS5 26 | 0.39x [0.38, 0.41] | **LOSS** |
+| On-disk size (MiB) | 9.8 | Apache Lucene 9.12.3 (JVM) 10.3 | 1.05x (no CI) | **WIN** |
+| Cold start to first answer (s) | 0.62 | tantivy 0.07 | 0.12x [0.10, 0.13] | **LOSS** |
+| Replace one document (durable) (ms) | 3.919 | SQLite FTS5 4.626 | 1.18x (no CI) | **WIN** |
+| Delete one document (durable) (ms) | 3.162 | Apache Lucene 9.12.3 (JVM) 1.482 | 0.47x (no CI) | **LOSS** |
+| Install size (MiB) | 2.4 | Whoosh 2.0 | 0.83x (no CI) | **LOSS** |
+| Install distributions (count) | 92 | tantivy 1 | 0.01x (no CI) | **n/v** |
+
+<details><summary>All systems</summary>
+
+| Metric | HMS | HMS (eager hypervectors) | SQLite FTS5 | Apache Lucene 9.12.3 (JVM) | tantivy | Whoosh | bm25s |
+|---|---|---|---|---|---|---|---|
+| nDCG@10 | 0.4561 | 0.4561 | 0.4501 | **0.4627** | 0.4491 | 0.4401 | 0.4418 |
+| recall@100 | 0.8203 | 0.8203 | **0.8392** | 0.8237 | 0.8203 | 0.8207 | 0.8312 |
+| QPS (single thread) (QPS) | 2,225 | 2,154 | 32 | 991 | **2,399** | 14 | 1,094 |
+| p50 latency (us) | 425 | 430 | 24,730 | 932 | **400** | 68,913 | 908 |
+| p99 latency (us) | 786 | 783 | 118,223 | 2,170 | **733** | 131,777 | 1,255 |
+| Ingest/build time (s) | 2.52 | 16.57 | **2.06** | 4.09 | 3.48 | 41.11 | 5.15 |
+| Peak RSS, build (MiB) | 133 | 167 | **121** | 768 | 244 | 536 | 237 |
+| Peak RSS, serving (MiB) | 66 | 74 | **26** | 438 | 38 | 141 | 84 |
+| On-disk size (MiB) | 9.8 | **9.8** | 63.0 | 10.3 | 13.7 | 48.6 | 14.2 |
+| Cold start to first answer (s) | 0.62 | 0.63 | 0.09 | 0.45 | **0.07** | 0.29 | 0.24 |
+| Replace one document (durable) (ms) | 3.919 | **3.805** | 4.626 | 18.039 | 163.897 | 146.631 | n/m (immutable index; any change is a full rebuild) |
+| Delete one document (durable) (ms) | 3.162 | 3.269 | 6.418 | **1.482** | 176.531 | 16.973 | n/m (immutable index; any change is a full rebuild) |
+| Install size (MiB) | 2.4 | 2.4 | **0.0** | 5.7 | 13.8 | 2.0 | 56.5 |
+| Install distributions (count) | 92 | 92 | **0** | 2 | 1 | 2 | 3 |
+
+Bold marks the best value in the row.
+
+</details>
+
+### beir:nfcorpus (3,633 documents, 324 queries)
+
+Suite `heavy`, hardware class `modal-x86_64-8vcpu-32g` (unknown, 24 logical cores, 396 GiB, Linux 4.19.0-gvisor), commit `d5f3f3b8cb`, 2026-10-21. Raw results: [heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json](../../benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json). Intervals: 99.62% bootstrap (Bonferroni family of 13 verdict metrics).
+
+Timing boundary (where each query is timed): HMS: native Rust API call in the engine process (no language binding); text: BM25 index only (`--encode lexical`); ANN: public-bench loop; HMS (eager hypervectors): native Rust API call in the engine process (no language binding); text: BM25 index plus chunk hypervectors at ingest (`--encode eager`); SQLite FTS5: CPython sqlite3 call per query (query string built outside the timer); Apache Lucene 9.12.3 (JVM): in-process JVM API call, after a full untimed JIT warm-up pass; tantivy: CPython tantivy-py call per query (stored id fetched per hit); Whoosh: pure Python; bm25s: CPython + NumPy (single-threaded retrieve).
+
+| Metric | HMS | Best other | Advantage (HMS vs best other) | Verdict |
+|---|---|---|---|---|
+| nDCG@10 | 0.2916 | SQLite FTS5 0.2914 | 1.00x [0.70, 1.44] | **TIE** |
+| recall@100 | 0.2274 | Apache Lucene 9.12.3 (JVM) 0.2276 | 1.00x [0.66, 1.50] | **TIE** |
+| QPS (single thread) (QPS) | 9,532 | tantivy 7,105 | 1.34x [0.92, 1.69] | **TIE** |
+| p50 latency (us) | 66 | tantivy 158 | 2.38x [2.24, 3.06] | **WIN** |
+| p99 latency (us) | 298 | tantivy 300 | 1.01x [0.43, 1.33] | **TIE** |
+| Ingest/build time (s) | 0.59 | SQLite FTS5 0.29 | 0.48x [0.47, 0.49] | **LOSS** |
+| Peak RSS, build (MiB) | 57 | SQLite FTS5 34 | 0.59x [0.58, 0.60] | **LOSS** |
+| Peak RSS, serving (MiB) | 57 | SQLite FTS5 30 | 0.53x [0.50, 0.54] | **LOSS** |
+| On-disk size (MiB) | 2.1 | Apache Lucene 9.12.3 (JVM) 1.5 | 0.72x (no CI) | **LOSS** |
+| Cold start to first answer (s) | 0.18 | tantivy 0.07 | 0.39x [0.35, 0.43] | **LOSS** |
+| Replace one document (durable) (ms) | 1.073 | SQLite FTS5 3.141 | 2.93x (no CI) | **WIN** |
+| Delete one document (durable) (ms) | 0.729 | Apache Lucene 9.12.3 (JVM) 1.349 | 1.85x (no CI) | **WIN** |
+| Install size (MiB) | 2.4 | Whoosh 2.0 | 0.83x (no CI) | **LOSS** |
+| Install distributions (count) | 92 | tantivy 1 | 0.01x (no CI) | **n/v** |
+
+<details><summary>All systems</summary>
+
+| Metric | HMS | HMS (eager hypervectors) | SQLite FTS5 | Apache Lucene 9.12.3 (JVM) | tantivy | Whoosh | bm25s |
+|---|---|---|---|---|---|---|---|
+| nDCG@10 | **0.2916** | 0.2916 | 0.2914 | 0.2897 | 0.2901 | 0.2873 | 0.2878 |
+| recall@100 | 0.2274 | 0.2274 | 0.2271 | **0.2276** | 0.2269 | 0.2252 | 0.2272 |
+| QPS (single thread) (QPS) | 9,532 | **10,532** | 484 | 2,997 | 7,105 | 132 | 1,229 |
+| p50 latency (us) | 66 | **60** | 777 | 406 | 158 | 2,985 | 799 |
+| p99 latency (us) | 298 | **281** | 6,965 | 711 | 300 | 33,191 | 1,078 |
+| Ingest/build time (s) | 0.59 | 2.18 | **0.29** | 0.97 | 0.49 | 7.33 | 0.88 |
+| Peak RSS, build (MiB) | 57 | 87 | **34** | 455 | 78 | 144 | 92 |
+| Peak RSS, serving (MiB) | 57 | 58 | **30** | 441 | 41 | 70 | 70 |
+| On-disk size (MiB) | 2.1 | 2.1 | 9.3 | **1.5** | 2.0 | 9.9 | 3.4 |
+| Cold start to first answer (s) | 0.18 | 0.18 | 0.07 | 0.44 | **0.07** | 0.24 | 0.21 |
+| Replace one document (durable) (ms) | 1.073 | **1.065** | 3.141 | 18.216 | 55.324 | 53.212 | n/m (immutable index; any change is a full rebuild) |
+| Delete one document (durable) (ms) | 0.729 | **0.706** | 8.833 | 1.349 | 50.475 | 6.141 | n/m (immutable index; any change is a full rebuild) |
+| Install size (MiB) | 2.4 | 2.4 | **0.0** | 5.7 | 13.8 | 2.0 | 56.5 |
+| Install distributions (count) | 92 | 92 | **0** | 2 | 1 | 2 | 3 |
+
+Bold marks the best value in the row.
+
+</details>
+
+### beir:scifact (5,183 documents, 809 queries)
+
+Suite `heavy`, hardware class `modal-x86_64-8vcpu-32g` (unknown, 24 logical cores, 396 GiB, Linux 4.19.0-gvisor), commit `d5f3f3b8cb`, 2026-10-21. Raw results: [heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json](../../benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json). Intervals: 99.62% bootstrap (Bonferroni family of 13 verdict metrics).
+
+Timing boundary (where each query is timed): HMS: native Rust API call in the engine process (no language binding); text: BM25 index only (`--encode lexical`); ANN: public-bench loop; HMS (eager hypervectors): native Rust API call in the engine process (no language binding); text: BM25 index plus chunk hypervectors at ingest (`--encode eager`); SQLite FTS5: CPython sqlite3 call per query (query string built outside the timer); Apache Lucene 9.12.3 (JVM): in-process JVM API call, after a full untimed JIT warm-up pass; tantivy: CPython tantivy-py call per query (stored id fetched per hit); Whoosh: pure Python; bm25s: CPython + NumPy (single-threaded retrieve).
+
+| Metric | HMS | Best other | Advantage (HMS vs best other) | Verdict |
+|---|---|---|---|---|
+| nDCG@10 | 0.7027 | Apache Lucene 9.12.3 (JVM) 0.7022 | 1.00x [0.90, 1.12] | **TIE** |
+| recall@100 | 0.9264 | SQLite FTS5 0.9322 | 0.99x [0.94, 1.05] | **TIE** |
+| QPS (single thread) (QPS) | 2,711 | tantivy 2,879 | 0.94x [0.62, 1.00] | **LOSS** |
+| p50 latency (us) | 374 | tantivy 338 | 0.90x [0.69, 0.96] | **LOSS** |
+| p99 latency (us) | 526 | tantivy 520 | 0.99x [0.43, 1.18] | **TIE** |
+| Ingest/build time (s) | 1.42 | SQLite FTS5 0.43 | 0.30x [0.28, 0.32] | **LOSS** |
+| Peak RSS, build (MiB) | 65 | SQLite FTS5 39 | 0.60x [0.59, 0.61] | **LOSS** |
+| Peak RSS, serving (MiB) | 160 | SQLite FTS5 54 | 0.34x [0.34, 0.35] | **LOSS** |
+| On-disk size (MiB) | 2.9 | Apache Lucene 9.12.3 (JVM) 2.0 | 0.68x (no CI) | **LOSS** |
+| Cold start to first answer (s) | 0.24 | SQLite FTS5 0.08 | 0.32x [0.27, 0.37] | **LOSS** |
+| Replace one document (durable) (ms) | 1.016 | SQLite FTS5 3.199 | 3.15x (no CI) | **WIN** |
+| Delete one document (durable) (ms) | 0.793 | Apache Lucene 9.12.3 (JVM) 1.269 | 1.60x (no CI) | **WIN** |
+| Install size (MiB) | 2.4 | Whoosh 2.0 | 0.83x (no CI) | **LOSS** |
+| Install distributions (count) | 92 | tantivy 1 | 0.01x (no CI) | **n/v** |
+
+<details><summary>All systems</summary>
+
+| Metric | HMS | HMS (eager hypervectors) | SQLite FTS5 | Apache Lucene 9.12.3 (JVM) | tantivy | Whoosh | bm25s |
+|---|---|---|---|---|---|---|---|
+| nDCG@10 | **0.7027** | 0.7027 | 0.7009 | 0.7022 | 0.7013 | 0.6908 | 0.7001 |
+| recall@100 | 0.9264 | 0.9264 | **0.9322** | 0.9295 | 0.9283 | 0.9186 | 0.9283 |
+| QPS (single thread) (QPS) | 2,711 | 2,695 | 99 | 1,460 | **2,879** | 23 | 1,111 |
+| p50 latency (us) | 374 | 377 | 9,931 | 641 | **338** | 36,112 | 877 |
+| p99 latency (us) | 526 | 533 | 17,790 | 1,128 | **520** | 128,762 | 1,297 |
+| Ingest/build time (s) | 1.42 | 3.60 | **0.43** | 1.52 | 0.76 | 11.38 | 1.40 |
+| Peak RSS, build (MiB) | 65 | 96 | **39** | 504 | 90 | 178 | 104 |
+| Peak RSS, serving (MiB) | 160 | 160 | **54** | 952 | 65 | 101 | 95 |
+| On-disk size (MiB) | 2.9 | 2.9 | 12.4 | **2.0** | 2.6 | 13.2 | 4.5 |
+| Cold start to first answer (s) | 0.24 | 0.25 | **0.08** | 0.46 | 0.08 | 0.24 | 0.23 |
+| Replace one document (durable) (ms) | 1.016 | **0.923** | 3.199 | 16.979 | 73.369 | 48.782 | n/m (immutable index; any change is a full rebuild) |
+| Delete one document (durable) (ms) | 0.793 | **0.714** | 6.280 | 1.269 | 63.293 | 6.583 | n/m (immutable index; any change is a full rebuild) |
+| Install size (MiB) | 2.4 | 2.4 | **0.0** | 5.7 | 13.8 | 2.0 | 56.5 |
+| Install distributions (count) | 92 | 92 | **0** | 2 | 1 | 2 | 3 |
+
+Bold marks the best value in the row.
+
+</details>
 
 ## Operational facts
 
 | System | Service needed | Encrypted at rest | Basis |
 |---|---|---|---|
+| HMS | no | yes | measured: benchmarks/results/security_matrix_v2.json |
+| HMS (eager hypervectors) | no | yes | measured: benchmarks/results/security_matrix_v2.json |
+| SQLite FTS5 | no | no (SQLCipher is a separate build) | documentation (not exercised) |
+| Apache Lucene 9.12.3 (JVM) | no (library; needs a JVM) | no (filesystem-level only) | documentation (not exercised) |
+| tantivy | no | no | documentation (not exercised) |
+| Whoosh | no | no | documentation (not exercised) |
+| bm25s | no | no | documentation (not exercised) |
 
 ## Versions
 
 | System | Pinned version(s) |
 |---|---|
+| HMS | holographic-memory 0.6.1, commit d5f3f3b8cbf963003d282181409e6a0203f9e96d |
+| HMS (eager hypervectors) | holographic-memory 0.6.1, commit d5f3f3b8cbf963003d282181409e6a0203f9e96d |
+| SQLite FTS5 | python-sqlite3 3.40.1 |
+| Apache Lucene 9.12.3 (JVM) | lucene 9.12.3, jvm openjdk version "17.0.20.1" 2026-08-18 |
+| tantivy | tantivy 0.26.2 |
+| Whoosh | whoosh-reloaded 2.7.5 |
+| bm25s | bm25s 0.3.14, PyStemmer 3.1.0 |
 
 ## Not run
 
+- `pgvector`: needs a PostgreSQL server with the extension; not installable from pip/cargo/npm (service required)
+- `mem0`: agent-memory systems belong to the next harness stage (plug in through the same adapter interface)
+- `zep`: agent-memory systems belong to the next harness stage
+- `letta`: agent-memory systems belong to the next harness stage
+- `langmem`: agent-memory systems belong to the next harness stage
 

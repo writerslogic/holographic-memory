@@ -11,7 +11,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from hmsbench import data  # noqa: E402
-from hmsbench.common import bootstrap_ci, dir_bytes, ndcg_at, quantile, recall_at, timing_lock  # noqa: E402
+from hmsbench import common  # noqa: E402
+from hmsbench.common import _Spawner, bootstrap_ci, dir_bytes, ndcg_at, pass_summary, quantile, recall_at, run_measured, timing_lock  # noqa: E402
 
 
 def test_bootstrap_interval_brackets_the_median_and_narrows_with_more_data():
@@ -71,6 +72,13 @@ def test_dir_bytes_counts_allocated_not_apparent_size(tmp_path):
     assert dir_bytes(tmp_path) < 2**20
 
 
+def test_dir_bytes_ignores_zero_blocks_of_a_file_reported_fully_allocated(tmp_path, monkeypatch):
+    monkeypatch.setattr(common, "_misreports_sparse", lambda directory: True)
+    arena = tmp_path / "arena"
+    arena.write_bytes(bytes(4 * 2**20) + b"x" + bytes(4095))
+    assert dir_bytes(tmp_path) == 4096
+
+
 def test_timing_lock_is_a_noop_on_ci(monkeypatch):
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     with timing_lock():
@@ -79,3 +87,32 @@ def test_timing_lock_is_a_noop_on_ci(monkeypatch):
     monkeypatch.setenv("HMS_BENCH_LOCK", "/nonexistent-dir/timing.lock")
     with timing_lock():
         pass
+
+
+def test_pass_summary_keeps_what_qps_and_latency_intervals_use():
+    ns = [5, 1, 9, 3, 7] * 20
+    got = pass_summary(ns)
+    srt = sorted(ns)
+    assert got == {"queries": 100, "total_ns": sum(ns), "p50_ns": srt[49], "p90_ns": srt[89], "p99_ns": srt[98], "max_ns": 9}
+
+
+def test_spawner_reports_the_childs_own_peak_rss_and_exit_status(tmp_path):
+    spawner = _Spawner()
+    out, err = tmp_path / "out", tmp_path / "err"
+    out.touch()
+    err.touch()
+    code = "b = bytearray(80 * 2**20); b[::4096] = b'\\x01' * len(b[::4096]); print('ok')"
+    job = {"argv": [sys.executable, "-I", "-c", code], "env": dict(__import__("os").environ), "cwd": "", "stdout": str(out), "stderr": str(err)}
+    status, peak = spawner.run(job, 60)
+    assert status == 0 and out.read_text().strip() == "ok"
+    assert 80 * 2**20 <= peak < 400 * 2**20
+    assert spawner.run({**job, "argv": ["false"]}, 60)[0] == 1
+    spawner.proc.stdin.close()
+    spawner.proc.wait(timeout=10)
+
+
+def test_run_measured_raises_on_failure_and_on_timeout():
+    with pytest.raises(RuntimeError, match="exited 1"):
+        run_measured(["false"])
+    with pytest.raises(TimeoutError):
+        run_measured(["sleep", "30"], timeout=1)
