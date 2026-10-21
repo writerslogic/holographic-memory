@@ -1,0 +1,25 @@
+float:
+  angular:
+  - base_args: ['@metric']
+    constructor: HMS
+    disabled: false
+    docker_tag: ann-benchmarks-hms
+    module: ann_benchmarks.algorithms.hms
+    name: hms
+    run_groups:
+      degree-32:
+        arg_groups: [{degree: 32, build_ef: 500}]
+        args: {}
+        query_args: [[10, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024], [16, 64, 256]]
+      degree-48:
+        arg_groups: [{degree: 48, build_ef: 500}]
+        args: {}
+        query_args: [[10, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024], [16, 64, 256]]
+      degree-64:
+        arg_groups: [{degree: 64, build_ef: 500}]
+        args: {}
+        query_args: [[10, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024], [16, 64, 256]]
+      degree-96:
+        arg_groups: [{degree: 96, build_ef: 500}]
+        args: {}
+        query_args: [[10, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024], [16, 64, 256]]

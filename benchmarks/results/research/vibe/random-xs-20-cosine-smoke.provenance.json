@@ -1,0 +1,14 @@
+{
+  "purpose": "correctness smoke of benchmarks/vibe/hms through VIBE's single-run entry point; QPS is not comparable (macOS, no CPU pinning, no competitors)",
+  "harness": "github.com/vector-index-bench/vibe @ 7ac76c1",
+  "hms": "holographic-vsa wheel built from this branch (base 15b87db) with maturin 1.15.0, rustc 1.96.0",
+  "machine": "Apple M4, macOS 27.0, Python 3.11",
+  "dataset": "random-xs-20-cosine: the train/test rows of ann-benchmarks random-xs-20-angular (9,000 / 1,000) in VIBE's HDF5 layout, exact top-100 ground truth by VIBE's cosine distance",
+  "why_not_run_py": "run.py (even --local) calls os.sched_getaffinity and taskset/numactl, which macOS lacks; run_algorithm.py is the per-run entry point run.py launches",
+  "commands": [
+    "python run_algorithm.py --dataset random-xs-20-cosine --algorithm hms --module vibe.algorithms.hms --constructor HMS --count 100 --runs 2 '[\"cosine\", 32, 500]' <the 33 [ef, rerank] pairs of config.yml>",
+    "python export_results.py --results results --data data --output <dir>"
+  ],
+  "runs": "1 build (degree 32, build_ef 500) x 33 query settings, k=100, no errors",
+  "recall_range": "0.967 (rerank 100) to 1.000 (rerank 400, ef >= 256)"
+}

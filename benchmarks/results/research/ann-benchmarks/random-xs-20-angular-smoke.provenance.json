@@ -1,0 +1,16 @@
+{
+  "purpose": "correctness smoke of benchmarks/ann-benchmarks/hms through the ann-benchmarks harness; QPS is not comparable (local mode, no CPU pinning, no competitors)",
+  "harness": "github.com/erikbern/ann-benchmarks @ 2e081ad",
+  "hms": "holographic-vsa wheel built from this branch (base 15b87db) with maturin 1.15.0, rustc 1.96.0",
+  "machine": "Apple M4, macOS 27.0, Python 3.12, upstream requirements.txt",
+  "dataset": "random-xs-20-angular (9,000 train, 1,000 test, k=10)",
+  "commands": [
+    "python run.py --local --algorithm hms --dataset random-xs-20-angular --runs 2 --timeout 600",
+    "python run.py --local --algorithm hms --dataset random-xs-20-angular --runs 2 --timeout 600 --batch",
+    "python plot.py --dataset random-xs-20-angular --output random-xs-20-angular-smoke.png",
+    "python plot.py --dataset random-xs-20-angular --output random-xs-20-angular-smoke-batch.png --batch",
+    "python data_export.py --out random-xs-20-angular-smoke.csv"
+  ],
+  "runs": "4 builds (degree 32/48/64/96, build_ef 500) x 42 query settings, single and batch mode: 168 + 168 runs, no errors",
+  "recall_range": "0.346 (ef 10) to 1.000 (ef >= 96, rerank 256); rerank 16 caps recall at 0.495 on this 20-dimensional set"
+}
