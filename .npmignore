@@ -4,8 +4,6 @@ benches/
 benchmarks/
 target/
 .cargo_home/
-conductor/
-tasks/
 
 # Data files (storage artifacts)
 *.bin
