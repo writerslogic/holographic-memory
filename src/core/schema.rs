@@ -30,7 +30,7 @@ struct StoreSchema {
 
 pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig) -> Result<()> {
     let expected = StoreSchema {
-        version: 2,
+        version: super::format::STORE_SCHEMA_VERSION,
         dimensions,
         text_encoder: config.text_encoder.name().into(),
         vector_encoder: "signed-projection-v2".into(),
@@ -41,7 +41,18 @@ pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig)
     };
     let schema_path = path.join("store.json");
     if schema_path.exists() {
-        let actual: StoreSchema = serde_json::from_slice(&std::fs::read(schema_path)?)?;
+        let bytes = std::fs::read(schema_path)?;
+        if let Some(version) = serde_json::from_slice::<serde_json::Value>(&bytes)
+            .ok()
+            .and_then(|v| v["version"].as_u64())
+            .filter(|&v| v > u64::from(super::format::STORE_SCHEMA_VERSION))
+        {
+            bail!(
+                "store schema version {version} is newer than the supported version {}; open it with a release that supports it",
+                super::format::STORE_SCHEMA_VERSION
+            );
+        }
+        let actual: StoreSchema = serde_json::from_slice(&bytes)?;
         if actual != expected {
             bail!("incompatible store schema: dimensions, encoder, embedding model, encryption, or meaning configuration changed; reopen with the original configuration or re-encode source documents into a new store");
         }

@@ -1,0 +1,5 @@
+[
+  {"id":"emb-north","text":"Northbound freight schedule for the harbor railway","version":"1","metadata":{"axis":"north"},"embeddings":[[1.0,0.0,0.0]]},
+  {"id":"emb-east","text":"Eastern routes cross the river by the old bridge","version":"1","metadata":{"axis":"east"},"embeddings":[[0.0,1.0,0.0]]},
+  {"id":"emb-up","text":"Elevator maintenance logs for the tall tower","version":"1","metadata":{"axis":"up"},"embeddings":[[0.0,0.0,1.0]]}
+]

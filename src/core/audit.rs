@@ -78,6 +78,14 @@ pub struct AuditLog {
 impl AuditLog {
     pub fn new(storage_path: &std::path::Path) -> Result<Self> {
         let path = storage_path.join("audit.bin");
+        // An append the crash interrupted leaves a partial entry. Readers ignore it, but every
+        // entry appended after it would start at the wrong offset, so it is cut off here.
+        if let Ok(metadata) = std::fs::metadata(&path) {
+            let whole = metadata.len() - metadata.len() % ENTRY_SIZE as u64;
+            if whole != metadata.len() {
+                OpenOptions::new().write(true).open(&path)?.set_len(whole)?;
+            }
+        }
         let file = OpenOptions::new()
             .read(true)
             .append(true)

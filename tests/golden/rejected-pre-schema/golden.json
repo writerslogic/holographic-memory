@@ -1,0 +1,122 @@
+{
+  "audit": false,
+  "derivedFrom": "v061-plain",
+  "description": "A store with no store.json (written before stores recorded their embedding schema). The engine must refuse it with the reencode message and leave it untouched.",
+  "dimensions": 1024,
+  "embeddingSpace": null,
+  "encrypted": false,
+  "expect": {
+    "absentDocuments": [
+      "doc-obsolete"
+    ],
+    "documents": [
+      {
+        "id": "doc-backup",
+        "metadata": {
+          "project": "ops",
+          "replaced": true
+        },
+        "sourceUri": "notes/backup.md",
+        "text": "Backup retention policy keeps thirty daily snapshots and twelve monthly archives.",
+        "version": "2"
+      },
+      {
+        "id": "doc-compiler",
+        "metadata": {
+          "project": "software"
+        },
+        "sourceUri": "notes/compiler.md",
+        "text": "The compiler lowers the syntax tree into an intermediate representation, runs several optimization passes over it, and finally emits machine code for the target architecture with a register allocator.",
+        "version": "2"
+      },
+      {
+        "id": "doc-harbor",
+        "metadata": {
+          "project": "maritime",
+          "tags": [
+            "ships",
+            "log"
+          ]
+        },
+        "sourceUri": "notes/harbor.md",
+        "text": "The harbor master recorded every ship that entered the northern harbor at dawn, noting cargo, flag and tonnage in a weathered logbook.",
+        "version": "1"
+      },
+      {
+        "id": "doc-ledger",
+        "metadata": {
+          "project": "finance",
+          "quarter": 4
+        },
+        "sourceUri": "notes/ledger.md",
+        "text": "Quarterly ledger reconciliation requires matching every invoice against the bank statement before the accountant signs the books.",
+        "version": "3"
+      },
+      {
+        "id": "doc-orchard",
+        "metadata": {
+          "project": "farming"
+        },
+        "sourceUri": "notes/orchard.md",
+        "text": "Apple orchards in the valley blossom in early spring, provided the late frost does not damage the buds.",
+        "version": "1"
+      },
+      {
+        "id": "doc-unicode",
+        "metadata": {
+          "lang": "mixed"
+        },
+        "sourceUri": "notes/unicode.md",
+        "text": "Zażółć gęślą jaźń: crème brûlée at the café in 東京 with naïve résumé",
+        "version": "1"
+      }
+    ],
+    "relations": 1,
+    "searches": [
+      {
+        "query": "harbor master ship dawn",
+        "top": "doc-harbor"
+      },
+      {
+        "query": "quarterly ledger invoice bank statement",
+        "top": "doc-ledger"
+      },
+      {
+        "query": "intermediate representation optimization register allocator",
+        "top": "doc-compiler"
+      },
+      {
+        "query": "thirty daily snapshots twelve monthly archives",
+        "top": "doc-backup"
+      },
+      {
+        "query": "crème brûlée café 東京",
+        "top": "doc-unicode"
+      }
+    ],
+    "vectors": [
+      {
+        "id": "vec-a",
+        "seed": 7
+      },
+      {
+        "id": "vec-b",
+        "seed": 8
+      }
+    ]
+  },
+  "expectOpenError": "legacy store has no embedding schema",
+  "features": [],
+  "name": "rejected-pre-schema",
+  "padTo": {
+    "vectors_data.bin/seg_0.bin": 1073741824
+  },
+  "producedBy": "git archive v0.6.1; tests/golden/generator/gen_v061.rs built as an example (cargo build --release --features security --example gen_v061); run as `gen_v061 <out> tests/golden/corpus/text.json 1024 [passphrase]`",
+  "provenance": "derived",
+  "schema": 2,
+  "storageFormat": 2,
+  "textEncoder": "multiscale-words-v1",
+  "textSegment": null,
+  "transaction": "HMS-TXN-2",
+  "verifyVerdict": "unsupported"
+}

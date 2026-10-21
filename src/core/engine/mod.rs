@@ -516,9 +516,18 @@ impl HmsCore {
             let (payload, _) = self
                 .arena_read_frame(offset)
                 .with_context(|| format!("cannot replay arena frame at {offset}"))?;
-            let json = payload.strip_prefix(mutation::TRANSACTION_MAGIC).context(
-                "unsupported transaction format; re-encode original sources into a new store",
-            )?;
+            let json = payload
+                .strip_prefix(mutation::TRANSACTION_MAGIC)
+                .with_context(|| {
+                    match super::format::scan::classify_payload(&payload) {
+                        super::format::scan::PayloadKind::OtherTransactionVersion(version)
+                            if version.parse::<u32>().is_ok_and(|v| v > 2) =>
+                        {
+                            format!("journal frame format HMS-TXN-{version} is newer than the supported HMS-TXN-2; open the store with a release that supports it")
+                        }
+                        _ => "unsupported transaction format; re-encode original sources into a new store".to_string(),
+                    }
+                })?;
             let mutations: Vec<Mutation> = serde_json::from_slice(json)?;
             for mutation in &mutations {
                 self.validate_mutation(mutation)?;

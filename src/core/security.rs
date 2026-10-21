@@ -161,7 +161,9 @@ impl EncryptionManager {
             let mut s = vec![0u8; 16];
             use rand::Rng;
             rand::rng().fill_bytes(&mut s);
-            std::fs::write(&salt_path, &s)?;
+            // Durable before any frame is encrypted under it: a salt lost to a crash would
+            // make every frame written with the derived key unreadable.
+            super::durable_file::atomic_write(&salt_path, &s)?;
             s
         };
 

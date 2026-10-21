@@ -55,6 +55,8 @@ pub mod engine;
 pub mod entangled;
 pub(crate) mod error;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod format;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod graph;
 pub mod hardware;
 pub mod hopfield;

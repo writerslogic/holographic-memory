@@ -53,8 +53,13 @@ pub(crate) fn scrub_remove_dir(dir: &Path) -> Result<()> {
 }
 
 /// Manifests that carry a `<name>.crc32` sidecar holding the CRC32 of their bytes, so a flip
-/// inside a value that still parses is caught at open and by `hms-admin verify`.
-pub(crate) const CHECKSUMMED_MANIFESTS: [&str; 3] = ["store.json", "indices.json", "format.json"];
+/// inside a value that still parses is caught at open and by `hms-admin verify`. Both are
+/// written once; `indices.json`, which every flush rewrites, is not on the list: a crash
+/// between a rewrite's sidecar and its file would otherwise make an intact store refuse to
+/// open, and the file is a cache that already binds itself with a checkpoint and per-file
+/// checksums. Stores written before this change may carry an `indices.json.crc32`; it is
+/// ignored.
+pub(crate) const CHECKSUMMED_MANIFESTS: [&str; 2] = ["store.json", "format.json"];
 
 fn sidecar(path: &Path) -> Option<PathBuf> {
     let name = path.file_name()?.to_str()?;
@@ -113,11 +118,7 @@ pub(crate) fn read_manifest(path: &Path) -> Result<(Vec<u8>, bool)> {
 /// arena directory); returns the names verified.
 pub(crate) fn verify_manifests(store: &Path, arena: &Path) -> Result<Vec<String>> {
     let mut verified = Vec::new();
-    for (dir, name) in [
-        (store, "store.json"),
-        (store, "indices.json"),
-        (arena, "format.json"),
-    ] {
+    for (dir, name) in [(store, "store.json"), (arena, "format.json")] {
         let path = dir.join(name);
         if path.exists() && read_manifest(&path)?.1 {
             verified.push(name.to_string());

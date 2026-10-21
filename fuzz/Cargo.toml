@@ -133,3 +133,10 @@ bench = false
 name = "gen_seeds"
 path = "examples/gen_seeds.rs"
 required-features = ["provenance", "experimental"]
+
+[[bin]]
+name = "format_readers"
+path = "fuzz_targets/format_readers.rs"
+test = false
+doc = false
+bench = false

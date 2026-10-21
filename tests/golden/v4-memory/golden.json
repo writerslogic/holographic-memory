@@ -1,0 +1,54 @@
+{
+  "audit": false,
+  "description": "Facts written by the memory API: a mem1 version stamp, a supersession link, entities, and one fact whose stamp overflowed into the _mem metadata key.",
+  "dimensions": 1024,
+  "embeddingSpace": null,
+  "encrypted": false,
+  "expect": {
+    "facts": [
+      {
+        "id": "m-bob",
+        "stampStyle": "version",
+        "text": "Bob adopted a dog named Rex"
+      },
+      {
+        "id": "m-wide",
+        "stampStyle": "metadata",
+        "text": "A fact that mentions very many entities at once"
+      }
+    ],
+    "recalls": [
+      {
+        "asOf": 1767225600000,
+        "ids": [
+          "m-berlin"
+        ],
+        "query": "where does Alice live"
+      },
+      {
+        "asOf": 1622505600000,
+        "ids": [
+          "m-paris"
+        ],
+        "query": "where does Alice live"
+      },
+      {
+        "asOf": 1767225600000,
+        "query": "dog named Rex",
+        "top": "m-bob"
+      }
+    ]
+  },
+  "features": [],
+  "name": "v4-memory",
+  "padTo": {
+    "vectors_data.bin/seg_0.bin": 67108864
+  },
+  "provenance": "current-code",
+  "schema": 2,
+  "storageFormat": 4,
+  "textEncoder": "multiscale-words-v1",
+  "textSegment": 2,
+  "transaction": "HMS-TXN-2",
+  "verifyVerdict": "ok"
+}

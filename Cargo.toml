@@ -155,6 +155,10 @@ name = "hms-admin"
 path = "src/bin/hms-admin.rs"
 
 [[bin]]
+name = "hms-format"
+path = "src/bin/hms-format.rs"
+
+[[bin]]
 name = "hms-server"
 path = "src/bin/hms-server/main.rs"
 required-features = ["server"]
