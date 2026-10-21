@@ -377,7 +377,7 @@ impl HmsCore {
                     expected_crc.as_u64() == Some(crc32fast::hash(&raw) as u64),
                     "index cache checksum mismatch"
                 );
-                self.maybe_decrypt(&raw)
+                self.maybe_decrypt(raw)
             };
             let nsg_path = self.nsg_index_path(i, multi);
             if nsg_path.exists() && saved["shards"][i]["nsg"] == true {
@@ -515,21 +515,28 @@ impl HmsCore {
         Ok(std::borrow::Cow::Borrowed(data))
     }
 
-    fn maybe_decrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
+    /// Decrypts `data` when the store is encrypted; a plaintext buffer is returned as is.
+    fn maybe_decrypt(&self, data: Vec<u8>) -> Result<Vec<u8>> {
         #[cfg(feature = "security")]
         if let Some(ref enc) = self.encryption {
-            return enc.decrypt(data);
+            return enc.decrypt(&data);
         }
-        Ok(data.to_vec())
+        Ok(data)
     }
 
     fn load_from_log(&self) -> Result<()> {
         let shards = self.shards.write();
         let mut offset = 0;
         while offset < self.arena.stats().used_bytes {
-            let (payload, _) = self
-                .arena_read_frame(offset)
+            let (data, _) = self
+                .arena
+                .read_frame(offset)
                 .with_context(|| format!("cannot replay arena frame at {offset}"))?;
+            // Only an encrypted store can fail here, and the first frame that does is almost
+            // always a wrong passphrase rather than damage, so say so instead of hiding it.
+            let payload = self.maybe_decrypt(data).with_context(|| {
+                format!("cannot decrypt arena frame at {offset}: wrong passphrase, or the store is corrupted")
+            })?;
             let json = payload
                 .strip_prefix(mutation::TRANSACTION_MAGIC)
                 .with_context(|| {
@@ -1369,14 +1376,10 @@ impl HmsCore {
         self.arena.write_slice(&payload)
     }
 
+    #[cfg(test)] // replay reads and decrypts in two steps to tell a bad frame from a wrong passphrase
     fn arena_read_frame(&self, offset: usize) -> Result<(Vec<u8>, u32)> {
         let (data, version) = self.arena.read_frame(offset)?;
-        #[cfg(feature = "security")]
-        if self.encryption.is_some() {
-            return Ok((self.maybe_decrypt(&data)?, version));
-        }
-        // Unencrypted frames are already an owned buffer; no second copy.
-        Ok((data, version))
+        Ok((self.maybe_decrypt(data)?, version))
     }
 
     fn sign_fn(&self) -> Option<SignFn<'_>> {
