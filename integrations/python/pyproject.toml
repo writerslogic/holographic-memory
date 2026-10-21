@@ -1,0 +1,71 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "holographic-integrations"
+version = "0.1.0"
+description = "Agent and RAG framework adapters for Holographic Memory"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "WritersLogic", email = "david@writerslogic.com" }]
+dependencies = ["holographic-sdk>=0.1.2", "httpx>=0.27"]
+
+# Framework dependency trees conflict: install exactly one framework extra per environment.
+# Lower bounds are the versions the adapters were tested against (docs/integrations/frameworks/MATRIX.md).
+[project.optional-dependencies]
+langchain = ["langchain-core>=1.6.12", "numpy"]
+langgraph = ["langgraph>=1.2.16", "langgraph-checkpoint>=4.3.0"]
+llamaindex = ["llama-index-core>=0.14.25"]
+haystack = ["haystack-ai>=3.4.0"]
+dspy = ["dspy>=3.4.1", "numpy"]
+openai-agents = ["openai-agents>=0.24.0"]
+pydantic-ai = ["pydantic-ai-slim>=2.58.0"]
+smolagents = ["smolagents>=1.26.0"]
+litellm = ["litellm>=1.106.0", "mcp>=2.3.0"]
+crewai = ["crewai>=1.15.28"]
+autogen = ["autogen-agentchat>=0.7.5", "autogen-core>=0.7.5", "autogen-ext>=0.7.5"]
+ag2 = ["ag2>=1.1.2"]
+semantic-kernel = ["semantic-kernel>=1.45.0"]
+mem0 = ["mem0ai>=2.2.1"]
+letta = ["letta-client>=1.12.1"]
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6"]
+test-langchain = ["langchain-tests>=1.1.9"]
+test-langgraph = ["langgraph-checkpoint-conformance>=0.0.2", "numpy"]
+
+[tool.uv]
+conflicts = [
+  [
+    { extra = "langchain" },
+    { extra = "langgraph" },
+    { extra = "llamaindex" },
+    { extra = "haystack" },
+    { extra = "dspy" },
+    { extra = "openai-agents" },
+    { extra = "pydantic-ai" },
+    { extra = "smolagents" },
+    { extra = "litellm" },
+    { extra = "crewai" },
+    { extra = "autogen" },
+    { extra = "ag2" },
+    { extra = "semantic-kernel" },
+    { extra = "mem0" },
+    { extra = "letta" },
+  ],
+]
+
+[tool.uv.sources]
+holographic-sdk = { path = "../../bindings/python/holographic-sdk" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/holographic_integrations"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -1,0 +1,13 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+from haystack.core.serialization import allow_deserialization_module
+
+from .document_store import HolographicDocumentStore
+from .retrievers import HolographicEmbeddingRetriever, HolographicTextRetriever
+
+__all__ = ["HolographicDocumentStore", "HolographicEmbeddingRetriever", "HolographicTextRetriever"]
+
+# Haystack 3 refuses to deserialize components from modules it does not trust. Importing this
+# package is the user's opt-in for these classes only.
+allow_deserialization_module("holographic_integrations.haystack")
