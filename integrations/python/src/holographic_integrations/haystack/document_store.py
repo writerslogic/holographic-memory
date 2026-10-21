@@ -15,7 +15,6 @@ from haystack import default_from_dict, default_to_dict
 from haystack.dataclasses import ByteStream, Document, SparseEmbedding
 from haystack.document_stores.errors import DuplicateDocumentError
 from haystack.document_stores.types import DuplicatePolicy
-from haystack.errors import FilterError
 from haystack.utils import Secret, deserialize_secrets_inplace
 from haystack.utils.filters import document_matches_filter
 

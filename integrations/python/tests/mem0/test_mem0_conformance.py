@@ -7,7 +7,6 @@ mem0 is configured fully offline: a local qdrant path, the hashing embedder in p
 dummy OpenAI key that is never used because every add() passes infer=False.
 """
 
-import os
 
 import pytest
 

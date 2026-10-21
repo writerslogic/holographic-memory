@@ -8,7 +8,6 @@ semantics: every filter case must select the same node ids from both stores.
 """
 
 import dataclasses
-import itertools
 import math
 import random
 
@@ -16,7 +15,7 @@ import pytest
 
 pytest.importorskip("llama_index.core")
 
-from llama_index.core import Document, Settings, StorageContext, VectorStoreIndex
+from llama_index.core import Document, StorageContext, VectorStoreIndex
 from llama_index.core.embeddings import MockEmbedding
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores import SimpleVectorStore
@@ -29,7 +28,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
-from holographic_integrations.core import HmsConfig
 from holographic_integrations.llamaindex import HolographicVectorStore
 
 DIM = 16

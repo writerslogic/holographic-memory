@@ -5,7 +5,6 @@
 
 import pytest
 from langchain_core.embeddings import DeterministicFakeEmbedding
-from langgraph.store.base import MatchCondition
 from langgraph.store.memory import InMemoryStore
 
 from holographic_integrations.langgraph import HolographicStore

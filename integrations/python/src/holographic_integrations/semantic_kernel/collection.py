@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import ast
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar
 
 from pydantic import ConfigDict, PrivateAttr
