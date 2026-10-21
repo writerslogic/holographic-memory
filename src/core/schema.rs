@@ -28,8 +28,10 @@ struct StoreSchema {
     embedding_space: Option<EmbeddingSpace>,
 }
 
-pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig) -> Result<()> {
-    let expected = StoreSchema {
+/// Checks the store's `store.json` against `config` (writing it for a new store) and returns
+/// its schema version, which fixes the journal format the store is written in.
+pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig) -> Result<u32> {
+    let mut expected = StoreSchema {
         version: super::format::STORE_SCHEMA_VERSION,
         dimensions,
         text_encoder: config.text_encoder.name().into(),
@@ -53,6 +55,13 @@ pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig)
             );
         }
         let actual: StoreSchema = serde_json::from_slice(&bytes)?;
+        // Every schema from the oldest supported one opens; only the version differs between
+        // them (it selects the journal format).
+        if (super::format::STORE_SCHEMA_OLDEST..=super::format::STORE_SCHEMA_VERSION)
+            .contains(&actual.version)
+        {
+            expected.version = actual.version;
+        }
         if actual != expected {
             bail!("incompatible store schema: dimensions, encoder, embedding model, encryption, or meaning configuration changed; reopen with the original configuration or re-encode source documents into a new store");
         }
@@ -62,5 +71,5 @@ pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig)
         }
         super::durable_file::atomic_write(&schema_path, &serde_json::to_vec_pretty(&expected)?)?;
     }
-    Ok(())
+    Ok(expected.version)
 }

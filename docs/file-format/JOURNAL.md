@@ -65,7 +65,7 @@ live arena: a format-2 store compacts to format 2), replays frames appended mean
 atomically replaces `CURRENT`. Old generation directories are removed afterwards; a leftover
 `gen-*` that `CURRENT` does not name is garbage from an interrupted run and may be deleted.
 Frames written after a compaction go to the new generation. Compaction does not change the
-format version.
+format version, nor the payload format (`HMS-TXN-2` or `HMS-TXN-3`, by `store.json` schema).
 
 Compaction frames contain document text inline (it is resolved from the text segment), so a
 compacted journal is self-contained.

@@ -413,23 +413,60 @@ impl PostingList {
         self.last = previous;
     }
 
-    /// Drops a slot present in the list.
-    fn remove(&mut self, slot: usize) {
-        let mut postings = self.decode();
-        let at = postings
-            .binary_search_by_key(&slot, |p| p.0)
-            .expect("document missing from posting");
-        postings.remove(at);
-        self.encode(&postings);
+    /// Byte ranges of the posting of `slot`: `(delta_start, frequency_start, end, previous)`,
+    /// where `previous` is the slot of the posting before it (0 for the first).
+    fn locate(&self, slot: usize) -> (usize, usize, usize, u64) {
+        let target = slot as u64;
+        let bytes = &self.data[..];
+        let (mut at, mut current, mut previous) = (0usize, 0u64, 0u64);
+        for _ in 0..self.count {
+            let start = at;
+            current += get_varint(bytes, &mut at);
+            let frequency = at;
+            get_varint(bytes, &mut at);
+            match current.cmp(&target) {
+                std::cmp::Ordering::Equal => return (start, frequency, at, previous),
+                std::cmp::Ordering::Greater => break,
+                std::cmp::Ordering::Less => previous = current,
+            }
+        }
+        panic!("document missing from posting");
     }
 
+    /// Drops a slot present in the list. The bytes before it stay, the next posting's delta
+    /// absorbs the removed one, and the tail moves down once: no decode or re-encode.
+    fn remove(&mut self, slot: usize) {
+        let (start, _, end, previous) = self.locate(slot);
+        let removed_delta = slot as u64 - previous;
+        if end == self.data.len() {
+            self.data.truncate(start);
+            self.last = previous;
+        } else {
+            let mut next = end;
+            let next_delta = get_varint(&self.data, &mut next);
+            let mut merged = Vec::with_capacity(10);
+            put_varint(&mut merged, removed_delta + next_delta);
+            self.data.splice(start..next, merged);
+        }
+        self.count -= 1;
+        if self.count == 0 {
+            self.data = Vec::new();
+            self.last = 0;
+        } else if self.data.capacity() > 2 * self.data.len() + 64 {
+            self.data.shrink_to_fit();
+        }
+    }
+
+    /// Rewrites one posting's frequency in place; only its own varint changes length.
     fn set_frequency(&mut self, slot: usize, frequency: u32) {
-        let mut postings = self.decode();
-        let at = postings
-            .binary_search_by_key(&slot, |p| p.0)
-            .expect("document missing from posting");
-        postings[at].1 = frequency;
-        self.encode(&postings);
+        let (_, start, end, _) = self.locate(slot);
+        let mut encoded = Vec::with_capacity(5);
+        put_varint(&mut encoded, u64::from(frequency));
+        if encoded.len() == end - start {
+            self.data[start..end].copy_from_slice(&encoded);
+        } else {
+            self.data.splice(start..end, encoded);
+        }
     }
 }
 
@@ -550,6 +587,10 @@ impl PostingLists {
             let slots: Vec<usize> = list.iter().map(|(slot, _)| slot).collect();
             assert!(slots.windows(2).all(|pair| pair[0] < pair[1]));
             assert_eq!(slots.last().copied(), Some(list.last as usize));
+            // In-place edits leave exactly the bytes a fresh encoding of the postings has.
+            let mut fresh = PostingList::default();
+            fresh.encode(&list.decode());
+            assert_eq!(fresh.data, list.data, "posting bytes are not canonical");
         }
         for &id in &self.free {
             assert!(!live[id as usize] && self.lists[id as usize].is_empty());

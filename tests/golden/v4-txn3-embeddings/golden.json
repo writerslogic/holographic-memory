@@ -1,0 +1,86 @@
+{
+  "audit": false,
+  "description": "Schema 3 with a client embedding space (3 dimensions): chunk embeddings in the binary frames.",
+  "dimensions": 1024,
+  "embeddingSpace": {
+    "dimensions": 3,
+    "metric": "cosine",
+    "model": "golden-model",
+    "normalization": "l2",
+    "revision": "1"
+  },
+  "encrypted": false,
+  "expect": {
+    "documents": [
+      {
+        "id": "emb-east",
+        "metadata": {
+          "axis": "east"
+        },
+        "sourceUri": null,
+        "text": "Eastern routes cross the river by the old bridge",
+        "version": "1"
+      },
+      {
+        "id": "emb-north",
+        "metadata": {
+          "axis": "north"
+        },
+        "sourceUri": null,
+        "text": "Northbound freight schedule for the harbor railway",
+        "version": "1"
+      },
+      {
+        "id": "emb-up",
+        "metadata": {
+          "axis": "up"
+        },
+        "sourceUri": null,
+        "text": "Elevator maintenance logs for the tall tower",
+        "version": "1"
+      }
+    ],
+    "searches": [
+      {
+        "embedding": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "query": "",
+        "top": "emb-north"
+      },
+      {
+        "embedding": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "query": "",
+        "top": "emb-east"
+      },
+      {
+        "embedding": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "query": "",
+        "top": "emb-up"
+      }
+    ],
+    "vectorCount": 3
+  },
+  "features": [],
+  "name": "v4-txn3-embeddings",
+  "padTo": {
+    "vectors_data.bin/seg_0.bin": 67108864
+  },
+  "provenance": "current-code",
+  "schema": 3,
+  "storageFormat": 4,
+  "textEncoder": "multiscale-words-v1",
+  "textSegment": 2,
+  "transaction": "HMS-TXN-3",
+  "verifyVerdict": "ok"
+}

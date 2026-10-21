@@ -25,10 +25,17 @@ pub use verify::{verify_path, VerifyOptions};
 pub const STORAGE_FORMAT_CURRENT: u32 = super::storage::STORAGE_FORMAT_VERSION;
 /// Oldest arena manifest version this build opens. Version 1 (no manifest) is read as 2.
 pub const STORAGE_FORMAT_OLDEST: u32 = 2;
-/// `version` field of `store.json`.
-pub const STORE_SCHEMA_VERSION: u32 = 2;
-/// Prefix of every journal frame payload; the digit is the journal format version.
+/// `version` field of the `store.json` a new store gets. Schema 2 stores write
+/// [`TRANSACTION_MAGIC`] frames, schema 3 stores [`BINARY_TRANSACTION_MAGIC`] frames; a store
+/// keeps the schema it was created with.
+pub const STORE_SCHEMA_VERSION: u32 = 3;
+/// Oldest `store.json` schema this build opens.
+pub const STORE_SCHEMA_OLDEST: u32 = 2;
+/// Prefix of a JSON journal frame payload (schema 2 stores); the digit is the journal format
+/// version.
 pub const TRANSACTION_MAGIC: &[u8] = b"HMS-TXN-2\0";
+/// Prefix of a binary journal frame payload (schema 3 stores).
+pub const BINARY_TRANSACTION_MAGIC: &[u8] = b"HMS-TXN-3\0";
 /// Bytes shared by every journal format version: `HMS-TXN-`, then ASCII digits, then NUL.
 pub const TRANSACTION_MAGIC_PREFIX: &[u8] = b"HMS-TXN-";
 /// Header layout version of `documents.text` this build writes.
@@ -72,7 +79,7 @@ pub const CURRENT: FormatVersions = FormatVersions {
     storage_format_current: STORAGE_FORMAT_CURRENT,
     storage_format_oldest: STORAGE_FORMAT_OLDEST,
     store_schema: STORE_SCHEMA_VERSION,
-    transaction_magic: "HMS-TXN-2",
+    transaction_magic: "HMS-TXN-3",
     text_segment: TEXT_SEGMENT_VERSION,
 };
 
@@ -270,10 +277,16 @@ mod tests {
         assert_eq!(bytes[4], TEXT_SEGMENT_VERSION);
         assert_eq!(bytes.len(), TEXT_SEGMENT_HEADER_LEN);
         assert_eq!(TRANSACTION_MAGIC, b"HMS-TXN-2\0");
+        assert_eq!(BINARY_TRANSACTION_MAGIC, b"HMS-TXN-3\0");
         assert!(TRANSACTION_MAGIC.starts_with(TRANSACTION_MAGIC_PREFIX));
+        assert!(BINARY_TRANSACTION_MAGIC.starts_with(TRANSACTION_MAGIC_PREFIX));
         assert_eq!(
             CURRENT.transaction_magic.as_bytes(),
-            &TRANSACTION_MAGIC[..9]
+            &BINARY_TRANSACTION_MAGIC[..9]
+        );
+        assert_eq!(
+            crate::core::engine::journal::JournalFormat::for_schema(STORE_SCHEMA_VERSION),
+            crate::core::engine::journal::JournalFormat::Binary
         );
     }
 }

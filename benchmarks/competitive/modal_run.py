@@ -74,7 +74,8 @@ def run(archive: bytes, suite: str, args: list[str], cap_usd: float, tag: str, r
     env = {**os.environ, "PATH": f"/root/.cargo/bin:{os.environ['PATH']}", "HMS_BENCH_DATA": "/vol/data", "HMS_BENCH_HW_CLASS": HW_CLASS,
            "HMS_BENCH_WORK": "/tmp/hms-work", "HMS_BENCH_ENVS": "/tmp/hms-envs", "HMS_BENCH_RESULTS": str(results_dir),
            "HMS_BENCH_COMMIT": revision, "CARGO_TARGET_DIR": "/tmp/target", "CARGO_BUILD_JOBS": str(CPU), "PYTHONUNBUFFERED": "1"}
-    subprocess.run(["cargo", "build", "--release", "--bin", "public-bench", "--example", "competitive_text"], cwd=work, env=env, check=True)
+    # The profile the harness runs and measures (runner.HMS_PROFILE).
+    subprocess.run(["cargo", "build", "--profile", "dist", "--bin", "public-bench", "--example", "competitive_text"], cwd=work, env=env, check=True)
     # The cap stops the run gracefully only if it falls before the platform's hard timeout.
     budget_s = min(cap_usd / USD_PER_HOUR * 3600, TIMEOUT_S - 1800) - (time.time() - started)
     log = Path("/vol/logs") / f"{tag}.log"

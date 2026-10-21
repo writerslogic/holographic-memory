@@ -63,3 +63,31 @@ Frames are applied in file order, segment by segment. Each mutation is validated
 replay with the limits above; a failure fails the open. Later records win: a second `Document`
 with the same id replaces the first, a `Delete` removes the earlier `Vector`. The journal
 keeps deleted data until compaction.
+
+## Binary frames (`HMS-TXN-3`, schema 3 stores)
+
+A store records its journal format in `store.json` `version`: 2 writes the JSON array above,
+3 (new stores since 0.7.0) writes binary payloads; readers accept both in any store. Varints
+are unsigned LEB128 (at most 10 bytes); `str` and `bytes` are a varint length then the bytes.
+
+```
+payload   = "HMS-TXN-3\0" varint(count) dictionary mutation{count}
+dictionary= varint(n) { varint(shared) str(suffix) }{n}   terms strictly ascending (bytes),
+            each = previous[..shared] + suffix, UTF-8
+mutation  = 0x00 bytes(JSON of one mutation, as an element of the HMS-TXN-2 array)
+          | 0x01 document
+          | 0x02 str(id)                                   DeleteDocument
+document  = str(id) (0x00 | 0x01 str(sourceUri)) str(version) bytes(metadata JSON)
+            varint(chunks) chunk{chunks}
+chunk     = flags [str(id)] [str(text)] varint(start_byte) varint(end_byte) varint(word_count)
+            varint(dim) varint(k) varint(index gap){k} [varint(n) f32le{n}]
+            varint(t) varint(term id gap){t} varint(frequency){t}
+flags     = bit0 explicit chunk id (else hms:chunk:<len(id)>:<id>:<index>), bit1 text,
+            bit2 stemmed, bit3 embedding, bits4-5 vector state (0 encoded, 1 pending,
+            2 lexical); other bits zero
+```
+
+Gaps: the first value is absolute, each next one the difference to the previous (vector
+indices and term ids strictly ascending). Term ids index the frame's dictionary, so a chunk's
+terms come out in byte order. A binary payload decodes to exactly the mutations its
+`HMS-TXN-2` form would hold; `hms-format` and `verify` read it through that JSON form.

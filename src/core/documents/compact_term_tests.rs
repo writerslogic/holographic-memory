@@ -87,6 +87,56 @@ fn memoized_terms_match_the_reference_tokenizer() {
     }
 }
 
+/// Ingest's interned counting gives every chunk exactly the term table and word count of
+/// `terms(text, true)` with the first line counted `title_weight` times in total: with and
+/// without a batch interner, for repeated, mixed-case and non-ASCII words, and after the
+/// interner starts over at its capacity.
+#[test]
+fn interned_chunk_terms_match_terms_with_title_weighting() {
+    fn expected(text: &str, title_weight: u32) -> (Vec<(String, u32)>, usize) {
+        let mut terms = super::terms(text, true);
+        if title_weight > 1 {
+            for (term, count) in super::terms(text.lines().next().unwrap_or_default(), true) {
+                *terms.entry(term).or_insert(0) += count * (title_weight - 1);
+            }
+        }
+        let words = terms.values().map(|&n| n as usize).sum();
+        (terms.into_iter().collect(), words)
+    }
+    fn actual(text: &str, title_weight: u32) -> (Vec<(String, u32)>, usize) {
+        let (terms, words) = super::chunk_terms(text, title_weight);
+        terms.assert_valid_storage();
+        let pairs = (&terms)
+            .into_iter()
+            .map(|(k, &v)| (k.to_owned(), v))
+            .collect();
+        (pairs, words)
+    }
+    let many: String = (0..70_000).map(|i| format!("w{i} ")).collect();
+    let texts = [
+        "Running runners RUN quickly;\nthe runner's running-shoes ran. Running",
+        "ΟΔΟΣ Οδός ΣΟΦΟΣ naïve\r\nCafé CAFÉ straße STRASSE 42 x2 İstanbul",
+        "",
+        "!!! ,,, ---\nwords after an empty title",
+        "abcdefgh abcdefghi abcdefgg abcdefg abcdefghij zzzzzzzzz a aa\u{0}aa",
+        &many,
+        "Running runners RUN quickly;\nthe runner's running-shoes ran. Running",
+    ];
+    for title_weight in [1, 2, 16] {
+        for text in texts {
+            assert_eq!(actual(text, title_weight), expected(text, title_weight));
+        }
+        let mut memo = super::StemMemo::default();
+        let _installed = memo.install();
+        for text in texts.iter().chain(&texts) {
+            for words in text.split_inclusive(' ').collect::<Vec<_>>().chunks(1000) {
+                let chunk = words.concat();
+                assert_eq!(actual(&chunk, title_weight), expected(&chunk, title_weight));
+            }
+        }
+    }
+}
+
 /// The byte scanner finds the same whitespace-separated words as `char::is_whitespace` on
 /// text mixing ASCII and Unicode separators (NBSP, NEL, em space, ideographic space).
 #[test]

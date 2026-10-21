@@ -151,10 +151,18 @@ fn the_spec_alone_decodes_every_golden_journal() -> Result<()> {
                 } else {
                     frame.payload.clone()
                 };
-                let json = plain
-                    .strip_prefix(b"HMS-TXN-2\0")
-                    .context("journal magic")?;
-                let mutations: Vec<Value> = serde_json::from_slice(json)?;
+                // MUTATIONS.md: HMS-TXN-2 is a JSON array; HMS-TXN-3 is binary, read back as
+                // the JSON array of the same mutations.
+                let json = match plain.strip_prefix(b"HMS-TXN-2\0") {
+                    Some(json) => std::borrow::Cow::Borrowed(json),
+                    None => {
+                        ensure!(plain.starts_with(b"HMS-TXN-3\0"), "journal magic");
+                        holographic_memory::core::format::scan::transaction_json(&plain)
+                            .context("journal magic")?
+                            .map_err(anyhow::Error::msg)?
+                    }
+                };
+                let mutations: Vec<Value> = serde_json::from_slice(&json)?;
                 ensure!((1..=4096).contains(&mutations.len()));
                 for m in mutations {
                     let object = m.as_object().context("mutation object")?;
@@ -343,19 +351,19 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
     // Store schema.
     let (_k, store) = make()?;
     let schema = store.join("store.json");
-    let text = std::fs::read_to_string(&schema)?.replace("\"version\": 2", "\"version\": 3");
+    let text = std::fs::read_to_string(&schema)?.replace("\"version\": 2", "\"version\": 4");
     std::fs::write(&schema, &text)?;
     std::fs::write(
         store.join("store.json.crc32"),
         format!("{:08x}\n", crc32fast::hash(text.as_bytes())),
     )?;
     refused(&golden, &store, "newer than the supported")?;
-    // Journal magic: a well-formed frame whose payload is HMS-TXN-3.
+    // Journal magic: a well-formed frame whose payload is HMS-TXN-4.
     let (_k, store) = make()?;
     let path = store.join("vectors_data.bin/seg_0.bin");
     let mut seg = std::fs::read(&path)?;
     let (_, end, _) = read_segment(&seg)?;
-    let payload = b"HMS-TXN-3\0[]";
+    let payload = b"HMS-TXN-4\0[]";
     let mut frame = Vec::new();
     frame.extend_from_slice(&crc32fast::hash(payload).to_le_bytes());
     frame.extend_from_slice(&(payload.len() as u32).to_le_bytes());
@@ -365,7 +373,7 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
     frame.extend_from_slice(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x4c, 0x44, 0x4e, 0x45]);
     seg[end..end + frame.len()].copy_from_slice(&frame);
     std::fs::write(&path, seg)?;
-    refused(&golden, &store, "HMS-TXN-3 is newer")?;
+    refused(&golden, &store, "HMS-TXN-4 is newer")?;
     // A text segment from the future is only a cache: it is overwritten.
     let (_k, store) = make()?;
     let mut text = std::fs::read(store.join("documents.text"))?;

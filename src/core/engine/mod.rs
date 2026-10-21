@@ -7,6 +7,7 @@ mod document_api;
 mod document_batch;
 #[cfg(feature = "local-embed")]
 mod embed_api;
+pub(crate) mod journal;
 pub(crate) mod knowledge;
 pub(crate) mod memory_access;
 pub(crate) mod multi_hop;
@@ -70,6 +71,8 @@ pub struct HmsCore {
     /// writes.
     persisted_indices: parking_lot::Mutex<Vec<u8>>,
     revision: std::sync::atomic::AtomicU64,
+    /// The frame format this store is written in (its `store.json` schema); both are read.
+    journal: journal::JournalFormat,
     pub(crate) arena: Arc<PersistentArena>,
     pub(crate) dimensions: usize,
     pub(crate) storage_path: PathBuf,
@@ -149,7 +152,7 @@ impl HmsCore {
         }
 
         let store_lock = StoreLock::acquire(&base_path)?;
-        super::schema::validate_store(&base_path, dim, &config)?;
+        let schema = super::schema::validate_store(&base_path, dim, &config)?;
 
         let arena = Arc::new(PersistentArena::new(base_path.join("vectors_data.bin"))?);
 
@@ -250,6 +253,7 @@ impl HmsCore {
             compaction: parking_lot::Mutex::new(()),
             persisted_indices: parking_lot::Mutex::new(Vec::new()),
             revision: std::sync::atomic::AtomicU64::new(0),
+            journal: journal::JournalFormat::for_schema(schema),
             arena,
             dimensions: dim,
             storage_path: base_path,
@@ -537,19 +541,21 @@ impl HmsCore {
             let payload = self.maybe_decrypt(data).with_context(|| {
                 format!("cannot decrypt arena frame at {offset}: wrong passphrase, or the store is corrupted")
             })?;
-            let json = payload
-                .strip_prefix(mutation::TRANSACTION_MAGIC)
-                .with_context(|| {
-                    match super::format::scan::classify_payload(&payload) {
-                        super::format::scan::PayloadKind::OtherTransactionVersion(version)
-                            if version.parse::<u32>().is_ok_and(|v| v > 2) =>
-                        {
-                            format!("journal frame format HMS-TXN-{version} is newer than the supported HMS-TXN-2; open the store with a release that supports it")
-                        }
-                        _ => "unsupported transaction format; re-encode original sources into a new store".to_string(),
+            if let Some(json) = payload.strip_prefix(mutation::TRANSACTION_MAGIC) {
+                self.replay_frame(json, &shards)?;
+            } else if let Some(body) = payload.strip_prefix(journal::BINARY_MAGIC) {
+                self.replay_binary_frame(body, &shards)
+                    .with_context(|| format!("cannot replay arena frame at {offset}"))?;
+            } else {
+                anyhow::bail!(match super::format::scan::classify_payload(&payload) {
+                    super::format::scan::PayloadKind::OtherTransactionVersion(version)
+                        if version.parse::<u32>().is_ok_and(|v| v > 3) =>
+                    {
+                        format!("journal frame format HMS-TXN-{version} is newer than the supported HMS-TXN-3; open the store with a release that supports it")
                     }
-                })?;
-            self.replay_frame(json, &shards)?;
+                    _ => "unsupported transaction format; re-encode original sources into a new store".to_string(),
+                });
+            }
             let next = self.arena.next_offset(offset)?;
             // The frame is applied; its pages stay on disk for the next replay or compaction.
             self.arena
@@ -620,6 +626,36 @@ impl HmsCore {
         decoded?;
         decoder.end()?;
         Ok(())
+    }
+
+    /// [`Self::replay_frame`] for an `HMS-TXN-3` payload body: mutations are decoded and
+    /// applied `REPLAY_CHUNK` at a time, the frame's term dictionary held meanwhile.
+    fn replay_binary_frame(&self, body: &[u8], shards: &ShardSet) -> Result<()> {
+        let mut decoder = journal::BinaryDecoder::new(body)?;
+        let mut chunk = Vec::with_capacity(REPLAY_CHUNK);
+        loop {
+            let next = decoder.next_mutation()?;
+            let done = next.is_none();
+            chunk.extend(next);
+            if chunk.len() == REPLAY_CHUNK || (done && !chunk.is_empty()) {
+                for mutation in &chunk {
+                    self.validate_mutation(mutation)?;
+                }
+                self.apply_mutations(&self.prepare_mutations(&chunk), shards)?;
+                chunk.clear();
+            }
+            if done {
+                return Ok(());
+            }
+        }
+    }
+
+    /// `mutations` as a journal payload in this store's format.
+    fn transaction_payload(&self, mutations: &[Mutation]) -> Result<Vec<u8>> {
+        match self.journal {
+            journal::JournalFormat::Json => mutation::transaction_payload(mutations),
+            journal::JournalFormat::Binary => journal::binary_payload(mutations),
+        }
     }
 
     /// Returns the dimensionality of the hypervector space.

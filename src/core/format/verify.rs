@@ -15,7 +15,7 @@ use serde_json::Value;
 use super::scan::{self, PayloadKind, Replay, SegmentEnd, TextHeader};
 use super::{
     Report, Severity, TenantReport, CURRENT, SALT_LEN, STORAGE_FORMAT_CURRENT,
-    STORAGE_FORMAT_OLDEST, STORE_SCHEMA_VERSION,
+    STORAGE_FORMAT_OLDEST, STORE_SCHEMA_OLDEST, STORE_SCHEMA_VERSION,
 };
 use crate::core::storage::{FormatManifest, FORMAT_MAGIC, LEGACY_SEGMENT_SIZE, SEGMENT_SIZE};
 
@@ -222,7 +222,8 @@ fn check_schema(store: &Path, report: &mut Report) -> Schema {
     let version = value.get("version").and_then(Value::as_u64);
     report.versions.store_schema = version.map(|v| v as u32);
     match version {
-        Some(v) if v == u64::from(STORE_SCHEMA_VERSION) => {}
+        Some(v)
+            if (u64::from(STORE_SCHEMA_OLDEST)..=u64::from(STORE_SCHEMA_VERSION)).contains(&v) => {}
         Some(v) if v > u64::from(STORE_SCHEMA_VERSION) => report.add(
             Severity::Unsupported,
             "schema-newer",
@@ -583,12 +584,24 @@ fn check_arena(
                 payload
             };
             match scan::classify_payload(payload) {
-                PayloadKind::Transaction(json) => {
-                    transaction_formats.insert("HMS-TXN-2".to_owned());
+                kind @ (PayloadKind::Transaction(_) | PayloadKind::BinaryTransaction(_)) => {
+                    transaction_formats.insert(
+                        if matches!(kind, PayloadKind::Transaction(_)) {
+                            "HMS-TXN-2"
+                        } else {
+                            "HMS-TXN-3"
+                        }
+                        .to_owned(),
+                    );
                     if schema.encrypted && !authenticated {
                         return;
                     }
-                    match scan::check_transaction(json, schema.dimensions, &mut replay) {
+                    let checked = scan::transaction_json(payload)
+                        .expect("a transaction payload")
+                        .and_then(|json| {
+                            scan::check_transaction(&json, schema.dimensions, &mut replay)
+                        });
+                    match checked {
                         Ok(_) => {}
                         Err(message) => {
                             payload_problems += 1;
@@ -604,7 +617,7 @@ fn check_arena(
                 }
                 PayloadKind::OtherTransactionVersion(version) => {
                     payload_problems += 1;
-                    let newer = version.parse::<u32>().map_or(true, |v| v > 2);
+                    let newer = version.parse::<u32>().map_or(true, |v| v > 3);
                     transaction_formats.insert(format!("HMS-TXN-{version}"));
                     report.add(
                         Severity::Unsupported,
@@ -617,7 +630,7 @@ fn check_arena(
                         Some(offset),
                         format!(
                             "journal frame format HMS-TXN-{version} is {} than the supported \
-                             HMS-TXN-2",
+                             HMS-TXN-2 and HMS-TXN-3",
                             if newer { "newer" } else { "older" }
                         ),
                     );

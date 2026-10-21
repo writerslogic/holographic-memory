@@ -91,7 +91,7 @@ impl HmsCore {
         #[cfg(feature = "local-embed")]
         let inferred_dimensions =
             inferred_dimensions.or_else(|| self.text_embedder().map(|e| e.dimensions()));
-        super::document_batch::validate_inputs(&inputs, inferred_dimensions)?;
+        let spans = super::document_batch::validate_inputs(&inputs, inferred_dimensions)?;
         #[cfg(feature = "local-embed")]
         let inputs = {
             let mut inputs = inputs;
@@ -100,7 +100,8 @@ impl HmsCore {
         };
         let mutations = inputs
             .into_par_iter()
-            .map_init(documents::StemMemo::default, |memo, input| {
+            .zip(spans)
+            .map_init(documents::StemMemo::default, |memo, (input, spans)| {
                 let _memo = memo.install();
                 #[cfg(feature = "local-models")]
                 if let Some(stages) = stages.as_deref() {
@@ -108,8 +109,9 @@ impl HmsCore {
                         .prepare_document_with_models(input, stages, options.encode)
                         .map(|document| Mutation::Document(Arc::new(document)));
                 }
-                documents::prepare_with_options(
+                documents::prepare_spans(
                     input,
+                    spans,
                     self.dimensions,
                     self.config.embedding_space.as_ref().map(|s| s.dimensions),
                     None,
@@ -119,7 +121,7 @@ impl HmsCore {
                 .map(|document| Mutation::Document(Arc::new(document)))
             })
             .collect::<Result<Vec<_>>>()?;
-        let payload = super::document_batch::serialize_transaction(&mutations)?;
+        let payload = super::document_batch::serialize_transaction(self, &mutations)?;
         let counts = mutations
             .iter()
             .map(|mutation| match mutation {

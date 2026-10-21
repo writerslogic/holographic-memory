@@ -10,8 +10,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::Value;
 
 use super::{
-    AUDIT_ENTRY_LEN, END_MARK, FRAME_HEADER_LEN, MAX_FRAME_PAYLOAD, TEXT_SEGMENT_HEADER_LEN,
-    TEXT_SEGMENT_MAGIC, TRANSACTION_MAGIC, TRANSACTION_MAGIC_PREFIX,
+    AUDIT_ENTRY_LEN, BINARY_TRANSACTION_MAGIC, END_MARK, FRAME_HEADER_LEN, MAX_FRAME_PAYLOAD,
+    TEXT_SEGMENT_HEADER_LEN, TEXT_SEGMENT_MAGIC, TRANSACTION_MAGIC, TRANSACTION_MAGIC_PREFIX,
 };
 
 /// Location and header fields of one journal frame.
@@ -204,11 +204,14 @@ fn fault(
     }
 }
 
-/// What a frame payload is, before any JSON is decoded.
+/// What a frame payload is, before any of it is decoded.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PayloadKind<'a> {
     /// `HMS-TXN-2\0` followed by the JSON mutation array.
     Transaction(&'a [u8]),
+    /// `HMS-TXN-3\0` followed by the binary mutations; [`transaction_json`] reads them as the
+    /// JSON array an `HMS-TXN-2` frame of the same mutations holds.
+    BinaryTransaction(&'a [u8]),
     /// `HMS-TXN-<n>\0` with an `n` this build does not read.
     OtherTransactionVersion(String),
     /// No journal magic: damaged, foreign, or still encrypted.
@@ -218,6 +221,9 @@ pub enum PayloadKind<'a> {
 pub fn classify_payload(payload: &[u8]) -> PayloadKind<'_> {
     if let Some(json) = payload.strip_prefix(TRANSACTION_MAGIC) {
         return PayloadKind::Transaction(json);
+    }
+    if let Some(body) = payload.strip_prefix(BINARY_TRANSACTION_MAGIC) {
+        return PayloadKind::BinaryTransaction(body);
     }
     if let Some(rest) = payload.strip_prefix(TRANSACTION_MAGIC_PREFIX) {
         let digits = rest.iter().take_while(|b| b.is_ascii_digit()).count();
@@ -565,6 +571,13 @@ fn check_mutation(
     Ok(())
 }
 
+/// The JSON mutation array of a transaction payload of either journal format (`None` for
+/// any other payload); a malformed binary payload is the problem as text.
+pub fn transaction_json(payload: &[u8]) -> Option<Result<std::borrow::Cow<'_, [u8]>, String>> {
+    crate::core::engine::journal::payload_json(payload)
+        .map(|json| json.map_err(|error| format!("{error:#}")))
+}
+
 /// Decodes a transaction's JSON and checks every mutation, applying them to `replay`.
 /// Returns the first problem as text.
 pub fn check_transaction(
@@ -828,7 +841,11 @@ mod tests {
         ));
         assert_eq!(
             classify_payload(b"HMS-TXN-3\0[]"),
-            PayloadKind::OtherTransactionVersion("3".into())
+            PayloadKind::BinaryTransaction(b"[]")
+        );
+        assert_eq!(
+            classify_payload(b"HMS-TXN-4\0"),
+            PayloadKind::OtherTransactionVersion("4".into())
         );
         assert_eq!(classify_payload(b"HMS-TXN-\0"), PayloadKind::Unrecognized);
         assert_eq!(classify_payload(b"HMS-TXN-2"), PayloadKind::Unrecognized);
