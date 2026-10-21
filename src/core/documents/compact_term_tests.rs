@@ -86,3 +86,24 @@ fn memoized_terms_match_the_reference_tokenizer() {
         }
     }
 }
+
+/// The byte scanner finds the same whitespace-separated words as `char::is_whitespace` on
+/// text mixing ASCII and Unicode separators (NBSP, NEL, em space, ideographic space).
+#[test]
+fn chunk_boundaries_match_char_whitespace_on_mixed_text() {
+    let text = "α\u{a0}beta \u{85}gamma\u{2003}δ\tε\u{3000}zeta\u{b}eta  θ";
+    let reference: Vec<&str> = text
+        .split(char::is_whitespace)
+        .filter(|w| !w.is_empty())
+        .collect();
+    let input: super::DocumentInput = serde_json::from_value(serde_json::json!({
+        "id": "d", "text": text, "chunkWords": 1, "overlapWords": 0
+    }))
+    .unwrap();
+    let chunks: Vec<String> = super::chunk_document(&input)
+        .unwrap()
+        .into_iter()
+        .map(|c| c.text)
+        .collect();
+    assert_eq!(chunks, reference);
+}
