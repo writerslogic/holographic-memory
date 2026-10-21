@@ -128,6 +128,38 @@ Full GloVe-100 and SIFT-1M do not fit a hosted runner. Two supported ways to run
   writes the results back with hardware class `modal-x86_64-8vcpu-32g`. The cap kills the run before
   the published rate would exceed it.
 
+## Server mode
+
+Server systems are compared with `hms-server` (feature `server`), never with the embedded rows;
+their files carry `mode: "server"` and render under "Server mode results".
+
+| Kind | Systems | Source |
+|---|---|---|
+| ANN | `hms-server`, Qdrant, Weaviate, OpenSearch k-NN, PostgreSQL + pgvector (HNSW, IVFFlat), Redis 8 query engine (HNSW, FLAT) | `hmsbench/servers.py` |
+| Text | OpenSearch BM25, Meilisearch, Typesense, PostgreSQL tsvector/ts_rank, ParadeDB pg_search | `hmsbench/servers.py` |
+
+```sh
+./benchmarks/competitive/hms-bench install-servers            # downloads, sha256/sha512 checks, client env
+./benchmarks/competitive/hms-bench run --suite smoke --mode server
+```
+
+* Downloaded servers are pinned per platform with a digest; PostgreSQL's pgvector (macOS: Homebrew
+  keg; Linux: PGDG apt) and Redis 8 with its query engine module (Homebrew; packages.redis.io) come
+  from the package manager and are recorded by reported version. PostgreSQL itself on macOS is the
+  pinned zonky build; ParadeDB's package is unpacked, never installed, and loaded through
+  `extension_control_path`. OpenSearch has no macOS build. Milvus standalone is not run: its
+  current releases ship only Docker Compose files.
+* `hmsbench/server_proc.py` owns each server: stable loopback ports per data directory, its own
+  session, bounded readiness probe, log in the work directory, SIGTERM then SIGKILL of the whole
+  process group, sampled RSS of the group (PSS on Linux).
+* The protocol (one client, one persistent connection, sequential queries, client-side timing;
+  build until queryable; cold start from process start to first answer; durable replace/delete
+  semantics per system) is written into every results file under `protocol`.
+* `hms-server`'s text row ingests through the memory API (`remember`) and queries through
+  `recall` with lexical weight 1 and semantic weight 0, the same document-search options as the
+  embedded `hms` row. Its graph index is held in memory only, so every serving process rebuilds it before the first
+  ANN query (counted into cold start and serving RSS).
+
 ## Plugging in more systems
 
 * **ANN or vector store:** add an `Adapter` subclass in `hmsbench/ann_worker.py` (`build`, `open`,

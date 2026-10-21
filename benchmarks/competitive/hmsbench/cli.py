@@ -5,7 +5,7 @@
 import argparse
 import sys
 
-from . import envs, registry, runner, table
+from . import envs, registry, runner, server_registry, server_runner, table
 from .common import RESULTS
 
 
@@ -24,7 +24,11 @@ def main(argv=None):
                      help="ANN only: restrict a comparator to these builds (systems not named keep all builds)")
     run.add_argument("--rounds", type=int)
     run.add_argument("--build-repeats", type=int)
-    tab = sub.add_parser("table", help="regenerate docs/benchmarks/COMPARISON.md and the README block from committed results")
+    run.add_argument("--mode", choices=["embedded", "server", "all"], default=None,
+                     help="embedded (default) or server-mode systems (hms-server is always included); naming server systems implies server")
+    srv = sub.add_parser("install-servers", help="download and verify the pinned server artifacts and the client environment")
+    srv.add_argument("systems", nargs="*")
+    tab =sub.add_parser("table", help="regenerate docs/benchmarks/COMPARISON.md and the README block from committed results")
     tab.add_argument("--check", action="store_true", help="fail if the committed files differ from the regenerated ones")
     sub.add_parser("list", help="list systems and suites")
     a = p.parse_args(argv)
@@ -57,6 +61,11 @@ def main(argv=None):
                 if not sep or not build:
                     raise SystemExit(f"--builds expects SYSTEM:BUILD, got {item!r}")
                 only_builds.setdefault(system, []).append(build)
+        mode = a.mode or ("server" if wanted and wanted <= set(server_registry.SERVER_SYSTEMS) else "embedded")
+        if mode in ("server", "all"):
+            server_runner.run_cli(a, spec, wanted)
+        if mode == "server":
+            return 0
         if a.only in ("ann", "both"):
             systems = [registry.HMS] + [s for s in registry.ANN_SYSTEMS if s not in registry.NOT_RUN and (wanted is None or s in wanted)]
             for dataset, n_train, n_test in spec["ann"]:
@@ -69,6 +78,10 @@ def main(argv=None):
                 if a.datasets and dataset not in a.datasets:
                     continue
                 print(runner.run_text(dataset, spec, systems))
+    elif a.cmd == "install-servers":
+        unavailable = server_runner.install(a.systems or list(server_registry.SERVER_SYSTEMS))
+        for system, why in unavailable.items():
+            print(f"unavailable here: {system}: {why}")
     elif a.cmd == "table":
         return table.main(check=a.check)
     return 0

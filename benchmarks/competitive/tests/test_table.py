@@ -65,6 +65,9 @@ def test_every_cell_recomputes_from_its_results_file():
             if cell.get("derived"):
                 mine, other = metrics[cell["metric"]][cell["hms"]], metrics[cell["metric"]][cell["other"]]
                 adv = table.advantage(cell["metric"], mine, other)
+                if adv is None:  # HMS not measured on this metric (for example a static index's replace)
+                    assert cell["factor"] is None and cell["text"] == "n/m"
+                    continue
                 assert (None if adv["factor"] == float("inf") else adv["factor"]) == cell["factor"]
                 assert (adv["ci"] or None) == (cell["ci"] or None)
                 assert cell["text"] == table.fx(adv["factor"])

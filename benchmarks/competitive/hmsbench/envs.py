@@ -123,5 +123,11 @@ def versions(name, packages):
     return json.loads(out)
 
 
+# Server-mode client environment (server_registry.py).
+from .server_registry import SERVER_PINS  # noqa: E402
+
+PINS.update(SERVER_PINS)
+
+
 if __name__ == "__main__":
     lock(sys.argv[1:] or None)

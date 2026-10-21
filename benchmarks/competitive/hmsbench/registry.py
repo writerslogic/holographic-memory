@@ -86,7 +86,6 @@ FACTS = {
 
 # Systems named in the brief that were not run, with the reason recorded in every results file.
 NOT_RUN = {
-    "pgvector": "needs a PostgreSQL server with the extension; not installable from pip/cargo/npm (service required)",
     "mem0": "agent-memory systems belong to the next harness stage (plug in through the same adapter interface)",
     "zep": "agent-memory systems belong to the next harness stage",
     "letta": "agent-memory systems belong to the next harness stage",
@@ -115,3 +114,11 @@ NOT_RUN.update({k: v[platform.system()] for k, v in _PLATFORM_NOT_RUN.items() if
 
 ANN_SYSTEMS = [k for k, v in SYSTEMS.items() if v["kind"] == "ann"]
 TEXT_SYSTEMS = [k for k, v in SYSTEMS.items() if v["kind"] == "text"]
+
+# Server-mode systems (own table sections, measured against hms-server): server_registry.py.
+from .server_registry import SERVER_FACTS, SERVER_NOT_RUN, SERVER_SYSTEMS, SERVER_TIMING_BOUNDARY  # noqa: E402
+
+SYSTEMS.update(SERVER_SYSTEMS)
+FACTS.update(SERVER_FACTS)
+TIMING_BOUNDARY.update(SERVER_TIMING_BOUNDARY)
+NOT_RUN.update(SERVER_NOT_RUN)

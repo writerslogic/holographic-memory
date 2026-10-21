@@ -98,7 +98,8 @@ def load_results():
         data = json.loads(path.read_text())
         if data.get("schema_version") != 1 or data.get("kind") not in ("ann", "text"):
             continue
-        key = (data["kind"], data["dataset"].get("id") or data["dataset"].get("name"), data["dataset"].get("n_train"), data["hardware"]["class"], data["suite"])
+        key = (data["kind"], data["dataset"].get("id") or data["dataset"].get("name"), data["dataset"].get("n_train"), data["hardware"]["class"], data["suite"],
+               data.get("mode", "embedded"))
         if key not in found or data["date"] > found[key][1]["date"]:
             found[key] = (path, data)
     return sorted(found.values(), key=lambda pd: (pd[1]["kind"], str(pd[1]["dataset"]), pd[1]["suite"], pd[1]["hardware"]["class"]))
@@ -160,6 +161,15 @@ def best_other(metric, cells):
     return best, others[best]
 
 
+def reference(data):
+    """The HMS row verdicts are drawn for: the library, or hms-server in a server-mode file."""
+    return data.get("reference", registry.HMS)
+
+
+def is_server(data):
+    return data.get("mode") == "server"
+
+
 def metrics_for(path, data):
     """Cells at a Bonferroni-adjusted level: the family is the verdict-bearing metrics of this
     results file (those where HMS and at least one comparator have a value)."""
@@ -167,8 +177,9 @@ def metrics_for(path, data):
     fn = analyze.ann_metrics if kind == "ann" else analyze.text_metrics
     spec = ANN_METRICS if kind == "ann" else TEXT_METRICS
     first = fn(rel(path), data)
-    family = sum(1 for k, *_ in spec if k not in analyze.NO_VERDICT and registry.HMS in first.get(k, {})
-                 and first[k][registry.HMS]["value"] is not None and best_other(k, first[k])[0] is not None)
+    ref = reference(data)
+    family = sum(1 for k, *_ in spec if k not in analyze.NO_VERDICT and ref in first.get(k, {})
+                 and first[k][ref]["value"] is not None and best_other(k, first[k])[0] is not None)
     level = 1 - 0.05 / max(family, 1)
     return fn(rel(path), data, level=level), level, family
 
@@ -180,6 +191,8 @@ def section(path, data):
     hw = data["hardware"]
     ds = data["dataset"]
     title = f"{ds.get('id') or ds['name']}" + (f" ({ds['n_train']:,} vectors, {ds['n_test']:,} queries)" if kind == "ann" else f" ({ds['documents']:,} documents, {ds['queries']:,} queries)")
+    if is_server(data):
+        title += ", server mode"
     return {"path": path, "data": data, "metrics": metrics, "spec": spec, "title": title, "hw": hw, "kind": kind,
             "level": level, "family": family}
 
@@ -198,13 +211,13 @@ def render_section(sec, cells_out):
              f"{hw['os']}{', GitHub-hosted runner' if hw.get('hosted_runner') else ''}), commit `{data['commit'][:10]}`, {data['date'][:10]}. " +
              f"Raw results: [{path.name}](../../{rel(path)}). Intervals: {sec['level'] * 100:.2f}% bootstrap (Bonferroni family of {sec['family']} verdict metrics).", "",
              *timing_boundary_lines(data),
-             "| Metric | HMS | Best other | Advantage (HMS vs best other) | Verdict |", "|---|---|---|---|---|"]
+             f"| Metric | {'hms-server' if is_server(data) else 'HMS'} | Best other | Advantage (HMS vs best other) | Verdict |", "|---|---|---|---|---|"]
     tally = {"WIN": [], "TIE": [], "LOSS": [], "n/m": [], "n/v": []}
     for key, label, unit, dec in spec:
         cells = metrics.get(key)
         if not cells:
             continue
-        mine = cells.get(registry.HMS)
+        mine = cells.get(reference(data))
         name, other = best_other(key, cells)
         for system, c in cells.items():
             cells_out.append({"section": sec["title"], "file": rel(path), "hardware_class": hw["class"], "metric": key, "system": system,
@@ -217,7 +230,7 @@ def render_section(sec, cells_out):
         tally[v].append((key, label, name, adv))
         if other is not None:
             cells_out.append({"section": sec["title"], "file": rel(path), "hardware_class": hw["class"], "metric": key, "derived": True,
-                              "hms": registry.HMS, "other": name, "factor": None if adv is None or adv["factor"] == float("inf") else adv["factor"],
+                              "hms": reference(data), "other": name, "factor": None if adv is None or adv["factor"] == float("inf") else adv["factor"],
                               "factor_infinite": bool(adv and adv["factor"] == float("inf")), "ci": adv["ci"] if adv else None, "verdict": v,
                               "text": "n/m" if adv is None else fx(adv["factor"])})
         adv_text = "n/m" if adv is None else fx(adv["factor"]) + (f" [{adv['ci'][0]:.2f}, {adv['ci'][1]:.2f}]" if adv["ci"] else " (no CI)")
@@ -282,13 +295,18 @@ def versions_table(results):
 
 
 def build():
-    results = load_results()
+    # Embedded sections first, then server-mode sections under their own heading: a server row is
+    # never compared with an embedded one.
+    results = sorted(load_results(), key=lambda pd: is_server(pd[1]))
     sections = [section(p, d) for p, d in results]
     cells = []
-    body, summary, losses = [], [], []
+    body, server_body, summary, losses = [], [], [], []
     for sec in sections:
         lines, tally = render_section(sec, cells)
-        body += lines
+        if is_server(sec["data"]):
+            server_body += lines
+        else:
+            body += lines
         counts = {k: len(v) for k, v in tally.items()}
         summary.append((sec, counts, tally))
         for key, label, name, adv in tally["LOSS"]:
@@ -309,7 +327,12 @@ def build():
             out.append(f"| {sec['title']} ({sec['hw']['class']}) | {label} | {registry.SYSTEMS[name]['display']} | {'the comparator has 0' if adv['factor'] == 0 else format(1 / adv['factor'], '.2f') + 'x worse'} | {LEVERS.get(sec['kind'] + ':' + key) or LEVERS.get(key, '')} |")
     else:
         out.append("No metric in the committed results is lost.")
-    out += ["", "## Results", ""] + body + ["## Operational facts", "", *facts_table(results), "",
+    out += ["", "## Results", ""] + body
+    if server_body:
+        out += ["## Server mode results", "",
+                ("Every system here is a separate server process tree measured from one client over loopback; verdicts compare "
+                 "comparators with `hms-server`, never with the embedded rows above. The protocol is recorded in each results file."), ""] + server_body
+    out += ["## Operational facts", "", *facts_table(results), "",
                                            "## Versions", "", *versions_table(results), ""]
     nr = {}
     for _, data in results:
@@ -341,7 +364,7 @@ def gaps_from(summary):
         for status in ("LOSS", "TIE"):
             for key, label, name, adv in tally[status]:
                 cells = sec["metrics"][key]
-                mine, other = cells[registry.HMS], cells[name]
+                mine, other = cells[reference(sec["data"])], cells[name]
                 paths = CODE_PATHS[sec["kind"]]
                 gaps.append({
                     "status": status, "dataset": sec["title"], "hardware_class": sec["hw"]["class"], "suite": sec["data"]["suite"],
@@ -377,10 +400,11 @@ def readme_block(summary):
         short = sec["title"].split(" (")[0]
         for key in HEADLINE[sec["kind"]]:
             cells = sec["metrics"].get(key)
-            if not cells or registry.HMS not in cells:
+            ref = reference(sec["data"])
+            if not cells or ref not in cells:
                 continue
             label, unit, dec = spec[key]
-            mine = cells[registry.HMS]
+            mine = cells[ref]
             name, other = best_other(key, cells)
             adv = advantage(key, mine, other) if other else None
             mark = {"WIN": "W", "TIE": "T", "LOSS": "L", "n/m": "-", "n/v": "-"}["n/v" if key in analyze.NO_VERDICT else verdict(adv) if other else "n/m"]
