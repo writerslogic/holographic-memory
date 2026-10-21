@@ -104,7 +104,7 @@ def timing(tdir):
 
 if __name__ == "__main__":
     e1, tdir, out = sys.argv[1:4]
-    doc = {"workstream": "E1 patience stop rule and E2 1-bit screen (ideas tree 2026-10, docs/research/IDEAS-2026-10.md)",
+    doc = {"workstream": "E1 patience stop rule and E2 1-bit screen (ideas tree 2026-10)",
            "method": "public-bench ann-qgraph --index vertex --residual --holdout 2000 (train vectors held out; test set unread); held-out graphs from the checked cache (degree 64 nytimes / 32 glove, build_ef 200, alpha 1.0); kill tests at --repeats 1 without the load gate (recall and evaluation counts are load-independent); paired timing: one invocation per set, every (ef, patience, screen) configuration timed back to back in each round under timed.sh, 4 rayon threads for the build, single-threaded search; the load gate (< 3) was never met, so absolute QPS are indicative and only the paired ratios decide",
            "decision_rules": "E1 goes if evals at recall within 0.005 of a fixed-ef row fall >= 15% at 0.90 and >= 5% at 0.95 on both sets, then paired QPS; E2 goes if recall at fixed ef is within 0.003 of the unscreened row with >= 60% of the 8-bit estimates skipped, then paired QPS; a ratio below 1 is a loss and is reported",
            "kill_tests": kill_tests(e1), "paired_timing": timing(tdir)}

@@ -239,8 +239,7 @@ across the operating range HMS cares about.
   proof that none exists. A genuinely novel superposition code remains open (and would be
   publishable) — but coupling, coherence design, learning, peeling, nonlinear lift, and
   Hopfield are now measured negatives, not untried ideas.
-- The exploration prototypes live under `/tmp/floor/` (ephemeral); the durable,
-  independently-reproduced crux is `scripts/superposition_floor.py`.
+- The independently reproduced crux is `scripts/superposition_floor.py`.
 
 **Reproduce:** the floor + computational gap — `uv run python scripts/superposition_floor.py`;
 the stronger-solver attack — `uv run python scripts/superposition_floor_probes.py`;

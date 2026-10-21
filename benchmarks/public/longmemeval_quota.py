@@ -6,7 +6,7 @@
 
   uv run --script benchmarks/public/longmemeval_quota.py <run dir> <longmemeval_s_cleaned.json>
 
-Leaf M1 of docs/research/IDEAS-2026-10.md: the dense-only proxy passed its rule by one question,
+Leaf M1 of the 2026-10 ideas tree: the dense-only proxy passed its rule by one question,
 so the policy is re-measured on the full tuned pipeline (longmemeval_config.json) using the
 cached scores of a Modal dev run (`modal volume get hms-lme runs/<tag>`; no compute). The turn
 ranking is post-processed: at most c turns per session before any session's (c+1)-th; the rest

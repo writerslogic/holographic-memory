@@ -88,14 +88,14 @@ code at recall 0.90 / 0.95 on nytimes, x1.48 / x1.58 on glove, 11 of 11 rounds) 
 8-bit encoding as the default: the 4-bit encoding wins x1.20 / x1.18 on nytimes but only x1.01 /
 x0.97 on glove (6 and 3 of 11 rounds), so it is a memory-only gain.
 
-### nytimes-256-angular, test set, Apple M4 (NEON): preliminary, x86 numbers pending
+### nytimes-256-angular, test set, Apple M4 (NEON)
 
 `benchmarks/results/public_qgraph_nytimes-256-angular.json` (commit d985308, 2026-10-07):
 10,000 test queries, every system single-threaded one query at a time, 3 repeats (median QPS, the
 runs are in the file), QPS at a target interpolated in log(QPS) between the Pareto-frontier points
 that bracket it; builds use all cores; competitors at the parameters their authors recommend
 (`benchmarks/public/ann_extra.py`). Every row ran with the 1-minute load above the gate of 3
-(another session's builds and timings shared the machine; load 5 to 103, recorded per row), so the
+(other builds and timings shared the machine; load 5 to 103, recorded per row), so the
 absolute QPS are indicative only, and the two HMS rows ran at different loads (9-28 against 7-9).
 Table: `uv run --script benchmarks/public/qgraph_table.py nytimes-256-angular`.
 
@@ -124,8 +124,7 @@ Read as the file reads it:
   unconfirmed until a rerun at equal load.
 - At recall 0.95 no HMS row is bracketed: both sweeps stopped at ef 512 with recall 0.948 (the test
   set is harder than the held-out train vectors, where ef 384 gave 0.950). FAISS, hnswlib, Lucene
-  and RaBitQ IVF 1+8 reach it (379, 509, 348, 129-278 and 803 QPS). The rerun with ef up to 1,024
-  is scripted in `/Volumes/A/.hms-target/logs/merge_verify/test/run_step4b.sh`.
+  and RaBitQ IVF 1+8 reach it (379, 509, 348, 129-278 and 803 QPS).
 - Memory: RaBitQ IVF (1+4: 55.5 MB, 1+8: 92.6 MB) and RaBitQ HNSW (95.3 MB) are 2.4-4.1x SMALLER
   than the 8-bit VGraph (226 MB) and 1.8-3.1x smaller than the 4-bit one (172 MB). That is a loss
   on index bytes at equal recall.
@@ -136,8 +135,7 @@ Read as the file reads it:
 - Not run on this machine: NGT (its quantized graph needs the `qbg` command, which the macOS
   Homebrew build lacks; the ONNG stand-in did not build within its 30-minute cap), Glass, DiskANN
   and ScaNN (x86-only builds). They need an x86 machine.
-- glove-100-angular was not run in this pass (the run was stopped so that the search-path changes
-  of the parallel session can be timed and the whole comparison rerun once).
+- glove-100-angular was not run in this pass.
 
 The earlier edge-code index (1,024-bit RaBitQ codes per edge, 2.97 GB on nytimes, 7,297 / 1,427
 QPS at load below 3) is superseded by `VGraph`; its sweeps stay in
@@ -147,10 +145,9 @@ overhead was not measured.
 
 ### Stop rule and 1-bit screen (held-out, 2026-10-07)
 
-`benchmarks/results/qgraph_stop_screen_heldout.json` (ideas tree `docs/research/IDEAS-2026-10.md`,
-leaves E1 and E2; held-out train vectors, test set unread). `VSearchParams::patience` ends a
+`benchmarks/results/qgraph_stop_screen_heldout.json` (held-out train vectors, test set unread). `VSearchParams::patience` ends a
 search after that many expansions without a change to the 10 best estimates: 17-29% fewer
-estimates at equal recall on both sets, and in coordinator-paired rounds (load 11-185, gate unmet,
+estimates at equal recall on both sets, and in paired rounds (load 11-185, gate unmet,
 ratios only) x1.33 (4 of 5 rounds) on nytimes and x1.42 (4 of 4) on glove at recall 0.95, neutral
 at 0.90; off by default, `--patience` in the bench. The opt-in 1-bit screen before the 8-bit
 estimate skips 76% of the estimates on nytimes at equal recall but is slower in nearly every round
@@ -233,367 +230,6 @@ about 48 in S, the embedding model is a 1.5B-parameter model against a 22M-param
 dataset release differs, and the paper's recall variant and level mapping were not re-derived
 here. No ranking against the paper is implied.
 
-## LongMemEval retrieval pipeline (S dev split)
-
-Protocol: `benchmarks/public/longmemeval_split.json` freezes 100 dev / 400 held-out question ids
-(seed 20261005, stratified by question type and abstention; S and M share the same 500 ids). Only
-dev is used for tuning; 84 dev questions survive the official scoring filter, so one question moves
-a recall by 0.012. Held-out is scored once, in the final M run.
-
-Pipeline: `longmemeval_pipeline.py` (keys, fusion, official scoring), `longmemeval_modal.py` (GPU
-stages on Modal with content-hash caches in the `hms-lme` volume and a hard cost cap; HMS BM25 and
-exact cosine from `public-bench lme-scores`), `longmemeval_sweep.py` (dev ablation and tuning,
-writes `longmemeval_config.json` and `benchmarks/results/longmemeval_dev_ablation.json`).
-
-Dev baseline (MiniLM hybrid, the harness above restricted to dev,
-`benchmarks/results/longmemeval_dev_minilm_baseline.json`): session run R@5 0.893, R@10 0.952,
-nDCG@5 0.899, nDCG@10 0.911; round run, turn level R@5 0.607, R@10 0.786, nDCG@5 0.649,
-nDCG@10 0.687.
-
-A date-range filter in the document API is not needed for this benchmark: every question's store is
-ranked exhaustively, so a date filter or boost applied to the full ranking gives the same result as
-an engine-side filter.
-
-Dev models (small, pinned in `longmemeval_modal.py`): Qwen3-Embedding-0.6B (model-card query
-instruction, last-token pooling, L2), Qwen3-Reranker-0.6B (model-card yes/no prompt),
-Qwen3-4B-Instruct-2507 for user-fact extraction per distinct session text and for query rewrite /
-sub-queries / time range. The LLM stage ran on an L4; vLLM on the cheaper T4 was not tried.
-Embedding and re-ranking ran on T4. Levers were measured on cached scores (`longmemeval_sweep.py`):
-first each lever alone against the baseline, then greedy ascent, then pruning. The baseline uses
-user-turn keys for turns, session keys for sessions, the original question, document-API hybrid
-RRF and max aggregation. The objective is the mean of recall_all@5/10 and ndcg_any@5/10 at that
-level. Greedy ascent kept a change only if it raised the objective by at least 0.005. Pruning then
-removed any kept lever whose removal cost less than 0.005.
-
-| Lever (value) | Session, alone | Turn, alone | Kept (drop-one loss) |
-|---|---|---|---|
-| Lexical weight (0.5; session kept 0.0, dense only) | +0.013 | +0.003 | session 0.0 (0.015), turn 0.5 (0.016) |
-| Min-max score blend instead of RRF | +0.017 | +0.005 | no |
-| User-turn keys merged into the session ranking | +0.016 | n/a | session (0.021) |
-| Round keys (user turn + assistant reply) | +0.010 | -0.015 | no |
-| Facts as their own ranked list | -0.152 | -0.148 | no |
-| Facts in the value keys' index (paper's "separate" join) | +0.027 | +0.025 | both (0.019 / 0.014) |
-| Fact-expanded turn keys (K = V + facts) | +0.018 | +0.014 | turn, weight 2 (0.008) |
-| Fact-expanded session keys | -0.006 | n/a | no |
-| Aggregation sum2 / sum3 / RRF instead of max | <= -0.003 | <= -0.002 | no |
-| LLM rewrite as an extra query | +0.011 | +0.014 | turn (0.015) |
-| LLM sub-queries (weight 0.25) | +0.008 | +0.004 | no |
-| Session prior for turns | n/a | +0.018 | no |
-| Time-range boost from `question_date` (0 to 31 days padding) | <= -0.002 | <= +0.003 | no |
-| Cross-encoder re-rank of the top 20 (weight 2; turn top 50: +0.074) | +0.040 | +0.052 | session w 1 (0.015), turn w 8 (0.042) |
-
-Notes on the levers:
-- Facts as a separate list lose because extraction yields facts for only some sessions, and rank
-  fusion then favours any session that has a fact.
-- The time lever did run. All 100 query outputs parsed, and 17 dev questions received a range.
-  The gold sessions fall inside it for 9 of those 17; the 4B model's date arithmetic is loose
-  (for example, "two weeks ago" from 2023/02/01 became 2022/12/15 to 12/31).
-- Noise floor: re-embedding the same texts in different batches moved the session baseline by
-  about 0.004 (fp16). Kept levers with drop-one losses near 0.008 are therefore close to noise.
-
-Final dev metrics come from the end-to-end Modal dry run of the exact job on an empty cache
-(`benchmarks/results/longmemeval_dev_final.json`; 84 scored dev questions; official
-`eval_utils.py`; recall_all / ndcg_any). The full-S MiniLM numbers quoted earlier (session R@10
-0.952, turn R@10 0.785) are not like-for-like with these; the dev baseline rows are:
-
-| Level | Recall@5 | Recall@10 | nDCG@5 | nDCG@10 |
-|---|---|---|---|---|
-| Session, MiniLM hybrid baseline (dev) | 0.893 | 0.952 | 0.899 | 0.911 |
-| Session, pipeline | **0.964** | **0.988** | **0.951** | **0.958** |
-| Turn, MiniLM hybrid baseline (dev) | 0.607 | 0.786 | 0.649 | 0.687 |
-| Turn, pipeline | **0.821** | **0.929** | **0.791** | **0.823** |
-
-R@10 by question type (turn level / session level):
-
-| Type | n | Turn R@10 | Session R@10 |
-|---|---|---|---|
-| multi-session | 24 | 0.833 | 0.958 |
-| temporal-reasoning | 25 | 0.920 | 1.000 |
-| knowledge-update | 15 | 1.000 | 1.000 |
-| single-session-user | 13 | 1.000 | 1.000 |
-| single-session-preference | 6 | 1.000 | 1.000 |
-
-Multi-session is the weakest type at turn level (R@5 0.625). These numbers were tuned on dev, so
-they say nothing about held-out performance.
-
-Cost of the dry run:
-- In-job estimate: $0.85.
-- `modal billing report`: $1.02 for that app (GPU, CPU and image build), read before the billing
-  hour closed.
-- All Modal use for this work, including development runs and failed attempts: $4.35.
-
-Stage times, from the dry run's `cost.gpu_calls`:
-
-| Stage | Hardware | Work | Time |
-|---|---|---|---|
-| Fact extraction | L4 | 4,506 sessions | 1,250 s |
-| Query LLM | L4 | 100 questions | 59 s |
-| Embedding | T4 | 50,585 texts | 458 s |
-| Re-ranking | T4 | 3,997 pairs | 273 s |
-| HMS scoring | driver CPU | 50 questions | about 15 s |
-
-### The single M run (not executed; needs the maintainer's go-ahead)
-
-```sh
-uvx modal run benchmarks/public/longmemeval_modal.py --dataset m --part all --models large \
-  --cap 40 --tag m-all-large --out benchmarks/results/longmemeval_m_large.json
-```
-
-Large models, all on H100: Qwen3-Embedding-8B @ `1d8ad4ca9b3d`, Qwen3-Reranker-8B @
-`77d193c791ed`, and Qwen3-30B-A3B-Instruct-2507 @ `0d7cf23991f4`. Metrics are written for dev,
-held-out and all separately.
-
-LongMemEval_M has 237,046 session instances but 48,783 distinct session texts (measured; 1,213,940
-user-turn instances, 251,622 distinct). Fact extraction is keyed by content alone, so it makes about
-49k LLM calls. With dates in the prompt it would make about 237k.
-
-The estimate below is an inference, not a measurement. Dev stage times were scaled by M's distinct
-counts (about 10.8x dev), by parameter count (8B against 0.6B) and by an assumed H100-to-T4/L4
-throughput ratio of 4x to 12x:
-
-| Stage | Estimate |
-|---|---|
-| Fact extraction | about 1 to 1.5 H100-hours |
-| Embedding (about 540k keys) | about 1.5 H100-hours |
-| Re-ranking (about 20k pairs) | about 0.5 H100-hours |
-| HMS scoring | about 30 minutes of driver CPU |
-
-Expected spend is $15 to $25, with 3 to 4 hours of wall time at 4 GPU containers per stage. The
-`--cap 40` stop is checked before every wave. The in-job estimate ran about 20% below the bill on
-S, which is why the cap leaves twice the margin.
-
-Not yet verified, because the large-model path has never run:
-- the H100 functions;
-- vLLM loading the 30B MoE model on one H100;
-- the M download and sha256 check;
-- driver memory for the 2.7 GB JSON (64 GiB allotted);
-- HMS ingestion at about 4,000 keys per question;
-- the `--part all` metrics path.
-
-## Holographic fact memory prototype (S dev split, numpy)
-
-`benchmarks/public/holographic_memory_proto.py`, results in `benchmarks/results/holographic_dev.json`.
-Dev split only; held-out untouched. Representation: binary spatter codes (XOR binding, majority
-superposition), D = 16,384; component and atom codes are sign codes of Qwen3-Embedding-0.6B
-embeddings under one fixed Gaussian projection, after centering (see capacity). Time is a
-month-bucket code with graded overlap between adjacent months; session and turn codes are random.
-LLM stages (Qwen3-4B-Instruct-2507 on an L4, cached by content under tag `holo-struct-dev`): one
-structuring pass over the cached free-text facts into (entity, attribute, value, when), one query
-parse into (entity, attribute, latest/earliest/in-range), and the answer judge. Modal spend for all
-of it: $0.76 on the ledger plus one preempted L4 shard (about $0.12) that was lost before its ledger
-write. The answer judge is the same model and prompt for every system.
-
-**Capacity (facts per trace before cleanup accuracy drops below 0.95; codebook of 4,000 real
-values, attributes distinct within a trace).** Uncentered sign codes fail at 8 facts whatever D:
-the raw embeddings share a common direction (mean pairwise cosine 0.43), so their sign codes agree
-on 64% of bits and every superposition collapses onto that component. Centered sign codes:
-
-| Facts per trace | 64 | 128 | 256 | 512 |
-|---|---|---|---|---|
-| BSC, random codes, D = 8,192 / 16,384 / 32,768 / 65,536 | 1.0 / 1.0 / 1.0 / 1.0 | 0.98 / 1.0 / 1.0 / 1.0 | 0.81 / 0.99 / 1.0 / 1.0 | 0.37 / 0.77 / 1.0 / 1.0 |
-| BSC, centered sign codes, same D | 1.0 / 1.0 / 1.0 / 1.0 | 0.95 / 0.98 / 0.98 / 1.0 | 0.55 / 0.57 / 0.21 / 0.90 | 0.10 / 0.12 / 0.16 / 0.11 |
-| HRR (circular convolution), sign codes, D = 8,192 / 16,384 | 1.0 / 1.0 | 1.0 / 1.0 | 0.77 / 0.96 | 0.25 / 0.52 |
-| BSC two-level (sessions of 8, then superposed), sign codes, D = 16,384 / 65,536 | 0.95 / 1.0 | 0.19 / 0.68 | 0.0 / 0.05 | 0.0 / 0.0 |
-
-Random codes scale with D as Plate's analysis predicts; semantic codes saturate at about 128 to 256
-facts per trace and more D does not buy more, because the crosstalk is structured (near-synonymous
-attributes and values share bits by design). A second level of superposition halves the usable
-load again. HRR is slightly better than BSC at equal D but needs real-valued traces; BSC was kept
-because the sign codes are already binary and XOR is its own inverse. D = 16,384 was chosen as the
-smallest D at which the mean per-entity load on dev (156 records for `user`, max 239) is at the
-0.95 point for single-level traces.
-
-**EAV fact memory (the §5.7 design): a negative result.** Structuring produced 17,867 records from
-13,351 cached facts (83% about `user`); each question's store has 189 records over 48 sessions.
-Answer accuracy (judge; 94 non-abstention dev questions):
-
-| Question type (n) | Holographic flat | Hierarchical (user trace, then session traces) | Compositional (top-5 sessions by binding) | Retrieval top-1 turn | Retrieval top-5 turns | Either (flat or top-1) |
-|---|---|---|---|---|---|---|
-| knowledge-update (15) | 0.267 | 0.267 | 0.333 | 0.733 | 1.0 | 0.733 |
-| multi-session (24) | 0.042 | 0.042 | 0.292 | 0.208 | 0.417 | 0.25 |
-| single-session-assistant (11) | 0.0 | 0.0 | 0.0 | 0.455 | 0.364 | 0.455 |
-| single-session-preference (6) | 0.0 | 0.0 | 0.0 | 0.5 | 0.833 | 0.5 |
-| single-session-user (13) | 0.231 | 0.308 | 0.308 | 0.923 | 1.0 | 0.923 |
-| temporal-reasoning (25) | 0.12 | 0.2 | 0.16 | 0.36 | 0.76 | 0.4 |
-| overall (94) | 0.117 | 0.149 | 0.213 | 0.479 | 0.702 | 0.5 |
-
-Controls over the same fact sentences (dense sign-code index 0.277, sparse 64-of-16,384 index
-0.255) show most of the gap is the extraction ceiling, not the hologram: the gold answer string
-appears in some structured value for 27 of 81 short-answer questions and in some fact sentence for
-33 (none for single-session-assistant, whose answers are in assistant turns the extractor never
-sees). Time binding changed no answer (with and without time: 0.117; knowledge-update 0.267 both
-ways) because the month code only separates values when two records of the same attribute exist in
-different months and the cleanup already preferred one of them. Where it loses: aggregation
-questions (26 parsed as needing several records; a single-value lookup cannot answer them, the
-compositional list helps multi-session, 0.292 against top-1's 0.208, but stays below top-5's
-0.417); extraction and structuring (the breed in "a collar suitable for a Golden Retriever" became
-the record `plan = get new collar with name tag`); cleanup crosstalk (correct answers score 0.20 to
-0.26 agreement, incorrect ones median 0.23, so no abstention threshold separates them; the six
-abstention questions score 0.20 to 0.32). Session recall from the user trace alone: R_any@5 0.548,
-R_all@5 0.155 (fact index 0.857 / 0.679; tuned pipeline 0.976 / 0.964). Query cost: flat trace
-292 D-bit ops (one cleanup per month bucket), hierarchical 4,380, fact-index scan 138.
-
-Robustness of the EAV variant: with 5/10/20/30/40/50% of trace bits flipped the flat answer stays
-at 0.117 / 0.117 / 0.138 / 0.128 / 0.106 / 0.011 (same answer as the clean trace 97 / 94 / 85 / 77
-/ 56 / 1%), the sparse-code index drops 0.255 to 0.234 / 0.191 / 0.117 / 0.053 / 0.043 / 0.0 and
-the dense-code index holds 0.277 to 0.245 until 40% then 0.011 at 50%. Eight shards of each entity
-trace (every record in a random half of them) answer 0.117 after deleting 10 / 25 / 50% of shards;
-the fact index with the same fraction of items deleted goes 0.277 to 0.223 / 0.266 / 0.202.
-
-**Turn-atom memory (no extraction), official metrics.** Atoms are the sign codes of raw user turns
-and of the cached fact sentences (385 per haystack, 8 per session); each atom is bound with a random
-turn code, its session code and the session's month code; session traces, window traces (W
-consecutive sessions) and the user trace are majorities. A content query is not a factor of any
-trace, so the maintainer's "unbind with the query" step is replaced by its defined form: a trace is
-unbound with an atom's key and compared with the query code, one Hamming per atom and no codebook
-(the cleanup codebook of all turns is therefore unused). Official `eval_utils.py` (pinned commit),
-84 scored dev questions, D = 16,384, same codes for the flat Hamming scan. Every random code
-(projection, time, session, turn, tie), corruption and shard draw was repeated with 3 seeds; the
-numbers are mean ± sample std over seeds (`variants`, `variants_std`, each seed in
-`variants_per_seed`):
-
-| Coarse trace (atoms per trace) | Session R_all@5 | Session nDCG@10 | Turn R_all@5 (from session traces) | Turn nDCG@10 |
-|---|---|---|---|---|
-| user trace (385) | 0.131 ± 0.021 | 0.301 ± 0.010 | 0.726 ± 0.012 | 0.791 ± 0.008 |
-| window of 16 sessions (130) | 0.528 ± 0.036 | 0.650 ± 0.032 | | |
-| window of 4 sessions (32) | 0.849 ± 0.014 | 0.850 ± 0.003 | | |
-| one trace per session (8) | 0.944 ± 0.007 | 0.923 ± 0.002 | | |
-| flat Hamming scan over the atoms (no traces) | 0.976 ± 0.000 | 0.977 ± 0.001 | 0.786 ± 0.000 | 0.839 ± 0.001 |
-| tuned pipeline (dense + BM25 + facts + re-ranker, `longmemeval_dev_final.json`) | 0.964 | 0.958 | 0.821 | 0.823 |
-
-The session traces hold their 8 atoms almost losslessly: turns resolved from them reach R_all@5
-0.726 / nDCG@10 0.791 against 0.786 / 0.839 for the flat scan over the same codes, with the store
-reduced from 385 atom codes (788 KB per question) to 48 session codes (97 KB), and the LLM rewrite
-as the query did not help (0.135 session R_all@5 from the user trace). The user trace is over
-capacity, in line with the curve above: session recall from one trace per haystack is 0.131, and
-recovers only when a trace holds at most about 32 atoms (window of 4 sessions, 0.849). Per type
-(seed mean), turns from session traces match the flat scan on single-session-user (1.0),
-single-session-assistant (1.0) and multi-session (0.58), are close on knowledge-update (0.80
-against 0.84) and preference (0.61 against 0.56), and lose on temporal-reasoning (0.69 against
-0.88). Query cost: 864 D-bit ops hierarchical (coarse over the user trace plus fine over every
-session trace) against 385 for the flat scan; with window traces the coarse stage is n_sessions
-times the window's atoms.
-
-Robustness of the turn-atom variant (window-4 coarse, session-trace fine; turns ordered globally by
-score; 3 seeds): flipping 5 / 10 / 20 / 30 / 40 / 50% of every trace's bits gives session R_all@5
-0.837 / 0.746 / 0.659 / 0.440 / 0.190 / 0.040 and turn R_all@5 0.698 / 0.714 / 0.706 / 0.647 /
-0.405 / 0.004 (clean: 0.849 / 0.726; seed std 0.01 to 0.06). Storing each session trace as 8
-shards (every atom in a random half) costs 779 KB per question, the same bytes as the flat index of
-atom codes (788 KB), so the equal-bytes control is the index itself: a "replicated" index at that
-budget gets 0.99 copies per atom. Deleting 10 / 25 / 50% of storage units:
-
-| Storage (bytes per question) | Session R_all@5 at 10 / 25 / 50% loss | Turn R_all@5 at 10 / 25 / 50% loss |
-|---|---|---|
-| 8 shards per session trace (779 KB) | 0.925 / 0.913 / 0.901 | 0.599 / 0.587 / 0.552 |
-| flat index, atoms deleted (788 KB) | 0.960 / 0.960 / 0.865 | 0.738 / 0.651 / 0.433 |
-| flat index replicated to 779 KB, copies deleted | 0.948 / 0.937 / 0.921 | 0.706 / 0.651 / 0.460 |
-
-At 50% loss the sharded traces keep turn recall 0.552 ± 0.034 against 0.460 ± 0.038 for the
-equal-bytes index and 0.433 ± 0.007 for plain deletion, but at 10 and 25% loss and at zero loss
-the index is ahead (0.738 against 0.599 at 10%; the shards cost 0.13 of the fine-stage recall up
-front, 0.599 against 0.726, because averaging agreements over half-full shards adds noise), and at
-the session level the replicated index is ahead at every loss fraction. The graceful-degradation
-property is real only past about 30% loss and is paid for at zero loss; it is not a free lunch
-over an index of the same size.
-
-**Plain statement.** On dev, no holographic variant answers questions better than the tuned
-chunk-retrieval pipeline: the EAV design loses on every question type (0.117 against 0.479 top-1)
-and its ceiling is extraction, not the algebra; the extraction-free turn-atom design gets within
-0.06 of a flat scan over the same codes at the turn level while storing one vector per session
-(8x fewer bytes), and loses at the session level unless traces are kept at about 32 atoms. The
-properties the name implies hold in the measured form: answers and rankings degrade gradually up
-to 30% bit flips where the sparse index fails by 20%; shard loss is survived better than an
-equal-bytes index only beyond about 30% loss, and worse below it. The cost is capacity, which
-semantic codes cap at a few hundred items per trace regardless of D. These dev results do not
-justify a Rust port: the one measured advantage (8x smaller store at a 0.06 turn-recall cost) is a
-compression claim that a quantized index can also make, and no variant beats the index on
-accuracy. Not verified: time codes bound into the query, re-ranking on top of the holographic
-candidates, and anything on the held-out split or on M.
-
-## Representation and evidence experiments (S dev)
-
-Measured 2026-10-08, cached dev inputs only; the 400 held-out IDs remain unused. Detailed
-protocols, all tried settings, accounting and decisions are in
-[the canonical research record, sections 14–16](research/IDEAS-2026-10.md).
-
-Conversation geometry: 45 representations, 100 questions, original and shuffled streams,
-9,000 result rows; 84 scorable questions per arm. Low-rank projection energy, weighted
-energy and signed per-turn coordinates are compared with pooling, equally budgeted
-representative turns and full float16/int8/four-bit scans. **No arm passes** the fixed
-4x coarse-index reduction plus quality/shortlist-coverage gate. Rank-one int8 energy
-reduces coarse bytes 9.83x but loses session recall_all@5 from 0.916667 to 0.869048.
-Rank-eight recovers quality with only 1.93x coarse reduction; retaining exact refinement
-vectors makes its full serving layout 48.4% larger than float16. Ordinary four-bit storage
-uses 159,718 bytes per scored question versus 531,447 for float16, including exact user
-source evidence and directories. These raw-dense controls are not the tuned HMS pipeline.
-Query workspace is separately charged; local NumPy timings are indicative, not vendor
-comparisons. Report: `benchmarks/results/geometry_dev.json.gz`; independent validation:
-`benchmarks/results/geometry_dev_summary.json`. No Rust integration follows.
-
-Evidence selection: a weakest-facet beam selector and ordinary mean-coverage controls use
-the tuned cached ablation run, which reproduces turn recall_all@5 0.809524; it is distinct
-from the separate Modal-final 0.821429 run. Alpha selection uses 40 calibration questions;
-on 44 internal confirmation questions, the selected proposal reaches 0.818182 versus
-0.863636 for the unchanged baseline, paired difference -0.045455, 95% CI
-[-0.113636, 0.000000]. It fails the fixed quality gate. Report/independent summary:
-`benchmarks/results/evidence_completeness_dev.json` and
-`benchmarks/results/evidence_completeness_summary.json`.
-
-Source-budget diagnosis on the same previously used dev set: tuned top-20 complete
-labeled-evidence coverage is 0.964286, versus 0.809524 at five. A gold-assisted oracle
-could fit all labeled turns for 0.940476 of questions into their original first-five
-UTF-8 source-packet budgets. Anchored relevance knapsack still obtains 0.809524; extra
-items alone do not improve quality. This is a diagnostic bound with exact user text,
-dates, identities and alias witnesses, not an implementable answer system. Reports:
-`benchmarks/results/evidence_budget_dev.json` and
-`benchmarks/results/evidence_budget_summary.json`. No tokenizer, reader, judge, answer
-accuracy, product capacity, or competitor-superiority result is established by these
-experiments. All source readouts and statistics are independently checked; all five
-repository gates pass on macOS aarch64, Rust 1.96.0. Other platforms/MSRV are untested.
-
-
-## Source operand retrieval (S dev, 2026-10-08)
-
-The implemented Rust operand retriever reaches **79/84 complete labeled evidence
-sets**, versus **68/84** for both tuned first-five retrieval and anchored relevance
-knapsack, at every question's original source-packet byte budget. It realizes
-all eleven oracle-feasible improvements and loses no first-five successes.
-Mean quoted packet size is 2,404 bytes against the original mean limit of
-2,444 bytes; complete original turns, roles, dates and every alias witness are
-retained. Partial gold-turn excerpts never count as faithful support.
-
-Two independent runs reproduce all selections and packet hashes. Warm Rust
-selector p95 is 46.346 µs versus knapsack 80.987 µs in the first run and
-55.844 µs versus 76.386 µs in the second. Both selectors share prepared source
-facts/costs; source indexing averages 0.668 ms in the first run and is charged
-separately. This measures warm selection, not cold indexing or end-to-end
-retrieval/answer latency, total serving memory, or tokenizer budgets.
-
-Acceptance criteria were recorded before measurement in the
-[operand protocol](research/PROTOCOL-2026-10-08-OPERAND.md). The final lexical
-mechanism incorporates disclosed dev-informed repairs; retained iterations
-score 59, 71, 71, 74 and 78 before reaching 79. A continuation wires literal
-quotation, name and calendar-date coverage and reproduces 79 again. Explicit
-calendar-date questions are absent from dev; that behavior is checked with
-synthetic source/alias fixtures. This is repeated-use dev analysis, not untouched
-confirmation. All 400 held-out IDs remain unused.
-No reader or answer judge is run: packet `q` contains verbatim quoted evidence,
-while inferred answers `i` remain empty. Full labeled-turn coverage does not
-establish answer entailment or competitor superiority.
-
-The [final report](../benchmarks/results/evidence_budget_dev.json),
-[independent summary](../benchmarks/results/evidence_budget_summary.json) and
-[fingerprints](../benchmarks/results/evidence_budget_dev.fingerprints.json)
-record the result. The original section-16 report is preserved as
-`evidence_budget_baseline_dev.json` with its baseline summary. Independent raw
-source validation checks 24,391 occurrences and passes five validation gates;
-four distinct packet-hash/budget/oracle/membership corruptions are rejected.
-All five repository Rust gates and an explicit no-default-features Clippy
-check pass. Logs: `target/conversation-geometry-validation/operand-independent.log`,
-`operand-tamper.log`, `operand-tamper-checks.json`, and `operand-gates.json`.
-Detailed mechanism and retained negative results are in section 17 of the
-[research record](research/IDEAS-2026-10.md).
-
 ## What this means
 
 - For semantic search over text, use the document API: exact cosine reproduces the embedding
@@ -647,11 +283,8 @@ timed end to end. Embedder and re-ranker parity with the Python stages on 48 tur
 Metal and CUDA can batch: the decoder runs continuous batching with left-padded rows, the encoders
 run right-padded batches. Inputs: the first 64 distinct LongMemEval_S haystack sessions
 (`prompts::fact_prompt`, greedy, up to 1536 new tokens), 96 user turns, 96 questions and 96
-(question, turn) pairs. Timing is paired (arms alternating, 2 rounds, one `timed.sh` lock, 1-minute
-load average below 8 before every run; every run cited in the table met the gate). Throughput
-excludes model load. The decoder timing held the lock for about 21 minutes, over the 15-minute
-limit; a shorter re-run could not start because the machine stayed loaded (see the JSON's
-`protocol_deviations`).
+(question, turn) pairs. Timing is paired (arms alternating, 2 rounds, 1-minute load average below 8 before every run). Throughput
+excludes model load.
 
 | Stage | Batch 1 | Best batch | Parity vs batch 1 |
 |---|---|---|---|
@@ -660,37 +293,10 @@ limit; a shorter re-run could not start because the machine stayed loaded (see t
 | Re-ranking, 96 pairs | 9.1 pairs/s | batch 1 (batch 2: 8.8, 4: 8.7, 8: 8.0) | batch 16: max p(yes) diff 3.6e-7 |
 
 On the full 64 sessions, untimed: batch 1 took 829 s (7,851 tokens) and batch 8 434 s (7,812
-tokens), peak memory footprint 9.6 GB and 19.2 GB. At batch 1 the new decoder reproduces the
-candle 0.11 decoder on main byte for byte (64 / 64), and embeddings and p(yes) at batch 1 match main
-exactly. Batch-1 decoding first ran slower than main because the KV cache was concatenated from a
-strided tensor and re-copied each step; making it contiguous fixed that (wall 218 to 251 s against
-main's 231 to 238 s for 16 sessions).
+tokens), peak memory footprint 9.6 GB and 19.2 GB.
 
 Defaults on Metal and CUDA: the decoder stays at batch 1 because batch 8 changed 12.5% of fact
 outputs, which is above the 5% bar for making it the default; set `--batch` (or
 `Generator::set_batch`) to trade that for about 2x throughput. The embedder defaults to batch 4 and
-the re-ranker to batch 1. CUDA was not built or run for this measurement, so the CUDA defaults and
-the S dev throughput gap above remain unverified with batching.
-
-### LLM stage on GPU, S dev (Modal L4)
-
-`benchmarks/results/longmemeval_dev_hms_stages.json`. HMS's fact extraction (Qwen3-4B-Instruct-2507,
-candle, CUDA, one sequence at a time) was run over the S dev sessions on an L4 and compared key by key
-with the cached Python/vLLM outputs for the same model, revision and prompt
-(`benchmarks/public/compare_fact_caches.py`). On the first 1,500 sessions: identical output for 1,106
-(74%), the same fact set after normalization for 1,111, the same empty/non-empty decision for 1,482,
-and 2 unparseable outputs on each side. HMS produced 4,597 facts against Python's 4,493; 96% of
-Python's facts have an HMS fact with token Jaccard >= 0.5 (85% at >= 0.8), and 94% / 83% the other
-way. The prompt and parser are shared, so the differences come from decoding; their source within
-the decoder (kernels, numeric precision) was not isolated.
-
-Throughput is the problem: 4.64 s per session against 0.28 s with vLLM on the same GPU type, about
-17x slower, because HMS decodes one sequence at a time on GPU (the candle mask bug noted above). At
-that rate the S dev fact stage alone costs about $5.3 on an L4. The run did not reach the retrieval
-stages and gives no retrieval comparison with `longmemeval_dev_final.json`. It also overran its
-cap: Modal billed $14.40 against `--cap 8`, because the CPU driver was preempted six times and each
-restart cancelled in-flight L4 shards that were billed but never recorded in the ledger, and the
-driver's own CPU and memory were recorded only after a wave completed. The run was stopped by hand
-after 1,500 of 4,506 sessions; `longmemeval_modal.py` now reserves each wave's projected cost
-before launching it, so a preempted driver's restart inherits the spend. Candle 0.11 also does not compile its CUDA kernels for T4 (sm_75) on
-CUDA 12.4, so every HMS stage runs on L4.
+the re-ranker to batch 1. CUDA was not built or run for this measurement, so the CUDA defaults remain
+unverified with batching.

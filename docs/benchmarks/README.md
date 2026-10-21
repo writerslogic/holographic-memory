@@ -57,8 +57,7 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
   child's peak RSS from `wait4`. Cold start is the wall time from spawning the serving process to
   the first answered query (interpreter, imports, open, first query; the file cache is warm).
 * Serve rounds are interleaved: each round runs HMS and every comparator once, in rotated order,
-  so a load spike lands on all systems. Each phase takes the shared timing lock
-  (`/Volumes/A/.hms-target/timing.lock`) while it runs, never across a whole suite; the lock is a
+  so a load spike lands on all systems. Each phase takes a timing lock while it runs, never across a whole suite; the lock is a
   no-op on CI. Load averages are recorded per configuration; a load gate is not enforced on
   shared machines (`load_gate_met` is `null`, not `true`).
 * **Matched recall.** Each comparator sweeps its documented good settings (HNSW M 16 and 32 with
@@ -117,9 +116,7 @@ default token do not trigger CI. All actions are pinned by SHA.
 Full GloVe-100 and SIFT-1M do not fit a hosted runner. Two supported ways to run them:
 
 * Self-hosted or workstation: `./benchmarks/competitive/hms-bench run --suite heavy --only ann`.
-  On writerslogic-02 follow the existing rules (one benchmark lock held under 14 minutes per phase,
-  keep the rule30 workers and `keep-awake.ps1` alive); set `HMS_BENCH_HW_CLASS` if the derived
-  class is not descriptive. Commit the resulting `heavy-*.json` files.
+  Set `HMS_BENCH_HW_CLASS` if the derived class is not descriptive. Commit the resulting `heavy-*.json` files.
 * Modal: `uv run --with modal modal run --detach benchmarks/competitive/modal_run.py --suite heavy --cap-usd 12`
   ships the working tree to one 8 vCPU / 32 GiB container, builds HMS there, runs the suite and
   writes the results back with hardware class `modal-x86_64-8vcpu-32g`. The cap kills the run before
