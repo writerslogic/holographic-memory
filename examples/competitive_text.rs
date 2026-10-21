@@ -42,6 +42,9 @@ struct Args {
     /// (BM25 index only, like-for-like with the lexical comparators).
     #[arg(long, default_value = "eager")]
     encode: String,
+    /// `build` only: documents per atomic batch (0 = the whole corpus in one batch).
+    #[arg(long, default_value_t = 0)]
+    batch: usize,
 }
 
 #[derive(Deserialize)]
@@ -77,7 +80,13 @@ fn main() -> Result<()> {
             let core = HmsCore::new(1024, Some(store), None)?;
             // One atomic batch, as the comparators load the corpus in one transaction.
             let count = input.documents.len();
-            core.memorize_documents_with(input.documents, &options)?;
+            if args.batch == 0 {
+                core.memorize_documents_with(input.documents, &options)?;
+            } else {
+                for chunk in input.documents.chunks(args.batch) {
+                    core.memorize_documents_with(chunk.to_vec(), &options)?;
+                }
+            }
             json!({"documents": count, "ingest_s": start.elapsed().as_secs_f64(),
                 "encode": mode.name()})
         }
