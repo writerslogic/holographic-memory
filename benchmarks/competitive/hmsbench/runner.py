@@ -47,12 +47,17 @@ def _out_dir(spec):
     return CACHE / "competitive" / "smoke" if spec["name"] == "smoke" else RESULTS
 
 
+# Cargo profile of the HMS binaries the harness runs and measures: `dist` is the release build
+# without the symbol table (Cargo.toml), i.e. what is shipped. modal_run.py builds the same one.
+HMS_PROFILE = "dist"
+
+
 def hms_binary(name, example=False):
     target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target"))
-    path = target / "release" / ("examples" if example else "") / name
+    path = target / HMS_PROFILE / ("examples" if example else "") / name
     if not path.exists():
         log(f"building {name}")
-        cmd = ["cargo", "build", "--release", "--example" if example else "--bin", name]
+        cmd = ["cargo", "build", "--profile", HMS_PROFILE, "--example" if example else "--bin", name]
         subprocess.run(cmd, check=True, cwd=ROOT)
     return path
 
@@ -65,7 +70,8 @@ def hms_install_facts(paths):
         text = subprocess.run(probe, capture_output=True, text=True).stdout
         non_system = [l for l in text.splitlines()[1:] if l.strip() and not any(
             m in l for m in ("/usr/lib/", "/System/", "libc.so", "libm.so", "libgcc_s", "libpthread", "libdl", "ld-linux", "linux-vdso", "librt"))]
-        out[path.name] = {"bytes": path.stat().st_size, "non_system_dynamic_libraries": len(non_system)}
+        out[path.name] = {"bytes": path.stat().st_size, "non_system_dynamic_libraries": len(non_system),
+                          "profile": HMS_PROFILE, "symbols": "stripped"}
     tree = subprocess.run(["cargo", "tree", "-e", "normal", "--prefix", "none", "-p", "holographic-memory", "--offline"],
                           capture_output=True, text=True, cwd=ROOT)
     crates = sorted({line.split()[0] for line in tree.stdout.splitlines() if line.strip()}) if tree.returncode == 0 else []

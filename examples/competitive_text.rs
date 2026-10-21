@@ -10,8 +10,7 @@
 //!          passes over all queries one at a time.
 //! `ops`    replaces `--ops` documents and then deletes `--ops` others, one durable commit each.
 
-use anyhow::{ensure, Result};
-use clap::Parser;
+use anyhow::{bail, ensure, Context, Result};
 use holographic_memory::core::documents::{
     BatchTooLarge, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
 };
@@ -23,30 +22,68 @@ use std::{
     time::{Instant, SystemTime, UNIX_EPOCH},
 };
 
-#[derive(Parser)]
+const USAGE: &str =
+    "usage: competitive_text <build|serve|ops> --input FILE --store DIR --out FILE \
+    [--passes N (3)] [--ops N (100)] [--t0-ns NS (0)] [--encode eager|deferred|lexical (eager)] \
+    [--batch N (0)]";
+
+/// Command line, parsed by hand: this binary is what the harness measures as HMS's install
+/// footprint, and an argument-parsing framework would be most of it.
 struct Args {
     /// build | serve | ops
     phase: String,
-    #[arg(long)]
     input: PathBuf,
-    #[arg(long)]
     store: PathBuf,
-    #[arg(long)]
     out: PathBuf,
-    #[arg(long, default_value_t = 3)]
     passes: usize,
-    #[arg(long, default_value_t = 100)]
     ops: usize,
     /// Unix epoch nanoseconds taken by the orchestrator just before spawning this process.
-    #[arg(long, default_value_t = 0)]
     t0_ns: u128,
     /// `build` only: eager (chunk hypervectors at ingest, the default) | deferred | lexical
     /// (BM25 index only, like-for-like with the lexical comparators).
-    #[arg(long, default_value = "eager")]
     encode: String,
     /// `build` only: documents per atomic batch (0 = as many per batch as the engine accepts).
-    #[arg(long, default_value_t = 0)]
     batch: usize,
+}
+
+impl Args {
+    fn parse() -> Result<Self> {
+        let mut words = std::env::args().skip(1);
+        let phase = words.next().context(USAGE)?;
+        let (mut input, mut store, mut out) = (None, None, None);
+        let mut args = Args {
+            phase,
+            input: PathBuf::new(),
+            store: PathBuf::new(),
+            out: PathBuf::new(),
+            passes: 3,
+            ops: 100,
+            t0_ns: 0,
+            encode: "eager".into(),
+            batch: 0,
+        };
+        while let Some(flag) = words.next() {
+            let value = words
+                .next()
+                .with_context(|| format!("{flag} needs a value; {USAGE}"))?;
+            let number = || format!("{flag} takes a non-negative integer, not {value:?}");
+            match flag.as_str() {
+                "--input" => input = Some(PathBuf::from(&value)),
+                "--store" => store = Some(PathBuf::from(&value)),
+                "--out" => out = Some(PathBuf::from(&value)),
+                "--passes" => args.passes = value.parse().with_context(number)?,
+                "--ops" => args.ops = value.parse().with_context(number)?,
+                "--t0-ns" => args.t0_ns = value.parse().with_context(number)?,
+                "--encode" => args.encode = value,
+                "--batch" => args.batch = value.parse().with_context(number)?,
+                _ => bail!("unknown argument {flag}; {USAGE}"),
+            }
+        }
+        args.input = input.context(USAGE)?;
+        args.store = store.context(USAGE)?;
+        args.out = out.context(USAGE)?;
+        Ok(args)
+    }
 }
 
 #[derive(Deserialize)]
@@ -93,7 +130,7 @@ fn ingest(
 }
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = Args::parse()?;
     let input: Input = serde_json::from_slice(&std::fs::read(&args.input)?)?;
     let store = args.store.display().to_string();
     let report = match args.phase.as_str() {

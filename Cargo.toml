@@ -251,6 +251,12 @@ codegen-units = 1
 strip = "debuginfo"
 opt-level = 3
 
+# Shipped executables (the benchmark drivers the comparison measures, release binaries): the
+# release build without the symbol table, which only backtraces and profilers read.
+[profile.dist]
+inherits = "release"
+strip = "symbols"
+
 
 [[bench]]
 name = "intersection_kernels"

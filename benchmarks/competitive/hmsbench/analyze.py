@@ -66,7 +66,9 @@ def _install_cells(put, system, entry, src):
                                                   note or "Python distributions (wheels) the install pulls in") | {"informational": info})
         return
     binary = next(v for k, v in inst.items() if not k.startswith("_"))
-    put("install_mib", system, cell(binary["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", "one statically linked binary, symbols included"))
+    # Files written before the binaries were built with the `dist` profile record no symbols field.
+    symbols = binary.get("symbols", "included")
+    put("install_mib", system, cell(binary["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", f"one statically linked binary, symbols {symbols}"))
     crates = inst.get("_crate_dependencies", {}).get("count", 0)
     put("install_distributions", system, cell(crates, None, 1, f"{src}.install._crate_dependencies", "count",
                                               "crates compiled into the binary (not separately installed); non-OS shared libraries: "
