@@ -1,0 +1,3 @@
+5application/x-ndjson
+{"id":"a","text":"one"}
+{"id":"b","vector":[1,2,3]}

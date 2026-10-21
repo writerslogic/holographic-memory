@@ -157,7 +157,7 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
     Ok(n)
 }
 
-fn validate_batch(docs: &[ValidDoc], input_dim: usize) -> Result<(), ApiError> {
+pub fn validate_batch(docs: &[ValidDoc], input_dim: usize) -> Result<(), ApiError> {
     let mut source_bytes = 0usize;
     let mut metadata_bytes = 0usize;
     let mut embedding_values = 0usize;
@@ -215,7 +215,7 @@ pub async fn add_one(State(state): State<Arc<AppState>>, req: Request) -> ApiRes
     .await
 }
 
-fn is_ndjson(headers: &HeaderMap) -> bool {
+pub fn is_ndjson(headers: &HeaderMap) -> bool {
     headers
         .get(header::CONTENT_TYPE)
         .and_then(|v| v.to_str().ok())

@@ -132,9 +132,15 @@ struct Staging(Option<PathBuf>);
 
 impl Staging {
     fn new(state: &AppState) -> Result<Self, ApiError> {
-        let root = state.staging_root();
-        std::fs::create_dir_all(&root).map_err(ApiError::internal)?;
+        let configured = state.staging_root();
+        std::fs::create_dir_all(&configured).map_err(ApiError::internal)?;
+        // The hex name cannot contain a separator or `..`; the containment check on the
+        // canonical root states that invariant where the path is built.
+        let root = configured.canonicalize().map_err(ApiError::internal)?;
         let dir = root.join(format!("{:016x}", rand::random::<u64>()));
+        if dir.parent() != Some(root.as_path()) {
+            return Err(ApiError::internal("staging directory escapes its root"));
+        }
         Ok(Self(Some(dir)))
     }
 

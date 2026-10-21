@@ -147,7 +147,7 @@ fn replay(stored: &StoredResponse) -> Response {
     response
 }
 
-fn idempotency_key(headers: &HeaderMap) -> Result<Option<String>, ApiError> {
+pub fn idempotency_key(headers: &HeaderMap) -> Result<Option<String>, ApiError> {
     let Some(value) = headers.get("idempotency-key") else {
         return Ok(None);
     };

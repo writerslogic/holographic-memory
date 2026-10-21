@@ -58,6 +58,7 @@ jobs:
           - { target: did_parse, features: provenance }
           - { target: provenance_json, features: provenance }
           - { target: private_query, features: private-search }
+          - { target: server_requests, features: server }
           - { target: operand_question, features: experimental }
           - { target: connection_graph_log, features: experimental }
           - { target: llm_output, features: local-models }

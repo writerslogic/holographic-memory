@@ -26,6 +26,7 @@ has no Android or JVM types, so the sources are a ready starting point for a Kot
 
 ```sh
 cd bindings/kotlin
+scripts/bootstrap-gradle-wrapper.sh # once: fetch the checksum-pinned gradle-wrapper.jar
 scripts/build-jvm-native.sh        # host library into jvm/build/natives
 ./gradlew :jvm:test                # JUnit on the JVM
 scripts/build-android.sh           # four ABIs into android/src/main/jniLibs
