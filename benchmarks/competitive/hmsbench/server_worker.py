@@ -231,10 +231,10 @@ class HmsServer(ServerSystem):
 
 
 class HmsServerText(HmsServer):
-    """Lexical text through the memory API: `remember` stores each document as a fact and
-    `recall` with lexicalWeight 1 / semanticWeight 0 is document search's BM25 ranking (the
-    recall path hands ranking to document search when no fact has validity or supersession
-    metadata), with the same options as the embedded `hms` row."""
+    """Lexical text: `remember` (memory API) stores each document as a fact; queries go to
+    `/api/v1/search`, document search's BM25 ranking returning ids and scores only, with the
+    same options as the embedded `hms` row (equal to `recall` with lexicalWeight 1 /
+    semanticWeight 0 on facts without validity or supersession metadata)."""
 
     BUILDS = {"default": {}}
 
@@ -258,10 +258,10 @@ class HmsServerText(HmsServer):
         pass
 
     def prepare(self, text):
-        return json.dumps({"query": text, "k": TEXT_K, "candidateLimit": TEXT_K, "lexicalWeight": 1, "semanticWeight": 0}).encode()
+        return json.dumps({"query": text, "top_k": TEXT_K}).encode()
 
     def search(self, body):
-        return [(r["id"], r["score"]) for r in self.http.call("POST", "/api/v1/memory/recall", body=body)["results"]]
+        return [(h["id"], h["score"]) for h in self.http.call("POST", "/api/v1/search", body=body)["hits"]]
 
     def replace_doc(self, doc, n):
         self.http.call("POST", "/api/v1/memory/remember", {"id": doc["id"], "text": doc["text"] + " benchmarkrevision"})

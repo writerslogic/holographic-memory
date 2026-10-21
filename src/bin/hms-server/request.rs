@@ -86,7 +86,7 @@ pub async fn read_body(state: &AppState, body: Body) -> Result<Vec<u8>, ApiError
             "request body timed out",
         )
     })?
-    .map(|b| b.to_vec())
+    .map(Vec::from)
     .map_err(|_| {
         ApiError::new(
             StatusCode::PAYLOAD_TOO_LARGE,
@@ -116,6 +116,19 @@ pub fn parse<T: for<'de> Deserialize<'de>>(bytes: &[u8]) -> Result<T, ApiError> 
             format!("malformed request body: {e}"),
         )
     })
+}
+
+/// A response from already serialized JSON.
+pub fn json_bytes_response(status: StatusCode, body: Vec<u8>) -> Response {
+    (
+        status,
+        [(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        )],
+        body,
+    )
+        .into_response()
 }
 
 pub fn json_response(status: StatusCode, body: &Value) -> Response {

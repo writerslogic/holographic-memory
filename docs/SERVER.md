@@ -58,6 +58,7 @@ The contract is [`server/openapi.json`](server/openapi.json). Every operation li
 | `GET /api/v1/documents?limit&after` ids and metadata, id cursor | read | 200 `{"documents":[{"id","metadata"}],"next_cursor","count"}` |
 | `GET /api/v1/stats` | read | 200 `{"tenant","documents","vectors","documentIndexTrained","usedBytes","capacityBytes"}` |
 | `POST /api/v1/query` | read | 200 `{"matches":[{"id","text","metadata","score"}]}` best first |
+| `POST /api/v1/search` | read | 200 `{"hits":[{"id","score"}]}` best first (BM25) |
 | `POST /api/v1/index/maintain` | write | 200 `{"documentIndexTrained": bool}` |
 | `POST /api/v1/memory/{remember,recall,explain,forget,get,history,applyForgetting,consolidate}` | write / read | the memory API, `docs/memory-api` |
 | `GET /api/v1/compaction`, `POST /api/v1/compaction` | read / admin | status, run now |
@@ -71,6 +72,8 @@ The contract is [`server/openapi.json`](server/openapi.json). Every operation li
 A document is `{"id": str, "vector": [float], "text"?: str, "metadata"?: object}`. `vector` has exactly `--input-dim` finite f64 values, not all zero; query vectors follow the same rule. Normalization handles very large and very small finite magnitudes without narrowing to f32. `id` is 1 to 256 bytes with no control characters and not starting with `hms:`. `text` must fit one engine chunk (at most 4096 words and 64 KiB), because one vector describes one stored chunk; split longer documents and send one vector per part. `metadata` is at most 64 KiB. Adding an existing id replaces it.
 
 `POST /api/v1/query` takes `{"query_vector": [...], "top_k"?: 1..=max-top-k (default 3), "filter"?: object}`. `filter` keeps documents whose metadata contains every filter key with an equal JSON value; it is applied before ranking, so it never reduces the number of matches below `top_k` when enough documents match. `score` is the exact cosine similarity between the query and the stored embedding.
+
+`POST /api/v1/search` takes `{"query": "...", "top_k"?: 1..=max-top-k (default 10), "include"?: ["text", "metadata"]}` and ranks the tenant's documents, memory facts included, by BM25, one hit per document. Hits carry only `id` and `score` unless `include` names stored text or metadata; it applies no memory semantics (validity time, supersession), for which use `memory/recall`.
 
 Batch totals are limited to 8 MiB of ids and text, 8 MiB of metadata and 1,048,576 embedding values; the native prepared transaction is limited to 32 MiB. All documents are validated before one atomic commit; repeated ids keep their last occurrence while `added` stays the incoming count.
 

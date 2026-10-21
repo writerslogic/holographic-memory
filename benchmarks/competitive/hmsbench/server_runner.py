@@ -38,7 +38,7 @@ PROTOCOL = {
     "durability": DURABILITY,
     "hms_server": "ANN: the graph snapshot lives in memory only, so every serving process rebuilds it (POST /api/v1/index/maintain) before "
                   "its first query; its cold start and serving peak RSS include that build. Text: documents enter through the memory API "
-                  "(remember) and queries through recall with lexicalWeight 1 / semanticWeight 0, i.e. document search's BM25 ranking",
+                  "(remember) and queries through POST /api/v1/search (document search's BM25 ranking; ids and scores only)",
     "guards_lifted": "Weaviate's disk read-only guard (DISK_USE_READONLY_PERCENTAGE=100): a safety stop that trips on a nearly full host disk",
     "server_threads":"build threads = protocol build_threads where the server has a knob; per-query search parallelism pinned to 1 where a knob exists",
 }

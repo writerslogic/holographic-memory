@@ -415,6 +415,76 @@
         ],
         "type": "object"
       },
+      "SearchHit": {
+        "description": "One text search hit. `text` and `metadata` are present only when named in `include`.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "metadata": true,
+          "score": {
+            "description": "BM25 score.",
+            "format": "double",
+            "type": "number"
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "score"
+        ],
+        "type": "object"
+      },
+      "SearchHits": {
+        "properties": {
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "hits"
+        ],
+        "type": "object"
+      },
+      "SearchIn": {
+        "additionalProperties": false,
+        "description": "A lexical text query over the tenant's documents (memory facts included).",
+        "properties": {
+          "include": {
+            "default": [],
+            "description": "Extra fields per hit: any of `\"text\"` and `\"metadata\"`. Default: ids and scores only.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "query": {
+            "description": "1..=8192 bytes with at least one word.",
+            "type": "string"
+          },
+          "top_k": {
+            "default": null,
+            "description": "1..=`--max-top-k`, default 10.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
       "Snapshot": {
         "properties": {
           "bytes": {
@@ -1916,6 +1986,66 @@
         "summary": "Replace the tenant's store with an uploaded snapshot archive after verifying it.",
         "tags": [
           "snapshots"
+        ]
+      }
+    },
+    "/api/v1/search": {
+      "post": {
+        "operationId": "search",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchHits"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "BM25 text search: document ids and scores, best first; stored text and metadata on request.",
+        "tags": [
+          "documents"
         ]
       }
     },

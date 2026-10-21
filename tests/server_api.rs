@@ -859,3 +859,77 @@ fn logs_are_structured_and_never_contain_secrets_or_content() {
     assert_eq!(requests[3]["route"], "/api/v1/documents/{id}");
     assert!(events.iter().any(|e| e["event"] == "shutdown_complete"));
 }
+
+#[test]
+fn search_ranks_like_lexical_recall_and_returns_fields_only_on_request() {
+    let s = Server::open(&[]);
+    let words = [
+        "apple", "river", "stone", "cloud", "ember", "maple", "quartz",
+    ];
+    let facts: Vec<Value> = (0..40)
+        .map(|i| {
+            let text: Vec<&str> = (0..6)
+                .map(|j| words[(i * 3 + j * j) % words.len()])
+                .collect();
+            json!({"id": format!("f{i:02}"), "text": format!("{} note {i}", text.join(" "))})
+        })
+        .collect();
+    let stored = s
+        .req("POST", "/api/v1/memory/remember")
+        .json(&json!({ "facts": facts }))
+        .send();
+    assert_eq!(stored.status, 200);
+
+    for query in ["apple river", "quartz", "ember maple stone", "cloud note"] {
+        let recall = s
+            .req("POST", "/api/v1/memory/recall")
+            .json(&json!({"query": query, "k": 10, "candidateLimit": 10, "lexicalWeight": 1, "semanticWeight": 0}))
+            .send()
+            .json();
+        let expected: Vec<&str> = recall["results"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["id"].as_str().unwrap())
+            .collect();
+        let found = s
+            .req("POST", "/api/v1/search")
+            .json(&json!({"query": query, "top_k": 10}))
+            .send();
+        assert_eq!(found.status, 200);
+        let found = found.json();
+        let hits = found["hits"].as_array().unwrap();
+        let ids: Vec<&str> = hits.iter().map(|h| h["id"].as_str().unwrap()).collect();
+        assert!(!ids.is_empty());
+        assert_eq!(ids, expected, "query {query:?}");
+        assert!(hits
+            .iter()
+            .all(|h| h.get("text").is_none() && h.get("metadata").is_none()));
+        assert!(hits
+            .windows(2)
+            .all(|w| w[0]["score"].as_f64() >= w[1]["score"].as_f64()));
+    }
+
+    let full = s
+        .req("POST", "/api/v1/search")
+        .json(&json!({"query": "quartz", "top_k": 1, "include": ["text", "metadata"]}))
+        .send()
+        .json();
+    let hit = &full["hits"][0];
+    assert!(hit["text"].as_str().unwrap().contains("quartz"));
+    assert!(hit["metadata"].is_object());
+    assert_eq!(full["hits"].as_array().unwrap().len(), 1);
+
+    for (bad, status) in [
+        (json!({"query": "apple", "top_k": 0}), 422),
+        (json!({"query": "  "}), 422),
+        (json!({"query": "apple", "include": ["vector"]}), 422),
+        (json!({"query": "apple", "k": 3}), 400),
+    ] {
+        assert_eq!(
+            s.req("POST", "/api/v1/search").json(&bad).send().status,
+            status,
+            "{bad}"
+        );
+    }
+}
