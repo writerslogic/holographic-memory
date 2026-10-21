@@ -28,7 +28,7 @@ engine-supported models, equal best LongMemEval recall@5, and 6 layers against 1
 about half the compute and a 34 MB int8 pack. gte-small is the better choice on NFCorpus-dev
 (0.3398 against 0.3149) and is in the registry. `granite-embedding-small-english-r2` (ModernBERT) scores
 higher on SciFact but needs an architecture the engine does not implement. Engine-side runs of gte-small
-and bge-small were not completed (see `docs/research/HANDOFF-embeddings.md`), so the choice rests on
+and bge-small were not completed, so the choice rests on
 stage-1 quality plus the layer count, not on a measured engine latency comparison.
 
 ## Rust engine, int8 (granite-embedding-30m-english)

@@ -966,8 +966,7 @@ approaches the ~D linear cap, and >D requires a nonlinear encode. 0.5·D is reac
 but only by encode-side redesign (SC-SPARC), not decoder tricks — and it stays in the
 superposition regime (unlike sharding). Genuinely-different algebraic routes
 (Berlekamp-Welch rational store: exact unique-decode to 0.5·D; tropical max-plus
-superposition; cuckoo encode-gauge nulling) remain untested — see
-docs/CAPACITY-CAMPAIGN-LOG.md for the full ledger.
+superposition; cuckoo encode-gauge nulling) remain untested.
 
 ## 26. The floor was self-inflicted: solve-don't-sum reaches M≈D (2026-07-06)
 

@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["numpy>=1.26", "modal>=1.0"]
 # ///
-"""Holographic fact memory prototype on the LongMemEval_S dev split (docs/RESEARCH-OPPORTUNITIES.md 5.7).
+"""Holographic fact memory prototype on the LongMemEval_S dev split.
 
 Facts become hypervectors by binding attribute, value and time; an entity's facts are superposed into
 one trace; a question is parsed into (entity, attribute, time), the trace is unbound and cleaned up
