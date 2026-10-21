@@ -96,7 +96,7 @@ def pack(name, outdir, root, rels, part_bytes=DEFAULT_PART_BYTES):
                     for rel in rels:
                         for member in walk(root, rel):
                             add_member(tar, root, member, index)
-            except BaseException as exc:  # surfaced once the pipe has drained
+            except Exception as exc:  # surfaced once the pipe has drained
                 errors.append(exc)
             finally:
                 zstd.stdin.close()
@@ -106,27 +106,29 @@ def pack(name, outdir, root, rels, part_bytes=DEFAULT_PART_BYTES):
         parts = []
         handle = digest = path = None
         written = 0
-        while True:
-            data = zstd.stdout.read(CHUNK)
-            if not data:
-                break
-            view = memoryview(data)
-            while len(view):
-                if handle is None:
-                    path = outdir / f"{name}.tar.zst.{len(parts):03d}"
-                    handle, digest, written = open(path, "wb"), hashlib.sha256(), 0
-                take = min(len(view), part_bytes - written)
-                handle.write(view[:take])
-                digest.update(view[:take])
-                written += take
-                view = view[take:]
-                if written == part_bytes:
-                    handle.close()
-                    parts.append({"name": path.name, "size": written, "sha256": digest.hexdigest()})
-                    handle = None
-        if handle is not None:
-            handle.close()
-            parts.append({"name": path.name, "size": written, "sha256": digest.hexdigest()})
+        try:
+            while True:
+                data = zstd.stdout.read(CHUNK)
+                if not data:
+                    break
+                view = memoryview(data)
+                while len(view):
+                    if handle is None:
+                        path = outdir / f"{name}.tar.zst.{len(parts):03d}"
+                        handle, digest, written = open(path, "wb"), hashlib.sha256(), 0
+                    take = min(len(view), part_bytes - written)
+                    handle.write(view[:take])
+                    digest.update(view[:take])
+                    written += take
+                    view = view[take:]
+                    if written == part_bytes:
+                        handle.close()
+                        parts.append({"name": path.name, "size": written, "sha256": digest.hexdigest()})
+                        handle = None
+        finally:
+            if handle is not None:
+                handle.close()
+                parts.append({"name": path.name, "size": written, "sha256": digest.hexdigest()})
         thread.join()
     zstd.stdout.close()
     if zstd.wait() != 0 or errors:

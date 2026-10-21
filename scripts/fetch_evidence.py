@@ -190,12 +190,12 @@ def zstd_stream(paths):
                 with open(path, "rb") as handle:
                     shutil.copyfileobj(handle, process.stdin, CHUNK)
         except BrokenPipeError:
-            pass
+            pass  # zstd exited early; its exit status is checked by the reader
         finally:
             try:
                 process.stdin.close()
             except BrokenPipeError:
-                pass
+                pass  # already closed by the exiting decoder
 
     threading.Thread(target=feed, daemon=True).start()
 
