@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "holographic_memory.h"
 
@@ -46,10 +48,75 @@ static void make_dir(char *buffer, size_t size, const char *tag) {
   snprintf(buffer, size, "%s/hms-c-test-%d-%s", base ? base : "/tmp", (int)getpid(), tag);
 }
 
-static void remove_tree(const char *path) {
-  char command[1024];
-  snprintf(command, sizeof command, "rm -rf '%s'", path);
-  if (system(command) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
+/* Calls `visit` for every regular file under `path` (no shell, no symlink following); stops
+   and returns 1 as soon as `visit` does. Directories are removed after their contents when
+   `remove` is set. */
+static int walk_tree(const char *path, int (*visit)(const char *, void *), void *context, int remove) {
+  struct stat st;
+  if (lstat(path, &st) != 0) return 0;
+  if (!S_ISDIR(st.st_mode)) {
+    if (visit && visit(path, context)) return 1;
+    if (remove && unlink(path) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
+    return 0;
+  }
+  DIR *dir = opendir(path);
+  if (dir) {
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+      if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) continue;
+      char child[1024];
+      int n = snprintf(child, sizeof child, "%s/%s", path, entry->d_name);
+      if (n < 0 || (size_t)n >= sizeof child) continue;
+      if (walk_tree(child, visit, context, remove)) {
+        closedir(dir);
+        return 1;
+      }
+    }
+    closedir(dir);
+  }
+  if (remove && rmdir(path) != 0) fprintf(stderr, "cleanup of %s failed\n", path);
+  return 0;
+}
+
+static void remove_tree(const char *path) { walk_tree(path, NULL, NULL, 1); }
+
+/* Whether the file at `path` contains the bytes of `needle`. */
+static int file_contains(const char *path, const char *needle) {
+  FILE *file = fopen(path, "rb");
+  if (!file) return 0;
+  size_t length = strlen(needle), held = 0, capacity = 1 << 16;
+  char *buffer = malloc(capacity);
+  int found = 0;
+  size_t n;
+  while (buffer && !found && (n = fread(buffer + held, 1, capacity - held, file)) > 0) {
+    held += n;
+    for (size_t i = 0; i + length <= held; i++)
+      if (!memcmp(buffer + i, needle, length)) { found = 1; break; }
+    /* Keep the last length - 1 bytes so a match across reads is still seen. */
+    if (held >= length) {
+      memmove(buffer, buffer + held - (length - 1), length - 1);
+      held = length - 1;
+    }
+  }
+  free(buffer);
+  fclose(file);
+  return found;
+}
+
+struct needle_search { const char *needle; const char *skip; };
+
+static int visit_contains(const char *path, void *context) {
+  const struct needle_search *search = context;
+  const char *name = strrchr(path, '/');
+  name = name ? name + 1 : path;
+  if (search->skip && !strcmp(name, search->skip)) return 0;
+  return file_contains(path, search->needle);
+}
+
+/* Whether any file under `dir`, other than ones named `skip`, contains `needle`. */
+static int tree_contains(const char *dir, const char *needle, const char *skip) {
+  struct needle_search search = {needle, skip};
+  return walk_tree(dir, visit_contains, &search, 0);
 }
 
 static hms_store_t *open_store(const char *path, const char *key) {
@@ -305,14 +372,13 @@ static void test_encryption(void) {
   CHECK(hms_store_close(store) == HMS_OK);
 
   /* The transaction log, indices and keys hold no plaintext at rest. */
-  char command[1200];
-  snprintf(command, sizeof command, "grep -rlq swordfish '%s' --exclude=documents.text", dir);
-  CHECK(system(command) != 0);
+  CHECK(!tree_contains(dir, "swordfish", "documents.text"));
   /* ENGINE GAP (not the ABI): the engine writes chunk text to the documents.text sidecar
      unencrypted even when encryption is on. Reported, not hidden: it fails only under
      HMS_STRICT_AT_REST=1 until the engine encrypts that segment. */
-  snprintf(command, sizeof command, "grep -q swordfish '%s/documents.text'", dir);
-  if (system(command) == 0) {
+  char text_segment[1100];
+  snprintf(text_segment, sizeof text_segment, "%s/documents.text", dir);
+  if (file_contains(text_segment, "swordfish")) {
     fprintf(stderr, "WARNING: documents.text holds plaintext in an encrypted store (engine gap)\n");
     if (getenv("HMS_STRICT_AT_REST")) CHECK(0 && "documents.text must be encrypted");
   }
@@ -345,7 +411,11 @@ static void test_encryption(void) {
 static void test_chunking(void) {
   char text[4096];
   size_t used = 0;
-  for (int i = 0; i < 400; i++) used += (size_t)snprintf(text + used, sizeof text - used, "word%d ", i);
+  for (int i = 0; i < 400; i++) {
+    int n = snprintf(text + used, sizeof text - used, "word%d ", i);
+    if (n < 0 || (size_t)n >= sizeof text - used) break;
+    used += (size_t)n;
+  }
   hms_document_t d = doc("long", text, NULL);
   d.chunk_words = 100;
   d.overlap_words = 10;
