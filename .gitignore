@@ -61,3 +61,4 @@ benchmarks/public/*.py.lock
 # Local embedder model packs are build products (see bindings/embed-models)
 *.hmsemb
 bindings/embed-models/**/packs/
+.hms-local/
