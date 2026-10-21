@@ -10,7 +10,8 @@ use super::{
     HmsCore, ShardSet,
 };
 use crate::core::documents::{
-    self, DocumentInput, DocumentResult, IngestOptions, SearchOptions, VectorState,
+    self, DocumentInput, DocumentResult, IngestOptions, SearchOptions, VectorIndexMode,
+    VectorIndexStatus, VectorQueryOptions, VectorState,
 };
 
 /// Documents per `EncodeDocument` transaction of a lazy encoding pass (the journal takes at
@@ -168,8 +169,113 @@ impl HmsCore {
         self.documents.read().embedded_count()
     }
 
+    /// Nearest embedded chunks to `embedding` by cosine, best first; `score` and
+    /// `semantic_score` both carry the cosine. Unfiltered vector queries are answered from the
+    /// vector snapshot (`documents::vector_index`) when one is built: the graph index under
+    /// `Auto`/`Graph`, the contiguous exact scan under `Exact`. Without a snapshot, or when the
+    /// snapshot is too stale for this query, the generic exact path answers. `Graph` without a
+    /// graph index fails with [`documents::GraphUnavailable`].
+    pub fn search_vectors(
+        &self,
+        embedding: &[f64],
+        k: usize,
+        options: &VectorQueryOptions,
+    ) -> Result<Vec<DocumentResult>> {
+        let Some(space) = &self.config.embedding_space else {
+            anyhow::bail!("configure an embedding space before vector search");
+        };
+        ensure!(
+            (1..=documents::MAX_K).contains(&k),
+            "require 1 <= k <= {}",
+            documents::MAX_K
+        );
+        ensure!(
+            (1..=documents::MAX_EF).contains(&options.ef),
+            "require 1 <= ef <= {}",
+            documents::MAX_EF
+        );
+        ensure!(
+            options.min_score.is_finite() && (-1.0..=1.0).contains(&options.min_score),
+            "minScore must be in [-1,1]"
+        );
+        let normalized = documents::normalize_embedding(embedding, space.dimensions)?;
+        let query: Vec<f32> = normalized.iter().map(|&value| value as f32).collect();
+        match self.vector_index.get() {
+            Some(snapshot) => {
+                if let Some(results) = documents::search_vector_snapshot(
+                    &snapshot,
+                    &self.documents,
+                    &query,
+                    k,
+                    options,
+                )? {
+                    return Ok(results);
+                }
+            }
+            None if options.mode == VectorIndexMode::Graph => {
+                return Err(anyhow::Error::new(documents::GraphUnavailable));
+            }
+            None => {}
+        }
+        let fallback = SearchOptions {
+            k: Some(k as u32),
+            candidate_limit: Some((k as u32).max(100)),
+            embedding: Some(embedding.to_vec()),
+            lexical_weight: Some(0.0),
+            semantic_weight: Some(1.0),
+            min_semantic_score: Some(options.min_score),
+            ..SearchOptions::default()
+        };
+        let mut hits = self.search_documents("", &fallback)?;
+        for hit in &mut hits {
+            hit.score = hit.semantic_score.unwrap_or(hit.score);
+        }
+        Ok(hits)
+    }
+
+    pub fn vector_index_status(&self) -> VectorIndexStatus {
+        let snapshot = self.vector_index.get();
+        documents::vector_index_status(snapshot.as_deref(), &self.documents.read())
+    }
+
+    /// Captures the embedded chunks and publishes a fresh vector snapshot, with the graph
+    /// index when the store has at least `graph_min_rows` of them. `false` when the store has
+    /// no embedding space or too few embedded chunks (the snapshot is dropped then), or when
+    /// another build is running (the published snapshot stays). The capture holds the store's
+    /// read lock; the graph build holds no lock.
+    pub fn rebuild_vector_index(&self, graph_min_rows: usize) -> Result<bool> {
+        let Some(space) = &self.config.embedding_space else {
+            return Ok(false);
+        };
+        let Some(_building) = self.vector_index.try_build() else {
+            return Ok(self.vector_index.get().is_some());
+        };
+        let capture = {
+            let _transaction = self.mutation_gate.read();
+            documents::capture_vector_rows(&self.documents.read(), space.dimensions)?
+        };
+        let Some(capture) = capture else {
+            self.vector_index.clear();
+            return Ok(false);
+        };
+        let snapshot = documents::build_vector_snapshot(capture, graph_min_rows)?;
+        self.vector_index.publish(Arc::new(snapshot));
+        Ok(true)
+    }
+
+    /// [`Self::rebuild_vector_index`] when the status recommends it (no snapshot over a store
+    /// with enough embedded chunks, or `REBUILD_AFTER_MUTATIONS` mutations since the capture);
+    /// otherwise reports whether a snapshot exists.
+    pub fn maintain_vector_index(&self, graph_min_rows: usize) -> Result<bool> {
+        if self.vector_index_status().rebuild_recommended {
+            return self.rebuild_vector_index(graph_min_rows);
+        }
+        Ok(self.vector_index.get().is_some())
+    }
+
     pub fn train_document_index(&self) -> Result<()> {
         self.encode_pending_documents()?;
+        self.maintain_vector_index(documents::DEFAULT_GRAPH_MIN_ROWS)?;
         let Some(space) = &self.config.embedding_space else {
             return Ok(());
         };

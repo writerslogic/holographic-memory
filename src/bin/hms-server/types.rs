@@ -44,6 +44,36 @@ pub struct Matches {
 #[serde(rename_all = "camelCase")]
 pub struct Maintained {
     pub document_index_trained: bool,
+    pub vector_index: VectorIndexBody,
+}
+
+/// The vector snapshot that answers unfiltered vector queries (see `--query-index`).
+#[derive(Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct VectorIndexBody {
+    /// Embedded chunks the snapshot covers; 0 until maintenance builds one.
+    pub rows: usize,
+    /// Whether a graph index is built over the snapshot (`auto` queries use it).
+    pub graph: bool,
+    /// Whether the snapshot is the live store. A stale snapshot still answers correctly:
+    /// deleted and replaced documents are dropped and new ones scored exactly.
+    pub current: bool,
+    /// Inserts, replaces and deletes since the snapshot was captured.
+    pub stale_mutations: u64,
+    /// Whether the next index maintenance or compaction will capture a fresh snapshot.
+    pub rebuild_recommended: bool,
+}
+
+impl From<holographic_memory::core::documents::VectorIndexStatus> for VectorIndexBody {
+    fn from(status: holographic_memory::core::documents::VectorIndexStatus) -> Self {
+        Self {
+            rows: status.rows,
+            graph: status.graph,
+            current: status.current,
+            stale_mutations: status.stale_mutations,
+            rebuild_recommended: status.rebuild_recommended,
+        }
+    }
 }
 
 #[derive(Serialize, JsonSchema)]
@@ -84,6 +114,7 @@ pub struct Stats {
     pub documents: usize,
     pub vectors: usize,
     pub document_index_trained: bool,
+    pub vector_index: VectorIndexBody,
     pub used_bytes: f64,
     pub capacity_bytes: f64,
 }

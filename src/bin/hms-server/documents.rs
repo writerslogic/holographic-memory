@@ -13,6 +13,9 @@ use axum::extract::rejection::QueryRejection;
 use axum::extract::{Path as UrlPath, Query, Request, State};
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
+use holographic_memory::core::documents::{
+    GraphUnavailable, VectorIndexMode, VectorQueryOptions, MAX_EF,
+};
 use holographic_memory::{chunk_document, DocumentInput, SearchOptions};
 use http_body_util::BodyExt;
 use schemars::JsonSchema;
@@ -459,6 +462,35 @@ pub struct QueryIn {
     /// Keep documents whose metadata contains every key with an equal JSON value.
     #[serde(default)]
     pub filter: Option<Value>,
+    /// Route of an unfiltered vector query: `auto` (the graph index when built, else the
+    /// exact scan), `exact` or `graph` (409 `index_unavailable` until maintenance built one).
+    /// Default: the server's `--query-index`.
+    #[serde(default)]
+    pub index: Option<String>,
+    /// Beam width of a graph-index query, 1..=4096 (recall knob). Default: `--query-ef`.
+    #[serde(default)]
+    pub ef: Option<u32>,
+}
+
+fn query_options(
+    cfg: &Config,
+    index: Option<&str>,
+    ef: Option<u32>,
+) -> Result<VectorQueryOptions, ApiError> {
+    let mode = match index {
+        None => VectorIndexMode::parse(&cfg.query_index).unwrap_or_default(),
+        Some(name) => VectorIndexMode::parse(name)
+            .ok_or_else(|| ApiError::bad("index must be \"auto\", \"exact\" or \"graph\""))?,
+    };
+    let ef = ef.unwrap_or(cfg.query_ef);
+    if !(1..=MAX_EF as u32).contains(&ef) {
+        return Err(ApiError::bad(format!("ef must be 1..={MAX_EF}")));
+    }
+    Ok(VectorQueryOptions {
+        mode,
+        ef: ef as usize,
+        min_score: -1.0,
+    })
 }
 
 pub async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
@@ -481,10 +513,11 @@ pub async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
             Some(_) => return Err(ApiError::bad("filter must be a JSON object")),
         };
         let core = state.core(&tenant)?;
+        let options = query_options(&state.cfg, q.index.as_deref(), q.ef)?;
         let hits = match (q.query_vector, q.query) {
             (Some(v), None) => {
                 dense(&v, state.cfg.input_dim, "query_vector")?;
-                vector_search(&core, v, top_k as u32, filter)?
+                vector_search(&core, v, top_k as u32, filter, &options)?
             }
             #[cfg(feature = "local-models")]
             (v, Some(text)) if state.stages.is_some() => {
@@ -531,16 +564,36 @@ pub async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
     Ok(json_response(StatusCode::OK, &body(&Matches { matches })))
 }
 
+/// An unfiltered query goes to the engine's vector dispatch (snapshot: graph or exact scan,
+/// generic exact path without one); a filtered query takes the generic path, which is the
+/// only one that applies metadata filters.
 fn vector_search(
     core: &CoreGuard,
     query_vector: Vec<f64>,
     top_k: u32,
     filter: Option<serde_json::Map<String, Value>>,
+    route: &VectorQueryOptions,
 ) -> Result<Vec<holographic_memory::DocumentResult>, ApiError> {
+    let Some(filter) = filter else {
+        return core
+            .search_vectors(&query_vector, top_k as usize, route)
+            .map_err(|e| {
+                if e.downcast_ref::<GraphUnavailable>().is_some() {
+                    ApiError::new(StatusCode::CONFLICT, "index_unavailable", e.to_string())
+                } else {
+                    ApiError::internal(e)
+                }
+            });
+    };
+    if route.mode == VectorIndexMode::Graph {
+        return Err(ApiError::bad(
+            "index \"graph\" does not apply to filtered queries; omit index or send \"exact\"",
+        ));
+    }
     let options = SearchOptions {
         k: Some(top_k),
         candidate_limit: Some(top_k.max(100)),
-        filter: filter.map(Value::Object),
+        filter: Some(Value::Object(filter)),
         embedding: Some(query_vector),
         lexical_weight: Some(0.0),
         semantic_weight: Some(1.0),
@@ -571,14 +624,23 @@ pub async fn maintain_index(State(state): State<Arc<AppState>>, req: Request) ->
             ));
         }
         let core = state.core(&tenant)?;
+        // The vector snapshot (graph index above --graph-min-rows) first, so the bounding-box
+        // index below sees it current and does not build it a second time.
+        core.rebuild_vector_index(state.cfg.graph_min_rows)
+            .map_err(ApiError::internal)?;
         core.train_document_index().map_err(ApiError::internal)?;
-        Ok(core.document_index_trained())
+        Ok((
+            core.document_index_trained(),
+            VectorIndexBody::from(core.vector_index_status()),
+        ))
     })
     .await?;
+    let (trained, vector_index) = trained;
     Ok(json_response(
         StatusCode::OK,
         &body(&Maintained {
             document_index_trained: trained,
+            vector_index,
         }),
     ))
 }
@@ -692,6 +754,7 @@ pub async fn stats(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
                 documents: core.document_count(),
                 vectors: core.document_embedding_count(),
                 document_index_trained: core.document_index_trained(),
+                vector_index: VectorIndexBody::from(core.vector_index_status()),
                 used_bytes: health.used_bytes,
                 capacity_bytes: health.capacity_bytes,
             }),

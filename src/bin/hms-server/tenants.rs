@@ -559,6 +559,14 @@ impl AppState {
         }
         let started = Instant::now();
         let result = guard.compact();
+        // Scheduled maintenance of the vector snapshot rides on compaction: a rebuild happens
+        // only when the engine recommends one (no snapshot yet, or enough mutations since the
+        // capture), and its duration counts into this compaction's.
+        if result.is_ok() {
+            if let Err(error) = guard.maintain_vector_index(self.cfg.graph_min_rows) {
+                crate::log_event!(Warn, "vector_index_rebuild_failed", "tenant" => name, "detail" => format!("{error:#}"));
+            }
+        }
         let mut status = guard.tenant.compaction.lock();
         status.running = false;
         status.last_duration_ms =
