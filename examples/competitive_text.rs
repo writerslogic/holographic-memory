@@ -12,7 +12,9 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::core::documents::{EncodeMode, IngestOptions, MAX_BATCH_ITEMS};
+use holographic_memory::core::documents::{
+    BatchTooLarge, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
+};
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
 use serde_json::json;
@@ -83,11 +85,7 @@ fn ingest(
         let end = (at + size).min(documents.len());
         match core.memorize_documents_with(documents[at..end].to_vec(), options) {
             Ok(_) => at = end,
-            Err(error)
-                if fixed == 0 && size > 1 && error.to_string().starts_with("document batch") =>
-            {
-                size /= 2
-            }
+            Err(error) if fixed == 0 && size > 1 && error.is::<BatchTooLarge>() => size /= 2,
             Err(error) => return Err(error),
         }
     }

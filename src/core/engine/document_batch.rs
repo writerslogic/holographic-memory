@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use super::mutation::{transaction_payload, Mutation, TRANSACTION_MAGIC};
 use crate::core::documents::{
-    chunk_document, DocumentInput, MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
+    chunk_document, BatchTooLarge, DocumentInput, MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
 };
 
 const MAX_EMBEDDING_VALUES: usize = 1_048_576;
@@ -50,11 +50,11 @@ fn serialized_size(value: &impl Serialize, limit: usize) -> Result<usize> {
     Ok(sink.bytes)
 }
 
-fn add_size(total: &mut usize, size: usize, limit: usize, message: &str) -> Result<()> {
+fn add_size(total: &mut usize, size: usize, limit: usize, message: &'static str) -> Result<()> {
     *total = total
         .checked_add(size)
         .filter(|&n| n <= limit)
-        .ok_or_else(|| anyhow::anyhow!("{message}"))?;
+        .ok_or(BatchTooLarge(message))?;
     Ok(())
 }
 
@@ -62,10 +62,11 @@ pub(super) fn validate_inputs(
     inputs: &[DocumentInput],
     inferred_dimensions: Option<usize>,
 ) -> Result<()> {
-    ensure!(
-        !inputs.is_empty() && inputs.len() <= MAX_ITEMS,
-        "document batch requires 1..=4096 items"
-    );
+    const ITEMS: &str = "document batch requires 1..=4096 items";
+    ensure!(!inputs.is_empty(), ITEMS);
+    if inputs.len() > MAX_ITEMS {
+        return Err(BatchTooLarge(ITEMS).into());
+    }
     // The per-input measures (metadata size, chunk count) are computed in parallel; the
     // budgets then fold in input order, so the first input over a limit is the one reported,
     // as it is when everything runs serially.
@@ -147,10 +148,9 @@ pub(super) fn validate_inputs(
 /// appends it as is.
 pub(super) fn serialize_transaction(mutations: &[Mutation]) -> Result<Vec<u8>> {
     let payload = transaction_payload(mutations)?;
-    ensure!(
-        payload.len() - TRANSACTION_MAGIC.len() <= MAX_TRANSACTION_BYTES,
-        "document batch size limit exceeded"
-    );
+    if payload.len() - TRANSACTION_MAGIC.len() > MAX_TRANSACTION_BYTES {
+        return Err(BatchTooLarge("document batch size limit exceeded").into());
+    }
     Ok(payload)
 }
 
@@ -167,9 +167,20 @@ mod tests {
     fn batch_item_and_chunk_boundaries_are_independent() {
         for count in [4095, 4096, 4097] {
             let inputs: Vec<_> = (0..count).map(|id| input(&id.to_string())).collect();
-            assert_eq!(validate_inputs(&inputs, None).is_ok(), count <= MAX_ITEMS);
+            let result = validate_inputs(&inputs, None);
+            assert_eq!(result.is_ok(), count <= MAX_ITEMS);
+            if let Err(error) = result {
+                assert!(
+                    error.is::<BatchTooLarge>(),
+                    "an oversized batch is retryable"
+                );
+            }
         }
-        assert!(validate_inputs(&[], None).is_err());
+        let empty = validate_inputs(&[], None).unwrap_err();
+        assert!(
+            !empty.is::<BatchTooLarge>(),
+            "an empty batch is not a size limit"
+        );
         for count in [4095, 4096, 4097] {
             let mut inputs: Vec<_> = (0..count - 2).map(|id| input(&id.to_string())).collect();
             let mut last = input("last");
