@@ -242,7 +242,8 @@ required-features = ["private-search"]
 
 [profile.release]
 lto = true
-strip = true
+# "debuginfo" keeps the symbol table: a fully stripped .node/.dylib fails to load on macOS 27 (mis-aligned LINKEDIT)
+strip = "debuginfo"
 opt-level = 3
 
 
