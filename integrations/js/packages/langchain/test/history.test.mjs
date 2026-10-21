@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { test } from 'node:test'
 import { pathToFileURL } from 'node:url'
-import { AIMessage, HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messages'
+import { AIMessage, HumanMessage } from '@langchain/core/messages'
 import { HmsChatMessageHistory, HmsStore } from '../dist/index.js'
 
 const tmp = () => mkdtempSync(join(tmpdir(), 'hms-lc-hist-'))
