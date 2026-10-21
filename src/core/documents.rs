@@ -474,15 +474,25 @@ pub fn chunk_document(input: &DocumentInput) -> Result<Vec<DocumentChunk>> {
         (1..=4096).contains(&size) && overlap < size,
         "chunkWords must be 1..=4096 and overlapWords smaller than chunkWords"
     );
-    let mut words = Vec::new();
+    let mut words = Vec::with_capacity(input.text.len() / 6);
     let mut start = None;
-    for (i, c) in input.text.char_indices() {
-        if c.is_whitespace() {
+    let mut boundary = |i: usize, whitespace: bool| {
+        if whitespace {
             if let Some(s) = start.take() {
                 words.push((s, i));
             }
         } else if start.is_none() {
             start = Some(i);
+        }
+    };
+    if input.text.is_ascii() {
+        // `char::is_whitespace` on ASCII is exactly 0x09..=0x0D and the space.
+        for (i, b) in input.text.bytes().enumerate() {
+            boundary(i, matches!(b, b' ' | b'\t'..=b'\r'));
+        }
+    } else {
+        for (i, c) in input.text.char_indices() {
+            boundary(i, c.is_whitespace());
         }
     }
     if let Some(s) = start {
@@ -551,20 +561,66 @@ fn stemmer() -> &'static rust_stemmers::Stemmer {
 /// Lowercased alphanumeric tokens and their counts; with `stem`, each token is reduced by
 /// the English Snowball (Porter 2) stemmer, which is what the published BM25 baselines do.
 pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
-    let mut result = BTreeMap::new();
+    // Counted in a hash map keyed by borrowed text (one allocation per distinct term, not per
+    // occurrence), then sorted once into the ordered map the postings expect.
+    let mut counts: fxhash::FxHashMap<String, u32> =
+        fxhash::FxHashMap::with_capacity_and_hasher(text.len() / 16, Default::default());
+    let mut lower = String::new();
+    let mut add = |key: &str| match counts.get_mut(key) {
+        Some(count) => *count += 1,
+        None => {
+            counts.insert(key.to_owned(), 1);
+        }
+    };
     for word in text
         .split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
     {
-        let lower = word.to_lowercase();
-        let key = if stem {
-            stemmer().stem(&lower).into_owned()
+        lower.clear();
+        if word.is_ascii() {
+            lower.push_str(word);
+            lower.make_ascii_lowercase();
         } else {
-            lower
-        };
-        *result.entry(key).or_default() += 1;
+            // `str::to_lowercase`, not per-char mapping: it applies the final-sigma rule.
+            lower.push_str(&word.to_lowercase());
+        }
+        if stem {
+            with_stem(&lower, &mut add);
+        } else {
+            add(&lower);
+        }
     }
-    result
+    // Keys are unique, so an unstable sort is exact; the map's own stable sort then sees one
+    // ascending run and finishes in a single pass.
+    let mut sorted: Vec<(String, u32)> = counts.into_iter().collect();
+    sorted.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    sorted.into_iter().collect()
+}
+
+/// Entries kept in each thread's stem memo before it is cleared; bounds memory on corpora with
+/// unbounded vocabularies while keeping the common-word hit rate.
+const STEM_MEMO_CAPACITY: usize = 1 << 17;
+
+/// Calls `f` with the Snowball stem of `lower`, memoized per thread: a corpus repeats a small
+/// vocabulary, and stemming each occurrence dominated single-threaded ingest.
+fn with_stem(lower: &str, f: &mut impl FnMut(&str)) {
+    thread_local! {
+        static MEMO: std::cell::RefCell<fxhash::FxHashMap<Box<str>, Box<str>>> =
+            std::cell::RefCell::new(fxhash::FxHashMap::default());
+    }
+    MEMO.with(|memo| {
+        let mut memo = memo.borrow_mut();
+        if let Some(stem) = memo.get(lower) {
+            f(stem);
+            return;
+        }
+        let stem: Box<str> = stemmer().stem(lower).into();
+        f(&stem);
+        if memo.len() >= STEM_MEMO_CAPACITY {
+            memo.clear();
+        }
+        memo.insert(lower.into(), stem);
+    });
 }
 
 pub(crate) fn prepare(

@@ -46,3 +46,43 @@ fn rebuilt_terms_preserve_complete_document_bytes_and_legacy_frequencies() {
         assert_eq!(serde_json::to_vec(&restored).unwrap(), expected);
     }
 }
+
+/// The memoized, hash-counted tokenizer returns exactly what the per-occurrence reference
+/// returns: same keys, same counts, for ASCII, mixed case, non-ASCII (final sigma), and words
+/// seen before the memo was populated and after.
+#[test]
+fn memoized_terms_match_the_reference_tokenizer() {
+    fn reference(text: &str, stem: bool) -> std::collections::BTreeMap<String, u32> {
+        let stemmer = rust_stemmers::Stemmer::create(rust_stemmers::Algorithm::English);
+        let mut out = std::collections::BTreeMap::new();
+        for word in text
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|s| !s.is_empty())
+        {
+            let lower = word.to_lowercase();
+            let key = if stem {
+                stemmer.stem(&lower).into_owned()
+            } else {
+                lower
+            };
+            *out.entry(key).or_insert(0) += 1;
+        }
+        out
+    }
+    let texts = [
+        "Running runners RUN quickly; the runner's running-shoes ran.",
+        "ΟΔΟΣ Οδός ΣΟΦΟΣ naïve Café CAFÉ straße STRASSE 42 x2 İstanbul",
+        "",
+        "!!! ,,, ---",
+        "Running runners RUN quickly; the runner's running-shoes ran.",
+    ];
+    for stem in [false, true] {
+        for text in texts {
+            assert_eq!(
+                super::terms(text, stem),
+                reference(text, stem),
+                "stem={stem} text={text:?}"
+            );
+        }
+    }
+}

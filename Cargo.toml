@@ -242,6 +242,9 @@ required-features = ["private-search"]
 
 [profile.release]
 lto = true
+# One unit lets LLVM inline across the whole crate: about 2% faster single-thread ingest,
+# measured interleaved on NFCorpus (0.166 s vs 0.170 s), for a slower release build.
+codegen-units = 1
 # "debuginfo" keeps the symbol table: a fully stripped .node/.dylib fails to load on macOS 27 (mis-aligned LINKEDIT)
 strip = "debuginfo"
 opt-level = 3
