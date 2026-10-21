@@ -328,16 +328,34 @@ impl PostingList {
     }
 
     /// Calls `f(slot, frequency)` for every posting in slot order; the loop form keeps the
-    /// decoder state in registers where the iterator cannot.
+    /// decoder state in registers where the iterator cannot. Four postings whose eight varints
+    /// are one byte each (gaps and frequencies below 128, the common case in long lists)
+    /// decode from one 64-bit load.
     pub(super) fn for_each(&self, mut f: impl FnMut(usize, u32)) {
         let bytes = &self.data[..];
         let mut at = 0usize;
         let mut slot = 0u64;
-        for _ in 0..self.count {
+        let mut left = self.count as usize;
+        while left > 0 {
+            if left >= 4 {
+                if let Some(word) = bytes.get(at..at + 8) {
+                    let word = u64::from_le_bytes(word.try_into().expect("eight bytes"));
+                    if word & 0x8080_8080_8080_8080 == 0 {
+                        for pair in 0..4 {
+                            slot += (word >> (16 * pair)) & 0xff;
+                            f(slot as usize, ((word >> (16 * pair + 8)) & 0xff) as u32);
+                        }
+                        at += 8;
+                        left -= 4;
+                        continue;
+                    }
+                }
+            }
             slot += get_varint(bytes, &mut at);
             let frequency = get_varint(bytes, &mut at);
             debug_assert!(slot <= usize::MAX as u64 && frequency <= u64::from(u32::MAX));
             f(slot as usize, frequency as u32);
+            left -= 1;
         }
     }
 
@@ -872,6 +890,40 @@ mod tests {
         assert_eq!(d.len(), 2000 - 667 + 2 + 2000);
         let terms: Vec<&[u8]> = (0..d.base_ids.len()).map(|i| d.base_term(i)).collect();
         assert!(terms.windows(2).all(|pair| pair[0] < pair[1]));
+    }
+
+    /// `for_each` (four one-byte postings per load where it can) visits exactly what `iter`
+    /// decodes, for lists of every length up to past two loads, with a multi-byte gap or
+    /// frequency at every position.
+    #[test]
+    fn for_each_matches_iter_across_varint_widths() {
+        for length in 0..=13usize {
+            for wide in 0..=length {
+                for wide_frequency in [false, true] {
+                    let mut run = Vec::new();
+                    let mut slot = 5usize;
+                    for i in 0..length {
+                        slot += if i == wide && !wide_frequency {
+                            300
+                        } else {
+                            1 + i % 3
+                        };
+                        let frequency = if i == wide && wide_frequency {
+                            70_000
+                        } else {
+                            1 + i as u32 % 127
+                        };
+                        run.push((slot, frequency));
+                    }
+                    let mut list = PostingList::default();
+                    list.append_run(&run, &mut Vec::new());
+                    let mut visited = Vec::new();
+                    list.for_each(|slot, frequency| visited.push((slot, frequency)));
+                    assert_eq!(visited, list.iter().collect::<Vec<_>>());
+                    assert_eq!(visited, run, "length {length} wide {wide}");
+                }
+            }
+        }
     }
 
     #[test]
