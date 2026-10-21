@@ -15,7 +15,13 @@ impl HmsCore {
         }
         // Documents memorized with deferred encoding join the vector index on first use; a
         // failure leaves them pending (and absent from this query) and the next call retries.
-        if self.documents.read().pending_vector_count() > 0 {
+        // `try_read`: a query must keep progressing while compaction or a mutation holds the
+        // store for writing, so a contended lock means "no catch-up this time".
+        if self
+            .documents
+            .try_read()
+            .is_some_and(|store| store.pending_vector_count() > 0)
+        {
             if let Err(error) = self.encode_pending_documents() {
                 tracing::warn!(%error, "deferred document encoding failed; pending chunks stay outside this query");
             }
@@ -55,10 +61,11 @@ impl HmsCore {
             .shards
             .read()
             .explain_query(query_vec, k, self.dimensions);
-        let (pending, lexical) = {
-            let store = self.documents.read();
-            (store.pending_vector_count(), store.lexical_vector_count())
-        };
+        let (pending, lexical) = self
+            .documents
+            .try_read()
+            .map(|store| (store.pending_vector_count(), store.lexical_vector_count()))
+            .unwrap_or((0, 0));
         if pending > 0 || lexical > 0 {
             explanation.rationale.push_str(&format!(
                 " {pending} document chunk(s) await deferred encoding (a query, \
