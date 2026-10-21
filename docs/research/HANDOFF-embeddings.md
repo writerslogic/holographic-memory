@@ -35,3 +35,10 @@
    `pyproject.toml`, and `features` there now includes `local-embed-download`.
 8. Throughput: ~280 ms CPU per 330-token passage per core (no AMX/int8 dot); an int8 SIMD dot kernel is the
    next speedup.
+
+## Quickstart note (for the docs agent)
+Embeddings quickstart text lives in `docs/embeddings/README.md` (Rust, Python, Node snippets, option table,
+air-gapped install). Link it from the site nav under "Guides"; the install line is
+`pip install holographic-vsa[embed]` (offline packs) or plain `pip install holographic-vsa` (first-use
+download, `HMS_EMBED_OFFLINE=1` to forbid). The `Docs` workflow failure on this PR is pre-existing on main
+(`scripts/docs_openapi.py` crashes on a boolean JSON-schema property), not caused by this change.
