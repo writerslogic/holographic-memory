@@ -1,0 +1,43 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Standalone research crate (not a workspace member). It calls no root-crate
+# API, so the `holographic-memory` path dependency is intentionally omitted
+# (same reasoning as `benchmarks/research/scan`): the kill test is about a
+# posting-list index written in plain Rust, and a root dependency would add
+# minutes of LTO build time for nothing. Every third-party crate and version
+# below is already used by the root crate (`rayon 1.8` is the root's version;
+# it is used only in the build-time projection / quantile-fit passes and the
+# timed query path is single-threaded).
+
+[package]
+name = "hms-research-witness"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+description = "Kill test: occupancy-balanced rare-witness decoding (SRHT channel bank, sorted postings, counting threshold-join, bulk rerank) for large-N ANN"
+
+[workspace]
+
+[lib]
+name = "hms_research_witness"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hms-research-witness"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+rayon = "1.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false
