@@ -524,9 +524,15 @@ impl HmsCore {
         let shards = self.shards.write();
         let mut offset = 0;
         while offset < self.arena.stats().used_bytes {
-            let (payload, _) = self
-                .arena_read_frame(offset)
+            let (data, _) = self
+                .arena
+                .read_frame(offset)
                 .with_context(|| format!("cannot replay arena frame at {offset}"))?;
+            // Only an encrypted store can fail here, and the first frame that does is almost
+            // always a wrong passphrase rather than damage, so say so instead of hiding it.
+            let payload = self.maybe_decrypt(&data).with_context(|| {
+                format!("cannot decrypt arena frame at {offset}: wrong passphrase, or the store is corrupted")
+            })?;
             let json = payload
                 .strip_prefix(mutation::TRANSACTION_MAGIC)
                 .with_context(|| {
@@ -1309,6 +1315,7 @@ impl HmsCore {
         self.arena.write_slice(&payload)
     }
 
+    #[cfg(test)] // replay reads and decrypts in two steps to tell a bad frame from a wrong passphrase
     fn arena_read_frame(&self, offset: usize) -> Result<(Vec<u8>, u32)> {
         let (data, version) = self.arena.read_frame(offset)?;
         let payload = self.maybe_decrypt(&data)?;
