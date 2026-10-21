@@ -1,0 +1,24 @@
+[package]
+name = "hms-research-challenge"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+description = "Research round 2: answer-and-challenge retrieval with scoped erase-units over the HMS memory API"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "hms-research-challenge"
+path = "src/main.rs"
+
+[dependencies]
+# Root crate, default features: the memory API (src/core/memory_api) is unconditional.
+holographic-memory = { path = "../../.." }
+# Every crates.io dependency below is already a dependency of the root crate at the same version.
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+anyhow = "1.0"
+tempfile = "3"
