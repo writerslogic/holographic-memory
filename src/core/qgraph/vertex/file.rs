@@ -143,8 +143,9 @@ impl<T: Plain> Slab<T> {
 /// Where the arrays of an index opened with [`VGraph::open`] live.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Residency {
-    /// The file is mapped read-only: a page is read on its first touch and then counts as
-    /// file-backed resident memory, which the kernel may reclaim under pressure and read again.
+    /// The file is mapped read-only. `open` reads the neighbour lists and id maps, which it
+    /// checks; the codes are read on their first touch. Read pages count as file-backed
+    /// resident memory, which the kernel may reclaim under pressure and read again.
     Mapped,
     /// As [`Residency::Mapped`], with every page touched before `open` returns, so no query
     /// pays a page fault.
