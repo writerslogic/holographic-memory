@@ -1,0 +1,355 @@
+{
+ "schema": "text_query_path_v1",
+ "machine": "Apple M4 (10 cores, 32 GiB), macOS, shared with other benchmark sessions; every timed run held the shared benchmark lock",
+ "commits": {
+  "before": "15b87db",
+  "after": "0cbb26a"
+ },
+ "paired_serve": {
+  "method": "examples/competitive_text.rs serve on stores built with --encode lexical; queries are the harness serve inputs (k 100, candidateLimit 100, lexical only); RAYON_NUM_THREADS=1 as the harness serves; rounds interleave the binaries in rotated order; per pass QPS = n/sum(ns), p50 = sorted[(n-1)//2], p99 = sorted[int((n-1)*0.99)] (analyze.py), median over all passes",
+  "rounds": 3,
+  "passes_per_round": 10,
+  "binaries": [
+   "base",
+   "final"
+  ],
+  "identical_hits_and_scores": true,
+  "mismatches": {},
+  "datasets": {
+   "nfcorpus": {
+    "base": {
+     "qps": 16602.920550982086,
+     "p50_us": 32.292,
+     "p99_us": 241.70850000000002,
+     "round_qps": [
+      11248.8,
+      27393.5,
+      16602.9
+     ],
+     "round_p50_us": [
+      60.6,
+      22.77,
+      32.29
+     ],
+     "round_p99_us": [
+      423.38,
+      107.13,
+      241.71
+     ],
+     "passes": 30,
+     "queries": 324,
+     "load_1m": [
+      138.99951171875,
+      93.9287109375,
+      64.28466796875
+     ]
+    },
+    "final": {
+     "qps": 35951.889349474426,
+     "p50_us": 24.625,
+     "p99_us": 72.604,
+     "round_qps": [
+      24672.2,
+      51683.3,
+      34762.8
+     ],
+     "round_p50_us": [
+      31.83,
+      18.31,
+      25.92
+     ],
+     "round_p99_us": [
+      116.46,
+      44.33,
+      87.17
+     ],
+     "passes": 30,
+     "queries": 324,
+     "load_1m": [
+      138.99951171875,
+      93.9287109375,
+      64.28466796875
+     ]
+    }
+   },
+   "scifact": {
+    "base": {
+     "qps": 4764.077175046526,
+     "p50_us": 191.9795,
+     "p99_us": 538.9794999999999,
+     "round_qps": [
+      2502.1,
+      5339.5,
+      4863.0
+     ],
+     "round_p50_us": [
+      256.5,
+      181.5,
+      191.98
+     ],
+     "round_p99_us": [
+      3052.9,
+      436.69,
+      474.33
+     ],
+     "passes": 30,
+     "queries": 809,
+     "load_1m": [
+      138.99951171875,
+      86.88720703125,
+      64.28466796875
+     ]
+    },
+    "final": {
+     "qps": 10482.053681885807,
+     "p50_us": 84.9165,
+     "p99_us": 190.5205,
+     "round_qps": [
+      9432.3,
+      20134.8,
+      10042.2
+     ],
+     "round_p50_us": [
+      92.83,
+      49.21,
+      87.81
+     ],
+     "round_p99_us": [
+      250.23,
+      72.69,
+      214.37
+     ],
+     "passes": 30,
+     "queries": 809,
+     "load_1m": [
+      132.83349609375,
+      86.88720703125,
+      64.28466796875
+     ]
+    }
+   },
+   "memory": {
+    "base": {
+     "qps": 1608.26181105196,
+     "p50_us": 332.9375,
+     "p99_us": 7523.271000000001,
+     "round_qps": [
+      1599.6,
+      3112.6,
+      1202.0
+     ],
+     "round_p50_us": [
+      344.73,
+      282.75,
+      360.71
+     ],
+     "round_p99_us": [
+      8462.19,
+      694.92,
+      11836.5
+     ],
+     "passes": 30,
+     "queries": 100,
+     "load_1m": [
+      132.83349609375,
+      86.88720703125,
+      60.818359375
+     ]
+    },
+    "final": {
+     "qps": 6645.359023694166,
+     "p50_us": 107.625,
+     "p99_us": 311.41700000000003,
+     "round_qps": [
+      6117.8,
+      8360.0,
+      2773.1
+     ],
+     "round_p50_us": [
+      95.77,
+      101.23,
+      145.67
+     ],
+     "round_p99_us": [
+      216.79,
+      281.67,
+      2509.1
+     ],
+     "passes": 30,
+     "queries": 100,
+     "load_1m": [
+      124.3583984375,
+      86.88720703125,
+      60.818359375
+     ]
+    }
+   },
+   "fiqa": {
+    "base": {
+     "qps": 315.39452577337477,
+     "p50_us": 2617.1665000000003,
+     "p99_us": 7228.6255,
+     "round_qps": [
+      315.4,
+      447.0,
+      105.5
+     ],
+     "round_p50_us": [
+      2617.17,
+      1890.83,
+      6400.29
+     ],
+     "round_p99_us": [
+      7228.63,
+      6021.67,
+      45713.62
+     ],
+     "passes": 30,
+     "queries": 500,
+     "load_1m": [
+      124.3583984375,
+      80.56982421875,
+      60.818359375
+     ]
+    },
+    "final": {
+     "qps": 2268.0295165261514,
+     "p50_us": 404.83299999999997,
+     "p99_us": 856.5625,
+     "round_qps": [
+      2341.1,
+      2631.5,
+      1927.5
+     ],
+     "round_p50_us": [
+      391.02,
+      368.31,
+      493.1
+     ],
+     "round_p99_us": [
+      843.4,
+      653.9,
+      930.65
+     ],
+     "passes": 30,
+     "queries": 500,
+     "load_1m": [
+      93.9287109375,
+      80.56982421875,
+      69.30615234375
+     ]
+    }
+   }
+  }
+ },
+ "harness": {
+  "before": {
+   "nfcorpus": {
+    "file": "standard-text-beir-nfcorpus-darwin-arm64-apple-m4-10c-32g.json",
+    "commit": "15b87dbacb66ba8dc48263968fe0b86616a3da1c",
+    "date": "2026-10-21T10:44:53-0700",
+    "hardware_class": "darwin-arm64-apple-m4-10c-32g",
+    "rounds": 3,
+    "documents": 3633,
+    "queries": 324,
+    "systems": {
+     "hms": {
+      "qps": 30183.8,
+      "p50_us": 20.62,
+      "p99_us": 98.33,
+      "passes": 9,
+      "ndcg_at_10": 0.29158226275481797,
+      "serve_peak_rss_mib": 63.6
+     },
+     "lucene": {
+      "qps": 5608.1,
+      "p50_us": 197.29,
+      "p99_us": 629.12,
+      "passes": 9,
+      "ndcg_at_10": 0.28972271928920523,
+      "serve_peak_rss_mib": 250.5
+     },
+     "tantivy": {
+      "qps": 17663.3,
+      "p50_us": 64.71,
+      "p99_us": 116.25,
+      "passes": 9,
+      "ndcg_at_10": 0.29006819680247453,
+      "serve_peak_rss_mib": 36.0
+     }
+    }
+   },
+   "scifact": {
+    "file": "standard-text-beir-scifact-darwin-arm64-apple-m4-10c-32g.json",
+    "commit": "15b87dbacb66ba8dc48263968fe0b86616a3da1c",
+    "date": "2026-10-21T11:02:52-0700",
+    "hardware_class": "darwin-arm64-apple-m4-10c-32g",
+    "rounds": 3,
+    "documents": 5183,
+    "queries": 809,
+    "systems": {
+     "hms": {
+      "qps": 7290.7,
+      "p50_us": 126.83,
+      "p99_us": 480.17,
+      "passes": 9,
+      "ndcg_at_10": 0.7026997341473034,
+      "serve_peak_rss_mib": 156.5
+     },
+     "lucene": {
+      "qps": 2630.3,
+      "p50_us": 330.67,
+      "p99_us": 870.04,
+      "passes": 9,
+      "ndcg_at_10": 0.7021782838562147,
+      "serve_peak_rss_mib": 423.6
+     },
+     "tantivy": {
+      "qps": 7106.6,
+      "p50_us": 138.46,
+      "p99_us": 222.54,
+      "passes": 9,
+      "ndcg_at_10": 0.701325671999324,
+      "serve_peak_rss_mib": 62.8
+     }
+    }
+   },
+   "fiqa": {
+    "file": "standard-text-beir-fiqa-darwin-arm64-apple-m4-10c-32g.json",
+    "commit": "15b87dbacb66ba8dc48263968fe0b86616a3da1c",
+    "date": "2026-10-21T10:52:24-0700",
+    "hardware_class": "darwin-arm64-apple-m4-10c-32g",
+    "rounds": 3,
+    "documents": 57600,
+    "queries": 500,
+    "systems": {
+     "hms": {
+      "qps": 850.9,
+      "p50_us": 1198.33,
+      "p99_us": 2008.0,
+      "passes": 9,
+      "ndcg_at_10": 0.26537791112001474,
+      "serve_peak_rss_mib": 255.1
+     },
+     "lucene": {
+      "qps": 1194.3,
+      "p50_us": 774.54,
+      "p99_us": 1850.92,
+      "passes": 9,
+      "ndcg_at_10": 0.2656768159122737,
+      "serve_peak_rss_mib": 423.0
+     },
+     "tantivy": {
+      "qps": 1623.6,
+      "p50_us": 600.12,
+      "p99_us": 1174.5,
+      "passes": 9,
+      "ndcg_at_10": 0.26427698472308014,
+      "serve_peak_rss_mib": 56.2
+     }
+    }
+   }
+  },
+  "after": {}
+ }
+}
