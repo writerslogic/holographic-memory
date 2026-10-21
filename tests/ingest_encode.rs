@@ -23,11 +23,46 @@ const PARAGRAPHS: [&str; 6] = [
 ];
 
 const VOCABULARY: [&str; 40] = [
-    "memory", "vector", "sparse", "index", "query", "document", "chunk", "restore", "backup",
-    "snapshot", "verified", "running", "common", "topic", "rare", "shared", "birds", "fly",
-    "distant", "place", "revision", "Café", "naïve", "coöperate", "2026-10-20", "k=10", "fsync",
-    "journal", "postings", "stem", "stemmed", "tantivy", "sqlite", "bm25", "jaccard", "bundle",
-    "bind", "permute", "dimension", "threshold",
+    "memory",
+    "vector",
+    "sparse",
+    "index",
+    "query",
+    "document",
+    "chunk",
+    "restore",
+    "backup",
+    "snapshot",
+    "verified",
+    "running",
+    "common",
+    "topic",
+    "rare",
+    "shared",
+    "birds",
+    "fly",
+    "distant",
+    "place",
+    "revision",
+    "Café",
+    "naïve",
+    "coöperate",
+    "2026-10-20",
+    "k=10",
+    "fsync",
+    "journal",
+    "postings",
+    "stem",
+    "stemmed",
+    "tantivy",
+    "sqlite",
+    "bm25",
+    "jaccard",
+    "bundle",
+    "bind",
+    "permute",
+    "dimension",
+    "threshold",
 ];
 
 /// A deterministic corpus: the fixed paragraphs, generated sentences over a vocabulary with
@@ -117,7 +152,9 @@ fn lexical_hits(core: &HmsCore, text: &str) -> anyhow::Result<serde_json::Value>
         k: Some(20),
         ..Default::default()
     };
-    Ok(serde_json::to_value(core.search_documents(text, &options)?)?)
+    Ok(serde_json::to_value(
+        core.search_documents(text, &options)?,
+    )?)
 }
 
 #[test]
@@ -155,7 +192,10 @@ fn encode_modes_keep_lexical_results_and_defer_or_skip_vectors() -> anyhow::Resu
         counts
     );
     let chunks: u64 = counts.iter().map(|&count| u64::from(count)).sum();
-    assert!(chunks > inputs.len() as u64, "corpus must span several chunks");
+    assert!(
+        chunks > inputs.len() as u64,
+        "corpus must span several chunks"
+    );
     assert_eq!(eager.vector_count(), chunks);
     assert_eq!(deferred.vector_count(), 0);
     assert_eq!(lexical.vector_count(), 0);
@@ -170,8 +210,16 @@ fn encode_modes_keep_lexical_results_and_defer_or_skip_vectors() -> anyhow::Resu
     ];
     for query in queries {
         let expected = lexical_hits(&eager, query)?;
-        assert_eq!(lexical_hits(&deferred, query)?, expected, "deferred {query:?}");
-        assert_eq!(lexical_hits(&lexical, query)?, expected, "lexical {query:?}");
+        assert_eq!(
+            lexical_hits(&deferred, query)?,
+            expected,
+            "deferred {query:?}"
+        );
+        assert_eq!(
+            lexical_hits(&lexical, query)?,
+            expected,
+            "lexical {query:?}"
+        );
     }
 
     let probe = deferred.encode_text(&texts[5]);
@@ -213,7 +261,10 @@ fn encode_modes_keep_lexical_results_and_defer_or_skip_vectors() -> anyhow::Resu
     drop(deferred);
     let deferred = open(&dirs[1])?;
     assert_eq!(deferred.vector_count(), chunks);
-    assert_eq!(vector_hits(&deferred, &texts[3]), vector_hits(&eager, &texts[3]));
+    assert_eq!(
+        vector_hits(&deferred, &texts[3]),
+        vector_hits(&eager, &texts[3])
+    );
 
     // Deferred documents that are never queried stay pending across a reopen, and a document
     // replaced while pending takes the replacement's encoding, not the stale one.

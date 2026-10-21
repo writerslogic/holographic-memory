@@ -85,7 +85,11 @@ fn reference_top_k(docs: &[Vec<f64>], query: &[f64], k: usize) -> Vec<String> {
         .map(|(i, d)| (d.iter().zip(query).map(|(a, b)| a * b).sum::<f64>(), i))
         .collect();
     scored.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
-    scored.iter().take(k).map(|(_, i)| format!("d{i}")).collect()
+    scored
+        .iter()
+        .take(k)
+        .map(|(_, i)| format!("d{i}"))
+        .collect()
 }
 
 fn document(id: &str, index: usize, vector: &[f64]) -> Value {
@@ -173,13 +177,13 @@ fn graph_and_exact_routes_agree_and_track_deletes_and_replaces() {
         reference_top_k(&docs, &queries[0], K)
     );
     let (status, body) = query(&server, &queries[0], "bogus");
-    assert_eq!(status, 400, "{body}");
+    assert_eq!(status, 422, "{body}");
     let resp = server
         .req("POST", "/api/v1/query")
         .tenant(TENANT)
         .json(&json!({"query_vector": queries[0], "top_k": K, "ef": 0}))
         .send();
-    assert_eq!(resp.status, 400, "{}", resp.text());
+    assert_eq!(resp.status, 422, "{}", resp.text());
 
     // Maintenance builds the snapshot with the graph (3000 rows >= --graph-min-rows 512).
     let built = maintain(&server);
@@ -224,11 +228,19 @@ fn graph_and_exact_routes_agree_and_track_deletes_and_replaces() {
     for route in ["graph", "exact", "auto"] {
         let got = top_ids(&server, &queries[0], route);
         assert!(!got.contains(&victim), "{route} still returns {victim}");
-        assert_eq!(got.len(), K, "{route} returned {} after the delete", got.len());
+        assert_eq!(
+            got.len(),
+            K,
+            "{route} returned {} after the delete",
+            got.len()
+        );
     }
     let stale = vector_index_stats(&server);
     assert_eq!(stale["current"], false, "{stale}");
-    assert!(stale["staleMutations"].as_u64().unwrap_or(0) >= 1, "{stale}");
+    assert!(
+        stale["staleMutations"].as_u64().unwrap_or(0) >= 1,
+        "{stale}"
+    );
     assert_eq!(stale["rows"], DOCS, "{stale}");
 
     // Replace d7 with query 1's vector: both routes find the new vector first (delta pass).
@@ -244,7 +256,10 @@ fn graph_and_exact_routes_agree_and_track_deletes_and_replaces() {
         let got = ids(&body);
         assert_eq!(got[0], "d7", "{route} top-1 after the replace: {body}");
         let score = body["matches"][0]["score"].as_f64().unwrap_or(0.0);
-        assert!(score > 0.9999, "{route} score of the replaced vector: {score}");
+        assert!(
+            score > 0.9999,
+            "{route} score of the replaced vector: {score}"
+        );
     }
     let reference = reference_top_k(
         &docs
@@ -261,7 +276,11 @@ fn graph_and_exact_routes_agree_and_track_deletes_and_replaces() {
         &queries[1],
         K + 1,
     );
-    let reference: Vec<String> = reference.into_iter().filter(|id| *id != victim).take(K).collect();
+    let reference: Vec<String> = reference
+        .into_iter()
+        .filter(|id| *id != victim)
+        .take(K)
+        .collect();
     assert_eq!(top_ids(&server, &queries[1], "exact"), reference);
 
     // Maintenance captures the mutated store; the fresh graph sees the same facts.
@@ -287,7 +306,9 @@ fn graph_and_exact_routes_agree_and_track_deletes_and_replaces() {
     let resp = server
         .req("POST", "/api/v1/query")
         .tenant(TENANT)
-        .json(&json!({"query_vector": queries[3], "top_k": K, "filter": {"i": 3}, "index": "graph"}))
+        .json(
+            &json!({"query_vector": queries[3], "top_k": K, "filter": {"i": 3}, "index": "graph"}),
+        )
         .send();
-    assert_eq!(resp.status, 400, "{}", resp.text());
+    assert_eq!(resp.status, 422, "{}", resp.text());
 }

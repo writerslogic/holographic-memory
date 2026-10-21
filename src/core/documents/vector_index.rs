@@ -645,10 +645,7 @@ pub(crate) fn search_vector_snapshot(
         }
         let mut scratch = vec![0.0f32; snapshot.dim];
         for document in store.documents.values() {
-            if snapshot
-                .members
-                .contains(&(Arc::as_ptr(document) as usize))
-            {
+            if snapshot.members.contains(&(Arc::as_ptr(document) as usize)) {
                 continue;
             }
             for (chunk, stored) in document.chunks.iter().enumerate() {
@@ -738,7 +735,10 @@ mod tests {
         ]);
         let hits = scan.search(&[1.0, 0.0, 0.0, 0.0], 3, 0).unwrap();
         assert_eq!(hits.iter().map(|h| h.0).collect::<Vec<_>>(), [1, 2, 3]);
-        assert!((hits[0].1 - 1.0).abs() < 1e-6 && (hits[2].1 - 0.7071).abs() < 1e-3);
+        assert!(
+            (hits[0].1 - 1.0).abs() < 1e-6
+                && (hits[2].1 - std::f32::consts::FRAC_1_SQRT_2).abs() < 1e-3
+        );
         assert_eq!(scan.search(&[1.0, 0.0, 0.0, 0.0], 10, 0).unwrap().len(), 4);
         assert!(scan.search(&[1.0, 0.0, 0.0], 1, 0).is_err());
     }

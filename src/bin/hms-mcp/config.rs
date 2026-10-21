@@ -216,7 +216,7 @@ impl Cli {
         if self.transport == Transport::Http {
             let loopback = self.bind.ip().is_loopback();
             let token = http_token()?.is_some();
-            if !loopback && !(self.allow_remote && token) {
+            if !(loopback || (self.allow_remote && token)) {
                 bail!(
                     "binding {} needs --allow-remote and HMS_MCP_TOKEN set",
                     self.bind

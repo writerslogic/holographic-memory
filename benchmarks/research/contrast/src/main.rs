@@ -1006,7 +1006,7 @@ fn run_part_b(
         calibration: "threshold and lambda from the first half of each query class; FAR/TAR/AUC on the second half",
         repeats,
         warmup,
-        sketch_build_us_per_doc,
+        sketch_build_us_per_doc: sketch_us_per_doc,
         methods: reports,
         verdict,
     };

@@ -462,7 +462,9 @@ fn check_document(body: &Value, dimensions: Option<u64>) -> Result<(), String> {
                 .and_then(Value::as_array)
                 .is_some_and(Vec::is_empty);
             if !known || !empty {
-                return Err("chunk vector_state must be pending or lexical with an empty vector".into());
+                return Err(
+                    "chunk vector_state must be pending or lexical with an empty vector".into(),
+                );
             }
         }
     }

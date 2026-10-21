@@ -286,11 +286,7 @@ impl EncodeState {
             return EntangledHVec::from_indices(Vec::new(), dim);
         }
         let union = encoder.bundles_by_union();
-        let threshold = if union {
-            1
-        } else {
-            (count as u32).div_ceil(2)
-        };
+        let threshold = if union { 1 } else { (count as u32).div_ceil(2) };
         self.selected.clear();
         if dim <= self.flat.len().saturating_mul(COUNTING_RATIO) {
             if self.counts.len() != dim {
@@ -504,10 +500,7 @@ fn encode_cached(
     }
 
     if level_bundles.is_empty() {
-        return EntangledHVec::new_deterministic(
-            dim,
-            seeded(LEVEL_CHAR, 1, state.chars[0] as u64),
-        );
+        return EntangledHVec::new_deterministic(dim, seeded(LEVEL_CHAR, 1, state.chars[0] as u64));
     }
     combine_levels(&level_bundles, dim)
 }
@@ -728,7 +721,11 @@ mod tests {
                 for shift in 0..dim.min(7) {
                     let mut out = Vec::new();
                     rotate_sorted(base.indices(), shift as u32, dim as u32, &mut out);
-                    assert_eq!(out, base.permute(shift).indices(), "dim {dim} shift {shift}");
+                    assert_eq!(
+                        out,
+                        base.permute(shift).indices(),
+                        "dim {dim} shift {shift}"
+                    );
                 }
             }
         }

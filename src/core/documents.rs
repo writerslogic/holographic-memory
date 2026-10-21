@@ -23,15 +23,6 @@ mod search;
 mod text;
 mod vector_index;
 pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
-pub use vector_index::{
-    GraphUnavailable, VectorIndex, VectorIndexKind, VectorIndexMode, VectorIndexStatus,
-    VectorQueryOptions, DEFAULT_EF, DEFAULT_GRAPH_MIN_ROWS, MAX_EF, MAX_K,
-    REBUILD_AFTER_MUTATIONS, SNAPSHOT_MIN_ROWS,
-};
-pub(crate) use vector_index::{
-    build_vector_snapshot, capture_vector_rows, search_vector_snapshot, vector_index_status,
-    VectorIndexSlot, VectorSnapshot,
-};
 pub(crate) use index::DocumentStore;
 pub(crate) use index::DocumentWithText;
 pub use listing::DocumentRecord;
@@ -39,6 +30,15 @@ pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
 pub(crate) use search::{CapturedSearch, PreparedSearch};
 pub(crate) use text::TextSegment;
+pub(crate) use vector_index::{
+    build_vector_snapshot, capture_vector_rows, search_vector_snapshot, vector_index_status,
+    VectorIndexSlot,
+};
+pub use vector_index::{
+    GraphUnavailable, VectorIndex, VectorIndexKind, VectorIndexMode, VectorIndexStatus,
+    VectorQueryOptions, DEFAULT_EF, DEFAULT_GRAPH_MIN_ROWS, MAX_EF, MAX_K, REBUILD_AFTER_MUTATIONS,
+    SNAPSHOT_MIN_ROWS,
+};
 
 pub(crate) const MAX_DOCUMENT_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const MAX_CHUNK_BYTES: usize = 64 * 1024;
@@ -502,26 +502,8 @@ pub(crate) fn prepare(
     )
 }
 
-/// `keys` replaces each chunk's text as its lexical key (for example the chunk prefixed with
-/// facts extracted from it); the stored text and byte offsets stay the chunk's own.
-pub(crate) fn prepare_with_keys(
-    input: DocumentInput,
-    dimensions: usize,
-    embedding_dimensions: Option<usize>,
-    keys: Option<&[String]>,
-    encoder: TextEncoder,
-) -> Result<StoredDocument> {
-    prepare_with_options(
-        input,
-        dimensions,
-        embedding_dimensions,
-        keys,
-        encoder,
-        EncodeMode::Eager,
-    )
-}
-
-/// [`prepare_with_keys`] with the chunk vectors encoded now, later or never (`mode`). The
+/// [`prepare`] with an optional lexical key per chunk (for example the chunk prefixed with
+/// facts extracted from it; stored text and byte offsets stay the chunk's own) and the chunk vectors encoded now, later or never (`mode`). The
 /// lexical side of the document is the same in every mode.
 pub(crate) fn prepare_with_options(
     input: DocumentInput,
@@ -655,7 +637,10 @@ pub(crate) fn prepare_with_options(
 /// chunk, mixed with the crate's splitmix64 chain. `None` when a chunk's text is unavailable.
 /// `Mutation::EncodeDocument` carries it so vectors computed for one revision of a document
 /// are never installed on another that reused its id, version and chunk count.
-pub(crate) fn document_fingerprint(store: &DocumentStore, document: &StoredDocument) -> Option<u64> {
+pub(crate) fn document_fingerprint(
+    store: &DocumentStore,
+    document: &StoredDocument,
+) -> Option<u64> {
     let mut h = super::encoding::hash_str_seed(&document.version, 0x5EED_D0C5_F1A6_0001);
     for chunk in &document.chunks {
         let text = store.chunk_text(chunk)?;

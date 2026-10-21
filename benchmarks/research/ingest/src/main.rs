@@ -132,7 +132,7 @@ fn median(values: &[f64]) -> Option<f64> {
 fn build(documents: &[DocumentInput], dim: usize, batch: usize, options: &IngestOptions) -> Result<Built> {
     let dir = tempfile::tempdir().context("temporary store directory")?;
     let start = Instant::now();
-    let core = HmsCore::new(dim, Some(dir.path().display().to_string()), None)?;
+    let core = HmsCore::new(dim as u32, Some(dir.path().display().to_string()), None)?;
     let mut chunks = 0u64;
     for group in documents.chunks(batch) {
         let counts = core.memorize_documents_with(group.to_vec(), options)?;
