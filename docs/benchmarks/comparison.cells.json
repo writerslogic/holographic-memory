@@ -1,5 +1,1693 @@
 [
  {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.90",
+  "system": "hnswlib",
+  "value": 9480.442447565747,
+  "ci": [
+   9417.422568871087,
+   9697.221801401593
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.serve_rounds[*].configs[2]",
+  "text": "9,480"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.90",
+  "system": "hms",
+  "value": 23293.629504996767,
+  "ci": [
+   22814.748394915856,
+   23733.858833120175
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[*].configs[11]",
+  "text": "23,294"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.90",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 2.4570192408032363,
+  "factor_infinite": false,
+  "ci": [
+   2.352709761843162,
+   2.5202074834755206
+  ],
+  "verdict": "WIN",
+  "text": "2.46x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.95",
+  "system": "hnswlib",
+  "value": 7630.414893330864,
+  "ci": [
+   7474.952830643235,
+   7814.989707482342
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.serve_rounds[*].configs[3]",
+  "text": "7,630"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.95",
+  "system": "hms",
+  "value": 17480.964142532004,
+  "ci": [
+   15253.129845587078,
+   17833.849020964924
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[*].configs[2]",
+  "text": "17,481"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.95",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 2.290958537236385,
+  "factor_infinite": false,
+  "ci": [
+   1.9517786224316076,
+   2.3858142552894592
+  ],
+  "verdict": "WIN",
+  "text": "2.29x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.99",
+  "system": "hnswlib",
+  "value": 3192.520978113118,
+  "ci": [
+   3080.7832588347464,
+   3298.7230563365106
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.serve_rounds[*].configs[6]",
+  "text": "3,193"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.99",
+  "system": "hms",
+  "value": 8794.271294386524,
+  "ci": [
+   8591.235496775094,
+   9082.365742451297
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[*].configs[5]",
+  "text": "8,794"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps@recall0.99",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 2.7546479270385937,
+  "factor_infinite": false,
+  "ci": [
+   2.604412480239045,
+   2.948070337764217
+  ],
+  "verdict": "WIN",
+  "text": "2.75x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency@recall0.95",
+  "system": "hnswlib",
+  "value": 133.32475,
+  "ci": [
+   128.75775,
+   136.15449999999998
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.serve_rounds[*].configs[3]",
+  "text": "133"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency@recall0.95",
+  "system": "hms",
+  "value": 62.091,
+  "ci": [
+   55.067,
+   62.514
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[*].configs[2]",
+  "text": "62"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency@recall0.95",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 2.1472475882172937,
+  "factor_infinite": false,
+  "ci": [
+   2.059662635569632,
+   2.472524379392376
+  ],
+  "verdict": "WIN",
+  "text": "2.15x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency@recall0.95",
+  "system": "hnswlib",
+  "value": 219.73541500000005,
+  "ci": [
+   216.20628,
+   228.29286000000002
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.serve_rounds[*].configs[3]",
+  "text": "220"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency@recall0.95",
+  "system": "hms",
+  "value": 104.57,
+  "ci": [
+   84.128,
+   110.87700000000001
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[*].configs[2]",
+  "text": "105"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency@recall0.95",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 2.1013236587931536,
+  "factor_infinite": false,
+  "ci": [
+   1.9499650964582373,
+   2.713637076835299
+  ],
+  "verdict": "WIN",
+  "text": "2.10x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "hnswlib",
+  "value": 182.4948315215006,
+  "ci": [
+   182.2122630720005,
+   182.7773999710007
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.build_runs",
+  "text": "182.49"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 312.6031632165,
+  "ci": [
+   310.021226209,
+   315.185100224
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[graph_built]",
+  "text": "312.60"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 0.5837907385316825,
+  "factor_infinite": false,
+  "ci": [
+   0.5781119188137492,
+   0.589564147610273
+  ],
+  "verdict": "LOSS",
+  "text": "0.58x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "hnswlib",
+  "value": 1524.958984375,
+  "ci": [
+   1520.74609375,
+   1529.171875
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.build_runs",
+  "text": "1,525"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 2967.65234375,
+  "ci": [
+   2957.69140625,
+   2977.61328125
+  ],
+  "n": 2,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[graph_built]",
+  "text": "2,968"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 0.5138603878539302,
+  "factor_infinite": false,
+  "ci": [
+   0.5107265282990651,
+   0.5170153558848817
+  ],
+  "verdict": "LOSS",
+  "text": "0.51x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "hnswlib",
+  "value": 1019.3671875,
+  "ci": [
+   1018.99609375,
+   1019.375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.serve_rounds[*].rss_steady",
+  "text": "1,019"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 2203.828125,
+  "ci": [
+   1261.109375,
+   2223.64453125
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[*].rss_steady",
+  "text": "2,204"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 0.4625438689779858,
+  "factor_infinite": false,
+  "ci": [
+   0.45825494112459664,
+   0.808316090743517
+  ],
+  "verdict": "LOSS",
+  "text": "0.46x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "index_bytes_mib",
+  "system": "hnswlib",
+  "value": 873.813777923584,
+  "ci": [
+   873.813777923584,
+   873.813777923584
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500",
+  "text": "873.8"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "index_bytes_mib",
+  "system": "hms",
+  "value": 446.3023262023926,
+  "ci": [
+   446.3023262023926,
+   446.3023262023926
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32",
+  "text": "446.3"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "index_bytes_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 1.957896534752365,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "1.96x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "hnswlib",
+  "value": 0.748887823,
+  "ci": [
+   0.536470403,
+   0.77115552
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.builds.m48e500.serve_rounds[*].cold_start_s",
+  "text": "0.75"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.builds.vertex-d32.serve_rounds[*].cold_start_s",
+  "text": "n/m"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": null,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/m",
+  "text": "n/m"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "hnswlib",
+  "value": 6.010148169989407,
+  "ci": [
+   6.010148169989407,
+   6.010148169989407
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.ops.replace",
+  "text": "6.010"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": null,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/m",
+  "text": "n/m"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "hnswlib",
+  "value": 3.3136410399856686,
+  "ci": [
+   3.3136410399856686,
+   3.3136410399856686
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.ops.delete",
+  "text": "3.314"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": null,
+  "ci": null,
+  "n": 0,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops",
+  "text": "n/m"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": null,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/m",
+  "text": "n/m"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "hnswlib",
+  "value": 61.750614166259766,
+  "ci": [
+   61.750614166259766,
+   61.750614166259766
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.install",
+  "text": "61.8"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 3.378631591796875,
+  "ci": [
+   3.378631591796875,
+   3.378631591796875
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install",
+  "text": "3.4"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 18.276811924740993,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "18.28x"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "hnswlib",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hnswlib.install",
+  "text": "2"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
+  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "hnswlib",
+  "factor": 0.021739130434782608,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.02x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "hms",
+  "value": 0.26537791112001474,
+  "ci": [
+   0.2202195029557607,
+   0.3152282371269464
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.2654"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "sqlite-fts5",
+  "value": 0.26781574230549227,
+  "ci": [
+   0.22274318202559268,
+   0.3206258963583593
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.2678"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "lucene",
+  "value": 0.2656768159122737,
+  "ci": [
+   0.22036786779073506,
+   0.3139701649250381
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.2657"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "tantivy",
+  "value": 0.26427698472308014,
+  "ci": [
+   0.21816731368957304,
+   0.3152407464091055
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.2643"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.9908973566509144,
+  "factor_infinite": false,
+  "ci": [
+   0.6868425334852687,
+   1.415209364705616
+  ],
+  "verdict": "TIE",
+  "text": "0.99x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "hms",
+  "value": 0.5422345043845044,
+  "ci": [
+   0.4848873015873016,
+   0.60181443001443
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.5422"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "sqlite-fts5",
+  "value": 0.5545597791097792,
+  "ci": [
+   0.5011080086580086,
+   0.6097621600621601
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.5546"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "lucene",
+  "value": 0.5444845043845044,
+  "ci": [
+   0.48340490620490617,
+   0.5998866522366523
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.5445"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "tantivy",
+  "value": 0.5405661283161284,
+  "ci": [
+   0.4886063492063492,
+   0.6022588744588744
+  ],
+  "n": 500,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.5406"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.9777746688642652,
+  "factor_infinite": false,
+  "ci": [
+   0.7952072682533653,
+   1.2009674952633824
+  ],
+  "verdict": "TIE",
+  "text": "0.98x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "hms",
+  "value": 3576.2010884139404,
+  "ci": [
+   3300.1591653564815,
+   3703.4829761183273
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "3,576"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "sqlite-fts5",
+  "value": 26.384892807750848,
+  "ci": [
+   25.099973048326643,
+   26.854216080674412
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "26"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "lucene",
+  "value": 1259.6001972040144,
+  "ci": [
+   1023.609596282643,
+   1286.2379536098217
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "1,260"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "tantivy",
+  "value": 1617.0952478997635,
+  "ci": [
+   1470.4609063542825,
+   1651.386284785746
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "1,617"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.211496875684105,
+  "factor_infinite": false,
+  "ci": [
+   1.9984174482741635,
+   2.518586492245062
+  ],
+  "verdict": "WIN",
+  "text": "2.21x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "hms",
+  "value": 269.241,
+  "ci": [
+   263.756,
+   292.066
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "269"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "sqlite-fts5",
+  "value": 34691.752,
+  "ci": [
+   34254.818,
+   36857.09
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "34,692"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "lucene",
+  "value": 727.967,
+  "ci": [
+   707.581,
+   879.043
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "728"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "tantivy",
+  "value": 601.255,
+  "ci": [
+   598.008,
+   662.323
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "601"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.2331479975189517,
+  "factor_infinite": false,
+  "ci": [
+   2.0475098094266366,
+   2.5111201261772247
+  ],
+  "verdict": "WIN",
+  "text": "2.23x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "hms",
+  "value": 501.462,
+  "ci": [
+   457.24,
+   614.993
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "501"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "sqlite-fts5",
+  "value": 88811.706,
+  "ci": [
+   86997.578,
+   94275.323
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "88,812"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "lucene",
+  "value": 1904.356,
+  "ci": [
+   1671.394,
+   2547.587
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "1,904"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "tantivy",
+  "value": 1269.343,
+  "ci": [
+   1093.41,
+   1574.422
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "1,269"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.531284524051673,
+  "factor_infinite": false,
+  "ci": [
+   1.7779226755426485,
+   3.4433164202606945
+  ],
+  "verdict": "WIN",
+  "text": "2.53x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 2.156009168,
+  "ci": [
+   2.131987949,
+   2.188588237
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "2.16"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "sqlite-fts5",
+  "value": 1.1806630159990164,
+  "ci": [
+   1.1729135619989393,
+   1.1811330580003414
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "1.18"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "lucene",
+  "value": 2.630518981,
+  "ci": [
+   2.473350822,
+   2.778356151
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "2.63"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "tantivy",
+  "value": 2.6500262409990682,
+  "ci": [
+   2.6409532399993623,
+   2.6505701259993657
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "2.65"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.547615025725631,
+  "factor_infinite": false,
+  "ci": [
+   0.5359224463376934,
+   0.5540055039027528
+  ],
+  "verdict": "LOSS",
+  "text": "0.55x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "lucene",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "tantivy",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "lucene",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "tantivy",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "hms",
+  "value": 20.562817573547363,
+  "ci": [
+   20.562817573547363,
+   20.562817573547363
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs[0].disk_bytes",
+  "text": "20.6"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "sqlite-fts5",
+  "value": 27.0859375,
+  "ci": [
+   27.0859375,
+   27.0859375
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs[0].disk_bytes",
+  "text": "27.1"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "lucene",
+  "value": 12.16652774810791,
+  "ci": [
+   12.16652774810791,
+   12.16652774810791
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs[0].disk_bytes",
+  "text": "12.2"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "tantivy",
+  "value": 17.35812759399414,
+  "ci": [
+   17.35812759399414,
+   17.35812759399414
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs[0].disk_bytes",
+  "text": "17.4"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.5916761020026411,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.59x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": 0.840599199,
+  "ci": [
+   0.836939676,
+   0.942827962
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].cold_start_s",
+  "text": "0.84"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "sqlite-fts5",
+  "value": 0.081541718,
+  "ci": [
+   0.077916238,
+   0.088280834
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].cold_start_s",
+  "text": "0.08"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "lucene",
+  "value": 0.291951304,
+  "ci": [
+   0.275507479,
+   0.31941395
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].cold_start_s",
+  "text": "0.29"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "tantivy",
+  "value": 0.024903889,
+  "ci": [
+   0.023638664,
+   0.02968958
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].cold_start_s",
+  "text": "0.02"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.029626353474552856,
+  "factor_infinite": false,
+  "ci": [
+   0.025072086268905124,
+   0.03547397841370828
+  ],
+  "verdict": "LOSS",
+  "text": "0.03x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": 1.71895986,
+  "ci": [
+   1.71895986,
+   1.71895986
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.replace",
+  "text": "1.719"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 9.141574070017668,
+  "ci": [
+   9.141574070017668,
+   9.141574070017668
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.replace",
+  "text": "9.142"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "lucene",
+  "value": 31.037972089999997,
+  "ci": [
+   31.037972089999997,
+   31.037972089999997
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.replace",
+  "text": "31.038"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "tantivy",
+  "value": 82.71144980999452,
+  "ci": [
+   82.71144980999452,
+   82.71144980999452
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.replace",
+  "text": "82.711"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 5.318084664302556,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "5.32x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": 3.75641631,
+  "ci": [
+   3.75641631,
+   3.75641631
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.delete",
+  "text": "3.756"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 8.763046479998593,
+  "ci": [
+   8.763046479998593,
+   8.763046479998593
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.delete",
+  "text": "8.763"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "lucene",
+  "value": 14.948087370000001,
+  "ci": [
+   14.948087370000001,
+   14.948087370000001
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.delete",
+  "text": "14.948"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "tantivy",
+  "value": 43.996110599982785,
+  "ci": [
+   43.996110599982785,
+   43.996110599982785
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.delete",
+  "text": "43.996"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 2.3328209007799225,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "2.33x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 2.4908218383789062,
+  "ci": [
+   2.4908218383789062,
+   2.4908218383789062
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install",
+  "text": "2.5"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "sqlite-fts5",
+  "value": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0.0"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "lucene",
+  "value": 5.715169906616211,
+  "ci": [
+   5.715169906616211,
+   5.715169906616211
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "5.7"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "tantivy",
+  "value": 13.801004409790039,
+  "ci": [
+   13.801004409790039,
+   13.801004409790039
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "13.8"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.00x"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "sqlite-fts5",
+  "value": 0,
+  "ci": [
+   0,
+   0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "lucene",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "2"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "tantivy",
+  "value": 1,
+  "ci": [
+   1,
+   1
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "1"
+ },
+ {
+  "section": "beir:fiqa (57,600 documents, 500 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.00x"
+ },
+ {
   "section": "memory (4,559 documents, 100 queries)",
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hardware_class": "modal-x86_64-8vcpu-32g",
@@ -1687,6 +3375,2120 @@
   "text": "0.01x"
  },
  {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "hms",
+  "value": 0.4561419499447157,
+  "ci": [
+   0.3383549497121346,
+   0.5719627171884742
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.4561"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "sqlite-fts5",
+  "value": 0.45009623895127726,
+  "ci": [
+   0.32554655664914095,
+   0.5727626155385812
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.4501"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "lucene",
+  "value": 0.46265299364569407,
+  "ci": [
+   0.33417139599958345,
+   0.5770370040492443
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.4627"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "tantivy",
+  "value": 0.4491250108653578,
+  "ci": [
+   0.330732032158942,
+   0.5639818248756597
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.4491"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.9859267230723582,
+  "factor_infinite": false,
+  "ci": [
+   0.5863661209554932,
+   1.7115849053375807
+  ],
+  "verdict": "TIE",
+  "text": "0.99x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "hms",
+  "value": 0.8203333333333334,
+  "ci": [
+   0.7175,
+   0.914
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.8203"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "sqlite-fts5",
+  "value": 0.8391666666666667,
+  "ci": [
+   0.738,
+   0.922
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.8392"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "lucene",
+  "value": 0.8236666666666665,
+  "ci": [
+   0.7241666666666667,
+   0.9173333333333333
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.8237"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "tantivy",
+  "value": 0.8203333333333334,
+  "ci": [
+   0.7175,
+   0.914
+  ],
+  "n": 100,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.8203"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.9775571002979145,
+  "factor_infinite": false,
+  "ci": [
+   0.7781995661605206,
+   1.2384823848238482
+  ],
+  "verdict": "TIE",
+  "text": "0.98x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "hms",
+  "value": 11856.868624709952,
+  "ci": [
+   10468.949253548215,
+   12906.478238967833
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "11,857"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "sqlite-fts5",
+  "value": 61.378817161375366,
+  "ci": [
+   55.24428366486958,
+   63.0343365952096
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "61"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "lucene",
+  "value": 1338.3452757897326,
+  "ci": [
+   1228.2875909617587,
+   1448.9261711116028
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "1,338"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "tantivy",
+  "value": 4591.32669920295,
+  "ci": [
+   4486.3028463483,
+   5298.197945125717
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "4,591"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.582449344493018,
+  "factor_infinite": false,
+  "ci": [
+   1.975945285921137,
+   2.876862904935915
+  ],
+  "verdict": "WIN",
+  "text": "2.58x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "hms",
+  "value": 80.091,
+  "ci": [
+   72.785,
+   90.316
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "80"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "sqlite-fts5",
+  "value": 12485.416,
+  "ci": [
+   12368.788,
+   14031.627
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "12,485"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "lucene",
+  "value": 706.365,
+  "ci": [
+   635.971,
+   789.486
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "706"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "tantivy",
+  "value": 190.226,
+  "ci": [
+   179.244,
+   210.75
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "190"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.375123297249379,
+  "factor_infinite": false,
+  "ci": [
+   1.9846317374551574,
+   2.895514185615168
+  ],
+  "verdict": "WIN",
+  "text": "2.38x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "hms",
+  "value": 144.633,
+  "ci": [
+   142.803,
+   174.308
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "145"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "sqlite-fts5",
+  "value": 61669.52,
+  "ci": [
+   58131.376,
+   66600.055
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "61,670"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "lucene",
+  "value": 1384.901,
+  "ci": [
+   1280.298,
+   1477.334
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "1,385"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "tantivy",
+  "value": 412.014,
+  "ci": [
+   342.165,
+   610.31
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "412"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.8486859845263526,
+  "factor_infinite": false,
+  "ci": [
+   1.962990797897974,
+   4.2737897663214355
+  ],
+  "verdict": "WIN",
+  "text": "2.85x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 1.213714217,
+  "ci": [
+   1.196267904,
+   1.2146892440000001
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "1.21"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "sqlite-fts5",
+  "value": 0.8815983789991151,
+  "ci": [
+   0.8279929869986518,
+   0.9001539719993161
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "0.88"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "lucene",
+  "value": 2.25939896,
+  "ci": [
+   2.248518259,
+   2.347525725
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "2.26"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "tantivy",
+  "value": 1.7403191430003062,
+  "ci": [
+   1.734949711999434,
+   1.7461702269993111
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "1.74"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.7263640539518498,
+  "factor_infinite": false,
+  "ci": [
+   0.6816500525451691,
+   0.7524685473792635
+  ],
+  "verdict": "LOSS",
+  "text": "0.73x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "lucene",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "tantivy",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "lucene",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "tantivy",
+  "value": 2479.68359375,
+  "ci": [
+   2479.68359375,
+   2479.68359375
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].peak_rss_bytes",
+  "text": "2,480"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "hms",
+  "value": 9.797192573547363,
+  "ci": [
+   9.797192573547363,
+   9.797192573547363
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs[0].disk_bytes",
+  "text": "9.8"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "sqlite-fts5",
+  "value": 19.25390625,
+  "ci": [
+   19.25390625,
+   19.25390625
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs[0].disk_bytes",
+  "text": "19.3"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "lucene",
+  "value": 10.313986778259277,
+  "ci": [
+   10.313986778259277,
+   10.313986778259277
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs[0].disk_bytes",
+  "text": "10.3"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "tantivy",
+  "value": 13.706984519958496,
+  "ci": [
+   13.706984519958496,
+   13.706984519958496
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs[0].disk_bytes",
+  "text": "13.7"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 1.05274921369896,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "1.05x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": 0.301695743,
+  "ci": [
+   0.287584375,
+   0.317913052
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].cold_start_s",
+  "text": "0.30"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "sqlite-fts5",
+  "value": 0.035247877,
+  "ci": [
+   0.031886552,
+   0.038362907
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].cold_start_s",
+  "text": "0.04"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "lucene",
+  "value": 0.275996363,
+  "ci": [
+   0.271379881,
+   0.316352287
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].cold_start_s",
+  "text": "0.28"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "tantivy",
+  "value": 0.022639198,
+  "ci": [
+   0.020162576,
+   0.022888295
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].cold_start_s",
+  "text": "0.02"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.075039832431444,
+  "factor_infinite": false,
+  "ci": [
+   0.06342166788421132,
+   0.07958810349136666
+  ],
+  "verdict": "LOSS",
+  "text": "0.08x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": 4.456856650000001,
+  "ci": [
+   4.456856650000001,
+   4.456856650000001
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.replace",
+  "text": "4.457"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 11.852811349999683,
+  "ci": [
+   11.852811349999683,
+   11.852811349999683
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.replace",
+  "text": "11.853"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "lucene",
+  "value": 38.05683817,
+  "ci": [
+   38.05683817,
+   38.05683817
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.replace",
+  "text": "38.057"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "tantivy",
+  "value": 93.66708319999816,
+  "ci": [
+   93.66708319999816,
+   93.66708319999816
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.replace",
+  "text": "93.667"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 2.6594553697390473,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "2.66x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": 3.3314022100000003,
+  "ci": [
+   3.3314022100000003,
+   3.3314022100000003
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.delete",
+  "text": "3.331"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 10.455956980003975,
+  "ci": [
+   10.455956980003975,
+   10.455956980003975
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.delete",
+  "text": "10.456"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "lucene",
+  "value": 17.638506319999998,
+  "ci": [
+   17.638506319999998,
+   17.638506319999998
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.delete",
+  "text": "17.639"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "tantivy",
+  "value": 52.88391140000385,
+  "ci": [
+   52.88391140000385,
+   52.88391140000385
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.delete",
+  "text": "52.884"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 3.138605404240269,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "3.14x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 2.4908218383789062,
+  "ci": [
+   2.4908218383789062,
+   2.4908218383789062
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install",
+  "text": "2.5"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "sqlite-fts5",
+  "value": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0.0"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "lucene",
+  "value": 5.715169906616211,
+  "ci": [
+   5.715169906616211,
+   5.715169906616211
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "5.7"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "tantivy",
+  "value": 13.801004409790039,
+  "ci": [
+   13.801004409790039,
+   13.801004409790039
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "13.8"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.00x"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "sqlite-fts5",
+  "value": 0,
+  "ci": [
+   0,
+   0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "lucene",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "2"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "tantivy",
+  "value": 1,
+  "ci": [
+   1,
+   1
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "1"
+ },
+ {
+  "section": "memory (4,559 documents, 100 queries)",
+  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "hms",
+  "value": 0.29158226275481797,
+  "ci": [
+   0.23886320107734008,
+   0.3411719935240954
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.2916"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "sqlite-fts5",
+  "value": 0.29140981016338025,
+  "ci": [
+   0.23737701726378196,
+   0.3425518570467957
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.2914"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "lucene",
+  "value": 0.28972271928920523,
+  "ci": [
+   0.2354374337831947,
+   0.34013480906506466
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.2897"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "tantivy",
+  "value": 0.29006819680247453,
+  "ci": [
+   0.2369758611545306,
+   0.3396545165744922
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.2901"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0005917871856855,
+  "factor_infinite": false,
+  "ci": [
+   0.697305228868484,
+   1.4372579007721404
+  ],
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "hms",
+  "value": 0.22742500506264265,
+  "ci": [
+   0.18025102198000628,
+   0.271293273499347
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.2274"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "sqlite-fts5",
+  "value": 0.22713744545849535,
+  "ci": [
+   0.18038212850278756,
+   0.2710244800674338
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.2271"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "lucene",
+  "value": 0.22757113786424402,
+  "ci": [
+   0.1809647707555367,
+   0.27166470060864706
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.2276"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "tantivy",
+  "value": 0.22689859592232703,
+  "ci": [
+   0.18035440689654195,
+   0.2709681788324846
+  ],
+  "n": 324,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.2269"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.9993578588085782,
+  "factor_infinite": false,
+  "ci": [
+   0.6635054962097233,
+   1.4991496541933793
+  ],
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "hms",
+  "value": 38962.84279635361,
+  "ci": [
+   34807.345639090796,
+   41861.011364618586
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "38,963"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "sqlite-fts5",
+  "value": 1415.6626698169298,
+  "ci": [
+   1380.6499808639355,
+   1453.5804663585916
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "1,416"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "lucene",
+  "value": 4114.5853605973725,
+  "ci": [
+   3918.9511551362534,
+   4517.162897691404
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "4,115"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "tantivy",
+  "value": 14704.7297082332,
+  "ci": [
+   13863.304649842234,
+   15804.180352038118
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "14,705"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.649680991724605,
+  "factor_infinite": false,
+  "ci": [
+   2.202413846448039,
+   3.019555035537286
+  ],
+  "verdict": "WIN",
+  "text": "2.65x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "hms",
+  "value": 26.085,
+  "ci": [
+   24.994,
+   30.935
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "26"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "sqlite-fts5",
+  "value": 254.805,
+  "ci": [
+   247.493,
+   263.758
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "255"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "lucene",
+  "value": 283.067,
+  "ci": [
+   263.002,
+   288.8
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "283"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "tantivy",
+  "value": 75.212,
+  "ci": [
+   68.494,
+   76.131
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "75"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.8833429173854705,
+  "factor_infinite": false,
+  "ci": [
+   2.2141263940520446,
+   3.0459710330479317
+  ],
+  "verdict": "WIN",
+  "text": "2.88x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "hms",
+  "value": 57.175,
+  "ci": [
+   53.09,
+   64.058
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "57"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "sqlite-fts5",
+  "value": 2701.062,
+  "ci": [
+   2618.0,
+   2875.719
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "2,701"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "lucene",
+  "value": 536.786,
+  "ci": [
+   471.91,
+   567.596
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "537"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "tantivy",
+  "value": 149.59,
+  "ci": [
+   140.261,
+   258.21
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "150"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.616353301268037,
+  "factor_infinite": false,
+  "ci": [
+   2.1895938056136623,
+   4.863627801845921
+  ],
+  "verdict": "WIN",
+  "text": "2.62x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 0.230839372,
+  "ci": [
+   0.23019802,
+   0.232152894
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "0.23"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "sqlite-fts5",
+  "value": 0.13541231199997128,
+  "ci": [
+   0.1334877620010957,
+   0.14226272999985667
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "0.14"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "lucene",
+  "value": 0.619037672,
+  "ci": [
+   0.614903845,
+   0.621166554
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "0.62"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "tantivy",
+  "value": 0.2790714090006077,
+  "ci": [
+   0.27693536700098775,
+   0.2895067500012374
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "0.28"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.586608388451045,
+  "factor_infinite": false,
+  "ci": [
+   0.5749993450484218,
+   0.6180015362419568
+  ],
+  "verdict": "LOSS",
+  "text": "0.59x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "lucene",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "tantivy",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].peak_rss_bytes",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].peak_rss_bytes",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "lucene",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].peak_rss_bytes",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "tantivy",
+  "value": 747.8046875,
+  "ci": [
+   747.8046875,
+   747.8046875
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].peak_rss_bytes",
+  "text": "748"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "hms",
+  "value": 2.0628175735473633,
+  "ci": [
+   2.0628175735473633,
+   2.0628175735473633
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs[0].disk_bytes",
+  "text": "2.1"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "sqlite-fts5",
+  "value": 4.0234375,
+  "ci": [
+   4.0234375,
+   4.0234375
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs[0].disk_bytes",
+  "text": "4.0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "lucene",
+  "value": 1.4865550994873047,
+  "ci": [
+   1.4865550994873047,
+   1.4865550994873047
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs[0].disk_bytes",
+  "text": "1.5"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "tantivy",
+  "value": 1.9688215255737305,
+  "ci": [
+   1.9688215255737305,
+   1.9688215255737305
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs[0].disk_bytes",
+  "text": "2.0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.7206430265818039,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.72x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": 0.08889909,
+  "ci": [
+   0.083722021,
+   0.097128282
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].cold_start_s",
+  "text": "0.09"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "sqlite-fts5",
+  "value": 0.021537669,
+  "ci": [
+   0.020218705,
+   0.02514792
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].cold_start_s",
+  "text": "0.02"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "lucene",
+  "value": 0.283127535,
+  "ci": [
+   0.272270907,
+   0.30104404
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].cold_start_s",
+  "text": "0.28"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "tantivy",
+  "value": 0.020183307,
+  "ci": [
+   0.019923964,
+   0.025963645
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].cold_start_s",
+  "text": "0.02"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.22703614851400616,
+  "factor_infinite": false,
+  "ci": [
+   0.20513040681600855,
+   0.3101172748804045
+  ],
+  "verdict": "LOSS",
+  "text": "0.23x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": 2.03304533,
+  "ci": [
+   2.03304533,
+   2.03304533
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.replace",
+  "text": "2.033"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 9.737997880001785,
+  "ci": [
+   9.737997880001785,
+   9.737997880001785
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.replace",
+  "text": "9.738"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "lucene",
+  "value": 30.87565001,
+  "ci": [
+   30.87565001,
+   30.87565001
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.replace",
+  "text": "30.876"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "tantivy",
+  "value": 84.13805727999716,
+  "ci": [
+   84.13805727999716,
+   84.13805727999716
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.replace",
+  "text": "84.138"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 4.789857725406341,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "4.79x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": 1.7135118999999999,
+  "ci": [
+   1.7135118999999999,
+   1.7135118999999999
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.delete",
+  "text": "1.714"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 9.43153046999214,
+  "ci": [
+   9.43153046999214,
+   9.43153046999214
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.delete",
+  "text": "9.432"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "lucene",
+  "value": 14.462594180000002,
+  "ci": [
+   14.462594180000002,
+   14.462594180000002
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.delete",
+  "text": "14.463"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "tantivy",
+  "value": 42.87158723000175,
+  "ci": [
+   42.87158723000175,
+   42.87158723000175
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.delete",
+  "text": "42.872"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 5.504210662319965,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "5.50x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 2.4908218383789062,
+  "ci": [
+   2.4908218383789062,
+   2.4908218383789062
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install",
+  "text": "2.5"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "sqlite-fts5",
+  "value": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0.0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "lucene",
+  "value": 5.715169906616211,
+  "ci": [
+   5.715169906616211,
+   5.715169906616211
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "5.7"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "tantivy",
+  "value": 13.801004409790039,
+  "ci": [
+   13.801004409790039,
+   13.801004409790039
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "13.8"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.00x"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "sqlite-fts5",
+  "value": 0,
+  "ci": [
+   0,
+   0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "lucene",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "2"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "tantivy",
+  "value": 1,
+  "ci": [
+   1,
+   1
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "1"
+ },
+ {
+  "section": "beir:nfcorpus (3,633 documents, 324 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.00x"
+ },
+ {
   "section": "beir:nfcorpus (3,633 documents, 324 queries)",
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hardware_class": "modal-x86_64-8vcpu-32g",
@@ -3372,6 +7174,1066 @@
   "ci": null,
   "verdict": "n/v",
   "text": "0.01x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "hms",
+  "value": 0.7026997341473034,
+  "ci": [
+   0.6658698690249654,
+   0.7429302255190232
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.7027"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "sqlite-fts5",
+  "value": 0.7009278481912261,
+  "ci": [
+   0.6640612884177873,
+   0.7444364735259774
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.7009"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "lucene",
+  "value": 0.7021782838562147,
+  "ci": [
+   0.6658209083576906,
+   0.7423305918449589
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.7022"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "system": "tantivy",
+  "value": 0.701325671999324,
+  "ci": [
+   0.6628589508331748,
+   0.7413639093332942
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.7013"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "ndcg@10",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 1.0007426180830101,
+  "factor_infinite": false,
+  "ci": [
+   0.8969990949315977,
+   1.1158108977856072
+  ],
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "hms",
+  "value": 0.9264112072517512,
+  "ci": [
+   0.8990523279769262,
+   0.9504532344458179
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[0].quality",
+  "text": "0.9264"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "sqlite-fts5",
+  "value": 0.9321796456530697,
+  "ci": [
+   0.9065306963329213,
+   0.9562422744128554
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[0].quality",
+  "text": "0.9322"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "lucene",
+  "value": 0.9295014421096004,
+  "ci": [
+   0.9019983518747425,
+   0.9530284301606922
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[0].quality",
+  "text": "0.9295"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "system": "tantivy",
+  "value": 0.9282653481664607,
+  "ci": [
+   0.9015451174289246,
+   0.9526782035434693
+  ],
+  "n": 809,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[0].quality",
+  "text": "0.9283"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "recall@100",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.9938118811881188,
+  "factor_infinite": false,
+  "ci": [
+   0.9401930368838332,
+   1.0484512419607754
+  ],
+  "verdict": "TIE",
+  "text": "0.99x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "hms",
+  "value": 17781.668497694965,
+  "ci": [
+   13748.482207501169,
+   18339.96934935456
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "17,782"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "sqlite-fts5",
+  "value": 241.40480554663426,
+  "ci": [
+   239.0382548446373,
+   243.66628093250253
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "241"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "lucene",
+  "value": 2629.7883525204566,
+  "ci": [
+   2518.397806522205,
+   2929.936108270389
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "2,630"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "system": "tantivy",
+  "value": 6450.044975709162,
+  "ci": [
+   5982.8211388882055,
+   6578.028665471498
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "6,450"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "qps",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.7568286057943228,
+  "factor_infinite": false,
+  "ci": [
+   2.0900611576334183,
+   3.0654383481640735
+  ],
+  "verdict": "WIN",
+  "text": "2.76x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "hms",
+  "value": 55.432,
+  "ci": [
+   53.494,
+   71.139
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "55"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "sqlite-fts5",
+  "value": 3852.758,
+  "ci": [
+   3841.876,
+   3879.967
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "3,853"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "lucene",
+  "value": 350.705,
+  "ci": [
+   319.601,
+   368.767
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "351"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "system": "tantivy",
+  "value": 150.61,
+  "ci": [
+   149.927,
+   156.825
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "151"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p50_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 2.7170226583922648,
+  "factor_infinite": false,
+  "ci": [
+   2.107521893757292,
+   2.9316371929562193
+  ],
+  "verdict": "WIN",
+  "text": "2.72x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "hms",
+  "value": 94.551,
+  "ci": [
+   80.781,
+   143.225
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].passes",
+  "text": "95"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "sqlite-fts5",
+  "value": 9489.031,
+  "ci": [
+   9299.68,
+   9672.006
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].passes",
+  "text": "9,489"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "lucene",
+  "value": 789.441,
+  "ci": [
+   688.894,
+   865.042
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].passes",
+  "text": "789"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "system": "tantivy",
+  "value": 292.225,
+  "ci": [
+   221.767,
+   360.372
+  ],
+  "n": 15,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].passes",
+  "text": "292"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "p99_latency",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 3.0906600670537596,
+  "factor_infinite": false,
+  "ci": [
+   1.5483819165648456,
+   4.461098525643406
+  ],
+  "verdict": "WIN",
+  "text": "3.09x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "hms",
+  "value": 0.312045625,
+  "ci": [
+   0.310915802,
+   0.317366839
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "0.31"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "sqlite-fts5",
+  "value": 0.19639155000004394,
+  "ci": [
+   0.1934057339985884,
+   0.21986437700070383
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "0.20"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "lucene",
+  "value": 0.712891089,
+  "ci": [
+   0.682538507,
+   0.789371421
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "0.71"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "system": "tantivy",
+  "value": 0.36752783200063277,
+  "ci": [
+   0.3633899329997803,
+   0.3676003689997742
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "0.37"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_seconds",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.6293680611610688,
+  "factor_infinite": false,
+  "ci": [
+   0.609407506493104,
+   0.7071508607359359
+  ],
+  "verdict": "LOSS",
+  "text": "0.63x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "hms",
+  "value": 73.18359375,
+  "ci": [
+   73.18359375,
+   73.18359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs",
+  "text": "73"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 73.18359375,
+  "ci": [
+   73.18359375,
+   73.18359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs",
+  "text": "73"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "lucene",
+  "value": 162.078125,
+  "ci": [
+   158.83984375,
+   167.75
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs",
+  "text": "162"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "system": "tantivy",
+  "value": 73.18359375,
+  "ci": [
+   73.18359375,
+   73.18359375
+  ],
+  "n": 3,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs",
+  "text": "73"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "build_peak_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 1.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "TIE",
+  "text": "1.00x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "hms",
+  "value": 195.8359375,
+  "ci": [
+   143.99609375,
+   329.3828125
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].peak_rss_bytes",
+  "text": "196"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "sqlite-fts5",
+  "value": 218.0078125,
+  "ci": [
+   84.171875,
+   351.5546875
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].peak_rss_bytes",
+  "text": "218"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "lucene",
+  "value": 410.25390625,
+  "ci": [
+   403.73046875,
+   426.3046875
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].peak_rss_bytes",
+  "text": "410"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "system": "tantivy",
+  "value": 173.6640625,
+  "ci": [
+   84.859375,
+   396.0703125
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].peak_rss_bytes",
+  "text": "174"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "serving_rss_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.8867834204332389,
+  "factor_infinite": false,
+  "ci": [
+   0.2576314603543559,
+   2.750562895043811
+  ],
+  "verdict": "TIE",
+  "text": "0.89x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "hms",
+  "value": 2.9104738235473633,
+  "ci": [
+   2.9104738235473633,
+   2.9104738235473633
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.build_runs[0].disk_bytes",
+  "text": "2.9"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "sqlite-fts5",
+  "value": 5.87109375,
+  "ci": [
+   5.87109375,
+   5.87109375
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.build_runs[0].disk_bytes",
+  "text": "5.9"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "lucene",
+  "value": 1.9866275787353516,
+  "ci": [
+   1.9866275787353516,
+   1.9866275787353516
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.build_runs[0].disk_bytes",
+  "text": "2.0"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "system": "tantivy",
+  "value": 2.6494836807250977,
+  "ci": [
+   2.6494836807250977,
+   2.6494836807250977
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.build_runs[0].disk_bytes",
+  "text": "2.6"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "disk_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "lucene",
+  "factor": 0.6825787480589661,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.68x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "hms",
+  "value": 0.117377458,
+  "ci": [
+   0.11571311,
+   0.119997146
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.serve_rounds[*].cold_start_s",
+  "text": "0.12"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "sqlite-fts5",
+  "value": 0.026888259,
+  "ci": [
+   0.023155602,
+   0.029468671
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.serve_rounds[*].cold_start_s",
+  "text": "0.03"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "lucene",
+  "value": 0.291827871,
+  "ci": [
+   0.28430985,
+   2.911798323
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.serve_rounds[*].cold_start_s",
+  "text": "0.29"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "system": "tantivy",
+  "value": 0.024623582,
+  "ci": [
+   0.023976055,
+   0.025707532
+  ],
+  "n": 5,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.serve_rounds[*].cold_start_s",
+  "text": "0.02"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "cold_start_s",
+  "derived": true,
+  "hms": "hms",
+  "other": "tantivy",
+  "factor": 0.2097811830274941,
+  "factor_infinite": false,
+  "ci": [
+   0.19980521036725324,
+   0.22216611410755446
+  ],
+  "verdict": "LOSS",
+  "text": "0.21x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "hms",
+  "value": 2.00371566,
+  "ci": [
+   2.00371566,
+   2.00371566
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.replace",
+  "text": "2.004"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 9.131574970015208,
+  "ci": [
+   9.131574970015208,
+   9.131574970015208
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.replace",
+  "text": "9.132"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "lucene",
+  "value": 30.77421369,
+  "ci": [
+   30.77421369,
+   30.77421369
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.replace",
+  "text": "30.774"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "system": "tantivy",
+  "value": 86.06415542000832,
+  "ci": [
+   86.06415542000832,
+   86.06415542000832
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.replace",
+  "text": "86.064"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "replace_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 4.5573207577841695,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "4.56x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "hms",
+  "value": 1.73026945,
+  "ci": [
+   1.73026945,
+   1.73026945
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.ops.delete",
+  "text": "1.730"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "sqlite-fts5",
+  "value": 8.99912264001614,
+  "ci": [
+   8.99912264001614,
+   8.99912264001614
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.ops.delete",
+  "text": "8.999"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "lucene",
+  "value": 14.38683205,
+  "ci": [
+   14.38683205,
+   14.38683205
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.ops.delete",
+  "text": "14.387"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "system": "tantivy",
+  "value": 44.8263032900104,
+  "ci": [
+   44.8263032900104,
+   44.8263032900104
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.ops.delete",
+  "text": "44.826"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "delete_ms_per_op",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 5.200994931752473,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "WIN",
+  "text": "5.20x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "hms",
+  "value": 2.4908218383789062,
+  "ci": [
+   2.4908218383789062,
+   2.4908218383789062
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install",
+  "text": "2.5"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "sqlite-fts5",
+  "value": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0.0"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "lucene",
+  "value": 5.715169906616211,
+  "ci": [
+   5.715169906616211,
+   5.715169906616211
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "5.7"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "system": "tantivy",
+  "value": 13.801004409790039,
+  "ci": [
+   13.801004409790039,
+   13.801004409790039
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "13.8"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_mib",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "LOSS",
+  "text": "0.00x"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "hms",
+  "value": 92,
+  "ci": [
+   92,
+   92
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.hms.install._crate_dependencies",
+  "text": "92"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "sqlite-fts5",
+  "value": 0,
+  "ci": [
+   0,
+   0
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.sqlite-fts5.install",
+  "text": "0"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "lucene",
+  "value": 2,
+  "ci": [
+   2,
+   2
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.lucene.install",
+  "text": "2"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "system": "tantivy",
+  "value": 1,
+  "ci": [
+   1,
+   1
+  ],
+  "n": 1,
+  "source": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json#systems.tantivy.install",
+  "text": "1"
+ },
+ {
+  "section": "beir:scifact (5,183 documents, 809 queries)",
+  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
+  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
+  "metric": "install_distributions",
+  "derived": true,
+  "hms": "hms",
+  "other": "sqlite-fts5",
+  "factor": 0.0,
+  "factor_infinite": false,
+  "ci": null,
+  "verdict": "n/v",
+  "text": "0.00x"
  },
  {
   "section": "beir:scifact (5,183 documents, 809 queries)",
