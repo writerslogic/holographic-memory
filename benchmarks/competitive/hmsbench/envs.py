@@ -9,15 +9,19 @@ what the benchmark runtime (which also needs numpy) holds.
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 from .common import CACHE, ROOT, dir_bytes, log
 
 REQUIREMENTS = ROOT / "benchmarks/competitive/requirements"
-ENV_ROOT = CACHE / "competitive" / "envs"
+# Source-built packages (hnswlib) compile with -march=native, so an environment is only valid on
+# the CPU that built it; a fleet with mixed CPUs points this at machine-local storage.
+ENV_ROOT = Path(os.environ["HMS_BENCH_ENVS"]) if os.environ.get("HMS_BENCH_ENVS") else CACHE / "competitive" / "envs"
 PYTHON = "3.13"
 
 # Pins: library name -> (requirement lines, importable distributions that report the version).
