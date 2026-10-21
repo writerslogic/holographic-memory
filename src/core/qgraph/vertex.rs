@@ -24,7 +24,7 @@ use super::kernels::{
     dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i4_inline_x4, dot_i8_inline, interleave_for_i4,
     prefetch, prefetch_bytes, raw_one, QueryCode, Rotation, SplitMix,
 };
-use super::{invalid, upper_bytes, BuildParams, Graph, NONE};
+use super::{invalid, prepare_rows, upper_bytes, BuildParams, Graph, Metric, NONE};
 use crate::core::error::HmsError;
 
 /// Search parameters of a [`VGraph`].
@@ -234,6 +234,9 @@ pub struct VGraph {
     stride: usize,
     degree: usize,
     mean: Vec<f32>,
+    /// Euclidean: `|x|^2 / 2` per stored vertex, the norm term of the distance order; empty
+    /// for angular.
+    half_norms: Vec<f32>,
     /// Neighbour ids, `degree` per vertex padded with `NONE`; empty with 3-byte ids.
     adj: Vec<u32>,
     /// The same as 3-byte little-endian ids (padded with `NONE3`); empty with `u32` ids.
@@ -683,6 +686,10 @@ impl VGraph {
                 "residual code bits must be 0, 4 or 8, not {residual_bits}"
             )));
         }
+        let euclidean = g.metric == Metric::Euclidean;
+        if euclidean && screen {
+            return Err(invalid("the 1-bit screen is angular only".into()));
+        }
         let (n, dim) = (g.n, g.dim);
         let padded = dim.next_multiple_of(if bits == 4 { 32 } else { 16 });
         let cbytes = if bits == 4 { padded / 2 } else { padded };
@@ -697,7 +704,7 @@ impl VGraph {
             _ => 0,
         };
         let mut sum = vec![0f64; dim];
-        for x in g.unit.chunks_exact(dim) {
+        for x in g.vectors.chunks_exact(dim) {
             sum.iter_mut().zip(x).for_each(|(s, &v)| *s += f64::from(v));
         }
         let mut mean: Vec<f32> = sum.iter().map(|s| (s / n as f64) as f32).collect();
@@ -713,6 +720,11 @@ impl VGraph {
             }
         }
         let new = |o: u32| if reorder { new_id[o as usize] } else { o };
+        let half_norms: Vec<f32> = if euclidean {
+            (0..n).map(|v| 0.5 * g.norms[old(v)]).collect()
+        } else {
+            Vec::new()
+        };
 
         let screen_rot = screen.then(|| Rotation::new(dim, 0, SCREEN_SEED));
         let screen_words = screen_rot.as_ref().map_or(0, |r| r.padded() / 64);
@@ -720,7 +732,7 @@ impl VGraph {
             .into_par_iter()
             .map(|v| {
                 let o = old(v);
-                let mut x: Vec<f32> = g.unit[o * dim..(o + 1) * dim]
+                let mut x: Vec<f32> = g.vectors[o * dim..(o + 1) * dim]
                     .iter()
                     .zip(&mean)
                     .map(|(a, m)| a - m)
@@ -832,6 +844,7 @@ impl VGraph {
             stride,
             degree: r,
             mean,
+            half_norms,
             adj,
             adj3,
             adjv,
@@ -873,6 +886,9 @@ impl VGraph {
         if !matches!(bits, 1 | 2 | 4) {
             return Err(invalid(format!("block bits must be 1, 2 or 4, not {bits}")));
         }
+        if !self.half_norms.is_empty() {
+            return Err(invalid("neighbour blocks are angular only".into()));
+        }
         let (n, dim, r) = (self.n, self.dim, self.degree);
         let rot = Rotation::new(dim, 0, BLOCK_SEED);
         let bd = rot.padded();
@@ -881,7 +897,7 @@ impl VGraph {
         let record = block_record_bytes(m);
         let ids = &self.ids;
         let old = |v: usize| if ids.is_empty() { v } else { ids[v] as usize };
-        let row = |v: usize| &g.unit[old(v) * dim..(old(v) + 1) * dim];
+        let row = |v: usize| &g.vectors[old(v) * dim..(old(v) + 1) * dim];
         let mut blocks = Lines::zeroed(n * per_vertex * record);
         blocks
             .bytes_mut()
@@ -954,7 +970,7 @@ impl VGraph {
         } else {
             self.ids[v] as usize
         };
-        &g.unit[o * self.dim..(o + 1) * self.dim]
+        &g.vectors[o * self.dim..(o + 1) * self.dim]
     }
 
     /// Fits `block_kappa` by least squares on a deterministic sample: the squared error of
@@ -1083,14 +1099,14 @@ impl VGraph {
         let (mut sum, mut sum2, mut count) = (0f64, 0f64, 0usize);
         for _ in 0..nq {
             let q = (rng.next_u64() % self.n as u64) as usize;
-            qf[..self.dim].copy_from_slice(&g.unit[q * self.dim..(q + 1) * self.dim]);
+            qf[..self.dim].copy_from_slice(&g.vectors[q * self.dim..(q + 1) * self.dim]);
             let sq = self.encode_query(&qf, &mut qc, &mut qtmp, &mut qrot, &mut qs);
             if sq == 0.0 {
                 continue;
             }
             for _ in 0..nv {
                 let v = (rng.next_u64() % self.n as u64) as u32;
-                let d = f64::from(self.screen_est(&qs, v) - self.est(&qc, v));
+                let d = f64::from(self.screen_est(&qs, v) - self.est(&qc, v, 1.0));
                 sum += d;
                 sum2 += d * d;
                 count += 1;
@@ -1183,6 +1199,7 @@ impl VGraph {
             + self.scales.len() * 4
             + self.residual_bytes()
             + self.mean.len() * 4
+            + self.half_norms.len() * 4
             + self.ids.len() * 4
             + self.screen_bytes()
             + self.block_bytes()
@@ -1287,30 +1304,43 @@ impl VGraph {
     }
 
     /// Estimated negative inner product with the query code (up to the per-query terms
-    /// `<q, mean>` and `s_q`, which do not change the order).
+    /// `<q, mean>` and `s_q`, which do not change the order). Euclidean adds `w |x|^2 / 2`
+    /// with `w = 1 / s_q`, the order of `|q - x|^2` in the same units.
     #[inline]
-    fn est(&self, qc: &[i8], v: u32) -> f32 {
+    fn est(&self, qc: &[i8], v: u32, w: f32) -> f32 {
         let dot = if self.bits == 8 {
             dot_i8_inline(qc, self.code(v))
         } else {
             dot_i4_inline(qc, self.code(v))
         };
-        -(self.scales[v as usize] * dot as f32)
+        self.order(v, self.scales[v as usize] * dot as f32, w)
+    }
+
+    /// The distance order of `v` from its estimated (or re-ranked) inner product `ip` in
+    /// units of `1 / w`: `-ip` for angular, `w |x|^2 / 2 - ip` for Euclidean.
+    #[inline]
+    fn order(&self, v: u32, ip: f32, w: f32) -> f32 {
+        if self.half_norms.is_empty() {
+            -ip
+        } else {
+            self.half_norms[v as usize] * w - ip
+        }
     }
 
     /// [`VGraph::est`] of four vertices with shared query loads; the same integer sums, so
     /// the same values.
     #[inline]
-    fn est4(&self, qc: &[i8], v: [u32; 4]) -> [f32; 4] {
+    fn est4(&self, qc: &[i8], v: [u32; 4], w: f32) -> [f32; 4] {
         let dots = if self.bits == 8 {
             v.map(|u| dot_i8_inline(qc, self.code(u)))
         } else {
             dot_i4_inline_x4(qc, v.map(|u| self.code(u)))
         };
-        std::array::from_fn(|i| -(self.scales[v[i] as usize] * dots[i] as f32))
+        std::array::from_fn(|i| self.order(v[i], self.scales[v[i] as usize] * dots[i] as f32, w))
     }
 
-    /// Re-rank score with the float (centred) query: negative estimated inner product.
+    /// Re-rank score with the float query: negative estimated inner product with the
+    /// reconstructed centred vector (Euclidean: plus `|x|^2 / 2`).
     fn fine(&self, qf: &[f32], v: u32) -> f32 {
         let primary = if self.bits == 8 {
             dot_f32_i8(qf, self.code(v))
@@ -1328,23 +1358,23 @@ impl VGraph {
             };
             ip += self.res_scales[v] * d;
         }
-        -ip
+        self.order(v, ip, 1.0)
     }
 
     /// Greedy descent through the upper layers on estimated distances; returns the bottom-layer
     /// entry vertex and the number of estimates.
-    fn descend(&self, qc: &[i8]) -> (u32, usize) {
+    fn descend(&self, qc: &[i8], w: f32) -> (u32, usize) {
         if self.layers.is_empty() {
             return (self.entry, 0);
         }
         let mut p = 0u32;
-        let mut best = self.est(qc, self.upper_ids[0]);
+        let mut best = self.est(qc, self.upper_ids[0], w);
         let mut evals = 1;
         for layer in self.layers.iter().rev() {
             loop {
                 let mut moved = false;
                 for &u in &layer[p as usize] {
-                    let d = self.est(qc, self.upper_ids[u as usize]);
+                    let d = self.est(qc, self.upper_ids[u as usize], w);
                     evals += 1;
                     if d < best {
                         best = d;
@@ -1602,7 +1632,7 @@ impl VSearcher<'_> {
     /// number of estimates. `stale` resets on an insert among the `k` best when `patience`
     /// is on.
     #[inline]
-    fn score_fresh(&mut self, k: usize, patience: usize, stale: &mut usize) -> usize {
+    fn score_fresh(&mut self, k: usize, patience: usize, stale: &mut usize, w: f32) -> usize {
         let g = self.index;
         let qc = &self.qc[..];
         let n = self.fresh.len();
@@ -1615,7 +1645,7 @@ impl VSearcher<'_> {
                     self.fresh[i + 2],
                     self.fresh[i + 3],
                 ];
-                for (e, u) in g.est4(qc, ids).into_iter().zip(ids) {
+                for (e, u) in g.est4(qc, ids, w).into_iter().zip(ids) {
                     if let Some((pos, _)) = self.pool.insert(key(e, u)) {
                         if patience > 0 && pos < k {
                             *stale = 0;
@@ -1626,7 +1656,7 @@ impl VSearcher<'_> {
             }
         }
         for &u in &self.fresh[i..] {
-            let kk = key(g.est(qc, u), u);
+            let kk = key(g.est(qc, u, w), u);
             if let Some((pos, _)) = self.pool.insert(kk) {
                 if patience > 0 && pos < k {
                     *stale = 0;
@@ -1636,11 +1666,11 @@ impl VSearcher<'_> {
         n
     }
 
-    /// Writes the ids of the (approximate) `k` nearest vectors by cosine into `out`, nearest
-    /// first, and returns the number of distance estimates (descent, traversal and re-rank).
-    /// A query of the wrong dimension, with a non-finite value, or all zero (cosine is
-    /// undefined) is an error; the pool and heaps are bounded by the vertex count whatever
-    /// `ef` is.
+    /// Writes the ids of the (approximate) `k` nearest vectors by the index's metric (cosine
+    /// or Euclidean) into `out`, nearest first, and returns the number of distance estimates
+    /// (descent, traversal and re-rank). A query of the wrong dimension, with a non-finite
+    /// value, or all zero on an angular index (cosine is undefined) is an error; the pool and
+    /// heaps are bounded by the vertex count whatever `ef` is.
     pub fn search(
         &mut self,
         query: &[f32],
@@ -1661,7 +1691,7 @@ impl VSearcher<'_> {
                 "non-finite query value at coordinate {at}"
             )));
         }
-        if query.iter().all(|&v| v == 0.0) {
+        if g.half_norms.is_empty() && query.iter().all(|&v| v == 0.0) {
             return Err(invalid("zero query: cosine similarity is undefined".into()));
         }
         let ef = params.ef.max(k).max(1);
@@ -1675,6 +1705,9 @@ impl VSearcher<'_> {
             &mut self.qrot,
             &mut self.qs,
         );
+        // Weight of the Euclidean norm term in the estimate's units (unused for angular); a
+        // zero query has every inner product zero, so the norms alone order it.
+        let w = if sq > 0.0 { 1.0 / sq } else { 1.0 };
         let qc = &self.qc[..];
         let blocks = g.has_blocks();
         if blocks {
@@ -1687,7 +1720,7 @@ impl VSearcher<'_> {
         self.screened = 0;
 
         self.visited.next();
-        let (entry, mut evals) = g.descend(qc);
+        let (entry, mut evals) = g.descend(qc, w);
         self.visited.insert(entry);
         let fuse = blocks && params.fuse && !block_screen;
         if fuse {
@@ -1707,7 +1740,7 @@ impl VSearcher<'_> {
         self.pool.reset(ef);
         self.expanded.clear();
         let take = params.rerank.max(k).min(g.n);
-        let k0 = key(g.est(qc, entry), entry);
+        let k0 = key(g.est(qc, entry, w), entry);
         self.pool.insert(k0);
         if fuse {
             self.visited.trace(entry).1.key = k0;
@@ -1809,7 +1842,7 @@ impl VSearcher<'_> {
                     }
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
-                evals += self.score_fresh(k, patience, &mut stale);
+                evals += self.score_fresh(k, patience, &mut stale, w);
                 continue;
             }
             if blocks {
@@ -1819,7 +1852,7 @@ impl VSearcher<'_> {
                 // padding is skipped, and a vertex met again is re-admitted only when its
                 // fused estimate improves on the entry it holds.
                 let v = key_id(c) as usize;
-                let est_v = g.est(&self.qc, v as u32);
+                let est_v = g.est(&self.qc, v as u32, w);
                 let ek = key(est_v, v as u32);
                 evals += 1;
                 // `<q, x_v - mean>` in float units: the estimate dropped the query scale.
@@ -1948,7 +1981,7 @@ impl VSearcher<'_> {
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
             }
-            evals += self.score_fresh(k, patience, &mut stale);
+            evals += self.score_fresh(k, patience, &mut stale, w);
             if knobs.prefetch >= 3 {
                 // Lookahead: what the next expansion's admission touches for its unvisited
                 // neighbours, one expansion early (its list was prefetched above).
@@ -2005,13 +2038,14 @@ impl VSearcher<'_> {
 }
 
 /// Format 02 adds the build parameters and a fingerprint of the vectors to the header, so a
-/// cache written for other data or parameters is rejected instead of silently reused.
-const CACHE_MAGIC: &[u8; 8] = b"HMSGRF03";
+/// cache written for other data or parameters is rejected instead of silently reused; 03 the
+/// quantized-search flag; 04 the metric.
+const CACHE_MAGIC: &[u8; 8] = b"HMSGRF04";
 
-/// Fingerprint of the normalized vectors a graph was built over.
-fn data_fingerprint(unit: &[f32]) -> u64 {
+/// Fingerprint of the prepared vectors (normalized for angular) a graph was built over.
+fn data_fingerprint(vectors: &[f32]) -> u64 {
     let mut h = super::Fnv::new();
-    unit.iter().for_each(|x| h.word(x.to_bits()));
+    vectors.iter().for_each(|x| h.word(x.to_bits()));
     h.finish()
 }
 
@@ -2069,8 +2103,8 @@ fn get_lists(r: &mut impl std::io::Read, n: u64) -> std::io::Result<Vec<Vec<u32>
 /// experiments on one graph need not rebuild it.
 impl Graph {
     /// Writes the header (n, dim, degree, build_ef, alpha, seed, entry, data fingerprint,
-    /// quantized_search),
-    /// the adjacency and the upper layers; the vectors are not stored.
+    /// quantized_search, metric), the adjacency and the upper layers; the vectors are not
+    /// stored.
     pub fn save(&self, path: &std::path::Path) -> std::io::Result<()> {
         let mut w = std::io::BufWriter::new(std::fs::File::create(path)?);
         use std::io::Write;
@@ -2083,8 +2117,9 @@ impl Graph {
             u64::from(self.build.alpha.to_bits()),
             self.build.seed,
             u64::from(self.entry),
-            data_fingerprint(&self.unit),
+            data_fingerprint(&self.vectors),
             u64::from(self.build.quantized_search),
+            self.metric.code(),
         ];
         for x in header {
             w.write_all(&x.to_le_bytes())?;
@@ -2098,10 +2133,11 @@ impl Graph {
         w.flush()
     }
 
-    /// Reads a graph written by [`Graph::save`] for the same `data` (normalized here exactly
+    /// Reads a graph written by [`Graph::save`] for the same `data` (prepared here exactly
     /// as [`Graph::build`] does) and the same `params`. Any mismatch in the vector count,
-    /// dimension, degree, build_ef, alpha, seed or the data fingerprint is an error, so a
-    /// stale cache never stands in for a build; delete the file to rebuild.
+    /// dimension, degree, build_ef, alpha, seed, quantized search, metric or the data
+    /// fingerprint is an error, so a stale cache never stands in for a build; delete the file
+    /// to rebuild.
     pub fn load(
         data: &[f32],
         dim: usize,
@@ -2118,29 +2154,26 @@ impl Graph {
                     .into(),
             ));
         }
-        let mut header = [0u64; 9];
+        let mut header = [0u64; 10];
         for x in &mut header {
             *x = get_u64(&mut r)?;
         }
-        let [n, d, degree, build_ef, alpha_bits, seed, entry, fingerprint, quantized] = header;
+        let [n, d, degree, build_ef, alpha_bits, seed, entry, fingerprint, quantized, metric] =
+            header;
         if dim == 0 || !data.len().is_multiple_of(dim) {
             return Err(bad("graph cache: ragged data".into()));
         }
-        let mut unit = data.to_vec();
-        unit.par_chunks_mut(dim).for_each(|x| {
-            let norm = super::dot(x, x).sqrt();
-            if norm > 0.0 {
-                x.iter_mut().for_each(|o| *o /= norm);
-            }
-        });
-        let checks: [(&str, u64, u64); 8] = [
+        let mut vectors = data.to_vec();
+        let norms = prepare_rows(&mut vectors, dim, params.metric);
+        let checks: [(&str, u64, u64); 9] = [
+            ("metric", metric, params.metric.code()),
             ("n", n, (data.len() / dim) as u64),
             ("dim", d, dim as u64),
             ("degree", degree, params.degree as u64),
             ("build_ef", build_ef, params.build_ef as u64),
             ("alpha", alpha_bits, u64::from(params.alpha.to_bits())),
             ("seed", seed, params.seed),
-            ("data fingerprint", fingerprint, data_fingerprint(&unit)),
+            ("data fingerprint", fingerprint, data_fingerprint(&vectors)),
             (
                 "quantized_search",
                 quantized,
@@ -2187,7 +2220,9 @@ impl Graph {
             n,
             dim,
             degree: degree as usize,
-            unit,
+            metric: params.metric,
+            vectors,
+            norms,
             adj,
             entry: entry as u32,
             upper_ids,
@@ -2226,7 +2261,7 @@ mod tests {
             (back.entry, &back.upper_ids),
             (graph.entry, &graph.upper_ids)
         );
-        assert_eq!(back.unit, graph.unit);
+        assert_eq!(back.vectors, graph.vectors);
         let rejects = |data: &[f32], p: &BuildParams, what: &str| {
             let err = Graph::load(data, d, &path, p)
                 .err()
@@ -2263,6 +2298,13 @@ mod tests {
                     ..params.clone()
                 },
             ),
+            (
+                "metric",
+                BuildParams {
+                    metric: Metric::Euclidean,
+                    ..params.clone()
+                },
+            ),
         ] {
             rejects(&data, &p, what);
         }
@@ -2273,6 +2315,112 @@ mod tests {
         std::fs::write(&path, b"HMSGRF01").unwrap();
         rejects(&data, &params, "bad magic");
         std::fs::remove_file(&path).unwrap();
+    }
+
+    /// On clustered rows whose norms spread over [0.1, 10], a Euclidean index (4-bit codes,
+    /// 8-bit residual re-rank, reordered 3-byte ids: the benchmark layout) finds the exact
+    /// Euclidean neighbours, while an angular index over the same rows, which ranks by
+    /// direction alone, clearly does not.
+    #[test]
+    fn euclidean_index_finds_euclidean_neighbours() {
+        let (d, n, k) = (32, 4000, 10);
+        let spread = |rows: &mut [f32], salt: usize| {
+            let count = rows.len() / d;
+            for (i, x) in rows.chunks_exact_mut(d).enumerate() {
+                let s = 0.1 * 100f32.powf(((i * 7919 + salt) % count) as f32 / count as f32);
+                x.iter_mut().for_each(|v| *v *= s);
+            }
+        };
+        // Queries are held-out rows of the same clusters.
+        let mut data = clustered(n + 100, d, 7);
+        spread(&mut data, 0);
+        let queries = data.split_off(n * d);
+        let l2 = |a: &[f32], b: &[f32]| -> f64 {
+            a.iter()
+                .zip(b)
+                .map(|(x, y)| (f64::from(*x) - f64::from(*y)).powi(2))
+                .sum()
+        };
+        let recall = |metric: Metric| -> f64 {
+            let params = BuildParams {
+                metric,
+                degree: 32,
+                build_ef: 100,
+                ..BuildParams::default()
+            };
+            let g = Graph::build(&data, d, &params).expect("build");
+            let index = VGraph::from_graph_with(&g, 4, 8, true, true, 3, false).expect("encode");
+            let mut s = index.searcher_with(SearchKnobs::OFF);
+            let mut out = Vec::new();
+            let mut hits = 0;
+            for q in queries.chunks_exact(d) {
+                let mut all: Vec<(f64, u32)> = data
+                    .chunks_exact(d)
+                    .enumerate()
+                    .map(|(i, x)| (l2(q, x), i as u32))
+                    .collect();
+                all.sort_by(|a, b| a.0.total_cmp(&b.0));
+                let truth: Vec<u32> = all[..k].iter().map(|t| t.1).collect();
+                let params = VSearchParams {
+                    ef: 64,
+                    rerank: 32,
+                    ..VSearchParams::default()
+                };
+                s.search(q, k, params, &mut out).expect("search");
+                hits += out.iter().filter(|x| truth.contains(x)).count();
+            }
+            hits as f64 / (k * 100) as f64
+        };
+        let (euclidean, angular) = (recall(Metric::Euclidean), recall(Metric::Angular));
+        assert!(euclidean >= 0.95, "Euclidean recall {euclidean}");
+        assert!(
+            angular < euclidean - 0.3,
+            "angular recall {angular} against Euclidean {euclidean}"
+        );
+    }
+
+    /// A Euclidean index refuses the angular-only encodings and accepts a zero query (its
+    /// nearest rows are the ones of smallest norm).
+    #[test]
+    fn euclidean_index_limits() {
+        let d = 16;
+        let mut data = clustered(500, d, 2);
+        for (i, x) in data.chunks_exact_mut(d).enumerate() {
+            x.iter_mut().for_each(|v| *v *= 1.0 + i as f32 / 50.0);
+        }
+        let params = BuildParams {
+            metric: Metric::Euclidean,
+            degree: 16,
+            build_ef: 64,
+            ..BuildParams::default()
+        };
+        let g = Graph::build(&data, d, &params).expect("build");
+        assert!(VGraph::from_graph_with(&g, 8, 0, false, false, 4, true).is_err());
+        assert!(super::super::QGraph::from_graph(&g, &params).is_err());
+        let blocks = VGraph::from_graph(&g, false)
+            .expect("encode")
+            .with_blocks(&g, 4);
+        assert!(blocks.is_err());
+        let index = VGraph::from_graph(&g, true).expect("encode");
+        let mut out = Vec::new();
+        let params = VSearchParams {
+            ef: 500,
+            rerank: 500,
+            ..VSearchParams::default()
+        };
+        index
+            .searcher_with(SearchKnobs::OFF)
+            .search(&[0.0; 16], 1, params, &mut out)
+            .expect("zero query");
+        let smallest = data
+            .chunks_exact(d)
+            .enumerate()
+            .min_by(|a, b| {
+                let n2 = |x: &[f32]| x.iter().map(|v| v * v).sum::<f32>();
+                n2(a.1).total_cmp(&n2(b.1))
+            })
+            .map(|m| m.0 as u32);
+        assert_eq!(out.first().copied(), smallest);
     }
 
     /// Per coordinate the 8-bit code is off by at most half a step, and the residual code
@@ -2412,7 +2560,7 @@ mod tests {
         let data = clustered(3000, d, 5);
         let graph = Graph::build(&data, d, &BuildParams::default()).expect("build");
         // The index works on unit rows; so must the exact products.
-        let unit = &graph.unit;
+        let unit = &graph.vectors;
         for (bits, bar) in [(4u8, 0.998), (2, 0.98), (1, 0.90)] {
             let g = VGraph::from_graph(&graph, false)
                 .expect("encode")

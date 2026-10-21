@@ -40,8 +40,9 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
   1,000 queries, `standard` 250,000 and 2,000, `heavy` all 1,183,514 and 10,000. For every subset
   the exact top-100 truth is recomputed (`hmsbench/data.py`); the files HMS and every comparator
   read are byte-identical, and their sha256 are recorded.
-* **sift-128-euclidean** (heavy only). `public-bench ann-qgraph` supports angular data only, so
-  HMS has **no SIFT row**; the comparators are still measured and the file records why.
+* **sift-128-euclidean** (1M x 128, ann-benchmarks): `standard` uses the first 250,000 vectors
+  and 2,000 queries, `heavy` all 1,000,000 and 10,000. HMS runs `public-bench ann-qgraph
+  --metric euclidean` (vertex index on the vectors as given, Euclidean truth).
 * **BEIR SciFact (train qrels) and NFCorpus (dev qrels)**, the existing document-competition
   protocol: lexical only, top 100, one chunk per document, test qrels never read.
 * **memory** (agent-memory-shaped): all sessions of the 100 LongMemEval_S dev questions as one
