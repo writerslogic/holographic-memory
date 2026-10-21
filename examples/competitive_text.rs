@@ -49,7 +49,16 @@ struct Args {
 
 #[derive(Deserialize)]
 struct Input {
+    /// Absent in the serve phase, which reads only the queries: building 3,633 document
+    /// values there would count harness memory against the engine's serving RSS.
+    #[serde(default)]
     documents: Vec<DocumentInput>,
+    queries: Vec<Query>,
+}
+
+/// The serve phase's view of the same file: `documents` is skipped without allocating.
+#[derive(Deserialize)]
+struct QueriesOnly {
     queries: Vec<Query>,
 }
 
@@ -69,7 +78,17 @@ fn epoch_ns() -> u128 {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let input: Input = serde_json::from_slice(&std::fs::read(&args.input)?)?;
+    let raw = std::fs::read(&args.input)?;
+    let input: Input = if args.phase == "serve" {
+        let QueriesOnly { queries } = serde_json::from_slice(&raw)?;
+        Input {
+            documents: Vec::new(),
+            queries,
+        }
+    } else {
+        serde_json::from_slice(&raw)?
+    };
+    drop(raw);
     let store = args.store.display().to_string();
     let report = match args.phase.as_str() {
         "build" => {
@@ -113,7 +132,12 @@ fn main() -> Result<()> {
                     let results = core.search_documents(&query.text, &query.options)?;
                     ns.push(t.elapsed().as_nanos() as u64);
                     if pass == 0 {
-                        rows.push(json!({"id": query.id, "results": results}));
+                        // The same fields the Python workers keep: id and score per hit.
+                        let hits: Vec<_> = results
+                            .iter()
+                            .map(|r| json!({"documentId": r.document_id, "lexicalScore": r.score}))
+                            .collect();
+                        rows.push(json!({"id": query.id, "results": hits}));
                     }
                 }
                 passes.push(ns);
