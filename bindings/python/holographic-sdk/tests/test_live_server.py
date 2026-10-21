@@ -114,7 +114,9 @@ def test_sync_and_async_document_maintenance_preserves_query_results(server):
         client.add_documents(indexed)
         before = [client.query(embedding(i), top_k=10) for i in (0, 11, 127)]
         filtered = client.query(embedding(11), top_k=10, filter={"even": True})
-        assert client.maintain_document_index() == {"documentIndexTrained": True}
+        maintained = client.maintain_document_index()
+        assert maintained["documentIndexTrained"] is True
+        assert isinstance(maintained["vectorIndex"], dict)
         assert [client.query(embedding(i), top_k=10) for i in (0, 11, 127)] == before
         assert client.query(embedding(11), top_k=10, filter={"even": True}) == filtered
         client.delete_document("indexed0")

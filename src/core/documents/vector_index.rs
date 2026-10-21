@@ -242,15 +242,15 @@ impl TopK {
 fn dot(a: &[f32], b: &[f32]) -> f32 {
     debug_assert_eq!(a.len(), b.len());
     let mut lanes = [0.0f32; 8];
-    let mut wide_a = a.chunks_exact(8);
-    let mut wide_b = b.chunks_exact(8);
-    for (x, y) in (&mut wide_a).zip(&mut wide_b) {
+    let (wide_a, tail_a) = a.as_chunks::<8>();
+    let (wide_b, tail_b) = b.as_chunks::<8>();
+    for (x, y) in wide_a.iter().zip(wide_b) {
         for ((lane, x), y) in lanes.iter_mut().zip(x).zip(y) {
             *lane += x * y;
         }
     }
     let mut sum = lanes.iter().sum::<f32>();
-    for (x, y) in wide_a.remainder().iter().zip(wide_b.remainder()) {
+    for (x, y) in tail_a.iter().zip(tail_b) {
         sum += x * y;
     }
     sum

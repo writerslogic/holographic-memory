@@ -837,14 +837,15 @@ fn explicit_index_maintenance_preserves_exact_queries_and_tenant_isolation() {
         &json!({}),
     );
     assert_eq!(status, 200);
-    assert_eq!(maintained, json!({"documentIndexTrained": true}));
+    assert_eq!(maintained["documentIndexTrained"], json!(true));
+    assert!(maintained["vectorIndex"].is_object(), "{maintained}");
     let (status, after) = s.json("POST", "/api/v1/query", Some("indexed"), &query);
     assert_eq!(status, 200);
     assert_eq!(before, after);
     assert_eq!(ids(&after)[0], "vector-12");
     let (status, empty) = s.json("POST", "/api/v1/index/maintain", Some("other"), &json!({}));
     assert_eq!(status, 200);
-    assert_eq!(empty, json!({"documentIndexTrained": false}));
+    assert_eq!(empty["documentIndexTrained"], json!(false));
     assert_eq!(
         s.json(
             "POST",
