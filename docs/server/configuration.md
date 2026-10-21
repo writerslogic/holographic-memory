@@ -51,6 +51,9 @@ With neither `HMS_API_KEY` nor `--keys-file`, the server only starts if `--no-au
 | `--body-timeout-seconds` | `HMS_BODY_TIMEOUT_SECONDS` | `30` | Deadline to read a body, and the longest idle gap in a streamed upload. 1..=300. |
 | `--max-batch` | `HMS_MAX_BATCH` | `1000` | Documents per batch request, at most 4096. |
 | `--max-top-k` | `HMS_MAX_TOP_K` | `100` | Upper bound for `top_k`. |
+| `--query-index` | `HMS_QUERY_INDEX` | `auto` | Route of unfiltered vector queries: `auto` (the graph index once maintenance built one, else the exact scan), `exact`, or `graph` (409 until a graph index exists). A request's `index` field overrides it. |
+| `--query-ef` | `HMS_QUERY_EF` | `128` | Beam width of graph-index queries, 1..=4096: the recall knob. A request's `ef` field overrides it. |
+| `--graph-min-rows` | `HMS_GRAPH_MIN_ROWS` | `4096` | Fewest embedded chunks for which index maintenance builds the graph index; smaller stores answer from the exact scan. |
 | `--max-tenants` | `HMS_MAX_TENANTS` | `64` | Stores open at once (503 `tenant_limit` above it). |
 | `--max-concurrent-work` | `HMS_MAX_CONCURRENT_WORK` | `4` | Requests reading bodies or running engine work at once, 1..=256. |
 | `--max-queue` | `HMS_MAX_QUEUE` | `0` | Requests allowed to wait for a work slot. 0 answers 503 `server_busy` immediately. |
