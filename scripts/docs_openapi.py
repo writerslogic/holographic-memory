@@ -46,7 +46,9 @@ def _properties(schema, spec, required=()):
     rows = []
     for name, prop in (schema.get("properties") or {}).items():
         need = "required" if name in required else ""
-        rows.append(f"| `{name}` | {type_of(prop, spec)} | {need} | {_cell(prop.get('description'))} |")
+        # A property may be a boolean schema (`true`), which carries no description.
+        description = prop.get("description") if isinstance(prop, dict) else None
+        rows.append(f"| `{name}` | {type_of(prop, spec)} | {need} | {_cell(description)} |")
     return rows
 
 
