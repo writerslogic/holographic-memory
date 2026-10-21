@@ -171,12 +171,9 @@ the npm build includes). The script then proves two things: a wrong passphrase c
 store, and the right one can. Prefer `encryptionPassphraseEnv` (Node) or
 `encryption_passphrase_env` (Rust) over a literal passphrase in real code.
 
-!!! warning "Passage text is not yet encrypted on disk"
-    In the current build the engine's file-backed passage cache, `documents.text`, is written
-    in plaintext even when encryption is on. The quickstart asserts exactly that (the only file
-    holding the passage is `documents.text`), so this notice cannot go stale unnoticed: when the
-    engine encrypts that file, the check fails and this page is updated. Read the
-    [privacy limits](../concepts/privacy-limits.md) before relying on encryption at rest.
+The script also scans every file in the encrypted store for a known passage and asserts none
+contains it, the text segment included. Read the [privacy limits](../concepts/privacy-limits.md)
+for what encryption does not cover (file names, sizes, access patterns).
 
 The Python client cannot encrypt, because `hms-server` has no encryption at rest. It offers
 client-side vector masking with `zero_trust_key`, which is obfuscation: the server still learns
