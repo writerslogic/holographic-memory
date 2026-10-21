@@ -1,4 +1,4 @@
-from .client import AsyncHolographicClient, HolographicClient, VectorMask
+from .client import AsyncHolographicClient, HolographicClient, HolographicError, VectorMask
 from .memory import AsyncMemoryClient, MemoryClient
 from .evidence import (
     EvidenceSelection,
@@ -10,6 +10,7 @@ from .evidence import (
 __all__ = [
     "HolographicClient",
     "AsyncHolographicClient",
+    "HolographicError",
     "VectorMask",
     "MemoryClient",
     "AsyncMemoryClient",

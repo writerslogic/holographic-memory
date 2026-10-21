@@ -5,7 +5,7 @@ import math
 import httpx
 import pytest
 
-from holographic_sdk import AsyncHolographicClient, HolographicClient, VectorMask
+from holographic_sdk import AsyncHolographicClient, HolographicClient, HolographicError, VectorMask
 
 SALT = b"0123456789abcdef"
 
@@ -89,6 +89,43 @@ def test_server_errors_raise():
     client = HolographicClient(transport=recording_transport([], batch_status=500))
     with pytest.raises(httpx.HTTPStatusError):
         client.add_documents([{"id": "a"}])
+
+
+def error_transport(status, **body):
+    return httpx.MockTransport(lambda request: httpx.Response(status, **body))
+
+
+def test_service_errors_raise_holographic_error():
+    body = {"error": {"code": "invalid_request", "message": "top_k must be at least 1"}}
+    client = HolographicClient(transport=error_transport(422, json=body))
+    with pytest.raises(HolographicError) as raised:
+        client.query([1.0], top_k=0)
+    error = raised.value
+    assert (error.status_code, error.code, error.message) == (422, "invalid_request", "top_k must be at least 1")
+    assert str(error) == "top_k must be at least 1"
+    # still an HTTPStatusError, which the importer's retries catch
+    assert isinstance(error, httpx.HTTPStatusError)
+    assert error.response.status_code == 422
+
+
+def test_errors_without_the_service_shape_stay_http_status_errors():
+    for body in ({"text": "Bad Gateway"}, {"json": {"error": "no code"}}, {"json": {"detail": "x"}}):
+        client = HolographicClient(transport=error_transport(502, **body))
+        with pytest.raises(httpx.HTTPStatusError) as raised:
+            client.delete_document("a")
+        assert not isinstance(raised.value, HolographicError)
+
+
+def test_async_client_raises_holographic_error():
+    body = {"error": {"code": "tenant_limit", "message": "too many open tenants"}}
+
+    async def run():
+        async with AsyncHolographicClient(transport=error_transport(429, json=body)) as client:
+            await client.maintain_document_index()
+
+    with pytest.raises(HolographicError) as raised:
+        asyncio.run(run())
+    assert (raised.value.status_code, raised.value.code) == (429, "tenant_limit")
 
 
 def test_async_client_matches_sync_masking():
