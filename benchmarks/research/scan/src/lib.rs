@@ -9,15 +9,16 @@
 //! public, secret-free basis `(mu, U, R)`:
 //!
 //! * `mu`: centre (mean of a 1,000-vector public calibration sample).
-//! * `U`: 16 orthonormal rows (`HEAD_DIM x D`), either the top-16 PCA subspace of
-//!   the calibration sample (subspace iteration) or a fixed random orthonormal
-//!   basis (flag-selectable, see [`codes::BasisKind`]).
-//! * `R`: a subsampled randomized Walsh-Hadamard rotation on the zero-padded
-//!   power-of-two dimension `P >= D`: `R v = S H diag(s) pad(v) / sqrt(P)` with
-//!   fixed random signs `s` and a fixed random coordinate subset `S` of size `B`
-//!   (the residual bit count, a multiple of 64, `B <= P`).
+//! * `U`: `H` orthonormal rows (`H x D`, `H` in 16/32/64, `--head-dim`), either
+//!   the top-`H` PCA subspace of the calibration sample (subspace iteration) or
+//!   a fixed random orthonormal basis (flag-selectable, see [`codes::BasisKind`]).
+//! * `R`: `M` independent subsampled randomized Walsh-Hadamard rotations
+//!   (`--residual-mult`) on the zero-padded power-of-two dimension `P >= D`:
+//!   `R_m v = H diag(s_m) pad(v) / sqrt(P)`, concatenated to `M * P`
+//!   coordinates, of which a fixed random subset `S` of size `B` (the residual
+//!   bit count, a multiple of 64, `B <= M * P`) is kept.
 //!
-//! Decomposition: `x - mu = U^T h + r` with head `h = U (x - mu)` (16 floats) and
+//! Decomposition: `x - mu = U^T h + r` with head `h = U (x - mu)` (`H` floats) and
 //! residual `r` orthogonal to the head subspace. For a query `q`:
 //!
 //! ```text
@@ -31,9 +32,13 @@
 //! the random rotation:
 //!
 //! ```text
-//! y = R r (B coords),  rho = (P / B) * |y|^2 / sum_i |y_i|
+//! y = R r (B kept coords),  rho = (P / B) * |y|^2 / sum_i |y_i|
 //! <q_perp, r> ~= rho * sum_i sign(y_i) * z_i,   z = R q_perp
 //! ```
+//!
+//! (`P / B` is right for any `M`: each rotation preserves `<q_perp, r>`, so the
+//! sum over all `M * P` coordinates is `M <q_perp, r>` and keeping `B` of them
+//! scales it by `B / (M * P)`.)
 //!
 //! Two query-side evaluations of `sum_i sign(y_i) z_i` are implemented:
 //!
@@ -43,25 +48,27 @@
 //!   `sum_{b_i = 1} z_i` via four AND + popcount per word plus the stored
 //!   popcount of `b` (the standard 4-bit-query / 1-bit-code dot).
 //!
-//! # Record layout (one contiguous `[u64; 3 + W]` per document, `W = B / 64`)
+//! # Record layout (one contiguous `[u64; HW + 1 + W]` per document)
+//!
+//! `HW = H / 8` head words, `W = B / 64` residual words:
 //!
 //! ```text
-//! word 0..2   : 16 x int8 head (little-endian bytes)
-//! word 2      : bits  0..16 head scale  (IEEE half)
-//!               bits 16..32 rho         (IEEE half)
-//!               bits 32..48 popcount(b) (u16, used by asym4 only)
-//!               bits 48..64 reserved (zero)
-//! word 3..3+W : residual sign bits, coordinate i at word i/64, bit i%64
+//! word 0..HW        : H x int8 head (little-endian bytes)
+//! word HW           : bits  0..16 head scale  (IEEE half)
+//!                     bits 16..32 rho         (IEEE half)
+//!                     bits 32..48 popcount(b) (u16, used by asym4 only)
+//!                     bits 48..64 reserved (zero)
+//! word HW+1..HW+1+W : residual sign bits, coordinate i at word i/64, bit i%64
 //! ```
 //!
-//! `D = 768, B = 768` gives `3 + 12 = 15` words = 120 bytes per document
-//! (the primary f32 row for exact rerank lives in a separate array).
+//! `D = 768, H = 16, B = 768` gives `2 + 1 + 12 = 15` words = 120 bytes per
+//! document (the primary f32 row for exact rerank lives in a separate array).
 //!
 //! # Invariants
 //!
 //! * All stored vectors are l2-normalized; scores are cosines.
-//! * `B % 64 == 0`, `B <= P`, `W` is one of the monomorphized word counts in
-//!   [`scan::SUPPORTED_WORDS`].
+//! * `H` is one of [`codes::SUPPORTED_HEAD_DIMS`]; `B % 64 == 0`, `B <= M * P`,
+//!   `W` is one of the monomorphized word counts in [`codes::SUPPORTED_WORDS`].
 //! * Delete never touches the scan loop: a deleted slot's scalar word is zeroed
 //!   (score 0) and the liveness flag in [`codes::Primary`] is cleared; the exact
 //!   rerank / final filter is the correctness guarantee.
@@ -78,9 +85,6 @@ use std::cmp::Ordering;
 pub mod codes;
 pub mod data;
 pub mod scan;
-
-/// Dimension of the quantized head (fixed by the panel spec).
-pub const HEAD_DIM: usize = 16;
 
 /// Lane count for the vectorizable dot products.
 const LANES: usize = 16;

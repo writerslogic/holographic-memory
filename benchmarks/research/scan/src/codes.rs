@@ -4,11 +4,20 @@
 //! Frozen public basis, document codes, query transforms, and the three index
 //! representations compared by the kill test:
 //!
-//! * [`SplitIndex`]: int8 x16 head + `B`-bit sign residual per document,
-//!   contiguous `[u64; 3 + W]` records (layout in the crate docs).
+//! * [`SplitIndex`]: int8 x `H` head (`H` in 16/32/64) + `B`-bit sign residual
+//!   per document, contiguous `[u64; H/8 + 1 + W]` records (layout in the crate
+//!   docs).
 //! * [`Int8Index`]: full-dimension int8 rows with a per-row f32 scale.
 //! * [`Primary`]: the f32 rows (exact scan baseline and the rerank source)
 //!   plus the per-document liveness flag shared by every method.
+//!
+//! The residual rotation is `M` independent subsampled randomized
+//! Walsh-Hadamard transforms (`--residual-mult`): rotation `m` has its own
+//! random signs, each produces `P` coordinates, and the sign code keeps a fixed
+//! random subset of `B <= M * P` of the concatenated `M * P` coordinates. Each
+//! rotation preserves `<q, r>`, so the sum over all `M * P` coordinates is
+//! `M <q, r>` and the unbiased per-document scalar carries `keep_ratio = P / B`
+//! whatever `M` is.
 //!
 //! Encoding is single-threaded and allocation-free per document through
 //! [`Scratch`].
@@ -17,19 +26,25 @@ use anyhow::{ensure, Result};
 use serde::Serialize;
 
 use crate::data::Rng;
-use crate::{dot_f32, f32_to_f16_bits, HEAD_DIM};
+use crate::{dot_f32, f32_to_f16_bits};
 
-/// Word counts (`B / 64`) the scan kernels are monomorphized for.
-pub const SUPPORTED_WORDS: [usize; 8] = [1, 2, 3, 4, 6, 8, 12, 16];
+/// Largest head dimension the kernels and buffers support.
+pub const MAX_HEAD_DIM: usize = 64;
 
-/// Record words before the residual bits: two words of int8 head, one of scalars.
-pub const RECORD_PREFIX_WORDS: usize = 3;
+/// Head dimensions the scan kernels are monomorphized for (2, 4, 8 words).
+pub const SUPPORTED_HEAD_DIMS: [usize; 3] = [16, 32, 64];
 
-/// How the 16-dim head subspace is chosen.
+/// Residual word counts (`B / 64`) the scan kernels are monomorphized for.
+pub const SUPPORTED_WORDS: [usize; 10] = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
+
+/// Largest `--residual-mult`.
+pub const MAX_RESIDUAL_MULT: usize = 8;
+
+/// How the head subspace is chosen.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, clap::ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum BasisKind {
-    /// Top-16 principal subspace of the calibration sample.
+    /// Top-`H` principal subspace of the calibration sample.
     Pca,
     /// Fixed random orthonormal basis (data-independent).
     Random,
@@ -51,7 +66,11 @@ pub struct BasisParams {
     pub kind: BasisKind,
     /// Embedding dimension `D`.
     pub dim: usize,
-    /// Residual bits `B` (multiple of 64, at most the padded dimension).
+    /// Head dimension `H` (one of [`SUPPORTED_HEAD_DIMS`]).
+    pub head_dim: usize,
+    /// Number of independent residual rotations `M`.
+    pub residual_mult: usize,
+    /// Residual bits `B` (multiple of 64, at most `M * P`).
     pub residual_bits: usize,
     /// Seed for the random signs, coordinate subset and random basis.
     pub seed: u64,
@@ -59,38 +78,45 @@ pub struct BasisParams {
     pub pca_iters: usize,
 }
 
-/// The frozen public basis `(mu, U, R)`.
+/// The frozen public basis `(mu, U, R_1..R_M)`.
 pub struct Basis {
     /// Head subspace kind.
     pub kind: BasisKind,
     /// `D`.
     pub dim: usize,
-    /// `P = next_power_of_two(D)`.
+    /// `H`.
+    pub head_dim: usize,
+    /// `H / 8`: record words holding the int8 head.
+    pub head_words: usize,
+    /// `P = next_power_of_two(D)` (at least 64).
     pub padded: usize,
+    /// `M`.
+    pub mult: usize,
+    /// `M * P`: rotated coordinates available for selection.
+    pub padded_total: usize,
     /// `B`.
     pub bits: usize,
     /// `W = B / 64`.
     pub words: usize,
     /// Centre, length `D`.
     pub mu: Vec<f32>,
-    /// `HEAD_DIM` orthonormal rows of length `D`, row-major.
+    /// `H` orthonormal rows of length `D`, row-major.
     pub u: Vec<f32>,
-    /// Random signs (`+1`/`-1`) for the first `D` padded coordinates.
+    /// Random signs (`+1`/`-1`), `M` blocks of `D`.
     pub signs: Vec<f32>,
-    /// The `B` kept coordinates of the rotated vector (sorted).
+    /// The `B` kept coordinates of the concatenated rotations (sorted).
     pub select: Vec<u32>,
-    /// `1 / sqrt(P)`: makes the Walsh-Hadamard transform orthonormal.
+    /// `1 / sqrt(P)`: makes each Walsh-Hadamard transform orthonormal.
     pub scale: f32,
-    /// `P / B`: compensates the dropped coordinates in the residual estimator.
+    /// `P / B`: compensates dropped (or repeated) coordinates in the estimator.
     pub keep_ratio: f32,
-    /// Fraction of calibration variance captured by the head (PCA diagnostics;
-    /// computed for both kinds on the calibration sample).
+    /// Fraction of calibration variance captured by the head.
     pub head_variance_fraction: f32,
 }
 
-/// Modified Gram-Schmidt on `HEAD_DIM` rows of length `d`.
-fn orthonormalize(v: &mut [f32], d: usize, rng: &mut Rng) {
-    for k in 0..HEAD_DIM {
+/// Modified Gram-Schmidt on `rows` rows of length `d`.
+fn orthonormalize(v: &mut [f32], rows: usize, d: usize, rng: &mut Rng) {
+    for k in 0..rows {
         for j in 0..k {
             let (lo, hi) = v.split_at_mut(k * d);
             let vj = &lo[j * d..(j + 1) * d];
@@ -124,14 +150,32 @@ pub fn fit_basis(p: &BasisParams, calib: &[f32]) -> Result<Basis> {
         "calibration sample must hold at least one row of {} floats",
         d
     );
+    let h = p.head_dim;
+    ensure!(
+        SUPPORTED_HEAD_DIMS.contains(&h),
+        "head dim {} not in the monomorphized set {:?}",
+        h,
+        SUPPORTED_HEAD_DIMS
+    );
+    ensure!(h < d, "head dim {} must be smaller than the embedding dim {}", h, d);
+    let mult = p.residual_mult;
+    ensure!(
+        (1..=MAX_RESIDUAL_MULT).contains(&mult),
+        "residual mult {} must be in 1..={}",
+        mult,
+        MAX_RESIDUAL_MULT
+    );
     let n = calib.len() / d;
     let padded = d.next_power_of_two().max(64);
+    let padded_total = padded * mult;
     let bits = p.residual_bits;
     ensure!(
-        bits % 64 == 0 && bits > 0 && bits <= padded,
-        "residual bits {} must be a positive multiple of 64 and at most the padded dim {}",
+        bits % 64 == 0 && bits > 0 && bits <= padded_total,
+        "residual bits {} must be a positive multiple of 64 and at most mult * padded dim = {} * {} = {}",
         bits,
-        padded
+        mult,
+        padded,
+        padded_total
     );
     let words = bits / 64;
     ensure!(
@@ -161,21 +205,21 @@ pub fn fit_basis(p: &BasisParams, calib: &[f32]) -> Result<Basis> {
     }
     let total_var: f32 = centred.iter().map(|x| x * x).sum::<f32>() * inv_n;
 
-    let mut u = vec![0.0f32; HEAD_DIM * d];
+    let mut u = vec![0.0f32; h * d];
     for x in u.iter_mut() {
         *x = rng.gaussian();
     }
-    orthonormalize(&mut u, d, &mut rng);
+    orthonormalize(&mut u, h, d, &mut rng);
     if p.kind == BasisKind::Pca {
-        let mut acc = vec![0.0f32; HEAD_DIM * d];
+        let mut acc = vec![0.0f32; h * d];
         for _ in 0..p.pca_iters.max(1) {
             acc.iter_mut().for_each(|x| *x = 0.0);
             for row in centred.chunks_exact(d) {
-                let mut proj = [0.0f32; HEAD_DIM];
-                for k in 0..HEAD_DIM {
+                let mut proj = [0.0f32; MAX_HEAD_DIM];
+                for k in 0..h {
                     proj[k] = dot_f32(row, &u[k * d..(k + 1) * d]);
                 }
-                for k in 0..HEAD_DIM {
+                for k in 0..h {
                     let s = proj[k];
                     let a = &mut acc[k * d..(k + 1) * d];
                     for j in 0..d {
@@ -184,14 +228,14 @@ pub fn fit_basis(p: &BasisParams, calib: &[f32]) -> Result<Basis> {
                 }
             }
             u.copy_from_slice(&acc);
-            orthonormalize(&mut u, d, &mut rng);
+            orthonormalize(&mut u, h, d, &mut rng);
         }
     }
     let mut head_var = 0.0f32;
     for row in centred.chunks_exact(d) {
-        for k in 0..HEAD_DIM {
-            let h = dot_f32(row, &u[k * d..(k + 1) * d]);
-            head_var += h * h;
+        for k in 0..h {
+            let c = dot_f32(row, &u[k * d..(k + 1) * d]);
+            head_var += c * c;
         }
     }
     head_var *= inv_n;
@@ -201,16 +245,20 @@ pub fn fit_basis(p: &BasisParams, calib: &[f32]) -> Result<Basis> {
         0.0
     };
 
-    let signs: Vec<f32> = (0..d)
+    let signs: Vec<f32> = (0..mult * d)
         .map(|_| if rng.next_u64() & 1 == 0 { 1.0 } else { -1.0 })
         .collect();
-    let mut select = rng.sample_indices(padded, bits);
+    let mut select = rng.sample_indices(padded_total, bits);
     select.sort_unstable();
 
     Ok(Basis {
         kind: p.kind,
         dim: d,
+        head_dim: h,
+        head_words: h / 8,
         padded,
+        mult,
+        padded_total,
         bits,
         words,
         mu,
@@ -246,11 +294,11 @@ pub fn fwht(v: &mut [f32]) {
 
 /// Per-thread working buffers for encoding and query preparation.
 pub struct Scratch {
-    /// Head coefficients.
-    pub head: [f32; HEAD_DIM],
+    /// Head coefficients (first `H` used).
+    pub head: [f32; MAX_HEAD_DIM],
     /// Centred vector, then the residual (length `D`).
     pub resid: Vec<f32>,
-    /// Padded rotation buffer (length `P`).
+    /// Rotation buffer (length `M * P`).
     pub pad: Vec<f32>,
     /// Kept rotated coordinates (length `B`).
     pub sel: Vec<f32>,
@@ -260,18 +308,19 @@ impl Scratch {
     /// Buffers sized for `basis`.
     pub fn new(basis: &Basis) -> Self {
         Self {
-            head: [0.0; HEAD_DIM],
+            head: [0.0; MAX_HEAD_DIM],
             resid: vec![0.0; basis.dim],
-            pad: vec![0.0; basis.padded],
+            pad: vec![0.0; basis.padded_total],
             sel: vec![0.0; basis.bits],
         }
     }
 }
 
 impl Basis {
-    /// Split `x` (optionally centred by `mu`) into `s.head` and `s.resid`.
+    /// Split `x` (optionally centred by `mu`) into `s.head[..H]` and `s.resid`.
     pub fn project(&self, x: &[f32], centre: bool, s: &mut Scratch) {
         let d = self.dim;
+        let h = self.head_dim;
         if centre {
             for j in 0..d {
                 s.resid[j] = x[j] - self.mu[j];
@@ -279,61 +328,68 @@ impl Basis {
         } else {
             s.resid[..d].copy_from_slice(&x[..d]);
         }
-        for k in 0..HEAD_DIM {
+        for k in 0..h {
             s.head[k] = dot_f32(&s.resid, &self.u[k * d..(k + 1) * d]);
         }
-        for k in 0..HEAD_DIM {
-            let h = s.head[k];
+        for k in 0..h {
+            let c = s.head[k];
             let uk = &self.u[k * d..(k + 1) * d];
             for j in 0..d {
-                s.resid[j] -= h * uk[j];
+                s.resid[j] -= c * uk[j];
             }
         }
     }
 
-    /// Rotate `s.resid` into `s.sel`: sign flip, zero pad, orthonormal
-    /// Walsh-Hadamard, coordinate subset.
+    /// Rotate `s.resid` into `s.sel`: for each of the `M` rotations sign flip,
+    /// zero pad, orthonormal Walsh-Hadamard; then the coordinate subset.
     pub fn rotate(&self, s: &mut Scratch) {
         let d = self.dim;
         let p = self.padded;
-        for j in 0..d {
-            s.pad[j] = s.resid[j] * self.signs[j];
-        }
-        for j in d..p {
-            s.pad[j] = 0.0;
-        }
-        fwht(&mut s.pad);
-        let sc = self.scale;
-        for v in s.pad.iter_mut() {
-            *v *= sc;
+        for m in 0..self.mult {
+            let seg = &mut s.pad[m * p..(m + 1) * p];
+            let signs = &self.signs[m * d..(m + 1) * d];
+            for j in 0..d {
+                seg[j] = s.resid[j] * signs[j];
+            }
+            for v in seg[d..p].iter_mut() {
+                *v = 0.0;
+            }
+            fwht(seg);
+            let sc = self.scale;
+            for v in seg.iter_mut() {
+                *v *= sc;
+            }
         }
         for (dst, &idx) in s.sel.iter_mut().zip(&self.select) {
             *dst = s.pad[idx as usize];
         }
     }
 
-    /// Record words per document.
+    /// Record words per document: `H / 8` head words, one scalar word, `W` bit words.
     pub fn stride(&self) -> usize {
-        RECORD_PREFIX_WORDS + self.words
+        self.head_words + 1 + self.words
     }
 
     /// Write the record for the vector currently held in `s` (after
     /// [`Basis::project`] with centring and [`Basis::rotate`]).
     pub fn encode_record(&self, s: &Scratch, out: &mut [u64]) {
         debug_assert_eq!(out.len(), self.stride());
+        let h = self.head_dim;
+        let hw = self.head_words;
         let mut maxabs = 0.0f32;
-        for h in s.head.iter() {
-            maxabs = maxabs.max(h.abs());
+        for c in s.head[..h].iter() {
+            maxabs = maxabs.max(c.abs());
         }
         let head_scale = maxabs / 127.0;
         let inv = if head_scale > 0.0 { 1.0 / head_scale } else { 0.0 };
-        let mut hb = [0u8; HEAD_DIM];
-        for k in 0..HEAD_DIM {
+        let mut hb = [0u8; MAX_HEAD_DIM];
+        for k in 0..h {
             let q = (s.head[k] * inv).round().clamp(-127.0, 127.0) as i8;
             hb[k] = q as u8;
         }
-        out[0] = u64::from_le_bytes(hb[0..8].try_into().expect("8 head bytes"));
-        out[1] = u64::from_le_bytes(hb[8..16].try_into().expect("8 head bytes"));
+        for w in 0..hw {
+            out[w] = u64::from_le_bytes(hb[w * 8..w * 8 + 8].try_into().expect("8 head bytes"));
+        }
 
         let mut sum_sq = 0.0f32;
         let mut sum_abs = 0.0f32;
@@ -348,14 +404,14 @@ impl Basis {
                 }
             }
             ones += word.count_ones();
-            out[RECORD_PREFIX_WORDS + wi] = word;
+            out[hw + 1 + wi] = word;
         }
         let rho = if sum_abs > 0.0 {
             self.keep_ratio * sum_sq / sum_abs
         } else {
             0.0
         };
-        out[2] = (f32_to_f16_bits(head_scale) as u64)
+        out[hw] = (f32_to_f16_bits(head_scale) as u64)
             | ((f32_to_f16_bits(rho) as u64) << 16)
             | (((ones & 0xffff) as u64) << 32);
     }
@@ -365,8 +421,8 @@ impl Basis {
 pub struct SplitQuery {
     /// Residual mode the planes/bits were built for.
     pub mode: ResidualMode,
-    /// Int16-quantized query head widened to i32.
-    pub head_q: [i32; HEAD_DIM],
+    /// Int16-quantized query head widened to i32 (first `H` used, rest zero).
+    pub head_q: [i32; MAX_HEAD_DIM],
     /// Query head scale (`max|U q| / 32767`).
     pub a_q: f32,
     /// `sym1`: query sign bits (`W` words).
@@ -391,7 +447,7 @@ impl SplitQuery {
         let w = basis.words;
         Self {
             mode,
-            head_q: [0; HEAD_DIM],
+            head_q: [0; MAX_HEAD_DIM],
             a_q: 0.0,
             bits: vec![0; w],
             planes: [vec![0; w], vec![0; w], vec![0; w], vec![0; w]],
@@ -408,13 +464,14 @@ impl Basis {
     /// Transform query `q` (unit norm) into `out`.
     pub fn prepare_query(&self, q: &[f32], s: &mut Scratch, out: &mut SplitQuery) {
         self.project(q, false, s);
+        let h = self.head_dim;
         let mut maxabs = 0.0f32;
-        for h in s.head.iter() {
-            maxabs = maxabs.max(h.abs());
+        for c in s.head[..h].iter() {
+            maxabs = maxabs.max(c.abs());
         }
         let a_q = maxabs / 32767.0;
         let inv = if a_q > 0.0 { 1.0 / a_q } else { 0.0 };
-        for k in 0..HEAD_DIM {
+        for k in 0..h {
             out.head_q[k] = (s.head[k] * inv).round().clamp(-32767.0, 32767.0) as i32;
         }
         out.a_q = a_q;
@@ -504,12 +561,13 @@ impl SplitIndex {
         self.basis.project(x, true, s);
         self.basis.rotate(s);
         let st = self.stride;
-        self.basis.encode_record(s, &mut self.codes[id * st..(id + 1) * st]);
+        self.basis
+            .encode_record(s, &mut self.codes[id * st..(id + 1) * st]);
     }
 
     /// Zero the scalar word of slot `id` so it scores 0; returns bytes touched.
     pub fn delete(&mut self, id: usize) -> usize {
-        self.codes[id * self.stride + 2] = 0;
+        self.codes[id * self.stride + self.basis.head_words] = 0;
         8
     }
 
@@ -687,41 +745,49 @@ mod tests {
             spread: 0.75,
             spectrum_alpha: 0.5,
         });
-        let basis = fit_basis(
-            &BasisParams {
-                kind: BasisKind::Pca,
-                dim: 96,
-                residual_bits: 128,
-                seed: 3,
-                pca_iters: 16,
-            },
-            &ds.docs[..500 * 96],
-        )
-        .expect("basis");
-        for a in 0..HEAD_DIM {
-            for b in 0..HEAD_DIM {
-                let d = dot_f32(&basis.u[a * 96..(a + 1) * 96], &basis.u[b * 96..(b + 1) * 96]);
-                let want = if a == b { 1.0 } else { 0.0 };
-                assert!((d - want).abs() < 1e-4, "u[{a}].u[{b}] = {d}");
+        for (head_dim, mult, bits) in [(16usize, 1usize, 128usize), (32, 2, 256), (64, 1, 64)] {
+            let basis = fit_basis(
+                &BasisParams {
+                    kind: BasisKind::Pca,
+                    dim: 96,
+                    head_dim,
+                    residual_mult: mult,
+                    residual_bits: bits,
+                    seed: 3,
+                    pca_iters: 16,
+                },
+                &ds.docs[..500 * 96],
+            )
+            .expect("basis");
+            for a in 0..head_dim {
+                for b in 0..head_dim {
+                    let d = dot_f32(&basis.u[a * 96..(a + 1) * 96], &basis.u[b * 96..(b + 1) * 96]);
+                    let want = if a == b { 1.0 } else { 0.0 };
+                    assert!((d - want).abs() < 1e-4, "u[{a}].u[{b}] = {d}");
+                }
             }
+            assert!(basis.head_variance_fraction > 0.0 && basis.head_variance_fraction <= 1.0 + 1e-5);
+            assert_eq!(basis.stride(), head_dim / 8 + 1 + bits / 64);
+            let mut ix = SplitIndex::with_capacity(basis, ds.n_docs, ResidualMode::Sym1);
+            let mut s = Scratch::new(&ix.basis);
+            for i in 0..ds.n_docs {
+                ix.encode(i, ds.doc(i), &mut s);
+            }
+            let mut sq = SplitQuery::new(&ix.basis, ResidualMode::Sym1);
+            ix.basis.prepare_query(ds.query(0), &mut s, &mut sq);
+            let mut heap = crate::TopK::new(32);
+            crate::scan::scan_split(&ix, &sq, &mut heap);
+            let q_mu = dot_f32(ds.query(0), &ix.basis.mu);
+            let mut err = 0.0f32;
+            for &(est, id) in heap.entries() {
+                let exact = dot_f32(ds.query(0), ds.doc(id as usize));
+                err += (est + q_mu - exact).abs();
+            }
+            let mean_err = err / heap.entries().len() as f32;
+            assert!(
+                mean_err < 0.25,
+                "head={head_dim} mult={mult} bits={bits}: mean |estimate - exact| = {mean_err}"
+            );
         }
-        assert!(basis.head_variance_fraction > 0.0 && basis.head_variance_fraction <= 1.0);
-        let mut ix = SplitIndex::with_capacity(basis, ds.n_docs, ResidualMode::Sym1);
-        let mut s = Scratch::new(&ix.basis);
-        for i in 0..ds.n_docs {
-            ix.encode(i, ds.doc(i), &mut s);
-        }
-        let mut sq = SplitQuery::new(&ix.basis, ResidualMode::Sym1);
-        ix.basis.prepare_query(ds.query(0), &mut s, &mut sq);
-        let mut heap = crate::TopK::new(32);
-        crate::scan::scan_split(&ix, &sq, &mut heap);
-        let q_mu = dot_f32(ds.query(0), &ix.basis.mu);
-        let mut err = 0.0f32;
-        for &(est, id) in heap.entries() {
-            let exact = dot_f32(ds.query(0), ds.doc(id as usize));
-            err += (est + q_mu - exact).abs();
-        }
-        let mean_err = err / heap.entries().len() as f32;
-        assert!(mean_err < 0.25, "mean |estimate - exact| = {mean_err}");
     }
 }
