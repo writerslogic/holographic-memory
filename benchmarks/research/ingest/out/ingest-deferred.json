@@ -1,0 +1,34 @@
+{
+  "mode": "deferred",
+  "dim": 1024,
+  "batch": 512,
+  "documents": 3633,
+  "chunks": 3633,
+  "store_text": true,
+  "repeats": 5,
+  "ingest_s": [
+    0.621914667,
+    0.638327167,
+    0.661813792,
+    0.651575875,
+    0.639858458
+  ],
+  "median_ingest_s": 0.639858458,
+  "catch_up_s": [
+    1.062059,
+    0.990475209,
+    1.014519875,
+    1.066646834,
+    1.041213208
+  ],
+  "median_catch_up_s": 1.041213208,
+  "vectors_after_ingest": 0,
+  "vectors_after_catch_up": 3633,
+  "parity": {
+    "queries": 16,
+    "lexical_identical": true,
+    "vector_identical": true,
+    "lexical_mismatches": [],
+    "vector_mismatches": []
+  }
+}

@@ -215,7 +215,18 @@ mod tests {
                     tx.send(id).unwrap();
                 } else {
                     let transaction = worker_gate.begin_write();
-                    assert!(worker_gate.writers.state.try_lock().is_some());
+                    // `begin_write` must not hold the state mutex. The test thread polls that
+                    // mutex while registering workers, so a single `try_lock` can observe its
+                    // momentary hold; the invariant is that the lock becomes free while the
+                    // transaction is open.
+                    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+                    while worker_gate.writers.state.try_lock().is_none() {
+                        assert!(
+                            std::time::Instant::now() < deadline,
+                            "begin_write holds the state mutex"
+                        );
+                        std::thread::yield_now();
+                    }
                     let _published = transaction.publish();
                     tx.send(id).unwrap();
                 }

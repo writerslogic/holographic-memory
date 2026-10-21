@@ -231,12 +231,13 @@ pub fn classify_payload(payload: &[u8]) -> PayloadKind<'_> {
 }
 
 /// Mutation variants the journal may carry (`docs/file-format/MUTATIONS.md`).
-pub const MUTATION_VARIANTS: [&str; 13] = [
+pub const MUTATION_VARIANTS: [&str; 14] = [
     "Vector",
     "Atom",
     "Composite",
     "StoredTriple",
     "Document",
+    "EncodeDocument",
     "Derived",
     "DeleteDocument",
     "Delete",
@@ -268,15 +269,18 @@ pub struct Replay {
 #[derive(Debug, Clone)]
 pub struct DocumentSummary {
     pub chunks: usize,
+    /// Chunks whose vector is in the vector index: those without a `vector_state` (encoded
+    /// at ingest) plus pending ones an `EncodeDocument` installed.
+    pub indexed: usize,
     pub version: String,
     /// Carries a memory-API stamp: a `mem1:` version or a `_mem` metadata key.
     pub stamped: bool,
 }
 
 impl Replay {
-    /// Vectors the engine holds: standalone vectors plus one per document chunk.
+    /// Vectors the engine holds: standalone vectors plus one per indexed document chunk.
     pub fn vector_total(&self) -> usize {
-        self.vectors.len() + self.documents.values().map(|d| d.chunks).sum::<usize>()
+        self.vectors.len() + self.documents.values().map(|d| d.indexed).sum::<usize>()
     }
 
     fn drop_derived(&mut self, id: &str) {
@@ -310,17 +314,38 @@ impl Replay {
                         .get("metadata")
                         .and_then(Value::as_object)
                         .is_some_and(|m| m.contains_key("_mem"));
+                let chunks = body.get("chunks").and_then(Value::as_array);
                 self.documents.insert(
                     id.to_owned(),
                     DocumentSummary {
-                        chunks: body
-                            .get("chunks")
-                            .and_then(Value::as_array)
-                            .map_or(0, Vec::len),
+                        chunks: chunks.map_or(0, Vec::len),
+                        indexed: chunks.map_or(0, |chunks| {
+                            chunks
+                                .iter()
+                                .filter(|chunk| chunk.get("vector_state").is_none())
+                                .count()
+                        }),
                         version: version.to_owned(),
                         stamped,
                     },
                 );
+            }
+            "EncodeDocument" => {
+                // The engine also requires the content fingerprint to match; the scanner has
+                // no chunk text, so it assumes the common case (the document is unchanged).
+                let version = body
+                    .get("version")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let vectors = body
+                    .get("vectors")
+                    .and_then(Value::as_array)
+                    .map_or(0, Vec::len);
+                if let Some(document) = self.documents.get_mut(id) {
+                    if document.version == version && document.chunks == vectors {
+                        document.indexed = document.chunks;
+                    }
+                }
             }
             "DeleteDocument" => {
                 self.documents.remove(id);
@@ -429,6 +454,48 @@ fn check_document(body: &Value, dimensions: Option<u64>) -> Result<(), String> {
                 return Err("chunk text length differs from its byte range".into());
             }
         }
+        if let Some(state) = chunk.get("vector_state") {
+            let known = matches!(state.as_str(), Some("pending" | "lexical"));
+            let empty = chunk
+                .get("vector")
+                .and_then(|v| v.get("indices"))
+                .and_then(Value::as_array)
+                .is_some_and(Vec::is_empty);
+            if !known || !empty {
+                return Err(
+                    "chunk vector_state must be pending or lexical with an empty vector".into(),
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Checks an `EncodeDocument` body: a valid id, a version of 1..=1024 bytes and 1..=4096
+/// well-formed vectors.
+fn check_encode_document(body: &Value, dimensions: Option<u64>) -> Result<(), String> {
+    if !valid_id(body.get("id")) {
+        return Err("document id is not 1..=65535 bytes without NUL".into());
+    }
+    let version_ok = body
+        .get("version")
+        .and_then(Value::as_str)
+        .is_some_and(|v| !v.is_empty() && v.len() <= 1024);
+    if !version_ok {
+        return Err("deferred encoding version is not 1..=1024 bytes".into());
+    }
+    let vectors = body
+        .get("vectors")
+        .and_then(Value::as_array)
+        .ok_or("deferred encoding has no vectors array")?;
+    if vectors.is_empty() || vectors.len() > MAX_CHUNKS {
+        return Err(format!(
+            "deferred encoding has {} vectors, expected 1..=4096",
+            vectors.len()
+        ));
+    }
+    for vector in vectors {
+        valid_vector(Some(vector), dimensions)?;
     }
     Ok(())
 }
@@ -455,6 +522,7 @@ fn check_mutation(
             valid_vector(body.get("vector"), dimensions)?;
         }
         "Document" => check_document(body, dimensions)?,
+        "EncodeDocument" => check_encode_document(body, dimensions)?,
         "Delete" | "DeleteDocument" => {
             if !valid_id(body.get("id")) {
                 return Err("id is not 1..=65535 bytes without NUL".into());

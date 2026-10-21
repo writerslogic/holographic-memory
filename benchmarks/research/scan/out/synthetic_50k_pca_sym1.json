@@ -1,0 +1,260 @@
+{
+  "schema": "hms-research-scan/v1",
+  "generated_unix_s": 1792552105,
+  "dataset": {
+    "kind": "synthetic",
+    "name": "synthetic_768d_200c",
+    "source": "synthetic gaussian clusters: seed=42 clusters=200 spread=0.75 spectrum_alpha=0.5",
+    "n_docs": 50000,
+    "n_real_docs": 50000,
+    "dim": 768,
+    "n_queries": 500,
+    "seed": 42,
+    "load_ms": 256.456958,
+    "ground_truth_ms": 1646.3853749999998
+  },
+  "config": {
+    "basis": "pca",
+    "head_dim": 16,
+    "residual_bits": 768,
+    "residual_words": 12,
+    "padded_dim": 1024,
+    "residual_mode": "sym1",
+    "ks": [
+      64,
+      256,
+      1024
+    ],
+    "runs": 5,
+    "warmup_queries": 50,
+    "rerank_top": 10,
+    "calib_vectors": 1000,
+    "pca_iters": 32,
+    "head_variance_fraction": 0.48378506,
+    "threads": 1,
+    "target": "aarch64,neon,dotprod"
+  },
+  "basis_fit_ms": 43.38975,
+  "methods": {
+    "split": {
+      "bytes_per_doc": 120,
+      "encode_ms": 164.726,
+      "encode_us_per_doc": 3.29452,
+      "per_k": [
+        {
+          "k": 64,
+          "recall_at_top": 0.9947999999999997,
+          "qps": 3332.7306645381623,
+          "us_per_query": 300.05425,
+          "median_run_ms": 150.027125,
+          "run_ms": [
+            150.027125,
+            149.882208,
+            151.086667,
+            146.290875,
+            157.953708
+          ]
+        },
+        {
+          "k": 256,
+          "recall_at_top": 1.0,
+          "qps": 2221.691484811962,
+          "us_per_query": 450.1075,
+          "median_run_ms": 225.05375,
+          "run_ms": [
+            193.916,
+            217.752416,
+            240.501084,
+            225.05375,
+            225.20399999999998
+          ]
+        },
+        {
+          "k": 1024,
+          "recall_at_top": 1.0,
+          "qps": 1163.2635561942193,
+          "us_per_query": 859.6504160000001,
+          "median_run_ms": 429.82520800000003,
+          "run_ms": [
+            442.824375,
+            429.82520800000003,
+            379.790125,
+            470.79949999999997,
+            400.341167
+          ]
+        }
+      ]
+    },
+    "int8": {
+      "bytes_per_doc": 772,
+      "encode_ms": 11.008583,
+      "encode_us_per_doc": 0.22017166000000002,
+      "per_k": [
+        {
+          "k": 64,
+          "recall_at_top": 1.0,
+          "qps": 754.5007383732851,
+          "us_per_query": 1325.37975,
+          "median_run_ms": 662.689875,
+          "run_ms": [
+            647.618292,
+            618.793375,
+            770.968708,
+            698.858166,
+            662.689875
+          ]
+        },
+        {
+          "k": 256,
+          "recall_at_top": 1.0,
+          "qps": 639.4794125997907,
+          "us_per_query": 1563.772,
+          "median_run_ms": 781.886,
+          "run_ms": [
+            704.721167,
+            794.014541,
+            778.5531249999999,
+            783.905125,
+            781.886
+          ]
+        },
+        {
+          "k": 1024,
+          "recall_at_top": 1.0,
+          "qps": 432.8500116828816,
+          "us_per_query": 2310.269084,
+          "median_run_ms": 1155.1345419999998,
+          "run_ms": [
+            1025.869375,
+            1155.1345419999998,
+            1027.8061249999998,
+            1317.695166,
+            1857.3972919999999
+          ]
+        }
+      ]
+    },
+    "exact": {
+      "bytes_per_doc": 3073,
+      "encode_ms": 11.411666,
+      "encode_us_per_doc": 0.22823332000000002,
+      "per_k": [
+        {
+          "k": 10,
+          "recall_at_top": 1.0,
+          "qps": 169.86515442586762,
+          "us_per_query": 5887.0225820000005,
+          "median_run_ms": 2943.5112910000003,
+          "run_ms": [
+            2762.668083,
+            3578.173167,
+            2890.386791,
+            2943.5112910000003,
+            3292.400708
+          ]
+        }
+      ]
+    }
+  },
+  "ablation": {
+    "target_recall": 0.95,
+    "threshold_max_k": 256,
+    "split_k_star": 64,
+    "int8_k_star": 64,
+    "split_qps_at_k_star": 3332.7306645381623,
+    "int8_qps_at_k_star": 754.5007383732851,
+    "exact_qps": 169.86515442586762,
+    "ratio_split_vs_int8_matched": 4.417133734982923,
+    "ratio_split_vs_exact_matched": 19.61986068186003,
+    "ratio_at_equal_k": [
+      {
+        "k": 64,
+        "split_recall": 0.9947999999999997,
+        "int8_recall": 1.0,
+        "split_qps": 3332.7306645381623,
+        "int8_qps": 754.5007383732851,
+        "ratio_split_vs_int8": 4.417133734982923
+      },
+      {
+        "k": 256,
+        "split_recall": 1.0,
+        "int8_recall": 1.0,
+        "split_qps": 2221.691484811962,
+        "int8_qps": 639.4794125997907,
+        "ratio_split_vs_int8": 3.4742189365873712
+      },
+      {
+        "k": 1024,
+        "split_recall": 1.0,
+        "int8_recall": 1.0,
+        "split_qps": 1163.2635561942193,
+        "int8_qps": 432.8500116828816,
+        "ratio_split_vs_int8": 2.687451830419401
+      }
+    ]
+  },
+  "mutation": {
+    "ops": 1000,
+    "leak_check_k": 1024,
+    "deleted_leaks": 0,
+    "replace_self_hits": 50,
+    "replace_self_checks": 50,
+    "split": {
+      "delete_bytes_touched": 9,
+      "delete_ns_per_op": 7.542,
+      "replace_bytes_touched": 3193,
+      "replace_us_per_op": 8.522875
+    },
+    "int8": {
+      "delete_bytes_touched": 5,
+      "delete_ns_per_op": 4.25,
+      "replace_bytes_touched": 3845,
+      "replace_us_per_op": 0.626375
+    },
+    "exact": {
+      "delete_bytes_touched": 1,
+      "delete_ns_per_op": 0.917,
+      "replace_bytes_touched": 3073,
+      "replace_us_per_op": 0.27
+    }
+  },
+  "thresholds": [
+    {
+      "name": "split recall@10 >= 0.95 at some K <= 256",
+      "value": 1.0,
+      "limit": 0.95,
+      "pass": true
+    },
+    {
+      "name": "split single-thread QPS >= 2500 at K* (smallest K <= 256 reaching recall 0.95)",
+      "value": 3332.7306645381623,
+      "limit": 2500.0,
+      "pass": true
+    },
+    {
+      "name": "split / int8+rerank QPS ratio at matched recall >= 1.5",
+      "value": 4.417133734982923,
+      "limit": 1.5,
+      "pass": true
+    },
+    {
+      "name": "split encode time for 50000 docs < 250.0 ms (250 ms per 50k, scaled)",
+      "value": 164.726,
+      "limit": 250.0,
+      "pass": true
+    },
+    {
+      "name": "no deleted id returned by any method after delete",
+      "value": 0.0,
+      "limit": 0.0,
+      "pass": true
+    },
+    {
+      "name": "replaced slots are found by their own new vector (split)",
+      "value": 50.0,
+      "limit": 50.0,
+      "pass": true
+    }
+  ],
+  "pass": true
+}

@@ -1,0 +1,252 @@
+{
+  "part": "B",
+  "config": {
+    "seed": 6840335614487822338,
+    "n_docs": 2000,
+    "n_queries_per_class": 500,
+    "candidates": 20,
+    "p_passive": 0.3,
+    "p_voice_match": 0.7,
+    "p_query_cause": 0.5
+  },
+  "n_docs": 2000,
+  "n_queries": 1000,
+  "calibration": "threshold and lambda from the first half of each query class; FAR/TAR/AUC on the second half",
+  "repeats": 7,
+  "warmup": 1,
+  "sketch_build_us_per_doc": 136.5905625,
+  "methods": [
+    {
+      "name": "bm25",
+      "lambda": null,
+      "threshold": null,
+      "far_at_tar80_calibrated": 1.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 1.0,
+      "auc_eval": 0.144272,
+      "auc_all": 0.15934,
+      "latency_us_per_query": 3.1075,
+      "added_latency_us": 0.0,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.1471293753748067
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.13785452440671425
+      }
+    },
+    {
+      "name": "raw_overlap",
+      "lambda": null,
+      "threshold": null,
+      "far_at_tar80_calibrated": 1.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 1.0,
+      "auc_eval": 0.016,
+      "auc_all": 0.012,
+      "latency_us_per_query": 1.1540420000000002,
+      "added_latency_us": -1.9534579999999997,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.014124293785310734
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.02054794520547945
+      }
+    },
+    {
+      "name": "cleanup_energy",
+      "lambda": null,
+      "threshold": null,
+      "far_at_tar80_calibrated": 1.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 1.0,
+      "auc_eval": 0.382752,
+      "auc_all": 0.392548,
+      "latency_us_per_query": 17.767125,
+      "added_latency_us": 14.659625,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.5705267809235236
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.0007717538105344395
+      }
+    },
+    {
+      "name": "positive",
+      "lambda": null,
+      "threshold": null,
+      "far_at_tar80_calibrated": 1.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 1.0,
+      "auc_eval": 0.337792,
+      "auc_all": 0.36037,
+      "latency_us_per_query": 10.129125,
+      "added_latency_us": 7.021625,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.5044503361424107
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.001543507621068879
+      }
+    },
+    {
+      "name": "mean_foil",
+      "lambda": 0.5,
+      "threshold": null,
+      "far_at_tar80_calibrated": 1.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 1.0,
+      "auc_eval": 0.3488,
+      "auc_all": 0.37354,
+      "latency_us_per_query": 61.341167,
+      "added_latency_us": 58.233667,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.5178171259034814
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.008875168821146055
+      }
+    },
+    {
+      "name": "max_foil",
+      "lambda": null,
+      "threshold": null,
+      "far_at_tar80_calibrated": 1.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 1.0,
+      "auc_eval": 0.19912,
+      "auc_all": 0.215244,
+      "latency_us_per_query": 52.204417,
+      "added_latency_us": 49.096917,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.28737808919609886
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.012348060968551032
+      }
+    },
+    {
+      "name": "hashed_pairs",
+      "lambda": null,
+      "threshold": null,
+      "far_at_tar80_calibrated": 1.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 1.0,
+      "auc_eval": 0.706584,
+      "auc_all": 0.717282,
+      "latency_us_per_query": 22.542792,
+      "added_latency_us": 19.435291999999997,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.9972067039106145
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 1.0,
+        "tar": 1.0,
+        "auc": 0.0
+      }
+    },
+    {
+      "name": "exact_tuple",
+      "lambda": null,
+      "threshold": 1.0,
+      "far_at_tar80_calibrated": 0.0,
+      "tar_realized": 1.0,
+      "far_at_tar80_oracle": 0.0,
+      "auc_eval": 1.0,
+      "auc_all": 1.0,
+      "latency_us_per_query": 0.207542,
+      "added_latency_us": -2.899958,
+      "voice_match": {
+        "n_present": 177,
+        "n_absent": 179,
+        "far": 0.0,
+        "tar": 1.0,
+        "auc": 1.0
+      },
+      "voice_mismatch": {
+        "n_present": 73,
+        "n_absent": 71,
+        "far": 0.0,
+        "tar": 1.0,
+        "auc": 1.0
+      }
+    }
+  ],
+  "verdict": {
+    "pass": false,
+    "pass_far": false,
+    "pass_auc": false,
+    "pass_latency": true,
+    "contrast_method": "mean_foil",
+    "contrast_far": 1.0,
+    "contrast_auc": 0.3488,
+    "contrast_added_latency_us": 58.233667,
+    "baseline_best_far": 1.0,
+    "baseline_best_auc": 0.382752,
+    "demote": [
+      {
+        "method": "hashed_pairs",
+        "far": 1.0,
+        "latency_us_per_query": 22.542792
+      },
+      {
+        "method": "exact_tuple",
+        "far": 0.0,
+        "latency_us_per_query": 0.207542
+      }
+    ]
+  }
+}

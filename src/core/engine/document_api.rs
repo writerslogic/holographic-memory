@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use anyhow::{ensure, Result};
+use anyhow::{anyhow, ensure, Result};
 use rayon::prelude::*;
 use std::sync::Arc;
 
@@ -9,7 +9,14 @@ use super::{
     mutation::{validate_id, Mutation},
     HmsCore, ShardSet,
 };
-use crate::core::documents::{self, DocumentInput, DocumentResult, SearchOptions};
+use crate::core::documents::{
+    self, DocumentInput, DocumentResult, IngestOptions, SearchOptions, VectorIndexMode,
+    VectorIndexStatus, VectorQueryOptions, VectorState,
+};
+
+/// Documents per `EncodeDocument` transaction of a lazy encoding pass (the journal takes at
+/// most 4096 mutations per frame).
+const ENCODE_BATCH: usize = 1024;
 use crate::core::types::MemorizeBatchItem;
 
 impl HmsCore {
@@ -27,9 +34,19 @@ impl HmsCore {
     }
 
     pub fn memorize_document(&self, input: DocumentInput) -> Result<u32> {
+        self.memorize_document_with(input, &IngestOptions::default())
+    }
+
+    /// [`Self::memorize_document`] with per-call options: [`IngestOptions::encode`] chooses
+    /// whether the chunk hypervectors are computed now, on first vector use, or never.
+    pub fn memorize_document_with(
+        &self,
+        input: DocumentInput,
+        options: &IngestOptions,
+    ) -> Result<u32> {
         #[cfg(feature = "local-models")]
         if let Some(stages) = self.model_stages() {
-            return self.memorize_document_with_models(input, &stages);
+            return self.memorize_document_with_models(input, &stages, options.encode);
         }
         #[cfg(feature = "local-embed")]
         let input = {
@@ -37,11 +54,13 @@ impl HmsCore {
             self.embed_document_inputs(std::slice::from_mut(&mut input))?;
             input
         };
-        let document = documents::prepare(
+        let document = documents::prepare_with_options(
             input,
             self.dimensions,
             self.config.embedding_space.as_ref().map(|s| s.dimensions),
+            None,
             self.config.text_encoder,
+            options.encode,
         )?;
         let count = document.chunks.len() as u32;
         self.commit(&[Mutation::Document(Arc::new(document))])?;
@@ -49,6 +68,17 @@ impl HmsCore {
     }
 
     pub fn memorize_documents(&self, inputs: Vec<DocumentInput>) -> Result<Vec<u32>> {
+        self.memorize_documents_with(inputs, &IngestOptions::default())
+    }
+
+    /// [`Self::memorize_documents`] with per-call options. Documents are prepared in parallel
+    /// and committed as one transaction in input order; the encoder's per-thread memo tables
+    /// are pure caches, so the stored vectors do not depend on the thread count.
+    pub fn memorize_documents_with(
+        &self,
+        inputs: Vec<DocumentInput>,
+        options: &IngestOptions,
+    ) -> Result<Vec<u32>> {
         #[cfg(feature = "local-models")]
         let stages = self.model_stages();
         #[cfg(feature = "local-models")]
@@ -74,14 +104,16 @@ impl HmsCore {
                 #[cfg(feature = "local-models")]
                 if let Some(stages) = stages.as_deref() {
                     return self
-                        .prepare_document_with_models(input, stages)
+                        .prepare_document_with_models(input, stages, options.encode)
                         .map(|document| Mutation::Document(Arc::new(document)));
                 }
-                documents::prepare(
+                documents::prepare_with_options(
                     input,
                     self.dimensions,
                     self.config.embedding_space.as_ref().map(|s| s.dimensions),
+                    None,
                     self.config.text_encoder,
+                    options.encode,
                 )
                 .map(|document| Mutation::Document(Arc::new(document)))
             })
@@ -137,7 +169,132 @@ impl HmsCore {
         self.documents.read().embedded_count()
     }
 
+    /// Nearest embedded chunks to `embedding` by cosine, best first; `score` and
+    /// `semantic_score` both carry the cosine. Unfiltered vector queries are answered from the
+    /// vector snapshot (`documents::vector_index`) when one is built: the graph index under
+    /// `Auto`/`Graph`, the contiguous exact scan under `Exact`. Without a snapshot, or when the
+    /// snapshot is too stale for this query, the generic exact path answers. `Graph` without a
+    /// graph index fails with [`documents::GraphUnavailable`].
+    pub fn search_vectors(
+        &self,
+        embedding: &[f64],
+        k: usize,
+        options: &VectorQueryOptions,
+    ) -> Result<Vec<DocumentResult>> {
+        let Some(space) = &self.config.embedding_space else {
+            anyhow::bail!("configure an embedding space before vector search");
+        };
+        ensure!(
+            (1..=documents::MAX_K).contains(&k),
+            "require 1 <= k <= {}",
+            documents::MAX_K
+        );
+        ensure!(
+            (1..=documents::MAX_EF).contains(&options.ef),
+            "require 1 <= ef <= {}",
+            documents::MAX_EF
+        );
+        ensure!(
+            options.min_score.is_finite() && (-1.0..=1.0).contains(&options.min_score),
+            "minScore must be in [-1,1]"
+        );
+        let normalized = documents::normalize_embedding(embedding, space.dimensions)?;
+        let query: Vec<f32> = normalized.iter().map(|&value| value as f32).collect();
+        match self.vector_index.get() {
+            Some(snapshot) => {
+                if let Some(results) = documents::search_vector_snapshot(
+                    &snapshot,
+                    &self.documents,
+                    &query,
+                    &normalized,
+                    k,
+                    options,
+                )? {
+                    return Ok(results);
+                }
+            }
+            None if options.mode == VectorIndexMode::Graph => {
+                return Err(anyhow::Error::new(documents::GraphUnavailable));
+            }
+            None => {
+                // First vector query over a store without a snapshot: publish one now so an
+                // unfiltered query answers from the same scan before and after maintenance
+                // (the fallback below scores `f64` rows and would differ in the last digits).
+                if self.rebuild_vector_index(documents::DEFAULT_GRAPH_MIN_ROWS)? {
+                    if let Some(snapshot) = self.vector_index.get() {
+                        if let Some(results) = documents::search_vector_snapshot(
+                            &snapshot,
+                            &self.documents,
+                            &query,
+                            &normalized,
+                            k,
+                            options,
+                        )? {
+                            return Ok(results);
+                        }
+                    }
+                }
+            }
+        }
+        let fallback = SearchOptions {
+            k: Some(k as u32),
+            candidate_limit: Some((k as u32).max(100)),
+            embedding: Some(embedding.to_vec()),
+            lexical_weight: Some(0.0),
+            semantic_weight: Some(1.0),
+            min_semantic_score: Some(options.min_score),
+            ..SearchOptions::default()
+        };
+        let mut hits = self.search_documents("", &fallback)?;
+        for hit in &mut hits {
+            hit.score = hit.semantic_score.unwrap_or(hit.score);
+        }
+        Ok(hits)
+    }
+
+    pub fn vector_index_status(&self) -> VectorIndexStatus {
+        let snapshot = self.vector_index.get();
+        documents::vector_index_status(snapshot.as_deref(), &self.documents.read())
+    }
+
+    /// Captures the embedded chunks and publishes a fresh vector snapshot, with the graph
+    /// index when the store has at least `graph_min_rows` of them. `false` when the store has
+    /// no embedding space or too few embedded chunks (the snapshot is dropped then), or when
+    /// another build is running (the published snapshot stays). The capture holds the store's
+    /// read lock; the graph build holds no lock.
+    pub fn rebuild_vector_index(&self, graph_min_rows: usize) -> Result<bool> {
+        let Some(space) = &self.config.embedding_space else {
+            return Ok(false);
+        };
+        let Some(_building) = self.vector_index.try_build() else {
+            return Ok(self.vector_index.get().is_some());
+        };
+        let capture = {
+            let _transaction = self.mutation_gate.read();
+            documents::capture_vector_rows(&self.documents.read(), space.dimensions)?
+        };
+        let Some(capture) = capture else {
+            self.vector_index.clear();
+            return Ok(false);
+        };
+        let snapshot = documents::build_vector_snapshot(capture, graph_min_rows)?;
+        self.vector_index.publish(Arc::new(snapshot));
+        Ok(true)
+    }
+
+    /// [`Self::rebuild_vector_index`] when the status recommends it (no snapshot over a store
+    /// with enough embedded chunks, or `REBUILD_AFTER_MUTATIONS` mutations since the capture);
+    /// otherwise reports whether a snapshot exists.
+    pub fn maintain_vector_index(&self, graph_min_rows: usize) -> Result<bool> {
+        if self.vector_index_status().rebuild_recommended {
+            return self.rebuild_vector_index(graph_min_rows);
+        }
+        Ok(self.vector_index.get().is_some())
+    }
+
     pub fn train_document_index(&self) -> Result<()> {
+        self.encode_pending_documents()?;
+        self.maintain_vector_index(documents::DEFAULT_GRAPH_MIN_ROWS)?;
         let Some(space) = &self.config.embedding_space else {
             return Ok(());
         };
@@ -160,6 +317,89 @@ impl HmsCore {
             "store changed during document index training; retry maintenance"
         );
         Ok(())
+    }
+
+    /// Encodes and persists the hypervectors of every document memorized with
+    /// [`documents::EncodeMode::Deferred`] that is still awaiting them, and returns how many
+    /// documents that was. Vectors are computed from the stored chunk text exactly as eager
+    /// ingest computes them. Idempotent; concurrent callers serialize on the store's encode
+    /// gate and the second one finds nothing left. A vector query runs this first, so pending
+    /// documents are never silently missing from it.
+    pub fn encode_pending_documents(&self) -> Result<usize> {
+        if self.documents.read().pending_vector_count() == 0 {
+            return Ok(0);
+        }
+        let gate = self.documents.read().encode_gate();
+        let _encoding = gate.lock();
+        let encoder = self.config.text_encoder;
+        ensure!(
+            !encoder.is_embedding(),
+            "deferred encoding needs a text encoder, not {}",
+            encoder.name()
+        );
+        // The snapshot: each pending document with the text of its pending chunks and the
+        // fingerprint the installed vectors are bound to.
+        let pending: Vec<(Arc<documents::StoredDocument>, u64, Vec<Option<String>>)> = {
+            let _transaction = self.mutation_gate.read();
+            let store = self.documents.read();
+            if store.pending_vector_count() == 0 {
+                return Ok(0);
+            }
+            let mut pending = Vec::new();
+            for document in store.shared_values() {
+                if !document
+                    .chunks
+                    .iter()
+                    .any(|chunk| chunk.vector_state == VectorState::Pending)
+                {
+                    continue;
+                }
+                let mut texts = Vec::with_capacity(document.chunks.len());
+                for chunk in &document.chunks {
+                    texts.push(if chunk.vector_state == VectorState::Pending {
+                        Some(store.chunk_text(chunk).ok_or_else(|| {
+                            anyhow!(
+                                "document {} awaits deferred encoding but has no stored text",
+                                document.id
+                            )
+                        })?)
+                    } else {
+                        None
+                    });
+                }
+                let fingerprint = documents::document_fingerprint(&store, &document)
+                    .ok_or_else(|| anyhow!("document {} has no stored text", document.id))?;
+                pending.push((document, fingerprint, texts));
+            }
+            pending
+        };
+        let dimensions = self.dimensions;
+        let mut encoded = 0;
+        for batch in pending.chunks(ENCODE_BATCH) {
+            let mutations: Vec<Mutation> = batch
+                .par_iter()
+                .map(|(document, fingerprint, texts)| {
+                    let vectors = document
+                        .chunks
+                        .iter()
+                        .zip(texts)
+                        .map(|(chunk, text)| match text {
+                            Some(text) => encoder.encode(text, dimensions),
+                            None => chunk.vector.clone(),
+                        })
+                        .collect();
+                    Mutation::EncodeDocument {
+                        id: document.id.clone(),
+                        version: document.version.clone(),
+                        fingerprint: *fingerprint,
+                        vectors,
+                    }
+                })
+                .collect();
+            self.commit(&mutations)?;
+            encoded += batch.len();
+        }
+        Ok(encoded)
     }
 
     /// Whether a document with this id currently resolves in the opened store.
@@ -299,8 +539,9 @@ impl HmsCore {
         &self,
         input: DocumentInput,
         stages: &crate::core::models::ModelStages,
+        mode: documents::EncodeMode,
     ) -> Result<u32> {
-        let document = self.prepare_document_with_models(input, stages)?;
+        let document = self.prepare_document_with_models(input, stages, mode)?;
         let count = document.chunks.len() as u32;
         self.commit(&[Mutation::Document(Arc::new(document))])?;
         Ok(count)
@@ -310,6 +551,7 @@ impl HmsCore {
         &self,
         mut input: DocumentInput,
         stages: &crate::core::models::ModelStages,
+        mode: documents::EncodeMode,
     ) -> Result<documents::StoredDocument> {
         let chunks: Vec<String> = documents::chunk_document(&input)?
             .into_iter()
@@ -326,12 +568,13 @@ impl HmsCore {
                     .collect(),
             );
         }
-        documents::prepare_with_keys(
+        documents::prepare_with_options(
             input,
             self.dimensions,
             self.config.embedding_space.as_ref().map(|s| s.dimensions),
             keys.as_deref(),
             self.config.text_encoder,
+            mode,
         )
     }
 

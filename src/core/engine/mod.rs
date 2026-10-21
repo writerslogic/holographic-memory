@@ -73,6 +73,8 @@ pub struct HmsCore {
     shards: RwLock<ShardSet>,
     graph: RelationStore,
     documents: RwLock<super::documents::DocumentStore>,
+    /// Snapshot answering unfiltered vector queries (`search_vectors`); built by maintenance.
+    vector_index: super::documents::VectorIndexSlot,
     #[cfg(feature = "local-models")]
     model_stages: RwLock<Option<Arc<crate::core::models::ModelStages>>>,
     #[cfg(feature = "local-embed")]
@@ -251,6 +253,7 @@ impl HmsCore {
             shards: RwLock::new(shard_set),
             graph: RelationStore::new(),
             documents: RwLock::new(super::documents::DocumentStore::default()),
+            vector_index: super::documents::VectorIndexSlot::default(),
             #[cfg(feature = "local-models")]
             model_stages: RwLock::new(None),
             #[cfg(feature = "local-embed")]

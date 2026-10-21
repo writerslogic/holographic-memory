@@ -239,10 +239,14 @@
         "properties": {
           "documentIndexTrained": {
             "type": "boolean"
+          },
+          "vectorIndex": {
+            "$ref": "#/components/schemas/VectorIndexBody"
           }
         },
         "required": [
-          "documentIndexTrained"
+          "documentIndexTrained",
+          "vectorIndex"
         ],
         "type": "object"
       },
@@ -333,9 +337,27 @@
       },
       "QueryIn": {
         "properties": {
+          "ef": {
+            "default": null,
+            "description": "Beam width of a graph-index query, 1..=4096 (recall knob). Default: `--query-ef`.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "filter": {
             "default": null,
             "description": "Keep documents whose metadata contains every key with an equal JSON value."
+          },
+          "index": {
+            "default": null,
+            "description": "Route of an unfiltered vector query: `auto` (the graph index when built, else the\nexact scan), `exact` or `graph` (409 `index_unavailable` until maintenance built one).\nDefault: the server's `--query-index`.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "query": {
             "default": null,
@@ -449,6 +471,9 @@
             "format": "double",
             "type": "number"
           },
+          "vectorIndex": {
+            "$ref": "#/components/schemas/VectorIndexBody"
+          },
           "vectors": {
             "format": "uint",
             "minimum": 0,
@@ -460,6 +485,7 @@
           "documents",
           "vectors",
           "documentIndexTrained",
+          "vectorIndex",
           "usedBytes",
           "capacityBytes"
         ],
@@ -526,6 +552,43 @@
         },
         "required": [
           "reloaded"
+        ],
+        "type": "object"
+      },
+      "VectorIndexBody": {
+        "description": "The vector snapshot that answers unfiltered vector queries (see `--query-index`).",
+        "properties": {
+          "current": {
+            "description": "Whether the snapshot is the live store. A stale snapshot still answers correctly:\ndeleted and replaced documents are dropped and new ones scored exactly.",
+            "type": "boolean"
+          },
+          "graph": {
+            "description": "Whether a graph index is built over the snapshot (`auto` queries use it).",
+            "type": "boolean"
+          },
+          "rebuildRecommended": {
+            "description": "Whether the next index maintenance or compaction will capture a fresh snapshot.",
+            "type": "boolean"
+          },
+          "rows": {
+            "description": "Embedded chunks the snapshot covers; 0 until maintenance builds one.",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "staleMutations": {
+            "description": "Inserts, replaces and deletes since the snapshot was captured.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rows",
+          "graph",
+          "current",
+          "staleMutations",
+          "rebuildRecommended"
         ],
         "type": "object"
       }

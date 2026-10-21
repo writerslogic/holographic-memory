@@ -1,0 +1,260 @@
+{
+  "schema": "hms-research-scan/v1",
+  "generated_unix_s": 1792552670,
+  "dataset": {
+    "kind": "nfcorpus",
+    "name": "nfcorpus_minilm",
+    "source": "/Users/davidcondrey/.cache/hms-bench/nfcorpus (BEIR NFCorpus, MiniLM-L6 384-d) + 46367 on-manifold distractors (noise=0.6)",
+    "n_docs": 50000,
+    "n_real_docs": 3633,
+    "dim": 384,
+    "n_queries": 323,
+    "seed": 42,
+    "load_ms": 128.988958,
+    "ground_truth_ms": 429.56895899999995
+  },
+  "config": {
+    "basis": "pca",
+    "head_dim": 16,
+    "residual_bits": 512,
+    "residual_words": 8,
+    "padded_dim": 512,
+    "residual_mode": "sym1",
+    "ks": [
+      64,
+      256,
+      1024
+    ],
+    "runs": 5,
+    "warmup_queries": 50,
+    "rerank_top": 10,
+    "calib_vectors": 1000,
+    "pca_iters": 32,
+    "head_variance_fraction": 0.31955567,
+    "threads": 1,
+    "target": "aarch64,neon,dotprod"
+  },
+  "basis_fit_ms": 26.216957999999998,
+  "methods": {
+    "split": {
+      "bytes_per_doc": 88,
+      "encode_ms": 98.307833,
+      "encode_us_per_doc": 1.96615666,
+      "per_k": [
+        {
+          "k": 64,
+          "recall_at_top": 0.9018575851393192,
+          "qps": 3846.9230475329146,
+          "us_per_query": 259.9480123839009,
+          "median_run_ms": 83.963208,
+          "run_ms": [
+            83.963208,
+            86.32258399999999,
+            86.71466699999999,
+            78.628833,
+            80.488541
+          ]
+        },
+        {
+          "k": 256,
+          "recall_at_top": 0.9721362229102173,
+          "qps": 2853.475592019106,
+          "us_per_query": 350.4498173374613,
+          "median_run_ms": 113.195291,
+          "run_ms": [
+            105.51804100000001,
+            114.397708,
+            113.195291,
+            113.418917,
+            112.157708
+          ]
+        },
+        {
+          "k": 1024,
+          "recall_at_top": 0.9956656346749226,
+          "qps": 1545.3963158086747,
+          "us_per_query": 647.0832043343653,
+          "median_run_ms": 209.007875,
+          "run_ms": [
+            209.007875,
+            211.83687500000002,
+            199.78758299999998,
+            196.532458,
+            223.205042
+          ]
+        }
+      ]
+    },
+    "int8": {
+      "bytes_per_doc": 388,
+      "encode_ms": 5.887125,
+      "encode_us_per_doc": 0.1177425,
+      "per_k": [
+        {
+          "k": 64,
+          "recall_at_top": 0.9996904024767801,
+          "qps": 1352.034382694797,
+          "us_per_query": 739.626160990712,
+          "median_run_ms": 238.89925,
+          "run_ms": [
+            247.98837500000002,
+            253.04645799999997,
+            238.89925,
+            211.011167,
+            204.674792
+          ]
+        },
+        {
+          "k": 256,
+          "recall_at_top": 0.9996904024767801,
+          "qps": 1228.4638496938348,
+          "us_per_query": 814.0247678018576,
+          "median_run_ms": 262.93,
+          "run_ms": [
+            227.822,
+            238.709125,
+            289.761167,
+            263.496541,
+            262.93
+          ]
+        },
+        {
+          "k": 1024,
+          "recall_at_top": 0.9990712074303407,
+          "qps": 885.7359492251181,
+          "us_per_query": 1129.0046439628484,
+          "median_run_ms": 364.6685,
+          "run_ms": [
+            359.88245800000004,
+            397.113333,
+            378.606541,
+            364.6685,
+            323.417625
+          ]
+        }
+      ]
+    },
+    "exact": {
+      "bytes_per_doc": 1537,
+      "encode_ms": 4.455625,
+      "encode_us_per_doc": 0.0891125,
+      "per_k": [
+        {
+          "k": 10,
+          "recall_at_top": 1.0,
+          "qps": 618.0994045335586,
+          "us_per_query": 1617.862746130031,
+          "median_run_ms": 522.569667,
+          "run_ms": [
+            511.236459,
+            645.4233750000001,
+            472.683792,
+            529.196458,
+            522.569667
+          ]
+        }
+      ]
+    }
+  },
+  "ablation": {
+    "target_recall": 0.95,
+    "threshold_max_k": 256,
+    "split_k_star": 256,
+    "int8_k_star": 64,
+    "split_qps_at_k_star": 2853.475592019106,
+    "int8_qps_at_k_star": 1352.034382694797,
+    "exact_qps": 618.0994045335586,
+    "ratio_split_vs_int8_matched": 2.110505197605791,
+    "ratio_split_vs_exact_matched": 4.616531857319046,
+    "ratio_at_equal_k": [
+      {
+        "k": 64,
+        "split_recall": 0.9018575851393192,
+        "int8_recall": 0.9996904024767801,
+        "split_qps": 3846.9230475329146,
+        "int8_qps": 1352.034382694797,
+        "ratio_split_vs_int8": 2.8452849252734604
+      },
+      {
+        "k": 256,
+        "split_recall": 0.9721362229102173,
+        "int8_recall": 0.9996904024767801,
+        "split_qps": 2853.475592019106,
+        "int8_qps": 1228.4638496938348,
+        "ratio_split_vs_int8": 2.322799806221621
+      },
+      {
+        "k": 1024,
+        "split_recall": 0.9956656346749226,
+        "int8_recall": 0.9990712074303407,
+        "split_qps": 1545.3963158086747,
+        "int8_qps": 885.7359492251181,
+        "ratio_split_vs_int8": 1.7447596173110702
+      }
+    ]
+  },
+  "mutation": {
+    "ops": 1000,
+    "leak_check_k": 1024,
+    "deleted_leaks": 0,
+    "replace_self_hits": 50,
+    "replace_self_checks": 50,
+    "split": {
+      "delete_bytes_touched": 9,
+      "delete_ns_per_op": 5.75,
+      "replace_bytes_touched": 1625,
+      "replace_us_per_op": 2.4740830000000003
+    },
+    "int8": {
+      "delete_bytes_touched": 5,
+      "delete_ns_per_op": 3.0,
+      "replace_bytes_touched": 1925,
+      "replace_us_per_op": 0.208167
+    },
+    "exact": {
+      "delete_bytes_touched": 1,
+      "delete_ns_per_op": 0.417,
+      "replace_bytes_touched": 1537,
+      "replace_us_per_op": 0.062167
+    }
+  },
+  "thresholds": [
+    {
+      "name": "split recall@10 >= 0.95 at some K <= 256",
+      "value": 0.9721362229102173,
+      "limit": 0.95,
+      "pass": true
+    },
+    {
+      "name": "split single-thread QPS >= 2500 at K* (smallest K <= 256 reaching recall 0.95)",
+      "value": 2853.475592019106,
+      "limit": 2500.0,
+      "pass": true
+    },
+    {
+      "name": "split / int8+rerank QPS ratio at matched recall >= 1.5",
+      "value": 2.110505197605791,
+      "limit": 1.5,
+      "pass": true
+    },
+    {
+      "name": "split encode time for 50000 docs < 250.0 ms (250 ms per 50k, scaled)",
+      "value": 98.307833,
+      "limit": 250.0,
+      "pass": true
+    },
+    {
+      "name": "no deleted id returned by any method after delete",
+      "value": 0.0,
+      "limit": 0.0,
+      "pass": true
+    },
+    {
+      "name": "replaced slots are found by their own new vector (split)",
+      "value": 50.0,
+      "limit": 50.0,
+      "pass": true
+    }
+  ],
+  "pass": true
+}

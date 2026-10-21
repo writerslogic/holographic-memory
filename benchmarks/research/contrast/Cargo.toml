@@ -1,0 +1,30 @@
+[package]
+name = "hms-research-contrast"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+description = "Kill test for counterfactual structural contrast on a 2,048-bit document sketch (research round 2)"
+
+# Standalone crate: the root manifest is not a workspace, this table keeps cargo from
+# looking any further up the tree.
+[workspace]
+
+[dependencies]
+# Versions match the root manifest (Cargo.toml [dependencies]).
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+rust-stemmers = "1.2.0"
+
+[[bin]]
+name = "hms-contrast"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+debug = false
+codegen-units = 1
+lto = "thin"

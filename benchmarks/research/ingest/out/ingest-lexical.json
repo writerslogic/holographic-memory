@@ -1,0 +1,28 @@
+{
+  "mode": "lexical",
+  "dim": 1024,
+  "batch": 512,
+  "documents": 3633,
+  "chunks": 3633,
+  "store_text": null,
+  "repeats": 5,
+  "ingest_s": [
+    0.607267084,
+    0.596350792,
+    0.6580885,
+    0.589175042,
+    0.602324334
+  ],
+  "median_ingest_s": 0.602324334,
+  "catch_up_s": [],
+  "median_catch_up_s": null,
+  "vectors_after_ingest": 0,
+  "vectors_after_catch_up": 0,
+  "parity": {
+    "queries": 16,
+    "lexical_identical": true,
+    "vector_identical": true,
+    "lexical_mismatches": [],
+    "vector_mismatches": []
+  }
+}

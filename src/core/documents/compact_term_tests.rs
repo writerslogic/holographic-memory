@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use super::{compact_chunks, EntangledHVec, StoredChunk, StoredDocument};
+use super::{compact_chunks, EntangledHVec, StoredChunk, StoredDocument, VectorState};
 use std::collections::BTreeMap;
 
 #[test]
@@ -34,6 +34,7 @@ fn rebuilt_terms_preserve_complete_document_bytes_and_legacy_frequencies() {
                 terms: terms.into(),
                 word_count: 0,
                 stemmed: count % 2 == 0,
+                vector_state: VectorState::Encoded,
             }],
         };
         let expected = serde_json::to_vec(&document).unwrap();

@@ -1,0 +1,39 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Standalone research crate (not a workspace member). It calls no root-crate
+# API, so the `holographic-memory` path dependency is intentionally omitted:
+# the kill test is about plain auto-vectorized Rust, and a root dependency
+# would add minutes of LTO build time for nothing. All third-party crates and
+# versions below are already used by the root crate.
+
+[package]
+name = "hms-research-scan"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+description = "Kill test: graph-free split-manifold scan (int8x16 head + sign residual) vs int8 and exact f32 scans"
+
+[workspace]
+
+[lib]
+name = "hms_research_scan"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hms-research-scan"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false

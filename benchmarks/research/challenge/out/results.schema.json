@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hms-research-challenge/results/v1",
+  "title": "hms-research-challenge run results",
+  "description": "Written by `hms-research-challenge run --out FILE`. Rates are fractions in [0, 1]; latencies are microseconds of single-caller-thread wall clock, the median across timed passes of each pass's nearest-rank percentile.",
+  "type": "object",
+  "required": ["schema", "generated_at_unix_ms", "split", "seed", "run", "dataset", "ingest", "arena", "methods", "challenge", "erase", "sqlite_baseline", "verdict"],
+  "properties": {
+    "schema": { "const": "hms-research-challenge/results/v1" },
+    "generated_at_unix_ms": { "type": "integer" },
+    "split": { "enum": ["tune", "test"], "description": "Which held-out template pool phrased records and queries." },
+    "seed": { "type": "integer", "description": "Seed of the structural draw (default 0x5EEDC0DE20260001)." },
+    "run": {
+      "type": "object",
+      "required": ["repeats", "warmup_passes", "dimensions", "store_dir", "single_threaded_timing", "evidence_budget"],
+      "properties": {
+        "repeats": { "type": "integer", "minimum": 1, "description": "Timed passes over the whole query set." },
+        "warmup_passes": { "type": "integer", "minimum": 1 },
+        "dimensions": { "type": "integer", "description": "Hypervector width of the engine underneath." },
+        "store_dir": { "type": ["string", "null"], "description": "null: a temporary directory removed after the run." },
+        "single_threaded_timing": { "const": true },
+        "evidence_budget": { "const": 4 }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "required": ["families", "conflict_families", "records", "queries", "query_mix", "templates"],
+      "properties": {
+        "families": { "type": "integer" },
+        "conflict_families": { "type": "integer", "description": "Families whose D7 and D8 are concurrent (two-branch conflict)." },
+        "records": { "type": "integer", "description": "families x 10." },
+        "queries": { "type": "integer", "description": "families x 4." },
+        "query_mix": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Counts per query kind: in_scope, out_of_scope, no_scope, as_of_mid." },
+        "templates": { "enum": ["tune", "test"] }
+      }
+    },
+    "ingest": {
+      "type": "object",
+      "required": ["batches", "facts_created", "facts_idempotent", "elapsed_ms"],
+      "properties": {
+        "batches": { "type": "integer" },
+        "facts_created": { "type": "integer" },
+        "facts_idempotent": { "type": "integer" },
+        "elapsed_ms": { "type": "number" }
+      }
+    },
+    "arena": {
+      "type": "object",
+      "required": ["families", "assertions", "elapsed_ms"],
+      "properties": {
+        "families": { "type": "integer" },
+        "assertions": { "type": "integer" },
+        "elapsed_ms": { "type": "number", "description": "Time to rebuild the arena from Memory::get records." }
+      }
+    },
+    "methods": {
+      "type": "object",
+      "description": "One report per method, keyed by name.",
+      "propertyNames": { "enum": ["global_bm25_top4", "scoped_bm25_latest_first_engine", "scoped_bm25_latest_first_local", "scoped_lookup_no_challenge", "challenge"] },
+      "additionalProperties": { "$ref": "#/$defs/methodReport" }
+    },
+    "challenge": {
+      "type": "object",
+      "required": ["queries", "support_overridden", "support_overridden_rate", "status_counts", "defeat_counts", "branches_truncated", "mean_items"],
+      "properties": {
+        "queries": { "type": "integer" },
+        "support_overridden": { "type": "integer", "description": "Queries where the challenge pass replaced the lexical winner." },
+        "support_overridden_rate": { "type": "number" },
+        "status_counts": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Keys: resolved, unresolved-conflict." },
+        "defeat_counts": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Keys: none, retracted, superseded, less-specific, outranked." },
+        "branches_truncated": { "type": "integer" },
+        "mean_items": { "type": "number", "description": "Mean records returned per query (at most 4)." }
+      }
+    },
+    "erase": {
+      "type": "object",
+      "required": ["families_wiped", "assertions_dropped", "facts_forgotten", "wipe_p50_us", "wipe_p95_us", "verified", "failures", "wipes"],
+      "properties": {
+        "families_wiped": { "type": "integer" },
+        "assertions_dropped": { "type": "integer" },
+        "facts_forgotten": { "type": "integer" },
+        "wipe_p50_us": { "type": "number" },
+        "wipe_p95_us": { "type": "number" },
+        "verified": { "type": "boolean", "description": "Every wiped family left the arena and the memory API, and the next family's answers were unchanged." },
+        "failures": { "type": "array", "items": { "type": "string" } },
+        "wipes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "arena_assertions_dropped", "facts_forgotten", "elapsed_us"],
+            "properties": {
+              "key": { "$ref": "#/$defs/familyKey" },
+              "arena_assertions_dropped": { "type": "integer" },
+              "facts_forgotten": { "type": "integer" },
+              "elapsed_us": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "sqlite_baseline": { "type": "string", "description": "Why baseline (d) was skipped." },
+    "verdict": {
+      "type": "object",
+      "required": ["strongest_baseline", "strongest_baseline_correctness", "challenge_correctness", "margin_points", "required_margin_points", "latency_reference", "reference_p95_us", "challenge_p95_us", "p95_ratio", "max_p95_ratio", "accuracy_pass", "latency_pass", "pass", "summary"],
+      "properties": {
+        "strongest_baseline": { "type": "string", "description": "The non-challenge method with the highest correctness." },
+        "strongest_baseline_correctness": { "type": "number" },
+        "challenge_correctness": { "type": "number" },
+        "margin_points": { "type": "number", "description": "(challenge - strongest baseline) x 100." },
+        "required_margin_points": { "const": 10.0 },
+        "latency_reference": { "enum": ["scoped_bm25_latest_first_engine", "scoped_bm25_latest_first_local"], "description": "The faster scope-filtered BM25 variant (conservative)." },
+        "reference_p95_us": { "type": "number" },
+        "challenge_p95_us": { "type": "number" },
+        "p95_ratio": { "type": "number", "description": "challenge p95 / reference p95." },
+        "max_p95_ratio": { "const": 2.0 },
+        "accuracy_pass": { "type": "boolean" },
+        "latency_pass": { "type": "boolean" },
+        "pass": { "type": "boolean", "description": "accuracy_pass AND latency_pass; also printed as PASS/FAIL." },
+        "summary": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "familyKey": {
+      "type": "object",
+      "required": ["entity", "attribute"],
+      "properties": { "entity": { "type": "string" }, "attribute": { "type": "string" } }
+    },
+    "breakdown": {
+      "type": "object",
+      "required": ["queries", "correct", "correctness", "answer_only", "stale"],
+      "properties": {
+        "queries": { "type": "integer" },
+        "correct": { "type": "integer" },
+        "correctness": { "type": "number" },
+        "answer_only": { "type": "integer" },
+        "stale": { "type": "integer" }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "required": ["p50_us", "p95_us", "p99_us", "mean_us", "max_us", "repeats", "warmup_passes", "per_pass_p95_us"],
+      "properties": {
+        "p50_us": { "type": "number" },
+        "p95_us": { "type": "number" },
+        "p99_us": { "type": "number" },
+        "mean_us": { "type": "number" },
+        "max_us": { "type": "number" },
+        "repeats": { "type": "integer" },
+        "warmup_passes": { "type": "integer" },
+        "per_pass_p95_us": { "type": "array", "items": { "type": "number" }, "description": "p95 of each timed pass; the reported p95 is their median." }
+      }
+    },
+    "methodReport": {
+      "type": "object",
+      "required": ["method", "queries", "correct", "correctness", "answer_only_accuracy", "stale_answers", "stale_answer_rate", "exception_queries", "missed_exceptions", "missed_exception_rate", "conflict_queries", "blended_on_conflict", "unresolved_returned", "over_budget", "latency", "by_query_kind", "by_family_type"],
+      "properties": {
+        "method": { "type": "string" },
+        "queries": { "type": "integer" },
+        "correct": { "type": "integer", "description": "Answer-and-evidence correct at the 4-item budget." },
+        "correctness": { "type": "number", "description": "correct / queries. The headline metric." },
+        "answer_only_accuracy": { "type": "number", "description": "Right answer (or right conflict) regardless of evidence." },
+        "stale_answers": { "type": "integer" },
+        "stale_answer_rate": { "type": "number", "description": "Answers that are superseded or retracted claims as of the query." },
+        "exception_queries": { "type": "integer" },
+        "missed_exceptions": { "type": "integer" },
+        "missed_exception_rate": { "type": "number", "description": "Over exception_queries." },
+        "conflict_queries": { "type": "integer", "description": "Queries whose gold is UnresolvedConflict." },
+        "blended_on_conflict": { "type": "integer", "description": "Conflict queries answered with a ranking (counted wrong)." },
+        "unresolved_returned": { "type": "integer" },
+        "over_budget": { "type": "integer" },
+        "latency": { "$ref": "#/$defs/latency" },
+        "by_query_kind": { "type": "object", "additionalProperties": { "$ref": "#/$defs/breakdown" }, "description": "Keys: in_scope, out_of_scope, no_scope, as_of_mid." },
+        "by_family_type": { "type": "object", "additionalProperties": { "$ref": "#/$defs/breakdown" }, "description": "Keys: normal, conflict." }
+      }
+    }
+  }
+}
