@@ -315,7 +315,10 @@ def run_text(dataset, spec, systems, out_path=None):
                             "retrieval": "lexical only, OR over the lowercase alphanumeric query word set, top 100; each system's own analyzer and default BM25",
                             "timing": "one query at a time, single client thread; HMS timed inside its process, Python systems inside their worker",
                             "hms_rows": "hms = `--encode lexical` (BM25 index only, like-for-like); hms-eager = default eager encoding (chunk hypervectors at ingest); every build repeat is one cold process",
-                            "interleaving": "each round runs HMS and every comparator once, order rotated per round"},
+                            "interleaving": "each round runs HMS and every comparator once, order rotated per round",
+                            "peak_rss": "wait4 rusage of that phase's own process, forked from a small helper so it never inherits the orchestrator's RSS (Linux)",
+                            "disk": "allocated bytes of the store directory (du); where the filesystem reports sparse files as fully allocated, only non-zero 4 KiB blocks count",
+                            "passes": "per timed pass: queries, total_ns and p50/p90/p99/max ns of the per-query latencies"},
                "facts": registry.FACTS, "timing_boundary": registry.TIMING_BOUNDARY, "not_run": registry.NOT_RUN, "systems": {}, "skipped": {}}
     input_path = folder / "input.json"
     # Every system's serve phase reads the queries alone, so no worker's serving RSS includes
