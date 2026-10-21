@@ -13,7 +13,7 @@ import subprocess
 import httpx
 import pytest
 
-from holographic_sdk import AsyncHolographicClient, HolographicClient
+from holographic_sdk import AsyncHolographicClient, HolographicClient, HolographicError
 
 BIN = os.environ.get("HMS_SERVER_BIN")
 pytestmark = pytest.mark.skipif(not BIN, reason="HMS_SERVER_BIN not set")
@@ -81,6 +81,9 @@ def test_sync_client_end_to_end(server):
         with pytest.raises(httpx.HTTPStatusError) as err:
             client.delete_document("s2")
         assert err.value.response.status_code == 404
+        # the server's error body is read into a HolographicError, which is still an HTTPStatusError
+        assert isinstance(err.value, HolographicError)
+        assert (err.value.status_code, err.value.code) == (404, "not_found")
 
 
 def test_ids_needing_escaping_can_be_deleted(server):

@@ -12,6 +12,33 @@ _DEFAULT_MASK_SALT = b"holographic-sdk-mask-v1"
 _MIN_SALT_LEN = 16
 
 
+class HolographicError(httpx.HTTPStatusError):
+    """The service rejected a request with its documented ``{"error": {"code", "message"}}`` body.
+
+    ``status_code``, ``code`` and ``message`` come from that response. It is still an
+    ``httpx.HTTPStatusError``, so code that catches that, such as the importer's retries, keeps working.
+    """
+
+    def __init__(self, message: str, code: str, response: httpx.Response) -> None:
+        super().__init__(message, request=response.request, response=response)
+        self.message = message
+        self.code = code
+        self.status_code = response.status_code
+
+
+def _check(res: httpx.Response) -> None:
+    """Raise `HolographicError` for an error in the service's shape, and `raise_for_status()` otherwise."""
+    if res.is_success:
+        return
+    try:
+        error = res.json()["error"]
+        code, message = error["code"], error["message"]
+    except (ValueError, KeyError, TypeError):
+        res.raise_for_status()
+        return
+    raise HolographicError(message, code, res)
+
+
 def _get_headers(api_key: Optional[str], tenant_id: Optional[str]) -> Dict[str, str]:
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -124,17 +151,17 @@ class HolographicClient:
         res = self.client.post(f"{self.url}/api/v1/documents/batch", json=docs_to_send)
         if res.status_code == 404: # Fallback for old API
             for doc in docs_to_send:
-                self.client.post(f"{self.url}/api/v1/documents", json=doc).raise_for_status()
+                _check(self.client.post(f"{self.url}/api/v1/documents", json=doc))
         else:
-            res.raise_for_status()
+            _check(res)
 
     def delete_document(self, doc_id: str) -> None:
         res = self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
-        res.raise_for_status()
+        _check(res)
 
     def maintain_document_index(self) -> Dict[str, Any]:
         res = self.client.post(f"{self.url}/api/v1/index/maintain", json={})
-        res.raise_for_status()
+        _check(res)
         return res.json()
 
     def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -144,7 +171,7 @@ class HolographicClient:
             payload["filter"] = filter
             
         res = self.client.post(f"{self.url}/api/v1/query", json=payload)
-        res.raise_for_status()
+        _check(res)
         return res.json()
 
 
@@ -197,17 +224,17 @@ class AsyncHolographicClient:
         if res.status_code == 404: # Fallback for old API
             for doc in docs_to_send:
                 res_single = await self.client.post(f"{self.url}/api/v1/documents", json=doc)
-                res_single.raise_for_status()
+                _check(res_single)
         else:
-            res.raise_for_status()
+            _check(res)
 
     async def delete_document(self, doc_id: str) -> None:
         res = await self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
-        res.raise_for_status()
+        _check(res)
 
     async def maintain_document_index(self) -> Dict[str, Any]:
         res = await self.client.post(f"{self.url}/api/v1/index/maintain", json={})
-        res.raise_for_status()
+        _check(res)
         return res.json()
 
     async def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -217,5 +244,5 @@ class AsyncHolographicClient:
             payload["filter"] = filter
             
         res = await self.client.post(f"{self.url}/api/v1/query", json=payload)
-        res.raise_for_status()
+        _check(res)
         return res.json()
