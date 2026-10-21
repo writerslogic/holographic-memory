@@ -1,0 +1,20 @@
+{
+  "what": "Default feature set (plus `server` for hms-server) built from the commit before the embeddings merge and from the merge commit; release profile, --locked, separate target dirs.",
+  "pre": "7a60e35",
+  "post": "932bb1f (#132)",
+  "binary_bytes": {
+    "hms-server": {"pre": 5539376, "post": 5539360},
+    "document-search-bench": {"pre": 1579104, "post": 1595600}
+  },
+  "notes": [
+    "hms-server is 16 bytes smaller after the merge; document-search-bench is 16.5 KB larger. Both differences come from the new TextEncoder::LocalEmbedV1 variant (name/parse arms, config-validation message) and one branch in document preparation; no embedder, tokenizer, ureq or sha2-for-embed code is linked (`strings` finds only the 'local-embed-v1' encoder name and the validation message).",
+    "No new crate enters the default dependency tree (`cargo tree` before/after identical); libm, tokenizers, ureq are optional behind local-embed."
+  ],
+  "serving_rss_microcheck": {
+    "command": "document-search-bench --documents 20000 (synthetic 384-d embeddings, 3 query modes, filtered and unfiltered), /usr/bin/time -l, alternating pre/post, 3 runs each",
+    "max_rss_bytes": {"pre": [183713792, 184270848, 183664640], "post": [182239232, 183926784, 183943168]},
+    "wall_seconds": {"pre": [6.46, 6.54, 6.60], "post": [6.50, 6.56, 6.55]},
+    "result": "no difference beyond run-to-run noise (post mean 183.37 MB vs pre mean 183.88 MB)",
+    "limits": "shared machine; this is a stand-in microcheck, not the V38 transport serving-RSS gate, which was not run"
+  }
+}
