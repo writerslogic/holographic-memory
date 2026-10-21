@@ -483,32 +483,36 @@ impl LexicalScratch {
             }
             self.touched.truncate(reached);
         }
-        // Selection: a bounded heap of the best `limit` scores sets the bar a candidate must
-        // reach; every candidate at or above the bar when it is read is kept, so all chunks
-        // scoring at least the final bar (the `limit`-th best score) are among the kept ones,
-        // ties included, and the exact order decides between them.
+        // Selection: a bounded heap holds the best `limit` scores read so far (as `f64` bits,
+        // which order positive values); once it is full its smallest is the floor a later
+        // score must reach. Every score at or above the floor when read is kept, so all chunks
+        // scoring at least the final floor (the `limit`-th best score) are among the kept
+        // ones, ties included, and the exact order decides between them.
         let limit = prepared.limit;
         let (candidates, best) = (&mut self.candidates, &mut self.best);
         candidates.clear();
         best.clear();
+        // The least admissible score as bits: any positive one until the heap is full, then the
+        // floor. One unsigned range test admits positive scores (infinity included) at or
+        // above it and turns away zero, NaN and the scores below it without branching on each.
+        const INFINITY: u64 = 0x7FF0_0000_0000_0000;
+        let mut floor = 1u64;
         let mut consider = |slot: u32, score: f64| {
-            let positive = score > 0.0;
-            if !positive {
+            let bits = score.to_bits();
+            if bits.wrapping_sub(floor) > INFINITY - floor {
                 return;
             }
-            let bits = score.to_bits();
+            candidates.push((score, slot));
             if best.len() < limit {
                 best.push(std::cmp::Reverse(bits));
+            } else if bits > floor {
+                *best.peek_mut().expect("full heap") = std::cmp::Reverse(bits);
             } else {
-                let mut floor = best.peek_mut().expect("full heap");
-                if bits < floor.0 {
-                    return;
-                }
-                if bits > floor.0 {
-                    *floor = std::cmp::Reverse(bits);
-                }
+                return;
             }
-            candidates.push((score, slot));
+            if best.len() == limit {
+                floor = best.peek().expect("full heap").0;
+            }
         };
         if dense {
             for (slot, score) in scores.iter_mut().enumerate() {
@@ -677,14 +681,16 @@ fn execute_chunks(captured: &CapturedQuery, chunks: &[CapturedChunk]) -> Vec<Doc
         |a: &(f64, usize), b: &(f64, usize)| b.0.total_cmp(&a.0).then_with(|| order(a.1, b.1));
     top_ranked(&mut lexical, prepared.limit, by_score);
     top_ranked(&mut semantic, prepared.limit, by_score);
-    let mut fused = BTreeMap::<usize, f64>::new();
+    // Each list's contribution per chunk, lexical first; a stable sort by chunk then sums them
+    // in that order, starting from 0.
+    let mut contributions = Vec::with_capacity(lexical.len() + semantic.len());
     for (indices, weight) in [
         (&lexical, prepared.lexical_weight),
         (&semantic, prepared.semantic_weight),
     ] {
         if prepared.rrf {
             for (rank, &(_, i)) in indices.iter().enumerate() {
-                *fused.entry(i).or_default() += weight / (60.0 + rank as f64 + 1.0);
+                contributions.push((i, weight / (60.0 + rank as f64 + 1.0)));
             }
             continue;
         }
@@ -698,10 +704,17 @@ fn execute_chunks(captured: &CapturedQuery, chunks: &[CapturedChunk]) -> Vec<Doc
             } else {
                 1.0
             };
-            *fused.entry(i).or_default() += weight * normalized;
+            contributions.push((i, weight * normalized));
         }
     }
-    let mut ranked: Vec<_> = fused.into_iter().collect();
+    contributions.sort_by_key(|&(i, _)| i);
+    let mut ranked: Vec<(usize, f64)> = Vec::with_capacity(contributions.len());
+    for (i, contribution) in contributions {
+        match ranked.last_mut() {
+            Some(fused) if fused.0 == i => fused.1 += contribution,
+            _ => ranked.push((i, 0.0 + contribution)),
+        }
+    }
     top_ranked(&mut ranked, prepared.k, |a, b| {
         b.1.total_cmp(&a.1).then_with(|| order(a.0, b.0))
     });
