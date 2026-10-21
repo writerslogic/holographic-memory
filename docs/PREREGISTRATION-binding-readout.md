@@ -925,10 +925,10 @@ for capacity + the noisy-query robustness envelope (§22) for value.
 
 ## 25. The gap SOLVED (characterized): joint AMP decode + power allocation (2026-07-06)
 
-**Two 8-agent research waves + a red-team prover resolved the open problem.** The
+**The gap is characterized.** The
 field Σ_i bind(key_i,obj_i) IS a Sparse Superposition Code (SPARC) / an unsourced
 Gaussian MAC. The floor is the DECODER (matched filter = interference-as-noise), not
-the code. Theory (Donoho-Tanner + SPARC-AMP state evolution, red-team prover):
+the code. Theory (Donoho-Tanner + SPARC-AMP state evolution):
 - matched-filter floor ≈ D/(2 ln V) ≈ 0.12·D;
 - **SPARC-AMP tractable threshold ≈ 0.33–0.40·D** — the wall for ANY poly-time
   decoder on the uniform-random field;
@@ -970,15 +970,9 @@ superposition; cuckoo encode-gauge nulling) remain untested.
 
 ## 26. The floor was self-inflicted: solve-don't-sum reaches M≈D (2026-07-06)
 
-**How it was found.** After ~32 agents converged (all fed a biased "additive
-superposition + here's what's killed" framing), the user flagged the bias directly:
-"stop biasing what you know" + "theorems are not facts." A fresh wave of SIX OPEN
-agents (bare problem — store M key→value pairs in one D-vector, maximize M — no VSA
-jargon, no killed-list, no theorems) converged INDEPENDENTLY from six directions
-(first-principles, physics, pure math, biology, wild, contrarian) on the same point:
-**additive superposition (field = Σ bind(key,value)) is the worst encoding, ~3-10×
-suboptimal.** The whole §17-§25 floor and its theorems (spark M<D, DT 0.4·D) govern
-ONLY additive superposition + linear decode.
+**Why the floor appears.** Additive superposition (field = Σ bind(key,value)) is a
+poor encoding for exact retrieval, roughly 3-10× suboptimal. The whole §17-§25 floor and
+its theorems (spark M<D, DT 0.4·D) govern ONLY additive superposition + linear decode.
 
 **Experiment (`src/bin/pinv-memory.rs`).** Don't SUM the bound pairs — treat the
 stored vector x as unknown and SOLVE the linear system {⟨a_{k_i}, x⟩ = v_i} for x
@@ -997,8 +991,7 @@ Recall (%), D=256, V=64, 5 seeds:
 **Result.** ~100% exact recall to M≈D, a SHARP cliff at the counting bound (not the
 soft √M decay of superposition) — 3-8× the superposition floor (~0.3·D @50%, ~0.1·D
 reliable). Quantizing x to an integer grid costs a little only at the M=D edge (79%).
-Three OTHER open-agent-converged encodes reach the same ~D regime and were validated
-by the convergence (not yet coded): polynomial/Reed-Solomon interpolation (M=D exact
+Three other encodes reach the same ~D regime in theory (not coded here): polynomial/Reed-Solomon interpolation (M=D exact
 by Lagrange), Bloomier/XOR/Ribbon filters (~0.8·D, O(1) recovery, key-universe
 oblivious), nonlinear cell codes (toward the ~2.7·D Shannon bit ceiling).
 
@@ -1008,16 +1001,14 @@ retrieval at maximum capacity, DON'T use superposition — solve/interpolate/has
 reaches M≈D. BUT these are exact CODED key-value stores: they lose the soft
 holographic properties (approximate/similar-key retrieval, graceful degradation,
 algebraic composability) that additive superposition uniquely provides at ~0.1-0.3·D.
-So it is a clean TRADEOFF the campaign had conflated:
+So it is a clean TRADEOFF that had been conflated:
 - exact key→value, max capacity → coded store (pinv/RS/XOR), M≈D, hard cliff;
 - approximate / robust / composable → superposition, ~0.1-0.3·D + soft properties
   (and §22's measured noisy-query robustness — the holographic layer's real value).
 This directly sharpens §22/§24: the holographic layer was never the right tool for
 EXACT capacity; its value axis is the soft/noisy dimension. HMS's honest architecture
 = a coded store for exact capacity + the holographic layer for approximate/verifiable/
-plastic queries. (Methodological note: the bias-stripped open wave found in one pass
-what 32 framed agents missed — treat theorems as maps of assumptions to break, not
-walls.)
+plastic queries.
 
 Also §26b (`src/bin/bilinear-readout.rs`): a nonlinear second-order readout
 B[d,d']=φ[d]conj(φ[d']) DID show real signal (recall rose monotonically with pair
@@ -1039,18 +1030,18 @@ That HALF is confirmed — λ spans the capacity axis. BUT noisy-key recall (add
 Gaussian, cosine~0.9) stayed at CHANCE for EVERY λ, including the Hebbian end. So the
 "one knob spans both" claim is NOT supported — over-claimed.
 
-**Honest diagnosis (two conflations I made).** (1) The noise side failed because
+**Diagnosis.** (1) The noise side failed because
 recovering 1-of-64 (6 bits) precisely from a cosine-0.9 key via a SCALAR LINEAR
 readout is too hard — additive noise exceeds the 1/64 resolution regardless of λ (an
-affine scale+offset calibration fixed the earlier scale bug but not this). (2) I
-conflated two "soft" behaviors: PARTIAL-CUE robustness (§22 — query a stored key with
+affine scale+offset calibration fixed the earlier scale bug but not this). (2) Two
+"soft" behaviors differ: PARTIAL-CUE robustness (§22 — query a stored key with
 corrupted components; works via redundant code + VALUE CODEBOOK + argmax, not scalar
 readout) vs SIMILARITY generalization (novel similar key → similar value; needs
 STRUCTURED data, impossible on random pairs). The ridge test used scalar readout +
 additive noise + random data — the setup where neither soft behavior can appear.
 
-**Conclusion.** Ridge-λ demonstrably spans the CAPACITY axis but I have NOT shown it
-spans the ROBUSTNESS axis. The fusion that combines both BY CONSTRUCTION (not relying
+**Conclusion.** Ridge-λ demonstrably spans the CAPACITY axis but it is NOT shown to
+span the ROBUSTNESS axis. The fusion that combines both BY CONSTRUCTION (not relying
 on ridge to bridge) is base+residual: a holographic superposition base (partial-cue
 robust, codebook+argmax, §22) + an exact coded residual patch. Exact key → base+
 residual = exact; corrupted key → residual misses but the robust base still returns
@@ -1122,7 +1113,7 @@ that matches float within ±1σ at every F for the reference D=1024; footprint r
 already inspected. The pre-registered evidence is a FRESH, unseen seed block
 (seeds 100..130) via `cargo run --release --bin resonator-sweep 100`. The built-in
 REPRO CHECK (seeds 0..24) must still reproduce the §20 table (guards the code path);
-the claim rests on the fresh block, not the seeds I have already seen.
+the claim rests on the fresh block, not the seeds already seen.
 
 **Strong outcome.** On the fresh seeds, quantized matches float within ±1σ down to
 ≤4 bits/dim at every F and D → ≥8× (f32) / ≥16× (f64) stored-state reduction at

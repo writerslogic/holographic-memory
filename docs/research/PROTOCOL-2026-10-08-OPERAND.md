@@ -4,8 +4,7 @@ Evaluate only the existing 100 S dev IDs, of which 84 have scored user-turn
 evidence. Keep all 400 held-out IDs untouched. No service calls, paid compute,
 new embeddings, reader, judge, answer labels in selection, or parameter sweep.
 The 13 diagnosed misses may inform the mechanism; this is repeatedly used dev,
-not a fresh confirmation set. Diagnosis is retained in
-`target/conversation-geometry-validation/missing-operands.txt` and `/tmp/missing.txt`.
+not a fresh confirmation set.
 
 Inputs: the independently validated cached tuned ranking in
 `evidence_completeness_dev.json`, its summary, the pinned cleaned S release

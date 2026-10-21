@@ -931,7 +931,7 @@ mod tests {
         }
     }
 
-    /// Kill test for the 1-bit screen (docs/research/IDEAS-2026-10.md, E2): per neighbour,
+    /// Kill test for the 1-bit screen (experiment E2): per neighbour,
     /// the screen must cost < 25% of the 8-bit SDOT estimate on a nytimes-sized working set
     /// (300k rows, 256 dims: 256-byte code rows, 40-byte screen rows) with the search loop's
     /// access pattern (64 random fresh neighbours per expansion, prefetched, then estimated).

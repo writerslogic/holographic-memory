@@ -3,7 +3,7 @@
 ## Checked-in inputs and reports
 
 The [2026-09-14 reports](../benchmarks/review-2026-09-14) were produced locally on an Apple M4,
-macOS arm64, with the format-2 working tree. The Node evaluation records Node version, model
+macOS arm64. The Node evaluation records Node version, model
 identity, preprocessing fingerprint, artifact revisions, dtype, and dataset SHA-256. Rust
 reports record engine version, dimensions, corpus size, architecture, and operating system.
 
