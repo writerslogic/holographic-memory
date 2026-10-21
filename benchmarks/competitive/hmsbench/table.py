@@ -211,7 +211,7 @@ def render_section(sec, cells_out):
              f"{hw['os']}{', GitHub-hosted runner' if hw.get('hosted_runner') else ''}), commit `{data['commit'][:10]}`, {data['date'][:10]}. " +
              f"Raw results: [{path.name}](../../{rel(path)}). Intervals: {sec['level'] * 100:.2f}% bootstrap (Bonferroni family of {sec['family']} verdict metrics).", "",
              *timing_boundary_lines(data),
-             "| Metric | HMS | Best other | Advantage (HMS vs best other) | Verdict |", "|---|---|---|---|---|"]
+             f"| Metric | {'hms-server' if is_server(data) else 'HMS'} | Best other | Advantage (HMS vs best other) | Verdict |", "|---|---|---|---|---|"]
     tally = {"WIN": [], "TIE": [], "LOSS": [], "n/m": [], "n/v": []}
     for key, label, unit, dec in spec:
         cells = metrics.get(key)

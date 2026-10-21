@@ -133,7 +133,9 @@ class ServerSystem:
         self.logs.mkdir(parents=True, exist_ok=True)
         self.pre_start()
         argv, env, cwd = self.command()
-        server_proc.chown_for_server(self.data, self.logs)
+        # As root (Modal), the server runs as an unprivileged user and owns its whole workdir
+        # (data, logs, OpenSearch's config copy).
+        server_proc.chown_for_server(self.workdir)
         self.server = server_proc.Server(f"{self.ENGINE}-{self.phase}", argv, self.logs, env=env, cwd=cwd).start()
         self.server.wait_ready(self.ready, timeout=self.READY_TIMEOUT)
         self.connect()
@@ -398,8 +400,7 @@ class OpenSearchBase(ServerSystem):
         heap = os.environ.get("HMS_BENCH_OPENSEARCH_HEAP", "4g")
         settings = {"path.data": self.data, "path.logs": self.logs, "http.port": self.port, "transport.port": transport,
                     "network.host": "127.0.0.1", "discovery.type": "single-node", "cluster.name": "hmsbench", "node.name": "n1",
-                    "plugins.security.disabled": "true", "search.concurrent_segment_search.mode": "none",
-                    "bootstrap.memory_lock": "false"}
+                    "plugins.security.disabled": "true", "bootstrap.memory_lock": "false"}
         argv = [home / "bin" / "opensearch", *(x for k, v in settings.items() for x in ("-E", f"{k}={v}"))]
         env = {"OPENSEARCH_PATH_CONF": str(conf), "OPENSEARCH_JAVA_OPTS": f"-Xms{heap} -Xmx{heap}"}
         return argv, env, self.workdir
@@ -412,6 +413,8 @@ class OpenSearchBase(ServerSystem):
 
     def connect(self):
         self.http = Http(self.port)
+        # One query, one search thread: concurrent segment search off (a dynamic cluster setting).
+        self.http.call("PUT", "/_cluster/settings", {"persistent": {"search.concurrent_segment_search.mode": "none"}})
 
     def finish_index(self):
         """Queryable and steady: refresh, merge to one segment, refresh, restore the refresh interval."""
@@ -623,6 +626,49 @@ class PgTsvector(Postgres):
 
     def delete_doc(self, doc, n):
         self.db.execute("DELETE FROM docs WHERE id = %s", (doc["id"],))
+
+
+class ParadeDb(PgTsvector):
+    """pg_search (Tantivy inside PostgreSQL): BM25 over an english-stemmed field, OR query."""
+
+    ENGINE = "paradedb"
+
+    def command(self):
+        argv, env, cwd = super().command()
+        home = servers.artifact_dir("paradedb")
+        share, lib = str((home / "share").resolve()), str((home / "lib").resolve())
+        out = []
+        for arg in argv:
+            arg = str(arg)
+            if arg.startswith("extension_control_path="):
+                arg = f"{arg}:{share}"
+            elif arg.startswith("dynamic_library_path="):
+                arg = f"{arg}:{lib}"
+            out.append(arg)
+        if not any(a.startswith("extension_control_path=") for a in out):
+            out += ["-c", f"extension_control_path=$system:{share}", "-c", f"dynamic_library_path=$libdir:{lib}"]
+        # pg_search refuses to load otherwise; resolved through dynamic_library_path.
+        out += ["-c", "shared_preload_libraries=pg_search"]
+        return out, env, cwd
+
+    def create(self, params):
+        self.db.execute("CREATE EXTENSION IF NOT EXISTS pg_search CASCADE")
+        self.db.execute("CREATE TABLE docs (n integer PRIMARY KEY, id text NOT NULL UNIQUE, body text NOT NULL)")
+
+    def wait_queryable(self, params):
+        self.db.execute("CREATE INDEX docs_bm25 ON docs USING bm25 (n, (body::pdb.simple('stemmer=english'))) WITH (key_field = 'n')")
+        self.db.execute("VACUUM ANALYZE docs")
+        self.checkpoint()
+
+    def prepare(self, text):
+        return " ".join(words(text))
+
+    def search(self, query):
+        if not query:
+            return []
+        rows = self.db.execute("SELECT id, pdb.score(n) AS s FROM docs WHERE body ||| %s "
+                               f"ORDER BY s DESC, id LIMIT {TEXT_K}", (query,)).fetchall()
+        return [(i, float(s)) for i, s in rows]
 
 
 # ------------------------------------------------------------------ Redis 8 query engine
@@ -876,7 +922,8 @@ class OpenSearchBm25(OpenSearchBase):
 
 ANN = {"hms-server": HmsServer, "qdrant-server": QdrantServer, "weaviate": WeaviateServer, "opensearch-knn": OpenSearchKnn,
        "pgvector": PgVector, "redis-vss": RedisVss}
-TEXT = {"meilisearch": Meilisearch, "typesense": Typesense, "opensearch-bm25": OpenSearchBm25, "pg-tsvector": PgTsvector}
+TEXT = {"meilisearch": Meilisearch, "typesense": Typesense, "opensearch-bm25": OpenSearchBm25, "pg-tsvector": PgTsvector,
+        "paradedb": ParadeDb}
 
 
 # ------------------------------------------------------------------ phases

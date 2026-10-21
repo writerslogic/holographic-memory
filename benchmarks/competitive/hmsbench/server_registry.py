@@ -21,6 +21,7 @@ SERVER_SYSTEMS = {
     "typesense": {"display": "Typesense", "kind": "server-text", "env": ENV, "engine": "typesense", "package": "typesense", "family": "lexical"},
     "opensearch-bm25": {"display": "OpenSearch BM25", "kind": "server-text", "env": ENV, "engine": "opensearch", "package": "opensearch", "family": "lexical"},
     "pg-tsvector": {"display": "PostgreSQL tsvector (ts_rank)", "kind": "server-text", "env": ENV, "engine": "postgres", "package": "postgresql", "family": "lexical"},
+    "paradedb": {"display": "ParadeDB pg_search (BM25)", "kind": "server-text", "env": ENV, "engine": "paradedb", "package": "pg_search", "family": "lexical"},
 }
 
 _HTTP = "one persistent HTTP/1.1 keep-alive connection from a CPython client on loopback; request body serialized before the timer, response JSON decoded inside it"
@@ -35,6 +36,7 @@ SERVER_TIMING_BOUNDARY = {
     "typesense": f"{_HTTP}; GET search with drop_tokens_threshold=100 (its own text-match ranking, not BM25)",
     "opensearch-bm25": f"{_HTTP}; _search match query (OR), english analyzer, default BM25; one shard",
     "pg-tsvector": "psycopg 3 over one TCP connection, server-side prepared statement; OR of the query words via to_tsquery, ranked by ts_rank (not BM25)",
+    "paradedb": "psycopg 3 over one TCP connection, server-side prepared statement; `|||` (match any word) over an english-stemmed field, BM25 via pdb.score",
 }
 
 _DOC = "documentation, not exercised here"
@@ -50,6 +52,7 @@ SERVER_FACTS = {
     "typesense": {"service_needed": {"value": "yes", "basis": _DOC}, "encrypted_at_rest": {"value": "no built-in", "basis": _DOC}},
     "opensearch-bm25": {"service_needed": {"value": "yes (JVM)", "basis": _DOC}, "encrypted_at_rest": {"value": "no built-in (filesystem level)", "basis": _DOC}},
     "pg-tsvector": {"service_needed": {"value": "yes", "basis": _DOC}, "encrypted_at_rest": {"value": "no built-in (filesystem level)", "basis": _DOC}},
+    "paradedb": {"service_needed": {"value": "yes (PostgreSQL extension)", "basis": _DOC}, "encrypted_at_rest": {"value": "no built-in (filesystem level)", "basis": _DOC}},
 }
 
 # What a replace/delete acknowledgement means for each server, as configured here.
@@ -61,6 +64,7 @@ DURABILITY = {
     "opensearch-bm25": "translog fsync per request (index.translog.durability=request, the default); refresh=true makes it visible",
     "pgvector": "autocommit; synchronous_commit=on, WAL flushed per commit with the default wal_sync_method (no drive-cache flush on macOS)",
     "pg-tsvector": "autocommit; synchronous_commit=on, WAL flushed per commit with the default wal_sync_method (no drive-cache flush on macOS)",
+    "paradedb": "autocommit; synchronous_commit=on, WAL flushed per commit with the default wal_sync_method (no drive-cache flush on macOS)",
     "redis-vss": "appendonly yes, appendfsync always (plain fsync; no F_FULLFSYNC on macOS)",
     "meilisearch": "the enqueued task is polled until it succeeded (LMDB commit)",
     "typesense": "acknowledged after the write is applied; per-request fsync not documented",
@@ -69,7 +73,6 @@ DURABILITY = {
 SERVER_NOT_RUN = {
     "milvus-standalone": "no non-Docker artifact: releases 3.0.3 and 2.6.25 ship only Docker Compose files; the last native package "
                          "(milvus_2.6.4 .deb/.rpm, Linux only) is superseded",
-    "paradedb": "pg_search ships as a macOS .pkg / Debian .deb for system PostgreSQL installs; not wired into this harness yet",
     "hms-server (text)": "hms-server answers text queries only with the `local-models` model stages (embedding, not BM25); its HTTP API has "
                          "no lexical-only query, so the server text sections have no HMS row",
 }

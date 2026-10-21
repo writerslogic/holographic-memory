@@ -60,6 +60,16 @@ ARTIFACTS = {
         MAC_ARM: ("https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-darwin-arm64v8/18.6.0/"
                   "embedded-postgres-binaries-darwin-arm64v8-18.6.0.jar",
                   "8f6ed6f38195b50a40712ada8b2a12060b6193c1a6977a6eb5cff053bb5a1b89", "Maven Central .sha256")}},
+    # ParadeDB pg_search for PostgreSQL 18, unpacked (never installed system-wide) and loaded
+    # through extension_control_path / dynamic_library_path. `share` and `lib` are the extension
+    # and library directories inside the unpacked package.
+    "paradedb": {"version": "0.26.2", "binary": "share", "files": {
+        MAC_ARM: ("https://github.com/paradedb/paradedb/releases/download/v0.26.2/pg_search@18--0.26.2.arm64_tahoe.pkg",
+                  "355519075c359da7a432a1d0068b6993c757003eaa28830f5dd95903e4bacdf9", "GitHub release asset digest"),
+        LINUX_X86: ("https://github.com/paradedb/paradedb/releases/download/v0.26.2/postgresql-18-pg-search_0.26.2-1PARADEDB-trixie_amd64.deb",
+                    "3aa15d28b87e336a3dd22fce1bb2e4d0e2958560b92adfdf5cb4d466288da95f", "GitHub release asset digest")},
+        "layout": {MAC_ARM: ("Payload/share/postgresql@18", "Payload/lib/postgresql"),
+                   LINUX_X86: ("usr/share/postgresql/18", "usr/lib/postgresql/18/lib")}},
 }
 
 # Package-manager installs. Paths are the defaults; HMS_BENCH_PG_BIN, HMS_BENCH_PGVECTOR_SHARE,
@@ -140,8 +150,17 @@ def install(name):
             with tarfile.open(inner) as tar:
                 tar.extractall(target, filter="data")
             inner.unlink()
+    elif url.endswith(".pkg"):
+        shutil.rmtree(target)
+        subprocess.run(["pkgutil", "--expand-full", str(download), str(target)], check=True, capture_output=True)
+    elif url.endswith(".deb"):
+        subprocess.run(["dpkg-deb", "-x", str(download), str(target)], check=True, capture_output=True)
     else:
         shutil.copy2(download, target / spec["binary"])
+    if "layout" in spec:
+        share, lib = (target / p for p in spec["layout"][PLATFORM])
+        (target / "share").symlink_to(share.relative_to(target))
+        (target / "lib").symlink_to(lib.relative_to(target))
     binary = target / spec["binary"]
     if not binary.exists():
         raise RuntimeError(f"{name}: {spec['binary']} not found in {url}")
@@ -182,6 +201,8 @@ def system_package(name):
 def prepare(name):
     """Make server `name` runnable here: install its pinned artifact for this platform and check
     any package-manager parts. Raises NotAvailable with the reason when it cannot run here."""
+    if name == "paradedb":
+        prepare("postgres")  # pg_search loads into the same PostgreSQL as pgvector (it requires it)
     pinned = name in ARTIFACTS and PLATFORM in ARTIFACTS[name]["files"]
     if pinned:
         install(name)
