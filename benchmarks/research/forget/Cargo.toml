@@ -1,0 +1,43 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Standalone research crate (not a workspace member). It depends on the root
+# crate with default features off, purely for `EntangledHVec` (the engine's
+# sparse hypervector type, its deterministic generator, `bundle_bloom`,
+# `containment_similarity`) and `hash_u64`, so the prototype bundles exactly the
+# vectors the engine bundles. `sha2 0.11` is the root crate's optional
+# `security` dependency, reused here at the same version for the certificate
+# digests. No new third-party crates.
+
+[package]
+name = "hms-research-forget"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+description = "Kill test: exact deletion from a counter-backed sparse-hypervector bundle with a verifiable certificate, vs the thresholded-only bundle"
+
+[workspace]
+
+[lib]
+name = "hms_research_forget"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hms-research-forget"
+path = "src/main.rs"
+
+[dependencies]
+holographic-memory = { path = "../../..", default-features = false }
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+sha2 = "0.11"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false

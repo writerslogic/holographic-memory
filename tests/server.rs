@@ -281,7 +281,7 @@ fn scores_are_exact_cosine_and_documents_must_fit_one_chunk() {
     assert_eq!(got.len(), 3);
     for ((gid, gs), (eid, es)) in got.iter().zip(&expected) {
         assert_eq!(gid, eid);
-        assert!((gs - es).abs() < 1e-9, "{gid}: score {gs} vs cosine {es}");
+        assert!((gs - es).abs() < 1e-6, "{gid}: score {gs} vs cosine {es}");
     }
 
     let bare = json!({"id": "bare", "vector": embedding(16)});

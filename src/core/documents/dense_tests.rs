@@ -44,7 +44,7 @@ fn exhaustive(
         .map(|row| {
             let score = query
                 .iter()
-                .zip(row.embedding())
+                .zip(row.embedding().iter().map(|&v| f64::from(v)))
                 .map(|(a, b)| a * b)
                 .sum::<f64>()
                 .clamp(-1.0, 1.0);
@@ -89,6 +89,7 @@ fn exact_candidates_match_exhaustive_scores_at_rank_and_threshold_boundaries() {
         let boundary = index.rows[173]
             .embedding()
             .iter()
+            .map(|&v| f64::from(v))
             .zip(&query)
             .map(|(a, b)| a * b)
             .sum::<f64>()
@@ -115,7 +116,7 @@ fn exact_candidates_match_exhaustive_scores_at_rank_and_threshold_boundaries() {
             for row in &index.rows[node.start..node.end] {
                 let score = query
                     .iter()
-                    .zip(row.embedding())
+                    .zip(row.embedding().iter().map(|&v| f64::from(v)))
                     .map(|(a, b)| a * b)
                     .sum::<f64>()
                     .clamp(-1.0, 1.0);
@@ -132,17 +133,19 @@ fn exact_candidates_match_exhaustive_scores_at_rank_and_threshold_boundaries() {
 fn outward_bounds_cover_cancellation_subnormals_signed_zero_and_large_legacy_values() {
     let mut store = store(257, 8);
     let tiny = f64::from_bits(1);
+    // Stored values are `f32`: the legacy extremes are the `f32` subnormal and `f32::MAX`.
+    let tiny32 = f32::from_bits(1);
     for id in 0..257 {
         let mut document = store.remove(&format!("d{id:04}")).unwrap().as_ref().clone();
-        document.chunks[0].embedding = Some(match id % 7 {
-            0 => vec![1.0, -1.0, tiny, -tiny, 0.0, -0.0, 0.0, 0.0],
-            1 => vec![tiny, tiny, -tiny, -tiny, 0.0, 0.0, -0.0, 0.0],
-            2 => vec![f64::MAX, f64::MAX, -f64::MAX, -f64::MAX, 0.0, 0.0, 0.0, 0.0],
-            3 => vec![-f64::MAX, -f64::MAX, f64::MAX, f64::MAX, 0.0, 0.0, 0.0, 0.0],
+        document.chunks[0].embedding = Some(documents::Embedding::from_f32(match id % 7 {
+            0 => vec![1.0, -1.0, tiny32, -tiny32, 0.0, -0.0, 0.0, 0.0],
+            1 => vec![tiny32, tiny32, -tiny32, -tiny32, 0.0, 0.0, -0.0, 0.0],
+            2 => vec![f32::MAX, f32::MAX, -f32::MAX, -f32::MAX, 0.0, 0.0, 0.0, 0.0],
+            3 => vec![-f32::MAX, -f32::MAX, f32::MAX, f32::MAX, 0.0, 0.0, 0.0, 0.0],
             4 => vec![
-                1.0_f64.next_up(),
+                1.0_f32.next_up(),
                 -1.0,
-                1.0_f64.next_down(),
+                1.0_f32.next_down(),
                 -1.0,
                 0.0,
                 0.0,
@@ -151,7 +154,7 @@ fn outward_bounds_cover_cancellation_subnormals_signed_zero_and_large_legacy_val
             ],
             5 => vec![0.0; 8],
             _ => vec![1.0, 0.0, 0.0, 0.0, -0.0, 0.0, 0.0, 0.0],
-        });
+        }));
         store.insert(document.id.clone(), document);
     }
     let trained = train(&store, 8);
@@ -179,7 +182,7 @@ fn outward_bounds_cover_cancellation_subnormals_signed_zero_and_large_legacy_val
             for row in &index.rows[node.start..node.end] {
                 let score = query
                     .iter()
-                    .zip(row.embedding())
+                    .zip(row.embedding().iter().map(|&v| f64::from(v)))
                     .map(|(a, b)| a * b)
                     .sum::<f64>()
                     .clamp(-1.0, 1.0);
@@ -443,7 +446,9 @@ fn invalid_shapes_and_bounded_auxiliary_allocations_fail_before_building() {
         );
     }
     let mut invalid = store.documents["d0000"].as_ref().clone();
-    invalid.chunks[0].embedding.as_mut().unwrap()[0] = f64::NAN;
+    let mut values = invalid.chunks[0].embedding.as_ref().unwrap().to_vec();
+    values[0] = f32::NAN;
+    invalid.chunks[0].embedding = Some(documents::Embedding::from_f32(values));
     let mut malformed = store;
     malformed.insert(invalid.id.clone(), invalid);
     assert!(build_dense_index(capture_dense_index(&malformed, 2).unwrap().unwrap()).is_err());

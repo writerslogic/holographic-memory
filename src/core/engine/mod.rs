@@ -544,7 +544,11 @@ impl HmsCore {
                 self.validate_mutation(mutation)?;
             }
             self.apply_mutations(&self.prepare_mutations(&mutations), &shards)?;
-            offset = self.arena.next_offset(offset)?;
+            let next = self.arena.next_offset(offset)?;
+            // The frame is applied; its pages stay on disk for the next replay or compaction.
+            self.arena
+                .release_pages(offset, next.saturating_sub(offset));
+            offset = next;
         }
         if let Some(atoms) = &self.atom_memory {
             atoms.rebuild_indices();

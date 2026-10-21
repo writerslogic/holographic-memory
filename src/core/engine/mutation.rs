@@ -2,11 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{ensure, Result};
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use super::{HmsCore, ShardSet};
 use crate::core::{
+    documents::StoredDocument,
     entangled::EntangledHVec,
     rules::CompositionRule,
     types::{Relation, RelationType},
@@ -14,6 +17,36 @@ use crate::core::{
 
 pub(super) const TRANSACTION_MAGIC: &[u8] = crate::core::format::TRANSACTION_MAGIC;
 pub(super) const MEANING_PREFIX: &str = "hms:meaning:";
+/// Batches of at least this many mutations are validated on the thread pool.
+const PARALLEL_VALIDATION: usize = 64;
+/// Batches of at least this many mutations are serialized on the thread pool.
+const PARALLEL_SERIALIZATION: usize = 16;
+
+/// The journal payload of a transaction: the magic, then the batch as one JSON array. A
+/// large batch serializes its elements in parallel and joins them with the separators
+/// `serde_json` writes for a slice, so the bytes are exactly those of serializing the slice.
+pub(super) fn transaction_payload(mutations: &[Mutation]) -> Result<Vec<u8>> {
+    let mut payload = Vec::with_capacity(TRANSACTION_MAGIC.len() + 128);
+    payload.extend_from_slice(TRANSACTION_MAGIC);
+    if mutations.len() < PARALLEL_SERIALIZATION {
+        serde_json::to_writer(&mut payload, mutations)?;
+        return Ok(payload);
+    }
+    let parts = mutations
+        .par_iter()
+        .map(serde_json::to_vec)
+        .collect::<Result<Vec<Vec<u8>>, serde_json::Error>>()?;
+    payload.reserve(parts.iter().map(Vec::len).sum::<usize>() + parts.len() + 1);
+    payload.push(b'[');
+    for (i, part) in parts.iter().enumerate() {
+        if i > 0 {
+            payload.push(b',');
+        }
+        payload.extend_from_slice(part);
+    }
+    payload.push(b']');
+    Ok(payload)
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) enum Mutation {
@@ -153,27 +186,59 @@ impl HmsCore {
         self.commit_with_append(mutations, |payload| self.arena_write(payload).map(|_| ()))
     }
 
+    /// [`Self::commit`] of a batch whose journal payload the caller built with
+    /// [`transaction_payload`] already (a document batch serializes once, where its size is
+    /// checked).
+    pub(super) fn commit_serialized(&self, mutations: &[Mutation], payload: &[u8]) -> Result<()> {
+        debug_assert!(payload.starts_with(TRANSACTION_MAGIC));
+        self.validate_transaction(mutations)?;
+        self.commit_payload(mutations, payload, |payload| {
+            self.arena_write(payload).map(|_| ())
+        })
+    }
+
     fn commit_with_append(
         &self,
         mutations: &[Mutation],
         append: impl FnOnce(&[u8]) -> Result<()>,
     ) -> Result<()> {
+        self.validate_transaction(mutations)?;
+        let payload = transaction_payload(mutations)?;
+        self.commit_payload(mutations, &payload, append)
+    }
+
+    /// The bounds and per-mutation checks every transaction passes before it is serialized.
+    /// A large batch validates in parallel and still reports the first failure in batch
+    /// order.
+    fn validate_transaction(&self, mutations: &[Mutation]) -> Result<()> {
         ensure!(
             !mutations.is_empty() && mutations.len() <= 4096,
             "transaction requires 1..=4096 operations"
         );
-        for mutation in mutations {
-            self.validate_mutation(mutation)?;
+        if mutations.len() < PARALLEL_VALIDATION {
+            return mutations
+                .iter()
+                .try_for_each(|mutation| self.validate_mutation(mutation));
         }
-        let mut payload = Vec::with_capacity(TRANSACTION_MAGIC.len() + 128);
-        payload.extend_from_slice(TRANSACTION_MAGIC);
-        serde_json::to_writer(&mut payload, mutations)?;
+        let failures: Vec<Option<anyhow::Error>> = mutations
+            .par_iter()
+            .map(|mutation| self.validate_mutation(mutation).err())
+            .collect();
+        failures.into_iter().flatten().next().map_or(Ok(()), Err)
+    }
+
+    fn commit_payload(
+        &self,
+        mutations: &[Mutation],
+        payload: &[u8],
+        append: impl FnOnce(&[u8]) -> Result<()>,
+    ) -> Result<()> {
         // Lookups, clones and the chunk diff of every mutation are prepared while readers are
         // still served and before this writer queues; the exclusive window only installs them
         // (a document replaced by another writer in between is re-diffed there).
         let mutations = &self.prepare_mutations(mutations);
         let transaction = self.mutation_gate.begin_write();
-        append(&payload)?;
+        append(payload)?;
         let _transaction = transaction.publish();
         let shards = self.shards.write();
         self.apply_mutations(mutations, &shards)?;
@@ -337,6 +402,8 @@ impl HmsCore {
     /// the clones handed to the shards, each replaced document and the chunk ids it loses.
     /// Validation is the caller's ([`Self::commit`] and replay validate first).
     pub(super) fn prepare_mutations<'a>(&self, mutations: &'a [Mutation]) -> PreparedBatch<'a> {
+        // One read lock for the batch's lookups.
+        let store = self.documents.read();
         let prepared = mutations
             .iter()
             .map(|mutation| match mutation {
@@ -347,7 +414,7 @@ impl HmsCore {
                     }
                 }
                 Mutation::Document(document) => {
-                    let previous = self.documents.read().get(&document.id).cloned();
+                    let previous = store.get(&document.id).cloned();
                     let stale = stale_chunks(previous.as_deref(), document);
                     // Chunks awaiting deferred encoding or stored lexical-only have no
                     // vector to index; `stale` drops any earlier vector under their ids.
@@ -367,15 +434,25 @@ impl HmsCore {
                 _ => Prepared::None,
             })
             .collect();
+        drop(store);
         PreparedBatch {
             mutations,
             prepared: std::cell::RefCell::new(prepared),
         }
     }
 
+    /// Installs the documents a batch has accumulated so far in one store write.
+    fn install_documents(&self, pending: &mut Vec<Arc<StoredDocument>>) {
+        if !pending.is_empty() {
+            self.documents.write().insert_batch(std::mem::take(pending));
+        }
+    }
+
     /// Installs a prepared batch into the live state (once: the prepared values are taken).
     /// A document whose stored predecessor is no longer the one the batch was prepared
     /// against (another writer replaced it in between) has its stale chunks re-diffed here.
+    /// Consecutive documents install together in one store write; the run breaks at a
+    /// repeated id, so the second copy diffs against the first as it would one at a time.
     pub(super) fn apply_mutations(
         &self,
         batch: &PreparedBatch<'_>,
@@ -386,7 +463,17 @@ impl HmsCore {
             prepared.len() == batch.len(),
             "prepared batch already installed"
         );
+        let mut pending: Vec<Arc<StoredDocument>> = Vec::new();
+        let mut pending_ids: HashSet<String> = HashSet::new();
         for (mutation, prepared) in batch.mutations.iter().zip(prepared) {
+            let is_document = matches!(
+                (mutation, &prepared),
+                (Mutation::Document(_), Prepared::Document { .. })
+            );
+            if !is_document {
+                self.install_documents(&mut pending);
+                pending_ids.clear();
+            }
             match (mutation, prepared) {
                 (
                     Mutation::Vector { id, vector },
@@ -438,6 +525,11 @@ impl HmsCore {
                         chunks,
                     },
                 ) => {
+                    if !pending_ids.insert(document.id.clone()) {
+                        self.install_documents(&mut pending);
+                        pending_ids.clear();
+                        pending_ids.insert(document.id.clone());
+                    }
                     let current = self.documents.read().get(&document.id).cloned();
                     let unchanged = match (&previous, &current) {
                         (Some(a), Some(b)) => Arc::ptr_eq(a, b),
@@ -453,7 +545,7 @@ impl HmsCore {
                     for (chunk, vector) in chunks {
                         shards.insert(chunk, vector, self.dimensions)?;
                     }
-                    self.documents.write().insert(document.id.clone(), document);
+                    pending.push(document);
                 }
                 (
                     Mutation::Vector { .. } | Mutation::Composite { .. } | Mutation::Document(_),
@@ -541,6 +633,7 @@ impl HmsCore {
                 }
             }
         }
+        self.install_documents(&mut pending);
         Ok(())
     }
 
@@ -853,9 +946,6 @@ mod tests {
                     assert_eq!(text.capacity(), text.len());
                 }
                 assert_eq!(chunk.vector.indices.capacity(), chunk.vector.indices.len());
-                if let Some(values) = &chunk.embedding {
-                    assert_eq!(values.capacity(), values.len());
-                }
                 chunk.terms.assert_valid_storage();
             }
         }

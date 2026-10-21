@@ -118,7 +118,7 @@ impl HmsCore {
                 .map(|document| Mutation::Document(Arc::new(document)))
             })
             .collect::<Result<Vec<_>>>()?;
-        super::document_batch::validate_prepared(&mutations)?;
+        let payload = super::document_batch::serialize_transaction(&mutations)?;
         let counts = mutations
             .iter()
             .map(|mutation| match mutation {
@@ -126,7 +126,7 @@ impl HmsCore {
                 _ => unreachable!("document preparation produced a non-document mutation"),
             })
             .collect();
-        self.commit(&mutations)?;
+        self.commit_serialized(&mutations, &payload)?;
         Ok(counts)
     }
 

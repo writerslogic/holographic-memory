@@ -1,0 +1,138 @@
+{
+ "arms": {
+  "eager": {
+   "data_dir_bytes_after_ingest": 202016532,
+   "dim": 384,
+   "encode": "eager",
+   "graph_min_rows": null,
+   "ingest_seconds": 8.243982076644897,
+   "maintain": false,
+   "rss_after_ingest_mb": 342.109375,
+   "rss_idle_mb": 4.703125,
+   "text_bytes": 12,
+   "vectors": 50000
+  },
+  "lexical": {
+   "data_dir_bytes_after_ingest": 202016532,
+   "dim": 384,
+   "encode": "lexical",
+   "graph_min_rows": null,
+   "ingest_seconds": 8.108814716339111,
+   "maintain": false,
+   "rss_after_ingest_mb": 245.71875,
+   "rss_idle_mb": 4.6875,
+   "text_bytes": 12,
+   "vectors": 50000
+  },
+  "lexical_dim128": {
+   "data_dir_bytes_after_ingest": 67798804,
+   "dim": 128,
+   "encode": "lexical",
+   "graph_min_rows": null,
+   "ingest_seconds": 2.9320099353790283,
+   "maintain": false,
+   "rss_after_ingest_mb": 202.828125,
+   "rss_idle_mb": 4.71875,
+   "text_bytes": 12,
+   "vectors": 50000
+  },
+  "lexical_graph": {
+   "data_dir_bytes_after_ingest": 202016532,
+   "dim": 384,
+   "encode": "lexical",
+   "graph_min_rows": null,
+   "ingest_seconds": 7.956143140792847,
+   "maintain": true,
+   "maintain_seconds": 4.452355146408081,
+   "rss_after_ingest_mb": 244.84375,
+   "rss_after_maintain_mb": 338.5,
+   "rss_idle_mb": 4.703125,
+   "text_bytes": 12,
+   "vector_index": {
+    "current": true,
+    "graph": true,
+    "rebuildRecommended": false,
+    "rows": 50000,
+    "staleMutations": 0
+   },
+   "vectors": 50000
+  },
+  "lexical_long_text": {
+   "data_dir_bytes_after_ingest": 211446125,
+   "dim": 384,
+   "encode": "lexical",
+   "graph_min_rows": null,
+   "ingest_seconds": 9.315537929534912,
+   "maintain": false,
+   "rss_after_ingest_mb": 309.859375,
+   "rss_idle_mb": 4.75,
+   "text_bytes": 200,
+   "vectors": 50000
+  },
+  "lexical_snapshot": {
+   "data_dir_bytes_after_ingest": 202016532,
+   "dim": 384,
+   "encode": "lexical",
+   "graph_min_rows": 4194304,
+   "ingest_seconds": 8.191080093383789,
+   "maintain": true,
+   "maintain_seconds": 0.1607968807220459,
+   "rss_after_ingest_mb": 248.0625,
+   "rss_after_maintain_mb": 254.546875,
+   "rss_idle_mb": 4.703125,
+   "text_bytes": 12,
+   "vector_index": {
+    "current": true,
+    "graph": false,
+    "rebuildRecommended": false,
+    "rows": 50000,
+    "staleMutations": 0
+   },
+   "vectors": 50000
+  }
+ },
+ "binary": "/Volumes/A/.hms-target-r3/release/hms-server",
+ "components": {
+  "arithmetic": {
+   "bbox_nodes_f32_mb": 4.5791015625,
+   "embeddings_f32_mb": 73.2421875,
+   "embeddings_f64_mb": 146.484375,
+   "graph_estimate_mb": 43.1060791015625,
+   "snapshot_handles_mb_after_change": 1.52587890625,
+   "snapshot_matrix_copy_f32_mb_before_change": 73.2421875
+  },
+  "dim": 384,
+  "embedding_bytes_per_value_measured": 3.5136,
+  "embedding_slopes": [
+   {
+    "bytes_per_value": 3.5136,
+    "other_dim": 128
+   }
+  ],
+  "embeddings_mb": 64.3359375,
+  "graph_mb": 83.953125,
+  "hypervectors_mb": 96.390625,
+  "n": 50000,
+  "residual_mb": 176.6953125,
+  "snapshot_and_bbox_mb": 6.484375,
+  "text_tables_mb": 64.140625,
+  "text_tables_mb_per_extra_text_byte_x_n": 7.154927659574468
+ },
+ "label": "f32",
+ "method": {
+  "batch": 500,
+  "dim": 384,
+  "dims": [
+   384,
+   128
+  ],
+  "extra_flags": [],
+  "long_text_bytes": 200,
+  "n": 50000,
+  "rss": "median of 5 ps -o rss= readings 0.5s apart",
+  "seed": 7,
+  "text_bytes": 12
+ },
+ "platform": "darwin",
+ "schema": "hms-rss-breakdown/1"
+}

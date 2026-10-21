@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use super::{compact_chunks, EntangledHVec, StoredChunk, StoredDocument, VectorState};
+use super::{compact_chunks, Embedding, EntangledHVec, StoredChunk, StoredDocument, VectorState};
 use std::collections::BTreeMap;
 
 #[test]
@@ -30,7 +30,7 @@ fn rebuilt_terms_preserve_complete_document_bytes_and_legacy_frequencies() {
                 start_byte: 0,
                 end_byte: 11,
                 vector: EntangledHVec::new_deterministic(1024, count as u64),
-                embedding: Some(vec![1.0, -0.0, 0.0]),
+                embedding: Some(Embedding::from_f32(vec![1.0, -0.0, 0.0])),
                 terms: terms.into(),
                 word_count: 0,
                 stemmed: count % 2 == 0,

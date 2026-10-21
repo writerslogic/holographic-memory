@@ -8,10 +8,14 @@
 //! `examples/competitive_text.rs build` reads): `documents` are `DocumentInput`s, `queries`
 //! are `{id, text, options}` with `SearchOptions`.
 //!
-//! Mechanism: after `--warmups` discarded runs, each of `--repeats` runs opens a fresh store
-//! in a temporary directory (`HmsCore::new(dim, path, None)`, the harness configuration) and
-//! ingests the corpus in batches of `--batch` documents with `memorize_documents_with`, timing
-//! the wall clock from before the open to after the last commit, as the harness does. In
+//! Mechanism: after `--warmups` discarded runs (default none), each of `--repeats` runs
+//! (default one) opens a fresh store in a temporary directory (`HmsCore::new(dim, path,
+//! None)`, the harness configuration) and ingests the corpus in batches of `--batch`
+//! documents with `memorize_documents_with`, timing the wall clock from before the open to
+//! after the last commit, as the harness does. The encoder's memo tables are per-thread and
+//! survive between builds of one process, so only the first timed build without warmups is
+//! cold (`cold_ingest_s`, the figure comparable with `examples/competitive_text.rs build` in
+//! its own process); later builds are reported as `warm_ingest_s`. In
 //! `deferred` mode the catch-up (`encode_pending_documents`) is timed separately. The last
 //! store is then compared with an eager reference store built from the same inputs: the
 //! lexical results of the first `--parity-queries` queries (JSON of `search_documents` with
@@ -23,8 +27,9 @@
 //! in input order, so stored vectors do not depend on the thread count; timings do.
 //!
 //! Output (`--out`): one JSON object
-//! `{mode, dim, batch, documents, chunks, store_text, repeats, ingest_s: [f64], median_ingest_s,
-//!   catch_up_s: [f64], median_catch_up_s: f64|null, vectors_after_ingest,
+//! `{mode, dim, batch, documents, chunks, store_text, repeats, warmups, ingest_s: [f64],
+//!   cold_ingest_s: f64|null, warm_ingest_s: [f64], median_warm_ingest_s: f64|null,
+//!   median_ingest_s, catch_up_s: [f64], median_catch_up_s: f64|null, vectors_after_ingest,
 //!   vectors_after_catch_up, parity: {queries, lexical_identical, vector_identical,
 //!   lexical_mismatches: [query id], vector_mismatches: [query id]}}`.
 //! A run passes when both parity flags are true; `median_ingest_s` is the figure to compare
@@ -48,9 +53,13 @@ struct Args {
     /// eager | deferred | lexical
     #[arg(long, default_value = "eager")]
     encode: String,
-    #[arg(long, default_value_t = 5)]
-    repeats: usize,
+    /// Timed builds in this process. The first one with no warmups is the cold figure (the
+    /// encoder's per-thread memo tables are empty, as in a fresh ingest process); later ones
+    /// are warm and reported separately.
     #[arg(long, default_value_t = 1)]
+    repeats: usize,
+    /// Discarded builds before the timed ones; any warmup makes every timed build warm.
+    #[arg(long, default_value_t = 0)]
     warmups: usize,
     /// Documents per `memorize_documents_with` call (one transaction each).
     #[arg(long, default_value_t = 512)]
@@ -99,7 +108,16 @@ struct Report {
     chunks: u64,
     store_text: Option<bool>,
     repeats: usize,
+    warmups: usize,
+    /// Every timed build, in order.
     ingest_s: Vec<f64>,
+    /// The first timed build when nothing warmed the process: the figure comparable with a
+    /// single-process ingest (`examples/competitive_text.rs build`). Null after warmups.
+    cold_ingest_s: Option<f64>,
+    /// Timed builds after the first, in this process, with the encoder memo tables warm.
+    warm_ingest_s: Vec<f64>,
+    median_warm_ingest_s: Option<f64>,
+    /// Median over every timed build (equals `cold_ingest_s` at the default one repeat).
     median_ingest_s: f64,
     catch_up_s: Vec<f64>,
     median_catch_up_s: Option<f64>,
@@ -228,6 +246,10 @@ fn main() -> Result<()> {
         chunks: last.chunks,
         store_text,
         repeats: args.repeats,
+        warmups: args.warmups,
+        cold_ingest_s: (args.warmups == 0).then(|| ingest_s[0]),
+        median_warm_ingest_s: median(&ingest_s[1..]),
+        warm_ingest_s: ingest_s[1..].to_vec(),
         median_ingest_s: median(&ingest_s).context("ingest timings")?,
         ingest_s,
         median_catch_up_s: median(&catch_up_s),

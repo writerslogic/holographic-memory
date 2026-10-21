@@ -5,7 +5,8 @@ use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
-use std::sync::OnceLock;
+use std::ops::Deref;
+use std::sync::{Arc, OnceLock};
 
 use super::{encoding::TextEncoder, entangled::EntangledHVec};
 
@@ -252,6 +253,82 @@ pub struct DocumentResult {
     pub semantic_score: Option<f64>,
 }
 
+/// A chunk's dense embedding as stored: the l2-normalised values rounded to `f32`, in one
+/// shared allocation that the store and every vector snapshot covering the chunk hold
+/// together, so a snapshot adds no copy of the matrix (4 bytes per value in memory, against
+/// the 8 of the `f64` form plus a 4-byte snapshot copy before this type).
+///
+/// Scoring: every path (the generic search, the dense index, the vector snapshot's exact
+/// re-score) calls [`Embedding::cosine`], which widens each stored value to `f64` and
+/// accumulates in `f64`, so one chunk has one semantic score however it was reached. The
+/// score is the exact cosine of the stored (`f32`) vector; it differs from the cosine of the
+/// client's `f64` vector by at most the rounding of the stored values, `2^-24` relative per
+/// coordinate (about `6e-8` worst case over an l2-normalised pair, `2e-9` typical at 384
+/// dimensions).
+///
+/// Serialized form: a JSON array of the `f32` values (shortest round-trip decimals, about
+/// half the bytes of the `f64` form). A record written before this type held an array of
+/// `f64` values under the same key; both read as an array of numbers rounded to the nearest
+/// `f32`, so a store from either version opens, and a store written now still opens with
+/// the previous release (which reads the array as `f64`). Chunks without an embedding
+/// serialize byte for byte as before.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct Embedding(Arc<[f32]>);
+
+impl Embedding {
+    /// Rounds l2-normalised `f64` values to the stored `f32` form.
+    pub(crate) fn from_f64(values: &[f64]) -> Self {
+        Self(values.iter().map(|&value| value as f32).collect())
+    }
+
+    pub(crate) fn from_f32(values: Vec<f32>) -> Self {
+        Self(values.into())
+    }
+
+    /// The stored values widened to `f64` (exact).
+    pub(crate) fn to_f64(&self) -> Vec<f64> {
+        self.0.iter().map(|&value| f64::from(value)).collect()
+    }
+
+    /// The semantic score of this chunk against an l2-normalised `f64` query: the sequential
+    /// `f64` dot product over the widened stored values, clamped to the cosine range.
+    #[inline]
+    pub(crate) fn cosine(&self, query: &[f64]) -> f64 {
+        query
+            .iter()
+            .zip(self.0.iter())
+            .map(|(q, &v)| q * f64::from(v))
+            .sum::<f64>()
+            .clamp(-1.0, 1.0)
+    }
+
+    /// Whether both handles share one allocation (a snapshot row and the store's chunk).
+    #[cfg(test)]
+    pub(crate) fn shares_allocation(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Deref for Embedding {
+    type Target = [f32];
+
+    fn deref(&self) -> &[f32] {
+        &self.0
+    }
+}
+
+impl Serialize for Embedding {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_seq(self.0.iter())
+    }
+}
+
+impl<'de> Deserialize<'de> for Embedding {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Vec::<f32>::deserialize(deserializer).map(Self::from_f32)
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub(crate) struct StoredChunk {
     pub id: String,
@@ -264,7 +341,7 @@ pub(crate) struct StoredChunk {
     pub start_byte: u32,
     pub end_byte: u32,
     pub vector: EntangledHVec,
-    pub embedding: Option<Vec<f64>>,
+    pub embedding: Option<Embedding>,
     pub terms: StoredTerms,
     pub word_count: usize,
     /// Whether `terms` were stemmed at ingest; chunks stored before stemming existed match
@@ -376,9 +453,6 @@ fn compact_chunks(chunks: &mut Vec<StoredChunk>) {
             compact_string(text);
         }
         compact_vec(&mut chunk.vector.indices);
-        if let Some(embedding) = &mut chunk.embedding {
-            compact_vec(embedding);
-        }
     }
     compact_vec(chunks);
 }
@@ -447,7 +521,14 @@ pub fn chunk_document(input: &DocumentInput) -> Result<Vec<DocumentChunk>> {
     Ok(chunks)
 }
 
-pub(crate) fn normalize_embedding(values: &[f64], dimensions: usize) -> Result<Vec<f64>> {
+/// Validates `values` (the store's dimensions, finite, not all zero) and returns them
+/// l2-normalised in `f64`. Accepts the client's `f64` values and a stored [`Embedding`]'s
+/// `f32` values, which widen exactly.
+pub(crate) fn normalize_embedding<T: Copy + Into<f64>>(
+    values: &[T],
+    dimensions: usize,
+) -> Result<Vec<f64>> {
+    let values: Vec<f64> = values.iter().map(|&x| x.into()).collect();
     ensure!(
         values.len() == dimensions && values.iter().all(|x| x.is_finite()),
         "embedding dimensions must match the store and values must be finite"
@@ -575,7 +656,10 @@ pub(crate) fn prepare_with_options(
         let embedding = input
             .embeddings
             .as_ref()
-            .map(|all| normalize_embedding(&all[i], embedding_dimensions.unwrap_or(0)))
+            .map(|all| {
+                normalize_embedding(&all[i], embedding_dimensions.unwrap_or(0))
+                    .map(|values| Embedding::from_f64(&values))
+            })
             .transpose()?;
         let (vector, vector_state) = match (mode, encoder.is_embedding(), &embedding) {
             (EncodeMode::Lexical, _, _) => (
@@ -590,13 +674,10 @@ pub(crate) fn prepare_with_options(
                 encoder.encode(&chunk.text, dimensions),
                 VectorState::Encoded,
             ),
-            (EncodeMode::Eager, true, Some(e)) => {
-                let dense: Vec<f32> = e.iter().map(|&x| x as f32).collect();
-                (
-                    EntangledHVec::from_dense(&dense, dimensions),
-                    VectorState::Encoded,
-                )
-            }
+            (EncodeMode::Eager, true, Some(e)) => (
+                EntangledHVec::from_dense(e, dimensions),
+                VectorState::Encoded,
+            ),
             (EncodeMode::Eager, true, None) => bail!(
                 "the {} text encoder needs a dense embedding for every chunk; install a text embedder",
                 encoder.name()
@@ -870,13 +951,7 @@ fn search_impl(
             let semantic = query_embedding
                 .as_ref()
                 .zip(c.embedding.as_ref())
-                .map(|(q, v)| {
-                    q.iter()
-                        .zip(v)
-                        .map(|(a, b)| a * b)
-                        .sum::<f64>()
-                        .clamp(-1.0, 1.0)
-                });
+                .map(|(q, v)| v.cosine(q));
             (lexical, semantic)
         })
         .collect();
@@ -1191,6 +1266,55 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn embeddings_round_to_f32_and_read_legacy_f64_records() {
+        let legacy = "[0.1, 0.2, 0.30000000000000004, -0.7071067811865476]";
+        let read: Embedding = serde_json::from_str(legacy).unwrap();
+        assert_eq!(
+            read,
+            Embedding::from_f32(vec![0.1, 0.2, 0.3, -std::f32::consts::FRAC_1_SQRT_2])
+        );
+        let written = serde_json::to_string(&read).unwrap();
+        assert_eq!(written, "[0.1,0.2,0.3,-0.70710677]");
+        let again: Embedding = serde_json::from_str(&written).unwrap();
+        assert_eq!(again, read);
+        assert_eq!(
+            read.to_f64(),
+            read.iter().map(|&v| f64::from(v)).collect::<Vec<_>>()
+        );
+
+        let stored = document(5, 1);
+        let embedded = stored.chunks[0].embedding.as_ref().unwrap();
+        let reference = normalize_embedding(&[1.0, 0.1, 0.0], 3).unwrap();
+        assert_eq!(
+            &embedded[..],
+            &reference.iter().map(|&v| v as f32).collect::<Vec<_>>()[..]
+        );
+        let query = normalize_embedding(&[0.3, -0.2, 0.9], 3).unwrap();
+        let exact: f64 = query.iter().zip(&reference).map(|(q, v)| q * v).sum();
+        assert!((embedded.cosine(&query) - exact).abs() < 1e-6);
+        let widened: f64 = query
+            .iter()
+            .zip(embedded.iter())
+            .map(|(q, &v)| q * f64::from(v))
+            .sum();
+        assert_eq!(embedded.cosine(&query), widened.clamp(-1.0, 1.0));
+
+        let json = serde_json::to_value(&stored).unwrap();
+        assert!(json["chunks"][0]["embedding"].is_array());
+        let parsed: StoredDocument = serde_json::from_value(json).unwrap();
+        assert_eq!(parsed.chunks[0].embedding, stored.chunks[0].embedding);
+        let without: StoredChunk = {
+            let mut chunk = stored.chunks[0].clone();
+            chunk.embedding = None;
+            chunk
+        };
+        assert_eq!(
+            serde_json::to_value(&without).unwrap()["embedding"],
+            Value::Null
+        );
     }
 
     #[test]

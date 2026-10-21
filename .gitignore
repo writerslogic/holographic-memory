@@ -62,3 +62,4 @@ benchmarks/public/*.py.lock
 *.hmsemb
 bindings/embed-models/**/packs/
 .hms-local/
+benchmarks/results/research/ann/*.graph

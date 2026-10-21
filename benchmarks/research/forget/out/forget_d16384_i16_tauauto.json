@@ -1,0 +1,1490 @@
+{
+  "schema": "hms-research-forget/v1",
+  "generated_unix_s": 1792563504,
+  "config": {
+    "dim": 16384,
+    "ns": [
+      100,
+      1000,
+      10000
+    ],
+    "delete_fracs": [
+      0.01,
+      0.1
+    ],
+    "tau": "auto",
+    "counter": "i16",
+    "probes": 2000,
+    "survivor_sample": 2000,
+    "runs": 5,
+    "warmup": 1,
+    "seed": 42,
+    "sigma": 3.0,
+    "z_threshold": 3.0,
+    "policy": {
+      "max_items": 18446744073709551615,
+      "max_view_density": 1.0
+    },
+    "threads": 1
+  },
+  "shards": {
+    "per_document": true,
+    "deletion_already_exact": true,
+    "note": "The engine's document-store shards keep one EntangledHVec per id (no superposition); remove() drops the map entry, removes the id's postings from the inverted index and invalidates the IVF/NSG snapshots, so deletion there is already exact. Counter bundles apply to the engine's superposition stores (bloom / counting-bloom / composite memories), which have no delete today.",
+    "evidence": [
+      "src/core/engine/shard.rs:24-35 Shard { vectors: RwLock<FxHashMap<String, EntangledHVec>>, inverted, nsg, ivf, .. }",
+      "src/core/engine/shard.rs:100-116 Shard::remove: vectors.remove(id); inverted.remove_doc(slot, old.indices()); ivf = None; nsg = None",
+      "src/core/engine/mutation.rs:451-454,600 shards.remove(chunk, dims) / shards.insert(chunk, vector, dims)",
+      "src/core/counting_bloom_memory.rs:31-61 CountingBloomMemory { counts: Vec<u32> } insert only, saturating_add, no delete",
+      "src/core/entangled.rs:356-443 bundle (majority threshold, top-k truncation) and bundle_bloom (union)"
+    ]
+  },
+  "rows": [
+    {
+      "n": 100,
+      "delete_frac": 0.01,
+      "k_deleted": 1,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "bafe278e35f2ac6c78fe39fa5c4db51f4a616c9ca915c480dec92a8e69b144f1",
+        "rebuild_state_digest": "bafe278e35f2ac6c78fe39fa5c4db51f4a616c9ca915c480dec92a8e69b144f1",
+        "view_digest_after": "c93237be6ac6fa551266f21569f201720ecc272483064a3feb34126802b542c4",
+        "rebuild_view_digest": "c93237be6ac6fa551266f21569f201720ecc272483064a3feb34126802b542c4",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 0.3231201171875,
+        "view_density_after": 0.32061767578125,
+        "lambda_full": 0.390625,
+        "lambda_after": 0.38671875,
+        "certificates": {
+          "issued": 1,
+          "verified": 1,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 1,
+          "max_abs_view_z": 0.6656248985483498,
+          "max_abs_count_z": 0.2513129747175485,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "80e4359164fd5d4f40710024e7b387f4348dff6f9d8c36a66696db6d1209522c",
+            "state_before": "068ad990c9728a32aca363f9b226572975ddeebaa2313bc25bba09e99602cb5a",
+            "state_after": "bafe278e35f2ac6c78fe39fa5c4db51f4a616c9ca915c480dec92a8e69b144f1",
+            "view_after": "c93237be6ac6fa551266f21569f201720ecc272483064a3feb34126802b542c4",
+            "items_before": 100,
+            "items_after": 99,
+            "residual": {
+              "active": 64,
+              "view_size": 5253,
+              "view_density": 0.32061767578125,
+              "view_overlap": 23,
+              "overlap_fraction": 0.359375,
+              "cosine": 0.039667437727165696,
+              "view_null_mean": 20.51953125,
+              "view_null_sd": 3.7265263895770917,
+              "view_z": 0.6656248985483498,
+              "count_dot": 26,
+              "count_null_mean": 24.75,
+              "count_null_sd": 4.9738776973408525,
+              "count_z": 0.2513129747175485,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 1,
+              "mean": 0.359375,
+              "sd": 0.0,
+              "min": 0.359375,
+              "max": 0.359375
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.3218984375,
+              "sd": 0.05978276359376131,
+              "min": 0.125,
+              "max": 0.5625
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 0.6267223965412222,
+            "z_survivors_vs_random": 110.1653791599772,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 1,
+              "mean": 0.034629379356596476,
+              "sd": 0.0,
+              "min": 0.034629379356596476,
+              "max": 0.034629379356596476
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.03306772753753431,
+              "sd": 0.0067149984610687784,
+              "min": 0.011987092854206472,
+              "max": 0.05860356506500942
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 0.11849866875404114,
+              "sd": 0.006757858951194207,
+              "min": 0.10788383568785825,
+              "max": 0.14118131583843177
+            },
+            "z_deleted_vs_random": 0.2325036351836768,
+            "z_survivors_vs_random": 123.56505007252498,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 99,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 99,
+          "ledger_payload_bytes": 1188,
+          "view_size": 5253,
+          "view_density": 0.32061767578125,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 21012,
+          "bytes_per_item_counter": 330.989898989899,
+          "bytes_per_item_total": 342.989898989899,
+          "per_document_store_bytes": 25344,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 280.83,
+            "runs": [
+              273.34,
+              273.34,
+              280.83,
+              308.75,
+              319.58
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 333.0,
+            "runs": [
+              292.0,
+              292.0,
+              333.0,
+              333.0,
+              417.0
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 74500.0,
+            "runs": [
+              73125.0,
+              74208.0,
+              74500.0,
+              84250.0,
+              84333.0
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 83.5,
+            "runs": [
+              74.917,
+              74.958,
+              83.5,
+              85.792,
+              85.792
+            ]
+          },
+          "state_digest_us": {
+            "median": 20.666,
+            "runs": [
+              18.125,
+              18.125,
+              20.666,
+              20.667,
+              20.875
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.03125,
+            "runs": [
+              0.027625,
+              0.027792,
+              0.03125,
+              0.032375,
+              0.033584
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 91.67,
+            "runs": [
+              90.0,
+              90.0,
+              91.67,
+              95.41,
+              106.25
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.3231201171875,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 1,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.32440625,
+              "sd": 0.059953427071739125,
+              "min": 0.125,
+              "max": 0.5625
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 11.265826623469492,
+            "z_survivors_vs_random": 109.44551915115535,
+            "frac_deleted_over_threshold": 1.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": true,
+          "distinguishable": true
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.3192138671875,
+          "bits_cleared": 64,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 1,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.3205390625,
+              "sd": 0.05977273610350488,
+              "min": 0.125,
+              "max": 0.546875
+            },
+            "survivors": {
+              "n": 99,
+              "mean": 0.9958964646464646,
+              "sd": 0.007918873581659753,
+              "min": 0.96875,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -5.361289756210539,
+            "z_survivors_vs_random": 109.73796540752684,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.004103535353535359,
+          "leaks": false,
+          "distinguishable": true
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": true,
+        "pass": true
+      }
+    },
+    {
+      "n": 100,
+      "delete_frac": 0.1,
+      "k_deleted": 10,
+      "k_active": 64,
+      "tau": 1,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "47c63454ac2f290ca4d761e21b03b3a5f53ba9d384085f4a060e49fa323e3e0f",
+        "rebuild_state_digest": "47c63454ac2f290ca4d761e21b03b3a5f53ba9d384085f4a060e49fa323e3e0f",
+        "view_digest_after": "7a8ab2c4dd02eb7fbf80f24e9829badd48d8cc20000b590f58675514594d7b93",
+        "rebuild_view_digest": "7a8ab2c4dd02eb7fbf80f24e9829badd48d8cc20000b590f58675514594d7b93",
+        "view_matches_bundle_bloom": true,
+        "view_density_full": 0.3231201171875,
+        "view_density_after": 0.29449462890625,
+        "lambda_full": 0.390625,
+        "lambda_after": 0.3515625,
+        "certificates": {
+          "issued": 10,
+          "verified": 10,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 10,
+          "max_abs_view_z": 1.4733539827448623,
+          "max_abs_count_z": 1.5559394197463814,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 1,
+            "counter_bits": 16,
+            "item": "79ac6a87a100fa7f7f9f3706047890fa51190292e313fa00b6129ef3f71ab0a6",
+            "state_before": "068ad990c9728a32aca363f9b226572975ddeebaa2313bc25bba09e99602cb5a",
+            "state_after": "939f27c6241c10806b17a2216dfc8c1ddb1629009379b81649981e25d0a8a735",
+            "view_after": "86c88c8baf2ce42245a186cda99f72bcaafc9eec10297a282aa1566a801e3377",
+            "items_before": 100,
+            "items_after": 99,
+            "residual": {
+              "active": 64,
+              "view_size": 5245,
+              "view_density": 0.32012939453125,
+              "view_overlap": 15,
+              "overlap_fraction": 0.234375,
+              "cosine": 0.025889789883460305,
+              "view_null_mean": 20.48828125,
+              "view_null_sd": 3.725025563629534,
+              "view_z": -1.4733539827448623,
+              "count_dot": 17,
+              "count_null_mean": 24.75,
+              "count_null_sd": 4.9809137178767875,
+              "count_z": -1.5559394197463814,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 0.253125,
+              "sd": 0.04588065738655258,
+              "min": 0.171875,
+              "max": 0.3125
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.2968046875,
+              "sd": 0.05856458441211322,
+              "min": 0.125,
+              "max": 0.546875
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -2.352672228256542,
+            "z_survivors_vs_random": 111.43048243455897,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 10,
+              "mean": 0.027758044840500158,
+              "sd": 0.005315889649112528,
+              "min": 0.01831749151911178,
+              "max": 0.03522594522906111
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.03189145725367818,
+              "sd": 0.006822551788968631,
+              "min": 0.011272302473299555,
+              "max": 0.05917958798482267
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 0.12321252842342706,
+              "sd": 0.007128951914692586,
+              "min": 0.10990494911467066,
+              "max": 0.14794896996205667
+            },
+            "z_deleted_vs_random": -1.9110799999265582,
+            "z_survivors_vs_random": 124.2187816919081,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 90,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 90,
+          "ledger_payload_bytes": 1080,
+          "view_size": 4825,
+          "view_density": 0.29449462890625,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 19300,
+          "bytes_per_item_counter": 364.0888888888889,
+          "bytes_per_item_total": 376.0888888888889,
+          "per_document_store_bytes": 23040,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 292.08,
+            "runs": [
+              281.25,
+              291.66,
+              292.08,
+              300.83,
+              310.0
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 320.8,
+            "runs": [
+              295.8,
+              300.0,
+              320.8,
+              320.8,
+              325.0
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 72966.7,
+            "runs": [
+              72541.7,
+              72625.0,
+              72966.7,
+              73616.7,
+              75375.0
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 77.041,
+            "runs": [
+              76.833,
+              76.875,
+              77.041,
+              77.208,
+              78.708
+            ]
+          },
+          "state_digest_us": {
+            "median": 18.792,
+            "runs": [
+              18.75,
+              18.75,
+              18.792,
+              18.792,
+              18.792
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.027209,
+            "runs": [
+              0.026375,
+              0.026875,
+              0.027209,
+              0.027375,
+              0.02825
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 77.5,
+            "runs": [
+              75.0,
+              76.25,
+              77.5,
+              80.83,
+              87.09
+            ]
+          }
+        }
+      },
+      "baselines": [
+        {
+          "mode": "noop",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.3231201171875,
+          "bits_cleared": 0,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.32440625,
+              "sd": 0.059953427071739125,
+              "min": 0.125,
+              "max": 0.5625
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 1.0,
+              "sd": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": 35.54582340501606,
+            "z_survivors_vs_random": 104.57664849599615,
+            "frac_deleted_over_threshold": 1.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.0,
+          "leaks": true,
+          "distinguishable": true
+        },
+        {
+          "mode": "clear",
+          "view_density_full": 0.3231201171875,
+          "view_density_after": 0.28466796875,
+          "bits_cleared": 630,
+          "readout": {
+            "name": "bit_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 0.0,
+              "sd": 0.0,
+              "min": 0.0,
+              "max": 0.0
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.2868203125,
+              "sd": 0.05779824438827753,
+              "min": 0.125,
+              "max": 0.515625
+            },
+            "survivors": {
+              "n": 90,
+              "mean": 0.9659722222222222,
+              "sd": 0.021155629661027735,
+              "min": 0.90625,
+              "max": 1.0
+            },
+            "z_deleted_vs_random": -15.653527724082032,
+            "z_survivors_vs_random": 109.04741845629738,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          "survivor_bits_lost_frac": 0.03402777777777777,
+          "leaks": false,
+          "distinguishable": true
+        }
+      ],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": true,
+        "pass": true
+      }
+    },
+    {
+      "n": 1000,
+      "delete_frac": 0.01,
+      "k_deleted": 10,
+      "k_active": 64,
+      "tau": 4,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "1d12e364c2ac4d2c225e55a64ab7bcd6274208f0d7df29afd8459d3ab188bd5a",
+        "rebuild_state_digest": "1d12e364c2ac4d2c225e55a64ab7bcd6274208f0d7df29afd8459d3ab188bd5a",
+        "view_digest_after": "4e64bd5247a4039110c366a775dc053325ff09c41f5e29f6038cf818060b07cb",
+        "rebuild_view_digest": "4e64bd5247a4039110c366a775dc053325ff09c41f5e29f6038cf818060b07cb",
+        "view_matches_bundle_bloom": null,
+        "view_density_full": 0.54425048828125,
+        "view_density_after": 0.53680419921875,
+        "lambda_full": 3.90625,
+        "lambda_after": 3.8671875,
+        "certificates": {
+          "issued": 10,
+          "verified": 10,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 10,
+          "max_abs_view_z": 2.1010392750937035,
+          "max_abs_count_z": 2.5479925481999945,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 4,
+            "counter_bits": 16,
+            "item": "80e4359164fd5d4f40710024e7b387f4348dff6f9d8c36a66696db6d1209522c",
+            "state_before": "0c6ff63ffbaa90b3922d01d00a70c390e4369d901df65f68bed5f7e8314b6329",
+            "state_after": "72e7e64f291fedd4809194376083d8dde3968732e417b100bd9ceea3f693804f",
+            "view_after": "fcd0f21cb84c4025437524d58c44be74766792d2dfed2a533e7a350a1fb7a6db",
+            "items_before": 1000,
+            "items_after": 999,
+            "residual": {
+              "active": 64,
+              "view_size": 8906,
+              "view_density": 0.5435791015625,
+              "view_overlap": 38,
+              "overlap_fraction": 0.59375,
+              "cosine": 0.050332936000601056,
+              "view_null_mean": 34.7890625,
+              "view_null_sd": 3.977108920279791,
+              "view_z": 0.8073546800860836,
+              "count_dot": 253,
+              "count_null_mean": 249.75,
+              "count_null_sd": 15.738705937441006,
+              "count_z": 0.20649728210935905,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 10,
+              "mean": 0.5671875,
+              "sd": 0.06671954283291616,
+              "min": 0.46875,
+              "max": 0.671875
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.535828125,
+              "sd": 0.06329061403969899,
+              "min": 0.328125,
+              "max": 0.765625
+            },
+            "survivors": {
+              "n": 990,
+              "mean": 0.7389362373737374,
+              "sd": 0.053945304314112326,
+              "min": 0.546875,
+              "max": 0.875
+            },
+            "z_deleted_vs_random": 1.5629499050847973,
+            "z_survivors_vs_random": 82.58191732238664,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 10,
+              "mean": 0.05759598041120122,
+              "sd": 0.004505027794275987,
+              "min": 0.05180710009611372,
+              "max": 0.06464625098949843
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.055700178420074624,
+              "sd": 0.0035438495332557668,
+              "min": 0.04347291442847804,
+              "max": 0.06599774055722313
+            },
+            "survivors": {
+              "n": 990,
+              "mean": 0.07006859095212645,
+              "sd": 0.003473932998102749,
+              "min": 0.058564547934737254,
+              "max": 0.08244086363120705
+            },
+            "z_deleted_vs_random": 1.687464596977444,
+            "z_survivors_vs_random": 104.33511892979799,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 990,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 990,
+          "ledger_payload_bytes": 11880,
+          "view_size": 8795,
+          "view_density": 0.53680419921875,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 35180,
+          "bytes_per_item_counter": 33.0989898989899,
+          "bytes_per_item_total": 45.0989898989899,
+          "per_document_store_bytes": 253440,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 299.125,
+            "runs": [
+              298.25,
+              298.875,
+              299.125,
+              300.292,
+              301.709
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 325.0,
+            "runs": [
+              316.6,
+              316.7,
+              325.0,
+              325.0,
+              333.3
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 90612.5,
+            "runs": [
+              90133.4,
+              90512.5,
+              90612.5,
+              92995.9,
+              93158.3
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 95.125,
+            "runs": [
+              94.917,
+              95.083,
+              95.125,
+              95.5,
+              97.292
+            ]
+          },
+          "state_digest_us": {
+            "median": 19.625,
+            "runs": [
+              19.625,
+              19.625,
+              19.625,
+              19.625,
+              19.666
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.299333,
+            "runs": [
+              0.298084,
+              0.298792,
+              0.299333,
+              0.301958,
+              0.308792
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 118.041,
+            "runs": [
+              112.208,
+              117.167,
+              118.041,
+              123.625,
+              134.0
+            ]
+          }
+        }
+      },
+      "baselines": [],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": null,
+        "pass": true
+      }
+    },
+    {
+      "n": 1000,
+      "delete_frac": 0.1,
+      "k_deleted": 100,
+      "k_active": 64,
+      "tau": 4,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "04ac4a12c2dbeadeaae588d63d2ab50a0a1971fb134b3930b7d5287de197093f",
+        "rebuild_state_digest": "04ac4a12c2dbeadeaae588d63d2ab50a0a1971fb134b3930b7d5287de197093f",
+        "view_digest_after": "3a8412a31a64c937fc663fac2649e266222d09da74579c014a0ef1e2b747763e",
+        "rebuild_view_digest": "3a8412a31a64c937fc663fac2649e266222d09da74579c014a0ef1e2b747763e",
+        "view_matches_bundle_bloom": null,
+        "view_density_full": 0.54425048828125,
+        "view_density_after": 0.4649658203125,
+        "lambda_full": 3.90625,
+        "lambda_after": 3.515625,
+        "certificates": {
+          "issued": 100,
+          "verified": 100,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 100,
+          "max_abs_view_z": 2.616756671523703,
+          "max_abs_count_z": 2.5330290991993873,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 4,
+            "counter_bits": 16,
+            "item": "79ac6a87a100fa7f7f9f3706047890fa51190292e313fa00b6129ef3f71ab0a6",
+            "state_before": "0c6ff63ffbaa90b3922d01d00a70c390e4369d901df65f68bed5f7e8314b6329",
+            "state_after": "87619acdefb8b22c8db273c8013d729bea218eff2355ef94cee9f2f006e7189a",
+            "view_after": "c1dbb669ced279b129ade0f2b76445442b6dc161e1dd836798581f75be032324",
+            "items_before": 1000,
+            "items_after": 999,
+            "residual": {
+              "active": 64,
+              "view_size": 8904,
+              "view_density": 0.54345703125,
+              "view_overlap": 38,
+              "overlap_fraction": 0.59375,
+              "cosine": 0.050338588528666565,
+              "view_null_mean": 34.78125,
+              "view_null_sd": 3.9771940760751376,
+              "view_z": 0.8093017183552677,
+              "count_dot": 242,
+              "count_null_mean": 249.75,
+              "count_null_sd": 15.741425336255926,
+              "count_z": -0.4923315287180548,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 0.47265625,
+              "sd": 0.06164083553736881,
+              "min": 0.328125,
+              "max": 0.625
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.4641171875,
+              "sd": 0.06285966840994832,
+              "min": 0.265625,
+              "max": 0.671875
+            },
+            "survivors": {
+              "n": 900,
+              "mean": 0.6801215277777778,
+              "sd": 0.05845016950207471,
+              "min": 0.484375,
+              "max": 0.84375
+            },
+            "z_deleted_vs_random": 1.3256945076953774,
+            "z_survivors_vs_random": 85.6106206536383,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 100,
+              "mean": 0.055203140580055356,
+              "sd": 0.0037697077641698474,
+              "min": 0.04781084793742302,
+              "max": 0.06595445177008612
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.055143438316092426,
+              "sd": 0.0037101203608998832,
+              "min": 0.04364272273262204,
+              "max": 0.0666900032768157
+            },
+            "survivors": {
+              "n": 900,
+              "mean": 0.07080854686153347,
+              "sd": 0.003721032342998246,
+              "min": 0.05786338519606068,
+              "max": 0.08336250409601963
+            },
+            "z_deleted_vs_random": 0.1570392280817648,
+            "z_survivors_vs_random": 105.1919880950875,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 900,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 900,
+          "ledger_payload_bytes": 10800,
+          "view_size": 7618,
+          "view_density": 0.4649658203125,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 30472,
+          "bytes_per_item_counter": 36.40888888888889,
+          "bytes_per_item_total": 48.40888888888889,
+          "per_document_store_bytes": 230400,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 291.333,
+            "runs": [
+              284.5,
+              285.625,
+              291.333,
+              297.25,
+              298.375
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 315.83,
+            "runs": [
+              315.0,
+              315.41,
+              315.83,
+              316.25,
+              330.0
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 88492.09,
+            "runs": [
+              86889.16,
+              88363.75,
+              88492.09,
+              88755.0,
+              91195.83
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 93.458,
+            "runs": [
+              88.25,
+              89.667,
+              93.458,
+              93.583,
+              97.959
+            ]
+          },
+          "state_digest_us": {
+            "median": 18.792,
+            "runs": [
+              18.708,
+              18.75,
+              18.792,
+              18.792,
+              19.542
+            ]
+          },
+          "rebuild_ms": {
+            "median": 0.270167,
+            "runs": [
+              0.269458,
+              0.26975,
+              0.270167,
+              0.27325,
+              0.275708
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 137.833,
+            "runs": [
+              137.042,
+              137.125,
+              137.833,
+              138.833,
+              146.916
+            ]
+          }
+        }
+      },
+      "baselines": [],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": null,
+        "pass": true
+      }
+    },
+    {
+      "n": 10000,
+      "delete_frac": 0.01,
+      "k_deleted": 100,
+      "k_active": 64,
+      "tau": 40,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "326100c7068ea96cc329ee9119a4b6d5c1ac2864c3e85dd28511ff923872f9cb",
+        "rebuild_state_digest": "326100c7068ea96cc329ee9119a4b6d5c1ac2864c3e85dd28511ff923872f9cb",
+        "view_digest_after": "f5727a643436d85448ac350e0377a839c36204cdc735fa894b10a9940b7bfe6a",
+        "rebuild_view_digest": "f5727a643436d85448ac350e0377a839c36204cdc735fa894b10a9940b7bfe6a",
+        "view_matches_bundle_bloom": null,
+        "view_density_full": 0.45806884765625,
+        "view_density_after": 0.4337158203125,
+        "lambda_full": 39.0625,
+        "lambda_after": 38.671875,
+        "certificates": {
+          "issued": 100,
+          "verified": 100,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 100,
+          "max_abs_view_z": 2.491109771872591,
+          "max_abs_count_z": 2.8633422791250447,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 40,
+            "counter_bits": 16,
+            "item": "80e4359164fd5d4f40710024e7b387f4348dff6f9d8c36a66696db6d1209522c",
+            "state_before": "005bab5bd9e29ec930512a96b1a574aa7f8cb2599882394a683b985088df8496",
+            "state_after": "01942932926a1f90782571248411304a2c5a82fbe14a32fb19cf38517ae778e6",
+            "view_after": "104046cdedd3b51d25a48a032bc8f2484e68bcc90290a1cd4c848f8cf2fcf3fe",
+            "items_before": 10000,
+            "items_after": 9999,
+            "residual": {
+              "active": 64,
+              "view_size": 7502,
+              "view_density": 0.4578857421875,
+              "view_overlap": 32,
+              "overlap_fraction": 0.5,
+              "cosine": 0.04618186436370564,
+              "view_null_mean": 29.3046875,
+              "view_null_sd": 3.978114908197194,
+              "view_z": 0.6775351044903487,
+              "count_dot": 2502,
+              "count_null_mean": 2499.75,
+              "count_null_sd": 49.710399527529404,
+              "count_z": 0.045262158851770234,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 100,
+              "mean": 0.43984375,
+              "sd": 0.05964828620894437,
+              "min": 0.28125,
+              "max": 0.59375
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.4370078125,
+              "sd": 0.06266297019128567,
+              "min": 0.234375,
+              "max": 0.65625
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.4965390625,
+              "sd": 0.061615247184860306,
+              "min": 0.296875,
+              "max": 0.71875
+            },
+            "z_deleted_vs_random": 0.44166301161261534,
+            "z_survivors_vs_random": 30.042358570337747,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 100,
+              "mean": 0.06182791970765298,
+              "sd": 0.0013270155374760025,
+              "min": 0.05824848074734421,
+              "max": 0.06513057864386262
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.06177342396507016,
+              "sd": 0.0012481059607576102,
+              "min": 0.05807393478620063,
+              "max": 0.06580382735113073
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.06331072505027366,
+              "sd": 0.0012369536363492563,
+              "min": 0.05934562678881816,
+              "max": 0.06784850861024128
+            },
+            "z_deleted_vs_random": 0.4261048407274616,
+            "z_survivors_vs_random": 38.95000129428714,
+            "frac_deleted_over_threshold": 0.0,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 9900,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 9900,
+          "ledger_payload_bytes": 118800,
+          "view_size": 7106,
+          "view_density": 0.4337158203125,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 28424,
+          "bytes_per_item_counter": 3.30989898989899,
+          "bytes_per_item_total": 15.30989898989899,
+          "per_document_store_bytes": 2534400,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 272.1917,
+            "runs": [
+              261.9416,
+              267.7083,
+              272.1917,
+              284.85,
+              291.2917
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 321.25,
+            "runs": [
+              299.59,
+              301.25,
+              321.25,
+              326.25,
+              337.92
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 75790.84,
+            "runs": [
+              73815.41,
+              75515.84,
+              75790.84,
+              81292.08,
+              81687.08
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 82.5,
+            "runs": [
+              81.875,
+              82.125,
+              82.5,
+              84.084,
+              84.833
+            ]
+          },
+          "state_digest_us": {
+            "median": 17.25,
+            "runs": [
+              17.042,
+              17.083,
+              17.25,
+              18.209,
+              18.792
+            ]
+          },
+          "rebuild_ms": {
+            "median": 2.730541,
+            "runs": [
+              2.582333,
+              2.593833,
+              2.730541,
+              2.776834,
+              3.066708
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 58.55,
+            "runs": [
+              57.625,
+              57.6833,
+              58.55,
+              58.625,
+              68.3333
+            ]
+          }
+        }
+      },
+      "baselines": [],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": null,
+        "pass": true
+      }
+    },
+    {
+      "n": 10000,
+      "delete_frac": 0.1,
+      "k_deleted": 1000,
+      "k_active": 64,
+      "tau": 40,
+      "counter": {
+        "counter": "i16",
+        "rebuild_exact": true,
+        "counts_equal": true,
+        "state_digest_after": "59533c46360e027cf45a2cedbb5422967e128886bb9247d97a0e31cd7b258935",
+        "rebuild_state_digest": "59533c46360e027cf45a2cedbb5422967e128886bb9247d97a0e31cd7b258935",
+        "view_digest_after": "295596811eba34bd7311e13f459a7904845a589a9353cde0a60d63fc4986d73c",
+        "rebuild_view_digest": "295596811eba34bd7311e13f459a7904845a589a9353cde0a60d63fc4986d73c",
+        "view_matches_bundle_bloom": null,
+        "view_density_full": 0.45806884765625,
+        "view_density_after": 0.228271484375,
+        "lambda_full": 39.0625,
+        "lambda_after": 35.15625,
+        "certificates": {
+          "issued": 1000,
+          "verified": 1000,
+          "chain_consistent": true,
+          "first_state_before_matches_full_state": true,
+          "within_bound": 997,
+          "max_abs_view_z": 3.074313543535914,
+          "max_abs_count_z": 3.4568300330952666,
+          "example": {
+            "schema": "hms-forget/certificate-v1",
+            "dim": 16384,
+            "tau": 40,
+            "counter_bits": 16,
+            "item": "79ac6a87a100fa7f7f9f3706047890fa51190292e313fa00b6129ef3f71ab0a6",
+            "state_before": "005bab5bd9e29ec930512a96b1a574aa7f8cb2599882394a683b985088df8496",
+            "state_after": "3967f348bb05bcd6b41ea6076b6bc20a42f1b25b51f0a5966e8fd0ec6c99564c",
+            "view_after": "70a4ee01065d9ac6850783c70e28bd253ec9becfd9c6895fa12caf0167e47ba9",
+            "items_before": 10000,
+            "items_after": 9999,
+            "residual": {
+              "active": 64,
+              "view_size": 7504,
+              "view_density": 0.4580078125,
+              "view_overlap": 23,
+              "overlap_fraction": 0.359375,
+              "cosine": 0.03318879131378448,
+              "view_null_mean": 29.3125,
+              "view_null_sd": 3.978197176818994,
+              "view_z": -1.5867740384471183,
+              "count_dot": 2443,
+              "count_null_mean": 2499.75,
+              "count_null_sd": 49.71501771270622,
+              "count_z": -1.1415061808475584,
+              "sigma": 3.0,
+              "within_bound": true
+            }
+          }
+        },
+        "readouts": [
+          {
+            "name": "view_overlap",
+            "deleted": {
+              "n": 1000,
+              "mean": 0.228359375,
+              "sd": 0.05341021658090906,
+              "min": 0.0625,
+              "max": 0.40625
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.2303203125,
+              "sd": 0.053147846012163984,
+              "min": 0.0625,
+              "max": 0.4375
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.28259375,
+              "sd": 0.05579674152443733,
+              "min": 0.125,
+              "max": 0.5
+            },
+            "z_deleted_vs_random": -0.952647987366593,
+            "z_survivors_vs_random": 31.10250669211032,
+            "frac_deleted_over_threshold": 0.003,
+            "informative": true
+          },
+          {
+            "name": "count_cosine",
+            "deleted": {
+              "n": 1000,
+              "mean": 0.061629009344230705,
+              "sd": 0.0013077407994493008,
+              "min": 0.05725372870595322,
+              "max": 0.06703343260452992
+            },
+            "random": {
+              "n": 2000,
+              "mean": 0.06171028772369041,
+              "sd": 0.0012961519305517831,
+              "min": 0.057281122834520665,
+              "max": 0.06607463810466946
+            },
+            "survivors": {
+              "n": 2000,
+              "mean": 0.06341980461987724,
+              "sd": 0.001269871743129161,
+              "min": 0.05944525899134856,
+              "max": 0.06771828581871596
+            },
+            "z_deleted_vs_random": -1.6190993387642512,
+            "z_survivors_vs_random": 41.70781960869854,
+            "frac_deleted_over_threshold": 0.001,
+            "informative": true
+          }
+        ],
+        "memory": {
+          "dim": 16384,
+          "items": 9000,
+          "active_per_item": 64,
+          "counter_bits": 16,
+          "counter_bytes": 32768,
+          "ledger_entries": 9000,
+          "ledger_payload_bytes": 108000,
+          "view_size": 3740,
+          "view_density": 0.228271484375,
+          "view_bitset_bytes": 2048,
+          "view_sparse_bytes": 14960,
+          "bytes_per_item_counter": 3.640888888888889,
+          "bytes_per_item_total": 15.640888888888888,
+          "per_document_store_bytes": 2304000,
+          "per_document_bytes_per_item": 256,
+          "breakeven_items": 128
+        },
+        "timing": {
+          "insert_ns_per_item": {
+            "median": 288.55,
+            "runs": [
+              270.2917,
+              270.7209,
+              288.55,
+              308.9708,
+              324.0083
+            ]
+          },
+          "delete_ns_per_item": {
+            "median": 334.333,
+            "runs": [
+              293.709,
+              323.958,
+              334.333,
+              354.333,
+              368.042
+            ]
+          },
+          "delete_with_certificate_ns_per_item": {
+            "median": 73000.875,
+            "runs": [
+              70360.0,
+              72456.708,
+              73000.875,
+              73510.375,
+              81961.709
+            ]
+          },
+          "verify_certificate_us": {
+            "median": 67.708,
+            "runs": [
+              65.916,
+              67.625,
+              67.708,
+              89.25,
+              126.416
+            ]
+          },
+          "state_digest_us": {
+            "median": 17.292,
+            "runs": [
+              16.75,
+              17.083,
+              17.292,
+              21.959,
+              34.042
+            ]
+          },
+          "rebuild_ms": {
+            "median": 2.701584,
+            "runs": [
+              2.420333,
+              2.490875,
+              2.701584,
+              2.915625,
+              3.055792
+            ]
+          },
+          "baseline_insert_ns_per_item": {
+            "median": 61.2667,
+            "runs": [
+              57.15,
+              59.8125,
+              61.2667,
+              63.6,
+              80.125
+            ]
+          }
+        }
+      },
+      "baselines": [],
+      "verdict": {
+        "exact": true,
+        "chain_consistent": true,
+        "counter_indistinguishable": true,
+        "baseline_leaks": null,
+        "pass": true
+      }
+    }
+  ],
+  "overall": {
+    "pass": true,
+    "rows_pass": 6,
+    "rows_total": 6,
+    "rows_baseline_not_applicable": 4
+  }
+}

@@ -1,11 +1,18 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Bounding-box tree over the stored `f32` embeddings for filtered and hybrid semantic
+//! queries. Rows reference the store's chunks through their documents (no copy of the
+//! embeddings); node bounds are the exact coordinate-wise `f32` minimum and maximum of the
+//! rows below, and a query prunes a node when the outward-rounded `f64` upper bound of its
+//! dot product is below the current k-th score. Leaf rows are scored with
+//! [`Embedding::cosine`], the one semantic score of a chunk.
+
 use std::{cmp::Ordering, collections::BinaryHeap, mem::size_of, sync::Arc};
 
 use anyhow::{ensure, Context, Result};
 
-use super::{DocumentStore, StoredDocument};
+use super::{DocumentStore, Embedding, StoredDocument};
 
 pub(super) const MIN_ROWS: usize = 128;
 pub(super) const MAX_ROWS: usize = 250_000;
@@ -41,17 +48,23 @@ struct DenseRow {
 }
 
 impl DenseRow {
-    fn embedding(&self) -> &[f64] {
+    fn stored(&self) -> &Embedding {
         self.document.chunks[self.chunk]
             .embedding
-            .as_deref()
+            .as_ref()
             .expect("indexed chunk lost its embedding")
+    }
+
+    fn embedding(&self) -> &[f32] {
+        self.stored()
     }
 }
 
+/// Exact `f32` bounds of the rows in `start..end`: a minimum or maximum of `f32` values is one
+/// of them, so no rounding is involved in the bounds themselves.
 struct Node {
-    low: Vec<f64>,
-    high: Vec<f64>,
+    low: Vec<f32>,
+    high: Vec<f32>,
     start: usize,
     end: usize,
     children: Option<(usize, usize)>,
@@ -173,7 +186,7 @@ pub(super) fn build_dense_index(snapshot: DenseIndexSnapshot) -> Result<Option<T
     let max_nodes = leaves * 2 - 1;
     let bounds = max_nodes
         .checked_mul(dimensions)
-        .and_then(|n| n.checked_mul(2 * size_of::<f64>()));
+        .and_then(|n| n.checked_mul(2 * size_of::<f32>()));
     ensure!(
         bounds.is_some_and(|bytes| bytes <= MAX_BOUND_BYTES),
         "dense index bounds exceed 64 MiB"
@@ -247,11 +260,11 @@ impl DenseIndex {
         let mut low = Vec::new();
         low.try_reserve_exact(self.dimensions)
             .context("cannot allocate dense lower bounds")?;
-        low.resize(self.dimensions, f64::INFINITY);
+        low.resize(self.dimensions, f32::INFINITY);
         let mut high = Vec::new();
         high.try_reserve_exact(self.dimensions)
             .context("cannot allocate dense upper bounds")?;
-        high.resize(self.dimensions, f64::NEG_INFINITY);
+        high.resize(self.dimensions, f32::NEG_INFINITY);
         for row in &self.rows[start..end] {
             for (dimension, &value) in row.embedding().iter().enumerate() {
                 low[dimension] = low[dimension].min(value);
@@ -291,14 +304,15 @@ impl DenseIndex {
     fn upper(&self, node: usize, query: &[f64]) -> f64 {
         let node = &self.nodes[node];
         let mut upper = 0.0_f64;
-        // Coordinate containment plus outward rounding bounds the computed sequential f64 dot,
-        // including cancellation and underflow; equality with the kth score must not be pruned.
+        // The `f32` endpoints widen exactly; coordinate containment plus outward rounding then
+        // bounds the computed sequential `f64` dot of `Embedding::cosine`, including
+        // cancellation and underflow. Equality with the kth score must not be pruned.
         for (dimension, &value) in query.iter().enumerate() {
-            let endpoint = if value >= 0.0 {
+            let endpoint = f64::from(if value >= 0.0 {
                 node.high[dimension]
             } else {
                 node.low[dimension]
-            };
+            });
             upper = (upper + (value * endpoint).next_up()).next_up();
         }
         if upper.is_nan() {
@@ -351,12 +365,7 @@ impl DenseIndex {
                 }
             } else {
                 for (row, point) in self.rows[node.start..node.end].iter().enumerate() {
-                    let score = query
-                        .iter()
-                        .zip(point.embedding())
-                        .map(|(a, b)| a * b)
-                        .sum::<f64>()
-                        .clamp(-1.0, 1.0);
+                    let score = point.stored().cosine(query);
                     dots += 1;
                     if !score.is_finite() || score < minimum {
                         continue;

@@ -1,0 +1,28 @@
+{
+  "mode": "eager",
+  "dim": 1024,
+  "batch": 512,
+  "documents": 3633,
+  "chunks": 3633,
+  "store_text": null,
+  "repeats": 5,
+  "ingest_s": [
+    0.342107292,
+    0.339776834,
+    0.340296958,
+    0.345352833,
+    0.351150417
+  ],
+  "median_ingest_s": 0.342107292,
+  "catch_up_s": [],
+  "median_catch_up_s": null,
+  "vectors_after_ingest": 3633,
+  "vectors_after_catch_up": 3633,
+  "parity": {
+    "queries": 16,
+    "lexical_identical": true,
+    "vector_identical": true,
+    "lexical_mismatches": [],
+    "vector_mismatches": []
+  }
+}

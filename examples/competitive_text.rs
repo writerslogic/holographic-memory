@@ -12,6 +12,7 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
+use holographic_memory::core::documents::{EncodeMode, IngestOptions};
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
 use serde_json::json;
@@ -37,6 +38,10 @@ struct Args {
     /// Unix epoch nanoseconds taken by the orchestrator just before spawning this process.
     #[arg(long, default_value_t = 0)]
     t0_ns: u128,
+    /// `build` only: eager (chunk hypervectors at ingest, the default) | deferred | lexical
+    /// (BM25 index only, like-for-like with the lexical comparators).
+    #[arg(long, default_value = "eager")]
+    encode: String,
 }
 
 #[derive(Deserialize)]
@@ -66,12 +71,15 @@ fn main() -> Result<()> {
     let report = match args.phase.as_str() {
         "build" => {
             ensure!(!args.store.exists(), "store exists; remove it first");
+            let mode: EncodeMode = args.encode.parse()?;
+            let options = IngestOptions { encode: mode };
             let start = Instant::now();
             let core = HmsCore::new(1024, Some(store), None)?;
             for chunk in input.documents.chunks(512) {
-                core.memorize_documents(chunk.to_vec())?;
+                core.memorize_documents_with(chunk.to_vec(), &options)?;
             }
-            json!({"documents": input.documents.len(), "ingest_s": start.elapsed().as_secs_f64()})
+            json!({"documents": input.documents.len(), "ingest_s": start.elapsed().as_secs_f64(),
+                "encode": mode.name()})
         }
         "serve" => {
             ensure!(

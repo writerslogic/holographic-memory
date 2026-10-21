@@ -88,3 +88,89 @@ with the offending path in the message.
 
 None from the root crate. Dependency: numpy (1.26 or 2.x), supplied by `--with numpy`.
 Python >= 3.11.
+
+---
+
+# relevance: closing the oracle gap above static fusion (round 2)
+
+`relevance.py` imports `roc.py` (same directory) for input parsing, BM25, metrics, pools and the
+bootstrap, and tests seven query-time mechanisms against the z-score-sum baseline that round 1
+selected (eval 0.3459, oracles 0.3774 best channel / 0.3970 best weight).
+
+## Command
+
+```sh
+uv run --no-project --with numpy python benchmarks/research/roc/relevance.py
+```
+
+Options: `--cache <dir>` (default `~/.cache/hms-bench/nfcorpus`), `--out <json>` (default
+`benchmarks/research/roc/out/relevance_v1.json`). Same input checks as `roc.py` (row counts,
+f32 sizes, sha256 recorded). Deterministic: fixed tie-break, bootstrap seed 0, no hash-order
+dependence. Expected wall clock 20-60 s on one core (BM25 a few seconds; 2 folds x up to 9
+PRF corpus re-scores of 323 x 3633 x 384; everything else is on compact pools). Budget: 3 min.
+
+## Protocol (exact)
+
+* Queries with IDCG@10 = 0 are dropped. BM25 (k1 1.2, b 0.75, HMS tokenizer) and cosine
+  (`Q D^T`, l2-normalised rows) as in `roc.py`.
+* Pool per query: BM25 top-200 (positive scores only) | cosine top-200; PRF adds | cos' top-200.
+  Both channels z-scored over the pool; fused = (1-w) z(BM25) + w z(dense); fused top-100 with
+  the lower-document-index tie-break. nDCG@10 (linear gain) and recall@100 on that list.
+* Folds: `primary` tunes on odd 0-based query indices (queries.jsonl order) and evaluates on even;
+  `swapped` mirrors it. Every parameter is chosen by tune-fold mean nDCG@10; each family's
+  held-out number is reported once. The chosen family is the non-baseline family with the highest
+  tune-fold score. Nothing that reads eval-fold labels enters a choice.
+* Families (dense weight grid 0..1 step 0.05 everywhere; `n_configs` = configurations compared
+  on the tune fold):
+  * `zsum` baseline (weight w0 by tune); `rrf_k60` competitor baseline (untuned).
+  * (a) `prf_dense`: q' = normalize(q + alpha mean(D[zsum fused top-m])), m in {3,5,10}, alpha in
+    {0.5,1,2}; cos' over the whole corpus; re-fuse with a second-stage weight (189 configs).
+  * (c) `gate_jaccard20`: Jaccard of BM25 top-20 (positive) and cosine top-20, bucketed by
+    tune-fold quantiles (2/3/4 buckets); each bucket takes the weight maximising the tune mean of
+    its members; a bucket with no tune member takes the global tune-best weight.
+  * (d) `gate_cos_margin` (cos top1-top2), `gate_bm25_margin` ((s1-s2)/s1, 0 when s1 <= 0),
+    `gate_margin_diff` (difference of the two tune-fold midrank ECDFs), `gate_margin_2d`
+    (2x2 or 3x3 quantile grid over both margins); same bucket rule.
+  * (e) `centroid_rerank`: + beta z(cos(doc, normalize(mean D[positive BM25 top-m]))) on the
+    baseline pool, m in {3,5}, beta in {0.25,0.5,1,2} (168 configs); centroid = q when there is no
+    BM25 hit.
+  * (f) `two_stage_prf`: zsum fused top-100 re-ranked by (1-lambda) z(fused) + lambda z(cos'),
+    lambda in {0.5,0.75,1} over the nine (m, alpha) PRF queries (27 configs); recall@100 is the
+    baseline's by construction.
+  * (g) `prf_gate_jaccard20`, `prf_gate_margin`: the nine PRF tables with the second-stage weight
+    chosen per bucket by the (c) or (d) gates computed on the first-pass channels (27 / 99 configs).
+* Per family and fold: `ndcg10_tune`, `ndcg10_eval`, `recall100_tune/eval`, `delta_vs_zsum_eval`,
+  `gap_closed_best_weight_eval` = (family - zsum)/(best-z-weight-per-query oracle - zsum) and
+  `gap_closed_best_channel_eval` on the eval fold (null when the oracle does not exceed zsum),
+  `bootstrap_vs_zsum_eval` (paired percentile bootstrap, 2000 resamples, seed 0, over eval
+  queries), `cost.extra_dots` (dim-384 dot products per query beyond the baseline's single corpus
+  pass: PRF = corpus size 3633, centroid rerank = mean pool width, two-stage = 100, gates = 0).
+* `folds.<fold>.chosen` adds `bootstrap_vs_rrf_eval` and `passes_win_rule`;
+  `best_family_by_eval_info_only` is printed for diagnosis only and never drives selection.
+
+## Output
+
+`benchmarks/research/roc/out/relevance_v1.json` (schema `hms.research.relevance/1`), floats to 6
+decimals. Keys: `protocol` (procedure text), `constants`, `data` (counts, pool width, input
+sha256s), `all_queries` (channel and oracle numbers over all scored queries, the zsum weight curve,
+statistic quantiles), `folds.primary` / `folds.swapped` (`bm25`, `cosine`, `oracle_eval`,
+`families`, `chosen`), `verdict`, `timing_s`.
+
+## Pass / fail
+
+The summary prints one table per fold (family, tune, eval, R@100, delta vs zsum, CI95, gap closed
+vs both oracles, extra dots, configs) and ends with
+
+```
+VERDICT: WIN|NO_WIN  (chosen <family>: delta +x.xxxx >= 0.01: yes|no; ci95 [...] excludes 0: yes|no; swapped fold <family> delta +x.xxxx passes: yes|no)
+```
+
+WIN iff the family chosen on the primary tune fold beats `zsum` by >= 0.01 nDCG@10 on the primary
+eval fold (162 queries) with the bootstrap CI95 lower bound > 0. Read with it: whether the swapped
+fold selects the same family and also passes (`verdict.swapped_fold`), `cross_fit_delta_vs_zsum`,
+and the `n_configs` of the winner (a 189-configuration grid on 161 tune queries can select noise;
+the held-out CI is the guard). A `prf_dense` win costs one extra corpus pass per query; a gate win
+costs nothing. Exit 0 with the JSON written is the only success signal; input mismatches exit
+non-zero naming the file.
+
+Dependencies: numpy only (`--with numpy`), Python >= 3.11, `roc.py` beside the script.

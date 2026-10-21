@@ -1,0 +1,2 @@
+now:  Alice lives in Berlin
+then: Alice lives in Paris

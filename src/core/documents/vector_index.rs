@@ -4,20 +4,23 @@
 //! Vector query dispatch for the document store.
 //!
 //! Mechanism: a vector-only, unfiltered query does not need the lexical capture in
-//! `search.rs`, which clones one `Arc<StoredDocument>` per stored chunk and scores `f64` rows
+//! `search.rs`, which clones one `Arc<StoredDocument>` per stored chunk and scores rows
 //! through the document pointers on every query. It is answered from a [`VectorSnapshot`]:
-//! an immutable, contiguous `f32` matrix of the embedded chunks captured at one store
-//! generation, with an optional vertex graph (`qgraph::VGraph`) over the same rows. Every
-//! [`VectorIndex`] maps a query to row ids of that matrix and the snapshot maps rows back to
-//! documents. Readers share the snapshot through one `Arc`, so a query holds the store's read
-//! lock only to read the generation and the text segment (and, when stale, to validate hits).
+//! the embedded chunks captured at one store generation as a row list over the store's own
+//! `f32` embeddings ([`super::Embedding`], one shared allocation per chunk, so the snapshot
+//! adds no copy of the matrix), with an optional vertex graph (`qgraph::VGraph`) over the
+//! same rows. Every [`VectorIndex`] maps a query to row ids and the snapshot maps rows back
+//! to documents. Readers share the snapshot through one `Arc`, so a query holds the store's
+//! read lock only to read the generation and the text segment (and, when stale, to validate
+//! hits).
 //!
-//! Data layout: `rows[i]` owns the document of matrix row `i` and the chunk index inside it;
-//! `matrix[i * dim .. (i + 1) * dim]` is that chunk's embedding, l2-normalised in `f32` (a
-//! zero embedding stays zero and scores 0). `members` holds the address of every document
+//! Data layout: `rows[i]` owns the document of row `i` and the chunk index inside it;
+//! `exact.rows[i]` is that chunk's embedding handle, l2-normalised `f32` values rounded from
+//! the `f64` normalisation at ingest. `members` holds the address of every document
 //! allocation the snapshot covers; the addresses stay unique while the snapshot holds the
 //! `Arc`s, so a replaced document (a new allocation under the same id) is never mistaken for
-//! the captured one.
+//! the captured one. The graph build needs one contiguous matrix; it is assembled for the
+//! build and freed with the builder, so it is transient memory, not part of the snapshot.
 //!
 //! Consistency: the store bumps `generation` on every insert, replace and delete
 //! (`index.rs`), and a snapshot records the generation it was captured at.
@@ -27,18 +30,19 @@
 //!   A deleted or replaced document's `Arc` is no longer the one in `store.documents`, so
 //!   its rows drop out (the tombstone), and the search over-fetches up to `4k` rows to cover
 //!   them. Documents the snapshot does not cover (inserted or replaced since the capture)
-//!   are scored exactly in a delta pass over the live documents: one walk over
-//!   `store.documents` with a hash probe per document plus a dot product per uncovered
-//!   chunk. That pass is bounded by the store size and never costs more than the generic
-//!   exact path; when fewer than `k` hits survive, the caller falls back to that path.
-//!   `rebuild_recommended` asks maintenance for a fresh capture after
-//!   [`REBUILD_AFTER_MUTATIONS`] mutations, so the stale window is bounded by the
-//!   maintenance interval.
+//!   are scored in a delta pass over the live documents: one walk over `store.documents`
+//!   with a hash probe per document plus a dot product per uncovered chunk. That pass is
+//!   bounded by the store size and never costs more than the generic exact path; when fewer
+//!   than `k` hits survive, the caller falls back to that path. `rebuild_recommended` asks
+//!   maintenance for a fresh capture after [`REBUILD_AFTER_MUTATIONS`] mutations, so the
+//!   stale window is bounded by the maintenance interval.
 //! - third implementation slot: [`VectorIndexKind::Scan`] is reserved for the graph-free
 //!   scan under research in `benchmarks/research/scan`; nothing implements it here.
 //!
-//! Scores are `f32` cosines widened to `f64`; ties break on `(document id, chunk)` ascending,
-//! like the generic path.
+//! Scores: candidates are ranked by the `f32` dot, then every returned hit is re-scored with
+//! [`super::Embedding::cosine`] (the `f64` accumulation every other path uses), so a result
+//! does not depend on which index produced it; ties break on `(document id, chunk)`
+//! ascending, like the generic path.
 
 use std::{cmp::Ordering, collections::BinaryHeap, sync::Arc};
 
@@ -48,7 +52,7 @@ use parking_lot::{Mutex, MutexGuard, RwLock};
 use serde::{Deserialize, Serialize};
 
 use super::index::text_of;
-use super::{DocumentResult, DocumentStore, StoredDocument, TextSegment};
+use super::{DocumentResult, DocumentStore, Embedding, StoredDocument, TextSegment};
 use crate::core::qgraph::{BuildParams, Graph, VGraph, VSearchParams};
 
 /// Fewest embedded chunks worth a snapshot; smaller stores take the generic exact path.
@@ -66,14 +70,14 @@ pub const MAX_K: usize = 1000;
 /// Mutations since the capture after which maintenance builds a fresh snapshot.
 pub const REBUILD_AFTER_MUTATIONS: u64 = 64;
 const MAX_ROWS: usize = 1 << 22;
-/// Upper bound on the matrix: 512 Mi `f32` values (2 GiB).
+/// Upper bound on the graph build matrix: 512 Mi `f32` values (2 GiB).
 const MAX_MATRIX_VALUES: usize = 512 * 1024 * 1024;
 
 /// Which implementation answered, or may answer, a vector query.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VectorIndexKind {
-    /// Exact cosine over the contiguous `f32` matrix.
+    /// Exact cosine over the store's `f32` rows.
     Exact,
     /// The vertex graph (`qgraph::VGraph`) with exact re-scoring of the fetched rows.
     Graph,
@@ -256,28 +260,16 @@ fn dot(a: &[f32], b: &[f32]) -> f32 {
     sum
 }
 
-/// Writes `values` l2-normalised into `out`; a zero or non-finite vector becomes zeros.
-fn write_normalized(values: &[f64], out: &mut [f32]) {
-    let norm = values.iter().map(|v| v * v).sum::<f64>().sqrt();
-    if norm > 0.0 && norm.is_finite() {
-        for (slot, value) in out.iter_mut().zip(values) {
-            *slot = (value / norm) as f32;
-        }
-    } else {
-        out.fill(0.0);
-    }
-}
-
-/// Exact cosine over the snapshot matrix, one query per thread.
+/// Exact cosine over the snapshot rows, one query per thread. Each row is the store's own
+/// embedding allocation (one pointer per row, shared with the chunk).
 pub(crate) struct ExactScan {
     dim: usize,
-    matrix: Arc<[f32]>,
+    rows: Arc<[Embedding]>,
 }
 
 impl ExactScan {
     fn row(&self, row: u32) -> &[f32] {
-        let start = row as usize * self.dim;
-        &self.matrix[start..start + self.dim]
+        &self.rows[row as usize]
     }
 }
 
@@ -287,7 +279,7 @@ impl VectorIndex for ExactScan {
     }
 
     fn rows(&self) -> usize {
-        self.matrix.len() / self.dim
+        self.rows.len()
     }
 
     fn search(&self, query: &[f32], k: usize, _ef: usize) -> Result<Vec<(u32, f32)>> {
@@ -298,7 +290,7 @@ impl VectorIndex for ExactScan {
             self.dim
         );
         let mut best = TopK::new(k.min(self.rows()));
-        for (row, values) in self.matrix.chunks_exact(self.dim).enumerate() {
+        for (row, values) in self.rows.iter().enumerate() {
             best.offer(row as u32, dot(query, values));
         }
         Ok(best.into_sorted())
@@ -396,17 +388,18 @@ impl VectorSnapshot {
     }
 }
 
-/// The rows copied out of the store under its read lock; [`build_vector_snapshot`] turns it
-/// into a snapshot without any lock.
+/// The rows captured under the store's read lock; [`build_vector_snapshot`] turns it into a
+/// snapshot without any lock. `embeddings[i]` is the handle of `rows[i]`'s chunk embedding,
+/// shared with the store (a reference count, not a copy).
 pub(crate) struct VectorCapture {
     generation: u64,
     dim: usize,
     rows: Vec<RowRef>,
-    matrix: Vec<f32>,
+    embeddings: Vec<Embedding>,
 }
 
-/// Copies every embedded chunk into a contiguous normalised matrix. `None` when the store has
-/// fewer than [`SNAPSHOT_MIN_ROWS`] embedded chunks.
+/// Captures every embedded chunk's embedding handle. `None` when the store has fewer than
+/// [`SNAPSHOT_MIN_ROWS`] embedded chunks.
 pub(crate) fn capture_vector_rows(
     store: &DocumentStore,
     dim: usize,
@@ -428,10 +421,10 @@ pub(crate) fn capture_vector_rows(
     let mut rows = Vec::new();
     rows.try_reserve_exact(count)
         .context("cannot allocate vector snapshot rows")?;
-    let mut matrix = Vec::new();
-    matrix
-        .try_reserve_exact(count * dim)
-        .context("cannot allocate vector snapshot matrix")?;
+    let mut embeddings = Vec::new();
+    embeddings
+        .try_reserve_exact(count)
+        .context("cannot allocate vector snapshot embedding handles")?;
     for id in &store.embedded_documents {
         let Some(document) = store.documents.get(id) else {
             bail!("embedded document {id:?} is missing from the store");
@@ -449,9 +442,7 @@ pub(crate) fn capture_vector_rows(
                 rows.len() < count,
                 "store counts {count} embedded chunks but holds more"
             );
-            let start = matrix.len();
-            matrix.resize(start + dim, 0.0);
-            write_normalized(embedding, &mut matrix[start..]);
+            embeddings.push(embedding.clone());
             rows.push(RowRef {
                 document: Arc::clone(document),
                 chunk: u32::try_from(chunk).context("chunk index over u32")?,
@@ -467,12 +458,13 @@ pub(crate) fn capture_vector_rows(
         generation: store.generation,
         dim,
         rows,
-        matrix,
+        embeddings,
     }))
 }
 
 /// Builds the exact scan and, with at least `graph_min_rows` rows, the vertex graph. The
-/// graph build is deterministic (`BuildParams::default()`, fixed seed) and uses the rayon pool.
+/// graph build is deterministic (`BuildParams::default()`, fixed seed) and uses the rayon
+/// pool; its contiguous input matrix (`rows * dim * 4` bytes) lives only for the build.
 pub(crate) fn build_vector_snapshot(
     capture: VectorCapture,
     graph_min_rows: usize,
@@ -481,23 +473,33 @@ pub(crate) fn build_vector_snapshot(
         generation,
         dim,
         rows,
-        matrix,
+        embeddings,
     } = capture;
     let members = rows
         .iter()
         .map(|row| Arc::as_ptr(&row.document) as usize)
         .collect();
-    let matrix: Arc<[f32]> = matrix.into();
+    let embeddings: Arc<[Embedding]> = embeddings.into();
     let exact = ExactScan {
         dim,
-        matrix: Arc::clone(&matrix),
+        rows: Arc::clone(&embeddings),
     };
     let graph = if rows.len() >= graph_min_rows.max(SNAPSHOT_MIN_ROWS) {
-        let built = Graph::build_owned(matrix.to_vec(), dim, &BuildParams::default())
+        let mut matrix = Vec::new();
+        matrix
+            .try_reserve_exact(rows.len() * dim)
+            .context("cannot allocate the graph build matrix")?;
+        for embedding in embeddings.iter() {
+            matrix.extend_from_slice(embedding);
+        }
+        let built = Graph::build_owned(matrix, dim, &BuildParams::default())
             .map_err(|e| anyhow::anyhow!("graph build: {e}"))?;
         let encoded =
             VGraph::from_graph(&built, true).map_err(|e| anyhow::anyhow!("graph encode: {e}"))?;
         drop(built);
+        // The builder's matrix (`rows * dim * 4` bytes) and its per-vertex neighbour lists
+        // are freed now; hand the allocator's free pages back so they leave the resident set.
+        crate::core::os_memory::release_free_heap();
         ensure!(
             encoded.len() == rows.len(),
             "graph index has {} vertices for {} rows",
@@ -508,7 +510,7 @@ pub(crate) fn build_vector_snapshot(
             graph: encoded,
             exact: ExactScan {
                 dim,
-                matrix: Arc::clone(&matrix),
+                rows: Arc::clone(&embeddings),
             },
         })
     } else {
@@ -562,19 +564,8 @@ pub(crate) fn vector_index_status(
 struct Hit {
     document: Arc<StoredDocument>,
     chunk: u32,
-    /// Candidate score from the `f32` scan, replaced by the exact `f64` cosine before ranking.
+    /// Candidate score from the `f32` scan, replaced by the `f64` re-score before ranking.
     score: f64,
-}
-
-/// Cosine between the l2-normalised `f64` query and a stored embedding, the same arithmetic as
-/// the generic search path, so a result does not depend on which index produced it.
-fn exact_cosine(query: &[f64], embedding: &[f64]) -> f64 {
-    let norm = embedding.iter().map(|v| v * v).sum::<f64>().sqrt();
-    if norm > 0.0 && norm.is_finite() {
-        (query.iter().zip(embedding).map(|(q, v)| q * v).sum::<f64>() / norm).clamp(-1.0, 1.0)
-    } else {
-        0.0
-    }
 }
 
 fn to_result(hit: &Hit, segment: Option<&TextSegment>) -> DocumentResult {
@@ -629,8 +620,8 @@ pub(crate) fn search_vector_snapshot(
     };
     let stale = staleness(generation, snapshot.generation);
     let extra = usize::try_from(stale).unwrap_or(usize::MAX).min(4 * k);
-    // A small margin covers candidates the `f32` scan ranks just outside `k` that the exact
-    // `f64` re-score moves inside it.
+    // A small margin covers candidates the `f32` scan ranks just outside `k` that the `f64`
+    // re-score moves inside it.
     let fetch = (k + extra + 8).min(snapshot.rows());
     let hits = index.search(query, fetch, options.ef)?;
     let mut found: Vec<Hit> = Vec::with_capacity(fetch);
@@ -658,7 +649,6 @@ pub(crate) fn search_vector_snapshot(
                 });
             }
         }
-        let mut scratch = vec![0.0f32; snapshot.dim];
         for document in store.documents.values() {
             if snapshot.members.contains(&(Arc::as_ptr(document) as usize)) {
                 continue;
@@ -670,11 +660,10 @@ pub(crate) fn search_vector_snapshot(
                 if embedding.len() != snapshot.dim {
                     continue;
                 }
-                write_normalized(embedding, &mut scratch);
                 found.push(Hit {
                     document: Arc::clone(document),
                     chunk: u32::try_from(chunk).context("chunk index over u32")?,
-                    score: f64::from(dot(query, &scratch)),
+                    score: f64::from(dot(query, embedding)),
                 });
             }
         }
@@ -690,7 +679,7 @@ pub(crate) fn search_vector_snapshot(
             .get(hit.chunk as usize)
             .and_then(|chunk| chunk.embedding.as_ref())
         {
-            hit.score = exact_cosine(exact_query, embedding);
+            hit.score = embedding.cosine(exact_query);
         }
     }
     found.sort_by(|a, b| {
@@ -737,16 +726,21 @@ impl VectorIndexSlot {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::documents::{prepare, DocumentInput};
+    use crate::core::encoding::TextEncoder;
+    use serde_json::json;
 
     fn matrix(rows: &[[f32; 4]]) -> ExactScan {
-        let mut values = Vec::new();
-        for row in rows {
-            let norm = row.iter().map(|v| v * v).sum::<f32>().sqrt();
-            values.extend(row.iter().map(|v| v / norm));
-        }
+        let rows: Vec<Embedding> = rows
+            .iter()
+            .map(|row| {
+                let norm = row.iter().map(|v| v * v).sum::<f32>().sqrt();
+                Embedding::from_f32(row.iter().map(|v| v / norm).collect())
+            })
+            .collect();
         ExactScan {
             dim: 4,
-            matrix: values.into(),
+            rows: rows.into(),
         }
     }
 
@@ -774,5 +768,62 @@ mod tests {
         let b: Vec<f32> = (0..19).map(|i| 1.0 - i as f32 * 0.1).collect();
         let expected: f32 = a.iter().zip(&b).map(|(x, y)| x * y).sum();
         assert!((dot(&a, &b) - expected).abs() < 1e-4);
+    }
+
+    /// The snapshot holds the store's embedding allocations, not copies, and the graph-free
+    /// and graph snapshots both answer from them.
+    #[test]
+    fn snapshot_rows_share_the_store_embeddings() {
+        const DIM: usize = 16;
+        let axis = |lead: usize, second: usize, value: f64| -> Vec<f64> {
+            let mut values = vec![0.0; DIM];
+            values[lead] = 1.0;
+            values[second] = value;
+            values
+        };
+        let mut store = DocumentStore::default();
+        for i in 0..40 {
+            let input: DocumentInput = serde_json::from_value(json!({
+                "id": format!("d{i:03}"),
+                "text": format!("document {i} with a few words of text for two chunks here"),
+                "chunkWords": 6, "overlapWords": 0,
+                "embeddings": [axis(0, 1, i as f64 / 50.0), axis(2, 3, i as f64 / 40.0)]
+            }))
+            .unwrap();
+            let document = prepare(input, 1024, Some(DIM), TextEncoder::default()).unwrap();
+            store.insert(document.id.clone(), document);
+        }
+        let capture = capture_vector_rows(&store, DIM).unwrap().unwrap();
+        assert_eq!(capture.rows.len(), 80);
+        for (row, embedding) in capture.rows.iter().zip(&capture.embeddings) {
+            let stored = store.documents[&row.document.id].chunks[row.chunk as usize]
+                .embedding
+                .as_ref()
+                .unwrap();
+            assert!(embedding.shares_allocation(stored));
+        }
+        for graph_min_rows in [usize::MAX, 1] {
+            let capture = capture_vector_rows(&store, DIM).unwrap().unwrap();
+            let snapshot = build_vector_snapshot(capture, graph_min_rows).unwrap();
+            assert_eq!(snapshot.has_graph(), graph_min_rows == 1);
+            for (row, embedding) in snapshot.rows.iter().zip(snapshot.exact.rows.iter()) {
+                let stored = store.documents[&row.document.id].chunks[row.chunk as usize]
+                    .embedding
+                    .as_ref()
+                    .unwrap();
+                assert!(embedding.shares_allocation(stored));
+            }
+            let query = Embedding::from_f64(
+                &super::super::normalize_embedding(&axis(0, 1, 39.0 / 50.0), DIM).unwrap(),
+            );
+            let hits = snapshot
+                .index(VectorIndexMode::Auto)
+                .unwrap()
+                .search(&query, 1, DEFAULT_EF)
+                .unwrap();
+            let row = &snapshot.rows[hits[0].0 as usize];
+            assert_eq!((row.document.id.as_str(), row.chunk), ("d039", 0));
+            assert!((hits[0].1 - 1.0).abs() < 1e-6);
+        }
     }
 }
