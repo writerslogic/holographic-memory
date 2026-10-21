@@ -1,0 +1,29 @@
+cloudpickle==3.1.2
+    # via joblib
+joblib==1.6.0
+    # via
+    #   pynndescent
+    #   scikit-learn
+llvmlite==0.50.0
+    # via
+    #   numba
+    #   pynndescent
+narwhals==2.27.1
+    # via scikit-learn
+numba==0.68.0
+    # via pynndescent
+numpy==2.5.4
+    # via
+    #   numba
+    #   scikit-learn
+    #   scipy
+pynndescent==0.6.0
+    # via -r benchmarks/competitive/requirements/pynndescent.footprint.in
+scikit-learn==1.9.1
+    # via pynndescent
+scipy==1.18.1
+    # via
+    #   pynndescent
+    #   scikit-learn
+threadpoolctl==3.7.0
+    # via scikit-learn

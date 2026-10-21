@@ -1,0 +1,6 @@
+diskannpy==0.7.0
+    # via -r benchmarks/competitive/requirements/diskann.in
+numpy==1.25.0
+    # via
+    #   -r benchmarks/competitive/requirements/diskann.in
+    #   diskannpy

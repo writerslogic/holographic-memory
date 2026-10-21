@@ -1,0 +1,4 @@
+ngt==2.3.12
+    # via -r benchmarks/competitive/requirements/ngt.footprint.in
+numpy==2.5.4
+    # via ngt

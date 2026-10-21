@@ -1,0 +1,6 @@
+numpy==2.5.4
+    # via scann
+protobuf==7.36.2
+    # via scann
+scann==1.4.2
+    # via -r benchmarks/competitive/requirements/scann.footprint.in
