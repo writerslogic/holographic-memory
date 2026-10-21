@@ -49,7 +49,10 @@ def test_kv_store_contract(srv):
     assert kv.get_all("other") == {"b": {"x": 2}, "c": {"x": 3}}
     kv.put("a", {"x": 9})
     assert kv.get("a") == {"x": 9}
-    assert kv.delete("a") is True and kv.delete("a") is False
+    first = kv.delete("a")
+    second = kv.delete("a")
+    assert first is True
+    assert second is False
     long_key = "k" * 400
     kv.put(long_key, {"v": 1})
     assert kv.get(long_key) == {"v": 1} and long_key in kv.get_all()

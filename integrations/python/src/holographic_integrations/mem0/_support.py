@@ -32,9 +32,7 @@ ENTITY_PARAMS = ("user_id", "agent_id", "run_id")
 IDENTITY_KEYS = frozenset(ENTITY_PARAMS) | {"actor_id"}
 PROMOTED = ("user_id", "agent_id", "run_id", "actor_id", "role", "attributed_to", "expiration_date")
 _CORE_KEYS = frozenset({"data", "hash", "created_at", "updated_at", "id", "text_lemmatized", BUCKET_KEY, *PROMOTED})
-_UNSET = object()
 DEFAULT_BUCKETS = 32
-_LOOKUP_OPS = ("eq", "ne", "gt", "gte", "lt", "lte", "in", "nin", "contains", "icontains")
 
 
 # --------------------------------------------------------------------------- validation

@@ -49,7 +49,8 @@ def test_create_search_list_delete_roundtrip(server):
         assert res.results[0].id == p.id and res.results[0].content.startswith("The quarterly") and res.results[0].tags == ["meetings", "roadmap"]
         assert res.results[0].timestamp.endswith("+00:00")
         assert {x.text for x in mem.list(AGENT)} == {"The quarterly roadmap focuses on performance work", "Lunch order was pasta"}
-        assert mem.delete(p.id, agent_id=AGENT) == {}
+        deleted = mem.delete(p.id, agent_id=AGENT)
+        assert deleted == {}
         assert [x.text for x in mem.list(AGENT)] == ["Lunch order was pasta"]
         with pytest.raises(KeyError):
             mem.delete(p.id, agent_id=AGENT)

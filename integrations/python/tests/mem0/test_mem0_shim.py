@@ -35,7 +35,8 @@ def test_add_search_get_update_delete_history(server):
         new = m.get(r["id"])
         assert new["memory"] == "I love skiing in the alps" and new["created_at"] == got["created_at"]
         assert new["updated_at"] >= got["updated_at"] and new["hash"] != got["hash"]
-        assert m.delete(r["id"]) == {"message": "Memory deleted successfully!"}
+        deleted = m.delete(r["id"])
+        assert deleted == {"message": "Memory deleted successfully!"}
         assert m.get(r["id"]) is None
         events = [(h["event"], h["old_memory"], h["new_memory"], h["is_deleted"]) for h in m.history(r["id"])]
         assert events == [

@@ -47,7 +47,7 @@ from langgraph.checkpoint.base import (
 from langgraph.checkpoint.serde.base import SerializerProtocol
 
 from ..core import AsyncHmsBackend, HmsBackend, HmsConfig, Record
-from ..core.filters import And, Eq, Filter
+from ..core.filters import And, Eq
 
 _PAGE = 50
 _PART = 40_000

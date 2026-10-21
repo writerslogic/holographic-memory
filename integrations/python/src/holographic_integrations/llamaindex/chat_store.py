@@ -21,7 +21,7 @@ number (its 0-based position in the key's history since creation), not its curre
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.bridge.pydantic import PrivateAttr

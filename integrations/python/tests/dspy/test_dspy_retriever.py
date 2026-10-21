@@ -63,7 +63,8 @@ def test_delete_and_replace_by_id(server):
     r.add(["first"], ids=["x"])
     r.add(["second"], ids=["x"])
     assert r("second", k=3).passages == ["second"]
-    assert r.delete(["x", "ghost"]) == 1
+    deleted = r.delete(["x", "ghost"])
+    assert deleted == 1
     assert r("second", k=3).passages == []
 
 

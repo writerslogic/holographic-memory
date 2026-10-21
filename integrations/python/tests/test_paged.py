@@ -18,11 +18,16 @@ def test_log_across_page_boundaries(server_factory, n):
         log.append(items[4:])
         assert len(log) == n and log.read() == items
         assert log.read(limit=3) == items[-3:] and log.read(limit=n + 1) == items
-        assert log.pop() == items[-1] and log.read() == items[:-1]
+        popped = log.pop()
+        assert popped == items[-1]
+        assert log.read() == items[:-1]
         log.append(["tail"])
         assert log.read(limit=1) == ["tail"]
         log.clear()
-        assert log.read() == [] and log.pop() is None and len(log) == 0
+        assert log.read() == []
+        popped = log.pop()
+        assert popped is None
+        assert len(log) == 0
 
 
 def test_logs_with_different_keys_or_namespaces_do_not_mix(server):
