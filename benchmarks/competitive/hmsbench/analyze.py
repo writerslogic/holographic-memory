@@ -58,8 +58,12 @@ def _install_cells(put, system, entry, src):
     if not inst:
         return
     if "bytes" in inst:
-        put("install_mib", system, cell(inst["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", inst.get("note", "")))
-        put("install_distributions", system, cell(inst.get("distributions", 0), None, 1, f"{src}.install", "count", "Python distributions (wheels) the install pulls in"))
+        # A comparator that ships with the interpreter installs nothing: 0 is not a result HMS can lose to.
+        info = bool(inst.get("ships_with_interpreter"))
+        note = "ships with the Python interpreter: not an install cost, no verdict drawn against it" if info else ""
+        put("install_mib", system, cell(inst["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", note or inst.get("note", "")) | {"informational": info})
+        put("install_distributions", system, cell(inst.get("distributions", 0), None, 1, f"{src}.install", "count",
+                                                  note or "Python distributions (wheels) the install pulls in") | {"informational": info})
         return
     binary = next(v for k, v in inst.items() if not k.startswith("_"))
     put("install_mib", system, cell(binary["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", "one statically linked binary, symbols included"))
@@ -156,14 +160,13 @@ def text_metrics(path, results, level=0.95):
                                            q["queries"], qsrc, "recall"))
         qps, p50, p99 = [], [], []
         for r in rounds:
-            for ns in r["passes_ns"]:
-                qps.append(len(ns) / (sum(ns) / 1e9))
-                srt = sorted(ns)
-                p50.append(srt[(len(srt) - 1) // 2] / 1e3)
-                p99.append(srt[int((len(srt) - 1) * 0.99)] / 1e3)
-        put("qps", system, cell(_med(qps), ci(qps), len(qps), src + ".serve_rounds[*].passes_ns", "QPS", results.get("timing_boundary", {}).get(system, "")))
-        put("p50_latency", system, cell(_med(p50), ci(p50), len(p50), src + ".serve_rounds[*].passes_ns", "us"))
-        put("p99_latency", system, cell(_med(p99), ci(p99), len(p99), src + ".serve_rounds[*].passes_ns", "us"))
+            for p in r["passes"]:
+                qps.append(p["queries"] / (p["total_ns"] / 1e9))
+                p50.append(p["p50_ns"] / 1e3)
+                p99.append(p["p99_ns"] / 1e3)
+        put("qps", system, cell(_med(qps), ci(qps), len(qps), src + ".serve_rounds[*].passes", "QPS", results.get("timing_boundary", {}).get(system, "")))
+        put("p50_latency", system, cell(_med(p50), ci(p50), len(p50), src + ".serve_rounds[*].passes", "us"))
+        put("p99_latency", system, cell(_med(p99), ci(p99), len(p99), src + ".serve_rounds[*].passes", "us"))
         bt = [b["ingest_s"] for b in entry["build_runs"]]
         put("build_seconds", system, cell(_med(bt), ci(bt), len(bt), src + ".build_runs", "s"))
         pk = [b["peak_rss_bytes"] / 2**20 for b in entry["build_runs"]]

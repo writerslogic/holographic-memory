@@ -41,6 +41,8 @@ pub use vector_index::{
     SNAPSHOT_MIN_ROWS,
 };
 
+/// Documents, and chunks, one `memorize_documents_with` call accepts.
+pub const MAX_BATCH_ITEMS: usize = 4096;
 pub(crate) const MAX_DOCUMENT_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const MAX_CHUNK_BYTES: usize = 64 * 1024;
 pub(crate) const CHUNK_PREFIX: &str = "hms:chunk:";

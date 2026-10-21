@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 
 from . import SCHEMA_VERSION, data, envs, jars, registry, textdata
-from .common import CACHE, RESULTS, ROOT, commit, dir_bytes, hardware, log, run_measured, write_json
+from .common import CACHE, RESULTS, ROOT, commit, dir_bytes, hardware, log, pass_summary, run_measured, write_json
 
 WORK = Path(os.environ.get("HMS_BENCH_WORK", CACHE / "competitive" / "work"))
 WORKER_DIR = Path(__file__).resolve().parent
@@ -349,7 +349,9 @@ def run_text(dataset, spec, systems, out_path=None):
                 t0 = time.time_ns()
                 stdout, stderr, wall, peak = _text_cmd(system, "serve", serve_input_path, stores[system], out, threads, t0=t0)
                 body = json.loads(out.read_text())
-                body["quality"] = _quality(body.pop("rows"), qrels) if r == 0 else None
+                rows = body.pop("rows")
+                body["quality"] = _quality(rows, qrels) if r == 0 else None
+                body["passes"] = [pass_summary(ns) for ns in body.pop("passes_ns")]
                 runs[system]["serve_rounds"].append(body | {"peak_rss_bytes": peak, "wall_s": wall})
             except Exception as error:
                 results["skipped"][system] = str(error)[-600:]

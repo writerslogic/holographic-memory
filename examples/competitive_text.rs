@@ -12,7 +12,9 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
+use holographic_memory::core::documents::{
+    chunk_document, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
+};
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
 use serde_json::json;
@@ -42,7 +44,8 @@ struct Args {
     /// (BM25 index only, like-for-like with the lexical comparators).
     #[arg(long, default_value = "eager")]
     encode: String,
-    /// `build` only: documents per atomic batch (0 = the whole corpus in one batch).
+    /// `build` only: documents per atomic batch (0 = as many documents per batch as the engine
+    /// accepts, bounded by both its item and chunk limits).
     #[arg(long, default_value_t = 0)]
     batch: usize,
 }
@@ -67,6 +70,34 @@ fn epoch_ns() -> u128 {
         .unwrap_or(0)
 }
 
+/// Documents per batch. A fixed `fixed` size when non-zero; otherwise greedy: as many consecutive
+/// documents as fit the engine's per-batch item and chunk limits. Chunk counts come from the
+/// engine's own chunker, before the timer starts.
+fn plan_batches(documents: &[DocumentInput], fixed: usize) -> Result<Vec<usize>> {
+    if fixed > 0 {
+        return Ok(documents.chunks(fixed).map(|chunk| chunk.len()).collect());
+    }
+    let mut sizes = Vec::new();
+    let (mut items, mut chunks) = (0, 0);
+    for document in documents {
+        let n = chunk_document(document)?.len();
+        ensure!(
+            n <= MAX_BATCH_ITEMS,
+            "document exceeds the batch chunk limit"
+        );
+        if items == MAX_BATCH_ITEMS || chunks + n > MAX_BATCH_ITEMS {
+            sizes.push(items);
+            (items, chunks) = (0, 0);
+        }
+        items += 1;
+        chunks += n;
+    }
+    if items > 0 {
+        sizes.push(items);
+    }
+    Ok(sizes)
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
     let input: Input = serde_json::from_slice(&std::fs::read(&args.input)?)?;
@@ -76,16 +107,14 @@ fn main() -> Result<()> {
             ensure!(!args.store.exists(), "store exists; remove it first");
             let mode: EncodeMode = args.encode.parse()?;
             let options = IngestOptions { encode: mode };
+            let count = input.documents.len();
+            let batches = plan_batches(&input.documents, args.batch)?;
             let start = Instant::now();
             let core = HmsCore::new(1024, Some(store), None)?;
-            // One atomic batch, as the comparators load the corpus in one transaction.
-            let count = input.documents.len();
-            if args.batch == 0 {
-                core.memorize_documents_with(input.documents, &options)?;
-            } else {
-                for chunk in input.documents.chunks(args.batch) {
-                    core.memorize_documents_with(chunk.to_vec(), &options)?;
-                }
+            let mut documents = input.documents.into_iter();
+            for size in batches {
+                let batch: Vec<_> = documents.by_ref().take(size).collect();
+                core.memorize_documents_with(batch, &options)?;
             }
             json!({"documents": count, "ingest_s": start.elapsed().as_secs_f64(),
                 "encode": mode.name()})

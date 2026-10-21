@@ -59,7 +59,7 @@ TIMEOUT_S = 23 * 3600
 
 
 @app.function(image=image, volumes={"/vol": VOL}, cpu=CPU, memory=MEM_GIB * 1024, timeout=TIMEOUT_S)
-def run(archive: bytes, suite: str, args: list[str], cap_usd: float, tag: str) -> dict:
+def run(archive: bytes, suite: str, args: list[str], cap_usd: float, tag: str, revision: str) -> dict:
     started = time.time()
     work = Path("/work/src")
     work.mkdir(parents=True, exist_ok=True)
@@ -73,7 +73,7 @@ def run(archive: bytes, suite: str, args: list[str], cap_usd: float, tag: str) -
     results_dir.mkdir(parents=True, exist_ok=True)
     env = {**os.environ, "PATH": f"/root/.cargo/bin:{os.environ['PATH']}", "HMS_BENCH_DATA": "/vol/data", "HMS_BENCH_HW_CLASS": HW_CLASS,
            "HMS_BENCH_WORK": "/tmp/hms-work", "HMS_BENCH_ENVS": "/tmp/hms-envs", "HMS_BENCH_RESULTS": str(results_dir),
-           "CARGO_TARGET_DIR": "/tmp/target", "CARGO_BUILD_JOBS": str(CPU), "PYTHONUNBUFFERED": "1"}
+           "HMS_BENCH_COMMIT": revision, "CARGO_TARGET_DIR": "/tmp/target", "CARGO_BUILD_JOBS": str(CPU), "PYTHONUNBUFFERED": "1"}
     subprocess.run(["cargo", "build", "--release", "--bin", "public-bench", "--example", "competitive_text"], cwd=work, env=env, check=True)
     # The cap stops the run gracefully only if it falls before the platform's hard timeout.
     budget_s = min(cap_usd / USD_PER_HOUR * 3600, TIMEOUT_S - 1800) - (time.time() - started)
@@ -102,13 +102,17 @@ def shard_args(spec: str) -> list[str]:
 
 
 @app.local_entrypoint()
-def main(suite: str = "heavy", cap_usd: float = 12.0, only: str = "both", datasets: str = "", shards: str = ""):
-    """`shards`: `;`-separated `only:datasets` specs, each run on its own container in parallel with
+def main(suite: str = "heavy", cap_usd: float = 12.0, only: str = "both", datasets: str = "", shards: str = "", rounds: int = 0):
+    """`rounds` overrides the suite's serve rounds. `shards`: `;`-separated `only:datasets` specs, each run on its own container in parallel with
     an equal share of the cap; without it, one container runs `--only`/`--datasets`."""
     specs = shards.split(";") if shards else [f"{only}:{datasets}"]
     run_id = time.strftime("%Y%m%dT%H%M%S")
     archive = tree_tar()
-    calls = [(archive, suite, shard_args(spec), cap_usd / len(specs), f"{run_id}-{i}") for i, spec in enumerate(specs)]
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    revision = head + ("+uncommitted" if dirty else "")
+    extra = ["--rounds", str(rounds)] if rounds else []
+    calls = [(archive, suite, shard_args(spec) + extra, cap_usd / len(specs), f"{run_id}-{i}", revision) for i, spec in enumerate(specs)]
     dest = ROOT / "benchmarks/results/competitive"
     for out in run.starmap(calls, return_exceptions=True):
         if isinstance(out, BaseException):

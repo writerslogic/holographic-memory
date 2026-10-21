@@ -91,7 +91,7 @@ def footprint(name):
     """Install size in bytes and number of distributions for `name` alone."""
     lock_file = REQUIREMENTS / f"{name}.footprint.txt"
     if not lock_file.exists() or not lock_file.read_text().strip():
-        return {"bytes": 0, "distributions": 0, "note": "standard library or already-installed dependency"}
+        return {"bytes": 0, "distributions": 0, "ships_with_interpreter": True, "note": "standard library or already-installed dependency"}
     target = ENV_ROOT / f"{name}-footprint"
     shutil.rmtree(target, ignore_errors=True)
     subprocess.run(["uv", "pip", "install", "-q", "--python-version", PYTHON, "--target", str(target), "-r", str(lock_file)], check=True)

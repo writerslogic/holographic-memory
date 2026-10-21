@@ -138,3 +138,16 @@ def test_selection_uses_pooled_timings_over_recall_qualified_rows():
     best, _ = analyze.pick_config(builds, 0.95)
     assert best[2] == 0  # ef=3 is faster but below the recall target; ef=1 beats ef=2 on pooled median
     assert analyze.pick_config(builds, 0.999)[0] is None
+
+
+def test_a_comparator_that_ships_with_the_interpreter_draws_no_install_verdict():
+    put = {}
+
+    def collect(metric, system, c):
+        put.setdefault(metric, {})[system] = c
+
+    analyze._install_cells(collect, "sqlite-fts5", {"install": {"bytes": 0, "distributions": 0, "ships_with_interpreter": True}}, "x")
+    analyze._install_cells(collect, "tantivy", {"install": {"bytes": 3 * 2**20, "distributions": 1}}, "x")
+    name, best = table.best_other("install_mib", put["install_mib"])
+    assert name == "tantivy" and best["value"] == 3.0
+    assert put["install_mib"]["sqlite-fts5"]["informational"]

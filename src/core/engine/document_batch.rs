@@ -9,9 +9,10 @@ use rayon::prelude::*;
 use serde::Serialize;
 
 use super::mutation::{transaction_payload, Mutation, TRANSACTION_MAGIC};
-use crate::core::documents::{chunk_document, DocumentInput, MAX_DOCUMENT_BYTES};
+use crate::core::documents::{
+    chunk_document, DocumentInput, MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
+};
 
-const MAX_ITEMS: usize = 4096;
 const MAX_EMBEDDING_VALUES: usize = 1_048_576;
 const MAX_TRANSACTION_BYTES: usize = 32 * 1024 * 1024;
 
