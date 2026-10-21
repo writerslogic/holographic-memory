@@ -1,0 +1,20 @@
+Bootstrap: localimage
+From: base.sif
+
+%post
+  # The holographic-memory revision to build; pin it to a release tag or commit.
+  HMS_REV=main
+
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.96.0
+  export PATH="$HOME/.cargo/bin:$PATH"
+  pip install --no-cache-dir maturin==1.15.0
+
+  git clone https://github.com/writerslogic/holographic-memory.git /tmp/hms
+  cd /tmp/hms
+  git checkout "$HMS_REV"
+  maturin build --release --locked --out /tmp/hms-dist
+  pip install --no-cache-dir /tmp/hms-dist/*.whl
+  cd /
+  rm -rf /tmp/hms /tmp/hms-dist "$HOME/.cargo" "$HOME/.rustup"
+
+  python -c 'from holographic_memory import VectorIndex; print(VectorIndex())'

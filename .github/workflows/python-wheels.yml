@@ -17,6 +17,8 @@ on:
       - scripts/ci/smoke-wheel.sh
       - scripts/ci/smoke_python.py
       - src/python.rs
+      - src/python/**
+      - tests/python/**
       - pyproject.toml
       - Cargo.toml
       - Cargo.lock
@@ -74,6 +76,19 @@ jobs:
         if: ${{ !matrix.container }}
         shell: bash
         run: scripts/ci/smoke-wheel.sh "$PYTHON" dist
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+      - name: Binding tests against the wheel
+        if: ${{ !matrix.container }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PYTHON" -m venv "$RUNNER_TEMP/binding"
+          bin="$RUNNER_TEMP/binding/bin"
+          [ -d "$RUNNER_TEMP/binding/Scripts" ] && bin="$RUNNER_TEMP/binding/Scripts"
+          "$bin/python" -m pip install --quiet numpy==2.0.2 pytest==8.3.5
+          "$bin/python" -m pip install --quiet --no-index --find-links dist holographic-vsa
+          "$bin/python" -I -m pytest -q -p no:cacheprovider tests/python
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}
       - name: Smoke test in a clean container (${{ matrix.container }})

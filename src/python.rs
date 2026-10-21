@@ -6,9 +6,10 @@
 //! Exposes the differentiated phase-vector surface -- non-self-inverse binding,
 //! graceful similarity, deterministic bundling, and resonator factorization -- as a
 //! pip-installable module built with `maturin` under the `python` feature. This is
-//! the initial, curated surface (the phase substrate, qFHRR arXiv 2604.25939); it
-//! will grow as the public API stabilises. See `pyproject.toml` and
-//! `.github/workflows/publish-pypi.yml`. The module is named `holographic_memory`.
+//! the initial, curated surface (the phase substrate, qFHRR arXiv 2604.25939, and the
+//! `VectorIndex` nearest-neighbour index); it will grow as the public API stabilises.
+//! See `pyproject.toml` and `.github/workflows/publish-pypi.yml`. The module is named
+//! `holographic_memory`.
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -18,6 +19,7 @@ use crate::core::phase_resonator::{phase_resonator_factorize, ResonatorConfig};
 
 #[cfg(feature = "local-embed")]
 mod embed;
+mod vector_index;
 
 /// A quantized-phase hypervector: `dim` phases in `Z_N`. Binding is phase-add mod N
 /// (not self-inverse), bundling is a deterministic integer fold, similarity is the
@@ -140,6 +142,7 @@ fn holographic_memory(m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?;
     m.add_class::<PyPhaseHVec>()?;
     m.add_function(wrap_pyfunction!(resonator_factorize, m)?)?;
+    vector_index::register(m)?;
     #[cfg(feature = "local-embed")]
     embed::register(m)?;
     Ok(())

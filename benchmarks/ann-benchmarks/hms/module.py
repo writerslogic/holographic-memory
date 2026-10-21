@@ -1,0 +1,49 @@
+"""ann-benchmarks wrapper for HMS (holographic-memory), the quantized graph index.
+
+Copy this directory to ann_benchmarks/algorithms/hms/ in an ann-benchmarks checkout and add
+`- hms` to the library matrix in .github/workflows/benchmarks.yml. Build the image with
+`python install.py --algorithm hms`.
+
+The index is a proximity graph over unit vectors whose traversal reads 4-bit codes of the
+randomly rotated rows; the `rerank` best candidates are re-scored with an 8-bit residual code.
+Build arguments: graph out-degree and construction search width. Query arguments: candidate
+pool size `ef` and re-rank depth `rerank`.
+"""
+import numpy as np
+from holographic_memory import VectorIndex
+
+from ..base.module import BaseANN
+
+
+class HMS(BaseANN):
+    def __init__(self, metric, method_param):
+        if metric != "angular":
+            raise NotImplementedError(f"hms supports angular only, not {metric}")
+        self.metric = metric
+        self.degree = method_param["degree"]
+        self.build_ef = method_param["build_ef"]
+        self.name = f"hms(degree={self.degree}, build_ef={self.build_ef})"
+        self.index = None
+
+    def fit(self, X):
+        self.index = VectorIndex(self.metric, degree=self.degree, build_ef=self.build_ef)
+        self.index.fit(np.ascontiguousarray(X, dtype=np.float32))
+
+    def set_query_arguments(self, ef, rerank):
+        self.index.set_query_arguments(ef, rerank)
+        self.name = f"hms(degree={self.degree}, build_ef={self.build_ef}, ef={ef}, rerank={rerank})"
+
+    def query(self, v, n):
+        return self.index.query(v, n)
+
+    def batch_query(self, X, n):
+        self.res = self.index.batch_query(np.ascontiguousarray(X, dtype=np.float32), n)
+
+    def get_batch_results(self):
+        return self.res
+
+    def get_additional(self):
+        return {"index_bytes": self.index.index_bytes}
+
+    def done(self):
+        self.index = None
