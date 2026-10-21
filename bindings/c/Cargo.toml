@@ -1,0 +1,33 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "holographic-memory-c"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+authors = ["WritersLogic, Inc. <david@writerslogic.com>"]
+description = "Stable C ABI for the Holographic Memory System document store (C, Go, Java and .NET bindings)."
+repository = "https://github.com/writerslogic/holographic-memory"
+publish = false
+
+[lib]
+name = "holographic_memory_c"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+holographic-memory = { path = "../..", features = ["security"] }
+parking_lot = "0.12"
+serde_json = "1"
+anyhow = "1"
+tempfile = "3"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+panic = "unwind"
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
