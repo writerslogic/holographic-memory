@@ -1156,6 +1156,62 @@ fn custom_supersession_policy_is_validated() {
     assert!(!memory.core().has_document("a"));
 }
 
+/// A clock that runs one armed action the next time it is read. Recall reads the clock
+/// between its search and its index check, so the action lands a commit in that window.
+struct InterleavingClock {
+    armed: parking_lot::Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+impl Clock for InterleavingClock {
+    fn now_millis(&self) -> Millis {
+        let action = self.armed.lock().take();
+        if let Some(action) = action {
+            action();
+        }
+        1_000
+    }
+}
+
+#[test]
+fn recall_judges_status_from_the_revision_it_searched() {
+    let dir = tempfile::tempdir().unwrap();
+    let clock = Arc::new(InterleavingClock {
+        armed: parking_lot::Mutex::new(None),
+    });
+    let config = MemoryConfig {
+        supersession: SupersessionSpec::LatestBySubject,
+        ..MemoryConfig::default()
+    };
+    let memory = Arc::new(
+        Memory::with_config(open(dir.path()), config)
+            .unwrap()
+            .with_clock(clock.clone()),
+    );
+    let version = |id: &str, from: i64| RememberInput {
+        subject: Some("worker".into()),
+        valid_from: Some(from),
+        ..fact(id, &format!("worker reports {id}"))
+    };
+    memory.remember(version("v0", 1)).unwrap();
+    let writer = Arc::downgrade(&memory);
+    *clock.armed.lock() = Some(Box::new(move || {
+        writer
+            .upgrade()
+            .unwrap()
+            .remember(version("v1", 2))
+            .unwrap();
+    }));
+    let got = memory
+        .recall("worker reports", &RecallOptions::default())
+        .unwrap();
+    assert!(
+        clock.armed.lock().is_none(),
+        "the commit did not interleave"
+    );
+    let current: Vec<&str> = got.iter().map(|r| r.id.as_str()).collect();
+    assert_eq!(current, ["v1"]);
+}
+
 #[test]
 fn concurrent_writers_and_readers_stay_consistent_with_foreign_writes() {
     let dir = tempfile::tempdir().unwrap();
