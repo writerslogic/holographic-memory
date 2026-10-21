@@ -5,7 +5,7 @@ install | install
 getting started | quickstart
 sqlite comparison | quickstart
 offline agent | offline-agent
-encrypt a store | quickstart
+encrypt a store | quickstart,ENCRYPTION,privacy-limits
 passphrase | faq
 wrong passphrase | faq
 holographic | concepts/holographic,faq
