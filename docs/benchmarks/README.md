@@ -155,8 +155,10 @@ their files carry `mode: "server"` and render under "Server mode results".
 * The protocol (one client, one persistent connection, sequential queries, client-side timing;
   build until queryable; cold start from process start to first answer; durable replace/delete
   semantics per system) is written into every results file under `protocol`.
-* `hms-server` answers text only through its on-device model stages, not BM25, so the text server
-  sections have no HMS row and draw no verdicts.
+* `hms-server`'s text row ingests through the memory API (`remember`) and queries through
+  `recall` with lexical weight 1 and semantic weight 0, the same document-search options as the
+  embedded `hms` row. Its graph index is held in memory only, so every serving process rebuilds it before the first
+  ANN query (counted into cold start and serving RSS).
 
 ## Plugging in more systems
 

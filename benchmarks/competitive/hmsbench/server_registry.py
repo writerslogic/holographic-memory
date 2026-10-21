@@ -26,7 +26,7 @@ SERVER_SYSTEMS = {
 
 _HTTP = "one persistent HTTP/1.1 keep-alive connection from a CPython client on loopback; request body serialized before the timer, response JSON decoded inside it"
 SERVER_TIMING_BOUNDARY = {
-    HMS_SERVER: f"{_HTTP}; POST /api/v1/query with index=graph and per-request ef",
+    HMS_SERVER: f"{_HTTP}; ANN: POST /api/v1/query with index=graph and per-request ef; text: POST /api/v1/memory/recall, lexical weight only",
     "qdrant-server": f"{_HTTP}; POST /collections/c/points/query (REST, not gRPC); max_search_threads=1",
     "weaviate": f"{_HTTP}; GraphQL nearVector (REST, not gRPC); ef set on the class between sweep points",
     "opensearch-knn": f"{_HTTP}; _search knn query with method_parameters.ef_search; concurrent segment search off, one shard",
@@ -73,11 +73,10 @@ DURABILITY = {
 SERVER_NOT_RUN = {
     "milvus-standalone": "no non-Docker artifact: releases 3.0.3 and 2.6.25 ship only Docker Compose files; the last native package "
                          "(milvus_2.6.4 .deb/.rpm, Linux only) is superseded",
-    "hms-server (text)": "hms-server answers text queries only with the `local-models` model stages (embedding, not BM25); its HTTP API has "
-                         "no lexical-only query, so the server text sections have no HMS row",
 }
 
 SERVER_PINS = {ENV: ["psycopg[binary]==3.3.6", "redis==8.1.0"]}
 
 SERVER_ANN_SYSTEMS = [k for k, v in SERVER_SYSTEMS.items() if v["kind"] == "server-ann"]
-SERVER_TEXT_SYSTEMS = [k for k, v in SERVER_SYSTEMS.items() if v["kind"] == "server-text"]
+# hms-server serves both kinds; its text row goes through the memory API (server_worker.HmsServerText).
+SERVER_TEXT_SYSTEMS = [HMS_SERVER] + [k for k, v in SERVER_SYSTEMS.items() if v["kind"] == "server-text"]

@@ -36,7 +36,11 @@ PROTOCOL = {
     "disk": "allocated bytes (du) of the server data directory after a clean stop (logs excluded)",
     "ops": "100 replacements then 100 deletions on a copy of the built data directory, one request each, each acknowledged per `durability`",
     "durability": DURABILITY,
-    "server_threads": "build threads = protocol build_threads where the server has a knob; per-query search parallelism pinned to 1 where a knob exists",
+    "hms_server": "ANN: the graph snapshot lives in memory only, so every serving process rebuilds it (POST /api/v1/index/maintain) before "
+                  "its first query; its cold start and serving peak RSS include that build. Text: documents enter through the memory API "
+                  "(remember) and queries through recall with lexicalWeight 1 / semanticWeight 0, i.e. document search's BM25 ranking",
+    "guards_lifted": "Weaviate's disk read-only guard (DISK_USE_READONLY_PERCENTAGE=100): a safety stop that trips on a nearly full host disk",
+    "server_threads":"build threads = protocol build_threads where the server has a knob; per-query search parallelism pinned to 1 where a knob exists",
 }
 
 
@@ -180,15 +184,18 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None):
 def run_cli(a, spec, wanted):
     """`hms-bench run` in server mode: hms-server plus the requested (default: all) server systems."""
     from .server_registry import SERVER_ANN_SYSTEMS, SERVER_TEXT_SYSTEMS
-    if a.only in ("ann", "both"):
-        systems = [HMS_SERVER] + [s for s in SERVER_ANN_SYSTEMS if s != HMS_SERVER and (wanted is None or s in wanted)]
+    def pick(pool):
+        # hms-server always runs; a kind is skipped when systems were named and none is of it.
+        others = [s for s in pool if s != HMS_SERVER and (wanted is None or s in wanted)]
+        return [HMS_SERVER] + others if others or wanted is None or wanted == {HMS_SERVER} else []
+
+    if a.only in ("ann", "both") and (systems := pick(SERVER_ANN_SYSTEMS)):
         for dataset, n_train, n_test in spec["ann"]:
             if not a.datasets or dataset in a.datasets:
                 print(run_ann(dataset, n_train, n_test, spec, systems))
-    if a.only in ("text", "both"):
-        systems = [s for s in SERVER_TEXT_SYSTEMS if wanted is None or s in wanted]
+    if a.only in ("text", "both") and (systems := pick(SERVER_TEXT_SYSTEMS)):
         for dataset in spec["text"]:
-            if systems and (not a.datasets or dataset in a.datasets):
+            if not a.datasets or dataset in a.datasets:
                 print(run_text(dataset, spec, systems))
 
 

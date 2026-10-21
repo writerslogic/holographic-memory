@@ -230,6 +230,46 @@ class HmsServer(ServerSystem):
             self.http.call("DELETE", f"/api/v1/documents/{int(i)}")
 
 
+class HmsServerText(HmsServer):
+    """Lexical text through the memory API: `remember` stores each document as a fact and
+    `recall` with lexicalWeight 1 / semanticWeight 0 is document search's BM25 ranking (the
+    recall path hands ranking to document search when no fact has validity or supersession
+    metadata), with the same options as the embedded `hms` row."""
+
+    BUILDS = {"default": {}}
+
+    def command(self):
+        argv, env, cwd = super().command()
+        argv[argv.index("--input-dim") + 1] = "384"
+        # Replacing a document means re-remembering its id with new text (the default rejects it).
+        config = self.workdir / "memory.json"
+        config.write_text(json.dumps({"onIdConflict": "replace"}))
+        return argv + ["--memory-config", config], env, cwd
+
+    def ingest(self, documents):
+        for lo in range(0, len(documents), 1000):
+            facts = [{"id": d["id"], "text": d["text"]} for d in documents[lo:lo + 1000]]
+            self.http.call("POST", "/api/v1/memory/remember", {"facts": facts})
+
+    def wait_queryable(self, params):
+        pass
+
+    def after_start(self, params):
+        pass
+
+    def prepare(self, text):
+        return json.dumps({"query": text, "k": TEXT_K, "candidateLimit": TEXT_K, "lexicalWeight": 1, "semanticWeight": 0}).encode()
+
+    def search(self, body):
+        return [(r["id"], r["score"]) for r in self.http.call("POST", "/api/v1/memory/recall", body=body)["results"]]
+
+    def replace_doc(self, doc, n):
+        self.http.call("POST", "/api/v1/memory/remember", {"id": doc["id"], "text": doc["text"] + " benchmarkrevision"})
+
+    def delete_doc(self, doc, n):
+        self.http.call("POST", "/api/v1/memory/forget", {"scope": {"kind": "ids", "ids": [doc["id"]]}})
+
+
 # ------------------------------------------------------------------ Qdrant
 
 class QdrantServer(ServerSystem):
@@ -922,7 +962,7 @@ class OpenSearchBm25(OpenSearchBase):
 
 ANN = {"hms-server": HmsServer, "qdrant-server": QdrantServer, "weaviate": WeaviateServer, "opensearch-knn": OpenSearchKnn,
        "pgvector": PgVector, "redis-vss": RedisVss}
-TEXT = {"meilisearch": Meilisearch, "typesense": Typesense, "opensearch-bm25": OpenSearchBm25, "pg-tsvector": PgTsvector,
+TEXT = {"hms-server": HmsServerText, "meilisearch": Meilisearch, "typesense": Typesense, "opensearch-bm25": OpenSearchBm25, "pg-tsvector": PgTsvector,
         "paradedb": ParadeDb}
 
 
