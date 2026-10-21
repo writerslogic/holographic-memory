@@ -128,6 +128,61 @@ def test_async_client_raises_holographic_error():
     assert (raised.value.status_code, raised.value.code) == (429, "tenant_limit")
 
 
+def document_transport(requests):
+    """Answers DELETE /api/v1/documents/a%20b%2Fc and POST /api/v1/index/maintain; anything else is a 404."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.method == "DELETE" and request.url.raw_path == b"/api/v1/documents/a%20b%2Fc":
+            return httpx.Response(200, json={"deleted": True})
+        if request.method == "POST" and request.url.path == "/api/v1/index/maintain":
+            return httpx.Response(200, json={"rebuilt": True, "documents": 3})
+        return httpx.Response(404, text="not found")
+
+    return httpx.MockTransport(handler)
+
+
+def test_delete_document_percent_encodes_the_id():
+    requests = []
+    with HolographicClient(transport=document_transport(requests)) as client:
+        client.delete_document("a b/c")
+        with pytest.raises(httpx.HTTPStatusError) as raised:
+            client.delete_document("missing")
+    assert [(r.method, r.url.raw_path) for r in requests] == [
+        ("DELETE", b"/api/v1/documents/a%20b%2Fc"),
+        ("DELETE", b"/api/v1/documents/missing"),
+    ]
+    assert raised.value.response.status_code == 404
+
+
+def test_maintain_document_index_posts_an_empty_object():
+    requests = []
+    with HolographicClient(transport=document_transport(requests)) as client:
+        assert client.maintain_document_index() == {"rebuilt": True, "documents": 3}
+    assert requests[0].method == "POST"
+    assert json.loads(requests[0].content) == {}
+
+
+def test_async_delete_and_maintain():
+    requests = []
+
+    async def run():
+        async with AsyncHolographicClient(transport=document_transport(requests)) as client:
+            await client.delete_document("a b/c")
+            with pytest.raises(httpx.HTTPStatusError) as raised:
+                await client.delete_document("missing")
+            assert raised.value.response.status_code == 404
+            return await client.maintain_document_index()
+
+    assert asyncio.run(run()) == {"rebuilt": True, "documents": 3}
+    assert [(r.method, r.url.raw_path) for r in requests] == [
+        ("DELETE", b"/api/v1/documents/a%20b%2Fc"),
+        ("DELETE", b"/api/v1/documents/missing"),
+        ("POST", b"/api/v1/index/maintain"),
+    ]
+    assert json.loads(requests[2].content) == {}
+
+
 def test_async_client_matches_sync_masking():
     requests = []
 
