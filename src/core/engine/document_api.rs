@@ -206,6 +206,7 @@ impl HmsCore {
                     &snapshot,
                     &self.documents,
                     &query,
+                    &normalized,
                     k,
                     options,
                 )? {
@@ -225,6 +226,7 @@ impl HmsCore {
                             &snapshot,
                             &self.documents,
                             &query,
+                            &normalized,
                             k,
                             options,
                         )? {

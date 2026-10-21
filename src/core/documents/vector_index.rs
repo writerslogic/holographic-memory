@@ -52,7 +52,7 @@ use super::{DocumentResult, DocumentStore, StoredDocument, TextSegment};
 use crate::core::qgraph::{BuildParams, Graph, VGraph, VSearchParams};
 
 /// Fewest embedded chunks worth a snapshot; smaller stores take the generic exact path.
-pub const SNAPSHOT_MIN_ROWS: usize = 128;
+pub const SNAPSHOT_MIN_ROWS: usize = 1;
 /// Default `graph_min_rows`: a snapshot with fewer rows carries only the exact scan, which
 /// beats a graph traversal at that size.
 pub const DEFAULT_GRAPH_MIN_ROWS: usize = 4096;
@@ -562,13 +562,25 @@ pub(crate) fn vector_index_status(
 struct Hit {
     document: Arc<StoredDocument>,
     chunk: u32,
-    score: f32,
+    /// Candidate score from the `f32` scan, replaced by the exact `f64` cosine before ranking.
+    score: f64,
+}
+
+/// Cosine between the l2-normalised `f64` query and a stored embedding, the same arithmetic as
+/// the generic search path, so a result does not depend on which index produced it.
+fn exact_cosine(query: &[f64], embedding: &[f64]) -> f64 {
+    let norm = embedding.iter().map(|v| v * v).sum::<f64>().sqrt();
+    if norm > 0.0 && norm.is_finite() {
+        (query.iter().zip(embedding).map(|(q, v)| q * v).sum::<f64>() / norm).clamp(-1.0, 1.0)
+    } else {
+        0.0
+    }
 }
 
 fn to_result(hit: &Hit, segment: Option<&TextSegment>) -> DocumentResult {
     let document = &hit.document;
     let chunk = &document.chunks[hit.chunk as usize];
-    let score = f64::from(hit.score).clamp(-1.0, 1.0);
+    let score = hit.score.clamp(-1.0, 1.0);
     DocumentResult {
         id: chunk.id.clone(),
         document_id: document.id.clone(),
@@ -591,6 +603,7 @@ pub(crate) fn search_vector_snapshot(
     snapshot: &VectorSnapshot,
     store: &RwLock<DocumentStore>,
     query: &[f32],
+    exact_query: &[f64],
     k: usize,
     options: &VectorQueryOptions,
 ) -> Result<Option<Vec<DocumentResult>>> {
@@ -616,7 +629,9 @@ pub(crate) fn search_vector_snapshot(
     };
     let stale = staleness(generation, snapshot.generation);
     let extra = usize::try_from(stale).unwrap_or(usize::MAX).min(4 * k);
-    let fetch = (k + extra).min(snapshot.rows());
+    // A small margin covers candidates the `f32` scan ranks just outside `k` that the exact
+    // `f64` re-score moves inside it.
+    let fetch = (k + extra + 8).min(snapshot.rows());
     let hits = index.search(query, fetch, options.ef)?;
     let mut found: Vec<Hit> = Vec::with_capacity(fetch);
     if stale == 0 {
@@ -625,7 +640,7 @@ pub(crate) fn search_vector_snapshot(
             found.push(Hit {
                 document: Arc::clone(&row.document),
                 chunk: row.chunk,
-                score,
+                score: f64::from(score),
             });
         }
     } else {
@@ -639,7 +654,7 @@ pub(crate) fn search_vector_snapshot(
                 found.push(Hit {
                     document: Arc::clone(&row.document),
                     chunk: row.chunk,
-                    score,
+                    score: f64::from(score),
                 });
             }
         }
@@ -659,13 +674,23 @@ pub(crate) fn search_vector_snapshot(
                 found.push(Hit {
                     document: Arc::clone(document),
                     chunk: u32::try_from(chunk).context("chunk index over u32")?,
-                    score: dot(query, &scratch),
+                    score: f64::from(dot(query, &scratch)),
                 });
             }
         }
         drop(store);
         if found.len() < k.min(snapshot.rows()) {
             return Ok(None);
+        }
+    }
+    for hit in &mut found {
+        if let Some(embedding) = hit
+            .document
+            .chunks
+            .get(hit.chunk as usize)
+            .and_then(|chunk| chunk.embedding.as_ref())
+        {
+            hit.score = exact_cosine(exact_query, embedding);
         }
     }
     found.sort_by(|a, b| {
@@ -676,7 +701,7 @@ pub(crate) fn search_vector_snapshot(
     });
     let results = found
         .iter()
-        .filter(|hit| f64::from(hit.score) >= options.min_score)
+        .filter(|hit| hit.score >= options.min_score)
         .take(k)
         .map(|hit| to_result(hit, segment.as_deref()))
         .collect();
