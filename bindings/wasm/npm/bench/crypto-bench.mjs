@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scratch = resolve(process.argv[2] ?? "scratch-crypto");
 mkdirSync(scratch, { recursive: true });
-const targetDir = `${process.env.HMS_WASM_TARGET_DIR ?? "/Volumes/A/.hms-target-wasm"}-aes`;
+const targetDir = `${process.env.HMS_WASM_TARGET_DIR ?? "./.hms-target-wasm"}-aes`;
 const env = { ...process.env, CARGO_TARGET_DIR: targetDir, RUSTFLAGS: '--cfg getrandom_backend="wasm_js" -C target-feature=+simd128' };
 const sh = (cmd, args) => {
   const r = spawnSync(cmd, args, { env, stdio: ["ignore", "ignore", "inherit"] });

@@ -20,7 +20,7 @@ from holographic_sdk.importers import HmsSink, ImportOptions, ImporterError, run
 
 DIM = 32
 API_KEY = "import-test-key"
-_DEFAULT_BIN = "/Volumes/A/.hms-target-import/release/hms-server"
+_DEFAULT_BIN = "./.hms-target-import/release/hms-server"
 
 
 def server_bin() -> Optional[str]:

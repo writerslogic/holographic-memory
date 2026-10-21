@@ -1,13 +1,13 @@
 {
-  "build_command": "CARGO_TARGET_DIR=/Volumes/A/.hms-target-metal-sdpa cargo build --release --locked --features local-models --bin public-bench",
+  "build_command": "CARGO_TARGET_DIR=./.hms-target-metal-sdpa cargo build --release --locked --features local-models --bin public-bench",
   "build_conditions_identical": true,
   "build_log": {
-    "path": "/Volumes/A/hms-metal-sdpa/target-metal-sdpa-build.log",
+    "path": "./hms-metal-sdpa/target-metal-sdpa-build.log",
     "sha256": "2759fc89fedd65b662da8a430a8d04382059be477d4f611f76dae543493e836d",
     "size": 130
   },
   "candidate_binary": {
-    "path": "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-sdpa",
+    "path": "./.hms-target-metal-sdpa/release/public-bench-sdpa",
     "sha256": "4771dc6cbd48282336343cb6b86171b90860e7427a373c93e405326f163ee317",
     "size": 7721152
   },
@@ -189,19 +189,19 @@
     "target": 4042923778193349304
   },
   "candidate_qwen_source": {
-    "path": "/Volumes/A/hms-metal-sdpa/src/core/models/qwen3.rs",
+    "path": "./hms-metal-sdpa/src/core/models/qwen3.rs",
     "sha256": "3b4f6c57315cedde07f74049599be79c9340151501cceaeb9c35e4e2dd9b8e96",
     "size": 19836
   },
   "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
   "cargo_lock": {
-    "path": "/Volumes/A/hms-metal-sdpa/Cargo.lock",
+    "path": "./hms-metal-sdpa/Cargo.lock",
     "sha256": "585ff4990529495ea07cdb0f073b3f380793aae48d7218e7de0fae953d854220",
     "size": 102858
   },
   "compiler": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: aarch64-apple-darwin\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
   "control_build_log": {
-    "path": "/Volumes/A/hms-metal-sdpa/target-metal-control-build.log",
+    "path": "./hms-metal-sdpa/target-metal-control-build.log",
     "sha256": "9173efca27d3c3bf28441703832eff21be46f4471547c3fe59ffdcd6084764db",
     "size": 130
   },
@@ -214,24 +214,24 @@
     "release_locked_local_models_build": true
   },
   "frozen_binary": {
-    "path": "/Volumes/A/.hms-target-gpubatch/release/public-bench",
+    "path": "./.hms-target-gpubatch/release/public-bench",
     "sha256": "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec",
     "size": 7406992
   },
   "frozen_protocol": {
-    "path": "/Volumes/A/holographic-memory/benchmarks/public/reader_protocol_v1.json",
+    "path": "./benchmarks/public/reader_protocol_v1.json",
     "sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
     "size": 10076
   },
   "gpu_execution": false,
   "observed_at_utc": "2026-10-09T19:21:25.776216+00:00",
   "preregistration": {
-    "path": "/Volumes/A/hms-metal-sdpa/benchmarks/results/preregistration_metal_sdpa_2026-10-09.json",
+    "path": "./hms-metal-sdpa/benchmarks/results/preregistration_metal_sdpa_2026-10-09.json",
     "sha256": "4907d1ff9fa565324ced692ff97535009106766a1194ed8a80537dcd8f84a066",
     "size": 33679
   },
   "qwen_patch": {
-    "path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/qwen3-sdpa.patch",
+    "path": "./hms-metal-sdpa/target/sdpa-validation/qwen3-sdpa.patch",
     "sha256": "81af1dcc4e6ff6a7546bf2697852084b1650322bf65d4f6984c04a7b2f4fb34e",
     "size": 1874
   },
@@ -248,7 +248,7 @@
   ],
   "rustflags": "",
   "same_build_control_binary": {
-    "path": "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-control",
+    "path": "./.hms-target-metal-sdpa/release/public-bench-control",
     "sha256": "0039628291b4cb5eeec8e5315afedfdcde50ecc3e7ecebe6bad38842314fa623",
     "size": 7605520
   },
@@ -284,7 +284,7 @@
   },
   "timing_claim": false,
   "unmodified_qwen_source": {
-    "path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/qwen3-control.rs",
+    "path": "./hms-metal-sdpa/target/sdpa-validation/qwen3-control.rs",
     "sha256": "006f0ea505752a2cf89e70225e180de72df0ba18ed84f5a21d6c6f9e6a7dc6b1",
     "size": 18971
   },

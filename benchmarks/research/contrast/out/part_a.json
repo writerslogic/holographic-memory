@@ -3,7 +3,7 @@
   "tune_mode": "Scifact",
   "eval_set": {
     "name": "nfcorpus (all queries with qrels)",
-    "dir": "/Users/davidcondrey/.cache/hms-bench/nfcorpus",
+    "dir": "~/.cache/hms-bench/nfcorpus",
     "n_queries": 323,
     "candidates_k": 200,
     "recall_at_k": 0.8018575851393189,
@@ -13,7 +13,7 @@
   },
   "tune_set": {
     "name": "scifact (all queries with qrels)",
-    "dir": "/Users/davidcondrey/.cache/hms-bench/scifact",
+    "dir": "~/.cache/hms-bench/scifact",
     "n_queries": 300,
     "candidates_k": 200,
     "recall_at_k": 0.9366666666666666,

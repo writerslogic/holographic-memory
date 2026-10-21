@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "host": "writerslogic-02",
+ "host": "linux-host",
  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
  "versions": {
   "hms": "research/2026-10-superiority at 0283e3d plus uncommitted src changes: end-of-log marker after every frame (a bad frame followed by committed data is corruption and fails open; only a frame with nothing after it is a torn tail), crc32 sidecars for store.json/indices.json/format.json verified at open, hms-admin verify opens the store and cross-checks every logged document; old binary: hms-admin built from tag v0.6.1 (unchanged)",

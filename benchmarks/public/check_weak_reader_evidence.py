@@ -18,8 +18,8 @@ import tokenizers
 ROOT = Path(__file__).resolve().parents[2]
 REVISION = 'cdbee75f17c01a7cc42f958dc650907174af0554'
 MODEL = 'Qwen/Qwen3-4B-Instruct-2507'
-MODEL_DIR = Path('/Volumes/A/hms-models/Qwen3-4B-Instruct-2507')
-BINARY = Path('/Volumes/A/.hms-target-gpubatch/release/public-bench')
+MODEL_DIR = Path('./hms-models/Qwen3-4B-Instruct-2507')
+BINARY = Path('./.hms-target-gpubatch/release/public-bench')
 BINARY_SHA256 = 'd7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec'
 TOKENIZER_SHA256 = 'aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4'
 PROTOCOL_SHA256 = '66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d'

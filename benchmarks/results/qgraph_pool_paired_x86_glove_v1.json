@@ -462,7 +462,7 @@
   "min_ratio": 1.0
  },
  "measurement": {
-  "host": "writerslogic-02, Intel Core Ultra 9 185H (AVX2), Linux; 1-minute load 10-12 from a concurrent build",
+  "host": "linux-host, Intel Core Ultra 9 185H (AVX2), Linux; 1-minute load 10-12 from a concurrent build",
   "protocol": "as qgraph_pool_paired_x86_nytimes_v1.json on glove-100-angular degree 32 build_ef 200 (--holdout 2000), 11 paired rounds alternating A B C",
   "arms": {
    "A": "heap pools binary, accepted encoding, rerank 64, ef 256/736",

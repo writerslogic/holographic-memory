@@ -1,5 +1,5 @@
 {
-  "patch": "/Volumes/A/holographic-memory-memory-competition/benchmarks/results/memory_competition_v1/supplemental.patch",
+  "patch": ".-memory-competition/benchmarks/results/memory_competition_v1/supplemental.patch",
   "base_sha256": {
     "bindings/python/holographic-sdk/README.md": "8b18209238ce2412c6c0e50e3f1d8948e167198b0fd43dfac24f4307d6f4b593",
     "bindings/python/holographic-sdk/tests/test_evidence.py": "ab4580a9fbe290ac1db8c5a6f17b8c32c6a0844371fb5a89c59b0be455f6c9b1"

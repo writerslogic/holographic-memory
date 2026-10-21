@@ -3,7 +3,7 @@
  "category": "2A serving memory",
  "candidate": "V37",
  "mechanism": "compact term dictionary (sorted concatenated base + overlay) and delta-varint posting lists in src/core/documents/postings.rs; file-backed chunk text (src/core/documents/text.rs) which is inert in this protocol because the serving fixture stores no chunk text (documents.text stayed 0 bytes in every cell store)",
- "protocol": "serving-v30 controller derived as serving-v37-monotonic-v1 on writerslogic-02 (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v37 / sqlite-full (Node 26.8.1 package with the node-api,security features; SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3",
+ "protocol": "serving-v30 controller derived as serving-v37-monotonic-v1 on linux-host (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v37 / sqlite-full (Node 26.8.1 package with the node-api,security features; SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3",
  "identities": {
   "candidate_manifest_sha256_prefix": "4542abf20b68",
   "candidate_native_sha256_prefix": "2d67f9493bc1",
@@ -132,9 +132,9 @@
  },
  "bound": "sqlite-full static RSS 102.7 MB and serving max 181.9 MB in this run; the HMS native footprint above the Node runtime (candidate static 119.9 MB) is about 17 MB, so a zero native footprint would give about 0.84 of sqlite-full's serving max here, which is below the 0.75 target",
  "paths": {
-  "host": "writerslogic-02",
+  "host": "linux-host",
   "build": "/home/davidcondrey/hms-retained-20261016/v37-build-v1",
   "campaign": "/home/davidcondrey/hms-retained-20261016/serving-v37-monotonic-v1/serving-v37-monotonic-full11-v1 (analysis.json, measurements.json, cells/)",
-  "local_scripts": "/Volumes/A/.hms-target-2a/v37-build (compose.py, build_v37.py, stage_v37.py, extract_v37.py)"
+  "local_scripts": "./.hms-target-2a/v37-build (compose.py, build_v37.py, stage_v37.py, extract_v37.py)"
  }
 }

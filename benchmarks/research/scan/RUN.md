@@ -101,7 +101,7 @@ Other knobs: `--ks 64,256,1024` (default), `--runs 5`, `--warmup 50`,
 thresholds `--target-recall 0.95 --min-qps 2500 --min-ratio 1.5
 --max-encode-ms-50k 250 --threshold-max-k 256`.
 
-## Pass/fail thresholds (panel)
+## Pass/fail thresholds
 
 Evaluated on every run and on every sweep row; the encode limit scales
 linearly with `--n` so a 10k run is judged at 50 ms.

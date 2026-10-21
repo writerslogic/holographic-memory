@@ -89,7 +89,7 @@
   "tie_eps": 0.0
  },
  "data": {
-  "cache": "/Users/davidcondrey/.cache/hms-bench/nfcorpus",
+  "cache": "~/.cache/hms-bench/nfcorpus",
   "meta": {
    "kind": "beir",
    "name": "nfcorpus",

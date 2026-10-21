@@ -26,7 +26,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from select_model import beir, lme_dev, ndcg_at  # noqa: E402
 
-WORK = "/Volumes/A/.hms-embed-work"
+WORK = "./.hms-embed-work"
 
 
 def run(binary, task, encoder, model, threads, work):

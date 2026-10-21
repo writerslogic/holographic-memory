@@ -63,7 +63,7 @@ LEVERS = {
     "text:recall@100": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
     "text:replace_ms_per_op": "batching commits (memorize_batch) or a group commit; the per-op figure is one durable commit",
     "text:delete_ms_per_op": "batching commits (memorize_batch) or a group commit; the per-op figure is one durable commit",
-    "qps@recall0.90": "per-query estimate count and memory traffic of the vertex graph (ledger category 1A in benchmarks/results/superiority_ledger.json: fewer estimates per query at equal recall, or a SIMD fast-scan of neighbour blocks on x86)",
+    "qps@recall0.90": "per-query estimate count and memory traffic of the vertex graph (the vertex-graph rows under benchmarks/results)",
     "qps@recall0.95": "per-query estimate count and memory traffic of the vertex graph (ledger 1A; the neighbour-block fast-scan lever was killed on M4 in benchmarks/results/qgraph_block_scan_microbench.json, so the open levers are pruning and an x86 kernel)",
     "qps@recall0.99": "higher-recall operating points need more re-rank candidates; a cheaper re-rank (residual 4-bit, benchmarks/results/qgraph_bytes_paired_m4_glove_v1.json) or exact re-rank of fewer candidates",
     "p50_latency@recall0.95": "same as QPS at 0.95 (latency is the inverse of the single-thread rate here)",

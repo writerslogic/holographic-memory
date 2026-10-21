@@ -13,10 +13,10 @@
     {
       "name": "unmodified_control",
       "returncode": 1,
-      "report_path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/report.json",
+      "report_path": "./hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/report.json",
       "report_sha256": "fa87231eab171b7e4343af2e504d3d5dd09880461672ce646c402bd9d37a32b3",
       "output_agreement": false,
-      "checker_path": "/Volumes/A/hms-metal-sdpa/benchmarks/public/check_metal_sdpa_pairs.py",
+      "checker_path": "./hms-metal-sdpa/benchmarks/public/check_metal_sdpa_pairs.py",
       "checker_sha256": "70e3b21005404b2b2e9210a082772baf3c2a4f21dfe15f70e94ad0aedcd55608"
     }
   ],

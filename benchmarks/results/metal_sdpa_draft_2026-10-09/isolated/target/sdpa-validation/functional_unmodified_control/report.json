@@ -2,28 +2,28 @@
   "schema_version": 1,
   "complete": false,
   "preregistration": {
-    "path": "/Volumes/A/hms-metal-sdpa/benchmarks/results/preregistration_metal_sdpa_2026-10-09.json",
+    "path": "./hms-metal-sdpa/benchmarks/results/preregistration_metal_sdpa_2026-10-09.json",
     "bytes": 33679,
     "sha256": "4907d1ff9fa565324ced692ff97535009106766a1194ed8a80537dcd8f84a066"
   },
   "producer": {
-    "path": "/Volumes/A/hms-metal-sdpa/benchmarks/public/metal_sdpa_pairs.py",
+    "path": "./hms-metal-sdpa/benchmarks/public/metal_sdpa_pairs.py",
     "bytes": 7647,
     "sha256": "150d52b6c9245d40e6d8a1ab1bf27e56c578a62cebde8da44d4bc184aa650441"
   },
   "input": {
-    "path": "/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/input.json",
+    "path": "./hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/input.json",
     "bytes": 7504,
     "sha256": "bf77de4764ee14506b151eb44db0d2aa430414e7fe9daf6079cc80c20e16ea0a"
   },
   "binaries": {
     "control": {
-      "path": "/Volumes/A/.hms-target-gpubatch/release/public-bench",
+      "path": "./.hms-target-gpubatch/release/public-bench",
       "bytes": 7406992,
       "sha256": "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec"
     },
     "candidate": {
-      "path": "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-control",
+      "path": "./.hms-target-metal-sdpa/release/public-bench-control",
       "bytes": 7605520,
       "sha256": "0039628291b4cb5eeec8e5315afedfdcde50ecc3e7ecebe6bad38842314fa623"
     }
@@ -45,6 +45,6 @@
   "functional_only": true,
   "lock_max_seconds": 840,
   "runs": [],
-  "failure": "Command '['/Volumes/A/.hms-target-gpubatch/release/public-bench', 'lme-model', '--stage', 'chat', '--model', '/Volumes/A/hms-models/Qwen3-4B-Instruct-2507', '--revision', 'cdbee75f17c01a7cc42f958dc650907174af0554', '--batch', '1', '--input', '/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/input.json', '--out', '/Volumes/A/hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/warmup_00_control.output.json']' timed out after 120 seconds",
+  "failure": "Command '['./.hms-target-gpubatch/release/public-bench', 'lme-model', '--stage', 'chat', '--model', './hms-models/Qwen3-4B-Instruct-2507', '--revision', 'cdbee75f17c01a7cc42f958dc650907174af0554', '--batch', '1', '--input', './hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/input.json', '--out', './hms-metal-sdpa/target/sdpa-validation/functional_unmodified_control/warmup_00_control.output.json']' timed out after 120 seconds",
   "lock_elapsed_seconds": 138.39856050000526
 }

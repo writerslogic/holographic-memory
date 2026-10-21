@@ -95,5 +95,5 @@
   "recall_change_C_vs_B": "0.90055 vs 0.9005 at ef 256; 0.95065 both at ef 736"
  },
  "caveats": "shared cloud hardware: per-round QPS medians differ by up to 2x for the same binary (B at 0.95: 552 then 1030), so the QPS ratios carry that spread; build seconds and RSS come from one cold run per arm; the container is not the GCE C4 host of the accepted rows and its numbers are not comparable to 877 QPS / 1435 s / 4317 MiB, only to each other",
- "finding": "On x86 the AVX2 kernels raise single-thread QPS at recall 0.95 from 426 to 799 (1.88x, per-round ratios 1.29 and 2.42) and the quantized construction search cuts the glove build from 249.6 s to 106.5 s (2.34x) and its peak RSS from 4310 to 1950 MiB (0.45x) at equal recall. This confirms on x86 the same-host build lever measured on the M4 and the kernel fix measured on writerslogic-02."
+ "finding": "On x86 the AVX2 kernels raise single-thread QPS at recall 0.95 from 426 to 799 (1.88x, per-round ratios 1.29 and 2.42) and the quantized construction search cuts the glove build from 249.6 s to 106.5 s (2.34x) and its peak RSS from 4310 to 1950 MiB (0.45x) at equal recall. This confirms on x86 the same-host build lever measured on the M4 and the kernel fix measured on linux-host."
 }

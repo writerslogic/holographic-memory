@@ -7,7 +7,7 @@
  "candidate": "V38",
  "date": "2026-10-19",
  "mechanism": "V37 (compact term dictionary, delta-varint postings, file-backed text) + dense-slot posting capture, closure varint decode, slot word counts, packed selection (src/core/documents/search.rs, index.rs, postings.rs) + packed synchronous Node result path with per-instance string interning (src/lib.rs searchDocumentsPacked on the JavaScript thread, index.js wrapper)",
- "protocol": "serving-v30 controller derived as serving-v38-monotonic-v1 on writerslogic-02 (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v38 / sqlite-full (Node 26.8.1, SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3; all 33 load gates met; oracle exact",
+ "protocol": "serving-v30 controller derived as serving-v38-monotonic-v1 on linux-host (WSL2, Intel Ultra 9 185H): 11 rounds, 33 cells, 324 NFCorpus queries x 8 passes = 2592 operations per cell, arms baseline / candidate-v38 / sqlite-full (Node 26.8.1, SQLite 3.53.4), monotonic RSS brackets, 20 s pauses, load threshold 3; all 33 load gates met; oracle exact",
  "identities": {
   "candidate_manifest_sha256": "2158df77382f041469f123abb220d7dd9eb689fa6eb4384bcc240e9a780d7113",
   "candidate_native_sha256": "be9ef2d54986efb42cc4da1aac163861fe5b77c3af7683f6580b04f27de5ffb4",
@@ -116,10 +116,10 @@
  },
  "verdict": "2A not accepted: serving max RSS 1.0027x baseline (V37 was 0.970x) and 1.117x sqlite-full, above the accepted 1.092; the packed path run on the JavaScript thread leaves about 9 MB of native residency over the serving window (static RSS still improves 105.7 -> 100.3 MB). 2B measured: QPS 2.40x baseline and 10.12x sqlite-full [9.60, 10.37], p99 0.66x baseline; not accepted because production inputs change only through the 2A acceptance path. Follow-up candidate V39 moves the packed path off the JavaScript thread and reuses its buffers.",
  "paths": {
-  "host": "writerslogic-02",
+  "host": "linux-host",
   "build": "/home/davidcondrey/hms-retained-20261016/v38-build-v1",
   "campaign": "/home/davidcondrey/hms-retained-20261016/serving-v38-monotonic-v1/serving-v38-monotonic-full11-v1 (analysis.json, measurements.json, cells/)",
   "linux_ab": "/home/davidcondrey/hms-retained-20261016/ab-v38-v1/ab.log (v37 peak 122-123 MB, v38 134, v38 async path of the same binary 124)",
-  "local_scripts": "/Volumes/A/.hms-target-2a/v38-build"
+  "local_scripts": "./.hms-target-2a/v38-build"
  }
 }

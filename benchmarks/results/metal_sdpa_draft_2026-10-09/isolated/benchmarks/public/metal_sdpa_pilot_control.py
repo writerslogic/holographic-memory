@@ -16,10 +16,10 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path("/Volumes/A/holographic-memory")
-DRAFT = Path("/Volumes/A/hms-metal-sdpa")
+ROOT = Path(".")
+DRAFT = Path("./hms-metal-sdpa")
 PARENT = 62480
-FROZEN = "/Volumes/A/.hms-target-gpubatch/release/public-bench"
+FROZEN = "./.hms-target-gpubatch/release/public-bench"
 REGISTRATION = DRAFT / "benchmarks/results/preregistration_metal_sdpa_2026-10-09.json"
 JOURNAL = ROOT / "benchmarks/results/weak_reader_suspension_pilot_2026-10-09.json"
 
@@ -51,7 +51,7 @@ def main():
         raise ValueError("expected exactly one active frozen native child")
     if any("rustc" in line or "cargo" in line for line in active):
         raise ValueError("a build remains active; reader was not suspended")
-    with Path("/Volumes/A/.hms-target/timing.lock").open("a") as lock:
+    with Path("./.hms-target/timing.lock").open("a") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
     if JOURNAL.exists():
@@ -78,12 +78,12 @@ def main():
         if not args.functional_only and os.getloadavg()[0] >= 3:
             raise RuntimeError("load gate remained unmet; no GPU check started")
         for name, candidate in (
-            ("unmodified_control", "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-control"),
-            ("sdpa", "/Volumes/A/.hms-target-metal-sdpa/release/public-bench-sdpa"),
+            ("unmodified_control", "./.hms-target-metal-sdpa/release/public-bench-control"),
+            ("sdpa", "./.hms-target-metal-sdpa/release/public-bench-sdpa"),
         ):
             prefix = "functional_" if args.functional_only else "pilot_"
             directory = DRAFT / "target/sdpa-validation" / (prefix + name)
-            command = ["/Volumes/A/.hms-target/timed.sh", "uv", "run", "--locked", "--script",
+            command = ["./.hms-target/timed.sh", "uv", "run", "--locked", "--script",
                        str(DRAFT / "benchmarks/public/metal_sdpa_pairs.py"), "--preregistration",
                        str(REGISTRATION), "--candidate", candidate, "--directory", str(directory),
                        "--pilot-only"]

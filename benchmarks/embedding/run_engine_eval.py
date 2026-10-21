@@ -131,7 +131,7 @@ if __name__ == "__main__":
     ap.add_argument("--skip-lme", action="store_true")
     ap.add_argument("--skip-speed", action="store_true")
     a = ap.parse_args()
-    with tempfile.TemporaryDirectory(dir="/Volumes/A/.hms-embed-work") as work:
+    with tempfile.TemporaryDirectory(dir="./.hms-embed-work") as work:
         out = {"model": a.model_id, "pack": Path(a.pack).name, "threads": a.threads}
         if not a.skip_quality:
             out["quality"] = quality(a.binary, a.pack, "", "", a.threads, work, a.max_length, not a.skip_lme)

@@ -1,6 +1,6 @@
 {
-  "worktree": "/Volumes/A/holographic-memory-memory-competition",
-  "patch": "/Volumes/A/holographic-memory-memory-competition/benchmarks/results/memory_competition_v1/integration.patch",
+  "worktree": ".-memory-competition",
+  "patch": ".-memory-competition/benchmarks/results/memory_competition_v1/integration.patch",
   "code_files": {
     "bindings/python/holographic-sdk/holographic_sdk/__init__.py": "6e6594908ccfb7057a7793a400baaa1cca1502681563372c5b6b408df17642b7",
     "bindings/python/holographic-sdk/holographic_sdk/evidence.py": "953fff331b3c9d0353eef15b6557c3a659e38af6070d7d9e87a281a89bd03e34",

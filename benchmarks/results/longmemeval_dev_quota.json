@@ -1,6 +1,6 @@
 {
  "question": "Does a per-session quota on the tuned turn ranking raise multi-session recall_all@5 without hurting the other types? (IDEAS-2026-10 leaf M1)",
- "run_dir": "/Users/davidcondrey/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2",
+ "run_dir": "~/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2",
  "config": {
   "kinds": {
    "turn": 1.0,

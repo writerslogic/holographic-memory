@@ -148,7 +148,7 @@ def main():
     write(folder / "protocol.json", protocol)
     measurements, summary = [], {}
     started = time.monotonic()
-    with Path("/Volumes/A/.hms-target/timing.lock").open("a") as lock:
+    with Path("./.hms-target/timing.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         for dataset, split in protocol["datasets"].items():
             input_path = folder / f"{dataset}-{split}-input.json"

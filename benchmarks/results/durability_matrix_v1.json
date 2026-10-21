@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "host": "writerslogic-02",
+ "host": "linux-host",
  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
  "versions": {
   "hms": "research/2026-10-superiority at 18a0eec (durability-driver over the public crate API; hms-admin verify as the integrity scan; old binary: hms-admin built from tag v0.6.1)",

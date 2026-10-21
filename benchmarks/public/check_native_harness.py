@@ -35,8 +35,8 @@ ALLOWED_EXTERNAL = [Path.home() / '.cache/hms-bench',
                     Path.home() / '.cache/uv',
                     Path.home() / 'Library/Caches/uv',
                     Path('/usr/lib'), Path('/System/Library'),
-                    Path('/Volumes/A/.hms-target-native-harness'),
-                    Path('/Volumes/A/hms-native-harness')]
+                    Path('./.hms-target-native-harness'),
+                    Path('./hms-native-harness')]
 
 
 def require(condition, message):
@@ -573,7 +573,7 @@ def check(report, files, overrides=None, allow_incomplete=False):
                 'timing lock incomplete or duration differs')
         require(lock['exit_code'] != 124 or lock.get('timeout') is True,
                 'timing timeout lacks supervisor evidence')
-        require(lock['path'] == '/Volumes/A/.hms-target/timing.lock' and lock['pid'] > 0,
+        require(lock['path'] == './.hms-target/timing.lock' and lock['pid'] > 0,
                 'timing lock identity differs')
     chronological_locks = sorted(locks.values(), key=lambda item: item['timer']['start_ns'])
     require(all(a['timer']['end_ns'] <= b['timer']['start_ns']

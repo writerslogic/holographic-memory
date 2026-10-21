@@ -10,7 +10,7 @@
  "protocol": {
   "holdout": "--holdout 2000 (train vectors held out as queries; test.f32 and neighbors.i32 not read)",
   "build": "--build-ef 200 --alpha 1.0; nytimes --degree 64 --rerank 16 --ef 96,384; glove --degree 32 --rerank 16 --ef 256,768; --repeats 3, --max-load 1000 (load recorded, not gated)",
-  "timing": "each paired comparison is one /Volumes/A/.hms-target/timed.sh invocation, runs alternating, held <= 15 minutes",
+  "timing": "each paired comparison is one ./.hms-target/timed.sh invocation, runs alternating, held <= 15 minutes",
   "graph_identity": "HMS_QGRAPH_BUILD_PROFILE=1 prints a hash of (adjacency, upper layers, entry); equal hashes mean a bit-identical graph"
  },
  "change": {

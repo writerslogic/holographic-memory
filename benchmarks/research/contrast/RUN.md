@@ -44,7 +44,7 @@ Dependencies (all already in the root manifest, same versions): `serde 1.0`, `se
 Run from anywhere; output paths are absolute (resolved from the crate directory at compile time).
 
 ```sh
-cd /Volumes/A/holographic-memory/benchmarks/research/contrast
+cd ./benchmarks/research/contrast
 
 # unit tests (hv rotate/bind/dot identities, foil == reversed-sequence sketch,
 # single-dot contrast == linear combination, synth twin multiset invariant, metrics)

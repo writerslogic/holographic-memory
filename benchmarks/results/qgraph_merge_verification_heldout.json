@@ -209,7 +209,7 @@
    },
    "processes": {
     "A": {
-     "binary": "/Volumes/A/.hms-target-vsearch/bin/pb-base: integrate/qgraph-speed 4ed59b8 search code (the old default path), built 2026-10-07 13:14",
+     "binary": "./.hms-target-vsearch/bin/pb-base: integrate/qgraph-speed 4ed59b8 search code (the old default path), built 2026-10-07 13:14",
      "encoding": {
       "degree": 64,
       "build_ef": 200,
@@ -221,7 +221,7 @@
       "align_rows": null,
       "reorder": null
      },
-     "graph_cache": "/Volumes/A/.hms-target-vsearch/cache/nytimes-256-angular_d64_b200.graph",
+     "graph_cache": "./.hms-target-vsearch/cache/nytimes-256-angular_d64_b200.graph",
      "index_bytes": 224743984,
      "residual_bytes": 74880000,
      "load_gate_met_all_rows": false,
@@ -661,7 +661,7 @@
       "align_rows": true,
       "reorder": true
      },
-     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/nytimes-256-angular_d64_b200_v2.graph",
+     "graph_cache": "./.hms-target/logs/merge_verify/cache/nytimes-256-angular_d64_b200_v2.graph",
      "index_bytes": 170599984,
      "residual_bytes": 74880000,
      "load_gate_met_all_rows": false,
@@ -926,7 +926,7 @@
       "align_rows": false,
       "reorder": false
      },
-     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/nytimes-256-angular_d64_b200_v2.graph",
+     "graph_cache": "./.hms-target/logs/merge_verify/cache/nytimes-256-angular_d64_b200_v2.graph",
      "index_bytes": 224743984,
      "residual_bytes": 74880000,
      "load_gate_met_all_rows": false,
@@ -2045,7 +2045,7 @@
    },
    "processes": {
     "A": {
-     "binary": "/Volumes/A/.hms-target-vsearch/bin/pb-base: integrate/qgraph-speed 4ed59b8 search code (the old default path), built 2026-10-07 13:14",
+     "binary": "./.hms-target-vsearch/bin/pb-base: integrate/qgraph-speed 4ed59b8 search code (the old default path), built 2026-10-07 13:14",
      "encoding": {
       "degree": 32,
       "build_ef": 200,
@@ -2057,7 +2057,7 @@
       "align_rows": null,
       "reorder": null
      },
-     "graph_cache": "/Volumes/A/.hms-target-vsearch/cache/glove-100-angular_d32_b200.graph",
+     "graph_cache": "./.hms-target-vsearch/cache/glove-100-angular_d32_b200.graph",
      "index_bytes": 430510900,
      "residual_bytes": 137055624,
      "load_gate_met_all_rows": false,
@@ -2287,7 +2287,7 @@
       "align_rows": true,
       "reorder": true
      },
-     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/glove-100-angular_d32_b200_v2.graph",
+     "graph_cache": "./.hms-target/logs/merge_verify/cache/glove-100-angular_d32_b200_v2.graph",
      "index_bytes": 359620124,
      "residual_bytes": 155959848,
      "load_gate_met_all_rows": false,
@@ -2517,7 +2517,7 @@
       "align_rows": false,
       "reorder": false
      },
-     "graph_cache": "/Volumes/A/.hms-target/logs/merge_verify/cache/glove-100-angular_d32_b200_v2.graph",
+     "graph_cache": "./.hms-target/logs/merge_verify/cache/glove-100-angular_d32_b200_v2.graph",
      "index_bytes": 430510900,
      "residual_bytes": 137055624,
      "load_gate_met_all_rows": false,

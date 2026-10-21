@@ -33,7 +33,7 @@ ENV = {name: "1" for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NU
 DATASETS = {"glove-100-angular": 100, "nytimes-256-angular": 256}
 SCALES = {10000: 128, 100000: 512, 250000: 1024}
 SYSTEMS = ("faiss_hnsw", "hnswlib", "rabitq_ivf", "symphonyqg", "faiss_ivfsq", "rabitq_ivf_current")
-LOCK_PATH = Path("/Volumes/A/.hms-target/timing.lock")
+LOCK_PATH = Path("./.hms-target/timing.lock")
 _CAMPAIGN = {"lock": None}
 
 

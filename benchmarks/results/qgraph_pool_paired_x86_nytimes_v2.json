@@ -502,7 +502,7 @@
   "min_ratio": 1.0
  },
  "measurement": {
-  "host": "writerslogic-02 (x86), 1-minute load 10-11",
+  "host": "linux-host (x86), 1-minute load 10-11",
   "protocol": "nytimes-256-angular --holdout 2000, 11 paired rounds alternating A B C",
   "arms": {
    "A": "heap pools binary, accepted encoding, rerank 32, ef 96/400",

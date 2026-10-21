@@ -16,7 +16,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(here, "..");
 const crateRoot = resolve(pkgRoot, "..");
 const dist = join(pkgRoot, "dist");
-const targetBase = process.env.HMS_WASM_TARGET_DIR ?? "/Volumes/A/.hms-target-wasm";
+const targetBase = process.env.HMS_WASM_TARGET_DIR ?? "./.hms-target-wasm";
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => {

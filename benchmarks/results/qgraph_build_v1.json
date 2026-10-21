@@ -395,7 +395,7 @@
    "dataset": "glove-100-angular (held-out train split, 1,181,514 rows, degree 32, build_ef 200, alpha 1.0)",
    "lever": "baseline: two insertion passes, no codes at dim 100, exact float distances for every fresh neighbour",
    "flags": "",
-   "binary": "/Volumes/A/.hms-target-fastscan-wt/release/public-bench (7cbf2d3 build path)",
+   "binary": "./.hms-target-fastscan-wt/release/public-bench (7cbf2d3 build path)",
    "graph_build_s": 238.69,
    "greedy_cpu_s": 878.1,
    "build_s_total_with_encoding": 243.1,
