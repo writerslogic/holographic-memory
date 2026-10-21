@@ -330,8 +330,8 @@ def build():
     out += ["", "## Results", ""] + body
     if server_body:
         out += ["## Server mode results", "",
-                "Every system here is a separate server process tree measured from one client over loopback; verdicts compare "
-                "comparators with `hms-server`, never with the embedded rows above. The protocol is recorded in each results file.", ""] + server_body
+                ("Every system here is a separate server process tree measured from one client over loopback; verdicts compare "
+                 "comparators with `hms-server`, never with the embedded rows above. The protocol is recorded in each results file."), ""] + server_body
     out += ["## Operational facts", "", *facts_table(results), "",
                                            "## Versions", "", *versions_table(results), ""]
     nr = {}

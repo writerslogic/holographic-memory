@@ -246,7 +246,7 @@ class HmsServerText(HmsServer):
         config.write_text(json.dumps({"onIdConflict": "replace"}))
         return argv + ["--memory-config", config], env, cwd
 
-    def ingest(self, documents):
+    def ingest(self, documents, params=None):
         for lo in range(0, len(documents), 1000):
             facts = [{"id": d["id"], "text": d["text"]} for d in documents[lo:lo + 1000]]
             self.http.call("POST", "/api/v1/memory/remember", {"facts": facts})
@@ -771,7 +771,7 @@ class RedisVss(ServerSystem):
 
     def after_start(self, params):
         # Loading the AOF re-creates the index definition and re-indexes every hash.
-        wait_until(lambda: self._loaded(), 7200, 0.05, "redis loaded")
+        wait_until(self._loaded, 7200, 0.05, "redis loaded")
         self.wait_queryable(params)
 
     def _loaded(self):

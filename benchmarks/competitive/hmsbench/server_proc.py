@@ -62,6 +62,7 @@ def stable_ports(path, count):
                 s.bind(("127.0.0.1", port))
             return saved
         except OSError:
+            # A saved port is taken now; fall through and pick fresh ones.
             pass
         finally:
             for s in held:
@@ -102,6 +103,7 @@ def tree_rss_bytes(pgid):
                 try:
                     total += int(Path(f"/proc/{pid}/statm").read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
                 except (OSError, ValueError):
+                    # The process exited between listing and reading; it holds no memory.
                     pass
         return total
     out = subprocess.run(["ps", "-ax", "-o", "pgid=,rss="], capture_output=True, text=True).stdout
@@ -148,6 +150,7 @@ def kill_orphans(log_dir):
                 os.killpg(pgid, signal.SIGKILL)
                 killed.append(pgid)
         except (ValueError, ProcessLookupError, PermissionError, OSError):
+            # A stale or unreadable marker, or a group that is already gone: nothing to kill.
             pass
         marker.unlink(missing_ok=True)
     return killed
@@ -253,6 +256,7 @@ class Server:
         try:
             os.killpg(pgid, signal.SIGKILL)
         except ProcessLookupError:
+            # Every process in the group has already exited.
             pass
         if self.proc.poll() is None:
             self.proc.wait(timeout=10)
