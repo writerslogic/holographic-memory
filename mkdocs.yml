@@ -107,13 +107,7 @@ extra_javascript:
 # from the site resolve to the file on GitHub (scripts/docs_hooks.py). _data and overrides are
 # build inputs, not pages.
 exclude_docs: |
-  CONTINUATION.md
-  NEXT-SESSIONS.md
-  OVERNIGHT-LOG.md
   PREREGISTRATION-*.md
-  CAPACITY-CAMPAIGN-LOG.md
-  RESEARCH-OPPORTUNITIES.md
-  review-improvements.md
   research/
   requirements.txt
   versions.json
