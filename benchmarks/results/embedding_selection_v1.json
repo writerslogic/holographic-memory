@@ -1,0 +1,381 @@
+{
+ "protocol": {
+  "datasets": {
+   "scifact": "BEIR SciFact, queries of qrels/train.tsv (809), nDCG@10 over the full corpus (5183)",
+   "nfcorpus": "BEIR NFCorpus, queries of qrels/dev.tsv (324), nDCG@10 over the full corpus (3633)",
+   "longmemeval_dev": "LongMemEval_S frozen dev ids (benchmarks/public/longmemeval_split.json), non-abstention (94), turn-level embeddings of both roles, session score = best turn, ranked over the question's own haystack"
+  },
+  "held_out": "no test split and none of the 400 held-out LongMemEval ids was read",
+  "licence_rule": "MIT or Apache-2.0 only (read from the Hugging Face model card at the pinned commit)",
+  "engine_quantization": "int8, one f32 scale per 64 weights per row; embeddings and linear layers; layer norms, biases and position tables stay f32",
+  "agreement_bar": "min cosine >= 0.999 against the sentence-transformers fp32 reference on the fixed sample of benchmarks/embedding/agreement_sample.json (71 texts)",
+  "timing_note": "shared machine; load average recorded per run; compare models inside one run"
+ },
+ "default": "ibm-granite/granite-embedding-30m-english",
+ "rationale": "Stage-1 fp32 quality plus cost: highest SciFact-train among engine-supported models, equal best LongMemEval-dev recall@5, 6 layers (about half the compute of the 12-layer bge/gte/e5), Apache-2.0, 34 MB int8 pack. Engine stage 2 completed for this model only.",
+ "candidates": {
+  "sentence-transformers/all-MiniLM-L6-v2": {
+   "license": "apache-2.0",
+   "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+   "parameters": 22713728,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.6602002541701137
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.30242251132856496
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9680851063829787,
+     "ndcg@10": 0.8941718703276373
+    }
+   },
+   "max_seq_length": 256,
+   "dimensions": 384
+  },
+  "sentence-transformers/all-MiniLM-L12-v2": {
+   "license": "apache-2.0",
+   "revision": "a50ef00143b4d5391434df20ae11632588ac25be",
+   "parameters": 33360512,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.6230669064020586
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.30965372918258693
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9468085106382979,
+     "ndcg@10": 0.8880897466578479
+    }
+   },
+   "max_seq_length": 128,
+   "dimensions": 384
+  },
+  "BAAI/bge-small-en-v1.5": {
+   "license": "mit",
+   "revision": "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a",
+   "parameters": 33360512,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.7469421895117045
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.3276308577409458
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9680851063829787,
+     "ndcg@10": 0.8999935385098936
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  },
+  "thenlper/gte-small": {
+   "license": "mit",
+   "revision": "17e1f347d17fe144873b1201da91788898c639cd",
+   "parameters": 33360512,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.737685418838749
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.3398106429104885
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9574468085106383,
+     "ndcg@10": 0.9081991868455946
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  },
+  "intfloat/e5-small-v2": {
+   "license": "mit",
+   "revision": "ffb93f3bd4047442299a41ebb6fa998a38507c52",
+   "parameters": 33360512,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.7077582647867329
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.3222227233818721
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9574468085106383,
+     "ndcg@10": 0.9169892777831039
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  },
+  "intfloat/multilingual-e5-small": {
+   "license": "mit",
+   "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+   "parameters": 117654272,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.6765762996568716
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.2973628029438546
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9574468085106383,
+     "ndcg@10": 0.9079994016243769
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  },
+  "Snowflake/snowflake-arctic-embed-s": {
+   "license": "apache-2.0",
+   "revision": "e596f507467533e48a2e17c007f0e1dacc837b33",
+   "parameters": 33212160,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.7093592029467085
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.31012514390747525
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9574468085106383,
+     "ndcg@10": 0.899139141575598
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  },
+  "Snowflake/snowflake-arctic-embed-xs": {
+   "license": null,
+   "revision": "d8c86521100d3556476a063fc2342036d45c106f",
+   "parameters": 22565376,
+   "engine_architecture_supported": true,
+   "not_evaluated": "licence None is not MIT/Apache-2.0"
+  },
+  "mixedbread-ai/mxbai-embed-xsmall-v1": {
+   "license": "apache-2.0",
+   "revision": "e6ac24e5d6efb8782b59de1647b3ececb4ece94e",
+   "parameters": 24089472,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.6283869177616543
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.26387406561595805
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9468085106382979,
+     "ndcg@10": 0.8396217449298463
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  },
+  "avsolatorio/GIST-small-Embedding-v0": {
+   "license": "mit",
+   "revision": "75e62fd210b9fde790430e0b2f040b0b00a021b1",
+   "parameters": 33360000,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.7301181152185515
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.33320293645324417
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9574468085106383,
+     "ndcg@10": 0.9010361567228198
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  },
+  "ibm-granite/granite-embedding-30m-english": {
+   "license": "apache-2.0",
+   "revision": "9b5b096411652ec1189c68fcfb90d0a82c5b45af",
+   "parameters": 30295296,
+   "engine_architecture_supported": true,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.7485938838145739
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.3149330285440208
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9680851063829787,
+     "ndcg@10": 0.9088613725336208
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384,
+   "rust_engine_int8": {
+    "model": "ibm-granite/granite-embedding-30m-english",
+    "pack": "granite-embedding-30m-english-int8.hmsemb",
+    "threads": 8,
+    "quality": {
+     "scifact_train": {
+      "queries": 809,
+      "corpus": 5183,
+      "ndcg@10": 0.7491272996136764
+     },
+     "nfcorpus_dev": {
+      "queries": 324,
+      "corpus": 3633,
+      "ndcg@10": 0.3151809118685082
+     },
+     "lme_dev": {
+      "questions": 94,
+      "turns": 44305,
+      "recall_any@5": 0.9680851063829787,
+      "ndcg@10": 0.9091582019374367
+     }
+    },
+    "speed": {
+     "load_average_1m": 20.05029296875,
+     "threads_1": {
+      "passage_ms_each": 278.883,
+      "query_ms_each": 13.795,
+      "passages": 500,
+      "queries": 500
+     },
+     "threads_8": {
+      "passage_ms_each": 76.694,
+      "query_ms_each": 3.832,
+      "passages": 500,
+      "queries": 500
+     },
+     "peak_rss_bytes_2000_passages": 181616640,
+     "cold_start": {
+      "wall_ms": 396.11291885375977,
+      "load_ms": 279.7,
+      "rss_bytes": 88227840
+     },
+     "pack_bytes": 34065777
+    }
+   },
+   "agreement_with_fp32_reference": {
+    "passage": {
+     "n": 39,
+     "min_cosine": 0.9996262788772583,
+     "mean_cosine": 0.9998531937599182,
+     "worst_index": 38
+    },
+    "query": {
+     "n": 32,
+     "min_cosine": 0.9997456669807434,
+     "mean_cosine": 0.9998722076416016,
+     "worst_index": 27
+    }
+   }
+  },
+  "ibm-granite/granite-embedding-small-english-r2": {
+   "license": "apache-2.0",
+   "revision": "2ab6fa8ea2d674564defd37171ae19079b864b33",
+   "parameters": 47662464,
+   "engine_architecture_supported": false,
+   "fp32_pytorch": {
+    "scifact_train": {
+     "queries": 809,
+     "corpus": 5183,
+     "ndcg@10": 0.7622567780460279
+    },
+    "nfcorpus_dev": {
+     "queries": 324,
+     "corpus": 3633,
+     "ndcg@10": 0.33380779241289216
+    },
+    "lme_dev": {
+     "questions": 94,
+     "unique_sessions": 4299,
+     "turns": 44305,
+     "recall_any@5": 0.9574468085106383,
+     "ndcg@10": 0.8950216997475414
+    }
+   },
+   "max_seq_length": 512,
+   "dimensions": 384
+  }
+ }
+}

@@ -1,0 +1,145 @@
+{
+ "model": "/Volumes/A/.hms-embed-work/pins/granite-embedding-30m-english/granite-embedding-30m-english-int8.hmsemb",
+ "threads": 8,
+ "load_average_1m": 9.48876953125,
+ "datasets": {
+  "scifact": {
+   "default_encoder": {
+    "scores": {
+     "lexical": {
+      "ndcg@10": 0.7026997341473034,
+      "queries": 809
+     }
+    },
+    "documents": 5183,
+    "ingest_seconds": 7.053249042,
+    "ingest_docs_per_second": 734.8386494134514,
+    "query_latency": {
+     "lexical": {
+      "mean_ms": 0.12889550185414095,
+      "n": 809,
+      "p50_ms": 0.13016699999999998,
+      "p95_ms": 0.17300000000000001
+     }
+    },
+    "wall_seconds": 8.262374877929688,
+    "peak_rss_bytes": 97222656
+   },
+   "local_embed_v1": {
+    "scores": {
+     "hybrid": {
+      "ndcg@10": 0.7681005250024876,
+      "queries": 809
+     },
+     "lexical": {
+      "ndcg@10": 0.7026997341473034,
+      "queries": 809
+     },
+     "semantic": {
+      "ndcg@10": 0.7491272996136765,
+      "queries": 809
+     }
+    },
+    "documents": 5183,
+    "ingest_seconds": 538.726152459,
+    "ingest_docs_per_second": 9.620843495980928,
+    "query_latency": {
+     "hybrid": {
+      "mean_ms": 14.78618662051916,
+      "n": 809,
+      "p50_ms": 12.024334,
+      "p95_ms": 29.731417
+     },
+     "lexical": {
+      "mean_ms": 14.161673758961681,
+      "n": 809,
+      "p50_ms": 11.582458,
+      "p95_ms": 30.94475
+     },
+     "semantic": {
+      "mean_ms": 14.268575456118668,
+      "n": 809,
+      "p50_ms": 12.0525,
+      "p95_ms": 30.198791
+     }
+    },
+    "wall_seconds": 573.8441121578217,
+    "peak_rss_bytes": 368525312
+   }
+  },
+  "nfcorpus": {
+   "default_encoder": {
+    "scores": {
+     "lexical": {
+      "ndcg@10": 0.29158226275481797,
+      "queries": 324
+     }
+    },
+    "documents": 3633,
+    "ingest_seconds": 12.863697167,
+    "ingest_docs_per_second": 282.42269332334325,
+    "query_latency": {
+     "lexical": {
+      "mean_ms": 0.07525800617283945,
+      "n": 324,
+      "p50_ms": 0.035790999999999996,
+      "p95_ms": 0.229875
+     }
+    },
+    "wall_seconds": 13.098294019699097,
+    "peak_rss_bytes": 80936960
+   },
+   "local_embed_v1": {
+    "scores": {
+     "hybrid": {
+      "ndcg@10": 0.3434959404053958,
+      "queries": 324
+     },
+     "lexical": {
+      "ndcg@10": 0.29158226275481797,
+      "queries": 324
+     },
+     "semantic": {
+      "ndcg@10": 0.3150856918862613,
+      "queries": 324
+     }
+    },
+    "documents": 3633,
+    "ingest_seconds": 510.001300208,
+    "ingest_docs_per_second": 7.1235112508895755,
+    "query_latency": {
+     "hybrid": {
+      "mean_ms": 8.87430763888889,
+      "n": 324,
+      "p50_ms": 7.936083,
+      "p95_ms": 16.59875
+     },
+     "lexical": {
+      "mean_ms": 6.894033299382717,
+      "n": 324,
+      "p50_ms": 5.736459,
+      "p95_ms": 14.606417
+     },
+     "semantic": {
+      "mean_ms": 8.597348256172843,
+      "n": 324,
+      "p50_ms": 7.492792,
+      "p95_ms": 17.071708
+     }
+    },
+    "wall_seconds": 518.5042207241058,
+    "peak_rss_bytes": 345620480
+   }
+  }
+ },
+ "cold_start": {
+  "default": {
+   "wall_seconds": 0.7472519874572754,
+   "peak_rss_bytes": 4800512
+  },
+  "local-embed-v1": {
+   "wall_seconds": 0.30892491340637207,
+   "peak_rss_bytes": 88686592
+  }
+ }
+}

@@ -12,6 +12,10 @@ pub enum TextEncoder {
     /// Experimental union within each level, capped by cross-level frequency.
     #[serde(rename = "multiscale-capped-union-v1")]
     MultiscaleCappedUnionV1,
+    /// Sparse sketch of a local neural sentence embedding (feature `local-embed`); the store's
+    /// documents also get dense chunk embeddings from the same model.
+    #[serde(rename = "local-embed-v1")]
+    LocalEmbedV1,
 }
 
 impl TextEncoder {
@@ -19,16 +23,26 @@ impl TextEncoder {
         match self {
             Self::MultiscaleWordsV1 => "multiscale-words-v1",
             Self::MultiscaleCappedUnionV1 => "multiscale-capped-union-v1",
+            Self::LocalEmbedV1 => "local-embed-v1",
         }
     }
 
+    /// Whether vectors come from a neural embedding instead of the text itself.
+    pub fn is_embedding(self) -> bool {
+        self == Self::LocalEmbedV1
+    }
+
     pub(crate) fn encode(self, text: &str, dim: usize) -> EntangledHVec {
+        assert!(
+            !self.is_embedding(),
+            "embedding encoders are applied to embeddings by the engine, not to text"
+        );
         encode(text, dim, self)
     }
 
     fn bundle(self, vectors: &[EntangledHVec]) -> EntangledHVec {
         match self {
-            Self::MultiscaleWordsV1 => EntangledHVec::bundle(vectors),
+            Self::MultiscaleWordsV1 | Self::LocalEmbedV1 => EntangledHVec::bundle(vectors),
             Self::MultiscaleCappedUnionV1 => EntangledHVec::bundle_bloom(vectors),
         }
     }
@@ -41,6 +55,7 @@ impl std::str::FromStr for TextEncoder {
         match name {
             "multiscale-words-v1" => Ok(Self::MultiscaleWordsV1),
             "multiscale-capped-union-v1" => Ok(Self::MultiscaleCappedUnionV1),
+            "local-embed-v1" => Ok(Self::LocalEmbedV1),
             _ => anyhow::bail!("unknown text encoder {name:?}"),
         }
     }

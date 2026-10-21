@@ -1,0 +1,10 @@
+{
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "what": "min cosine of the Rust engine (int8 pack) against the sentence-transformers fp32 reference on benchmarks/embedding/agreement_sample.json (39 passages, 32 queries); group 0 = one scale per row",
+  "reproduce": "hms-embed pack ... --int8-group G, then benchmarks/embedding/agreement.py compare",
+  "min_cosine_passages": {"0": 0.9973096, "128": 0.9987792, "64": 0.9993921, "32": 0.9994429, "16": 0.9995311},
+  "min_cosine_queries": {"0": 0.9973096, "128": 0.9987793, "64": 0.9993922, "32": 0.9994429, "16": 0.9995312},
+  "f32_pack_min_cosine": 0.9999999,
+  "f16_pack_min_cosine": 0.9999995
+}

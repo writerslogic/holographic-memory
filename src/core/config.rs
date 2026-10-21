@@ -19,6 +19,10 @@ pub struct HmsConfig {
     pub cognition: CognitionConfig,
     pub hopfield: super::hopfield::HopfieldConfig,
     pub embedding_space: Option<super::schema::EmbeddingSpace>,
+    /// Options of the local embedder `TextEncoder::LocalEmbedV1` loads (default options when
+    /// absent). Ignored by the other encoders.
+    #[cfg(feature = "local-embed")]
+    pub local_embed: Option<super::embed::EmbedOptions>,
 }
 
 #[derive(Clone, Debug)]
@@ -238,9 +242,14 @@ impl Default for CognitionConfig {
 impl HmsConfig {
     pub(crate) fn validate(&self) -> anyhow::Result<()> {
         anyhow::ensure!(
-            cfg!(feature = "experimental")
-                || self.text_encoder == super::encoding::TextEncoder::MultiscaleWordsV1,
+            self.text_encoder != super::encoding::TextEncoder::MultiscaleCappedUnionV1
+                || cfg!(feature = "experimental"),
             "capped-union text encoding requires a build with the experimental feature"
+        );
+        anyhow::ensure!(
+            self.text_encoder != super::encoding::TextEncoder::LocalEmbedV1
+                || cfg!(feature = "local-embed"),
+            "the local-embed-v1 text encoder requires a build with the local-embed feature"
         );
         anyhow::ensure!(
             cfg!(feature = "security")

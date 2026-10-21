@@ -19,6 +19,10 @@ pub mod core;
 #[cfg(feature = "python")]
 mod python;
 
+// Node surface of the local embedder.
+#[cfg(all(feature = "node-api", feature = "local-embed"))]
+mod node_embed;
+
 pub use crate::core::documents::{
     chunk_document, DocumentChunk, DocumentInput, DocumentRecord, DocumentResult, SearchOptions,
 };

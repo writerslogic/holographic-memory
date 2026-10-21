@@ -120,6 +120,34 @@ export declare class HolographicMemorySystem {
   federatedQuery(peerPaths: Array<string>, text: string, k: number): Promise<Array<RetrievalResult>>
 }
 
+export declare class LocalEmbedder {
+  /** Loads (and on first use downloads) the model: `await LocalEmbedder.load()`. */
+  static load(options?: EmbedOptionsJs | undefined | null): Promise<LocalEmbedder>
+  /** One L2-normalized vector per query text. */
+  embedQuery(texts: Array<string>): Promise<Array<Float32Array>>
+  /** One L2-normalized vector per passage text. */
+  embedPassages(texts: Array<string>): Promise<Array<Float32Array>>
+  get dimensions(): number
+  get model(): string
+  get revision(): string
+  get quantization(): string
+  get packSha256(): string
+}
+
+/** An exact in-memory semantic index. */
+export declare class SemanticIndex {
+  /** An empty index over a loaded embedder: `SemanticIndex.create(await LocalEmbedder.load())`. */
+  static create(embedder: LocalEmbedder): SemanticIndex
+  add(ids: Array<string>, texts: Array<string>): Promise<void>
+  search(query: string, k?: number | undefined | null): Promise<Array<SemanticHit>>
+  remove(id: string): boolean
+  save(path: string): Promise<void>
+  /** Loads a saved index; it must have been built with the same model pack. */
+  static load(path: string, embedder: LocalEmbedder): SemanticIndex
+  get length(): number
+}
+export type JsSemanticIndex = SemanticIndex
+
 export interface AuditEntryJs {
   timestampMs: number
   op: string
@@ -157,13 +185,13 @@ export interface DocumentInput {
   chunkWords?: number
   overlapWords?: number
   storeText?: boolean
+  embeddings?: Array<Array<number>>
   /**
    * Counts the terms of the text's first line this many times in the first chunk's term
    * frequencies and word count, as if the title were repeated; 1 or absent leaves the
    * document exactly as before this option existed.
    */
   titleWeight?: number
-  embeddings?: Array<Array<number>>
 }
 
 export interface DocumentResult {
@@ -178,6 +206,24 @@ export interface DocumentResult {
   score: number
   lexicalScore: number
   semanticScore?: number
+}
+
+export interface EmbedOptionsJs {
+  /** A registry id, "default", or the path of a `.hmsemb` pack. */
+  model?: string
+  sha256?: string
+  maxLength?: number
+  /** "mean" or "cls". */
+  pooling?: string
+  normalize?: boolean
+  queryPrefix?: string
+  passagePrefix?: string
+  batchSize?: number
+  maxBatchTokens?: number
+  threads?: number
+  offline?: boolean
+  modelDir?: string
+  cacheDir?: string
 }
 
 export interface GoalJs {
@@ -366,6 +412,12 @@ export interface SearchOptions {
   bm25K1?: number
   /** BM25 length normalization `b` in `[0, 1]`; the default scores exactly as before (0.75). */
   bm25B?: number
+}
+
+export interface SemanticHit {
+  id: string
+  score: number
+  text: string
 }
 
 /** Persistence health information suitable for diagnostics and monitoring. */

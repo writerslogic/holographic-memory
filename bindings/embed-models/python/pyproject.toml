@@ -1,0 +1,20 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "holographic-vsa-models"
+version = "0.1.0"
+description = "Offline model packs for the local embedder of holographic-vsa (pip install holographic-vsa[embed])"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "WritersLogic, Inc.", email = "david@writerslogic.com" }]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["holographic_memory_models"]
+# The packs are build products (tens of MB, git-ignored): `build_packs.sh` creates them before the wheel is built.
+artifacts = ["holographic_memory_models/packs/*.hmsemb"]

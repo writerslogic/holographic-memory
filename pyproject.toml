@@ -20,6 +20,10 @@ classifiers = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+# Offline model packs for holographic_memory.Embedder (no first-use download).
+embed = ["holographic-vsa-models>=0.1.0"]
+
 [project.urls]
 Repository = "https://github.com/writerslogic/holographic-memory"
 Documentation = "https://docs.rs/holographic-memory"
@@ -28,5 +32,5 @@ Documentation = "https://docs.rs/holographic-memory"
 # The import name is `holographic_memory` (matches the #[pymodule] in src/python.rs);
 # the PyPI distribution name is `holographic-vsa` (the crate name is taken on PyPI).
 module-name = "holographic_memory"
-features = ["python"]
+features = ["python", "local-embed-download"]
 # Version is read from Cargo.toml (dynamic).
