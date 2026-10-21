@@ -34,11 +34,11 @@ SUITES = {
               "rounds": 3, "build_repeats": 2, "threads": 4, "timeout_s": 1500},
     # standard: local workstation; full public sizes for the text sets, 250k glove and 250k SIFT.
     "standard": {"ann": [("glove-100-angular", 250_000, 2_000), ("sift-128-euclidean", 250_000, 2_000)],
-                 "text": ["beir:scifact", "beir:nfcorpus", "memory"],
+                 "text": ["beir:scifact", "beir:nfcorpus", "memory", "beir:fiqa"],
                  "rounds": 5, "build_repeats": 3, "threads": 4, "timeout_s": 2700},
     # heavy: self-hosted or Modal; full GloVe-100 (1.18M) and SIFT-1M.
     "heavy": {"ann": [("glove-100-angular", None, 10_000), ("sift-128-euclidean", None, 10_000)],
-              "text": ["beir:scifact", "beir:nfcorpus", "memory"], "rounds": 3, "build_repeats": 2, "threads": 8, "timeout_s": 3600},
+              "text": ["beir:scifact", "beir:nfcorpus", "memory", "beir:fiqa"], "rounds": 3, "build_repeats": 2, "threads": 8, "timeout_s": 3600},
 }
 
 
