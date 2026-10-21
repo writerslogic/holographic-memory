@@ -31,6 +31,16 @@ pub(super) enum Mutation {
     },
     StoredTriple(crate::core::triple_store::TripleRecord),
     Document(Arc<crate::core::documents::StoredDocument>),
+    /// The hypervectors of a document memorized with deferred encoding, one per chunk, computed
+    /// later from its stored text. Applies only while the document `id` is still the revision
+    /// (`version`, chunk count and content `fingerprint`) the vectors were computed for and has
+    /// chunks awaiting encoding; otherwise a no-op, so replay and concurrent encoders agree.
+    EncodeDocument {
+        id: String,
+        version: String,
+        fingerprint: u64,
+        vectors: Vec<EntangledHVec>,
+    },
     Derived {
         id: String,
         children: Vec<String>,
@@ -87,7 +97,9 @@ enum Prepared {
     },
 }
 
-/// Chunk ids of `previous` absent from `document`.
+/// Chunk ids of `previous` that `document` does not carry an encoded vector for: absent from
+/// it, or replaced by a chunk awaiting deferred encoding or stored lexical-only. Their shard
+/// entries go, so no stale vector outlives the text it encoded.
 fn stale_chunks(
     previous: Option<&crate::core::documents::StoredDocument>,
     document: &crate::core::documents::StoredDocument,
@@ -95,17 +107,28 @@ fn stale_chunks(
     let Some(previous) = previous else {
         return Vec::new();
     };
-    let ids: std::collections::BTreeSet<_> = document
+    let encoded: std::collections::BTreeSet<_> = document
         .chunks
         .iter()
+        .filter(|chunk| chunk.vector_state.is_encoded())
         .map(|chunk| chunk.id.as_str())
         .collect();
     previous
         .chunks
         .iter()
-        .filter(|chunk| !ids.contains(chunk.id.as_str()))
+        .filter(|chunk| !encoded.contains(chunk.id.as_str()))
         .map(|chunk| chunk.id.clone())
         .collect()
+}
+
+/// A vector of the store's dimensions with sorted, in-range indices.
+fn valid_vector(vector: &EntangledHVec, dimensions: usize) -> bool {
+    vector.dim == dimensions
+        && vector
+            .indices()
+            .last()
+            .is_none_or(|&i| (i as usize) < dimensions)
+        && vector.indices().windows(2).all(|p| p[0] < p[1])
 }
 
 pub(crate) fn validate_id(id: &str) -> Result<()> {
@@ -213,6 +236,24 @@ impl HmsCore {
                     }
                 }
             }
+            Mutation::EncodeDocument {
+                id,
+                version,
+                vectors,
+                ..
+            } => {
+                validate_id(id)?;
+                ensure!(
+                    !version.is_empty()
+                        && version.len() <= 1024
+                        && !vectors.is_empty()
+                        && vectors.len() <= 4096
+                        && vectors
+                            .iter()
+                            .all(|vector| valid_vector(vector, self.dimensions)),
+                    "invalid deferred document encoding"
+                );
+            }
             Mutation::Derived { id, children } => {
                 validate_public_id(id)?;
                 let prefix = format!("{MEANING_PREFIX}{}:{id}:", id.len());
@@ -308,9 +349,12 @@ impl HmsCore {
                 Mutation::Document(document) => {
                     let previous = self.documents.read().get(&document.id).cloned();
                     let stale = stale_chunks(previous.as_deref(), document);
+                    // Chunks awaiting deferred encoding or stored lexical-only have no
+                    // vector to index; `stale` drops any earlier vector under their ids.
                     let chunks = document
                         .chunks
                         .iter()
+                        .filter(|chunk| chunk.vector_state.is_encoded())
                         .map(|chunk| (chunk.id.clone(), chunk.vector.clone()))
                         .collect();
                     Prepared::Document {
@@ -417,6 +461,17 @@ impl HmsCore {
                 ) => {
                     unreachable!("mutation prepared with the wrong variant")
                 }
+                (
+                    Mutation::EncodeDocument {
+                        id,
+                        version,
+                        fingerprint,
+                        vectors,
+                    },
+                    _,
+                ) => {
+                    self.install_deferred_encoding(id, version, *fingerprint, vectors, shards)?;
+                }
                 (Mutation::Derived { id, children }, _) => {
                     self.derived.write().insert(id.clone(), children.clone());
                 }
@@ -486,6 +541,49 @@ impl HmsCore {
                 }
             }
         }
+        Ok(())
+    }
+
+    /// Installs `vectors` on the pending chunks of document `id` if it is still the revision
+    /// they were computed for (same version, chunk count and content fingerprint); any other
+    /// state, including an already installed encoding, leaves the store untouched. The decision
+    /// reads only the live state, so a replay of the journal reaches the same one.
+    fn install_deferred_encoding(
+        &self,
+        id: &str,
+        version: &str,
+        fingerprint: u64,
+        vectors: &[EntangledHVec],
+        shards: &ShardSet,
+    ) -> Result<()> {
+        use crate::core::documents::{document_fingerprint, StoredDocument, VectorState};
+        let current = {
+            let store = self.documents.read();
+            let Some(document) = store.get(id).cloned() else {
+                return Ok(());
+            };
+            let applicable = document.version == version
+                && document.chunks.len() == vectors.len()
+                && document
+                    .chunks
+                    .iter()
+                    .any(|chunk| chunk.vector_state == VectorState::Pending)
+                && document_fingerprint(&store, &document) == Some(fingerprint);
+            if !applicable {
+                return Ok(());
+            }
+            document
+        };
+        let mut encoded = StoredDocument::clone(&current);
+        for (chunk, vector) in encoded.chunks.iter_mut().zip(vectors) {
+            if chunk.vector_state != VectorState::Pending {
+                continue;
+            }
+            chunk.vector = vector.clone();
+            chunk.vector_state = VectorState::Encoded;
+            shards.insert(chunk.id.clone(), vector.clone(), self.dimensions)?;
+        }
+        self.documents.write().insert(id.to_string(), encoded);
         Ok(())
     }
 

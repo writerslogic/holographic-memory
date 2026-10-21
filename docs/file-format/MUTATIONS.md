@@ -22,6 +22,7 @@ Each mutation is a JSON object with exactly one key naming the variant (serde ex
 | `Composite` | `{id, vector}` | set a composite vector |
 | `StoredTriple` | `{subject_id, relation_id, object_id, composite_id, deleted}` | meaning memory |
 | `Document` | `{id, source_uri, version, metadata, chunks}` | replace the document `id` with its chunks |
+| `EncodeDocument` | `{id, version, fingerprint, vectors}` | install `vectors` (one per chunk) on the `pending` chunks of document `id` if it is still the revision they were computed for: same `version`, chunk count and content `fingerprint` (u64 over version, byte spans and chunk text); otherwise nothing |
 | `Derived` | `{id, children}` | record meaning children of `id` |
 | `DeleteDocument` | `{id}` | remove the document and its chunk vectors |
 | `Delete` | `{id}` | remove the vector `id` and what derives from it |
@@ -46,6 +47,13 @@ start`, `embedding` is null or an array of the embedding-space length, `terms` i
 term to count (stemmed lowercase tokens when `stemmed` is true), `word_count` the chunk's word
 count. Documents have 1..=4096 chunks. A document `version` of the form `mem1:<json>` is a
 memory-API stamp ([ANCILLARY.md](ANCILLARY.md)).
+
+A chunk memorized with deferred or lexical-only encoding (`IngestOptions.encode`) also carries
+`vector_state`: `"pending"` (its encoding will be installed by an `EncodeDocument`) or
+`"lexical"` (never encoded). Such a chunk has an empty `vector` and is not in the vector
+index. The field is absent when the vector is the chunk's encoding, so chunks written before
+the flag existed read as encoded and a store without deferred or lexical documents serializes
+exactly as before.
 
 IDs are 1..=65535 bytes with no NUL. `hms:chunk:` and `hms:meaning:` prefixes are reserved.
 
