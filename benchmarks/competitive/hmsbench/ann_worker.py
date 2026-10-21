@@ -520,7 +520,8 @@ class Duckdb(Adapter):
         self.con.execute(f"SET hnsw_ef_search = {max(sp['ef'], K)}")
 
     def query(self, q):
-        rows = self.con.execute(f"SELECT id FROM t ORDER BY {"array_cosine_distance" if self.angular else "array_distance"}(v, ?::FLOAT[{self.dim}]) LIMIT {K}", [q[0].tolist()]).fetchall()
+        fn = "array_cosine_distance" if self.angular else "array_distance"
+        rows = self.con.execute(f"SELECT id FROM t ORDER BY {fn}(v, ?::FLOAT[{self.dim}]) LIMIT {K}", [q[0].tolist()]).fetchall()
         return [r[0] for r in rows]
 
     def replace(self, ids, vectors):
@@ -605,6 +606,7 @@ class Scann(Adapter):
                     .tree(leaves, 1, training_sample_size=len(train), spherical=True, quantize_centroids=True)
                     .score_ah(params["dims"], anisotropic_quantization_threshold=params["avq"])
                     .reorder(1).build())
+        (self.workdir / "searcher").mkdir(parents=True, exist_ok=True)
         searcher.serialize(str(self.workdir / "searcher"))
 
     def open(self, params, n):
