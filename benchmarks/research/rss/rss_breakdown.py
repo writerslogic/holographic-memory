@@ -106,9 +106,10 @@ class Server:
         return cmd + self.extra
 
     def start(self, timeout: float = 60.0) -> None:
-        stderr = open(self.stderr_path, "wb")
         env = {**os.environ, **self.arm.env}
-        self.proc = subprocess.Popen(self.command(), stdout=subprocess.DEVNULL, stderr=stderr, env=env)
+        # The child inherits the descriptor; the parent's copy closes once it has started.
+        with open(self.stderr_path, "wb") as stderr:
+            self.proc = subprocess.Popen(self.command(), stdout=subprocess.DEVNULL, stderr=stderr, env=env)
         deadline = time.time() + timeout
         while time.time() < deadline:
             if self.proc.poll() is not None:

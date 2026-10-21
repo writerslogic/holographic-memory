@@ -64,7 +64,9 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import roc  # noqa: E402
-from roc import BOOT_N, BOOT_SEED, CAND_K, NDCG_K, RRF_K, WEIGHTS, Candidates  # noqa: E402
+
+BOOT_N, BOOT_SEED, CAND_K, NDCG_K, RRF_K, WEIGHTS = roc.BOOT_N, roc.BOOT_SEED, roc.CAND_K, roc.NDCG_K, roc.RRF_K, roc.WEIGHTS
+Candidates = roc.Candidates
 
 SCHEMA = "hms.research.relevance/1"
 RECALL_K = 100
