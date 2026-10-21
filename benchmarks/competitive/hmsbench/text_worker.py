@@ -59,8 +59,9 @@ class SqliteFts5:
 
     def open(self):
         self.db = sqlite3.connect(self.store / "fts.db")
-        # macOS fsync does not flush the drive cache; HMS's sync_all (and tantivy's, Lucene's) do.
-        # Matching that guarantee keeps the durable replace/delete rows comparable.
+        # macOS fsync leaves writes in the drive cache. Every durable replace/delete of HMS ends in
+        # fcntl(F_FULLFSYNC) on macOS, as do tantivy (Rust std sync_all/sync_data) and Lucene
+        # (JDK FileChannel.force); fullfsync holds SQLite to the same standard.
         self.db.execute("PRAGMA fullfsync = ON")
         self.db.execute("PRAGMA checkpoint_fullfsync = ON")
 

@@ -21,7 +21,7 @@ use serde::Serialize;
 use super::scan::{self, SegmentEnd};
 use super::verify::{verify_path, VerifyOptions};
 use super::{Report, Verdict, STORAGE_FORMAT_CURRENT};
-use crate::core::storage::PersistentArena;
+use crate::core::storage::StagedArena;
 use crate::core::store_lock::{StoreLock, LOCK_FILE};
 
 const ARENA_DIRECTORY: &str = "vectors_data.bin";
@@ -516,7 +516,10 @@ fn rewrite_arena(context: &mut StepContext<'_>) -> Result<()> {
     }
     ids.sort_unstable();
     ensure!(!ids.is_empty(), "the source arena has no segments");
-    let target = PersistentArena::new(context.staging.join(ARENA_DIRECTORY))?;
+    // Frames are staged without a sync each; `finish` makes the arena durable once.
+    let directory = context.staging.join(ARENA_DIRECTORY);
+    std::fs::create_dir_all(&directory)?;
+    let mut target = StagedArena::new(&directory, None)?;
     let mut failure: Option<anyhow::Error> = None;
     for (n, id) in ids.iter().enumerate() {
         let path = generation.join(format!("seg_{id}.bin"));
@@ -543,7 +546,7 @@ fn rewrite_arena(context: &mut StepContext<'_>) -> Result<()> {
             )
         }
     }
-    target.flush()?;
+    target.finish()?;
     Ok(())
 }
 

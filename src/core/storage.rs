@@ -64,6 +64,43 @@ pub struct ArenaStats {
     pub capacity_bytes: usize,
 }
 
+/// The writable segment: its mapping and the open file behind it, replaced together, so a
+/// commit can complete the frame's durability on the file the frame was written to.
+pub(crate) struct ActiveSegment {
+    map: MmapMut,
+    file: File,
+}
+
+impl ActiveSegment {
+    fn new(file: File) -> Result<Self> {
+        // SAFETY: the arena owns the segment file; writers hold the guard around this value.
+        let map = unsafe { MmapMut::map_mut(&file)? };
+        Ok(Self { map, file })
+    }
+
+    /// Writes back the mapping's dirty pages (`msync`) without the platform's full sync:
+    /// for intermediate flushes whose durability a later [`Self::sync`] completes.
+    fn write_back(&self) -> Result<()> {
+        self.map
+            .flush()
+            .map_err(|e| anyhow!("mmap flush failed: {}", e))
+    }
+
+    /// Makes every written byte of the segment durable.
+    fn sync(&self) -> Result<()> {
+        self.write_back()?;
+        super::durable_file::sync_mapped_file(&self.file).context("segment sync failed")
+    }
+
+    /// Makes `[offset, offset + len)` durable.
+    fn sync_range(&self, offset: usize, len: usize) -> Result<()> {
+        self.map
+            .flush_range(offset, len)
+            .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
+        super::durable_file::sync_mapped_file(&self.file).context("segment sync failed")
+    }
+}
+
 /// RwLock-guarded segmented mmap arena with LZ4 compression and CRC32 framing.
 /// Writers acquire a write lock; readers acquire a read lock.
 /// Note: `version_counter` resets to 0 on restart (no WAL recovery).
@@ -74,7 +111,7 @@ pub struct PersistentArena {
     base_path: PathBuf,
     data_path: RwLock<PathBuf>,
     read_segments: RwLock<Vec<Arc<Mmap>>>,
-    active_segment: Arc<RwLock<MmapMut>>,
+    active_segment: Arc<RwLock<ActiveSegment>>,
     active_id: AtomicUsize,
     write_offset: AtomicUsize,
     active_capacity: AtomicUsize,
@@ -153,13 +190,14 @@ impl PersistentArena {
             file.set_len(active_capacity as u64)?;
             file.sync_all()?;
         }
-        let mut mut_map = unsafe { MmapMut::map_mut(&file)? };
+        let mut active = ActiveSegment::new(file)?;
+        let mut_map = &mut active.map;
 
-        let (recovered_offset, max_version) = Self::discover_offset(&mut_map)
+        let (recovered_offset, max_version) = Self::discover_offset(mut_map)
             .with_context(|| format!("arena segment {}", active_path.display()))?;
         // A partially written tail may contain bytes from an older frame. Persist the end
         // marker at the recovered boundary so future restarts never interpret stale tail
-        // bytes as a valid frame.
+        // bytes as a valid frame. (On macOS the next commit's full sync covers it.)
         if recovered_offset + HEADER_SIZE <= mut_map.len() {
             mut_map[recovered_offset..recovered_offset + HEADER_SIZE]
                 .copy_from_slice(&end_marker_bytes());
@@ -177,7 +215,7 @@ impl PersistentArena {
             base_path: base,
             data_path: RwLock::new(data_path),
             read_segments: RwLock::new(segments),
-            active_segment: Arc::new(RwLock::new(mut_map)),
+            active_segment: Arc::new(RwLock::new(active)),
             active_id: AtomicUsize::new(active_id),
             write_offset: AtomicUsize::new(recovered_offset),
             active_capacity: AtomicUsize::new(active_capacity),
@@ -258,10 +296,13 @@ impl PersistentArena {
 
     /// Durably flush all pending writes in the active segment.
     pub fn flush(&self) -> Result<()> {
-        self.active_segment
-            .write()
-            .flush()
-            .map_err(|e| anyhow!("mmap flush failed: {}", e))
+        self.active_segment.write().sync()
+    }
+
+    /// Writes back the active segment's dirty pages without the platform's full sync; a later
+    /// [`Self::flush`] makes them durable.
+    pub(crate) fn write_back(&self) -> Result<()> {
+        self.active_segment.write().write_back()
     }
 
     /// Walk CRC32-framed entries in the active segment to find the first free offset
@@ -397,8 +438,8 @@ impl PersistentArena {
             }
             return Err(anyhow!("read exceeds arena segment"));
         }
-        if end <= active.len() {
-            Ok(active[local_offset..end].to_vec())
+        if end <= active.map.len() {
+            Ok(active.map[local_offset..end].to_vec())
         } else {
             Err(anyhow!(
                 "Read out of bounds: offset {}, len {}",
@@ -544,7 +585,7 @@ impl PersistentArena {
             self.rotate_segment_locked(&mut active)?;
             offset = 0;
         }
-        if offset + total_frame_len > active.len() {
+        if offset + total_frame_len > active.map.len() {
             self.grow_segment_locked(&mut active, offset + total_frame_len)?;
         }
         self.write_offset
@@ -555,10 +596,10 @@ impl PersistentArena {
         // Each copy_nonoverlapping targets a distinct, non-overlapping range:
         //   [offset..+4], [offset+4..+8], [offset+8..+12], [offset+12..+16], [offset+16..+16+comp_len]
         debug_assert!(offset + total_frame_len <= self.segment_size);
-        debug_assert!(offset + total_frame_len <= active.len());
+        debug_assert!(offset + total_frame_len <= active.map.len());
         debug_assert!(total_frame_len == HEADER_SIZE + comp_len);
         unsafe {
-            let ptr = active.as_ptr() as *mut u8;
+            let ptr = active.map.as_ptr() as *mut u8;
             let target = ptr.add(offset);
             // CRC32 at +0
             std::ptr::copy_nonoverlapping(crc.to_le_bytes().as_ptr(), target, 4);
@@ -581,22 +622,20 @@ impl PersistentArena {
         }
         let frame_end = offset + total_frame_len;
         // The end marker rides in the frame's flush range: it records the committed end.
-        let sentinel_len = if frame_end + HEADER_SIZE <= active.len() {
-            active[frame_end..frame_end + HEADER_SIZE].copy_from_slice(&end_marker_bytes());
+        let sentinel_len = if frame_end + HEADER_SIZE <= active.map.len() {
+            active.map[frame_end..frame_end + HEADER_SIZE].copy_from_slice(&end_marker_bytes());
             HEADER_SIZE
         } else {
             0
         };
         if durable {
-            active
-                .flush_range(offset, total_frame_len + sentinel_len)
-                .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
+            active.sync_range(offset, total_frame_len + sentinel_len)?;
             // The frame is on disk and applied in memory by the caller; its pages are only
             // needed again by replay or compaction, which read them back from the file.
             if super::os_memory::release_journal_pages_enabled() {
                 let released = total_frame_len + sentinel_len;
                 super::os_memory::release_file_pages(
-                    active[offset..offset + released].as_ptr(),
+                    active.map[offset..offset + released].as_ptr(),
                     released,
                 );
             }
@@ -622,7 +661,7 @@ impl PersistentArena {
         let bytes: &[u8] = if seg_idx < reader.len() {
             &reader[seg_idx][..]
         } else if seg_idx == self.active_id.load(Ordering::Acquire) {
-            &active[..]
+            &active.map[..]
         } else {
             return;
         };
@@ -645,14 +684,14 @@ impl PersistentArena {
 
     fn grow_segment_locked(
         &self,
-        active: &mut parking_lot::RwLockWriteGuard<'_, MmapMut>,
+        active: &mut parking_lot::RwLockWriteGuard<'_, ActiveSegment>,
         required: usize,
     ) -> Result<()> {
         ensure!(
             self.format_version >= 4
                 && INCREMENTAL_ALLOCATION
                 && required <= self.segment_size
-                && required > active.len(),
+                && required > active.map.len(),
             "invalid arena growth request"
         );
         let capacity = required.div_ceil(SEGMENT_SIZE) * SEGMENT_SIZE;
@@ -661,12 +700,11 @@ impl PersistentArena {
             self.active_id.load(Ordering::Acquire)
         ));
         let file = OpenOptions::new().read(true).write(true).open(path)?;
-        active.flush()?;
+        active.write_back()?;
         file.set_len(capacity as u64)?;
         file.sync_all()?;
         // SAFETY: the writer guard excludes all readers and the file has its new durable length.
-        let mapping = unsafe { MmapMut::map_mut(&file)? };
-        **active = mapping;
+        **active = ActiveSegment::new(file)?;
         self.active_capacity.store(capacity, Ordering::Release);
         Ok(())
     }
@@ -675,7 +713,7 @@ impl PersistentArena {
     /// and pass the guard so we can swap the mmap in place.
     fn rotate_segment_locked(
         &self,
-        active: &mut parking_lot::RwLockWriteGuard<'_, MmapMut>,
+        active: &mut parking_lot::RwLockWriteGuard<'_, ActiveSegment>,
     ) -> Result<()> {
         let current_id = self.active_id.load(Ordering::SeqCst);
         let path = self
@@ -683,7 +721,7 @@ impl PersistentArena {
             .read()
             .join(format!("seg_{}.bin", current_id));
         let file = File::open(&path)?;
-        active.flush()?;
+        active.sync()?;
         let mmap = unsafe { Mmap::map(&file)? };
         self.read_segments.write().push(Arc::new(mmap));
 
@@ -703,9 +741,7 @@ impl PersistentArena {
         next_file.set_len(capacity as u64)?;
         next_file.sync_all()?;
         super::durable_file::sync_directory(&self.data_path.read())?;
-        let next_map = unsafe { MmapMut::map_mut(&next_file)? };
-
-        **active = next_map;
+        **active = ActiveSegment::new(next_file)?;
         self.active_capacity.store(capacity, Ordering::Release);
         self.active_id.store(next_id, Ordering::SeqCst);
         self.write_offset.store(0, Ordering::SeqCst);
@@ -849,7 +885,7 @@ impl PersistentArena {
         let mut active = self.active_segment.write();
         let mut segments = self.read_segments.write();
         let mut data_path = self.data_path.write();
-        active.flush()?;
+        active.write_back()?;
         // IMPORTANT: old mappings/files stay valid until the durable pointer commits.
         let publication = super::durable_file::atomic_write(
             &self.base_path.join("CURRENT"),
@@ -864,7 +900,7 @@ impl PersistentArena {
         compaction_crash_point("published");
         std::mem::swap(&mut *active, &mut *replacement.active_segment.write());
         std::mem::swap(&mut *segments, &mut *replacement.read_segments.write());
-        Self::release_all_pages(&active, &segments);
+        Self::release_all_pages(&active.map, &segments);
         let live_path = new_path.clone();
         let old_path = std::mem::replace(&mut *data_path, new_path);
         self.active_capacity.store(
@@ -963,7 +999,7 @@ impl PersistentArena {
 
 impl Drop for PersistentArena {
     fn drop(&mut self) {
-        let _ = self.active_segment.write().flush();
+        let _ = self.active_segment.write().write_back();
     }
 }
 
@@ -1071,7 +1107,8 @@ mod tests {
             arena.write_slice(b"distinct replay payload")?;
             let end = arena.stats().used_bytes;
             {
-                let mut map = arena.active_segment.write();
+                let mut active = arena.active_segment.write();
+                let map = &mut active.map;
                 let raw = u32::from_le_bytes(map[4..8].try_into()?);
                 let compressed = u32::from_le_bytes(map[8..12].try_into()?);
                 assert_eq!(raw, compressed);
@@ -1101,7 +1138,8 @@ mod tests {
             let payload = vec![7; length.min(MAX_RAW_FRAME_SIZE)];
             arena.write_slice(&payload)?;
             if length > MAX_RAW_FRAME_SIZE {
-                let mut map = arena.active_segment.write();
+                let mut active = arena.active_segment.write();
+                let map = &mut active.map;
                 map[4..8].copy_from_slice(&(length as u32).to_le_bytes());
                 map.flush()?;
             }
@@ -1159,7 +1197,8 @@ mod tests {
                     offsets.push(staged.write_slice(payload)?);
                 }
                 {
-                    let mut map = staged.active_segment.write();
+                    let mut active = staged.active_segment.write();
+                    let map = &mut active.map;
                     let offset = offsets[frame];
                     if truncate {
                         map[offset..offset + HEADER_SIZE].fill(0);

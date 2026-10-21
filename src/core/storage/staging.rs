@@ -48,7 +48,8 @@ impl StagedArena {
             .context("staged frame byte count overflow")?;
         self.pending_frames += 1;
         if self.pending_bytes >= MAX_PENDING_BYTES || self.pending_frames >= MAX_PENDING_FRAMES {
-            self.arena.flush()?;
+            // Bounds the dirty pages; `finish` makes the arena durable.
+            self.arena.write_back()?;
             self.pending_bytes = 0;
             self.pending_frames = 0;
         }
