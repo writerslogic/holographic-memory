@@ -52,7 +52,7 @@ jobs:
       # able to reach what is published (zizmor cache-poisoning).
       - name: Install documentation tools
         run: |
-          pip install -r docs/requirements.txt
+          pip install --require-hashes -r docs/requirements.txt
           npm ci --prefix scripts/docs-api
 
       - name: Unit-test the docs generators
@@ -113,10 +113,10 @@ jobs:
 
       - name: Install tools
         run: |
-          pip install -r docs/requirements.txt
+          pip install --require-hashes -r docs/requirements.txt
           npm ci --prefix scripts/docs-api
           npm ci --prefix scripts/docs-qa
-          npm exec --prefix scripts/docs-qa -- playwright install --with-deps chromium
+          scripts/docs-qa/node_modules/.bin/playwright install --with-deps chromium
 
       # The site is served at the root of 127.0.0.1:8123, so its absolute URLs resolve. The rust
       # reference is built and checked by the `build` job; this build skips it.

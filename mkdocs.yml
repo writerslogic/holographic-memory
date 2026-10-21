@@ -116,6 +116,7 @@ exclude_docs: |
   review-improvements.md
   research/
   requirements.txt
+  requirements.in
   versions.json
   _data/
   overrides/
