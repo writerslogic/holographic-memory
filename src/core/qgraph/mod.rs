@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! Quantized graph index for approximate nearest-neighbour search on angular data.
+//! Quantized graph index for approximate nearest-neighbour search on angular data, and (the
+//! [`Graph`] and [`VGraph`] only, see [`Metric`]) on Euclidean data.
 //!
 //! Vectors are normalized and rotated (random sign flips and fast Walsh-Hadamard transforms),
 //! and a Vamana-style graph with alpha pruning and a fixed out-degree is built on exact inner
@@ -59,8 +60,32 @@ const MIN_LAYER: usize = 64;
 /// access (the build measured 1.8x faster at 256 dimensions, and not faster at 100).
 const BUILD_CODES_MIN_DIM: usize = 128;
 
+/// Distance a graph is built and searched for.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Metric {
+    /// Cosine: rows are normalized at build, queries need not be.
+    #[default]
+    Angular,
+    /// Squared Euclidean distance on the rows as given. Construction scores
+    /// `|a|^2 + |b|^2 - 2 <a, b>` with exact per-row squared norms; the vertex index orders
+    /// candidates by `|x|^2 / 2 - <q, x - mean>`, its code estimate of the same order. The edge
+    /// index ([`QGraph`]), the screen and the neighbour blocks are angular only.
+    Euclidean,
+}
+
+impl Metric {
+    fn code(self) -> u64 {
+        match self {
+            Self::Angular => 0,
+            Self::Euclidean => 1,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct BuildParams {
+    /// Distance the graph is built for.
+    pub metric: Metric,
     /// Candidate list size of the construction-time greedy search.
     pub build_ef: usize,
     /// Out-degree of the bottom layer (even).
@@ -81,6 +106,7 @@ pub struct BuildParams {
 impl Default for BuildParams {
     fn default() -> Self {
         Self {
+            metric: Metric::Angular,
             build_ef: 128,
             degree: DEFAULT_DEGREE,
             alpha: 1.0,
@@ -237,14 +263,11 @@ thread_local! {
     static BUILD_VISITED: RefCell<BuildVisited> = RefCell::new(BuildVisited::default());
 }
 
-/// Squared Euclidean distance between unit vectors.
-fn d2(a: &[f32], b: &[f32]) -> f32 {
-    (2.0 - 2.0 * dot(a, b)).max(0.0)
-}
-
 struct Rows<'a> {
     data: &'a [f32],
     dim: usize,
+    /// Squared norm of every row (Euclidean); `None` for unit rows (angular).
+    norms: Option<&'a [f32]>,
     /// Bounds that let construction skip exact distances whose outcome they already decide,
     /// or, with `quantized`, the estimates that order the construction search's pool.
     codes: Option<&'a BuildCodes>,
@@ -261,10 +284,14 @@ struct BuildCodes {
     scale: Vec<f32>,
     err: Vec<f32>,
     dot: DotI8,
+    /// Euclidean rows: per row the squared norm the exact distance uses and the norm.
+    norms: Option<Vec<(f32, f32)>>,
+    /// Euclidean rows: relative f32 rounding slack of the computed distance.
+    rel_slack: f32,
 }
 
 impl BuildCodes {
-    fn new(data: &[f32], dim: usize) -> Self {
+    fn new(data: &[f32], dim: usize, norms: Option<&[f32]>) -> Self {
         let n = data.len() / dim;
         let width = dim.next_multiple_of(16);
         let mut q = vec![0i8; n * width];
@@ -296,6 +323,10 @@ impl BuildCodes {
             scale,
             err,
             dot: dot_i8_kernel(),
+            norms: norms.map(|n| n.iter().map(|&n2| (n2, n2.sqrt())).collect()),
+            // The computed dot product and squared norms are each within `dim * 2^-24` of the
+            // magnitudes summed; twice that, and at least the unit-row slack, covers them.
+            rel_slack: 1e-4f32.max((dim as f32 + 4.0) * 2.0 * f32::EPSILON),
         }
     }
 
@@ -318,17 +349,34 @@ impl BuildCodes {
     #[inline]
     fn d2_est(&self, p: u32, u: u32) -> f32 {
         let raw = (self.dot)(self.code(p), self.code(u)) as f32;
-        (2.0 - 2.0 * self.scale[p as usize] * self.scale[u as usize] * raw).max(0.0)
+        let (pi, ui) = (p as usize, u as usize);
+        match &self.norms {
+            None => (2.0 - 2.0 * self.scale[pi] * self.scale[ui] * raw).max(0.0),
+            Some(n) => (n[pi].0 + n[ui].0 - 2.0 * self.scale[pi] * self.scale[ui] * raw).max(0.0),
+        }
     }
 
+    /// For rows of any norm the same inequality reads
+    /// `|<p, u> - s_p s_u <q_p, q_u>| <= |e_p| |u| + (|p| + |e_p|) |e_u|`, and the computed
+    /// distance `|p|^2 + |u|^2 - 2 <p, u>` gets a slack relative to the magnitudes it sums.
     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
         const SLACK: f32 = 1e-4;
         let (pi, ui) = (p as usize, u as usize);
         let raw = (self.dot)(self.code(p), self.code(u)) as f32;
         let ep = self.err[pi];
         let est = self.scale[pi] * self.scale[ui] * raw;
-        let margin = ep + (1.0 + ep) * self.err[ui] + SLACK;
-        (2.0 - 2.0 * (est + margin), 2.0 - 2.0 * (est - margin))
+        let Some(n) = &self.norms else {
+            let margin = ep + (1.0 + ep) * self.err[ui] + SLACK;
+            return (2.0 - 2.0 * (est + margin), 2.0 - 2.0 * (est - margin));
+        };
+        let ((np2, np), (nu2, nu)) = (n[pi], n[ui]);
+        let margin = ep * nu + (np + ep) * self.err[ui];
+        let slack = self.rel_slack * (np2 + nu2 + 2.0 * np * nu);
+        let base = np2 + nu2;
+        (
+            base - 2.0 * (est + margin) - slack,
+            base - 2.0 * (est - margin) + slack,
+        )
     }
 }
 
@@ -338,26 +386,38 @@ impl Rows<'_> {
         &self.data[i * self.dim..(i + 1) * self.dim]
     }
 
-    #[cfg(test)]
-    fn d2(&self, a: u32, b: u32) -> f32 {
-        d2(self.row(a), self.row(b))
+    /// Squared distance of rows `a` and `b` from their computed dot product: `2 - 2 dot` for
+    /// unit rows, `|a|^2 + |b|^2 - 2 dot` with the stored squared norms otherwise.
+    #[inline]
+    fn dist(&self, a: u32, b: u32, dot: f32) -> f32 {
+        match self.norms {
+            None => (2.0 - 2.0 * dot).max(0.0),
+            Some(n) => (n[a as usize] + n[b as usize] - 2.0 * dot).max(0.0),
+        }
     }
 
-    /// `d2(target, row(u))` for every `u` in `ids`, written to `out`.
-    fn d2_many(&self, target: &[f32], ids: &[u32], out: &mut Vec<f32>) {
+    /// Squared distance of rows `a` and `b`.
+    fn d2(&self, a: u32, b: u32) -> f32 {
+        self.dist(a, b, dot(self.row(a), self.row(b)))
+    }
+
+    /// `d2(p, u)` for every `u` in `ids`, written to `out`.
+    fn d2_many(&self, p: u32, ids: &[u32], out: &mut Vec<f32>) {
         out.clear();
+        let target = self.row(p);
         let (quads, rest) = ids.as_chunks::<4>();
         for q in quads {
             let d = build_kernels::dot4(target, q.map(|u| self.row(u)));
-            out.extend(d.map(|x| (2.0 - 2.0 * x).max(0.0)));
+            out.extend(d.iter().zip(q).map(|(&x, &u)| self.dist(p, u, x)));
         }
-        out.extend(rest.iter().map(|&u| d2(target, self.row(u))));
+        out.extend(rest.iter().map(|&u| self.d2(p, u)));
     }
 
     /// `d2_many` over a long list of rows not yet in cache, prefetching a few rows ahead.
-    fn d2_stream(&self, target: &[f32], ids: &[u32], out: &mut Vec<f32>) {
+    fn d2_stream(&self, p: u32, ids: &[u32], out: &mut Vec<f32>) {
         const AHEAD: usize = 16;
         out.clear();
+        let target = self.row(p);
         for &u in ids.iter().take(AHEAD) {
             build_kernels::prefetch_row(self.row(u));
         }
@@ -367,9 +427,9 @@ impl Rows<'_> {
                 build_kernels::prefetch_row(self.row(u));
             }
             let d = build_kernels::dot4(target, q.map(|u| self.row(u)));
-            out.extend(d.map(|x| (2.0 - 2.0 * x).max(0.0)));
+            out.extend(d.iter().zip(q).map(|(&x, &u)| self.dist(p, u, x)));
         }
-        out.extend(rest.iter().map(|&u| d2(target, self.row(u))));
+        out.extend(rest.iter().map(|&u| self.d2(p, u)));
     }
 
     /// True if some `s` in `kept` has `a2 d2(s, c) <= dc`.
@@ -393,26 +453,33 @@ impl Rows<'_> {
                 if n_open == 4 {
                     n_open = 0;
                     let d = build_kernels::dot4(rc, open.map(|u| self.row(u)));
-                    if d.iter().any(|&x| a2 * (2.0 - 2.0 * x).max(0.0) <= dc) {
+                    if d.iter()
+                        .zip(&open)
+                        .any(|(&x, &s)| a2 * self.dist(c, s, x) <= dc)
+                    {
                         return true;
                     }
                 }
             }
             return open[..n_open]
                 .iter()
-                .any(|&s| a2 * d2(self.row(s), rc) <= dc);
+                .any(|&s| a2 * self.dist(s, c, dot(self.row(s), rc)) <= dc);
         }
         let (quads, rest) = kept.as_chunks::<4>();
         for q in quads {
             let d = build_kernels::dot4(rc, q.map(|u| self.row(u)));
-            if d.iter().any(|&x| a2 * (2.0 - 2.0 * x).max(0.0) <= dc) {
+            if d.iter()
+                .zip(q)
+                .any(|(&x, &s)| a2 * self.dist(c, s, x) <= dc)
+            {
                 return true;
             }
         }
-        rest.iter().any(|&s| a2 * d2(self.row(s), rc) <= dc)
+        rest.iter()
+            .any(|&s| a2 * self.dist(s, c, dot(self.row(s), rc)) <= dc)
     }
 
-    /// Greedy search from `start`; returns every expanded vertex with its distance to `target`.
+    /// Greedy search from `start`; returns every expanded vertex with its distance to row `p`.
     fn greedy(
         &self,
         graph: &[Vec<u32>],
@@ -421,12 +488,11 @@ impl Rows<'_> {
         l: usize,
         visited: &mut BuildVisited,
     ) -> Vec<(f32, u32)> {
-        let target = self.row(p);
         let (mut n_fresh, mut n_exact) = (0u64, 0u64);
         visited.reset(graph.len());
         visited.insert(start);
         let mut pool = vec![Candidate {
-            dist: d2(target, self.row(start)),
+            dist: self.d2(p, start),
             id: start,
             done: false,
         }];
@@ -483,7 +549,7 @@ impl Rows<'_> {
                 }
                 None => {
                     n_exact += fresh.len() as u64;
-                    self.d2_many(target, &fresh, &mut dists);
+                    self.d2_many(p, &fresh, &mut dists);
                 }
             }
             let mut best = usize::MAX;
@@ -515,7 +581,7 @@ impl Rows<'_> {
             // Exact distances of the expanded set, which the prune scores exactly.
             let ids: Vec<u32> = expanded.iter().map(|e| e.1).collect();
             let mut d = Vec::with_capacity(ids.len());
-            self.d2_stream(target, &ids, &mut d);
+            self.d2_stream(p, &ids, &mut d);
             n_exact += ids.len() as u64;
             for (e, d) in expanded.iter_mut().zip(d) {
                 e.0 = d;
@@ -550,7 +616,7 @@ impl Rows<'_> {
     /// the rest of the list; the result equals `prune` of the whole list.
     fn prune_merged(&self, t: u32, list: &[u32], closed: usize, alpha: f32, r: usize) -> Vec<u32> {
         let mut d = Vec::with_capacity(list.len());
-        self.d2_stream(self.row(t), list, &mut d);
+        self.d2_stream(t, list, &mut d);
         let mut cands: Vec<(f32, u32, bool)> = d
             .into_iter()
             .zip(list)
@@ -608,7 +674,7 @@ impl Rows<'_> {
                     let t0 = prof::start();
                     let adj = &g[p as usize];
                     let mut d = Vec::with_capacity(adj.len());
-                    self.d2_stream(self.row(p), adj, &mut d);
+                    self.d2_stream(p, adj, &mut d);
                     cands.extend(d.into_iter().zip(adj.iter().copied()));
                     let out = self.prune(p, cands, alpha, r);
                     prof::add(&prof::PRUNE, t0);
@@ -689,7 +755,7 @@ impl Rows<'_> {
                     ids.retain(|_| b.next().is_some_and(|b| b.0 <= cut));
                 }
                 let mut d = Vec::new();
-                self.d2_stream(self.row(v as u32), &ids, &mut d);
+                self.d2_stream(v as u32, &ids, &mut d);
                 let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
                 c.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
                 c.into_iter().take(r - have.len()).map(|x| x.1).collect()
@@ -745,6 +811,11 @@ impl QGraph {
                 "graph built with degree {r}, parameters say {}",
                 params.degree
             )));
+        }
+        if g.metric != Metric::Angular {
+            return Err(invalid(
+                "the edge index is angular only; use VGraph for Euclidean data".into(),
+            ));
         }
         let rotation = Rotation::new(dim, params.code_bits, params.seed);
         let words = rotation.padded() / 64;
@@ -809,13 +880,18 @@ impl QGraph {
     }
 }
 
-/// A built proximity graph over normalized vectors, before any encoding. Holds a full-precision
-/// copy of the data, so it is a build-time object; the indexes keep only their encodings.
+/// A built proximity graph, before any encoding: over normalized vectors (angular) or the
+/// vectors as given (Euclidean). Holds a full-precision copy of the data, so it is a
+/// build-time object; the indexes keep only their encodings.
 pub struct Graph {
     n: usize,
     dim: usize,
     degree: usize,
-    unit: Vec<f32>,
+    metric: Metric,
+    /// Unit rows (angular) or the rows as given (Euclidean).
+    vectors: Vec<f32>,
+    /// Squared norm of every row (Euclidean); empty for angular.
+    norms: Vec<f32>,
     adj: Vec<Vec<u32>>,
     entry: u32,
     upper_ids: Vec<u32>,
@@ -824,14 +900,42 @@ pub struct Graph {
     build: BuildParams,
 }
 
+/// Prepares rows for `metric` in place: normalizes them for angular (zero rows stay zero) and
+/// returns the squared norms for Euclidean (empty for angular).
+fn prepare_rows(data: &mut [f32], dim: usize, metric: Metric) -> Vec<f32> {
+    match metric {
+        Metric::Angular => {
+            data.par_chunks_mut(dim).for_each(|x| {
+                let norm = dot(x, x).sqrt();
+                if norm > 0.0 {
+                    x.iter_mut().for_each(|o| *o /= norm);
+                }
+            });
+            Vec::new()
+        }
+        Metric::Euclidean => data.par_chunks(dim).map(|x| dot(x, x)).collect(),
+    }
+}
+
+/// The squared norms as [`Rows`] takes them: `None` when empty (angular).
+fn norms_opt(norms: &[f32]) -> Option<&[f32]> {
+    (!norms.is_empty()).then_some(norms)
+}
+
 impl Graph {
     fn rows(&self) -> Rows<'_> {
         Rows {
-            data: &self.unit,
+            data: &self.vectors,
             dim: self.dim,
+            norms: norms_opt(&self.norms),
             codes: None,
             quantized: false,
         }
+    }
+
+    /// The metric the graph was built for.
+    pub fn metric(&self) -> Metric {
+        self.metric
     }
 
     /// Stable 64-bit hash of the structure (adjacency, upper layers, entry): equal values mean
@@ -853,14 +957,14 @@ impl Graph {
         h.finish()
     }
 
-    /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
-    /// stay zero. Uses the rayon pool; the result depends only on the data and `params`
-    /// (`code_bits` is not used).
+    /// Build over `data` (row-major, `dim` floats per vector). Angular rows are normalized;
+    /// zero rows stay zero. Uses the rayon pool; the result depends only on the data and
+    /// `params` (`code_bits` is not used).
     pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, HmsError> {
         Self::build_owned(data.to_vec(), dim, params)
     }
 
-    /// [`Graph::build`] over an owned matrix, normalized in place: the caller's copy is the
+    /// [`Graph::build`] over an owned matrix, prepared in place: the caller's copy is the
     /// one the graph keeps, so the vectors are resident once during construction instead of
     /// twice (the build's own copy next to the caller's).
     pub fn build_owned(
@@ -900,40 +1004,63 @@ impl Graph {
                 "degree must be positive and even, not {r}"
             )));
         }
-        data.par_chunks_mut(dim).for_each(|x| {
-            let norm = dot(x, x).sqrt();
-            if norm > 0.0 {
-                x.iter_mut().for_each(|o| *o /= norm);
-            }
-        });
-        let unit = data;
+        let metric = params.metric;
+        let norms = prepare_rows(&mut data, dim, metric);
+        if let Some(at) = norms.iter().position(|v| !v.is_finite()) {
+            return Err(invalid(format!("row {at} overflows its squared norm")));
+        }
+        let vectors = data;
         let codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
-            .then(|| BuildCodes::new(&unit, dim));
+            .then(|| BuildCodes::new(&vectors, dim, norms_opt(&norms)));
         let rows = Rows {
-            data: &unit,
+            data: &vectors,
             dim,
+            norms: norms_opt(&norms),
             codes: codes.as_ref(),
             quantized: params.quantized_search,
         };
 
         let mut centroid = vec![0f32; dim];
-        for x in unit.chunks_exact(dim) {
+        for x in vectors.chunks_exact(dim) {
             centroid.iter_mut().zip(x).for_each(|(c, v)| *c += v);
         }
-        let entry = (0..n as u32)
-            .into_par_iter()
-            .map(|i| (dot(rows.row(i), &centroid), i))
-            .reduce(
-                || (f32::NEG_INFINITY, NONE),
-                |a, b| {
-                    if b.0 > a.0 || (b.0 == a.0 && b.1 < a.1) {
-                        b
-                    } else {
-                        a
-                    }
-                },
-            )
-            .1;
+        let entry = match metric {
+            Metric::Angular => {
+                (0..n as u32)
+                    .into_par_iter()
+                    .map(|i| (dot(rows.row(i), &centroid), i))
+                    .reduce(
+                        || (f32::NEG_INFINITY, NONE),
+                        |a, b| {
+                            if b.0 > a.0 || (b.0 == a.0 && b.1 < a.1) {
+                                b
+                            } else {
+                                a
+                            }
+                        },
+                    )
+                    .1
+            }
+            Metric::Euclidean => {
+                // The row nearest the mean: `|x|^2 - 2 <x, mean>` is `|x - mean|^2` less a
+                // constant.
+                centroid.iter_mut().for_each(|c| *c /= n as f32);
+                (0..n as u32)
+                    .into_par_iter()
+                    .map(|i| (norms[i as usize] - 2.0 * dot(rows.row(i), &centroid), i))
+                    .reduce(
+                        || (f32::INFINITY, NONE),
+                        |a, b| {
+                            if b.0 < a.0 || (b.0 == a.0 && b.1 < a.1) {
+                                b
+                            } else {
+                                a
+                            }
+                        },
+                    )
+                    .1
+            }
+        };
 
         let mut rng = SplitMix(params.seed ^ 0xA5A5_A5A5);
         let mut order: Vec<u32> = (0..n as u32).collect();
@@ -960,11 +1087,16 @@ impl Graph {
                 .iter()
                 .flat_map(|&g| rows.row(g).iter().copied())
                 .collect();
+            let sub_norms: Vec<f32> = match rows.norms {
+                Some(n) => order[..size].iter().map(|&g| n[g as usize]).collect(),
+                None => Vec::new(),
+            };
             let sub_codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
-                .then(|| BuildCodes::new(&sub, dim));
+                .then(|| BuildCodes::new(&sub, dim, norms_opt(&sub_norms)));
             let sub_rows = Rows {
                 data: &sub,
                 dim,
+                norms: norms_opt(&sub_norms),
                 codes: sub_codes.as_ref(),
                 quantized: params.quantized_search,
             };
@@ -988,7 +1120,9 @@ impl Graph {
             n,
             dim,
             degree: r,
-            unit,
+            metric,
+            vectors,
+            norms,
             adj: graph,
             entry,
             upper_ids,
@@ -1350,6 +1484,7 @@ mod tests {
         let rows = Rows {
             data: &data,
             dim: d,
+            norms: None,
             quantized: false,
             codes: None,
         };
@@ -1382,43 +1517,48 @@ mod tests {
 
     /// The code filters of the construction search, the prune and the fill only skip exact
     /// work, so they build the very graph exact scoring builds, including on near-duplicate
-    /// rows (bounds at their tightest) and a zero row.
+    /// rows (bounds at their tightest) and a zero row; for Euclidean rows too, with norms
+    /// spread over two decades and an offset from the origin (bounds scaled by the norms).
     #[test]
     fn build_codes_leave_the_graph_unchanged() {
-        for d in [100, 160] {
-            let n = 1200;
-            let mut data = clustered(n, d, 3);
-            let mut rng = SplitMix(5);
-            for i in (0..n).step_by(7) {
-                let j = (rng.next_u64() % n as u64) as usize;
-                for k in 0..d {
-                    data[i * d + k] = data[j * d + k] * (1.0 + 1e-6 * gaussian(&mut rng));
+        for metric in [Metric::Angular, Metric::Euclidean] {
+            for d in [100, 160] {
+                let n = 1200;
+                let mut data = clustered(n, d, 3);
+                let mut rng = SplitMix(5);
+                if metric == Metric::Euclidean {
+                    for (i, x) in data.chunks_exact_mut(d).enumerate() {
+                        let s = 0.1 * 100f32.powf((i * 7919 % n) as f32 / n as f32);
+                        x.iter_mut().for_each(|v| *v = s * (*v + 3.0));
+                    }
                 }
-            }
-            data[5 * d..6 * d].fill(0.0);
-            data.chunks_exact_mut(d).for_each(|x| {
-                let norm = dot(x, x).sqrt();
-                if norm > 0.0 {
-                    x.iter_mut().for_each(|v| *v /= norm);
+                for i in (0..n).step_by(7) {
+                    let j = (rng.next_u64() % n as u64) as usize;
+                    for k in 0..d {
+                        data[i * d + k] = data[j * d + k] * (1.0 + 1e-6 * gaussian(&mut rng));
+                    }
                 }
-            });
-            let codes = BuildCodes::new(&data, d);
-            let build = |codes: Option<&BuildCodes>| {
-                let rows = Rows {
-                    data: &data,
-                    dim: d,
-                    codes,
-                    quantized: false,
+                data[5 * d..6 * d].fill(0.0);
+                let norms = prepare_rows(&mut data, d, metric);
+                let codes = BuildCodes::new(&data, d, norms_opt(&norms));
+                let build = |codes: Option<&BuildCodes>| {
+                    let rows = Rows {
+                        data: &data,
+                        dim: d,
+                        norms: norms_opt(&norms),
+                        codes,
+                        quantized: false,
+                    };
+                    let order: Vec<u32> = (0..n as u32).rev().collect();
+                    let mut graph = vec![Vec::new(); n];
+                    for alpha in [1.0, 1.2] {
+                        rows.insert_pass(&mut graph, &order, 0, 40, alpha, 12);
+                    }
+                    rows.fill(&mut graph, 12);
+                    graph
                 };
-                let order: Vec<u32> = (0..n as u32).rev().collect();
-                let mut graph = vec![Vec::new(); n];
-                for alpha in [1.0, 1.2] {
-                    rows.insert_pass(&mut graph, &order, 0, 40, alpha, 12);
-                }
-                rows.fill(&mut graph, 12);
-                graph
-            };
-            assert_eq!(build(Some(&codes)), build(None), "d = {d}");
+                assert_eq!(build(Some(&codes)), build(None), "{metric:?}, d = {d}");
+            }
         }
     }
 

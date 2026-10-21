@@ -12,7 +12,8 @@
 //!         all cores, then times single-threaded queries one at a time over an `ef` x
 //!         `max-exact` sweep, each configuration repeated and gated on the 1-minute load.
 //!         `--index vertex` uses the per-vertex 8-bit code index (`VGraph`) instead, swept over
-//!         `ef` x `rerank`; `--residual` adds its second code for the re-rank.
+//!         `ef` x `rerank`; `--residual` adds its second code for the re-rank. Angular and
+//!         (vertex index only) Euclidean sets.
 //! `beir`: BEIR sets with precomputed embeddings and text. Writes ranked runs for the
 //!         document API (lexical, dense, hybrid) and the raw sparse-vector path.
 //! `longmemeval`: LongMemEval_S with precomputed embeddings. Every question gets a fresh store
@@ -31,7 +32,7 @@ use std::time::Instant;
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
 use holographic_memory::core::qgraph::{
-    BuildParams, Graph, QGraph, SearchParams, VGraph, VSearchParams,
+    BuildParams, Graph, Metric, QGraph, SearchParams, VGraph, VSearchParams,
 };
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
@@ -66,6 +67,10 @@ enum Mode {
         data: PathBuf,
         #[arg(long)]
         out: PathBuf,
+        /// Distance: `angular` or `euclidean` (vertex index only). Defaults to the dataset's
+        /// metric; a value that contradicts it is an error.
+        #[arg(long, value_parser = ["angular", "euclidean"])]
+        metric: Option<String>,
         /// Candidate pool sizes to sweep.
         #[arg(
             long,
@@ -100,7 +105,8 @@ enum Mode {
         #[arg(long)]
         queries: Option<usize>,
         /// Tuning mode: hold out every (n / N)-th train vector as a query (N in total), build
-        /// on the rest and score against exact cosine truth; the test queries are not read.
+        /// on the rest and score against exact truth in the metric; the test queries are not
+        /// read.
         #[arg(long, conflicts_with = "queries")]
         holdout: Option<usize>,
         /// Index layout: `edge` (1-bit code per edge, QGraph) or `vertex` (8-bit code per
@@ -470,6 +476,7 @@ fn wait_for_idle(max: f64, deadline: Instant) -> (f64, bool) {
 struct QgraphArgs {
     data: PathBuf,
     out: PathBuf,
+    metric: Option<String>,
     ef: Vec<usize>,
     max_exact: Vec<usize>,
     build_ef: usize,
@@ -517,16 +524,20 @@ fn normalize(v: &mut [f32]) {
 type Split = (Vec<Vec<f32>>, Vec<Vec<f32>>, Vec<Vec<i32>>);
 
 /// Splits `rows` into a tuning set of `n` queries (every `rows.len() / n`-th row) and the
-/// rest, with the exact cosine top-`k` of each query over the rest as ground truth.
-fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize) -> Result<Split> {
+/// rest, with the exact top-`k` of each query over the rest as ground truth: by cosine
+/// (rows normalized) for angular, by Euclidean distance (rows as given) otherwise.
+fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize, metric: Metric) -> Result<Split> {
     ensure!(n > 0 && n < rows.len(), "holdout must be in 1..n_train");
+    let angular = metric == Metric::Angular;
     let step = rows.len() / n;
     let mut queries = Vec::with_capacity(n);
     let mut keep = Vec::with_capacity(rows.len() - n);
     for (i, mut r) in rows.drain(..).enumerate() {
-        normalize(&mut r);
+        if angular {
+            normalize(&mut r);
+        }
         // A zero row has no cosine neighbours, so it is never a query; it stays indexed.
-        if i % step == 0 && queries.len() < n && r.iter().any(|&v| v != 0.0) {
+        if i % step == 0 && queries.len() < n && (!angular || r.iter().any(|&v| v != 0.0)) {
             queries.push(r);
         } else {
             keep.push(r);
@@ -537,7 +548,16 @@ fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize) -> Result<Split> {
         .map(|q| {
             let mut top: Vec<(f32, u32)> = Vec::with_capacity(k + 1);
             for (i, r) in keep.iter().enumerate() {
-                let s = q.iter().zip(r).map(|(a, b)| a * b).sum::<f32>();
+                // Larger is nearer: the inner product, or the negated squared distance,
+                // accumulated in f64 (exact for integer data such as SIFT).
+                let s = if angular {
+                    q.iter().zip(r).map(|(a, b)| a * b).sum::<f32>()
+                } else {
+                    -(q.iter()
+                        .zip(r)
+                        .map(|(a, b)| (f64::from(*a) - f64::from(*b)).powi(2))
+                        .sum::<f64>() as f32)
+                };
                 if top.len() < k || s > top[k - 1].0 {
                     let pos = top.partition_point(|t| t.0 >= s);
                     top.insert(pos, (s, i as u32));
@@ -554,16 +574,27 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     const K: usize = 10;
     ensure!(a.repeats > 0, "repeats must be positive");
     let m = meta(&a.data)?;
+    let data_metric = m["metric"].as_str().context("meta.metric")?;
+    let metric_name = a.metric.as_deref().unwrap_or(data_metric);
     ensure!(
-        m["metric"] == "angular",
-        "qgraph supports angular data only"
+        metric_name == data_metric,
+        "--metric {metric_name} contradicts the dataset metric {data_metric}"
+    );
+    let metric = match metric_name {
+        "angular" => Metric::Angular,
+        "euclidean" => Metric::Euclidean,
+        other => anyhow::bail!("qgraph supports angular and euclidean data, not {other}"),
+    };
+    ensure!(
+        metric == Metric::Angular || a.index == "vertex",
+        "euclidean data needs --index vertex (the edge index is angular only)"
     );
     let d = m["dim"].as_u64().context("meta.dim")? as usize;
     let width = m["n_neighbors"].as_u64().context("meta.n_neighbors")? as usize;
     let rows = read_f32(&a.data.join("train.f32"), d)?;
     let (mut train, mut test, truth) = match a.holdout {
         Some(n) => {
-            let (keep, q, t) = holdout_split(rows, n, K)?;
+            let (keep, q, t) = holdout_split(rows, n, K, metric)?;
             (keep.concat(), q, t)
         }
         None => {
@@ -575,11 +606,15 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
             (rows.concat(), test, truth)
         }
     };
-    // Normalized outside the timer, as evaluate.py does for the other systems.
-    for q in &mut test {
-        normalize(q);
+    // Angular queries are normalized outside the timer, as evaluate.py does for the other
+    // systems; Euclidean ones are used as given.
+    if metric == Metric::Angular {
+        for q in &mut test {
+            normalize(q);
+        }
     }
     let params = BuildParams {
+        metric,
         build_ef: a.build_ef,
         quantized_search: a.quantized_search,
         alpha: a.alpha,
@@ -810,7 +845,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "dataset": m,
         "environment": environment(),
         "n_queries": test.len(),
-        "build": {"params": {"index": a.index, "degree": a.degree, "build_ef": a.build_ef, "quantized_search": a.quantized_search,
+        "build": {"params": {"index": a.index, "metric": metric_name, "degree": a.degree, "build_ef": a.build_ef, "quantized_search": a.quantized_search,
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
                              "residual": a.residual, "residual_bits": a.residual_bits,
                              "vertex_bits": a.vertex_bits, "id_bytes": a.id_bytes, "screen": a.screen,
@@ -826,7 +861,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "rss_bytes": {"after_build": rss_after_build, "end": rss_end},
         "holdout": a.holdout.map(|n| json!({
             "n_queries": n,
-            "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact cosine over the rest; the test set was not read.",
+            "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read.",
         })),
         "repeats": a.repeats,
         "max_load": a.max_load,
@@ -1262,6 +1297,7 @@ fn main() -> Result<()> {
         Mode::AnnQgraph {
             data,
             out,
+            metric,
             ef,
             max_exact,
             build_ef,
@@ -1294,6 +1330,7 @@ fn main() -> Result<()> {
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
+            metric,
             ef,
             max_exact,
             build_ef,

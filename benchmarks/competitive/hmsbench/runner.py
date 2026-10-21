@@ -32,8 +32,9 @@ SUITES = {
     # light: hosted-runner subset; ratios only (see docs/benchmarks/README.md).
     "light": {"ann": [("glove-100-angular", 100_000, 1_000)], "text": ["beir:scifact", "beir:nfcorpus", "memory"],
               "rounds": 3, "build_repeats": 2, "threads": 4, "timeout_s": 1500},
-    # standard: local workstation; full public sizes for the text sets, 250k glove.
-    "standard": {"ann": [("glove-100-angular", 250_000, 2_000)], "text": ["beir:scifact", "beir:nfcorpus", "memory"],
+    # standard: local workstation; full public sizes for the text sets, 250k glove and 250k SIFT.
+    "standard": {"ann": [("glove-100-angular", 250_000, 2_000), ("sift-128-euclidean", 250_000, 2_000)],
+                 "text": ["beir:scifact", "beir:nfcorpus", "memory"],
                  "rounds": 5, "build_repeats": 3, "threads": 4, "timeout_s": 2700},
     # heavy: self-hosted or Modal; full GloVe-100 (1.18M) and SIFT-1M.
     "heavy": {"ann": [("glove-100-angular", None, 10_000), ("sift-128-euclidean", None, 10_000)],
@@ -111,9 +112,6 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
                             "query_caps": QUERY_CAPS if meta["n_train"] > 200_000 else {},
                             "recall_targets": [0.9, 0.95, 0.99], "selection": "pooled-median-QPS argmax over sweep rows with recall >= target"},
                "facts": registry.FACTS, "timing_boundary": registry.TIMING_BOUNDARY, "not_run": registry.NOT_RUN, "systems": {}, "skipped": {}}
-    if meta["metric"] != "angular" and registry.HMS in systems:
-        results["skipped"][registry.HMS] = f"public-bench ann-qgraph supports angular data only (dataset metric {meta['metric']})"
-        systems = [s for s in systems if s != registry.HMS]
     rounds = spec["rounds"]
     _LIMITS["timeout"] = spec.get("timeout_s", 7200)
     big = meta["n_train"] > 200_000
@@ -229,7 +227,7 @@ def _hms_ann_round(directory, meta, threads, cache, fresh):
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
     efs = "64,96,128,192,256,384,512,736,1024"
-    cmd = [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--index", "vertex",
+    cmd = [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--index", "vertex", "--metric", meta["metric"],
            "--degree", "64", "--build-ef", "500", "--residual", "--residual-bits", "8", "--vertex-bits", "4", "--id-bytes", "3",
            "--align-rows", "--reorder", "--rerank", "64", "--quantized-search", "--ef", efs, "--repeats", "2", "--latency",
            "--max-load", "1000000", "--max-wait-secs", "0", "--graph-cache", str(cache)]

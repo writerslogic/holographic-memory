@@ -44,7 +44,7 @@ impl<'a> ExactSearcher<'a> {
         Self {
             graph,
             norms: graph
-                .unit
+                .vectors
                 .chunks_exact(graph.dim)
                 .map(|row| {
                     row.iter()
@@ -75,7 +75,7 @@ impl<'a> ExactSearcher<'a> {
 
     fn score(&self, query: &[f32], id: u32) -> Candidate {
         let row =
-            &self.graph.unit[id as usize * self.graph.dim..(id as usize + 1) * self.graph.dim];
+            &self.graph.vectors[id as usize * self.graph.dim..(id as usize + 1) * self.graph.dim];
         let norm = self.norms[id as usize];
         let similarity = if norm == 0.0 {
             0.0
