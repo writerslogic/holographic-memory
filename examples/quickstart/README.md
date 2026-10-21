@@ -22,7 +22,6 @@ queries drive all three languages, and CI runs each one on every pull request.
 
 ## The encryption check
 
-The Rust and Node programs assert that, in an encrypted store, `documents.text` is the only file
-holding the passage text. That is the engine's current behaviour (see
-[privacy limits](../../docs/concepts/privacy-limits.md)), not the goal. When the engine encrypts
-that file the assertion fails on purpose, and the docs have to be updated with it.
+The Rust and Node programs scan every file of an encrypted store and assert that none holds the
+passage text, `documents.text` included (see
+[privacy limits](../../docs/concepts/privacy-limits.md)).

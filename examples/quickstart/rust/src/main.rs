@@ -165,15 +165,10 @@ fn main() -> Result<()> {
     let needle = b"periodic holidays with pay";
     let leaks = files_containing(secret_dir.path(), needle)?;
     println!("encrypted store, files holding the passage: {leaks:?}");
-    // Pins the current behaviour: `documents.text`, the engine's file-backed passage cache, is
-    // written in plaintext even when encryption is on, so encryption does not yet keep passages
-    // off the disk. A new leak, or the engine fixing this, fails the assertion and forces the docs
-    // (docs/concepts/privacy-limits.md, README) to be updated.
-    ensure!(
-        leaks == ["documents.text"],
-        "expected exactly documents.text to hold plaintext, found {leaks:?}"
-    );
-    println!("note: passage text in documents.text is not yet encrypted at rest");
+    // With encryption on, no store file may hold the passage text, the file-backed text segment
+    // (`documents.text`) included.
+    ensure!(leaks.is_empty(), "plaintext passage found in {leaks:?}");
+    println!("no store file holds the passage text");
 
     let reopened = HmsCore::new(DIMENSIONS, Some(secret_path.clone()), Some(config.clone()))?;
     let hit = &reopened.search_documents("paid holidays", &SearchOptions::default())?[0];

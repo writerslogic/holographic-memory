@@ -192,7 +192,7 @@ latency is not. More benchmarks, competitor tables and the loss reports are on t
 | Meaning memory: triples, multi-hop, Hopfield cleanup | Ships (runtime opt-in) | Tested on synthetic and 2,120-fact sets ([`research_bench_16384_256.json`](benchmarks/results/research_bench_16384_256.json)) |
 | Union-bundle membership | Research | At D = 16,384: positive gap to N = 500 (4% false positives), tested to 2,500 ([`benchmark_scaling_results.json`](benchmarks/results/benchmark_scaling_results.json)) |
 | Sparse vector index (`memorize_vector`) | Experimental | Not competitive with HNSW (table above) |
-| Encrypted stores (`security`) | Ships | AES-256-GCM, Argon2id. **The passage cache `documents.text` is still plaintext today** |
+| Encrypted stores (`security`) | Ships | AES-256-GCM, Argon2id; covers the log, index caches and the text segment. Metadata, file names and sizes are not encrypted |
 | Signed audit log, credential-gated access, COSE/SCITT/C2PA (`provenance`) | Ships | Host must authenticate DIDs; PoSME, RATS, `did:web` not implemented |
 | On-device models (`local-models`: Qwen3 embed/rerank/LLM) | Ships | Local weights only; never downloads |
 | `hms-server` HTTP API, multi-tenant | Ships | No TLS, one shared key, single node |

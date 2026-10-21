@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- Copyright 2024-2026 WritersLogic Contributors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en"><head><meta charset="utf-8"><title>bench</title></head>
+<body><script type="module">
+import * as api from "/pkg/web.js";
+import { benchOne } from "/bench-core.mjs";
+const q = new URLSearchParams(location.search);
+try {
+  const result = await benchOne(api, { documents: Number(q.get("documents")), queries: Number(q.get("queries")), simd: "auto" });
+  result.userAgent = navigator.userAgent;
+  window.__result = result;
+} catch (error) {
+  window.__result = { failed: true, error: String(error) };
+}
+</script></body></html>
