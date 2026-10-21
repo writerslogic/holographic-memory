@@ -26,9 +26,14 @@ def serve():
         pid = os.fork()
         if pid == 0:
             try:
-                os.dup2(os.open(os.devnull, os.O_RDONLY), 0)
-                for fd, path in ((1, job["stdout"]), (2, job["stderr"])):
-                    os.dup2(os.open(path, os.O_WRONLY | os.O_APPEND), fd)
+                for fd, path, flags in ((0, os.devnull, os.O_RDONLY), (1, job["stdout"], os.O_WRONLY | os.O_APPEND),
+                                        (2, job["stderr"], os.O_WRONLY | os.O_APPEND)):
+                    source = os.open(path, flags)
+                    try:
+                        os.dup2(source, fd)
+                    finally:
+                        if source != fd:
+                            os.close(source)
                 if job["cwd"]:
                     os.chdir(job["cwd"])
                 os.execvpe(job["argv"][0], job["argv"], job["env"])
