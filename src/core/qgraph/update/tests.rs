@@ -546,7 +546,9 @@ fn killed_commit_and_consolidation_recover_complete_generations() {
     let rows = data(16, 4);
     drop(UpdatableVGraph::create(&source, &rows, 4, &params()).unwrap());
     let initial: BTreeMap<_, _> = rows
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .enumerate()
         .map(|(id, row)| (id as u32, row.to_vec()))
         .collect();
