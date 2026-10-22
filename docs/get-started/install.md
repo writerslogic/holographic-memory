@@ -35,7 +35,7 @@ downloads a model or contacts a service: installing and running HMS is local.
 
     `default = []`: nothing is on unless you ask. Turn on what you need, for example
     `cargo add holographic-memory --features security` for AES-256-GCM stores and signed audit logs.
-    Every feature is listed with its dependencies in [`Cargo.toml`](../../Cargo.toml).
+    Every feature, what it turns on and whether it is experimental: [Cargo features](../reference/features.md).
 
 === "Python"
 
