@@ -141,6 +141,7 @@ fn write_file(path: &Path, bytes: &[u8]) -> Result<()> {
     let mut temp = tempfile::NamedTempFile::new_in(parent)?;
     temp.write_all(bytes)?;
     temp.as_file().sync_all()?;
+    sync_mapped_file(temp.as_file())?;
     temp.persist(path)?;
     Ok(())
 }

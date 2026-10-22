@@ -21,6 +21,15 @@ pub mod verify;
 pub use upgrade::{plan_upgrade, upgrade_store, UpgradePlan, UpgradeReport, UpgradeStep};
 pub use verify::{verify_path, VerifyOptions};
 
+/// Version of the standalone persisted vector update directory.
+pub const VECTOR_UPDATE_FORMAT_VERSION: u32 = 1;
+/// Vector checkpoint manifest magic.
+pub const VECTOR_MANIFEST_MAGIC: &[u8; 8] = b"HMSVUP01";
+/// Full-precision vector row magic.
+pub const VECTOR_ROWS_MAGIC: &[u8; 8] = b"HMSVRW01";
+/// Vector update log magic.
+pub const VECTOR_LOG_MAGIC: &[u8; 8] = b"HMSVLG01";
+
 /// Version of the arena manifest (`vectors_data.bin/format.json`) this build writes.
 pub const STORAGE_FORMAT_CURRENT: u32 = super::storage::STORAGE_FORMAT_VERSION;
 /// Oldest arena manifest version this build opens. Version 1 (no manifest) is read as 2.

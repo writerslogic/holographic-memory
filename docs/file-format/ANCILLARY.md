@@ -49,6 +49,10 @@ synced and renamed into place. Open recomputes every derived size from the heade
 section length and stored id before use; a mismatch is an error. Little-endian targets only; outside
 the stability promise (a format change bumps the magic and needs a re-save).
 
+Persisted updatable vector directories use the same vertex encoding together with versioned
+row, checkpoint and update-log files; see [VECTOR-UPDATES.md](VECTOR-UPDATES.md). Those files
+are durable data rather than rebuildable store caches.
+
 ## Memory-API stamps
 
 A fact is a document; its stamp is in the document `version` string as `mem1:<compact JSON>` or,

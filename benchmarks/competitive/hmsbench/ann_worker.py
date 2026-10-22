@@ -117,6 +117,41 @@ class Adapter:
         return {}
 
 
+class Hms(Adapter):
+    BUILDS = {"persisted": {}}
+    SWEEPS = {"persisted": [{"ef": 64}]}
+    PERSISTENT_FLUSH = True
+
+    def open(self, params, n):
+        import subprocess
+        binary = os.environ["HMS_PUBLIC_BENCH"]
+        self.process = subprocess.Popen([binary, "ann-updates", "--action", "session", "--index", str(self.workdir / "index.updates")],
+                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        if json.loads(self.process.stdout.readline()) != {"ready": True}:
+            raise RuntimeError("HMS update session failed to open")
+
+    def _request(self, request):
+        self.process.stdin.write(json.dumps(request) + "\n")
+        self.process.stdin.flush()
+        response = json.loads(self.process.stdout.readline())
+        if "error" in response:
+            raise RuntimeError(response["error"])
+
+    def replace(self, ids, vectors):
+        self._request({"op": "replace", "ids": [int(i) for i in ids], "vectors": vectors.tolist()})
+
+    def delete(self, ids):
+        self._request({"op": "delete", "ids": [int(i) for i in ids]})
+
+    def flush(self):
+        self._request({"op": "commit"})
+
+    def close(self):
+        self.process.stdin.close()
+        if self.process.wait(timeout=30) != 0:
+            raise RuntimeError("HMS update session exited unsuccessfully")
+
+
 class Hnswlib(Adapter):
     # m32e500 and m48e500 match the build effort of the HMS graph (degree 64 at level 0 for
     # M=32, construction ef 500); analysis reports the best build per target recall.
@@ -563,6 +598,7 @@ class Duckdb(Adapter):
 
 
 SYSTEMS = {
+    "hms": Hms,
     "hnswlib": Hnswlib, "faiss-hnsw": FaissHnsw, "faiss-flat": FaissFlat, "faiss-ivfpq": FaissIvfpq,
     "usearch": Usearch, "annoy": Annoy, "sqlite-vec": SqliteVec, "lancedb": Lancedb, "chroma": Chroma,
     "qdrant-local": Qdrant, "milvus-lite": Milvus, "duckdb-vss": Duckdb,
@@ -875,6 +911,8 @@ def run_ops(a, adapter, meta):
                          "flush_required": adapter.PERSISTENT_FLUSH, "operations_per_flush": 1}
         except Unsupported as e:
             out[name] = {"supported": False, "reason": str(e)}
+    if isinstance(adapter, Hms):
+        adapter.close()
     return out
 
 

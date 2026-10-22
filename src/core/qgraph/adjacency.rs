@@ -6,7 +6,7 @@ use rayon::prelude::*;
 /// plus a length per vertex. Construction rewrites lists millions of times from many threads;
 /// fixed slots keep those rewrites from allocating, and the structure is freed as two blocks
 /// that go straight back to the system instead of a heap fragmented by per-list buffers.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct Adjacency {
     degree: usize,
     slots: Vec<u32>,
@@ -38,6 +38,18 @@ impl Adjacency {
             at += l as usize;
         }
         Some(adj)
+    }
+
+    /// Appends `list` as a new vertex; an empty `Adjacency` takes `degree` from this call.
+    pub(crate) fn push(&mut self, list: &[u32], degree: usize) {
+        if self.lens.is_empty() {
+            self.degree = degree;
+        }
+        assert!(list.len() <= self.degree, "list longer than the degree");
+        let at = self.slots.len();
+        self.slots.resize(at + self.degree, 0);
+        self.slots[at..at + list.len()].copy_from_slice(list);
+        self.lens.push(list.len() as u32);
     }
 
     /// Number of vertices.
