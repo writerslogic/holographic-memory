@@ -261,7 +261,7 @@ retains its three explicitly ignored experiments.
 The [HMS adapter](../../benchmarks/vibe/hms/)
 follows VIBE's [new-method guide](https://github.com/vector-index-bench/vibe/blob/main/docs/NEW_METHOD.md):
 one-thread builds, unique original row IDs, separate build/query parameters,
-four build combinations and 33 query combinations, with a pinned implementation
+four build combinations and 33 query combinations (56 for ip), with a pinned implementation
 revision in `image.def`. It is the quantized graph algorithm, not the memory
 database service. It advertises cosine, normalized, euclidean and ip datasets;
 the ip grid searches deeper (ef up to 8000) because the reduction places every
@@ -294,7 +294,9 @@ An upstream contribution also needs the HMS row in VIBE's algorithm table and
 a Linux image build through `./install.sh --algorithm hms`. The
 [prepared upstream patch](../../benchmarks/vibe/upstream.patch) includes the
 README row and all three adapter files; it passes the reverse-apply check on the
-pinned checkout. It has not been submitted. The
+pinned checkout (VIBE 7ac76c1). The image has not been built: this host has no Apptainer, so the
+same recipe was replayed in a micromamba copy of `base.sif` and `run.py --local` passed on a
+smoke subset of llama-128-ip. The
 [real adapter checks](../../benchmarks/results/vibe_v1/adapter_validation.json)
 cover both advertised metrics, dimensions 768/2048, original IDs, input
 immutability, result-count boundaries and VIBE's configuration loader. Local
