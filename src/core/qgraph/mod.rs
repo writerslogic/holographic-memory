@@ -21,6 +21,7 @@
 //! [`VGraph`] is the compact alternative on the same [`Graph`]: one 8-bit code per vertex instead
 //! of one 1-bit code per edge (see `vertex.rs`).
 
+mod adjacency;
 mod build_kernels;
 mod fastscan;
 pub(crate) mod kernels;
@@ -37,6 +38,7 @@ use std::cell::RefCell;
 use rayon::prelude::*;
 
 use crate::core::error::HmsError;
+use adjacency::Adjacency;
 
 use kernels::{
     as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, DotI8, QueryCode, Rotation,
@@ -520,7 +522,7 @@ impl Rows<'_> {
     /// Greedy search from `start`; returns every expanded vertex with its distance to row `p`.
     fn greedy(
         &self,
-        graph: &[Vec<u32>],
+        graph: &Adjacency,
         start: u32,
         p: u32,
         l: usize,
@@ -548,7 +550,7 @@ impl Rows<'_> {
             // codes rule most of them out without loading their rows.
             match self.codes.filter(|_| self.quantized || pool.len() >= l) {
                 Some(codes) if self.quantized => {
-                    for &u in &graph[v as usize] {
+                    for &u in graph.get(v as usize) {
                         if visited.insert(u) {
                             codes.prefetch(u);
                             fresh.push(u);
@@ -557,7 +559,7 @@ impl Rows<'_> {
                     n_fresh += fresh.len() as u64;
                 }
                 Some(codes) => {
-                    for &u in &graph[v as usize] {
+                    for &u in graph.get(v as usize) {
                         if visited.insert(u) {
                             codes.prefetch(u);
                             fresh.push(u);
@@ -571,7 +573,7 @@ impl Rows<'_> {
                     }
                 }
                 None => {
-                    for &u in &graph[v as usize] {
+                    for &u in graph.get(v as usize) {
                         if visited.insert(u) {
                             build_kernels::prefetch_row(self.row(u));
                             fresh.push(u);
@@ -607,14 +609,14 @@ impl Rows<'_> {
                 pool.truncate(l);
                 best = best.min(pos);
                 // The list header of a pooled vertex is read when it is expanded.
-                build_kernels::prefetch_meta(&graph[u as usize]);
+                build_kernels::prefetch_meta(graph.len_word(u as usize));
             }
             cur = best.min(cur + 1);
             while cur < pool.len() && pool[cur].done {
                 cur += 1;
             }
             if let Some(c) = pool.get(cur) {
-                build_kernels::prefetch_ids(&graph[c.id as usize]);
+                build_kernels::prefetch_ids(graph.get(c.id as usize));
             }
         }
         if self.quantized {
@@ -686,7 +688,7 @@ impl Rows<'_> {
     #[allow(clippy::too_many_arguments)]
     fn insert_pass(
         &self,
-        graph: &mut [Vec<u32>],
+        graph: &mut Adjacency,
         order: &[u32],
         entry: u32,
         l: usize,
@@ -697,68 +699,66 @@ impl Rows<'_> {
         // Length of the prefix of each list that is an unchanged output of `prune` in this pass.
         let mut closed = vec![0u32; n];
         let max_batch = (n / 50).max(64);
+        let mut outs = Adjacency::new(max_batch.min(order.len()), r);
         let (mut start, mut size) = (0, 1);
         while start < order.len() {
             let end = (start + size).min(order.len());
             let batch = &order[start..end];
-            let g: &[Vec<u32>] = graph;
-            let outs: Vec<Vec<u32>> = batch
-                .par_iter()
-                .map(|&p| {
-                    let t0 = prof::start();
-                    let mut cands = BUILD_VISITED.with(|cell| {
-                        let mut vis = cell.borrow_mut();
-                        self.greedy(g, entry, p, l, &mut vis)
-                    });
-                    prof::add(&prof::GREEDY, t0);
-                    let t0 = prof::start();
-                    let adj = &g[p as usize];
-                    let mut d = Vec::with_capacity(adj.len());
-                    self.d2_stream(p, adj, &mut d);
-                    cands.extend(d.into_iter().zip(adj.iter().copied()));
-                    let out = self.prune(p, cands, alpha, r);
-                    prof::add(&prof::PRUNE, t0);
-                    out
-                })
-                .collect();
+            let g: &Adjacency = graph;
+            outs.par_set(batch.len(), |i| {
+                let p = batch[i];
+                let t0 = prof::start();
+                let mut cands = BUILD_VISITED.with(|cell| {
+                    let mut vis = cell.borrow_mut();
+                    self.greedy(g, entry, p, l, &mut vis)
+                });
+                prof::add(&prof::GREEDY, t0);
+                let t0 = prof::start();
+                let adj = g.get(p as usize);
+                let mut d = Vec::with_capacity(adj.len());
+                self.d2_stream(p, adj, &mut d);
+                cands.extend(d.into_iter().zip(adj.iter().copied()));
+                let out = self.prune(p, cands, alpha, r);
+                prof::add(&prof::PRUNE, t0);
+                out
+            });
             let trev = prof::start();
             let mut rev: Vec<(u32, u32)> = batch
                 .iter()
-                .zip(&outs)
-                .flat_map(|(&p, out)| out.iter().map(move |&u| (u, p)))
+                .enumerate()
+                .flat_map(|(i, &p)| outs.get(i).iter().map(move |&u| (u, p)))
                 .collect();
-            for (&p, out) in batch.iter().zip(outs) {
+            for (i, &p) in batch.iter().enumerate() {
+                let out = outs.get(i);
                 closed[p as usize] = out.len() as u32;
-                graph[p as usize] = out;
+                graph.set(p as usize, out);
             }
             rev.par_sort_unstable();
-            let groups: Vec<&[(u32, u32)]> = rev.chunk_by(|a, b| a.0 == b.0).collect();
-            let g: &[Vec<u32>] = graph;
-            let updates: Vec<(u32, Vec<u32>, bool)> = groups
-                .par_iter()
-                .map(|grp| {
+            // Each group updates only its own target's list, so the groups run in place.
+            let groups: Vec<_> = rev.chunk_by(|a, b| a.0 == b.0).collect();
+            let targets = || groups.iter().map(|grp| grp[0].0 as usize);
+            let closed_of = pick_mut(&mut closed, targets());
+            let jobs: Vec<_> = graph
+                .rows_mut(targets())
+                .zip(closed_of)
+                .zip(&groups)
+                .collect();
+            jobs.into_par_iter()
+                .for_each(|(((row, len), closed), grp)| {
                     let t = grp[0].0;
-                    let mut merged = g[t as usize].clone();
+                    let mut merged = row[..*len as usize].to_vec();
                     for &(_, s) in grp.iter() {
                         if !merged.contains(&s) {
                             merged.push(s);
                         }
                     }
                     if merged.len() > r {
-                        let c = closed[t as usize] as usize;
-                        merged = self.prune_merged(t, &merged, c, alpha, r);
-                        (t, merged, true)
-                    } else {
-                        (t, merged, false)
+                        merged = self.prune_merged(t, &merged, *closed as usize, alpha, r);
+                        *closed = merged.len() as u32;
                     }
-                })
-                .collect();
-            for (t, m, pruned) in updates {
-                if pruned {
-                    closed[t as usize] = m.len() as u32;
-                }
-                graph[t as usize] = m;
-            }
+                    row[..merged.len()].copy_from_slice(&merged);
+                    *len = merged.len() as u32;
+                });
             prof::add(&prof::REV, trev);
             start = end;
             size = (size * 2).min(max_batch);
@@ -767,64 +767,72 @@ impl Rows<'_> {
 
     /// Fill every adjacency list up to `r` with the nearest two-hop neighbours; the
     /// search estimates a full batch per expansion anyway, so the extra edges are free.
-    fn fill(&self, graph: &mut [Vec<u32>], r: usize) {
-        let g: &[Vec<u32>] = graph;
-        let extra: Vec<Vec<u32>> = (0..g.len())
-            .into_par_iter()
-            .map(|v| {
-                let have = &g[v];
-                if have.len() >= r {
-                    return Vec::new();
+    fn fill(&self, graph: &mut Adjacency, r: usize) {
+        graph.par_append(|g, v| {
+            let have = g.get(v);
+            if have.len() >= r {
+                return Vec::new();
+            }
+            let mut ids: Vec<u32> = have
+                .iter()
+                .flat_map(|&u| g.get(u as usize).iter().copied())
+                .collect();
+            ids.sort_unstable();
+            ids.dedup();
+            // `ids` is sorted, so one merge with the sorted list drops the ids in it.
+            let mut skip = have.to_vec();
+            skip.push(v as u32);
+            skip.sort_unstable();
+            let mut at = 0;
+            ids.retain(|&u| {
+                while at < skip.len() && skip[at] < u {
+                    at += 1;
                 }
-                let mut ids: Vec<u32> = have
+                skip.get(at) != Some(&u)
+            });
+            let k = r - have.len();
+            if let Some(codes) = self.codes.filter(|_| ids.len() > k) {
+                // At least `k` ids score at most the k-th smallest upper bound, so an id
+                // whose lower bound exceeds it cannot be among the `k` nearest.
+                const AHEAD: usize = 8;
+                ids.iter().take(AHEAD).for_each(|&u| codes.prefetch(u));
+                let bounds: Vec<(f32, f32)> = ids
                     .iter()
-                    .flat_map(|&u| g[u as usize].iter().copied())
+                    .enumerate()
+                    .map(|(i, &u)| {
+                        if let Some(&w) = ids.get(i + AHEAD) {
+                            codes.prefetch(w);
+                        }
+                        codes.d2_bounds(v as u32, u)
+                    })
                     .collect();
-                ids.sort_unstable();
-                ids.dedup();
-                // `ids` is sorted, so one merge with the sorted list drops the ids in it.
-                let mut skip = have.clone();
-                skip.push(v as u32);
-                skip.sort_unstable();
-                let mut at = 0;
-                ids.retain(|&u| {
-                    while at < skip.len() && skip[at] < u {
-                        at += 1;
-                    }
-                    skip.get(at) != Some(&u)
-                });
-                let k = r - have.len();
-                if let Some(codes) = self.codes.filter(|_| ids.len() > k) {
-                    // At least `k` ids score at most the k-th smallest upper bound, so an id
-                    // whose lower bound exceeds it cannot be among the `k` nearest.
-                    const AHEAD: usize = 8;
-                    ids.iter().take(AHEAD).for_each(|&u| codes.prefetch(u));
-                    let bounds: Vec<(f32, f32)> = ids
-                        .iter()
-                        .enumerate()
-                        .map(|(i, &u)| {
-                            if let Some(&w) = ids.get(i + AHEAD) {
-                                codes.prefetch(w);
-                            }
-                            codes.d2_bounds(v as u32, u)
-                        })
-                        .collect();
-                    let mut upper: Vec<f32> = bounds.iter().map(|b| b.1).collect();
-                    let cut = *upper.select_nth_unstable_by(k - 1, f32::total_cmp).1;
-                    let mut b = bounds.iter();
-                    ids.retain(|_| b.next().is_some_and(|b| b.0 <= cut));
-                }
-                let mut d = Vec::new();
-                self.d2_stream(v as u32, &ids, &mut d);
-                let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
-                c.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
-                c.into_iter().take(r - have.len()).map(|x| x.1).collect()
-            })
-            .collect();
-        for (adj, e) in graph.iter_mut().zip(extra) {
-            adj.extend(e);
-        }
+                let mut upper: Vec<f32> = bounds.iter().map(|b| b.1).collect();
+                let cut = *upper.select_nth_unstable_by(k - 1, f32::total_cmp).1;
+                let mut b = bounds.iter();
+                ids.retain(|_| b.next().is_some_and(|b| b.0 <= cut));
+            }
+            let mut d = Vec::new();
+            self.d2_stream(v as u32, &ids, &mut d);
+            let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
+            c.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+            c.into_iter().take(r - have.len()).map(|x| x.1).collect()
+        });
     }
+}
+
+/// The entries of `values` at `ids` (strictly increasing), as disjoint mutable references.
+fn pick_mut<T>(values: &mut [T], ids: impl Iterator<Item = usize>) -> impl Iterator<Item = &mut T> {
+    let mut rest = values;
+    let mut next = 0;
+    ids.map(move |v| {
+        assert!(v >= next, "ids must be strictly increasing");
+        let (x, tail) = std::mem::take(&mut rest)[v - next..]
+            .split_first_mut()
+            .expect("id in range");
+        rest = tail;
+        next = v + 1;
+        x
+    })
 }
 
 /// Per-edge code and factors for the edge v -> u (rotated unit vectors).
@@ -896,9 +904,9 @@ impl QGraph {
         let mut blocks = vec![0u64; n * stride];
         blocks
             .par_chunks_mut(stride)
-            .zip(graph.par_iter())
             .enumerate()
-            .for_each(|(v, (b, adj))| {
+            .for_each(|(v, b)| {
+                let adj = graph.get(v);
                 let (vec_w, rest) = b.split_at_mut(codes_off);
                 let (codes, rest) = rest.split_at_mut(r * words);
                 let (fac, ids) = rest.split_at_mut(3 * r / 2);
@@ -952,7 +960,7 @@ pub struct Graph {
     vectors: Vec<f32>,
     /// Squared norm of every row (Euclidean); empty for angular.
     norms: Vec<f32>,
-    adj: Vec<Vec<u32>>,
+    adj: Adjacency,
     entry: u32,
     upper_ids: Vec<u32>,
     layers: Vec<Vec<Vec<u32>>>,
@@ -998,12 +1006,17 @@ impl Graph {
         self.metric
     }
 
+    /// The out-neighbours of vertex `v` in the base layer.
+    pub(crate) fn neighbors(&self, v: usize) -> &[u32] {
+        self.adj.get(v)
+    }
+
     /// Stable 64-bit hash of the structure (adjacency, upper layers, entry): equal values mean
     /// a bit-identical graph, across builds, binaries and cache round trips.
     pub fn structure_hash(&self) -> u64 {
         let mut h = Fnv::new();
         h.word(self.entry);
-        for list in &self.adj {
+        for list in self.adj.iter() {
             h.word(list.len() as u32);
             list.iter().for_each(|&u| h.word(u));
         }
@@ -1127,7 +1140,7 @@ impl Graph {
         for i in (1..n).rev() {
             order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
         }
-        let mut graph: Vec<Vec<u32>> = vec![Vec::new(); n];
+        let mut graph = Adjacency::new(n, r);
         let first_ef = params.build_ef.min(FIRST_PASS_EF);
         for (l, alpha) in [(first_ef, 1.0), (params.build_ef, params.alpha)] {
             let t = prof::start();
@@ -1162,7 +1175,7 @@ impl Graph {
                 quantized: params.quantized_search,
             };
             let local: Vec<u32> = (0..size as u32).collect();
-            let mut g: Vec<Vec<u32>> = vec![Vec::new(); size];
+            let mut g = Adjacency::new(size, UPPER_DEGREE);
             sub_rows.insert_pass(
                 &mut g,
                 &local,
@@ -1171,7 +1184,7 @@ impl Graph {
                 params.alpha,
                 UPPER_DEGREE,
             );
-            layers.push(g);
+            layers.push(g.to_lists());
             size /= LAYER_RATIO;
         }
         prof::report("upper", tup);
@@ -1611,7 +1624,7 @@ mod tests {
                         quantized: false,
                     };
                     let order: Vec<u32> = (0..n as u32).rev().collect();
-                    let mut graph = vec![Vec::new(); n];
+                    let mut graph = Adjacency::new(n, 12);
                     for alpha in [1.0, 1.2] {
                         rows.insert_pass(&mut graph, &order, 0, 40, alpha, 12);
                     }
@@ -1645,6 +1658,29 @@ mod tests {
             sa.search(q, 10, p, &mut oa);
             sb.search(q, 10, p, &mut ob);
             assert_eq!(oa, ob);
+        }
+    }
+
+    /// The graphs a build produces, pinned by structure hash: a change to how construction
+    /// stores or schedules its work must leave every list, layer and the entry unchanged.
+    #[test]
+    fn build_reproduces_the_pinned_graphs() {
+        let cases = [
+            (Metric::Angular, false, 16, 0x2b16_3721_02ba_f39b),
+            (Metric::Euclidean, true, 128, 0xe014_c782_9bed_e9aa),
+        ];
+        for (metric, quantized_search, d, want) in cases {
+            let data = clustered(2500, d, 11);
+            let params = BuildParams {
+                metric,
+                quantized_search,
+                degree: 16,
+                build_ef: 48,
+                seed: 7,
+                ..BuildParams::default()
+            };
+            let g = Graph::build(&data, d, &params).expect("build");
+            assert_eq!(g.structure_hash(), want, "{metric:?}");
         }
     }
 
