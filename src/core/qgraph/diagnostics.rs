@@ -4,7 +4,8 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::BinaryHeap;
 
-use super::{invalid, Graph};
+use super::kernels::Rotation;
+use super::{invalid, Graph, Metric, VGraph, VSearchParams, VSearcher};
 use crate::core::error::HmsError;
 
 #[derive(Clone, Copy, Debug)]
@@ -231,10 +232,238 @@ pub fn residual_feedback(query: &[f32]) -> Result<Vec<f32>, HmsError> {
         .collect())
 }
 
+/// Encoding-only rotation control: retains the original graph topology and IDs.
+/// Restricted to angular search; no production encoding or default changes.
+pub struct RotationControl {
+    index: VGraph,
+    rotation: Rotation,
+    original_dim: usize,
+    graph_hash: u64,
+}
+
+fn rotation_matrix_length(rows: usize, dimension: usize) -> Result<usize, HmsError> {
+    rows.checked_mul(dimension)
+        .filter(|&n| n <= (1 << 29))
+        .ok_or_else(|| invalid("rotated diagnostic matrix exceeds 2 GiB".into()))
+}
+
+impl RotationControl {
+    pub fn from_graph(graph: &Graph, bits: u8, seed: u64) -> Result<Self, HmsError> {
+        if graph.metric != Metric::Angular || !matches!(bits, 4 | 8) || graph.dim > 8192 {
+            return Err(invalid(
+                "rotation control requires angular data, 4 or 8 bits, and dimension <= 8192".into(),
+            ));
+        }
+        let rotation = Rotation::new(graph.dim, 0, seed);
+        let dim = rotation.padded();
+        let length = rotation_matrix_length(graph.n, dim)?;
+        let mut vectors = vec![0.0; length];
+        for (source, target) in graph
+            .vectors
+            .chunks_exact(graph.dim)
+            .zip(vectors.chunks_exact_mut(dim))
+        {
+            rotation.apply(source, target);
+        }
+        let rotated = Graph {
+            n: graph.n,
+            dim,
+            degree: graph.degree,
+            metric: graph.metric,
+            vectors,
+            norms: Vec::new(),
+            adj: graph.adj.clone(),
+            entry: graph.entry,
+            upper_ids: graph.upper_ids.clone(),
+            layers: graph.layers.clone(),
+            build: graph.build.clone(),
+        };
+        let id_bytes = if graph.n < (1 << 24) - 1 { 3 } else { 4 };
+        let graph_hash = rotated.structure_hash();
+        let index = VGraph::from_graph_with(&rotated, bits, 8, true, true, id_bytes, false)?;
+        Ok(Self {
+            index,
+            rotation,
+            original_dim: graph.dim,
+            graph_hash,
+        })
+    }
+
+    pub fn graph_hash(&self) -> u64 {
+        self.graph_hash
+    }
+
+    pub fn padded_dimension(&self) -> usize {
+        self.rotation.padded()
+    }
+
+    pub fn index_bytes(&self) -> usize {
+        self.index.index_bytes() + self.rotation.index_bytes()
+    }
+
+    pub fn searcher(&self) -> RotationSearcher<'_> {
+        RotationSearcher {
+            inner: self.index.searcher(),
+            rotation: &self.rotation,
+            dim: self.original_dim,
+            rotated: vec![0.0; self.rotation.padded()],
+            scaled: vec![0.0; self.original_dim],
+        }
+    }
+}
+
+pub struct RotationSearcher<'a> {
+    inner: VSearcher<'a>,
+    rotation: &'a Rotation,
+    dim: usize,
+    rotated: Vec<f32>,
+    scaled: Vec<f32>,
+}
+
+impl RotationSearcher<'_> {
+    pub fn search(
+        &mut self,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        out: &mut Vec<u32>,
+    ) -> Result<usize, HmsError> {
+        if query.len() != self.dim || k == 0 || query.iter().any(|x| !x.is_finite()) {
+            return Err(invalid(
+                "rotation query requires finite coordinates of index dimension and positive k"
+                    .into(),
+            ));
+        }
+        let maximum = query.iter().map(|v| v.abs()).fold(0.0, f32::max);
+        if maximum == 0.0 {
+            return Err(invalid(
+                "zero rotation query has no cosine similarity".into(),
+            ));
+        }
+        if !(1e-10..=1e10).contains(&maximum) {
+            // Rescaling preserves angular order and avoids FHT overflow/underflow.
+            for (to, &from) in self.scaled.iter_mut().zip(query) {
+                *to = (f64::from(from) / f64::from(maximum)) as f32;
+            }
+            self.rotation.apply(&self.scaled, &mut self.rotated);
+        } else {
+            self.rotation.apply(query, &mut self.rotated);
+        }
+        self.inner.search(&self.rotated, k, params, out)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::core::qgraph::{BuildParams, VGraph, VSearchParams};
+
+    #[test]
+    fn rotation_control_preserves_ids_topology_and_query_boundaries() {
+        for dim in [63, 64, 65] {
+            let n = 80;
+            let mut data = vec![0.0; n * dim];
+            for row in 0..n {
+                data[row * dim + row % dim] = 1.0;
+            }
+            let mut graph = Graph::build(
+                &data,
+                dim,
+                &BuildParams {
+                    degree: 8,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            graph.degree = n;
+            graph.adj = super::super::adjacency::Adjacency::new(n, n);
+            for i in 0..n {
+                let neighbors: Vec<_> = (0..n).filter(|&j| i != j).map(|j| j as u32).collect();
+                graph.adj.set(i, &neighbors);
+            }
+            let hash = graph.structure_hash();
+            for bits in [4, 8] {
+                let index = RotationControl::from_graph(&graph, bits, 24301).unwrap();
+                assert_eq!(index.graph_hash(), hash);
+                let mut searcher = index.searcher();
+                let params = VSearchParams {
+                    ef: n,
+                    rerank: n,
+                    ..Default::default()
+                };
+                let query = &data[5 * dim..6 * dim];
+                let mut found = Vec::new();
+                for k in [n - 1, n, n + 1] {
+                    searcher.search(query, k, params, &mut found).unwrap();
+                    assert_eq!(found.len(), k.min(n));
+                    assert_eq!(found[0], 5);
+                    let mut distinct = found.clone();
+                    distinct.sort_unstable();
+                    distinct.dedup();
+                    assert_eq!(distinct.len(), found.len());
+                }
+                for extreme in [f32::MAX, f32::from_bits(1)] {
+                    let mut q = vec![0.0; dim];
+                    q[5] = extreme;
+                    searcher.search(&q, 1, params, &mut found).unwrap();
+                    assert_eq!(found, vec![5]);
+                }
+                for bad in [
+                    vec![0.0; dim],
+                    vec![f32::NAN; dim],
+                    vec![f32::INFINITY; dim],
+                    vec![1.0; dim - 1],
+                    vec![1.0; dim + 1],
+                ] {
+                    assert!(searcher.search(&bad, 1, params, &mut found).is_err());
+                }
+                assert!(searcher.search(query, 0, params, &mut found).is_err());
+            }
+            assert_eq!(graph.vectors, data);
+            assert_eq!(graph.structure_hash(), hash);
+            for bits in [3, 5, 7, 9] {
+                assert!(RotationControl::from_graph(&graph, bits, 24301).is_err());
+            }
+        }
+    }
+
+    #[test]
+    fn rotation_control_rejects_unsupported_metric_and_oversized_allocations() {
+        let graph = Graph::build(
+            &[1.0, 0.0, 0.0, 1.0],
+            2,
+            &BuildParams {
+                metric: Metric::Euclidean,
+                degree: 2,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(RotationControl::from_graph(&graph, 4, 24301).is_err());
+        let limit = 1 << 29;
+        assert_eq!(rotation_matrix_length(1, limit - 1).unwrap(), limit - 1);
+        assert_eq!(rotation_matrix_length(1, limit).unwrap(), limit);
+        assert!(rotation_matrix_length(1, limit + 1).is_err());
+        assert!(rotation_matrix_length(usize::MAX, 2).is_err());
+        for dim in [8191, 8192, 8193] {
+            let mut data = vec![0.0; 2 * dim];
+            data[0] = 1.0;
+            data[dim + 1] = 1.0;
+            let graph = Graph::build(
+                &data,
+                dim,
+                &BuildParams {
+                    degree: 2,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                RotationControl::from_graph(&graph, 4, 24301).is_ok(),
+                dim <= 8192
+            );
+        }
+    }
 
     #[test]
     fn full_beam_and_rerank_match_flat_with_duplicates_and_zero_rows() {

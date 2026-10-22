@@ -1,0 +1,40 @@
+{
+  "cache_sha256": "75edc49fa21aa7330e943fcb545e504153e782e283a3582ebdd9390adad747ec",
+  "nodes": 100000,
+  "edges": 6383828,
+  "strong_components": 63,
+  "largest_component": 99932,
+  "sink_components": [
+    {
+      "size": 4,
+      "ids": [
+        304,
+        2509,
+        82196,
+        88423
+      ]
+    },
+    {
+      "size": 2,
+      "ids": [
+        11120,
+        42632
+      ]
+    },
+    {
+      "size": 2,
+      "ids": [
+        11317,
+        23820
+      ]
+    },
+    {
+      "size": 2,
+      "ids": [
+        12016,
+        24249
+      ]
+    }
+  ],
+  "bridge_policy": null
+}

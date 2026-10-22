@@ -6,6 +6,7 @@ use rayon::prelude::*;
 /// plus a length per vertex. Construction rewrites lists millions of times from many threads;
 /// fixed slots keep those rewrites from allocating, and the structure is freed as two blocks
 /// that go straight back to the system instead of a heap fragmented by per-list buffers.
+#[derive(Clone)]
 pub(crate) struct Adjacency {
     degree: usize,
     slots: Vec<u32>,

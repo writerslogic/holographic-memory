@@ -283,6 +283,10 @@ name = "ann-failure-map"
 required-features = ["experimental"]
 
 [[bin]]
+name = "vibe-rotation"
+required-features = ["experimental"]
+
+[[bin]]
 name = "ann-ivf-bench"
 required-features = ["experimental"]
 

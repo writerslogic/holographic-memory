@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source": "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/07b387891a221b7b073b83d2f752b76462e5fa03/inaturalist-resnet-2048-cosine.hdf5",
+  "source_revision": "07b387891a221b7b073b83d2f752b76462e5fa03",
+  "dataset": "inaturalist-resnet-2048-cosine",
+  "original_rows": 499000,
+  "rows": 100000,
+  "queries": 256,
+  "dimension": 2048,
+  "metric": "cosine",
+  "ood": false,
+  "corpus_selection": "prefix",
+  "query_selection": "original test prefix",
+  "truth": "recomputed exact float32 FAISS flat; no inherited full-corpus neighbor IDs",
+  "official_scale": false,
+  "sha256": "b36c45e80e739988deb6e3e7bb83127094cf99ec7386f1a347eba12b66bb0f2d",
+  "prepare_sha256": "d7868130a087aaa38a2bc0286318c4a9b938494dbf4273ee60ab9cb69dfe721b"
+}

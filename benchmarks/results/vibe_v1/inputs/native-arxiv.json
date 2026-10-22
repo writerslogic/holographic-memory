@@ -1,0 +1,32 @@
+{
+  "name": "arxiv-nomic-768-normalized",
+  "metric": "angular",
+  "source_metric": "normalized",
+  "dim": 768,
+  "n_train": 100000,
+  "n_test": 256,
+  "n_neighbors": 100,
+  "input_manifest": {
+    "schema_version": 1,
+    "source": "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/07b387891a221b7b073b83d2f752b76462e5fa03/arxiv-nomic-768-normalized.hdf5",
+    "source_revision": "07b387891a221b7b073b83d2f752b76462e5fa03",
+    "dataset": "arxiv-nomic-768-normalized",
+    "original_rows": 1344643,
+    "rows": 100000,
+    "queries": 256,
+    "dimension": 768,
+    "metric": "normalized",
+    "ood": false,
+    "corpus_selection": "prefix",
+    "query_selection": "original test prefix",
+    "truth": "recomputed exact float32 FAISS flat; no inherited full-corpus neighbor IDs",
+    "official_scale": false,
+    "sha256": "516d3e4ac650f467f655ec1df91335e1c45ebfa4dc2957570352c623f2552515",
+    "prepare_sha256": "d7868130a087aaa38a2bc0286318c4a9b938494dbf4273ee60ab9cb69dfe721b"
+  },
+  "files": {
+    "train.f32": "d7fe486937db1444bcd197e9dde315510c29186534da2917868c3d2a0839481a",
+    "test.f32": "db5da2d16720c42021a0093d81df7aa1181a7b327aac53e3a9272ba739502311",
+    "neighbors.i32": "30d0fa18056e10224a44ce1ae3b9a3f23332f8d50e11c9f042cbe9fb20a50f1e"
+  }
+}

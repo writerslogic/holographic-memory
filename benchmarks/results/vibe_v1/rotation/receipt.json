@@ -1,0 +1,120 @@
+{
+  "utc": "2026-10-22T06:48:05.287008+00:00",
+  "host": "writerslogic-02",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "python": "3.11.16",
+  "base_hms_revision": "28a0a5b1bc6e84037fed51fdba8c6b508f821502",
+  "source_scope": "isolated frozen base plus experimental rotation control; concurrent workspace changes excluded",
+  "sources_sha256": {
+    "Cargo.toml": "552c6be7ee77aedfbdd666c18b7c4babe9c87111552e85a03a044ea086dce651",
+    "Cargo.lock": "938728420a50fc53d06ddaf4bdfd70a3e98d6aac37b09cdd02ada91d0aeb3c87",
+    "src/core/qgraph/mod.rs": "f03bf64653cdc3432e5743fb31bf9942b86888f9103e1123f76317bf796c0667",
+    "src/core/qgraph/vertex.rs": "26f6c9a0649b5830de81fb4e29d79928be08b735805ae5cc450a2a400e8c1034",
+    "src/core/qgraph/build_kernels.rs": "a72f80e6715e6382715bafc598ff119183b34f2fcea6901537ccea42ebc018cf",
+    "src/core/qgraph/fastscan.rs": "2c9f337d7b4d3e748bee1beda254286469213c963f087f120ca106b0218eb7bb",
+    "src/core/qgraph/kernels.rs": "f6f8b1ca2c5a2c5d13261e46056e3d51fcfe2874af512200f6c97e1b61afaa4a",
+    "src/core/qgraph/diagnostics.rs": "98d6994cbd61c5b674f0206597629e8cbb57696e595c5d0b7dabfb12e8d2916a",
+    "src/bin/vibe-rotation.rs": "5899a0d728d05a7622c7342c21dfeb6c6aab5da1632f9c81a11c9e1cacb399cd"
+  },
+  "measured_binary_sha256": "0f9e9e2cf4f70080e9c712382438b6d26414c3d068aa8fffbe74cb6bbba64af0",
+  "measured_binary_source_sha256": "74baadf1180167c7488a35b1982e92a0b94e48faabce56a96ff7ac1ad02b0916",
+  "final_source_note": "After measurement, corpus range validation was rewritten with RangeInclusive::contains to pass Clippy; measured source is archived as sources/vibe-rotation-measured.rs. No search code changed.",
+  "scripts_sha256": {
+    "check.py": "e324dface3b39192aa3319cf0a7282314d4a040824721378bfcea91bac70d478",
+    "check_rotation.py": "c5daab1efaed5a265a7506699095fb788c7adb78dbdcb5057da28ad5df14d5af",
+    "connectivity.py": "cfc713c317a630d98f3c87426d50f302e640653471acf5d58089e3ac07095745",
+    "to_native_v2.py": "67c8e3f67897775dfacbf6e2595576abea23c4efd4091590e0512827deea7d64",
+    "test_connectivity.py": "ee0226801ab38c3dab416c86262906ea38258da3e745026d7b37cdc4be8ba7eb",
+    "test_rotation_measurement.py": "59e8c897a998e88a36cc1a68a90a9c99486a180c681f61187aeee9edec7d5890"
+  },
+  "packages": {
+    "numpy": "2.2.6",
+    "h5py": "3.15.1",
+    "scipy": "1.17.1",
+    "faiss-cpu": "1.14.3",
+    "pytest": "9.1.1"
+  },
+  "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: x86_64-unknown-linux-gnu\nrelease: 1.96.0\nLLVM version: 22.1.2",
+  "protocol": {
+    "cpu_affinity": [
+      0
+    ],
+    "query_threads": 1,
+    "env": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1"
+    },
+    "repeats": 3,
+    "ef": [
+      128,
+      256,
+      512,
+      1000,
+      2000
+    ],
+    "rerank": [
+      100,
+      400,
+      1000
+    ],
+    "arm_order": "config groups of plain4/rotated4/plain8/rotated8, cyclically shifted per repetition",
+    "query_transform_timed": true,
+    "rotation_seed": 24301,
+    "residual_bits": 8,
+    "k": 100,
+    "recall_epsilon": 0.001,
+    "missing_neighbors": "u32::MAX sentinel, zero credit with full nq*k denominator",
+    "concurrent_benchmark_builds": false
+  },
+  "caches_sha256": {
+    "arxiv.graph": "dfd571daf7576da16f175814b6c59ecfbeeec46f3df98a57d52e2fb7ba351ce0",
+    "laion.graph": "75edc49fa21aa7330e943fcb545e504153e782e283a3582ebdd9390adad747ec",
+    "inaturalist.graph": "7cf8fc47ed1d70190b64d4b0daabc82d2ebd85209208723ee3e46ac6f1b11358",
+    "laion-escape.graph": "58864b41c7394860ce1d1bc70cdcf6f609cabdc0a05a70a9f5941f9671050ab9"
+  },
+  "outputs_sha256": {
+    "rotation-laion.json": "cbfd661af8d6884c33319a7b9279ffd0f02f3ba14a4ebe14517cf174cf8037c8",
+    "rotation-laion.ids.u32": "e3ccb6877d58d993bcf64ee34655d8df32fe099563fb7602f54d3a06a69beba0",
+    "rotation-arxiv.json": "ea81be8d8ade129a7ebc55ebbaecda4aad6107407b0075bafdae008df97825bb",
+    "rotation-arxiv.ids.u32": "353cc5bf705f09be1a362ea77e0c4043309f613bcb93692f4c7c79aee868891d",
+    "rotation-inaturalist.json": "1571c1d7cdba8e9201f9a28f2d4a3f868e86ccbcedff6e79e112523e11ead638",
+    "rotation-inaturalist.ids.u32": "edbd4a108e06e7cf0e6f7bcb986adde82ba9e2801312569e7fcbdd5a97b1f353",
+    "rotation-laion-escape.json": "9a1616d692720c51a1ecbce69bf8208b30efa7fc4dbf0396793163def76fa516",
+    "rotation-laion-escape.ids.u32": "90b7f7518360a2beb4f93635f5332d5f52de59ea73b5e8a16ceed453930f81b8"
+  },
+  "validation_sha256": "afe5d4f490e0ba81b586e7cbc497c68b1ff36620133b70a0cd9e93ac199e0453",
+  "loads_1m": {
+    "rotation-laion": {
+      "minimum": 0.65,
+      "maximum": 0.93
+    },
+    "rotation-arxiv": {
+      "minimum": 0.41,
+      "maximum": 0.77
+    },
+    "rotation-inaturalist": {
+      "minimum": 0.8,
+      "maximum": 0.99
+    },
+    "rotation-laion-escape": {
+      "minimum": 0.49,
+      "maximum": 0.76
+    }
+  },
+  "checks": {
+    "qgraph": "36 passed, 3 existing ignored experiments",
+    "python_integrity_connectivity": "14 passed; Euclidean escape control rejected",
+    "clippy": "all-features lib + vibe-rotation, warnings denied",
+    "default_feature_check": "lib passed",
+    "escape_cache_recheck": "New angular-metric guard tested; regenerated cache is byte-identical to measured escape cache"
+  },
+  "limits": [
+    "100000 corpus prefix and 256 original queries per dataset, not official scale",
+    "Three datasets, two from default circle plus additional iNaturalist stress test",
+    "Encoding arms interleaved within each graph; graph versions measured separately",
+    "No PAG run, no AVX-512, no Modal or other cloud run",
+    "No production default or upstream contribution revision changed"
+  ],
+  "escape_recheck_sha256": "ed651adb435751ada52df9c3f405530ebc6a5a28496ee5d111e3486529005bee"
+}

@@ -1,2 +1,13 @@
 # Golden stores are byte-exact fixtures (checksums cover their text files): no EOL conversion.
 tests/golden/** -text
+benchmarks/results/vibe_v1/**/*.npz filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/**/*.parquet filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/rotation/*.ids.u32 filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/rotation/rotation-arxiv.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/rotation/rotation-inaturalist.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/rotation/rotation-laion.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/rotation/rotation-laion-escape.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/**/*.log filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/native/*.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/diagnostic/laion-*.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/vibe_v1/leaderboard.json filter=lfs diff=lfs merge=lfs -text
