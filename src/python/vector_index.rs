@@ -671,6 +671,14 @@ impl PyUpdatableIndex {
             .map_err(update_err)
     }
 
+    /// Streaming diagnostics, enabled at open/create by HMS_STREAM_DIAGNOSTICS=1.
+    fn streaming_diagnostics(
+        &self,
+        py: Python<'_>,
+    ) -> Option<std::collections::BTreeMap<String, f64>> {
+        py.detach(|| self.index.streaming_diagnostics())
+    }
+
     #[getter]
     fn dim(&self) -> usize {
         self.index.dim()

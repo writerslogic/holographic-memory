@@ -483,11 +483,19 @@ pub(super) fn replay(
     Ok((sequence.max(manifest.sequence), at))
 }
 
-pub(super) fn append(path: &Path, end: u64, bytes: &[u8]) -> Result<(), UpdateError> {
+pub(super) fn append(
+    path: &Path,
+    end: u64,
+    bytes: &[u8],
+    mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+) -> Result<(), UpdateError> {
+    checkpoint(0)?;
     let mut file = std::fs::OpenOptions::new().write(true).open(path)?;
     file.seek(SeekFrom::Start(end))?;
     file.write_all(bytes)?;
+    checkpoint(1)?;
     file.sync_all()?;
     sync_mapped_file(&file)?;
+    checkpoint(2)?;
     Ok(())
 }

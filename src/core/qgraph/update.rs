@@ -20,6 +20,7 @@ use crate::core::durable_file::{atomic_write, sync_directory, sync_mapped_file};
 use crate::core::error::HmsError;
 
 mod delta;
+mod diagnostics;
 mod format;
 use delta::Delta;
 use format::BaseRows;
@@ -274,6 +275,7 @@ pub struct UpdatableVGraph {
     _lock: IndexLock,
     writer: AtomicU8,
     state: RwLock<State>,
+    diagnostics: diagnostics::Diagnostics,
 }
 struct Writer<'a>(&'a AtomicU8);
 impl Writer<'_> {
@@ -400,6 +402,7 @@ impl UpdatableVGraph {
             _lock: file,
             writer: AtomicU8::new(0),
             state: RwLock::new(State::new(base, manifest)),
+            diagnostics: diagnostics::Diagnostics::from_env(),
         })
     }
     /// Saves a graph and its matching vertex encoding without rebuilding the graph.
@@ -442,6 +445,7 @@ impl UpdatableVGraph {
             _lock: file,
             writer: AtomicU8::new(0),
             state: RwLock::new(State::new(base, manifest)),
+            diagnostics: diagnostics::Diagnostics::from_env(),
         })
     }
     /// Opens and replays committed batches; truncates only an incomplete final frame.
@@ -466,6 +470,7 @@ impl UpdatableVGraph {
             _lock: file,
             writer: AtomicU8::new(0),
             state: RwLock::new(state),
+            diagnostics: diagnostics::Diagnostics::from_env(),
         })
     }
     fn writer(&self) -> Result<Writer<'_>, UpdateError> {
@@ -585,6 +590,13 @@ impl UpdatableVGraph {
         self.commit_with(&writer)
     }
     fn commit_with(&self, writer: &Writer<'_>) -> Result<(), UpdateError> {
+        self.commit_with_checkpoints(writer, |_| Ok(()))
+    }
+    fn commit_with_checkpoints(
+        &self,
+        writer: &Writer<'_>,
+        mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+    ) -> Result<(), UpdateError> {
         let (bytes, end, sequence) = {
             let s = self.state.read();
             if s.pending.is_empty() {
@@ -597,7 +609,8 @@ impl UpdatableVGraph {
                 sequence,
             )
         };
-        if let Err(e) = format::append(&self.dir.join("updates.log"), end, &bytes) {
+        if let Err(e) = format::append(&self.dir.join("updates.log"), end, &bytes, &mut checkpoint)
+        {
             writer.uncertain();
             return Err(e);
         }
@@ -607,6 +620,11 @@ impl UpdatableVGraph {
         s.pending.clear();
         s.touched.clear();
         s.pending_bytes = 0;
+        drop(s);
+        if let Err(error) = checkpoint(3) {
+            writer.uncertain();
+            return Err(error);
+        }
         Ok(())
     }
     /// Searches a consistent in-memory view. `k` is clamped to the live count.
@@ -635,6 +653,7 @@ impl UpdatableVGraph {
         if k == 0 {
             return Ok(());
         }
+        self.diagnostics.query();
         if s.delta.len() == 0 && s.deleted == 0 {
             if let Some(graph) = &s.base.graph {
                 SCRATCH.with(|cache| {
@@ -691,7 +710,13 @@ impl UpdatableVGraph {
                 s.delta.live.len(),
             );
             loop {
-                let found = s.delta.search(query, ef, metric);
+                let found = if self.diagnostics.enabled {
+                    let (found, visits) = s.delta.search_profiled(query, ef, metric);
+                    self.diagnostics.delta_search(visits, found.len());
+                    found
+                } else {
+                    s.delta.search(query, ef, metric)
+                };
                 if ef == s.delta.len() || found.len() >= k.min(s.delta.live.len()) {
                     candidates.extend(found);
                     break;
@@ -704,6 +729,12 @@ impl UpdatableVGraph {
         out.clear();
         out.extend(candidates.into_iter().map(|(_, id)| id));
         Ok(())
+    }
+    /// Returns streaming counters and delta topology when `HMS_STREAM_DIAGNOSTICS=1`
+    /// was set at open/create. Topology scans run only on this explicit call. Base topology
+    /// is unavailable through the immutable graph interface and is marked accordingly.
+    pub fn streaming_diagnostics(&self) -> Option<std::collections::BTreeMap<String, f64>> {
+        self.diagnostics.snapshot(&self.state.read())
     }
     pub fn needs_consolidation(&self, policy: ConsolidationPolicy) -> Result<bool, UpdateError> {
         if !policy.delta_ratio.is_finite()
@@ -733,6 +764,7 @@ impl UpdatableVGraph {
     ) -> Result<(), UpdateError> {
         let writer = self.writer()?;
         self.commit_with(&writer)?;
+        checkpoint(0)?;
         // The writer flag excludes every other mutation, so a read guard sees the same state
         // a clone would, without copying the delta.
         let snapshot = self.state.read();
@@ -773,7 +805,7 @@ impl UpdatableVGraph {
             }
         }
         drop(snapshot);
-        write_base(&self.dir, &manifest, &ids, rows)?;
+        write_base_with_checkpoints(&self.dir, &manifest, &ids, rows, &mut checkpoint)?;
         checkpoint(1)?;
         let base = Base::open(&self.dir, &manifest)?;
         let publication = (|| {
@@ -781,6 +813,7 @@ impl UpdatableVGraph {
             checkpoint(2)?;
             checkpoint(3)?;
             format::rotate(&self.dir.join("updates.log"), &manifest)?;
+            checkpoint(4)?;
             Ok::<_, UpdateError>(())
         })();
         if let Err(e) = publication {
@@ -788,6 +821,10 @@ impl UpdatableVGraph {
             return Err(e);
         }
         *self.state.write() = State::new(base, manifest.clone());
+        if let Err(error) = checkpoint(5) {
+            writer.uncertain();
+            return Err(error);
+        }
         cleanup_generations(&self.dir, manifest.sequence)?;
         Ok(())
     }
@@ -821,7 +858,19 @@ fn write_base(
     ids: &[u32],
     rows: Vec<f32>,
 ) -> Result<(), UpdateError> {
+    write_base_with_checkpoints(dir, manifest, ids, rows, |_| Ok(()))
+}
+
+fn write_base_with_checkpoints(
+    dir: &Path,
+    manifest: &Manifest,
+    ids: &[u32],
+    rows: Vec<f32>,
+    mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+) -> Result<(), UpdateError> {
+    checkpoint(6)?;
     BaseRows::write(&manifest.rows_path(dir), manifest, ids, &rows)?;
+    checkpoint(7)?;
     if !ids.is_empty() {
         let graph = Graph::build_owned(rows, manifest.dim, &manifest.build)?;
         let e = &manifest.encoding;
@@ -837,9 +886,12 @@ fn write_base(
         if e.block_bits != 0 {
             vertex = vertex.with_blocks(&graph, e.block_bits)?;
         }
+        checkpoint(8)?;
         vertex.save(&manifest.vertex_path(dir))?;
+        checkpoint(9)?;
     }
     sync_directory(dir)?;
+    checkpoint(10)?;
     Ok(())
 }
 
