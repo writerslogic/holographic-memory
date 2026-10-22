@@ -254,11 +254,11 @@ def write_summary() -> dict:
                "arms": dict(sorted(arms.items())), "spend_settled_from_call_cache": spend,
                "limitations": [
                    "Retrieval is the reference ranking, not native ConversationMemory recall; the native path "
-                   "was not run end to end (about 3 minutes per question locally).",
+                   + "was not run end to end (about 3 minutes per question locally).",
                    "The reference ranking indexes user turns; evidence held only in assistant turns is reached "
-                   "through round expansion alone.",
+                   + "through round expansion alone.",
                    "Reader and judge at temperature 0 are not deterministic: repeated k=10 runs differ on about "
-                   "6 of 100 questions, so single runs are data points and arms are compared by their run ranges.",
+                   + "6 of 100 questions, so single runs are data points and arms are compared by their run ranges.",
                    "Replacing label-bearing tie-breaks with hashed ids leaves every top-10/15/50 set unchanged.",
                    "topk_context was chosen on dev; there is no held-out claim."]}
     out = ROOT / "benchmarks/results/longmemeval_official_dev_summary.json"
