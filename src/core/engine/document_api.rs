@@ -269,11 +269,25 @@ impl HmsCore {
     /// another build is running (the published snapshot stays). The capture holds the store's
     /// read lock; the graph build holds no lock.
     pub fn rebuild_vector_index(&self, graph_min_rows: usize) -> Result<bool> {
-        let Some(space) = &self.config.embedding_space else {
+        if self.config.embedding_space.is_none() {
             return Ok(false);
-        };
+        }
         let Some(_building) = self.vector_index.try_build() else {
             return Ok(self.vector_index.get().is_some());
+        };
+        self.rebuild_vector_index_locked(graph_min_rows)
+    }
+
+    /// [`Self::rebuild_vector_index`] that waits for a running build instead of keeping its
+    /// result, so the snapshot published on return was captured after the call began.
+    pub(super) fn rebuild_vector_index_waiting(&self, graph_min_rows: usize) -> Result<bool> {
+        let _building = self.vector_index.build();
+        self.rebuild_vector_index_locked(graph_min_rows)
+    }
+
+    fn rebuild_vector_index_locked(&self, graph_min_rows: usize) -> Result<bool> {
+        let Some(space) = &self.config.embedding_space else {
+            return Ok(false);
         };
         let capture = {
             let _transaction = self.mutation_gate.read();
@@ -301,6 +315,11 @@ impl HmsCore {
     pub fn train_document_index(&self) -> Result<()> {
         self.encode_pending_documents()?;
         self.maintain_vector_index(documents::DEFAULT_GRAPH_MIN_ROWS)?;
+        self.train_dense_index()
+    }
+
+    /// Trains and publishes the dense document index over the current embedded chunks.
+    pub(super) fn train_dense_index(&self) -> Result<()> {
         let Some(space) = &self.config.embedding_space else {
             return Ok(());
         };

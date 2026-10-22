@@ -66,6 +66,15 @@ impl TextSegment {
         })
     }
 
+    /// A new, empty segment at `path` (created or truncated) sealed like this one.
+    pub(crate) fn recreate(&self, path: &Path) -> Result<Self> {
+        Self::create(
+            path,
+            #[cfg(feature = "security")]
+            self.cipher.clone(),
+        )
+    }
+
     /// Appends `text` and returns its location.
     pub(crate) fn append(&self, text: &str) -> Result<(u64, u32)> {
         let at = self.len.load(Ordering::Acquire);

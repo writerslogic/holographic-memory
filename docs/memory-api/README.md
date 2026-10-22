@@ -188,6 +188,29 @@ the store directory, before reopen, after an abort in a child process, and after
   Derived data (hashed n-gram vectors in the ANN index files, fact ids) is rewritten without
   the deleted entries by the purge but is not text.
 
+After a purge the store is indistinguishable from one that never held the forgotten facts and
+was purged at the same point: the same results, ranks and score bits in lexical, hybrid and
+vector search (exact and graph), the same listings and index status, and byte-identical files
+except the generation directory's name, which carries the compaction time. Lexical statistics
+(document frequencies, chunk and word counts) are integers and match after any delete; the
+purge rebuilds what a delete leaves shaped by history: the text segment and the slots (in id
+order, as a reopen lays them out), a published vector snapshot and its graph (with the same
+graph choice, so a purge costs one graph build when the snapshot has one), and the dense
+document index. Compaction
+writes vectors in id order. `HmsCore::revision` and the vector index status `generation`
+advance by one per mutation from a random value per open, so a reading does not reveal how
+many inserts and deletes came before it. Checked by `tests/forget_equivalence.rs` and by the
+paired-store experiment `forget-experiment` (feature `experimental`; results in
+`benchmarks/results/forget_equivalence_*.json`). Not covered:
+
+- a delete without `purge`: until the purge the journal holds the frames, the text segment
+  holds zeroed records, and a vector snapshot keeps the deleted vertex in its graph, so
+  graph-mode results near the deleted vector can differ;
+- decisions taken while the fact was stored: a `max-facts` eviction it caused, a
+  consolidation or supersession that used it, or a chain forget that re-linked survivors;
+- file timestamps, inode numbers and the generation name; encrypted bytes (same lengths,
+  fresh nonces); `audit.bin` and the provenance log under `security`, which record the delete.
+
 ## Guarantees
 
 Each is covered by `tests/memory_api.rs`, `tests/memory_api_server.rs` and the binding tests.
