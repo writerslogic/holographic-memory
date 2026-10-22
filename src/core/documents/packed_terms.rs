@@ -421,7 +421,7 @@ mod tests {
                 map.insert(key, frequency);
                 let table = StoredTerms::from(map.clone());
                 assert_eq!(
-                    matches!(table.0.as_deref(), Some(TermData::Packed(_))),
+                    matches!(table.terms.as_deref(), Some(TermData::Packed(_))),
                     delta <= 0
                 );
                 parity(map);
@@ -443,7 +443,7 @@ mod tests {
         for length in [65535usize, 65536, 65537, 2 * 1024 * 1024] {
             let map: BTreeMap<_, _> = [("x".repeat(length), u32::MAX)].into();
             let table = StoredTerms::from(map.clone());
-            assert!(matches!(table.0.as_deref(), Some(TermData::Tree(_))));
+            assert!(matches!(table.terms.as_deref(), Some(TermData::Tree(_))));
             parity(map);
         }
     }

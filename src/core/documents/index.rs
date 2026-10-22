@@ -32,6 +32,7 @@ pub(crate) struct DocumentStore {
     pub(super) chunk_count: usize,
     pub(super) word_count: usize,
     pub(super) nonpositional_chunks: usize,
+    pub(super) multichunk_documents: BTreeSet<String>,
     pub(super) generation: u64,
     pub(super) dense_index: Option<Arc<DenseIndex>>,
     pub(super) embedded_documents: BTreeSet<String>,
@@ -174,6 +175,9 @@ fn replace_postings(
         if let Some(&frequency) = new.terms.get(term).filter(|_| old.stemmed == new.stemmed) {
             // Unchanged terms (a deferred encoding landing, a re-memorized document) leave
             // the list alone; rewriting it would decode and encode the whole list.
+            if new.word_count < old.word_count {
+                postings[usize::from(old.stemmed)].invalidate_length(term, slot);
+            }
             if frequency != old_frequency {
                 postings[usize::from(old.stemmed)].set_frequency(term, slot, frequency);
             }
@@ -363,6 +367,13 @@ impl DocumentStore {
         (&document.id, *chunk)
     }
 
+    pub(super) fn borrowed_chunk(&self, slot: usize) -> (&StoredDocument, usize) {
+        let (document, index) = self.owners[slot]
+            .as_ref()
+            .expect("unoccupied document slot");
+        (document.as_ref(), *index)
+    }
+
     pub(super) fn owned_chunk(&self, slot: usize) -> (Arc<StoredDocument>, usize) {
         let (document, chunk) = self.owners[slot]
             .as_ref()
@@ -485,6 +496,9 @@ impl DocumentStore {
                 indexed.push((slot, chunk));
                 slots.push(slot);
             }
+            if document.chunks.len() > 1 {
+                self.multichunk_documents.insert(document.id.clone());
+            }
             self.slots.insert(document.id.clone(), slots);
             if embedded {
                 assert!(
@@ -494,7 +508,7 @@ impl DocumentStore {
             }
             self.insert_filters(document);
         }
-        super::postings::index_chunks(&mut self.postings, &indexed);
+        super::postings::index_chunks(&mut self.postings, &indexed, &self.word_counts);
         // One generation step per document, as single inserts take.
         self.generation = self
             .generation
@@ -707,6 +721,7 @@ impl DocumentStore {
 
     pub(crate) fn remove(&mut self, id: &str) -> Option<Arc<StoredDocument>> {
         let document = self.documents.remove(id)?;
+        self.multichunk_documents.remove(id);
         self.invalidate_dense_index();
         if document
             .chunks

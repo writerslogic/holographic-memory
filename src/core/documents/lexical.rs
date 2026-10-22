@@ -268,7 +268,23 @@ pub(crate) fn execute(
     options: &LexicalOptions,
 ) -> Result<LexicalResults> {
     let bm25 = prepare(store, query, options)?;
-    exhaustive(store, query, options, bm25)
+    if options.execution != LexicalExecution::Exhaustive
+        && options.k == 0
+        && options.count
+        && query
+            .clauses
+            .iter()
+            .all(|clause| clause.occur == Occur::Should && !clause.phrase)
+    {
+        return Ok(LexicalResults {
+            hits: Vec::new(),
+            count: Some(execution::count_union(store, query)),
+        });
+    }
+    match options.execution {
+        LexicalExecution::Exhaustive => exhaustive(store, query, options, bm25),
+        LexicalExecution::Auto => document_at_a_time(store, query, options, bm25),
+    }
 }
 
 fn exhaustive(
@@ -327,6 +343,9 @@ fn exhaustive(
         count: options.count.then_some(matched.len()),
     })
 }
+
+mod execution;
+use execution::document_at_a_time;
 
 #[cfg(test)]
 mod tests;
