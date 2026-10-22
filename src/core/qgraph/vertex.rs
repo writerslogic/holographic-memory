@@ -19,6 +19,7 @@ use std::sync::OnceLock;
 
 use rayon::prelude::*;
 
+use super::adjacency::Adjacency;
 use super::fastscan::{pack32, scan32, BLOCK};
 use super::kernels::{
     dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i4_inline_x4, dot_i8_inline, interleave_for_i4,
@@ -564,7 +565,7 @@ fn bfs_order(g: &Graph) -> Vec<u32> {
         while head < order.len() {
             let v = order[head] as usize;
             head += 1;
-            for &u in &g.adj[v] {
+            for &u in g.neighbors(v) {
                 if !std::mem::replace(&mut seen[u as usize], true) {
                     order.push(u);
                 }
@@ -813,7 +814,7 @@ impl VGraph {
 
         let r = g.degree;
         // Stored vertex `v`'s list: the build's list of the vertex, renumbered, at most `r`.
-        let list = |v: usize| g.adj[old(v)].iter().take(r).map(|&u| new(u));
+        let list = |v: usize| g.neighbors(old(v)).iter().take(r).map(|&u| new(u));
         let (mut adj, mut adj3) = (Vec::new(), Vec::new());
         let (mut adjv, mut adjv_off) = (Vec::new(), Vec::new());
         if id_bytes == 3 {
@@ -2106,10 +2107,13 @@ fn get_u32s(r: &mut impl std::io::Read, max: u64) -> std::io::Result<Vec<u32>> {
         .collect())
 }
 
-fn put_lists(w: &mut impl std::io::Write, lists: &[Vec<u32>]) -> std::io::Result<()> {
-    let lens: Vec<u32> = lists.iter().map(|l| l.len() as u32).collect();
+fn put_lists<'a>(
+    w: &mut impl std::io::Write,
+    lists: impl Iterator<Item = &'a [u32]> + Clone,
+) -> std::io::Result<()> {
+    let lens: Vec<u32> = lists.clone().map(|l| l.len() as u32).collect();
     put_u32s(w, &lens)?;
-    put_u32s(w, &lists.concat())
+    put_u32s(w, &lists.flatten().copied().collect::<Vec<u32>>())
 }
 
 fn get_lists(r: &mut impl std::io::Read, n: u64) -> std::io::Result<Vec<Vec<u32>>> {
@@ -2149,11 +2153,11 @@ impl Graph {
         for x in header {
             w.write_all(&x.to_le_bytes())?;
         }
-        put_lists(&mut w, &self.adj)?;
+        put_lists(&mut w, self.adj.iter())?;
         put_u32s(&mut w, &self.upper_ids)?;
         w.write_all(&(self.layers.len() as u64).to_le_bytes())?;
         for l in &self.layers {
-            put_lists(&mut w, l)?;
+            put_lists(&mut w, l.iter().map(Vec::as_slice))?;
         }
         w.flush()
     }
@@ -2223,7 +2227,11 @@ impl Graph {
         if entry >= n as u64 {
             return Err(bad("graph cache: entry out of range".into()));
         }
-        let adj = get_lists(&mut r, n as u64)?;
+        let lens = get_u32s(&mut r, n as u64)?;
+        let flat = get_u32s(&mut r, lens.iter().map(|&l| u64::from(l)).sum())?;
+        let adj = Adjacency::from_flat(lens, &flat, degree as usize)
+            .ok_or_else(|| bad("graph cache: list longer than the degree".into()))?;
+        drop(flat);
         let upper_ids = get_u32s(&mut r, n as u64)?;
         let nl = get_u64(&mut r)?;
         if nl > 64 {

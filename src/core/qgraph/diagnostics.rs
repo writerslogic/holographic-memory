@@ -187,7 +187,7 @@ impl<'a> ExactSearcher<'a> {
             if self.best.len() >= ef && self.best.peek().is_some_and(|&worst| candidate > worst) {
                 break;
             }
-            for &id in &g.adj[candidate.1 as usize] {
+            for &id in g.neighbors(candidate.1 as usize) {
                 if self.seen[id as usize] == self.epoch {
                     continue;
                 }
