@@ -19,6 +19,9 @@ use super::types::*;
 use super::{Memory, MemoryError, RecencyContext};
 use crate::core::documents::{terms, DocumentResult, SearchOptions};
 
+/// Searches tried before a recall settles for an index that may trail the searched revision.
+const SNAPSHOT_ATTEMPTS: usize = 4;
+
 /// A fact's status at `now`, or none when `known_at` predates its ingest.
 pub(super) fn evaluate(
     stamp: Option<&Stamp>,
@@ -234,6 +237,14 @@ impl Memory {
     }
 
     /// Searches, evaluates and ranks. None when no fact can qualify.
+    ///
+    /// A fact's status is judged from the supersession index, so the index must describe the
+    /// same store revision the search read. A commit landing between the two (this process's
+    /// own `remember` before it settles the index, or a write through the core) would otherwise
+    /// show a fact next to an unindexed successor and report both as current. After a miss the
+    /// index is brought to the store's revision and the search repeats; it takes no writer lock,
+    /// so an observer callback running under one may still recall. After `SNAPSHOT_ATTEMPTS`
+    /// the last attempt is used as is.
     fn run(
         &self,
         query: &str,
@@ -242,17 +253,43 @@ impl Memory {
         k: u32,
         force_wide: bool,
     ) -> Result<Option<Run>> {
-        let (constrained, restrict) = {
+        let mut attempt = 1;
+        loop {
+            let (run, consistent) = self.run_once(query, options, history, k, force_wide)?;
+            if consistent || attempt == SNAPSHOT_ATTEMPTS {
+                return Ok(run);
+            }
+            attempt += 1;
+            self.ensure_fresh();
+        }
+    }
+
+    /// One search and evaluation, and whether the index matched the revision searched.
+    fn run_once(
+        &self,
+        query: &str,
+        options: &RecallOptions,
+        history: HistoryMode,
+        k: u32,
+        force_wide: bool,
+    ) -> Result<(Option<Run>, bool)> {
+        let revision = self.core.revision();
+        let (indexed, constrained, restrict) = {
             let index = self.index.read();
-            (index.constrained(), self.restriction(&index, options))
+            (
+                index.revision,
+                index.constrained(),
+                self.restriction(&index, options),
+            )
         };
+        let indexed = indexed == Some(revision);
         let restrict = match restrict {
-            Some(ids) if ids.is_empty() => return Ok(None),
+            Some(ids) if ids.is_empty() => return Ok((None, indexed)),
             other => other,
         };
         let needs_status = constrained || options.known_at.is_some();
         if history == HistoryMode::Historical && !needs_status && !force_wide {
-            return Ok(None);
+            return Ok((None, indexed));
         }
         let filter = history != HistoryMode::All && needs_status;
         let reorder =
@@ -282,6 +319,10 @@ impl Memory {
             .map_err(|error| MemoryError::Invalid(format!("{error}")))?;
         let now = options.as_of.unwrap_or_else(|| self.clock.now_millis());
         let index = self.index.read();
+        // Commits bump the revision inside the gate that excludes the search's capture, so an
+        // unchanged revision across the search means the capture saw exactly `revision`.
+        let consistent =
+            indexed && index.revision == Some(revision) && self.core.revision() == revision;
         let mut seen: HashSet<String> = HashSet::with_capacity(hits.len());
         let mut ranked = Vec::with_capacity(hits.len());
         for hit in hits {
@@ -337,13 +378,14 @@ impl Memory {
         if !force_wide {
             ranked.truncate(k as usize);
         }
-        Ok(Some(Run {
+        let run = Run {
             ranked,
             now,
             lexical_weight: options.lexical_weight.unwrap_or(1.0),
             semantic_weight: options.semantic_weight.unwrap_or(1.0),
             fusion: options.fusion.clone().unwrap_or_else(|| "blend".into()),
-        }))
+        };
+        Ok((Some(run), consistent))
     }
 
     /// Ids a subject or entity filter limits recall to; none when unrestricted.
