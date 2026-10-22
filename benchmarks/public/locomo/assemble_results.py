@@ -66,7 +66,7 @@ def main():
     ap.add_argument('--meta', required=True, help='a locomo_bench summary.json for models, split and sha')
     ap.add_argument('--arm', action='append', nargs='+', metavar=('NAME:RUNS', 'PREDICTIONS'), required=True,
                     help='arm name, passes to score, then predictions.jsonl files')
-    ap.add_argument('--spend', type=float, required=True, help='OpenAI spend over all runs, USD')
+    ap.add_argument('--spend', type=float, required=True, help='OpenAI spend over all runs, USD (estimate when a run was interrupted)')
     ap.add_argument('--note', default='')
     args = ap.parse_args()
     meta = json.loads(Path(args.meta).read_text())
@@ -91,7 +91,7 @@ def main():
         'note': args.note,
         'arms': arms,
         'published': PUBLISHED,
-        'openai_spend_usd_total': args.spend,
+        'openai_spend_usd_estimate': args.spend,
     }
     Path(args.out).write_text(json.dumps(result, indent=2) + '\n')
     for name, arm in arms.items():

@@ -29,7 +29,7 @@
   },
   "split_rule": "first three conversations in file order are the tuning set, fixed before any run",
   "scores": "fractions; f1/bleu1/j are means over independent reader passes",
-  "note": "Incomplete: the OpenAI account ran out of credit during the final run. Held-out J (judge) was never computed; conv-49 and conv-50 were never read. F1/BLEU-1 are scored offline from cached reader responses (3 passes) on 8 conversations (tuning 3 + held-out 5). J exists only for the tuning set, one pass. Spend is an estimate: 0.96 USD recorded on tuning runs plus about 2.5 USD for the interrupted final run.",
+  "note": "Incomplete: the OpenAI account ran out of credit during the final run, before any judge call. Held-out J was never computed; conv-49 and conv-50 were never read; conv-48 is excluded because two of its questions have no cached reader response. F1/BLEU-1 are scored offline from cached reader responses (passes 0-2), one rerun per conversation, on 7 conversations (tuning 3 + held-out 4). J exists only for the tuning set, one pass. openai_spend_usd_total is an estimate: 0.96 USD measured on tuning runs plus about 2.5 USD for the interrupted final run.",
   "arms": {
     "primary": {
       "all_scored": {
@@ -40,67 +40,66 @@
           "conv-42",
           "conv-43",
           "conv-44",
-          "conv-47",
-          "conv-48"
+          "conv-47"
         ],
         "overall": {
-          "n": 1226,
-          "evidence_recall": 0.8153,
-          "context_tokens_mean": 1749.4,
-          "f1": 0.5194,
-          "bleu1": 0.4113,
+          "n": 1035,
+          "evidence_recall": 0.8152,
+          "context_tokens_mean": 1749.5,
+          "f1": 0.5239,
+          "bleu1": 0.4162,
           "f1_runs": [
-            0.5193,
-            0.5195,
-            0.5193
+            0.5232,
+            0.5245,
+            0.5239
           ]
         },
         "category_1": {
-          "n": 213,
-          "evidence_recall": 0.5908,
-          "context_tokens_mean": 1750.1,
-          "f1": 0.3684,
-          "bleu1": 0.2487,
+          "n": 192,
+          "evidence_recall": 0.5785,
+          "context_tokens_mean": 1750.2,
+          "f1": 0.3779,
+          "bleu1": 0.2607,
           "f1_runs": [
-            0.3689,
-            0.37,
-            0.3663
+            0.3779,
+            0.3795,
+            0.3762
           ]
         },
         "category_2": {
-          "n": 256,
-          "evidence_recall": 0.8867,
-          "context_tokens_mean": 1748.3,
-          "f1": 0.5966,
-          "bleu1": 0.4835,
+          "n": 214,
+          "evidence_recall": 0.8847,
+          "context_tokens_mean": 1748.1,
+          "f1": 0.5942,
+          "bleu1": 0.4758,
           "f1_runs": [
-            0.5968,
-            0.5933,
-            0.5997
+            0.5926,
+            0.5907,
+            0.5992
           ]
         },
         "category_3": {
-          "n": 76,
-          "evidence_recall": 0.5471,
-          "context_tokens_mean": 1746.0,
-          "f1": 0.2303,
-          "bleu1": 0.1653,
+          "n": 66,
+          "evidence_recall": 0.5354,
+          "context_tokens_mean": 1745.5,
+          "f1": 0.22,
+          "bleu1": 0.1591,
           "f1_runs": [
-            0.2358,
-            0.2291,
-            0.226
+            0.2263,
+            0.2187,
+            0.215
           ]
         },
         "category_4": {
-          "n": 681,
-          "evidence_recall": 0.8886,
-          "context_tokens_mean": 1750.0,
-          "f1": 0.5698,
-          "bleu1": 0.4624,
+          "n": 563,
+          "evidence_recall": 0.9023,
+          "context_tokens_mean": 1750.3,
+          "f1": 0.5825,
+          "bleu1": 0.4768,
           "f1_runs": [
-            0.5688,
-            0.5708,
-            0.5698
+            0.5811,
+            0.5846,
+            0.582
           ]
         }
       },
@@ -176,67 +175,66 @@
           "conv-42",
           "conv-43",
           "conv-44",
-          "conv-47",
-          "conv-48"
+          "conv-47"
         ],
         "overall": {
-          "n": 841,
-          "evidence_recall": 0.8027,
-          "context_tokens_mean": 1749.6,
-          "f1": 0.508,
-          "bleu1": 0.4063,
+          "n": 650,
+          "evidence_recall": 0.7988,
+          "context_tokens_mean": 1749.9,
+          "f1": 0.5118,
+          "bleu1": 0.4127,
           "f1_runs": [
-            0.5088,
-            0.5086,
-            0.5065
+            0.512,
+            0.5135,
+            0.51
           ]
         },
         "category_1": {
-          "n": 139,
-          "evidence_recall": 0.5634,
-          "context_tokens_mean": 1749.9,
-          "f1": 0.3423,
-          "bleu1": 0.2303,
+          "n": 118,
+          "evidence_recall": 0.5386,
+          "context_tokens_mean": 1750.0,
+          "f1": 0.3531,
+          "bleu1": 0.2465,
           "f1_runs": [
-            0.3482,
-            0.3437,
-            0.335
+            0.3592,
+            0.3546,
+            0.3456
           ]
         },
         "category_2": {
-          "n": 166,
-          "evidence_recall": 0.8494,
-          "context_tokens_mean": 1748.5,
-          "f1": 0.547,
-          "bleu1": 0.4491,
+          "n": 124,
+          "evidence_recall": 0.8333,
+          "context_tokens_mean": 1748.0,
+          "f1": 0.526,
+          "bleu1": 0.4241,
           "f1_runs": [
-            0.5454,
-            0.5469,
-            0.5487
+            0.5207,
+            0.5267,
+            0.5306
           ]
         },
         "category_3": {
-          "n": 55,
-          "evidence_recall": 0.5742,
-          "context_tokens_mean": 1747.7,
-          "f1": 0.2423,
-          "bleu1": 0.1658,
+          "n": 45,
+          "evidence_recall": 0.563,
+          "context_tokens_mean": 1747.4,
+          "f1": 0.2299,
+          "bleu1": 0.1569,
           "f1_runs": [
-            0.2478,
-            0.2417,
-            0.2374
+            0.2366,
+            0.2292,
+            0.2238
           ]
         },
         "category_4": {
-          "n": 481,
-          "evidence_recall": 0.8818,
-          "context_tokens_mean": 1750.2,
-          "f1": 0.5727,
-          "bleu1": 0.4699,
+          "n": 363,
+          "evidence_recall": 0.9008,
+          "context_tokens_mean": 1750.8,
+          "f1": 0.5935,
+          "bleu1": 0.4946,
           "f1_runs": [
-            0.5725,
-            0.5736,
-            0.5722
+            0.5928,
+            0.5958,
+            0.5919
           ]
         }
       },
@@ -506,5 +504,5 @@
       "why_unmatched": "Zep's own reader prompt and retrieval template; Mem0 reran it with Mem0's prompt: 58.44 +- 0.20"
     }
   },
-  "openai_spend_usd_total": 3.5
+  "openai_spend_usd_estimate": 3.5
 }
