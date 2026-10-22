@@ -16,6 +16,8 @@ mod compact_term_tests;
 mod packed_terms;
 use packed_terms::StoredTerms;
 
+#[cfg(test)]
+mod census;
 mod dense;
 mod index;
 mod lexical;

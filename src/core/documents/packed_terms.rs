@@ -159,6 +159,74 @@ impl PackedTerms {
 }
 
 impl StoredTerms {
+    #[cfg(test)]
+    pub(super) fn record_memory(&self, census: &mut super::census::MemoryCensus) {
+        use std::mem::{size_of, size_of_val};
+        if let Some(terms) = self.terms.as_deref() {
+            census.bytes("forward.term_records", size_of::<TermData>());
+            census.count("forward.terms", self.len());
+            match terms {
+                TermData::Packed(table) => {
+                    census.count("forward.packed_tables", 1);
+                    census.bytes("forward.term_text", table.text.len());
+                    census.bytes("forward.term_offsets", size_of_val(&*table.starts));
+                    census.bytes("forward.frequencies", size_of_val(&*table.frequencies));
+                }
+                TermData::Shared(table) => {
+                    census.count("forward.shared_tables", 1);
+                    census.bytes("forward.term_ids", table.ids.len());
+                    census.bytes(
+                        "forward.frequencies",
+                        match &table.frequencies {
+                            SharedFrequencies::Byte(v) => size_of_val(&**v),
+                            SharedFrequencies::Short(v) => size_of_val(&**v),
+                            SharedFrequencies::Word(v) => size_of_val(&**v),
+                        },
+                    );
+                    if census
+                        .dictionaries
+                        .insert(Arc::as_ptr(&table.dictionary) as usize)
+                    {
+                        census.count("forward.shared_dictionaries", 1);
+                        census.bytes(
+                            "forward.dictionary_records",
+                            size_of::<SharedDictionary>() + 2 * size_of::<usize>(),
+                        );
+                        census.bytes("forward.dictionary_text", table.dictionary.text.len());
+                        census.bytes(
+                            "forward.dictionary_offsets",
+                            size_of_val(&*table.dictionary.starts),
+                        );
+                    }
+                }
+                TermData::Tree(table) => {
+                    census.count("forward.tree_tables", 1);
+                    census.bytes(
+                        "forward.tree.payload",
+                        table
+                            .iter()
+                            .map(|(term, frequency)| {
+                                size_of_val(term) + size_of_val(frequency) + term.capacity()
+                            })
+                            .sum(),
+                    );
+                }
+            }
+        }
+        if let Some(positions) = self.positions.as_deref() {
+            census.bytes("positions.records", size_of_val(positions));
+            census.bytes("positions.data", positions.data.len());
+            census.bytes(
+                "positions.offsets",
+                match &positions.offsets {
+                    super::positions::Offsets::Byte(v) => size_of_val(&**v),
+                    super::positions::Offsets::Short(v) => size_of_val(&**v),
+                    super::positions::Offsets::Word(v) => size_of_val(&**v),
+                },
+            );
+        }
+    }
+
     fn len(&self) -> usize {
         match self.terms.as_deref() {
             None => 0,

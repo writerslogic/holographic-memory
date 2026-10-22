@@ -346,17 +346,26 @@ impl<'a> BitReader<'a> {
 }
 
 fn frontier(points: impl Iterator<Item = (u32, u32)>) -> Option<Box<[(u32, u32)]>> {
-    let mut points: Vec<_> = points.filter(|p| p.0 > 0).collect();
+    let mut scratch = [(0, 0); BLOCK_LEN];
+    let mut used = 0;
+    for point in points.filter(|p| p.0 > 0) {
+        assert!(used < BLOCK_LEN, "frontier exceeds posting block length");
+        scratch[used] = point;
+        used += 1;
+    }
+    let points = &mut scratch[..used];
     points.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
     let mut shortest = u32::MAX;
-    let mut kept = Vec::new();
-    for point in points {
-        if kept.is_empty() || point.1 < shortest {
+    let mut kept = 0;
+    for index in 0..points.len() {
+        let point = points[index];
+        if kept == 0 || point.1 < shortest {
             shortest = point.1;
-            kept.push(point);
+            points[kept] = point;
+            kept += 1;
         }
     }
-    (kept.len() > 1).then(|| kept.into_boxed_slice())
+    (kept > 1).then(|| points[..kept].into())
 }
 
 impl PostingList {
@@ -495,6 +504,9 @@ impl PostingList {
         let Some(&(first, _)) = run.first() else {
             return;
         };
+        if self.blocks.capacity() == 0 {
+            self.blocks.reserve_exact(run.len().div_ceil(BLOCK_LEN));
+        }
         if self.count > 0 && first as u64 <= self.last {
             let merged = merge_sorted(&self.decode(), run);
             self.encode(&merged);
@@ -657,6 +669,78 @@ pub(super) struct PostingLists {
 }
 
 impl PostingLists {
+    #[cfg(test)]
+    pub(super) fn record_memory(&self, census: &mut super::census::MemoryCensus) {
+        use std::mem::{size_of, size_of_val};
+        census
+            .counts
+            .insert("postings.block_size", size_of::<Block>());
+        census
+            .counts
+            .insert("postings.list_size", size_of::<PostingList>());
+        census.bytes(
+            "postings.lists.capacity",
+            self.lists.capacity() * size_of::<PostingList>(),
+        );
+        census.bytes(
+            "postings.free.capacity",
+            self.free.capacity() * size_of::<u32>(),
+        );
+        census.bytes(
+            "postings.dictionary.text.capacity",
+            self.dictionary.bytes.capacity(),
+        );
+        census.bytes(
+            "postings.dictionary.offsets.capacity",
+            self.dictionary.offsets.capacity() * size_of::<u32>(),
+        );
+        census.bytes(
+            "postings.dictionary.ids.capacity",
+            self.dictionary.base_ids.capacity() * size_of::<u32>(),
+        );
+        census.bytes(
+            "postings.dictionary.overlay.payload",
+            self.dictionary
+                .overlay
+                .iter()
+                .map(|(term, id)| term.len() + size_of_val(term) + size_of_val(id))
+                .sum(),
+        );
+        for list in &self.lists {
+            *census
+                .histogram
+                .entry((list.len(), list.blocks.len(), list.blocks.capacity()))
+                .or_default() += 1;
+            census.count("postings.postings", list.len());
+            census.count("postings.lists", 1);
+            census.count("postings.blocks", list.blocks.len());
+            census.bytes("postings.data.length", list.data.len());
+            census.bytes("postings.data.capacity", list.data.capacity());
+            census.bytes(
+                "postings.data.unused",
+                list.data.capacity() - list.data.len(),
+            );
+            census.bytes(
+                "postings.blocks.length",
+                list.blocks.len() * size_of::<Block>(),
+            );
+            census.bytes(
+                "postings.blocks.capacity",
+                list.blocks.capacity() * size_of::<Block>(),
+            );
+            census.bytes(
+                "postings.blocks.unused",
+                (list.blocks.capacity() - list.blocks.len()) * size_of::<Block>(),
+            );
+            for block in &list.blocks {
+                census.bytes(
+                    "postings.frontiers",
+                    block.frontier.as_deref().map_or(0, size_of_val),
+                );
+            }
+        }
+    }
+
     pub(super) fn get(&self, term: &str) -> Option<&PostingList> {
         self.dictionary.get(term).map(|id| &self.lists[id as usize])
     }
@@ -904,6 +988,105 @@ pub(super) fn index_chunks<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn initial_block_capacity_matches_the_first_run() {
+        for length in [0, 1, 127, 128, 129, 255, 256, 257, 511, 512, 513] {
+            let run: Vec<Posting> = (0..length).map(|slot| (slot, 1)).collect();
+            let mut list = PostingList::default();
+            list.append_run(&run, &mut Vec::new());
+            assert_eq!(list.blocks.capacity(), length.div_ceil(BLOCK_LEN));
+            assert_eq!(list.decode(), run);
+            list.append_run(&[(length, 2)], &mut Vec::new());
+            assert_eq!(list.len(), length + 1);
+            assert_eq!(list.iter().last(), Some((length, 2)));
+        }
+    }
+
+    #[test]
+    fn frontiers_match_pairwise_dominance() {
+        let check = |points: &[(u32, u32)]| {
+            let mut expected: Vec<_> = points
+                .iter()
+                .copied()
+                .filter(|&(frequency, words)| {
+                    frequency > 0
+                        && !points.iter().any(|&(other_frequency, other_words)| {
+                            other_frequency >= frequency
+                                && other_words <= words
+                                && (other_frequency > frequency || other_words < words)
+                        })
+                })
+                .collect();
+            expected.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+            expected.dedup();
+            let expected = (expected.len() > 1).then_some(expected);
+            assert_eq!(
+                frontier(points.iter().copied()).as_deref(),
+                expected.as_deref()
+            );
+        };
+        for points in [
+            vec![],
+            vec![(0, 0), (0, u32::MAX)],
+            vec![(1, u32::MAX)],
+            vec![(1, 0), (1, 0), (u32::MAX, u32::MAX)],
+            vec![(0, 0), (2, 5), (2, 7), (1, 5), (3, 8), (1, 1)],
+        ] {
+            check(&points);
+        }
+        for length in [BLOCK_LEN - 1, BLOCK_LEN] {
+            check(
+                &(0..length)
+                    .map(|i| (i as u32 + 1, i as u32))
+                    .collect::<Vec<_>>(),
+            );
+            for seed in 0..64 {
+                let points: Vec<_> = (0..length)
+                    .map(|i| (((i * 37 + seed) % 13) as u32, ((i * 17 + seed) % 23) as u32))
+                    .collect();
+                check(&points);
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "frontier exceeds posting block length")]
+    fn frontiers_reject_more_points_than_a_block_can_hold() {
+        frontier(std::iter::repeat_n((1, 1), BLOCK_LEN + 1));
+    }
+
+    #[test]
+    fn partial_blocks_preserve_full_frontiers_and_invalidated_fallbacks() {
+        let run: Vec<_> = (0..BLOCK_LEN).map(|i| (i, i as u32 + 1)).collect();
+        let mut list = PostingList::default();
+        for posting in &run {
+            list.append_run_with_lengths(std::slice::from_ref(posting), &mut Vec::new(), |slot| {
+                slot as u32 + 1
+            });
+        }
+        let expected: Vec<_> = run
+            .iter()
+            .map(|&(slot, frequency)| (frequency, slot as u32 + 1))
+            .rev()
+            .collect();
+        assert_eq!(
+            list.blocks[0].frontier.as_deref(),
+            Some(expected.as_slice())
+        );
+        assert_eq!(list.decode(), run);
+
+        let mut list = PostingList::default();
+        list.append_run_with_lengths(&[(0, 5)], &mut Vec::new(), |_| 10);
+        list.invalidate_length(0);
+        list.append_run_with_lengths(&[(1, 6), (2, 0)], &mut Vec::new(), |_| 20);
+        assert_eq!(
+            list.blocks[0].frontier.as_deref(),
+            Some([(6, 20), (5, 0)].as_slice())
+        );
+        assert_eq!(list.blocks[0].min_words, 0);
+        assert_eq!(list.blocks[0].max_frequency, 6);
+    }
 
     /// Insert, update and remove against a map model over the full slot and frequency
     /// ranges, with every lookup checked through a rebuilt dictionary too.

@@ -1,0 +1,24 @@
+
+running 1 test
+test core::engine::document_memory_census::reopened_index_memory_census ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 508 filtered out; finished in 40.77s
+
+       40.82 real        42.38 user         1.45 sys
+          2070446080  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              135754  page reclaims
+               71046  page faults
+                   0  swaps
+                   3  block input operations
+                   4  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   9  voluntary context switches
+              168455  involuntary context switches
+        382836667474  instructions retired
+        152612099562  cycles elapsed
+          2045200712  peak memory footprint

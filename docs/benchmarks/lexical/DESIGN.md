@@ -132,6 +132,21 @@ u32 values from a fixed table, preserving existing reference-returning term APIs
 Phrase verification resolves each term index once rather than repeating dictionary
 searches for presence, offsets and the rarest positional lead.
 
+### Initial block capacity and frontier scratch
+
+New posting lists reserve exactly the first nonempty run's block count; later
+growth remains amortized. Frontier construction sorts and compacts at most 128
+impact pairs on the stack, allocating only a final multi-point boxed frontier.
+Filtering, singleton fallback, encoding and score-bound invalidation are unchanged.
+
+The [paired allocation census](../../../benchmarks/results/lexical_posting_allocations_2026_10_22/)
+reopens the same saved 600,000-input diagnostic index, containing 548,246 live
+articles and 1,221,454 term lists. Block records are 56 bytes and posting lists
+64 bytes on the measured host. Requested block capacity falls from 313,582,080
+to 113,708,392 bytes, a 190.61 MiB reduction. All other recorded ownership bytes,
+posting counts and block lengths are identical. These subset measurements do not
+establish full-corpus build, reopen or query capacity under the 12 GiB Linux limit.
+
 ## Pruning experiment
 
 The first 600,000-article diagnostic run isolates scoring: union TOP_10 takes about

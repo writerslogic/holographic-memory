@@ -1,0 +1,1385 @@
+{
+  "scope": "same saved 600,000-input index; 548,246 live articles",
+  "queries": 11,
+  "k_values": [
+    0,
+    10,
+    1000
+  ],
+  "checks_per_binary": 33,
+  "executions_compared": [
+    "DocumentAtATime",
+    "BlockMaxWand"
+  ],
+  "exhaustive_comparisons_per_binary": 66,
+  "baseline_candidate_ranked_results_equal": true,
+  "comparison": "Complete result equality, including all hits, IDs, scores, ordering and counts, asserted in each binary against Exhaustive; complete reference results also compared between binaries before reducing this receipt. SHA-256 uses Python json.dumps(sort_keys=True,separators=(comma,colon)).",
+  "checks": [
+    {
+      "query": "the",
+      "k": 0,
+      "count": 496555,
+      "hits": 0,
+      "result_sha256": "3c008707f8ef7e62f7733a6e209dcaac86909f6e818ba31f7d4b119fcc85fb57",
+      "first_hits": []
+    },
+    {
+      "query": "the",
+      "k": 10,
+      "count": 496555,
+      "hits": 10,
+      "result_sha256": "a1f3a737c8a015a158ac4cb1cb90168cd241d37a9d0c142be98b8ecc4e5388ae",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "584079",
+          "score": 0.21436394820064142
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "224570",
+          "score": 0.2143254167011944
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "441494",
+          "score": 0.21432363150968334
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "454427",
+          "score": 0.21431276106120872
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "329828",
+          "score": 0.21424380008378968
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "372853",
+          "score": 0.21419008563530442
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "223607",
+          "score": 0.21414808004844993
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "344071",
+          "score": 0.2141237125376323
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "18856",
+          "score": 0.2141074434959059
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "488192",
+          "score": 0.2140653835006542
+        }
+      ]
+    },
+    {
+      "query": "the",
+      "k": 1000,
+      "count": 496555,
+      "hits": 1000,
+      "result_sha256": "b3d9343d0819e0bf9c0e334f84b85ef3292ef796e9ec6b876186c17e863f91f7",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "584079",
+          "score": 0.21436394820064142
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "224570",
+          "score": 0.2143254167011944
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "441494",
+          "score": 0.21432363150968334
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "454427",
+          "score": 0.21431276106120872
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "329828",
+          "score": 0.21424380008378968
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "372853",
+          "score": 0.21419008563530442
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "223607",
+          "score": 0.21414808004844993
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "344071",
+          "score": 0.2141237125376323
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "18856",
+          "score": 0.2141074434959059
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "488192",
+          "score": 0.2140653835006542
+        }
+      ]
+    },
+    {
+      "query": "+griffith +observatory",
+      "k": 0,
+      "count": 12,
+      "hits": 0,
+      "result_sha256": "6d22a85f450f5661c1b3192a9301561ac9001045132efc90f046823c441504c0",
+      "first_hits": []
+    },
+    {
+      "query": "+griffith +observatory",
+      "k": 10,
+      "count": 12,
+      "hits": 10,
+      "result_sha256": "862191d8abdb1edb13e7d7addd676f55000bc520c6fbb76c8542bab8fcbe149a",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "261214",
+          "score": 23.868766126299967
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "380110",
+          "score": 17.7967744747989
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "9148",
+          "score": 16.54680465118664
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254080",
+          "score": 15.556498078750316
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "217876",
+          "score": 15.115260259979927
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "239852",
+          "score": 11.6993251288356
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "416996",
+          "score": 11.685963984843049
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254466",
+          "score": 11.286387888423441
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "386571",
+          "score": 8.095649240286019
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "308645",
+          "score": 7.063603775205041
+        }
+      ]
+    },
+    {
+      "query": "+griffith +observatory",
+      "k": 1000,
+      "count": 12,
+      "hits": 12,
+      "result_sha256": "7b650ab14afec203d4fd68d56c615896cb9b369b1abb4f7a1276f152acb5de5b",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "261214",
+          "score": 23.868766126299967
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "380110",
+          "score": 17.7967744747989
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "9148",
+          "score": 16.54680465118664
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254080",
+          "score": 15.556498078750316
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "217876",
+          "score": 15.115260259979927
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "239852",
+          "score": 11.6993251288356
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "416996",
+          "score": 11.685963984843049
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254466",
+          "score": 11.286387888423441
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "386571",
+          "score": 8.095649240286019
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "308645",
+          "score": 7.063603775205041
+        }
+      ]
+    },
+    {
+      "query": "\"griffith observatory\"",
+      "k": 0,
+      "count": 8,
+      "hits": 0,
+      "result_sha256": "d6f5a19ef8efd1f141bbaaef9feda168e29183b662666104f6821fa86d2499bc",
+      "first_hits": []
+    },
+    {
+      "query": "\"griffith observatory\"",
+      "k": 10,
+      "count": 8,
+      "hits": 8,
+      "result_sha256": "50d8fd0b78b41c3959f771553b3df5fd5ac8d3992c14f17d96d6f1b8bd4cb581",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "380110",
+          "score": 15.720604928461887
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "261214",
+          "score": 14.01909455757378
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "416996",
+          "score": 11.685963984843047
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254466",
+          "score": 11.286387888423441
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "217876",
+          "score": 11.236811333664324
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254080",
+          "score": 11.236811333664324
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "308645",
+          "score": 7.06360377520504
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "386571",
+          "score": 6.218009167759855
+        }
+      ]
+    },
+    {
+      "query": "\"griffith observatory\"",
+      "k": 1000,
+      "count": 8,
+      "hits": 8,
+      "result_sha256": "50d8fd0b78b41c3959f771553b3df5fd5ac8d3992c14f17d96d6f1b8bd4cb581",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "380110",
+          "score": 15.720604928461887
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "261214",
+          "score": 14.01909455757378
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "416996",
+          "score": 11.685963984843047
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254466",
+          "score": 11.286387888423441
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "217876",
+          "score": 11.236811333664324
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254080",
+          "score": 11.236811333664324
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "308645",
+          "score": 7.06360377520504
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "386571",
+          "score": 6.218009167759855
+        }
+      ]
+    },
+    {
+      "query": "griffith observatory",
+      "k": 0,
+      "count": 2059,
+      "hits": 0,
+      "result_sha256": "2b85d54e6f35fd418ba69be32e261da95c8adce1634ed7f92c8a416dd0f3b62a",
+      "first_hits": []
+    },
+    {
+      "query": "griffith observatory",
+      "k": 10,
+      "count": 2059,
+      "hits": 10,
+      "result_sha256": "cd57ea86b38ef5355c4a72304747bf26c274192ebd8fcf2ab8f42538030736e9",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "261214",
+          "score": 23.868766126299967
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "380110",
+          "score": 17.7967744747989
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "9148",
+          "score": 16.54680465118664
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254080",
+          "score": 15.556498078750316
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "217876",
+          "score": 15.115260259979927
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "240546",
+          "score": 13.675301293907992
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254783",
+          "score": 13.43800255291409
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "57655",
+          "score": 13.266946074839769
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "559288",
+          "score": 13.186207938744467
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "585375",
+          "score": 13.171343807172985
+        }
+      ]
+    },
+    {
+      "query": "griffith observatory",
+      "k": 1000,
+      "count": 2059,
+      "hits": 1000,
+      "result_sha256": "41a68ecef589b9dc3b6b640d8ca127631c861d6c876acacbca8f796e944237ba",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "261214",
+          "score": 23.868766126299967
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "380110",
+          "score": 17.7967744747989
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "9148",
+          "score": 16.54680465118664
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254080",
+          "score": 15.556498078750316
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "217876",
+          "score": 15.115260259979927
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "240546",
+          "score": 13.675301293907992
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "254783",
+          "score": 13.43800255291409
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "57655",
+          "score": 13.266946074839769
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "559288",
+          "score": 13.186207938744467
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "585375",
+          "score": 13.171343807172985
+        }
+      ]
+    },
+    {
+      "query": "+\"the who\" +uk",
+      "k": 0,
+      "count": 103,
+      "hits": 0,
+      "result_sha256": "35cc8ad811796a8149c64b203b870587af837136e537acdb5dffe115b313af98",
+      "first_hits": []
+    },
+    {
+      "query": "+\"the who\" +uk",
+      "k": 10,
+      "count": 103,
+      "hits": 10,
+      "result_sha256": "bb7f7b60b9f8ef684799b4dce85bb9e039a855faf10b1f29d9e97ebb5aa58102",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "130412",
+          "score": 7.5166992586754775
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "265450",
+          "score": 7.430344278091578
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "466096",
+          "score": 7.305564044034405
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "214820",
+          "score": 7.219375231038971
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "242974",
+          "score": 7.1293180619683945
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "360736",
+          "score": 6.963688961372274
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "268682",
+          "score": 6.912689039007032
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "400081",
+          "score": 6.758959259738079
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "308545",
+          "score": 6.689892857865088
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "451419",
+          "score": 6.667409599477263
+        }
+      ]
+    },
+    {
+      "query": "+\"the who\" +uk",
+      "k": 1000,
+      "count": 103,
+      "hits": 103,
+      "result_sha256": "eecd746063a9779376bec23fb7b73a41d4e08f838e37f253eacb3ba17616db0d",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "130412",
+          "score": 7.5166992586754775
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "265450",
+          "score": 7.430344278091578
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "466096",
+          "score": 7.305564044034405
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "214820",
+          "score": 7.219375231038971
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "242974",
+          "score": 7.1293180619683945
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "360736",
+          "score": 6.963688961372274
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "268682",
+          "score": 6.912689039007032
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "400081",
+          "score": 6.758959259738079
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "308545",
+          "score": 6.689892857865088
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "451419",
+          "score": 6.667409599477263
+        }
+      ]
+    },
+    {
+      "query": "+climate policy",
+      "k": 0,
+      "count": 5573,
+      "hits": 0,
+      "result_sha256": "2a1ac9727c6f47bb6f6f05df80ef9924c5f6f6c6b59bc233eb0bcd084a510548",
+      "first_hits": []
+    },
+    {
+      "query": "+climate policy",
+      "k": 10,
+      "count": 5573,
+      "hits": 10,
+      "result_sha256": "1171e24a7abeb9042cc9a58a3e5573cbcc845b86a3705b797497817fd4b9c5a1",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "533305",
+          "score": 15.857225270709797
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "18985",
+          "score": 15.656719731191505
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "509937",
+          "score": 15.448784558849962
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "232100",
+          "score": 15.156220463333257
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "538370",
+          "score": 14.435144137903258
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "24189",
+          "score": 14.272988941421223
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "521383",
+          "score": 14.2654906716636
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "223699",
+          "score": 14.222108352145
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "539725",
+          "score": 14.130467727083772
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "180079",
+          "score": 14.085020741386018
+        }
+      ]
+    },
+    {
+      "query": "+climate policy",
+      "k": 1000,
+      "count": 5573,
+      "hits": 1000,
+      "result_sha256": "509862e98cb7ce109ff72b75ff9d87be7f2ca32d580135c09c361370aa327e7f",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "533305",
+          "score": 15.857225270709797
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "18985",
+          "score": 15.656719731191505
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "509937",
+          "score": 15.448784558849962
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "232100",
+          "score": 15.156220463333257
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "538370",
+          "score": 14.435144137903258
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "24189",
+          "score": 14.272988941421223
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "521383",
+          "score": 14.2654906716636
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "223699",
+          "score": 14.222108352145
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "539725",
+          "score": 14.130467727083772
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "180079",
+          "score": 14.085020741386018
+        }
+      ]
+    },
+    {
+      "query": "+python -snake -monty",
+      "k": 0,
+      "count": 317,
+      "hits": 0,
+      "result_sha256": "c1dad672a1df89d851d67557ff80f49efcc376ac4c8df768cf4ca4143aeb3ba6",
+      "first_hits": []
+    },
+    {
+      "query": "+python -snake -monty",
+      "k": 10,
+      "count": 317,
+      "hits": 10,
+      "result_sha256": "2618d379d9c90103eca9576c5f2f2fd3f15f882d4615c745837c7505f7086af4",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "260896",
+          "score": 14.35981982835215
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "598341",
+          "score": 14.041801027599124
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "191870",
+          "score": 13.99014585566499
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "292899",
+          "score": 13.67550361683472
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "265685",
+          "score": 13.579839535730402
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "462728",
+          "score": 13.504683048933131
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "568456",
+          "score": 13.504683048933131
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "126960",
+          "score": 13.451261192896247
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "437051",
+          "score": 13.376884831462036
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "54236",
+          "score": 13.167631431541938
+        }
+      ]
+    },
+    {
+      "query": "+python -snake -monty",
+      "k": 1000,
+      "count": 317,
+      "hits": 317,
+      "result_sha256": "435f0bacde7b534275bc5132d8b601647a84bdc84958ffd3b6f666ab73293425",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "260896",
+          "score": 14.35981982835215
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "598341",
+          "score": 14.041801027599124
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "191870",
+          "score": 13.99014585566499
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "292899",
+          "score": 13.67550361683472
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "265685",
+          "score": 13.579839535730402
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "462728",
+          "score": 13.504683048933131
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "568456",
+          "score": 13.504683048933131
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "126960",
+          "score": 13.451261192896247
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "437051",
+          "score": 13.376884831462036
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "54236",
+          "score": 13.167631431541938
+        }
+      ]
+    },
+    {
+      "query": "a search engine is an information retrieval software system designed to help find information stored on one or more computer systems",
+      "k": 0,
+      "count": 537005,
+      "hits": 0,
+      "result_sha256": "2ddaee8b2b98cebbeef22fe1187f745dace88585c81aa5d4e546844ea47802cc",
+      "first_hits": []
+    },
+    {
+      "query": "a search engine is an information retrieval software system designed to help find information stored on one or more computer systems",
+      "k": 10,
+      "count": 537005,
+      "hits": 10,
+      "result_sha256": "7720d6badb1393dfb30efa7d44d238e486e6461f46a92eb96e6f1e01e7d8f9fa",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "170794",
+          "score": 51.07465162156424
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "459234",
+          "score": 48.554668126478575
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "249052",
+          "score": 48.08581669121812
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "189928",
+          "score": 47.77654904695814
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "420610",
+          "score": 46.91725821243891
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "495074",
+          "score": 43.77609991101858
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "579146",
+          "score": 43.58768777058939
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "473441",
+          "score": 43.402776229011884
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "207385",
+          "score": 42.7244742301469
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "519107",
+          "score": 42.30433110106037
+        }
+      ]
+    },
+    {
+      "query": "a search engine is an information retrieval software system designed to help find information stored on one or more computer systems",
+      "k": 1000,
+      "count": 537005,
+      "hits": 1000,
+      "result_sha256": "64014e1617bfd3071cf1e4843539745226b8cb71527c71bcb057f71537b7a3ae",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "170794",
+          "score": 51.07465162156424
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "459234",
+          "score": 48.554668126478575
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "249052",
+          "score": 48.08581669121812
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "189928",
+          "score": 47.77654904695814
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "420610",
+          "score": 46.91725821243891
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "495074",
+          "score": 43.77609991101858
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "579146",
+          "score": 43.58768777058939
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "473441",
+          "score": 43.402776229011884
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "207385",
+          "score": 42.7244742301469
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "519107",
+          "score": 42.30433110106037
+        }
+      ]
+    },
+    {
+      "query": "\"the the\"",
+      "k": 0,
+      "count": 2415,
+      "hits": 0,
+      "result_sha256": "7c3a0d5cb5f77372ae81ea21b7b0959732f5c78b498dd4a97497ca0b31849aa8",
+      "first_hits": []
+    },
+    {
+      "query": "\"the the\"",
+      "k": 10,
+      "count": 2415,
+      "hits": 10,
+      "result_sha256": "9f68fc9caec0d7d6b449e0ac6c59ec63148e0d771a5575401d794646cec207d6",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "63560",
+          "score": 0.39064623406994203
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "323719",
+          "score": 0.3665559665505574
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "565353",
+          "score": 0.36571493574284986
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "91403",
+          "score": 0.3579986840830823
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "287860",
+          "score": 0.35002721732566733
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "464317",
+          "score": 0.3495884458051405
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "240193",
+          "score": 0.3406797909038724
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "430427",
+          "score": 0.3329032836153345
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "334518",
+          "score": 0.32982336347196944
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "183460",
+          "score": 0.3287169557512589
+        }
+      ]
+    },
+    {
+      "query": "\"the the\"",
+      "k": 1000,
+      "count": 2415,
+      "hits": 1000,
+      "result_sha256": "dabb16996fe91ed90de36843af90ab88055ee5aea97757929837a79ffb4f69c5",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "63560",
+          "score": 0.39064623406994203
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "323719",
+          "score": 0.3665559665505574
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "565353",
+          "score": 0.36571493574284986
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "91403",
+          "score": 0.3579986840830823
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "287860",
+          "score": 0.35002721732566733
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "464317",
+          "score": 0.3495884458051405
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "240193",
+          "score": 0.3406797909038724
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "430427",
+          "score": 0.3329032836153345
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "334518",
+          "score": 0.32982336347196944
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "183460",
+          "score": 0.3287169557512589
+        }
+      ]
+    },
+    {
+      "query": "+the -\"the the\"",
+      "k": 0,
+      "count": 494140,
+      "hits": 0,
+      "result_sha256": "3738dd3e44b04d576e61ca0128d79feadeba75a7b44f5af739e300ab7e781632",
+      "first_hits": []
+    },
+    {
+      "query": "+the -\"the the\"",
+      "k": 10,
+      "count": 494140,
+      "hits": 10,
+      "result_sha256": "174f80e58adbe74631a3ebb42896014cb5db4ae6df9a54302c3016dfc2c897c7",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "584079",
+          "score": 0.21436394820064142
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "224570",
+          "score": 0.2143254167011944
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "441494",
+          "score": 0.21432363150968334
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "454427",
+          "score": 0.21431276106120872
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "329828",
+          "score": 0.21424380008378968
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "372853",
+          "score": 0.21419008563530442
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "223607",
+          "score": 0.21414808004844993
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "344071",
+          "score": 0.2141237125376323
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "18856",
+          "score": 0.2141074434959059
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "488192",
+          "score": 0.2140653835006542
+        }
+      ]
+    },
+    {
+      "query": "+the -\"the the\"",
+      "k": 1000,
+      "count": 494140,
+      "hits": 1000,
+      "result_sha256": "3349a817f0fb77678e06f7058a2f032471b34c2b7cbcfa8de33a3369e786628b",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "584079",
+          "score": 0.21436394820064142
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "224570",
+          "score": 0.2143254167011944
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "441494",
+          "score": 0.21432363150968334
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "454427",
+          "score": 0.21431276106120872
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "329828",
+          "score": 0.21424380008378968
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "372853",
+          "score": 0.21419008563530442
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "223607",
+          "score": 0.21414808004844993
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "344071",
+          "score": 0.2141237125376323
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "18856",
+          "score": 0.2141074434959059
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "488192",
+          "score": 0.2140653835006542
+        }
+      ]
+    },
+    {
+      "query": "the \"of the\"",
+      "k": 0,
+      "count": 496555,
+      "hits": 0,
+      "result_sha256": "3c008707f8ef7e62f7733a6e209dcaac86909f6e818ba31f7d4b119fcc85fb57",
+      "first_hits": []
+    },
+    {
+      "query": "the \"of the\"",
+      "k": 10,
+      "count": 496555,
+      "hits": 10,
+      "result_sha256": "2541642c231c4c890a87501f67a6d402398e8537d0e6776d46aab9afab84bf13",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "319789",
+          "score": 0.7893885656593322
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "497882",
+          "score": 0.7882104791043079
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "339435",
+          "score": 0.7877733426369582
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "382645",
+          "score": 0.7877184473902477
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "430899",
+          "score": 0.7869119523795138
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "436282",
+          "score": 0.786266958818423
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "145098",
+          "score": 0.7861824518053249
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "541073",
+          "score": 0.7852423836876277
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "523842",
+          "score": 0.7851520347556373
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "525852",
+          "score": 0.7847498415638275
+        }
+      ]
+    },
+    {
+      "query": "the \"of the\"",
+      "k": 1000,
+      "count": 496555,
+      "hits": 1000,
+      "result_sha256": "1eddb630a233fe8337e6641d18bcdee5f57ec8dd81b4fe15fa7558f747d61c38",
+      "first_hits": [
+        {
+          "chunkIndex": 0,
+          "documentId": "319789",
+          "score": 0.7893885656593322
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "497882",
+          "score": 0.7882104791043079
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "339435",
+          "score": 0.7877733426369582
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "382645",
+          "score": 0.7877184473902477
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "430899",
+          "score": 0.7869119523795138
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "436282",
+          "score": 0.786266958818423
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "145098",
+          "score": 0.7861824518053249
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "541073",
+          "score": 0.7852423836876277
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "523842",
+          "score": 0.7851520347556373
+        },
+        {
+          "chunkIndex": 0,
+          "documentId": "525852",
+          "score": 0.7847498415638275
+        }
+      ]
+    }
+  ]
+}
