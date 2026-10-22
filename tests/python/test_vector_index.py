@@ -137,6 +137,51 @@ def test_default_traversal_codes_match_explicit_four_bits():
         np.testing.assert_array_equal(actual, expected)
 
 
+def test_omitted_patience_matches_explicit_zero_and_resets_early_stop():
+    rows = clustered(256, 16, 51)
+    probes = clustered(8, 16, 52)
+    idx = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8)
+    idx.fit(rows)
+    idx.set_query_arguments(ef=64, rerank=32)
+    expected = idx.batch_query(probes, K)
+    idx.set_query_arguments(ef=64, rerank=32, patience=0)
+    for actual, reference in zip(idx.batch_query(probes, K), expected):
+        np.testing.assert_array_equal(actual, reference)
+    idx.set_query_arguments(ef=64, rerank=32, patience=1)
+    idx.query(probes[0], K)
+    idx.set_query_arguments(ef=64, rerank=32)
+    for actual, reference in zip(idx.batch_query(probes, K), expected):
+        np.testing.assert_array_equal(actual, reference)
+
+
+@pytest.mark.parametrize("patience", [1, 4, 8, 16])
+def test_positive_patience_preserves_query_result_contract(patience):
+    rows = clustered(256, 16, 53)
+    learn = clustered(32, 16, 54)
+    probes = clustered(8, 16, 55)
+    idx = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8)
+    idx.fit(rows, training_queries=learn)
+    idx.set_query_arguments(ef=64, rerank=32, patience=patience)
+    for query, actual in zip(probes, idx.batch_query(probes, K)):
+        assert actual.dtype == np.int64
+        assert len(actual) == len(np.unique(actual)) == K
+        assert np.all((actual >= 0) & (actual < len(rows)))
+        np.testing.assert_array_equal(actual, idx.query(query, K))
+
+
+def test_negative_patience_rejects_without_changing_query_arguments():
+    rows = clustered(256, 16, 56)
+    probes = clustered(8, 16, 57)
+    idx = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1)
+    idx.fit(rows)
+    idx.set_query_arguments(ef=96, rerank=64, patience=4)
+    expected = idx.batch_query(probes, K)
+    with pytest.raises(OverflowError):
+        idx.set_query_arguments(ef=1, rerank=1, patience=-1)
+    for actual, reference in zip(idx.batch_query(probes, K), expected):
+        np.testing.assert_array_equal(actual, reference)
+
+
 @pytest.mark.parametrize("code_bits", [3, 4, 5, 7, 8, 9])
 def test_traversal_code_width_boundaries(code_bits):
     if code_bits in (4, 8):

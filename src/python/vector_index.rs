@@ -126,6 +126,7 @@ struct PyVectorIndex {
     pool: Option<rayon::ThreadPool>,
     ef: usize,
     rerank: usize,
+    patience: usize,
     dim: usize,
     built: Option<Built>,
     query_buf: Vec<f32>,
@@ -143,6 +144,7 @@ impl PyVectorIndex {
         VSearchParams {
             ef: self.ef,
             rerank: self.rerank,
+            patience: self.patience,
             ..VSearchParams::default()
         }
     }
@@ -228,6 +230,7 @@ impl PyVectorIndex {
             pool,
             ef: 64,
             rerank: 64,
+            patience: 0,
             dim: 0,
             built: None,
             query_buf: Vec::new(),
@@ -325,13 +328,16 @@ impl PyVectorIndex {
 
     /// Search effort: `ef` is the candidate pool size, `rerank` how many of the best pool
     /// candidates are re-scored with the residual code (0 returns the pool order).
-    #[pyo3(signature = (ef, rerank=64))]
-    fn set_query_arguments(&mut self, ef: usize, rerank: usize) -> PyResult<()> {
+    /// `patience` stops after that many expansions without improving the estimated top k
+    /// (0 disables this early stop).
+    #[pyo3(signature = (ef, rerank=64, patience=0))]
+    fn set_query_arguments(&mut self, ef: usize, rerank: usize, patience: usize) -> PyResult<()> {
         if ef == 0 {
             return Err(PyValueError::new_err("ef must be positive"));
         }
         self.ef = ef;
         self.rerank = rerank;
+        self.patience = patience;
         Ok(())
     }
 

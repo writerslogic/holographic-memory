@@ -26,6 +26,7 @@ class HMS(BaseANN):
         self.query_aware = bool(query_aware)
         self.ef = None
         self.rerank = None
+        self.patience = 0
         self.index = None
 
     def fit(self, X):
@@ -42,12 +43,22 @@ class HMS(BaseANN):
         learning = None if queries is None else np.ascontiguousarray(queries, dtype=np.float32)
         self.index.fit(np.ascontiguousarray(X, dtype=np.float32), training_queries=learning)
 
-    def set_query_arguments(self, ef, rerank=None):
+    def set_query_arguments(self, ef, rerank=None, patience=0):
         if rerank is None:
-            ef, rerank = ef
+            arguments = tuple(ef)
+            if len(arguments) == 2:
+                ef, rerank = arguments
+            elif len(arguments) == 3:
+                ef, rerank, patience = arguments
+            else:
+                raise ValueError("query arguments must contain ef, rerank and optional patience")
+        if patience == 0:
+            self.index.set_query_arguments(ef, rerank)
+        else:
+            self.index.set_query_arguments(ef, rerank, patience)
         self.ef = ef
         self.rerank = rerank
-        self.index.set_query_arguments(ef, rerank)
+        self.patience = patience
 
     def query(self, v, n):
         return self.index.query(v, n)
@@ -55,4 +66,5 @@ class HMS(BaseANN):
     def __str__(self):
         precision = "" if self.code_bits == 4 else f", code_bits={self.code_bits}"
         training = ", query_aware=True" if self.query_aware else ""
-        return f"HMS(metric={self.metric}, degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank}{precision}{training})"
+        early_stop = f", patience={self.patience}" if self.patience > 0 else ""
+        return f"HMS(metric={self.metric}, degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank}{precision}{training}{early_stop})"

@@ -21,6 +21,8 @@ struct Args {
     rerank: usize,
     #[arg(long, default_value_t = 2000)]
     ef: usize,
+    #[arg(long, default_value_t = 0)]
+    patience: usize,
     #[arg(long)]
     training: Option<PathBuf>,
     #[arg(long, default_value_t = 8192)]
@@ -186,6 +188,7 @@ fn main() -> Result<()> {
     let settings = VSearchParams {
         ef: args.ef,
         rerank: args.rerank,
+        patience: args.patience,
         ..Default::default()
     };
     let mut rows = Vec::new();
@@ -245,7 +248,7 @@ fn main() -> Result<()> {
             "cache_hit": cache_hit, "graph_seconds": graph_seconds, "encoding_seconds": encoding_seconds,
             "base_graph_hash": base_graph_hash, "projection_seconds": projection_seconds, "projection": projection,
             "index_bytes": index.index_bytes(), "graph_cache_bytes": fs::metadata(&args.graph)?.len()},
-        "search": {"ef": args.ef, "rerank": args.rerank, "bits": args.bits, "residual_bits": 8, "rotation": false,
+        "search": {"ef": args.ef, "rerank": args.rerank, "patience": args.patience, "bits": args.bits, "residual_bits": 8, "rotation": false,
             "exact_f32_rerank": false, "knobs": "OFF", "k": 100},
         "aggregate": aggregate, "queries": rows});
     fs::write(&args.out, serde_json::to_vec_pretty(&report)?)?;
