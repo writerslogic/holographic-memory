@@ -1,0 +1,1326 @@
+{
+  "suite": "bemula",
+  "paper": "arXiv 2610.18052v1",
+  "suite_repo": "https://github.com/Nboxff/bemula-benchmark",
+  "suite_commit": "862aff6be384835a7cedc8169fd88d3b5e8dc2c3",
+  "split": "data/full (50 dialogues, 135 forget requests, 1742 items)",
+  "date": "2026-10-22",
+  "hms_sha": "ec2da79f6ca627440926cfa25af7f4a99a28bb0c",
+  "hms_surface": "hms-server memory API (remember, recall k=5 hybrid with embedding, get, forget ids + purge)",
+  "agent_model": "deepseek/deepseek-v4-flash-0731 via OpenRouter, provider pinned to DeepSeek (no fallbacks), reasoning off, temperature 0",
+  "judge_model": "deepseek/deepseek-v4-flash-0731 via OpenRouter, provider pinned to DeepSeek (no fallbacks), reasoning off, temperature 0",
+  "embedding_model": "openai/text-embedding-3-small via OpenRouter",
+  "model_notes": "The published DeepSeek rows record agent deepseek-deepseek-v4-flash-0731 and judge alias deepseek-flash (rejudged 2026-09-24, before deepseek-v4.1-flash-1017 existed). The paper text names DeepSeek-V4.1-Flash. The DeepSeek API account was unfunded, so both roles used the dated 0731 snapshot through OpenRouter. same_day_rag is Bemula's own Naive RAG baseline rerun with these models as a drift control.",
+  "guarantee_mapping": {
+    "engine": "a purged fact is never returned by recall and the store matches one that never held it (docs/memory-api/README.md, tests/forget_equivalence.rs); checked on every probe as purged_ids_returned_by_recall",
+    "adapter_policy": "request detection (regex screen + agent-model classifier) and which stored facts a request covers (agent-model review of every stored fact)",
+    "outside_any_storage_guarantee": "F4 inferential targets and multihop attacks answerable from facts never covered; agent-model guesses on enumeration (yes/no) and jailbreak probes"
+  },
+  "deviations": [
+    "Judge snapshot inferred: the authors' run_meta records the alias deepseek-flash (rejudged 2026-09-24, before deepseek-v4.1-flash-1017 existed); the paper text says DeepSeek-V4.1-Flash. Models are served through OpenRouter (a third party) pinned to DeepSeek's deployment."
+  ],
+  "run_history": "A first run was stopped and not published: OpenRouter ignored Bemula's DeepSeek thinking switch (reasoning was on, provider unpinned), a failed forget-review call was treated as flagging nothing, the request screen missed typographic apostrophes, and its log could not separate control and forget copies. The adapter fixes are error handling only; prompts, k and batch sizes are unchanged.",
+  "hms": {
+    "RA": 0.7991071428571429,
+    "FE": 0.5178571428571429,
+    "PR": 0.7266666666666667,
+    "RLA": 0.6842105263157895,
+    "AR": {
+      "average": 0.40291262135922334,
+      "by_attack_type": {
+        "enumeration": 0.558252427184466,
+        "indirect": 0.3883495145631068,
+        "jailbreak": 0.32524271844660196,
+        "multihop": 0.39805825242718446,
+        "roleplay": 0.3446601941747573
+      }
+    },
+    "FA": 0.45678351428019953,
+    "UG": 0.7051191264291023,
+    "bemula_score": 0.3220867925564697,
+    "request_pass_rate": 0.022222222222222223,
+    "by_forget_type": {
+      "F1": {
+        "RA": 0.7692307692307693,
+        "FE": 0.5641025641025641,
+        "PR": null,
+        "RLA": 0.625,
+        "AR": {
+          "average": 0.44375,
+          "by_attack_type": {
+            "enumeration": 0.65625,
+            "indirect": 0.46875,
+            "jailbreak": 0.28125,
+            "multihop": 0.4375,
+            "roleplay": 0.375
+          }
+        },
+        "FA": 0.5003204101578436,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F2": {
+        "RA": 0.82,
+        "FE": 0.48,
+        "PR": null,
+        "RLA": 0.8260869565217391,
+        "AR": {
+          "average": 0.4222222222222222,
+          "by_attack_type": {
+            "enumeration": 0.5333333333333333,
+            "indirect": 0.37777777777777777,
+            "jailbreak": 0.4,
+            "multihop": 0.4666666666666667,
+            "roleplay": 0.3333333333333333
+          }
+        },
+        "FA": 0.4501851470969102,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F3": {
+        "RA": 0.8481012658227848,
+        "FE": 0.5443037974683544,
+        "PR": null,
+        "RLA": 0.6923076923076923,
+        "AR": {
+          "average": 0.47027027027027024,
+          "by_attack_type": {
+            "enumeration": 0.6486486486486487,
+            "indirect": 0.47297297297297297,
+            "jailbreak": 0.35135135135135137,
+            "multihop": 0.4594594594594595,
+            "roleplay": 0.4189189189189189
+          }
+        },
+        "FA": 0.5059346735939112,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F4": {
+        "RA": 0.23076923076923078,
+        "FE": 0.15384615384615385,
+        "PR": null,
+        "RLA": 0.8461538461538461,
+        "AR": {
+          "average": 0.10769230769230771,
+          "by_attack_type": {
+            "enumeration": 0.3076923076923077,
+            "indirect": 0.15384615384615385,
+            "jailbreak": 0.0,
+            "multihop": 0.0,
+            "roleplay": 0.07692307692307693
+          }
+        },
+        "FA": 0.12871692715908856,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F5": {
+        "RA": 0.8636363636363636,
+        "FE": 0.36363636363636365,
+        "PR": null,
+        "RLA": 0.5,
+        "AR": {
+          "average": 0.35238095238095235,
+          "by_attack_type": {
+            "enumeration": 0.42857142857142855,
+            "indirect": 0.2857142857142857,
+            "jailbreak": 0.38095238095238093,
+            "multihop": 0.2857142857142857,
+            "roleplay": 0.38095238095238093
+          }
+        },
+        "FA": 0.35796442300671183,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F6": {
+        "RA": 0.9047619047619048,
+        "FE": 0.8095238095238095,
+        "PR": null,
+        "RLA": null,
+        "AR": {
+          "average": 0.2952380952380952,
+          "by_attack_type": {
+            "enumeration": 0.42857142857142855,
+            "indirect": 0.23809523809523808,
+            "jailbreak": 0.2857142857142857,
+            "multihop": 0.3333333333333333,
+            "roleplay": 0.19047619047619047
+          }
+        },
+        "FA": 0.4888785816270704,
+        "UG": null,
+        "bemula_score": null
+      }
+    },
+    "suite_pass_rates": {
+      "retention": 0.4,
+      "efficacy": 0.08,
+      "preservation": 0.42,
+      "relearning": 0.5102040816326531,
+      "attack": 0.02
+    }
+  },
+  "hms_items": 1742,
+  "same_day_rag": {
+    "RA": 0.71875,
+    "FE": 0.09821428571428571,
+    "PR": 0.66,
+    "RLA": 0.7368421052631579,
+    "AR": {
+      "average": 0.11650485436893203,
+      "by_attack_type": {
+        "enumeration": 0.09223300970873786,
+        "indirect": 0.02912621359223301,
+        "jailbreak": 0.28640776699029125,
+        "multihop": 0.07281553398058252,
+        "roleplay": 0.10194174757281553
+      }
+    },
+    "FA": 0.10696934632917758,
+    "UG": 0.6973634557916584,
+    "bemula_score": 0.07459651301989002,
+    "request_pass_rate": 0.0,
+    "by_forget_type": {
+      "F1": {
+        "RA": 0.6923076923076923,
+        "FE": 0.02564102564102564,
+        "PR": null,
+        "RLA": 0.71875,
+        "AR": {
+          "average": 0.14375,
+          "by_attack_type": {
+            "enumeration": 0.09375,
+            "indirect": 0.03125,
+            "jailbreak": 0.21875,
+            "multihop": 0.1875,
+            "roleplay": 0.1875
+          }
+        },
+        "FA": 0.06071159226949525,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F2": {
+        "RA": 0.78,
+        "FE": 0.04,
+        "PR": null,
+        "RLA": 0.8695652173913043,
+        "AR": {
+          "average": 0.1511111111111111,
+          "by_attack_type": {
+            "enumeration": 0.13333333333333333,
+            "indirect": 0.06666666666666667,
+            "jailbreak": 0.3111111111111111,
+            "multihop": 0.08888888888888889,
+            "roleplay": 0.15555555555555556
+          }
+        },
+        "FA": 0.077746025264604,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F3": {
+        "RA": 0.7088607594936709,
+        "FE": 0.0,
+        "PR": null,
+        "RLA": 0.6923076923076923,
+        "AR": {
+          "average": 0.0945945945945946,
+          "by_attack_type": {
+            "enumeration": 0.02702702702702703,
+            "indirect": 0.0,
+            "jailbreak": 0.36486486486486486,
+            "multihop": 0.04054054054054054,
+            "roleplay": 0.04054054054054054
+          }
+        },
+        "FA": 0.0,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F4": {
+        "RA": 0.15384615384615385,
+        "FE": 0.0,
+        "PR": null,
+        "RLA": 0.7692307692307693,
+        "AR": {
+          "average": 0.06153846153846154,
+          "by_attack_type": {
+            "enumeration": 0.07692307692307693,
+            "indirect": 0.07692307692307693,
+            "jailbreak": 0.0,
+            "multihop": 0.07692307692307693,
+            "roleplay": 0.07692307692307693
+          }
+        },
+        "FA": 0.0,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F5": {
+        "RA": 0.8181818181818182,
+        "FE": 0.045454545454545456,
+        "PR": null,
+        "RLA": 0.65,
+        "AR": {
+          "average": 0.11428571428571428,
+          "by_attack_type": {
+            "enumeration": 0.23809523809523808,
+            "indirect": 0.0,
+            "jailbreak": 0.2857142857142857,
+            "multihop": 0.0,
+            "roleplay": 0.047619047619047616
+          }
+        },
+        "FA": 0.07207499701564472,
+        "UG": null,
+        "bemula_score": null
+      },
+      "F6": {
+        "RA": 0.9047619047619048,
+        "FE": 0.8571428571428571,
+        "PR": null,
+        "RLA": null,
+        "AR": {
+          "average": 0.11428571428571428,
+          "by_attack_type": {
+            "enumeration": 0.09523809523809523,
+            "indirect": 0.047619047619047616,
+            "jailbreak": 0.23809523809523808,
+            "multihop": 0.047619047619047616,
+            "roleplay": 0.14285714285714285
+          }
+        },
+        "FA": 0.31298431857438064,
+        "UG": null,
+        "bemula_score": null
+      }
+    },
+    "suite_pass_rates": {
+      "retention": 0.3,
+      "efficacy": 0.02,
+      "preservation": 0.3,
+      "relearning": 0.5510204081632653,
+      "attack": 0.0
+    }
+  },
+  "published_deepseek": {
+    "amem": {
+      "RA": 0.7321428571428571,
+      "FE": 0.29464285714285715,
+      "PR": 0.54,
+      "RLA": 0.9298245614035088,
+      "AR": {
+        "average": 0.2116504854368932,
+        "by_attack_type": {
+          "enumeration": 0.22330097087378642,
+          "indirect": 0.17475728155339806,
+          "jailbreak": 0.25728155339805825,
+          "multihop": 0.20388349514563106,
+          "roleplay": 0.19902912621359223
+        }
+      },
+      "FA": 0.24972245342539562,
+      "UG": 0.7085938633363223,
+      "bemula_score": 0.1769517980345259,
+      "request_pass_rate": 0.0,
+      "by_forget_type": {
+        "F1": {
+          "RA": 0.6666666666666666,
+          "FE": 0.358974358974359,
+          "PR": null,
+          "RLA": 0.875,
+          "AR": {
+            "average": 0.3375,
+            "by_attack_type": {
+              "enumeration": 0.40625,
+              "indirect": 0.375,
+              "jailbreak": 0.3125,
+              "multihop": 0.34375,
+              "roleplay": 0.25
+            }
+          },
+          "FA": 0.34807161066919284,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F2": {
+          "RA": 0.78,
+          "FE": 0.3,
+          "PR": null,
+          "RLA": 0.9565217391304348,
+          "AR": {
+            "average": 0.36444444444444446,
+            "by_attack_type": {
+              "enumeration": 0.4666666666666667,
+              "indirect": 0.3333333333333333,
+              "jailbreak": 0.4,
+              "multihop": 0.3333333333333333,
+              "roleplay": 0.28888888888888886
+            }
+          },
+          "FA": 0.3306559138036599,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F3": {
+          "RA": 0.7848101265822784,
+          "FE": 0.10126582278481013,
+          "PR": null,
+          "RLA": 0.9230769230769231,
+          "AR": {
+            "average": 0.12702702702702703,
+            "by_attack_type": {
+              "enumeration": 0.05405405405405406,
+              "indirect": 0.06756756756756757,
+              "jailbreak": 0.24324324324324326,
+              "multihop": 0.13513513513513514,
+              "roleplay": 0.13513513513513514
+            }
+          },
+          "FA": 0.11341735496739555,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F4": {
+          "RA": 0.3076923076923077,
+          "FE": 0.3076923076923077,
+          "PR": null,
+          "RLA": 1.0,
+          "AR": {
+            "average": 0.10769230769230771,
+            "by_attack_type": {
+              "enumeration": 0.23076923076923078,
+              "indirect": 0.07692307692307693,
+              "jailbreak": 0.07692307692307693,
+              "multihop": 0.0,
+              "roleplay": 0.15384615384615385
+            }
+          },
+          "FA": 0.18203322409537281,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F5": {
+          "RA": 0.8181818181818182,
+          "FE": 0.18181818181818182,
+          "PR": null,
+          "RLA": 0.95,
+          "AR": {
+            "average": 0.17142857142857143,
+            "by_attack_type": {
+              "enumeration": 0.09523809523809523,
+              "indirect": 0.09523809523809523,
+              "jailbreak": 0.23809523809523808,
+              "multihop": 0.14285714285714285,
+              "roleplay": 0.2857142857142857
+            }
+          },
+          "FA": 0.1765469659009499,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F6": {
+          "RA": 0.7142857142857143,
+          "FE": 1.0,
+          "PR": null,
+          "RLA": null,
+          "AR": {
+            "average": 0.09523809523809523,
+            "by_attack_type": {
+              "enumeration": 0.14285714285714285,
+              "indirect": 0.047619047619047616,
+              "jailbreak": 0.047619047619047616,
+              "multihop": 0.14285714285714285,
+              "roleplay": 0.09523809523809523
+            }
+          },
+          "FA": 0.3086066999241838,
+          "UG": null,
+          "bemula_score": null
+        }
+      },
+      "suite_pass_rates": {
+        "retention": 0.4,
+        "efficacy": 0.06,
+        "preservation": 0.16,
+        "relearning": 0.8367346938775511,
+        "attack": 0.0
+      }
+    },
+    "fullcontext": {
+      "RA": 0.75,
+      "FE": 0.5357142857142857,
+      "PR": 0.46,
+      "RLA": 1.0,
+      "AR": {
+        "average": 0.329126213592233,
+        "by_attack_type": {
+          "enumeration": 0.36893203883495146,
+          "indirect": 0.33980582524271846,
+          "jailbreak": 0.2524271844660194,
+          "multihop": 0.3737864077669903,
+          "roleplay": 0.3106796116504854
+        }
+      },
+      "FA": 0.4199019104795911,
+      "UG": 0.6782329983125268,
+      "bemula_score": 0.28479133174173127,
+      "request_pass_rate": 0.007407407407407408,
+      "by_forget_type": {
+        "F1": {
+          "RA": 0.6666666666666666,
+          "FE": 0.5384615384615384,
+          "PR": null,
+          "RLA": 1.0,
+          "AR": {
+            "average": 0.3625,
+            "by_attack_type": {
+              "enumeration": 0.46875,
+              "indirect": 0.4375,
+              "jailbreak": 0.3125,
+              "multihop": 0.4375,
+              "roleplay": 0.15625
+            }
+          },
+          "FA": 0.4418057352415286,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F2": {
+          "RA": 0.82,
+          "FE": 0.68,
+          "PR": null,
+          "RLA": 1.0,
+          "AR": {
+            "average": 0.36444444444444446,
+            "by_attack_type": {
+              "enumeration": 0.37777777777777777,
+              "indirect": 0.35555555555555557,
+              "jailbreak": 0.3333333333333333,
+              "multihop": 0.4666666666666667,
+              "roleplay": 0.28888888888888886
+            }
+          },
+          "FA": 0.49781745873585254,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F3": {
+          "RA": 0.6962025316455697,
+          "FE": 0.3924050632911392,
+          "PR": null,
+          "RLA": 1.0,
+          "AR": {
+            "average": 0.3081081081081081,
+            "by_attack_type": {
+              "enumeration": 0.24324324324324326,
+              "indirect": 0.35135135135135137,
+              "jailbreak": 0.28378378378378377,
+              "multihop": 0.2702702702702703,
+              "roleplay": 0.3918918918918919
+            }
+          },
+          "FA": 0.3477113481936926,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F4": {
+          "RA": 0.6923076923076923,
+          "FE": 0.6153846153846154,
+          "PR": null,
+          "RLA": 1.0,
+          "AR": {
+            "average": 0.15384615384615385,
+            "by_attack_type": {
+              "enumeration": 0.38461538461538464,
+              "indirect": 0.07692307692307693,
+              "jailbreak": 0.0,
+              "multihop": 0.23076923076923078,
+              "roleplay": 0.07692307692307693
+            }
+          },
+          "FA": 0.3076923076923077,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F5": {
+          "RA": 0.9090909090909091,
+          "FE": 0.5,
+          "PR": null,
+          "RLA": 1.0,
+          "AR": {
+            "average": 0.4095238095238095,
+            "by_attack_type": {
+              "enumeration": 0.2857142857142857,
+              "indirect": 0.5238095238095238,
+              "jailbreak": 0.14285714285714285,
+              "multihop": 0.5714285714285714,
+              "roleplay": 0.5238095238095238
+            }
+          },
+          "FA": 0.4525062483125562,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F6": {
+          "RA": 0.8095238095238095,
+          "FE": 0.7142857142857143,
+          "PR": null,
+          "RLA": null,
+          "AR": {
+            "average": 0.30476190476190473,
+            "by_attack_type": {
+              "enumeration": 0.7142857142857143,
+              "indirect": 0.09523809523809523,
+              "jailbreak": 0.14285714285714285,
+              "multihop": 0.3333333333333333,
+              "roleplay": 0.23809523809523808
+            }
+          },
+          "FA": 0.46656947481584343,
+          "UG": null,
+          "bemula_score": null
+        }
+      },
+      "suite_pass_rates": {
+        "retention": 0.38,
+        "efficacy": 0.18,
+        "preservation": 0.16,
+        "relearning": 1.0,
+        "attack": 0.0
+      }
+    },
+    "langmem": {
+      "RA": 0.9196428571428571,
+      "FE": 0.40625,
+      "PR": 0.74,
+      "RLA": 0.8947368421052632,
+      "AR": {
+        "average": 0.3572815533980583,
+        "by_attack_type": {
+          "enumeration": 0.3446601941747573,
+          "indirect": 0.30097087378640774,
+          "jailbreak": 0.46601941747572817,
+          "multihop": 0.27184466019417475,
+          "roleplay": 0.4029126213592233
+        }
+      },
+      "FA": 0.3809798302639671,
+      "UG": 0.8136985087597831,
+      "bemula_score": 0.3100027197533453,
+      "request_pass_rate": 0.014814814814814815,
+      "by_forget_type": {
+        "F1": {
+          "RA": 0.8717948717948718,
+          "FE": 0.4358974358974359,
+          "PR": null,
+          "RLA": 0.90625,
+          "AR": {
+            "average": 0.53125,
+            "by_attack_type": {
+              "enumeration": 0.59375,
+              "indirect": 0.53125,
+              "jailbreak": 0.5625,
+              "multihop": 0.40625,
+              "roleplay": 0.5625
+            }
+          },
+          "FA": 0.4812177395114532,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F2": {
+          "RA": 0.94,
+          "FE": 0.32,
+          "PR": null,
+          "RLA": 0.9565217391304348,
+          "AR": {
+            "average": 0.3422222222222222,
+            "by_attack_type": {
+              "enumeration": 0.26666666666666666,
+              "indirect": 0.24444444444444444,
+              "jailbreak": 0.4666666666666667,
+              "multihop": 0.26666666666666666,
+              "roleplay": 0.4666666666666667
+            }
+          },
+          "FA": 0.3309246305597562,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F3": {
+          "RA": 0.9620253164556962,
+          "FE": 0.35443037974683544,
+          "PR": null,
+          "RLA": 0.8076923076923077,
+          "AR": {
+            "average": 0.34594594594594597,
+            "by_attack_type": {
+              "enumeration": 0.3108108108108108,
+              "indirect": 0.2972972972972973,
+              "jailbreak": 0.47297297297297297,
+              "multihop": 0.2702702702702703,
+              "roleplay": 0.3783783783783784
+            }
+          },
+          "FA": 0.3501624665687341,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F4": {
+          "RA": 0.6923076923076923,
+          "FE": 0.3076923076923077,
+          "PR": null,
+          "RLA": 0.9230769230769231,
+          "AR": {
+            "average": 0.3230769230769231,
+            "by_attack_type": {
+              "enumeration": 0.38461538461538464,
+              "indirect": 0.3076923076923077,
+              "jailbreak": 0.46153846153846156,
+              "multihop": 0.15384615384615385,
+              "roleplay": 0.3076923076923077
+            }
+          },
+          "FA": 0.3152907927987569,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F5": {
+          "RA": 0.9090909090909091,
+          "FE": 0.3181818181818182,
+          "PR": null,
+          "RLA": 0.9,
+          "AR": {
+            "average": 0.34285714285714286,
+            "by_attack_type": {
+              "enumeration": 0.2857142857142857,
+              "indirect": 0.3333333333333333,
+              "jailbreak": 0.47619047619047616,
+              "multihop": 0.2857142857142857,
+              "roleplay": 0.3333333333333333
+            }
+          },
+          "FA": 0.3302891295379082,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F6": {
+          "RA": 0.9523809523809523,
+          "FE": 0.9047619047619048,
+          "PR": null,
+          "RLA": null,
+          "AR": {
+            "average": 0.2,
+            "by_attack_type": {
+              "enumeration": 0.2857142857142857,
+              "indirect": 0.047619047619047616,
+              "jailbreak": 0.2857142857142857,
+              "multihop": 0.14285714285714285,
+              "roleplay": 0.23809523809523808
+            }
+          },
+          "FA": 0.42538497969766276,
+          "UG": null,
+          "bemula_score": null
+        }
+      },
+      "suite_pass_rates": {
+        "retention": 0.7,
+        "efficacy": 0.16,
+        "preservation": 0.4,
+        "relearning": 0.7551020408163265,
+        "attack": 0.02
+      }
+    },
+    "lightmem": {
+      "RA": 0.9464285714285714,
+      "FE": 0.12946428571428573,
+      "PR": 0.94,
+      "RLA": 0.8245614035087719,
+      "AR": {
+        "average": 0.10388349514563107,
+        "by_attack_type": {
+          "enumeration": 0.02912621359223301,
+          "indirect": 0.0970873786407767,
+          "jailbreak": 0.17475728155339806,
+          "multihop": 0.0970873786407767,
+          "roleplay": 0.12135922330097088
+        }
+      },
+      "FA": 0.11597069671487102,
+      "UG": 0.8803906628867924,
+      "bemula_score": 0.10209951855624845,
+      "request_pass_rate": 0.0,
+      "by_forget_type": {
+        "F1": {
+          "RA": 0.9487179487179487,
+          "FE": 0.10256410256410256,
+          "PR": null,
+          "RLA": 0.78125,
+          "AR": {
+            "average": 0.14375,
+            "by_attack_type": {
+              "enumeration": 0.0625,
+              "indirect": 0.15625,
+              "jailbreak": 0.125,
+              "multihop": 0.125,
+              "roleplay": 0.25
+            }
+          },
+          "FA": 0.1214231845389905,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F2": {
+          "RA": 0.96,
+          "FE": 0.04,
+          "PR": null,
+          "RLA": 0.8695652173913043,
+          "AR": {
+            "average": 0.08444444444444445,
+            "by_attack_type": {
+              "enumeration": 0.022222222222222223,
+              "indirect": 0.1111111111111111,
+              "jailbreak": 0.08888888888888889,
+              "multihop": 0.08888888888888889,
+              "roleplay": 0.1111111111111111
+            }
+          },
+          "FA": 0.058118652580542315,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F3": {
+          "RA": 0.9493670886075949,
+          "FE": 0.0,
+          "PR": null,
+          "RLA": 0.8846153846153846,
+          "AR": {
+            "average": 0.11081081081081082,
+            "by_attack_type": {
+              "enumeration": 0.013513513513513514,
+              "indirect": 0.06756756756756757,
+              "jailbreak": 0.25675675675675674,
+              "multihop": 0.12162162162162163,
+              "roleplay": 0.0945945945945946
+            }
+          },
+          "FA": 0.0,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F4": {
+          "RA": 0.7692307692307693,
+          "FE": 0.23076923076923078,
+          "PR": null,
+          "RLA": 0.9230769230769231,
+          "AR": {
+            "average": 0.13846153846153847,
+            "by_attack_type": {
+              "enumeration": 0.07692307692307693,
+              "indirect": 0.3076923076923077,
+              "jailbreak": 0.15384615384615385,
+              "multihop": 0.07692307692307693,
+              "roleplay": 0.07692307692307693
+            }
+          },
+          "FA": 0.1787530775172654,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F5": {
+          "RA": 0.9545454545454546,
+          "FE": 0.0,
+          "PR": null,
+          "RLA": 0.7,
+          "AR": {
+            "average": 0.07619047619047618,
+            "by_attack_type": {
+              "enumeration": 0.0,
+              "indirect": 0.0,
+              "jailbreak": 0.3333333333333333,
+              "multihop": 0.047619047619047616,
+              "roleplay": 0.0
+            }
+          },
+          "FA": 0.0,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F6": {
+          "RA": 1.0,
+          "FE": 0.9523809523809523,
+          "PR": null,
+          "RLA": null,
+          "AR": {
+            "average": 0.06666666666666667,
+            "by_attack_type": {
+              "enumeration": 0.047619047619047616,
+              "indirect": 0.047619047619047616,
+              "jailbreak": 0.0,
+              "multihop": 0.047619047619047616,
+              "roleplay": 0.19047619047619047
+            }
+          },
+          "FA": 0.25197631533948484,
+          "UG": null,
+          "bemula_score": null
+        }
+      },
+      "suite_pass_rates": {
+        "retention": 0.78,
+        "efficacy": 0.08,
+        "preservation": 0.82,
+        "relearning": 0.6326530612244898,
+        "attack": 0.0
+      }
+    },
+    "mem0": {
+      "RA": 0.8794642857142857,
+      "FE": 0.16964285714285715,
+      "PR": 0.8666666666666667,
+      "RLA": 0.7105263157894737,
+      "AR": {
+        "average": 0.1262135922330097,
+        "by_attack_type": {
+          "enumeration": 0.08737864077669903,
+          "indirect": 0.05825242718446602,
+          "jailbreak": 0.18932038834951456,
+          "multihop": 0.13592233009708737,
+          "roleplay": 0.16019417475728157
+        }
+      },
+      "FA": 0.14632578172239946,
+      "UG": 0.7847225456708954,
+      "bemula_score": 0.11482513993048508,
+      "request_pass_rate": 0.0,
+      "by_forget_type": {
+        "F1": {
+          "RA": 0.8974358974358975,
+          "FE": 0.07692307692307693,
+          "PR": null,
+          "RLA": 0.75,
+          "AR": {
+            "average": 0.15625,
+            "by_attack_type": {
+              "enumeration": 0.125,
+              "indirect": 0.09375,
+              "jailbreak": 0.25,
+              "multihop": 0.125,
+              "roleplay": 0.1875
+            }
+          },
+          "FA": 0.10963225241337865,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F2": {
+          "RA": 0.9,
+          "FE": 0.16,
+          "PR": null,
+          "RLA": 0.782608695652174,
+          "AR": {
+            "average": 0.17777777777777776,
+            "by_attack_type": {
+              "enumeration": 0.13333333333333333,
+              "indirect": 0.044444444444444446,
+              "jailbreak": 0.24444444444444444,
+              "multihop": 0.2222222222222222,
+              "roleplay": 0.24444444444444444
+            }
+          },
+          "FA": 0.16865480854231354,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F3": {
+          "RA": 0.8860759493670886,
+          "FE": 0.0,
+          "PR": null,
+          "RLA": 0.6538461538461539,
+          "AR": {
+            "average": 0.06756756756756757,
+            "by_attack_type": {
+              "enumeration": 0.013513513513513514,
+              "indirect": 0.04054054054054054,
+              "jailbreak": 0.12162162162162163,
+              "multihop": 0.06756756756756757,
+              "roleplay": 0.0945945945945946
+            }
+          },
+          "FA": 0.0,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F4": {
+          "RA": 0.6923076923076923,
+          "FE": 0.38461538461538464,
+          "PR": null,
+          "RLA": 0.8461538461538461,
+          "AR": {
+            "average": 0.23076923076923078,
+            "by_attack_type": {
+              "enumeration": 0.46153846153846156,
+              "indirect": 0.15384615384615385,
+              "jailbreak": 0.23076923076923078,
+              "multihop": 0.15384615384615385,
+              "roleplay": 0.15384615384615385
+            }
+          },
+          "FA": 0.297921795862109,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F5": {
+          "RA": 0.9090909090909091,
+          "FE": 0.09090909090909091,
+          "PR": null,
+          "RLA": 0.55,
+          "AR": {
+            "average": 0.17142857142857143,
+            "by_attack_type": {
+              "enumeration": 0.047619047619047616,
+              "indirect": 0.09523809523809523,
+              "jailbreak": 0.3333333333333333,
+              "multihop": 0.23809523809523808,
+              "roleplay": 0.14285714285714285
+            }
+          },
+          "FA": 0.12483755678647185,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F6": {
+          "RA": 0.8571428571428571,
+          "FE": 0.9523809523809523,
+          "PR": null,
+          "RLA": null,
+          "AR": {
+            "average": 0.06666666666666667,
+            "by_attack_type": {
+              "enumeration": 0.0,
+              "indirect": 0.0,
+              "jailbreak": 0.047619047619047616,
+              "multihop": 0.09523809523809523,
+              "roleplay": 0.19047619047619047
+            }
+          },
+          "FA": 0.25197631533948484,
+          "UG": null,
+          "bemula_score": null
+        }
+      },
+      "suite_pass_rates": {
+        "retention": 0.62,
+        "efficacy": 0.06,
+        "preservation": 0.64,
+        "relearning": 0.4897959183673469,
+        "attack": 0.0
+      }
+    },
+    "rag": {
+      "RA": 0.7276785714285714,
+      "FE": 0.125,
+      "PR": 0.6466666666666666,
+      "RLA": 0.7105263157894737,
+      "AR": {
+        "average": 0.11844660194174757,
+        "by_attack_type": {
+          "enumeration": 0.08737864077669903,
+          "indirect": 0.0825242718446602,
+          "jailbreak": 0.19902912621359223,
+          "multihop": 0.07766990291262135,
+          "roleplay": 0.14563106796116504
+        }
+      },
+      "FA": 0.12167918985068255,
+      "UG": 0.6778448821157583,
+      "bemula_score": 0.08247961610027689,
+      "request_pass_rate": 0.0,
+      "by_forget_type": {
+        "F1": {
+          "RA": 0.717948717948718,
+          "FE": 0.05128205128205128,
+          "PR": null,
+          "RLA": 0.71875,
+          "AR": {
+            "average": 0.14375,
+            "by_attack_type": {
+              "enumeration": 0.125,
+              "indirect": 0.125,
+              "jailbreak": 0.125,
+              "multihop": 0.15625,
+              "roleplay": 0.1875
+            }
+          },
+          "FA": 0.08585915718078574,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F2": {
+          "RA": 0.78,
+          "FE": 0.08,
+          "PR": null,
+          "RLA": 0.8695652173913043,
+          "AR": {
+            "average": 0.1688888888888889,
+            "by_attack_type": {
+              "enumeration": 0.1111111111111111,
+              "indirect": 0.13333333333333333,
+              "jailbreak": 0.28888888888888886,
+              "multihop": 0.08888888888888889,
+              "roleplay": 0.2222222222222222
+            }
+          },
+          "FA": 0.11623730516108463,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F3": {
+          "RA": 0.7341772151898734,
+          "FE": 0.0,
+          "PR": null,
+          "RLA": 0.6153846153846154,
+          "AR": {
+            "average": 0.1,
+            "by_attack_type": {
+              "enumeration": 0.04054054054054054,
+              "indirect": 0.05405405405405406,
+              "jailbreak": 0.24324324324324326,
+              "multihop": 0.08108108108108109,
+              "roleplay": 0.08108108108108109
+            }
+          },
+          "FA": 0.0,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F4": {
+          "RA": 0.15384615384615385,
+          "FE": 0.07692307692307693,
+          "PR": null,
+          "RLA": 0.6923076923076923,
+          "AR": {
+            "average": 0.09230769230769231,
+            "by_attack_type": {
+              "enumeration": 0.15384615384615385,
+              "indirect": 0.15384615384615385,
+              "jailbreak": 0.0,
+              "multihop": 0.07692307692307693,
+              "roleplay": 0.07692307692307693
+            }
+          },
+          "FA": 0.08426500884694864,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F5": {
+          "RA": 0.7727272727272727,
+          "FE": 0.045454545454545456,
+          "PR": null,
+          "RLA": 0.65,
+          "AR": {
+            "average": 0.07619047619047618,
+            "by_attack_type": {
+              "enumeration": 0.14285714285714285,
+              "indirect": 0.0,
+              "jailbreak": 0.23809523809523808,
+              "multihop": 0.0,
+              "roleplay": 0.0
+            }
+          },
+          "FA": 0.058848988633649964,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F6": {
+          "RA": 0.9047619047619048,
+          "FE": 0.9523809523809523,
+          "PR": null,
+          "RLA": null,
+          "AR": {
+            "average": 0.09523809523809523,
+            "by_attack_type": {
+              "enumeration": 0.047619047619047616,
+              "indirect": 0.047619047619047616,
+              "jailbreak": 0.047619047619047616,
+              "multihop": 0.0,
+              "roleplay": 0.3333333333333333
+            }
+          },
+          "FA": 0.30116930096841704,
+          "UG": null,
+          "bemula_score": null
+        }
+      },
+      "suite_pass_rates": {
+        "retention": 0.3,
+        "efficacy": 0.02,
+        "preservation": 0.26,
+        "relearning": 0.5102040816326531,
+        "attack": 0.0
+      }
+    },
+    "simplemem": {
+      "RA": 0.90625,
+      "FE": 0.17857142857142858,
+      "PR": 0.8466666666666667,
+      "RLA": 0.9035087719298246,
+      "AR": {
+        "average": 0.2,
+        "by_attack_type": {
+          "enumeration": 0.12135922330097088,
+          "indirect": 0.1796116504854369,
+          "jailbreak": 0.2912621359223301,
+          "multihop": 0.16019417475728157,
+          "roleplay": 0.24757281553398058
+        }
+      },
+      "FA": 0.18898223650461363,
+      "UG": 0.8746260688053599,
+      "bemula_score": 0.165288790588075,
+      "request_pass_rate": 0.007407407407407408,
+      "by_forget_type": {
+        "F1": {
+          "RA": 0.8461538461538461,
+          "FE": 0.1282051282051282,
+          "PR": null,
+          "RLA": 0.8125,
+          "AR": {
+            "average": 0.325,
+            "by_attack_type": {
+              "enumeration": 0.21875,
+              "indirect": 0.28125,
+              "jailbreak": 0.4375,
+              "multihop": 0.34375,
+              "roleplay": 0.34375
+            }
+          },
+          "FA": 0.2041241452319315,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F2": {
+          "RA": 0.94,
+          "FE": 0.2,
+          "PR": null,
+          "RLA": 0.9565217391304348,
+          "AR": {
+            "average": 0.31555555555555553,
+            "by_attack_type": {
+              "enumeration": 0.2222222222222222,
+              "indirect": 0.3111111111111111,
+              "jailbreak": 0.4222222222222222,
+              "multihop": 0.2222222222222222,
+              "roleplay": 0.4
+            }
+          },
+          "FA": 0.25121924908555693,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F3": {
+          "RA": 0.9367088607594937,
+          "FE": 0.02531645569620253,
+          "PR": null,
+          "RLA": 0.9615384615384616,
+          "AR": {
+            "average": 0.13513513513513514,
+            "by_attack_type": {
+              "enumeration": 0.02702702702702703,
+              "indirect": 0.10810810810810811,
+              "jailbreak": 0.25675675675675674,
+              "multihop": 0.0945945945945946,
+              "roleplay": 0.1891891891891892
+            }
+          },
+          "FA": 0.05849053480392354,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F4": {
+          "RA": 0.5384615384615384,
+          "FE": 0.3076923076923077,
+          "PR": null,
+          "RLA": 1.0,
+          "AR": {
+            "average": 0.2,
+            "by_attack_type": {
+              "enumeration": 0.23076923076923078,
+              "indirect": 0.38461538461538464,
+              "jailbreak": 0.07692307692307693,
+              "multihop": 0.07692307692307693,
+              "roleplay": 0.23076923076923078
+            }
+          },
+          "FA": 0.2480694691784169,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F5": {
+          "RA": 0.9545454545454546,
+          "FE": 0.045454545454545456,
+          "PR": null,
+          "RLA": 0.85,
+          "AR": {
+            "average": 0.10476190476190475,
+            "by_attack_type": {
+              "enumeration": 0.0,
+              "indirect": 0.047619047619047616,
+              "jailbreak": 0.23809523809523808,
+              "multihop": 0.09523809523809523,
+              "roleplay": 0.14285714285714285
+            }
+          },
+          "FA": 0.06900655593423542,
+          "UG": null,
+          "bemula_score": null
+        },
+        "F6": {
+          "RA": 1.0,
+          "FE": 0.8571428571428571,
+          "PR": null,
+          "RLA": null,
+          "AR": {
+            "average": 0.08571428571428572,
+            "by_attack_type": {
+              "enumeration": 0.14285714285714285,
+              "indirect": 0.0,
+              "jailbreak": 0.09523809523809523,
+              "multihop": 0.09523809523809523,
+              "roleplay": 0.09523809523809523
+            }
+          },
+          "FA": 0.27105237087157535,
+          "UG": null,
+          "bemula_score": null
+        }
+      },
+      "suite_pass_rates": {
+        "retention": 0.68,
+        "efficacy": 0.08,
+        "preservation": 0.62,
+        "relearning": 0.7959183673469388,
+        "attack": 0.0
+      }
+    }
+  },
+  "forget_requests": {
+    "in_suite": 135,
+    "forget_events_forget_copy": 86,
+    "forget_events_control_copy": 4,
+    "facts_purged": 2851,
+    "facts_whose_review_failed": 0,
+    "classifier_failures": 0
+  },
+  "purged_ids_returned_by_recall": 0,
+  "failed_forget_items_attribution": {
+    "model": 82,
+    "policy": 255
+  }
+}
