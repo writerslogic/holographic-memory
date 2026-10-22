@@ -423,11 +423,7 @@ mod tests {
                 .all(|id| report.retained.contains(id)));
             assert_eq!(
                 report.rerank_candidates.len(),
-                if rerank == 0 {
-                    0
-                } else {
-                    rerank.max(7).min(37)
-                }
+                if rerank == 0 { 0 } else { rerank.clamp(7, 37) }
             );
             for exact in [false, true] {
                 let oracle = index

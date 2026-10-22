@@ -39,8 +39,10 @@ fn floats(path: PathBuf, expected: usize) -> Result<Vec<f32>> {
     );
     let bytes = fs::read(path)?;
     let values: Vec<_> = bytes
-        .chunks_exact(4)
-        .map(|v| f32::from_le_bytes(v.try_into().expect("four bytes")))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|v| f32::from_le_bytes(*v))
         .collect();
     ensure!(values.iter().all(|v| v.is_finite()), "nonfinite matrix");
     Ok(values)
@@ -100,11 +102,13 @@ fn main() -> Result<()> {
     let truth_bytes = fs::read(args.data.join("truth.u32"))?;
     ensure!(truth_bytes.len() == nq * 100 * 4, "truth shape mismatch");
     let truth: Vec<_> = truth_bytes
-        .chunks_exact(4)
-        .map(|v| u32::from_le_bytes(v.try_into().expect("four bytes")))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|v| u32::from_le_bytes(*v))
         .collect();
     ensure!(truth.iter().all(|&v| (v as usize) < n), "invalid truth ID");
-    for row in truth.chunks_exact(100) {
+    for row in truth.as_chunks::<100>().0 {
         let mut unique = row.to_vec();
         unique.sort_unstable();
         unique.dedup();
@@ -174,9 +178,11 @@ fn main() -> Result<()> {
             "training neighbor shape mismatch"
         );
         let ids: Vec<_> = bytes
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .take(args.training_count * 100)
-            .map(|v| u32::from_le_bytes(v.try_into().expect("four bytes")))
+            .map(|v| u32::from_le_bytes(*v))
             .collect();
         projection = json!({"input": training_meta, "stats": graph.project_diagnostic(
             Some(&transformed), &ids, 100, args.projected_degree)?});
@@ -194,7 +200,7 @@ fn main() -> Result<()> {
     let mut rows = Vec::new();
     for (i, (query, expected)) in queries
         .chunks_exact(dim)
-        .zip(truth.chunks_exact(100))
+        .zip(truth.as_chunks::<100>().0)
         .enumerate()
     {
         let mut transformed = query.to_vec();
