@@ -311,7 +311,11 @@ class QAGPair(BaseANN):
             "qag_construction_queries": self._construction_count,
             "qag_candidate_training_queries": self._training_count,
             "qag_resource_scope": "all built arms co-resident; VIBE index_size is aggregate USS delta, not per-arm peak RSS or serialized bytes",
+            "qag_thread_environment": ",".join(f"{key}={os.environ.get(key, '')}" for key in (
+                "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS", "RAYON_NUM_THREADS")),
         }
+        if hasattr(os, "sched_getaffinity"):
+            attrs["qag_cpu_affinity"] = sorted(os.sched_getaffinity(0))
         if self._training_path is not None:
             attrs["qag_candidate_training_query_file"] = self._training_path
             attrs["qag_candidate_training_query_sha256"] = self._training_sha256

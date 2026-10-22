@@ -1,0 +1,20 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+float:
+  ip:
+  - name: hms-query-aware
+    module: vibe.algorithms.hms
+    constructor: HMS
+    singularity_image: hms
+    disabled: false
+    ood: true
+    base_args: ['@metric']
+    run_groups:
+      query-aware:
+        args:
+          degree: [64]
+          build_ef: [500]
+          code_bits: [8]
+          query_aware: [true]
+        query_arg_groups:
+        - [[100, 100], [160, 200], [256, 400], [512, 400]]
