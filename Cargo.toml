@@ -5,12 +5,12 @@ edition = "2021"
 rust-version = "1.89"
 license = "Apache-2.0"
 authors = ["WritersLogic, Inc. <david@writerslogic.com>"]
-description = "A high-performance Holographic Memory System (HMS) implementing Vector Symbolic Architectures (VSA)."
+description = "Local-first search engine and agent memory: fast approximate nearest-neighbor and BM25 full-text search, encrypted stores, provable deletion, built on vector-symbolic architectures."
 repository = "https://github.com/writerslogic/holographic-memory"
-homepage = "https://github.com/writerslogic/holographic-memory"
+homepage = "https://holographic-memory.com"
 documentation = "https://docs.rs/holographic-memory"
-keywords = ["vsa", "hdc", "vector-database", "semantic-search", "neuro-symbolic"]
-categories = ["algorithms", "data-structures", "science"]
+keywords = ["vector-database", "vector-search", "full-text-search", "agent-memory", "rag"]
+categories = ["database-implementations", "text-processing", "algorithms", "data-structures", "science"]
 readme = "README.md"
 
 [lib]

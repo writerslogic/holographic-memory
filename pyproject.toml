@@ -4,18 +4,24 @@ build-backend = "maturin"
 
 [project]
 name = "holographic-vsa"
-description = "Deterministic, verifiable vector-symbolic (VSA) memory on a quantized-phase substrate."
+description = "Fast local vector search (approximate nearest neighbors: angular, Euclidean, inner product) and vector-symbolic memory, from the Holographic Memory Rust engine."
 requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
 authors = [{ name = "WritersLogic, Inc.", email = "david@writerslogic.com" }]
 readme = "README.md"
-keywords = ["vsa", "hdc", "hyperdimensional", "vector-symbolic", "holographic-memory", "resonator"]
+keywords = ["vector-search", "nearest-neighbor", "ann", "embeddings", "vector-database", "vsa", "hyperdimensional", "holographic-memory"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Rust",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Database :: Database Engines/Servers",
+    "Topic :: Text Processing :: Indexing",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
 ]
 dynamic = ["version"]
@@ -25,8 +31,9 @@ dynamic = ["version"]
 embed = ["holographic-vsa-models>=0.1.0"]
 
 [project.urls]
+Homepage = "https://holographic-memory.com"
+Documentation = "https://docs.holographic-memory.com"
 Repository = "https://github.com/writerslogic/holographic-memory"
-Documentation = "https://docs.rs/holographic-memory"
 
 [tool.maturin]
 # The import name is `holographic_memory` (matches the #[pymodule] in src/python.rs);
