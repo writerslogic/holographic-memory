@@ -291,16 +291,14 @@ impl Memory {
 
     /// Records that this process's own commit moved the store from `before` by exactly
     /// `commits` revisions and the index already reflects it; anything else (another writer
-    /// interleaved, or the change was not tracked) leaves the index to rebuild.
-    fn settle(&self, before: u64, commits: u64, apply: impl FnOnce(&mut Index)) {
+    /// interleaved, or the change was not tracked) leaves the index to rebuild. `apply`
+    /// returns false, before changing the index, when it cannot track the change.
+    fn settle(&self, before: u64, commits: u64, apply: impl FnOnce(&mut Index) -> bool) {
         let after = self.core.revision();
         let mut index = self.index.write();
-        if index.revision == Some(before) && after == before + commits {
-            apply(&mut index);
-            index.revision = Some(after);
-        } else {
-            index.revision = None;
-        }
+        index.revision =
+            (index.revision == Some(before) && after == before + commits && apply(&mut index))
+                .then_some(after);
     }
 }
 

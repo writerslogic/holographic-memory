@@ -40,6 +40,23 @@ pub struct Matches {
     pub matches: Vec<Match>,
 }
 
+/// One text search hit. `text` and `metadata` are present only when named in `include`.
+#[derive(Serialize, JsonSchema)]
+pub struct SearchHit {
+    pub id: String,
+    /// BM25 score; the fused rank score when the server runs on-device model stages.
+    pub score: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Value>,
+}
+
+#[derive(Serialize, JsonSchema)]
+pub struct SearchHits {
+    pub hits: Vec<SearchHit>,
+}
+
 #[derive(Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Maintained {

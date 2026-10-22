@@ -453,6 +453,91 @@ pub async fn delete_doc(
     ))
 }
 
+/// A lexical text query over the tenant's documents (memory facts included).
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct SearchIn {
+    /// 1..=8192 bytes with at least one word.
+    pub query: String,
+    /// 1..=`--max-top-k`, default 10.
+    #[serde(default)]
+    pub top_k: Option<i64>,
+    /// Extra fields per hit: any of `"text"` and `"metadata"`. Default: ids and scores only.
+    #[serde(default)]
+    pub include: Vec<String>,
+}
+
+/// Most chunks one text search asks the engine for (its `k` limit).
+const MAX_SEARCH_CHUNKS: u32 = 1000;
+
+/// Text ranking (BM25; the model stages when configured) of the tenant's documents by `query`: ids and scores, best first, one hit per
+/// document. The response is serialized from the engine's results without an intermediate
+/// JSON tree, and stored text or metadata is copied into it only when requested.
+pub async fn search(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
+    let (_, tenant) = admit(&state, &req, Scope::Read)?;
+    let permit = acquire(&state).await?;
+    let bytes = read_body(&state, req.into_body()).await?;
+    let out = blocking(permit, move || {
+        let q: SearchIn = parse(&bytes)?;
+        if q.query.len() > 8192 || q.query.split_whitespace().next().is_none() {
+            return Err(ApiError::bad("query requires 1..=8192 bytes with a word"));
+        }
+        let top_k = q.top_k.unwrap_or(10);
+        if top_k < 1 || top_k > i64::from(state.cfg.max_top_k) {
+            return Err(ApiError::bad(format!(
+                "top_k must be 1..={}",
+                state.cfg.max_top_k
+            )));
+        }
+        let (mut text, mut metadata) = (false, false);
+        for field in &q.include {
+            match field.as_str() {
+                "text" => text = true,
+                "metadata" => metadata = true,
+                _ => return Err(ApiError::bad("include accepts \"text\" and \"metadata\"")),
+            }
+        }
+        // The engine ranks chunks and a document longer than one chunk can rank several, of
+        // which its best one stands. Ask for more chunks than documents and widen the request
+        // until `top_k` distinct documents are found or the ranking is exhausted.
+        let core = state.core(&tenant)?;
+        let mut chunks = (top_k as u32).saturating_mul(4).min(MAX_SEARCH_CHUNKS);
+        let mut results = loop {
+            let options = SearchOptions {
+                k: Some(chunks),
+                candidate_limit: Some(chunks),
+                lexical_weight: Some(1.0),
+                semantic_weight: Some(0.0),
+                ..SearchOptions::default()
+            };
+            let mut results = core
+                .search_documents(&q.query, &options)
+                .map_err(ApiError::internal)?;
+            let exhausted = results.len() < chunks as usize || chunks == MAX_SEARCH_CHUNKS;
+            let mut seen = std::collections::HashSet::with_capacity(results.len());
+            results.retain(|hit| seen.insert(hit.document_id.clone()));
+            if exhausted || results.len() >= top_k as usize {
+                break results;
+            }
+            chunks = chunks.saturating_mul(4).min(MAX_SEARCH_CHUNKS);
+        };
+        drop(core);
+        results.truncate(top_k as usize);
+        let hits: Vec<SearchHit> = results
+            .into_iter()
+            .map(|hit| SearchHit {
+                id: hit.document_id,
+                score: hit.score,
+                text: text.then(|| hit.text.unwrap_or_default()),
+                metadata: metadata.then_some(hit.metadata),
+            })
+            .collect();
+        serde_json::to_vec(&SearchHits { hits }).map_err(ApiError::internal)
+    })
+    .await?;
+    Ok(json_bytes_response(StatusCode::OK, out))
+}
+
 #[derive(Deserialize, JsonSchema)]
 pub struct QueryIn {
     /// Query embedding: exactly `--input-dim` finite numbers.
