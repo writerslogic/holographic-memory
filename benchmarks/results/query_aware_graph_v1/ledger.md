@@ -165,7 +165,7 @@ versus Roar96/L1206363.46:24.57% deficit. At0.90 llama6399.41 versus6363.46
 Yi beats measured RoarGraph at0.90/0.95, pending the predeclared RF80 comparator.
 Neither frozen competitor qualifies at0.99; no matched high-recall victory claimed.
 
-The user's new objective is superiority at all three thresholds, replacing the
+The new objective is superiority at all three thresholds, replacing the
 old90%-of-competitor progress gate. The report now requires separated observed
 ranges for a positive superiority status; selection still uses actual recall
 and measured medians. Full points/frontiers are in pareto.json/pareto.csv.
@@ -221,7 +221,7 @@ gate receipts are in final-gate/; checks.json states the validation limit.
 
 Raw files and source copies remain intact in the local worktree, the durable
 local .qag-preserved/20261022-1948 archive, and writerslogic-02. Follow the
-concurrent hash-only publication policy. SESSION.md is retained locally and
-excluded from publication. All experiment budgets are closed. SIFT remains
+concurrent hash-only publication policy.
+All experiment budgets are closed. SIFT remains
 inconclusive; cancelled Glove and unrun Yahoo leave full ID preservation
 unverified. No new official evaluation or universal superiority is claimed.
