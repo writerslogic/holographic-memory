@@ -57,14 +57,14 @@ SERVER_FACTS = {
 
 # What a replace/delete acknowledgement means for each server, as configured here.
 DURABILITY = {
-    HMS_SERVER: "one journal frame per request, msync(MS_SYNC) of the mapped segment before the response (no drive-cache flush on macOS)",
+    HMS_SERVER: "one journal frame per request, msync(MS_SYNC) of the mapped segment before the response, then fcntl(F_FULLFSYNC) on macOS",
     "qdrant-server": "wait=true: applied to the WAL and segment before the response; WAL fsync is periodic, not per request",
     "weaviate": "acknowledged after the write-ahead log append; per-request fsync not documented",
     "opensearch-knn": "translog fsync per request (index.translog.durability=request, the default); refresh=true makes it visible",
     "opensearch-bm25": "translog fsync per request (index.translog.durability=request, the default); refresh=true makes it visible",
-    "pgvector": "autocommit; synchronous_commit=on, WAL flushed per commit with the default wal_sync_method (no drive-cache flush on macOS)",
-    "pg-tsvector": "autocommit; synchronous_commit=on, WAL flushed per commit with the default wal_sync_method (no drive-cache flush on macOS)",
-    "paradedb": "autocommit; synchronous_commit=on, WAL flushed per commit with the default wal_sync_method (no drive-cache flush on macOS)",
+    "pgvector": "autocommit; synchronous_commit=on, WAL flushed per commit (wal_sync_method=fsync_writethrough on macOS, the default elsewhere)",
+    "pg-tsvector": "autocommit; synchronous_commit=on, WAL flushed per commit (wal_sync_method=fsync_writethrough on macOS, the default elsewhere)",
+    "paradedb": "autocommit; synchronous_commit=on, WAL flushed per commit (wal_sync_method=fsync_writethrough on macOS, the default elsewhere)",
     "redis-vss": "appendonly yes, appendfsync always (plain fsync; no F_FULLFSYNC on macOS)",
     "meilisearch": "the enqueued task is polled until it succeeded (LMDB commit)",
     "typesense": "acknowledged after the write is applied; per-request fsync not documented",
