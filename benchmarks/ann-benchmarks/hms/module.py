@@ -3,12 +3,8 @@
 Copy this directory to ann_benchmarks/algorithms/hms/ in an ann-benchmarks checkout and add
 `- hms` to the library matrix in .github/workflows/benchmarks.yml. Build the image with
 `python install.py --algorithm hms`.
-
-The index is a proximity graph over unit vectors whose traversal reads 4-bit codes of the
-randomly rotated rows; the `rerank` best candidates are re-scored with an 8-bit residual code.
-Build arguments: graph out-degree and construction search width. Query arguments: candidate
-pool size `ef` and re-rank depth `rerank`.
 """
+
 import numpy as np
 from holographic_memory import VectorIndex
 
@@ -16,9 +12,16 @@ from ..base.module import BaseANN
 
 
 class HMS(BaseANN):
+    """HMS (holographic-memory) quantized graph index.
+
+    A proximity graph whose traversal reads 4-bit codes of randomly rotated rows; the `rerank`
+    best candidates are re-scored with an 8-bit residual code. Build arguments: graph out-degree
+    and construction search width. Query arguments: candidate pool size `ef` and re-rank depth.
+    """
+
     def __init__(self, metric, method_param):
-        if metric != "angular":
-            raise NotImplementedError(f"hms supports angular only, not {metric}")
+        if metric not in ("angular", "euclidean"):
+            raise NotImplementedError(f"hms does not support metric {metric}")
         self.metric = metric
         self.degree = method_param["degree"]
         self.build_ef = method_param["build_ef"]
