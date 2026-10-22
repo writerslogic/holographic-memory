@@ -2857,6 +2857,15 @@
       "9931ae910d62e4301f61fe1cce2e00837fb9b85e",
       "8e3dabbd044120c91731276773a6234846d9a290",
       "429e57b98eef32eded06a202d744ef4f5b807d98"
-    ]
+    ],
+    "followup": {
+      "branch": "feat/query-aware-graph-costs",
+      "base_commit": "fbd465dd674989c2bc917c066535f48671bd9a6f",
+      "original_pushed_commit": "72a1315c141cab6156a32d6e346eeceb4cf89b94",
+      "prior_pr": 204,
+      "prior_pr_state": "merged",
+      "integration_receipt": "final-gate/followup-integration.json",
+      "rust_retested": false
+    }
   }
 }

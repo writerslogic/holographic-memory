@@ -524,7 +524,7 @@ def render(root, checks=None):
         outcome,
         f"Regression gate: **{overall_regression}**. Formatting: **{check_status['fmt']}**. Required Rust gate: **{check_status['cargo']}**.",
         "",
-        *(["The single Rust gate passed on frozen source `2d4967e`. Concurrent diagnostic/test-only maintenance was integrated afterward and was not retested under the one-test budget; formatting passed on the merged source. [Exact source delta and receipts](final-gate/post-gate-integration.patch) preserve this verification limit.", ""]
+        *(["The single Rust gate passed on frozen source `2d4967e`. Subsequent diagnostic/test maintenance and the follow-up's newer main base were not Rust-tested under the one-test budget. Rust 1.89 formatting passes on the follow-up source. [Integration scope](final-gate/followup-integration.json), [earlier source delta](final-gate/post-gate-integration.patch) and [check receipts](checks.json) preserve this verification limit.", ""]
           if checks and (load(checks) or {}).get("cargo", {}).get("post_gate_integration_tested") is False else []),
         "Baseline SHA: `08d37778a66b58709461456e5b9a7ab6a05b399f`. Source decisions, configurations, seeds and commands are retained in [ledger.md](ledger.md); dataset/runtime fingerprints are in [provenance.json](provenance.json).",
         "",

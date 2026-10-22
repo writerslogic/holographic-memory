@@ -3,10 +3,11 @@
     "command": "cargo fmt --check",
     "status": "pass",
     "exit_code": 0,
-    "log": "final-gate/merged-fmt/fmt.txt",
-    "source_commit": "ec79af1dc69b4a668e21f17748ce32d1212262a2",
+    "log": "final-gate/followup-fmt/fmt.txt",
+    "source_commit": "e3c5c06916c3c78fa89e03463cadab51d891250e",
     "toolchain": "1.89.0",
-    "reason_for_additional_format_check": "Concurrent source maintenance integrated after the frozen one-shot test; no Rust test rerun"
+    "reason_for_additional_format_check": "Clean cherry-pick onto current main after PR #204 was merged; format only, no second Rust test.",
+    "platform": "Darwin"
   },
   "cargo": {
     "command": "cargo +1.89.0 test --all-features",
@@ -16,7 +17,7 @@
     "attempts": 1,
     "source_commit": "2d4967e711c00c51b6ab4b588b0869c06a772003",
     "post_gate_integration_tested": false,
-    "limitation": "Concurrent diagnostic/test-only maintenance commits were merged after the one-shot source freeze; no second Rust test is authorized."
+    "limitation": "Only frozen signed 2d4967e; later diagnostic/test maintenance and the newer main base are not covered by that test receipt. The sole test has been consumed; no second Rust test was run on the follow-up."
   },
   "native_python": {
     "command": "uv run --no-project --python /home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python python - /home/davidcondrey/sol-qag/v2/candidate-holographic_memory.so /home/davidcondrey/sol-qag/repo-v2/tests/python/test_vector_index.py",
@@ -63,5 +64,11 @@
     "dev_test_debug": "0 (repository CI)",
     "RUSTFLAGS": "unset",
     "target": "/home/davidcondrey/sol-qag/target-final-189"
+  },
+  "followup_integration": {
+    "receipt": "final-gate/followup-integration.json",
+    "source_commit": "e3c5c06916c3c78fa89e03463cadab51d891250e",
+    "base_commit": "fbd465dd674989c2bc917c066535f48671bd9a6f",
+    "rust_retested": false
   }
 }

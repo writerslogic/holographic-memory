@@ -3,7 +3,7 @@
 The required recall/throughput goals remain incomplete within the frozen measured configurations.
 Regression gate: **inconclusive**. Formatting: **pass**. Required Rust gate: **pass**.
 
-The single Rust gate passed on frozen source `2d4967e`. Concurrent diagnostic/test-only maintenance was integrated afterward and was not retested under the one-test budget; formatting passed on the merged source. [Exact source delta and receipts](final-gate/post-gate-integration.patch) preserve this verification limit.
+The single Rust gate passed on frozen source `2d4967e`. Subsequent diagnostic/test maintenance and the follow-up's newer main base were not Rust-tested under the one-test budget. Rust 1.89 formatting passes on the follow-up source. [Integration scope](final-gate/followup-integration.json), [earlier source delta](final-gate/post-gate-integration.patch) and [check receipts](checks.json) preserve this verification limit.
 
 Baseline SHA: `08d37778a66b58709461456e5b9a7ab6a05b399f`. Source decisions, configurations, seeds and commands are retained in [ledger.md](ledger.md); dataset/runtime fingerprints are in [provenance.json](provenance.json).
 
@@ -119,7 +119,7 @@ The separately declared exact byte-VNNI intervention was rejected by its six-poi
 
 | Check | Exact command / evidence | Status |
 |---|---|---|
-| Formatting | `cargo fmt --check` — [log](final-gate/merged-fmt/fmt.txt); source `ec79af1dc69b4a668e21f17748ce32d1212262a2` | pass |
+| Formatting | `cargo fmt --check` — [log](final-gate/followup-fmt/fmt.txt); source `e3c5c06916c3c78fa89e03463cadab51d891250e` | pass |
 | Required Rust gate | `cargo +1.89.0 test --all-features` — [log](final-gate/cargo.txt); source `2d4967e711c00c51b6ab4b588b0869c06a772003` | pass |
 | Native Python contracts | `uv run --no-project --python /home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python python - /home/davidcondrey/sol-qag/v2/candidate-holographic_memory.so /home/davidcondrey/sol-qag/repo-v2/tests/python/test_vector_index.py` — [log](logs/v2-native-python.txt) | pass |
 | Benchmark Python contracts | `uv run --no-project --with pytest python -m pytest -q benchmarks/vibe/test_qag_cost_report.py` — [log](logs/v2-cost-report-tests.txt) | pass |

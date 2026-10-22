@@ -152,3 +152,9 @@ learn/test split. The original Q_12_15/Q_31_13.npy files are absent from the
 installed VIBE data directory. The discarded endpoints have not been audited for
 padding, duplicates, validity or historical use and are not certified fresh data.
 No new final split is established by this observation.
+
+## Follow-up publication after PR #204 merged
+
+PR #204 was merged externally at head429e57b (merge917671a) while this task ran. The user authorized a new draft follow-up. Original signed research HEAD72a1315 remains pushed on feat/query-aware-graph. A separate feat/query-aware-graph-costs worktree cleanly cherry-picks only2d4967e,60df9db and72a1315 onto mainfbd465d; the original squash-merged v1 history is not reintroduced.
+
+No benchmark or Rust test was repeated. The sole947-pass/6-ignored Linux receipt covers frozen2d4967e only. Later diagnostic/test cleanup and the newer main base are outside that test scope. Rust1.89 cargo fmt --check passes on the follow-up source. The integration receipt in ../query_aware_graph_v1/final-gate/followup-integration.json records the source mapping, inherited changes and matching static query-graph files. Frozen official metrics, validation timings and source/binary hashes remain unchanged.
