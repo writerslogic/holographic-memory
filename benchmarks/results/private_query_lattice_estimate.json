@@ -1,0 +1,149 @@
+{
+  "tool": "lattice-estimator",
+  "commit": "e4333d9bf9ef42fd8a29651b0c559fba7ce0d834",
+  "sage": "passagemath-standard 10.8.13",
+  "secret": "uniform mod q",
+  "error": "discrete Gaussian",
+  "rows": [
+    {
+      "n": 1024,
+      "log_q": 32,
+      "sigma": 6.4,
+      "samples": 2097152,
+      "source": "SimplePIR Section 4.2; the previous parameter set",
+      "estimate_bits": {
+        "usvp": 123.2,
+        "bdd": 121.5,
+        "dual": 125.7,
+        "dual_hybrid": 126.3
+      },
+      "rough_bits": {
+        "usvp": 95.2,
+        "dual_hybrid": 97.8
+      },
+      "usvp_block_size": 326,
+      "estimate_min_bits": 121.5,
+      "rough_min_bits": 95.2
+    },
+    {
+      "n": 1024,
+      "log_q": 32,
+      "sigma": 11.0,
+      "samples": 2097152,
+      "source": "YPIR, s = 11*sqrt(2*pi)",
+      "estimate_bits": {
+        "usvp": 130.1,
+        "bdd": 128.4,
+        "dual": 133.0,
+        "dual_hybrid": 134.0
+      },
+      "rough_bits": {
+        "usvp": 102.5,
+        "dual_hybrid": 106.0
+      },
+      "usvp_block_size": 351,
+      "estimate_min_bits": 128.4,
+      "rough_min_bits": 102.5
+    },
+    {
+      "n": 1152,
+      "log_q": 32,
+      "sigma": 6.4,
+      "samples": 2097152,
+      "source": "candidate",
+      "estimate_bits": {
+        "usvp": 139.2,
+        "bdd": 137.5,
+        "dual": 141.9,
+        "dual_hybrid": 142.7
+      },
+      "rough_bits": {
+        "usvp": 111.8,
+        "dual_hybrid": 114.8
+      },
+      "usvp_block_size": 383,
+      "estimate_min_bits": 137.5,
+      "rough_min_bits": 111.8
+    },
+    {
+      "n": 1280,
+      "log_q": 32,
+      "sigma": 6.4,
+      "samples": 2097152,
+      "source": "candidate",
+      "estimate_bits": {
+        "usvp": 155.4,
+        "bdd": 153.7,
+        "dual": 158.6,
+        "dual_hybrid": 158.9
+      },
+      "rough_bits": {
+        "usvp": 128.8,
+        "dual_hybrid": 132.0
+      },
+      "usvp_block_size": 441,
+      "estimate_min_bits": 153.7,
+      "rough_min_bits": 128.8
+    },
+    {
+      "n": 1408,
+      "log_q": 32,
+      "sigma": 6.4,
+      "samples": 2097152,
+      "source": "candidate",
+      "estimate_bits": {
+        "usvp": 172.0,
+        "bdd": 170.3,
+        "dual": 175.8,
+        "dual_hybrid": 175.3
+      },
+      "rough_bits": {
+        "usvp": 146.0,
+        "dual_hybrid": 149.5
+      },
+      "usvp_block_size": 500,
+      "estimate_min_bits": 170.3,
+      "rough_min_bits": 146.0
+    },
+    {
+      "n": 1536,
+      "log_q": 32,
+      "sigma": 6.4,
+      "samples": 2097152,
+      "source": "candidate",
+      "estimate_bits": {
+        "usvp": 189.1,
+        "bdd": 187.1,
+        "dual": 193.2,
+        "dual_hybrid": 192.6
+      },
+      "rough_bits": {
+        "usvp": 163.8,
+        "dual_hybrid": 167.3
+      },
+      "usvp_block_size": 561,
+      "estimate_min_bits": 187.1,
+      "rough_min_bits": 163.8
+    },
+    {
+      "n": 2048,
+      "log_q": 32,
+      "sigma": 6.4,
+      "samples": 2097152,
+      "source": "candidate",
+      "estimate_bits": {
+        "usvp": 259.3,
+        "bdd": 257.1,
+        "dual": 265.1,
+        "dual_hybrid": 263.8
+      },
+      "rough_bits": {
+        "usvp": 236.8,
+        "dual_hybrid": 240.4
+      },
+      "usvp_block_size": 811,
+      "estimate_min_bits": 257.1,
+      "rough_min_bits": 236.8
+    }
+  ]
+}
