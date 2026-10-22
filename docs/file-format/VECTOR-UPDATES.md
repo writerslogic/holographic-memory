@@ -13,15 +13,21 @@ vertex codes cannot reconstruct them without accumulating error on rebuilds.
 External ids are `u32`, excluding `u32::MAX`; dense graph slots are private.
 
 A mutable delta uses the construction implementation's greedy search and Vamana
-robust prune, including reciprocal links. Slots are never reused before
-consolidation. Base deletions use a bitmap; delta deletions retain routing slots
+robust prune, including reciprocal links. A nearest-parent routing tree retains
+one incoming path per allocated delta slot, using two u32 links per slot.
+Reciprocal pruning can otherwise remove a vertex's last incoming edge, as the
+repeated-replacement regression demonstrates. Routing-tree links survive pruning
+and logical deletion until consolidation. When the beam covers the whole delta,
+live rows are scored directly rather than maintaining a full sorted search pool.
+Slots are never reused before consolidation. Base deletions use a bitmap; delta deletions retain routing slots
 but remove their external-id lookup. Replace invalidates the previous slot and
 inserts a new one in one operation. One id may occur only once between commits.
 Updates become visible when their in-memory operation completes; durability
 requires `commit`. Dropping without committing discards the pending batch.
 
 With no updates, search calls the existing vertex search unchanged, with reused
-per-thread scratch. With updates it widens the base beam and candidate count by
+per-thread scratch. `search_into` also reuses the caller's result buffer; dense
+external ids need no translation. With updates it widens the base beam and candidate count by
 the inverse live fraction, preserving routing through deleted slots,
 filters deleted answers, doubles the beam and retries when too few live candidates
 remain, searches the delta with the same compensation, and merges candidates using original
@@ -129,21 +135,28 @@ QPS was 26,465/20,175/10,068. The base benchmark uses an aggregate timer; the
 update and hnswlib workers time individual queries. These single-run differences
 of 2.9–4.6% do not isolate synchronization cost from the timing boundary or noise.
 An identically timed, 50-sample Criterion comparison on 10k 32-dimensional vectors
-measured 24.24 microseconds before and 24.58 for the clean updatable index (+1.4%).
-The final dimension-keyed scratch fix is included in that Criterion result.
+measured 24.97 microseconds before and 24.85 for the final clean updatable index
+with a reused output buffer (-0.5%); the allocating API measured 24.78 microseconds.
+The same immutable binary measured 23.66–24.97 microseconds across runs. The artifact
+retains the earlier pairs, including 23.66/24.86 and 24.24/24.58 microseconds.
+This variability prevents a speedup claim; the final pair shows no clean-path
+regression. The one permitted full SIFT comparison was used before the final
+fixes, so its QPS numbers are not a measurement of the final binary.
 
 Mapped serving RSS from `/proc/<pid>/smaps_rollup` was 468.0 MiB before and
 479.2 MiB after; hnswlib was 898.7 MiB. The page-cache-evicted open plus first
 query took 198.9 ms. Replacing 10,000 ids including commit took 1.291 seconds;
-deleting 10,000 ids including commit took 8.405 ms. The existing hnswlib adapter's
-save boundary took 1.311 ms per replacement and 0.02969 ms per deletion; its
-`save_index` boundary has different durability semantics from HMS's synced log.
+deleting 10,000 ids including commit took 8.405 ms. The existing hnswlib adapter
+measured 1.311 ms per replacement and 0.02969 ms per deletion, including its save
+boundary. Its `save_index` has different durability semantics from HMS's synced log.
 
 The update tests cover randomized insert/delete/replace sequences against exact
 kNN and a freshly built base; committed reopen equivalence; every byte offset of
 a torn final frame; corrupt checksums and headers; three consolidation publication
 interruptions; torn unpublished vertex files; concurrent readers during I/O;
-allocation limits; and dimension-safe scratch reuse. The 50k-vector test uses
+allocation limits; bounded manifest reads; inherited-lock release; id-table
+checksums; reusable output buffers; delta routing reachability after replacement;
+and dimension-safe scratch reuse. The 50k-vector test uses
 16 dimensions, 100 queries, 500 deletes and 500 replacements, and bounds the recall
 change after consolidation by 0.002. Golden-byte regeneration passes on ARM macOS
 and x86 Linux.
@@ -166,3 +179,16 @@ python benchmarks/competitive/ann_updatable_measure.py \
 The hnswlib environment uses Python 3.13, numpy 2.5.4 and hnswlib 0.8.0.
 The artifact records the exact original invocation and the measured executables'
 source provenance. Python and Node API bindings remain outside this change.
+
+Reproduce the smaller Criterion comparison in each source checkout, using a
+private target directory per checkout (the before checkout needs the static-only
+benchmark source embedded in the result artifact):
+
+```sh
+CARGO_TARGET_DIR="$HOME/codex-ann-update/target-after" \
+  taskset -c 12-21 cargo +1.96.0 bench --profile dist --bench vector_updates --no-run
+CARGO_TARGET_DIR="$HOME/codex-ann-update/target-after" RAYON_NUM_THREADS=10 \
+  flock -F "$HOME/hms-timing.lock" taskset -c 2,3 \
+  "$HOME/codex-ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8" \
+  --bench --save-baseline release-final
+```

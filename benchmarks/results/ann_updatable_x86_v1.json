@@ -1,0 +1,2785 @@
+{
+  "commit": "e8b0b18b160f9a02e133d189975f8c14efca2f16",
+  "before_commit": "6685568704b6da3399baebe6a82c4dea21d0ecfd",
+  "command": [
+    "/home/davidcondrey/codex-ann-update/hnsw-env/bin/python",
+    "/home/davidcondrey/codex-ann-update/after/benchmarks/competitive/ann_updatable_measure.py",
+    "--data",
+    "/home/davidcondrey/codex-ann-update/data",
+    "--work",
+    "/home/davidcondrey/codex-ann-update/measurement",
+    "--before",
+    "/home/davidcondrey/codex-ann-update/target-before/dist/public-bench",
+    "--after",
+    "/home/davidcondrey/codex-ann-update/target-after/dist/public-bench",
+    "--python-hnsw",
+    "/home/davidcondrey/codex-ann-update/hnsw-env/bin/python",
+    "--commit",
+    "a2a16d4189a56162b3782977d5e5bbcb1a063bc1",
+    "--before-commit",
+    "6685568",
+    "--out",
+    "/home/davidcondrey/codex-ann-update/ann_updatable_x86_v1.json"
+  ],
+  "commands": [
+    {
+      "label": "hms-build",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "12-21",
+        "/home/davidcondrey/codex-ann-update/target-after/dist/public-bench",
+        "ann-qgraph",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--metric",
+        "euclidean",
+        "--index",
+        "vertex",
+        "--degree",
+        "64",
+        "--build-ef",
+        "500",
+        "--quantized-search",
+        "--residual",
+        "--residual-bits",
+        "8",
+        "--vertex-bits",
+        "8",
+        "--id-bytes",
+        "3",
+        "--align-rows",
+        "--reorder",
+        "--ef",
+        "10,16,24,32,48,64,96,128,192,256",
+        "--rerank",
+        "32,64",
+        "--max-load",
+        "1000000",
+        "--max-wait-secs",
+        "0",
+        "--save-index",
+        "/home/davidcondrey/codex-ann-update/measurement/index.vgraph",
+        "--save-updates",
+        "/home/davidcondrey/codex-ann-update/measurement/index.updates",
+        "--out",
+        "/home/davidcondrey/codex-ann-update/measurement/build.json"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "10",
+        "OMP_NUM_THREADS": "10"
+      },
+      "smaps_rollup_last": "5a517c2bf000-7ffce81ad000 ---p 00000000 00:00 0                          [rollup]\nRss:             1166884 kB\nPss:             1165017 kB\nPss_Dirty:       1162764 kB\nPss_Anon:        1162764 kB\nPss_File:           2253 kB\nPss_Shmem:             0 kB\nShared_Clean:       2032 kB\nShared_Dirty:          0 kB\nPrivate_Clean:      2088 kB\nPrivate_Dirty:   1162764 kB\nReferenced:      1166884 kB\nAnonymous:       1162764 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:         0 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "before",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "2,3",
+        "/home/davidcondrey/codex-ann-update/target-before/dist/public-bench",
+        "ann-qgraph",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--metric",
+        "euclidean",
+        "--index",
+        "vertex",
+        "--degree",
+        "64",
+        "--build-ef",
+        "500",
+        "--quantized-search",
+        "--residual",
+        "--residual-bits",
+        "8",
+        "--vertex-bits",
+        "8",
+        "--id-bytes",
+        "3",
+        "--align-rows",
+        "--reorder",
+        "--ef",
+        "10,16,24,32,48,64,96,128,192,256",
+        "--rerank",
+        "32,64",
+        "--max-load",
+        "1000000",
+        "--max-wait-secs",
+        "0",
+        "--load-index",
+        "/home/davidcondrey/codex-ann-update/measurement/index.vgraph",
+        "--residency",
+        "mapped",
+        "--latency",
+        "--repeats",
+        "2",
+        "--out",
+        "/home/davidcondrey/codex-ann-update/measurement/before.json"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+      },
+      "smaps_rollup_last": "5f0590cc3000-7ffdf57bb000 ---p 00000000 00:00 0                          [rollup]\nRss:              479272 kB\nPss:              477401 kB\nPss_Dirty:         17924 kB\nPss_Anon:          17924 kB\nPss_File:         459477 kB\nPss_Shmem:             0 kB\nShared_Clean:       2084 kB\nShared_Dirty:          0 kB\nPrivate_Clean:    459264 kB\nPrivate_Dirty:     17924 kB\nReferenced:       479272 kB\nAnonymous:         17924 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:         0 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:    440320 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "after",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "2,3",
+        "/home/davidcondrey/codex-ann-update/target-after/dist/public-bench",
+        "ann-updates",
+        "--action",
+        "serve",
+        "--index",
+        "/home/davidcondrey/codex-ann-update/measurement/index.updates",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--out",
+        "/home/davidcondrey/codex-ann-update/measurement/after.json"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+      },
+      "smaps_rollup_last": "55c948049000-7ffdb612b000 ---p 00000000 00:00 0                          [rollup]\nRss:              490728 kB\nPss:              488852 kB\nPss_Dirty:         25192 kB\nPss_Anon:          25192 kB\nPss_File:         463660 kB\nPss_Shmem:             0 kB\nShared_Clean:       2096 kB\nShared_Dirty:          0 kB\nPrivate_Clean:    463440 kB\nPrivate_Dirty:     25192 kB\nReferenced:       490728 kB\nAnonymous:         25192 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:         0 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:    440320 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "cold",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "2,3",
+        "/home/davidcondrey/codex-ann-update/target-after/dist/public-bench",
+        "ann-updates",
+        "--action",
+        "cold-start",
+        "--cold",
+        "--index",
+        "/home/davidcondrey/codex-ann-update/measurement/index.updates",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--ef",
+        "64",
+        "--rerank",
+        "64",
+        "--out",
+        "/home/davidcondrey/codex-ann-update/measurement/cold.json"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+      },
+      "smaps_rollup_last": "5bca8e431000-7ffffda12000 ---p 00000000 00:00 0                          [rollup]\nRss:                  20 kB\nPss:                  20 kB\nPss_Dirty:            20 kB\nPss_Anon:             20 kB\nPss_File:              0 kB\nPss_Shmem:             0 kB\nShared_Clean:          0 kB\nShared_Dirty:          0 kB\nPrivate_Clean:         0 kB\nPrivate_Dirty:        20 kB\nReferenced:           20 kB\nAnonymous:            20 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:         0 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "replace",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "2,3",
+        "/home/davidcondrey/codex-ann-update/target-after/dist/public-bench",
+        "ann-updates",
+        "--action",
+        "replace",
+        "--index",
+        "/home/davidcondrey/codex-ann-update/measurement/replace.updates",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--out",
+        "/home/davidcondrey/codex-ann-update/measurement/replace.json"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+      },
+      "smaps_rollup_last": "5c3d5cbde000-7ffe7631d000 ---p 00000000 00:00 0                          [rollup]\nRss:              764892 kB\nPss:              763021 kB\nPss_Dirty:        760524 kB\nPss_Anon:         526652 kB\nPss_File:         236369 kB\nPss_Shmem:             0 kB\nShared_Clean:       2084 kB\nShared_Dirty:          0 kB\nPrivate_Clean:      2284 kB\nPrivate_Dirty:    760524 kB\nReferenced:       764892 kB\nAnonymous:        526652 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:         0 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "delete",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "2,3",
+        "/home/davidcondrey/codex-ann-update/target-after/dist/public-bench",
+        "ann-updates",
+        "--action",
+        "delete",
+        "--index",
+        "/home/davidcondrey/codex-ann-update/measurement/delete.updates",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--out",
+        "/home/davidcondrey/codex-ann-update/measurement/delete.json"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+      },
+      "smaps_rollup_last": "5be80d2a8000-7ffd468bd000 ---p 00000000 00:00 0                          [rollup]\nRss:                  16 kB\nPss:                  16 kB\nPss_Dirty:            16 kB\nPss_Anon:             16 kB\nPss_File:              0 kB\nPss_Shmem:             0 kB\nShared_Clean:          0 kB\nShared_Dirty:          0 kB\nPrivate_Clean:         0 kB\nPrivate_Dirty:        16 kB\nReferenced:           16 kB\nAnonymous:            16 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:         0 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "hnsw-build",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "12-21",
+        "/home/davidcondrey/codex-ann-update/hnsw-env/bin/python",
+        "/home/davidcondrey/codex-ann-update/after/benchmarks/competitive/hmsbench/ann_worker.py",
+        "build",
+        "--system",
+        "hnswlib",
+        "--build",
+        "m32e500",
+        "--threads",
+        "10",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--workdir",
+        "/home/davidcondrey/codex-ann-update/measurement/hnsw"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "10",
+        "OMP_NUM_THREADS": "10"
+      },
+      "smaps_rollup_last": "003ff000-7ffcf184f000 ---p 00000000 00:00 0                              [rollup]\nRss:             1424416 kB\nPss:             1418397 kB\nPss_Dirty:       1404456 kB\nPss_Anon:        1404456 kB\nPss_File:          13941 kB\nPss_Shmem:             0 kB\nShared_Clean:      10268 kB\nShared_Dirty:          0 kB\nPrivate_Clean:      9692 kB\nPrivate_Dirty:   1404456 kB\nReferenced:      1424416 kB\nAnonymous:       1404456 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:    497664 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "hnsw-serve",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "2,3",
+        "/home/davidcondrey/codex-ann-update/hnsw-env/bin/python",
+        "/home/davidcondrey/codex-ann-update/after/benchmarks/competitive/hmsbench/ann_worker.py",
+        "serve",
+        "--system",
+        "hnswlib",
+        "--build",
+        "m32e500",
+        "--threads",
+        "1",
+        "--repeats",
+        "2",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--workdir",
+        "/home/davidcondrey/codex-ann-update/measurement/hnsw"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+      },
+      "smaps_rollup_last": "003ff000-7ffc66a8a000 ---p 00000000 00:00 0                              [rollup]\nRss:              920252 kB\nPss:              914267 kB\nPss_Dirty:        900052 kB\nPss_Anon:         900052 kB\nPss_File:          14215 kB\nPss_Shmem:             0 kB\nShared_Clean:      10128 kB\nShared_Dirty:          0 kB\nPrivate_Clean:     10072 kB\nPrivate_Dirty:    900052 kB\nReferenced:       920252 kB\nAnonymous:        900052 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:      2048 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    },
+    {
+      "label": "hnsw-ops",
+      "command": [
+        "flock",
+        "-F",
+        "/home/davidcondrey/hms-timing.lock",
+        "taskset",
+        "-c",
+        "2,3",
+        "/home/davidcondrey/codex-ann-update/hnsw-env/bin/python",
+        "/home/davidcondrey/codex-ann-update/after/benchmarks/competitive/ann_updatable_measure.py",
+        "--hnsw-ops",
+        "--data",
+        "/home/davidcondrey/codex-ann-update/data",
+        "--work",
+        "/home/davidcondrey/codex-ann-update/measurement/hnsw"
+      ],
+      "environment": {
+        "RAYON_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+      },
+      "smaps_rollup_last": "003ff000-7fff8ebd3000 ---p 00000000 00:00 0                              [rollup]\nRss:              918024 kB\nPss:              912041 kB\nPss_Dirty:        893024 kB\nPss_Anon:         893024 kB\nPss_File:          19017 kB\nPss_Shmem:             0 kB\nShared_Clean:      10124 kB\nShared_Dirty:          0 kB\nPrivate_Clean:     14876 kB\nPrivate_Dirty:    893024 kB\nReferenced:       918024 kB\nAnonymous:        893024 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:      4096 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    }
+  ],
+  "hardware": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           46 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  22\nOn-line CPU(s) list:                     0-21\nVendor ID:                               GenuineIntel\nModel name:                              Intel(R) Core(TM) Ultra 9 185H\nCPU family:                              6\nModel:                                   170\nThread(s) per core:                      2\nCore(s) per socket:                      11\nSocket(s):                               1\nStepping:                                4\nMicrocode version:                       0xffffffff\nBogoMIPS:                                6143.99\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves avx_vnni vnmi umip waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize ibt flush_l1d arch_capabilities\nVirtualization:                          VT-x\nHypervisor vendor:                       Microsoft\nVirtualization type:                     full\nL1d cache:                               528 KiB (11 instances)\nL1i cache:                               704 KiB (11 instances)\nL2 cache:                                22 MiB (11 instances)\nL3 cache:                                24 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-21\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Mitigation; Enhanced IBRS\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI BHI_DIS_S\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+  "dataset": {
+    "kind": "ann",
+    "name": "sift-128-euclidean",
+    "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+    "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+    "metric": "euclidean",
+    "n_train": 1000000,
+    "n_test": 10000,
+    "dim": 128,
+    "n_neighbors": 100
+  },
+  "summary": {
+    "0.9": {
+      "before": {
+        "recall": 0.92405,
+        "qps": 27752.229999914187,
+        "params": {
+          "ef": 16,
+          "patience": 0,
+          "rerank": 32,
+          "screen": false,
+          "screen_sigmas": 1.0
+        }
+      },
+      "after": {
+        "recall": 0.92405,
+        "qps": 26465.356217609155,
+        "params": {
+          "ef": 16,
+          "rerank": 32
+        }
+      },
+      "hnswlib": {
+        "recall": 0.92486,
+        "qps": 10996.573877768597,
+        "params": {
+          "ef": 24
+        }
+      }
+    },
+    "0.95": {
+      "before": {
+        "recall": 0.95729,
+        "qps": 20769.3210742388,
+        "params": {
+          "ef": 24,
+          "patience": 0,
+          "rerank": 32,
+          "screen": false,
+          "screen_sigmas": 1.0
+        }
+      },
+      "after": {
+        "recall": 0.95729,
+        "qps": 20174.828967436097,
+        "params": {
+          "ef": 24,
+          "rerank": 32
+        }
+      },
+      "hnswlib": {
+        "recall": 0.952,
+        "qps": 8948.863978378831,
+        "params": {
+          "ef": 32
+        }
+      }
+    },
+    "0.99": {
+      "before": {
+        "recall": 0.99246,
+        "qps": 10484.816829280147,
+        "params": {
+          "ef": 64,
+          "patience": 0,
+          "rerank": 32,
+          "screen": false,
+          "screen_sigmas": 1.0
+        }
+      },
+      "after": {
+        "recall": 0.99246,
+        "qps": 10068.296321561764,
+        "params": {
+          "ef": 64,
+          "rerank": 32
+        }
+      },
+      "hnswlib": {
+        "recall": 0.99453,
+        "qps": 3610.7165657899195,
+        "params": {
+          "ef": 96
+        }
+      }
+    }
+  },
+  "hms": {
+    "build": {
+      "build": {
+        "build_secs": 294.378988807,
+        "graph_hash": "ef9aa09a67cd0e0f",
+        "load_1m_after_build": null,
+        "load_1m_before_build": null,
+        "load_gate_met": false,
+        "params": {
+          "align_rows": true,
+          "alpha": 1.0,
+          "block_bits": 0,
+          "build_ef": 500,
+          "code_bits": 0,
+          "degree": 64,
+          "fuse": false,
+          "graph_cache": null,
+          "id_bytes": 3,
+          "index": "vertex",
+          "metric": "euclidean",
+          "neighbour_cap": 0,
+          "quantized_search": true,
+          "reorder": true,
+          "residual": true,
+          "residual_bits": 8,
+          "screen": false,
+          "seed": 24301,
+          "vertex_bits": 8
+        },
+        "threads": 10
+      },
+      "dataset": {
+        "dim": 128,
+        "kind": "ann",
+        "metric": "euclidean",
+        "n_neighbors": 100,
+        "n_test": 10000,
+        "n_train": 1000000,
+        "name": "sift-128-euclidean",
+        "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+        "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5"
+      },
+      "environment": {
+        "arch": "x86_64",
+        "cpu": "",
+        "hms_version": "0.6.1",
+        "load_average": "",
+        "os": "linux",
+        "rayon_threads": 10
+      },
+      "first_query_unix_ns": null,
+      "first_query_us": null,
+      "holdout": null,
+      "index_bytes": 467981908,
+      "index_file": {
+        "bytes": 468267320,
+        "cold": false,
+        "loaded": null,
+        "open_secs": null,
+        "residency": null,
+        "saved": "/home/davidcondrey/codex-ann-update/measurement/index.vgraph"
+      },
+      "max_load": 1000000.0,
+      "memory_phases": [
+        {
+          "memory": {
+            "RssAnon": 526184448,
+            "RssFile": 3629056,
+            "RssShmem": 0,
+            "VmHWM": 529813504,
+            "VmRSS": 529813504,
+            "smaps_Anonymous": 526184448,
+            "smaps_Pss_File": 1957888,
+            "smaps_Rss": 529813504
+          },
+          "phase": "input"
+        },
+        {
+          "memory": {
+            "RssAnon": 1852383232,
+            "RssFile": 4481024,
+            "RssShmem": 0,
+            "VmHWM": 2023636992,
+            "VmRSS": 1856864256,
+            "smaps_Anonymous": 1852383232,
+            "smaps_Pss_File": 2516992,
+            "smaps_Rss": 1856864256
+          },
+          "phase": "graph"
+        },
+        {
+          "memory": {
+            "RssAnon": 2300395520,
+            "RssFile": 4481024,
+            "RssShmem": 0,
+            "VmHWM": 2304876544,
+            "VmRSS": 2304876544,
+            "smaps_Anonymous": 2300395520,
+            "smaps_Pss_File": 2516992,
+            "smaps_Rss": 2304876544
+          },
+          "phase": "encode"
+        },
+        {
+          "memory": {
+            "RssAnon": 1764388864,
+            "RssFile": 4677632,
+            "RssShmem": 0,
+            "VmHWM": 2508492800,
+            "VmRSS": 1769066496,
+            "smaps_Anonymous": 1764388864,
+            "smaps_Pss_File": 2713600,
+            "smaps_Rss": 1769066496
+          },
+          "phase": "drop_graph"
+        },
+        {
+          "memory": {
+            "RssAnon": 1764388864,
+            "RssFile": 4677632,
+            "RssShmem": 0,
+            "VmHWM": 2508492800,
+            "VmRSS": 1769066496,
+            "smaps_Anonymous": 1764388864,
+            "smaps_Pss_File": 2713600,
+            "smaps_Rss": 1769066496
+          },
+          "phase": "serve_start"
+        },
+        {
+          "memory": {
+            "RssAnon": 1764388864,
+            "RssFile": 4743168,
+            "RssShmem": 0,
+            "VmHWM": 2508492800,
+            "VmRSS": 1769132032,
+            "smaps_Anonymous": 1764388864,
+            "smaps_Pss_File": 2715648,
+            "smaps_Rss": 1769132032
+          },
+          "phase": "serve_end"
+        }
+      ],
+      "n_queries": 10000,
+      "notes": [
+        "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+        "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+        "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+      ],
+      "paired_sync": false,
+      "repeats": 3,
+      "residual_bytes": 132000000,
+      "rss_bytes": {
+        "after_build": 1769132032,
+        "end": 1769132032
+      },
+      "sweep": [],
+      "system": "hms qgraph-vertex"
+    },
+    "before": {
+      "build": {
+        "build_secs": 294.378988807,
+        "graph_hash": "ef9aa09a67cd0e0f",
+        "load_1m_after_build": null,
+        "load_1m_before_build": null,
+        "load_gate_met": false,
+        "params": {
+          "align_rows": true,
+          "alpha": 1.0,
+          "block_bits": 0,
+          "build_ef": 500,
+          "code_bits": 0,
+          "degree": 64,
+          "fuse": false,
+          "graph_cache": null,
+          "id_bytes": 3,
+          "index": "vertex",
+          "metric": "euclidean",
+          "neighbour_cap": 0,
+          "quantized_search": true,
+          "reorder": true,
+          "residual": true,
+          "residual_bits": 8,
+          "screen": false,
+          "seed": 24301,
+          "vertex_bits": 8
+        },
+        "threads": 1
+      },
+      "dataset": {
+        "dim": 128,
+        "kind": "ann",
+        "metric": "euclidean",
+        "n_neighbors": 100,
+        "n_test": 10000,
+        "n_train": 1000000,
+        "name": "sift-128-euclidean",
+        "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+        "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5"
+      },
+      "environment": {
+        "arch": "x86_64",
+        "cpu": "",
+        "hms_version": "0.6.1",
+        "load_average": "",
+        "os": "linux",
+        "rayon_threads": 1
+      },
+      "first_query_unix_ns": 1792642644718770794,
+      "first_query_us": 769.7620000000001,
+      "holdout": null,
+      "index_bytes": 467981908,
+      "index_file": {
+        "bytes": 468267320,
+        "cold": false,
+        "loaded": "/home/davidcondrey/codex-ann-update/measurement/index.vgraph",
+        "open_secs": 0.048906101,
+        "residency": "mapped",
+        "saved": null
+      },
+      "max_load": 1000000.0,
+      "memory_phases": [
+        {
+          "memory": {
+            "RssAnon": 14176256,
+            "RssFile": 3624960,
+            "RssShmem": 0,
+            "VmHWM": 17801216,
+            "VmRSS": 17801216,
+            "smaps_Anonymous": 14176256,
+            "smaps_Pss_File": 1932288,
+            "smaps_Rss": 17801216
+          },
+          "phase": "input"
+        },
+        {
+          "memory": {
+            "RssAnon": 16769024,
+            "RssFile": 204247040,
+            "RssShmem": 0,
+            "VmHWM": 221016064,
+            "VmRSS": 221016064,
+            "smaps_Anonymous": 16773120,
+            "smaps_Pss_File": 202394624,
+            "smaps_Rss": 221020160
+          },
+          "phase": "open"
+        },
+        {
+          "memory": {
+            "RssAnon": 16773120,
+            "RssFile": 204312576,
+            "RssShmem": 0,
+            "VmHWM": 221085696,
+            "VmRSS": 221085696,
+            "smaps_Anonymous": 16777216,
+            "smaps_Pss_File": 202460160,
+            "smaps_Rss": 221089792
+          },
+          "phase": "serve_start"
+        },
+        {
+          "memory": {
+            "RssAnon": 18190336,
+            "RssFile": 472420352,
+            "RssShmem": 0,
+            "VmHWM": 490610688,
+            "VmRSS": 490610688,
+            "smaps_Anonymous": 18194432,
+            "smaps_Pss_File": 470504448,
+            "smaps_Rss": 490614784
+          },
+          "phase": "serve_end"
+        }
+      ],
+      "n_queries": 10000,
+      "notes": [
+        "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+        "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+        "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+      ],
+      "paired_sync": false,
+      "repeats": 2,
+      "residual_bytes": 132000000,
+      "rss_bytes": {
+        "after_build": 221155328,
+        "end": 490610688
+      },
+      "sweep": [
+        {
+          "latency_us": {
+            "p50": 27.347,
+            "p99": 56.854
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 710.3574,
+          "params": {
+            "ef": 10,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            31127.53242008764,
+            36228.641988302654
+          ],
+          "qps_single_thread": 36228.641988302654,
+          "recall_at_10": 0.85619,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 35.36,
+            "p99": 57.1
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 937.5163,
+          "params": {
+            "ef": 16,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            27670.987366824556,
+            27752.229999914187
+          ],
+          "qps_single_thread": 27752.229999914187,
+          "recall_at_10": 0.92405,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 47.586,
+            "p99": 76.405
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 1225.8992,
+          "params": {
+            "ef": 24,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            20378.9071813877,
+            20769.3210742388
+          ],
+          "qps_single_thread": 20769.3210742388,
+          "recall_at_10": 0.95729,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 60.204,
+            "p99": 108.777
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 1501.9428,
+          "params": {
+            "ef": 32,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            16347.446589655197,
+            17102.33464637249
+          ],
+          "qps_single_thread": 17102.33464637249,
+          "recall_at_10": 0.97301,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 79.28200000000001,
+            "p99": 123.66499999999999
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 2009.368,
+          "params": {
+            "ef": 48,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            12832.034325753415,
+            12756.614383010769
+          ],
+          "qps_single_thread": 12832.034325753415,
+          "recall_at_10": 0.98678,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 97.809,
+            "p99": 174.42600000000002
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 2486.1009,
+          "params": {
+            "ef": 64,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            10344.692777024335,
+            10484.816829280147
+          ],
+          "qps_single_thread": 10484.816829280147,
+          "recall_at_10": 0.99246,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 133.957,
+            "p99": 214.938
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 3368.3462,
+          "params": {
+            "ef": 96,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            7554.443845613753,
+            7533.309363548267
+          ],
+          "qps_single_thread": 7554.443845613753,
+          "recall_at_10": 0.99662,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 169.967,
+            "p99": 312.47
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 4181.4969,
+          "params": {
+            "ef": 128,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            6027.020216494182,
+            5613.442257794377
+          ],
+          "qps_single_thread": 6027.020216494182,
+          "recall_at_10": 0.99786,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 235.024,
+            "p99": 414.872
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 5667.5005,
+          "params": {
+            "ef": 192,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            4355.883968530854,
+            4298.121498047753
+          ],
+          "qps_single_thread": 4355.883968530854,
+          "recall_at_10": 0.99872,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 309.724,
+            "p99": 579.336
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 7021.5314,
+          "params": {
+            "ef": 256,
+            "patience": 0,
+            "rerank": 32,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            3493.1310885139515,
+            3434.8960052310936
+          ],
+          "qps_single_thread": 3493.1310885139515,
+          "recall_at_10": 0.99893,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 26.594,
+            "p99": 45.463
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 710.3574,
+          "params": {
+            "ef": 10,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            35039.776891929396,
+            35617.00371998946
+          ],
+          "qps_single_thread": 35617.00371998946,
+          "recall_at_10": 0.85619,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 35.367000000000004,
+            "p99": 55.254000000000005
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 937.5163,
+          "params": {
+            "ef": 16,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            27422.588377641223,
+            27504.130474050136
+          ],
+          "qps_single_thread": 27504.130474050136,
+          "recall_at_10": 0.92405,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 51.474000000000004,
+            "p99": 87.298
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 1225.8992,
+          "params": {
+            "ef": 24,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            20581.320000864005,
+            20698.788277203173
+          ],
+          "qps_single_thread": 20698.788277203173,
+          "recall_at_10": 0.95729,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 64.348,
+            "p99": 94.02900000000001
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 1501.9428,
+          "params": {
+            "ef": 32,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            16895.287359482423,
+            16899.63166627497
+          ],
+          "qps_single_thread": 16899.63166627497,
+          "recall_at_10": 0.97301,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 89.457,
+            "p99": 137.456
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 2025.3664,
+          "params": {
+            "ef": 48,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            12291.91226086621,
+            12200.597028651227
+          ],
+          "qps_single_thread": 12291.91226086621,
+          "recall_at_10": 0.98678,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 105.251,
+            "p99": 166.667
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 2518.0977,
+          "params": {
+            "ef": 64,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            9581.817995965755,
+            9664.199845509262
+          ],
+          "qps_single_thread": 9664.199845509262,
+          "recall_at_10": 0.99246,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 142.382,
+            "p99": 232.22400000000002
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 3400.343,
+          "params": {
+            "ef": 96,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            7128.51200534627,
+            7207.2682884813
+          ],
+          "qps_single_thread": 7207.2682884813,
+          "recall_at_10": 0.99662,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 177.677,
+            "p99": 287.186
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 4213.4937,
+          "params": {
+            "ef": 128,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            5707.492731449505,
+            5706.533160725542
+          ],
+          "qps_single_thread": 5707.492731449505,
+          "recall_at_10": 0.99786,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 245.682,
+            "p99": 399.593
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 5699.4973,
+          "params": {
+            "ef": 192,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            4169.588980435454,
+            4114.047738957417
+          ],
+          "qps_single_thread": 4169.588980435454,
+          "recall_at_10": 0.99872,
+          "screened_per_query": 0.0
+        },
+        {
+          "latency_us": {
+            "p50": 307.40900000000005,
+            "p99": 533.5300000000001
+          },
+          "load_1m_before_runs": [
+            null,
+            null
+          ],
+          "load_gate_met": false,
+          "mean_exact_evals_per_query": 7053.5282,
+          "params": {
+            "ef": 256,
+            "patience": 0,
+            "rerank": 64,
+            "screen": false,
+            "screen_sigmas": 1.0
+          },
+          "qps_runs": [
+            3255.590184812569,
+            3349.298896352961
+          ],
+          "qps_single_thread": 3349.298896352961,
+          "recall_at_10": 0.99893,
+          "screened_per_query": 0.0
+        }
+      ],
+      "system": "hms qgraph-vertex"
+    },
+    "after": {
+      "cold_start_s": 0.054269038,
+      "configs": [
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 10,
+            "rerank": 32
+          },
+          "recall_at_10": 0.85619,
+          "repeats": [
+            {
+              "p50_us": 27.7,
+              "p99_us": 46.355,
+              "qps": 35375.885176725584
+            },
+            {
+              "p50_us": 27.783,
+              "p99_us": 46.747,
+              "qps": 35234.6762094103
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 16,
+            "rerank": 32
+          },
+          "recall_at_10": 0.92405,
+          "repeats": [
+            {
+              "p50_us": 37.094,
+              "p99_us": 58.81,
+              "qps": 26788.63718913426
+            },
+            {
+              "p50_us": 37.721000000000004,
+              "p99_us": 63.17600000000001,
+              "qps": 26142.07524608405
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 24,
+            "rerank": 32
+          },
+          "recall_at_10": 0.95729,
+          "repeats": [
+            {
+              "p50_us": 49.937,
+              "p99_us": 77.764,
+              "qps": 20101.746598548318
+            },
+            {
+              "p50_us": 49.654,
+              "p99_us": 75.47500000000001,
+              "qps": 20247.911336323876
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 32,
+            "rerank": 32
+          },
+          "recall_at_10": 0.97301,
+          "repeats": [
+            {
+              "p50_us": 61.37199999999999,
+              "p99_us": 91.624,
+              "qps": 16456.384543933913
+            },
+            {
+              "p50_us": 62.312999999999995,
+              "p99_us": 106.44,
+              "qps": 16055.279637904052
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 48,
+            "rerank": 32
+          },
+          "recall_at_10": 0.98678,
+          "repeats": [
+            {
+              "p50_us": 83.003,
+              "p99_us": 141.541,
+              "qps": 12137.561534296367
+            },
+            {
+              "p50_us": 82.18299999999999,
+              "p99_us": 137.12800000000001,
+              "qps": 12339.700442715373
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 64,
+            "rerank": 32
+          },
+          "recall_at_10": 0.99246,
+          "repeats": [
+            {
+              "p50_us": 100.942,
+              "p99_us": 145.77700000000002,
+              "qps": 10129.664065929093
+            },
+            {
+              "p50_us": 101.94500000000001,
+              "p99_us": 155.84099999999998,
+              "qps": 10006.928577194432
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 96,
+            "rerank": 32
+          },
+          "recall_at_10": 0.99662,
+          "repeats": [
+            {
+              "p50_us": 138.56599999999997,
+              "p99_us": 220.975,
+              "qps": 7358.550025621098
+            },
+            {
+              "p50_us": 139.01399999999998,
+              "p99_us": 235.662,
+              "qps": 7332.614296197749
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 128,
+            "rerank": 32
+          },
+          "recall_at_10": 0.99786,
+          "repeats": [
+            {
+              "p50_us": 175.85999999999999,
+              "p99_us": 292.789,
+              "qps": 5806.8450086700805
+            },
+            {
+              "p50_us": 175.03300000000002,
+              "p99_us": 281.937,
+              "qps": 5845.200953940525
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 192,
+            "rerank": 32
+          },
+          "recall_at_10": 0.99872,
+          "repeats": [
+            {
+              "p50_us": 243.703,
+              "p99_us": 410.138,
+              "qps": 4174.604783767523
+            },
+            {
+              "p50_us": 243.482,
+              "p99_us": 385.05800000000005,
+              "qps": 4200.827037739042
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 256,
+            "rerank": 32
+          },
+          "recall_at_10": 0.99893,
+          "repeats": [
+            {
+              "p50_us": 301.548,
+              "p99_us": 567.919,
+              "qps": 3334.8633608619543
+            },
+            {
+              "p50_us": 294.45300000000003,
+              "p99_us": 502.863,
+              "qps": 3439.961679900171
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 10,
+            "rerank": 64
+          },
+          "recall_at_10": 0.85619,
+          "repeats": [
+            {
+              "p50_us": 27.598,
+              "p99_us": 48.172,
+              "qps": 35350.946164539164
+            },
+            {
+              "p50_us": 27.605999999999998,
+              "p99_us": 46.549,
+              "qps": 35425.29877874123
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 16,
+            "rerank": 64
+          },
+          "recall_at_10": 0.92405,
+          "repeats": [
+            {
+              "p50_us": 37.70399999999999,
+              "p99_us": 68.027,
+              "qps": 26008.635564038632
+            },
+            {
+              "p50_us": 38.284,
+              "p99_us": 66.081,
+              "qps": 25611.64507819703
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 24,
+            "rerank": 64
+          },
+          "recall_at_10": 0.95729,
+          "repeats": [
+            {
+              "p50_us": 50.587,
+              "p99_us": 76.611,
+              "qps": 19872.899255940927
+            },
+            {
+              "p50_us": 50.041,
+              "p99_us": 86.006,
+              "qps": 19891.506709745343
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 32,
+            "rerank": 64
+          },
+          "recall_at_10": 0.97301,
+          "repeats": [
+            {
+              "p50_us": 61.885999999999996,
+              "p99_us": 99.03699999999999,
+              "qps": 16230.213687658797
+            },
+            {
+              "p50_us": 62.602999999999994,
+              "p99_us": 112.447,
+              "qps": 15895.859611010666
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 48,
+            "rerank": 64
+          },
+          "recall_at_10": 0.98678,
+          "repeats": [
+            {
+              "p50_us": 85.78699999999999,
+              "p99_us": 139.793,
+              "qps": 11796.942665880704
+            },
+            {
+              "p50_us": 86.805,
+              "p99_us": 148.136,
+              "qps": 11613.64938554629
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 64,
+            "rerank": 64
+          },
+          "recall_at_10": 0.99246,
+          "repeats": [
+            {
+              "p50_us": 108.881,
+              "p99_us": 161.542,
+              "qps": 9380.497868761235
+            },
+            {
+              "p50_us": 109.204,
+              "p99_us": 176.785,
+              "qps": 9300.692682573526
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 96,
+            "rerank": 64
+          },
+          "recall_at_10": 0.99662,
+          "repeats": [
+            {
+              "p50_us": 147.157,
+              "p99_us": 214.691,
+              "qps": 6978.458887523263
+            },
+            {
+              "p50_us": 146.595,
+              "p99_us": 221.034,
+              "qps": 6988.67887485668
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 128,
+            "rerank": 64
+          },
+          "recall_at_10": 0.99786,
+          "repeats": [
+            {
+              "p50_us": 189.427,
+              "p99_us": 304.533,
+              "qps": 5381.4659714846675
+            },
+            {
+              "p50_us": 183.494,
+              "p99_us": 278.69899999999996,
+              "qps": 5593.3335330749815
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 192,
+            "rerank": 64
+          },
+          "recall_at_10": 0.99872,
+          "repeats": [
+            {
+              "p50_us": 252.506,
+              "p99_us": 383.45399999999995,
+              "qps": 4062.3859059875726
+            },
+            {
+              "p50_us": 252.899,
+              "p99_us": 422.508,
+              "qps": 4027.794667104018
+            }
+          ]
+        },
+        {
+          "load_1m": null,
+          "load_gate_met": null,
+          "params": {
+            "ef": 256,
+            "rerank": 64
+          },
+          "recall_at_10": 0.99893,
+          "repeats": [
+            {
+              "p50_us": 301.772,
+              "p99_us": 503.724,
+              "qps": 3367.7337320668903
+            },
+            {
+              "p50_us": 302.398,
+              "p99_us": 509.417,
+              "qps": 3352.8141502745016
+            }
+          ]
+        }
+      ],
+      "first_query_unix_ns": 1792642722336172237,
+      "memory_phases": [
+        {
+          "memory": {
+            "RssAnon": 25796608,
+            "RssFile": 476708864,
+            "RssShmem": 0,
+            "VmHWM": 502505472,
+            "VmRSS": 502505472,
+            "smaps_Anonymous": 25796608,
+            "smaps_Pss_File": 474787840,
+            "smaps_Rss": 502505472
+          },
+          "phase": "serve_end"
+        }
+      ],
+      "n": 1000000,
+      "n_queries": 10000,
+      "open_s": 0.053527928,
+      "rss_after_open": 363593728,
+      "rss_steady": 502505472
+    },
+    "cold": {
+      "cold_start_s": 0.198851377,
+      "first_query_s": 0.094609851,
+      "memory_phases": [
+        {
+          "memory": {
+            "RssAnon": 17137664,
+            "RssFile": 270200832,
+            "RssShmem": 0,
+            "VmHWM": 287338496,
+            "VmRSS": 287338496,
+            "smaps_Anonymous": 17141760,
+            "smaps_Pss_File": 268278784,
+            "smaps_Rss": 287342592
+          },
+          "phase": "first_query"
+        }
+      ],
+      "open_s": 0.104240525,
+      "page_cache_dropped": true
+    },
+    "operations": {
+      "replace": {
+        "apply_s": 1.274883157,
+        "count": 10000,
+        "flush_s": 0.016149147,
+        "memory_phases": [
+          {
+            "memory": {
+              "RssAnon": 546713600,
+              "RssFile": 244023296,
+              "RssShmem": 0,
+              "VmHWM": 795570176,
+              "VmRSS": 790736896,
+              "smaps_Anonymous": 546713600,
+              "smaps_Pss_File": 242107392,
+              "smaps_Rss": 790736896
+            },
+            "phase": "committed"
+          }
+        ],
+        "operation": "replace",
+        "per_op_ms_durable": 0.12910323040000002
+      },
+      "delete": {
+        "apply_s": 0.000929848,
+        "count": 10000,
+        "flush_s": 0.007475554,
+        "memory_phases": [
+          {
+            "memory": {
+              "RssAnon": 530116608,
+              "RssFile": 244043776,
+              "RssShmem": 0,
+              "VmHWM": 774160384,
+              "VmRSS": 774160384,
+              "smaps_Anonymous": 530116608,
+              "smaps_Pss_File": 242125824,
+              "smaps_Rss": 774160384
+            },
+            "phase": "committed"
+          }
+        ],
+        "operation": "delete",
+        "per_op_ms_durable": 0.0008405401999999998
+      }
+    }
+  },
+  "hnswlib": {
+    "build": {
+      "build_s": 151.3399422260045,
+      "rss_before_build": 548810752,
+      "rss_after_build": 610385920,
+      "n": 1000000,
+      "peak_rss_bytes_self": 1473937408
+    },
+    "serve": {
+      "open_s": 0.4571369070035871,
+      "cold_start_s": 0.495166992,
+      "rss_before_sweep": 931569664,
+      "rss_steady": 942338048,
+      "n_queries": 10000,
+      "n": 1000000,
+      "configs": [
+        {
+          "params": {
+            "ef": 10
+          },
+          "recall_at_10": 0.79524,
+          "repeats": [
+            {
+              "qps": 18338.265256955314,
+              "p50_us": 51.787,
+              "p99_us": 99.97689000000001
+            },
+            {
+              "qps": 17796.748668917546,
+              "p50_us": 54.2325,
+              "p99_us": 109.0291
+            }
+          ],
+          "load_1m": 8.62060546875,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 16
+          },
+          "recall_at_10": 0.87444,
+          "repeats": [
+            {
+              "qps": 14284.8919861106,
+              "p50_us": 69.08449999999999,
+              "p99_us": 122.15800000000004
+            },
+            {
+              "qps": 14622.64347107538,
+              "p50_us": 67.961,
+              "p99_us": 115.58155000000002
+            }
+          ],
+          "load_1m": 8.62060546875,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 24
+          },
+          "recall_at_10": 0.92486,
+          "repeats": [
+            {
+              "qps": 10916.27407942575,
+              "p50_us": 91.405,
+              "p99_us": 159.66334
+            },
+            {
+              "qps": 11076.873676111443,
+              "p50_us": 90.71549999999999,
+              "p99_us": 149.995
+            }
+          ],
+          "load_1m": 8.62060546875,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 32
+          },
+          "recall_at_10": 0.952,
+          "repeats": [
+            {
+              "qps": 8982.027766331057,
+              "p50_us": 113.033,
+              "p99_us": 176.4232
+            },
+            {
+              "qps": 8915.700190426607,
+              "p50_us": 113.6605,
+              "p99_us": 188.06566000000004
+            }
+          ],
+          "load_1m": 8.01025390625,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 48
+          },
+          "recall_at_10": 0.97668,
+          "repeats": [
+            {
+              "qps": 6444.129883981955,
+              "p50_us": 157.7125,
+              "p99_us": 260.62491000000006
+            },
+            {
+              "qps": 6546.691372099205,
+              "p50_us": 156.3275,
+              "p99_us": 243.07436
+            }
+          ],
+          "load_1m": 7.44873046875,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 64
+          },
+          "recall_at_10": 0.98664,
+          "repeats": [
+            {
+              "qps": 4925.680878665732,
+              "p50_us": 207.68,
+              "p99_us": 335.16847
+            },
+            {
+              "qps": 5117.134334033676,
+              "p50_us": 201.78300000000002,
+              "p99_us": 282.4265600000005
+            }
+          ],
+          "load_1m": 6.93212890625,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 96
+          },
+          "recall_at_10": 0.99453,
+          "repeats": [
+            {
+              "qps": 3536.882689971914,
+              "p50_us": 289.842,
+              "p99_us": 488.62868000000026
+            },
+            {
+              "qps": 3684.5504416079248,
+              "p50_us": 279.983,
+              "p99_us": 437.5481300000001
+            }
+          ],
+          "load_1m": 6.45703125,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 128
+          },
+          "recall_at_10": 0.99705,
+          "repeats": [
+            {
+              "qps": 2828.5446271736255,
+              "p50_us": 362.598,
+              "p99_us": 607.4279600000001
+            },
+            {
+              "qps": 2877.030939331501,
+              "p50_us": 358.5355,
+              "p99_us": 554.4693100000002
+            }
+          ],
+          "load_1m": 5.61767578125,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 192
+          },
+          "recall_at_10": 0.99864,
+          "repeats": [
+            {
+              "qps": 2049.6719580685703,
+              "p50_us": 503.6575,
+              "p99_us": 807.1407100000001
+            },
+            {
+              "qps": 2001.9036301809756,
+              "p50_us": 517.1125,
+              "p99_us": 811.28524
+            }
+          ],
+          "load_1m": 4.9072265625,
+          "load_gate_met": null
+        },
+        {
+          "params": {
+            "ef": 256
+          },
+          "recall_at_10": 0.99912,
+          "repeats": [
+            {
+              "qps": 1575.033696093703,
+              "p50_us": 653.5815,
+              "p99_us": 1065.1864500000001
+            },
+            {
+              "qps": 1598.4611877571865,
+              "p50_us": 648.0245,
+              "p99_us": 1017.5365800000005
+            }
+          ],
+          "load_1m": 3.79736328125,
+          "load_gate_met": null
+        }
+      ],
+      "peak_rss_bytes_self": 942051328
+    },
+    "operations": {
+      "count": 10000,
+      "replace": {
+        "apply_s": 12.897717858999385,
+        "flush_s": 0.2108229039949947,
+        "per_op_ms_durable": 1.310854076299438
+      },
+      "delete": {
+        "apply_s": 0.0017139990013674833,
+        "flush_s": 0.2951512610015925,
+        "per_op_ms_durable": 0.029686526000295997
+      },
+      "flush_semantics": "hnswlib adapter save_index; same save boundary as the competitive harness",
+      "smaps_rollup": "003ff000-7fff8ebd3000 ---p 00000000 00:00 0                              [rollup]\nRss:              918300 kB\nPss:              912317 kB\nPss_Dirty:        893236 kB\nPss_Anon:         893236 kB\nPss_File:          19081 kB\nPss_Shmem:             0 kB\nShared_Clean:      10124 kB\nShared_Dirty:          0 kB\nPrivate_Clean:     14940 kB\nPrivate_Dirty:    893236 kB\nReferenced:       918300 kB\nAnonymous:        893236 kB\nKSM:                   0 kB\nLazyFree:              0 kB\nAnonHugePages:      4096 kB\nShmemPmdMapped:        0 kB\nFilePmdMapped:         0 kB\nShared_Hugetlb:        0 kB\nPrivate_Hugetlb:       0 kB\nSwap:                  0 kB\nSwapPss:               0 kB\nLocked:                0 kB\n"
+    }
+  },
+  "notes": [
+    "One run per arm; timing noise is not estimated by independent repetitions.",
+    "Before is the immutable mapped base; after opens the updatable directory with an empty delta.",
+    "Recall is measured before updates; randomized and 50k tests cover updates and consolidation.",
+    "HMS operation batches contain 1% of ids and include commit; hnswlib uses its harness save_index flush.",
+    "Before QPS uses the existing ann-qgraph aggregate timer; after and hnswlib use per-query timers. The separately timed Criterion comparison uses identical query timing for both versions.",
+    "The SIFT recall values match at all 20 ef/rerank configurations. The single run shows 2.9\u20134.6% lower QPS through the update API; no independent-round noise estimate is available.",
+    "HMS cold-start is open plus first query with index-file page cache dropped; hnswlib cold_start_s includes interpreter startup and query-file loading, following the existing harness boundary.",
+    "The final dimension-keyed scratch reuse fix is covered by Criterion and regression tests. SIFT serving/update measurements use the preceding commit; they involve only one dimension.",
+    "Final source 3c4ca53 includes explicit ownership unlock, id-table checksums, bounded manifest reads, dense-id mapping bypass, single query validation, search_into, and delta routing reachability. The final Criterion section measures that source; initial and buffer-fix measurements are retained. The single SIFT comparison precedes these fixes.",
+    "The final Criterion pair is 24.97 us immutable versus 24.85 us buffered clean search (-0.5%); the identical immutable binary ranged 23.66\u201324.97 us across runs, so no speedup is claimed.",
+    "After the measured query-path revision 3c4ca53, a4ec72f changes only header-version recognition and its tests: unknown versions are refused before fixed-size validation. No wire bytes or query algorithms change; this final header guard was not benchmarked."
+  ],
+  "invocation_commit_label": "a2a16d4189a56162b3782977d5e5bbcb1a063bc1",
+  "source": {
+    "immutable_binary_commit": "6685568704b6da3399baebe6a82c4dea21d0ecfd",
+    "graph_builder_commit": "caf87a79592e4aad193652566af755b4667246e6",
+    "updatable_binary_commit": "e8b0b18b160f9a02e133d189975f8c14efca2f16",
+    "immutable_binary_sha256": "361cfee5689215651ff3cf6fb13a00c619e5ee64a44b4f69aec92e7ff86ac31c",
+    "updatable_binary_sha256": "8ccc1fb7422575069a65314faf3ef8ea166d1a6a4cb0ae3a4e80ac2bc4be15c4",
+    "note": "The graph was built before serving. The updatable binary was rebuilt with bounded tombstone compensation before any serving or update measurements. Rebasing onto main changed only docs/benchmarks/COMPARISON.md; the recorded invocation retains its original commit label."
+  },
+  "criterion": {
+    "commit": "3c4ca53ed6fb21cfbf63ea7a9ff3b9320c45aa76",
+    "before_commit": "6685568704b6da3399baebe6a82c4dea21d0ecfd",
+    "dataset": "10,000 deterministic uniform vectors, dimension 32, Euclidean, ef=64, rerank=64, k=10; 50 samples",
+    "commands": [
+      {
+        "cwd": "/home/davidcondrey/codex-ann-update/before",
+        "environment": {
+          "CARGO_TARGET_DIR": "/home/davidcondrey/codex-ann-update/target-before",
+          "RAYON_NUM_THREADS": "10"
+        },
+        "command": [
+          "flock",
+          "-F",
+          "/home/davidcondrey/hms-timing.lock",
+          "taskset",
+          "-c",
+          "2,3",
+          "/home/davidcondrey/codex-ann-update/target-before/dist/deps/vector_updates-c4f1efd2bcfee7d8",
+          "--bench",
+          "--save-baseline",
+          "release-final"
+        ]
+      },
+      {
+        "cwd": "/home/davidcondrey/codex-ann-update/after",
+        "environment": {
+          "CARGO_TARGET_DIR": "/home/davidcondrey/codex-ann-update/target-after",
+          "RAYON_NUM_THREADS": "10"
+        },
+        "command": [
+          "flock",
+          "-F",
+          "/home/davidcondrey/hms-timing.lock",
+          "taskset",
+          "-c",
+          "2,3",
+          "/home/davidcondrey/codex-ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8",
+          "--bench",
+          "--save-baseline",
+          "release-final"
+        ]
+      }
+    ],
+    "estimates": {
+      "before": {
+        "binary_sha256": "672032bab93dd65c44a1ded18fc392069e591e3f4b3871957101605983f75128",
+        "benchmarks": {
+          "vertex_10k_32d": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24861.072678243356,
+                "upper_bound": 25136.28107294617
+              },
+              "point_estimate": 24994.203501116266,
+              "standard_error": 70.00135982582665
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24711.172563069114,
+                "upper_bound": 25103.828672790623
+              },
+              "point_estimate": 24895.84293831169,
+              "standard_error": 97.17514402084404
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 333.3717259393129,
+                "upper_bound": 684.800348205998
+              },
+              "point_estimate": 502.2605070385649,
+              "standard_error": 84.28491696655216
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24836.90939881339,
+                "upper_bound": 25110.420550742212
+              },
+              "point_estimate": 24970.01888146798,
+              "standard_error": 69.62176627245864
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 385.8666060712142,
+                "upper_bound": 604.4917465074575
+              },
+              "point_estimate": 501.2525601116445,
+              "standard_error": 56.21676364769166
+            }
+          }
+        },
+        "stdout": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0242 s (196k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.837 \u00b5s 24.970 \u00b5s 25.110 \u00b5s]\nFound 1 outliers among 50 measurements (2.00%)\n  1 (2.00%) high mild\n\n"
+      },
+      "after": {
+        "binary_sha256": "2d25069c7e6baea482990ea6a032148ec54102f1e3cd60995aca2290379ad910",
+        "benchmarks": {
+          "updatable_10k_32d_buffered": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24794.25634194916,
+                "upper_bound": 25050.18567690268
+              },
+              "point_estimate": 24915.980219491274,
+              "standard_error": 65.56360473691097
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24607.61769717624,
+                "upper_bound": 24918.816075949366
+              },
+              "point_estimate": 24745.969005296705,
+              "standard_error": 76.66130385273036
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 121.48763354038749,
+                "upper_bound": 480.16897506252786
+              },
+              "point_estimate": 294.74646729945744,
+              "standard_error": 87.7790954876484
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24749.85352153077,
+                "upper_bound": 24978.394906331203
+              },
+              "point_estimate": 24854.971450646182,
+              "standard_error": 58.64287792147887
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 338.6971221569581,
+                "upper_bound": 571.1663974907393
+              },
+              "point_estimate": 469.9358284230521,
+              "standard_error": 59.63206442909868
+            }
+          },
+          "updatable_10k_32d_clean": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24627.188017383585,
+                "upper_bound": 24810.00537677935
+              },
+              "point_estimate": 24715.056062968302,
+              "standard_error": 46.515860055441195
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24512.822102425875,
+                "upper_bound": 24744.16555334193
+              },
+              "point_estimate": 24582.442553908357,
+              "standard_error": 61.13788051561611
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 98.93043893593563,
+                "upper_bound": 383.18069511022907
+              },
+              "point_estimate": 197.6869244164889,
+              "standard_error": 75.80870587484029
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24656.202975601904,
+                "upper_bound": 24905.129359026963
+              },
+              "point_estimate": 24776.659776632492,
+              "standard_error": 63.690174837988806
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 249.65323311561576,
+                "upper_bound": 405.6514905771539
+              },
+              "point_estimate": 332.7744430317227,
+              "standard_error": 40.040424810706575
+            }
+          },
+          "vertex_10k_32d": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 25019.687707555477,
+                "upper_bound": 25400.047113140747
+              },
+              "point_estimate": 25197.53379888176,
+              "standard_error": 97.17772668519271
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24786.756517595306,
+                "upper_bound": 25141.756253537067
+              },
+              "point_estimate": 24969.455061631263,
+              "standard_error": 89.86601114475948
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 229.4625778141302,
+                "upper_bound": 666.1144768416292
+              },
+              "point_estimate": 435.31867958986027,
+              "standard_error": 109.512126881857
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24825.508148438366,
+                "upper_bound": 25040.674671283046
+              },
+              "point_estimate": 24920.251297574538,
+              "standard_error": 54.80458407720515
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 449.89439797369755,
+                "upper_bound": 885.112753868538
+              },
+              "point_estimate": 695.9136388933168,
+              "standard_error": 109.94979174035112
+            }
+          }
+        },
+        "stdout": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0260 s (198k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.826 \u00b5s 24.920 \u00b5s 25.041 \u00b5s]\nFound 3 outliers among 50 measurements (6.00%)\n  3 (6.00%) high mild\n\nBenchmarking updatable_10k_32d_buffered\nBenchmarking updatable_10k_32d_buffered: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_buffered: Collecting 50 samples in estimated 5.0306 s (201k iterations)\nBenchmarking updatable_10k_32d_buffered: Analyzing\nupdatable_10k_32d_buffered\n                        time:   [24.750 \u00b5s 24.855 \u00b5s 24.978 \u00b5s]\nFound 4 outliers among 50 measurements (8.00%)\n  4 (8.00%) high mild\n\nBenchmarking updatable_10k_32d_clean\nBenchmarking updatable_10k_32d_clean: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_clean: Collecting 50 samples in estimated 5.0024 s (203k iterations)\nBenchmarking updatable_10k_32d_clean: Analyzing\nupdatable_10k_32d_clean time:   [24.656 \u00b5s 24.777 \u00b5s 24.905 \u00b5s]\nFound 1 outliers among 50 measurements (2.00%)\n  1 (2.00%) high mild\n\n"
+      },
+      "before_source": "// Copyright 2024-2026 WritersLogic Contributors\n// SPDX-License-Identifier: Apache-2.0\n\nuse criterion::{criterion_group, criterion_main, Criterion};\nuse holographic_memory::core::qgraph::{\n    BuildParams, Graph, Metric, VGraph, VSearchParams,\n};\nuse std::hint::black_box;\n\nfn vectors() -> Vec<f32> {\n    let mut seed = 42u64;\n    (0..10000 * 32)\n        .map(|_| {\n            seed ^= seed << 13;\n            seed ^= seed >> 7;\n            seed ^= seed << 17;\n            (seed >> 40) as f32 / (1u32 << 24) as f32\n        })\n        .collect()\n}\n\nfn search(c: &mut Criterion) {\n    let data = vectors();\n    let graph = Graph::build(\n        &data,\n        32,\n        &BuildParams {\n            metric: Metric::Euclidean,\n            ..BuildParams::default()\n        },\n    )\n    .unwrap();\n    let index = VGraph::from_graph(&graph, true).unwrap();\n    let mut searcher = index.searcher();\n    let mut out = Vec::new();\n    let params = VSearchParams {\n        ef: 64,\n        rerank: 64,\n        ..VSearchParams::default()\n    };\n    let mut q = 0;\n    c.bench_function(\"vertex_10k_32d\", |b| {\n        b.iter(|| {\n            q = (q + 1) % 256;\n            searcher\n                .search(black_box(&data[q * 32..(q + 1) * 32]), 10, params, &mut out)\n                .unwrap();\n            black_box(&out);\n        })\n    });\n\n}\n\ncriterion_group! { name = benches; config = Criterion::default().sample_size(50); targets = search }\ncriterion_main!(benches);\n"
+    },
+    "stdout_before": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0242 s (196k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.837 \u00b5s 24.970 \u00b5s 25.110 \u00b5s]\nFound 1 outliers among 50 measurements (2.00%)\n  1 (2.00%) high mild\n\n",
+    "stdout_after": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0260 s (198k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.826 \u00b5s 24.920 \u00b5s 25.041 \u00b5s]\nFound 3 outliers among 50 measurements (6.00%)\n  3 (6.00%) high mild\n\nBenchmarking updatable_10k_32d_buffered\nBenchmarking updatable_10k_32d_buffered: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_buffered: Collecting 50 samples in estimated 5.0306 s (201k iterations)\nBenchmarking updatable_10k_32d_buffered: Analyzing\nupdatable_10k_32d_buffered\n                        time:   [24.750 \u00b5s 24.855 \u00b5s 24.978 \u00b5s]\nFound 4 outliers among 50 measurements (8.00%)\n  4 (8.00%) high mild\n\nBenchmarking updatable_10k_32d_clean\nBenchmarking updatable_10k_32d_clean: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_clean: Collecting 50 samples in estimated 5.0024 s (203k iterations)\nBenchmarking updatable_10k_32d_clean: Analyzing\nupdatable_10k_32d_clean time:   [24.656 \u00b5s 24.777 \u00b5s 24.905 \u00b5s]\nFound 1 outliers among 50 measurements (2.00%)\n  1 (2.00%) high mild\n\n",
+    "before_setup": "Copy benches/vector_updates.rs into the before checkout, remove the UpdatableVGraph import and the updatable benchmark block, and register the vector_updates harness=false bench target.",
+    "build_command": [
+      "taskset",
+      "-c",
+      "12-21",
+      "cargo",
+      "+1.96.0",
+      "bench",
+      "--profile",
+      "dist",
+      "--bench",
+      "vector_updates",
+      "--no-run"
+    ],
+    "comparison": {
+      "updatable_10k_32d_buffered": {
+        "before_ns": 24970.01888146798,
+        "after_ns": 24854.971450646182,
+        "latency_change_pct": -0.46074226602680346
+      },
+      "updatable_10k_32d_clean": {
+        "before_ns": 24970.01888146798,
+        "after_ns": 24776.659776632492,
+        "latency_change_pct": -0.774365072583072
+      },
+      "vertex_10k_32d": {
+        "before_ns": 24970.01888146798,
+        "after_ns": 24920.251297574538,
+        "latency_change_pct": -0.1993093562711601
+      }
+    }
+  },
+  "criterion_initial": {
+    "commit": "f1a9e926a927ccc965e0a40e523cdba8d86c1ae8",
+    "before_commit": "6685568704b6da3399baebe6a82c4dea21d0ecfd",
+    "dataset": "10,000 deterministic uniform vectors, dimension 32, Euclidean, ef=64, rerank=64, k=10; 50 samples",
+    "commands": [
+      {
+        "cwd": "/home/davidcondrey/codex-ann-update/before",
+        "environment": {
+          "CARGO_TARGET_DIR": "/home/davidcondrey/codex-ann-update/target-before",
+          "RAYON_NUM_THREADS": "10"
+        },
+        "command": [
+          "flock",
+          "-F",
+          "/home/davidcondrey/hms-timing.lock",
+          "taskset",
+          "-c",
+          "2,3",
+          "/home/davidcondrey/codex-ann-update/target-before/dist/deps/vector_updates-c4f1efd2bcfee7d8",
+          "--bench",
+          "--save-baseline",
+          "final-paired"
+        ]
+      },
+      {
+        "cwd": "/home/davidcondrey/codex-ann-update/after",
+        "environment": {
+          "CARGO_TARGET_DIR": "/home/davidcondrey/codex-ann-update/target-after",
+          "RAYON_NUM_THREADS": "10"
+        },
+        "command": [
+          "flock",
+          "-F",
+          "/home/davidcondrey/hms-timing.lock",
+          "taskset",
+          "-c",
+          "2,3",
+          "/home/davidcondrey/codex-ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8",
+          "--bench",
+          "--save-baseline",
+          "final-paired"
+        ]
+      }
+    ],
+    "estimates": {
+      "before": {
+        "binary_sha256": "672032bab93dd65c44a1ded18fc392069e591e3f4b3871957101605983f75128",
+        "benchmarks": {
+          "vertex_10k_32d": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24004.8330975025,
+                "upper_bound": 24512.486531999773
+              },
+              "point_estimate": 24233.773697835906,
+              "standard_error": 130.2500832139174
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 23785.326410934744,
+                "upper_bound": 24127.479835390946
+              },
+              "point_estimate": 23898.36547067901,
+              "standard_error": 105.52266039805603
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 156.7565686669388,
+                "upper_bound": 612.1956766943935
+              },
+              "point_estimate": 302.4948477035922,
+              "standard_error": 117.89782979730741
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24062.474932044574,
+                "upper_bound": 24425.861079015107
+              },
+              "point_estimate": 24236.83101979479,
+              "standard_error": 92.980438845049
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 485.9767883321532,
+                "upper_bound": 1305.5157452718279
+              },
+              "point_estimate": 929.5079821239906,
+              "standard_error": 214.31539052199287
+            }
+          }
+        },
+        "public_bench_sha256": "361cfee5689215651ff3cf6fb13a00c619e5ee64a44b4f69aec92e7ff86ac31c"
+      },
+      "after": {
+        "binary_sha256": "7dada362f41797526a1b42f8e13265d1823db933740757aa6023659aae8936ff",
+        "benchmarks": {
+          "vertex_10k_32d": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24707.934665880977,
+                "upper_bound": 25824.134201321114
+              },
+              "point_estimate": 25136.45336291986,
+              "standard_error": 304.53067774579927
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24474.876107594937,
+                "upper_bound": 24878.675825872182
+              },
+              "point_estimate": 24631.554464247914,
+              "standard_error": 95.96106456669523
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 207.64366410375007,
+                "upper_bound": 683.5494716654588
+              },
+              "point_estimate": 403.6259887432141,
+              "standard_error": 120.02330865906062
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24754.983458273375,
+                "upper_bound": 25124.178450681233
+              },
+              "point_estimate": 24935.9096885206,
+              "standard_error": 94.4579436739542
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 517.175595241051,
+                "upper_bound": 3610.7498583522447
+              },
+              "point_estimate": 2185.797938122031,
+              "standard_error": 1040.1557645911728
+            }
+          },
+          "updatable_10k_32d_clean": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24459.569738243896,
+                "upper_bound": 24746.01491361366
+              },
+              "point_estimate": 24589.369480287667,
+              "standard_error": 73.31975792966949
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24350.041118421053,
+                "upper_bound": 24530.425125313282
+              },
+              "point_estimate": 24389.332776600946,
+              "standard_error": 51.789136951031786
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 104.77973622118525,
+                "upper_bound": 374.6119010945246
+              },
+              "point_estimate": 161.98026379742575,
+              "standard_error": 75.98631100120288
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24459.711496800403,
+                "upper_bound": 24722.62784375949
+              },
+              "point_estimate": 24582.32401894369,
+              "standard_error": 67.02578084518224
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 296.32945999449356,
+                "upper_bound": 750.3419948453227
+              },
+              "point_estimate": 524.5695085931304,
+              "standard_error": 129.45156915525737
+            }
+          }
+        },
+        "public_bench_sha256": "8ccc1fb7422575069a65314faf3ef8ea166d1a6a4cb0ae3a4e80ac2bc4be15c4"
+      }
+    },
+    "stdout_before": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0102 s (207k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.062 \u00b5s 24.237 \u00b5s 24.426 \u00b5s]\nFound 3 outliers among 50 measurements (6.00%)\n  1 (2.00%) high mild\n  2 (4.00%) high severe\n\n",
+    "stdout_after": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0147 s (201k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.755 \u00b5s 24.936 \u00b5s 25.124 \u00b5s]\nFound 5 outliers among 50 measurements (10.00%)\n  4 (8.00%) high mild\n  1 (2.00%) high severe\n\nBenchmarking updatable_10k_32d_clean\nBenchmarking updatable_10k_32d_clean: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_clean: Collecting 50 samples in estimated 5.0215 s (194k iterations)\nBenchmarking updatable_10k_32d_clean: Analyzing\nupdatable_10k_32d_clean time:   [24.460 \u00b5s 24.582 \u00b5s 24.723 \u00b5s]\nFound 2 outliers among 50 measurements (4.00%)\n  1 (2.00%) high mild\n  1 (2.00%) high severe\n\n",
+    "before_setup": "Copy benches/vector_updates.rs into the before checkout, remove the UpdatableVGraph import and the updatable benchmark block, and register the vector_updates harness=false bench target.",
+    "build_command": [
+      "taskset",
+      "-c",
+      "12-21",
+      "cargo",
+      "+1.96.0",
+      "bench",
+      "--profile",
+      "dist",
+      "--bench",
+      "vector_updates",
+      "--no-run"
+    ]
+  },
+  "criterion_buffer_fix": {
+    "commit": "b4eccff622e387a46f253e76c9fc8e4844233883",
+    "before_commit": "6685568704b6da3399baebe6a82c4dea21d0ecfd",
+    "dataset": "10,000 deterministic uniform vectors, dimension 32, Euclidean, ef=64, rerank=64, k=10; 50 samples",
+    "commands": [
+      {
+        "cwd": "/home/davidcondrey/codex-ann-update/before",
+        "environment": {
+          "CARGO_TARGET_DIR": "/home/davidcondrey/codex-ann-update/target-before",
+          "RAYON_NUM_THREADS": "10"
+        },
+        "command": [
+          "flock",
+          "-F",
+          "/home/davidcondrey/hms-timing.lock",
+          "taskset",
+          "-c",
+          "2,3",
+          "/home/davidcondrey/codex-ann-update/target-before/dist/deps/vector_updates-c4f1efd2bcfee7d8",
+          "--bench",
+          "--save-baseline",
+          "release-final"
+        ]
+      },
+      {
+        "cwd": "/home/davidcondrey/codex-ann-update/after",
+        "environment": {
+          "CARGO_TARGET_DIR": "/home/davidcondrey/codex-ann-update/target-after",
+          "RAYON_NUM_THREADS": "10"
+        },
+        "command": [
+          "flock",
+          "-F",
+          "/home/davidcondrey/hms-timing.lock",
+          "taskset",
+          "-c",
+          "2,3",
+          "/home/davidcondrey/codex-ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8",
+          "--bench",
+          "--save-baseline",
+          "release-final"
+        ]
+      }
+    ],
+    "estimates": {
+      "before": {
+        "binary_sha256": "672032bab93dd65c44a1ded18fc392069e591e3f4b3871957101605983f75128",
+        "benchmarks": {
+          "vertex_10k_32d": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 23459.065804260914,
+                "upper_bound": 23922.43035924147
+              },
+              "point_estimate": 23674.133819524428,
+              "standard_error": 118.45436937095457
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 23250.154208754208,
+                "upper_bound": 23648.919859848487
+              },
+              "point_estimate": 23409.176342737723,
+              "standard_error": 90.43611842549933
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 226.29585707252267,
+                "upper_bound": 693.8784528753129
+              },
+              "point_estimate": 436.4407059890018,
+              "standard_error": 116.37527714353116
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 23513.679147690036,
+                "upper_bound": 23848.389830231637
+              },
+              "point_estimate": 23663.40494717707,
+              "standard_error": 85.78710856556205
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 522.7746762038015,
+                "upper_bound": 1140.7927982062731
+              },
+              "point_estimate": 847.7660726980705,
+              "standard_error": 161.83490003596182
+            }
+          }
+        },
+        "stdout": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0019 s (210k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [23.514 \u00b5s 23.663 \u00b5s 23.848 \u00b5s]\nFound 6 outliers among 50 measurements (12.00%)\n  4 (8.00%) high mild\n  2 (4.00%) high severe\n\n"
+      },
+      "after": {
+        "binary_sha256": "314ea4a171a7898aa265647f6049c7702dbb95139608663566df106dae0c7b94",
+        "benchmarks": {
+          "updatable_10k_32d_buffered": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24608.24937155471,
+                "upper_bound": 24961.166598938336
+              },
+              "point_estimate": 24779.435599047494,
+              "standard_error": 90.13029854549778
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24417.941569970586,
+                "upper_bound": 24863.66724318658
+              },
+              "point_estimate": 24628.44909943419,
+              "standard_error": 122.84691893707222
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 293.12329158353987,
+                "upper_bound": 787.3905367229505
+              },
+              "point_estimate": 508.49594839530903,
+              "standard_error": 126.5001042918693
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24688.722045304094,
+                "upper_bound": 25046.971238432627
+              },
+              "point_estimate": 24860.82555297927,
+              "standard_error": 91.1943286431703
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 492.29810080994827,
+                "upper_bound": 775.3117612298088
+              },
+              "point_estimate": 645.3606190469366,
+              "standard_error": 72.3554249382491
+            }
+          },
+          "updatable_10k_32d_clean": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24638.128863479145,
+                "upper_bound": 24993.534898294598
+              },
+              "point_estimate": 24805.500279422664,
+              "standard_error": 90.59239378932702
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24391.982683982686,
+                "upper_bound": 24807.500554938957
+              },
+              "point_estimate": 24422.755829114896,
+              "standard_error": 113.01371207740578
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 52.14263267204871,
+                "upper_bound": 663.0771718569904
+              },
+              "point_estimate": 178.8356719979032,
+              "standard_error": 159.74500056538355
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24696.45529972044,
+                "upper_bound": 25072.521016663843
+              },
+              "point_estimate": 24881.719977289627,
+              "standard_error": 95.98280297656406
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 449.1311272707286,
+                "upper_bound": 829.1821131225853
+              },
+              "point_estimate": 647.928489171901,
+              "standard_error": 98.59005550514958
+            }
+          },
+          "vertex_10k_32d": {
+            "mean": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24211.62619292337,
+                "upper_bound": 24699.21130827036
+              },
+              "point_estimate": 24434.785636135497,
+              "standard_error": 125.50792922637565
+            },
+            "median": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 23986.761888292865,
+                "upper_bound": 24391.060761544693
+              },
+              "point_estimate": 24057.905593199073,
+              "standard_error": 129.16502607882882
+            },
+            "median_abs_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 182.97830570992045,
+                "upper_bound": 707.3462142221824
+              },
+              "point_estimate": 468.87679951504015,
+              "standard_error": 119.65836293033604
+            },
+            "slope": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 24269.29777435252,
+                "upper_bound": 24684.010067090137
+              },
+              "point_estimate": 24475.564025220938,
+              "standard_error": 106.40233071687065
+            },
+            "std_dev": {
+              "confidence_interval": {
+                "confidence_level": 0.95,
+                "lower_bound": 496.6876327603468,
+                "upper_bound": 1251.6539514224064
+              },
+              "point_estimate": 896.9788411039722,
+              "standard_error": 200.48124424166048
+            }
+          }
+        },
+        "stdout": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0041 s (205k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.269 \u00b5s 24.476 \u00b5s 24.684 \u00b5s]\nFound 4 outliers among 50 measurements (8.00%)\n  2 (4.00%) high mild\n  2 (4.00%) high severe\n\nBenchmarking updatable_10k_32d_buffered\nBenchmarking updatable_10k_32d_buffered: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_buffered: Collecting 50 samples in estimated 5.0120 s (203k iterations)\nBenchmarking updatable_10k_32d_buffered: Analyzing\nupdatable_10k_32d_buffered\n                        time:   [24.689 \u00b5s 24.861 \u00b5s 25.047 \u00b5s]\nFound 1 outliers among 50 measurements (2.00%)\n  1 (2.00%) high mild\n\nBenchmarking updatable_10k_32d_clean\nBenchmarking updatable_10k_32d_clean: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_clean: Collecting 50 samples in estimated 5.0286 s (203k iterations)\nBenchmarking updatable_10k_32d_clean: Analyzing\nupdatable_10k_32d_clean time:   [24.696 \u00b5s 24.882 \u00b5s 25.073 \u00b5s]\nFound 2 outliers among 50 measurements (4.00%)\n  2 (4.00%) high mild\n\n"
+      },
+      "before_source": "// Copyright 2024-2026 WritersLogic Contributors\n// SPDX-License-Identifier: Apache-2.0\n\nuse criterion::{criterion_group, criterion_main, Criterion};\nuse holographic_memory::core::qgraph::{\n    BuildParams, Graph, Metric, VGraph, VSearchParams,\n};\nuse std::hint::black_box;\n\nfn vectors() -> Vec<f32> {\n    let mut seed = 42u64;\n    (0..10000 * 32)\n        .map(|_| {\n            seed ^= seed << 13;\n            seed ^= seed >> 7;\n            seed ^= seed << 17;\n            (seed >> 40) as f32 / (1u32 << 24) as f32\n        })\n        .collect()\n}\n\nfn search(c: &mut Criterion) {\n    let data = vectors();\n    let graph = Graph::build(\n        &data,\n        32,\n        &BuildParams {\n            metric: Metric::Euclidean,\n            ..BuildParams::default()\n        },\n    )\n    .unwrap();\n    let index = VGraph::from_graph(&graph, true).unwrap();\n    let mut searcher = index.searcher();\n    let mut out = Vec::new();\n    let params = VSearchParams {\n        ef: 64,\n        rerank: 64,\n        ..VSearchParams::default()\n    };\n    let mut q = 0;\n    c.bench_function(\"vertex_10k_32d\", |b| {\n        b.iter(|| {\n            q = (q + 1) % 256;\n            searcher\n                .search(black_box(&data[q * 32..(q + 1) * 32]), 10, params, &mut out)\n                .unwrap();\n            black_box(&out);\n        })\n    });\n\n}\n\ncriterion_group! { name = benches; config = Criterion::default().sample_size(50); targets = search }\ncriterion_main!(benches);\n"
+    },
+    "stdout_before": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0019 s (210k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [23.514 \u00b5s 23.663 \u00b5s 23.848 \u00b5s]\nFound 6 outliers among 50 measurements (12.00%)\n  4 (8.00%) high mild\n  2 (4.00%) high severe\n\n",
+    "stdout_after": "Gnuplot not found, using plotters backend\nBenchmarking vertex_10k_32d\nBenchmarking vertex_10k_32d: Warming up for 3.0000 s\nBenchmarking vertex_10k_32d: Collecting 50 samples in estimated 5.0041 s (205k iterations)\nBenchmarking vertex_10k_32d: Analyzing\nvertex_10k_32d          time:   [24.269 \u00b5s 24.476 \u00b5s 24.684 \u00b5s]\nFound 4 outliers among 50 measurements (8.00%)\n  2 (4.00%) high mild\n  2 (4.00%) high severe\n\nBenchmarking updatable_10k_32d_buffered\nBenchmarking updatable_10k_32d_buffered: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_buffered: Collecting 50 samples in estimated 5.0120 s (203k iterations)\nBenchmarking updatable_10k_32d_buffered: Analyzing\nupdatable_10k_32d_buffered\n                        time:   [24.689 \u00b5s 24.861 \u00b5s 25.047 \u00b5s]\nFound 1 outliers among 50 measurements (2.00%)\n  1 (2.00%) high mild\n\nBenchmarking updatable_10k_32d_clean\nBenchmarking updatable_10k_32d_clean: Warming up for 3.0000 s\nBenchmarking updatable_10k_32d_clean: Collecting 50 samples in estimated 5.0286 s (203k iterations)\nBenchmarking updatable_10k_32d_clean: Analyzing\nupdatable_10k_32d_clean time:   [24.696 \u00b5s 24.882 \u00b5s 25.073 \u00b5s]\nFound 2 outliers among 50 measurements (4.00%)\n  2 (4.00%) high mild\n\n",
+    "before_setup": "Copy benches/vector_updates.rs into the before checkout, remove the UpdatableVGraph import and the updatable benchmark block, and register the vector_updates harness=false bench target.",
+    "build_command": [
+      "taskset",
+      "-c",
+      "12-21",
+      "cargo",
+      "+1.96.0",
+      "bench",
+      "--profile",
+      "dist",
+      "--bench",
+      "vector_updates",
+      "--no-run"
+    ],
+    "comparison": {
+      "updatable_10k_32d_buffered": {
+        "before_ns": 23663.40494717707,
+        "after_ns": 24860.82555297927,
+        "latency_change_pct": 5.060221081772287
+      },
+      "updatable_10k_32d_clean": {
+        "before_ns": 23663.40494717707,
+        "after_ns": 24881.719977289627,
+        "latency_change_pct": 5.148519550893704
+      },
+      "vertex_10k_32d": {
+        "before_ns": 23663.40494717707,
+        "after_ns": 24475.564025220938,
+        "latency_change_pct": 3.432131089574053
+      }
+    }
+  },
+  "final_source_commit": "a4ec72fad4db9b260b0c6a8735b56757307b744e"
+}
