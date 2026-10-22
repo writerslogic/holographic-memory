@@ -24,6 +24,7 @@ anyhow = "1"
 tempfile = "3"
 
 [dev-dependencies]
+rayon = "1.8"
 tempfile = "3"
 
 [profile.release]
