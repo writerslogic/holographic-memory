@@ -404,7 +404,10 @@ impl PostingList {
     }
 
     fn decode_block(&self, index: usize, out: &mut [Posting; BLOCK_LEN]) {
-        let block = &self.blocks[index];
+        self.decode_values(&self.blocks[index], out);
+    }
+
+    fn decode_values(&self, block: &Block, out: &mut [Posting; BLOCK_LEN]) {
         let count = usize::from(block.count);
         let bytes = &self.data[block.offset..];
         let mut frequencies = BitReader::new(
@@ -498,14 +501,9 @@ impl PostingList {
             return;
         }
         let mut start = 0;
-        if self
-            .blocks
-            .last()
-            .is_some_and(|b| usize::from(b.count) < BLOCK_LEN)
-        {
+        if let Some(block) = self.blocks.pop_if(|b| usize::from(b.count) < BLOCK_LEN) {
             let mut decoded = [(0, 0); BLOCK_LEN];
-            self.decode_block(self.blocks.len() - 1, &mut decoded);
-            let block = self.blocks.pop().unwrap();
+            self.decode_values(&block, &mut decoded);
             self.data.truncate(block.offset);
             let old_len = usize::from(block.count);
             let take = (BLOCK_LEN - old_len).min(run.len());

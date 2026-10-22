@@ -395,3 +395,44 @@ fn whole_articles_preserve_conjunction_exclusion_and_cross_boundary_phrases() {
         )
         .is_err());
 }
+
+#[test]
+fn shared_whole_article_batches_preserve_pinned_owners_at_group_boundaries() {
+    let ingest = IngestOptions {
+        whole_document: true,
+        ..options(true, true)
+    };
+    let template = documents::prepare_with_options(
+        input("template", "red blue red who"),
+        64,
+        None,
+        None,
+        TextEncoder::default(),
+        &ingest,
+    )
+    .unwrap();
+    for count in [
+        documents::MAX_BATCH_ITEMS - 1,
+        documents::MAX_BATCH_ITEMS,
+        documents::MAX_BATCH_ITEMS + 1,
+    ] {
+        let batch: Vec<_> = (0..count)
+            .map(|i| {
+                let mut document = template.clone();
+                document.id = format!("d{i:05}");
+                std::sync::Arc::new(document)
+            })
+            .collect();
+        let pinned = std::sync::Arc::clone(&batch[0]);
+        let before = serde_json::to_vec(pinned.as_ref()).unwrap();
+        let mut store = DocumentStore::default();
+        store.insert_batch(batch);
+        assert_eq!(run(&store, "+\"red blue\" +who", 10).count, Some(count));
+        assert_eq!(run(&store, "red blue", 10).count, Some(count));
+        store.remove("d00000");
+        assert_eq!(run(&store, "red blue", 10).count, Some(count - 1));
+        drop(store);
+        assert_eq!(serde_json::to_vec(pinned.as_ref()).unwrap(), before);
+        assert_eq!(pinned.chunks[0].terms.get("red"), Some(&2));
+    }
+}

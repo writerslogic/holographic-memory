@@ -122,12 +122,15 @@ interface. This reuses the frame dictionary already encoded in HMS-TXN-3 and avo
 copying each word into every article. Narrow positional offsets to u8/u16/u32 in
 memory. Serialization still emits the same term keys, frequencies and u32 offsets;
 existing and new golden bytes remain fixed. Groups and captured documents pin shared
-dictionary owners. Fresh whole-article ingest groups use 512 documents; legacy and
+dictionary owners. Fresh whole-article ingest groups use at most 4,096 documents, matching
+the existing batch limit; legacy and
 non-positional ingest behavior is preserved. Binary replay shares the existing frame
 dictionary. The second release must remeasure both indexing and query memory.
 
 Shared term frequencies also narrow to u8/u16/u32. Small frequencies borrow immutable
 u32 values from a fixed table, preserving existing reference-returning term APIs.
+Phrase verification resolves each term index once rather than repeating dictionary
+searches for presence, offsets and the rarest positional lead.
 
 ## Pruning experiment
 

@@ -147,24 +147,27 @@ fn frequency(clause: &Clause, chunk: &StoredChunk) -> u32 {
     if !clause.phrase {
         return chunk.terms.get(&words[0]).copied().unwrap_or(0);
     }
-    if words
-        .iter()
-        .any(|w| chunk.terms.get(w).copied().unwrap_or(0) == 0)
-    {
-        return 0;
+    let mut indices = Vec::with_capacity(words.len());
+    let (mut lead, mut least) = (0, u32::MAX);
+    for word in words {
+        let Some(index) = chunk.terms.index(word) else {
+            return 0;
+        };
+        let frequency = chunk.terms.frequency_at(index);
+        if frequency == 0 {
+            return 0;
+        }
+        if frequency < least {
+            lead = indices.len();
+            least = frequency;
+        }
+        indices.push(index);
     }
     let positions = chunk
         .terms
         .positions
         .as_ref()
         .expect("phrase capability checked");
-    let indices: Vec<usize> = words
-        .iter()
-        .map(|w| chunk.terms.index(w).expect("present phrase term"))
-        .collect();
-    let lead = (0..words.len())
-        .min_by_key(|&i| chunk.terms.get(&words[i]).copied().unwrap_or(0))
-        .expect("nonempty phrase");
     let mut cursors: Vec<_> = indices
         .iter()
         .map(|&i| positions.iter(i).peekable())

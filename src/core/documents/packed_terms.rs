@@ -205,6 +205,14 @@ impl StoredTerms {
         }
     }
 
+    pub(super) fn frequency_at(&self, index: usize) -> u32 {
+        match self.terms.as_deref().expect("nonempty term table") {
+            TermData::Packed(table) => table.frequencies[index],
+            TermData::Shared(table) => *table.frequencies.get(index).expect("term index"),
+            TermData::Tree(table) => *table.values().nth(index).expect("term index"),
+        }
+    }
+
     pub(crate) fn contains_key(&self, key: &str) -> bool {
         self.get(key).is_some()
     }

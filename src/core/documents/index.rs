@@ -332,7 +332,7 @@ impl DocumentStore {
     /// the batch) takes the replacement path at its turn. The maximal runs of new, distinct
     /// documents between those are indexed in bulk (`postings::index_chunks`).
     pub(crate) fn insert_batch(&mut self, mut documents: Vec<Arc<StoredDocument>>) {
-        for group in documents.chunks_mut(512) {
+        for group in documents.chunks_mut(super::MAX_BATCH_ITEMS) {
             if group
                 .iter()
                 .all(|d| d.chunks.iter().all(|c| c.terms.is_whole_document()))

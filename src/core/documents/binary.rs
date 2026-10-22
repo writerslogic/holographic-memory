@@ -165,11 +165,11 @@ impl<'a> FrameTerms<'a> {
         Self { sorted, ids }
     }
 
-    /// Front-coded: per term, the bytes it shares with the previous one, then the rest.
     pub(super) fn into_shared(self) -> (Arc<SharedDictionary>, Vec<u32>) {
         (Arc::new(SharedDictionary::new(&self.sorted)), self.ids)
     }
 
+    /// Front-coded: per term, the bytes it shares with the previous one, then the rest.
     pub(crate) fn write(&self, out: &mut Vec<u8>) {
         put_varint(out, self.sorted.len() as u64);
         let mut previous: &[u8] = &[];
