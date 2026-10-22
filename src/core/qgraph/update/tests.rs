@@ -99,15 +99,19 @@ fn deterministic_streaming_model_survives_generations_and_replay_twice() {
         let row: Vec<f32> = (0..4)
             .map(|_| (random.next_u64() >> 40) as f32 / (1u32 << 24) as f32)
             .collect();
-        if !live.contains_key(&id) {
-            index.insert(id, &row).unwrap();
-            live.insert(id, row);
-        } else if step % 3 == 0 {
-            index.delete(id).unwrap();
-            live.remove(&id);
-        } else {
-            index.replace(id, &row).unwrap();
-            live.insert(id, row);
+        match live.entry(id) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                index.insert(id, &row).unwrap();
+                entry.insert(row);
+            }
+            std::collections::btree_map::Entry::Occupied(entry) if step % 3 == 0 => {
+                index.delete(id).unwrap();
+                entry.remove();
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                index.replace(id, &row).unwrap();
+                entry.insert(row);
+            }
         }
         index.commit().unwrap();
         if step % 17 == 0 {
