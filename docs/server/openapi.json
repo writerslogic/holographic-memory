@@ -423,7 +423,7 @@
           },
           "metadata": true,
           "score": {
-            "description": "BM25 score.",
+            "description": "BM25 score; the fused rank score when the server runs on-device model stages.",
             "format": "double",
             "type": "number"
           },
@@ -2043,7 +2043,7 @@
             ]
           }
         ],
-        "summary": "BM25 text search: document ids and scores, best first; stored text and metadata on request.",
+        "summary": "Text search: document ids and scores, best first (BM25, or the on-device model stages when configured); stored text and metadata on request.",
         "tags": [
           "documents"
         ]

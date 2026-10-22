@@ -467,7 +467,7 @@ pub struct SearchIn {
     pub include: Vec<String>,
 }
 
-/// BM25 ranking of the tenant's documents by `query`: ids and scores, best first, one hit per
+/// Text ranking (BM25; the model stages when configured) of the tenant's documents by `query`: ids and scores, best first, one hit per
 /// document. The response is serialized from the engine's results without an intermediate
 /// JSON tree, and stored text or metadata is copied into it only when requested.
 pub async fn search(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {

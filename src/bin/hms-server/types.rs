@@ -44,7 +44,7 @@ pub struct Matches {
 #[derive(Serialize, JsonSchema)]
 pub struct SearchHit {
     pub id: String,
-    /// BM25 score.
+    /// BM25 score; the fused rank score when the server runs on-device model stages.
     pub score: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
