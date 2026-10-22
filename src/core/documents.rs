@@ -842,15 +842,28 @@ impl Drop for StemMemoGuard<'_> {
 
 /// The batch interner a store keeps between its document batches, so a corpus loaded in
 /// consecutive batches stems each distinct word once rather than once per batch and rayon
-/// split. One is kept, bounded by [`STEM_MEMO_CAPACITY`] words.
+/// split. One is kept, bounded by [`STEM_MEMO_CAPACITY`] words, unless keeping is turned off
+/// ([`StemMemoPool::set_keep`]), when each batch's interner is freed with the batch.
 #[derive(Default)]
-pub(crate) struct StemMemoPool(parking_lot::Mutex<Option<StemMemo>>);
+pub(crate) struct StemMemoPool {
+    kept: parking_lot::Mutex<Option<StemMemo>>,
+    release: std::sync::atomic::AtomicBool,
+}
 
 impl StemMemoPool {
     /// The kept interner, or a new one; it goes back to the pool when the result drops.
     pub(crate) fn take(&self) -> PooledStemMemo<'_> {
-        let memo = self.0.lock().take().unwrap_or_default();
+        let memo = self.kept.lock().take().unwrap_or_default();
         PooledStemMemo { pool: self, memo }
+    }
+
+    /// Whether interners outlive their batch; turning it off frees the kept one now.
+    pub(crate) fn set_keep(&self, keep: bool) {
+        self.release
+            .store(!keep, std::sync::atomic::Ordering::Relaxed);
+        if !keep {
+            self.kept.lock().take();
+        }
     }
 }
 
@@ -868,7 +881,10 @@ impl PooledStemMemo<'_> {
 impl Drop for PooledStemMemo<'_> {
     fn drop(&mut self) {
         let memo = std::mem::take(&mut self.memo);
-        let mut kept = self.pool.0.lock();
+        if self.pool.release.load(std::sync::atomic::Ordering::Relaxed) {
+            return;
+        }
+        let mut kept = self.pool.kept.lock();
         // Of the interners of concurrent splits, keep the one that has seen the most words.
         if kept
             .as_ref()

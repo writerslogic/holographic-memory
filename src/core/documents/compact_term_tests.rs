@@ -201,10 +201,23 @@ fn pooled_interner_counts_later_batches_like_a_fresh_one() {
     drop(pool.take());
     drop(warm);
     assert!(pool
-        .0
+        .kept
         .lock()
         .as_ref()
         .is_some_and(|kept| kept.0.words.len() > 0));
+
+    // With keeping off, the kept interner is freed and returned ones are not kept.
+    pool.set_keep(false);
+    assert!(pool.kept.lock().is_none());
+    {
+        let mut memo = pool.take();
+        let _installed = memo.install();
+        assert_eq!(&table(texts[0]), &fresh[0]);
+    }
+    assert!(pool.kept.lock().is_none());
+    pool.set_keep(true);
+    drop(pool.take());
+    assert!(pool.kept.lock().is_some());
 }
 
 /// The byte scanner finds the same whitespace-separated words as `char::is_whitespace` on

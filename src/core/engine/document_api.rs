@@ -413,6 +413,15 @@ impl HmsCore {
         self.documents.read().contains_key(id)
     }
 
+    /// Whether the word interner built while preparing a document batch is kept for the next
+    /// batch (the default). Keeping it saves re-stemming a corpus's vocabulary across batches at
+    /// a cost bounded by 2^18 distinct words (tens of MB at worst); a process holding many open
+    /// stores, such as a multi-tenant server, can turn it off to free each batch's interner
+    /// with the batch. Turning it off frees the kept interner now.
+    pub fn set_keep_ingest_interner(&self, keep: bool) {
+        self.stem_memos.set_keep(keep);
+    }
+
     /// Number of stored documents.
     pub fn document_count(&self) -> usize {
         documents::count(&self.documents.read())
