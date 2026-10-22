@@ -177,7 +177,7 @@ queued. The sole Rust1.89 all-features gate is unconsumed.
 
 ## Regression cancellation, 2026-10-22 18:41 UTC
 
-The user requested stopping the remaining long regression builds. Sent SIGTERM
+The remaining long regression builds were stopped. Sent SIGTERM
 only to the verified Glove worker process group415969; the fail-fast main driver
 exited and released its lock. Yahoo never started. Preserved SIFT raw/results,
 partial Glove receipts/logs, and the driver's original failure receipt. See

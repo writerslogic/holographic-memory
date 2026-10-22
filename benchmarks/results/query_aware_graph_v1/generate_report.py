@@ -494,9 +494,9 @@ def subsequent_validation(root):
         lines += [("The separately declared exact byte-VNNI intervention passed its six-point validation timing criterion."
                    if accepted else "The separately declared exact byte-VNNI intervention was rejected by its six-point validation timing criterion."
                    if accepted is False else "The separately declared exact byte-VNNI intervention is reported without a final selection receipt."), ""]
-    lines += ["[Layout profiles, paired QPS and resource costs](../query_aware_graph_v2/README.md); "
-              "[exact-kernel comparison and selection](../query_aware_graph_v3/README.md); "
-              "[three ranked next experiments](../query_aware_graph_v2/ledger.md). Full in-distribution throughput preservation remains unverified after the requested regression cancellation.", ""]
+    lines += [("[Layout profiles, paired QPS and resource costs](../query_aware_graph_v2/README.md); "
+               "[exact-kernel comparison and selection](../query_aware_graph_v3/README.md); "
+               "[three ranked next experiments](../query_aware_graph_v2/ledger.md). Full in-distribution throughput preservation remains unverified after the regression cancellation."), ""]
     return lines
 
 
@@ -556,9 +556,9 @@ def render(root, checks=None):
         "**In-distribution regression gate.** Both arms use the legacy 4-bit path with no training queries at frozen ef/rerank settings. The gate requires identical returned IDs and uses the three observed paired QPS ratios: all ≥0.97 pass, all <0.97 fail, mixed evidence is inconclusive. The observed paired range is not a statistical confidence interval. Glove's VIBE cosine alias preserves original angular coordinates and saved neighbor IDs.",
         "",
         *regressions, "",
-        *(["The user stopped the remaining regression builds to prioritize the comparator and profiling queue. "
-           "[Cancellation receipt](regression/default4-v1/cancellation.json) and the original failure/logs are preserved. "
-           "SIFT is inconclusive; Glove/Yahoo do not certify in-distribution preservation.", ""]
+        *([("The remaining regression builds were cancelled to prioritize the comparator and profiling queue. "
+            "[Cancellation receipt](regression/default4-v1/cancellation.json) and the original failure/logs are preserved. "
+            "SIFT is inconclusive; Glove/Yahoo do not certify in-distribution preservation."), ""]
           if (root / "regression/default4-v1/cancellation.json").is_file() else []),
         "**Resource observations.**", "",
         *resource_tables(root, official, validation, supplements), "",

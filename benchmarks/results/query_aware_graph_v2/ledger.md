@@ -68,7 +68,7 @@ dpbusd path would differ, but merely detecting AVX-VNNI does not establish a
 benefit. Rust primary docs confirm _mm256_dpbusd_avx_epi32 is stable since1.89
 and requires avxvnni. No kernel intervention has been declared or measured.
 
-At18:41UTC the user stopped the remaining v1 regression builds to prioritize
+At18:41UTC the remaining v1 regression builds were stopped to prioritize
 RF80/profiling/layout. SIFT's inconclusive result and cancellation evidence remain
 in v1. This does not relax exact-result/persisted-byte layout acceptance or certify
 the unmeasured default-path throughput. No further long regression build is queued.
