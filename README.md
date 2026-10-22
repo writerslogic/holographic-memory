@@ -10,7 +10,11 @@
   <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI"></a>
   <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/docs.yml"><img alt="Docs" src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/docs.yml?branch=main&label=docs"></a>
   <a href="https://crates.io/crates/holographic-memory"><img alt="crates.io" src="https://img.shields.io/crates/v/holographic-memory.svg"></a>
+  <a href="https://docs.rs/holographic-memory"><img alt="docs.rs" src="https://img.shields.io/docsrs/holographic-memory"></a>
+  <a href="https://pypi.org/project/holographic-vsa/"><img alt="PyPI" src="https://img.shields.io/pypi/v/holographic-vsa.svg?label=pypi"></a>
+  <img alt="MSRV 1.89" src="https://img.shields.io/badge/MSRV-1.89-informational.svg">
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img alt="OpenSSF Scorecard" src="https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory"></a>
+  <a href="https://www.bestpractices.dev/projects/13977"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/13977/badge"></a>
   <a href="#license"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
 </p>
 
