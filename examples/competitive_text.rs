@@ -137,7 +137,10 @@ fn main() -> Result<()> {
         "build" => {
             ensure!(!args.store.exists(), "store exists; remove it first");
             let mode: EncodeMode = args.encode.parse()?;
-            let options = IngestOptions { encode: mode };
+            let options = IngestOptions {
+                encode: mode,
+                ..Default::default()
+            };
             let count = input.documents.len();
             let start = Instant::now();
             let core = HmsCore::new(1024, Some(store), None)?;

@@ -158,6 +158,7 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
             .ingest_encode
             .parse()
             .map_err(ApiError::internal)?,
+        ..Default::default()
     };
     core.memorize_documents_with(inputs, &options)
         .map_err(ApiError::internal)?;

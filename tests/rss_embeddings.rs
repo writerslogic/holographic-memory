@@ -209,6 +209,7 @@ fn lexical_ingest_skips_the_hypervector_channel_without_changing_vector_search()
             inputs(&documents),
             &IngestOptions {
                 encode: EncodeMode::Eager,
+                ..Default::default()
             },
         )
         .unwrap();
@@ -217,6 +218,7 @@ fn lexical_ingest_skips_the_hypervector_channel_without_changing_vector_search()
             inputs(&documents),
             &IngestOptions {
                 encode: EncodeMode::Lexical,
+                ..Default::default()
             },
         )
         .unwrap();
