@@ -200,3 +200,32 @@ explicitly ignored tests. All 18 vector-update tests pass. The competitive adapt
 wiring checks pass (two tests). Linux CI with Rust 1.99.1 passed 889 all-features
 tests and two doctests; the MSRV 1.89 job also passed. The result artifact records
 the verified source revisions and command exit codes.
+
+### Direct streaming cost fixes
+
+Construction scratch clears only the bitset words visited by its previous search,
+before resizing for a different graph or routing layer. Each nonzero word has one
+entry in the touched-word list. Its logical additional payload is at most four
+bytes per bitset word; vector spare capacity is additional.
+
+Mixed queries request the complete widened base candidate set with residual
+reranking disabled, then retain the existing original-row scoring and external-id
+tie breaking. The requested candidate count, traversal width, and live-count
+retries are unchanged. Clean-base queries retain their configured reranking.
+Both delta scoring paths use the Euclidean norms computed during insertion;
+angular scoring is unchanged.
+
+The regression fingerprint `166293721`, captured from `1cfb43f` before these
+changes, covers ordered query results and encoded generation bytes across eleven
+encoding configurations, including reordered/compressed ids, screens, and neighbor
+blocks. It includes clean, deleted/replaced/inserted, replayed, and consolidated
+states, narrow and exhaustive beams, and exact ties. Separate regressions check
+visited-word boundaries and graph-size reuse, and bitwise delta score equivalence
+around the dot-product block boundaries and for zero Euclidean rows and queries.
+
+`benches/vector_updates.rs` adds synthetic 100-dimensional Euclidean mixed-base
+and delta-only query cases at `ef` 64, 1024, and 2048. The ignored
+`build_visited_reset_workload` diagnostic compares sparse and dense visitation at
+8,421,866 vertices. These measurements do not establish recall or runtime for the
+official 1,280-step streaming workload. Graph reuse, local repair, and recall
+changes remain separate work requiring measurements on that workload.

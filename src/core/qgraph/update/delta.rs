@@ -47,6 +47,14 @@ impl Delta {
         &self.vectors[slot * dim..(slot + 1) * dim]
     }
 
+    fn score(&self, query: &[f32], slot: usize, metric: Metric) -> f32 {
+        let row = self.row(slot, query.len());
+        match metric {
+            Metric::Angular => -dot(query, row),
+            Metric::Euclidean => self.norms[slot] * 0.5 - dot(query, row),
+        }
+    }
+
     pub fn insert(&mut self, id: u32, row: &[f32], params: &BuildParams) {
         let slot = self.ids.len();
         self.ids.push(id);
@@ -171,12 +179,7 @@ impl Delta {
             let mut all: Vec<_> = self
                 .live
                 .iter()
-                .map(|(&id, &slot)| {
-                    (
-                        super::distance(query, self.row(slot, query.len()), metric),
-                        id,
-                    )
-                })
+                .map(|(&id, &slot)| (self.score(query, slot, metric), id))
                 .collect();
             all.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
             return (all, if PROFILE { self.live.len() } else { 0 });
@@ -193,7 +196,7 @@ impl Delta {
     ) -> (Vec<(f32, u32)>, usize) {
         seen.reset(self.len());
         seen.insert(0);
-        let score = |slot: usize| super::distance(query, self.row(slot, query.len()), metric);
+        let score = |slot: usize| self.score(query, slot, metric);
         let mut pool = vec![(score(0), 0usize, false)];
         let mut visits = usize::from(PROFILE);
         while let Some(at) = pool.iter().position(|p| !p.2) {
@@ -335,5 +338,79 @@ impl Delta {
         .into_iter()
         .map(|(k, v)| (k.into(), v))
         .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::qgraph::{kernels::SplitMix, prepare_rows};
+
+    #[test]
+    fn cached_norms_preserve_score_bits_and_delta_results() {
+        for metric in [Metric::Angular, Metric::Euclidean] {
+            for dim in [1, 15, 16, 17, 31, 32, 33, 99, 100, 101, 127, 128, 129] {
+                let params = BuildParams {
+                    metric,
+                    degree: 8,
+                    build_ef: 16,
+                    ..Default::default()
+                };
+                let mut random = SplitMix(7654);
+                let mut rows: Vec<_> = (0..33 * dim)
+                    .map(|_| (random.next_u64() >> 40) as f32 / (1u32 << 24) as f32 - 0.5)
+                    .collect();
+                if metric == Metric::Euclidean {
+                    rows[32 * dim..].fill(-0.0);
+                }
+                prepare_rows(&mut rows, dim, metric);
+                let mut delta = Delta::default();
+                let ids: Vec<_> = (0..32).rev().collect();
+                delta.insert_batch(&ids, &rows[..32 * dim], &params);
+                delta.insert(100, &rows[32 * dim..], &params);
+                delta.insert(0, &rows[..dim], &params);
+                delta.live.remove(&1);
+                let zero = vec![0.0; dim];
+                let queries = rows
+                    .chunks_exact(dim)
+                    .take(4)
+                    .chain((metric == Metric::Euclidean).then_some(zero.as_slice()));
+                for query in queries {
+                    for slot in 0..delta.len() {
+                        assert_eq!(
+                            delta.score(query, slot, metric).to_bits(),
+                            super::super::distance(query, delta.row(slot, dim), metric).to_bits(),
+                            "{metric:?}, dim={dim}, slot={slot}"
+                        );
+                    }
+                    let mut expected: Vec<_> = delta
+                        .live
+                        .iter()
+                        .map(|(&id, &slot)| {
+                            (
+                                super::super::distance(query, delta.row(slot, dim), metric),
+                                id,
+                            )
+                        })
+                        .collect();
+                    expected.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+                    for ef in [1, 16, delta.len() - 1, delta.len(), delta.len() + 1] {
+                        let found = delta.search(query, ef, metric);
+                        assert_eq!(found, delta.search_profiled(query, ef, metric).0);
+                        for &(score, id) in &found {
+                            let slot = delta.live[&id];
+                            assert_eq!(
+                                score.to_bits(),
+                                super::super::distance(query, delta.row(slot, dim), metric)
+                                    .to_bits()
+                            );
+                        }
+                        if ef >= delta.len() {
+                            assert_eq!(found, expected);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

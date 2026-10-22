@@ -199,25 +199,34 @@ impl Visited {
     }
 }
 
-/// Visited set of the construction search: one bit per vertex, so it stays in the L1/L2 cache
-/// where the epoch marks of [`Visited`] would not; clearing it is cheap next to a search.
+/// One bit per vertex; reset clears only words touched by the previous search.
 #[derive(Default)]
 struct BuildVisited {
     bits: Vec<u64>,
+    touched: Vec<u32>,
 }
 
 impl BuildVisited {
     fn reset(&mut self, n: usize) {
-        self.bits.clear();
+        // Clear before shrinking: scratch is reused across graph sizes and routing layers.
+        for word in self.touched.drain(..) {
+            self.bits[word as usize] = 0;
+        }
         self.bits.resize(n.div_ceil(64), 0);
     }
 
     /// True if `id` was not yet visited since the last reset.
     fn insert(&mut self, id: u32) -> bool {
         let (w, b) = (id as usize / 64, 1u64 << (id % 64));
-        let fresh = self.bits[w] & b == 0;
-        self.bits[w] |= b;
-        fresh
+        let old = self.bits[w];
+        if old & b != 0 {
+            return false;
+        }
+        if old == 0 {
+            self.touched.push(w as u32);
+        }
+        self.bits[w] = old | b;
+        true
     }
 }
 
@@ -1630,6 +1639,77 @@ fn push_top(top: &mut Vec<(f32, u32)>, k: usize, dist: f32, id: u32) {
 mod tests {
     use super::*;
     use kernels::raw_estimates;
+
+    #[test]
+    fn build_visited_reuses_words_across_resets_and_graph_sizes() {
+        let mut visited = BuildVisited::default();
+        for n in [4097, 129, 128, 127, 65, 64, 63, 1, 0, 1, 63, 64, 65, 4097] {
+            for _ in 0..3 {
+                visited.reset(n);
+                let mut reference = std::collections::HashSet::new();
+                for id in (0..n as u32).rev().chain(0..n as u32) {
+                    assert_eq!(visited.insert(id), reference.insert(id));
+                }
+                assert_eq!(visited.touched.len(), n.div_ceil(64));
+                let mut unique = std::collections::HashSet::new();
+                assert!(visited
+                    .touched
+                    .iter()
+                    .all(|&word| visited.bits[word as usize] != 0 && unique.insert(word)));
+                visited.reset(n);
+                assert!(visited.touched.is_empty());
+                assert!(visited.bits.iter().all(|&word| word == 0));
+            }
+        }
+    }
+
+    #[test]
+    fn build_visited_records_each_sparse_word_once() {
+        let mut visited = BuildVisited::default();
+        visited.reset(8_421_866);
+        for id in [0, 1, 63, 64, 65, 127, 128, 8_421_865] {
+            assert!(visited.insert(id));
+            assert!(!visited.insert(id));
+        }
+        assert_eq!(visited.touched, [0, 1, 2, 131_591]);
+        visited.reset(0);
+        visited.reset(8_421_866);
+        for id in [0, 63, 64, 127, 128, 8_421_865] {
+            assert!(visited.insert(id));
+        }
+    }
+
+    #[test]
+    #[ignore = "synthetic visited-reset timing diagnostic; run in isolation with --release"]
+    fn build_visited_reset_workload() {
+        use std::hint::black_box;
+        use std::time::{Duration, Instant};
+
+        let n = 8_421_866usize;
+        for (visits, iterations) in [(64, 20_000), (1024, 10_000), (16_384, 1000), (n, 4)] {
+            let ids: Vec<_> = (0..visits).map(|i| (i * 104_729 % n) as u32).collect();
+            let words: std::collections::HashSet<_> = ids.iter().map(|id| id / 64).collect();
+            let mut visited = BuildVisited::default();
+            visited.reset(n);
+            for &id in &ids {
+                assert!(visited.insert(id));
+            }
+            let mut reset_time = Duration::ZERO;
+            let start = Instant::now();
+            for _ in 0..iterations {
+                let reset_start = Instant::now();
+                black_box(&mut visited).reset(black_box(n));
+                reset_time += reset_start.elapsed();
+                for &id in &ids {
+                    black_box(visited.insert(black_box(id)));
+                }
+            }
+            println!(
+                "{{\"vertices\":{n},\"visits\":{visits},\"touched_words\":{},\"full_words\":{},\"iterations\":{iterations},\"reset_ns\":{},\"total_ns\":{}}}",
+                words.len(), n.div_ceil(64), reset_time.as_nanos(), start.elapsed().as_nanos()
+            );
+        }
+    }
 
     pub(super) fn gaussian(rng: &mut SplitMix) -> f32 {
         let u = rng.next_f32().max(1e-7);
