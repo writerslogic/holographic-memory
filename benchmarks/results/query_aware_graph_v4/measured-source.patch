@@ -1,0 +1,1758 @@
+diff --git a/benchmarks/public/qag_serving_execute.py b/benchmarks/public/qag_serving_execute.py
+new file mode 100644
+index 0000000..86e27f5
+--- /dev/null
++++ b/benchmarks/public/qag_serving_execute.py
+@@ -0,0 +1,177 @@
++# Copyright 2024-2026 WritersLogic Contributors
++# SPDX-License-Identifier: Apache-2.0
++"""Measure the declared serving comparison with VIBE's saved fifth-pass timings."""
++
++import argparse
++import hashlib
++import importlib.util
++import json
++import os
++from pathlib import Path
++import re
++import shutil
++import socket
++import subprocess
++import sys
++
++
++THREADS = ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS", "RAYON_NUM_THREADS")
++NAMES = {0: "lifted", 1: "lifted+reservoir", 2: "direct", 3: "direct+reservoir"}
++
++
++def digest(path):
++    with Path(path).open("rb") as stream:
++        return hashlib.file_digest(stream, "sha256").hexdigest()
++
++
++def record(path):
++    path = Path(path).resolve(strict=True)
++    return {"path": str(path), "sha256": digest(path), "bytes": path.stat().st_size}
++
++
++def write_new(path, value):
++    with Path(path).open("x") as stream:
++        json.dump(value, stream, indent=2, allow_nan=False)
++        stream.write("\n")
++
++
++def run(args):
++    import h5py
++    import numpy as np
++
++    if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,47}", args.run_id):
++        raise ValueError("invalid run ID")
++    repo = Path(__file__).resolve().parents[2]
++    extractor = repo / "benchmarks/results/query_aware_graph_v1/sources/qag_report_full_evaluation_v1.py"
++    spec = importlib.util.spec_from_file_location("qag_serving_report", extractor)
++    reporter = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(reporter)
++    diagnostic = json.loads(args.diagnostic.read_text())
++    if not diagnostic["retention_preserves_traversal"] or diagnostic["input"]["official_test_read"]:
++        raise ValueError("requires the completed reserved validation diagnosis")
++    expected = {(int(r["direct_ip"]) * 2 + int(r["reservoir"] > 0), r["ef"], r["query"]): r["ids"]
++                for r in diagnostic["queries"]}
++    encoded_bytes = {r["direct_ip"]: r["diagnostic"]["index_bytes"] for r in diagnostic["encodings"]}
++    if len(expected) != 4 * 3 * 256:
++        raise ValueError("incomplete diagnostic matrix")
++    dependencies = {args.view.resolve(), args.training.resolve(), args.diagnostic.resolve(), args.extension.resolve()}
++    baseline_raw = args.baseline / "raw.hdf5"
++    baseline_report = args.baseline / "report.json"
++    saved = json.loads(baseline_report.read_text())
++    if digest(baseline_raw) != saved["provenance"]["raw_results_sha256"]:
++        raise ValueError("frozen baseline raw results changed")
++    with h5py.File(baseline_raw, "r") as results:
++        for rep in range(3):
++            for ef in (100, 256, 512):
++                rr = 100 if ef == 100 else 400
++                reference = np.asarray([expected[0, ef, i] for i in range(256)])
++                if not np.array_equal(results[f"0_{ef}_{rr}_{rep}"]["neighbors"][:], reference):
++                    raise ValueError("legacy serving differs from frozen v2 ordered IDs")
++    dependencies.update((baseline_raw.resolve(), baseline_report.resolve()))
++    write_new(args.out / "baseline-parity.json", {"ordered_ids_identical": True,
++        "queries": 256, "settings": 3, "repetitions": 3, "raw": record(baseline_raw)})
++    with h5py.File(args.view, "r") as source:
++        if (source.attrs["distance"] != "ip" or source.attrs.get("qag_scope") != "validation"
++                or source["test"].shape != (256, 128) or source["learn"].shape != (32768, 128)
++                or source["train"].shape != (diagnostic["input"]["rows"], 128)):
++            raise ValueError("view differs from the declared full-base validation split")
++        for name in source:
++            link = source.get(name, getlink=True)
++            if isinstance(link, h5py.ExternalLink):
++                dependencies.add((args.view.parent / link.filename).resolve())
++            for filename, _, _ in source[name].external or []:
++                dependencies.add(Path(filename).resolve())
++    vibe = Path.home() / "vibe-hms/vibe"
++    bench = Path.home() / "vibe-hms/bench.sh"
++    module = vibe / "vibe/algorithms/qag_serving/module.py"
++    module.parent.mkdir(exist_ok=True)
++    adapter = Path(__file__).with_name("qag_serving_module.py")
++    if module.exists() and digest(module) != digest(adapter):
++        raise ValueError("refusing to replace another serving adapter")
++    if not module.exists():
++        shutil.copyfile(adapter, module)
++        (module.parent / "__init__.py").touch()
++    schedule = [[arm, ef, 400, rep] for rep in range(3) for ef in (100, 256, 512)
++                for arm in ((0, 1, 2, 3) if rep != 1 else (3, 2, 1, 0))]
++    folder = args.out / "definitions/qag_serving"
++    folder.mkdir(parents=True)
++    config = folder / "config.yml"
++    write_new(config, {"float": {"ip": [{"name": "qag-serving-v4", "module": "vibe.algorithms.qag_serving",
++        "constructor": "QAGServing", "singularity_image": "hms", "disabled": False,
++        "ood": True, "base_args": ["@metric"], "run_groups": {"fixed": {"args": [64, 500],
++            "query_arg_groups": [schedule]}}}]}})
++    sources = [Path(__file__), adapter, extractor, config, bench, vibe / "run.py", module,
++        vibe / "vibe/algorithms/qag_pair/module.py", *(vibe / "vibe" / f"{n}.py" for n in
++        ("main", "runner", "workers", "numa", "definitions", "results", "distance"))]
++    snapshots = args.out / "snapshots"
++    snapshots.mkdir()
++    for i, path in enumerate(sources):
++        shutil.copyfile(path, snapshots / f"{i:02d}-{path.name}")
++    inputs = [record(p) for p in sources + sorted(dependencies)]
++    environment = {k: v for k, v in os.environ.items() if not k.startswith(("HMS_QGRAPH_", "HMS_QAG_"))}
++    environment.update({name: "1" for name in THREADS})
++    environment.update(HMS_QAG_CANDIDATE_SO=str(args.extension.resolve()),
++        HMS_QAG_TRAINING_QUERIES=str(args.training.resolve()), HMS_QAG_TRAINING_QUERIES_SHA256=digest(args.training))
++    alias = f"qag-serving-{args.run_id}-128-ip"
++    link = vibe / "data" / f"{alias}.hdf5"
++    if link.exists() or link.is_symlink() or (vibe / "results" / alias).exists():
++        raise FileExistsError("existing VIBE serving results")
++    link.symlink_to(args.view.resolve())
++    command = [str(bench), alias, "1", "vibe", str(folder.parent), "nolock"]
++    frozen = {"scope": "reserved learn validation only; no untouched final test", "host": socket.gethostname(),
++        "inputs": inputs, "schedule": schedule, "command": command, "harness_sha256": digest(vibe / "vibe/runner.py"),
++        "environment": {k: v for k, v in environment.items() if k in THREADS or k.startswith("HMS_QAG_")}}
++    write_new(args.out / "frozen.json", frozen)
++    process = subprocess.run(command, cwd=vibe, env=environment, capture_output=True, text=True)
++    (args.out / "bench-stdout.txt").write_text(process.stdout + process.stderr)
++    if process.returncode or re.findall(r"\brc=(\d+)\b", process.stdout) != ["0"]:
++        raise RuntimeError("bench.sh failed; inspect its preserved log")
++    raw_paths = list((vibe / "results" / alias / "100/qag-serving-v4").glob("*.hdf5"))
++    if len(raw_paths) != 1:
++        raise ValueError("expected one raw serving result")
++    raw = args.out / "raw.hdf5"
++    shutil.copyfile(raw_paths[0], raw)
++    shutil.copyfile(Path.home() / "vibe-hms/logs" / f"{alias}-definitions.log", args.out / "bench.log")
++    with h5py.File(raw, "r") as results:
++        if set(results) != {"_".join(map(str, group)) for group in schedule}:
++            raise ValueError("incomplete raw schedule")
++        affinities = {tuple(g.attrs["qag_cpu_affinity"]) for g in results.values()}
++        if len(affinities) != 1 or len(next(iter(affinities))) != 1:
++            raise ValueError("all groups must use the same single VIBE CPU")
++        for name, group in results.items():
++            arm, ef, _, _ = map(int, name.split("_"))
++            if not {f"{n}=1" for n in THREADS} <= set(str(group.attrs["qag_thread_environment"]).split(",")):
++                raise ValueError("thread policy differs")
++            for direct, label in ((False, "lifted"), (True, "direct")):
++                if int(group.attrs[f"qag_{label}_index_bytes"]) != encoded_bytes[direct]:
++                    raise ValueError("VIBE and native encoded sizes differ")
++            actual = group["neighbors"][:]
++            reference = np.asarray([expected[arm, ef, i] for i in range(256)])
++            if not np.array_equal(actual, reference):
++                raise ValueError(f"VIBE and native diagnostic IDs differ for {name}")
++    if any(record(item["path"]) != item for item in inputs):
++        raise ValueError("an input changed during timing")
++    receipt = args.out / "benchmark.json"
++    write_new(receipt, {**frozen, "raw_results": record(raw), "native_diagnostic_ids_identical": True})
++    report = reporter.extract(raw, args.view, receipt)
++    for row in report["rows"] + report["targets"]:
++        row["method"] = NAMES[row["arm"]]
++    write_new(args.out / "report.json", report)
++    write_new(args.out / "completion.json", {"status": "complete", "report": record(args.out / "report.json")})
++
++
++if __name__ == "__main__":
++    parser = argparse.ArgumentParser(description=__doc__)
++    for name in ("view", "training", "extension", "diagnostic", "baseline", "out"):
++        parser.add_argument(f"--{name}", type=Path, required=True)
++    parser.add_argument("--run-id", required=True)
++    args = parser.parse_args()
++    if (socket.gethostname() != "writerslogic-02" or os.environ.get("HMS_QAG_OUTER_LOCK") != "1"
++            or any(os.environ.get(name) != "1" for name in THREADS)):
++        parser.error("use the shared outer timing lock and one-thread environment")
++    args.out.mkdir(parents=True, exist_ok=False)
++    try:
++        run(args)
++    except BaseException as error:
++        write_new(args.out / "failure.json", {"error_type": type(error).__name__, "error": str(error)})
++        raise
+diff --git a/benchmarks/public/qag_serving_module.py b/benchmarks/public/qag_serving_module.py
+new file mode 100644
+index 0000000..58dfdb0
+--- /dev/null
++++ b/benchmarks/public/qag_serving_module.py
+@@ -0,0 +1,92 @@
++# Copyright 2024-2026 WritersLogic Contributors
++# SPDX-License-Identifier: Apache-2.0
++"""Four validation arms sharing two built indexes in the pinned VIBE harness."""
++
++import operator
++import os
++import resource
++import time
++
++from vibe.algorithms.base.module import BaseANN
++from vibe.algorithms.qag_pair.module import (
++    _extension_path,
++    _load_extension,
++    _matrix,
++    _training_query_file,
++)
++
++
++ARMS = {0: "lifted", 1: "lifted+reservoir", 2: "direct", 3: "direct+reservoir"}
++
++
++class QAGServing(BaseANN):
++    def __init__(self, metric, degree, build_ef):
++        if metric != "ip":
++            raise ValueError("serving comparison requires original inner product")
++        self._module = _load_extension(
++            _extension_path("HMS_QAG_CANDIDATE_SO"), "_hms_qag_serving"
++        )
++        self.degree, self.build_ef = degree, build_ef
++        self._indexes, self._seconds = {}, {}
++        self.arm = self.ef = self.rerank = self.repetition = None
++        self._query = None
++        self._training_path = self._training_sha256 = None
++
++    def fit(self, X):
++        raise ValueError("serving comparison requires the frozen construction view")
++
++    def fit_ood(self, X, X_learn, X_learn_neighbors):
++        rows = _matrix(X, "base")
++        learn = _matrix(X_learn, "construction queries")
++        if learn.shape != (32768, rows.shape[1]):
++            raise ValueError("expected the frozen 32768 construction queries")
++        training, path, checksum = _training_query_file(rows.shape[1], len(learn))
++        if training is None or training.shape != learn.shape or not (training == learn).all():
++            raise ValueError("construction file differs from the frozen view")
++        self._training_path, self._training_sha256 = path, checksum
++        for direct in (False, True):
++            started = time.perf_counter()
++            index = self._module.VectorIndex(
++                "ip", degree=self.degree, build_ef=self.build_ef, threads=1,
++                code_bits=8, direct_ip=direct,
++            )
++            index.fit(rows, training_queries=training)
++            self._indexes[direct] = index
++            self._seconds[direct] = time.perf_counter() - started
++
++    def set_query_arguments(self, arm, ef=None, rerank=None, repetition=None):
++        if ef is None and rerank is None and repetition is None:
++            arm, ef, rerank, repetition = arm
++        arm, ef, rerank, repetition = map(operator.index, (arm, ef, rerank, repetition))
++        if arm not in ARMS or ef not in (100, 256, 512) or rerank != 400 or repetition not in (0, 1, 2):
++            raise ValueError("query arguments differ from the declared serving comparison")
++        index = self._indexes[arm >= 2]
++        index.set_query_arguments(ef, rerank, patience=0, reservoir=400 if arm % 2 else 0)
++        self.arm, self.ef, self.rerank, self.repetition = arm, ef, rerank, repetition
++        self._query = index.query
++
++    def query(self, v, n):
++        return self._query(v, n)
++
++    def get_additional(self):
++        attrs = {
++            "qag_arm": self.arm, "qag_repetition": self.repetition, "qag_patience": 0,
++            "qag_candidate_code_bits": 8, "qag_candidate_training_queries": 32768,
++            "qag_candidate_training_query_file": self._training_path,
++            "qag_candidate_training_query_sha256": self._training_sha256,
++            "qag_serving_method": ARMS[self.arm],
++            "qag_reservoir": 400 if self.arm % 2 else 0,
++            "qag_thread_environment": ",".join(f"{k}={os.environ.get(k, '')}" for k in (
++                "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS", "RAYON_NUM_THREADS")),
++            "qag_cpu_affinity": sorted(os.sched_getaffinity(0)),
++            "qag_process_peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
++            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
++        }
++        for direct, index in self._indexes.items():
++            name = "direct" if direct else "lifted"
++            attrs[f"qag_{name}_index_bytes"] = int(index.index_bytes)
++            attrs[f"qag_{name}_build_seconds"] = self._seconds[direct]
++        return attrs
++
++    def __str__(self):
++        return f"QAGServing(arm={self.arm}, ef={self.ef}, rerank={self.rerank}, repetition={self.repetition})"
+diff --git a/src/bin/public-bench.rs b/src/bin/public-bench.rs
+index 543c356..30c6d0d 100644
+--- a/src/bin/public-bench.rs
++++ b/src/bin/public-bench.rs
+@@ -880,7 +880,7 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
+                 VGraph::open(p, residency).with_context(|| format!("opening {}", p.display()))?;
+             open_secs = Some(t.elapsed().as_secs_f64());
+             ensure!(
+-                v.metric() == metric && v.dim() == d,
++                v.metric() == metric.into() && v.dim() == d,
+                 "{} indexes {:?} vectors of dimension {}, the dataset is {metric:?} in {d}",
+                 p.display(),
+                 v.metric(),
+@@ -1013,6 +1013,7 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
+                     K,
+                     VSearchParams {
+                         ef,
++                        reservoir: 0,
+                         rerank: second,
+                         patience,
+                         screen_sigmas: sigmas.max(0.0),
+diff --git a/src/bin/qag-diagnose.rs b/src/bin/qag-diagnose.rs
+index fcd36e1..251a641 100644
+--- a/src/bin/qag-diagnose.rs
++++ b/src/bin/qag-diagnose.rs
+@@ -33,6 +33,9 @@ struct Args {
+     profile: bool,
+     #[arg(long)]
+     persist_dir: Option<PathBuf>,
++    /// Validation-only four-arm serving/retention comparison on one trained graph.
++    #[arg(long)]
++    compare_serving: bool,
+ }
+ 
+ fn floats(path: PathBuf, expected: usize) -> Result<Vec<f32>> {
+@@ -75,6 +78,16 @@ fn exact_rerank(ids: &[u32], base: &[f32], query: &[f32], dim: usize) -> Vec<u32
+ fn main() -> Result<()> {
+     let args = Args::parse();
+     ensure!(!args.out.exists(), "output exists");
++    if args.compare_serving {
++        ensure!(
++            args.training.is_some(),
++            "serving comparison requires frozen construction queries"
++        );
++        ensure!(
++            !args.profile && args.persist_dir.is_none(),
++            "serving comparison is a separate diagnostic mode"
++        );
++    }
+     ensure!([4, 8].contains(&args.bits), "bits must be 4 or 8");
+     ensure!(
+         (100..=2000).contains(&args.rerank),
+@@ -188,7 +201,7 @@ fn main() -> Result<()> {
+             .take(args.training_count * 100)
+             .map(|v| u32::from_le_bytes(*v))
+             .collect();
+-        if args.profile {
++        if args.profile || args.compare_serving {
+             ensure!(
+                 args.training_count == 32768 && args.projected_degree == 32,
+                 "production profile requires frozen training settings"
+@@ -201,6 +214,19 @@ fn main() -> Result<()> {
+         }
+     }
+     let projection_seconds = start.elapsed().as_secs_f64();
++    if args.compare_serving {
++        return compare_serving(
++            &args,
++            &graph,
++            &base,
++            &queries,
++            &truth,
++            meta,
++            json!({"cache_hit": cache_hit, "base_hash": base_graph_hash,
++                "trained_hash": graph.structure_hash(), "graph_seconds": graph_seconds,
++                "projection_seconds": projection_seconds, "projection": projection}),
++        );
++    }
+     let start = Instant::now();
+     let mut index = VGraph::from_graph_with(&graph, args.bits, 8, true, true, 3, false)?;
+     let encoding_seconds = start.elapsed().as_secs_f64();
+@@ -367,3 +393,192 @@ fn main() -> Result<()> {
+     println!("{}", serde_json::to_string(&report["aggregate"])?);
+     Ok(())
+ }
++
++fn compare_serving(
++    args: &Args,
++    graph: &Graph,
++    base: &[f32],
++    queries: &[f32],
++    truth: &[u32],
++    input: Value,
++    construction: Value,
++) -> Result<()> {
++    ensure!(
++        !args.profile,
++        "comparison and layout profile are separate modes"
++    );
++    let dim = input["dimension"].as_u64().context("dimension")? as usize;
++    let lift = lift_scale_diagnostic(base, dim);
++    let mut encodings = Vec::new();
++    let mut rows = Vec::new();
++    for direct in [false, true] {
++        let started = Instant::now();
++        let mut index = if direct {
++            VGraph::from_lifted_ip_graph(graph, args.bits, 8, true, true, 3)?
++        } else {
++            VGraph::from_graph_with(graph, args.bits, 8, true, true, 3, false)?
++        };
++        let seconds = started.elapsed().as_secs_f64();
++        encodings.push(json!({"direct_ip": direct, "seconds": seconds,
++            "diagnostic": index.encoding_diagnostic(graph)?}));
++        for ef in [100, 256, 512] {
++            let mut reference = Vec::new();
++            for reservoir in [0, 400] {
++                let settings = VSearchParams {
++                    ef,
++                    rerank: 400,
++                    reservoir,
++                    ..Default::default()
++                };
++                for (i, (query, expected)) in queries
++                    .chunks_exact(dim)
++                    .zip(truth.chunks_exact(100))
++                    .enumerate()
++                {
++                    let transformed: Vec<_> = query
++                        .iter()
++                        .copied()
++                        .chain((!direct).then_some(0.0))
++                        .collect();
++                    let found = index.diagnose(graph, &transformed, 100, settings, None, false)?;
++                    let mut out = Vec::new();
++                    let profile = index
++                        .searcher_with(holographic_memory::core::qgraph::SearchKnobs::OFF)
++                        .profile_search(&transformed, 100, settings, &mut out)?;
++                    ensure!(
++                        out == found.results,
++                        "diagnostic/production result mismatch"
++                    );
++                    if reservoir == 0 {
++                        reference.push((
++                            found.evaluated.clone(),
++                            found.beam.clone(),
++                            profile.expansions,
++                        ));
++                    } else {
++                        ensure!(
++                            reference[i]
++                                == (
++                                    found.evaluated.clone(),
++                                    found.beam.clone(),
++                                    profile.expansions
++                                ),
++                            "retention changed traversal for query {i}"
++                        );
++                    }
++                    rows.push(json!({"direct_ip": direct, "ef": ef, "reservoir": reservoir,
++                        "rerank": 400, "query": i, "ids": found.results,
++                        "recall": coverage(&found.results, expected),
++                        "evaluated_unique": found.evaluated.len(),
++                        "evaluated_coverage": coverage(&found.evaluated, expected),
++                        "beam_coverage": coverage(&found.beam, expected),
++                        "retained_coverage": coverage(&found.retained, expected),
++                        "rerank_candidate_coverage": coverage(&found.rerank_candidates, expected),
++                        "oracle_evaluated_recall": coverage(&exact_rerank(&found.evaluated, base, query, dim), expected),
++                        "oracle_beam_recall": coverage(&exact_rerank(&found.beam, base, query, dim), expected),
++                        "oracle_retained_recall": coverage(&exact_rerank(&found.retained, base, query, dim), expected),
++                        "oracle_rerank_recall": coverage(&exact_rerank(&found.rerank_candidates, base, query, dim), expected),
++                        "work": profile}));
++                }
++            }
++        }
++    }
++    let mut aggregate = Vec::new();
++    for direct in [false, true] {
++        for ef in [100, 256, 512] {
++            for reservoir in [0, 400] {
++                let selected: Vec<_> = rows
++                    .iter()
++                    .filter(|r| {
++                        r["direct_ip"] == direct && r["ef"] == ef && r["reservoir"] == reservoir
++                    })
++                    .collect();
++                let mut summary =
++                    json!({"direct_ip": direct, "ef": ef, "reservoir": reservoir, "rerank": 400});
++                for field in [
++                    "recall",
++                    "evaluated_unique",
++                    "evaluated_coverage",
++                    "beam_coverage",
++                    "retained_coverage",
++                    "rerank_candidate_coverage",
++                    "oracle_evaluated_recall",
++                    "oracle_beam_recall",
++                    "oracle_retained_recall",
++                    "oracle_rerank_recall",
++                ] {
++                    summary[field] = json!(
++                        selected
++                            .iter()
++                            .map(|r| r[field].as_f64().expect("number"))
++                            .sum::<f64>()
++                            / selected.len() as f64
++                    );
++                }
++                for field in [
++                    "expansions",
++                    "traversal_evaluations",
++                    "rerank_evaluations",
++                    "retained",
++                ] {
++                    summary[field] = json!(
++                        selected
++                            .iter()
++                            .map(|r| r["work"][field].as_f64().expect("number"))
++                            .sum::<f64>()
++                            / selected.len() as f64
++                    );
++                }
++                aggregate.push(summary);
++            }
++        }
++    }
++    let report = json!({"schema_version": 1, "scope": "untimed full-base reserved validation diagnosis; no official queries or production throughput claim",
++        "input": input, "construction": construction, "encodings": encodings,
++        "lift_scale_diagnostic": lift,
++        "retention_preserves_traversal": true, "aggregate": aggregate, "queries": rows});
++    fs::write(&args.out, serde_json::to_vec_pretty(&report)?)?;
++    println!("{}", serde_json::to_string(&report["aggregate"])?);
++    Ok(())
++}
++
++fn lift_scale_diagnostic(base: &[f32], dim: usize) -> Value {
++    let n = base.len() / dim;
++    let norms: Vec<f64> = base
++        .chunks_exact(dim)
++        .map(|r| r.iter().map(|&v| f64::from(v).powi(2)).sum())
++        .collect();
++    let max = norms.iter().copied().fold(0.0, f64::max);
++    let tails: Vec<f32> = norms
++        .iter()
++        .map(|v| (max - v).max(0.0).sqrt() as f32)
++        .collect();
++    let mut mean = vec![0f64; dim];
++    for row in base.chunks_exact(dim) {
++        for (m, &v) in mean.iter_mut().zip(row) {
++            *m += f64::from(v);
++        }
++    }
++    let mean: Vec<f32> = mean.into_iter().map(|v| (v / n as f64) as f32).collect();
++    let tail_mean = (tails.iter().map(|&v| f64::from(v)).sum::<f64>() / n as f64) as f32;
++    let (mut dominates, mut zero_original, mut ratio_sum, mut max_ratio) = (0, 0, 0f64, 1f64);
++    for (row, tail) in base.chunks_exact(dim).zip(tails) {
++        let original = row
++            .iter()
++            .zip(&mean)
++            .map(|(v, m)| (v - m).abs())
++            .fold(0f32, f32::max);
++        let added = (tail - tail_mean).abs();
++        dominates += usize::from(added > original);
++        if original == 0.0 {
++            zero_original += 1;
++            continue;
++        }
++        let ratio = f64::from(added.max(original)) / f64::from(original);
++        ratio_sum += ratio;
++        max_ratio = max_ratio.max(ratio);
++    }
++    json!({"rows": n, "tail_dominates_rows": dominates, "tail_dominates_fraction": dominates as f64 / n as f64,
++        "zero_original_centered_max_rows": zero_original, "max_scale_ratio": max_ratio,
++        "mean_scale_ratio_nonzero_original": (n > zero_original).then(|| ratio_sum / (n - zero_original) as f64)})
++}
+diff --git a/src/core/qgraph/diagnostics.rs b/src/core/qgraph/diagnostics.rs
+index 00924e7..e6ec0d5 100644
+--- a/src/core/qgraph/diagnostics.rs
++++ b/src/core/qgraph/diagnostics.rs
+@@ -14,7 +14,9 @@ pub struct TraversalDiagnostic {
+     pub results: Vec<u32>,
+     /// Unique vertices scored during descent or base-layer traversal.
+     pub evaluated: Vec<u32>,
+-    /// Final beam in routing-score order, before residual reranking.
++    /// Final traversal beam, independent of result retention.
++    pub beam: Vec<u32>,
++    /// Result reservoir (or final beam in legacy mode), before residual reranking.
+     pub retained: Vec<u32>,
+     /// Retained vertices passed to residual reranking; empty when reranking is disabled.
+     pub rerank_candidates: Vec<u32>,
+diff --git a/src/core/qgraph/mod.rs b/src/core/qgraph/mod.rs
+index 9eff9da..e690537 100644
+--- a/src/core/qgraph/mod.rs
++++ b/src/core/qgraph/mod.rs
+@@ -54,7 +54,7 @@ use kernels::{
+ };
+ #[cfg(feature = "experimental")]
+ pub use vertex::QueryProfile;
+-pub use vertex::{Residency, SearchKnobs, VGraph, VSearchParams, VSearcher};
++pub use vertex::{Residency, SearchKnobs, VGraph, VMetric, VSearchParams, VSearcher};
+ 
+ /// Default out-degree of every vertex; one batch of edge codes per expansion.
+ pub const DEFAULT_DEGREE: usize = 32;
+diff --git a/src/core/qgraph/update.rs b/src/core/qgraph/update.rs
+index 0de5e0d..9404a5f 100644
+--- a/src/core/qgraph/update.rs
++++ b/src/core/qgraph/update.rs
+@@ -163,7 +163,7 @@ impl Base {
+             let graph = VGraph::open(&m.vertex_path(dir), Residency::Mapped)?;
+             if graph.len() != rows.ids.len()
+                 || graph.dim() != m.dim
+-                || graph.metric() != m.build.metric
++                || graph.metric() != m.build.metric.into()
+             {
+                 return Err(UpdateError::CorruptBase(
+                     "vertex/rows shape mismatch".into(),
+@@ -411,7 +411,10 @@ impl UpdatableVGraph {
+         graph: &Graph,
+         vertex: &VGraph,
+     ) -> Result<Self, UpdateError> {
+-        if graph.n != vertex.len() || graph.dim != vertex.dim() || graph.metric != vertex.metric() {
++        if graph.n != vertex.len()
++            || graph.dim != vertex.dim()
++            || vertex.metric() != graph.metric.into()
++        {
+             return Err(UpdateError::CorruptBase(
+                 "graph and vertex encoding differ".into(),
+             ));
+diff --git a/src/core/qgraph/vertex.rs b/src/core/qgraph/vertex.rs
+index 1df4b9d..a8058d9 100644
+--- a/src/core/qgraph/vertex.rs
++++ b/src/core/qgraph/vertex.rs
+@@ -33,6 +33,33 @@ mod file;
+ pub use file::Residency;
+ use file::Slab;
+ 
++/// Scoring contract of the serving codes, independent of graph construction geometry.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum VMetric {
++    Angular,
++    Euclidean,
++    InnerProduct,
++}
++
++impl From<Metric> for VMetric {
++    fn from(metric: Metric) -> Self {
++        match metric {
++            Metric::Angular => Self::Angular,
++            Metric::Euclidean => Self::Euclidean,
++        }
++    }
++}
++
++impl VMetric {
++    fn code(self) -> u64 {
++        match self {
++            Self::Angular => 0,
++            Self::Euclidean => 1,
++            Self::InnerProduct => 2,
++        }
++    }
++}
++
+ #[derive(Default, serde::Serialize)]
+ pub struct QueryProfile {
+     pub query_encoding_ns: u64,
+@@ -46,6 +73,7 @@ pub struct QueryProfile {
+     pub entry_evaluations: usize,
+     pub traversal_evaluations: usize,
+     pub rerank_evaluations: usize,
++    pub beam_retained: usize,
+     pub retained: usize,
+ }
+ 
+@@ -54,6 +82,10 @@ pub struct QueryProfile {
+ pub struct VSearchParams {
+     /// Candidate pool size (beam width).
+     pub ef: usize,
++    /// Independent result capacity, offered every row score before beam admission.
++    /// 0 uses the legacy final beam; otherwise bounded to `max(k, reservoir).min(n)`.
++    /// Traversal, including the `ef >= k` rule, is unchanged.
++    pub reservoir: usize,
+     /// Number of best pool candidates re-scored with the float query (and the residual code,
+     /// when built); 0 returns the pool order.
+     pub rerank: usize,
+@@ -79,6 +111,7 @@ impl Default for VSearchParams {
+     fn default() -> Self {
+         Self {
+             ef: 64,
++            reservoir: 0,
+             rerank: 0,
+             patience: 0,
+             screen_sigmas: 1.0,
+@@ -252,6 +285,7 @@ impl Lines {
+ pub struct VGraph {
+     n: usize,
+     dim: usize,
++    metric: VMetric,
+     /// `dim` rounded up to a multiple of 16 (32 with 4-bit codes), the integer kernels' width.
+     padded: usize,
+     /// Bits per traversal code coordinate: 8, or 4 (two per byte).
+@@ -697,6 +731,54 @@ impl VGraph {
+         id_bytes: u8,
+         screen: bool,
+     ) -> Result<Self, HmsError> {
++        Self::encode_graph(
++            g,
++            (g.dim, g.metric.into()),
++            (bits, residual_bits),
++            align,
++            reorder,
++            id_bytes,
++            screen,
++        )
++    }
++
++    /// Keeps a lifted Euclidean graph's topology while encoding only its original coordinates
++    /// for negative inner-product scoring. The final construction coordinate is omitted.
++    pub fn from_lifted_ip_graph(
++        g: &Graph,
++        bits: u8,
++        residual_bits: u8,
++        align: bool,
++        reorder: bool,
++        id_bytes: u8,
++    ) -> Result<Self, HmsError> {
++        if g.metric != Metric::Euclidean || g.dim < 2 {
++            return Err(invalid(
++                "direct IP serving requires a lifted Euclidean graph".into(),
++            ));
++        }
++        Self::encode_graph(
++            g,
++            (g.dim - 1, VMetric::InnerProduct),
++            (bits, residual_bits),
++            align,
++            reorder,
++            id_bytes,
++            false,
++        )
++    }
++
++    fn encode_graph(
++        g: &Graph,
++        geometry: (usize, VMetric),
++        precision: (u8, u8),
++        align: bool,
++        reorder: bool,
++        id_bytes: u8,
++        screen: bool,
++    ) -> Result<Self, HmsError> {
++        let (dim, metric) = geometry;
++        let (bits, residual_bits) = precision;
+         if !matches!(bits, 4 | 8) {
+             return Err(invalid(format!(
+                 "vertex code bits must be 4 or 8, not {bits}"
+@@ -713,11 +795,11 @@ impl VGraph {
+                 "residual code bits must be 0, 4 or 8, not {residual_bits}"
+             )));
+         }
+-        let euclidean = g.metric == Metric::Euclidean;
+-        if euclidean && screen {
++        let euclidean = metric == VMetric::Euclidean;
++        if metric != VMetric::Angular && screen {
+             return Err(invalid("the 1-bit screen is angular only".into()));
+         }
+-        let (n, dim) = (g.n, g.dim);
++        let n = g.n;
+         let padded = dim.next_multiple_of(if bits == 4 { 32 } else { 16 });
+         let cbytes = if bits == 4 { padded / 2 } else { padded };
+         let stride = match (align, cbytes) {
+@@ -731,7 +813,7 @@ impl VGraph {
+             _ => 0,
+         };
+         let mut sum = vec![0f64; dim];
+-        for x in g.vectors.chunks_exact(dim) {
++        for x in g.vectors.chunks_exact(g.dim) {
+             sum.iter_mut().zip(x).for_each(|(s, &v)| *s += f64::from(v));
+         }
+         let mut mean: Vec<f32> = sum.iter().map(|s| (s / n as f64) as f32).collect();
+@@ -758,7 +840,7 @@ impl VGraph {
+         // The centred row of stored vertex `v`, which every code below encodes.
+         let centred = |v: usize| -> Vec<f32> {
+             let o = old(v);
+-            g.vectors[o * dim..(o + 1) * dim]
++            g.vectors[o * g.dim..o * g.dim + dim]
+                 .iter()
+                 .zip(&mean)
+                 .map(|(a, m)| a - m)
+@@ -883,6 +965,7 @@ impl VGraph {
+         let mut out = Self {
+             n,
+             dim,
++            metric,
+             padded,
+             bits,
+             cbytes,
+@@ -932,7 +1015,7 @@ impl VGraph {
+         if !matches!(bits, 1 | 2 | 4) {
+             return Err(invalid(format!("block bits must be 1, 2 or 4, not {bits}")));
+         }
+-        if !self.half_norms.is_empty() {
++        if self.metric != VMetric::Angular {
+             return Err(invalid("neighbour blocks are angular only".into()));
+         }
+         let (n, dim, r) = (self.n, self.dim, self.degree);
+@@ -1433,10 +1516,10 @@ impl VGraph {
+     /// units of `1 / w`: `-ip` for angular, `w |x|^2 / 2 - ip` for Euclidean.
+     #[inline]
+     fn order(&self, v: u32, ip: f32, w: f32) -> f32 {
+-        if self.half_norms.is_empty() {
+-            -ip
+-        } else {
++        if self.metric == VMetric::Euclidean {
+             self.half_norms[v as usize] * w - ip
++        } else {
++            -ip
+         }
+     }
+ 
+@@ -1476,18 +1559,20 @@ impl VGraph {
+ 
+     /// Greedy descent through the upper layers on estimated distances; returns the bottom-layer
+     /// entry vertex and the number of estimates.
+-    fn descend(&self, qc: &[i8], w: f32) -> (u32, usize) {
++    fn descend(&self, qc: &[i8], w: f32, reservoir: &mut Reservoir) -> (u32, usize) {
+         if self.layers.is_empty() {
+             return (self.entry, 0);
+         }
+         let mut p = 0u32;
+         let mut best = self.est(qc, self.upper_ids[0], w);
++        reservoir.offer(key(best, self.upper_ids[0]));
+         let mut evals = 1;
+         for layer in self.layers.iter().rev() {
+             loop {
+                 let mut moved = false;
+                 for &u in &layer[p as usize] {
+                     let d = self.est(qc, self.upper_ids[u as usize], w);
++                    reservoir.offer(key(d, self.upper_ids[u as usize]));
+                     evals += 1;
+                     if d < best {
+                         best = d;
+@@ -1539,6 +1624,7 @@ impl VGraph {
+                     cursor: 0,
+                 },
+                 expanded: BinaryHeap::new(),
++                reservoir: Reservoir::default(),
+                 keys: Vec::new(),
+                 results: Vec::new(),
+             },
+@@ -1749,6 +1835,34 @@ impl Pool {
+     }
+ }
+ 
++#[derive(Default)]
++struct Reservoir {
++    keys: Vec<u64>,
++    cap: usize,
++}
++
++impl Reservoir {
++    fn reset(&mut self, cap: usize) {
++        self.keys.clear();
++        self.cap = cap;
++    }
++
++    #[inline]
++    fn offer(&mut self, key: u64) {
++        if self.cap == 0 || (self.keys.len() == self.cap && key >= self.keys[self.keys.len() - 1]) {
++            return;
++        }
++        let pos = match self.keys.binary_search(&key) {
++            Ok(_) => return,
++            Err(pos) => pos,
++        };
++        if self.keys.len() == self.cap {
++            self.keys.pop();
++        }
++        self.keys.insert(pos, key);
++    }
++}
++
+ /// Per-thread search state for one [`VGraph`].
+ pub struct VSearcher<'a> {
+     index: &'a VGraph,
+@@ -1780,6 +1894,7 @@ pub(super) struct SearchScratch {
+     /// With blocks: the best `max(k, rerank)` expanded vertices by their own-code estimate,
+     /// farthest on top. Block estimates only order the exploration; results come from here.
+     expanded: BinaryHeap<u64>,
++    reservoir: Reservoir,
+     keys: Vec<u64>,
+     results: Vec<(f32, u32)>,
+     knobs: SearchKnobs,
+@@ -1835,7 +1950,9 @@ impl SearchScratch {
+                     self.fresh[i + 3],
+                 ];
+                 for (e, u) in g.est4(qc, ids, w).into_iter().zip(ids) {
+-                    if let Some((pos, _)) = self.pool.insert(key(e, u)) {
++                    let kk = key(e, u);
++                    self.reservoir.offer(kk);
++                    if let Some((pos, _)) = self.pool.insert(kk) {
+                         if patience > 0 && pos < k {
+                             *stale = 0;
+                         }
+@@ -1846,6 +1963,7 @@ impl SearchScratch {
+         }
+         for &u in &self.fresh[i..] {
+             let kk = key(g.est(qc, u, w), u);
++            self.reservoir.offer(kk);
+             if let Some((pos, _)) = self.pool.insert(kk) {
+                 if patience > 0 && pos < k {
+                     *stale = 0;
+@@ -1885,7 +2003,7 @@ impl SearchScratch {
+                 "non-finite query value at coordinate {at}"
+             )));
+         }
+-        if g.half_norms.is_empty() && query.iter().all(|&v| v == 0.0) {
++        if g.metric == VMetric::Angular && query.iter().all(|&v| v == 0.0) {
+             return Err(invalid("zero query: cosine similarity is undefined".into()));
+         }
+         Ok(())
+@@ -1912,8 +2030,18 @@ impl SearchScratch {
+         out: &mut Vec<u32>,
+         profile: &mut QueryProfile,
+     ) -> Result<usize, HmsError> {
++        if params.reservoir > 0 && (g.has_blocks() || (g.has_screen() && params.screen)) {
++            return Err(invalid(
++                "independent retention requires unscreened row-code search".into(),
++            ));
++        }
+         let started = PROFILE.then(Instant::now);
+         let ef = params.ef.max(k).max(1);
++        self.reservoir.reset(if params.reservoir == 0 {
++            0
++        } else {
++            params.reservoir.max(k).min(g.n)
++        });
+         // Only the order matters, so the query is used as given (no centring needed: the
+         // `<q, mean>` term is common to all candidates) and its scale is dropped.
+         self.qf[..g.dim].copy_from_slice(query);
+@@ -1943,7 +2071,7 @@ impl SearchScratch {
+ 
+         self.visited.next();
+         let entry_started = PROFILE.then(Instant::now);
+-        let (entry, mut evals) = g.descend(qc, w);
++        let (entry, mut evals) = g.descend(qc, w, &mut self.reservoir);
+         if let Some(started) = entry_started {
+             profile.entry_ns = started.elapsed().as_nanos() as u64;
+             profile.entry_evaluations = evals;
+@@ -1968,6 +2096,7 @@ impl SearchScratch {
+         self.expanded.clear();
+         let take = params.rerank.max(k).min(g.n);
+         let k0 = key(g.est(qc, entry, w), entry);
++        self.reservoir.offer(k0);
+         self.pool.insert(k0);
+         if fuse {
+             self.visited.trace(entry).1.key = k0;
+@@ -2250,16 +2379,21 @@ impl SearchScratch {
+ 
+         let rerank_started = PROFILE.then(Instant::now);
+         if PROFILE {
+-            profile.retained = self.pool.keys.len();
++            profile.beam_retained = self.pool.keys.len();
+             profile.traversal_evaluations += 1;
+         }
+         self.keys.clear();
+-        if blocks && !block_screen {
++        if params.reservoir > 0 {
++            self.keys.extend_from_slice(&self.reservoir.keys);
++        } else if blocks && !block_screen {
+             self.keys.extend(self.expanded.drain());
+             self.keys.sort_unstable();
+         } else {
+             self.keys.extend_from_slice(&self.pool.keys);
+         }
++        if PROFILE {
++            profile.retained = self.keys.len();
++        }
+         self.results.clear();
+         let take = take.min(self.keys.len());
+         if params.rerank > 0 {
+@@ -2326,6 +2460,43 @@ impl VSearcher<'_> {
+ 
+ #[cfg(feature = "experimental")]
+ impl VGraph {
++    /// Storage geometry and reconstruction error; diagnostic work is never part of search.
++    pub fn encoding_diagnostic(&self, source: &Graph) -> Result<serde_json::Value, HmsError> {
++        if source.n != self.n || source.dim < self.dim {
++            return Err(invalid("encoding diagnostic source shape mismatch".into()));
++        }
++        let (mut coarse_error, mut fine_error) = (0f64, 0f64);
++        for v in 0..self.n {
++            let original = self.original(v as u32) as usize;
++            for d in 0..self.dim {
++                let expected =
++                    f64::from(source.vectors[original * source.dim + d]) - f64::from(self.mean[d]);
++                let primary = f64::from(self.scales[v])
++                    * f64::from(code_at(self.code(v as u32), self.bits, d));
++                let residual = if self.has_residual() {
++                    f64::from(self.res_scales[v])
++                        * f64::from(code_at(
++                            &self.residual[v * self.res_stride..(v + 1) * self.res_stride],
++                            self.res_bits,
++                            d,
++                        ))
++                } else {
++                    0.0
++                };
++                coarse_error += (primary - expected).powi(2);
++                fine_error += (primary + residual - expected).powi(2);
++            }
++        }
++        let count = (self.n * self.dim) as f64;
++        Ok(
++            serde_json::json!({"metric": format!("{:?}", self.metric), "dimensions": self.dim,
++            "padded": self.padded, "primary_stride": self.stride, "residual_stride": self.res_stride,
++            "norm_bytes": self.half_norms.len() * 4, "index_bytes": self.index_bytes(),
++            "primary_coordinate_rmse": (coarse_error / count).sqrt(),
++            "refined_coordinate_rmse": (fine_error / count).sqrt()}),
++        )
++    }
++
+     /// Runs an untimed traversal control against the graph used to encode this index.
+     /// `oracle` is an original row ID; `exact` replaces routing scores only. Residual
+     /// reranking, beam ordering and tie handling remain those of the compact index.
+@@ -2340,9 +2511,13 @@ impl VGraph {
+         exact: bool,
+     ) -> Result<super::diagnostics::TraversalDiagnostic, HmsError> {
+         if source.n != self.n
+-            || source.dim != self.dim
++            || source.dim != self.dim + usize::from(self.metric == VMetric::InnerProduct)
+             || source.degree != self.degree
+-            || (source.metric == Metric::Euclidean) != !self.half_norms.is_empty()
++            || if self.metric == VMetric::InnerProduct {
++                source.metric != Metric::Euclidean
++            } else {
++                self.metric != source.metric.into()
++            }
+         {
+             return Err(invalid(
+                 "diagnostic source graph does not match index geometry and metric".into(),
+@@ -2355,7 +2530,7 @@ impl VGraph {
+         }
+         if query.len() != self.dim
+             || query.iter().any(|x| !x.is_finite())
+-            || (source.metric == Metric::Angular && query.iter().all(|&x| x == 0.0))
++            || (self.metric == VMetric::Angular && query.iter().all(|&x| x == 0.0))
+             || k == 0
+             || k > self.n
+         {
+@@ -2448,6 +2623,9 @@ impl VGraph {
+         );
+         report.evaluated.sort_unstable();
+         report.evaluated.dedup();
++        report
++            .beam
++            .extend(scratch.pool.keys.iter().map(|&c| self.original(key_id(c))));
+         report.retained.extend(
+             scratch
+                 .keys
+@@ -2473,20 +2651,33 @@ impl VGraph {
+         let mut report = super::diagnostics::TraversalDiagnostic::default();
+         let score = |id: u32| {
+             let original = self.original(id) as usize;
+-            let row = &source.vectors[original * self.dim..(original + 1) * self.dim];
++            let row = &source.vectors[original * source.dim..original * source.dim + self.dim];
+             let ip: f64 = row
+                 .iter()
+                 .zip(query)
+                 .map(|(&x, &q)| f64::from(x) * f64::from(q))
+                 .sum();
+-            let norm = if source.metric == Metric::Euclidean {
++            let norm = if self.metric == VMetric::Euclidean {
+                 row.iter().map(|&x| f64::from(x).powi(2)).sum::<f64>() * 0.5
+             } else {
+                 0.0
+             };
+             (norm - ip) as f32
+         };
+-        let entry = self.diagnostic_entry(score, &mut report.evaluated);
++        let mut reservoir = Reservoir::default();
++        reservoir.reset(if params.reservoir == 0 {
++            0
++        } else {
++            params.reservoir.max(k).min(self.n)
++        });
++        let entry = self.diagnostic_entry(
++            |id| {
++                let distance = score(id);
++                reservoir.offer(key(distance, id));
++                distance
++            },
++            &mut report.evaluated,
++        );
+         let mut pool = Pool {
+             keys: Vec::new(),
+             expanded: Vec::new(),
+@@ -2496,7 +2687,9 @@ impl VGraph {
+         let mut seen = vec![false; self.n];
+         seen[entry as usize] = true;
+         report.evaluated.push(self.original(entry));
+-        pool.insert(key(score(entry), entry));
++        let entry_key = key(score(entry), entry);
++        reservoir.offer(entry_key);
++        pool.insert(entry_key);
+         let mut stale = 0usize;
+         while let Some(candidate) = pool.next() {
+             if params.patience > 0 && stale >= params.patience {
+@@ -2511,7 +2704,9 @@ impl VGraph {
+                 }
+                 seen[id as usize] = true;
+                 report.evaluated.push(self.original(id));
+-                if let Some((pos, _)) = pool.insert(key(score(id), id)) {
++                let kk = key(score(id), id);
++                reservoir.offer(kk);
++                if let Some((pos, _)) = pool.insert(kk) {
+                     if params.patience > 0 && pos < k {
+                         stale = 0;
+                     }
+@@ -2521,16 +2716,24 @@ impl VGraph {
+         report.evaluated.sort_unstable();
+         report.evaluated.dedup();
+         report
+-            .retained
++            .beam
+             .extend(pool.keys.iter().map(|&c| self.original(key_id(c))));
+-        let take = params.rerank.max(k).min(self.n).min(pool.keys.len());
++        let keys = if params.reservoir > 0 {
++            &reservoir.keys
++        } else {
++            &pool.keys
++        };
++        report
++            .retained
++            .extend(keys.iter().map(|&c| self.original(key_id(c))));
++        let take = params.rerank.max(k).min(self.n).min(keys.len());
+         if params.rerank > 0 {
+             report
+                 .rerank_candidates
+                 .extend_from_slice(&report.retained[..take]);
+             let mut qf = vec![0.0; self.padded];
+             qf[..self.dim].copy_from_slice(query);
+-            let mut results: Vec<_> = pool.keys[..take]
++            let mut results: Vec<_> = keys[..take]
+                 .iter()
+                 .map(|&c| (self.fine(&qf, key_id(c)), self.original(key_id(c))))
+                 .collect();
+@@ -2547,6 +2750,254 @@ impl VGraph {
+     }
+ }
+ 
++#[cfg(test)]
++mod serving_tests {
++    use super::*;
++
++    fn lifted(rows: &[f32], dim: usize) -> Graph {
++        let norms: Vec<f64> = rows
++            .chunks_exact(dim)
++            .map(|row| row.iter().map(|&x| f64::from(x).powi(2)).sum())
++            .collect();
++        let max = norms.iter().copied().fold(0.0, f64::max);
++        let data: Vec<f32> = rows
++            .chunks_exact(dim)
++            .zip(norms)
++            .flat_map(|(row, norm)| {
++                row.iter()
++                    .copied()
++                    .chain([(max - norm).max(0.0).sqrt() as f32])
++            })
++            .collect();
++        Graph::build_owned(
++            data,
++            dim + 1,
++            &BuildParams {
++                metric: Metric::Euclidean,
++                degree: 2,
++                build_ef: 16,
++                ..Default::default()
++            },
++        )
++        .unwrap()
++    }
++
++    #[test]
++    fn reservoir_recovers_a_beam_rejection_without_changing_expansions() {
++        let mut graph = lifted(&[0.0, 0.0, 0.8, 0.0, 1.0, 381.0], 2);
++        graph.entry = 0;
++        graph.layers.clear();
++        graph.upper_ids.clear();
++        graph.adj.set(0, &[1, 2]);
++        graph.adj.set(1, &[]);
++        graph.adj.set(2, &[]);
++        let index = VGraph::from_lifted_ip_graph(&graph, 8, 8, false, false, 4).unwrap();
++        let mut searcher = index.searcher_with(SearchKnobs::OFF);
++        let mut out = Vec::new();
++        let params = VSearchParams {
++            ef: 1,
++            rerank: 3,
++            ..Default::default()
++        };
++        searcher.search(&[1.0, 0.0], 1, params, &mut out).unwrap();
++        assert_eq!(out, [1]);
++        let beam = searcher.scratch.pool.keys.clone();
++        let marks = searcher.scratch.visited.marks.clone();
++        for capacity in [1, 2, 3, usize::MAX] {
++            let params = VSearchParams {
++                reservoir: capacity,
++                ..params
++            };
++            searcher.search(&[1.0, 0.0], 1, params, &mut out).unwrap();
++            assert_eq!(searcher.scratch.pool.keys, beam);
++            assert!(searcher
++                .scratch
++                .visited
++                .marks
++                .iter()
++                .zip(&marks)
++                .all(|(&a, &b)| (a > 0) == (b > 0)));
++            assert_eq!(out, if capacity == 1 { vec![1] } else { vec![2] });
++            assert_eq!(searcher.scratch.results.len(), capacity.min(3));
++            #[cfg(feature = "experimental")]
++            {
++                let profile = searcher
++                    .profile_search(&[1.0, 0.0], 1, params, &mut out)
++                    .unwrap();
++                assert_eq!(profile.expansions, 2);
++                assert_eq!(profile.rerank_evaluations, capacity.min(3));
++                assert_eq!(profile.beam_retained, 1);
++                assert_eq!(profile.retained, capacity.min(3));
++            }
++        }
++    }
++
++    #[test]
++    fn retention_preserves_traversal_with_stopping_and_batch_scoring() {
++        let rows = crate::core::qgraph::tests::clustered(256, 32, 77);
++        for metric in [Metric::Angular, Metric::Euclidean] {
++            let graph = Graph::build(
++                &rows,
++                32,
++                &BuildParams {
++                    metric,
++                    degree: 8,
++                    build_ef: 32,
++                    ..Default::default()
++                },
++            )
++            .unwrap();
++            let index = VGraph::from_graph_with(&graph, 4, 8, true, true, 3, false).unwrap();
++            for patience in [0, 1, 4] {
++                for knobs in [
++                    SearchKnobs::OFF,
++                    SearchKnobs {
++                        prefetch: 3,
++                        batch_est: true,
++                        frontier: 0.8,
++                        block_screen: false,
++                    },
++                ] {
++                    let mut a = index.searcher_with(knobs);
++                    let mut b = index.searcher_with(knobs);
++                    for q in rows.chunks_exact(32).take(8) {
++                        let mut out = Vec::new();
++                        let p = VSearchParams {
++                            ef: 12,
++                            rerank: 40,
++                            patience,
++                            ..Default::default()
++                        };
++                        let ea = a.search(q, 5, p, &mut out).unwrap();
++                        let eb = b
++                            .search(q, 5, VSearchParams { reservoir: 40, ..p }, &mut out)
++                            .unwrap();
++                        assert_eq!(a.scratch.pool.keys, b.scratch.pool.keys);
++                        assert_eq!(a.scratch.pool.expanded, b.scratch.pool.expanded);
++                        assert_eq!(a.scratch.visited.marks, b.scratch.visited.marks);
++                        assert_eq!(ea - a.scratch.results.len(), eb - b.scratch.results.len());
++                    }
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn reservoir_includes_upper_layer_scores_once() {
++        let mut graph = lifted(&[0.0, 0.0, 0.8, 0.0, 1.0, 381.0], 2);
++        graph.upper_ids = vec![0, 1, 2];
++        graph.layers = vec![vec![vec![1, 2], vec![0, 2], vec![0, 1]]];
++        for v in 0..3 {
++            graph.adj.set(v, &[]);
++        }
++        let index = VGraph::from_lifted_ip_graph(&graph, 8, 8, false, false, 4).unwrap();
++        let mut searcher = index.searcher_with(SearchKnobs::OFF);
++        let mut out = Vec::new();
++        for _ in 0..260 {
++            searcher
++                .search(
++                    &[1.0, 0.0],
++                    1,
++                    VSearchParams {
++                        ef: 1,
++                        rerank: 3,
++                        reservoir: 3,
++                        ..Default::default()
++                    },
++                    &mut out,
++                )
++                .unwrap();
++            assert_eq!(out, [2]);
++            assert_eq!(searcher.scratch.keys.len(), 3);
++        }
++    }
++
++    #[test]
++    fn direct_ip_preserves_magnitudes_zero_queries_and_topology() {
++        let rows = [1.0, 0.0, 0.0, 3.0, 0.0, 3.0, -2.0, 0.0];
++        let mut graph = lifted(&rows, 2);
++        for v in 0..graph.n {
++            graph.adj.set(v, &[((v + 1) % graph.n) as u32]);
++        }
++        for bits in [4, 8] {
++            for reorder in [false, true] {
++                let index =
++                    VGraph::from_lifted_ip_graph(&graph, bits, 8, true, reorder, 3).unwrap();
++                assert_eq!(index.metric(), VMetric::InnerProduct);
++                assert!(index.half_norms.is_empty());
++                for v in 0..index.n {
++                    let mut neighbors = Vec::new();
++                    index.for_each_neighbour(v, |u| neighbors.push(index.original(u)));
++                    assert_eq!(
++                        neighbors,
++                        graph.neighbors(index.original(v as u32) as usize)
++                    );
++                }
++                let mut searcher = index.searcher_with(SearchKnobs::OFF);
++                let mut out = Vec::new();
++                let params = VSearchParams {
++                    ef: 4,
++                    rerank: 4,
++                    reservoir: 4,
++                    ..Default::default()
++                };
++                for (query, expected) in [
++                    ([1.0, 1.0], vec![1, 2, 0, 3]),
++                    ([0.0, 0.0], vec![0, 1, 2, 3]),
++                    ([-1.0, 0.0], vec![3, 1, 2, 0]),
++                ] {
++                    searcher.search(&query, 4, params, &mut out).unwrap();
++                    assert_eq!(out, expected);
++                }
++                assert!(searcher
++                    .search(&[f32::NAN, 0.0], 1, params, &mut out)
++                    .is_err());
++                assert!(searcher.search(&[0.0], 1, params, &mut out).is_err());
++                assert!(index.with_blocks(&graph, 2).is_err());
++            }
++        }
++    }
++
++    #[test]
++    fn direct_ip_removes_the_128_dimension_stride_cliff() {
++        let mut rows = vec![0.0; 3 * 128];
++        rows[0] = 1.0;
++        rows[128] = 2.0;
++        rows[256] = -1.0;
++        let graph = lifted(&rows, 128);
++        let old = VGraph::from_graph_with(&graph, 8, 8, true, true, 3, false).unwrap();
++        let new = VGraph::from_lifted_ip_graph(&graph, 8, 8, true, true, 3).unwrap();
++        assert_eq!(
++            (old.dim, old.padded, old.stride, old.res_stride),
++            (129, 144, 256, 144)
++        );
++        assert_eq!(
++            (new.dim, new.padded, new.stride, new.res_stride),
++            (128, 128, 128, 128)
++        );
++        assert_eq!(
++            old.index_bytes() - new.index_bytes(),
++            148 * graph.n + 16 * 4
++        );
++        assert_eq!(old.entry, new.entry);
++        assert_eq!(old.upper_ids, new.upper_ids);
++        assert_eq!(old.layers, new.layers);
++        assert_eq!(&*old.ids, &*new.ids);
++        assert_eq!(&*old.adj3, &*new.adj3);
++        for dim in [127, 129] {
++            let mut rows = vec![0.0; 3 * dim];
++            rows[0] = 1.0;
++            rows[dim] = 2.0;
++            rows[2 * dim] = -1.0;
++            let graph = lifted(&rows, dim);
++            let old = VGraph::from_graph_with(&graph, 8, 8, true, true, 3, false).unwrap();
++            let new = VGraph::from_lifted_ip_graph(&graph, 8, 8, true, true, 3).unwrap();
++            assert_eq!((new.stride, new.res_stride), (old.stride, old.res_stride));
++            assert_eq!(old.index_bytes() - new.index_bytes(), 4 * graph.n);
++        }
++    }
++}
++
+ /// Format 02 adds the build parameters and a fingerprint of the vectors to the header, so a
+ /// cache written for other data or parameters is rejected instead of silently reused; 03 the
+ /// quantized-search flag; 04 the metric.
+diff --git a/src/core/qgraph/vertex/file.rs b/src/core/qgraph/vertex/file.rs
+index dfcb6dd..66c70e6 100644
+--- a/src/core/qgraph/vertex/file.rs
++++ b/src/core/qgraph/vertex/file.rs
+@@ -17,7 +17,7 @@ use std::path::Path;
+ use std::ptr::NonNull;
+ use std::sync::Arc;
+ 
+-use super::{block_record_bytes, get_varint, unzigzag, Line, Lines, Metric, Rotation, VGraph};
++use super::{block_record_bytes, get_varint, unzigzag, Line, Lines, Rotation, VGraph, VMetric};
+ use super::{BLOCK, BLOCK_SEED, NONE, NONE3, SCREEN_SEED};
+ 
+ /// Element types an index array may hold.
+@@ -258,12 +258,8 @@ impl VGraph {
+     }
+ 
+     /// The metric the index orders by.
+-    pub fn metric(&self) -> Metric {
+-        if self.half_norms.is_empty() {
+-            Metric::Angular
+-        } else {
+-            Metric::Euclidean
+-        }
++    pub fn metric(&self) -> VMetric {
++        self.metric
+     }
+ 
+     /// Writes the index for [`VGraph::open`]: to a temporary file next to `path`, synced, then
+@@ -462,7 +458,13 @@ impl VGraph {
+         let stride = small(6, 1 << 24, "row stride")?;
+         let id_bytes = small(7, 4, "id width")?;
+         let entry = small(8, u64::from(NONE), "entry")?;
+-        let euclidean = small(9, 1, "metric")? == 1;
++        let metric = match small(9, 2, "metric")? {
++            0 => VMetric::Angular,
++            1 => VMetric::Euclidean,
++            2 => VMetric::InnerProduct,
++            _ => unreachable!(),
++        };
++        let euclidean = metric == VMetric::Euclidean;
+         let screen_words = small(10, 1 << 20, "screen words")?;
+         let screen_sigma = f32::from_bits(h[11] as u32);
+         let block_bits = small(12, 4, "block bits")? as u8;
+@@ -502,14 +504,14 @@ impl VGraph {
+         };
+         let screen_rot = (screen_words > 0).then(|| Rotation::new(dim, 0, SCREEN_SEED));
+         if let Some(rot) = &screen_rot {
+-            if euclidean || screen_words != rot.padded() / 64 {
++            if metric != VMetric::Angular || screen_words != rot.padded() / 64 {
+                 return Err(bad("screen shape does not match the dimension".into()));
+             }
+         }
+         let block_rot = (block_bits > 0).then(|| Rotation::new(dim, 0, BLOCK_SEED));
+         let record = match &block_rot {
+             Some(rot) => {
+-                if euclidean
++                if metric != VMetric::Angular
+                     || !matches!(block_bits, 1 | 2 | 4)
+                     || block_dim != rot.padded()
+                     || block_m != block_dim * usize::from(block_bits) / 4
+@@ -628,6 +630,7 @@ impl VGraph {
+         Ok(Self {
+             n,
+             dim,
++            metric,
+             padded,
+             bits,
+             cbytes,
+@@ -716,7 +719,7 @@ fn delta_lists_ok(adjv: &[u8], off: &[u32], n: usize, degree: usize) -> bool {
+ mod tests {
+     use super::*;
+     use crate::core::qgraph::tests::clustered;
+-    use crate::core::qgraph::{BuildParams, Graph, VSearchParams};
++    use crate::core::qgraph::{BuildParams, Graph, Metric, VSearchParams};
+ 
+     /// Small indexes covering every array the file holds: both metrics, 4- and 8-bit codes,
+     /// residuals 0/4/8, ids 4/3/delta, reordering, aligned rows, the screen and blocks.
+@@ -753,6 +756,17 @@ mod tests {
+                     .and_then(|v| v.with_blocks(&g, 2))
+                     .expect("encode");
+                 out.push(("angular blocks".into(), v, queries.clone()));
++            } else {
++                for (bits, id_bytes) in [(4, 0), (8, 3), (8, 4)] {
++                    let v = VGraph::from_lifted_ip_graph(&g, bits, 8, true, true, id_bytes)
++                        .expect("encode direct IP");
++                    let mut probes: Vec<f32> = queries
++                        .chunks_exact(d)
++                        .flat_map(|q| q[..d - 1].iter().copied())
++                        .collect();
++                    probes.extend(vec![0.0; d - 1]);
++                    out.push((format!("direct IP b{bits} i{id_bytes}"), v, probes));
++                }
+             }
+         }
+         out
+@@ -762,10 +776,14 @@ mod tests {
+         let (mut sa, mut sb) = (a.searcher(), b.searcher());
+         let (mut oa, mut ob) = (Vec::new(), Vec::new());
+         for q in queries.chunks_exact(a.dim()) {
+-            for (ef, rerank) in [(16, 0), (48, 20)] {
++            for (ef, rerank, reservoir) in [(16, 0, 0), (48, 20, 0), (16, 40, 40)] {
++                if reservoir > 0 && (a.has_screen() || a.has_blocks()) {
++                    continue;
++                }
+                 let p = VSearchParams {
+                     ef,
+                     rerank,
++                    reservoir,
+                     ..VSearchParams::default()
+                 };
+                 let ea = sa.search(q, 10, p, &mut oa).expect("search");
+diff --git a/src/python/vector_index.rs b/src/python/vector_index.rs
+index 8dd11df..f37027a 100644
+--- a/src/python/vector_index.rs
++++ b/src/python/vector_index.rs
+@@ -124,9 +124,11 @@ struct PyVectorIndex {
+     build_ef: usize,
+     code_bits: u8,
+     compact_adjacency: bool,
++    direct_ip: bool,
+     pool: Option<rayon::ThreadPool>,
+     ef: usize,
+     rerank: usize,
++    reservoir: usize,
+     patience: usize,
+     dim: usize,
+     built: Option<Built>,
+@@ -145,6 +147,7 @@ impl PyVectorIndex {
+         VSearchParams {
+             ef: self.ef,
+             rerank: self.rerank,
++            reservoir: self.reservoir,
+             patience: self.patience,
+             ..VSearchParams::default()
+         }
+@@ -182,8 +185,9 @@ impl PyVectorIndex {
+     /// `build_ef` the construction search width, `threads` the build and batch-query threads
+     /// (0 = one per core). `code_bits` selects 4-bit traversal codes (default) or 8-bit
+     /// traversal codes for higher routing precision; residual reranking remains 8-bit.
++    /// `direct_ip` serves original coordinates with negative-IP scores on the lifted graph.
+     #[new]
+-    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4, compact_adjacency=false))]
++    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4, compact_adjacency=false, direct_ip=false))]
+     fn new(
+         metric: &str,
+         degree: usize,
+@@ -191,6 +195,7 @@ impl PyVectorIndex {
+         threads: usize,
+         code_bits: u8,
+         compact_adjacency: bool,
++        direct_ip: bool,
+     ) -> PyResult<Self> {
+         let metric = match metric {
+             "angular" => Distance::Angular,
+@@ -202,6 +207,9 @@ impl PyVectorIndex {
+                 )))
+             }
+         };
++        if direct_ip && metric != Distance::InnerProduct {
++            return Err(PyValueError::new_err("direct_ip requires metric 'ip'"));
++        }
+         if degree == 0 || !degree.is_multiple_of(2) {
+             return Err(PyValueError::new_err(format!(
+                 "degree must be positive and even, not {degree}"
+@@ -230,9 +238,11 @@ impl PyVectorIndex {
+             build_ef,
+             code_bits,
+             compact_adjacency,
++            direct_ip,
+             pool,
+             ef: 64,
+             rerank: 64,
++            reservoir: 0,
+             patience: 0,
+             dim: 0,
+             built: None,
+@@ -295,6 +305,7 @@ impl PyVectorIndex {
+         let metric = self.metric;
+         let code_bits = self.code_bits;
+         let compact_adjacency = self.compact_adjacency;
++        let direct_ip = self.direct_ip;
+         let graph = py
+             .detach(|| {
+                 self.run(|| {
+@@ -313,15 +324,26 @@ impl PyVectorIndex {
+                         training_data.as_deref(),
+                     )?;
+                     // The graph's float rows are dropped here; the index keeps only its codes.
+-                    let mut index = VGraph::from_graph_with(
+-                        &g,
+-                        code_bits,
+-                        RESIDUAL_BITS,
+-                        true,
+-                        true,
+-                        id_bytes,
+-                        false,
+-                    )?;
++                    let mut index = if direct_ip {
++                        VGraph::from_lifted_ip_graph(
++                            &g,
++                            code_bits,
++                            RESIDUAL_BITS,
++                            true,
++                            true,
++                            id_bytes,
++                        )?
++                    } else {
++                        VGraph::from_graph_with(
++                            &g,
++                            code_bits,
++                            RESIDUAL_BITS,
++                            true,
++                            true,
++                            id_bytes,
++                            false,
++                        )?
++                    };
+                     if compact_adjacency {
+                         index.compact_adjacency()?;
+                     }
+@@ -336,16 +358,24 @@ impl PyVectorIndex {
+ 
+     /// Search effort: `ef` is the candidate pool size, `rerank` how many of the best pool
+     /// candidates are re-scored with the residual code (0 returns the pool order).
++    /// `reservoir` retains candidates independently of traversal (0 uses the final beam).
+     /// `patience` stops after that many expansions without improving the estimated top k
+     /// (0 disables this early stop).
+-    #[pyo3(signature = (ef, rerank=64, patience=0))]
+-    fn set_query_arguments(&mut self, ef: usize, rerank: usize, patience: usize) -> PyResult<()> {
++    #[pyo3(signature = (ef, rerank=64, patience=0, reservoir=0))]
++    fn set_query_arguments(
++        &mut self,
++        ef: usize,
++        rerank: usize,
++        patience: usize,
++        reservoir: usize,
++    ) -> PyResult<()> {
+         if ef == 0 {
+             return Err(PyValueError::new_err("ef must be positive"));
+         }
+         self.ef = ef;
+         self.rerank = rerank;
+         self.patience = patience;
++        self.reservoir = reservoir;
+         Ok(())
+     }
+ 
+@@ -364,6 +394,7 @@ impl PyVectorIndex {
+             query_buf,
+             metric,
+             dim,
++            direct_ip,
+             ..
+         } = self;
+         let built = built
+@@ -375,7 +406,7 @@ impl PyVectorIndex {
+             Ok(s) => query_buf.extend_from_slice(s),
+             Err(_) => query_buf.extend(v.as_array().iter().copied()),
+         }
+-        if *metric == Distance::InnerProduct {
++        if *metric == Distance::InnerProduct && !*direct_ip {
+             if query_buf.len() != *dim {
+                 return Err(PyValueError::new_err(format!(
+                     "the query has {} dimensions, the index has {dim}",
+@@ -416,10 +447,10 @@ impl PyVectorIndex {
+         let params = self.params();
+         let graph = &*built.graph;
+         let metric = self.metric;
+-        if metric == Distance::InnerProduct {
++        if metric == Distance::InnerProduct && !self.direct_ip {
+             queries = augment_queries(&queries, dim);
+         }
+-        let dim = metric.graph_dim(dim);
++        let dim = graph.dim();
+         let results: Vec<Vec<u32>> = py
+             .detach(|| {
+                 self.run(|| {
+@@ -462,12 +493,14 @@ impl PyVectorIndex {
+ 
+     fn __repr__(&self) -> String {
+         format!(
+-            "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, n={})",
++            "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, direct_ip={}, reservoir={}, n={})",
+             self.metric.name(),
+             self.degree,
+             self.build_ef,
+             self.ef,
+             self.rerank,
++            self.direct_ip,
++            self.reservoir,
+             self.__len__()
+         )
+     }
+diff --git a/tests/python/test_vector_index.py b/tests/python/test_vector_index.py
+index 2211b63..2dfb2bf 100644
+--- a/tests/python/test_vector_index.py
++++ b/tests/python/test_vector_index.py
+@@ -123,11 +123,12 @@ def test_euclidean_ranks_by_distance_not_angle(data, queries):
+ 
+ 
+ @pytest.mark.parametrize("code_bits", [4, 8])
+-def test_inner_product_ranks_by_dot_product(data, queries, code_bits):
++@pytest.mark.parametrize("direct_ip", [False, True])
++def test_inner_product_ranks_by_dot_product(data, queries, code_bits, direct_ip):
+     scaled = data * np.random.default_rng(10).uniform(0.2, 5.0, (len(data), 1)).astype(np.float32)
+     dots = queries.astype(np.float64) @ scaled.astype(np.float64).T
+     truth = np.argsort(-dots, axis=1, kind="stable")[:, :K]
+-    idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2, code_bits=code_bits)
++    idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2, code_bits=code_bits, direct_ip=direct_ip)
+     idx.fit(scaled)
+     assert repr(idx).startswith("VectorIndex(metric='ip'")
+     # The reduction puts every row on one sphere, a harder graph than the raw data: more effort.
+@@ -141,6 +142,46 @@ def test_inner_product_ranks_by_dot_product(data, queries, code_bits):
+         idx.query(np.ones(DIM + 1, np.float32), K)
+ 
+ 
++@pytest.mark.parametrize("capacity", [1, 2, 3, 4])
++def test_independent_retention_capacity_bounds_reranking(capacity):
++    rows = np.array([[0.0, 0.0], [0.8, 0.0], [1.0, 381.0]], dtype=np.float32)
++    index = hm.VectorIndex("ip", degree=2, build_ef=16, threads=1, code_bits=8, direct_ip=True)
++    index.fit(rows)
++    index.set_query_arguments(ef=3, rerank=3, reservoir=capacity)
++    assert index.query(np.array([1.0, 0.0], dtype=np.float32), 1).tolist() == [2 if capacity > 1 else 1]
++
++
++def test_direct_ip_storage_and_zero_query_contract():
++    rows = clustered(128, 128, 61)
++    legacy = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8)
++    direct = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8, direct_ip=True)
++    for index in (legacy, direct):
++        index.fit(rows)
++        index.set_query_arguments(ef=128, rerank=128, reservoir=128)
++    assert legacy.index_bytes - direct.index_bytes == 148 * len(rows) + 64
++    np.testing.assert_array_equal(direct.query(np.zeros(128, np.float32), 128), np.arange(128))
++    probes = clustered(4, 128, 62)
++    for single, batch in zip([direct.query(q, K) for q in probes], direct.batch_query(probes, K)):
++        np.testing.assert_array_equal(single, batch)
++    with pytest.raises(ValueError, match="direct_ip requires"):
++        hm.VectorIndex("angular", direct_ip=True)
++
++
++def test_omitted_reservoir_restores_legacy_retention():
++    rows = clustered(128, 17, 63)
++    query = clustered(1, 17, 64)[0]
++    index = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1)
++    index.fit(rows)
++    index.set_query_arguments(ef=32, rerank=64)
++    expected = index.query(query, K)
++    index.set_query_arguments(ef=32, rerank=64, reservoir=64)
++    index.query(query, K)
++    with pytest.raises(OverflowError):
++        index.set_query_arguments(ef=1, reservoir=-1)
++    index.set_query_arguments(ef=32, rerank=64)
++    np.testing.assert_array_equal(index.query(query, K), expected)
++
++
+ def test_default_traversal_codes_match_explicit_four_bits():
+     rows = clustered(128, 17, 31)
+     probes = clustered(8, 17, 32)
+diff --git a/tests/qgraph_prefetch.rs b/tests/qgraph_prefetch.rs
+index d8585c6..8553489 100644
+--- a/tests/qgraph_prefetch.rs
++++ b/tests/qgraph_prefetch.rs
+@@ -168,11 +168,7 @@ fn params(ef: usize, rerank: usize) -> VSearchParams {
+     VSearchParams {
+         ef,
+         rerank,
+-        patience: 0,
+-        screen_sigmas: 1.0,
+-        screen: true,
+-        fuse: false,
+-        neighbour_cap: 0,
++        ..VSearchParams::default()
+     }
+ }
+ 

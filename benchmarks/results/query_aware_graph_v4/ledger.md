@@ -128,3 +128,25 @@ reserved validation, three sampled ef values, the tested 8/8 precision, and this
 single host. Old official and stopped/inconclusive regression evidence remains
 frozen. No new official, competitor-superiority, hardware-counter, isolated-RSS,
 or in-distribution performance claim is established. No commit or push was made.
+
+The user subsequently authorized PR submission. The implementation was rebased
+onto main at 1cfb43f850fbdf11e823f9217010b22a364106f6, incorporating its streaming
+consolidation changes. Encoding now reuses main's VertexLayout validation and
+GraphView BFS interface; the streaming encoder and its byte-parity tests remain
+intact. No benchmark timings were rerun or relabeled after this integration.
+
+The measured implementation is recoverable by applying measured-source.patch
+to 4d5168f7ce8253b15aefe2f7ce24f0e248de4deb. Reconstruction in a separate worktree
+matched all 13 final-source/final-callers hashes. That verification worktree was
+then removed. Large diagnostic JSONs and raw HDF5 files now use Git LFS, following
+the existing results policy; their bytes and recorded hashes are unchanged.
+The compact reports, receipts, logs, harness snapshots and source patch remain
+ordinary Git content. Authored reproduction scripts carry the repository's
+license header; captured harness snapshots remain verbatim.
+
+Fresh integration gates passed 994 Linux all-features tests (6 ignored),
+52 native Python tests, and 606 Rust 1.89 library tests (4 ignored). The archived
+test source and the signed-off feature commit have identical source/test trees;
+pr-source.sha256 also matches all 13 remote/local files. pr-integration.json
+records the source identity, commands and separate lint result. These functional
+checks validate the integration without replacing the frozen performance evidence.

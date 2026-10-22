@@ -4,6 +4,8 @@ Reserved learn validation only: 256 queries per full dataset, 32768 disjoint con
 
 Direct IP improves median QPS by 27.12–47.95% across the six tested dataset/beam points and saves about 18.4% of encoded bytes. The reservoir recovers low-beam recall at a measurable cost; at high effort, direct serving without the reservoir is the faster tested variant. Both features remain independently selectable.
 
+The measured source is reconstructed by applying [measured-source.patch](measured-source.patch) to commit 4d5168f7ce8253b15aefe2f7ce24f0e248de4deb; final-source.sha256 and final-callers.sha256 identify its files. The PR integrates later main changes separately; its functional checks are recorded in [pr-integration.json](pr-integration.json). Timings were not rerun after integration. Large diagnostic JSONs and raw HDF5 files use Git LFS; fetch them with `git lfs pull --include='benchmarks/results/query_aware_graph_v4/**'` before regenerating this report.
+
 Both changes are opt-in. Construction remains the lifted Euclidean graph; direct serving encodes the original 128 coordinates with explicit negative-inner-product semantics. The independent reservoir receives every row score before beam admission, including deduplicated descent scores. The existing ef >= k rule remains in force; screens and neighbor blocks reject independent retention.
 
 ```python
@@ -98,7 +100,9 @@ Default ordered IDs match all frozen v2 blocks (2304 lists per dataset); every m
 
 ## Verification and limits
 
-Final Linux all-features gate: 991 Rust tests passed, 6 ignored; 52 native Python tests passed. Rust 1.89 MSRV library gate: 603 passed, 4 ignored. Formatting passes. Strict Clippy remains blocked by two unchanged baseline lints in documents/postings.rs and triple_store.rs; no lint was suppressed.
+Measured-source Linux all-features gate: 991 Rust tests passed, 6 ignored; 52 native Python tests passed. Rust 1.89 MSRV library gate: 603 passed, 4 ignored. Formatting passes. The measured-source Clippy receipt records two baseline lints in documents/postings.rs and triple_store.rs; no lint was suppressed.
+
+After integration with main at 1cfb43f, the fresh Linux gate passed 994 Rust tests (6 ignored) and 52 native Python tests. The Rust 1.89 library gate passed 606 tests (4 ignored). Source hashes, commands, logs and the separate passing Rust 1.96 all-features Clippy result are recorded in pr-integration.json. These checks do not remeasure the frozen timings.
 
 Tests cover recovery after beam rejection, upper-layer deduplication/epoch wrap, unchanged traversal with patience/frontier/batched scoring, 127/128/129 storage boundaries, original magnitudes/IDs/ties/zero queries, and mapped/prefaulted/heap persistence. Compile-failure logs from updating complete parameter literals are preserved separately.
 

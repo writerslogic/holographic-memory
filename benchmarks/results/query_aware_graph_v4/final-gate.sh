@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 qag_task="$HOME/sol-qag"
 qag_out="$qag_task/v4"
