@@ -63,7 +63,7 @@ words regardless of its weight.
 
 | Parameter | Value | Source |
 |---|---|---|
-| LWE dimension `n` | 1024 | [1] Section 4.2, also Remark 4.1 |
+| LWE dimension `n` | 1280 | lattice estimator [5], see below ([1] uses 1024) |
 | Modulus `q` | 2^32 (wrapping `u32`) | [1] Section 4.2 |
 | Error distribution `χ` | discrete Gaussian, σ = 6.4 | [1] Section 4.2 |
 | Secret distribution | uniform over `Z_q^n` | [1] Figure 2 |
@@ -72,28 +72,45 @@ words regardless of its weight.
 | Error tail cut | ±77 = ceil(12σ) | chosen here |
 | Max row weight | 1023 (default) | derived below |
 
-Verified against the USENIX Security 2023 text of [1]: Section 4.2 states `n = 2^10`,
-`q = 2^32`, discrete Gaussian with σ = 6.4, and that these were chosen "to have 128-bit
-security, according to modern lattice-attack-cost estimates"; Figure 2 samples `s` uniformly
-from `Z_q^n` and builds the query as `A·s + e + Δ·u`; Section 4.1 notes that `A` may be reused
-across many encryptions.
+`q` and σ are SimplePIR's [1]: Section 4.2 of its USENIX Security 2023 text states `n = 2^10`,
+`q = 2^32`, discrete Gaussian with σ = 6.4, chosen "to have 128-bit security, according to
+modern lattice-attack-cost estimates"; Figure 2 samples `s` uniformly from `Z_q^n` and builds
+the query as `A·s + e + Δ·u`; Section 4.1 notes that `A` may be reused across many encryptions.
+The dimension is raised from SimplePIR's 1024 to 1280 because the lattice estimator does not
+reproduce the 128-bit figure at 1024.
+
+**Security estimate.** The lattice estimator [5] (commit `e4333d9`, run under the
+pip-installable SageMath distribution `passagemath-standard`) on LWE with `q = 2^32`, a secret
+uniform mod `q`, a discrete Gaussian error and `2^21` samples, the most one query can publish
+(`MAX_DIM`; a clustered probe publishes `C·d`, 6,400 at `C = 64, d = 100`). Script
+`benchmarks/private_search/lattice_estimate.py`, output
+`benchmarks/results/private_query_lattice_estimate.json`. Bits are `log2` of the estimated
+ring operations of the cheapest attack. "Default" is `LWE.estimate` with its default
+reduction cost model (MATZOV); "core-SVP" is `LWE.estimate.rough`, one sieving call of cost
+`2^(0.292 β)` for BKZ block size β, the conservative count used for Kyber-style claims.
+
+| n | σ | Default, cheapest attack (bits) | Core-SVP (bits) | uSVP block size | Note |
+|---|---|---|---|---|---|
+| 1024 | 6.4 | 121.5 (bdd) | 95.2 | 326 | SimplePIR [1]; previous set |
+| 1024 | 11 | 128.4 (bdd) | 102.5 | 351 | YPIR [3], `s = 11·sqrt(2π)` |
+| 1152 | 6.4 | 137.5 (bdd) | 111.8 | 383 | |
+| **1280** | **6.4** | **153.7 (bdd)** | **128.8** | 441 | **this crate** |
+| 1408 | 6.4 | 170.3 (bdd) | 146.0 | 500 | |
+| 2048 | 6.4 | 257.1 (bdd) | 236.8 | 811 | |
+
+The attacks run are uSVP, BDD (primal decoding), dual and dual-hybrid; Arora-GB, BKW and the
+BDD and meet-in-the-middle hybrids are skipped as slow and not competitive at this error and
+modulus. `n = 1280` is the smallest multiple of 128 at which both columns exceed 128 bits;
+`n = 1152` clears the default model but not core-SVP. As a cross-check, the Homomorphic
+Encryption Standard [6] (Table 1, BKZ.sieve, σ ≈ 3.2) allows `log2 q` up to 29 at `n = 1024`
+and 56 at `n = 2048` for 128 bits with a uniform secret, so `q = 2^32` at `n = 1024` is outside
+it; and the hand-written core-SVP script of the previous version
+(`benchmarks/private_search/lwe_core_svp.py`, `n = 1024` only) agrees with the estimator's
+95.2 and 102.5. These are estimates of known attacks under stated cost models, not proofs, and
+no quantum figure is claimed.
 
 Not verified, stated so rather than assumed:
 
-- The 128-bit figure is the paper's claim, which cites the attack-cost estimates of Albrecht,
-  Player and Scott (2015) and names no attack. A primal-uSVP core-SVP estimate (the 2016
-  method of [4]; `benchmarks/private_search/lwe_core_svp.py`, output in
-  `benchmarks/results/private_query_core_svp.json`) needs BKZ block size 326 for
-  `n = 1024, q = 2^32, σ = 6.4`: 2^95.2 classically and 2^86.4 quantumly. Core-SVP counts a
-  single sieving call; it is a conservative yardstick, not an attack cost, and the lattice
-  estimator's cost models add BKZ tours and polynomial factors on top. For comparison, YPIR [3]
-  uses the same `n` and `q` with `s = 11·sqrt(2π)` (σ ≈ 11) for 128-bit security by the lattice
-  estimator; the same script gives block size 351 (2^102.5) there. No security level is claimed for this
-  implementation; σ = 6.4 is kept as SimplePIR's published set, not re-derived.
-- The number of LWE samples the estimate covers: Section 4.2 does not state one, Appendix C.1
-  claims security for `sqrt(N)` samples, and the parameter table runs to `N = 2^42`, i.e.
-  `sqrt(N) = 2^21` samples per query; that is why `MAX_DIM = 2^21`. The primal attack above uses
-  about 1,100 samples however many a query publishes.
 - Tiptoe [2] ranks with different parameters: `q = 2^64`, `n = 2048`, σ = 81,920 and a ternary
   secret, stated as 128-bit for encrypted vectors of dimension up to 2^27 (Appendix C). They are
   not used here.
@@ -118,7 +135,8 @@ Rounding to the nearest multiple of `Δ` returns `|R_i ∩ u|` exactly when
 2. `|E_i| < Δ/2`, guaranteed by `2 · |R_i| · 77 < Δ`.
 
 Because every error sample is bounded, this holds with certainty, not with a failure
-probability. The largest admissible row weight is
+probability. The secret dimension `n` does not appear: `H_i·s` cancels exactly, so raising `n`
+changes neither bound. The largest admissible row weight is
 
 ```
 w_max(p) = min(p − 1, floor((Δ − 1) / 154)),   Δ = floor(2^32 / p)
@@ -132,8 +150,10 @@ loose; at weight 64 the typical `|E_i|` is about `6.4·sqrt(64) ≈ 51` against 
 
 ## Measured cost
 
-From `benchmarks/results/private_query.json`: D = 16384, row weight 64, release build, Apple M4,
-10 rayon threads, crate 0.6.1. Medians of 20 queries (3 hint builds). One run on a machine that
+From `benchmarks/results/private_query.json`, **measured at the previous `n = 1024`**, not
+re-run at 1280: hint bytes and the hint build, client encrypt and decode times scale with `n`
+(hint `4·n` bytes per row, 5,120 at `n = 1280`); server answer time and query and answer bytes
+do not. D = 16384, row weight 64, release build, Apple M4, 10 rayon threads, crate 0.6.1. Medians of 20 queries (3 hint builds). One run on a machine that
 was not idle; the per-query maxima in the JSON are 10 to 200 times the medians, so treat these
 as indicative. Tested range is N = 10^3 to 10^5; nothing is claimed beyond it.
 
@@ -143,10 +163,11 @@ as indicative. Tested range is N = 10^3 to 10^5; nothing is claimed beyond it.
 | 10,000 | 0.39 | 136 | 3.3 | 0.87 | 65,536 | 40,000 | 40,960,000 |
 | 100,000 | 0.88 | 816 | 1.3 | 5.1 | 65,536 | 400,000 | 409,600,000 |
 
-The hint is large: `4·n = 4096` bytes per stored row, 16 times the 256 bytes of a weight-64
-row's plaintext indices, and 409.6 MB at N = 10^5. The client must hold it and must download it
-again whenever the database changes. Server and client each also hold `A`, 64 MiB at D = 16384
-(43 ms to expand). The answer is 4 bytes per row, so communication and client work are linear
+The hint is large: `4·n` bytes per stored row (4,096 at `n = 1024`, 5,120 at 1280), 16 to 20
+times the 256 bytes of a weight-64 row's plaintext indices, and 409.6 MB at N = 10^5 in the
+table (512 MB at `n = 1280`). The client must hold it and must download it
+again whenever the database changes. Server and client each also hold `A`, 64 MiB at D = 16384 and
+`n = 1024` (43 ms to expand), 80 MiB at 1280. The answer is 4 bytes per row, so communication and client work are linear
 in N; this scheme returns all scores and does no private top-k selection.
 
 Regenerate with:
@@ -208,7 +229,9 @@ the sign, a bipolar hypervector; 4 bits is ±1 … ±15). k-means with 12 Lloyd 
 100,000-row sample; cluster capacity 1.25× the mean size, each row placed in its nearest cluster
 with room. Recall@10 is measured against the exhaustive plaintext ranking of the same codes and
 is tie-aware: a returned code counts when its score reaches the tenth-best plaintext score. The
-recall columns come from the plaintext sweep over 1,000 queries; the protocol runs compared every
+recall columns come from the plaintext sweep over 1,000 queries (regenerated at `n = 1280`; every
+recall value equals the `n = 1024` sweep's, since the plaintext ranking involves no LWE
+parameter); the protocol runs compared every
 decoded score of their 30 queries with the plaintext score and found no mismatch in any
 configuration (9.4 million scores at `N = 10^6, C = 64, P = 16`). For context, recall@10 against
 the exact f32 neighbours is also given; the 4:4 codes' own exhaustive ranking reaches 0.738 at
@@ -217,7 +240,13 @@ the exact f32 neighbours is also given; the 4:4 codes' own exhaustive ranking re
 Timing: writerslogic-02 (Intel Core Ultra 9 185H, Linux, AVX2, 22 rayon threads), release build,
 Rust 1.99.1, 2 warm-up and 30 timed queries per configuration, one run. Server time covers all
 `P` probes of one query, batched eight to a pass over the database; nothing is batched across
-queries. "Scored" is `P·S/N`, an upper bound on the share of rows whose scores the client
+queries. The tables are the `n = 1280` runs. In the same locked session the `n = 1024` build of
+the previous version ran the same configurations (order 1024, 1280, 1280, 1024 at `10^6`; files
+in `benchmarks/results/private_rank_n1280_ab/`). Upload, download and the decoded scores are
+identical; server time is within run-to-run spread (`C = 64, P = 16`: 24.9 and 27.4 ms at
+`n = 1024`, 25.1 and 23.3 ms at 1280), as expected since the server never touches `A` or `s`.
+What grows with `n` is the client side: the hint by exactly 25%, the hint build from 1.3–1.5 s
+to 1.6–1.7 s, and decoding (`C = 1`: 57.5 and 53.1 ms to 65.7 and 66.2 ms). "Scored" is `P·S/N`, an upper bound on the share of rows whose scores the client
 receives: `S` is the fullest cluster's size and smaller clusters are padded, so the mean share is
 close to `P/C`. The server reads the whole database for every probe.
 
@@ -225,28 +254,28 @@ close to `P/C`. The server reads the whole database for every probe.
 
 | Codes | C | P | Scored | Recall@10, same codes | Recall@10, f32 | Server ms, median [p10–p90] | Upload | Download | Hint | Client prepare / decode ms | Failure bound per probe |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 4:4 | 1 | 1 | 100% | 1.000 | 0.738 | 4.1 [3.1–5.0] | 400 B | 4.00 MB | 4,096 MB | 0.0 / 53.2 | 2^-5911 |
-| 4:4 | 16 | 4 | 31% | 0.896 | 0.688 | 11.1 [10.4–15.9] | 26 KB | 1.25 MB | 320 MB | 1.2 / 22.4 | 2^-387 |
-| 4:4 | 32 | 8 | 31% | 0.935 | 0.709 | 14.2 [11.7–16.1] | 102 KB | 1.25 MB | 160 MB | 2.4 / 31.2 | 2^-188 |
-| 4:4 | 64 | 8 | 16% | 0.902 | 0.694 | 10.4 [9.5–13.8] | 205 KB | 0.63 MB | 80 MB | 3.1 / 18.4 | 2^-87 |
-| 4:4 | 64 | 16 | 31% | 0.961 | 0.723 | 24.4 [22.7–27.4] | 410 KB | 1.25 MB | 80 MB | 4.6 / 37.7 | 2^-87 |
-| 1:4 | 64 | 16 | 31% | 0.924 | 0.252 | 24.2 [21.2–26.1] | 410 KB | 1.25 MB | 80 MB | 4.8 / 35.9 | exact |
+| 4:4 | 1 | 1 | 100% | 1.000 | 0.738 | 4.5 [3.8–5.3] | 400 B | 4.00 MB | 5,120 MB | 0.0 / 65.7 | 2^-5911 |
+| 4:4 | 16 | 4 | 31% | 0.896 | 0.688 | 10.7 [10.2–11.2] | 26 KB | 1.25 MB | 400 MB | 1.2 / 26.7 | 2^-387 |
+| 4:4 | 32 | 8 | 31% | 0.935 | 0.709 | 12.2 [10.3–15.9] | 102 KB | 1.25 MB | 200 MB | 2.4 / 32.5 | 2^-188 |
+| 4:4 | 64 | 8 | 16% | 0.902 | 0.694 | 10.4 [9.6–13.4] | 205 KB | 0.63 MB | 100 MB | 3.3 / 21.0 | 2^-87 |
+| 4:4 | 64 | 16 | 31% | 0.961 | 0.723 | 25.1 [21.8–28.1] | 410 KB | 1.25 MB | 100 MB | 5.4 / 42.2 | 2^-87 |
+| 1:4 | 64 | 16 | 31% | 0.924 | 0.252 | 23.9 [20.1–25.9] | 410 KB | 1.25 MB | 100 MB | 4.3 / 40.2 | exact |
 
 `N = 10^5`:
 
 | Codes | C | P | Scored | Recall@10, same codes | Recall@10, f32 | Server ms, median [p10–p90] | Upload | Download | Hint | Client prepare / decode ms | Failure bound per probe |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 4:4 | 1 | 1 | 100% | 1.000 | 0.759 | 1.0 [0.8–1.3] | 400 B | 0.40 MB | 410 MB | 0.0 / 6.6 | 2^-6020 |
-| 4:4 | 16 | 8 | 63% | 0.962 | 0.740 | 1.6 [1.5–1.7] | 51 KB | 0.25 MB | 32 MB | 0.9 / 9.8 | 2^-392 |
-| 4:4 | 32 | 8 | 31% | 0.912 | 0.723 | 1.5 [1.4–1.7] | 102 KB | 0.13 MB | 16 MB | 1.4 / 8.7 | 2^-192 |
-| 4:4 | 64 | 8 | 16% | 0.860 | 0.694 | 1.5 [1.5–1.6] | 205 KB | 0.06 MB | 8 MB | 2.0 / 5.2 | 2^-91 |
-| 4:4 | 64 | 16 | 31% | 0.933 | 0.732 | 3.1 [2.9–3.2] | 410 KB | 0.13 MB | 8 MB | 2.7 / 10.2 | 2^-91 |
-| 1:4 | 64 | 16 | 31% | 0.878 | 0.269 | 3.1 [2.9–3.2] | 410 KB | 0.13 MB | 8 MB | 2.8 / 10.0 | exact |
+| 4:4 | 1 | 1 | 100% | 1.000 | 0.759 | 1.1 [0.8–1.6] | 400 B | 0.40 MB | 512 MB | 0.0 / 8.4 | 2^-6020 |
+| 4:4 | 16 | 8 | 63% | 0.962 | 0.740 | 1.8 [1.6–2.0] | 51 KB | 0.25 MB | 40 MB | 1.0 / 12.0 | 2^-392 |
+| 4:4 | 32 | 8 | 31% | 0.912 | 0.723 | 1.6 [1.5–1.7] | 102 KB | 0.13 MB | 20 MB | 1.5 / 9.4 | 2^-192 |
+| 4:4 | 64 | 8 | 16% | 0.860 | 0.694 | 1.6 [1.4–1.7] | 205 KB | 0.06 MB | 10 MB | 2.2 / 5.6 | 2^-91 |
+| 4:4 | 64 | 16 | 31% | 0.933 | 0.732 | 3.3 [3.1–3.5] | 410 KB | 0.13 MB | 10 MB | 3.3 / 11.0 | 2^-91 |
+| 1:4 | 64 | 16 | 31% | 0.878 | 0.269 | 3.3 [3.1–3.5] | 410 KB | 0.13 MB | 10 MB | 3.1 / 11.0 | exact |
 
 Offline per database version, besides the hint: the centroids (`C·d` floats, 25.6 KB at `C = 64`)
-and the public matrix `A` (`C·d × n` words, 26 MB at `C = 64`, expanded from a 32-byte seed in
-4–10 ms on the test machine). Building the hint took 1.3 s at `N = 10^6` for `C ≥ 16` and 2.1 s at
-`C = 1`. Client prepare (fresh secrets and `A·s + e` for every probe) does not depend on the
+and the public matrix `A` (`C·d × n` words, 33 MB at `C = 64`, expanded from a 32-byte seed in
+3–10 ms on the test machine). Building the hint took 1.6–1.7 s at `N = 10^6` for `C ≥ 16` and
+2.6 s at `C = 1`. Client prepare (fresh secrets and `A·s + e` for every probe) does not depend on the
 query and can run ahead; adding the query took under 0.01 ms. Results are (cluster, slot)
 positions; unless records are addressed by position, the client also needs the position-to-record
 map, 4 bytes per row (4 MB at `N = 10^6`). The sweep files cover `C` from 1 to
@@ -268,20 +297,21 @@ quality rather than recall against its own codes.
 most a few MB of online communication, the offline hint stated, and recall@10 of at least 0.9
 against the plaintext ranking of the same codes. Kill criterion: no configuration meets all four
 at `N = 10^6`. It did not fire. On glove-100 quantized to 4-bit codes, `C = 64, P = 16` meets all
-four: 24.4 ms median server time (27.4 ms at p90), 1.66 MB online (410 KB up, 1.25 MB down), an
-80 MB hint per database version, recall 0.961. `C = 32, P = 8` does too: 14.2 ms, 1.35 MB, a
-160 MB hint, recall 0.935. `C = 64, P = 8` (10.4 ms, 0.83 MB, 0.902) is within sampling error of
+four: 25.1 ms median server time (28.1 ms at p90), 1.66 MB online (410 KB up, 1.25 MB down), a
+100 MB hint per database version, recall 0.961. `C = 32, P = 8` does too: 12.2 ms, 1.35 MB, a
+200 MB hint, recall 0.935. `C = 64, P = 8` (10.4 ms, 0.83 MB, 0.902) is within sampling error of
 the recall threshold over 1,000 queries and is not counted as a pass. Exact
-scoring of the whole database (`C = 1`) takes 4.1 ms of server time and 4 MB down but needs a
-4,096 MB hint and 53 ms of client decoding. Limits of the result: one dataset, one machine, one
+scoring of the whole database (`C = 1`) takes 4.5 ms of server time and 4 MB down but needs a
+5,120 MB hint and 66 ms of client decoding. Limits of the result: one dataset, one machine, one
 run, 30 timed queries per configuration; recall against the share of the database scored
 depends on how well the data clusters, and on glove-100 the passing points score at most 31% of
 the rows (`P/C` = 25%).
-The security rests on SimplePIR's parameter set as stated above (128-bit by SimplePIR's
-estimate, 2^95 by the core-SVP estimate here). Raising σ to YPIR's 11 would multiply the
-failure-bound exponent by (6.4/11)² ≈ 0.34; by that scaling, not by measurement, the 4:4 rows at
-`C = 64` would exceed 2^-40 and the `C ≤ 32` rows and the 1-bit rows would not, so of the passing
-points only `C = 32, P = 8` would remain. Not implemented: dropping low bits of the
+The query's hiding rests on LWE with `n = 1280, q = 2^32, σ = 6.4`: 2^153.7 by the lattice
+estimator's default model and 2^128.8 by core-SVP (see [Parameters](#parameters)). Raising `n`
+rather than σ leaves every failure bound above unchanged. The alternative of YPIR's σ = 11 at
+`n = 1024` reaches only 2^128.4 by the default model and 2^102.5 by core-SVP, and would multiply
+the failure-bound exponent by (6.4/11)² ≈ 0.34, which by that scaling (not measured) pushes the
+4:4 rows at `C = 64` past 2^-40. Not implemented: dropping low bits of the
 answer words (16-bit plaintext in a 32-bit word), and removing the hint with Tiptoe's token or a
 hintless scheme such as YPIR [3].
 
@@ -312,3 +342,7 @@ and `test.f32` (little-endian f32 rows of 100).
    2024. https://www.usenix.org/system/files/usenixsecurity24-menon.pdf
 4. Alkim, Ducas, Pöppelmann, Schwabe. Post-quantum key exchange: a new hope. USENIX Security
    2016, Section 6.
+5. Albrecht, Player, Scott. On the concrete hardness of Learning with Errors. J. Math. Cryptol.
+   2015; software: https://github.com/malb/lattice-estimator
+6. Albrecht et al. Homomorphic Encryption Security Standard, v1.1, 2018.
+   https://homomorphicencryption.org/standard/
