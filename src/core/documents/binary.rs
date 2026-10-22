@@ -20,7 +20,8 @@ const CHUNK_TEXT: u8 = 1 << 1;
 const CHUNK_STEMMED: u8 = 1 << 2;
 const CHUNK_EMBEDDING: u8 = 1 << 3;
 const CHUNK_STATE_SHIFT: u8 = 4;
-const CHUNK_FLAGS: u8 = 0b0011_1111;
+const CHUNK_POSITIONS: u8 = 1 << 6;
+const CHUNK_FLAGS: u8 = 0b0111_1111;
 
 pub(crate) fn put_varint(out: &mut Vec<u8>, mut value: u64) {
     while value >= 0x80 {
@@ -296,7 +297,8 @@ pub(crate) fn write_document(
             | (u8::from(text.is_some()) * CHUNK_TEXT)
             | (u8::from(chunk.stemmed) * CHUNK_STEMMED)
             | (u8::from(chunk.embedding.is_some()) * CHUNK_EMBEDDING)
-            | (state_bits(chunk.vector_state) << CHUNK_STATE_SHIFT);
+            | (state_bits(chunk.vector_state) << CHUNK_STATE_SHIFT)
+            | (u8::from(chunk.terms.positions.is_some()) * CHUNK_POSITIONS);
         out.push(flags);
         if explicit_id {
             put_bytes(out, chunk.id.as_bytes());
@@ -338,6 +340,14 @@ pub(crate) fn write_document(
         for (_, &frequency) in &chunk.terms {
             put_varint(out, u64::from(frequency));
         }
+        if let Some(positions) = &chunk.terms.positions {
+            out.push(positions.version);
+            put_varint(out, positions.offsets.len() as u64);
+            for &offset in &positions.offsets {
+                put_varint(out, u64::from(offset));
+            }
+            put_bytes(out, &positions.data);
+        }
     }
     Ok(())
 }
@@ -367,7 +377,7 @@ pub(crate) fn read_document(
             flags & !CHUNK_FLAGS == 0,
             "binary journal chunk flags {flags:#x} are invalid"
         );
-        let vector_state = match flags >> CHUNK_STATE_SHIFT {
+        let vector_state = match (flags >> CHUNK_STATE_SHIFT) & 3 {
             0 => VectorState::Encoded,
             1 => VectorState::Pending,
             2 => VectorState::Lexical,
@@ -441,13 +451,38 @@ pub(crate) fn read_document(
             frequencies.push(reader.number::<u32>("term frequency")?);
         }
         let bytes = ids.iter().map(|&id| terms.term(id).len()).sum();
-        let table = StoredTerms::from_sorted_refs(
+        let mut table = StoredTerms::from_sorted_refs(
             term_count,
             bytes,
             ids.iter()
                 .zip(frequencies)
                 .map(|(&id, f)| (terms.term(id), f)),
         );
+        if flags & CHUNK_POSITIONS != 0 {
+            let version = reader.byte()?;
+            ensure!(
+                version == super::positions::VERSION,
+                "positional postings version {version} is newer than supported"
+            );
+            let count = reader.count(1)?;
+            ensure!(count == term_count + 1, "positional term count mismatch");
+            let mut offsets = Vec::with_capacity(count);
+            for _ in 0..count {
+                offsets.push(reader.number::<u32>("position offset")?);
+            }
+            let data = reader.bytes()?;
+            ensure!(
+                data.len() <= super::MAX_DOCUMENT_BYTES,
+                "positional payload exceeds document limit"
+            );
+            let positions = Box::new(super::positions::Positions {
+                version,
+                offsets: offsets.into_boxed_slice(),
+                data: data.into(),
+            });
+            positions.validate(&table)?;
+            table.positions = Some(positions);
+        }
         chunks.push(StoredChunk {
             id: chunk_id,
             text,
@@ -469,4 +504,100 @@ pub(crate) fn read_document(
         metadata,
         chunks,
     })
+}
+
+#[cfg(test)]
+mod positional_tests {
+    use super::*;
+    use crate::core::documents::{prepare_with_options, DocumentInput, EncodeMode, IngestOptions};
+    use crate::core::encoding::TextEncoder;
+
+    const LEGACY: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/golden/lexical-postings-v1/legacy.bin"
+    ));
+    const POSITIONAL: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/golden/lexical-postings-v1/positions-v1.bin"
+    ));
+    const JSON: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/golden/lexical-postings-v1/positions-v1.json"
+    ));
+
+    fn decode(bytes: &[u8]) -> Result<StoredDocument> {
+        let mut reader = Reader::new(bytes);
+        let terms = DecodedTerms::read(&mut reader)?;
+        let document = read_document(&mut reader, &terms)?;
+        ensure!(reader.is_empty(), "trailing fixture bytes");
+        Ok(document)
+    }
+
+    #[test]
+    fn positional_and_legacy_golden_bytes_round_trip() {
+        for (positions, bytes) in [(false, LEGACY), (true, POSITIONAL)] {
+            let input: DocumentInput = serde_json::from_value(serde_json::json!({
+                "id":"gold", "text":"red red fox", "storeText":false
+            }))
+            .unwrap();
+            let document = prepare_with_options(
+                input,
+                64,
+                None,
+                None,
+                TextEncoder::default(),
+                &IngestOptions {
+                    encode: EncodeMode::Lexical,
+                    unstemmed: true,
+                    positions,
+                },
+            )
+            .unwrap();
+            let dictionary = FrameTerms::new(std::iter::once(&document));
+            let mut encoded = Vec::new();
+            dictionary.write(&mut encoded);
+            write_document(&mut encoded, &document, None, &mut dictionary.cursor()).unwrap();
+            assert_eq!(encoded, bytes);
+            let restored = decode(bytes).unwrap();
+            assert_eq!(
+                serde_json::to_value(&document).unwrap(),
+                serde_json::to_value(&restored).unwrap()
+            );
+            assert_eq!(restored.chunks[0].terms.positions.is_some(), positions);
+            for end in 0..bytes.len() {
+                assert!(decode(&bytes[..end]).is_err(), "prefix {end}");
+            }
+        }
+        let terms: StoredTerms = serde_json::from_slice(JSON).unwrap();
+        assert_eq!(serde_json::to_vec(&terms).unwrap(), JSON);
+        let mut future = POSITIONAL.to_vec();
+        let version = future.len() - 9;
+        future[version] = 2;
+        assert!(decode(&future)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("newer than supported"));
+    }
+
+    #[test]
+    fn malformed_positional_json_is_rejected() {
+        let fixture: serde_json::Value = serde_json::from_slice(JSON).unwrap();
+        for (key, value) in [
+            ("version", serde_json::json!(2)),
+            ("offsets", serde_json::json!([0, 0, 3])),
+            ("offsets", serde_json::json!([0, 1, 4])),
+            ("offsets", serde_json::json!([0, 3, 1])),
+            ("data", serde_json::json!([2, 0, 0])),
+            ("data", serde_json::json!([2, 0, 128])),
+            ("data", serde_json::json!([2, 0, 3])),
+        ] {
+            let mut malformed = fixture.clone();
+            malformed["$hms_positions"][key] = value;
+            assert!(
+                serde_json::from_value::<StoredTerms>(malformed).is_err(),
+                "{key}"
+            );
+        }
+    }
 }

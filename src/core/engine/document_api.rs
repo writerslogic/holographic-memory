@@ -175,6 +175,29 @@ impl HmsCore {
         documents::count_matches(&self.documents.read(), text)
     }
 
+    /// Executes an explicit Boolean/phrase query over one live document generation.
+    pub fn search_lexical(
+        &self,
+        query: &documents::LexicalQuery,
+        options: &documents::LexicalOptions,
+    ) -> Result<documents::LexicalResults> {
+        let _transaction = self.mutation_gate.read();
+        documents::execute_lexical(&self.documents.read(), query, options)
+    }
+
+    /// Counts matching live parent documents without scoring.
+    pub fn count_lexical(&self, query: &documents::LexicalQuery) -> Result<usize> {
+        let result = self.search_lexical(
+            query,
+            &documents::LexicalOptions {
+                k: 0,
+                count: true,
+                ..Default::default()
+            },
+        )?;
+        Ok(result.count.expect("count requested"))
+    }
+
     pub fn document_index_trained(&self) -> bool {
         self.documents.read().dense_index_trained()
     }

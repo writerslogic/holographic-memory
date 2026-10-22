@@ -18,8 +18,10 @@ use packed_terms::StoredTerms;
 
 mod dense;
 mod index;
+mod lexical;
 mod listing;
 mod memory;
+mod positions;
 mod postings;
 mod search;
 mod text;
@@ -27,6 +29,8 @@ mod vector_index;
 pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
 pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
+pub(crate) use lexical::execute as execute_lexical;
+pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, LexicalResults};
 pub use listing::DocumentRecord;
 pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
@@ -145,6 +149,8 @@ pub struct IngestOptions {
     /// it contains as written. The default stems every word with the English Snowball stemmer.
     /// Query terms are matched in both forms, so one store may hold documents of either kind.
     pub unstemmed: bool,
+    /// Retain token positions for exact, ordered phrase queries. Off by default.
+    pub positions: bool,
 }
 
 /// Persisted state of a chunk's hypervector. Written only when not `Encoded`, so a store
@@ -1024,11 +1030,22 @@ pub(crate) fn prepare_spans(
     for (i, &(start_byte, end_byte)) in chunks.iter().enumerate() {
         let text = &input.text[start_byte as usize..end_byte as usize];
         let source = keys.map_or(text, |k| k[i].as_str());
-        let (terms, word_count) = chunk_terms(
+        let (mut terms, word_count) = chunk_terms(
             source,
             if i == 0 { title_weight } else { 1 },
             !options.unstemmed,
         );
+        if options.positions {
+            ensure!(
+                keys.is_none(),
+                "positions require the original chunk text as the lexical key"
+            );
+            terms.positions = Some(Box::new(positions::Positions::from_text(
+                source,
+                !options.unstemmed,
+                &terms,
+            )));
+        }
         let embedding = input
             .embeddings
             .as_ref()

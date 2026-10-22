@@ -31,6 +31,7 @@ pub(crate) struct DocumentStore {
     pub(super) slot_count: usize,
     pub(super) chunk_count: usize,
     pub(super) word_count: usize,
+    pub(super) nonpositional_chunks: usize,
     pub(super) generation: u64,
     pub(super) dense_index: Option<Arc<DenseIndex>>,
     pub(super) embedded_documents: BTreeSet<String>,
@@ -447,6 +448,7 @@ impl DocumentStore {
             let mut slots = Vec::with_capacity(document.chunks.len());
             let mut embedded = false;
             for (chunk_index, chunk) in document.chunks.iter().enumerate() {
+                self.nonpositional_chunks += usize::from(chunk.terms.positions.is_none());
                 self.count_vector_state(chunk.vector_state, true);
                 if chunk.embedding.is_some() {
                     self.embedded_count = self
@@ -570,6 +572,11 @@ impl DocumentStore {
             );
             assert_eq!(owner.1, index, "document slot chunk mismatch");
             *owner = (Arc::clone(&document), index);
+            self.nonpositional_chunks = self
+                .nonpositional_chunks
+                .checked_sub(usize::from(old.terms.positions.is_none()))
+                .and_then(|n| n.checked_add(usize::from(new.terms.positions.is_none())))
+                .expect("non-positional chunk count overflow");
             for (state, delta) in [(old.vector_state, -1), (new.vector_state, 1)] {
                 match state {
                     VectorState::Encoded => {}
@@ -719,6 +726,10 @@ impl DocumentStore {
             "document slot count mismatch"
         );
         for (index, (chunk, slot)) in document.chunks.iter().zip(slots).enumerate() {
+            self.nonpositional_chunks = self
+                .nonpositional_chunks
+                .checked_sub(usize::from(chunk.terms.positions.is_none()))
+                .expect("non-positional chunk count underflow");
             self.count_vector_state(chunk.vector_state, false);
             if chunk.embedding.is_some() {
                 self.embedded_count = self

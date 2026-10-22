@@ -7,7 +7,10 @@ use std::cmp::Ordering;
 use std::collections::{btree_map, BTreeMap};
 
 #[derive(Clone, Default)]
-pub(crate) struct StoredTerms(Option<Box<TermData>>);
+pub(crate) struct StoredTerms {
+    terms: Option<Box<TermData>>,
+    pub(super) positions: Option<Box<super::positions::Positions>>,
+}
 
 #[derive(Clone)]
 enum TermData {
@@ -48,7 +51,7 @@ impl PackedTerms {
 
 impl StoredTerms {
     fn len(&self) -> usize {
-        match self.0.as_deref() {
+        match self.terms.as_deref() {
             None => 0,
             Some(TermData::Packed(table)) => table.frequencies.len(),
             Some(TermData::Tree(table)) => table.len(),
@@ -56,10 +59,29 @@ impl StoredTerms {
     }
 
     pub(crate) fn get(&self, key: &str) -> Option<&u32> {
-        match self.0.as_deref() {
+        match self.terms.as_deref() {
             None => None,
             Some(TermData::Packed(table)) => table.get(key),
             Some(TermData::Tree(table)) => table.get(key),
+        }
+    }
+
+    pub(super) fn index(&self, key: &str) -> Option<usize> {
+        match self.terms.as_deref() {
+            None => None,
+            Some(TermData::Packed(table)) => {
+                let (mut low, mut high) = (0, table.starts.len());
+                while low < high {
+                    let middle = low + (high - low) / 2;
+                    match table.key(middle).cmp(key) {
+                        Ordering::Less => low = middle + 1,
+                        Ordering::Equal => return Some(middle),
+                        Ordering::Greater => high = middle,
+                    }
+                }
+                None
+            }
+            Some(TermData::Tree(table)) => table.keys().position(|k| k == key),
         }
     }
 
@@ -73,7 +95,7 @@ impl StoredTerms {
 
     #[cfg(test)]
     pub(crate) fn assert_valid_storage(&self) {
-        match self.0.as_deref() {
+        match self.terms.as_deref() {
             None => assert_eq!(self.len(), 0),
             Some(TermData::Tree(table)) => {
                 assert!(!table.is_empty());
@@ -167,7 +189,10 @@ impl StoredTerms {
                     .collect(),
             )
         };
-        Self(Some(Box::new(data)))
+        Self {
+            terms: Some(Box::new(data)),
+            positions: None,
+        }
     }
 
     /// [`Self::from_sorted`] from `count` borrowed entries whose keys total `bytes`, without
@@ -193,11 +218,14 @@ impl StoredTerms {
             frequencies.push(frequency);
         }
         debug_assert_eq!((text.len(), frequencies.len()), (bytes, count));
-        Self(Some(Box::new(TermData::Packed(PackedTerms {
-            text: text.into_boxed_str(),
-            starts: starts.into_boxed_slice(),
-            frequencies: frequencies.into_boxed_slice(),
-        }))))
+        Self {
+            terms: Some(Box::new(TermData::Packed(PackedTerms {
+                text: text.into_boxed_str(),
+                starts: starts.into_boxed_slice(),
+                frequencies: frequencies.into_boxed_slice(),
+            }))),
+            positions: None,
+        }
     }
 }
 
@@ -242,7 +270,7 @@ impl<'a> IntoIterator for &'a StoredTerms {
     type IntoIter = TermIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        TermIter(match self.0.as_deref() {
+        TermIter(match self.terms.as_deref() {
             None => TermIterData::Empty,
             Some(TermData::Tree(table)) => TermIterData::Tree(table.iter()),
             Some(TermData::Packed(table)) => TermIterData::Packed { table, next: 0 },
@@ -252,7 +280,11 @@ impl<'a> IntoIterator for &'a StoredTerms {
 
 impl Serialize for StoredTerms {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(Some(self.len()))?;
+        let mut map =
+            serializer.serialize_map(Some(self.len() + usize::from(self.positions.is_some())))?;
+        if let Some(positions) = &self.positions {
+            map.serialize_entry("$hms_positions", positions)?;
+        }
         for (key, frequency) in self {
             map.serialize_entry(key, frequency)?;
         }
@@ -278,11 +310,20 @@ impl<'de> Deserialize<'de> for StoredTerms {
                 let mut entries: Vec<(String, u32)> =
                     Vec::with_capacity(access.size_hint().unwrap_or(0).min(1 << 16));
                 let mut ascending = true;
-                while let Some((key, frequency)) = access.next_entry::<String, u32>()? {
+                let mut positions = None;
+                while let Some(key) = access.next_key::<String>()? {
+                    if key == "$hms_positions" {
+                        if positions.is_some() {
+                            return Err(serde::de::Error::custom("duplicate positional payload"));
+                        }
+                        positions = Some(access.next_value::<Box<super::positions::Positions>>()?);
+                        continue;
+                    }
+                    let frequency = access.next_value::<u32>()?;
                     ascending &= entries.last().is_none_or(|(last, _)| *last < key);
                     entries.push((key, frequency));
                 }
-                Ok(if ascending {
+                let mut table = if ascending {
                     StoredTerms::from_sorted(entries)
                 } else {
                     let mut map = BTreeMap::new();
@@ -290,7 +331,14 @@ impl<'de> Deserialize<'de> for StoredTerms {
                         map.insert(key, frequency);
                     }
                     StoredTerms::from(map)
-                })
+                };
+                if let Some(positions) = positions {
+                    positions
+                        .validate(&table)
+                        .map_err(serde::de::Error::custom)?;
+                    table.positions = Some(positions);
+                }
+                Ok(table)
             }
         }
         deserializer.deserialize_map(TermsVisitor)
