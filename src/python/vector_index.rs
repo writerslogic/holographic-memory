@@ -54,14 +54,65 @@ impl Built {
     }
 }
 
-/// Approximate nearest-neighbour index over float32 vectors (cosine similarity or Euclidean
-/// distance).
+/// The distance a `VectorIndex` ranks by.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Distance {
+    Angular,
+    Euclidean,
+    /// Largest inner product first. Each row `x` gains the coordinate `sqrt(M^2 - |x|^2)`, with
+    /// `M` the largest row norm, and each query a 0, so that the squared Euclidean distance
+    /// `|q|^2 + M^2 - 2 <q, x>` orders rows exactly by descending inner product.
+    InnerProduct,
+}
+
+impl Distance {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Angular => "angular",
+            Self::Euclidean => "euclidean",
+            Self::InnerProduct => "ip",
+        }
+    }
+
+    fn graph_metric(self) -> Metric {
+        match self {
+            Self::Angular => Metric::Angular,
+            Self::Euclidean | Self::InnerProduct => Metric::Euclidean,
+        }
+    }
+
+    /// Coordinates the graph stores per row of `dim` input coordinates.
+    fn graph_dim(self, dim: usize) -> usize {
+        match self {
+            Self::InnerProduct => dim + 1,
+            Self::Angular | Self::Euclidean => dim,
+        }
+    }
+}
+
+/// `rows` (row-major, `dim` wide) with the inner-product coordinate appended to each row.
+fn augment_rows(rows: &[f32], dim: usize) -> Vec<f32> {
+    let norms2: Vec<f64> = rows
+        .chunks_exact(dim)
+        .map(|r| r.iter().map(|&v| f64::from(v) * f64::from(v)).sum())
+        .collect();
+    let max2 = norms2.iter().copied().fold(0.0, f64::max);
+    let mut out = Vec::with_capacity(norms2.len() * (dim + 1));
+    for (r, n2) in rows.chunks_exact(dim).zip(norms2) {
+        out.extend_from_slice(r);
+        out.push((max2 - n2).max(0.0).sqrt() as f32);
+    }
+    out
+}
+
+/// Approximate nearest-neighbour index over float32 vectors: cosine similarity, Euclidean
+/// distance or (maximum) inner product.
 ///
 /// `fit` builds it, `set_query_arguments` sets the search effort, `query` and `batch_query`
 /// return the ids (row numbers of the fitted matrix) of the `k` nearest rows, nearest first.
 #[pyclass(name = "VectorIndex")]
 struct PyVectorIndex {
-    metric: Metric,
+    metric: Distance,
     degree: usize,
     build_ef: usize,
     pool: Option<rayon::ThreadPool>,
@@ -115,18 +166,20 @@ fn ids_array<'py>(py: Python<'py>, ids: &[u32]) -> Bound<'py, PyArray1<i64>> {
 
 #[pymethods]
 impl PyVectorIndex {
-    /// `metric` is "angular" (cosine) or "euclidean". `degree` is the out-degree of the graph (even),
+    /// `metric` is "angular" (cosine), "euclidean" or "ip" (largest inner product first).
+    /// `degree` is the out-degree of the graph (even),
     /// `build_ef` the construction search width, `threads` the build and batch-query threads
     /// (0 = one per core).
     #[new]
     #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0))]
     fn new(metric: &str, degree: usize, build_ef: usize, threads: usize) -> PyResult<Self> {
         let metric = match metric {
-            "angular" => Metric::Angular,
-            "euclidean" => Metric::Euclidean,
+            "angular" => Distance::Angular,
+            "euclidean" => Distance::Euclidean,
+            "ip" => Distance::InnerProduct,
             other => {
                 return Err(PyValueError::new_err(format!(
-                    "unknown metric {other:?}; VectorIndex supports 'angular' and 'euclidean'"
+                    "unknown metric {other:?}; VectorIndex supports 'angular', 'euclidean' and 'ip'"
                 )))
             }
         };
@@ -173,7 +226,7 @@ impl PyVectorIndex {
         // place and keeps it until the encoding is done.
         let data = row_major(&x);
         let params = BuildParams {
-            metric: self.metric,
+            metric: self.metric.graph_metric(),
             degree: self.degree,
             build_ef: self.build_ef,
             quantized_search: true,
@@ -181,10 +234,15 @@ impl PyVectorIndex {
         };
         self.built = None;
         let id_bytes = if n < THREE_BYTE_IDS_BELOW { 3 } else { 4 };
+        let metric = self.metric;
         let graph = py
             .detach(|| {
                 self.run(|| {
-                    let g = Graph::build_owned(data, dim, &params)?;
+                    let data = match metric {
+                        Distance::InnerProduct => augment_rows(&data, dim),
+                        Distance::Angular | Distance::Euclidean => data,
+                    };
+                    let g = Graph::build_owned(data, metric.graph_dim(dim), &params)?;
                     // The graph's float rows are dropped here; the index keeps only its codes.
                     VGraph::from_graph_with(
                         &g,
@@ -226,7 +284,11 @@ impl PyVectorIndex {
         Self::check_k(k)?;
         let params = self.params();
         let Self {
-            built, query_buf, ..
+            built,
+            query_buf,
+            metric,
+            dim,
+            ..
         } = self;
         let built = built
             .as_mut()
@@ -236,6 +298,15 @@ impl PyVectorIndex {
         match v.as_slice() {
             Ok(s) => query_buf.extend_from_slice(s),
             Err(_) => query_buf.extend(v.as_array().iter().copied()),
+        }
+        if *metric == Distance::InnerProduct {
+            if query_buf.len() != *dim {
+                return Err(PyValueError::new_err(format!(
+                    "the query has {} dimensions, the index has {dim}",
+                    query_buf.len()
+                )));
+            }
+            query_buf.push(0.0);
         }
         let mut out = Vec::with_capacity(k);
         let q = &query_buf[..];
@@ -265,9 +336,17 @@ impl PyVectorIndex {
                 self.dim
             )));
         }
-        let queries = row_major(&x);
+        let mut queries = row_major(&x);
         let params = self.params();
         let graph = &*built.graph;
+        let metric = self.metric;
+        if metric == Distance::InnerProduct {
+            queries = queries
+                .chunks_exact(dim)
+                .flat_map(|q| q.iter().copied().chain([0.0]))
+                .collect();
+        }
+        let dim = metric.graph_dim(dim);
         let results: Vec<Vec<u32>> = py
             .detach(|| {
                 self.run(|| {
@@ -311,10 +390,7 @@ impl PyVectorIndex {
     fn __repr__(&self) -> String {
         format!(
             "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, n={})",
-            match self.metric {
-                Metric::Angular => "angular",
-                Metric::Euclidean => "euclidean",
-            },
+            self.metric.name(),
             self.degree,
             self.build_ef,
             self.ef,

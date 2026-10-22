@@ -105,6 +105,23 @@ def test_euclidean_ranks_by_distance_not_angle(data, queries):
     assert recall([idx.query(q, K) for q in queries], exact_top_k(scaled, queries, K)) < 0.9
 
 
+def test_inner_product_ranks_by_dot_product(data, queries):
+    scaled = data * np.random.default_rng(10).uniform(0.2, 5.0, (len(data), 1)).astype(np.float32)
+    dots = queries.astype(np.float64) @ scaled.astype(np.float64).T
+    truth = np.argsort(-dots, axis=1, kind="stable")[:, :K]
+    idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2)
+    idx.fit(scaled)
+    assert repr(idx).startswith("VectorIndex(metric='ip'")
+    idx.set_query_arguments(ef=128, rerank=64)
+    found = [idx.query(q, K) for q in queries]
+    assert recall(found, truth) >= 0.95
+    batch = idx.batch_query(queries, K)
+    assert all(np.array_equal(a, b) for a, b in zip(found, batch))
+    assert recall(found, exact_top_k(scaled, queries, K)) < 0.9
+    with pytest.raises(ValueError, match="dimensions"):
+        idx.query(np.ones(DIM + 1, np.float32), K)
+
+
 def test_k_above_size_returns_every_row_once():
     small = clustered(12, 8, 3)
     idx = hm.VectorIndex(degree=4, build_ef=16)
