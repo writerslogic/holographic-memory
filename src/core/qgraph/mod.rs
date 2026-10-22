@@ -976,6 +976,167 @@ pub struct Graph {
     build: BuildParams,
 }
 
+struct GraphStructure {
+    adj: Adjacency,
+    entry: u32,
+    upper_ids: Vec<u32>,
+    layers: Vec<Vec<Vec<u32>>>,
+}
+
+#[derive(Clone, Copy)]
+struct GraphView<'a> {
+    n: usize,
+    dim: usize,
+    degree: usize,
+    metric: Metric,
+    vectors: &'a [f32],
+    norms: &'a [f32],
+    adj: &'a Adjacency,
+    entry: u32,
+    upper_ids: &'a [u32],
+    layers: &'a [Vec<Vec<u32>>],
+    backing: Option<&'a memmap2::Mmap>,
+}
+
+impl GraphView<'_> {
+    fn neighbors(&self, v: usize) -> &[u32] {
+        self.adj.get(v)
+    }
+
+    fn release_rows(&self) -> std::io::Result<()> {
+        if let Some(map) = self.backing {
+            #[cfg(target_os = "linux")]
+            // SAFETY: this shared, read-only mapping owns an unlinked private scratch file;
+            // its contents cannot change when discarded pages are read from that file again.
+            unsafe {
+                map.unchecked_advise(memmap2::UncheckedAdvice::DontNeed)?
+            };
+            #[cfg(not(target_os = "linux"))]
+            let _ = map;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) struct PreparedRows {
+    file: std::io::BufWriter<std::fs::File>,
+    values: usize,
+    expected: usize,
+    dim: usize,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl PreparedRows {
+    pub(crate) fn new(count: usize, dim: usize) -> std::io::Result<Self> {
+        let invalid =
+            || std::io::Error::new(std::io::ErrorKind::InvalidInput, "prepared row geometry");
+        if dim == 0 || count >= NONE as usize {
+            return Err(invalid());
+        }
+        let expected = count.checked_mul(dim).ok_or_else(invalid)?;
+        expected
+            .checked_mul(4)
+            .filter(|&n| n <= isize::MAX as usize)
+            .ok_or_else(invalid)?;
+        Ok(Self {
+            file: std::io::BufWriter::with_capacity(1 << 20, tempfile::tempfile()?),
+            values: 0,
+            expected,
+            dim,
+        })
+    }
+
+    pub(crate) fn append(&mut self, rows: &[f32]) -> std::io::Result<()> {
+        use std::io::Write;
+        let end = self
+            .values
+            .checked_add(rows.len())
+            .filter(|&n| n <= self.expected);
+        if !rows.len().is_multiple_of(self.dim) || end.is_none() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "prepared row count",
+            ));
+        }
+        // SAFETY: f32 has no padding; these are exactly the initialized bytes of `rows`.
+        let bytes = unsafe {
+            std::slice::from_raw_parts(rows.as_ptr().cast::<u8>(), std::mem::size_of_val(rows))
+        };
+        self.file.write_all(bytes)?;
+        self.values = end.expect("checked row count");
+        Ok(())
+    }
+
+    pub(crate) fn build(self, params: &BuildParams) -> Result<PreparedGraph, HmsError> {
+        let io = |error: std::io::Error| HmsError::StorageFailure {
+            context: format!("prepared graph rows: {error}"),
+        };
+        if self.values != self.expected || self.values == 0 {
+            return Err(invalid("incomplete or empty prepared rows".into()));
+        }
+        let file = self.file.into_inner().map_err(|e| io(e.into_error()))?;
+        // SAFETY: the unlinked temporary file has no other handles or mappings, and remains
+        // exclusively owned until this mutable mapping becomes read-only.
+        let mut map = unsafe { memmap2::MmapMut::map_mut(&file) }.map_err(io)?;
+        // SAFETY: a page-aligned mapping of `expected * 4` initialized bytes holds f32 values.
+        let data = unsafe {
+            std::slice::from_raw_parts_mut(map.as_mut_ptr().cast::<f32>(), self.expected)
+        };
+        validate_build(data, self.dim, params)?;
+        let norms = prepare_rows(data, self.dim, params.metric);
+        map.flush().map_err(io)?;
+        let vectors = map.make_read_only().map_err(io)?;
+        #[cfg(unix)]
+        vectors.advise(memmap2::Advice::Random).map_err(io)?;
+        // SAFETY: the same aligned f32 matrix is now read-only and has unchanged geometry.
+        let data =
+            unsafe { std::slice::from_raw_parts(vectors.as_ptr().cast::<f32>(), self.expected) };
+        let structure = build_structure(data, &norms, self.dim, params)?;
+        Ok(PreparedGraph {
+            vectors,
+            norms,
+            dim: self.dim,
+            metric: params.metric,
+            degree: params.degree,
+            structure,
+        })
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) struct PreparedGraph {
+    vectors: memmap2::Mmap,
+    norms: Vec<f32>,
+    dim: usize,
+    metric: Metric,
+    degree: usize,
+    structure: GraphStructure,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl PreparedGraph {
+    fn view(&self) -> GraphView<'_> {
+        // SAFETY: PreparedRows owns and validates the aligned immutable f32 mapping.
+        let vectors = unsafe {
+            std::slice::from_raw_parts(self.vectors.as_ptr().cast::<f32>(), self.vectors.len() / 4)
+        };
+        GraphView {
+            n: vectors.len() / self.dim,
+            dim: self.dim,
+            degree: self.degree,
+            metric: self.metric,
+            vectors,
+            norms: &self.norms,
+            adj: &self.structure.adj,
+            entry: self.structure.entry,
+            upper_ids: &self.structure.upper_ids,
+            layers: &self.structure.layers,
+            backing: Some(&self.vectors),
+        }
+    }
+}
+
 /// Prepares rows for `metric` in place: normalizes them for angular (zero rows stay zero) and
 /// returns the squared norms for Euclidean (empty for angular).
 fn prepare_rows(data: &mut [f32], dim: usize, metric: Metric) -> Vec<f32> {
@@ -999,6 +1160,22 @@ fn norms_opt(norms: &[f32]) -> Option<&[f32]> {
 }
 
 impl Graph {
+    fn view(&self) -> GraphView<'_> {
+        GraphView {
+            n: self.n,
+            dim: self.dim,
+            degree: self.degree,
+            metric: self.metric,
+            vectors: &self.vectors,
+            norms: &self.norms,
+            adj: &self.adj,
+            entry: self.entry,
+            upper_ids: &self.upper_ids,
+            layers: &self.layers,
+            backing: None,
+        }
+    }
+
     fn rows(&self) -> Rows<'_> {
         Rows {
             data: &self.vectors,
@@ -1053,165 +1230,186 @@ impl Graph {
         dim: usize,
         params: &BuildParams,
     ) -> Result<Self, HmsError> {
-        if dim == 0 || !data.len().is_multiple_of(dim) {
-            return Err(invalid(format!(
-                "ragged data: {} values are not a multiple of dimension {dim}",
-                data.len()
-            )));
-        }
-        let n = data.len() / dim;
-        if n == 0 {
-            return Err(invalid("empty index: no vectors to build from".into()));
-        }
-        if n >= NONE as usize {
-            return Err(invalid(format!(
-                "index too large: {n} vectors, the limit is {}",
-                NONE - 1
-            )));
-        }
-        if let Some(at) = data.iter().position(|v| !v.is_finite()) {
-            return Err(invalid(format!(
-                "non-finite value in row {} (coordinate {})",
-                at / dim,
-                at % dim
-            )));
-        }
-        if params.build_ef == 0 {
-            return Err(invalid("build_ef must be positive".into()));
-        }
-        let r = params.degree;
-        if r == 0 || !r.is_multiple_of(2) {
-            return Err(invalid(format!(
-                "degree must be positive and even, not {r}"
-            )));
-        }
-        let metric = params.metric;
-        let norms = prepare_rows(&mut data, dim, metric);
-        if let Some(at) = norms.iter().position(|v| !v.is_finite()) {
-            return Err(invalid(format!("row {at} overflows its squared norm")));
-        }
-        let vectors = data;
-        let codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
-            .then(|| BuildCodes::new(&vectors, dim, norms_opt(&norms)));
-        let rows = Rows {
-            data: &vectors,
-            dim,
-            norms: norms_opt(&norms),
-            codes: codes.as_ref(),
-            quantized: params.quantized_search,
-        };
-
-        let mut centroid = vec![0f32; dim];
-        for x in vectors.chunks_exact(dim) {
-            centroid.iter_mut().zip(x).for_each(|(c, v)| *c += v);
-        }
-        let entry = match metric {
-            Metric::Angular => {
-                (0..n as u32)
-                    .into_par_iter()
-                    .map(|i| (dot(rows.row(i), &centroid), i))
-                    .reduce(
-                        || (f32::NEG_INFINITY, NONE),
-                        |a, b| {
-                            if b.0 > a.0 || (b.0 == a.0 && b.1 < a.1) {
-                                b
-                            } else {
-                                a
-                            }
-                        },
-                    )
-                    .1
-            }
-            Metric::Euclidean => {
-                // The row nearest the mean: `|x|^2 - 2 <x, mean>` is `|x - mean|^2` less a
-                // constant.
-                centroid.iter_mut().for_each(|c| *c /= n as f32);
-                (0..n as u32)
-                    .into_par_iter()
-                    .map(|i| (norms[i as usize] - 2.0 * dot(rows.row(i), &centroid), i))
-                    .reduce(
-                        || (f32::INFINITY, NONE),
-                        |a, b| {
-                            if b.0 < a.0 || (b.0 == a.0 && b.1 < a.1) {
-                                b
-                            } else {
-                                a
-                            }
-                        },
-                    )
-                    .1
-            }
-        };
-
-        let mut rng = SplitMix(params.seed ^ 0xA5A5_A5A5);
-        let mut order: Vec<u32> = (0..n as u32).collect();
-        for i in (1..n).rev() {
-            order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
-        }
-        let mut graph = Adjacency::new(n, r);
-        let first_ef = params.build_ef.min(FIRST_PASS_EF);
-        for (l, alpha) in [(first_ef, 1.0), (params.build_ef, params.alpha)] {
-            let t = prof::start();
-            rows.insert_pass(&mut graph, &order, entry, l, alpha, r);
-            prof::report("pass", t);
-        }
-        let t = prof::start();
-        rows.fill(&mut graph, r);
-        prof::report("fill", t);
-        let tup = prof::start();
-
-        // Upper layers (HNSW-like) give each query a nearby entry vertex: layer j holds the
-        // first n / 16^(j+1) vertices of `order`, so a vertex keeps its local id in every layer.
-        let mut layers = Vec::new();
-        let mut size = n / LAYER_RATIO;
-        while size >= MIN_LAYER {
-            let sub: Vec<f32> = order[..size]
-                .iter()
-                .flat_map(|&g| rows.row(g).iter().copied())
-                .collect();
-            let sub_norms: Vec<f32> = match rows.norms {
-                Some(n) => order[..size].iter().map(|&g| n[g as usize]).collect(),
-                None => Vec::new(),
-            };
-            let sub_codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
-                .then(|| BuildCodes::new(&sub, dim, norms_opt(&sub_norms)));
-            let sub_rows = Rows {
-                data: &sub,
-                dim,
-                norms: norms_opt(&sub_norms),
-                codes: sub_codes.as_ref(),
-                quantized: params.quantized_search,
-            };
-            let local: Vec<u32> = (0..size as u32).collect();
-            let mut g = Adjacency::new(size, UPPER_DEGREE);
-            sub_rows.insert_pass(
-                &mut g,
-                &local,
-                0,
-                params.build_ef,
-                params.alpha,
-                UPPER_DEGREE,
-            );
-            layers.push(g.to_lists());
-            size /= LAYER_RATIO;
-        }
-        prof::report("upper", tup);
-        prof::graph_hash((&graph, &layers, entry));
-        let upper_ids = order[..n / LAYER_RATIO].to_vec();
+        validate_build(&data, dim, params)?;
+        let norms = prepare_rows(&mut data, dim, params.metric);
+        let structure = build_structure(&data, &norms, dim, params)?;
         Ok(Self {
-            n,
+            n: data.len() / dim,
             dim,
-            degree: r,
-            metric,
-            vectors,
+            degree: params.degree,
+            metric: params.metric,
+            vectors: data,
             norms,
-            adj: graph,
-            entry,
-            upper_ids,
-            layers,
+            adj: structure.adj,
+            entry: structure.entry,
+            upper_ids: structure.upper_ids,
+            layers: structure.layers,
             build: params.clone(),
         })
     }
+}
+
+fn validate_build(data: &[f32], dim: usize, params: &BuildParams) -> Result<(), HmsError> {
+    if dim == 0 || !data.len().is_multiple_of(dim) {
+        return Err(invalid(format!(
+            "ragged data: {} values are not a multiple of dimension {dim}",
+            data.len()
+        )));
+    }
+    let n = data.len() / dim;
+    if n == 0 {
+        return Err(invalid("empty index: no vectors to build from".into()));
+    }
+    if n >= NONE as usize {
+        return Err(invalid(format!(
+            "index too large: {n} vectors, the limit is {}",
+            NONE - 1
+        )));
+    }
+    if let Some(at) = data.iter().position(|v| !v.is_finite()) {
+        return Err(invalid(format!(
+            "non-finite value in row {} (coordinate {})",
+            at / dim,
+            at % dim
+        )));
+    }
+    if params.build_ef == 0 {
+        return Err(invalid("build_ef must be positive".into()));
+    }
+    let r = params.degree;
+    if r == 0 || !r.is_multiple_of(2) {
+        return Err(invalid(format!(
+            "degree must be positive and even, not {r}"
+        )));
+    }
+    Ok(())
+}
+
+fn build_structure(
+    vectors: &[f32],
+    norms: &[f32],
+    dim: usize,
+    params: &BuildParams,
+) -> Result<GraphStructure, HmsError> {
+    let n = vectors.len() / dim;
+    let r = params.degree;
+    let metric = params.metric;
+    if let Some(at) = norms.iter().position(|v| !v.is_finite()) {
+        return Err(invalid(format!("row {at} overflows its squared norm")));
+    }
+    let codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
+        .then(|| BuildCodes::new(vectors, dim, norms_opt(norms)));
+    let rows = Rows {
+        data: vectors,
+        dim,
+        norms: norms_opt(norms),
+        codes: codes.as_ref(),
+        quantized: params.quantized_search,
+    };
+
+    let mut centroid = vec![0f32; dim];
+    for x in vectors.chunks_exact(dim) {
+        centroid.iter_mut().zip(x).for_each(|(c, v)| *c += v);
+    }
+    let entry = match metric {
+        Metric::Angular => {
+            (0..n as u32)
+                .into_par_iter()
+                .map(|i| (dot(rows.row(i), &centroid), i))
+                .reduce(
+                    || (f32::NEG_INFINITY, NONE),
+                    |a, b| {
+                        if b.0 > a.0 || (b.0 == a.0 && b.1 < a.1) {
+                            b
+                        } else {
+                            a
+                        }
+                    },
+                )
+                .1
+        }
+        Metric::Euclidean => {
+            // The row nearest the mean: `|x|^2 - 2 <x, mean>` is `|x - mean|^2` less a
+            // constant.
+            centroid.iter_mut().for_each(|c| *c /= n as f32);
+            (0..n as u32)
+                .into_par_iter()
+                .map(|i| (norms[i as usize] - 2.0 * dot(rows.row(i), &centroid), i))
+                .reduce(
+                    || (f32::INFINITY, NONE),
+                    |a, b| {
+                        if b.0 < a.0 || (b.0 == a.0 && b.1 < a.1) {
+                            b
+                        } else {
+                            a
+                        }
+                    },
+                )
+                .1
+        }
+    };
+
+    let mut rng = SplitMix(params.seed ^ 0xA5A5_A5A5);
+    let mut order: Vec<u32> = (0..n as u32).collect();
+    for i in (1..n).rev() {
+        order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
+    }
+    let mut graph = Adjacency::new(n, r);
+    let first_ef = params.build_ef.min(FIRST_PASS_EF);
+    for (l, alpha) in [(first_ef, 1.0), (params.build_ef, params.alpha)] {
+        let t = prof::start();
+        rows.insert_pass(&mut graph, &order, entry, l, alpha, r);
+        prof::report("pass", t);
+    }
+    let t = prof::start();
+    rows.fill(&mut graph, r);
+    prof::report("fill", t);
+    let tup = prof::start();
+
+    // Upper layers (HNSW-like) give each query a nearby entry vertex: layer j holds the
+    // first n / 16^(j+1) vertices of `order`, so a vertex keeps its local id in every layer.
+    let mut layers = Vec::new();
+    let mut size = n / LAYER_RATIO;
+    while size >= MIN_LAYER {
+        let sub: Vec<f32> = order[..size]
+            .iter()
+            .flat_map(|&g| rows.row(g).iter().copied())
+            .collect();
+        let sub_norms: Vec<f32> = match rows.norms {
+            Some(n) => order[..size].iter().map(|&g| n[g as usize]).collect(),
+            None => Vec::new(),
+        };
+        let sub_codes = (params.quantized_search || dim >= BUILD_CODES_MIN_DIM)
+            .then(|| BuildCodes::new(&sub, dim, norms_opt(&sub_norms)));
+        let sub_rows = Rows {
+            data: &sub,
+            dim,
+            norms: norms_opt(&sub_norms),
+            codes: sub_codes.as_ref(),
+            quantized: params.quantized_search,
+        };
+        let local: Vec<u32> = (0..size as u32).collect();
+        let mut g = Adjacency::new(size, UPPER_DEGREE);
+        sub_rows.insert_pass(
+            &mut g,
+            &local,
+            0,
+            params.build_ef,
+            params.alpha,
+            UPPER_DEGREE,
+        );
+        layers.push(g.to_lists());
+        size /= LAYER_RATIO;
+    }
+    prof::report("upper", tup);
+    prof::graph_hash((&graph, &layers, entry));
+    let upper_ids = order[..n / LAYER_RATIO].to_vec();
+    Ok(GraphStructure {
+        adj: graph,
+        entry,
+        upper_ids,
+        layers,
+    })
 }
 
 /// FNV-1a over 32-bit words: a stable fingerprint, not a cryptographic hash.

@@ -13,8 +13,8 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 
 use super::{
-    kernels::dot, vertex::SearchScratch, BuildParams, Graph, Metric, Residency, VGraph,
-    VSearchParams,
+    kernels::dot, vertex::SearchScratch, BuildParams, Graph, Metric, PreparedRows, Residency,
+    VGraph, VSearchParams,
 };
 use crate::core::durable_file::{atomic_write, sync_directory, sync_mapped_file};
 use crate::core::error::HmsError;
@@ -23,7 +23,7 @@ mod delta;
 mod diagnostics;
 mod format;
 use delta::Delta;
-use format::BaseRows;
+use format::{BaseRows, BaseRowsWriter};
 
 const MAX_DIM: usize = 1 << 20;
 const MAX_PAYLOAD: usize = 64 << 20;
@@ -773,14 +773,6 @@ impl UpdatableVGraph {
         }
         let mut manifest = snapshot.manifest.clone();
         manifest.sequence = snapshot.sequence;
-        let mut rows = Vec::new();
-        rows.try_reserve_exact(
-            snapshot
-                .len()
-                .checked_mul(manifest.dim)
-                .ok_or(UpdateError::Capacity)?,
-        )
-        .map_err(|_| UpdateError::Capacity)?;
         let mut ids: Vec<_> = snapshot
             .base
             .rows
@@ -792,20 +784,35 @@ impl UpdatableVGraph {
             .chain(snapshot.delta.live.keys().copied())
             .collect();
         ids.sort_unstable();
-        for &id in &ids {
-            if let Some(&slot) = snapshot.delta.live.get(&id) {
-                rows.extend_from_slice(snapshot.delta.row(slot, manifest.dim));
-            } else {
-                rows.extend_from_slice(
-                    snapshot
-                        .base
-                        .rows
-                        .row(snapshot.base_slot(id).expect("live base id"))?,
-                );
-            }
-        }
+        let base = Arc::clone(&snapshot.base);
         drop(snapshot);
-        write_base_with_checkpoints(&self.dir, &manifest, &ids, rows, &mut checkpoint)?;
+        if !manifest.encoding.screen && manifest.encoding.block_bits == 0 {
+            self.write_mapped_base(&manifest, &ids, &base, &mut checkpoint)?;
+        } else {
+            let snapshot = self.state.read();
+            let mut rows = Vec::new();
+            rows.try_reserve_exact(
+                ids.len()
+                    .checked_mul(manifest.dim)
+                    .ok_or(UpdateError::Capacity)?,
+            )
+            .map_err(|_| UpdateError::Capacity)?;
+            for &id in &ids {
+                if let Some(&slot) = snapshot.delta.live.get(&id) {
+                    rows.extend_from_slice(snapshot.delta.row(slot, manifest.dim));
+                } else {
+                    rows.extend_from_slice(
+                        snapshot
+                            .base
+                            .rows
+                            .row(snapshot.base_slot(id).expect("live base id"))?,
+                    );
+                }
+            }
+            drop(snapshot);
+            write_base_with_checkpoints(&self.dir, &manifest, &ids, rows, &mut checkpoint)?;
+        }
+        drop(base);
         checkpoint(1)?;
         let base = Base::open(&self.dir, &manifest)?;
         let publication = (|| {
@@ -826,6 +833,70 @@ impl UpdatableVGraph {
             return Err(error);
         }
         cleanup_generations(&self.dir, manifest.sequence)?;
+        Ok(())
+    }
+    fn write_mapped_base(
+        &self,
+        manifest: &Manifest,
+        ids: &[u32],
+        base: &Base,
+        mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+    ) -> Result<(), UpdateError> {
+        checkpoint(6)?;
+        let mut output = BaseRowsWriter::new(&manifest.rows_path(&self.dir), manifest, ids)?;
+        let mut prepared = PreparedRows::new(ids.len(), manifest.dim)?;
+        let chunk_rows = ((4 << 20) / 4 / manifest.dim).max(1);
+        let mut rows = Vec::new();
+        rows.try_reserve_exact(
+            chunk_rows
+                .min(ids.len())
+                .checked_mul(manifest.dim)
+                .ok_or(UpdateError::Capacity)?,
+        )
+        .map_err(|_| UpdateError::Capacity)?;
+        if let Some(graph) = &base.graph {
+            graph.release_pages()?;
+        }
+        for chunk in ids.chunks(chunk_rows) {
+            rows.clear();
+            let snapshot = self.state.read();
+            for &id in chunk {
+                if let Some(&slot) = snapshot.delta.live.get(&id) {
+                    rows.extend_from_slice(snapshot.delta.row(slot, manifest.dim));
+                } else {
+                    rows.extend_from_slice(
+                        base.rows
+                            .row(snapshot.base_slot(id).expect("live base id"))?,
+                    );
+                }
+            }
+            drop(snapshot);
+            output.append(&rows)?;
+            prepared.append(&rows)?;
+            base.rows.release_pages()?;
+        }
+        output.finish()?;
+        checkpoint(7)?;
+        if let Some(graph) = &base.graph {
+            graph.release_pages()?;
+        }
+        if !ids.is_empty() {
+            let graph = prepared.build(&manifest.build)?;
+            checkpoint(8)?;
+            let e = &manifest.encoding;
+            VGraph::save_prepared(
+                &graph,
+                &manifest.vertex_path(&self.dir),
+                e.bits,
+                e.residual_bits,
+                e.align,
+                e.reorder,
+                e.id_bytes,
+            )?;
+            checkpoint(9)?;
+        }
+        sync_directory(&self.dir)?;
+        checkpoint(10)?;
         Ok(())
     }
 }
@@ -874,20 +945,32 @@ fn write_base_with_checkpoints(
     if !ids.is_empty() {
         let graph = Graph::build_owned(rows, manifest.dim, &manifest.build)?;
         let e = &manifest.encoding;
-        let mut vertex = VGraph::from_graph_with(
-            &graph,
-            e.bits,
-            e.residual_bits,
-            e.align,
-            e.reorder,
-            e.id_bytes,
-            e.screen,
-        )?;
-        if e.block_bits != 0 {
-            vertex = vertex.with_blocks(&graph, e.block_bits)?;
-        }
         checkpoint(8)?;
-        vertex.save(&manifest.vertex_path(dir))?;
+        if !e.screen && e.block_bits == 0 {
+            VGraph::save_from_graph(
+                &graph,
+                &manifest.vertex_path(dir),
+                e.bits,
+                e.residual_bits,
+                e.align,
+                e.reorder,
+                e.id_bytes,
+            )?;
+        } else {
+            let mut vertex = VGraph::from_graph_with(
+                &graph,
+                e.bits,
+                e.residual_bits,
+                e.align,
+                e.reorder,
+                e.id_bytes,
+                e.screen,
+            )?;
+            if e.block_bits != 0 {
+                vertex = vertex.with_blocks(&graph, e.block_bits)?;
+            }
+            vertex.save(&manifest.vertex_path(dir))?;
+        }
         checkpoint(9)?;
     }
     sync_directory(dir)?;

@@ -187,6 +187,15 @@ pub(super) struct BaseRows {
     row_at: usize,
     metric: Metric,
 }
+pub(super) struct BaseRowsWriter {
+    writer: std::io::BufWriter<tempfile::NamedTempFile>,
+    path: std::path::PathBuf,
+    dim: usize,
+    count: usize,
+    written: usize,
+    metric: Metric,
+    bytes: Vec<u8>,
+}
 fn row_offset(count: usize) -> Result<usize, UpdateError> {
     count
         .checked_mul(4)
@@ -201,47 +210,19 @@ impl BaseRows {
         ids: &[u32],
         vectors: &[f32],
     ) -> Result<(), UpdateError> {
-        let row_at = row_offset(ids.len())?;
-        let mut header = ROW_MAGIC.to_vec();
-        words(
-            &mut header,
-            &[
-                ORDER,
-                manifest.dim as u64,
-                ids.len() as u64,
-                manifest.build.metric.code(),
-                manifest.sequence,
-                row_at as u64,
-            ],
-        );
-        seal(&mut header);
-        let mut ids_crc = crc32fast::Hasher::new();
-        for id in ids {
-            ids_crc.update(&id.to_le_bytes());
+        let mut writer = BaseRowsWriter::new(path, manifest, ids)?;
+        writer.append(vectors)?;
+        writer.finish()
+    }
+
+    pub fn release_pages(&self) -> Result<(), UpdateError> {
+        #[cfg(target_os = "linux")]
+        // SAFETY: this shared read-only generation never changes while a reader exists,
+        // so discarding its pages cannot change any value observed by concurrent searches.
+        unsafe {
+            self.map
+                .unchecked_advise(memmap2::UncheckedAdvice::DontNeed)?;
         }
-        header.extend_from_slice(&ids_crc.finalize().to_le_bytes());
-        let parent = path.parent().ok_or(UpdateError::Capacity)?;
-        let mut temp = tempfile::NamedTempFile::new_in(parent)?;
-        let mut writer = std::io::BufWriter::new(temp.as_file_mut());
-        writer.write_all(&header)?;
-        for id in ids {
-            writer.write_all(&id.to_le_bytes())?;
-        }
-        writer.write_all(&vec![0u8; row_at - 64 - ids.len() * 4])?;
-        let mut bytes = Vec::with_capacity(manifest.dim * 4);
-        for row in vectors.chunks_exact(manifest.dim) {
-            bytes.clear();
-            for x in row {
-                bytes.extend_from_slice(&x.to_le_bytes());
-            }
-            writer.write_all(&bytes)?;
-            writer.write_all(&crc32fast::hash(&bytes).to_le_bytes())?;
-        }
-        writer.flush()?;
-        drop(writer);
-        temp.as_file().sync_all()?;
-        sync_mapped_file(temp.as_file())?;
-        temp.persist(path).map_err(|e| e.error)?;
         Ok(())
     }
     pub fn open(path: &Path, manifest: &Manifest) -> Result<Self, UpdateError> {
@@ -318,6 +299,84 @@ impl BaseRows {
         let row = unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<f32>(), self.dim) };
         validate_vector(row, self.dim, self.metric)?;
         Ok(row)
+    }
+}
+
+impl BaseRowsWriter {
+    pub fn new(path: &Path, manifest: &Manifest, ids: &[u32]) -> Result<Self, UpdateError> {
+        if manifest.dim == 0 || manifest.dim > MAX_DIM || ids.len() >= u32::MAX as usize {
+            return Err(UpdateError::Capacity);
+        }
+        let row_at = row_offset(ids.len())?;
+        let mut header = ROW_MAGIC.to_vec();
+        words(
+            &mut header,
+            &[
+                ORDER,
+                manifest.dim as u64,
+                ids.len() as u64,
+                manifest.build.metric.code(),
+                manifest.sequence,
+                row_at as u64,
+            ],
+        );
+        seal(&mut header);
+        let mut ids_crc = crc32fast::Hasher::new();
+        for id in ids {
+            ids_crc.update(&id.to_le_bytes());
+        }
+        header.extend_from_slice(&ids_crc.finalize().to_le_bytes());
+        let parent = path.parent().ok_or(UpdateError::Capacity)?;
+        let temp = tempfile::NamedTempFile::new_in(parent)?;
+        let mut writer = std::io::BufWriter::with_capacity(1 << 20, temp);
+        writer.write_all(&header)?;
+        for id in ids {
+            writer.write_all(&id.to_le_bytes())?;
+        }
+        writer.write_all(&vec![0u8; row_at - 64 - ids.len() * 4])?;
+        Ok(Self {
+            writer,
+            path: path.to_path_buf(),
+            dim: manifest.dim,
+            count: ids.len(),
+            written: 0,
+            metric: manifest.build.metric,
+            bytes: Vec::new(),
+        })
+    }
+
+    pub fn append(&mut self, vectors: &[f32]) -> Result<(), UpdateError> {
+        if !vectors.len().is_multiple_of(self.dim)
+            || self
+                .written
+                .checked_add(vectors.len() / self.dim)
+                .is_none_or(|n| n > self.count)
+        {
+            return Err(UpdateError::Capacity);
+        }
+        for row in vectors.chunks_exact(self.dim) {
+            validate_vector(row, self.dim, self.metric)?;
+            self.bytes.clear();
+            for x in row {
+                self.bytes.extend_from_slice(&x.to_le_bytes());
+            }
+            self.writer.write_all(&self.bytes)?;
+            self.writer
+                .write_all(&crc32fast::hash(&self.bytes).to_le_bytes())?;
+            self.written += 1;
+        }
+        Ok(())
+    }
+
+    pub fn finish(self) -> Result<(), UpdateError> {
+        if self.written != self.count {
+            return Err(UpdateError::Capacity);
+        }
+        let temp = self.writer.into_inner().map_err(|e| e.into_error())?;
+        temp.as_file().sync_all()?;
+        sync_mapped_file(temp.as_file())?;
+        temp.persist(self.path).map_err(|e| e.error)?;
+        Ok(())
     }
 }
 
