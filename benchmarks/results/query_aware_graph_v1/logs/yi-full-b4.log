@@ -1,0 +1,24 @@
+{"B":{"evaluated_coverage":0.9835937499999997,"evaluated_unique":27084.74609375,"exact_all_retained_recall":0.9831640624999997,"exact_rerank_recall":0.9808984375,"recall":0.9802734375000002,"rerank_candidate_coverage":0.9808984375,"retained_coverage":0.9831640624999997},"E":{"evaluated_coverage":0.9842578125000003,"evaluated_unique":26279.12109375,"exact_all_retained_recall":0.9842578125000003,"exact_rerank_recall":0.9842578125000003,"recall":0.9833984375000006,"rerank_candidate_coverage":0.9842578125000003,"retained_coverage":0.9842578125000003},"O":{"evaluated_coverage":0.9837499999999997,"evaluated_unique":27003.078125,"exact_all_retained_recall":0.9833203124999996,"exact_rerank_recall":0.9810546875000001,"recall":0.9804296875000003,"rerank_candidate_coverage":0.9810546875000001,"retained_coverage":0.9833203124999996},"OE":{"evaluated_coverage":0.9843750000000003,"evaluated_unique":26205.65234375,"exact_all_retained_recall":0.9843750000000003,"exact_rerank_recall":0.9843750000000003,"recall":0.9835156250000006,"rerank_candidate_coverage":0.9843750000000003,"retained_coverage":0.9843750000000003}}
+	Command being timed: "/home/davidcondrey/sol-qag/target/release/qag-diagnose --data /home/davidcondrey/sol-qag/data/yi-full --graph /home/davidcondrey/sol-qag/data/yi-full.graph --out /home/davidcondrey/sol-qag/results/yi-full-b4.json --bits 4"
+	User time (seconds): 124.32
+	System time (seconds): 0.28
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:03.84
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 343892
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 139769
+	Voluntary context switches: 966
+	Involuntary context switches: 677
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 99440
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

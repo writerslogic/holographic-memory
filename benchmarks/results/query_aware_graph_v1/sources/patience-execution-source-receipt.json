@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "scope": "Frozen source/compiler provenance and correctness receipts; no completed full-evaluation result asserted",
+  "core_commit": "f73305b624305836211c8157975c4f1c37f10df9",
+  "signature": "G: valid signature",
+  "production_source": {
+    "src/python/vector_index.rs": {
+      "sha256": "52bb1d32b5fb1f138010e382de7a1f1214b4bbff7b806b4c345db96308992ae8",
+      "matches_worktree": true
+    },
+    "src/bin/qag-diagnose.rs": {
+      "sha256": "f42214d6272d2ca19c1dea2f7232780178bd47c4d14685e8c33ca87848f433b3",
+      "matches_worktree": true
+    },
+    "tests/python/test_vector_index.py": {
+      "sha256": "beef5578bef921ad74a9eda116d95c9aa7d626271eab23df3b678248990299c3",
+      "matches_worktree": true
+    }
+  },
+  "candidate_extension": {
+    "path": "writerslogic-02:/home/davidcondrey/sol-qag/artifacts/patience-holographic_memory.so",
+    "sha256": "31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26",
+    "bytes": 1989928
+  },
+  "corrected_build": {
+    "compiler": "1.96.0",
+    "rustflags": "-C target-cpu=native",
+    "command": "cargo +1.96.0 build --release --features python --lib",
+    "incremental_build_seconds": 46.99,
+    "receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/logs/build-python-patience.log",
+      "sha256": "b8f5622da4a3de233374010da659884ccd8898760fb3ac4c6b0ecca8d618d9c0"
+    }
+  },
+  "initial_build_correction": {
+    "compiler": "mutable stable1.99.1",
+    "scope": "Untimed patience diagnostics only; first driver ended at missing smoke helper before timing",
+    "receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/logs/build-patience-diagnostic.log",
+      "sha256": "bfcce2e6a8cb6b92fcd1566cf75fd7dc095c7b0d12dbda33eff248279ef0d97f"
+    }
+  },
+  "runtime_snapshot_sha256": {
+    "sources/qag_pair_full_evaluation_v1.py": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+    "sources/qag_execute_full_evaluation_v1.py": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+    "sources/qag_regression_full_evaluation_v1.py": "e0e85f4328604ad0acdc363eb9e5778a64236e0de589ca7fe774fe3ca1667048",
+    "sources/qag_hdf5_full_evaluation_v1.py": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92",
+    "sources/qag_report_full_evaluation_v1.py": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+    "sources/full-evaluation-v1.sh": "ab2ac3e73dd30db7fc4aebb5928e01106e141991c38539c0caaa753a7acee2fe",
+    "sources/final-candidates-config-v1.yml": "0aa5dc6339a434ee3fbad834b4695c6943c28bd48b07f2a0b5ebdeae2bbd06f3",
+    "sources/llama-full-validation-v1-frozen.json": "2d004b909dcc6d6da9f4d9676ff4d4231df401078322e4c0ab13c7d130523e67"
+  },
+  "native_smoke": {
+    "path": "benchmarks/results/query_aware_graph_v1/logs/python-patience-smoke.log",
+    "sha256": "01c3f8c44743a0d6798e86e3292106e226a18a7e6a013fbb1e99afea866980bd"
+  },
+  "local_benchmark_tests": {
+    "path": "benchmarks/results/query_aware_graph_v1/logs/final-python-bench-tests.log",
+    "sha256": "0e875d2375d90063c77bc3f89932ceae595a7c127de45c4e0839c6bb16ad9d75"
+  },
+  "extension_hash_receipt": {
+    "path": "benchmarks/results/query_aware_graph_v1/patience-python.sha256",
+    "sha256": "4c5f79f2478105c3ff3d7caf587fc9a2f73d17c26f678c1ac1ecf1b96889effc"
+  },
+  "full_batch_log": "writerslogic-02:/home/davidcondrey/sol-qag/logs/full-evaluation-v1.log",
+  "final_rust_gate": "unrun"
+}

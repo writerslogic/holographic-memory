@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "data_manifest_sha256": "20758bdf8b57580d31e1900a41cfe406d54741d6559f8a1ce67d4413cf3ea314",
+  "source_sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+  "queries": 32768,
+  "dimension": 128,
+  "rows": 187843,
+  "neighbors": 100,
+  "selection": "seeded learn permutation immediately after validation",
+  "truth": "float64 original-IP block matrix products; descending score then base ID; vector-product spot checks",
+  "official_test_read": false,
+  "checks": [
+    {
+      "construction_row": 0,
+      "float64_top100_overlap": 1.0
+    },
+    {
+      "construction_row": 1,
+      "float64_top100_overlap": 1.0
+    },
+    {
+      "construction_row": 2,
+      "float64_top100_overlap": 1.0
+    },
+    {
+      "construction_row": 3,
+      "float64_top100_overlap": 1.0
+    }
+  ],
+  "files": {
+    "learn_ids.u32": "8d97968a2a58d3e971b4ab90a031686569be711b17ba127e3c9e049e01289b03",
+    "neighbors.u32": "86fd92b26b0090af62b63396a3dc8a6ac828bd4cedd631c9ffbe1890b21b79cd",
+    "queries.f32": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d"
+  },
+  "preparer_sha256": "2b94d0d4559a8ef1fbe78cd796158728dc1708b901457696a4a8a064e7c07001"
+}

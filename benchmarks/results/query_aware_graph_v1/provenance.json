@@ -1,0 +1,2809 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-22",
+  "baseline_sha": "08d37778a66b58709461456e5b9a7ab6a05b399f",
+  "worktree": "/Volumes/A/.sol-wt-qag",
+  "scope": "Historical v1 diagnostics and frozen full validation/official evaluations; default4 regression and RF80 batches still running. Subsequent optimization belongs to query_aware_graph_v2.",
+  "supplied_baseline": {
+    "artifact": "benchmarks/results/vibe_v1/llama-128-ip-standing-wl02.json",
+    "verified_from": "writerslogic-02:/home/davidcondrey/vibe-hms/export-final/summary.parquet",
+    "raw_results": "writerslogic-02:/home/davidcondrey/vibe-hms/vibe/results/llama-128-ip/100",
+    "recorded_hms_sha": "5c66a4815ef612f6afa36144d0ee2a98762ec2a2",
+    "build_checkout": "writerslogic-02:/home/davidcondrey/vibe-hms/build/hms",
+    "source_install_log": "writerslogic-02:/home/davidcondrey/vibe-hms/install-hms.log",
+    "source_build": {
+      "toolchain": "1.96.0",
+      "rustflags": "-C target-cpu=native",
+      "command": "maturin build --release --locked --out /home/davidcondrey/vibe-hms/build/hms-dist"
+    },
+    "includes_mips_pr186": true,
+    "mips_pr186_sha": "919cc91",
+    "extension_path": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/holographic_memory/holographic_memory.abi3.so",
+    "extension_sha256": "6a8347d3e5f52afb8495e5b260e635c08a20ab92c8aeb89e952c49e18d9ff249",
+    "result_verified": true,
+    "hms_config_count": 224,
+    "roargraph_config_count": 108,
+    "hms_max": {
+      "recall_vibe": 0.9585,
+      "recall_ids": 0.95801,
+      "qps_best_of_5": 94.03235299799906,
+      "config": {
+        "degree": 96,
+        "build_ef": 500,
+        "ef": 8000,
+        "rerank": 1000
+      },
+      "build_seconds": 615.9443759918213,
+      "uss_delta_kib": 14672
+    },
+    "points": [
+      {
+        "method": "hms",
+        "target": 0.9,
+        "recall_vibe": 0.91885,
+        "recall_ids": 0.9184,
+        "qps_best_of_5": 700.8253394103064,
+        "config": {
+          "degree": 48,
+          "build_ef": 500,
+          "ef": 1000,
+          "rerank": 1000
+        },
+        "build_seconds": 416.3314507007599,
+        "uss_delta_kib": 124156,
+        "raw_file": "hms/ip_48_500.hdf5",
+        "raw_group": "1000_1000"
+      },
+      {
+        "method": "hms",
+        "target": 0.95,
+        "recall_vibe": 0.9548,
+        "recall_ids": 0.95431,
+        "qps_best_of_5": 290.3855707947149,
+        "config": {
+          "degree": 48,
+          "build_ef": 500,
+          "ef": 3000,
+          "rerank": 1000
+        },
+        "build_seconds": 416.3314507007599,
+        "uss_delta_kib": 124156,
+        "raw_file": "hms/ip_48_500.hdf5",
+        "raw_group": "3000_1000"
+      },
+      {
+        "method": "hms",
+        "target": 0.99,
+        "reached": false
+      },
+      {
+        "method": "roargraph",
+        "target": 0.9,
+        "recall_vibe": 0.90054,
+        "recall_ids": 0.90005,
+        "qps_best_of_5": 5174.602867638178,
+        "config": {
+          "M_sq": 100,
+          "M_pjbp": 48,
+          "L_pjpq": 500,
+          "L_pq": 100
+        },
+        "build_seconds": 282.19271063804626,
+        "uss_delta_kib": 569672,
+        "raw_file": "roargraph/ip_100_48_500.hdf5",
+        "raw_group": "100"
+      },
+      {
+        "method": "roargraph",
+        "target": 0.95,
+        "recall_vibe": 0.97359,
+        "recall_ids": 0.9732,
+        "qps_best_of_5": 2947.0522964206903,
+        "config": {
+          "M_sq": 100,
+          "M_pjbp": 96,
+          "L_pjpq": 500,
+          "L_pq": 120
+        },
+        "build_seconds": 805.7212450504303,
+        "uss_delta_kib": 346236,
+        "raw_file": "roargraph/ip_100_96_500.hdf5",
+        "raw_group": "120"
+      },
+      {
+        "method": "roargraph",
+        "target": 0.99,
+        "recall_vibe": 0.99113,
+        "recall_ids": 0.99094,
+        "qps_best_of_5": 519.6949572300871,
+        "config": {
+          "M_sq": 100,
+          "M_pjbp": 96,
+          "L_pjpq": 500,
+          "L_pq": 800
+        },
+        "build_seconds": 805.7212450504303,
+        "uss_delta_kib": 346236,
+        "raw_file": "roargraph/ip_100_96_500.hdf5",
+        "raw_group": "800"
+      }
+    ],
+    "duplicate_id_queries_at_listed_points": 0,
+    "recall_definition": "VIBE export_results.py get_recall_values counts returned distance <= official kth distance + 1e-3; strict ID set intersection also audited.",
+    "timing_limitations": [
+      "QPS is best of 5 repetitions; only final repetition neighbors/times retained; no per-repetition median or range recoverable.",
+      "One mixed run with 10 concurrent pinned workers and host load ~11 at acquisition; not paired baseline/candidate independent runs.",
+      "No explicit cache reset/warmup in runner; first measured run warms the index.",
+      "VIBE index_size is post-build process USS delta in KiB, not serialized index size or peak RSS; deltas vary with allocator/process history."
+    ],
+    "mlann": {
+      "attempted": true,
+      "result_files": 0,
+      "source_log": "/home/davidcondrey/vibe-hms/logs/llama-128-ip-ip.log",
+      "error": "RuntimeError: The depth must belong to the set {1, ... , min(log2(n_train), 29)}.",
+      "note": "Supplied JSON calls MLANN not_run; raw logs show invalid-depth failures and valid builds followed by SIGSEGV during queries; no completed rows."
+    }
+  },
+  "upstream": {
+    "vibe_sha": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
+    "vibe_dir": "writerslogic-02:/home/davidcondrey/vibe-hms/vibe",
+    "roargraph_sha": "f2b49b6f47f16bccde9bc13d8fceffd5ff2dd4aa",
+    "mlann_sha": "de8f9d6ea977312f5a8943a9ccdbd11870ac590c",
+    "roargraph_wrapper": "vibe/algorithms/roargraph/module.py",
+    "roargraph_training": "fit_ood consumes permitted learn_neighbors to construct projected base graph; X_learn vectors not used by wrapper build.",
+    "split_source": "vibe/datasets.py:1242 llama, :1259 yi, :234 train_test_split",
+    "split_semantics": "K and Q arrays trimmed [1:-2047]; K is base train, Q is split into learn and official test with sklearn.train_test_split(test_size=1000, random_state=1). Llama layer12/head15; yi layer31/head13.",
+    "split_caveat": "Prepared HDF5 has no source-row split IDs; semantic provenance is upstream executable generator, corroborated by shapes and zero identical row bytes between stored learn and test.",
+    "permitted_validation": "Reserve deterministic rows from learn only and remove them from construction/training pool; recompute their prefix truth. Never use test or official neighbors for construction/tuning.",
+    "training_truth": "learn_neighbors is full-base top100 and cannot be cropped into prefix truth; prefix truth must be recomputed.",
+    "metrics": {
+      "ip": "distance=-dot(query,base); larger raw dot is better; original rows unnormalized.",
+      "normalized": "distance=clip(1-dot(query,base),0,2); generator normalizes embeddings.",
+      "euclidean": "distance=L2 norm; squared L2 preserves ordering.",
+      "angular": "ann-benchmarks angular means cosine distance with each row normalized."
+    }
+  },
+  "datasets": {
+    "llama-128-ip": {
+      "sha256": "43c6a366d1e7dfd9e331e712708a664f91f8dbda1928c9923ef730d6718a2f52",
+      "attrs": {
+        "dimension": "128",
+        "distance": "ip",
+        "point_type": "float"
+      },
+      "shapes": {
+        "avg_distances": [
+          1000
+        ],
+        "distances": [
+          1000,
+          100
+        ],
+        "learn": [
+          255921,
+          128
+        ],
+        "learn_neighbors": [
+          255921,
+          100
+        ],
+        "neighbors": [
+          1000,
+          100
+        ],
+        "test": [
+          1000,
+          128
+        ],
+        "train": [
+          256921,
+          128
+        ]
+      },
+      "learn_test_identical_rows": 0,
+      "learn_finite": true,
+      "test_finite": true,
+      "learn_norm_range": [
+        11.505537033081055,
+        25.356340408325195
+      ]
+    },
+    "yi-128-ip": {
+      "sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+      "attrs": {
+        "dimension": "128",
+        "distance": "ip",
+        "point_type": "float"
+      },
+      "shapes": {
+        "avg_distances": [
+          1000
+        ],
+        "distances": [
+          1000,
+          100
+        ],
+        "learn": [
+          186843,
+          128
+        ],
+        "learn_neighbors": [
+          186843,
+          100
+        ],
+        "neighbors": [
+          1000,
+          100
+        ],
+        "test": [
+          1000,
+          128
+        ],
+        "train": [
+          187843,
+          128
+        ]
+      },
+      "learn_test_identical_rows": 0,
+      "learn_finite": true,
+      "test_finite": true,
+      "learn_norm_range": [
+        13.454791069030762,
+        29.034671783447266
+      ]
+    },
+    "yahoo-minilm-384-normalized": {
+      "sha256": "8b0519850249d7ea4aea258eb43ae837dca1bb2f7a85ee0a5145afdb699c4136",
+      "attrs": {
+        "dimension": "384",
+        "distance": "normalized",
+        "point_type": "float"
+      },
+      "shapes": {
+        "avg_distances": [
+          1000
+        ],
+        "distances": [
+          1000,
+          100
+        ],
+        "neighbors": [
+          1000,
+          100
+        ],
+        "test": [
+          1000,
+          384
+        ],
+        "train": [
+          677305,
+          384
+        ]
+      }
+    }
+  },
+  "regressions": {
+    "sift-128-euclidean": {
+      "kind": "ann",
+      "name": "sift-128-euclidean",
+      "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+      "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+      "metric": "euclidean",
+      "n_train": 1000000,
+      "n_test": 10000,
+      "dim": 128,
+      "n_neighbors": 100,
+      "directory": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean",
+      "actual_sizes_bytes": {
+        "train.f32": 512000000,
+        "test.f32": 5120000,
+        "neighbors.i32": 4000000
+      }
+    },
+    "glove-100-angular": {
+      "kind": "ann",
+      "name": "glove-100-angular",
+      "source": "https://ann-benchmarks.com/glove-100-angular.hdf5",
+      "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+      "metric": "angular",
+      "n_train": 1183514,
+      "n_test": 10000,
+      "dim": 100,
+      "n_neighbors": 100,
+      "directory": "/home/davidcondrey/.cache/hms-bench/glove-100-angular",
+      "actual_sizes_bytes": {
+        "train.f32": 473405600,
+        "test.f32": 4000000,
+        "neighbors.i32": 4000000
+      }
+    },
+    "sift_hdf5": {
+      "attrs": {
+        "distance": "euclidean"
+      },
+      "shapes": {
+        "distances": [
+          10000,
+          100
+        ],
+        "neighbors": [
+          10000,
+          100
+        ],
+        "test": [
+          10000,
+          128
+        ],
+        "train": [
+          1000000,
+          128
+        ]
+      }
+    }
+  },
+  "local_dataset_resolution": {
+    "llama-128-ip": "writerslogic-02:/home/davidcondrey/vibe-hms/vibe/data/llama-128-ip.hdf5",
+    "yi-128-ip": "writerslogic-02:/home/davidcondrey/vibe-hms/vibe/data/yi-128-ip.hdf5",
+    "yahoo-minilm-384": "actual ID yahoo-minilm-384-normalized; writerslogic-02:/home/davidcondrey/vibe-hms/vibe/data/yahoo-minilm-384-normalized.hdf5",
+    "sift-128-euclidean": "writerslogic-02:/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean",
+    "glove-100-angular": "writerslogic-02:/home/davidcondrey/.cache/hms-bench/glove-100-angular",
+    "no_substitution": "VIBE DATASETS has no sift-128-euclidean or glove-100-angular; do not substitute glove-200-cosine. Exact requested datasets exist outside VIBE."
+  },
+  "download_provenance": {
+    "script": "/home/davidcondrey/vibe-hms/fetch.sh",
+    "source_url": "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/main/<id>.hdf5",
+    "revision_pinned_at_download": false,
+    "limitation": "Historical resolve/main revision absent; existing files are pinned by full SHA256 in this audit."
+  },
+  "policy": {
+    "timing_host": "writerslogic-02",
+    "lock": "/home/davidcondrey/hms-timing.lock",
+    "bench": "/home/davidcondrey/vibe-hms/bench.sh",
+    "bench_lock_deadline": "03:10 local hard-coded daily; lock mode skips once deadline passed.",
+    "safe_execution": "Acquire outer flock and invoke bench.sh <dataset> <parallelism> <env> <defs-folder> nolock; run.py controls worker affinity. Coordinate with root before any timing or build.",
+    "thread_vars": [
+      "OMP_NUM_THREADS",
+      "MKL_NUM_THREADS",
+      "OPENBLAS_NUM_THREADS",
+      "NUMEXPR_NUM_THREADS",
+      "RAYON_NUM_THREADS"
+    ],
+    "thread_value": 1
+  },
+  "evidence_sha256": {
+    "/home/davidcondrey/vibe-hms/export-final/summary.parquet": "4b435ce5b1b35b6e0155c1602c26f4d3bb45e68270bc65aec4df60b30b87f29e",
+    "/home/davidcondrey/vibe-hms/export-final/standing.json": "5fc5bc446988bea76c53b0264dba86a7bfe4c08935313823ef8b41c13e10eef4",
+    "/home/davidcondrey/vibe-hms/vibe/vibe/datasets.py": "6bc7e81058245c378a9aba7d76f7c816c3fa15acc2ec0254ee3aa068fa9edd83",
+    "/home/davidcondrey/vibe-hms/vibe/export_results.py": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+    "/home/davidcondrey/vibe-hms/bench.sh": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+    "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/roargraph/module.py": "e5aa00f86d34da05c5ada20622177f236ac7d2609cd4c21bbd97e3cbe8bb2d41",
+    "benchmarks/results/query_aware_graph_v1/baseline-python-source.sha256": "33c4d632c0c445cbe0072568b29c911727a988994118142efc871c2a99ee229e",
+    "benchmarks/results/query_aware_graph_v1/configs/projection-validation/qag_pair/config.yml": "fd58a97358b40462c251b7952204cab396e191045d2a1bc7ebdcea9813d1d3d9",
+    "benchmarks/results/query_aware_graph_v1/initial-diagnosis-source.sha256": "fa2192815a36a4860d4b6d88813095ee4f4e4c831f81482a20dd81a639335ae1",
+    "benchmarks/results/query_aware_graph_v1/llama-full-b4.json": "f4e0ea7f8c8d5ae9c558cbc76f50f8f416dc5c52791370f205a394364ac8c175",
+    "benchmarks/results/query_aware_graph_v1/llama-full-b8.json": "d82a88791559928da87e9d5148339e7f76d9af448707020bd9f5785acbb9b25f",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-b4-rr2000.json": "94b9875938ed711f8906dd83bc44b3bdc67f1052ecd4566dfad174a4b03b0f45",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-ef1000-rr1000.json": "3541321ad07d41c9c6e35c8347d03c2d04d6c6312fd7e2f9a6237236a3046ee3",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-ef200-rr400.json": "89e9dddcee70bf174b3e640ccb3aa6b1ebf984c7f22881a1e64bb75cdf310cd3",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-ef512-rr400.json": "52db0a810110c0419d9e3a718d9c99bec6bcf4cf79640bc15c1dca198cf8b99f",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-rr1000.json": "0a9924f02dad6f7fea55b6b47890639f8affb9f7539eba239701957c62e77df1",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-rr2000.json": "99c49d397362abe593daea4282d2074b2a22d3927bb51aea594eca449bf6351f",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-diagnosis.json": "331b7f1dcd7fb5d2fba3d801698970452076eef9ac7652baa16d04ed097f15d6",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d16-ef512.json": "f24e97323b930cefb22bbf5bc4ad3a597737ee901b8606067f986d69de37e4bb",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef100.json": "7482ed198f46a91694659f98db23d87ea51bb8f450b0e7e90decaa274a05ba50",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef160.json": "7fc2484509386bba34cb6888aea2aa5765373af802d5628b81128dd7fca265ec",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef256.json": "460f4189dc768d4979047423ac6b1a18082ae535f0ecc4506098928b9089f77d",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef512.json": "c3e20c8fbbd57430fe1b2ed2ee5e2a9c27f5d6321d3495955e5715771cee3020",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q8192-d16-ef512.json": "d54880b5f7e6cd8489ae0098550d0ac152b80edb4d670928fba9f566fd374881",
+    "benchmarks/results/query_aware_graph_v1/logs/build-diagnose-configurable.log": "b03c0ceaadd3716f6a77c5d455e708b87fedd9991b3f7214845f46508e7b7229",
+    "benchmarks/results/query_aware_graph_v1/logs/build-diagnose.log": "bb07efe67862022f18b68ed22808cdb700b42bb98a4143fb4e28f5141fc345af",
+    "benchmarks/results/query_aware_graph_v1/logs/build-projection-diagnosis.log": "fd5eb85301cd8000d85d6b8dadd049c7dd4d68c6abc346afc39e6c7dd57a5359",
+    "benchmarks/results/query_aware_graph_v1/logs/build-python-baseline.log": "a88526499ee761c6a9062f2af399cf71d67d22023c177731162c18055e2058d5",
+    "benchmarks/results/query_aware_graph_v1/logs/build-python-candidate.log": "9edc9d3e96e1c008b87e7ddc7dd8279901038d4cbd4b855195f512e54c442e46",
+    "benchmarks/results/query_aware_graph_v1/logs/build-python-trained.log": "b8f5622da4a3de233374010da659884ccd8898760fb3ac4c6b0ecca8d618d9c0",
+    "benchmarks/results/query_aware_graph_v1/logs/export-validation-hdf5.log": "074c6517f340d95b085734a91abc4b36a0bcf09aca240a125fe614daf8dcb828",
+    "benchmarks/results/query_aware_graph_v1/logs/install-1.89.log": "4040e663ae5b3077dc587d2c213364d57f115e8b7f39b766d73dd6073effeb50",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-full-b4.log": "93d53af0c2d1c257828b34f287f82e0fa4ce8b586b63f24adbc3d3e592244225",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-full-b8.log": "8eb282522f06acb650e32df383f80aa24f2c2cebcab10dd618e199e7eabb1f7f",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-b4-rr2000.log": "84435b3f228cc74e9030b57b109a6a7a35471df534eb1d68c0b436e73811aaea",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-b8-ef1000-rr1000.log": "215f4425a64ed70450a00263a5d0199c195a124985f2ebdf8e08e188dce69961",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-b8-ef200-rr400.log": "961ba6e286268732ea2f9a8c39963f659d5e71241a88e8e0dae575776c65b105",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-b8-ef512-rr400.log": "0d6a5b84f3ec05dfeaf62c4388df7c9d73ba4829b4ae8d73375dcf0d25f11f2a",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-b8-rr1000.log": "e3eb9a71f2aaf9ab3e207e1c733714c2e591dbca8bdee57efa4020503aabe238",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-b8-rr2000.log": "6662f7204a465b46a4fe497e9878aa05d0224106052703128246170552995a43",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-diagnosis.log": "211928c6f8462c9ca4b23da0418320b864463a412a85f38b07dd438a0a254f1f",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-proj-q32768-d16-ef512.log": "d811466acdcf641588b3de25527c0029ab662d00df2269c4257db4fd48be4797",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-proj-q32768-d32-ef512.log": "a5af74b6507de4087f0985c00e27f5400cd28eddda2646bc0de53b7790d871e9",
+    "benchmarks/results/query_aware_graph_v1/logs/llama-prefix-proj-q8192-d16-ef512.log": "131060e04e88de2e63dea2086b4931a3acdd5d0f630f1684d4e0b6ff74c7a4ae",
+    "benchmarks/results/query_aware_graph_v1/logs/prepare-llama-full.log": "6373527c586c8b265136bc4e43c23a7863e53d1cc5b4123e2277cd0be8f81a9c",
+    "benchmarks/results/query_aware_graph_v1/logs/prepare-llama-prefix.log": "7f24b2384fa0b5cec1f8562245db89b2eec8a5c4e579fdfaf499fed3c9c6ffd2",
+    "benchmarks/results/query_aware_graph_v1/logs/prepare-llama-training-numpy.log": "d3a15a2adcf7b4362616e7b83893e3b0ab5667217eef363c5204884cca604eb2",
+    "benchmarks/results/query_aware_graph_v1/logs/prepare-llama-training.log": "85a4f803925a50af6458382f8abe14e96cd01249301a89dd43cf13ed9418c374",
+    "benchmarks/results/query_aware_graph_v1/logs/prepare-yi-full.log": "400b763d29cdf18e2a3b68133cc392605fd4db200f64afa467cd3678bf3e64c4",
+    "benchmarks/results/query_aware_graph_v1/logs/python-native-smoke.log": "bca3ca59d60e8d2cce1fb6b64804e61b447b8cfa3d4e51d6f66e100aac780793",
+    "benchmarks/results/query_aware_graph_v1/logs/python-preparation.txt": "76ca1042114593d83abbb1b6413a8f789f3760787ce9420b6ec0e0da83948704",
+    "benchmarks/results/query_aware_graph_v1/logs/python-trained-smoke.log": "05612b1539d6e29e00c62936d2f9dcc897ef6aa211a129047d0afd31dbb5ca6a",
+    "benchmarks/results/query_aware_graph_v1/logs/qag-report-tests.log": "1456f30ad6b29683b3dbf2cf20e1e5b0035560e452e23e4bf259d32b29950e3e",
+    "benchmarks/results/query_aware_graph_v1/logs/restore-toolchain.log": "9e0c5ebb76c0cf0d89b7ab1331fc46ae3c2ef16521a286c3c9e6c64c5a8ce43a",
+    "benchmarks/results/query_aware_graph_v1/logs/test-qag-prepare.log": "34d8667b67a9b35f28587ca81e5fb81eab20ce0dc664c572368f493474045234",
+    "benchmarks/results/query_aware_graph_v1/logs/yi-full-b4.log": "2847c21c8785768d4182f1eb3732f35af30f1d13bec3eb72f4f0305e01bb88c7",
+    "benchmarks/results/query_aware_graph_v1/logs/yi-full-b8.log": "409111894a5485fc43fcf501bf9707cfd30459f0ad4323b095916e0f8ac647fa",
+    "benchmarks/results/query_aware_graph_v1/projection-validation-raw.hdf5": "663cde890101682a09e7efc569a4c69435d0d4a2987369e1820c74b7c2ac2bb2",
+    "benchmarks/results/query_aware_graph_v1/projection-validation-receipt.json": "e6d1357ba32a070463dd48de10afccd5fff12a6f3973a45bfc5ea51563e4dc1d",
+    "benchmarks/results/query_aware_graph_v1/python-extensions-trained.sha256": "39c24210f34f9b749791db5230dd96220593340c0af35c587d2c5beb17f072f1",
+    "benchmarks/results/query_aware_graph_v1/python-extensions.sha256": "5c355042510f0e3bbcb8acaa50a7af0103993d5253913e25412c9ccef24b7f79",
+    "benchmarks/results/query_aware_graph_v1/sources/committed-source-receipt.json": "e45df0409f33fb329a1ac67fe207152b019df96546f34898db35cfb48c663117",
+    "benchmarks/results/query_aware_graph_v1/sources/llama-full-training-meta.json": "22c42ba20f13d60fc7e0a0c94f1d13401b8e46a1cf882dbe7ab983b1713bc781",
+    "benchmarks/results/query_aware_graph_v1/sources/llama-prefix-training-meta.json": "e82b36f3a6f379111a222616a41e1a0467b66f3a0fdbcbdf6e1a2888ed245a1b",
+    "benchmarks/results/query_aware_graph_v1/sources/llama-prefix-validation-truth.u32": "360c81d4df421c04a1a06cfa285bc02e0895ea29c933ed306782046fac7fcee1",
+    "benchmarks/results/query_aware_graph_v1/sources/qag-llama-128-ip-meta.json": "d3186638311d7504fd2c8c3545ac3d982a8e3fcb08c6e283ca85d3d514a1c3d4",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_hdf5.py": "f82afb4d21978fcf9fe73da07f4835cc6d4cba6bc5568a3e80b3da6cc9583832",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_pair_projection_validation.py": "30e519088a56ced4d2dce0150d23955cdd5c8ac58f6bb9bc77bd0ef6661f1afc",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_prepare_initial.py": "0c16e1e3d36c55346803032a53675161f4dbdff1abbb4e7175001ae4d8c7d703",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_smoke.py": "4a0d5d63b615633f3d7b23c4af74efcf34e77227fcba596172138f70ac8a7993",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_training.py": "2b94d0d4559a8ef1fbe78cd796158728dc1708b901457696a4a8a064e7c07001",
+    "benchmarks/results/query_aware_graph_v1/sources/yi-full-training-meta.json": "06c89ee901458c272290a4f3730a87ca7233f31e5d5447cd54ed339c90442d30",
+    "benchmarks/results/query_aware_graph_v1/vibe-measurement.patch": "b073a0ad43bbd0cf94fcabd09f86f3ad949faf8246e20deb4fd17784824f4049",
+    "benchmarks/results/query_aware_graph_v1/yi-full-b4.json": "37c370da99a42b0cf43728d6db207942c9567d9168bc0d9095c236f19dab3b74",
+    "benchmarks/results/query_aware_graph_v1/yi-full-b8.json": "2033e8761ef5720b14446d47efd5eb58baaa6299ad13ed052a25f7af62a1af51",
+    "benchmarks/results/query_aware_graph_v1/configs/final-candidates/qag_pair/config.yml": "0aa5dc6339a434ee3fbad834b4695c6943c28bd48b07f2a0b5ebdeae2bbd06f3",
+    "benchmarks/results/query_aware_graph_v1/configs/full-evaluation-v1.sh": "ab2ac3e73dd30db7fc4aebb5928e01106e141991c38539c0caaa753a7acee2fe",
+    "benchmarks/results/query_aware_graph_v1/configs/patience-promotion.sh": "6f0b9d89de18679eb5a5402de7b7434843f6bcbbde4da19100448cb9ef735a13",
+    "benchmarks/results/query_aware_graph_v1/configs/patience-screen-v2.sh": "e52f7796399b4263b8e7a3a856f4f551be86df7d8c048f4a11ce66046025fd45",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-16.json": "598f4e32c2588a878ed84004ae374ad0fa7c323273cfe536834e304e2f7979a4",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-20.json": "c0be366abc35cc1049cb535809714fe0df9728332732a84f37fc4a8ff328c474",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-24.json": "ef9b36a5096832cdcd4729ab3c2cbd86d574bc588bd0e502bc3445eee4729afe",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-32.json": "021dccae02d06192b977d108b2c4312df608da8a0d6fad91015dd6b84f525a26",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-4.json": "1d6267649d1a0b77001bb274328e6cda61765924e686162b89d7bc9805794e24",
+    "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-8.json": "8f54f222aa98fcc8151c4d553ae1471dba6c8000e16e80eb4c245031d4fd3eff",
+    "benchmarks/results/query_aware_graph_v1/logs/build-patience-diagnostic.log": "bfcce2e6a8cb6b92fcd1566cf75fd7dc095c7b0d12dbda33eff248279ef0d97f",
+    "benchmarks/results/query_aware_graph_v1/logs/build-python-patience.log": "b8f5622da4a3de233374010da659884ccd8898760fb3ac4c6b0ecca8d618d9c0",
+    "benchmarks/results/query_aware_graph_v1/logs/final-python-bench-tests.log": "0e875d2375d90063c77bc3f89932ceae595a7c127de45c4e0839c6bb16ad9d75",
+    "benchmarks/results/query_aware_graph_v1/logs/native-hdf5-tests.log": "0127026fa52388c28c751af7383c9cfdcedb768d53987355f81395a89e7531e3",
+    "benchmarks/results/query_aware_graph_v1/logs/python-patience-smoke.log": "01c3f8c44743a0d6798e86e3292106e226a18a7e6a013fbb1e99afea866980bd",
+    "benchmarks/results/query_aware_graph_v1/logs/regression-gate-tests.log": "58d018df836a401dcdfcc92841de23803c294611788e943a6217a0b338faa634",
+    "benchmarks/results/query_aware_graph_v1/logs/regression-wrapper-static.log": "e5e6ba3c975bc6c9f1e8b2c47774e468e13a6e4e1c8116e036cb5b4d3ef3ac8d",
+    "benchmarks/results/query_aware_graph_v1/patience-python.sha256": "4c5f79f2478105c3ff3d7caf587fc9a2f73d17c26f678c1ac1ecf1b96889effc",
+    "benchmarks/results/query_aware_graph_v1/projection-validation-summary.json": "b2b82eb5823a79f477b3b68126b2877e7e22a22ec7177aae22254ddf3c761e6f",
+    "benchmarks/results/query_aware_graph_v1/sources/final-candidates-config-v1.yml": "0aa5dc6339a434ee3fbad834b4695c6943c28bd48b07f2a0b5ebdeae2bbd06f3",
+    "benchmarks/results/query_aware_graph_v1/sources/full-evaluation-v1.sh": "ab2ac3e73dd30db7fc4aebb5928e01106e141991c38539c0caaa753a7acee2fe",
+    "benchmarks/results/query_aware_graph_v1/sources/llama-full-validation-v1-frozen.json": "2d004b909dcc6d6da9f4d9676ff4d4231df401078322e4c0ab13c7d130523e67",
+    "benchmarks/results/query_aware_graph_v1/sources/patience-execution-source-receipt.json": "0f9c6a7aba57a3c81d3757cc58d778b942b553b49f97864fc99b1eeb7ff6eb89",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_execute_full_evaluation_v1.py": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_hdf5_full_evaluation_v1.py": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_pair_full_evaluation_v1.py": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_regression_full_evaluation_v1.py": "e0e85f4328604ad0acdc363eb9e5778a64236e0de589ca7fe774fe3ca1667048",
+    "benchmarks/results/query_aware_graph_v1/sources/qag_report_full_evaluation_v1.py": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a"
+  },
+  "commands": {
+    "schemas": "import h5py,json,glob,os,hashlib\nout={}\nfor p in sorted(glob.glob(os.path.expanduser('~/vibe-hms/vibe/data/*.hdf5'))):\n with h5py.File(p,'r') as f:\n  out[os.path.basename(p)]={'attributes':{k:str(v) for k,v in f.attrs.items()},'datasets':{k:{'shape':list(v.shape),'dtype':str(v.dtype)} for k,v in f.items()}}\nprint(json.dumps(out,indent=2))\n",
+    "dataset_audit": "Hash file SHA256, inspect HDF5 attributes/shapes, SHA256 each learn and test row to count overlap; check np.isfinite(learn/test).",
+    "summary": "import polars as p,json\nD=p.read_parquet('/home/davidcondrey/vibe-hms/export-final/summary.parquet')\no={}\nfor a in D['algorithm'].unique():\n d=D.filter(p.col('algorithm')==a)\n o[a]={'count':d.height,'max_recall':d['recall'].max(),'max_row':d.sort('recall',descending=True).head(1).to_dicts(),'best':{}}\n for t in [.9,.95,.99]:\n  x=d.filter(p.col('recall')>=t).sort('qps',descending=True).head(1)\n  o[a]['best'][str(t)]=x.to_dicts()\nprint(json.dumps(o,indent=2))",
+    "raw_points": "import h5py,numpy as np,json,glob\nroot='/home/davidcondrey/vibe-hms/vibe'\nwith h5py.File(root+'/data/llama-128-ip.hdf5','r') as d:\n truth=d['neighbors'][:]\n out={}\n for alg,f,g in [('hms','ip_48_500.hdf5','1000_1000'),('hms','ip_48_500.hdf5','3000_1000'),('hms','ip_96_500.hdf5','8000_1000'),('roargraph','ip_100_48_500.hdf5','100'),('roargraph','ip_100_96_500.hdf5','120'),('roargraph','ip_100_96_500.hdf5','800')]:\n  with h5py.File(root+'/results/llama-128-ip/100/'+alg+'/'+f,'r') as h:\n   x=h[g]; ids=x['neighbors'][:]\n   out[alg+'/'+f+'/'+g]={'stored_recall':float(np.mean(x['recalls'][:]/100)),'id_recall':float(np.mean([len(set(a)&set(b))/100 for a,b in zip(ids,truth)])),'duplicate_queries':int(sum(len(set(a))!=100 for a in ids)),'run_count':int(x.attrs['run_count']),'qps':float(x.attrs['best_qps']),'attrs':{k:str(v) for k,v in x.attrs.items()}}\n print(json.dumps(out,indent=2))"
+  },
+  "msrv_manifest_audit": {
+    "audit_date": "2026-10-22",
+    "mode": "Read-only manifest/index/source inspection; no Cargo build/check/test/clippy invoked.",
+    "baseline_sha": "08d37778a66b58709461456e5b9a7ab6a05b399f",
+    "lock_sha256": "53dbdf0866afc4657923597aca95d323167d99e9a87e00a31bb80367b5b21cf2",
+    "lock_packages": 480,
+    "installed_manifests_read": 467,
+    "declared_incompatibilities": [],
+    "highest_declared": [
+      {
+        "name": "nalgebra",
+        "version": "0.35.0",
+        "rust_version": "1.89.0",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nalgebra-0.35.0/Cargo.toml"
+      },
+      {
+        "name": "uuid",
+        "version": "1.28.0",
+        "rust_version": "1.89.0",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.28.0/Cargo.toml"
+      },
+      {
+        "name": "aes",
+        "version": "0.9.3",
+        "rust_version": "1.89",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aes-0.9.3/Cargo.toml"
+      },
+      {
+        "name": "safe_arch",
+        "version": "1.2.0",
+        "rust_version": "1.89",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/safe_arch-1.2.0/Cargo.toml"
+      },
+      {
+        "name": "wide",
+        "version": "1.7.1",
+        "rust_version": "1.89",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wide-1.7.1/Cargo.toml"
+      },
+      {
+        "name": "libloading",
+        "version": "0.9.0",
+        "rust_version": "1.88.0",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libloading-0.9.0/Cargo.toml"
+      },
+      {
+        "name": "time",
+        "version": "0.3.55",
+        "rust_version": "1.88.0",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-0.3.55/Cargo.toml"
+      },
+      {
+        "name": "time-core",
+        "version": "0.1.9",
+        "rust_version": "1.88.0",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.9/Cargo.toml"
+      },
+      {
+        "name": "time-macros",
+        "version": "0.2.32",
+        "rust_version": "1.88.0",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-macros-0.2.32/Cargo.toml"
+      },
+      {
+        "name": "napi",
+        "version": "3.14.2",
+        "rust_version": "1.88",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/napi-3.14.2/Cargo.toml"
+      },
+      {
+        "name": "napi-build",
+        "version": "2.6.0",
+        "rust_version": "1.88",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/napi-build-2.6.0/Cargo.toml"
+      },
+      {
+        "name": "napi-derive",
+        "version": "3.6.12",
+        "rust_version": "1.88",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/napi-derive-3.6.12/Cargo.toml"
+      },
+      {
+        "name": "napi-derive-backend",
+        "version": "6.1.5",
+        "rust_version": "1.88",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/napi-derive-backend-6.1.5/Cargo.toml"
+      },
+      {
+        "name": "napi-sys",
+        "version": "3.4.0",
+        "rust_version": "1.88",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/napi-sys-3.4.0/Cargo.toml"
+      },
+      {
+        "name": "proptest",
+        "version": "1.12.0",
+        "rust_version": "1.88",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proptest-1.12.0/Cargo.toml"
+      },
+      {
+        "name": "rcgen",
+        "version": "0.14.10",
+        "rust_version": "1.88",
+        "incompatible": false,
+        "manifest": "/home/davidcondrey/.local/share/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rcgen-0.14.10/Cargo.toml"
+      }
+    ],
+    "absent_manifest_index_metadata": [
+      {
+        "name": "android_system_properties",
+        "version": "0.1.6",
+        "rust_version": null,
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/an/dr/android_system_properties"
+      },
+      {
+        "name": "enum-as-inner",
+        "version": "0.6.1",
+        "rust_version": null,
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/en/um/enum-as-inner"
+      },
+      {
+        "name": "fiat-crypto",
+        "version": "0.3.0",
+        "rust_version": "1.83.0",
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/fi/at/fiat-crypto"
+      },
+      {
+        "name": "hermit-abi",
+        "version": "0.5.3",
+        "rust_version": null,
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/he/rm/hermit-abi"
+      },
+      {
+        "name": "iana-time-zone-haiku",
+        "version": "0.1.2",
+        "rust_version": null,
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/ia/na/iana-time-zone-haiku"
+      },
+      {
+        "name": "sysctl",
+        "version": "0.6.0",
+        "rust_version": null,
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/sy/sc/sysctl"
+      },
+      {
+        "name": "tokio",
+        "version": "1.54.1",
+        "rust_version": "1.85",
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/to/ki/tokio"
+      },
+      {
+        "name": "windows",
+        "version": "0.62.2",
+        "rust_version": "1.82",
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/wi/nd/windows"
+      },
+      {
+        "name": "windows-collections",
+        "version": "0.3.2",
+        "rust_version": "1.82",
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/wi/nd/windows-collections"
+      },
+      {
+        "name": "windows-future",
+        "version": "0.3.2",
+        "rust_version": "1.82",
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/wi/nd/windows-future"
+      },
+      {
+        "name": "windows-numerics",
+        "version": "0.3.1",
+        "rust_version": "1.82",
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/wi/nd/windows-numerics"
+      },
+      {
+        "name": "windows-threading",
+        "version": "0.2.1",
+        "rust_version": "1.82",
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/wi/nd/windows-threading"
+      },
+      {
+        "name": "winsafe",
+        "version": "0.0.19",
+        "rust_version": null,
+        "index_path": "/home/davidcondrey/.local/share/cargo/registry/index/index.crates.io-1949cf8c6b5b557f/.cache/wi/ns/winsafe"
+      }
+    ],
+    "conclusion": "No declared rust-version incompatibility found among the 480 locked registry packages: 467 installed manifests and cached index metadata for the remaining 13. Some packages omit rust-version, so this does not prove source-level compatibility or passing tests.",
+    "repository_policy": [
+      {
+        "path": "Cargo.toml:5",
+        "evidence": "rust-version = \"1.89\""
+      },
+      {
+        "path": "Cargo.toml:68",
+        "evidence": "local-models needs Rust >=1.94 because candle-core0.11 uses stdarch_neon_f16 on aarch64; Rust1.90-1.93 untested.",
+        "scope": "Documented architecture-specific allowance; Linux x86_64 prescribed gate remains unverified."
+      },
+      {
+        "path": ".github/workflows/ci.yml:185",
+        "evidence": "MSRV job installs1.89 and runs only cargo check --locked --no-default-features."
+      },
+      {
+        "path": ".github/workflows/ci.yml:117",
+        "evidence": "All-features tests run with stable, not the MSRV toolchain."
+      }
+    ],
+    "unrelated_higher_msrv_cached_packages": "ruint1.20.1 and affinidi/didwebvh packages advertise >1.89 but are not in this Cargo.lock; they are irrelevant to the prescribed gate.",
+    "missing_linux_package": "tokio1.54.1 is not installed in registry/src/cache; cached primary index declares rust_version1.85. Final all-features invocation may download it.",
+    "settled_gate": "Run exactly cargo +1.89.0 test --all-features once at end as user requested; no alternate gate or retry authorized by this audit."
+  },
+  "mlann_crash_analysis": {
+    "audit_date": "2026-10-22",
+    "source_sha": "de8f9d6ea977312f5a8943a9ccdbd11870ac590c",
+    "source_directory": "writerslogic-02:/home/davidcondrey/vibe-hms/build/mlann",
+    "documentation": "https://github.com/ejaasaari/mlann/blob/de8f9d6ea977312f5a8943a9ccdbd11870ac590c/README.md",
+    "primary_sha256": {
+      "cpp/distance.h": "2d6a61252954cc0b96d4bb5a7c7d4b6faa60f3f7b373178cf56bca4671c80735",
+      "cpp/rf-class-depth.h": "f63406af02dd4fce1076cab727928f4bc4f8485b37906590919f10d80c341997",
+      "mlann.py": "5b2378fe17acb78d4e9824155beb67cc00d513397279646053c973bfcb84f83a",
+      "installed_mlannlib.cpython-311-x86_64-linux-gnu.so": "70f58ba10bf216377474cf40cd150e70f336628417e139e96b3c23901da42d6b"
+    },
+    "historical_observations": [
+      "Depth18 rejected because full learn counts255921 and186843 each have floor(log2(nlearn))17.",
+      "Valid depths also built then exited -11 during first query pass; log examples RF10/depth17 at90-94, RF10/depth15 at1336-1358.",
+      "Kernel log: python3 general protection fault in mlannlib at offset0x1fc80.",
+      "addr2line resolves0x1fc80 to MLANN::exact_knn; objdump shows vmovaps(base_row,...), requiring32-byte alignment.",
+      "Pinned cpp/distance.h FMA/AVX2 dot_product uses _mm256_load_ps for each input."
+    ],
+    "diagnosis": "Historical crashes are consistent with insufficient NumPy data alignment. Aligning inputs is supported by the fault instruction and primary source, but this audit does not prove runtime resolution.",
+    "native_contract": {
+      "imports": [
+        "mlann",
+        "mlannlib"
+      ],
+      "python": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python",
+      "constructor": "mlann.MLANNIndex(base_f32_C, 'RF')",
+      "build": "index.build(learn_f32_C, learn_neighbors_u32_C, n_trees, depth)",
+      "query": "index.ann(query_f32_C, k, voting_threshold, mlann.IP, return_distances=False)",
+      "metric": "Native IP computes maximum original dot product; do not normalize ip rows.",
+      "alignment": "All base/query row starts32-byte aligned; dimension divisible by8 gives row stride multiple32.",
+      "depth": "1<=depth<=min(floor(log2(nlearn)),29)",
+      "missing_ids": "Native pads insufficient candidates with-1; VIBE runner indexes X_train[candidates] directly, so adapter removes-1 before runner scoring and lets result writer pad missing distances with+inf."
+    },
+    "frozen_benchmark_arm": {
+      "arm": 4,
+      "name": "mlann_rf10_depth14",
+      "n_trees": 10,
+      "depth": 14,
+      "ef_thresholds": {
+        "1": 0.0005,
+        "2": 5e-05,
+        "3": 5e-06
+      },
+      "rerank": "ignored",
+      "training": "Identical reserved-validation exclusion and construction pool as paired RoarGraph arms.",
+      "seed": "std::random_device has no exposed seed control; reuse one forest across paired repetitions and report limitation.",
+      "query_copy": "Every query copied into retained32-byte-aligned float32 buffer inside timed query call; duplicate and out-of-range IDs rejected.",
+      "unsupported_stride": "Reject dimensions not divisible by8; no metric padding.",
+      "validation_status": "Aligned native smoke passed with strict recall1.0 on one synthetic query in both precision/trained extension smoke logs; full-dataset timing remains incomplete."
+    },
+    "runtime_followup": {
+      "receipt": {
+        "path": "benchmarks/results/query_aware_graph_v1/logs/python-trained-smoke.log",
+        "sha256": "05612b1539d6e29e00c62936d2f9dcc897ef6aa211a129047d0afd31dbb5ca6a"
+      },
+      "observation": "Aligned RF10/depth14 MLANN completed the native synthetic build/query without the historical crash",
+      "limitation": "This supports the alignment intervention on the smoke workload; it does not prove every historical failure had that cause or establish full-dataset QPS"
+    }
+  },
+  "blockers": [],
+  "unmeasured": [
+    "Completed default4 regression gate and RF80 comparison (active/queued)",
+    "Isolated per-index peak RSS and actual persisted-index file sizes for frozen v1 timing arms",
+    "Final cargo fmt --check and sole Linux cargo +1.89.0 test --all-features gate",
+    "Untouched replacement official test for any newly developed architecture"
+  ],
+  "completed_source": {
+    "core_commit": "85b0af081c26e65f6a5643722386137ca332e587",
+    "integration_commit": "3f285cebcbebffe8f2f32c430e738f0eb79ae9cc",
+    "signatures": {
+      "verification_command": "git log -2 --format=%H,%G?,%s",
+      "status": {
+        "85b0af081c26e65f6a5643722386137ca332e587": "G: valid signature",
+        "3f285cebcbebffe8f2f32c430e738f0eb79ae9cc": "G: valid signature",
+        "f73305b624305836211c8157975c4f1c37f10df9": "G: valid signature"
+      }
+    },
+    "source_receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/sources/committed-source-receipt.json",
+      "sha256": "e45df0409f33fb329a1ac67fe207152b019df96546f34898db35cfb48c663117"
+    },
+    "rust_api": {
+      "borrowed": "Graph::build_with_training_queries(data, dim, params, training_queries: Option<&[f32]>)",
+      "owned": "Graph::build_owned_with_training_queries(data, dim, params, training_queries: Option<&[f32]>)",
+      "coordinates": "Graph input coordinates; MIPS callers augment base rows and append zero to queries",
+      "training_limit": 32768,
+      "neighbor_count_max": 100,
+      "projected_quota_max": 32,
+      "validation": "All supplied rows validated before using the first training_limit rows",
+      "legacy_none": "Directly delegates to the existing untrained build"
+    },
+    "python_api": {
+      "constructor": "VectorIndex(metric=\"angular\", degree=64, build_ef=500, threads=0, code_bits=4)",
+      "fit": "fit(X, training_queries=None)",
+      "code_bits": [
+        4,
+        8
+      ],
+      "residual_bits": 8,
+      "training_coordinates": "Original coordinates; Python appends zero for MIPS queries",
+      "input_failure": "Invalid training matrix shape/finiteness/angular-zero inputs preserve the existing fitted index",
+      "query_arguments": "set_query_arguments(ef, rerank=64, patience=0)"
+    },
+    "format": {
+      "graph_cache": "HMSGRF04",
+      "compact_index": "HMSVGR01",
+      "persisted_layout_changed": false,
+      "byte_compatibility_status": "Legacy None path preserved and Rust assertions added; final Rust gate unrun. Python output/index-allocation parity passed; this does not establish every serialized-byte contract."
+    },
+    "patience_commit": "f73305b624305836211c8157975c4f1c37f10df9",
+    "latest_core_commit": "f73305b624305836211c8157975c4f1c37f10df9",
+    "patience_contract": "Existing VSearchParams.patience only; default0 retains the prior path, negative conversion fails before argument mutation, zero resets a previous positive setting; no search-loop/layout change"
+  },
+  "validation_screens": {
+    "scope": "Untimed; reserved learn queries only; no official-test vectors or truth",
+    "seed": 24301,
+    "validation_queries": 256,
+    "prefix_base_rows": 200000,
+    "diagnosis": {
+      "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-diagnosis.json",
+      "sha256": "331b7f1dcd7fb5d2fba3d801698970452076eef9ac7652baa16d04ed097f15d6",
+      "search": {
+        "bits": 4,
+        "ef": 2000,
+        "exact_f32_rerank": false,
+        "k": 100,
+        "knobs": "OFF",
+        "rerank": 1000,
+        "residual_bits": 8,
+        "rotation": false
+      },
+      "strict_hits": 24717,
+      "strict_denominator": 25600,
+      "strict_recall": 0.9655078125,
+      "aggregate": {
+        "B": {
+          "evaluated_coverage": 0.9920312500000007,
+          "evaluated_unique": 35934.38671875,
+          "exact_all_retained_recall": 0.9862890625000001,
+          "exact_rerank_recall": 0.9659375000000001,
+          "recall": 0.9655078125000002,
+          "rerank_candidate_coverage": 0.9659375000000001,
+          "retained_coverage": 0.9862890625000001
+        },
+        "E": {
+          "evaluated_coverage": 0.9931640625000001,
+          "evaluated_unique": 34865.25390625,
+          "exact_all_retained_recall": 0.9931640625000001,
+          "exact_rerank_recall": 0.9931640625000001,
+          "recall": 0.9914843750000002,
+          "rerank_candidate_coverage": 0.9931640625000001,
+          "retained_coverage": 0.9931640625000001
+        },
+        "O": {
+          "evaluated_coverage": 0.9923046875000006,
+          "evaluated_unique": 35882.3203125,
+          "exact_all_retained_recall": 0.9865625000000001,
+          "exact_rerank_recall": 0.9662109375,
+          "recall": 0.96578125,
+          "rerank_candidate_coverage": 0.9662109375,
+          "retained_coverage": 0.9865625000000001
+        },
+        "OE": {
+          "evaluated_coverage": 0.9934375000000002,
+          "evaluated_unique": 34829.796875,
+          "exact_all_retained_recall": 0.9934375000000002,
+          "exact_rerank_recall": 0.9934375000000002,
+          "recall": 0.9917187500000002,
+          "rerank_candidate_coverage": 0.9934375000000002,
+          "retained_coverage": 0.9934375000000002
+        }
+      },
+      "index_bytes": 99972612,
+      "graph_hash": 17548645615212684194,
+      "seed": 24301,
+      "throughput_measured": false
+    },
+    "intervention_1": {
+      "name": "8-bit scalar routing and retained-candidate capacity",
+      "configurations_used": 6,
+      "configuration_budget": 6,
+      "results": [
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-b4-rr2000.json",
+          "sha256": "94b9875938ed711f8906dd83bc44b3bdc67f1052ecd4566dfad174a4b03b0f45",
+          "search": {
+            "bits": 4,
+            "ef": 2000,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 2000,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25221,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9851953125,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9920312500000007,
+              "evaluated_unique": 35934.38671875,
+              "exact_all_retained_recall": 0.9862890625000001,
+              "exact_rerank_recall": 0.9862890625000001,
+              "recall": 0.9851953125000003,
+              "rerank_candidate_coverage": 0.9862890625000001,
+              "retained_coverage": 0.9862890625000001
+            },
+            "E": {
+              "evaluated_coverage": 0.9931640625000001,
+              "evaluated_unique": 34865.25390625,
+              "exact_all_retained_recall": 0.9931640625000001,
+              "exact_rerank_recall": 0.9931640625000001,
+              "recall": 0.9914843750000002,
+              "rerank_candidate_coverage": 0.9931640625000001,
+              "retained_coverage": 0.9931640625000001
+            },
+            "O": {
+              "evaluated_coverage": 0.9923046875000006,
+              "evaluated_unique": 35882.3203125,
+              "exact_all_retained_recall": 0.9865625000000001,
+              "exact_rerank_recall": 0.9865625000000001,
+              "recall": 0.9855078125000002,
+              "rerank_candidate_coverage": 0.9865625000000001,
+              "retained_coverage": 0.9865625000000001
+            },
+            "OE": {
+              "evaluated_coverage": 0.9934375000000002,
+              "evaluated_unique": 34829.796875,
+              "exact_all_retained_recall": 0.9934375000000002,
+              "exact_rerank_recall": 0.9934375000000002,
+              "recall": 0.9917187500000002,
+              "rerank_candidate_coverage": 0.9934375000000002,
+              "retained_coverage": 0.9934375000000002
+            }
+          },
+          "index_bytes": 99972612,
+          "graph_hash": 17548645615212684194,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-rr1000.json",
+          "sha256": "0a9924f02dad6f7fea55b6b47890639f8affb9f7539eba239701957c62e77df1",
+          "search": {
+            "bits": 8,
+            "ef": 2000,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 1000,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25429,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9933203125,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9933203125000003,
+              "evaluated_unique": 34894.5078125,
+              "exact_all_retained_recall": 0.9933203125000003,
+              "exact_rerank_recall": 0.9933203125000003,
+              "recall": 0.9933203125000003,
+              "rerank_candidate_coverage": 0.9933203125000003,
+              "retained_coverage": 0.9933203125000003
+            },
+            "E": {
+              "evaluated_coverage": 0.9931640625000001,
+              "evaluated_unique": 34865.25390625,
+              "exact_all_retained_recall": 0.9931640625000001,
+              "exact_rerank_recall": 0.9931640625000001,
+              "recall": 0.9931640625000001,
+              "rerank_candidate_coverage": 0.9931640625000001,
+              "retained_coverage": 0.9931640625000001
+            },
+            "O": {
+              "evaluated_coverage": 0.9935937500000003,
+              "evaluated_unique": 34859.125,
+              "exact_all_retained_recall": 0.9935937500000003,
+              "exact_rerank_recall": 0.9935937500000003,
+              "recall": 0.9935937500000003,
+              "rerank_candidate_coverage": 0.9935937500000003,
+              "retained_coverage": 0.9935937500000003
+            },
+            "OE": {
+              "evaluated_coverage": 0.9934375000000002,
+              "evaluated_unique": 34829.796875,
+              "exact_all_retained_recall": 0.9934375000000002,
+              "exact_rerank_recall": 0.9934375000000002,
+              "recall": 0.9934375000000002,
+              "rerank_candidate_coverage": 0.9934375000000002,
+              "retained_coverage": 0.9934375000000002
+            }
+          },
+          "index_bytes": 122372548,
+          "graph_hash": 17548645615212684194,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-rr2000.json",
+          "sha256": "99c49d397362abe593daea4282d2074b2a22d3927bb51aea594eca449bf6351f",
+          "search": {
+            "bits": 8,
+            "ef": 2000,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 2000,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25429,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9933203125,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9933203125000003,
+              "evaluated_unique": 34894.5078125,
+              "exact_all_retained_recall": 0.9933203125000003,
+              "exact_rerank_recall": 0.9933203125000003,
+              "recall": 0.9933203125000003,
+              "rerank_candidate_coverage": 0.9933203125000003,
+              "retained_coverage": 0.9933203125000003
+            },
+            "E": {
+              "evaluated_coverage": 0.9931640625000001,
+              "evaluated_unique": 34865.25390625,
+              "exact_all_retained_recall": 0.9931640625000001,
+              "exact_rerank_recall": 0.9931640625000001,
+              "recall": 0.9931640625000001,
+              "rerank_candidate_coverage": 0.9931640625000001,
+              "retained_coverage": 0.9931640625000001
+            },
+            "O": {
+              "evaluated_coverage": 0.9935937500000003,
+              "evaluated_unique": 34859.125,
+              "exact_all_retained_recall": 0.9935937500000003,
+              "exact_rerank_recall": 0.9935937500000003,
+              "recall": 0.9935937500000003,
+              "rerank_candidate_coverage": 0.9935937500000003,
+              "retained_coverage": 0.9935937500000003
+            },
+            "OE": {
+              "evaluated_coverage": 0.9934375000000002,
+              "evaluated_unique": 34829.796875,
+              "exact_all_retained_recall": 0.9934375000000002,
+              "exact_rerank_recall": 0.9934375000000002,
+              "recall": 0.9934375000000002,
+              "rerank_candidate_coverage": 0.9934375000000002,
+              "retained_coverage": 0.9934375000000002
+            }
+          },
+          "index_bytes": 122372548,
+          "graph_hash": 17548645615212684194,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-ef200-rr400.json",
+          "sha256": "89e9dddcee70bf174b3e640ccb3aa6b1ebf984c7f22881a1e64bb75cdf310cd3",
+          "search": {
+            "bits": 8,
+            "ef": 200,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 400,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 21078,
+          "strict_denominator": 25600,
+          "strict_recall": 0.823359375,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.8233593749999992,
+              "evaluated_unique": 6948.328125,
+              "exact_all_retained_recall": 0.8233593749999992,
+              "exact_rerank_recall": 0.8233593749999992,
+              "recall": 0.8233593749999992,
+              "rerank_candidate_coverage": 0.8233593749999992,
+              "retained_coverage": 0.8233593749999992
+            },
+            "E": {
+              "evaluated_coverage": 0.8202734375000001,
+              "evaluated_unique": 6905.578125,
+              "exact_all_retained_recall": 0.8202734375000001,
+              "exact_rerank_recall": 0.8202734375000001,
+              "recall": 0.8202734375000001,
+              "rerank_candidate_coverage": 0.8202734375000001,
+              "retained_coverage": 0.8202734375000001
+            },
+            "O": {
+              "evaluated_coverage": 0.817617187499999,
+              "evaluated_unique": 6344.28515625,
+              "exact_all_retained_recall": 0.817617187499999,
+              "exact_rerank_recall": 0.817617187499999,
+              "recall": 0.817617187499999,
+              "rerank_candidate_coverage": 0.817617187499999,
+              "retained_coverage": 0.817617187499999
+            },
+            "OE": {
+              "evaluated_coverage": 0.8147265625,
+              "evaluated_unique": 6368.66796875,
+              "exact_all_retained_recall": 0.8147265625,
+              "exact_rerank_recall": 0.8147265625,
+              "recall": 0.8147265625,
+              "rerank_candidate_coverage": 0.8147265625,
+              "retained_coverage": 0.8147265625
+            }
+          },
+          "index_bytes": 122372548,
+          "graph_hash": 17548645615212684194,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-ef512-rr400.json",
+          "sha256": "52db0a810110c0419d9e3a718d9c99bec6bcf4cf79640bc15c1dca198cf8b99f",
+          "search": {
+            "bits": 8,
+            "ef": 512,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 400,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 24051,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9394921875,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9394921874999993,
+              "evaluated_unique": 13522.08203125,
+              "exact_all_retained_recall": 0.9394921874999993,
+              "exact_rerank_recall": 0.9394921874999993,
+              "recall": 0.9394921874999993,
+              "rerank_candidate_coverage": 0.9394921874999993,
+              "retained_coverage": 0.9394921874999993
+            },
+            "E": {
+              "evaluated_coverage": 0.9396874999999997,
+              "evaluated_unique": 13502.484375,
+              "exact_all_retained_recall": 0.9396874999999997,
+              "exact_rerank_recall": 0.9396874999999997,
+              "recall": 0.9396874999999997,
+              "rerank_candidate_coverage": 0.9396874999999997,
+              "retained_coverage": 0.9396874999999997
+            },
+            "O": {
+              "evaluated_coverage": 0.9387890624999992,
+              "evaluated_unique": 13247.39453125,
+              "exact_all_retained_recall": 0.9387890624999992,
+              "exact_rerank_recall": 0.9387890624999992,
+              "recall": 0.9387890624999992,
+              "rerank_candidate_coverage": 0.9387890624999992,
+              "retained_coverage": 0.9387890624999992
+            },
+            "OE": {
+              "evaluated_coverage": 0.9376953124999996,
+              "evaluated_unique": 13231.9765625,
+              "exact_all_retained_recall": 0.9376953124999996,
+              "exact_rerank_recall": 0.9376953124999996,
+              "recall": 0.9376953124999996,
+              "rerank_candidate_coverage": 0.9376953124999996,
+              "retained_coverage": 0.9376953124999996
+            }
+          },
+          "index_bytes": 122372548,
+          "graph_hash": 17548645615212684194,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-b8-ef1000-rr1000.json",
+          "sha256": "3541321ad07d41c9c6e35c8347d03c2d04d6c6312fd7e2f9a6237236a3046ee3",
+          "search": {
+            "bits": 8,
+            "ef": 1000,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 1000,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25033,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9778515625,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9778515624999998,
+              "evaluated_unique": 21791.00390625,
+              "exact_all_retained_recall": 0.9778515624999998,
+              "exact_rerank_recall": 0.9778515624999998,
+              "recall": 0.9778515624999998,
+              "rerank_candidate_coverage": 0.9778515624999998,
+              "retained_coverage": 0.9778515624999998
+            },
+            "E": {
+              "evaluated_coverage": 0.9781640625,
+              "evaluated_unique": 21756.6640625,
+              "exact_all_retained_recall": 0.9781640625,
+              "exact_rerank_recall": 0.9781640625,
+              "recall": 0.9781640625,
+              "rerank_candidate_coverage": 0.9781640625,
+              "retained_coverage": 0.9781640625
+            },
+            "O": {
+              "evaluated_coverage": 0.9783593749999999,
+              "evaluated_unique": 21742.8515625,
+              "exact_all_retained_recall": 0.9783593749999999,
+              "exact_rerank_recall": 0.9783593749999999,
+              "recall": 0.9783593749999999,
+              "rerank_candidate_coverage": 0.9783593749999999,
+              "retained_coverage": 0.9783593749999999
+            },
+            "OE": {
+              "evaluated_coverage": 0.9786718750000001,
+              "evaluated_unique": 21708.71875,
+              "exact_all_retained_recall": 0.9786718750000001,
+              "exact_rerank_recall": 0.9786718750000001,
+              "recall": 0.9786718750000001,
+              "rerank_candidate_coverage": 0.9786718750000001,
+              "retained_coverage": 0.9786718750000001
+            }
+          },
+          "index_bytes": 122372548,
+          "graph_hash": 17548645615212684194,
+          "seed": 24301,
+          "throughput_measured": false
+        }
+      ],
+      "decision": "Capacity alone rejected; precision improves llama but full yi validation remains below0.99, so insufficient for the required two-dataset goal"
+    },
+    "intervention_2": {
+      "name": "Query-aware projected edges retaining the old base edges",
+      "configurations_used": 6,
+      "configuration_budget": 6,
+      "results": [
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q8192-d16-ef512.json",
+          "sha256": "d54880b5f7e6cd8489ae0098550d0ac152b80edb4d670928fba9f566fd374881",
+          "search": {
+            "bits": 8,
+            "ef": 512,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 400,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25418,
+          "strict_denominator": 25600,
+          "strict_recall": 0.992890625,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9929296875000005,
+              "evaluated_unique": 14806.93359375,
+              "exact_all_retained_recall": 0.9929296875000005,
+              "exact_rerank_recall": 0.9929296875000005,
+              "recall": 0.9928906250000006,
+              "rerank_candidate_coverage": 0.9929296875000005,
+              "retained_coverage": 0.9929296875000005
+            },
+            "E": {
+              "evaluated_coverage": 0.9934375000000006,
+              "evaluated_unique": 14804.51171875,
+              "exact_all_retained_recall": 0.9934375000000006,
+              "exact_rerank_recall": 0.9934375000000006,
+              "recall": 0.9934375000000006,
+              "rerank_candidate_coverage": 0.9934375000000006,
+              "retained_coverage": 0.9934375000000006
+            },
+            "O": {
+              "evaluated_coverage": 0.9929296875000005,
+              "evaluated_unique": 14736.84765625,
+              "exact_all_retained_recall": 0.9929296875000005,
+              "exact_rerank_recall": 0.9929296875000005,
+              "recall": 0.9928906250000006,
+              "rerank_candidate_coverage": 0.9929296875000005,
+              "retained_coverage": 0.9929296875000005
+            },
+            "OE": {
+              "evaluated_coverage": 0.9934375000000006,
+              "evaluated_unique": 14732.8046875,
+              "exact_all_retained_recall": 0.9934375000000006,
+              "exact_rerank_recall": 0.9934375000000006,
+              "recall": 0.9934375000000006,
+              "rerank_candidate_coverage": 0.9934375000000006,
+              "retained_coverage": 0.9934375000000006
+            }
+          },
+          "index_bytes": 141572548,
+          "graph_hash": 4080507746556877965,
+          "seed": 24301,
+          "throughput_measured": false,
+          "projection_stats": {
+            "added_edges": 23749,
+            "degree_capacity": 96,
+            "forward_edges": 12928,
+            "max_degree": 96,
+            "mean_degree": 64.104315,
+            "neighbors_per_query": 100,
+            "original_edges": 12797114,
+            "projected_degree": 16,
+            "reverse_edges": 10821,
+            "total_edges": 12820863,
+            "training_queries": 8192
+          }
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d16-ef512.json",
+          "sha256": "f24e97323b930cefb22bbf5bc4ad3a597737ee901b8606067f986d69de37e4bb",
+          "search": {
+            "bits": 8,
+            "ef": 512,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 400,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25490,
+          "strict_denominator": 25600,
+          "strict_recall": 0.995703125,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9957421875000005,
+              "evaluated_unique": 15158.73046875,
+              "exact_all_retained_recall": 0.9957421875000005,
+              "exact_rerank_recall": 0.9957421875000005,
+              "recall": 0.9957031250000006,
+              "rerank_candidate_coverage": 0.9957421875000005,
+              "retained_coverage": 0.9957421875000005
+            },
+            "E": {
+              "evaluated_coverage": 0.9958984375000005,
+              "evaluated_unique": 15154.69140625,
+              "exact_all_retained_recall": 0.9958984375000005,
+              "exact_rerank_recall": 0.9958984375000005,
+              "recall": 0.9958593750000005,
+              "rerank_candidate_coverage": 0.9958984375000005,
+              "retained_coverage": 0.9958984375000005
+            },
+            "O": {
+              "evaluated_coverage": 0.9957421875000005,
+              "evaluated_unique": 15092.01171875,
+              "exact_all_retained_recall": 0.9957421875000005,
+              "exact_rerank_recall": 0.9957421875000005,
+              "recall": 0.9957031250000006,
+              "rerank_candidate_coverage": 0.9957421875000005,
+              "retained_coverage": 0.9957421875000005
+            },
+            "OE": {
+              "evaluated_coverage": 0.9958984375000005,
+              "evaluated_unique": 15086.6015625,
+              "exact_all_retained_recall": 0.9958984375000005,
+              "exact_rerank_recall": 0.9958984375000005,
+              "recall": 0.9958593750000005,
+              "rerank_candidate_coverage": 0.9958984375000005,
+              "retained_coverage": 0.9958984375000005
+            }
+          },
+          "index_bytes": 141572548,
+          "graph_hash": 1522815918949658258,
+          "seed": 24301,
+          "throughput_measured": false,
+          "projection_stats": {
+            "added_edges": 39583,
+            "degree_capacity": 96,
+            "forward_edges": 21840,
+            "max_degree": 96,
+            "mean_degree": 64.183485,
+            "neighbors_per_query": 100,
+            "original_edges": 12797114,
+            "projected_degree": 16,
+            "reverse_edges": 17743,
+            "total_edges": 12836697,
+            "training_queries": 32768
+          }
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef512.json",
+          "sha256": "c3e20c8fbbd57430fe1b2ed2ee5e2a9c27f5d6321d3495955e5715771cee3020",
+          "search": {
+            "bits": 8,
+            "ef": 512,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 400,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25551,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9980859375,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9981249999999999,
+              "evaluated_unique": 15803.78515625,
+              "exact_all_retained_recall": 0.9981249999999999,
+              "exact_rerank_recall": 0.9981249999999999,
+              "recall": 0.9980859375,
+              "rerank_candidate_coverage": 0.9981249999999999,
+              "retained_coverage": 0.9981249999999999
+            },
+            "E": {
+              "evaluated_coverage": 0.9979296875000001,
+              "evaluated_unique": 15788.296875,
+              "exact_all_retained_recall": 0.9979296875000001,
+              "exact_rerank_recall": 0.9979296875000001,
+              "recall": 0.9978906250000001,
+              "rerank_candidate_coverage": 0.9979296875000001,
+              "retained_coverage": 0.9979296875000001
+            },
+            "O": {
+              "evaluated_coverage": 0.9981249999999999,
+              "evaluated_unique": 15739.26953125,
+              "exact_all_retained_recall": 0.9981249999999999,
+              "exact_rerank_recall": 0.9981249999999999,
+              "recall": 0.9980859375,
+              "rerank_candidate_coverage": 0.9981249999999999,
+              "retained_coverage": 0.9981249999999999
+            },
+            "OE": {
+              "evaluated_coverage": 0.9979296875000001,
+              "evaluated_unique": 15722.75390625,
+              "exact_all_retained_recall": 0.9979296875000001,
+              "exact_rerank_recall": 0.9979296875000001,
+              "recall": 0.9978906250000001,
+              "rerank_candidate_coverage": 0.9979296875000001,
+              "retained_coverage": 0.9979296875000001
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false,
+          "projection_stats": {
+            "added_edges": 80157,
+            "degree_capacity": 128,
+            "forward_edges": 43680,
+            "max_degree": 128,
+            "mean_degree": 64.386355,
+            "neighbors_per_query": 100,
+            "original_edges": 12797114,
+            "projected_degree": 32,
+            "reverse_edges": 36477,
+            "total_edges": 12877271,
+            "training_queries": 32768
+          }
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef100.json",
+          "sha256": "7482ed198f46a91694659f98db23d87ea51bb8f450b0e7e90decaa274a05ba50",
+          "search": {
+            "bits": 8,
+            "ef": 100,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 100,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 23448,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9159375,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.956679687499999,
+              "evaluated_unique": 5219.10546875,
+              "exact_all_retained_recall": 0.9159374999999995,
+              "exact_rerank_recall": 0.9159374999999995,
+              "recall": 0.9159374999999995,
+              "rerank_candidate_coverage": 0.9159374999999995,
+              "retained_coverage": 0.9159374999999995
+            },
+            "E": {
+              "evaluated_coverage": 0.9577734374999993,
+              "evaluated_unique": 5219.296875,
+              "exact_all_retained_recall": 0.9577734374999993,
+              "exact_rerank_recall": 0.9577734374999993,
+              "recall": 0.9577734374999993,
+              "rerank_candidate_coverage": 0.9577734374999993,
+              "retained_coverage": 0.9577734374999993
+            },
+            "O": {
+              "evaluated_coverage": 0.9552734374999992,
+              "evaluated_unique": 5088.56640625,
+              "exact_all_retained_recall": 0.9148046874999993,
+              "exact_rerank_recall": 0.9148046874999993,
+              "recall": 0.9148046874999993,
+              "rerank_candidate_coverage": 0.9148046874999993,
+              "retained_coverage": 0.9148046874999993
+            },
+            "OE": {
+              "evaluated_coverage": 0.9573437499999993,
+              "evaluated_unique": 5095.89453125,
+              "exact_all_retained_recall": 0.9573437499999993,
+              "exact_rerank_recall": 0.9573437499999993,
+              "recall": 0.9573437499999993,
+              "rerank_candidate_coverage": 0.9573437499999993,
+              "retained_coverage": 0.9573437499999993
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false,
+          "projection_stats": {
+            "added_edges": 80157,
+            "degree_capacity": 128,
+            "forward_edges": 43680,
+            "max_degree": 128,
+            "mean_degree": 64.386355,
+            "neighbors_per_query": 100,
+            "original_edges": 12797114,
+            "projected_degree": 32,
+            "reverse_edges": 36477,
+            "total_edges": 12877271,
+            "training_queries": 32768
+          }
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef160.json",
+          "sha256": "7fc2484509386bba34cb6888aea2aa5765373af802d5628b81128dd7fca265ec",
+          "search": {
+            "bits": 8,
+            "ef": 160,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 200,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25061,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9789453125,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9794531249999996,
+              "evaluated_unique": 7213.984375,
+              "exact_all_retained_recall": 0.9789453124999997,
+              "exact_rerank_recall": 0.9789453124999997,
+              "recall": 0.9789453124999997,
+              "rerank_candidate_coverage": 0.9789453124999997,
+              "retained_coverage": 0.9789453124999997
+            },
+            "E": {
+              "evaluated_coverage": 0.9801953124999997,
+              "evaluated_unique": 7209.78515625,
+              "exact_all_retained_recall": 0.9801953124999997,
+              "exact_rerank_recall": 0.9801953124999997,
+              "recall": 0.9801953124999997,
+              "rerank_candidate_coverage": 0.9801953124999997,
+              "retained_coverage": 0.9801953124999997
+            },
+            "O": {
+              "evaluated_coverage": 0.9791406249999997,
+              "evaluated_unique": 7111.10546875,
+              "exact_all_retained_recall": 0.9786328124999998,
+              "exact_rerank_recall": 0.9786328124999998,
+              "recall": 0.9786328124999998,
+              "rerank_candidate_coverage": 0.9786328124999998,
+              "retained_coverage": 0.9786328124999998
+            },
+            "OE": {
+              "evaluated_coverage": 0.9797656249999998,
+              "evaluated_unique": 7107.2890625,
+              "exact_all_retained_recall": 0.9797656249999998,
+              "exact_rerank_recall": 0.9797656249999998,
+              "recall": 0.9797656249999998,
+              "rerank_candidate_coverage": 0.9797656249999998,
+              "retained_coverage": 0.9797656249999998
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false,
+          "projection_stats": {
+            "added_edges": 80157,
+            "degree_capacity": 128,
+            "forward_edges": 43680,
+            "max_degree": 128,
+            "mean_degree": 64.386355,
+            "neighbors_per_query": 100,
+            "original_edges": 12797114,
+            "projected_degree": 32,
+            "reverse_edges": 36477,
+            "total_edges": 12877271,
+            "training_queries": 32768
+          }
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef256.json",
+          "sha256": "460f4189dc768d4979047423ac6b1a18082ae535f0ecc4506098928b9089f77d",
+          "search": {
+            "bits": 8,
+            "ef": 256,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "rerank": 400,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 25361,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9906640625,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.990703125,
+              "evaluated_unique": 9947.44921875,
+              "exact_all_retained_recall": 0.990703125,
+              "exact_rerank_recall": 0.990703125,
+              "recall": 0.9906640625,
+              "rerank_candidate_coverage": 0.990703125,
+              "retained_coverage": 0.990703125
+            },
+            "E": {
+              "evaluated_coverage": 0.9914843750000001,
+              "evaluated_unique": 9941.0859375,
+              "exact_all_retained_recall": 0.9914843750000001,
+              "exact_rerank_recall": 0.9914843750000001,
+              "recall": 0.9914453125000001,
+              "rerank_candidate_coverage": 0.9914843750000001,
+              "retained_coverage": 0.9914843750000001
+            },
+            "O": {
+              "evaluated_coverage": 0.9906250000000001,
+              "evaluated_unique": 9866.19140625,
+              "exact_all_retained_recall": 0.9906250000000001,
+              "exact_rerank_recall": 0.9906250000000001,
+              "recall": 0.9905859375000001,
+              "rerank_candidate_coverage": 0.9906250000000001,
+              "retained_coverage": 0.9906250000000001
+            },
+            "OE": {
+              "evaluated_coverage": 0.9913671875000002,
+              "evaluated_unique": 9859.33203125,
+              "exact_all_retained_recall": 0.9913671875000002,
+              "exact_rerank_recall": 0.9913671875000002,
+              "recall": 0.9913281250000002,
+              "rerank_candidate_coverage": 0.9913671875000002,
+              "retained_coverage": 0.9913671875000002
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false,
+          "projection_stats": {
+            "added_edges": 80157,
+            "degree_capacity": 128,
+            "forward_edges": 43680,
+            "max_degree": 128,
+            "mean_degree": 64.386355,
+            "neighbors_per_query": 100,
+            "original_edges": 12797114,
+            "projected_degree": 32,
+            "reverse_edges": 36477,
+            "total_edges": 12877271,
+            "training_queries": 32768
+          }
+        }
+      ],
+      "decision": "Promote32768 queries/quota32 to production-path paired validation timing; screen does not establish full-dataset or competitor throughput acceptance"
+    },
+    "intervention_3": {
+      "name": "Existing stale-top-k early stopping",
+      "configurations_used": 6,
+      "configuration_budget": 6,
+      "selected": true,
+      "fixed": {
+        "bits": 8,
+        "ef": 160,
+        "rerank": 200,
+        "training_queries": 32768,
+        "quota": 32,
+        "seed": 24301
+      },
+      "results": [
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-4.json",
+          "sha256": "1d6267649d1a0b77001bb274328e6cda61765924e686162b89d7bc9805794e24",
+          "search": {
+            "bits": 8,
+            "ef": 160,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "patience": 4,
+            "rerank": 200,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 21743,
+          "strict_denominator": 25600,
+          "strict_recall": 0.8493359375,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.8494531249999998,
+              "evaluated_unique": 2711.1484375,
+              "exact_all_retained_recall": 0.8493359374999998,
+              "exact_rerank_recall": 0.8493359374999998,
+              "recall": 0.8493359374999998,
+              "rerank_candidate_coverage": 0.8493359374999998,
+              "retained_coverage": 0.8493359374999998
+            },
+            "E": {
+              "evaluated_coverage": 0.8478515625000005,
+              "evaluated_unique": 2693.70703125,
+              "exact_all_retained_recall": 0.8478515625000005,
+              "exact_rerank_recall": 0.8478515625000005,
+              "recall": 0.8478515625000005,
+              "rerank_candidate_coverage": 0.8478515625000005,
+              "retained_coverage": 0.8478515625000005
+            },
+            "O": {
+              "evaluated_coverage": 0.83796875,
+              "evaluated_unique": 2518.49609375,
+              "exact_all_retained_recall": 0.837890625,
+              "exact_rerank_recall": 0.837890625,
+              "recall": 0.837890625,
+              "rerank_candidate_coverage": 0.837890625,
+              "retained_coverage": 0.837890625
+            },
+            "OE": {
+              "evaluated_coverage": 0.8337109375000005,
+              "evaluated_unique": 2470.734375,
+              "exact_all_retained_recall": 0.8337109375000005,
+              "exact_rerank_recall": 0.8337109375000005,
+              "recall": 0.8337109375000005,
+              "rerank_candidate_coverage": 0.8337109375000005,
+              "retained_coverage": 0.8337109375000005
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-8.json",
+          "sha256": "8f54f222aa98fcc8151c4d553ae1471dba6c8000e16e80eb4c245031d4fd3eff",
+          "search": {
+            "bits": 8,
+            "ef": 160,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "patience": 8,
+            "rerank": 200,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 23185,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9056640625,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9058593749999995,
+              "evaluated_unique": 3612.03515625,
+              "exact_all_retained_recall": 0.9056640624999994,
+              "exact_rerank_recall": 0.9056640624999994,
+              "recall": 0.9056640624999994,
+              "rerank_candidate_coverage": 0.9056640624999994,
+              "retained_coverage": 0.9056640624999994
+            },
+            "E": {
+              "evaluated_coverage": 0.9085937499999991,
+              "evaluated_unique": 3630.92578125,
+              "exact_all_retained_recall": 0.9085937499999991,
+              "exact_rerank_recall": 0.9085937499999991,
+              "recall": 0.9085937499999991,
+              "rerank_candidate_coverage": 0.9085937499999991,
+              "retained_coverage": 0.9085937499999991
+            },
+            "O": {
+              "evaluated_coverage": 0.8962109374999996,
+              "evaluated_unique": 3438.3515625,
+              "exact_all_retained_recall": 0.8960156249999996,
+              "exact_rerank_recall": 0.8960156249999996,
+              "recall": 0.8960156249999996,
+              "rerank_candidate_coverage": 0.8960156249999996,
+              "retained_coverage": 0.8960156249999996
+            },
+            "OE": {
+              "evaluated_coverage": 0.8959374999999993,
+              "evaluated_unique": 3438.09765625,
+              "exact_all_retained_recall": 0.8959374999999993,
+              "exact_rerank_recall": 0.8959374999999993,
+              "recall": 0.8959374999999993,
+              "rerank_candidate_coverage": 0.8959374999999993,
+              "retained_coverage": 0.8959374999999993
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-16.json",
+          "sha256": "598f4e32c2588a878ed84004ae374ad0fa7c323273cfe536834e304e2f7979a4",
+          "search": {
+            "bits": 8,
+            "ef": 160,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "patience": 16,
+            "rerank": 200,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 24221,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9461328125,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9464843749999992,
+              "evaluated_unique": 4805.4375,
+              "exact_all_retained_recall": 0.9461328124999993,
+              "exact_rerank_recall": 0.9461328124999993,
+              "recall": 0.9461328124999993,
+              "rerank_candidate_coverage": 0.9461328124999993,
+              "retained_coverage": 0.9461328124999993
+            },
+            "E": {
+              "evaluated_coverage": 0.9496093749999993,
+              "evaluated_unique": 4849.10546875,
+              "exact_all_retained_recall": 0.9496093749999993,
+              "exact_rerank_recall": 0.9496093749999993,
+              "recall": 0.9496093749999993,
+              "rerank_candidate_coverage": 0.9496093749999993,
+              "retained_coverage": 0.9496093749999993
+            },
+            "O": {
+              "evaluated_coverage": 0.937812499999999,
+              "evaluated_unique": 4669.37890625,
+              "exact_all_retained_recall": 0.9374609374999991,
+              "exact_rerank_recall": 0.9374609374999991,
+              "recall": 0.9374609374999991,
+              "rerank_candidate_coverage": 0.9374609374999991,
+              "retained_coverage": 0.9374609374999991
+            },
+            "OE": {
+              "evaluated_coverage": 0.9405859374999996,
+              "evaluated_unique": 4685.94921875,
+              "exact_all_retained_recall": 0.9405859374999996,
+              "exact_rerank_recall": 0.9405859374999996,
+              "recall": 0.9405859374999996,
+              "rerank_candidate_coverage": 0.9405859374999996,
+              "retained_coverage": 0.9405859374999996
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-20.json",
+          "sha256": "c0be366abc35cc1049cb535809714fe0df9728332732a84f37fc4a8ff328c474",
+          "search": {
+            "bits": 8,
+            "ef": 160,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "patience": 20,
+            "rerank": 200,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 24449,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9550390625,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9554296874999989,
+              "evaluated_unique": 5277.60546875,
+              "exact_all_retained_recall": 0.955039062499999,
+              "exact_rerank_recall": 0.955039062499999,
+              "recall": 0.955039062499999,
+              "rerank_candidate_coverage": 0.955039062499999,
+              "retained_coverage": 0.955039062499999
+            },
+            "E": {
+              "evaluated_coverage": 0.9591406249999991,
+              "evaluated_unique": 5349.21484375,
+              "exact_all_retained_recall": 0.9591406249999991,
+              "exact_rerank_recall": 0.9591406249999991,
+              "recall": 0.9591406249999991,
+              "rerank_candidate_coverage": 0.9591406249999991,
+              "retained_coverage": 0.9591406249999991
+            },
+            "O": {
+              "evaluated_coverage": 0.949296874999999,
+              "evaluated_unique": 5141.2890625,
+              "exact_all_retained_recall": 0.9489062499999992,
+              "exact_rerank_recall": 0.9489062499999992,
+              "recall": 0.9489062499999992,
+              "rerank_candidate_coverage": 0.9489062499999992,
+              "retained_coverage": 0.9489062499999992
+            },
+            "OE": {
+              "evaluated_coverage": 0.9518749999999992,
+              "evaluated_unique": 5205.578125,
+              "exact_all_retained_recall": 0.9518749999999992,
+              "exact_rerank_recall": 0.9518749999999992,
+              "recall": 0.9518749999999992,
+              "rerank_candidate_coverage": 0.9518749999999992,
+              "retained_coverage": 0.9518749999999992
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-24.json",
+          "sha256": "ef9b36a5096832cdcd4729ab3c2cbd86d574bc588bd0e502bc3445eee4729afe",
+          "search": {
+            "bits": 8,
+            "ef": 160,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "patience": 24,
+            "rerank": 200,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 24640,
+          "strict_denominator": 25600,
+          "strict_recall": 0.9625,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.9629296874999992,
+              "evaluated_unique": 5729.046875,
+              "exact_all_retained_recall": 0.9624999999999995,
+              "exact_rerank_recall": 0.9624999999999995,
+              "recall": 0.9624999999999995,
+              "rerank_candidate_coverage": 0.9624999999999995,
+              "retained_coverage": 0.9624999999999995
+            },
+            "E": {
+              "evaluated_coverage": 0.9645312499999992,
+              "evaluated_unique": 5725.75,
+              "exact_all_retained_recall": 0.9645312499999992,
+              "exact_rerank_recall": 0.9645312499999992,
+              "recall": 0.9645312499999992,
+              "rerank_candidate_coverage": 0.9645312499999992,
+              "retained_coverage": 0.9645312499999992
+            },
+            "O": {
+              "evaluated_coverage": 0.9608593749999991,
+              "evaluated_unique": 5632.63671875,
+              "exact_all_retained_recall": 0.9604296874999994,
+              "exact_rerank_recall": 0.9604296874999994,
+              "recall": 0.9604296874999994,
+              "rerank_candidate_coverage": 0.9604296874999994,
+              "retained_coverage": 0.9604296874999994
+            },
+            "OE": {
+              "evaluated_coverage": 0.9576562499999992,
+              "evaluated_unique": 5583.46875,
+              "exact_all_retained_recall": 0.9576562499999992,
+              "exact_rerank_recall": 0.9576562499999992,
+              "recall": 0.9576562499999992,
+              "rerank_candidate_coverage": 0.9576562499999992,
+              "retained_coverage": 0.9576562499999992
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false
+        },
+        {
+          "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-patience-32.json",
+          "sha256": "021dccae02d06192b977d108b2c4312df608da8a0d6fad91015dd6b84f525a26",
+          "search": {
+            "bits": 8,
+            "ef": 160,
+            "exact_f32_rerank": false,
+            "k": 100,
+            "knobs": "OFF",
+            "patience": 32,
+            "rerank": 200,
+            "residual_bits": 8,
+            "rotation": false
+          },
+          "strict_hits": 24834,
+          "strict_denominator": 25600,
+          "strict_recall": 0.970078125,
+          "aggregate": {
+            "B": {
+              "evaluated_coverage": 0.970546874999999,
+              "evaluated_unique": 6323.8515625,
+              "exact_all_retained_recall": 0.9700781249999992,
+              "exact_rerank_recall": 0.9700781249999992,
+              "recall": 0.9700781249999992,
+              "rerank_candidate_coverage": 0.9700781249999992,
+              "retained_coverage": 0.9700781249999992
+            },
+            "E": {
+              "evaluated_coverage": 0.9721093749999992,
+              "evaluated_unique": 6321.03125,
+              "exact_all_retained_recall": 0.9721093749999992,
+              "exact_rerank_recall": 0.9721093749999992,
+              "recall": 0.9721093749999992,
+              "rerank_candidate_coverage": 0.9721093749999992,
+              "retained_coverage": 0.9721093749999992
+            },
+            "O": {
+              "evaluated_coverage": 0.9683984374999991,
+              "evaluated_unique": 6227.54296875,
+              "exact_all_retained_recall": 0.9679296874999993,
+              "exact_rerank_recall": 0.9679296874999993,
+              "recall": 0.9679296874999993,
+              "rerank_candidate_coverage": 0.9679296874999993,
+              "retained_coverage": 0.9679296874999993
+            },
+            "OE": {
+              "evaluated_coverage": 0.9695312499999993,
+              "evaluated_unique": 6201.515625,
+              "exact_all_retained_recall": 0.9695312499999993,
+              "exact_rerank_recall": 0.9695312499999993,
+              "recall": 0.9695312499999993,
+              "rerank_candidate_coverage": 0.9695312499999993,
+              "retained_coverage": 0.9695312499999993
+            }
+          },
+          "index_bytes": 160772548,
+          "graph_hash": 7022208822022038126,
+          "seed": 24301,
+          "throughput_measured": false
+        }
+      ],
+      "control": {
+        "path": "benchmarks/results/query_aware_graph_v1/llama-prefix-proj-q32768-d32-ef160.json",
+        "sha256": "7fc2484509386bba34cb6888aea2aa5765373af802d5628b81128dd7fca265ec"
+      },
+      "prediction": "Avoid late traversal work while retaining sufficient0.90/0.95 recall to improve matched-recall QPS",
+      "decision": "Promote patience8/20/24 at ef160/rr200; retain three prior patience0 controls. No further interventions/configurations in the screen budget.",
+      "rejection_criterion": "Reject if no configuration maintains0.95 with reduced evaluated work, or paired QPS fails90% of the fastest measured eligible competitor",
+      "compiler_scope": "Untimed diagnostic binary built during initial stable1.99.1 attempt; throughput uses rebuilt1.96.0/native Python extension only"
+    },
+    "full_base_precision_checks": [
+      {
+        "path": "benchmarks/results/query_aware_graph_v1/llama-full-b4.json",
+        "sha256": "f4e0ea7f8c8d5ae9c558cbc76f50f8f416dc5c52791370f205a394364ac8c175",
+        "search": {
+          "bits": 4,
+          "ef": 2000,
+          "exact_f32_rerank": false,
+          "k": 100,
+          "knobs": "OFF",
+          "rerank": 1000,
+          "residual_bits": 8,
+          "rotation": false
+        },
+        "strict_hits": 24444,
+        "strict_denominator": 25600,
+        "strict_recall": 0.95484375,
+        "aggregate": {
+          "B": {
+            "evaluated_coverage": 0.9877734375000002,
+            "evaluated_unique": 38314.046875,
+            "exact_all_retained_recall": 0.9791015624999998,
+            "exact_rerank_recall": 0.9551171874999994,
+            "recall": 0.9548437499999994,
+            "rerank_candidate_coverage": 0.9551171874999994,
+            "retained_coverage": 0.9791015624999998
+          },
+          "E": {
+            "evaluated_coverage": 0.9921093750000006,
+            "evaluated_unique": 37743.01953125,
+            "exact_all_retained_recall": 0.9921093750000006,
+            "exact_rerank_recall": 0.9921093750000006,
+            "recall": 0.9896875000000007,
+            "rerank_candidate_coverage": 0.9921093750000006,
+            "retained_coverage": 0.9921093750000006
+          },
+          "O": {
+            "evaluated_coverage": 0.9879296875000002,
+            "evaluated_unique": 38271.58203125,
+            "exact_all_retained_recall": 0.9792578124999997,
+            "exact_rerank_recall": 0.9552734374999993,
+            "recall": 0.9549999999999993,
+            "rerank_candidate_coverage": 0.9552734374999993,
+            "retained_coverage": 0.9792578124999997
+          },
+          "OE": {
+            "evaluated_coverage": 0.9921093750000006,
+            "evaluated_unique": 37710.7890625,
+            "exact_all_retained_recall": 0.9921093750000006,
+            "exact_rerank_recall": 0.9921093750000006,
+            "recall": 0.9896875000000007,
+            "rerank_candidate_coverage": 0.9921093750000006,
+            "retained_coverage": 0.9921093750000006
+          }
+        },
+        "index_bytes": 128432748,
+        "graph_hash": 15865356295251121278,
+        "seed": 24301,
+        "throughput_measured": false
+      },
+      {
+        "path": "benchmarks/results/query_aware_graph_v1/llama-full-b8.json",
+        "sha256": "d82a88791559928da87e9d5148339e7f76d9af448707020bd9f5785acbb9b25f",
+        "search": {
+          "bits": 8,
+          "ef": 2000,
+          "exact_f32_rerank": false,
+          "k": 100,
+          "knobs": "OFF",
+          "rerank": 1000,
+          "residual_bits": 8,
+          "rotation": false
+        },
+        "strict_hits": 25387,
+        "strict_denominator": 25600,
+        "strict_recall": 0.9916796875,
+        "aggregate": {
+          "B": {
+            "evaluated_coverage": 0.9918359375000004,
+            "evaluated_unique": 37757.70703125,
+            "exact_all_retained_recall": 0.9918359375000004,
+            "exact_rerank_recall": 0.9918359375000004,
+            "recall": 0.9916796875000005,
+            "rerank_candidate_coverage": 0.9918359375000004,
+            "retained_coverage": 0.9918359375000004
+          },
+          "E": {
+            "evaluated_coverage": 0.9921093750000006,
+            "evaluated_unique": 37743.01953125,
+            "exact_all_retained_recall": 0.9921093750000006,
+            "exact_rerank_recall": 0.9921093750000006,
+            "recall": 0.9919531250000005,
+            "rerank_candidate_coverage": 0.9921093750000006,
+            "retained_coverage": 0.9921093750000006
+          },
+          "O": {
+            "evaluated_coverage": 0.9917968750000005,
+            "evaluated_unique": 37724.359375,
+            "exact_all_retained_recall": 0.9917968750000005,
+            "exact_rerank_recall": 0.9917968750000005,
+            "recall": 0.9916406250000005,
+            "rerank_candidate_coverage": 0.9917968750000005,
+            "retained_coverage": 0.9917968750000005
+          },
+          "OE": {
+            "evaluated_coverage": 0.9921093750000006,
+            "evaluated_unique": 37710.7890625,
+            "exact_all_retained_recall": 0.9921093750000006,
+            "exact_rerank_recall": 0.9921093750000006,
+            "recall": 0.9919531250000005,
+            "rerank_candidate_coverage": 0.9921093750000006,
+            "retained_coverage": 0.9921093750000006
+          }
+        },
+        "index_bytes": 157207836,
+        "graph_hash": 15865356295251121278,
+        "seed": 24301,
+        "throughput_measured": false
+      },
+      {
+        "path": "benchmarks/results/query_aware_graph_v1/yi-full-b4.json",
+        "sha256": "37c370da99a42b0cf43728d6db207942c9567d9168bc0d9095c236f19dab3b74",
+        "search": {
+          "bits": 4,
+          "ef": 2000,
+          "exact_f32_rerank": false,
+          "k": 100,
+          "knobs": "OFF",
+          "rerank": 1000,
+          "residual_bits": 8,
+          "rotation": false
+        },
+        "strict_hits": 25095,
+        "strict_denominator": 25600,
+        "strict_recall": 0.9802734375,
+        "aggregate": {
+          "B": {
+            "evaluated_coverage": 0.9835937499999997,
+            "evaluated_unique": 27084.74609375,
+            "exact_all_retained_recall": 0.9831640624999997,
+            "exact_rerank_recall": 0.9808984375,
+            "recall": 0.9802734375000002,
+            "rerank_candidate_coverage": 0.9808984375,
+            "retained_coverage": 0.9831640624999997
+          },
+          "E": {
+            "evaluated_coverage": 0.9842578125000003,
+            "evaluated_unique": 26279.12109375,
+            "exact_all_retained_recall": 0.9842578125000003,
+            "exact_rerank_recall": 0.9842578125000003,
+            "recall": 0.9833984375000006,
+            "rerank_candidate_coverage": 0.9842578125000003,
+            "retained_coverage": 0.9842578125000003
+          },
+          "O": {
+            "evaluated_coverage": 0.9837499999999997,
+            "evaluated_unique": 27003.078125,
+            "exact_all_retained_recall": 0.9833203124999996,
+            "exact_rerank_recall": 0.9810546875000001,
+            "recall": 0.9804296875000003,
+            "rerank_candidate_coverage": 0.9810546875000001,
+            "retained_coverage": 0.9833203124999996
+          },
+          "OE": {
+            "evaluated_coverage": 0.9843750000000003,
+            "evaluated_unique": 26205.65234375,
+            "exact_all_retained_recall": 0.9843750000000003,
+            "exact_rerank_recall": 0.9843750000000003,
+            "recall": 0.9835156250000006,
+            "rerank_candidate_coverage": 0.9843750000000003,
+            "retained_coverage": 0.9843750000000003
+          }
+        },
+        "index_bytes": 93802528,
+        "graph_hash": 10949409054225582877,
+        "seed": 24301,
+        "throughput_measured": false
+      },
+      {
+        "path": "benchmarks/results/query_aware_graph_v1/yi-full-b8.json",
+        "sha256": "2033e8761ef5720b14446d47efd5eb58baaa6299ad13ed052a25f7af62a1af51",
+        "search": {
+          "bits": 8,
+          "ef": 2000,
+          "exact_f32_rerank": false,
+          "k": 100,
+          "knobs": "OFF",
+          "rerank": 1000,
+          "residual_bits": 8,
+          "rotation": false
+        },
+        "strict_hits": 25191,
+        "strict_denominator": 25600,
+        "strict_recall": 0.9840234375,
+        "aggregate": {
+          "B": {
+            "evaluated_coverage": 0.9840625000000001,
+            "evaluated_unique": 26266.11328125,
+            "exact_all_retained_recall": 0.9840625000000001,
+            "exact_rerank_recall": 0.9840625000000001,
+            "recall": 0.9840234375000001,
+            "rerank_candidate_coverage": 0.9840625000000001,
+            "retained_coverage": 0.9840625000000001
+          },
+          "E": {
+            "evaluated_coverage": 0.9842578125000003,
+            "evaluated_unique": 26279.12109375,
+            "exact_all_retained_recall": 0.9842578125000003,
+            "exact_rerank_recall": 0.9842578125000003,
+            "recall": 0.9842187500000004,
+            "rerank_candidate_coverage": 0.9842578125000003,
+            "retained_coverage": 0.9842578125000003
+          },
+          "O": {
+            "evaluated_coverage": 0.9841796875,
+            "evaluated_unique": 26193.9140625,
+            "exact_all_retained_recall": 0.9841796875,
+            "exact_rerank_recall": 0.9841796875,
+            "recall": 0.984140625,
+            "rerank_candidate_coverage": 0.9841796875,
+            "retained_coverage": 0.9841796875
+          },
+          "OE": {
+            "evaluated_coverage": 0.9843750000000003,
+            "evaluated_unique": 26205.65234375,
+            "exact_all_retained_recall": 0.9843750000000003,
+            "exact_rerank_recall": 0.9843750000000003,
+            "recall": 0.9843359375000004,
+            "rerank_candidate_coverage": 0.9843750000000003,
+            "retained_coverage": 0.9843750000000003
+          }
+        },
+        "index_bytes": 114840880,
+        "graph_hash": 10949409054225582877,
+        "seed": 24301,
+        "throughput_measured": false
+      }
+    ]
+  },
+  "completed_correctness_checks": {
+    "test_suites": [
+      {
+        "name": "native precision-extension Python checks",
+        "passed": 17,
+        "receipt": {
+          "path": "benchmarks/results/query_aware_graph_v1/logs/python-native-smoke.log",
+          "sha256": "bca3ca59d60e8d2cce1fb6b64804e61b447b8cfa3d4e51d6f66e100aac780793"
+        },
+        "performance_evidence": false
+      },
+      {
+        "name": "native trained-extension Python checks",
+        "passed": 32,
+        "receipt": {
+          "path": "benchmarks/results/query_aware_graph_v1/logs/python-trained-smoke.log",
+          "sha256": "05612b1539d6e29e00c62936d2f9dcc897ef6aa211a129047d0afd31dbb5ca6a"
+        },
+        "performance_evidence": false
+      },
+      {
+        "name": "data preparation/export tests",
+        "passed": 43,
+        "receipt": {
+          "path": "benchmarks/results/query_aware_graph_v1/logs/python-preparation.txt",
+          "sha256": "76ca1042114593d83abbb1b6413a8f789f3760787ce9420b6ec0e0da83948704"
+        },
+        "performance_evidence": false
+      },
+      {
+        "name": "latest reporter synthetic metric/protocol tests",
+        "passed": 28,
+        "receipt": {
+          "path": "benchmarks/results/query_aware_graph_v1/logs/qag-report-tests.log",
+          "sha256": "1456f30ad6b29683b3dbf2cf20e1e5b0035560e452e23e4bf259d32b29950e3e"
+        },
+        "performance_evidence": false
+      },
+      {
+        "name": "native patience-extension Python checks",
+        "passed": 38,
+        "receipt": {
+          "path": "benchmarks/results/query_aware_graph_v1/logs/python-patience-smoke.log",
+          "sha256": "01c3f8c44743a0d6798e86e3292106e226a18a7e6a013fbb1e99afea866980bd"
+        },
+        "performance_evidence": false
+      },
+      {
+        "name": "final local preparation/export/report/freeze checks",
+        "passed": 52,
+        "receipt": {
+          "path": "benchmarks/results/query_aware_graph_v1/logs/final-python-bench-tests.log",
+          "sha256": "0e875d2375d90063c77bc3f89932ceae595a7c127de45c4e0839c6bb16ad9d75"
+        },
+        "performance_evidence": false
+      }
+    ],
+    "native_smoke": {
+      "arms": [
+        {
+          "arm": 0,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 1,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 2,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 3,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 4,
+          "strict_recall": 1.0
+        }
+      ],
+      "base_rows": 128,
+      "dimension": 128,
+      "learn_rows": 16384,
+      "default_parity_queries": 16,
+      "candidate_training_queries": 0,
+      "trained_projection_exercised_by_native_smoke": false,
+      "training_contract_exercised_by_python_tests": true,
+      "training_tests": [
+        "test_omitted_training_queries_match_explicit_none",
+        "test_training_queries_preserve_fortran_row_coordinates",
+        "test_invalid_training_queries_preserve_existing_index",
+        "test_training_queries_inner_product_matches_asymmetric_l2_projection"
+      ],
+      "source": {
+        "path": "benchmarks/results/query_aware_graph_v1/sources/qag_smoke.py",
+        "sha256": "4a0d5d63b615633f3d7b23c4af74efcf34e77227fcba596172138f70ac8a7993"
+      },
+      "receipt": {
+        "path": "benchmarks/results/query_aware_graph_v1/logs/python-trained-smoke.log",
+        "sha256": "05612b1539d6e29e00c62936d2f9dcc897ef6aa211a129047d0afd31dbb5ca6a"
+      },
+      "scope": "Synthetic ABI/default parity and Python correctness; native smoke used no candidate construction queries and is not full-dataset or throughput evidence"
+    },
+    "cargo_fmt_check": "unrun",
+    "linux_cargo_1_89_all_features": "unrun",
+    "required_final_command": "cargo +1.89.0 test --all-features",
+    "omitted_checks": [
+      "Clippy",
+      "extra default-feature suite",
+      "feature-matrix sweeps"
+    ],
+    "patience_native_smoke": {
+      "arms": [
+        {
+          "arm": 0,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 1,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 2,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 3,
+          "strict_recall": 1.0
+        },
+        {
+          "arm": 4,
+          "strict_recall": 1.0
+        }
+      ],
+      "default_parity_queries": 16,
+      "candidate_training_queries": 0,
+      "source": {
+        "path": "benchmarks/results/query_aware_graph_v1/sources/qag_smoke.py",
+        "sha256": "4a0d5d63b615633f3d7b23c4af74efcf34e77227fcba596172138f70ac8a7993"
+      },
+      "receipt": {
+        "path": "benchmarks/results/query_aware_graph_v1/logs/python-patience-smoke.log",
+        "sha256": "01c3f8c44743a0d6798e86e3292106e226a18a7e6a013fbb1e99afea866980bd"
+      },
+      "scope": "Synthetic native ABI/default parity plus38 Python tests; no projected performance claim"
+    }
+  },
+  "frozen_validation_execution": {
+    "status": "Prefix and both full validation reports completed; both frozen official reports completed and recovered; regression/RF80 still active.",
+    "receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/projection-validation-receipt.json",
+      "sha256": "e6d1357ba32a070463dd48de10afccd5fff12a6f3973a45bfc5ea51563e4dc1d"
+    },
+    "scope": "validation only; no official test",
+    "core_commit": "85b0af081c26e65f6a5643722386137ca332e587",
+    "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+    "adapter_snapshot": {
+      "path": "benchmarks/results/query_aware_graph_v1/sources/qag_pair_projection_validation.py",
+      "sha256": "30e519088a56ced4d2dce0150d23955cdd5c8ac58f6bb9bc77bd0ef6661f1afc"
+    },
+    "adapter_matches_integration_commit": "3f285cebcbebffe8f2f32c430e738f0eb79ae9cc",
+    "extensions": {
+      "path": "benchmarks/results/query_aware_graph_v1/python-extensions-trained.sha256",
+      "sha256": "39c24210f34f9b749791db5230dd96220593340c0af35c587d2c5beb17f072f1"
+    },
+    "validation_export": {
+      "path": "benchmarks/results/query_aware_graph_v1/sources/qag-llama-128-ip-meta.json",
+      "sha256": "d3186638311d7504fd2c8c3545ac3d982a8e3fcb08c6e283ca85d3d514a1c3d4"
+    },
+    "training_manifests": [
+      {
+        "path": "benchmarks/results/query_aware_graph_v1/sources/llama-prefix-training-meta.json",
+        "sha256": "e82b36f3a6f379111a222616a41e1a0467b66f3a0fdbcbdf6e1a2888ed245a1b"
+      },
+      {
+        "path": "benchmarks/results/query_aware_graph_v1/sources/llama-full-training-meta.json",
+        "sha256": "22c42ba20f13d60fc7e0a0c94f1d13401b8e46a1cf882dbe7ab983b1713bc781"
+      },
+      {
+        "path": "benchmarks/results/query_aware_graph_v1/sources/yi-full-training-meta.json",
+        "sha256": "06c89ee901458c272290a4f3730a87ca7233f31e5d5447cd54ed339c90442d30"
+      }
+    ],
+    "local_post_commit_adapter_change": "Optional candidate_code_bits=8 constructor accepts4/8 and labels selected precision; not uploaded to the already imported validation worker",
+    "resource_scope": "All arms co-resident. Process peak RSS and VIBE index_size USS delta are aggregate; per-arm encoded-byte attributes are not isolated peak RSS or persisted file size.",
+    "known_scope_metadata_error": "Original prefix summary incorrectly sets official_test=true because exporter lacked qag_scope. Original source attribute and frozen receipt explicitly say validation only; original summary is preserved and full batch writes separate corrected v2 summary."
+  },
+  "evidence_gaps": [
+    "Initial diagnostic binary/source fingerprints retained; exact initial uncommitted source snapshots absent from canonical evidence. Current diagnostic source is committed.",
+    "Original prefix report retains a known incorrect official-test flag; validation-only source marker and receipt establish scope, and a separate v2 report is scheduled.",
+    "Both full validation and frozen official reports recovered; regressions, RF80 and final Rust gate remain active or unrun."
+  ],
+  "paired_prefix_validation": {
+    "scope": "200k base prefix;256 reserved learn queries only; no official test",
+    "raw": {
+      "path": "benchmarks/results/query_aware_graph_v1/projection-validation-raw.hdf5",
+      "sha256": "663cde890101682a09e7efc569a4c69435d0d4a2987369e1820c74b7c2ac2bb2"
+    },
+    "summary": {
+      "path": "benchmarks/results/query_aware_graph_v1/projection-validation-summary.json",
+      "sha256": "b2b82eb5823a79f477b3b68126b2877e7e22a22ec7177aae22254ddf3c761e6f"
+    },
+    "frozen_receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/projection-validation-receipt.json",
+      "sha256": "e6d1357ba32a070463dd48de10afccd5fff12a6f3973a45bfc5ea51563e4dc1d"
+    },
+    "groups": 36,
+    "repetitions": 3,
+    "passes_per_repetition": 5,
+    "saved_timed_pass": 5,
+    "targets": [
+      {
+        "arm": 0,
+        "method": "baseline4",
+        "target": 0.9,
+        "reached": true,
+        "ef": 1000,
+        "rerank": 1000,
+        "recall_ids_min": 0.948515625,
+        "recall_epsilon_min": 0.9488671875,
+        "qps_median": 970.3646868437671,
+        "qps_min": 966.7679893586516,
+        "qps_max": 976.6209253759621
+      },
+      {
+        "arm": 0,
+        "method": "baseline4",
+        "target": 0.95,
+        "reached": true,
+        "ef": 2000,
+        "rerank": 1000,
+        "recall_ids_min": 0.9655078125,
+        "recall_epsilon_min": 0.9658984375,
+        "qps_median": 543.341471131678,
+        "qps_min": 543.2532471752314,
+        "qps_max": 555.2502076420654
+      },
+      {
+        "arm": 0,
+        "method": "baseline4",
+        "target": 0.99,
+        "reached": false
+      },
+      {
+        "arm": 1,
+        "method": "candidate8",
+        "target": 0.9,
+        "reached": true,
+        "ef": 100,
+        "rerank": 100,
+        "recall_ids_min": 0.9159375,
+        "recall_epsilon_min": 0.9161328125,
+        "qps_median": 6071.758041010121,
+        "qps_min": 5643.246549624043,
+        "qps_max": 6077.615314876698
+      },
+      {
+        "arm": 1,
+        "method": "candidate8",
+        "target": 0.95,
+        "reached": true,
+        "ef": 160,
+        "rerank": 200,
+        "recall_ids_min": 0.9789453125,
+        "recall_epsilon_min": 0.979296875,
+        "qps_median": 4185.903702768022,
+        "qps_min": 3672.745412559217,
+        "qps_max": 4219.45649591026
+      },
+      {
+        "arm": 1,
+        "method": "candidate8",
+        "target": 0.99,
+        "reached": true,
+        "ef": 256,
+        "rerank": 400,
+        "recall_ids_min": 0.9906640625,
+        "recall_epsilon_min": 0.990859375,
+        "qps_median": 2778.246641855983,
+        "qps_min": 2205.9278430654535,
+        "qps_max": 2885.318204826574
+      },
+      {
+        "arm": 2,
+        "method": "roargraph48",
+        "target": 0.9,
+        "reached": false
+      },
+      {
+        "arm": 2,
+        "method": "roargraph48",
+        "target": 0.95,
+        "reached": false
+      },
+      {
+        "arm": 2,
+        "method": "roargraph48",
+        "target": 0.99,
+        "reached": false
+      },
+      {
+        "arm": 3,
+        "method": "roargraph96",
+        "target": 0.9,
+        "reached": true,
+        "ef": 120,
+        "rerank": 0,
+        "recall_ids_min": 0.9561328125,
+        "recall_epsilon_min": 0.9564453125,
+        "qps_median": 6086.976618610273,
+        "qps_min": 4522.092403148434,
+        "qps_max": 6977.557182642386
+      },
+      {
+        "arm": 3,
+        "method": "roargraph96",
+        "target": 0.95,
+        "reached": true,
+        "ef": 120,
+        "rerank": 0,
+        "recall_ids_min": 0.9561328125,
+        "recall_epsilon_min": 0.9564453125,
+        "qps_median": 6086.976618610273,
+        "qps_min": 4522.092403148434,
+        "qps_max": 6977.557182642386
+      },
+      {
+        "arm": 3,
+        "method": "roargraph96",
+        "target": 0.99,
+        "reached": false
+      },
+      {
+        "arm": 4,
+        "method": "mlann",
+        "target": 0.9,
+        "reached": false
+      },
+      {
+        "arm": 4,
+        "method": "mlann",
+        "target": 0.95,
+        "reached": false
+      },
+      {
+        "arm": 4,
+        "method": "mlann",
+        "target": 0.99,
+        "reached": false
+      }
+    ],
+    "resource_scope": "All arms co-resident; process RSS and VIBE USS delta aggregate. No isolated per-index peak RSS claimed.",
+    "known_scope_metadata_error": "Original prefix summary incorrectly sets official_test=true because exporter lacked qag_scope. Original source attribute and frozen receipt explicitly say validation only; original summary is preserved and full batch writes separate corrected v2 summary.",
+    "observations": "Projected8 matches diagnostic recall; prefix median throughput passes0.90 target and fails0.95 against Roar96 L120. Roar48 L100 below0.90; measured Roar96 L800 below0.99; measured MLANN points below0.90. Full-dataset parity not established."
+  },
+  "full_evaluation_batch": {
+    "status": "Both validation and both official runs completed successfully; original default4 regression batch is active; RF80 queued.",
+    "source_receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/sources/patience-execution-source-receipt.json",
+      "sha256": "0f9c6a7aba57a3c81d3757cc58d778b942b553b49f97864fc99b1eeb7ff6eb89"
+    },
+    "driver": {
+      "path": "benchmarks/results/query_aware_graph_v1/sources/full-evaluation-v1.sh",
+      "sha256": "ab2ac3e73dd30db7fc4aebb5928e01106e141991c38539c0caaa753a7acee2fe"
+    },
+    "first_freeze": {
+      "path": "benchmarks/results/query_aware_graph_v1/sources/llama-full-validation-v1-frozen.json",
+      "sha256": "2d004b909dcc6d6da9f4d9676ff4d4231df401078322e4c0ab13c7d130523e67"
+    },
+    "config": {
+      "path": "benchmarks/results/query_aware_graph_v1/sources/final-candidates-config-v1.yml",
+      "sha256": "0aa5dc6339a434ee3fbad834b4695c6943c28bd48b07f2a0b5ebdeae2bbd06f3"
+    },
+    "groups": 42,
+    "settings": 14,
+    "repetitions": 3,
+    "middle_block_reversed": true,
+    "candidate_settings": [
+      [
+        100,
+        100,
+        0
+      ],
+      [
+        160,
+        200,
+        8
+      ],
+      [
+        160,
+        200,
+        20
+      ],
+      [
+        160,
+        200,
+        24
+      ],
+      [
+        256,
+        400,
+        0
+      ],
+      [
+        512,
+        400,
+        0
+      ]
+    ],
+    "construction_policy": "Same32768-row permitted construction pool for HMS/RoarGraph/MLANN; excludes256 reserved validation queries",
+    "phase_order": [
+      "full llama validation",
+      "full yi validation",
+      "full llama official with validation report required by freeze",
+      "full yi official with validation report required by freeze",
+      "default4-bit regression datasets",
+      "prefix corrected v2 report"
+    ],
+    "log": "writerslogic-02:/home/davidcondrey/sol-qag/logs/full-evaluation-v1.log"
+  },
+  "official_evaluation_recovery": {
+    "date": "2026-10-22",
+    "signed_head_on_resume": "b6d82ef3195d7045afb46f2aa607a1d6ec8455da",
+    "candidate_source": "f73305b624305836211c8157975c4f1c37f10df9",
+    "official_read_policy": "Final evaluation only; no official outcome selects v2 settings. v2 uses permitted learn validation only.",
+    "reports": [
+      {
+        "dataset": "llama",
+        "frozen.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/frozen.json",
+          "sha256": "f10d3d09910929ede797370a8a19fea54c7978d297c34778855ddaa6da4bdfdb",
+          "bytes": 20879
+        },
+        "before.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/before.json",
+          "sha256": "989526a8cef8689d0feeffcefbddb79eb198970e9ba223a119c2181da2093279",
+          "bytes": 7652
+        },
+        "benchmark.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/benchmark.json",
+          "sha256": "d891e97f00ebae4bffb4dca99fc28c394b3fbc1d0206fe54f1facd4849f1ede8",
+          "bytes": 8409
+        },
+        "completion.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/completion.json",
+          "sha256": "d57d18fd5be0ac475ad336a8c0183f7b185655eb34cdb727a6b81151bf9d79ce",
+          "bytes": 487
+        },
+        "report.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/report.json",
+          "sha256": "c5b185f3db86d4644265a586dc548f7d2fc2f6d9f80591e0cc33acfde46eee2a",
+          "bytes": 125686
+        },
+        "raw.hdf5": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/raw.hdf5",
+          "sha256": "4e81c46d7a3f1adf68a0360e61e1ded232f0ab9e93de641c461ae81746c49854",
+          "bytes": 34159808
+        },
+        "max_hms_strict_recall": 0.99687
+      },
+      {
+        "dataset": "yi",
+        "frozen.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/frozen.json",
+          "sha256": "c6f2006c4e68a9a6fbcd4e77dc5ab8a30f93ff0f82a5943390295d9b31847101",
+          "bytes": 20766
+        },
+        "before.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/before.json",
+          "sha256": "0ce4d4b97cc31bac6a87ec79a8d2224a07dfbcb03f2ba1384d79b56a2d452149",
+          "bytes": 7622
+        },
+        "benchmark.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/benchmark.json",
+          "sha256": "d9078b9e25db6663ce5731928852ebe2afb11c36d9ea01733e6fe76481ef7f5a",
+          "bytes": 8370
+        },
+        "completion.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/completion.json",
+          "sha256": "a7c59c2a27e3d9af8374192c3ed8c940e54772db9d1e03eb65cb57506e86d98a",
+          "bytes": 481
+        },
+        "report.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/report.json",
+          "sha256": "ec88ed941d8acbbc563c068133566dbb59e590ecbd7b268a0012942fffbacab5",
+          "bytes": 125202
+        },
+        "raw.hdf5": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/raw.hdf5",
+          "sha256": "6f093d2c0deed0a22aafa1be232e4f7bdbc0c534448fc51e130bf16a9670c75e",
+          "bytes": 34159808
+        },
+        "max_hms_strict_recall": 0.98931
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "status": "success",
+  "created_utc": "2026-10-22T17:33:26.647017+00:00",
+  "benchmark_receipt": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-official-v1/benchmark.json",
+    "sha256": "d9078b9e25db6663ce5731928852ebe2afb11c36d9ea01733e6fe76481ef7f5a",
+    "bytes": 8370
+  },
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-official-v1/report.json",
+    "sha256": "ec88ed941d8acbbc563c068133566dbb59e590ecbd7b268a0012942fffbacab5",
+    "bytes": 125202
+  }
+}

@@ -105,11 +105,12 @@ def test_euclidean_ranks_by_distance_not_angle(data, queries):
     assert recall([idx.query(q, K) for q in queries], exact_top_k(scaled, queries, K)) < 0.9
 
 
-def test_inner_product_ranks_by_dot_product(data, queries):
+@pytest.mark.parametrize("code_bits", [4, 8])
+def test_inner_product_ranks_by_dot_product(data, queries, code_bits):
     scaled = data * np.random.default_rng(10).uniform(0.2, 5.0, (len(data), 1)).astype(np.float32)
     dots = queries.astype(np.float64) @ scaled.astype(np.float64).T
     truth = np.argsort(-dots, axis=1, kind="stable")[:, :K]
-    idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2)
+    idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2, code_bits=code_bits)
     idx.fit(scaled)
     assert repr(idx).startswith("VectorIndex(metric='ip'")
     # The reduction puts every row on one sphere, a harder graph than the raw data: more effort.
@@ -121,6 +122,160 @@ def test_inner_product_ranks_by_dot_product(data, queries):
     assert recall(found, exact_top_k(scaled, queries, K)) < 0.9
     with pytest.raises(ValueError, match="dimensions"):
         idx.query(np.ones(DIM + 1, np.float32), K)
+
+
+def test_default_traversal_codes_match_explicit_four_bits():
+    rows = clustered(128, 17, 31)
+    probes = clustered(8, 17, 32)
+    default = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1)
+    explicit = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=4)
+    for idx in (default, explicit):
+        idx.fit(rows)
+        idx.set_query_arguments(ef=64, rerank=32)
+    assert default.index_bytes == explicit.index_bytes
+    for actual, expected in zip(default.batch_query(probes, K), explicit.batch_query(probes, K)):
+        np.testing.assert_array_equal(actual, expected)
+
+
+def test_omitted_patience_matches_explicit_zero_and_resets_early_stop():
+    rows = clustered(256, 16, 51)
+    probes = clustered(8, 16, 52)
+    idx = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8)
+    idx.fit(rows)
+    idx.set_query_arguments(ef=64, rerank=32)
+    expected = idx.batch_query(probes, K)
+    idx.set_query_arguments(ef=64, rerank=32, patience=0)
+    for actual, reference in zip(idx.batch_query(probes, K), expected):
+        np.testing.assert_array_equal(actual, reference)
+    idx.set_query_arguments(ef=64, rerank=32, patience=1)
+    idx.query(probes[0], K)
+    idx.set_query_arguments(ef=64, rerank=32)
+    for actual, reference in zip(idx.batch_query(probes, K), expected):
+        np.testing.assert_array_equal(actual, reference)
+
+
+@pytest.mark.parametrize("patience", [1, 4, 8, 16])
+def test_positive_patience_preserves_query_result_contract(patience):
+    rows = clustered(256, 16, 53)
+    learn = clustered(32, 16, 54)
+    probes = clustered(8, 16, 55)
+    idx = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8)
+    idx.fit(rows, training_queries=learn)
+    idx.set_query_arguments(ef=64, rerank=32, patience=patience)
+    for query, actual in zip(probes, idx.batch_query(probes, K)):
+        assert actual.dtype == np.int64
+        assert len(actual) == len(np.unique(actual)) == K
+        assert np.all((actual >= 0) & (actual < len(rows)))
+        np.testing.assert_array_equal(actual, idx.query(query, K))
+
+
+def test_negative_patience_rejects_without_changing_query_arguments():
+    rows = clustered(256, 16, 56)
+    probes = clustered(8, 16, 57)
+    idx = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1)
+    idx.fit(rows)
+    idx.set_query_arguments(ef=96, rerank=64, patience=4)
+    expected = idx.batch_query(probes, K)
+    with pytest.raises(OverflowError):
+        idx.set_query_arguments(ef=1, rerank=1, patience=-1)
+    for actual, reference in zip(idx.batch_query(probes, K), expected):
+        np.testing.assert_array_equal(actual, reference)
+
+
+@pytest.mark.parametrize("code_bits", [3, 4, 5, 7, 8, 9])
+def test_traversal_code_width_boundaries(code_bits):
+    if code_bits in (4, 8):
+        idx = hm.VectorIndex("ip", degree=4, build_ef=16, threads=1, code_bits=code_bits)
+        rows = np.array([[3, 0], [0, 2], [1, 1], [-1, 0], [0, 0]], dtype=np.float32)
+        probe = np.array([1, 0.2], dtype=np.float32)
+        idx.fit(rows)
+        idx.set_query_arguments(ef=len(rows), rerank=len(rows))
+        expected = np.argsort(-(rows.astype(np.float64) @ probe), kind="stable")
+        np.testing.assert_array_equal(idx.query(probe, len(rows)), expected)
+        np.testing.assert_array_equal(idx.batch_query(probe[None], len(rows))[0], expected)
+    else:
+        with pytest.raises(ValueError, match="code_bits must be 4 or 8"):
+            hm.VectorIndex(code_bits=code_bits)
+
+
+@pytest.mark.parametrize("metric", ["angular", "euclidean", "ip"])
+def test_omitted_training_queries_match_explicit_none(metric):
+    rows = clustered(128, 7, 41)
+    probes = clustered(8, 7, 42)
+    omitted = hm.VectorIndex(metric, degree=16, build_ef=64, threads=1)
+    explicit = hm.VectorIndex(metric, degree=16, build_ef=64, threads=1)
+    omitted.fit(rows)
+    explicit.fit(rows, training_queries=None)
+    assert omitted.index_bytes == explicit.index_bytes
+    for index in (omitted, explicit):
+        index.set_query_arguments(ef=32, rerank=32)
+    for actual, expected in zip(omitted.batch_query(probes, K), explicit.batch_query(probes, K)):
+        np.testing.assert_array_equal(actual, expected)
+
+
+@pytest.mark.parametrize("metric", ["angular", "euclidean", "ip"])
+def test_training_queries_preserve_fortran_row_coordinates(metric):
+    rows = clustered(128, 7, 43)
+    learn = clustered(32, 7, 44)
+    probes = clustered(8, 7, 45)
+    contiguous = hm.VectorIndex(metric, degree=16, build_ef=64, threads=1)
+    fortran = hm.VectorIndex(metric, degree=16, build_ef=64, threads=1)
+    contiguous.fit(rows, training_queries=learn)
+    fortran.fit(np.asfortranarray(rows), training_queries=np.asfortranarray(learn))
+    assert contiguous.index_bytes == fortran.index_bytes
+    for index in (contiguous, fortran):
+        index.set_query_arguments(ef=32, rerank=32)
+    for actual, expected in zip(contiguous.batch_query(probes, K), fortran.batch_query(probes, K)):
+        np.testing.assert_array_equal(actual, expected)
+
+
+@pytest.mark.parametrize("invalid", [
+    np.ones(7, dtype=np.float32),
+    np.empty((0, 7), dtype=np.float32),
+    np.ones((2, 6), dtype=np.float32),
+    np.ones((2, 8), dtype=np.float32),
+    np.full((2, 7), np.nan, dtype=np.float32),
+    np.full((2, 7), np.inf, dtype=np.float32),
+    np.full((2, 7), -np.inf, dtype=np.float32),
+    np.zeros((2, 7), dtype=np.float32),
+])
+def test_invalid_training_queries_preserve_existing_index(invalid):
+    rows = clustered(96, 7, 46)
+    index = hm.VectorIndex("angular", degree=16, build_ef=32, threads=1)
+    index.fit(rows)
+    index.set_query_arguments(ef=32, rerank=32)
+    before = index.query(rows[0], K)
+    size = index.index_bytes
+    with pytest.raises((TypeError, ValueError)):
+        index.fit(rows[:32], training_queries=invalid)
+    assert len(index) == len(rows)
+    assert index.dim == rows.shape[1]
+    assert index.index_bytes == size
+    np.testing.assert_array_equal(index.query(rows[0], K), before)
+
+
+def test_training_queries_inner_product_matches_asymmetric_l2_projection():
+    rng = np.random.default_rng(47)
+    rows = clustered(256, 5, 48) * rng.uniform(0.1, 7.0, (256, 1)).astype(np.float32)
+    learn = clustered(64, 5, 49) * rng.uniform(0.1, 7.0, (64, 1)).astype(np.float32)
+    probes = clustered(16, 5, 50)
+    norms2 = (rows.astype(np.float64) ** 2).sum(axis=1)
+    augmented_rows = np.column_stack((rows, np.sqrt(norms2.max() - norms2))).astype(np.float32)
+    augmented_learn = np.column_stack((learn, np.zeros(len(learn), dtype=np.float32)))
+    augmented_probes = np.column_stack((probes, np.zeros(len(probes), dtype=np.float32)))
+    inner_product = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8)
+    euclidean = hm.VectorIndex("euclidean", degree=16, build_ef=64, threads=1, code_bits=8)
+    inner_product.fit(rows, training_queries=learn)
+    euclidean.fit(augmented_rows, training_queries=augmented_learn)
+    for index in (inner_product, euclidean):
+        index.set_query_arguments(ef=32, rerank=32)
+    for actual, expected in zip(
+        inner_product.batch_query(probes, K), euclidean.batch_query(augmented_probes, K)
+    ):
+        np.testing.assert_array_equal(actual, expected)
+    inner_product.set_query_arguments(ef=len(rows), rerank=len(rows))
+    truth = np.argsort(-(probes.astype(np.float64) @ rows.astype(np.float64).T), axis=1)[:, :K]
+    assert recall(inner_product.batch_query(probes, K), truth) >= 0.99
 
 
 def test_k_above_size_returns_every_row_once():

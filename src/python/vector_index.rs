@@ -3,7 +3,7 @@
 
 //! Python surface of the quantized graph index (`core::qgraph`): `VectorIndex`.
 //!
-//! The encoding is the one `public-bench ann-qgraph` measures: 4-bit traversal codes, an 8-bit
+//! The default encoding is the one `public-bench ann-qgraph` measures: 4-bit traversal codes, an 8-bit
 //! residual code for the re-rank, cache-line aligned rows, breadth-first vertex order and
 //! 3-byte neighbour ids, over a graph built with quantized construction search. Inputs are
 //! numpy arrays; build and search run without the GIL.
@@ -22,8 +22,6 @@ use crate::core::qgraph::{
     VSearchParams, VSearcher,
 };
 
-/// Traversal code bits per coordinate.
-const VERTEX_BITS: u8 = 4;
 /// Residual code bits per coordinate, read by the re-rank.
 const RESIDUAL_BITS: u8 = 8;
 /// Graphs below this many vertices store neighbour ids in three bytes.
@@ -108,6 +106,12 @@ fn augment_rows(rows: &[f32], dim: usize) -> Vec<f32> {
     out
 }
 
+fn augment_queries(rows: &[f32], dim: usize) -> Vec<f32> {
+    rows.chunks_exact(dim)
+        .flat_map(|q| q.iter().copied().chain([0.0]))
+        .collect()
+}
+
 /// Approximate nearest-neighbour index over float32 vectors: cosine similarity, Euclidean
 /// distance or (maximum) inner product.
 ///
@@ -118,9 +122,11 @@ struct PyVectorIndex {
     metric: Distance,
     degree: usize,
     build_ef: usize,
+    code_bits: u8,
     pool: Option<rayon::ThreadPool>,
     ef: usize,
     rerank: usize,
+    patience: usize,
     dim: usize,
     built: Option<Built>,
     query_buf: Vec<f32>,
@@ -138,6 +144,7 @@ impl PyVectorIndex {
         VSearchParams {
             ef: self.ef,
             rerank: self.rerank,
+            patience: self.patience,
             ..VSearchParams::default()
         }
     }
@@ -172,10 +179,17 @@ impl PyVectorIndex {
     /// `metric` is "angular" (cosine), "euclidean" or "ip" (largest inner product first).
     /// `degree` is the out-degree of the graph (even),
     /// `build_ef` the construction search width, `threads` the build and batch-query threads
-    /// (0 = one per core).
+    /// (0 = one per core). `code_bits` selects 4-bit traversal codes (default) or 8-bit
+    /// traversal codes for higher routing precision; residual reranking remains 8-bit.
     #[new]
-    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0))]
-    fn new(metric: &str, degree: usize, build_ef: usize, threads: usize) -> PyResult<Self> {
+    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4))]
+    fn new(
+        metric: &str,
+        degree: usize,
+        build_ef: usize,
+        threads: usize,
+        code_bits: u8,
+    ) -> PyResult<Self> {
         let metric = match metric {
             "angular" => Distance::Angular,
             "euclidean" => Distance::Euclidean,
@@ -194,6 +208,11 @@ impl PyVectorIndex {
         if build_ef == 0 {
             return Err(PyValueError::new_err("build_ef must be positive"));
         }
+        if !matches!(code_bits, 4 | 8) {
+            return Err(PyValueError::new_err(format!(
+                "code_bits must be 4 or 8, not {code_bits}"
+            )));
+        }
         let pool = match threads {
             0 => None,
             n => Some(
@@ -207,18 +226,26 @@ impl PyVectorIndex {
             metric,
             degree,
             build_ef,
+            code_bits,
             pool,
             ef: 64,
             rerank: 64,
+            patience: 0,
             dim: 0,
             built: None,
             query_buf: Vec::new(),
         })
     }
 
-    /// Builds the index over the rows of a 2-D array (converted to float32 if needed).
-    /// Replaces any previous index.
-    fn fit(&mut self, py: Python<'_>, x: PyArrayLike2<'_, f32, AllowTypeChange>) -> PyResult<()> {
+    /// Builds the index over a 2-D array, optionally adding projected edges from separate
+    /// training queries in the original coordinates. Replaces any previous index.
+    #[pyo3(signature = (x, training_queries=None))]
+    fn fit(
+        &mut self,
+        py: Python<'_>,
+        x: PyArrayLike2<'_, f32, AllowTypeChange>,
+        training_queries: Option<PyArrayLike2<'_, f32, AllowTypeChange>>,
+    ) -> PyResult<()> {
         let (n, dim) = (x.shape()[0], x.shape()[1]);
         if n == 0 || dim == 0 {
             return Err(PyValueError::new_err(format!(
@@ -228,6 +255,31 @@ impl PyVectorIndex {
         // One copy, made while the array is borrowed under the GIL; the build normalizes it in
         // place and keeps it until the encoding is done.
         let data = row_major(&x);
+        if data.iter().any(|v| !v.is_finite()) {
+            return Err(PyValueError::new_err(
+                "fit base vectors contain non-finite values",
+            ));
+        }
+        let training_data = training_queries
+            .map(|queries| {
+                let (count, query_dim) = (queries.shape()[0], queries.shape()[1]);
+                if count == 0 || query_dim != dim {
+                    return Err(PyValueError::new_err(format!(
+                        "training queries must be non-empty with {dim} dimensions, got shape ({count}, {query_dim})"
+                    )));
+                }
+                let rows = row_major(&queries);
+                if rows.iter().any(|v| !v.is_finite()) {
+                    return Err(PyValueError::new_err("training queries contain non-finite values"));
+                }
+                if self.metric == Distance::Angular
+                    && rows.chunks_exact(dim).any(|row| row.iter().all(|&v| v == 0.0))
+                {
+                    return Err(PyValueError::new_err("training queries contain a zero-norm row"));
+                }
+                Ok(rows)
+            })
+            .transpose()?;
         let params = BuildParams {
             metric: self.metric.graph_metric(),
             degree: self.degree,
@@ -238,6 +290,7 @@ impl PyVectorIndex {
         self.built = None;
         let id_bytes = if n < THREE_BYTE_IDS_BELOW { 3 } else { 4 };
         let metric = self.metric;
+        let code_bits = self.code_bits;
         let graph = py
             .detach(|| {
                 self.run(|| {
@@ -245,11 +298,20 @@ impl PyVectorIndex {
                         Distance::InnerProduct => augment_rows(&data, dim),
                         Distance::Angular | Distance::Euclidean => data,
                     };
-                    let g = Graph::build_owned(data, metric.graph_dim(dim), &params)?;
+                    let training_data = training_data.map(|queries| match metric {
+                        Distance::InnerProduct => augment_queries(&queries, dim),
+                        Distance::Angular | Distance::Euclidean => queries,
+                    });
+                    let g = Graph::build_owned_with_training_queries(
+                        data,
+                        metric.graph_dim(dim),
+                        &params,
+                        training_data.as_deref(),
+                    )?;
                     // The graph's float rows are dropped here; the index keeps only its codes.
                     VGraph::from_graph_with(
                         &g,
-                        VERTEX_BITS,
+                        code_bits,
                         RESIDUAL_BITS,
                         true,
                         true,
@@ -266,13 +328,16 @@ impl PyVectorIndex {
 
     /// Search effort: `ef` is the candidate pool size, `rerank` how many of the best pool
     /// candidates are re-scored with the residual code (0 returns the pool order).
-    #[pyo3(signature = (ef, rerank=64))]
-    fn set_query_arguments(&mut self, ef: usize, rerank: usize) -> PyResult<()> {
+    /// `patience` stops after that many expansions without improving the estimated top k
+    /// (0 disables this early stop).
+    #[pyo3(signature = (ef, rerank=64, patience=0))]
+    fn set_query_arguments(&mut self, ef: usize, rerank: usize, patience: usize) -> PyResult<()> {
         if ef == 0 {
             return Err(PyValueError::new_err("ef must be positive"));
         }
         self.ef = ef;
         self.rerank = rerank;
+        self.patience = patience;
         Ok(())
     }
 
@@ -344,10 +409,7 @@ impl PyVectorIndex {
         let graph = &*built.graph;
         let metric = self.metric;
         if metric == Distance::InnerProduct {
-            queries = queries
-                .chunks_exact(dim)
-                .flat_map(|q| q.iter().copied().chain([0.0]))
-                .collect();
+            queries = augment_queries(&queries, dim);
         }
         let dim = metric.graph_dim(dim);
         let results: Vec<Vec<u32>> = py

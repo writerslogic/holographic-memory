@@ -1,0 +1,24 @@
+{"B":{"evaluated_coverage":0.9929296875000005,"evaluated_unique":14806.93359375,"exact_all_retained_recall":0.9929296875000005,"exact_rerank_recall":0.9929296875000005,"recall":0.9928906250000006,"rerank_candidate_coverage":0.9929296875000005,"retained_coverage":0.9929296875000005},"E":{"evaluated_coverage":0.9934375000000006,"evaluated_unique":14804.51171875,"exact_all_retained_recall":0.9934375000000006,"exact_rerank_recall":0.9934375000000006,"recall":0.9934375000000006,"rerank_candidate_coverage":0.9934375000000006,"retained_coverage":0.9934375000000006},"O":{"evaluated_coverage":0.9929296875000005,"evaluated_unique":14736.84765625,"exact_all_retained_recall":0.9929296875000005,"exact_rerank_recall":0.9929296875000005,"recall":0.9928906250000006,"rerank_candidate_coverage":0.9929296875000005,"retained_coverage":0.9929296875000005},"OE":{"evaluated_coverage":0.9934375000000006,"evaluated_unique":14732.8046875,"exact_all_retained_recall":0.9934375000000006,"exact_rerank_recall":0.9934375000000006,"recall":0.9934375000000006,"rerank_candidate_coverage":0.9934375000000006,"retained_coverage":0.9934375000000006}}
+	Command being timed: "/home/davidcondrey/sol-qag/target/release/qag-diagnose --data /home/davidcondrey/sol-qag/data/llama-prefix --graph /home/davidcondrey/sol-qag/data/llama-prefix.graph --out /home/davidcondrey/sol-qag/results/llama-prefix-proj-q8192-d16-ef512.json --bits 8 --ef 512 --rerank 400 --training /home/davidcondrey/sol-qag/data/llama-prefix-training --training-count 8192 --projected-degree 16"
+	User time (seconds): 4.15
+	System time (seconds): 0.26
+	Percent of CPU this job got: 103%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:04.26
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 555472
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 209427
+	Voluntary context switches: 9
+	Involuntary context switches: 23
+	Swaps: 0
+	File system inputs: 12384
+	File system outputs: 3784
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

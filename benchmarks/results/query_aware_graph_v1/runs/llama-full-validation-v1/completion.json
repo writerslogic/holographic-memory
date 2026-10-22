@@ -1,0 +1,14 @@
+{
+  "status": "success",
+  "created_utc": "2026-10-22T16:57:45.823717+00:00",
+  "benchmark_receipt": {
+    "path": "/home/davidcondrey/sol-qag/runs/llama-full-validation-v1/benchmark.json",
+    "sha256": "3f9dc5cd9c2c5afe92fe2e80c0a993d4b5a77b1a60a0d970b39cbbc9f893a81a",
+    "bytes": 8497
+  },
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/runs/llama-full-validation-v1/report.json",
+    "sha256": "1524edd7d8b087bab038819471dcf703f210151621ee9735cfb1fa3795ac1abf",
+    "bytes": 127525
+  }
+}

@@ -1,0 +1,118 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling autocfg v1.5.1
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.191
+   Compiling serde v1.0.229
+   Compiling cfg-if v1.0.5
+   Compiling crossbeam-utils v0.8.23
+   Compiling crossbeam-epoch v0.9.21
+   Compiling crossbeam-deque v0.8.8
+   Compiling bytemuck v1.25.2
+   Compiling zmij v1.0.23
+   Compiling getrandom v0.4.3
+   Compiling utf8parse v0.2.2
+   Compiling rand_core v0.10.1
+   Compiling rayon-core v1.13.0
+   Compiling once_cell v1.21.4
+   Compiling colorchoice v1.0.5
+   Compiling rustix v1.1.5
+   Compiling anstyle v1.0.14
+   Compiling thiserror v2.0.21
+   Compiling anstyle-parse v1.0.0
+   Compiling parking_lot_core v0.9.12
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling anstyle-query v1.1.5
+   Compiling ref-cast v1.0.27
+   Compiling serde_json v1.0.154
+   Compiling bitflags v2.13.2
+   Compiling safe_arch v1.2.0
+   Compiling anstream v1.0.0
+   Compiling linux-raw-sys v0.12.1
+   Compiling cpufeatures v0.3.1
+   Compiling virtue v0.0.18
+   Compiling termcolor v1.4.1
+   Compiling crc32fast v1.5.3
+   Compiling clap_lex v1.1.1
+   Compiling strsim v0.11.1
+   Compiling rawpointer v0.2.1
+   Compiling scopeguard v1.2.0
+   Compiling heck v0.5.0
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling anyhow v1.0.104
+   Compiling smallvec v1.16.3
+   Compiling lock_api v0.4.14
+   Compiling num-traits v0.2.19
+   Compiling matrixmultiply v0.3.11
+   Compiling chacha20 v0.10.2
+   Compiling tracing-core v0.1.36
+   Compiling clap_builder v4.6.7
+   Compiling fastrand v2.5.0
+   Compiling holographic-memory v0.6.1 (/home/davidcondrey/sol-qag/repo)
+   Compiling twox-hash v2.1.5
+   Compiling typenum v1.20.1
+   Compiling unty v0.0.4
+   Compiling dyn-clone v1.0.20
+   Compiling either v1.19.0
+   Compiling byteorder v1.5.0
+   Compiling pin-project-lite v0.2.17
+   Compiling lz4_flex v0.14.0
+   Compiling wide v1.7.1
+   Compiling foldhash v0.2.0
+   Compiling bincode_derive v2.0.1
+   Compiling fxhash v0.2.1
+   Compiling syn v3.0.9
+   Compiling syn v2.0.119
+   Compiling num-integer v0.1.47
+   Compiling approx v0.5.1
+   Compiling num-rational v0.4.2
+   Compiling memmap2 v0.9.11
+   Compiling fs2 v0.4.3
+   Compiling rayon v1.12.0
+   Compiling rand v0.10.3
+   Compiling parking_lot v0.12.5
+   Compiling tempfile v3.27.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling thiserror-impl v2.0.21
+   Compiling clap_derive v4.6.7
+   Compiling schemars_derive v1.2.3
+   Compiling tracing-attributes v0.1.31
+   Compiling nalgebra-macros v0.3.0
+   Compiling ts-rs-macros v12.0.1
+   Compiling clap v4.6.7
+   Compiling tracing v0.1.44
+   Compiling ts-rs v12.0.1
+   Compiling num-complex v0.4.6
+   Compiling schemars v1.2.3
+   Compiling bincode v2.0.1
+   Compiling rust-stemmers v1.2.0
+   Compiling simba v0.10.2
+   Compiling nalgebra v0.35.0
+    Finished `release` profile [optimized] target(s) in 1m 09s
+	Command being timed: "cargo +1.96.0 build --release --locked --features experimental --bin qag-diagnose"
+	User time (seconds): 132.29
+	System time (seconds): 11.06
+	Percent of CPU this job got: 201%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:11.28
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1132568
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 263
+	Minor (reclaiming a frame) page faults: 3201215
+	Voluntary context switches: 22263
+	Involuntary context switches: 6831
+	Swaps: 0
+	File system inputs: 968792
+	File system outputs: 1028176
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
