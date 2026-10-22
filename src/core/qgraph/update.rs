@@ -590,6 +590,13 @@ impl UpdatableVGraph {
         self.commit_with(&writer)
     }
     fn commit_with(&self, writer: &Writer<'_>) -> Result<(), UpdateError> {
+        self.commit_with_checkpoints(writer, |_| Ok(()))
+    }
+    fn commit_with_checkpoints(
+        &self,
+        writer: &Writer<'_>,
+        mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+    ) -> Result<(), UpdateError> {
         let (bytes, end, sequence) = {
             let s = self.state.read();
             if s.pending.is_empty() {
@@ -602,7 +609,8 @@ impl UpdatableVGraph {
                 sequence,
             )
         };
-        if let Err(e) = format::append(&self.dir.join("updates.log"), end, &bytes) {
+        if let Err(e) = format::append(&self.dir.join("updates.log"), end, &bytes, &mut checkpoint)
+        {
             writer.uncertain();
             return Err(e);
         }
@@ -612,6 +620,11 @@ impl UpdatableVGraph {
         s.pending.clear();
         s.touched.clear();
         s.pending_bytes = 0;
+        drop(s);
+        if let Err(error) = checkpoint(3) {
+            writer.uncertain();
+            return Err(error);
+        }
         Ok(())
     }
     /// Searches a consistent in-memory view. `k` is clamped to the live count.
@@ -751,6 +764,7 @@ impl UpdatableVGraph {
     ) -> Result<(), UpdateError> {
         let writer = self.writer()?;
         self.commit_with(&writer)?;
+        checkpoint(0)?;
         // The writer flag excludes every other mutation, so a read guard sees the same state
         // a clone would, without copying the delta.
         let snapshot = self.state.read();
@@ -799,6 +813,7 @@ impl UpdatableVGraph {
             checkpoint(2)?;
             checkpoint(3)?;
             format::rotate(&self.dir.join("updates.log"), &manifest)?;
+            checkpoint(4)?;
             Ok::<_, UpdateError>(())
         })();
         if let Err(e) = publication {
@@ -806,6 +821,10 @@ impl UpdatableVGraph {
             return Err(e);
         }
         *self.state.write() = State::new(base, manifest.clone());
+        if let Err(error) = checkpoint(5) {
+            writer.uncertain();
+            return Err(error);
+        }
         cleanup_generations(&self.dir, manifest.sequence)?;
         Ok(())
     }

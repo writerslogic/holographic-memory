@@ -389,6 +389,37 @@ fn torn_last_batch_at_every_byte_and_checksum_corruption() {
 }
 
 #[test]
+fn torn_batched_insert_frame_preserves_only_complete_commits() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let index = UpdatableVGraph::create(&source, &[0.; 4], 4, &params()).unwrap();
+    let prefix = index.state.read().log_end;
+    index.insert_batch(&[100, 101, 102], &data(3, 4)).unwrap();
+    index.commit().unwrap();
+    let end = index.state.read().log_end;
+    drop(index);
+    for cut in prefix..=end {
+        let path = root.path().join(format!("insert-cut-{cut}"));
+        copy_store(&source, &path);
+        let file = OpenOptions::new()
+            .write(true)
+            .open(path.join("updates.log"))
+            .unwrap();
+        file.set_len(cut).unwrap();
+        drop(file);
+        for _ in 0..2 {
+            let index = UpdatableVGraph::open(&path).unwrap();
+            let found = index.search(&[1.; 4], 10, search_params()).unwrap();
+            assert_eq!(found.len(), if cut == end { 4 } else { 1 });
+            assert!(found.contains(&0));
+            for id in 100..103 {
+                assert_eq!(found.contains(&id), cut == end);
+            }
+        }
+    }
+}
+
+#[test]
 fn consolidation_interruption_recovers_committed_state() {
     for stop in 1..=3 {
         let dir = tempfile::tempdir().unwrap();
@@ -458,10 +489,138 @@ fn readers_continue_while_consolidation_performs_io() {
             .unwrap()
     });
     let result = read_rx.recv_timeout(std::time::Duration::from_secs(5));
+    assert!(matches!(
+        index.insert(100, &[1.; 4]),
+        Err(UpdateError::WriterBusy)
+    ));
+    assert!(matches!(index.delete(1), Err(UpdateError::WriterBusy)));
+    assert!(matches!(
+        index.replace(1, &[2.; 4]),
+        Err(UpdateError::WriterBusy)
+    ));
+    assert!(matches!(index.commit(), Err(UpdateError::WriterBusy)));
     resume_tx.send(()).unwrap();
     writer.join().unwrap().unwrap();
     reader.join().unwrap();
     assert!(!result.unwrap().contains(&0));
+}
+
+#[test]
+fn streaming_crash_child() {
+    let Some(path) = std::env::var_os("HMS_TEST_CRASH_DIR") else {
+        return;
+    };
+    let path = PathBuf::from(path);
+    let stop: u8 = std::env::var("HMS_TEST_CRASH_STEP")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let mode = std::env::var("HMS_TEST_CRASH_MODE").unwrap();
+    let index = UpdatableVGraph::open(&path).unwrap();
+    index.replace(1, &[9.; 4]).unwrap();
+    index.delete(2).unwrap();
+    index.insert(100, &[8.; 4]).unwrap();
+    let checkpoint = |point| {
+        if point == stop {
+            std::fs::write(path.join("kill-ready"), [point]).unwrap();
+            loop {
+                std::thread::park();
+            }
+        }
+        Ok(())
+    };
+    if mode == "commit" {
+        let writer = index.writer().unwrap();
+        index.commit_with_checkpoints(&writer, checkpoint).unwrap();
+    } else {
+        index.commit().unwrap();
+        index.consolidate_inner(checkpoint).unwrap();
+    }
+    panic!("crash checkpoint was not reached");
+}
+
+#[test]
+fn killed_commit_and_consolidation_recover_complete_generations() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let rows = data(16, 4);
+    drop(UpdatableVGraph::create(&source, &rows, 4, &params()).unwrap());
+    let initial: BTreeMap<_, _> = rows
+        .chunks_exact(4)
+        .enumerate()
+        .map(|(id, row)| (id as u32, row.to_vec()))
+        .collect();
+    let mut updated = initial.clone();
+    updated.insert(1, vec![9.; 4]);
+    updated.remove(&2);
+    updated.insert(100, vec![8.; 4]);
+    for (mode, points) in [("commit", 4), ("consolidate", 6)] {
+        for point in 0..points {
+            let path = root.path().join(format!("{mode}-{point}"));
+            copy_store(&source, &path);
+            let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "core::qgraph::update::tests::streaming_crash_child",
+                    "--nocapture",
+                ])
+                .env("HMS_TEST_CRASH_DIR", &path)
+                .env("HMS_TEST_CRASH_STEP", point.to_string())
+                .env("HMS_TEST_CRASH_MODE", mode)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .unwrap();
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+            while !path.join("kill-ready").exists() {
+                if let Some(status) = child.try_wait().unwrap() {
+                    let output = child.wait_with_output().unwrap();
+                    panic!(
+                        "child exited {status}: {} {}",
+                        String::from_utf8_lossy(&output.stdout),
+                        String::from_utf8_lossy(&output.stderr)
+                    );
+                }
+                if std::time::Instant::now() >= deadline {
+                    child.kill().unwrap();
+                    let output = child.wait_with_output().unwrap();
+                    panic!(
+                        "child did not reach {mode} point {point}: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    );
+                }
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            child.kill().unwrap();
+            child.wait().unwrap();
+            for _ in 0..2 {
+                let reopened = UpdatableVGraph::open(&path).unwrap();
+                let state = reopened.state.read();
+                let mut actual = BTreeMap::new();
+                for &id in initial.keys().chain(std::iter::once(&100)) {
+                    if let Some(&slot) = state.delta.live.get(&id) {
+                        actual.insert(id, state.delta.row(slot, 4).to_vec());
+                    } else if let Some(slot) = state.base_slot(id) {
+                        actual.insert(id, state.base.rows.row(slot).unwrap().to_vec());
+                    }
+                }
+                state.delta.assert_invariants(state.manifest.build.degree);
+                drop(state);
+                if mode == "consolidate" || point >= 2 {
+                    assert_eq!(actual, updated);
+                } else if point == 0 {
+                    assert_eq!(actual, initial);
+                } else {
+                    assert!(actual == initial || actual == updated);
+                }
+                let query = [0.31, -0.47, 0.63, 0.19];
+                assert_eq!(
+                    reopened.search(&query, 100, search_params()).unwrap(),
+                    exact(&actual, &query, 100)
+                );
+            }
+        }
+    }
 }
 
 proptest! {
