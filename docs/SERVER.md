@@ -41,6 +41,10 @@ from holographic_sdk import HolographicClient
 client = HolographicClient(url="http://127.0.0.1:8080", api_key="<token>", tenant_id="acme")
 ```
 
+## API keys
+
+Every request carries an API key. `HMS_API_KEY` sets one key valid for every tenant; `--keys-file` loads per-tenant API keys with read, write or admin scopes, created with `hms-server keygen`. Key format, scopes and rotation are in [server/auth.md](server/auth.md).
+
 ## API at a glance
 
 The contract is [`server/openapi.json`](server/openapi.json). Every operation lists the scope it needs (`read`, `write`, `admin`) as its security requirement. Errors are `application/problem+json` ([`server/errors.md`](server/errors.md)).

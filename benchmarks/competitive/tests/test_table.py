@@ -21,15 +21,19 @@ HAVE_RESULTS = bool(list(table.RESULTS.glob("*.json"))) and table.CELLS.exists()
 
 
 def resolve(data, path):
-    """Resolve `a.b[*].c[3]` against parsed JSON; `[*]` fans out. Returns the matched values."""
+    """Resolve `a.b[*].c[3]` or `a[flag]` against parsed JSON; `[*]` fans out. Returns the matched values."""
     nodes = [data]
     for part in re.findall(r"[^.\[\]]+|\[[^\]]*\]", path):
         nxt = []
         for node in nodes:
             if part == "[*]":
                 nxt += list(node)
-            elif part.startswith("["):
+            elif part.startswith("[") and part[1:-1].isdigit():
                 nxt.append(node[int(part[1:-1])])
+            elif part.startswith("["):
+                # `[flag]` keeps the list items whose `flag` is truthy (analyze.py
+                # writes serve_rounds[graph_built] for rounds that built the graph).
+                nxt += [item for item in node if isinstance(item, dict) and item.get(part[1:-1])]
             else:
                 key = part
                 if isinstance(node, dict) and key in node:
@@ -65,8 +69,8 @@ def test_every_cell_recomputes_from_its_results_file():
             if cell.get("derived"):
                 mine, other = metrics[cell["metric"]][cell["hms"]], metrics[cell["metric"]][cell["other"]]
                 adv = table.advantage(cell["metric"], mine, other)
-                if adv is None:  # HMS not measured on this metric (for example a static index's replace)
-                    assert cell["factor"] is None and cell["text"] == "n/m"
+                if adv is None:  # one side not measured (n/m), e.g. a static index's replace: no factor is drawn
+                    assert cell["factor"] is None and cell["ci"] is None and cell["text"] == "n/m"
                     continue
                 assert (None if adv["factor"] == float("inf") else adv["factor"]) == cell["factor"]
                 assert (adv["ci"] or None) == (cell["ci"] or None)
