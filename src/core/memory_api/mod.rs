@@ -45,6 +45,8 @@ macro_rules! invalid {
     };
 }
 
+#[cfg(feature = "conversation-memory")]
+mod conversation;
 mod index;
 mod json;
 mod maintenance;
@@ -62,6 +64,8 @@ use std::sync::Arc;
 use crate::core::HmsCore;
 use index::Index;
 
+#[cfg(feature = "conversation-memory")]
+pub use conversation::*;
 pub use json::OPERATIONS;
 pub use policy::*;
 pub use types::*;

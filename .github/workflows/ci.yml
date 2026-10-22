@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: [node-api, python, security, provenance, provenance-scitt, experimental, private-search, server, local-models]
+        features: [node-api, python, security, provenance, provenance-scitt, experimental, private-search, server, local-models, conversation-memory]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

@@ -35,6 +35,8 @@ class AnswerChecks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         source = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
+        if not source.is_file():
+            raise unittest.SkipTest('pinned LongMemEval source cache is unavailable')
         cls.question = next(question for question in json.loads(source.read_text())
                             if question['question_id'] == '18bc8abd')
         frozen = next(row for row in json.loads((ROOT / 'benchmarks/results/evidence_budget_dev.json').read_text())['rows']

@@ -60,7 +60,7 @@ series.
 
 - the `experimental` feature and everything it gates: research modules, connection graph and
   phase graph, the capped-union encoder, `connection_graph.log`;
-- `private-search`, `local-models` (model stage APIs and model directory layout), `provenance*`
+- `conversation-memory`, `private-search`, `local-models` (model stage APIs and model directory layout), `provenance*`
   file layouts (`provenance_log.jsonl`, `kel.json`) until they get their own specification;
 - the standalone qgraph/IVF cache files, benchmark binaries and their output formats,
   `hms-eval`, `hms-admin` output JSON field order;

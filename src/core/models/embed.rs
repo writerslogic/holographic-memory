@@ -15,6 +15,15 @@ pub struct Embedder {
     device: Device,
     dim: usize,
     batch: usize,
+    query_task: EmbeddingQueryTask,
+}
+
+/// Query instruction; document embeddings are identical for both tasks.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum EmbeddingQueryTask {
+    #[default]
+    UserMessages,
+    Conversation,
 }
 
 const MAX_TOKENS: usize = 2048;
@@ -42,7 +51,16 @@ impl Embedder {
             device: device.clone(),
             dim,
             batch: super::default_encode_batch(device, GPU_BATCH),
+            query_task: EmbeddingQueryTask::default(),
         })
+    }
+
+    pub fn set_query_task(&mut self, task: EmbeddingQueryTask) {
+        self.query_task = task;
+    }
+
+    pub fn query_task(&self) -> EmbeddingQueryTask {
+        self.query_task
     }
 
     pub fn dimensions(&self) -> usize {
@@ -61,7 +79,11 @@ impl Embedder {
             .map(|t| {
                 let t = t.as_ref();
                 if is_query {
-                    encode(&self.tokenizer, &prompts::embed_query(t), true)
+                    let query = match self.query_task {
+                        EmbeddingQueryTask::UserMessages => prompts::embed_query(t),
+                        EmbeddingQueryTask::Conversation => prompts::conversation_embed_query(t),
+                    };
+                    encode(&self.tokenizer, &query, true)
                 } else {
                     encode(&self.tokenizer, t, true)
                 }
