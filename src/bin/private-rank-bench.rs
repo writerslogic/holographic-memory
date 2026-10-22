@@ -95,7 +95,7 @@ fn read_f32(path: &Path, rows: usize) -> Result<Vec<f32>> {
         .iter()
         .map(|b| f32::from_le_bytes(*b))
         .collect();
-    for row in v.chunks_exact_mut(DIM) {
+    for row in v.as_chunks_mut::<DIM>().0.iter_mut() {
         let norm = row
             .iter()
             .map(|x| x * x)
@@ -142,7 +142,9 @@ fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
 /// Nearest centroid order: ascending `||x - c||²`, i.e. descending `x·c - ||c||²/2`.
 fn centroid_order(cent: &[f32], half_norms: &[f32], x: &[f32], take: usize) -> Vec<u32> {
     let mut s: Vec<(f32, u32)> = cent
-        .chunks_exact(DIM)
+        .as_chunks::<DIM>()
+        .0
+        .iter()
         .zip(half_norms)
         .enumerate()
         .map(|(k, (c, h))| (h - dot_f32(x, c), k as u32))
@@ -157,7 +159,9 @@ fn centroid_order(cent: &[f32], half_norms: &[f32], x: &[f32], take: usize) -> V
 }
 
 fn half_norms(cent: &[f32]) -> Vec<f32> {
-    cent.chunks_exact(DIM)
+    cent.as_chunks::<DIM>()
+        .0
+        .iter()
         .map(|c| dot_f32(c, c) / 2.0)
         .collect()
 }
@@ -181,7 +185,7 @@ fn kmeans(data: &[f32], k: usize, sample: usize, iters: usize, seed: u64) -> Vec
             .collect();
         let mut sums = vec![0f64; k * DIM];
         let mut counts = vec![0usize; k];
-        for (x, &a) in pts.chunks_exact(DIM).zip(&assign) {
+        for (x, &a) in pts.as_chunks::<DIM>().0.iter().zip(&assign) {
             counts[a as usize] += 1;
             for (s, &v) in sums[a as usize * DIM..][..DIM].iter_mut().zip(x) {
                 *s += f64::from(v);
@@ -224,7 +228,7 @@ fn layout(data: &[f32], k: usize, common: &Common) -> Layout {
     let start = Instant::now();
     if k == 1 {
         let mut centroid = vec![0f32; DIM];
-        for x in data.chunks_exact(DIM) {
+        for x in data.as_chunks::<DIM>().0.iter() {
             centroid
                 .iter_mut()
                 .zip(x)
@@ -322,7 +326,9 @@ fn f32_truth(data: &[f32], queries: &[f32]) -> Vec<Vec<u32>> {
         .par_chunks_exact(DIM)
         .map(|q| {
             let scored = data
-                .chunks_exact(DIM)
+                .as_chunks::<DIM>()
+                .0
+                .iter()
                 .enumerate()
                 .map(|(i, x)| (i as u32, (dot_f32(q, x) * 1e6) as i32));
             top_by_score(scored).into_iter().map(|(i, _)| i).collect()
@@ -342,7 +348,9 @@ fn config_row(
     let bx = (1u32 << bits.0) - 1;
     let bu = (1u32 << bits.1) - 1;
     let norms: Vec<u64> = codes
-        .chunks_exact(DIM)
+        .as_chunks::<DIM>()
+        .0
+        .iter()
         .map(|c| {
             c.iter()
                 .map(|&x| (i64::from(x) * i64::from(x)) as u64)
@@ -518,7 +526,12 @@ fn sweep(
             .par_chunks_exact(DIM)
             .enumerate()
             .map(|(qi, q)| {
-                let scores: Vec<i32> = codes.chunks_exact(DIM).map(|x| dot_i8(x, q)).collect();
+                let scores: Vec<i32> = codes
+                    .as_chunks::<DIM>()
+                    .0
+                    .iter()
+                    .map(|x| dot_i8(x, q))
+                    .collect();
                 let all = top_by_score(scores.iter().enumerate().map(|(i, &s)| (i as u32, s)));
                 let threshold = all[TOP - 1].1;
                 let ceiling = recall_f32(&all, &sized.truth[qi]);
@@ -626,7 +639,12 @@ fn protocol(
                 }
             }
         }
-        let all: Vec<i32> = codes.chunks_exact(DIM).map(|x| dot_i8(x, qc)).collect();
+        let all: Vec<i32> = codes
+            .as_chunks::<DIM>()
+            .0
+            .iter()
+            .map(|x| dot_i8(x, qc))
+            .collect();
         let threshold =
             top_by_score(all.iter().enumerate().map(|(i, &s)| (i as u32, s)))[TOP - 1].1;
         recall += recall_codes(&top_by_score(found.into_iter()), threshold);

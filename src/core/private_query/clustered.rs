@@ -450,7 +450,7 @@ impl DenseQueryState {
         let shift = 32 - self.params.modulus_bits;
         Ok(answers
             .iter()
-            .zip(self.secrets.chunks_exact(LWE_DIM))
+            .zip(self.secrets.as_chunks::<LWE_DIM>().0.iter())
             .map(|(answer, secret)| {
                 hint.data
                     .par_chunks(LWE_DIM)
@@ -508,7 +508,9 @@ impl DenseClient {
                 .zip(self.matrix.data.par_chunks(LWE_DIM))
                 .with_min_len(64)
                 .for_each(|(out, a)| {
-                    for (word, secret) in out.iter_mut().zip(secrets.chunks_exact(LWE_DIM)) {
+                    for (word, secret) in
+                        out.iter_mut().zip(secrets.as_chunks::<LWE_DIM>().0.iter())
+                    {
                         *word = kernels::dot_u32(a, secret);
                     }
                 });
@@ -570,8 +572,11 @@ mod kernels {
 
     #[inline(always)]
     fn hint_body(rows: &[i8], cols: usize, a: &[u32], out: &mut [u32]) {
-        for (col, a_row) in a.chunks_exact(LWE_DIM).enumerate() {
-            for (row, h) in rows.chunks_exact(cols).zip(out.chunks_exact_mut(LWE_DIM)) {
+        for (col, a_row) in a.as_chunks::<LWE_DIM>().0.iter().enumerate() {
+            for (row, h) in rows
+                .chunks_exact(cols)
+                .zip(out.as_chunks_mut::<LWE_DIM>().0.iter_mut())
+            {
                 let m = row[col];
                 if m != 0 {
                     let m = m as u32;
@@ -763,8 +768,18 @@ mod tests {
         let answers = server.answer(&queries).unwrap();
         // With a zero query, `a_i - H_i·s` is the error `E_i` itself.
         let mut errors = Vec::new();
-        for (answer, secret) in answers.iter().zip(state.secrets.chunks_exact(LWE_DIM)) {
-            for (h, &a) in server.hint.data.chunks_exact(LWE_DIM).zip(&answer.0) {
+        for (answer, secret) in answers
+            .iter()
+            .zip(state.secrets.as_chunks::<LWE_DIM>().0.iter())
+        {
+            for (h, &a) in server
+                .hint
+                .data
+                .as_chunks::<LWE_DIM>()
+                .0
+                .iter()
+                .zip(&answer.0)
+            {
                 errors.push(f64::from(a.wrapping_sub(dot(h, secret)) as i32));
             }
         }
