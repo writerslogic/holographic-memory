@@ -111,9 +111,13 @@ def _training_query_file(dim, max_rows):
 
 
 class QAGPair(BaseANN):
-    def __init__(self, metric, degree, build_ef):
+    def __init__(self, metric, degree, build_ef, candidate_code_bits=8):
         if metric not in METRICS:
             raise NotImplementedError(f"QAGPair does not support the {metric} distance")
+        candidate_code_bits = operator.index(candidate_code_bits)
+        if candidate_code_bits not in (4, 8):
+            raise ValueError("candidate_code_bits must be 4 or 8")
+        self._candidate_code_bits = candidate_code_bits
         baseline = _extension_path("HMS_QAG_BASELINE_SO")
         candidate = _extension_path("HMS_QAG_CANDIDATE_SO")
         if os.path.samefile(baseline, candidate):
@@ -133,6 +137,8 @@ class QAGPair(BaseANN):
         self.ef = None
         self.rerank = None
         self.repetition = None
+        self.patience = 0
+        self._candidate_patience = 0
         self._validation_count = 0
         self._construction_count = 0
         self._training_count = 0
@@ -151,6 +157,7 @@ class QAGPair(BaseANN):
 
     def _fit_hms(self, rows, training_queries=None):
         self._indexes.clear()
+        self._candidate_patience = 0
         self._build_seconds.clear()
         self._query = None
         self._validation_count = 0
@@ -166,7 +173,7 @@ class QAGPair(BaseANN):
         for arm, module in enumerate(self._modules):
             options = {"degree": self.degree, "build_ef": self.build_ef, "threads": 1}
             if arm == 1:
-                options["code_bits"] = 8
+                options["code_bits"] = self._candidate_code_bits
             started = time.perf_counter()
             index = module.VectorIndex(METRICS[self.metric], **options)
             if arm == 1 and training_queries is not None:
@@ -249,19 +256,27 @@ class QAGPair(BaseANN):
         self._build_seconds[4] = time.perf_counter() - started
         self._indexes[4] = index
 
-    def set_query_arguments(self, arm, ef=None, rerank=None, repetition=None):
+    def set_query_arguments(self, arm, ef=None, rerank=None, repetition=None, patience=0):
         if ef is None and rerank is None and repetition is None:
-            if not isinstance(arm, (list, tuple)) or len(arm) != 4:
-                raise ValueError("paired query arguments require four integers")
-            arm, ef, rerank, repetition = arm
-        arm, ef, rerank, repetition = map(operator.index, (arm, ef, rerank, repetition))
-        if arm not in ARM_NAMES or ef <= 0 or rerank < 0 or repetition < 0:
+            if not isinstance(arm, (list, tuple)) or len(arm) not in (4, 5):
+                raise ValueError("paired query arguments require four or five integers")
+            values = tuple(arm)
+            arm, ef, rerank, repetition = values[:4]
+            patience = values[4] if len(values) == 5 else 0
+        arm, ef, rerank, repetition, patience = map(operator.index, (arm, ef, rerank, repetition, patience))
+        if arm not in ARM_NAMES or ef <= 0 or rerank < 0 or repetition < 0 or patience < 0:
             raise ValueError("invalid paired arm, query effort or repetition")
+        if patience and arm != 1:
+            raise ValueError("early stopping is only measured on the candidate arm")
         if arm not in self._indexes:
             raise ValueError("selected arm was not built; learned indexes require fit_ood")
         index = self._indexes[arm]
         if arm < 2:
-            index.set_query_arguments(ef, rerank)
+            if arm == 1 and (patience or self._candidate_patience):
+                index.set_query_arguments(ef, rerank, patience=patience)
+                self._candidate_patience = patience
+            else:
+                index.set_query_arguments(ef, rerank)
         elif arm == 4:
             if ef not in MLANN_THRESHOLDS:
                 raise ValueError("MLANN effort must be 1, 2 or 3")
@@ -269,6 +284,7 @@ class QAGPair(BaseANN):
         else:
             index.set_query_arguments(ef)
         self.arm, self.ef, self.rerank, self.repetition = arm, ef, rerank, repetition
+        self.patience = patience
         self._query = self._query_mlann if arm == 4 else index.query
 
     def _query_mlann(self, v, n):
@@ -305,8 +321,10 @@ class QAGPair(BaseANN):
         attrs = {
             "qag_arm": -1 if self.arm is None else self.arm,
             "qag_repetition": -1 if self.repetition is None else self.repetition,
+            "qag_patience": self.patience,
             "qag_baseline_so": self._paths[0],
             "qag_candidate_so": self._paths[1],
+            "qag_candidate_code_bits": self._candidate_code_bits,
             "qag_reserved_validation_queries": self._validation_count,
             "qag_construction_queries": self._construction_count,
             "qag_candidate_training_queries": self._training_count,
@@ -320,7 +338,7 @@ class QAGPair(BaseANN):
             attrs["qag_candidate_training_query_file"] = self._training_path
             attrs["qag_candidate_training_query_sha256"] = self._training_sha256
         for arm, index in self._indexes.items():
-            name = ARM_NAMES[arm]
+            name = f"candidate{self._candidate_code_bits}" if arm == 1 else ARM_NAMES[arm]
             attrs[f"qag_{name}_build_seconds"] = self._build_seconds[arm]
             if hasattr(index, "index_bytes"):
                 attrs[f"qag_{name}_index_bytes"] = int(index.index_bytes)

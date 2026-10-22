@@ -87,13 +87,16 @@ def _read_runs(path, queries, rows, metric):
     seen = set()
     with h5py.File(path, "r") as results:
         for name in sorted(results):
-            match = re.fullmatch(r"(\d+)_(\d+)_(\d+)_(\d+)", name)
+            match = re.fullmatch(r"(\d+)_(\d+)_(\d+)_(\d+)(?:_(\d+))?", name)
             if match is None or not isinstance(results[name], h5py.Group):
                 raise ValueError(f"unrecognized paired result group {name}")
-            arm, ef, rerank, repetition = map(int, match.groups())
+            arm, ef, rerank, repetition = map(int, match.groups()[:4])
+            patience = int(match.group(5) or 0)
             if arm not in ARMS or ef <= 0 or repetition not in (0, 1, 2):
                 raise ValueError(f"invalid paired query arguments in {name}")
-            key = (arm, ef, rerank, repetition)
+            if patience and arm != 1:
+                raise ValueError("early stopping requires the candidate arm")
+            key = (arm, ef, rerank, patience, repetition)
             if key in seen:
                 raise ValueError("duplicate repetition for a paired configuration")
             seen.add(key)
@@ -102,7 +105,7 @@ def _read_runs(path, queries, rows, metric):
                 raise ValueError("paired results require count=100")
             if integer(group.attrs.get("run_count"), "run_count") != 5:
                 raise ValueError("paired results require run_count=5")
-            for attr, expected in (("qag_arm", arm), ("qag_repetition", repetition)):
+            for attr, expected in (("qag_arm", arm), ("qag_repetition", repetition), ("qag_patience", patience)):
                 if attr in group.attrs and integer(group.attrs[attr], attr) != expected:
                     raise ValueError(f"{attr} differs from the group arguments")
             if "distance" in group.attrs:
@@ -125,7 +128,7 @@ def _read_runs(path, queries, rows, metric):
                 if key.startswith("qag_") or key in ("build_time", "index_size", "algo", "dataset", "gpu_mode")
             }
             runs.append({
-                "arm": arm, "ef": ef, "rerank": rerank, "repetition": repetition,
+                "arm": arm, "ef": ef, "rerank": rerank, "patience": patience, "repetition": repetition,
                 "group": name, "ids": ids, "seconds": float(times.sum(dtype=np.float64)),
                 "strict_hits": 0, "epsilon_hits": 0, "resource_attrs": resources,
                 "ids_sha256": hashlib.sha256(ids.astype("<i8").tobytes()).hexdigest(),
@@ -134,7 +137,7 @@ def _read_runs(path, queries, rows, metric):
         raise ValueError("no paired result groups")
     configurations = {}
     for run in runs:
-        configurations.setdefault((run["arm"], run["ef"], run["rerank"]), []).append(run)
+        configurations.setdefault((run["arm"], run["ef"], run["rerank"], run["patience"]), []).append(run)
     if any(sorted(run["repetition"] for run in group) != [0, 1, 2] for group in configurations.values()):
         raise ValueError("every configuration requires exactly repetitions 0, 1 and 2")
     return runs, configurations
@@ -176,6 +179,8 @@ def extract(results, data, receipt=None):
                 run["epsilon_hits"] += int((distances[np.searchsorted(union, present)] <= threshold).sum())
         attributes = {key: plain(value) for key, value in source.attrs.items()}
         scope = attributes.get("qag_scope", attributes.get("scope"))
+        if scope is None and attributes.get("source") == "permitted learn split, validation only; no official test":
+            scope = "validation"
         source_info = {
             "metric": metric, "base_rows": len(base), "queries": len(queries),
             "dimension": base.shape[1], "attributes": attributes,
@@ -183,7 +188,12 @@ def extract(results, data, receipt=None):
             "official_test": scope is None or str(scope).lower() in ("official", "official_test"),
         }
     rows = []
-    for (arm, ef, rerank), group in sorted(configurations.items()):
+    for (arm, ef, rerank, patience), group in sorted(configurations.items()):
+        bits = {integer(run["resource_attrs"].get("qag_candidate_code_bits", 8),
+                        "qag_candidate_code_bits") for run in group}
+        if len(bits) != 1 or not bits <= {4, 8}:
+            raise ValueError("candidate encoding must be consistent across repetitions")
+        method = f"candidate{next(iter(bits))}" if arm == 1 else ARMS[arm]
         repetitions = []
         for run in sorted(group, key=lambda item: item["repetition"]):
             repetitions.append({
@@ -195,7 +205,7 @@ def extract(results, data, receipt=None):
             })
         qps = [run["qps"] for run in repetitions]
         rows.append({
-            "arm": arm, "method": ARMS[arm], "ef": ef, "rerank": rerank,
+            "arm": arm, "method": method, "ef": ef, "rerank": rerank, "patience": patience,
             "recall_ids_min": min(run["recall_ids"] for run in repetitions),
             "recall_epsilon_min": min(run["recall_epsilon"] for run in repetitions),
             "qps_median": statistics.median(qps), "qps_min": min(qps), "qps_max": max(qps),
@@ -206,7 +216,8 @@ def extract(results, data, receipt=None):
         for target in (0.90, 0.95, 0.99):
             eligible = [row for row in rows if row["arm"] == arm and row["recall_ids_min"] >= target]
             selected = max(eligible, key=lambda row: (row["qps_median"], -row["ef"], -row["rerank"])) if eligible else None
-            point = {"arm": arm, "method": ARMS[arm], "target": target, "reached": selected is not None}
+            method = next(row["method"] for row in rows if row["arm"] == arm)
+            point = {"arm": arm, "method": method, "target": target, "reached": selected is not None}
             if selected is not None:
                 point.update({key: value for key, value in selected.items() if key != "repetitions"})
             targets.append(point)

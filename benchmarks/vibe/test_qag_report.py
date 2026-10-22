@@ -94,6 +94,48 @@ def test_targets_require_actual_minimum_recall_without_rounding_or_interpolation
     assert next(point for point in report["targets"] if point["target"] == 0.99)["ef"] == 200
 
 
+def test_default_regression_encoding_is_reported_and_mixed_repetitions_rejected(tmp_path):
+    data, truth = source_file(tmp_path)
+    raw = result_file(tmp_path, truth, [(1, 100, 100, [truth] * 3, [1.] * 3)])
+    with h5py.File(raw, "r+") as output:
+        for group in output.values():
+            group.attrs["qag_candidate_code_bits"] = 4
+    report = reporter.extract(raw, data)
+    assert report["rows"][0]["method"] == "candidate4"
+    assert all(point["method"] == "candidate4" for point in report["targets"])
+    with h5py.File(raw, "r+") as output:
+        output["1_100_100_1"].attrs["qag_candidate_code_bits"] = 8
+    with pytest.raises(ValueError, match="consistent"):
+        reporter.extract(raw, data)
+
+
+def test_initial_validation_export_marker_does_not_become_official_test(tmp_path):
+    data, truth = source_file(tmp_path, scope=None)
+    with h5py.File(data, "r+") as output:
+        output.attrs["source"] = "permitted learn split, validation only; no official test"
+    raw = result_file(tmp_path, truth)
+    source = reporter.extract(raw, data)["source"]
+    assert source["scope"] == "validation"
+    assert source["official_test"] is False
+
+
+def test_patience_configurations_keep_separate_repetitions_and_parameters(tmp_path):
+    data, truth = source_file(tmp_path)
+    raw = result_file(tmp_path, truth, [(1, 160, 200, [truth] * 3, [1.] * 3)])
+    with h5py.File(raw, "r+") as output:
+        for repetition in range(3):
+            name = f"1_160_200_{repetition}"
+            output.move(name, name + "_8")
+            output[name + "_8"].attrs["qag_patience"] = 8
+    report = reporter.extract(raw, data)
+    assert report["rows"][0]["patience"] == 8
+    assert all(point["patience"] == 8 for point in report["targets"])
+    with h5py.File(raw, "r+") as output:
+        output["1_160_200_1_8"].attrs["qag_patience"] = 4
+    with pytest.raises(ValueError, match="qag_patience"):
+        reporter.extract(raw, data)
+
+
 @pytest.mark.parametrize("metric,query,rows,expected", [
     ("ip", [1., 0.], [[2., 0.], [40., 30.]], [-2., -40.]),
     ("euclidean", [0., 0.], [[3., 4.], [6., 8.]], [5., 10.]),

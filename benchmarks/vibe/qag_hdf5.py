@@ -37,7 +37,8 @@ def export(data, training, out):
         raise ValueError("construction/validation overlap")
     with h5py.File(out, "x") as handle:
         handle.attrs.update(dimension=dim, distance="ip", point_type="float",
-                            source="permitted learn split, validation only; no official test")
+                            source="permitted learn split, validation only; no official test",
+                            qag_scope="validation", qag_source_sha256=meta["source_sha256"])
         for name, matrix in (("train", base), ("test", queries), ("neighbors", truth),
                              ("distances", -scores), ("learn", construction), ("learn_neighbors", neighbors)):
             handle.create_dataset(name, data=matrix)
