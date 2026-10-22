@@ -1,0 +1,42 @@
+{
+ "by_model_usd": {
+  "gpt-4o-2024-08-06": 22.519549999999978,
+  "gpt-4o-mini-2024-07-18": 0.9571609500000001
+ },
+ "by_run_usd": {
+  "dev_gpt4o_k10:gpt-4o-2024-08-06": 1.7621924999999994,
+  "dev_gpt4o_k10_r1:gpt-4o-2024-08-06": 1.2473250000000007,
+  "dev_gpt4o_k10_r2:gpt-4o-2024-08-06": 1.1417375000000003,
+  "dev_gpt4o_k10_r3:gpt-4o-2024-08-06": 1.1015349999999993,
+  "dev_gpt4o_k15:gpt-4o-2024-08-06": 2.3469675000000003,
+  "dev_gpt4o_k50_base:gpt-4o-2024-08-06": 6.716690000000001,
+  "dev_gpt4o_k50_r1:gpt-4o-2024-08-06": 4.026107499999998,
+  "dev_gpt4o_k50_r2:gpt-4o-2024-08-06": 3.573499999999998,
+  "dev_mini_k10:gpt-4o-mini-2024-07-18": 0.20054695000000008,
+  "dev_mini_k10_r1:gpt-4o-mini-2024-07-18": 0.0630216,
+  "dev_mini_k10_round0.5:gpt-4o-mini-2024-07-18": 0.02050155,
+  "dev_mini_k10_round0.5_r1:gpt-4o-mini-2024-07-18": 0.017880899999999998,
+  "dev_mini_k10_sub1:gpt-4o-mini-2024-07-18": 0.14851345,
+  "dev_mini_k15:gpt-4o-mini-2024-07-18": 0.2342674499999999,
+  "dev_mini_k20:gpt-4o-mini-2024-07-18": 0.27247475000000015,
+  "dev_mini_k50:gpt-4o-mini-2024-07-18": 0.496847,
+  "dev_mini_k5:gpt-4o-mini-2024-07-18": 0.15624855000000007
+ },
+ "calls": 2799,
+ "cap_usd": 60.0,
+ "prices_usd_per_token": {
+  "gpt-4o-2024-08-06": [
+   2.5e-06,
+   1.25e-06,
+   1e-05
+  ],
+  "gpt-4o-mini-2024-07-18": [
+   1.5e-07,
+   7.5e-08,
+   6e-07
+  ]
+ },
+ "schema_version": 1,
+ "settled_from": "call cache; by_run_usd is the live ledger and can differ by failed reservations",
+ "total_usd": 23.47671095
+}

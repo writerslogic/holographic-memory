@@ -1,0 +1,963 @@
+{
+ "schema_version": 1,
+ "split": "dev",
+ "n_questions": 100,
+ "heldout_evaluated": 0,
+ "reader_protocol": "official run_generation.py 9e0b455: flat-turn rounds, json history, cot (con), temperature 0, max_tokens 800",
+ "judge": {
+  "model": "gpt-4o-2024-08-06",
+  "protocol": "official evaluate_qa.py get_anscheck_prompt, temperature 0"
+ },
+ "retrieval": "reference pipeline turn ranking over cached Qwen3 scores (longmemeval_config.json)",
+ "arms": {
+  "gpt-4o-2024-08-06|k10|sub0.0|round0.0": {
+   "reader": "gpt-4o-2024-08-06",
+   "topk_context": 10,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_gpt4o_k10.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 93,
+     "accuracy": 0.93,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 16
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 23
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 4
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 26
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 6
+     }
+    },
+    {
+     "file": "longmemeval_official_dev_gpt4o_k10_r1.json",
+     "repeat": 1,
+     "n": 100,
+     "correct": 87,
+     "accuracy": 0.87,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 15
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 21
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 24
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    },
+    {
+     "file": "longmemeval_official_dev_gpt4o_k10_r2.json",
+     "repeat": 2,
+     "n": 100,
+     "correct": 90,
+     "accuracy": 0.9,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 16
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 20
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 6
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 24
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 6
+     }
+    },
+    {
+     "file": "longmemeval_official_dev_gpt4o_k10_r3.json",
+     "repeat": 3,
+     "n": 100,
+     "correct": 89,
+     "accuracy": 0.89,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 15
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 21
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 5
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 13
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 25
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 6
+     }
+    }
+   ],
+   "mean_correct": 89.75,
+   "min_correct": 87,
+   "max_correct": 93,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 15.5
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 21.25
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 4.5
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 13.75
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 24.75
+    }
+   }
+  },
+  "gpt-4o-2024-08-06|k15|sub0.0|round0.0": {
+   "reader": "gpt-4o-2024-08-06",
+   "topk_context": 15,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_gpt4o_k15.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 88,
+     "accuracy": 0.88,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 15
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 22
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 24
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 88.0,
+   "min_correct": 88,
+   "max_correct": 88,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 15.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 22.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 3.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 24.0
+    }
+   }
+  },
+  "gpt-4o-2024-08-06|k50|sub0.0|round0.0": {
+   "reader": "gpt-4o-2024-08-06",
+   "topk_context": 50,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_gpt4o_k50_base.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 84,
+     "accuracy": 0.84,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 15
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 21
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 9
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 22
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    },
+    {
+     "file": "longmemeval_official_dev_gpt4o_k50_r1.json",
+     "repeat": 1,
+     "n": 100,
+     "correct": 82,
+     "accuracy": 0.82,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 15
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 20
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 20
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    },
+    {
+     "file": "longmemeval_official_dev_gpt4o_k50_r2.json",
+     "repeat": 2,
+     "n": 100,
+     "correct": 85,
+     "accuracy": 0.85,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 15
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 19
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 9
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 6
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 22
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 83.66666666666667,
+   "min_correct": 82,
+   "max_correct": 85,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 15.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 20.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 9.333333333333334
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 4.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 21.333333333333332
+    }
+   }
+  },
+  "gpt-4o-mini-2024-07-18|k10|sub0.0|round0.0": {
+   "reader": "gpt-4o-mini-2024-07-18",
+   "topk_context": 10,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_mini_k10.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 84,
+     "accuracy": 0.84,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 14
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 20
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 23
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 84.0,
+   "min_correct": 84,
+   "max_correct": 84,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 14.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 20.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 3.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 23.0
+    }
+   }
+  },
+  "gpt-4o-mini-2024-07-18|k10|sub1.0|round0.0": {
+   "reader": "gpt-4o-mini-2024-07-18",
+   "topk_context": 10,
+   "subquery_weight": 1.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_mini_k10_sub1.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 84,
+     "accuracy": 0.84,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 14
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 20
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 23
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 84.0,
+   "min_correct": 84,
+   "max_correct": 84,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 14.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 20.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 3.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 23.0
+    }
+   }
+  },
+  "gpt-4o-mini-2024-07-18|k15|sub0.0|round0.0": {
+   "reader": "gpt-4o-mini-2024-07-18",
+   "topk_context": 15,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_mini_k15.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 84,
+     "accuracy": 0.84,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 14
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 22
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 21
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 84.0,
+   "min_correct": 84,
+   "max_correct": 84,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 14.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 22.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 3.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 21.0
+    }
+   }
+  },
+  "gpt-4o-mini-2024-07-18|k20|sub0.0|round0.0": {
+   "reader": "gpt-4o-mini-2024-07-18",
+   "topk_context": 20,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_mini_k20.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 80,
+     "accuracy": 0.8,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 13
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 21
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 2
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 20
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 80.0,
+   "min_correct": 80,
+   "max_correct": 80,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 13.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 21.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 2.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 20.0
+    }
+   }
+  },
+  "gpt-4o-mini-2024-07-18|k50|sub0.0|round0.0": {
+   "reader": "gpt-4o-mini-2024-07-18",
+   "topk_context": 50,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_mini_k50.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 76,
+     "accuracy": 0.76,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 13
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 18
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 2
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 19
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 76.0,
+   "min_correct": 76,
+   "max_correct": 76,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 13.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 18.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 2.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 19.0
+    }
+   }
+  },
+  "gpt-4o-mini-2024-07-18|k5|sub0.0|round0.0": {
+   "reader": "gpt-4o-mini-2024-07-18",
+   "topk_context": 5,
+   "subquery_weight": 0.0,
+   "runs": [
+    {
+     "file": "longmemeval_official_dev_mini_k5.json",
+     "repeat": 0,
+     "n": 100,
+     "correct": 79,
+     "accuracy": 0.79,
+     "by_type": {
+      "knowledge-update": {
+       "n": 16,
+       "correct": 15
+      },
+      "multi-session": {
+       "n": 27,
+       "correct": 17
+      },
+      "single-session-assistant": {
+       "n": 11,
+       "correct": 10
+      },
+      "single-session-preference": {
+       "n": 6,
+       "correct": 3
+      },
+      "single-session-user": {
+       "n": 14,
+       "correct": 14
+      },
+      "temporal-reasoning": {
+       "n": 26,
+       "correct": 20
+      }
+     },
+     "abstention": {
+      "n": 6,
+      "correct": 5
+     }
+    }
+   ],
+   "mean_correct": 79.0,
+   "min_correct": 79,
+   "max_correct": 79,
+   "mean_by_type": {
+    "knowledge-update": {
+     "n": 16,
+     "mean_correct": 15.0
+    },
+    "multi-session": {
+     "n": 27,
+     "mean_correct": 17.0
+    },
+    "single-session-assistant": {
+     "n": 11,
+     "mean_correct": 10.0
+    },
+    "single-session-preference": {
+     "n": 6,
+     "mean_correct": 3.0
+    },
+    "single-session-user": {
+     "n": 14,
+     "mean_correct": 14.0
+    },
+    "temporal-reasoning": {
+     "n": 26,
+     "mean_correct": 20.0
+    }
+   }
+  }
+ },
+ "spend_settled_from_call_cache": {
+  "calls": 2799,
+  "total_usd": 23.47671095,
+  "by_model_usd": {
+   "gpt-4o-2024-08-06": 22.519549999999978,
+   "gpt-4o-mini-2024-07-18": 0.9571609500000001
+  }
+ },
+ "limitations": [
+  "Retrieval is the reference ranking, not native ConversationMemory recall; the native path was not run end to end (about 3 minutes per question locally).",
+  "The reference ranking indexes user turns; evidence held only in assistant turns is reached through round expansion alone.",
+  "Reader and judge at temperature 0 are not deterministic: repeated k=10 runs differ on about 6 of 100 questions, so single runs are data points and arms are compared by their run ranges.",
+  "Replacing label-bearing tie-breaks with hashed ids leaves every top-10/15/50 set unchanged.",
+  "topk_context was chosen on dev; there is no held-out claim."
+ ],
+ "gpt4o_k10_failures": {
+  "runs": 4,
+  "failed_every_run": [
+   [
+    "352ab8bd",
+    "single-session-assistant"
+   ],
+   [
+    "46a3abf7",
+    "multi-session"
+   ],
+   [
+    "7024f17c",
+    "multi-session"
+   ],
+   [
+    "gpt4_2f8be40d",
+    "multi-session"
+   ],
+   [
+    "gpt4_31ff4165",
+    "multi-session"
+   ]
+  ],
+  "failed_some_runs": [
+   [
+    "0a34ad58",
+    "single-session-preference",
+    2
+   ],
+   [
+    "15745da0",
+    "single-session-user",
+    3
+   ],
+   [
+    "1da05512",
+    "single-session-preference",
+    2
+   ],
+   [
+    "2133c1b5",
+    "knowledge-update",
+    2
+   ],
+   [
+    "28dc39ac",
+    "multi-session",
+    3
+   ],
+   [
+    "6d550036",
+    "multi-session",
+    1
+   ],
+   [
+    "7405e8b1",
+    "multi-session",
+    3
+   ],
+   [
+    "75832dbd",
+    "single-session-preference",
+    3
+   ],
+   [
+    "b6025781",
+    "single-session-preference",
+    3
+   ],
+   [
+    "e4e14d04",
+    "temporal-reasoning",
+    3
+   ],
+   [
+    "gpt4_59149c78",
+    "temporal-reasoning",
+    1
+   ],
+   [
+    "gpt4_70e84552_abs",
+    "temporal-reasoning",
+    3
+   ],
+   [
+    "gpt4_a56e767c",
+    "multi-session",
+    2
+   ]
+  ]
+ }
+}
