@@ -133,11 +133,15 @@ class Tantivy:
         writer.delete_documents("id", document["id"])
         writer.add_document(tantivy.Document(id=document["id"], body=document["text"] + " benchmarkrevision"))
         writer.commit()
+        self.index.reload()
+        self.searcher = self.index.searcher()
 
     def delete(self, document):
         writer = self._writer()
         writer.delete_documents("id", document["id"])
         writer.commit()
+        self.index.reload()
+        self.searcher = self.index.searcher()
 
 
 class Whoosh:
@@ -174,15 +178,22 @@ class Whoosh:
         hits = self.searcher.search(self.parser.parse(text), limit=K)
         return [(h["id"], h.score) for h in hits]
 
+    def _reload(self):
+        # refresh() reuses stale segment readers after deletion-only commits.
+        self.searcher.close()
+        self.searcher = self.ix.searcher()
+
     def replace(self, document):
         writer = self.ix.writer()
         writer.update_document(id=document["id"], body=document["text"] + " benchmarkrevision")
         writer.commit()
+        self._reload()
 
     def delete(self, document):
         writer = self.ix.writer()
         writer.delete_by_term("id", document["id"])
         writer.commit()
+        self._reload()
 
 
 class Bm25s:

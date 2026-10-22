@@ -6,6 +6,7 @@ committed COMPARISON.md equals a fresh generation."""
 
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -97,6 +98,26 @@ def test_cited_files_are_committed_and_table_is_current():
     assert table.main(check=True) == 0, "run ./benchmarks/competitive/hms-bench table"
 
 
+@pytest.mark.skipif(not HAVE_RESULTS, reason="no committed competitive results yet")
+def test_published_tables_regenerate_byte_for_byte(tmp_path):
+    paths = subprocess.check_output(["git", "-C", str(ROOT), "ls-files", "--", "README.md", "docs/benchmarks",
+                                     "benchmarks/results/competitive", "benchmarks/competitive/README-block.md",
+                                     "benchmarks/competitive/GAPS.json"], text=True).splitlines()
+    expected = {path: (ROOT / path).read_bytes() for path in paths}
+    for path, content in expected.items():
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+    harness = Path("benchmarks/competitive")
+    shutil.copytree(ROOT / harness / "hmsbench", tmp_path / harness / "hmsbench", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copy2(ROOT / harness / "hms-bench", tmp_path / harness / "hms-bench")
+    generated = subprocess.run([sys.executable, str(tmp_path / harness / "hms-bench"), "table"], cwd=tmp_path,
+                               capture_output=True, text=True)
+    assert generated.returncode == 0, generated.stderr
+    for path, content in expected.items():
+        assert (tmp_path / path).read_bytes() == content, f"stale generated file: {path}"
+
+
 def fake_ann(hms_qps, other_qps, spread=0.01):
     def serve(qps):
         return {"configs": [{"params": {"ef": 64}, "recall_at_10": 0.96,
@@ -167,3 +188,49 @@ def test_raw_pass_timings_from_older_files_summarise_like_stored_summaries():
     old = {"passes_ns": raw}
     new = {"passes": [pass_summary(ns) for ns in raw]}
     assert analyze._passes(old) == analyze._passes(new) == new["passes"]
+
+
+@pytest.mark.parametrize("kind", ["ann", "text"])
+@pytest.mark.parametrize("classes, expected", [
+    ({"hms-server": "per-request-flush", "qdrant-server": "per-request-flush"}, "WIN"),
+    ({"hms-server": "per-request-flush", "qdrant-server": "periodic"}, "n/v"),
+    ({"hms-server": "per-request-flush", "qdrant-server": "undocumented"}, "n/v"),
+    ({"hms-server": "per-request-flush"}, "n/v"),
+    ({}, "n/v"),
+])
+def test_server_operation_verdicts_require_matching_recorded_classes(kind, classes, expected, monkeypatch):
+    data = fake_ann(2000, 1000)
+    data["systems"] = {"hms-server": data["systems"][registry.HMS], "qdrant-server": data["systems"]["hnswlib"]}
+    data.update(kind=kind, mode="server", reference="hms-server", facts={}, protocol={"durability_class": classes})
+    if not classes:
+        data.pop("protocol")
+    data["hardware"].update(cpu="c", logical_cores=1, memory_bytes=2**30, os="o")
+    data["dataset"].update(documents=200, queries=1)
+    for i, entry in enumerate(data["systems"].values(), 1):
+        entry["ops"] = {name: {"supported": True, "per_op_ms_durable": i} for name in ("replace", "delete")}
+        if kind == "text":
+            entry.update(build_runs=[{"ingest_s": 1, "peak_rss_bytes": 2**20, "disk_bytes": 2**20}],
+                         serve_rounds=[{"passes_ns": [[1000, 2000]], "peak_rss_bytes": 2**20, "cold_start_s": 1}])
+    monkeypatch.setattr(table, "load_results", lambda: [(Path("server.json"), data)])
+    markdown, cells, _, gaps = table.build()
+    sec = table.section(Path("server.json"), data)
+    _, tally = table.render_section(sec, [])
+    operation_keys = {"replace_ms_per_op", "delete_ms_per_op"}
+    derived = [c for c in cells if c.get("derived") and c["metric"] in operation_keys]
+    assert len(derived) == 2
+    assert {c["verdict"] for c in derived} == {expected}
+    rows = [line for line in markdown.splitlines() if line.startswith(("| Replace one", "| Delete one"))]
+    if expected == "WIN":
+        assert all("†" not in line for line in rows)
+        assert all(c["factor"] == 2 for c in derived)
+        assert len([r for r in tally["WIN"] if r[0] in operation_keys]) == 2
+    else:
+        assert all("†" in line for line in rows)
+        assert all(c["factor"] is None and c["ci"] is None for c in derived)
+        assert not any(g["metric"] in operation_keys for g in gaps)
+        assert not any(r[0] in operation_keys for status in ("WIN", "TIE", "LOSS", "n/m") for r in tally[status])
+        assert "durability classes " + (classes.get("hms-server") or "unrecorded") in markdown
+        assert "vs " + (classes.get("qdrant-server") or "unrecorded") + "; no verdict" in markdown
+    data["systems"]["qdrant-server"].pop("ops")
+    without_ops = table.section(Path("server.json"), data)
+    assert sec["family"] == without_ops["family"] + (2 if expected == "WIN" else 0)

@@ -24,6 +24,26 @@ def cell(value, ci=None, n=1, source="", unit="", note=""):
     return {"value": value, "ci": ci if ci is not None else [value, value], "n": n, "source": source, "unit": unit, "note": note}
 
 
+def _operation_cell(results, system, *args, **kwargs):
+    c = cell(*args, **kwargs)
+    if results.get("mode") == "server":
+        c["durability_class"] = results.get("protocol", {}).get("durability_class", {}).get(system)
+    return c
+
+
+def comparison_note(metric, mine, theirs):
+    if metric not in ("replace_ms_per_op", "delete_ms_per_op"):
+        return ""
+    if mine["value"] is None or theirs["value"] is None:
+        return ""
+    if "durability_class" not in mine and "durability_class" not in theirs:
+        return ""
+    m, t = mine.get("durability_class"), theirs.get("durability_class")
+    if m and t and m == t:
+        return ""
+    return f"durability classes {m or 'unrecorded'} vs {t or 'unrecorded'}; no verdict"
+
+
 def _med(values):
     return statistics.median(values)
 
@@ -132,7 +152,7 @@ def ann_metrics(path, results, level=0.95):
         for name in ("replace", "delete"):
             o = ops.get(name)
             if o and o.get("supported"):
-                put(f"{name}_ms_per_op", system, cell(o["per_op_ms_durable"], None, 1, f"{path}#systems.{system}.ops.{name}", "ms",
+                put(f"{name}_ms_per_op", system, _operation_cell(results, system, o["per_op_ms_durable"], None, 1, f"{path}#systems.{system}.ops.{name}", "ms",
                                                       "includes the explicit save the library requires" if o.get("flush_required") else ""))
             else:
                 reason = (o or ops).get("reason") or (o or ops).get("error") or "not supported"
@@ -190,7 +210,7 @@ def text_metrics(path, results, level=0.95):
         for name in ("replace", "delete"):
             o = ops.get(name)
             if o and o.get("supported"):
-                put(f"{name}_ms_per_op", system, cell(o["per_op_ms_durable"], None, 1, f"{src}.ops.{name}", "ms"))
+                put(f"{name}_ms_per_op", system, _operation_cell(results, system, o["per_op_ms_durable"], None, 1, f"{src}.ops.{name}", "ms"))
             else:
                 put(f"{name}_ms_per_op", system, cell(None, None, 0, f"{src}.ops", "ms", (o or ops).get("reason") or (o or ops).get("error") or "not supported"))
         _install_cells(put, system, entry, src)

@@ -123,6 +123,8 @@ def advantage(metric, mine, theirs):
     """HMS advantage factor (>1 means HMS is better) with a conservative interval, or None."""
     if mine["value"] is None or theirs["value"] is None:
         return None
+    if analyze.comparison_note(metric, mine, theirs):
+        return None
     higher = analyze.direction(metric) == analyze.HIGHER
     if mine["value"] <= 0 or theirs["value"] <= 0:
         if mine["value"] == theirs["value"]:
@@ -182,7 +184,8 @@ def metrics_for(path, data):
     first = fn(rel(path), data)
     ref = reference(data)
     family = sum(1 for k, *_ in spec if k not in analyze.NO_VERDICT and ref in first.get(k, {})
-                 and first[k][ref]["value"] is not None and best_other(k, first[k])[0] is not None)
+                 and first[k][ref]["value"] is not None and best_other(k, first[k])[0] is not None
+                 and not analyze.comparison_note(k, first[k][ref], best_other(k, first[k])[1]))
     level = 1 - 0.05 / max(family, 1)
     return fn(rel(path), data, level=level), level, family
 
@@ -216,6 +219,17 @@ def render_section(sec, cells_out):
              *timing_boundary_lines(data),
              f"| Metric | {'hms-server' if is_server(data) else 'HMS'} | Best other | Advantage (HMS vs best other) | Verdict |", "|---|---|---|---|---|"]
     tally = {"WIN": [], "TIE": [], "LOSS": [], "n/m": [], "n/v": []}
+    footnotes = []
+
+    def marker(key, mine, other, name):
+        note = analyze.comparison_note(key, mine, other) if other else ""
+        if not note:
+            return ""
+        footnote = f"{registry.SYSTEMS[reference(data)]['display']} vs {registry.SYSTEMS[name]['display']}: {note}."
+        if footnote not in footnotes:
+            footnotes.append(footnote)
+        return "†"
+
     for key, label, unit, dec in spec:
         cells = metrics.get(key)
         if not cells:
@@ -229,7 +243,8 @@ def render_section(sec, cells_out):
         if mine is None:
             continue
         adv = advantage(key, mine, other) if other else None
-        v = "n/v" if key in analyze.NO_VERDICT else verdict(adv) if other else "n/m"
+        mark = marker(key, mine, other, name)
+        v = "n/v" if key in analyze.NO_VERDICT or mark else verdict(adv) if other else "n/m"
         tally[v].append((key, label, name, adv))
         if other is not None:
             cells_out.append({"section": sec["title"], "file": rel(path), "hardware_class": hw["class"], "metric": key, "derived": True,
@@ -237,9 +252,9 @@ def render_section(sec, cells_out):
                               "factor_infinite": bool(adv and adv["factor"] == float("inf")), "ci": adv["ci"] if adv else None, "verdict": v,
                               "text": "n/m" if adv is None else fx(adv["factor"])})
         adv_text = "n/m" if adv is None else fx(adv["factor"]) + (f" [{adv['ci'][0]:.2f}, {adv['ci'][1]:.2f}]" if adv["ci"] else " (no CI)")
-        best_text = "n/m" if other is None else f"{registry.SYSTEMS[name]['display']} {fmt(other['value'], dec)}"
+        best_text = "n/m" if other is None else f"{registry.SYSTEMS[name]['display']} {fmt(other['value'], dec)}{mark}"
         note = f" ({mine['note']})" if mine["value"] is None and mine["note"] else ""
-        lines.append(f"| {label}{' (' + unit + ')' if unit else ''} | {fmt(mine['value'], dec)}{note} | {best_text} | {adv_text} | **{v}** |")
+        lines.append(f"| {label}{' (' + unit + ')' if unit else ''} | {fmt(mine['value'], dec)}{mark}{note} | {best_text} | {adv_text} | **{v}** |")
     lines += ["", "<details><summary>All systems</summary>", ""]
     systems = list(data["systems"])
     head = ["Metric"] + [registry.SYSTEMS[s]["display"] for s in systems]
@@ -251,6 +266,9 @@ def render_section(sec, cells_out):
         best, _ = best_other(key, {**cells})
         sign = 1 if analyze.direction(key) == analyze.HIGHER else -1
         valued = {s: c["value"] for s, c in cells.items() if c["value"] is not None}
+        mine = cells.get(reference(data))
+        if mine and any(analyze.comparison_note(key, mine, cells[s]) for s in valued):
+            valued = {}
         top = max(valued, key=lambda s: sign * valued[s]) if valued else None
         row = [label + (f" ({unit})" if unit else "")]
         for s in systems:
@@ -261,12 +279,15 @@ def render_section(sec, cells_out):
                 row.append(f"n/m ({c['note']})" if c["note"] else "n/m")
             else:
                 text = fmt(c["value"], dec)
+                if mine and s != reference(data):
+                    text += marker(key, mine, c, s)
                 row.append(f"**{text}**" if s == top else text)
         lines.append("| " + " | ".join(row) + " |")
     lines += ["", "Bold marks the best value in the row. Operating points for the QPS rows: "
               + "; ".join(f"{registry.SYSTEMS[s]['display']}: {metrics['qps@recall0.95'][s]['note']}" for s in systems
                           if "qps@recall0.95" in metrics and s in metrics["qps@recall0.95"] and metrics["qps@recall0.95"][s]["note"]) + "." if sec["kind"] == "ann" else
               "Bold marks the best value in the row.", "", "</details>", ""]
+    lines += [f"† {note}" for note in footnotes] + ([""] if footnotes else [])
     skipped = data.get("skipped")
     if skipped:
         lines += ["Systems that did not run in this file: " + "; ".join(f"`{k}`: {v[:160]}" for k, v in skipped.items()) + ".", ""]

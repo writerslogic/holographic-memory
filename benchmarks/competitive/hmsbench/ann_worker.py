@@ -55,6 +55,24 @@ def normalize(a, angular=True):
     return np.ascontiguousarray((a / np.where(n == 0, 1, n)).astype(np.float32))
 
 
+def sync_index(directory):
+    for path in directory.rglob("*"):
+        if path.is_file():
+            with path.open("rb") as f:
+                if sys.platform == "darwin":
+                    import fcntl
+                    fcntl.fcntl(f.fileno(), fcntl.F_FULLFSYNC)
+                else:
+                    os.fsync(f.fileno())
+    if os.name == "posix":
+        for path in [*sorted((p for p in directory.rglob("*") if p.is_dir()), reverse=True), directory]:
+            fd = os.open(path, os.O_RDONLY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+
+
 def load_rows(path, dim, count=None):
     rows = np.fromfile(path, dtype="<f4").reshape(-1, dim)
     return rows if count is None else rows[:count]
@@ -128,9 +146,7 @@ class Hnswlib(Adapter):
         return self.idx.knn_query(q, k=K)[0][0]
 
     def replace(self, ids, vectors):
-        for i in ids:
-            self.idx.mark_deleted(int(i))
-        self.idx.add_items(vectors, np.arange(10**7, 10**7 + len(ids)))
+        self.idx.add_items(vectors, np.asarray(ids))
 
     def delete(self, ids):
         for i in ids:
@@ -138,6 +154,7 @@ class Hnswlib(Adapter):
 
     def flush(self):
         self.idx.save_index(str(self.workdir / "index.bin"))
+        sync_index(self.workdir)
 
 
 class FaissBase(Adapter):
@@ -157,6 +174,7 @@ class FaissBase(Adapter):
 
     def flush(self):
         self._write(self.index)
+        sync_index(self.workdir)
 
 
 class FaissHnsw(FaissBase):
@@ -188,14 +206,14 @@ class FaissFlat(FaissBase):
 
     def build(self, train, params):
         import faiss
-        index = faiss.IndexFlatIP(self.dim) if self.angular else faiss.IndexFlatL2(self.dim)
-        index.add(train)
+        flat = faiss.IndexFlatIP(self.dim) if self.angular else faiss.IndexFlatL2(self.dim)
+        index = faiss.IndexIDMap2(flat)
+        index.add_with_ids(train, np.arange(len(train), dtype=np.int64))
         self._write(index)
 
     def replace(self, ids, vectors):
-        import faiss
         self.index.remove_ids(np.asarray(ids, dtype=np.int64))
-        self.index.add(vectors)
+        self.index.add_with_ids(vectors, np.asarray(ids, dtype=np.int64))
 
     def delete(self, ids):
         self.index.remove_ids(np.asarray(ids, dtype=np.int64))
@@ -235,8 +253,9 @@ class FaissIvfpq(FaissBase):
             self.index.k_factor = sp["k_factor"]
 
     def delete(self, ids):
-        base = self.index
-        base.remove_ids(np.asarray(ids, dtype=np.int64))
+        if self.is_refine:
+            raise Unsupported("IndexRefine remove_ids is not defined for the refine store")
+        self.index.remove_ids(np.asarray(ids, dtype=np.int64))
 
     def replace(self, ids, vectors):
         if self.is_refine:
@@ -282,6 +301,7 @@ class Usearch(Adapter):
 
     def flush(self):
         self.index.save(str(self.workdir / "index.usearch"))
+        sync_index(self.workdir)
 
 
 class Annoy(Adapter):
@@ -319,6 +339,8 @@ class SqliteVec(Adapter):
         db.enable_load_extension(True)
         sqlite_vec.load(db)
         db.enable_load_extension(False)
+        db.execute("PRAGMA fullfsync = ON")
+        db.execute("PRAGMA checkpoint_fullfsync = ON")
         return db
 
     def build(self, train, params):
@@ -457,6 +479,7 @@ class Milvus(Adapter):
     BUILDS = {"hnsw_m16": {"index_type": "HNSW", "params": {"M": 16, "efConstruction": 200}},
               "ivf_flat": {"index_type": "IVF_FLAT", "params": {"nlist": 512}}}
     SWEEPS = {"hnsw_m16": [{"ef": e} for e in EF_SWEEP[:11]], "ivf_flat": [{"nprobe": p} for p in NPROBE_SWEEP]}
+    PERSISTENT_FLUSH = True
 
     def _client(self):
         from pymilvus import MilvusClient
@@ -489,6 +512,9 @@ class Milvus(Adapter):
 
     def delete(self, ids):
         self.client.delete("c", ids=[int(i) for i in ids])
+
+    def flush(self):
+        self.client.flush("c")
 
 
 class Duckdb(Adapter):
@@ -568,25 +594,36 @@ class Ngt(Adapter):
     def open(self, params, n):
         import ngtpy
         self.index = ngtpy.Index(str(self.workdir / "onng"))
+        path = self.workdir / "ids.json"
+        self.object_ids = {int(k): v for k, v in json.loads(path.read_text()).items()} if path.exists() else {}
+        self.dataset_ids = {v: k for k, v in self.object_ids.items()}
 
     def configure(self, sp):
         self.eps = sp["epsilon"]
 
     def query(self, q):
-        return self.index.search(q[0], K, epsilon=self.eps, with_distance=False)
+        found = self.index.search(q[0], K, epsilon=self.eps, with_distance=False)
+        return [self.dataset_ids.get(i, i) for i in found] if self.dataset_ids else found
 
     def replace(self, ids, vectors):
-        for i in ids:
-            self.index.remove(int(i))
-        self.index.batch_insert(vectors, num_threads=1)
+        self.delete(ids)
+        for i, v in zip(ids, vectors):
+            # batch_insert returns None and appends new IDs; insert returns the allocated ID.
+            oid = self.index.insert(v)
+            self.object_ids[int(i)] = oid
+            self.dataset_ids[oid] = int(i)
         self.index.build_index(num_threads=1)
 
     def delete(self, ids):
         for i in ids:
-            self.index.remove(int(i))
+            oid = self.object_ids.pop(int(i), int(i))
+            self.index.remove(oid)
+            self.dataset_ids.pop(oid, None)
 
     def flush(self):
         self.index.save()
+        (self.workdir / "ids.json").write_text(json.dumps(self.object_ids))
+        sync_index(self.workdir)
 
 
 class Scann(Adapter):
@@ -694,9 +731,7 @@ class Voyager(Adapter):
         return self.index.query(q[0], k=K, query_ef=self.ef)[0]
 
     def replace(self, ids, vectors):
-        for i in ids:
-            self.index.mark_deleted(int(i))
-        self.index.add_items(vectors, ids=list(range(10**7, 10**7 + len(ids))), num_threads=1)
+        self.index.add_items(vectors, ids=[int(i) for i in ids], num_threads=1)
 
     def delete(self, ids):
         for i in ids:
@@ -704,6 +739,7 @@ class Voyager(Adapter):
 
     def flush(self):
         self.index.save(str(self.workdir / "index.voyager"))
+        sync_index(self.workdir)
 
 
 class Diskann(Adapter):

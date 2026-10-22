@@ -70,6 +70,20 @@ DURABILITY = {
     "typesense": "acknowledged after the write is applied; per-request fsync not documented",
 }
 
+DURABILITY_CLASS = {
+    HMS_SERVER: "per-request-flush",  # https://github.com/writerslogic/holographic-memory/blob/main/docs/file-format/CRASH-CONSISTENCY.md
+    "qdrant-server": "periodic",  # https://qdrant.tech/documentation/operations/configuration/#configuration-file-example
+    "weaviate": "undocumented",  # https://docs.weaviate.io/weaviate/concepts/storage#write-ahead-log
+    "opensearch-knn": "per-request-flush",  # https://docs.opensearch.org/latest/install-and-configure/configuring-opensearch/index-settings/
+    "opensearch-bm25": "per-request-flush",  # https://docs.opensearch.org/latest/install-and-configure/configuring-opensearch/index-settings/
+    "pgvector": "per-request-flush",  # https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT
+    "pg-tsvector": "per-request-flush",  # https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT
+    "paradedb": "per-request-flush",  # https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT
+    "redis-vss": "per-request-flush",  # https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/#how-durable-is-the-append-only-file
+    "meilisearch": "undocumented",  # https://www.meilisearch.com/docs/resources/internals/storage (LMDB ACID; request fsync unspecified)
+    "typesense": "undocumented",  # https://typesense.org/docs/guide/high-availability.html
+}
+
 SERVER_NOT_RUN = {
     "milvus-standalone": "no non-Docker artifact: releases 3.0.3 and 2.6.25 ship only Docker Compose files; the last native package "
                          "(milvus_2.6.4 .deb/.rpm, Linux only) is superseded",
