@@ -1,0 +1,510 @@
+{
+  "benchmark": "LoCoMo locomo10.json (snap-research/locomo 3eb6f2c), categories 1-4, category 5 excluded",
+  "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "protocol": "mem0ai/mem0 evaluation/ at 393a4fd5: ANSWER_PROMPT reader as system message, top_k=30 per speaker, ACCURACY_PROMPT judge (json_object), set-token F1 and nltk BLEU-1 on the raw response",
+  "reader_model": "gpt-4o-mini-2024-07-18",
+  "judge_model": "gpt-4o-mini-2024-07-18",
+  "temperature": 0.0,
+  "embedding_model": "text-embedding-3-small",
+  "k_per_speaker": 30,
+  "token_budget": 1764,
+  "recall_options": {},
+  "hms_sha": "",
+  "hms_surface": "hms-server memory API (POST /api/v1/memory/remember, recall)",
+  "split": {
+    "tuning": [
+      "conv-26",
+      "conv-30",
+      "conv-41"
+    ],
+    "heldout": [
+      "conv-42",
+      "conv-43",
+      "conv-44",
+      "conv-47",
+      "conv-48",
+      "conv-49",
+      "conv-50"
+    ]
+  },
+  "split_rule": "first three conversations in file order are the tuning set, fixed before any run",
+  "scores": "fractions; f1/bleu1/j are means over independent reader passes",
+  "note": "Incomplete: the OpenAI account ran out of credit during the final run. Held-out J (judge) was never computed; conv-49 and conv-50 were never read. F1/BLEU-1 are scored offline from cached reader responses (3 passes) on 8 conversations (tuning 3 + held-out 5). J exists only for the tuning set, one pass. Spend is an estimate: 0.96 USD recorded on tuning runs plus about 2.5 USD for the interrupted final run.",
+  "arms": {
+    "primary": {
+      "all_scored": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41",
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48"
+        ],
+        "overall": {
+          "n": 1226,
+          "evidence_recall": 0.8153,
+          "context_tokens_mean": 1749.4,
+          "f1": 0.5194,
+          "bleu1": 0.4113,
+          "f1_runs": [
+            0.5193,
+            0.5195,
+            0.5193
+          ]
+        },
+        "category_1": {
+          "n": 213,
+          "evidence_recall": 0.5908,
+          "context_tokens_mean": 1750.1,
+          "f1": 0.3684,
+          "bleu1": 0.2487,
+          "f1_runs": [
+            0.3689,
+            0.37,
+            0.3663
+          ]
+        },
+        "category_2": {
+          "n": 256,
+          "evidence_recall": 0.8867,
+          "context_tokens_mean": 1748.3,
+          "f1": 0.5966,
+          "bleu1": 0.4835,
+          "f1_runs": [
+            0.5968,
+            0.5933,
+            0.5997
+          ]
+        },
+        "category_3": {
+          "n": 76,
+          "evidence_recall": 0.5471,
+          "context_tokens_mean": 1746.0,
+          "f1": 0.2303,
+          "bleu1": 0.1653,
+          "f1_runs": [
+            0.2358,
+            0.2291,
+            0.226
+          ]
+        },
+        "category_4": {
+          "n": 681,
+          "evidence_recall": 0.8886,
+          "context_tokens_mean": 1750.0,
+          "f1": 0.5698,
+          "bleu1": 0.4624,
+          "f1_runs": [
+            0.5688,
+            0.5708,
+            0.5698
+          ]
+        }
+      },
+      "tuning": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41"
+        ],
+        "overall": {
+          "n": 385,
+          "evidence_recall": 0.8429,
+          "context_tokens_mean": 1748.9,
+          "f1": 0.5442,
+          "bleu1": 0.4221,
+          "f1_runs": [
+            0.542,
+            0.5431,
+            0.5475
+          ]
+        },
+        "category_1": {
+          "n": 74,
+          "evidence_recall": 0.6421,
+          "context_tokens_mean": 1750.5,
+          "f1": 0.4174,
+          "bleu1": 0.2833,
+          "f1_runs": [
+            0.4078,
+            0.4194,
+            0.425
+          ]
+        },
+        "category_2": {
+          "n": 90,
+          "evidence_recall": 0.9556,
+          "context_tokens_mean": 1748.1,
+          "f1": 0.6881,
+          "bleu1": 0.5469,
+          "f1_runs": [
+            0.6918,
+            0.6789,
+            0.6936
+          ]
+        },
+        "category_3": {
+          "n": 21,
+          "evidence_recall": 0.4762,
+          "context_tokens_mean": 1741.5,
+          "f1": 0.1988,
+          "bleu1": 0.1639,
+          "f1_runs": [
+            0.2042,
+            0.1961,
+            0.1961
+          ]
+        },
+        "category_4": {
+          "n": 200,
+          "evidence_recall": 0.905,
+          "context_tokens_mean": 1749.5,
+          "f1": 0.5627,
+          "bleu1": 0.4445,
+          "f1_runs": [
+            0.5598,
+            0.5643,
+            0.5639
+          ]
+        }
+      },
+      "heldout": {
+        "conversations": [
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48"
+        ],
+        "overall": {
+          "n": 841,
+          "evidence_recall": 0.8027,
+          "context_tokens_mean": 1749.6,
+          "f1": 0.508,
+          "bleu1": 0.4063,
+          "f1_runs": [
+            0.5088,
+            0.5086,
+            0.5065
+          ]
+        },
+        "category_1": {
+          "n": 139,
+          "evidence_recall": 0.5634,
+          "context_tokens_mean": 1749.9,
+          "f1": 0.3423,
+          "bleu1": 0.2303,
+          "f1_runs": [
+            0.3482,
+            0.3437,
+            0.335
+          ]
+        },
+        "category_2": {
+          "n": 166,
+          "evidence_recall": 0.8494,
+          "context_tokens_mean": 1748.5,
+          "f1": 0.547,
+          "bleu1": 0.4491,
+          "f1_runs": [
+            0.5454,
+            0.5469,
+            0.5487
+          ]
+        },
+        "category_3": {
+          "n": 55,
+          "evidence_recall": 0.5742,
+          "context_tokens_mean": 1747.7,
+          "f1": 0.2423,
+          "bleu1": 0.1658,
+          "f1_runs": [
+            0.2478,
+            0.2417,
+            0.2374
+          ]
+        },
+        "category_4": {
+          "n": 481,
+          "evidence_recall": 0.8818,
+          "context_tokens_mean": 1750.2,
+          "f1": 0.5727,
+          "bleu1": 0.4699,
+          "f1_runs": [
+            0.5725,
+            0.5736,
+            0.5722
+          ]
+        }
+      },
+      "passes": 3
+    },
+    "primary_judged_tuning": {
+      "all_scored": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41"
+        ],
+        "overall": {
+          "n": 385,
+          "evidence_recall": 0.8429,
+          "context_tokens_mean": 1748.9,
+          "f1": 0.542,
+          "bleu1": 0.4213,
+          "f1_runs": [
+            0.542
+          ],
+          "j": 0.7948,
+          "j_runs": [
+            0.7948
+          ]
+        },
+        "category_1": {
+          "n": 74,
+          "evidence_recall": 0.6421,
+          "context_tokens_mean": 1750.5,
+          "f1": 0.4078,
+          "bleu1": 0.279,
+          "f1_runs": [
+            0.4078
+          ],
+          "j": 0.6351,
+          "j_runs": [
+            0.6351
+          ]
+        },
+        "category_2": {
+          "n": 90,
+          "evidence_recall": 0.9556,
+          "context_tokens_mean": 1748.1,
+          "f1": 0.6918,
+          "bleu1": 0.5516,
+          "f1_runs": [
+            0.6918
+          ],
+          "j": 0.8667,
+          "j_runs": [
+            0.8667
+          ]
+        },
+        "category_3": {
+          "n": 21,
+          "evidence_recall": 0.4762,
+          "context_tokens_mean": 1741.5,
+          "f1": 0.2042,
+          "bleu1": 0.173,
+          "f1_runs": [
+            0.2042
+          ],
+          "j": 0.6667,
+          "j_runs": [
+            0.6667
+          ]
+        },
+        "category_4": {
+          "n": 200,
+          "evidence_recall": 0.905,
+          "context_tokens_mean": 1749.5,
+          "f1": 0.5598,
+          "bleu1": 0.4413,
+          "f1_runs": [
+            0.5598
+          ],
+          "j": 0.835,
+          "j_runs": [
+            0.835
+          ]
+        }
+      },
+      "tuning": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41"
+        ],
+        "overall": {
+          "n": 385,
+          "evidence_recall": 0.8429,
+          "context_tokens_mean": 1748.9,
+          "f1": 0.542,
+          "bleu1": 0.4213,
+          "f1_runs": [
+            0.542
+          ],
+          "j": 0.7948,
+          "j_runs": [
+            0.7948
+          ]
+        },
+        "category_1": {
+          "n": 74,
+          "evidence_recall": 0.6421,
+          "context_tokens_mean": 1750.5,
+          "f1": 0.4078,
+          "bleu1": 0.279,
+          "f1_runs": [
+            0.4078
+          ],
+          "j": 0.6351,
+          "j_runs": [
+            0.6351
+          ]
+        },
+        "category_2": {
+          "n": 90,
+          "evidence_recall": 0.9556,
+          "context_tokens_mean": 1748.1,
+          "f1": 0.6918,
+          "bleu1": 0.5516,
+          "f1_runs": [
+            0.6918
+          ],
+          "j": 0.8667,
+          "j_runs": [
+            0.8667
+          ]
+        },
+        "category_3": {
+          "n": 21,
+          "evidence_recall": 0.4762,
+          "context_tokens_mean": 1741.5,
+          "f1": 0.2042,
+          "bleu1": 0.173,
+          "f1_runs": [
+            0.2042
+          ],
+          "j": 0.6667,
+          "j_runs": [
+            0.6667
+          ]
+        },
+        "category_4": {
+          "n": 200,
+          "evidence_recall": 0.905,
+          "context_tokens_mean": 1749.5,
+          "f1": 0.5598,
+          "bleu1": 0.4413,
+          "f1_runs": [
+            0.5598
+          ],
+          "j": 0.835,
+          "j_runs": [
+            0.835
+          ]
+        }
+      },
+      "passes": 1
+    }
+  },
+  "published": {
+    "source": "arXiv 2504.19413 Tables 1-2 (10 runs, mean +- sd); Zep own: getzep.com blog 2025-05-06 and getzep/zep-papers kg_architecture_agent_memory/locomo_eval",
+    "category_names": {
+      "1": "multi-hop",
+      "2": "temporal",
+      "3": "open-domain",
+      "4": "single-hop"
+    },
+    "mem0": {
+      "overall_j": 66.88,
+      "overall_j_sd": 0.15,
+      "context_tokens": 1764,
+      "f1_b1_j": {
+        "1": [
+          38.72,
+          27.13,
+          67.13
+        ],
+        "2": [
+          48.93,
+          40.51,
+          55.51
+        ],
+        "3": [
+          28.64,
+          21.58,
+          51.15
+        ],
+        "4": [
+          47.65,
+          38.72,
+          72.93
+        ]
+      }
+    },
+    "mem0_graph": {
+      "overall_j": 68.44,
+      "overall_j_sd": 0.17,
+      "context_tokens": 3616,
+      "f1_b1_j": {
+        "1": [
+          38.09,
+          26.03,
+          65.71
+        ],
+        "2": [
+          51.55,
+          40.28,
+          58.13
+        ],
+        "3": [
+          24.32,
+          18.82,
+          47.19
+        ],
+        "4": [
+          49.27,
+          40.3,
+          75.71
+        ]
+      }
+    },
+    "zep_in_mem0_harness": {
+      "overall_j": 65.99,
+      "overall_j_sd": 0.16,
+      "context_tokens": 3911,
+      "f1_b1_j": {
+        "1": [
+          35.74,
+          23.3,
+          61.7
+        ],
+        "2": [
+          42.0,
+          34.53,
+          49.31
+        ],
+        "3": [
+          19.37,
+          14.82,
+          41.35
+        ],
+        "4": [
+          49.56,
+          38.92,
+          76.6
+        ]
+      }
+    },
+    "full_context": {
+      "overall_j": 72.9,
+      "overall_j_sd": 0.19,
+      "context_tokens": 26031
+    },
+    "zep_own_harness_not_protocol_matched": {
+      "overall_j": 75.14,
+      "overall_j_sd": 0.17,
+      "j_by_category_single_run": {
+        "1": 74.11,
+        "2": 66.04,
+        "3": 67.71,
+        "4": 79.79
+      },
+      "why_unmatched": "Zep's own reader prompt and retrieval template; Mem0 reran it with Mem0's prompt: 58.44 +- 0.20"
+    }
+  },
+  "openai_spend_usd_total": 3.5
+}

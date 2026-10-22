@@ -1,13 +1,14 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Collect locomo_bench.py summaries into benchmarks/results/locomo_v1.json.
+"""Collect locomo_bench.py predictions into benchmarks/results/locomo_v1.json.
 
-  uv run --no-project python benchmarks/public/locomo/assemble_results.py OUT.json \
-    primary=DIR uncapped=DIR lexical=DIR full_context=DIR --tuning DIR [DIR...]
+  uv run --no-project python benchmarks/public/locomo/assemble_results.py OUT.json --meta RUN/summary.json \
+    --spend USD --arm primary:3 RUN1/predictions.jsonl RUN2/predictions.jsonl ...
 """
 
 import argparse
 import json
+import statistics
 from pathlib import Path
 
 # Mem0 paper (arXiv 2504.19413) Tables 1-2, columns re-keyed to LoCoMo category ids: weighting the paper's
@@ -34,44 +35,73 @@ PUBLISHED = {
 }
 
 
+def block(rows, runs):
+    if not rows:
+        return None
+    def runwise(key):
+        return [statistics.fmean(r[key][i] for r in rows) for i in range(runs)]
+    out = {'n': len(rows), 'evidence_recall': round(statistics.fmean(r['evidence_recall'] for r in rows), 4),
+           'context_tokens_mean': round(statistics.fmean(r['context_tokens'] for r in rows), 1),
+           'f1': round(statistics.fmean(runwise('f1')), 4), 'bleu1': round(statistics.fmean(runwise('bleu1')), 4),
+           'f1_runs': [round(x, 4) for x in runwise('f1')]}
+    if all('judge' in r and len(r['judge']) >= runs for r in rows):
+        j = runwise('judge')
+        out.update({'j': round(statistics.fmean(j), 4), 'j_runs': [round(x, 4) for x in j]})
+    return out
+
+
+def groups(rows, runs, split):
+    out = {}
+    for name, ids in {'all_scored': sorted({r['sample_id'] for r in rows}), **split}.items():
+        rs = [r for r in rows if r['sample_id'] in ids]
+        if rs:
+            out[name] = {'conversations': sorted({r['sample_id'] for r in rs}), 'overall': block(rs, runs),
+                         **{f'category_{c}': block([r for r in rs if r['category'] == c], runs) for c in (1, 2, 3, 4)}}
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('out')
-    ap.add_argument('arms', nargs='+', help='name=run_dir')
-    ap.add_argument('--tuning', nargs='*', default=[], help='tuning-set run dirs (spend only)')
+    ap.add_argument('--meta', required=True, help='a locomo_bench summary.json for models, split and sha')
+    ap.add_argument('--arm', action='append', nargs='+', metavar=('NAME:RUNS', 'PREDICTIONS'), required=True,
+                    help='arm name, passes to score, then predictions.jsonl files')
+    ap.add_argument('--spend', type=float, required=True, help='OpenAI spend over all runs, USD')
+    ap.add_argument('--note', default='')
     args = ap.parse_args()
-    arms, spend = {}, 0.0
-    for spec in args.arms:
-        name, run_dir = spec.split('=', 1)
-        summary = json.loads((Path(run_dir) / 'summary.json').read_text())
-        spend += summary['new_api_spend_usd']
-        arms[name] = {k: summary[k] for k in ('arm', 'embedding_model', 'k_per_speaker', 'token_budget',
-                                              'recall_options', 'runs', 'new_api_tokens', 'new_api_spend_usd')}
-        arms[name]['results'] = {g: summary['results'][g] for g in ('heldout', 'run', 'tuning')}
-        arms[name]['results']['all'] = arms[name]['results'].pop('run')
-        meta = summary
-    for run_dir in args.tuning:
-        spend += json.loads((Path(run_dir) / 'summary.json').read_text())['new_api_spend_usd']
+    meta = json.loads(Path(args.meta).read_text())
+    arms = {}
+    for name_runs, *files in args.arm:
+        name, runs = name_runs.split(':')
+        rows = [json.loads(line) for f in files for line in open(f)]
+        arms[name] = groups(rows, int(runs), meta['split'])
+        arms[name]['passes'] = int(runs)
     result = {
-        'benchmark': 'LoCoMo locomo10.json (snap-research/locomo 3eb6f2c), categories 1-4 (n=1540), category 5 excluded',
+        'benchmark': 'LoCoMo locomo10.json (snap-research/locomo 3eb6f2c), categories 1-4, category 5 excluded',
         'dataset_sha256': '79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4',
         'protocol': "mem0ai/mem0 evaluation/ at 393a4fd5: ANSWER_PROMPT reader as system message, top_k=30 per "
                     "speaker, ACCURACY_PROMPT judge (json_object), set-token F1 and nltk BLEU-1 on the raw response",
         'reader_model': meta['reader_model'], 'judge_model': meta['judge_model'], 'temperature': 0.0,
+        'embedding_model': meta['embedding_model'], 'k_per_speaker': meta['k_per_speaker'],
+        'token_budget': meta['token_budget'], 'recall_options': meta['recall_options'],
         'hms_sha': meta['hms_sha'], 'hms_surface': 'hms-server memory API (POST /api/v1/memory/remember, recall)',
         'split': meta['split'],
         'split_rule': 'first three conversations in file order are the tuning set, fixed before any run',
-        'scores': 'j/f1/bleu1 are fractions; j is the mean over independent reader+judge passes, j_std their sample sd',
+        'scores': 'fractions; f1/bleu1/j are means over independent reader passes',
+        'note': args.note,
         'arms': arms,
         'published': PUBLISHED,
-        'openai_spend_usd_total': round(spend, 2),
+        'openai_spend_usd_total': args.spend,
     }
     Path(args.out).write_text(json.dumps(result, indent=2) + '\n')
     for name, arm in arms.items():
-        for g in ('heldout', 'all'):
-            o = arm['results'][g]['overall']
-            print(name, g, o['n'], o['j'], o['j_std'], o['f1'], o['bleu1'], o['context_tokens_mean'])
-    print('spend', round(spend, 2))
+        for g, v in arm.items():
+            if isinstance(v, dict):
+                o = v['overall']
+                print(name, g, o['n'], o.get('j'), o['f1'], o['bleu1'], o['evidence_recall'], o['context_tokens_mean'])
+                for c in (1, 2, 3, 4):
+                    b = v[f'category_{c}']
+                    print(f"   cat{c} n={b['n']} J={b.get('j')} F1={b['f1']} B1={b['bleu1']} ev={b['evidence_recall']}")
 
 
 if __name__ == '__main__':

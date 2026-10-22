@@ -297,10 +297,11 @@ def summarize(rows, runs):
                'context_tokens_mean': round(statistics.fmean(r['context_tokens'] for r in rs), 1)}
         if not runs:
             return out
-        j = runwise('judge')
-        return {**out, 'j': round(statistics.fmean(j), 4), 'j_std': round(statistics.stdev(j), 4) if runs > 1 else 0.0,
-                'j_runs': [round(x, 4) for x in j],
-                'f1': round(statistics.fmean(runwise('f1')), 4), 'bleu1': round(statistics.fmean(runwise('bleu1')), 4)}
+        if 'judge' in rs[0]:
+            j = runwise('judge')
+            out.update({'j': round(statistics.fmean(j), 4), 'j_runs': [round(x, 4) for x in j],
+                        'j_std': round(statistics.stdev(j), 4) if runs > 1 else 0.0})
+        return {**out, 'f1': round(statistics.fmean(runwise('f1')), 4), 'bleu1': round(statistics.fmean(runwise('bleu1')), 4)}
     out = {'overall': block(rows)}
     for c in sorted({r['category'] for r in rows}):
         out[f'category_{c}'] = block([r for r in rows if r['category'] == c])
@@ -318,6 +319,7 @@ def main():
     ap.add_argument('--embed', action='store_true', help=f'hybrid recall with {EMBED_MODEL} embeddings')
     ap.add_argument('--memory-config', default=None)
     ap.add_argument('--full-context', action='store_true', help="Mem0's full-context baseline (no memory system)")
+    ap.add_argument('--skip-judge', action='store_true', help='score F1/BLEU-1 only (no judge calls)')
     ap.add_argument('--runs', type=int, default=1, help='independent reader+judge passes (Mem0 reports 10)')
     ap.add_argument('--retrieval-only', action='store_true', help='skip reader and judge; report evidence recall')
     ap.add_argument('--recall-options', default='{}', help='extra RecallOptions JSON, e.g. {"fusion": "rrf"}')
@@ -364,11 +366,14 @@ def main():
     finally:
         if server:
             server.close()
-    with ThreadPoolExecutor(args.workers) as pool:
-        labels = list(pool.map(lambda r: [judge(llm, r['question'], r['answer'], x, run)
-                                          for run, x in enumerate(r['responses'])], rows))
+    labels = [None] * len(rows)
+    if not args.skip_judge:
+        with ThreadPoolExecutor(args.workers) as pool:
+            labels = list(pool.map(lambda r: [judge(llm, r['question'], r['answer'], x, run)
+                                              for run, x in enumerate(r['responses'])], rows))
     for r, lab in zip(rows, labels):
-        r['judge'] = lab
+        if lab is not None:
+            r['judge'] = lab
     with open(out / 'predictions.jsonl', 'w') as f:
         for r in rows:
             f.write(json.dumps(r) + '\n')
