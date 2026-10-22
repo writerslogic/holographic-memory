@@ -54,6 +54,8 @@ enum Command {
         query: String,
         #[serde(default = "profile_recall_options")]
         options: ConversationRecallOptions,
+        #[serde(default, rename = "compactContext")]
+        compact_context: bool,
     },
     Reset {},
 }
@@ -388,7 +390,11 @@ impl Runtime {
                 Ok(json!({"remembered": remembered,
                           "modelUsageBounds": {"maxIngestEmbeddingInputs": embedding_inputs}}))
             }
-            Command::Recall { query, options } => {
+            Command::Recall {
+                query,
+                options,
+                compact_context,
+            } => {
                 let models = self
                     .backend
                     .as_ref()
@@ -404,11 +410,21 @@ impl Runtime {
                 let result = history.memory.recall(&query, &options);
                 timings.query_seconds = started.elapsed().as_secs_f64();
                 let evidence = result.map_err(memory_error_code)?;
-                Ok(json!({"evidence": evidence, "recallOptions": options,
+                let context = compact_context
+                    .then(|| evidence.pack_context(options.max_bytes))
+                    .transpose()
+                    .map_err(memory_error_code)?;
+                timings.query_seconds = started.elapsed().as_secs_f64();
+                let mut response = json!({"evidence": evidence, "recallOptions": options,
                           "modelUsageBounds": {"maxNativeSearches": searches, "maxQueryPlanCalls": searches,
                                                "maxQueryEmbeddingInputs": searches * 6,
                                                "maxGeneratedPlanTokens": searches * 1536,
-                                               "maxRerankPairs": searches * 20}}))
+                                               "maxRerankPairs": searches * 20}});
+                if let Some(context) = context {
+                    response["context"] =
+                        serde_json::to_value(context).map_err(|_| "internal_error")?;
+                }
+                Ok(response)
             }
         }
     }
@@ -658,8 +674,15 @@ mod tests {
         let before = runtime.reply(Command::Recall {
             query: "Asterneedle".into(),
             options: profile_recall_options(),
+            compact_context: true,
         });
         assert_eq!(before["evidence"]["sources"].as_array().unwrap().len(), 1);
+        let context: holographic_memory::core::memory_api::ConversationContext =
+            serde_json::from_value(before["context"].clone()).unwrap();
+        assert_eq!(
+            serde_json::to_value(context.sources().unwrap()).unwrap(),
+            before["evidence"]["sources"]
+        );
         let reset = runtime.reply(Command::Reset {});
         assert_eq!(reset["epoch"], 2);
         assert_eq!(reset["sourceCount"], 0);
@@ -668,9 +691,11 @@ mod tests {
         let after = runtime.reply(Command::Recall {
             query: "Asterneedle".into(),
             options: profile_recall_options(),
+            compact_context: false,
         });
         assert_eq!(after["epoch"], 2);
         assert!(after["evidence"]["sources"].as_array().unwrap().is_empty());
+        assert!(after.get("context").is_none());
     }
 
     #[test]
