@@ -62,9 +62,36 @@ impl HmsCore {
     /// Compacts and then physically erases what the compaction replaced: the old generation
     /// and any unreferenced leftovers are overwritten with zeros and synced before they are
     /// unlinked. The text segment is scrubbed per deleted document at delete time.
+    ///
+    /// Afterwards nothing derived depends on the purged documents or on the order documents
+    /// arrived in (see `canonicalize_derived_state`), so every query, status field
+    /// other than the opaque counters, and file other than the generation's name match a store
+    /// that never held them and was purged at the same point.
     pub fn compact_scrubbing(&self) -> Result<()> {
         self.sync_text_segment()?;
         self.compact_impl(|| {}, || {}, true)
+    }
+
+    /// Rebuilds the state a delete leaves shaped by history rather than by the live set: the
+    /// text segment (zeroed records of deleted text, offsets that count it) and the slots, in
+    /// id order as a reopen of the compacted journal lays them out; a published vector
+    /// snapshot, whose graph still holds the deleted rows' vertices and the edges they shaped
+    /// (rebuilt with the same graph choice); and the dense document index a delete dropped.
+    fn canonicalize_derived_state(&self) -> Result<()> {
+        {
+            let _transaction = self.mutation_gate.maintenance();
+            self.documents
+                .write()
+                .rebuild_canonical(&self.storage_path.join("documents.text"))?;
+        }
+        if let Some(snapshot) = self.vector_index.get() {
+            let graph_min_rows = if snapshot.has_graph() { 0 } else { usize::MAX };
+            self.rebuild_vector_index_waiting(graph_min_rows)?;
+        }
+        if self.documents.read().dense_index_recommended() {
+            self.train_dense_index()?;
+        }
+        Ok(())
     }
 
     fn compact_with_hook(&self, after_snapshot: impl FnOnce()) -> Result<()> {
@@ -165,13 +192,18 @@ impl HmsCore {
                 self.sign_fn().as_deref(),
             )?;
         }
+        if scrub {
+            // Still under the compaction lock: a concurrent compaction must not capture
+            // documents whose text offsets the canonical rebuild is replacing.
+            self.canonicalize_derived_state()?;
+        }
         Ok(())
     }
 
     fn compaction_snapshot(&self) -> Result<Snapshot> {
         let _transaction = self.mutation_gate.maintenance();
         let shards = self.shards.read();
-        let mut mutations = Vec::new();
+        let mut vectors = Vec::new();
         let composite_ids: HashSet<_> = self
             .composite_memory
             .as_ref()
@@ -189,14 +221,18 @@ impl HmsCore {
                 if !id.starts_with(crate::core::documents::CHUNK_PREFIX)
                     && !composite_ids.contains(id)
                 {
-                    mutations.push(Mutation::Vector {
-                        id: id.clone(),
-                        vector: vector.clone(),
-                    });
+                    vectors.push((id.clone(), vector.clone()));
                 }
             }
             Ok(())
         })?;
+        // The shard map's iteration order depends on its insertion and removal history; id
+        // order makes the compacted journal a function of the live vectors alone.
+        vectors.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+        let mut mutations: Vec<Mutation> = vectors
+            .into_iter()
+            .map(|(id, vector)| Mutation::Vector { id, vector })
+            .collect();
         let (documents, text) = {
             let store = self.documents.read();
             (store.shared_values().collect(), store.text_segment())

@@ -1,0 +1,569 @@
+{
+  "base_documents": 3513,
+  "batch": 256,
+  "checkpoints": {
+    "deleted": {
+      "api": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_components": {
+        "status/document_index_trained": 100,
+        "status/revision": 100,
+        "status/vector_index": 100,
+        "status/vector_index_generation": 100,
+        "vgraph": 12
+      },
+      "api_including_randomized_fields": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_or_files": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_randomized_components": {},
+      "file_components": {
+        "documents.text": 100,
+        "vectors_data.bin/seg_0.bin": 100
+      },
+      "files": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "generation_names_differ": 0,
+      "ghost_echoes": {
+        "direction": 1.0,
+        "feature": "graph_top1_x",
+        "test_accuracy": 0.5,
+        "test_accuracy_ci95": [
+          0.5,
+          0.5
+        ],
+        "test_targets": 50,
+        "train_accuracy": 0.5
+      },
+      "targets": 100
+    },
+    "present": {
+      "api": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_components": {
+        "default": 100,
+        "hybrid": 100,
+        "lex": 100,
+        "list/all": 100,
+        "status/document_count": 100,
+        "status/index_status": 100,
+        "status/revision": 100,
+        "status/vector_index": 100,
+        "status/vector_index_generation": 100,
+        "term": 100,
+        "vauto": 100,
+        "vexact": 100,
+        "vgraph": 100
+      },
+      "api_including_randomized_fields": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_or_files": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_randomized_components": {},
+      "file_components": {
+        "documents.text": 100,
+        "vectors_data.bin/seg_0.bin": 100
+      },
+      "files": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "generation_names_differ": 0,
+      "ghost_echoes": {
+        "direction": 1.0,
+        "feature": "graph_top1_x",
+        "test_accuracy": 0.98,
+        "test_accuracy_ci95": [
+          0.95,
+          1.0
+        ],
+        "test_targets": 50,
+        "train_accuracy": 0.98
+      },
+      "targets": 100
+    },
+    "purged": {
+      "api": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_components": {
+        "status/document_index_trained": 100,
+        "status/revision": 100,
+        "status/vector_index": 100,
+        "status/vector_index_generation": 100,
+        "vgraph": 12
+      },
+      "api_including_randomized_fields": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_or_files": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "api_randomized_components": {},
+      "file_components": {
+        "documents.text": 100
+      },
+      "files": {
+        "differ": 100,
+        "oracle_accuracy": 1.0,
+        "oracle_accuracy_bootstrap95": [
+          1.0,
+          1.0
+        ],
+        "oracle_accuracy_cp95": [
+          0.9818916536774122,
+          1.0
+        ],
+        "p_differ": 1.0,
+        "p_differ_cp95": [
+          0.9637833073548243,
+          1.0
+        ]
+      },
+      "generation_names_differ": 100,
+      "ghost_echoes": {
+        "direction": 1.0,
+        "feature": "graph_top1_x",
+        "test_accuracy": 0.5,
+        "test_accuracy_ci95": [
+          0.5,
+          0.5
+        ],
+        "test_targets": 50,
+        "train_accuracy": 0.5
+      },
+      "targets": 100
+    },
+    "readmitted": {
+      "api": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "api_components": {},
+      "api_including_randomized_fields": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "api_or_files": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "api_randomized_components": {},
+      "file_components": {},
+      "files": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "generation_names_differ": 100,
+      "ghost_echoes": {
+        "direction": 1.0,
+        "feature": "graph_top1_x",
+        "test_accuracy": 0.5,
+        "test_accuracy_ci95": [
+          0.5,
+          0.5
+        ],
+        "test_targets": 50,
+        "train_accuracy": 0.5
+      },
+      "targets": 100
+    },
+    "reopened": {
+      "api": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "api_components": {},
+      "api_including_randomized_fields": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "api_or_files": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "api_randomized_components": {},
+      "file_components": {},
+      "files": {
+        "differ": 0,
+        "oracle_accuracy": 0.5,
+        "oracle_accuracy_bootstrap95": [
+          0.5,
+          0.5
+        ],
+        "oracle_accuracy_cp95": [
+          0.5,
+          0.5181083463225882
+        ],
+        "p_differ": 0.0,
+        "p_differ_cp95": [
+          0.0,
+          0.03621669264517641
+        ]
+      },
+      "generation_names_differ": 100,
+      "ghost_echoes": {
+        "direction": 1.0,
+        "feature": "graph_top1_x",
+        "test_accuracy": 0.5,
+        "test_accuracy_ci95": [
+          0.5,
+          0.5
+        ],
+        "test_targets": 50,
+        "train_accuracy": 0.5
+      },
+      "targets": 100
+    }
+  },
+  "dataset": "nfcorpus",
+  "determinism_control_one_thread": {
+    "api": {
+      "differ": 0,
+      "oracle_accuracy": 0.5,
+      "oracle_accuracy_bootstrap95": [
+        0.5,
+        0.5
+      ],
+      "oracle_accuracy_cp95": [
+        0.5,
+        0.5181083463225882
+      ],
+      "p_differ": 0.0,
+      "p_differ_cp95": [
+        0.0,
+        0.03621669264517641
+      ]
+    },
+    "api_components": {},
+    "api_including_randomized_fields": {
+      "differ": 0,
+      "oracle_accuracy": 0.5,
+      "oracle_accuracy_bootstrap95": [
+        0.5,
+        0.5
+      ],
+      "oracle_accuracy_cp95": [
+        0.5,
+        0.5181083463225882
+      ],
+      "p_differ": 0.0,
+      "p_differ_cp95": [
+        0.0,
+        0.03621669264517641
+      ]
+    },
+    "api_or_files": {
+      "differ": 0,
+      "oracle_accuracy": 0.5,
+      "oracle_accuracy_bootstrap95": [
+        0.5,
+        0.5
+      ],
+      "oracle_accuracy_cp95": [
+        0.5,
+        0.5181083463225882
+      ],
+      "p_differ": 0.0,
+      "p_differ_cp95": [
+        0.0,
+        0.03621669264517641
+      ]
+    },
+    "api_randomized_components": {},
+    "file_components": {},
+    "files": {
+      "differ": 0,
+      "oracle_accuracy": 0.5,
+      "oracle_accuracy_bootstrap95": [
+        0.5,
+        0.5
+      ],
+      "oracle_accuracy_cp95": [
+        0.5,
+        0.5181083463225882
+      ],
+      "p_differ": 0.0,
+      "p_differ_cp95": [
+        0.0,
+        0.03621669264517641
+      ]
+    },
+    "generation_names_differ": 0,
+    "ghost_echoes": {
+      "direction": 1.0,
+      "feature": "graph_top1_x",
+      "test_accuracy": 0.5,
+      "test_accuracy_ci95": [
+        0.5,
+        0.5
+      ],
+      "test_targets": 50,
+      "train_accuracy": 0.5
+    },
+    "targets": 100
+  },
+  "encode": "Eager",
+  "experiment": "forget-indistinguishability",
+  "graph_min_rows": 1000,
+  "hypervector_dimensions": 1024,
+  "label": "before",
+  "later_documents": 20,
+  "randomized_files": [],
+  "randomized_probes": [],
+  "raw_vectors": 64,
+  "seconds": 235.539930291,
+  "seed": 20261021,
+  "targets": 100
+}

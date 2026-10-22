@@ -33,7 +33,7 @@ creation before any commit).
 | Compaction | A crash before `CURRENT` is replaced leaves the old generation; after, the new one. Both complete. Leftover `gen-*` is garbage. | `storage::tests::interrupted_compaction_recovers_a_complete_generation`, `layout_tests::legacy_compaction_tail_survives_each_plain_and_encrypted_publication_interruption` |
 | `encryption.salt` | Atomic and fsynced before the first frame. | `tests/format_crash.rs::salt_is_written_atomically` |
 | `audit.bin` | Entry append is fsynced; a torn entry is cut on the next open. | `tests/format_crash.rs::audit_torn_entry_is_repaired` |
-| `documents.text` | Not durable; rebuilt on every open. | `golden` tests |
+| `documents.text` | Not durable; rebuilt on every open and rewritten by a purge through `documents.text.canonical` (a leftover is scrubbed at open). | `golden` tests |
 | Provenance files, `kel.json`, `shard_meta.json` | Plain or atomic single-file writes, no cross-file atomicity. **Not covered.** | |
 
 Not guaranteed: durability on filesystems that reorder or lose fsync; two processes on one

@@ -39,8 +39,10 @@ impl DocumentView<'_> {
 }
 
 impl HmsCore {
-    /// The number of write transactions this process has committed and replayed so far. It
-    /// changes whenever the store does, so equal values bracket an unchanged store.
+    /// Advances by one per write transaction this process commits or replays, so equal values
+    /// bracket an unchanged store and the difference of two readings counts the transactions
+    /// between them. It starts at a random value per open, so one reading does not reveal how
+    /// many transactions (inserts, deletes) the store has seen.
     pub fn revision(&self) -> u64 {
         self.revision.load(std::sync::atomic::Ordering::Acquire)
     }

@@ -51,6 +51,25 @@ pub(crate) struct DocumentStore {
     encode_gate: Arc<parking_lot::Mutex<()>>,
 }
 
+/// A random starting value for a process-local mutation counter, below 2^53 so increments
+/// cannot overflow. A counter that starts here still advances by one per mutation for the
+/// caches and handles comparing two readings, but one reading says nothing about how many
+/// mutations (inserts and deletes since open) came before it.
+pub(crate) fn opaque_counter_start() -> u64 {
+    use std::hash::{BuildHasher, Hasher};
+    // 53 random bits: values stay exact as JSON numbers read by JavaScript.
+    std::collections::hash_map::RandomState::new()
+        .build_hasher()
+        .finish()
+        >> 11
+}
+
+/// Where [`DocumentStore::rebuild_canonical`] stages the segment that replaces `path`. A
+/// leftover from an interrupted purge holds live text in plaintext; open scrubs it.
+pub(crate) fn canonical_staging_path(path: &std::path::Path) -> std::path::PathBuf {
+    path.with_extension("text.canonical")
+}
+
 /// A chunk's word count is bounded by the 8 MiB document limit, so it fits a `u32`.
 pub(super) fn slot_words(count: usize) -> u32 {
     u32::try_from(count).expect("chunk word count over u32")
@@ -629,6 +648,54 @@ impl DocumentStore {
             }
         }
         Ok(removed)
+    }
+
+    /// An empty store whose generation starts at [`opaque_counter_start`], so the generation a
+    /// status reports does not count the mutations before it.
+    pub(crate) fn opened() -> Self {
+        Self {
+            generation: opaque_counter_start(),
+            ..Self::default()
+        }
+    }
+
+    /// Rebuilds the store from its documents in id order over a fresh text segment staged
+    /// beside `path` and renamed over it. Slots, postings, filters and the segment bytes become
+    /// what a reopen of the compacted journal produces (it replays documents in id order), so
+    /// none of them reflects a deleted document or the order documents arrived in. Readers
+    /// holding the old segment keep reading the unlinked file; deleted records in it are
+    /// already zero. No-op without a segment.
+    pub(crate) fn rebuild_canonical(&mut self, path: &std::path::Path) -> anyhow::Result<()> {
+        let Some(old) = self.text.clone() else {
+            return Ok(());
+        };
+        let staging = canonical_staging_path(path);
+        let segment = Arc::new(old.recreate(&staging)?);
+        let documents = self
+            .documents
+            .values()
+            .map(|document| {
+                let mut owned = StoredDocument::clone(document);
+                for chunk in &mut owned.chunks {
+                    if let Some((at, len)) = chunk.text_at.take() {
+                        chunk.text = Some(old.read(at, len)?);
+                    }
+                }
+                Ok(Arc::new(owned))
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?;
+        let generation = self.generation;
+        let encode_gate = Arc::clone(&self.encode_gate);
+        *self = Self::default();
+        self.generation = generation;
+        self.encode_gate = encode_gate;
+        self.text = Some(segment);
+        self.insert_batch(documents);
+        std::fs::rename(&staging, path)?;
+        if let Some(parent) = path.parent() {
+            crate::core::durable_file::sync_directory(parent)?;
+        }
+        Ok(())
     }
 
     pub(crate) fn remove(&mut self, id: &str) -> Option<Arc<StoredDocument>> {

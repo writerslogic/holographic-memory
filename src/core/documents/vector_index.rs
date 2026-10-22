@@ -721,6 +721,11 @@ impl VectorIndexSlot {
     pub(crate) fn try_build(&self) -> Option<MutexGuard<'_, ()>> {
         self.building.try_lock()
     }
+
+    /// The build lock, waiting for a running build to finish.
+    pub(crate) fn build(&self) -> MutexGuard<'_, ()> {
+        self.building.lock()
+    }
 }
 
 #[cfg(test)]

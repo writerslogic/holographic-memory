@@ -20,7 +20,10 @@ A record is a chunk's UTF-8 text (plaintext stores) or its sealed form. Location
 `(offset, length)` live only in memory, so the file cannot be parsed without replaying the
 journal. The engine **truncates and recreates it on every open** and re-appends chunk text
 during replay. A file without `HMST` (version 1: headerless plaintext) is overwritten the same
-way. Deleted text therefore remains in the file only until the next open.
+way. Deleted text therefore remains in the file only until the next open. A delete zeroes the
+deleted records in place; a purge then rewrites the file in document id order through
+`documents.text.canonical`, renamed over it, so no zeroed record or offset of deleted text
+remains. Open zeroes and unlinks a `documents.text.canonical` left by an interrupted purge.
 
 ## indices.json
 

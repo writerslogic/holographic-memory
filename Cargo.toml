@@ -275,6 +275,10 @@ name = "operand-retriever"
 required-features = ["experimental"]
 
 [[bin]]
+name = "forget-experiment"
+required-features = ["experimental"]
+
+[[bin]]
 name = "ann-failure-map"
 required-features = ["experimental"]
 
