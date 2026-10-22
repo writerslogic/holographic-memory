@@ -1,0 +1,1282 @@
+{
+  "schema_version": 1,
+  "experiment": "longmemeval_role_retrieval_v1",
+  "dev_only": true,
+  "heldout_run": false,
+  "complete": true,
+  "system": "matched_gpt54",
+  "arm": "full_history",
+  "qualification": "Repeated-use development result, not an unseen-set generalization estimate. Historical validation is preserved without new judging or rescoring.",
+  "checked_summary": {
+    "n": 100,
+    "correct": 93,
+    "answer_accuracy": 0.93,
+    "answer_accuracy_ci95": [
+      0.8625048526092651,
+      0.9656807389327273
+    ],
+    "acceptance_correct": 100,
+    "acceptance_met": false,
+    "reader_status": {
+      "ok": 100
+    },
+    "judge_status": {
+      "ok": 100
+    },
+    "by_type": {
+      "multi-session": {
+        "n": 27,
+        "correct": 20
+      },
+      "knowledge-update": {
+        "n": 16,
+        "correct": 16
+      },
+      "single-session-user": {
+        "n": 14,
+        "correct": 14
+      },
+      "temporal-reasoning": {
+        "n": 26,
+        "correct": 26
+      },
+      "single-session-preference": {
+        "n": 6,
+        "correct": 6
+      },
+      "single-session-assistant": {
+        "n": 11,
+        "correct": 11
+      }
+    },
+    "input_tokens": {
+      "median": 44400.5,
+      "max": 50698
+    },
+    "user_occurrences": 6388,
+    "assistant_occurrences": 6400,
+    "coverage": {
+      "scored": 84,
+      "actual_complete": 82
+    },
+    "abstentions": 7,
+    "exact_quote_claims": 215,
+    "total_claims": 222
+  },
+  "models_and_reasoning": {
+    "declared_active_settings": {
+      "reader_model": "gpt-5.4-2026-03-05",
+      "judge_model": "gpt-5.4-2026-03-05",
+      "reasoning_effort": "medium",
+      "reader_max_output_tokens": 4096,
+      "judge_max_output_tokens": 2048,
+      "tokenizer": "o200k_base",
+      "tokenizer_package": "tiktoken==0.14.0",
+      "framing_verification": "POST /v1/responses/input_tokens count before generation; count must be <=8192"
+    },
+    "observed_saved_request_settings": {
+      "reader": [
+        {
+          "max_output_tokens": 4096,
+          "model": "gpt-5.4-2026-03-05",
+          "reasoning": {
+            "effort": "medium"
+          },
+          "truncation": "disabled"
+        }
+      ],
+      "judge": [
+        {
+          "max_output_tokens": 2048,
+          "model": "gpt-5.4-2026-03-05",
+          "reasoning": {
+            "effort": "medium"
+          },
+          "truncation": "disabled"
+        }
+      ]
+    }
+  },
+  "token_budgets": {
+    "protocol_declared": {
+      "token_cap": 131072,
+      "local_token_cap": 130560,
+      "framing_reserve_tokens": 512,
+      "new_spend_cap_usd": 40.0
+    },
+    "observed_saved_reader_caps": [
+      {
+        "cap": 130560
+      }
+    ],
+    "observed_saved_input_tokens": {
+      "median": 44400.5,
+      "max": 50698,
+      "basis": "Saved input_tokens metadata; no new tokenization or scoring."
+    }
+  },
+  "source_provenance": {
+    "source_gate": {
+      "metadata_ids_verified": 500,
+      "dev_records_decoded": 100,
+      "heldout_records_decoded": 0
+    },
+    "dev_questions_verified": 100,
+    "heldout_questions_untouched": 400,
+    "paid_calls_verified": 200,
+    "historical_policy": {
+      "preregistered_protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
+      "reader_inputs_verified": 300,
+      "reader_requests_verified": 545,
+      "judge_requests_verified": 299
+    },
+    "recorded_artifact_count": 18,
+    "evidence_manifest": "benchmarks/results/longmemeval_completed_dev_evidence_manifest.json",
+    "original_checker": "benchmarks/public/check_longmemeval_role_reader.py",
+    "protocol_declared_policy": {
+      "source_policy": "cached user hybrid ranking fused with assistant-only lexical ranking; complete original exchanges",
+      "source_gate": {
+        "metadata_ids_verified": 500,
+        "dev_records_decoded": 100,
+        "heldout_records_decoded": 0
+      }
+    }
+  },
+  "recorded_costs": {
+    "validation_recorded": {
+      "global_recorded_spend_usd": 75.6391570000001,
+      "incremental_spend_usd": 12.461226000000002
+    },
+    "report_recorded": {
+      "starting_spend_usd": 43.301436,
+      "incremental_spend_usd": 12.461226000000002,
+      "global_recorded_spend_usd": 75.6391570000001
+    },
+    "interpretation": "Recorded historical costs; no new model call, judge, or scoring was performed."
+  },
+  "full_evidence": {
+    "answers": {
+      "path": "benchmarks/results/longmemeval_role_retrieval_v1/answers.json",
+      "bytes": 77244671,
+      "sha256": "a55152c4812e2bb0620c3a9343a63f0552d1e88708ad74dc3ba9a2daa6740367"
+    },
+    "validation": {
+      "path": "benchmarks/results/longmemeval_role_retrieval_v1/validation.json",
+      "bytes": 2381,
+      "sha256": "677e1e9bbc15e95349867edfdb830521ad59b4ef6ad6fafe4934b8c67d26bcf4"
+    },
+    "protocol": {
+      "path": "benchmarks/results/longmemeval_role_retrieval_v1/protocol.json",
+      "bytes": 24144,
+      "sha256": "2301a6eb0a2dc96f2ebe58b6e1a2a93b6721b26741d2fdc40d842c2977a68368"
+    },
+    "spend": {
+      "path": "benchmarks/results/longmemeval_role_retrieval_v1/spend.json",
+      "bytes": 1463446,
+      "sha256": "0aa51934504c92db8e0dec724d282a43d6f90a5e2faf9687dc9f86e0a3489f3f"
+    }
+  },
+  "storage_policy": "Full raw answers and request/response cache payloads remain outside Git. Original protocol and independent validation accompany this compact summary; file hashes and required external inputs are catalogued in the evidence manifest.",
+  "rows": [
+    {
+      "qid": "0100672e",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44812,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "06db6396",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47120,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "0862e8bf",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 40677,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "0862e8bf_abs",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 38180,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "08f4fc43",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42851,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "0a34ad58",
+      "qtype": "single-session-preference",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45422,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "0bc8ad92",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45182,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "0bc8ad93",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44434,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "0e5e2d1a",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43670,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "0ea62687",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43474,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "15745da0",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43685,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "184da446",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 40145,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "18bc8abd",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 49136,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "19b5f2b3",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44583,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "1da05512",
+      "qtype": "single-session-preference",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45946,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "2133c1b5",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 40633,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "2698e78f_abs",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 46914,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "28dc39ac",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47593,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "2b8f3739",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47741,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "2ebe6c92",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45516,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "32260d93",
+      "qtype": "single-session-preference",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41314,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "352ab8bd",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41273,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "38146c39",
+      "qtype": "single-session-preference",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43867,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "3ba21379",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 50698,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "3fdac837",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45132,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "4100d0a0",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 36295,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "41698283",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47524,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "4388e9dd",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47344,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "46a3abf7",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": false,
+      "judge_score": false,
+      "input_tokens": 43794,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "5025383b",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45263,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "55241a1f",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 46382,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "60036106",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45523,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "6a27ffc2",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 46199,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "6aeb4375",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41082,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "6b168ec8",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45523,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "6cb6f249",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43772,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "6d550036",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": false,
+      "judge_score": false,
+      "input_tokens": 41642,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "7024f17c",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45258,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "72e3ee87",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43003,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "7405e8b1",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": false,
+      "judge_score": false,
+      "input_tokens": 47912,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "75499fd8",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41217,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "75832dbd",
+      "qtype": "single-session-preference",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 49434,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "77eafa52",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 38715,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "7e00a6cb",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41708,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "80ec1f4f_abs",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": false,
+      "judge_score": false,
+      "input_tokens": 43060,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "8464fc84",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43188,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "89527b6b",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47272,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "8ebdbe50",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44653,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "8fb83627",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41729,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "94f70d80",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45543,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "993da5e2",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42139,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "9a707b81",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43373,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "9a707b82",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43915,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "9bbe84a2",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44584,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "affe2881",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44932,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "b3c15d39",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42542,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "b6025781",
+      "qtype": "single-session-preference",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43773,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "b759caee",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45036,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "c2ac3c61",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44413,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "c6853660",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47859,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "c8c3f81d",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42584,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "c9f37c46",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42358,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "d52b4f67",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42852,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "d596882b",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42241,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "d7c942c3",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44194,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "d905b33f",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44008,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "dccbc061",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 40964,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "e01b8e2f",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44565,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "e3fc4d6e",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 40265,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "e48988bc",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 38003,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "e4e14d04",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44319,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "e5ba910e_abs",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43218,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "e8a79c70",
+      "qtype": "single-session-assistant",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42896,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "eac54adc",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 48101,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "eac54add",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45123,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "ed4ddc30",
+      "qtype": "knowledge-update",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45549,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "edced276",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45152,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "edced276_abs",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44065,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "eeda8a6d",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41020,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "f4f1d8a4",
+      "qtype": "single-session-user",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 40843,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_2f8be40d",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": false,
+      "judge_score": false,
+      "input_tokens": 44388,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_31ff4165",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": false,
+      "judge_score": false,
+      "input_tokens": 46709,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_468eb064",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 46155,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_4edbafa2",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 46734,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_5501fe77",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47327,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_59149c78",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 43774,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_5dcc0aab",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 41733,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_61e13b3c",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47841,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_70e84552_abs",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47623,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_731e37d7",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": false,
+      "judge_score": false,
+      "input_tokens": 42990,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_7a0daae1",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 42263,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_8279ba03",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 47271,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_88806d6e",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44316,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_8c8961ae",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 44825,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_8e165409",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 40777,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_98f46fc6",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45823,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_a2d1d1f6",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 48103,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_a56e767c",
+      "qtype": "multi-session",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45345,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_d31cdae3",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 45702,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    },
+    {
+      "qid": "gpt4_e061b84f",
+      "qtype": "temporal-reasoning",
+      "reader_status": "ok",
+      "judge_status": "ok",
+      "correct": true,
+      "judge_score": true,
+      "input_tokens": 46901,
+      "reader_call_status": "ok",
+      "judge_call_status": "ok"
+    }
+  ]
+}

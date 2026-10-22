@@ -1,0 +1,155 @@
+{
+ "api_host": "api.openai.com",
+ "base_input_count_supported": true,
+ "cache_accounting": {
+  "formula": "((I-C-W30-W12)*2 + C*0.1 + W30*2.5 + W12*5 + O*10)/1000000",
+  "input_invariants": [
+   "C>=0",
+   "W30>=0",
+   "W12>=0",
+   "C+W30+W12<=I",
+   "W30+W12==cache_write_tokens"
+  ],
+  "recommended_single_use_options": {
+   "prompt_cache_options": {
+    "mode": "explicit"
+   },
+   "service_tier": "default"
+  },
+  "sdk_response_extra_fields_preserved": true,
+  "sdk_typed_ttl_12h_supported": false,
+  "sdk_typed_write_lifetime_details_supported": false
+ },
+ "checked_at_utc": "2026-10-22T04:48:44.715356+00:00",
+ "generation_calls": 0,
+ "heldout_records_decoded": 0,
+ "initial_error_details_retained": false,
+ "input_counting_limitation": "First probe included cache options and returned400; original error body was not retained. Follow-up tests base model/input only. Settings/framing must be reserved and actualusage checked.",
+ "input_token_count_probe": {
+  "checked_at_utc": "2026-10-22T04:52:06.935104+00:00",
+  "error_type": "BadRequestError",
+  "generation_calls": 0,
+  "http_status": 400,
+  "operation": "responses.input_tokens.count",
+  "request": {
+   "input": "Count this harmless synthetic sentence without generating an answer.",
+   "model": "gpt-6.1-sol",
+   "prompt_cache_options": {
+    "mode": "explicit"
+   },
+   "reasoning": {
+    "effort": "high"
+   },
+   "truncation": "disabled"
+  },
+  "request_sha256": "ebdc9fc07962864f63c5938e4b94077c2b18172127e82d834f334d0c48d5ae04",
+  "status": "error"
+ },
+ "input_token_count_probes": [
+  {
+   "checked_at_utc": "2026-10-22T04:52:06.935104+00:00",
+   "error_type": "BadRequestError",
+   "generation_calls": 0,
+   "http_status": 400,
+   "operation": "responses.input_tokens.count",
+   "request": {
+    "input": "Count this harmless synthetic sentence without generating an answer.",
+    "model": "gpt-6.1-sol",
+    "prompt_cache_options": {
+     "mode": "explicit"
+    },
+    "reasoning": {
+     "effort": "high"
+    },
+    "truncation": "disabled"
+   },
+   "request_sha256": "ebdc9fc07962864f63c5938e4b94077c2b18172127e82d834f334d0c48d5ae04",
+   "status": "error"
+  },
+  {
+   "authorization": "explicit follow-up: model and harmless input only",
+   "checked_at_utc": "2026-10-22T04:54:19.439529+00:00",
+   "generation_calls": 0,
+   "operation": "responses.input_tokens.count",
+   "request": {
+    "input": "Count this harmless synthetic sentence without generating an answer.",
+    "model": "gpt-6.1-sol"
+   },
+   "request_sha256": "7ce855a7eac7f34f329aeca318e71fb20d870ae303560b31972ebc4d71cca6d8",
+   "response": {
+    "input_tokens": 16,
+    "object": "response.input_tokens"
+   },
+   "status": "ok"
+  }
+ ],
+ "local_o200k_proxy_tokens_for_probe": 10,
+ "model": {
+  "created": 1790552874,
+  "id": "gpt-6.1-sol",
+  "object": "model",
+  "owned_by": "system"
+ },
+ "model_created_utc": "2026-09-27T23:47:54+00:00",
+ "official_sources": {
+  "cache_accounting": "https://developers.openai.com/api/docs/guides/prompt-caching",
+  "counting": "https://developers.openai.com/api/docs/guides/token-counting",
+  "model": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+  "prices": "https://developers.openai.com/api/docs/pricing",
+  "usage_schema": "https://developers.openai.com/api/reference/resources/responses/methods/create"
+ },
+ "openai_sdk_version": "3.27.0",
+ "operation": "models.retrieve",
+ "prior_all100_official_judge_usage_only": {
+  "input_tokens": 16704,
+  "n": 99,
+  "output_tokens": 3634,
+  "recorded_cost_usd": 0.09627000000000001,
+  "report": "benchmarks/results/longmemeval_dev_answers_v3.json",
+  "selection_used": false
+ },
+ "proposed_independent_reader_budget": {
+  "all100_judge_2048_output_reservation_usd": 3.20976,
+  "all100_reader_plus_prior_actual_judge_estimate_usd": 10.74587,
+  "caching_credit_assumed": false,
+  "exact_input_cap": 32768,
+  "gold_visible_to_selector": false,
+  "judge_actual_prior_sample_usd": 0.09627000000000001,
+  "max_output_tokens": 4096,
+  "n": 100,
+  "ordinary_input_worst_case_usd": 6.553599999999999,
+  "output_worst_case_usd": 4.096,
+  "prior_answers_visible_to_model": false,
+  "producer_implemented": false,
+  "reader_worst_case_usd": 10.6496,
+  "reasoning_effort": "high",
+  "tools": false
+ },
+ "published_dated_snapshot": null,
+ "requested_model": "gpt-6.1-sol",
+ "response_usage_input_fields": {
+  "cache_write_tokens": "<class 'int'>",
+  "cached_tokens": "<class 'int'>"
+ },
+ "response_usage_output_fields": {
+  "reasoning_tokens": "<class 'int'>"
+ },
+ "schema_version": 1,
+ "sdk_input_details_source_sha256": "b7dde289a76e8024deab04ff73b5722b9a641cb93c1e8dbd9527edf60327db81",
+ "sdk_prompt_cache_options": {
+  "comparison_response_id": "ForwardRef('Optional[str]', module='openai.types.responses.response_create_params')",
+  "mode": "ForwardRef(\"Literal['implicit', 'explicit']\", module='openai.types.responses.response_create_params')",
+  "prewarm": "ForwardRef('bool', module='openai.types.responses.response_create_params')",
+  "ttl": "ForwardRef(\"Literal['30m']\", module='openai.types.responses.response_create_params')"
+ },
+ "snapshot_limitation": "Official model page and models.retrieve identify gpt-6.1-sol only; no dated snapshot was published or resolved.",
+ "standard_short_context_prices_per_million_usd": {
+  "cached_input": 0.1,
+  "ordinary_input": 2,
+  "output": 10,
+  "write_12h": 5,
+  "write_30m": 2.5
+ },
+ "status": "ok",
+ "tiktoken_model_encoding": null
+}

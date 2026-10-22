@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "dev_only": true,
+  "heldout_run": false,
+  "corpus_read": false,
+  "new_model_or_judge_calls": 0,
+  "dev_questions_verified": 100,
+  "heldout_questions_untouched": 400,
+  "paid_calls_verified": 199,
+  "global_recorded_spend_usd": 54.73209150000008,
+  "incremental_spend_usd": 12.519595,
+  "summary": {
+    "n": 100,
+    "correct": 88,
+    "answer_accuracy": 0.88,
+    "answer_accuracy_ci95": [
+      0.8018790057328857,
+      0.9300059356298052
+    ],
+    "acceptance_correct": 100,
+    "acceptance_met": false,
+    "reader_status": {
+      "ok": 99,
+      "error": 1
+    },
+    "judge_status": {
+      "ok": 99,
+      "reader_failure": 1
+    },
+    "by_type": {
+      "multi-session": {
+        "n": 27,
+        "correct": 19
+      },
+      "knowledge-update": {
+        "n": 16,
+        "correct": 16
+      },
+      "single-session-user": {
+        "n": 14,
+        "correct": 14
+      },
+      "temporal-reasoning": {
+        "n": 26,
+        "correct": 24
+      },
+      "single-session-preference": {
+        "n": 6,
+        "correct": 5
+      },
+      "single-session-assistant": {
+        "n": 11,
+        "correct": 10
+      }
+    },
+    "input_tokens": {
+      "median": 44014.5,
+      "max": 51275
+    },
+    "user_occurrences": 24391,
+    "assistant_occurrences": 781,
+    "coverage": {
+      "scored": 84,
+      "actual_complete": 84
+    },
+    "abstentions": 9,
+    "exact_quote_claims": 222,
+    "total_claims": 227
+  },
+  "historical_policy": {
+    "preregistered_protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
+    "reader_inputs_verified": 300,
+    "reader_requests_verified": 545,
+    "judge_requests_verified": 299
+  },
+  "inputs": {
+    "answers_sha256": "659188fc4d4ea32e82bf84a3a084995097904a2f945817d933fe78989458d306",
+    "spend_sha256": "ecaed00437c7b7890d248f32758ceac66456dc16e76fba957a09ff9a1177cbfb",
+    "checker_sha256": "0554acc5137be765b5cbe0a2e202588f88bf055cdb83a7834fa528ce2323ed57",
+    "source_checker_sha256": "f2df58a96d8bf6d5316b83f8fa435076f3b45e87f072c7034dbac218c035847f",
+    "protocol_sha256": "f9e9b9d9312f26da679bf2201bf723595edab81e3de7c430bd9e29714174b891"
+  }
+}

@@ -1,0 +1,1270 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-22T04:36:27.391682+00:00",
+  "dev_only": true,
+  "heldout_run": false,
+  "new_model_or_judge_calls": 0,
+  "diagnostic_only": true,
+  "producer_reports_modified": false,
+  "inputs": {
+    "baseline": {
+      "path": "benchmarks/results/longmemeval_dev_answers_v3.json",
+      "sha256_at_snapshot": "42d40179543a815e9f938ce018df5bb7363ec3a31c9bee8526b26ade4955774e",
+      "mutable": false
+    },
+    "role_selection_snapshot": {
+      "path": "benchmarks/results/longmemeval_role_retrieval_v1/answers.json",
+      "sha256_at_snapshot": "92b06b6805529efec6aa567aaacd67f847787195ec6873896fd0405f6d0de0fc",
+      "mutable": true
+    },
+    "full_history_snapshot": {
+      "path": "benchmarks/results/longmemeval_full_history_v1/answers.json",
+      "sha256_at_snapshot": "76611999c2944a448f8b144d52f583aabd66e1eaf3b052168998ef9c3ab7dcd4",
+      "mutable": true
+    },
+    "role_protocol": {
+      "path": "benchmarks/results/longmemeval_role_retrieval_v1/protocol.json",
+      "sha256_at_snapshot": "2301a6eb0a2dc96f2ebe58b6e1a2a93b6721b26741d2fdc40d842c2977a68368",
+      "mutable": false
+    },
+    "full_history_protocol": {
+      "path": "benchmarks/results/longmemeval_full_history_v1/protocol.json",
+      "sha256_at_snapshot": "f9e9b9d9312f26da679bf2201bf723595edab81e3de7c430bd9e29714174b891",
+      "mutable": false
+    }
+  },
+  "cohort": {
+    "baseline_operand_incorrect": 12,
+    "snapshot_history_reader_status": {
+      "ok": 12
+    },
+    "snapshot_history_judge_status": {
+      "pending": 12
+    }
+  },
+  "limitations": [
+    "Manual post-hoc semantic evidence diagnosis; no new judging or answer-accuracy estimate.",
+    "Reader and judge statuses are point-in-time snapshots; pending outputs were not interpreted as wrong.",
+    "Reference answers and diagnostic IDs appear only in analysis, never as selector inputs or response rules.",
+    "Labeled support completeness is not used as proof of semantic sufficiency.",
+    "Observed evidence tensions are preserved; no reference is declared erroneous without resolving identity and time scope."
+  ],
+  "rows": [
+    {
+      "qid": "2133c1b5",
+      "qtype": "knowledge-update",
+      "question": "How long have I been living in my current apartment in Harajuku?",
+      "question_date": "2023/10/15 (Sun) 08:39",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "The only apartment-specific duration I can support is 1 month in your new studio apartment in Harajuku. There is also a separate statement that you had been living in Harajuku for 3 months, so the timeline is not fully consistent.",
+        "abstain": false
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "3 months",
+      "role_selection": {
+        "manual_assessment": "both conflicting duration statements are selected; neither is lost by retrieval",
+        "reader_status": "ok",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "About 6 months as of 2023/10/15 08:39, based on your 2023/04/11 statement that your new studio apartment in Harajuku had been yours for \"a month now.\" However, there is conflicting later evidence from the evening of 2023/10/15 saying you had been living in Harajuku for \"3 months now,\" if that refers to the same apartment.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "explicit_duration_update_vs_extrapolation",
+        "apartment_district_identity_scope",
+        "question_observation_clock_not_cutoff",
+        "elapsed_duration_arithmetic"
+      ],
+      "analysis": "Question time is2023/10/15 08:39. On2023/04/11 08:03 the source says the new studio apartment in Harajuku had been a month; on2023/10/15 20:50 it says living in Harajuku for3months. The frozen haystack includes the later same-day source, and the reader contract calls question_date observation context with no as-of exclusion rule. Apartment versus district leaves referent scope unresolved. Full_history projects about6months from the April statement, but projecting a one-month April tenure to October would additionally require adding the initial month and assuming continuous residence. Preserve the conflict; do not declare the reference erroneous solely from these timestamps.",
+      "general_rule_hypothesis": "Prefer an explicit current-duration update over an extrapolated old duration when referents align; separately report unresolved apartment/district scope and avoid assuming continuous residence.",
+      "evidence": [
+        {
+          "fact": "old_apartment_duration",
+          "source_id": "8be3bb6f2cb6aeaa7a79eb9dfec4313471d9511fe9975f7244fd11307ad476cf",
+          "session_index": 23,
+          "turn_index": 4,
+          "role": "user",
+          "observation_time": "2023/04/11 (Tue) 08:03",
+          "exact_quote": "o living in Tokyo, but I've been enjoying the independence of my new studio apartment in Harajuku - it's been a month now, and the commute to work is really convenient. Anyway, back to the trip - do you think it's better to book accommodations in Hakuba Valley or Matsumoto?",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "later_residency_duration",
+          "source_id": "7e847abe44f3e586bcda34090a8b5177f60092e2b6ac211145e1ad12a1c230f1",
+          "session_index": 34,
+          "turn_index": 2,
+          "role": "user",
+          "observation_time": "2023/10/15 (Sun) 20:50",
+          "exact_quote": "Brick Warehouse. I've heard great things about the harbor views. By the way, I've been living in Harajuku for 3 months now, and I'm still discovering new hidden gems in the neighborhood.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "352ab8bd",
+      "qtype": "single-session-assistant",
+      "question": "Can you remind me what was the average improvement in framerate when using the Hardware-Aware Modular Training (HAMT) agent in the 'To Adapt or Not to Adapt? Real-Time Adaptation for Semantic Segmentation' submission?",
+      "question_date": "2023/05/30 (Tue) 23:31",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — the retained evidence mentions that HAMLET/HAMT improved efficiency, but it does not state any numeric average framerate improvement.",
+        "abstain": true
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "The average improvement in framerate was approximately 20% when using the Hardware-Aware Modular Training (HAMT) agent.",
+      "role_selection": {
+        "manual_assessment": "the needed explicit numeric assistant assertion is present in role selection and absent from full_history",
+        "reader_status": "ok",
+        "source_count": 127
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "I don't know — the retained evidence mentions that HAMLET/HAMT improved \"accuracy and efficiency,\" but it does not give any numeric average framerate improvement.",
+        "abstain": true
+      },
+      "failure_factors": [
+        "missing_leading_assistant_source"
+      ],
+      "analysis": "The original session starts with an assistant turn stating approximately20% average framerate improvement from HAMT and a separate approximately4x improvement with Active Training Modulation. User-only reconstruction and following-assistant snapshots omitted that leading assistant turn. Role selection restores it; full_history still lacks it and abstains.",
+      "general_rule_hypothesis": "Index leading and assistant-only source turns, retain their role and full verbatim text, and bind each numeric value to its method and metric.",
+      "evidence": [
+        {
+          "fact": "HAMT_numeric_improvement",
+          "source_id": "85ab6a28057c7dcf4d33185ea600e7b9f1a95a0743d510bdd0d1e0ce0d9dfe9e",
+          "session_index": 10,
+          "turn_index": 0,
+          "role": "assistant",
+          "observation_time": "2023/05/22 (Mon) 11:51",
+          "exact_quote": "e to significantly improve the trade-off between accuracy and efficiency in online domain adaptation, with an average improvement in framerate of approximately 20% when using the Hardware-Aware Modular Training (HAMT) agent and a further improvement of approximately 4x with the addition of the Active Training Modulation system. The framework was also able to significant",
+          "present_in_role_selection": true,
+          "present_in_full_history": false
+        }
+      ]
+    },
+    {
+      "qid": "46a3abf7",
+      "qtype": "multi-session",
+      "question": "How many tanks do I currently have, including the one I set up for my friend's kid?",
+      "question_date": "2023/05/30 (Tue) 21:36",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "2 tanks.",
+        "abstain": false
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "3",
+      "role_selection": {
+        "manual_assessment": "all three tank identities are present; continued possession of the older tank is not explicitly revoked",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "At least 2: your 20-gallon community tank (“Amazonia”) and the 1-gallon tank you set up for your friend’s kid. It could be 3 if you still also had the older 5-gallon betta tank with Finley, because the evidence conflicts on whether that one was still current.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "ownership_state_inference",
+        "count_abstention_calibration"
+      ],
+      "analysis": "The reader treats old-tank language as possible removal. Sources assert a five-gallon betta tank, a new twenty-gallon community tank, and the one-gallon tank for the friend child; no selected disposal or sale assertion was found. Old and new distinguish identities without proving an ownership transition.",
+      "general_rule_hypothesis": "Do not remove a possession solely because it is called old; require an explicit terminal state or replacement relation and preserve uncertainty separately from the witnessed inventory.",
+      "evidence": [
+        {
+          "fact": "friend_child_tank",
+          "source_id": "fbefcf3c6c76aca331056d48951bea6302db00fd27f2ac74ecccba5c42aec04c",
+          "session_index": 8,
+          "turn_index": 10,
+          "role": "user",
+          "observation_time": "2023/05/21 (Sun) 12:06",
+          "exact_quote": "I've also been taking care of a small 1-gallon tank that I set up for a friend's kid, which has a few guppies and some plants. I was wondering if the temperature requirements are the same for these plants in a smaller tank like that?",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "betta_tank",
+          "source_id": "ee91c69bb08e9c8f60e720beb2311b0506ad8a9cd67dd2761a57eb6ce00bca28",
+          "session_index": 17,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/23 (Tue) 08:19",
+          "exact_quote": "orrectly. Can you walk me through the process? By the way, I've had some experience with aquariums - I have a 5-gallon tank with a solitary betta fish named Finley, which I got from my cousin.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "old_new_wording",
+          "source_id": "246425639a31f4034f4203dc38024e4e117bc166fede0e21894c535638ddfb14",
+          "session_index": 17,
+          "turn_index": 4,
+          "role": "user",
+          "observation_time": "2023/05/23 (Tue) 08:19",
+          "exact_quote": "een learning about aquarium keeping for about 6 months now, and I've had some experience with cycling a tank. My old tank was a 5-gallon one that I got from my cousin, and I kept a solitary betta fish named Finley. I've since set up a new 20-gallon community tank, and I want to make sure I'm doing everything right. Can you tell me more about how to ",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "community_tank",
+          "source_id": "89212926558c1b2b0ba4f895b921b41be3897d88829cbfe897d611a1e5a56ae4",
+          "session_index": 36,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/27 (Sat) 05:14",
+          "exact_quote": "you give me some tips on how to lower nitrite levels in a freshwater tank? By the way, I've finally set up my 20-gallon freshwater community tank, which I've named \"Amazonia\", and it's been doing well so far.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "6d550036",
+      "qtype": "multi-session",
+      "question": "How many projects have I led or am currently leading?",
+      "question_date": "2023/05/30 (Tue) 23:32",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "At least 1 explicitly; possibly 2 if the June product-feature effort counts as a project you’re currently leading.",
+        "abstain": false
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "2",
+      "role_selection": {
+        "manual_assessment": "partial: explicit Marketing Research leadership and engineering-team leadership are selected; the solo Data Mining project is absent from role selection but present in full_history",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "Likely 3 projects: (1) your Marketing Research class project, where you led the data analysis team; (2) your current solo Data Mining class project; and (3) the current new-product-feature project you’re planning with the team of five engineers you lead. Only the first is explicitly described as a project you “led”; the other two are current projects you appear to be handling/leading based on the wording.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "missing_context_turn",
+        "project_identity_and_leadership_scope",
+        "extra_context_count_ambiguity"
+      ],
+      "analysis": "The baseline did not retrieve the current solo class project. Role selection still omits that premise while selecting the same session feature-engineering exchange. Full_history sees the solo project and also counts the separate engineering feature project, producing three against the reference two. The engineering team assertion does not explicitly identify leadership of every mentioned project; the available text does not uniquely justify discarding that contextual candidate.",
+      "general_rule_hypothesis": "Carry the opening premise or neighboring user turn when a selected exchange is a follow-up; distinguish project identity from team leadership and list uncertain memberships separately.",
+      "evidence": [
+        {
+          "fact": "past_class_leadership",
+          "source_id": "922d6566418f97e6bce5ac05cfae441014c8299a8f90bed1485dbc7afd5f4b91",
+          "session_index": 6,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/21 (Sun) 19:38",
+          "exact_quote": " between k-means and hierarchical clustering? By the way, I've had some experience with data analysis from my Marketing Research class project, where I led the data analysis team and we did a comprehensive market analysis for a new product launch.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "current_solo_project",
+          "source_id": "31101f326c5eee6624d67f025926db835c6f1fbdd401e5a27942e7dcdd230a7e",
+          "session_index": 39,
+          "turn_index": 2,
+          "role": "user",
+          "observation_time": "2023/05/29 (Mon) 09:25",
+          "exact_quote": "I've been working on a solo project for my Data Mining class, and I'm really interested in applying some of these techniques to my customer purchase data. I'm trying to identify patterns and trends, and I think feature engineering will really help me with that. Do ",
+          "present_in_role_selection": false,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "engineering_team_and_feature_project",
+          "source_id": "9d8d262b19523ec425d3fd1b49d4b0e84056f58041860332868d248652b480a9",
+          "session_index": 35,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/28 (Sun) 03:42",
+          "exact_quote": "pecially since I was promoted to a senior software engineer position three months ago and have been leading a team of five engineers.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "7405e8b1",
+      "qtype": "multi-session",
+      "question": "Did I receive a higher percentage discount on my first order from HelloFresh, compared to my first UberEats order?",
+      "question_date": "2023/05/30 (Tue) 21:33",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — your HelloFresh first order was 40% off, but the retained evidence does not state a percentage discount for your first UberEats order; it only mentions a generic \"$5 off\" first-order offer and a separate 20% discount you got last week.",
+        "abstain": true
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "Yes.",
+      "role_selection": {
+        "manual_assessment": "both discount percentages are selected, but the UberEats order is not explicitly identified as the first order",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "I don't know — I have evidence that your first HelloFresh order had a 40% discount, but I do not have evidence for the discount on your first UberEats order specifically.",
+        "abstain": true
+      },
+      "failure_factors": [
+        "ordinal_event_identity_gap",
+        "supported_numeric_comparison_vs_full_abstention"
+      ],
+      "analysis": "HelloFresh first-order discount is40%; the recorded UberEats order last week was20%. Exact first-order co-reference is not established. Baseline and full_history abstain on that ordinal gap. A qualified comparison can state40 exceeds the recorded20 while preserving that the first UberEats order is unidentified; asserting that identity would fill an unsupported gap.",
+      "general_rule_hypothesis": "Separate a supported numeric comparison from an unresolved ordinal identity and qualify the scope rather than silently assigning first-order status.",
+      "evidence": [
+        {
+          "fact": "HelloFresh_first",
+          "source_id": "63a6aed2deffcb3b68ccbd921907cc175cacd6d69300be4db44a9ae4e0cb3167",
+          "session_index": 10,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/23 (Tue) 07:40",
+          "exact_quote": "ons available for popular brands like Blue Apron or Plated. By the way, I recently tried HelloFresh and got a 40% discount on my first order, which was a great deal!",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "UberEats_recorded_order",
+          "source_id": "b09e54b0541a8e02e888a82113697101a15bbbeacc1b8792619e169938e82410",
+          "session_index": 30,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/28 (Sun) 06:20",
+          "exact_quote": "eek and I was wondering if you could help me find some good deals or promo codes? By the way, last week I got 20% off my UberEats order, which was awesome!",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "eac54adc",
+      "qtype": "temporal-reasoning",
+      "question": "How many days ago did I launch my website when I signed a contract with my first client?",
+      "question_date": "2023/03/25 (Sat) 19:57",
+      "baseline": {
+        "reader_status": "error",
+        "judge_status": "reader_failure",
+        "official_correct": null,
+        "call_status": "error",
+        "error_type": "RateLimitError",
+        "http_status": 429
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "19 days ago. 20 days (including the last day) is also acceptable.",
+      "role_selection": {
+        "manual_assessment": "both the launch observation and first-client contract observation are selected",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "About 19 days earlier, assuming your website launch was the same day as the 2023-02-10 message saying you had \"just launched\" it. Because \"just launched\" is imprecise, 19 days is approximate.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "transport_rate_limit_in_baseline",
+        "approximate_event_date_arithmetic"
+      ],
+      "analysis": "The baseline operand reader failed with RateLimitError429, so its recorded miss is a transport failure. Feb10 says just launched and March1 says signed first client today. Full_history returns about19 days with an explicit approximation, using the contract event as the interval endpoint.",
+      "general_rule_hypothesis": "Keep transport failures distinct from memory failures; compute source-anchored approximate elapsed time when exact launch clock time is not stated.",
+      "evidence": [
+        {
+          "fact": "website_launch",
+          "source_id": "2d8f37c80724bd879f8e78e0d2a5d41a4bc015179eac43390dabe54100bb8a56",
+          "session_index": 0,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/02/10 (Fri) 18:00",
+          "exact_quote": "ant to make sure I'm consistently posting engaging content that will attract potential clients. By the way, I just launched my website and created a business plan outline, so I want to make sure my social media aligns with my overall business strategy.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "first_contract",
+          "source_id": "7e71d71f7bacf42e9aa77418f9856ea72a8e2d5b64d8933296d8385bb918aaa6",
+          "session_index": 27,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/03/01 (Wed) 03:03",
+          "exact_quote": "oking for some advice on creating a solid contract for my freelance clients. I just signed a contract with my first client today, and I want to make sure I'm covering all my bases for future projects.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_2f8be40d",
+      "qtype": "multi-session",
+      "question": "How many weddings have I attended in this year?",
+      "question_date": "2023/10/15 (Sun) 23:47",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — you've explicitly mentioned attending at least a few weddings, but the exact total for this year isn't stated clearly enough to count with confidence.",
+        "abstain": true
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "I attended three weddings. The couples were Rachel and Mike, Emily and Sarah, and Jen and Tom.",
+      "role_selection": {
+        "manual_assessment": "all three named reference events are selected, together with additional attendance assertions whose identities and dates require reconciliation",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "At least 5 weddings this year.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "reader_cap_source_loss",
+        "event_identity_resolution",
+        "event_date_vs_observation_date",
+        "unresolved_extra_attendance_evidence"
+      ],
+      "analysis": "The baseline dropped Jen and Tom. Role selection now includes their wedding, Emily and Sarah, and the cousin vineyard wedding. Full_history counts five by also introducing a cousin wedding last month and the sister wedding. The sister source gives no explicit event date; just amazing is evaluative wording, not by itself a time anchor. The last-month cousin mention anchors to September while the vineyard wedding says August, so blindly merging them is also unsupported. This is an evidence reconciliation problem; exact three is not uniquely established by the broad context without additional identity assumptions.",
+      "general_rule_hypothesis": "Build event keys from participants, venue and event-time constraints; merge only compatible references, distinguish unplaced dates from within-window events, and expose unresolved aliases.",
+      "evidence": [
+        {
+          "fact": "Emily_Sarah",
+          "source_id": "b4533e8da71d391624078d01408a4728be7c7657a645d1431bff3b4fc6e5bcd2",
+          "session_index": 6,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/10/15 (Sun) 04:44",
+          "exact_quote": "was beautiful - they had a rooftop garden ceremony overlooking the skyline, and it was so romantic. My friend Emily finally got to tie the knot with her partner Sarah, and it was amazing to see them so happy after waiting for marriage equality.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "vineyard_cousin",
+          "source_id": "cbfd548500d21f332985b9c4dbf7a94270944db708d0b3713e96dcaf4b17c94c",
+          "session_index": 9,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/10/15 (Sun) 05:48",
+          "exact_quote": "r some wedding venue ideas. I've been to a few weddings recently and one of them was my cousin's wedding at a vineyard in August, which was just stunning. Do you have any recommendations for outdoor wedding venues that could accommodate a similar atmosphere?",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "Jen_Tom",
+          "source_id": "abb9b9158794aba61c957781281f9d8a86bb740f5d056cd9501c019bbcd1542e",
+          "session_index": 41,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/10/15 (Sun) 19:23",
+          "exact_quote": "fect venue. By the way, I just got back from a friend's wedding last weekend, and it was amazing - the bride, Jen, looked stunning in her bohemian-inspired dress, and her husband, Tom, was clearly smitten with her. It was at a rustic barn in the countryside, and it was so cozy and relaxed.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "last_month_cousin",
+          "source_id": "fbeb2d519aa95891b7dab53245fa59d16b2bbbead2de99322fa142e43cb58495",
+          "session_index": 15,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/10/15 (Sun) 07:39",
+          "exact_quote": "ng to find my grandmother's silver locket that she gave me on my 18th birthday. I last wore it to my cousin's wedding last month, but now it's nowhere to be found. Can you help me think of where I might have misplaced it?",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "sister_undated",
+          "source_id": "4fda843b6c2264b6825c622ed7e59fa415ca254be452de8471c222483740d734",
+          "session_index": 24,
+          "turn_index": 4,
+          "role": "user",
+          "observation_time": "2023/10/15 (Sun) 10:57",
+          "exact_quote": "idea of how to keep the conversation light and fun. Thanks for the tips! By the way, speaking of weddings, my sister's wedding was just amazing, and I'm still on a high from it. We had such a great time planning it together, from choosing the dress to deciding on the menu. It was really special to be a part of it.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_31ff4165",
+      "qtype": "multi-session",
+      "question": "How many health-related devices do I use in a day?",
+      "question_date": "2023/05/30 (Tue) 23:38",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "At least 2 are explicitly used daily: your Fitbit Versa 3 and your Accu-Chek Aviva Nano system. If your hearing aids are part of your daily routine, that would make 3 health-related device types mentioned overall.",
+        "abstain": false
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "4",
+      "role_selection": {
+        "manual_assessment": "all four device categories are present in role selection: Fitbit, glucose meter, nebulizer and hearing aids",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "At least 3 health-related devices daily: your Fitbit Versa 3, your Accu-Chek Aviva Nano, and your nebulizer machine. It could be 4 if you also mean your Phonak hearing aids, which are mentioned as being used lately but not explicitly every day.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "missing_device_source_in_baseline",
+        "habit_frequency_scope",
+        "qualified_count_calibration"
+      ],
+      "analysis": "The baseline omitted the nebulizer. Role selection includes the twice-daily nebulizer and the hearing-aid battery request describing use for months, alongside Fitbit and glucose-meter routines. Full_history still restricts the count to three explicit daily schedules and leaves hearing aids conditional. The hearing-aid category is present; its exact daily frequency is implicit rather than separately quantified.",
+      "general_rule_hypothesis": "Separate the witnessed device inventory from certainty about each frequency; provide a qualified routine-use count without inventing an explicit daily schedule.",
+      "evidence": [
+        {
+          "fact": "Fitbit",
+          "source_id": "d8e67bf3a7a5950addc13856319f9afc488fce7e5182ccc5fd52b9d3d0023f7d",
+          "session_index": 13,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/21 (Sun) 23:08",
+          "exact_quote": "I'm trying to get back on track with my fitness goals, specifically increasing my daily step count. I've been wearing my Fitbit Versa 3 smartwatch non-stop since I got it three weeks ago, and I've noticed my average steps per day have dropped lately. Can you suggest some tips to help me stay motivated and reach my goal of 10,000 steps per day?",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "hearing_aids",
+          "source_id": "99c7ab11a7eeb6db7dc214ad94d12f9b2cf8b4c60ec6a18dcb9a31d722e75da2",
+          "session_index": 14,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/22 (Mon) 01:37",
+          "exact_quote": "I need help ordering some replacement batteries for my hearing aids. I've been using the same set for months now, and I can tell that they're running out of power.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "glucose_meter",
+          "source_id": "956d5d5adbb364af23e4986bf960f8ebb8d44b8f3e840eae35f3566be5768344",
+          "session_index": 30,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/27 (Sat) 10:21",
+          "exact_quote": "ine, especially when it comes to my health. I've been testing my blood sugar levels three times a day with my Accu-Chek Aviva Nano system, and I was wondering if you could help me find some healthy breakfast recipes to help lower my morning readings.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "nebulizer",
+          "source_id": "3ee90aef38a2f8158de5f077f26a178b96de8a8a90d70ead53a9174a88205536",
+          "session_index": 40,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/30 (Tue) 19:15",
+          "exact_quote": "u can recommend some tips on how to relieve sinus pressure. By the way, I've been doing inhalation treatments twice a day with my nebulizer machine, but I'm not sure if that's enough.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_5501fe77",
+      "qtype": "multi-session",
+      "question": "Which social media platform did I gain the most followers on over the past month?",
+      "question_date": "2023/05/30 (Tue) 22:43",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — the evidence only gives Twitter growth for the past month (+120, from 420 to 540), while TikTok's larger gain (~200) is for the past three weeks, not the past month.",
+        "abstain": true
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "TikTok",
+      "role_selection": {
+        "manual_assessment": "all reported follower changes are present in role selection",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "TikTok — among the platforms mentioned, that shows the biggest gain: about 200 followers in the past three weeks, which is more than Twitter’s 120 over the past month. Facebook was described as steady.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "temporal_window_precision",
+        "global_abstention_despite_supported_comparison"
+      ],
+      "analysis": "Twitter changed from420 to540 in a month, TikTok gained about200 in three weeks, and Facebook was steady. Baseline refused comparison because windows differ; full_history now gives TikTok among reported gains. The source does not describe TikTok losses or gains in the remaining week, so this supports a qualified comparison of reported recent growth rather than an exact reconstructed month total.",
+      "general_rule_hypothesis": "Answer comparisons at the precision supported by reported intervals and qualify unmatched portions, rather than treating every window mismatch as total absence.",
+      "evidence": [
+        {
+          "fact": "Twitter",
+          "source_id": "92cdbdc2a4f8d39b046b9a015e9fa27d52616ec7d13f5f3464e0b3dd1a794b71",
+          "session_index": 36,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/29 (Mon) 20:51",
+          "exact_quote": " me analyze my current performance. By the way, I just noticed that my Twitter follower count has jumped from 420 to 540 over the past month, which is really encouraging.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "TikTok",
+          "source_id": "09d55a88e90d01bcdae77ce5d7393bf9d4c72ed7d8e9d575a61be5044b31378d",
+          "session_index": 39,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/29 (Mon) 23:43",
+          "exact_quote": "that? By the way, I've been seeing some growth on some of my platforms, like TikTok, where I've gained around 200 followers over the past three weeks, which is pretty cool!",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "Facebook",
+          "source_id": "3d31c00273ed19ec1912ce5b66afda85f33e3e1e248d2039aeb77ad40fdaea81",
+          "session_index": 40,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/30 (Tue) 03:15",
+          "exact_quote": "est for posting to maximize engagement. By the way, I've noticed that my Facebook follower count has remained steady at around 800, but my posts have been getting more shares and comments than usual.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_59149c78",
+      "qtype": "temporal-reasoning",
+      "question": "I mentioned that I participated in an art-related event two weeks ago. Where was that event held at?",
+      "question_date": "2023/02/01 (Wed) 08:41",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — the retained evidence mentions several art-related events, but none is clearly identified as having happened exactly two weeks ago relative to 2023/02/01.",
+        "abstain": true
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "The Metropolitan Museum of Art.",
+      "role_selection": {
+        "manual_assessment": "the Metropolitan Museum visit and its own source date are selected",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "Most likely, it was held at the Metropolitan Museum of Art. You also mentioned an earlier art tour at the Museum of Modern Art, so if that’s the event you meant, it was at MoMA.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "approximate_relative_time",
+        "event_identity_ambiguity"
+      ],
+      "analysis": "The source records attendance at the Ancient Civilizations exhibit at the Metropolitan Museum onJan15, while the question isFeb1, a17-day gap. An exact14-day gate discarded the candidate despite ordinary approximate two-week language. Other museum mentions mean the answer should retain a narrow event-identity qualifier when necessary.",
+      "general_rule_hypothesis": "Interpret approximate relative periods at their stated precision; rank eligible events by temporal and semantic agreement instead of requiring exact day equality.",
+      "evidence": [
+        {
+          "fact": "Metropolitan_visit",
+          "source_id": "ae0f4bedae0b0c35b5788b1f8e76b45ac0fe176ab891fe9873a246277f4d0dab",
+          "session_index": 29,
+          "turn_index": 6,
+          "role": "user",
+          "observation_time": "2023/01/15 (Sun) 13:43",
+          "exact_quote": " been interested in ancient civilizations, which is why I attended the \"Ancient Civilizations\" exhibit at the Metropolitan Museum of Art today. Speaking of which, I was wondering, are there any other exhibits or museums in New York City that you would recommend for someone interested in ancient cultures?",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_731e37d7",
+      "qtype": "multi-session",
+      "question": "How much total money did I spend on attending workshops in the last four months?",
+      "question_date": "2023/02/26 (Sun) 23:35",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — I can only verify $220 in workshop spending within the last four months ($200 in November and $20 on December 12), but the January entrepreneurship workshop has no stated cost, so the exact total cannot be determined from the evidence.",
+        "abstain": true
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "$720",
+      "role_selection": {
+        "manual_assessment": "all stated nonzero costs, the free photography event, and the unpriced January event are selected",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "At least $220. That includes $200 for the November writing workshop and $20 for the December 12 mindfulness workshop; the February 22 photography workshop was free. The exact total could be higher because you also attended a January entrepreneurship workshop, but no fee for that one is stated.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "payment_date_vs_event_date",
+        "unknown_cost_scope",
+        "partial_sum_vs_abstention"
+      ],
+      "analysis": "The retained stated costs are200 for November writing,20 for December mindfulness and500 for digital marketing. The Feb26 source says I paid500 while naming a March15-16 event; payment and event dates need not coincide, although just attended creates a temporal tension. Filtering the500 only by event date discards a stated past payment. The January entrepreneurship cost is absent, so720 is a sum of reported costs rather than proven exhaustive total spending.",
+      "general_rule_hypothesis": "Attach the time window to the requested relation, distinguish payment from attendance, and return the known sum with explicit unknown-cost coverage instead of substituting zero or globally abstaining.",
+      "evidence": [
+        {
+          "fact": "free_photography",
+          "source_id": "2153ed9dba8d056e3ad0bc4dd35705f2e44410de7841bac5bfe53f97ac221b08",
+          "session_index": 17,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/02/26 (Sun) 11:52",
+          "exact_quote": "ttended a one-day photography workshop on February 22 at a local studio, and it was really helpful - it was a free event, but I had to register online in advance.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "unpriced_January",
+          "source_id": "719d117ced47cd53dd5514ea267f98c123ae3ed8acdd8ccb4697110929ec3c24",
+          "session_index": 17,
+          "turn_index": 8,
+          "role": "user",
+          "observation_time": "2023/02/26 (Sun) 11:52",
+          "exact_quote": "eaking of entrepreneurship, I attended a three-day entrepreneurship workshop at a coworking space downtown in January. It was organized by a startup accelerator program, and I was one of the 20 selected participants.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "mindfulness_cost",
+          "source_id": "645ce0e735a15ead1c80241e90303c580c860b86fc8734110f2d9801b98d609b",
+          "session_index": 17,
+          "turn_index": 10,
+          "role": "user",
+          "observation_time": "2023/02/26 (Sun) 11:52",
+          "exact_quote": "the stresses of entrepreneurship. I attended a half-day mindfulness workshop at a yoga studio near my home on December 12, and it was really helpful. I paid $20 to attend, and I got to take home a workbook with exercises and tips.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "writing_cost",
+          "source_id": "7718c51bd554637e57ee3d1c3e91f5161c43116117822d9f2d4e7aa262495c29",
+          "session_index": 21,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/02/26 (Sun) 13:21",
+          "exact_quote": "since a writing workshop I attended in November at a literary festival. It was a two-day workshop, and I paid $200 to attend. The instructor was a published author, and I got some great feedback on my work. Do you have any resources on character development and editing that you could recommend?",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "marketing_cost",
+          "source_id": "288bad0532228b9dc2b1f6eba3af77d855803e2ca0afd24e7b8f49f93518341e",
+          "session_index": 23,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/02/26 (Sun) 13:37",
+          "exact_quote": "rch 15-16, and it was really helpful in understanding the importance of tracking my online engagement. I paid $500 to attend, and it was worth it!",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_a56e767c",
+      "qtype": "multi-session",
+      "question": "How many movie festivals that I attended?",
+      "question_date": "2023/05/30 (Tue) 20:53",
+      "baseline": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "3: Austin Film Festival, Portland Film Festival, and AFI Fest in LA.",
+        "abstain": false
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "I attended four movie festivals.",
+      "role_selection": {
+        "manual_assessment": "all four distinct named festival identities are present in role selection",
+        "reader_status": "pending",
+        "source_count": 128
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "pending",
+        "official_correct": null,
+        "answer": "You attended 4 movie festivals: Austin Film Festival, Seattle International Film Festival, Portland Film Festival, and AFI Fest.",
+        "abstain": false
+      },
+      "failure_factors": [
+        "reader_cap_source_loss",
+        "distinct_event_count"
+      ],
+      "analysis": "The baseline lost the Seattle International Film Festival source after adding verbose assistant turns. Role selection includes Seattle as well as Austin, Portland and AFI; repeated Austin and Portland mentions must collapse to those same festival identities.",
+      "general_rule_hypothesis": "Enumerate canonical event identities before counting, retaining the source of each distinct identity.",
+      "evidence": [
+        {
+          "fact": "Austin",
+          "source_id": "df01bbee2c2e6457d83adad4a18983439a6aa9a2ebad08c695a8a8a87129c0ef",
+          "session_index": 6,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/21 (Sun) 17:55",
+          "exact_quote": "Parasite\" and \"The Farewell\" lately. By the way, I recently participated in the 48-hour film challenge at the Austin Film Festival, where my team and I had to write, shoot, and edit a short film within 48 hours - it was a wild ride!",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "Seattle",
+          "source_id": "27ea161bd83fec5fd36cac906ba5f9865dafa77bedbcff48ea1b4c8a8b07ab1e",
+          "session_index": 6,
+          "turn_index": 4,
+          "role": "user",
+          "observation_time": "2023/05/21 (Sun) 17:55",
+          "exact_quote": "tive structure of \"The Weight of Water\" with the director himself at a Q&A session after the screening at the Seattle International Film Festival, which was really enlightening.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "Portland",
+          "source_id": "6984f7135abd8e5f60a6ad323aeb138a2172b8d84ce2715c8271d733dea042a5",
+          "session_index": 29,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/25 (Thu) 23:02",
+          "exact_quote": "cover more. By the way, I've been pretty active in the film festival scene lately - I even volunteered at the Portland Film Festival, where I helped with event coordination and got to meet some industry professionals.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        },
+        {
+          "fact": "AFI",
+          "source_id": "482b2e828a1f72972ed7da15f0af6dbb5a7486fee8093a8496d6d93b388b7311",
+          "session_index": 32,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/26 (Fri) 09:43",
+          "exact_quote": "es of social justice and identity, similar to \"Parasite\" and \"The Farewell\"? By the way, I just got back from AFI Fest in LA, where I attended a screening of \"Joker\" and got to see Todd Phillips and Joaquin Phoenix during the Q&A session - it was really thought-provoking.",
+          "present_in_role_selection": true,
+          "present_in_full_history": true
+        }
+      ]
+    }
+  ],
+  "additional_schema_failure": {
+    "qid": "gpt4_70e84552_abs",
+    "category": "reader_output_schema_failure",
+    "reader_status": "error",
+    "api_call_status": "ok",
+    "raw_json_parseable": true,
+    "raw_abstain": true,
+    "raw_claim_count": 2,
+    "raw_answer": "I don't know — I found evidence that you fixed the fence, but no retained evidence that you purchased three cows from Peter, so I can't tell which happened first.",
+    "analysis": "The API transport succeeded and the model produced a supported abstention with explanatory cited claims; the frozen parser rejects abstain=true with nonempty claims. This is a final-contract schema failure, not transport or lack of memory support. Current run remains unmodified.",
+    "next_pipeline_hypothesis": "Enforce the abstention JSON contract during constrained generation or add a separately preregistered schema-repair step with unchanged semantic answer and fresh provenance; do not silently normalize the current run."
+  },
+  "next_general_intervention_hypothesis": {
+    "priority": "Source-linked evidence ledger followed by a contract-checked answer stage, with session premise closure for selected follow-ups.",
+    "ledger_fields": [
+      "speaker role",
+      "entity or event identity",
+      "relation being queried",
+      "observation time",
+      "explicit or relative event/validity interval",
+      "numeric value and unit",
+      "exact source quote",
+      "certainty and unresolved identity alternatives"
+    ],
+    "rules": [
+      "Retain full leading assistant observations and opening user context.",
+      "Prefer explicit current-state assertions over extrapolation from earlier durations when referents match; preserve identity conflicts.",
+      "Aggregate distinct compatible events and quantities, attach time to the requested relation, and keep unknown costs or unplaced event dates separate.",
+      "Give qualified supported values or comparisons when only precision or ordinal identity is uncertain; abstain when the requested fact itself lacks support.",
+      "Validate the final JSON/abstention contract independently of source entailment and transport."
+    ],
+    "acceptance_checks": [
+      "No qid, question type, source alias label, or reference-answer branch in retrieval or generation.",
+      "Cited ledger operands must be exact spans of retained full source occurrences.",
+      "Keep strict current-run reports unchanged and record any next schema-repair policy as a new protocol.",
+      "Run the next intervention across all100dev and inspect both corrections and regressions; held-out scoring stays unused."
+    ]
+  },
+  "additional_regressions": [
+    {
+      "qid": "3fdac837",
+      "question": "What is the total number of days I spent in Japan and Chicago?",
+      "question_date": "2023/05/30 (Tue) 19:13",
+      "baseline": {
+        "official_correct": true,
+        "answer": "12 days total, if counting the Japan trip from April 15th through 22nd inclusively (8 days in Japan + 4 days in Chicago)."
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "Approximately 154 days based on the clearly stated 5 months in Tokyo (about 150 days) plus the 4-day Chicago trip. If the separate Japan trip from April 15th to 22nd should also be added, the total is approximately 162 days."
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "11 days (or 12 days, if April 15th to 22nd is considered as 8 days)",
+      "classification": [
+        "relation_scope_contamination",
+        "residence_vs_trip_duration",
+        "unsupported_month_to_day_conversion",
+        "possible_interval_double_counting"
+      ],
+      "manual_evidence_assessment": "Both trip durations are present. The changed answer selects a continuous residence duration instead of the comparable Japan travel event, then optionally double-counts the separate Japan trip.",
+      "analysis": "Japan trip April15-22 supplies7 elapsed days or8 inclusive days; Chicago trip supplies4 days. Current Tokyo residence for approximately5months is a different relation/state. Full_history converts that approximate state duration to150days with an unmentioned30-day month convention, adds the Chicago trip, and optionally adds the Japan trip without establishing disjointness. The question omits the word trip, but both named places have matching explicit trip operands; mixing residence and trip scopes is less directly supported than the matched travel interpretation.",
+      "general_rule_hypothesis": "Resolve the requested relation and comparable event class before converting units or aggregating; match trip with trip, keep residence state separate unless the question requests it, and do not add intervals whose disjointness is unestablished.",
+      "evidence": [
+        {
+          "fact": "Japan_trip",
+          "source_id": "38d1e94b4d241053f2ef0ac626c4d7dde6c5e745fb6bf95a7f56bdf19de1eaea",
+          "session_index": 38,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/29 (Mon) 05:09",
+          "exact_quote": "m planning a trip to Asia and I was wondering if you could recommend some must-visit places in Tokyo. I went to Japan before from April 15th to 22nd, and I fell in love with the city.",
+          "present_in_role_selection": true
+        },
+        {
+          "fact": "Chicago_trip",
+          "source_id": "ac5338c65de035fc4bcb26210c6697e2718e205a5ecef724f7cb2164edc2acff",
+          "session_index": 16,
+          "turn_index": 2,
+          "role": "user",
+          "observation_time": "2023/05/23 (Tue) 02:30",
+          "exact_quote": "I'm actually looking for some good Italian restaurants, I had some great Italian food during my last 4-day trip to Chicago.",
+          "present_in_role_selection": true
+        },
+        {
+          "fact": "Tokyo_residence",
+          "source_id": "16e6a44863b9c3b6653af7058a2749cb5878741f99d85edef1b29b3746b15e84",
+          "session_index": 31,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/28 (Sun) 02:02",
+          "exact_quote": "uisine, but it's not always easy to find options that fit my dietary preferences. By the way, I've been living in Tokyo for about 5 months now, and it's been a big adjustment, but I'm loving it so far!",
+          "present_in_role_selection": true
+        }
+      ]
+    },
+    {
+      "qid": "7024f17c",
+      "question": "How many hours of jogging and yoga did I do last week?",
+      "question_date": "2023/05/30 (Tue) 21:24",
+      "baseline": {
+        "official_correct": true,
+        "answer": "I don't know — the retained evidence only confirms a 30-minute jog on Saturday 2023/05/20, and the yoga information for the following week is about plans or past habits, not completed sessions last week.",
+        "abstain": true
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — the retained evidence only confirms a 30-minute jog on May 20 and yoga plans/getting back into yoga, but no confirmed jogging or yoga sessions during last week (May 22–28)."
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "0.5 hours",
+      "classification": [
+        "temporal_window_ambiguity",
+        "answerable_abstention",
+        "official_judge_verdict_sensitivity"
+      ],
+      "analysis": "Both baseline and full_history abstain while explicitly mentioning the same30-minute May20 jog. The baseline was accepted and full_history rejected against0.5hours. Full_history additionally fixes last week toMay22-28 relative to theMay30 question, excludingMay20. The source itself is observedMay20 and says a30-minute jog onSaturday; yoga sources give old habits and prospective plans rather than completed sessions. This paired verdict loss is not evidence that a newly missing source caused degradation. The reference and strict calendar-window reading remain in tension; equivalent-abstention judge sensitivity cannot be ruled out from these two outputs.",
+      "general_rule_hypothesis": "Keep completed activity separate from habits/plans, state the chosen relative-window interpretation, and distinguish official paired verdict changes from independently established semantic regressions.",
+      "evidence": [
+        {
+          "source_id": "76f9d8ed1e5d174e024e22074c53edc4079b77d46a5f4175298834155f02d4da",
+          "session_index": 4,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/20 (Sat) 18:15",
+          "exact_quote": "ying to get more organized with my fitness routine. Can you help me track my workouts? I went for a 30-minute jog around the neighborhood on Saturday, and I'd like to keep a record of that."
+        },
+        {
+          "source_id": "d2f9456f6e8eeb3552c29b8575cd62d04803d55c82a6540c78cf407f45f76701",
+          "session_index": 22,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/22 (Mon) 23:10",
+          "exact_quote": "some apps or tools to help me plan out my daily tasks and stay on top of my schedule? By the way, I used to practice yoga three times a week, each time for 2 hours, but I've been slacking off for this month and I'm trying to get back into it."
+        },
+        {
+          "source_id": "f2e64ee7778bd0470f7f7683c795c4b60a4f794d86cad8ef41fcba9b4b1b587e",
+          "session_index": 26,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/23 (Tue) 18:03",
+          "exact_quote": "een trying to squeeze in a workout during lunch, so I need something fast and easy. By the way, I'm hoping to get back into yoga this week, maybe by starting with just one or two sessions a week."
+        }
+      ]
+    },
+    {
+      "qid": "75832dbd",
+      "question": "Can you recommend some recent publications or conferences that I might find interesting?",
+      "question_date": "2023/05/30 (Tue) 13:53",
+      "baseline": {
+        "official_correct": true,
+        "answer": "Based on the retained evidence, some publications you might find interesting are: \"Explainable AI in Medical Imaging: A Survey\" by Rajpurkar et al. (2020); \"Explanation Methods for Medical Image Analysis: A Systematic Review\" by Jimenez-Sánchez et al. (2020); \"Domain Adaptation for Medical Image Analysis: A Survey\" by Dou et al. (2020); \"Medical Image Synthesis using Generative Adversarial Networks: A Review\" by Wang et al. (2020); and \"Deep Learning for Medical Image Analysis: A Survey\" by Shen et al. (2017). The retained evidence does not mention any conferences.",
+        "abstain": false
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "Given your earlier interest in deep learning for medical image analysis, explainable AI, and multi-agent/multimodal RL, the most clearly supported recommendations are:\n\nPublications:\n- \"Explainable AI in Medical Imaging: A Survey\" (2020)\n- \"Explanation Methods for Medical Image Analysis: A Systematic Review\" (2020)\n- \"Domain Adaptation for Medical Image Analysis: A Survey\" (2020)\n- \"Medical Image Synthesis using Generative Adversarial Networks: A Review\" (2020)\n- \"Explainable AI in Healthcare: A Review of the Current State and Future Directions\" (2020)\n\nConferences:\n- NeurIPS\n- CVPR\n- ICML\n- ICLR\n- ICCV\n\nI should note that the publication recommendations supported by the retained evidence are mostly from 2019–2020, rather than brand-new 2023 releases."
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "The user would prefer suggestions related to recent research papers, articles, or conferences that focus on artificial intelligence in healthcare, particularly those that involve deep learning for medical image analysis. They would not be interested in general AI topics or those unrelated to healthcare.",
+      "classification": [
+        "preference_domain_dilution",
+        "pasted_document_vs_direct_interest",
+        "unsupported_recommendation_relevance"
+      ],
+      "analysis": "The medical-image/XAI discussion and supported specialized paper suggestions remain available. Full_history broadens recommendations to general AI venues and robotics/RL using a7772-character source beginning Rewrite the below Statement of purpose. The personalized response then lists general venues without establishing their healthcare-specific relevance. The official preference rubric asks for AI in healthcare and excludes general AI topics. This is context/provenance weighting rather than a source-availability problem; the pasted document may be autobiographical, but it does not erase the more specific healthcare context.",
+      "general_rule_hypothesis": "Track whether content is a direct conversational preference or a document being rewritten, preserve the most specific supported topic conjunction, and justify each recommendation against that domain rather than broadening on general topical overlap.",
+      "evidence": [
+        {
+          "source_id": "4198b839582e42296e13b5692fb6e157428d99dd6ac33eea3b1178590c3e4f5e",
+          "session_index": 7,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/22 (Mon) 00:37",
+          "exact_quote": "Can you give me an overview of the recent advancements in this field of deep learning for medical image analysis? Skip the basics as I am working in the field."
+        },
+        {
+          "source_id": "2c2ccd204fe1e1520b46dd3fe1d4b7c8c4f4f7c2d1fd15c488db8fd786e9f3a9",
+          "session_index": 7,
+          "turn_index": 10,
+          "role": "user",
+          "observation_time": "2023/05/22 (Mon) 00:37",
+          "exact_quote": "I'd like to explore some more research papers and articles on the topic of explainable AI in medical image analysis, specifically on techniques for visualizing and interpreting deep learning models. Can you recommend some papers on this topic?"
+        },
+        {
+          "source_id": "09e9a849132e8a0cdba931aba1b5d61cc221ee115a58a69c3d919704360101a8",
+          "session_index": 18,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/05/23 (Tue) 17:12",
+          "exact_quote": "Rewrite the below Statement of purpose to increase my odds of getting an admission in University of edinburgh.\nFrom a younger age I was captivated by the world of Science Fiction and its portrayal of artificial intelligence. Movies such as iRobot and Wall-E sparked my imagination and fuelled my cu"
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_4edbafa2",
+      "question": "What was the date on which I attended the first BBQ event in June?",
+      "question_date": "2023/07/01 (Sat) 02:36",
+      "baseline": {
+        "official_correct": true,
+        "answer": "The first June BBQ event mentioned was on the 3rd of June.",
+        "abstain": false
+      },
+      "full_history": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false,
+        "answer": "I don't know — there is no retained evidence before 2023/07/01 02:36 mentioning a BBQ event in June."
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "June 3rd",
+      "classification": [
+        "unsupported_question_time_source_cutoff",
+        "event_date_vs_observation_date",
+        "abstention_despite_retained_explicit_event_date"
+      ],
+      "analysis": "The question is datedJuly1 at02:36. A retained source recordedJuly1 at06:18 explicitly reports attending a BBQ onJune3, and another recordedJuly1 at22:07 discussesJune17. Full_history excludes all BBQ evidence because source observation clocks are later than the question and therefore abstains. The supplied memory and reader contract impose no source-clock cutoff; question_date is observation context. The requested June window applies to attendance event dates. The baseline used those same explicit event dates and answeredJune3.",
+      "general_rule_hypothesis": "Do not invent an as-of filter on provided source observation times; apply the requested temporal restriction to the queried event/relation and distinguish a later report from a future event.",
+      "evidence": [
+        {
+          "source_id": "66a9f978368e47c153f7c453b8b304b589692017961fa37dc80a51fcddbbcce1",
+          "session_index": 40,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/07/01 (Sat) 06:18",
+          "exact_quote": "it, but I want to try something new. I attended a backyard BBQ party at my colleague's house on the 3rd of June, and they had an amazing selection of BBQ sauces."
+        },
+        {
+          "source_id": "2e6297d2932af3dc08bb7eb33ac924be7d407803d2a06c978212d69da03562bf",
+          "session_index": 32,
+          "turn_index": 0,
+          "role": "user",
+          "observation_time": "2023/07/01 (Sat) 22:07",
+          "exact_quote": " recently used up my favorite Sweet Baby Ray's at my friend's place last Saturday, which was on the 17th of June, and I need to restock."
+        }
+      ]
+    },
+    {
+      "qid": "gpt4_70e84552_abs",
+      "question": "Which task did I complete first, fixing the fence or purchasing three cows from Peter?",
+      "question_date": "2023/05/21 (Sun) 10:40",
+      "baseline": {
+        "official_correct": true,
+        "answer": "I don't know — the retained evidence mentions fixing the fence, but it does not mention purchasing three cows from Peter, so I can’t compare which happened first.",
+        "abstain": true
+      },
+      "full_history": {
+        "reader_status": "error",
+        "judge_status": "reader_failure",
+        "official_correct": false,
+        "answer": "I don't know — I found evidence that you fixed the fence, but no retained evidence that you purchased three cows from Peter, so I can't tell which happened first."
+      },
+      "reference_answer_for_posthoc_diagnosis_only": "The information provided is not enough. You mentioned fixing the fence but did not mention purchasing cows from Peter.",
+      "classification": [
+        "final_output_schema_failure",
+        "supported_abstention_rejected_by_parser"
+      ],
+      "analysis": "The API call completed successfully. Raw JSON abstains because the purchase of three cows fromPeter is unsupported, while citing known fence repair and prospective cow-purchase evidence in a nonempty claims array. The frozen parser rejects abstain=true with any claims, turning a semantically appropriate abstention into a reader failure and no official judge call. This is neither transport failure nor newly missing evidence. The current run is preserved unchanged.",
+      "general_rule_hypothesis": "For a future declared protocol, constrain or explicitly repair the final schema so abstentions satisfy claims=[]; keep schema handling separate from semantic entailment and do not retroactively normalize this run.",
+      "evidence": []
+    }
+  ],
+  "additional_regressions_snapshots": [
+    {
+      "created_at_utc": "2026-10-22T04:40:09.849498+00:00",
+      "full_history_complete": false,
+      "full_history_judge_status": {
+        "ok": 44,
+        "pending": 56
+      },
+      "inputs": {
+        "baseline": {
+          "path": "benchmarks/results/longmemeval_dev_answers_v3.json",
+          "sha256_at_snapshot": "42d40179543a815e9f938ce018df5bb7363ec3a31c9bee8526b26ade4955774e"
+        },
+        "full_history": {
+          "path": "benchmarks/results/longmemeval_full_history_v1/answers.json",
+          "sha256_at_snapshot": "8a683f3ec7d74643f72c0041ba41f5c72d9f0fbca65d276febd9cca8c4d03b27"
+        },
+        "role_selection": {
+          "path": "benchmarks/results/longmemeval_role_retrieval_v1/answers.json",
+          "sha256_at_snapshot": "036f93902ed10e3cc51e8966c2ad9ca13faf04bf711f47e92e91969f974e820b"
+        }
+      }
+    },
+    {
+      "created_at_utc": "2026-10-22T04:45:44.533414+00:00",
+      "full_history_complete": true,
+      "full_history_judge_status": {
+        "ok": 99,
+        "reader_failure": 1
+      },
+      "inputs": {
+        "baseline": {
+          "path": "benchmarks/results/longmemeval_dev_answers_v3.json",
+          "sha256_at_snapshot": "42d40179543a815e9f938ce018df5bb7363ec3a31c9bee8526b26ade4955774e"
+        },
+        "full_history": {
+          "path": "benchmarks/results/longmemeval_full_history_v1/answers.json",
+          "sha256_at_snapshot": "74eefbfcfeefcecfbedd10e6532b47735bab6314fdf680c40e2a718a369ffe9d"
+        }
+      }
+    }
+  ],
+  "final_paired_audit": {
+    "n_dev": 100,
+    "baseline_correct": 88,
+    "full_history_correct": 88,
+    "gains": [
+      "2133c1b5",
+      "eac54adc",
+      "gpt4_5501fe77",
+      "gpt4_59149c78",
+      "gpt4_a56e767c"
+    ],
+    "losses": [
+      "3fdac837",
+      "7024f17c",
+      "75832dbd",
+      "gpt4_4edbafa2",
+      "gpt4_70e84552_abs"
+    ],
+    "common_correct": 83,
+    "common_incorrect": 7,
+    "reader_status": {
+      "ok": 99,
+      "error": 1
+    },
+    "judge_status": {
+      "ok": 99,
+      "reader_failure": 1
+    },
+    "gain_notes": {
+      "gpt4_a56e767c": "Four festival identities now available; answer accepted.",
+      "gpt4_5501fe77": "Qualified comparison of reported recent growth accepted.",
+      "eac54adc": "Rate-limit baseline failure replaced by source-anchored approximate19-day answer.",
+      "gpt4_59149c78": "Approximate two-week museum resolution accepted despite event qualifier.",
+      "2133c1b5": "Official judge accepts the about6months answer containing the conflicting3months statement; this gain does not independently settle apartment/district identity or extrapolation correctness."
+    },
+    "original_twelve_final_outcomes": {
+      "2133c1b5": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": true
+      },
+      "352ab8bd": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false
+      },
+      "46a3abf7": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false
+      },
+      "6d550036": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false
+      },
+      "7405e8b1": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false
+      },
+      "eac54adc": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": true
+      },
+      "gpt4_2f8be40d": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false
+      },
+      "gpt4_31ff4165": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false
+      },
+      "gpt4_5501fe77": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": true
+      },
+      "gpt4_59149c78": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": true
+      },
+      "gpt4_731e37d7": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": false
+      },
+      "gpt4_a56e767c": {
+        "reader_status": "ok",
+        "judge_status": "ok",
+        "official_correct": true
+      }
+    },
+    "interpretation": "Equal aggregate accuracy hides five official corrections and five losses. One loss is schema-only; the jogging loss is verdict-sensitive despite similar abstentions. More context introduces relation-scope, preference-domain and source-clock errors rather than uniformly improving memory quality.",
+    "snapshot_index": 1
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-22T06:55:42.112696+00:00",
+  "scope": "Production source-only development retrieval stopped at user lock-in before input counting, reader generation, or judging; no QA result.",
+  "work_path": "benchmarks/results/longmemeval_production_v1",
+  "status": "interrupted_before_qa",
+  "stop": {
+    "reason": "User requested PR packaging; root stopped the local native batch before QA.",
+    "producer_pid": 74069,
+    "producer_exit_code": 130,
+    "process_exit_evidence": "Root operator report; the immutable partial journals independently record completion and the pending ingest."
+  },
+  "planned_development_questions": 100,
+  "partial_native_counts": {
+    "completed_ok": 3,
+    "completed_error": 0,
+    "recorded_running_at_interrupt": 1,
+    "not_started": 96,
+    "journal_files": 4
+  },
+  "partial_native_status_note": "The one running status is an interrupted on-disk record, not a claim that the native process is still running. Its unreturned ingest is preserved; it was not retried or converted into a successful result.",
+  "qa": {
+    "input_count_endpoint_calls": 0,
+    "reader_api_calls": 0,
+    "judge_api_calls": 0,
+    "accuracy": null,
+    "denominator": null,
+    "score_claimed": false,
+    "absence_evidence": {
+      "work_files_present": {
+        "answers.json": false,
+        "protocol.json": false,
+        "spend.json": false,
+        "provider.json": false
+      },
+      "work_json_cache_counts": {
+        "cache": 0,
+        "input_counts": 0
+      }
+    },
+    "absence_evidence_limit": "Directory checks concern this experiment work directory; no global API-activity assertion is inferred."
+  },
+  "heldout": {
+    "questions": 400,
+    "authorized": false,
+    "evaluated": 0
+  },
+  "local_compute": {
+    "remote_api_calls": 0,
+    "compute_usd": null,
+    "exact_model_token_and_pair_counters_available": false
+  },
+  "off_git_evidence": {
+    "source_inputs": {
+      "path": "benchmarks/results/longmemeval_production_v1/source_inputs.json",
+      "size_bytes": 130724550,
+      "sha256": "55c13f979495db2178a03851721769fd74f05666c647e228ad90afc902be847f"
+    },
+    "native_identity": {
+      "path": "benchmarks/results/longmemeval_production_v1/native_identity.json",
+      "size_bytes": 48832,
+      "sha256": "2e7f9c01788ced7858126fbfd86d942d67afed3ecf82662a8086e45647dc5062"
+    },
+    "initializations": [
+      {
+        "path": "benchmarks/results/longmemeval_production_v1/native_initializations/0000.json",
+        "size_bytes": 61060,
+        "sha256": "a38cfda829370ac3f28d32044c1d629a89180f8c4a05522ccd7a57bceee661a7"
+      }
+    ],
+    "native_journals": [
+      {
+        "path": "benchmarks/results/longmemeval_production_v1/native/275ca884cc4144da6e6896c5fcfd5bc43087bc4aaafb3ca2f822ac5959e2da8b.json",
+        "size_bytes": 2022414,
+        "sha256": "4d1ea6f77456c18df269c2f061eb4a04e6a2b3cd8d5f412d3d8ed1211af35a91",
+        "recorded_status": "ok",
+        "exchanges": 53,
+        "commands": {
+          "reset": 1,
+          "ingest": 51,
+          "recall": 1
+        },
+        "unreturned_exchanges": 0,
+        "elapsed_seconds": 188.01979429100174
+      },
+      {
+        "path": "benchmarks/results/longmemeval_production_v1/native/b3ff26a2eed29816a2b230d14262e8981730e82e88abe8cdea146259e76742b2.json",
+        "size_bytes": 2010625,
+        "sha256": "6789056756b4c900e82bcfa5f9194bc9a5cab3ff7351934c3934957c1b7a4527",
+        "recorded_status": "ok",
+        "exchanges": 51,
+        "commands": {
+          "reset": 1,
+          "ingest": 49,
+          "recall": 1
+        },
+        "unreturned_exchanges": 0,
+        "elapsed_seconds": 219.14845029100252
+      },
+      {
+        "path": "benchmarks/results/longmemeval_production_v1/native/c1053377466b2692161f3d0501955367573d998a3e1e984443034b86eaaaaaaf.json",
+        "size_bytes": 933494,
+        "sha256": "658ce776dd9ea2ffb32572cd806bef769c0d12fb8fa310ca176160c28e440337",
+        "recorded_status": "running",
+        "exchanges": 27,
+        "commands": {
+          "reset": 1,
+          "ingest": 26
+        },
+        "unreturned_exchanges": 1,
+        "elapsed_seconds": null
+      },
+      {
+        "path": "benchmarks/results/longmemeval_production_v1/native/d5dee80d970d0b917cc6c207f48638dedaa88e509f818fcc53d4ce038ff71759.json",
+        "size_bytes": 1972931,
+        "sha256": "e62b282cbacbf4f89d456b04918644668962d2069a0aaccea3c902737a0d8dc9",
+        "recorded_status": "ok",
+        "exchanges": 52,
+        "commands": {
+          "reset": 1,
+          "ingest": 50,
+          "recall": 1
+        },
+        "unreturned_exchanges": 0,
+        "elapsed_seconds": 165.34409116698953
+      }
+    ],
+    "retention": "Retain the original full source inputs and raw partial journals locally outside Git. This compact artifact contains hashes and status metadata only."
+  },
+  "limitations": [
+    "Three successful retrieval packets and one interrupted ingestion are not a 100-question retrieval measurement or a QA evaluation.",
+    "No source text, query text, generated answer, question identifier, or gold answer is included in this closeout.",
+    "The production validation proof was created while the native batch was running; this closeout records its later interruption without changing that historical proof."
+  ]
+}

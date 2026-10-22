@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "native_packet_sources": 5,
+  "scope": "cross-language canonical source identities, exact original text, roles, byte count and direct premise closure; novel synthetic only"
+}
