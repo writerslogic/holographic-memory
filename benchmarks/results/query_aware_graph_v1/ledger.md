@@ -147,16 +147,15 @@ and saved-fifth-pass protocol. This adds competitor evidence, no new HMS
 intervention/configuration. A separate MLANN-only adapter avoids rebuilding
 HMS; preserve all first-batch snapshots and do not tune from official results.
 
-Session boundary requested by user. Resume instructions and exact live PIDs/
-queued jobs are in SESSION.md. Full validation reports are canonical; official
-and regression runs remain active. Final Rust gate is still entirely unrun.
+Full validation reports are canonical.
 
 ## Frozen official recovery, 2026-10-22
 
 Resumed signed HEAD b6d82ef3195d7045afb46f2aa607a1d6ec8455da; clean worktree.
 Origin has no query-aware branch or matching PR. All four main frozen runs
-completed successfully. Retrieved raw results, receipts, definitions and source
-snapshots; verified official raw and freeze SHA256 against report receipts.
+completed successfully. Verified official raw and freeze SHA256 against report
+receipts. Raw HDF5 results and the VIBE source snapshots are not committed: each
+`frozen.json` records their SHA256 and the VIBE commit they came from.
 No successful run was restarted. Official source metrics remain unnormalized IP.
 
 Official strict recall maximum: llama0.99687 (ef512/rr400/p0); yi0.98931
