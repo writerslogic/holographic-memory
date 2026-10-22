@@ -174,3 +174,26 @@ The original three-intervention budget remains closed. Additional work is in
 
 Default4 regression is still running under the original outer lock; RF80 remains
 queued. The sole Rust1.89 all-features gate is unconsumed.
+
+## Regression cancellation, 2026-10-22 18:41 UTC
+
+The user requested stopping the remaining long regression builds. Sent SIGTERM
+only to the verified Glove worker process group415969; the fail-fast main driver
+exited and released its lock. Yahoo never started. Preserved SIFT raw/results,
+partial Glove receipts/logs, and the driver's original failure receipt. See
+regression/default4-v1/cancellation.json for the intentional-cancellation context.
+The required full in-distribution throughput preservation is now unverified;
+SIFT remains inconclusive. No automatic restart or additional regression build.
+RF80 began immediately after release; profiling/layout jobs remain queued.
+The corrected-prefix report at the tail of the main batch was skipped when the
+regression driver exited and must be recovered separately without rerunning queries.
+
+RF80 completed on both official datasets after cancellation. Recovered raw HDF5,
+reports, receipts and15 source snapshots per dataset, verified their recorded
+SHA256, and regenerated README/Pareto/latency. Report generation accepted the
+same CPU/affinity/threads/harness/source/32768-pool/cache protocol. Llama RF80
+threshold5e-6 reaches0.99007 at3221.6976[2993.3524–3226.8472]QPS: HMS at0.99
+is54.79%behind with separated ranges. Yi's strongest qualifying0.95 comparator
+is now RF80 at0.96418/1952.6001[1951.8092–1973.4945]QPS, leaving HMS+64.62%.
+Yi0.90 still compares to Roar96/L120;0.99 remains unreached. Superiority remains
+NO. The stronger comparator does not select a new HMS configuration.

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-22T18:40:59Z",
+  "status": "remaining regression builds cancelled by user request",
+  "reason": "Prioritize queued RF80 comparator, production profiling and storage-layout validation. Remaining full regression builds are not required to conduct those experiments.",
+  "action": "SIGTERM only the verified Glove run_algorithm process group 415969; let the existing fail-fast driver release the timing lock",
+  "preserved": ["completed SIFT raw results and inconclusive gate", "partial Glove source, receipts and logs"],
+  "cancelled": ["glove-100-angular"],
+  "not_started": ["yahoo-minilm-384-normalized"],
+  "limitation": "Full in-distribution throughput preservation remains unverified. No regression pass is inferred from cancellation."
+}

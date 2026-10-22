@@ -59,3 +59,96 @@ for VNNI; Rust's AVX-VNNI dpbusd intrinsic is stable since1.89. MIPS query
 augmentation appends zero, but128-dimensional IP queries still score144
 8-bit padded coordinates, including an entirely zero16-coordinate block.
 These are source/hardware observations, not measured QPS improvements.
+
+On resume, disassembly of the frozen v1 native extension's dot_i8_avx2_checked
+(SHA31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26)
+shows vpmovsxbw widening and vpmaddwd, with some compiler-generated VEX
+vpdpwssd already present. See logs/v1-dot-i8-avx2.txt. An explicit byte-lane
+dpbusd path would differ, but merely detecting AVX-VNNI does not establish a
+benefit. Rust primary docs confirm _mm256_dpbusd_avx_epi32 is stable since1.89
+and requires avxvnni. No kernel intervention has been declared or measured.
+
+At18:41UTC the user stopped the remaining v1 regression builds to prioritize
+RF80/profiling/layout. SIFT's inconclusive result and cancellation evidence remain
+in v1. This does not relax exact-result/persisted-byte layout acceptance or certify
+the unmeasured default-path throughput. No further long regression build is queued.
+
+Both profiles completed. All256 returned-ID lists, persisted bytes and per-query
+work counts match across fixed/compact layouts. Live encoded savings are23.2639%
+for llama(206536668→158488097) and23.2400%for yi(150906736→115835997).
+Persisted files remain206622512/150982476bytes respectively, identical across
+layouts. Fixed-layout instrumented fractions: llama adjacency/visited/prefetch
+47.35%,scoring/pool37.69%,rerank/sort11.08%; yi45.48%/36.37%/13.45%.
+These do not isolate dot-product arithmetic or supply production QPS. Profile
+source/binary/compiler receipts and per-query counters are recovered; derived
+summary.json/README.md use qag_cost_report.py (two data-integrity tests passed).
+
+The one Python release build succeeded, then the native test bootstrap stopped
+with ModuleNotFoundError:pytest before any test or layout timing. Original log
+is preserved. resume-layout-v2.sh installs the missing test dependency and
+continues from the existing extension without a rebuild, then chains the
+separately declared v3 experiment. Queued flock423852, log
+~/sol-qag/v2/logs/resume-layout-driver.txt. At18:54UTC an unrelated sol-lex
+release-second.py process414739 owns the shared lock; do not stop or alter it.
+Corrected-prefix reporting/persisted hashes are queued ahead as flock421598.
+
+The plain production counters imply91.412/81.400neighbor checks per expansion
+for llama/yi. With one initial pool estimate excluded,55.72%/71.13%of neighbor
+checks find an already visited vertex. This follows from the measured counters
+and the plain loop's admission contract; it is not a cache-miss or branch counter.
+
+Ranked next experiments, not opened by this ledger or included in the current
+v2/v3 budget:
+
+1. Reduce repeated adjacency/visited work using one bounded construction-only
+   pruning/connectivity intervention, preserving the original-metric validation
+   gate. The measured loop is the largest stage and repeated checks are common.
+   [NGFix](https://arxiv.org/html/2510.22316v1) repairs neighborhood defects using
+   historical queries; this motivates a connectivity study, not an assumed HMS
+   gain. Its [upstream prerequisites](https://github.com/yuhuifishash/NGFix#prerequisites)
+   require AVX-512, so no unchanged-host comparison is established on the185H.
+2. Test selective score refinement before bounded-pool admission at the existing
+   low-beam point. The v1 prefix's evaluated-versus-retained coverage and exact
+   routing ablation motivate this; the larger rerank/expansion tradeoff must be
+   measured. [PAG's design](https://github.com/KejingLu-810/PAG/blob/main/docs/design.md)
+   places projection rejection before full scoring and packs edge metadata, but
+   its AVX-512 layout is not a measured185H comparator or an HMS implementation.
+3. Test exact block-aligned zero-tail scoring, separately from VNNI and layout.
+   Source inspection shows a16-coordinate all-zero8-bit MIPS query tail after
+  128→129augmentation/padding144. Preserve4-bit32-coordinate interleave and
+   all fine/batch/screen paths. No timing or net gain is established; arithmetic
+   is only part of the measured scoring/pool stage.
+
+All architecture changes need validation-only selection and a genuinely untouched
+final test before a new official claim. Historical all-learn construction means
+remaining learn rows must not be relabeled fresh without a source-derived audit.
+
+At19:02UTC the unrelated holder finished normally. The report-only job completed:
+corrected-prefix metadata says validation, with unchanged recall/QPS; both saved
+files per dataset also have identical SHA256 (persisted.sha256). The resume job
+installed pytest9.1.1;44 native Python contracts passed in1.40s and the real-native
+wrapper smoke passed, including legacy/default/baseline IDs and rejection-state
+preservation. Llama layout comparison started19:02:30UTC as worker425480;
+yi then v3 follow under the same flock. No layout QPS has been recovered yet.
+
+Llama completed and recovered at19:15UTC. Exact IDs match at all settings/blocks.
+Compact median deltas at100/100,256/400,512/400 are-3.7348%,-5.5158%,-5.3625%.
+All three256/400paired blocks are slower(-0.3072%,-4.9320%,-5.6145%); the other
+points have mixed paired signs and are inconclusive. Reject a llama speedup claim;
+retain the explicit memory-saving option, default off. One-build times350.092s
+fixed/345.635scompact; process peak1216140KiB includes both arms and input/runtime.
+Yi is active; no extrapolation from llama or the unpinned profile timings.
+
+Yi completed at19:21UTC and both raw/receipt/report/source-snapshot sets passed
+recovery checks (recovery.json). Compact median deltas are-3.2829%,+2.6812%,
+-1.3007%at100/100,256/400,512/400. Only100/100has all negative paired signs;
+the remaining points are inconclusive. No tested layout point demonstrates a
+repeatable speedup with separated observed ranges. Yi's build observations are
+176.030s/176.085s, co-resident peak956880KiB. This closes the v2 timing budget;
+retain compact adjacency as an explicit footprint tradeoff, default off.
+
+Fresh-test audit: the pinned VIBE generator trims Q/K[1:-2047] before its seeded
+learn/test split. The original Q_12_15/Q_31_13.npy files are absent from the
+installed VIBE data directory. The discarded endpoints have not been audited for
+padding, duplicates, validity or historical use and are not certified fresh data.
+No new final split is established by this observation.

@@ -8,9 +8,13 @@ from vibe.algorithms.qag_pair.module import QAGPair, METRICS, _matrix, _training
 
 
 class QAGLayout(QAGPair):
-    def __init__(self, metric, degree, build_ef, candidate_code_bits=8, legacy_reference=False):
+    def __init__(self, metric, degree, build_ef, candidate_code_bits=8, legacy_reference=False,
+                 revision_comparison=False):
         super().__init__(metric, degree, build_ef, candidate_code_bits)
         self._legacy_reference = bool(legacy_reference)
+        self._revision_comparison = bool(revision_comparison)
+        if self._legacy_reference and self._revision_comparison:
+            raise ValueError("legacy and revision comparisons are mutually exclusive")
         if self._legacy_reference and candidate_code_bits != 4:
             raise ValueError("the original reference uses four-bit codes")
 
@@ -22,7 +26,8 @@ class QAGLayout(QAGPair):
             started = time.perf_counter()
             options = dict(degree=self.degree, build_ef=self.build_ef, threads=1)
             if arm == 1 or not self._legacy_reference:
-                options.update(code_bits=self._candidate_code_bits, compact_adjacency=bool(arm))
+                options.update(code_bits=self._candidate_code_bits,
+                               compact_adjacency=bool(arm) and not self._revision_comparison)
             index = module.VectorIndex(METRICS[self.metric], **options)
             if training_queries is None:
                 index.fit(rows)
@@ -46,5 +51,6 @@ class QAGLayout(QAGPair):
         attrs = super().get_additional()
         attrs.update(qag_layout_comparison=True, qag_reference_code_bits=self._candidate_code_bits,
                      qag_legacy_reference=self._legacy_reference,
-                     qag_layout="compact" if self.arm == 1 else "fixed")
+                     qag_revision_comparison=self._revision_comparison,
+                     qag_layout="compact" if self.arm == 1 and not self._revision_comparison else "fixed")
         return attrs

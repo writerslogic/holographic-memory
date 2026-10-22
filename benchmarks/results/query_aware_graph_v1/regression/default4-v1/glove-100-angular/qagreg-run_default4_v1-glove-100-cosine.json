@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "scope": "full original base and official test; regression only",
+  "dataset": "glove-100-angular",
+  "vibe_dataset": "qagreg-run_default4_v1-glove-100-cosine",
+  "original_metric": "angular",
+  "metric": "cosine",
+  "dimension": 100,
+  "rows": 1183514,
+  "queries": 10000,
+  "neighbors": 100,
+  "ground_truth": "saved full-dataset neighbor IDs, unchanged; only their original-metric distances recomputed in float64",
+  "ground_truth_limit": "saved IDs trusted from the recorded source; this export does not recompute full-corpus nearest neighbors",
+  "storage": "external native raw files at immutable absolute paths",
+  "inputs": {
+    "meta.json": {
+      "path": "/home/davidcondrey/.cache/hms-bench/glove-100-angular/meta.json",
+      "sha256": "99fe2e96254d36d96fe8c82b31edd611715f26cf44faeb096cec99662b58d10a",
+      "bytes": 295
+    },
+    "train.f32": {
+      "path": "/home/davidcondrey/.cache/hms-bench/glove-100-angular/train.f32",
+      "sha256": "3cccad7d66dd35ffd7215e37503f2e1fa31b3aab917a45aa0a6eb4ef590ebcef",
+      "bytes": 473405600
+    },
+    "test.f32": {
+      "path": "/home/davidcondrey/.cache/hms-bench/glove-100-angular/test.f32",
+      "sha256": "38f1a79170d097f088eee8ba78761975205ff713faab0a4e283d6b7231f18ea0",
+      "bytes": 4000000
+    },
+    "neighbors.i32": {
+      "path": "/home/davidcondrey/.cache/hms-bench/glove-100-angular/neighbors.i32",
+      "sha256": "6dcf636e7f072aaf5ada2101f32bd5817bac2b1a5edff5de246c47eebc40282f",
+      "bytes": 4000000
+    }
+  },
+  "source": "https://ann-benchmarks.com/glove-100-angular.hdf5",
+  "source_sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+  "sha256": "575dd138298cbd5958f37dbc0132a91ebca34b54a272ab56fd1fae18ab14c779",
+  "bytes": 8008192,
+  "exporter_sha256": "4ae4b9d92da962f396c5f7865566b9e3bf3903b26e9dbfd1f9f7a03b763b939c"
+}

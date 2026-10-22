@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Run one frozen validation-only layout pair, or a fixed legacy regression pair."""
+"""Run one frozen validation layout/revision pair, or a fixed legacy regression pair."""
 
 import argparse
 import json
@@ -39,7 +39,8 @@ def run(args):
                 dependencies.add(Path(filename).resolve())
     snapshots = args.out / "snapshots"
     snapshots.mkdir()
-    module = vibe / "vibe/algorithms/qag_layout/module.py"
+    label = "qag_cost_v3" if args.revision else "qag_layout"
+    module = vibe / "vibe/algorithms" / label / "module.py"
     module.parent.mkdir(exist_ok=True)
     incoming = Path(__file__).with_name("qag_layout_module.py")
     if module.exists() and digest(module) != digest(incoming):
@@ -56,18 +57,19 @@ def run(args):
         extensions[arm] = record(path)
         inputs.append(record(path))
     same_source = extensions["baseline"]["sha256"] == extensions["candidate"]["sha256"]
-    if same_source == args.legacy:
-        raise ValueError("layout controls need one binary; legacy gate needs distinct revisions")
+    if same_source == (args.legacy or args.revision):
+        raise ValueError("layout controls need one binary; revision/legacy pairs need distinct binaries")
     settings = ((100, 100), (300, 400), (1000, 1000)) if args.legacy else ((100, 100), (256, 400), (512, 400))
     schedule = [[arm, ef, rr, rep] for rep in range(3) for ef, rr in settings
                 for arm in ((0, 1) if rep != 1 else (1, 0))]
     bits = 4 if args.legacy else 8
-    definition = {"name": "qag-layout-v2", "module": "vibe.algorithms.qag_layout",
+    algorithm = "qag-cost-v3" if args.revision else "qag-layout-v2"
+    definition = {"name": algorithm, "module": "vibe.algorithms." + label,
                   "constructor": "QAGLayout", "singularity_image": "hms", "disabled": False,
                   "ood": not args.legacy, "base_args": ["@metric"],
-                  "run_groups": {"fixed": {"args": [64, 500, bits, args.legacy],
+                  "run_groups": {"fixed": {"args": [64, 500, bits, args.legacy, args.revision],
                                              "query_arg_groups": [schedule]}}}
-    folder = args.out / "definitions/qag_layout"
+    folder = args.out / "definitions" / label
     folder.mkdir(parents=True)
     config = folder / "config.yml"
     write_new(config, {"float": {metric: [definition]}})
@@ -90,14 +92,14 @@ def run(args):
         inputs.append(record(args.training))
         environment.update(HMS_QAG_TRAINING_QUERIES=str(args.training.resolve()),
                            HMS_QAG_TRAINING_QUERIES_SHA256=digest(args.training))
-    alias = f"qag-layout-{args.run_id}-{dim}-{metric}"
+    alias = f"qag-{'cost' if args.revision else 'layout'}-{args.run_id}-{dim}-{metric}"
     link = vibe / "data" / (alias + ".hdf5")
     if link.exists() or link.is_symlink() or (vibe / "results" / alias).exists():
         raise FileExistsError("existing VIBE alias/results")
     link.symlink_to(args.view.resolve())
     command = [str(bench), alias, "1", "vibe", str(folder.parent), "nolock"]
     before = {"schema_version": 1, "created_utc": now(), "host": host(), "command": command,
-              "scope": "legacy regression" if args.legacy else "validation-only layout comparison",
+              "scope": "legacy regression" if args.legacy else "validation-only revision comparison" if args.revision else "validation-only layout comparison",
               "inputs": inputs, "schedule": schedule, "extensions": extensions,
               "harness_sha256": digest(vibe / "vibe/runner.py"),
               "environment": {k: v for k, v in environment.items() if k in THREADS or k.startswith("HMS_QAG_")}}
@@ -107,7 +109,7 @@ def run(args):
     (args.out / "bench-stdout.txt").write_text(process.stdout + process.stderr)
     if process.returncode or re.findall(r"\brc=(\d+)\b", process.stdout) != ["0"]:
         raise RuntimeError("bench.sh did not complete successfully")
-    raw_paths = list((vibe / "results" / alias / "100" / "qag-layout-v2").glob("*.hdf5"))
+    raw_paths = list((vibe / "results" / alias / "100" / algorithm).glob("*.hdf5"))
     if len(raw_paths) != 1:
         raise ValueError("expected one raw layout result")
     raw = args.out / "raw.hdf5"
@@ -143,10 +145,9 @@ def run(args):
                            "median_delta_percent": 100 * (b["qps_median"] / a["qps_median"] - 1)})
         gate = {"identical_returned_ids": True, "points": points,
                 "timing_limits": "three observed paired blocks; ranges are not confidence intervals"}
-        for row in report["rows"]:
-            row["method"] = "compact8" if row["arm"] == 1 else "fixed8"
-        for row in report["targets"]:
-            row["method"] = "compact8" if row["arm"] == 1 else "fixed8"
+        names = ("reference8", "avxvnni8") if args.revision else ("fixed8", "compact8")
+        for row in [*report["rows"], *report["targets"]]:
+            row["method"] = names[row["arm"]]
     write_new(args.out / "report.json", report)
     write_new(args.out / "gate.json", gate)
     write_new(args.out / "completion.json", {"status": "success", "report": record(args.out / "report.json"),
@@ -158,7 +159,9 @@ def main():
     for name in ("view", "baseline", "candidate", "out"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--training", type=Path)
-    parser.add_argument("--legacy", action="store_true")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--legacy", action="store_true")
+    modes.add_argument("--revision", action="store_true")
     parser.add_argument("--run-id", required=True)
     args = parser.parse_args()
     if (socket.gethostname() != "writerslogic-02" or os.environ.get("HMS_QAG_OUTER_LOCK") != "1"

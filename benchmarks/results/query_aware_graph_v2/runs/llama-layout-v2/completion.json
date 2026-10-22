@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/report.json",
+    "sha256": "0a106a910fcd4444b08dd316822c6d667a2e29b87398784e09ca517290af89f1",
+    "bytes": 60244
+  },
+  "gate": {
+    "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/gate.json",
+    "sha256": "40f15578b1356d0fbf8c1ede9b03b3b3832ba138196bf77d3704d0c74b80c44a",
+    "bytes": 903
+  }
+}

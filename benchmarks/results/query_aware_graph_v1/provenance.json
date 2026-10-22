@@ -3,7 +3,7 @@
   "audit_date": "2026-10-22",
   "baseline_sha": "08d37778a66b58709461456e5b9a7ab6a05b399f",
   "worktree": "/Volumes/A/.sol-wt-qag",
-  "scope": "Historical v1 diagnostics and frozen full validation/official evaluations; default4 regression and RF80 batches still running. Subsequent optimization belongs to query_aware_graph_v2.",
+  "scope": "Historical v1 diagnostics and frozen full validation/official evaluations; completed SIFT is inconclusive, remaining default4 regression builds cancelled at user request. RF80 completed and recovered; subsequent optimization belongs to query_aware_graph_v2.",
   "supplied_baseline": {
     "artifact": "benchmarks/results/vibe_v1/llama-128-ip-standing-wl02.json",
     "verified_from": "writerslogic-02:/home/davidcondrey/vibe-hms/export-final/summary.parquet",
@@ -769,7 +769,7 @@
   },
   "blockers": [],
   "unmeasured": [
-    "Completed default4 regression gate and RF80 comparison (active/queued)",
+    "Full in-distribution preservation: SIFT inconclusive, Glove cancelled and Yahoo unrun by user request",
     "Isolated per-index peak RSS and actual persisted-index file sizes for frozen v1 timing arms",
     "Final cargo fmt --check and sole Linux cargo +1.89.0 test --all-features gate",
     "Untouched replacement official test for any newly developed architecture"
@@ -2458,7 +2458,7 @@
     }
   },
   "frozen_validation_execution": {
-    "status": "Prefix and both full validation reports completed; both frozen official reports completed and recovered; regression/RF80 still active.",
+    "status": "Prefix validation scope corrected without rerunning queries; full validation/official and RF80 recovered; remaining ID regressions cancelled at user request",
     "receipt": {
       "path": "benchmarks/results/query_aware_graph_v1/projection-validation-receipt.json",
       "sha256": "e6d1357ba32a070463dd48de10afccd5fff12a6f3973a45bfc5ea51563e4dc1d"
@@ -2499,8 +2499,7 @@
   },
   "evidence_gaps": [
     "Initial diagnostic binary/source fingerprints retained; exact initial uncommitted source snapshots absent from canonical evidence. Current diagnostic source is committed.",
-    "Original prefix report retains a known incorrect official-test flag; validation-only source marker and receipt establish scope, and a separate v2 report is scheduled.",
-    "Both full validation and frozen official reports recovered; regressions, RF80 and final Rust gate remain active or unrun."
+    "Full in-distribution throughput preservation is unverified after user-requested cancellation; final Rust gate remains unconsumed"
   ],
   "paired_prefix_validation": {
     "scope": "200k base prefix;256 reserved learn queries only; no official test",
@@ -2666,7 +2665,7 @@
     "observations": "Projected8 matches diagnostic recall; prefix median throughput passes0.90 target and fails0.95 against Roar96 L120. Roar48 L100 below0.90; measured Roar96 L800 below0.99; measured MLANN points below0.90. Full-dataset parity not established."
   },
   "full_evaluation_batch": {
-    "status": "Both validation and both official runs completed successfully; original default4 regression batch is active; RF80 queued.",
+    "status": "Both validation and both official runs completed successfully; SIFT completed inconclusively. User cancelled Glove while building; Yahoo never started. Main driver exited, skipping corrected-prefix report. RF80 then completed on both official datasets; matching protocol validated by report generation.",
     "source_receipt": {
       "path": "benchmarks/results/query_aware_graph_v1/sources/patience-execution-source-receipt.json",
       "sha256": "0f9c6a7aba57a3c81d3757cc58d778b942b553b49f97864fc99b1eeb7ff6eb89"
@@ -2805,5 +2804,40 @@
         "max_hms_strict_recall": 0.98931
       }
     ]
+  },
+  "regression_cancellation": {
+    "receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/regression/default4-v1/cancellation.json",
+      "sha256": "7285f5b4e5b092f2e8c159aaa03c5a5a4a8aa624bd4547b292061db822b7795a"
+    },
+    "gate": "inconclusive",
+    "preservation_verified": false,
+    "no_restart": true
+  },
+  "rf80_recovery": {
+    "receipt": "benchmarks/results/query_aware_graph_v1/recovery-2026-10-22.json",
+    "llama": {
+      "recall": 0.99007,
+      "qps_median": 3221.6975819295903,
+      "qps_min": 2993.3523901029457,
+      "qps_max": 3226.8472194282563,
+      "configuration": "RF80/depth13/threshold5e-6"
+    },
+    "yi": {
+      "recall": 0.96418,
+      "qps_median": 1952.6001142318635,
+      "qps_min": 1951.8091993266344,
+      "qps_max": 1973.4945074875914,
+      "configuration": "RF80/depth13/threshold5e-6"
+    },
+    "selection": "predeclared before original official outcomes; no new HMS setting selected",
+    "verdict": "No overall superiority: llama .99 HMS54.79%behind RF80; yi .99 unreached"
+  },
+  "corrected_prefix_report": {
+    "path": "benchmarks/results/query_aware_graph_v1/projection-validation-summary-v2.json",
+    "sha256": "f4ed0d46ccb03981ae1ccea14098f925845b9974994149d8357ae4d4abbfcf11",
+    "unchanged_recall_qps": true,
+    "official_test": false,
+    "original_preserved": true
   }
 }

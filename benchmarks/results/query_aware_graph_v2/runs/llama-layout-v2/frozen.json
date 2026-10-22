@@ -1,0 +1,467 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-22T19:02:30.501422+00:00",
+  "host": {
+    "hostname": "writerslogic-02",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "lscpu": {
+      "lscpu": [
+        {
+          "field": "Architecture:",
+          "data": "x86_64"
+        },
+        {
+          "field": "CPU op-mode(s):",
+          "data": "32-bit, 64-bit"
+        },
+        {
+          "field": "Address sizes:",
+          "data": "46 bits physical, 48 bits virtual"
+        },
+        {
+          "field": "Byte Order:",
+          "data": "Little Endian"
+        },
+        {
+          "field": "CPU(s):",
+          "data": "22"
+        },
+        {
+          "field": "On-line CPU(s) list:",
+          "data": "0-21"
+        },
+        {
+          "field": "Vendor ID:",
+          "data": "GenuineIntel"
+        },
+        {
+          "field": "Model name:",
+          "data": "Intel(R) Core(TM) Ultra 9 185H"
+        },
+        {
+          "field": "CPU family:",
+          "data": "6"
+        },
+        {
+          "field": "Model:",
+          "data": "170"
+        },
+        {
+          "field": "Thread(s) per core:",
+          "data": "2"
+        },
+        {
+          "field": "Core(s) per socket:",
+          "data": "11"
+        },
+        {
+          "field": "Socket(s):",
+          "data": "1"
+        },
+        {
+          "field": "Stepping:",
+          "data": "4"
+        },
+        {
+          "field": "Microcode version:",
+          "data": "0xffffffff"
+        },
+        {
+          "field": "BogoMIPS:",
+          "data": "6143.99"
+        },
+        {
+          "field": "Flags:",
+          "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves avx_vnni vnmi umip waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize ibt flush_l1d arch_capabilities"
+        },
+        {
+          "field": "Virtualization:",
+          "data": "VT-x"
+        },
+        {
+          "field": "Hypervisor vendor:",
+          "data": "Microsoft"
+        },
+        {
+          "field": "Virtualization type:",
+          "data": "full"
+        },
+        {
+          "field": "L1d cache:",
+          "data": "528 KiB (11 instances)"
+        },
+        {
+          "field": "L1i cache:",
+          "data": "704 KiB (11 instances)"
+        },
+        {
+          "field": "L2 cache:",
+          "data": "22 MiB (11 instances)"
+        },
+        {
+          "field": "L3 cache:",
+          "data": "24 MiB (1 instance)"
+        },
+        {
+          "field": "NUMA node(s):",
+          "data": "1"
+        },
+        {
+          "field": "NUMA node0 CPU(s):",
+          "data": "0-21"
+        },
+        {
+          "field": "Vulnerability Gather data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Ghostwrite:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Indirect target selection:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Itlb multihit:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability L1tf:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Meltdown:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mmio stale data:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Old microcode:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Reg file data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Retbleed:",
+          "data": "Mitigation; Enhanced IBRS"
+        },
+        {
+          "field": "Vulnerability Spec rstack overflow:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Spec store bypass:",
+          "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+        },
+        {
+          "field": "Vulnerability Spectre v1:",
+          "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+        },
+        {
+          "field": "Vulnerability Spectre v2:",
+          "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI BHI_DIS_S"
+        },
+        {
+          "field": "Vulnerability Srbds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsa:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsx async abort:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Vmscape:",
+          "data": "Not affected"
+        }
+      ]
+    },
+    "python": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python"
+  },
+  "command": [
+    "/home/davidcondrey/vibe-hms/bench.sh",
+    "qag-layout-llama-layout-v2-128-ip",
+    "1",
+    "vibe",
+    "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/definitions",
+    "nolock"
+  ],
+  "scope": "validation-only layout comparison",
+  "inputs": [
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/snapshots/baseline-holographic_memory.so",
+      "sha256": "44c4ae556d3e04c08de22868f1a9ba89c4d4fc5a0b73b7ecae605edf64656b91",
+      "bytes": 2002312
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/snapshots/candidate-holographic_memory.so",
+      "sha256": "44c4ae556d3e04c08de22868f1a9ba89c4d4fc5a0b73b7ecae605edf64656b91",
+      "bytes": 2002312
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+      "bytes": 1056
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/run.py",
+      "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+      "bytes": 149
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+      "bytes": 12096
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+      "bytes": 12642
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/workers.py",
+      "sha256": "dfe0ccdab5339ee03e077e7d3180081048ceabab04265a21dfd7a6fcbe146af7",
+      "bytes": 17579
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/numa.py",
+      "sha256": "34631c428ed5b00988362db5252ccdb8bd535a4c2e622d67e241b8d53fa543de",
+      "bytes": 11511
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py",
+      "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+      "bytes": 14310
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py",
+      "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+      "bytes": 5447
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/distance.py",
+      "sha256": "b6cf2794de49fe05b025dd8d87c11655118244d9af5a4d2a10ba9e3159d4c9fe",
+      "bytes": 3321
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py",
+      "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+      "bytes": 17463
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_layout/module.py",
+      "sha256": "9fe857e48e5f22fe7846398b5232517fea73f8203f0b0e8af95f81b3d78d1a45",
+      "bytes": 2586
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/sources/qag_layout_execute.py",
+      "sha256": "9858d132bc66d2b6845a3a7ca5ad48563f3cfb4518f9e38b42e55cc99bdaed0b",
+      "bytes": 9682
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/sources/qag_report.py",
+      "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+      "bytes": 14116
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/sources/qag_execute.py",
+      "sha256": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+      "bytes": 18311
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/sources/qag_regression.py",
+      "sha256": "e0e85f4328604ad0acdc363eb9e5778a64236e0de589ca7fe774fe3ca1667048",
+      "bytes": 15920
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/runs/llama-full-validation-v1/evaluation.hdf5",
+      "sha256": "5ba18b70d875f635aad5be934a3a5c2a1fc576faae7bac596a2dfc35990d12dd",
+      "bytes": 6144
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/runs/llama-full-validation-v1/validation-export.hdf5",
+      "sha256": "3d43410e565ae8a50e05c29cefcb2b93910c3b666e93c53d97676247b000396c",
+      "bytes": 161874432
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/definitions/qag_layout/config.yml",
+      "sha256": "16058a9648227440f1e407b83520143c37a0a6c27827e2d27b63faeccc833b31",
+      "bytes": 2799
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/llama-full-training/queries.f32",
+      "sha256": "6ac89a55c119173744004b605c75f1ab0d4b026241e12317536b6ba17a967ffd",
+      "bytes": 16777216
+    }
+  ],
+  "schedule": [
+    [
+      0,
+      100,
+      100,
+      0
+    ],
+    [
+      1,
+      100,
+      100,
+      0
+    ],
+    [
+      0,
+      256,
+      400,
+      0
+    ],
+    [
+      1,
+      256,
+      400,
+      0
+    ],
+    [
+      0,
+      512,
+      400,
+      0
+    ],
+    [
+      1,
+      512,
+      400,
+      0
+    ],
+    [
+      1,
+      100,
+      100,
+      1
+    ],
+    [
+      0,
+      100,
+      100,
+      1
+    ],
+    [
+      1,
+      256,
+      400,
+      1
+    ],
+    [
+      0,
+      256,
+      400,
+      1
+    ],
+    [
+      1,
+      512,
+      400,
+      1
+    ],
+    [
+      0,
+      512,
+      400,
+      1
+    ],
+    [
+      0,
+      100,
+      100,
+      2
+    ],
+    [
+      1,
+      100,
+      100,
+      2
+    ],
+    [
+      0,
+      256,
+      400,
+      2
+    ],
+    [
+      1,
+      256,
+      400,
+      2
+    ],
+    [
+      0,
+      512,
+      400,
+      2
+    ],
+    [
+      1,
+      512,
+      400,
+      2
+    ]
+  ],
+  "extensions": {
+    "baseline": {
+      "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/snapshots/baseline-holographic_memory.so",
+      "sha256": "44c4ae556d3e04c08de22868f1a9ba89c4d4fc5a0b73b7ecae605edf64656b91",
+      "bytes": 2002312
+    },
+    "candidate": {
+      "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/snapshots/candidate-holographic_memory.so",
+      "sha256": "44c4ae556d3e04c08de22868f1a9ba89c4d4fc5a0b73b7ecae605edf64656b91",
+      "bytes": 2002312
+    }
+  },
+  "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1",
+    "HMS_QAG_BASELINE_SO": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/snapshots/baseline-holographic_memory.so",
+    "HMS_QAG_CANDIDATE_SO": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/snapshots/candidate-holographic_memory.so",
+    "HMS_QAG_TRAINING_QUERIES": "/home/davidcondrey/sol-qag/data/llama-full-training/queries.f32",
+    "HMS_QAG_TRAINING_QUERIES_SHA256": "6ac89a55c119173744004b605c75f1ab0d4b026241e12317536b6ba17a967ffd"
+  }
+}

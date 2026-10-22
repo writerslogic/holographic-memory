@@ -93,7 +93,7 @@ def main():
     (root / "pareto.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     fields = ("phase", "dataset", "method", "configuration", "recall_ids_min", "qps_median", "qps_min", "qps_max")
     with (root / "pareto.csv").open("w", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for phase, datasets in report["phases"].items():
             for dataset, data in datasets.items():

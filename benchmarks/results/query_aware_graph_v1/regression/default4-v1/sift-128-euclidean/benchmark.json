@@ -1,0 +1,431 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-22T17:33:27.693473+00:00",
+  "dataset": "sift-128-euclidean",
+  "alias": "qagreg-run_default4_v1-sift-128-euclidean",
+  "host": {
+    "hostname": "writerslogic-02",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "lscpu": {
+      "lscpu": [
+        {
+          "field": "Architecture:",
+          "data": "x86_64"
+        },
+        {
+          "field": "CPU op-mode(s):",
+          "data": "32-bit, 64-bit"
+        },
+        {
+          "field": "Address sizes:",
+          "data": "46 bits physical, 48 bits virtual"
+        },
+        {
+          "field": "Byte Order:",
+          "data": "Little Endian"
+        },
+        {
+          "field": "CPU(s):",
+          "data": "22"
+        },
+        {
+          "field": "On-line CPU(s) list:",
+          "data": "0-21"
+        },
+        {
+          "field": "Vendor ID:",
+          "data": "GenuineIntel"
+        },
+        {
+          "field": "Model name:",
+          "data": "Intel(R) Core(TM) Ultra 9 185H"
+        },
+        {
+          "field": "CPU family:",
+          "data": "6"
+        },
+        {
+          "field": "Model:",
+          "data": "170"
+        },
+        {
+          "field": "Thread(s) per core:",
+          "data": "2"
+        },
+        {
+          "field": "Core(s) per socket:",
+          "data": "11"
+        },
+        {
+          "field": "Socket(s):",
+          "data": "1"
+        },
+        {
+          "field": "Stepping:",
+          "data": "4"
+        },
+        {
+          "field": "Microcode version:",
+          "data": "0xffffffff"
+        },
+        {
+          "field": "BogoMIPS:",
+          "data": "6143.99"
+        },
+        {
+          "field": "Flags:",
+          "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves avx_vnni vnmi umip waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize ibt flush_l1d arch_capabilities"
+        },
+        {
+          "field": "Virtualization:",
+          "data": "VT-x"
+        },
+        {
+          "field": "Hypervisor vendor:",
+          "data": "Microsoft"
+        },
+        {
+          "field": "Virtualization type:",
+          "data": "full"
+        },
+        {
+          "field": "L1d cache:",
+          "data": "528 KiB (11 instances)"
+        },
+        {
+          "field": "L1i cache:",
+          "data": "704 KiB (11 instances)"
+        },
+        {
+          "field": "L2 cache:",
+          "data": "22 MiB (11 instances)"
+        },
+        {
+          "field": "L3 cache:",
+          "data": "24 MiB (1 instance)"
+        },
+        {
+          "field": "NUMA node(s):",
+          "data": "1"
+        },
+        {
+          "field": "NUMA node0 CPU(s):",
+          "data": "0-21"
+        },
+        {
+          "field": "Vulnerability Gather data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Ghostwrite:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Indirect target selection:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Itlb multihit:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability L1tf:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Meltdown:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mmio stale data:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Old microcode:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Reg file data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Retbleed:",
+          "data": "Mitigation; Enhanced IBRS"
+        },
+        {
+          "field": "Vulnerability Spec rstack overflow:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Spec store bypass:",
+          "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+        },
+        {
+          "field": "Vulnerability Spectre v1:",
+          "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+        },
+        {
+          "field": "Vulnerability Spectre v2:",
+          "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI BHI_DIS_S"
+        },
+        {
+          "field": "Vulnerability Srbds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsa:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsx async abort:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Vmscape:",
+          "data": "Not affected"
+        }
+      ]
+    },
+    "python": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python"
+  },
+  "command": [
+    "/home/davidcondrey/vibe-hms/bench.sh",
+    "qagreg-run_default4_v1-sift-128-euclidean",
+    "1",
+    "vibe",
+    "/home/davidcondrey/sol-qag/regression-runs/default4-v1/definitions",
+    "nolock"
+  ],
+  "outer_flock": "/home/davidcondrey/hms-timing.lock",
+  "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+  "extensions": {
+    "baseline": {
+      "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/snapshots/baseline-holographic_memory.so",
+      "sha256": "91beaaf58f5bced0060e6337052edad5aa1dd8c6733fece137b927c9d0788b7e",
+      "bytes": 1908632,
+      "original_path": "/home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so"
+    },
+    "candidate": {
+      "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/snapshots/candidate-holographic_memory.so",
+      "sha256": "31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26",
+      "bytes": 1989928,
+      "original_path": "/home/davidcondrey/sol-qag/artifacts/patience-holographic_memory.so"
+    }
+  },
+  "dataset_view": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/qagreg-run_default4_v1-sift-128-euclidean.hdf5",
+    "sha256": "675f0997382eb9094d6ec8ae7ddd7250339a4b97e841f60cf245daadf7b76adb",
+    "bytes": 8008192
+  },
+  "export_receipt": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/qagreg-run_default4_v1-sift-128-euclidean.json",
+    "sha256": "3c3a16a980dd55fecd508d05d034eb9a741dd61ae7be40c1742b1fc3fa9ac9c7",
+    "bytes": 1912
+  },
+  "inputs": [
+    {
+      "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/definitions/qag_pair/config.yml",
+      "sha256": "0dfa2e5e3e42c6a050d3527652b7844345ea61e9bdf7391f4f5f251011eb82d1",
+      "bytes": 798
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/snapshots/baseline-holographic_memory.so",
+      "sha256": "91beaaf58f5bced0060e6337052edad5aa1dd8c6733fece137b927c9d0788b7e",
+      "bytes": 1908632,
+      "original_path": "/home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/snapshots/candidate-holographic_memory.so",
+      "sha256": "31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26",
+      "bytes": 1989928,
+      "original_path": "/home/davidcondrey/sol-qag/artifacts/patience-holographic_memory.so"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_regression.py",
+      "sha256": "e0e85f4328604ad0acdc363eb9e5778a64236e0de589ca7fe774fe3ca1667048",
+      "bytes": 15920
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_regression.sh",
+      "sha256": "b274a0d9c9723764b0ccce0f82790cc911a166702e30477283f445e2045d7e34",
+      "bytes": 503
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_execute.py",
+      "sha256": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+      "bytes": 18311
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_report.py",
+      "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+      "bytes": 14116
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_native_hdf5.py",
+      "sha256": "4ae4b9d92da962f396c5f7865566b9e3bf3903b26e9dbfd1f9f7a03b763b939c",
+      "bytes": 7621
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+      "bytes": 1056
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/run.py",
+      "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+      "bytes": 149
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+      "bytes": 12096
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+      "bytes": 12642
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/workers.py",
+      "sha256": "dfe0ccdab5339ee03e077e7d3180081048ceabab04265a21dfd7a6fcbe146af7",
+      "bytes": 17579
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/numa.py",
+      "sha256": "34631c428ed5b00988362db5252ccdb8bd535a4c2e622d67e241b8d53fa543de",
+      "bytes": 11511
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/distance.py",
+      "sha256": "b6cf2794de49fe05b025dd8d87c11655118244d9af5a4d2a10ba9e3159d4c9fe",
+      "bytes": 3321
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py",
+      "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+      "bytes": 5447
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py",
+      "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+      "bytes": 14310
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py",
+      "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+      "bytes": 17463
+    },
+    {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/meta.json",
+      "sha256": "ed3b02ff55fe5f84356916480a31c2d7a82bce8b7840030fa0fce5821c5f71d9",
+      "bytes": 299
+    },
+    {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/train.f32",
+      "sha256": "ac8e11ed111b09e882bcf0ef1a77ebdd36c89f495bce8fd596603f69c35148e6",
+      "bytes": 512000000
+    },
+    {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/test.f32",
+      "sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+      "bytes": 5120000
+    },
+    {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/neighbors.i32",
+      "sha256": "4d880e63ec1ad02ea3a0827089f92bf2560bc59a74900c5feeb62903265bb870",
+      "bytes": 4000000
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/qagreg-run_default4_v1-sift-128-euclidean.hdf5",
+      "sha256": "675f0997382eb9094d6ec8ae7ddd7250339a4b97e841f60cf245daadf7b76adb",
+      "bytes": 8008192
+    }
+  ],
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1",
+    "HMS_QAG_BASELINE_SO": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/snapshots/baseline-holographic_memory.so",
+    "HMS_QAG_CANDIDATE_SO": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/snapshots/candidate-holographic_memory.so"
+  },
+  "policy": {
+    "candidate_code_bits": 4,
+    "training_queries": null,
+    "parallelism": 1,
+    "threads": {
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1"
+    },
+    "cache": "both indexes co-resident; four preceding warm passes; saved fifth pass reported",
+    "repetitions": [
+      0,
+      1,
+      2
+    ],
+    "settings": [
+      [
+        100,
+        100
+      ],
+      [
+        300,
+        400
+      ],
+      [
+        1000,
+        1000
+      ]
+    ],
+    "lock": "one outer flock across all exports, benchmarks and reports"
+  },
+  "completed_utc": "2026-10-22T18:22:51.996044+00:00",
+  "status": "benchmark_complete",
+  "raw_results": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/raw.hdf5",
+    "sha256": "546a28cfbf2bef3734176952d9a82002c13ca9887ce1b368dac501e8e5d4e2f1",
+    "bytes": 144879064
+  },
+  "vibe_raw_results": {
+    "path": "/home/davidcondrey/vibe-hms/vibe/results/qagreg-run_default4_v1-sift-128-euclidean/100/hms-qag-regression/euclidean_64_500_4.hdf5",
+    "sha256": "546a28cfbf2bef3734176952d9a82002c13ca9887ce1b368dac501e8e5d4e2f1",
+    "bytes": 144879064
+  },
+  "before": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/before.json",
+    "sha256": "56f90210790223081788ce87f2297656c4461a833f0871df8330d8c7769125fb",
+    "bytes": 13172
+  }
+}

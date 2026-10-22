@@ -1,0 +1,50 @@
+{
+  "fmt": {
+    "command": "cargo fmt --check",
+    "status": "unrun"
+  },
+  "cargo": {
+    "command": "cargo +1.89.0 test --all-features",
+    "status": "unrun",
+    "queued_flock_pid": 426458,
+    "gate_script": "../query_aware_graph_v3/final-gate.sh"
+  },
+  "native_python": {
+    "command": "uv run --no-project --python /home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python python - /home/davidcondrey/sol-qag/v2/candidate-holographic_memory.so /home/davidcondrey/sol-qag/repo-v2/tests/python/test_vector_index.py",
+    "status": "pass",
+    "exit_code": 0,
+    "log": "logs/v2-native-python.txt",
+    "passed": 44,
+    "bootstrap_source": "../query_aware_graph_v2/resume-layout-v2.sh",
+    "scope": "frozen v2 native extension; does not certify full ID throughput",
+    "original_log": "../query_aware_graph_v2/logs/native-python-resumed.txt"
+  },
+  "wrapper_native": {
+    "command": "uv run --no-project --python /home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python python /home/davidcondrey/sol-qag/v2/sources/qag_hms_smoke.py --vibe /home/davidcondrey/vibe-hms/vibe --extension /home/davidcondrey/sol-qag/v2/candidate-holographic_memory.so --wrapper /home/davidcondrey/sol-qag/v2/sources/hms_wrapper.py --baseline /home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so",
+    "status": "pass",
+    "exit_code": 0,
+    "log": "logs/v2-wrapper-native.json",
+    "scope": "synthetic native binding/wrapper compatibility, not throughput",
+    "original_log": "../query_aware_graph_v2/logs/wrapper-native.json"
+  },
+  "benchmark_python": {
+    "command": "uv run --no-project --with pytest python -m pytest -q benchmarks/vibe/test_qag_cost_report.py",
+    "status": "pass",
+    "exit_code": 0,
+    "log": "logs/v2-cost-report-tests.txt",
+    "passed": 2,
+    "scope": "profile/timing report integrity; existing52 earlier checks remain separately scoped",
+    "original_log": "../query_aware_graph_v2/logs/cost-report-tests.txt"
+  },
+  "reporter_selfcheck": {
+    "command": "uv run --no-project python benchmarks/results/query_aware_graph_v1/generate_report.py --self-test",
+    "status": "pass",
+    "exit_code": 0,
+    "log": "logs/reporter-selfcheck-latest.txt"
+  },
+  "native_bootstrap_failure": {
+    "error": "ModuleNotFoundError: pytest",
+    "log": "../query_aware_graph_v2/logs/native-python.log",
+    "resumed_without_rebuild": true
+  }
+}

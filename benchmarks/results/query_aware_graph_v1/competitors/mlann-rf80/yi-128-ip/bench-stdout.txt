@@ -1,0 +1,1 @@
+qag-mlann-rf80-yi-rf80-v1-128-ip /home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/definitions rc=0 77s 11:43:32

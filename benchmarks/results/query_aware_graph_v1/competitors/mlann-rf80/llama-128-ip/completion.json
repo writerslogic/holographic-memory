@@ -1,0 +1,14 @@
+{
+  "status": "success",
+  "created_utc": "2026-10-22T18:42:15.141562+00:00",
+  "benchmark": {
+    "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/llama-128-ip/benchmark.json",
+    "sha256": "cea46eb045efb55b810fdce166426957b03cb53a0a43eb81a0a55b6cc47d4eeb",
+    "bytes": 17706
+  },
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/llama-128-ip/report.json",
+    "sha256": "ce1b7cdda7b1850dab14ae6a497b4e9aaf61575c1cb69894dd7130dcd8170c19",
+    "bytes": 46545
+  }
+}

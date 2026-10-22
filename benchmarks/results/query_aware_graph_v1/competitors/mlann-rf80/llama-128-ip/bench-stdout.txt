@@ -1,0 +1,1 @@
+qag-mlann-rf80-llama-rf80-v1-128-ip /home/davidcondrey/sol-qag/competitors/mlann-rf80/llama-128-ip/definitions rc=0 72s 11:42:13

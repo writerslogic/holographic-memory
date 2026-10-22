@@ -1,0 +1,1 @@
+qag-cost-yi-kernel-v3-128-ip /home/davidcondrey/sol-qag/v3/runs/yi-kernel-v3/definitions rc=0 371s 12:40:21

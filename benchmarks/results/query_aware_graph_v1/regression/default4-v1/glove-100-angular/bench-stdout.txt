@@ -1,0 +1,1 @@
+qagreg-run_default4_v1-glove-100-cosine /home/davidcondrey/sol-qag/regression-runs/default4-v1/definitions rc=0 1074s 11:41:00

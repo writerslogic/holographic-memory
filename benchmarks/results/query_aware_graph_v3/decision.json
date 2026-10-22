@@ -1,0 +1,80 @@
+{
+  "kernel_accepted": false,
+  "selected_kernel_source": "repo-v2",
+  "criterion": "All six predeclared validation points faster in every observed paired block with separated QPS ranges; no new official evaluation",
+  "kernel_sha256": "f6f8b1ca2c5a2c5d13261e46056e3d51fcfe2874af512200f6c97e1b61afaa4a",
+  "points": [
+    {
+      "dataset": "llama",
+      "ef": 100,
+      "rerank": 100,
+      "paired_ratios": [
+        1.0335117420414852,
+        0.9741538264974178,
+        1.0275134937872967
+      ],
+      "separated_ranges": false,
+      "accepted": false
+    },
+    {
+      "dataset": "llama",
+      "ef": 256,
+      "rerank": 400,
+      "paired_ratios": [
+        0.9984145943349926,
+        1.2195638284192605,
+        1.0161372330089637
+      ],
+      "separated_ranges": false,
+      "accepted": false
+    },
+    {
+      "dataset": "llama",
+      "ef": 512,
+      "rerank": 400,
+      "paired_ratios": [
+        0.9397956849235943,
+        0.8796741553054429,
+        0.956062887836505
+      ],
+      "separated_ranges": false,
+      "accepted": false
+    },
+    {
+      "dataset": "yi",
+      "ef": 100,
+      "rerank": 100,
+      "paired_ratios": [
+        0.9423931460469066,
+        0.9865953473417477,
+        0.9933140551357577
+      ],
+      "separated_ranges": false,
+      "accepted": false
+    },
+    {
+      "dataset": "yi",
+      "ef": 256,
+      "rerank": 400,
+      "paired_ratios": [
+        0.9134799238103282,
+        0.9592449274562204,
+        0.9956722920948475
+      ],
+      "separated_ranges": false,
+      "accepted": false
+    },
+    {
+      "dataset": "yi",
+      "ef": 512,
+      "rerank": 400,
+      "paired_ratios": [
+        0.9312875245818395,
+        1.010478912824339,
+        0.9980432373897787
+      ],
+      "separated_ranges": false,
+      "accepted": false
+    }
+  ]
+}

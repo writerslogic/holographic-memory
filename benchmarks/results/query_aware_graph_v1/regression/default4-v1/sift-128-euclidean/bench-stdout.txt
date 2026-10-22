@@ -1,0 +1,1 @@
+qagreg-run_default4_v1-sift-128-euclidean /home/davidcondrey/sol-qag/regression-runs/default4-v1/definitions rc=0 2964s 11:22:51

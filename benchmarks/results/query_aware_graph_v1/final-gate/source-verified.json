@@ -1,0 +1,10 @@
+{
+  "status": "verified",
+  "matched_source_files": 919,
+  "excluded_generated_python_cache": [
+    "tests/python/__pycache__/test_vector_index.cpython-311-pytest-9.1.1.pyc"
+  ],
+  "shipping_rust_commit": "2d4967e711c00c51b6ab4b588b0869c06a772003",
+  "scope": "Final-gate source/test/example/binding/asset/document files match local source; generated Python bytecode is excluded. Local src/Cargo/build.rs also have no diff from signed2d4967e",
+  "manifest": "../../query_aware_graph_v3/final-source.sha256"
+}

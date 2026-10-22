@@ -1,0 +1,14 @@
+{
+  "status": "success",
+  "created_utc": "2026-10-22T18:43:33.894802+00:00",
+  "benchmark": {
+    "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/benchmark.json",
+    "sha256": "b95bdd8309bbdf1a950917975e873141e82bb2bd884e2cf26766211e9eb16c37",
+    "bytes": 17625
+  },
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/report.json",
+    "sha256": "80d8a0d0b8d660e6269f2bc180dba6f1d7fb7c86757f92a0b990c725d3331954",
+    "bytes": 46128
+  }
+}
