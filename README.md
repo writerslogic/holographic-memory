@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://writerslogic.github.io/holographic-memory/">Docs</a> &middot;
+  <a href="https://docs.holographic-memory.com/">Docs</a> &middot;
   <a href="#get-started-in-60-seconds">Get started</a> &middot;
   <a href="#why-is-it-called-holographic">Why "holographic"?</a> &middot;
   <a href="#how-it-compares">Compare</a> &middot;
@@ -64,7 +64,7 @@ queries, Hopfield cleanup); the resonator network; the union-bundle membership t
 not read the hypervectors), the NSG/IVF graph and inverted-file ANN indexes, the CRC-checked
 append-only memory-mapped storage log, the HTTP server. HMS does not claim holographic behavior
 for these. The longer version, with the tested numbers, is in
-[Concepts](https://writerslogic.github.io/holographic-memory/latest/concepts/holographic/).
+[Concepts](https://docs.holographic-memory.com/latest/concepts/holographic/).
 
 ## Get started in 60 seconds
 
@@ -146,7 +146,7 @@ print(client.query([0.1] * 384, top_k=1)["matches"][0]["id"])
 ```
 
 Endpoints, flags, tenants and limits: [docs/SERVER.md](docs/SERVER.md) and the
-[server docs](https://writerslogic.github.io/holographic-memory/latest/server/).
+[server docs](https://docs.holographic-memory.com/latest/server/).
 A runnable Python quickstart with a toy embedder is in
 [`examples/quickstart/python`](examples/quickstart/python/quickstart.py).
 
@@ -156,11 +156,11 @@ A runnable Python quickstart with a toy embedder is in
 <summary><strong>MCP</strong></summary>
 
 No MCP server ships in this repository today. Integration guides, when published, appear under
-Integrations in the [docs](https://writerslogic.github.io/holographic-memory/).
+Integrations in the [docs](https://docs.holographic-memory.com/).
 
 </details>
 
-The [five-minute quickstart](https://writerslogic.github.io/holographic-memory/latest/quickstart/)
+The [five-minute quickstart](https://docs.holographic-memory.com/latest/quickstart/)
 walks through ingest, search, a SQLite FTS5 comparison and encryption in Rust, Python and Node,
 and CI runs that code on every pull request. For a whole agent memory with no embeddings and no
 network, run `cargo run --example demo-offline-agent`.
@@ -178,7 +178,7 @@ runs, not a substitute for testing your data.
 
 The SciFact and NFCorpus runs were recorded on a loaded machine, so quality is quoted and
 latency is not. More benchmarks, competitor tables and the loss reports are on the
-[benchmarks pages](https://writerslogic.github.io/holographic-memory/latest/benchmarks/).
+[benchmarks pages](https://docs.holographic-memory.com/latest/benchmarks/).
 
 <!-- BENCH:START -->
 
@@ -282,7 +282,7 @@ Module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **Document search is conventional.** It does not use the hypervectors; the holographic parts
   are the algebra and the meaning memory.
 - **Capacity numbers are points, not guarantees**, and are stated only over the tested range
-  ([capacity](https://writerslogic.github.io/holographic-memory/latest/concepts/capacity/)).
+  ([capacity](https://docs.holographic-memory.com/latest/concepts/capacity/)).
 - **Masking is obfuscation.** Client-side vector masking preserves every pairwise similarity.
 - A store is a directory and `HmsCore::new(.., None, ..)` uses the current directory.
 
