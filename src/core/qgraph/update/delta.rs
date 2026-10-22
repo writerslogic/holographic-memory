@@ -3,14 +3,16 @@
 
 use std::collections::HashMap;
 
-use super::super::{kernels::dot, norms_opt, BuildParams, BuildVisited, Rows, NONE};
+use super::super::{
+    adjacency::Adjacency, kernels::dot, norms_opt, BuildParams, BuildVisited, Rows, NONE,
+};
 use super::Metric;
 
 #[derive(Clone, Default)]
 pub(super) struct Delta {
     vectors: Vec<f32>,
     norms: Vec<f32>,
-    edges: Vec<Vec<u32>>,
+    edges: Adjacency,
     first_child: Vec<u32>,
     next_sibling: Vec<u32>,
     ids: Vec<u32>,
@@ -33,7 +35,7 @@ impl Delta {
         if params.metric == Metric::Euclidean {
             self.norms.push(dot(row, row));
         }
-        self.edges.push(Vec::new());
+        self.edges.push(&[], params.degree);
         self.first_child.push(NONE);
         self.next_sibling.push(NONE);
         if slot > 0 {
@@ -63,9 +65,10 @@ impl Delta {
                     .map(|&v| (rows.d2(u, v), v))
                     .collect();
                 candidates.push((rows.d2(u, slot as u32), slot as u32));
-                self.edges[u as usize] = rows.prune(u, candidates, params.alpha, params.degree);
+                let pruned = rows.prune(u, candidates, params.alpha, params.degree);
+                self.edges.set(u as usize, &pruned);
             }
-            self.edges[slot] = neighbors;
+            self.edges.set(slot, &neighbors);
         }
         self.live.insert(id, slot);
     }
