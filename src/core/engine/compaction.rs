@@ -64,7 +64,7 @@ impl HmsCore {
     /// unlinked. The text segment is scrubbed per deleted document at delete time.
     ///
     /// Afterwards nothing derived depends on the purged documents or on the order documents
-    /// arrived in (see [`Self::canonicalize_derived_state`]), so every query, status field
+    /// arrived in (see `canonicalize_derived_state`), so every query, status field
     /// other than the opaque counters, and file other than the generation's name match a store
     /// that never held them and was purged at the same point.
     pub fn compact_scrubbing(&self) -> Result<()> {
