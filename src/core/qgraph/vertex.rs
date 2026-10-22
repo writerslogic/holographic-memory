@@ -1432,6 +1432,8 @@ impl VGraph {
         VSearcher {
             index: self,
             scratch: SearchScratch {
+                #[cfg(not(target_arch = "wasm32"))]
+                dim: self.dim,
                 knobs,
                 visited: Marks {
                     marks: vec![0; self.n],
@@ -1491,7 +1493,8 @@ impl VGraph {
         out: &mut Vec<u32>,
     ) -> Result<usize, HmsError> {
         let compatible = cache.as_ref().is_some_and(|s| {
-            s.visited.marks.len() == self.n
+            s.dim == self.dim
+                && s.visited.marks.len() == self.n
                 && s.qf.len() == self.padded
                 && s.qrot.len() == self.screen_words * 64
                 && s.bqrot.len() == self.block_dim
@@ -1672,6 +1675,8 @@ pub struct VSearcher<'a> {
 }
 
 pub(super) struct SearchScratch {
+    #[cfg(not(target_arch = "wasm32"))]
+    dim: usize,
     visited: Marks,
     qf: Vec<f32>,
     /// Query code in the traversal kernel's layout.

@@ -651,3 +651,28 @@ fn clustered_deletes_retry_without_global_tombstone_budget() {
         result
     );
 }
+
+#[test]
+fn scratch_reuse_distinguishes_dimensions_with_equal_padding() {
+    let root = tempfile::tempdir().unwrap();
+    let graph = Graph::build(&data(128, 31), 31, &params()).unwrap();
+    let vertex = VGraph::from_graph(&graph, true).unwrap();
+    let narrow =
+        UpdatableVGraph::create_from_graph(&root.path().join("narrow"), &graph, &vertex).unwrap();
+    let wide =
+        UpdatableVGraph::create(&root.path().join("wide"), &data(128, 32), 32, &params()).unwrap();
+    let p = VSearchParams {
+        ef: 16,
+        rerank: 16,
+        ..Default::default()
+    };
+    let mut query = [1.; 32];
+    query[31] = 1000.;
+    wide.search(&query, 10, p).unwrap();
+    let mut expected = Vec::new();
+    vertex
+        .searcher()
+        .search(&[1.; 31], 10, p, &mut expected)
+        .unwrap();
+    assert_eq!(narrow.search(&[1.; 31], 10, p).unwrap(), expected);
+}
