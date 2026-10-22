@@ -16,7 +16,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import longmemeval_role_retrieval as experiment
-from longmemeval_role_retrieval import retrieve
 
 
 def group(index, user="Can you give me advice?", assistant="A generic response."):
@@ -29,7 +28,7 @@ class RoleRetrievalTests(unittest.TestCase):
     def test_assistant_only_rare_fact_enters_a_pool_behind_generic_user_candidates(self):
         groups = [group(index) for index in range(100)]
         groups[-1]["sources"][1]["text"] = "The heliotrope renderer increased frame rate by 20%."
-        result = retrieve("What frame rate increase did the heliotrope renderer achieve?", groups, list(range(100)))
+        result = experiment.retrieve("What frame rate increase did the heliotrope renderer achieve?", groups, list(range(100)))
         self.assertEqual(result["selected"][:5], list(range(5)))
         self.assertEqual(result["selected"][5], 99)
         self.assertEqual(result["assistant_ranking"], [99])
@@ -39,7 +38,7 @@ class RoleRetrievalTests(unittest.TestCase):
     def test_user_text_does_not_receive_an_assistant_vote(self):
         groups = [group(index) for index in range(8)]
         groups[7]["sources"][0]["text"] = "I own a heliotrope renderer."
-        result = retrieve("heliotrope renderer", groups, list(range(8)))
+        result = experiment.retrieve("heliotrope renderer", groups, list(range(8)))
         self.assertEqual(result["assistant_ranking"], [])
         self.assertEqual(result["selected"], list(range(8)))
         self.assertEqual(result["assistant_scores"], [0.0] * 8)
@@ -48,7 +47,7 @@ class RoleRetrievalTests(unittest.TestCase):
         groups = [group(index) for index in range(8)]
         groups[-1]["sources"][1]["text"] = "You could buy the heliotrope model; this is a suggestion, not a purchase. αβ"
         unchanged = copy.deepcopy(groups)
-        result = retrieve("Which heliotrope model did I buy?", groups, list(range(8)))
+        result = experiment.retrieve("Which heliotrope model did I buy?", groups, list(range(8)))
         selected = next(item for item in result["source_groups"] if item["group_id"] == groups[-1]["group_id"])
         self.assertEqual(selected, groups[-1])
         self.assertEqual(selected["sources"][1]["role"], "assistant")
@@ -59,7 +58,7 @@ class RoleRetrievalTests(unittest.TestCase):
     def test_original_first_five_remain_in_their_cached_order(self):
         groups = [group(index, assistant="heliotrope details") for index in range(100)]
         prior = [8, 5, 2, 13, 21, *[index for index in range(100) if index not in (8, 5, 2, 13, 21)]]
-        result = retrieve("heliotrope", groups, prior)
+        result = experiment.retrieve("heliotrope", groups, prior)
         self.assertEqual(result["selected"][:5], prior[:5])
         self.assertEqual(result["reserved_user_prior"], prior[:5])
         self.assertEqual(len(set(result["selected"])), 64)
@@ -71,31 +70,31 @@ class RoleRetrievalTests(unittest.TestCase):
             item["group_id"] = f"renamed-{80 - index}"
             for source_index, source in enumerate(item["sources"]):
                 source["source_id"] = f"renamed-source-{80 - index}-{source_index}"
-        first = retrieve("heliotrope", groups, list(range(80)))
-        second = retrieve("heliotrope", renamed, list(range(80)))
+        first = experiment.retrieve("heliotrope", groups, list(range(80)))
+        second = experiment.retrieve("heliotrope", renamed, list(range(80)))
         for key in ("selected", "assistant_ranking", "assistant_scores", "fused_ranking", "fused_scores"):
             self.assertEqual(first[key], second[key])
 
     def test_only_positive_assistant_matches_vote_and_stop_words_do_not_match(self):
         groups = [group(0, assistant="the and or"), group(1, assistant="heliotrope"), group(2, assistant="unrelated")]
-        result = retrieve("the heliotrope and", groups, [0, 1, 2])
+        result = experiment.retrieve("the heliotrope and", groups, [0, 1, 2])
         self.assertEqual(result["assistant_ranking"], [1])
         self.assertAlmostEqual(result["fused_scores"][0], 1 / 61)
         self.assertAlmostEqual(result["fused_scores"][1], 1 / 62 + 1 / 61)
         self.assertAlmostEqual(result["fused_scores"][2], 1 / 63)
-        empty = retrieve("the and or", groups, [0, 1, 2])
+        empty = experiment.retrieve("the and or", groups, [0, 1, 2])
         self.assertEqual(empty["assistant_ranking"], [])
 
     def test_empty_assistant_documents_are_valid_without_spurious_scores(self):
         groups = [{"group_id": "one", "sources": [{"source_id": "source", "role": "user", "text": "A user fact."}]}]
-        result = retrieve("heliotrope", groups, [0])
+        result = experiment.retrieve("heliotrope", groups, [0])
         self.assertEqual(result["selected"], [0])
         self.assertEqual(result["assistant_ranking"], [])
 
     def test_partial_user_prior_allows_unranked_assistant_sources(self):
         groups = [group(index) for index in range(8)]
         groups[-1]["sources"][1]["text"] = "heliotrope"
-        result = retrieve("heliotrope", groups, [0, 1, 2, 3, 4], limit=6)
+        result = experiment.retrieve("heliotrope", groups, [0, 1, 2, 3, 4], limit=6)
         self.assertEqual(result["selected"], [0, 1, 2, 3, 4, 7])
 
     def test_rare_assistant_only_block_is_selectable_without_a_fabricated_user(self):
@@ -103,7 +102,7 @@ class RoleRetrievalTests(unittest.TestCase):
         orphan = {"group_id": "orphan-assistant-block", "sources": [
             {"source_id": "orphan-source", "role": "assistant", "text": "The heliotrope renderer achieved 20%."}]}
         groups.append(orphan)
-        result = retrieve("heliotrope renderer", groups, list(range(8)), limit=6)
+        result = experiment.retrieve("heliotrope renderer", groups, list(range(8)), limit=6)
         self.assertEqual(result["selected"], [0, 1, 2, 3, 4, 8])
         self.assertEqual(result["source_groups"][-1], orphan)
         self.assertEqual(result["source_groups"][-1]["sources"][0]["role"], "assistant")
@@ -114,12 +113,12 @@ class RoleRetrievalTests(unittest.TestCase):
             with self.subTest(limit=limit):
                 if limit > 64:
                     with self.assertRaisesRegex(ValueError, "1..=64"):
-                        retrieve("heliotrope", groups, list(range(80)), limit=limit)
+                        experiment.retrieve("heliotrope", groups, list(range(80)), limit=limit)
                 else:
-                    self.assertEqual(retrieve("heliotrope", groups, list(range(80)), limit=limit)["selected"], list(range(limit)))
+                    self.assertEqual(experiment.retrieve("heliotrope", groups, list(range(80)), limit=limit)["selected"], list(range(limit)))
         for limit in (0, -1, True, 1.5):
             with self.subTest(limit=limit), self.assertRaises(ValueError):
-                retrieve("heliotrope", groups, list(range(80)), limit=limit)
+                experiment.retrieve("heliotrope", groups, list(range(80)), limit=limit)
 
     def test_duplicate_identities_sources_and_prior_indices_are_rejected(self):
         original = [group(0), group(1)]
@@ -132,10 +131,10 @@ class RoleRetrievalTests(unittest.TestCase):
             groups = copy.deepcopy(original)
             mutate(groups)
             with self.assertRaisesRegex(ValueError, "duplicate"):
-                retrieve("heliotrope", groups, [0, 1])
+                experiment.retrieve("heliotrope", groups, [0, 1])
         for prior in ([0, 0], [-1], [2], [True], [], "0"):
             with self.subTest(prior=prior), self.assertRaises(ValueError):
-                retrieve("heliotrope", original, prior)
+                experiment.retrieve("heliotrope", original, prior)
 
     def test_complete_exchange_shape_and_text_are_required(self):
         for sources in ([],
@@ -144,7 +143,7 @@ class RoleRetrievalTests(unittest.TestCase):
                         [{"source_id": "system", "role": "system", "text": "Wrong role"}],
                         [{"source_id": "user", "role": "user", "text": 42}]):
             with self.subTest(sources=sources), self.assertRaises(ValueError):
-                retrieve("heliotrope", [{"group_id": "group", "sources": sources}], [0])
+                experiment.retrieve("heliotrope", [{"group_id": "group", "sources": sources}], [0])
 
     def test_dev_proof_merges_repeated_alias_occurrences_without_duplicate_prior_indices(self):
         dev = [f"dev-{index}" for index in range(100)]

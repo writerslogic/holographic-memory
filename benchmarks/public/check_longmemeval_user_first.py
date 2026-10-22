@@ -274,7 +274,7 @@ def validate(report, split, frozen, protocol, preregistration, archives, baselin
             and report.get('heldout_run') is False and report.get('reader_systems') == [SYSTEM],
             'expected a complete dev-only user-first report')
     dev = dev_membership(split)
-    rows = index_rows(report['rows'], dev, 'experiment')
+    index_rows(report['rows'], dev, 'experiment')
     baseline = index_rows(baseline_rows, dev, 'baseline')
     v1 = index_rows(v1_rows, dev, 'v1 snapshots')
     history = index_rows(history_rows, dev, 'historical evidence')

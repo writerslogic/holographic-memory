@@ -7,7 +7,6 @@
 """Check source-only native conversation recall and failure-inclusive dev outcomes offline."""
 
 import argparse
-import copy
 import json
 import math
 import statistics
@@ -472,7 +471,7 @@ def validate(report, split, protocol, base_protocol, preregistration, raw_questi
     require('acceptance_correct' not in report and 'acceptance_met' not in report.get('summary', {}),
             'development result declares a generalization acceptance target')
     dev = dev_membership(split)
-    rows = index_rows(report['rows'], dev, 'production report')
+    index_rows(report['rows'], dev, 'production report')
     require(set(raw_questions) == set(native_journals) == dev, 'original dev or native journal membership differs')
     check_production_protocol(protocol, base_protocol, preregistration)
     same(report['source_gate'], SOURCE_GATE, 'source gate changed')

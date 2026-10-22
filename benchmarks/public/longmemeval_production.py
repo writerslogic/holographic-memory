@@ -322,7 +322,7 @@ class NativeBridge:
                 try:
                     self.process.stdin.close()
                 except BrokenPipeError:
-                    pass
+                    pass  # the child already exited; nothing left to flush
                 except Exception:
                     failed = True
             try:
@@ -338,7 +338,7 @@ class NativeBridge:
                     if not handle.closed:
                         handle.close()
                 except BrokenPipeError:
-                    pass
+                    pass  # the child already exited; nothing left to flush
                 except Exception:
                     failed = True
         if failed:
