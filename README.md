@@ -248,11 +248,13 @@ _Generated from `benchmarks/results/competitive/` by `hms-bench table`; method a
 | Encrypted stores (`security`) | Ships | AES-256-GCM, Argon2id; covers the log, index caches and the text segment. Metadata, file names and sizes are not encrypted |
 | Signed audit log, credential-gated access, COSE/SCITT/C2PA (`provenance`) | Ships | Host must authenticate DIDs; PoSME, RATS, `did:web` not implemented |
 | On-device models (`local-models`: Qwen3 embed/rerank/LLM) | Ships | Local weights only; never downloads |
-| `hms-server` HTTP API, multi-tenant | Ships | No TLS, one shared key, single node |
+| `hms-server` HTTP API, multi-tenant (`server`) | Ships | Single node; TLS, per-tenant scoped keys ([guide](docs/SERVER.md)) |
 | Node.js bindings | Ships (build from source) | npm package not yet republished |
 | Python | Client + phase substrate | No in-process document search |
-| MCP server | Not shipped | |
-| Query-private search | Experimental | Hides the query vector from the scorer only ([notes](docs/PRIVATE-SEARCH.md)) |
+| MCP server (`mcp`: `hms-mcp`, stdio and HTTP) | Ships | Encryption needs `security`; semantic recall needs `local-models` |
+| Query-private search (`private-search`) | Experimental | For searching an index someone else holds; hides the query vector from the scorer only ([notes](docs/PRIVATE-SEARCH.md)) |
+
+Every capability above except document search is behind a Cargo feature that is off by default; [Cargo features](docs/reference/features.md) lists them all.
 
 ## Architecture
 
