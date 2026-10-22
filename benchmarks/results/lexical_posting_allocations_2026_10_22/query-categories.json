@@ -1,0 +1,13 @@
+{
+  "term": "the",
+  "intersection": "+griffith +observatory",
+  "phrase": "\"griffith observatory\"",
+  "union": "griffith observatory",
+  "two-phase-critic": "+\"the who\" +uk",
+  "intersection_union": "+climate policy",
+  "negated": "+python -snake -monty",
+  "long_union": "a search engine is an information retrieval software system designed to help find information stored on one or more computer systems",
+  "repeated_phrase": "\"the the\"",
+  "prohibited_phrase": "+the -\"the the\"",
+  "optional_phrase": "the \"of the\""
+}

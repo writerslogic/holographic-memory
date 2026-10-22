@@ -1,0 +1,39 @@
+--- a/src/core/documents/postings.rs
++++ b/src/core/documents/postings.rs
+@@ -348,13 +348,22 @@
+ fn frontier(points: impl Iterator<Item = (u32, u32)>) -> Option<Box<[(u32, u32)]>> {
+-    let mut points: Vec<_> = points.filter(|p| p.0 > 0).collect();
++    let mut scratch = [(0, 0); BLOCK_LEN];
++    let mut used = 0;
++    for point in points.filter(|p| p.0 > 0) {
++        assert!(used < BLOCK_LEN, "frontier exceeds posting block length");
++        scratch[used] = point;
++        used += 1;
++    }
++    let points = &mut scratch[..used];
+     points.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+     let mut shortest = u32::MAX;
+-    let mut kept = Vec::new();
+-    for point in points {
+-        if kept.is_empty() || point.1 < shortest {
++    let mut kept = 0;
++    for index in 0..points.len() {
++        let point = points[index];
++        if kept == 0 || point.1 < shortest {
+             shortest = point.1;
+-            kept.push(point);
+-        }
+-    }
+-    (kept.len() > 1).then(|| kept.into_boxed_slice())
++            points[kept] = point;
++            kept += 1;
++        }
++    }
++    (kept > 1).then(|| points[..kept].into())
+ }
+@@ -497,2 +506,5 @@
+         };
++        if self.blocks.capacity() == 0 {
++            self.blocks.reserve_exact(run.len().div_ceil(BLOCK_LEN));
++        }
+         if self.count > 0 && first as u64 <= self.last {

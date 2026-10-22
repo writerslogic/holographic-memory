@@ -53,6 +53,97 @@ pub(crate) struct DocumentStore {
     encode_gate: Arc<parking_lot::Mutex<()>>,
 }
 
+#[cfg(test)]
+impl DocumentStore {
+    pub(crate) fn memory_census(&self) -> super::census::MemoryCensus {
+        use std::mem::{size_of, size_of_val};
+        let mut census = super::census::MemoryCensus::default();
+        for postings in &self.postings {
+            postings.record_memory(&mut census);
+        }
+        census.count("documents", self.documents.len());
+        census.count("chunks", self.chunk_count);
+        census.bytes(
+            "slots.owners.capacity",
+            self.owners.capacity() * size_of::<Option<(Arc<StoredDocument>, usize)>>(),
+        );
+        census.bytes(
+            "slots.word_counts.capacity",
+            self.word_counts.capacity() * size_of::<u32>(),
+        );
+        census.bytes(
+            "documents.map.payload",
+            self.documents
+                .iter()
+                .map(|(id, document)| size_of_val(id) + size_of_val(document) + id.capacity())
+                .sum(),
+        );
+        census.bytes(
+            "slots.map.payload",
+            self.slots
+                .iter()
+                .map(|(id, slots)| {
+                    size_of_val(id)
+                        + size_of_val(slots)
+                        + id.capacity()
+                        + slots.capacity() * size_of::<usize>()
+                })
+                .sum(),
+        );
+        census.bytes("slots.free.payload", self.free.len() * size_of::<usize>());
+        for document in self.documents.values() {
+            census.bytes(
+                "documents.arc_records",
+                size_of::<StoredDocument>() + 2 * size_of::<usize>(),
+            );
+            census.bytes(
+                "documents.strings",
+                document.id.capacity()
+                    + document.version.capacity()
+                    + document.source_uri.as_ref().map_or(0, String::capacity),
+            );
+            census.count(
+                "documents.with_metadata",
+                usize::from(!document.metadata.is_null()),
+            );
+            census.bytes(
+                "chunks.capacity",
+                document.chunks.capacity() * size_of::<StoredChunk>(),
+            );
+            for chunk in &document.chunks {
+                census.bytes(
+                    "chunks.strings",
+                    chunk.id.capacity() + chunk.text.as_ref().map_or(0, String::capacity),
+                );
+                census.bytes(
+                    "chunks.vector_indices.capacity",
+                    chunk.vector.indices.capacity() * size_of::<u32>(),
+                );
+                census.count(
+                    "chunks.with_embedding",
+                    usize::from(chunk.embedding.is_some()),
+                );
+                chunk.terms.record_memory(&mut census);
+            }
+        }
+        census.count("unmeasured.metadata_entries", self.metadata.len());
+        census.count("unmeasured.source_entries", self.sources.len());
+        census.count(
+            "unmeasured.multichunk_documents",
+            self.multichunk_documents.len(),
+        );
+        census.count(
+            "unmeasured.embedded_documents",
+            self.embedded_documents.len(),
+        );
+        census.count(
+            "unmeasured.dense_index",
+            usize::from(self.dense_index.is_some()),
+        );
+        census
+    }
+}
+
 /// A random starting value for a process-local mutation counter, below 2^53 so increments
 /// cannot overflow. A counter that starts here still advances by one per mutation for the
 /// caches and handles comparing two readings, but one reading says nothing about how many

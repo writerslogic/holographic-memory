@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "source_revision": "d6a38eb11ab0ff320929249d0ec9e26f16e46dad",
+  "scope": "paired reopen of the same saved 600,000-input diagnostic index; no full-corpus capacity or competitive result",
+  "host": {
+    "system": "Darwin arm64",
+    "cpu": "Apple M4",
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: aarch64-apple-darwin\nrelease: 1.96.0\nLLVM version: 22.1.2",
+    "rayon_threads": 4
+  },
+  "articles": 548246,
+  "posting_lists": 1221454,
+  "postings": 78640902,
+  "block_size": 56,
+  "posting_list_size": 64,
+  "one_block_lists_with_capacity_four_before_and_one_after": 1189039,
+  "changed_ownership_bytes": {
+    "postings.blocks.capacity": {
+      "baseline": 313582080,
+      "candidate": 113708392,
+      "saved": 199873688
+    },
+    "postings.blocks.unused": {
+      "baseline": 214172504,
+      "candidate": 14298816,
+      "saved": 199873688
+    }
+  },
+  "all_other_recorded_bytes_and_counts_equal": true,
+  "posting_and_block_length_histograms_equal": true,
+  "block_capacity_saved_bytes": 199873688,
+  "block_capacity_saved_mib": 190.6144027709961,
+  "rss_single_pair": {
+    "baseline_peak_bytes": 2070446080,
+    "candidate_peak_bytes": 1818066944,
+    "observed_reduction_bytes": 252379136,
+    "observed_reduction_mib": 240.6875,
+    "limitations": "One macOS sample per policy with other local builds present. RSS includes allocator behavior and process state; its difference is not an additional additive saving. No controlled replay-latency claim; no Linux 12-GiB/no-swap acceptance claim."
+  },
+  "full_corpus_build_reopen_query_gate": "not executed for this repair",
+  "ownership_limitations": "Exact vector/box requested capacities; tree maps are payload lower bounds. Tree node overhead, allocator rounding and metadata, and engine components outside DocumentStore remain unmeasured.",
+  "source_hashes": {
+    "baseline.rs": "57178f6b38313415d2d325fc56aaa4246caf2476569d32a2fc49117c771ddcbd",
+    "candidate.rs": "7b46d7eace637951eceb4dbe549f33e5cf4ada611843ee6f4274ef0a002a7e7a"
+  },
+  "linux_layout_probe": {
+    "results": {
+      "block_size": 56,
+      "posting_list_size": 64,
+      "initial_push_capacity": 4,
+      "reserved_capacity": 1
+    },
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1",
+    "scope": "Extracted Block and PostingList definitions plus standard Vec; compiler/layout check only, not a Linux engine replay or allocation-traffic measurement."
+  }
+}

@@ -15,6 +15,8 @@ mod mutation;
 mod mutation_gate;
 
 #[cfg(test)]
+mod document_memory_census;
+#[cfg(test)]
 mod document_snapshot_tests;
 
 #[cfg(all(test, feature = "local-models"))]

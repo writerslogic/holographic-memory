@@ -1,0 +1,59 @@
+{
+  "format": {
+    "command": "cargo fmt -- --check",
+    "status": "passed",
+    "log": "/Volumes/A/.sol-lex-allocation/fmt.log"
+  },
+  "clippy_default": {
+    "command": "cargo clippy --locked --all-targets -- -D warnings",
+    "status": "passed",
+    "log": "/Volumes/A/.sol-lex-allocation/clippy-default.log"
+  },
+  "clippy_all_features": {
+    "command": "cargo clippy --locked --all-targets --all-features -- -D warnings",
+    "status": "passed",
+    "log": "/Volumes/A/.sol-lex-allocation/clippy-all.log"
+  },
+  "test_default": {
+    "command": "cargo test --locked",
+    "status": "passed",
+    "log": "/Volumes/A/.sol-lex-allocation/test-default.log",
+    "passed": 604,
+    "failed": 0,
+    "ignored": 6,
+    "test_suites": 75
+  },
+  "test_all_features": {
+    "command": "cargo test --locked --all-features",
+    "status": "passed",
+    "log": "/Volumes/A/.sol-lex-allocation/test-all.log",
+    "passed": 952,
+    "failed": 0,
+    "ignored": 7,
+    "test_suites": 98
+  },
+  "msrv": {
+    "command": "cargo +1.89.0 check --locked --no-default-features",
+    "status": "passed",
+    "log": "/Volumes/A/.sol-lex-allocation/msrv.log"
+  },
+  "ranked_differential": {
+    "status": "passed",
+    "complete_optimized_exhaustive_comparisons": 132,
+    "baseline_candidate_comparisons": 33,
+    "receipt": "ranked-validation.json"
+  },
+  "test_environment": {
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "1",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "all_features_RUST_TEST_THREADS": "4"
+  },
+  "linux_layout": {
+    "status": "passed",
+    "command": "rustc --edition=2021 linux-layout.rs -o linux-layout && ./linux-layout",
+    "receipt": "linux-layout.json",
+    "rustc_receipt": "linux-layout-rustc.txt"
+  }
+}
