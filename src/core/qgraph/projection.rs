@@ -471,7 +471,12 @@ mod tests {
             dim: 2,
             degree: 2,
             metric: Metric::Euclidean,
-            norms: vectors.chunks_exact(2).map(|row| row[0] * row[0]).collect(),
+            norms: vectors
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|row| row[0] * row[0])
+                .collect(),
             vectors,
             adj,
             entry: 0,
@@ -636,7 +641,7 @@ mod tests {
         };
         let graph = Graph::build(&augmented, 3, &params).unwrap();
         let mut expected = Vec::new();
-        for query in queries.chunks_exact(3) {
+        for query in queries.as_chunks::<3>().0 {
             let mut ids: Vec<u32> = (0..5).collect();
             let score = |id: u32| {
                 original[id as usize]
@@ -794,7 +799,7 @@ mod tests {
             index.searcher_with(SearchKnobs::OFF),
             opened.searcher_with(SearchKnobs::OFF),
         );
-        for query in queries.chunks_exact(2) {
+        for query in queries.as_chunks::<2>().0 {
             let (mut a, mut b) = (Vec::new(), Vec::new());
             let search = VSearchParams {
                 ef: 6,
