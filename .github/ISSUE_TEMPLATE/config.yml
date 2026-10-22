@@ -7,5 +7,5 @@ contact_links:
     url: https://github.com/writerslogic/holographic-memory/discussions
     about: Ask how to do something, or float an idea, in Discussions before opening an issue.
   - name: Documentation
-    url: https://writerslogic.github.io/holographic-memory/
+    url: https://docs.holographic-memory.com/
     about: Quickstart, concepts, API and security notes.

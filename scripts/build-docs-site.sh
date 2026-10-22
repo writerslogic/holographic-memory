@@ -20,7 +20,7 @@ export DISABLE_MKDOCS_2_WARNING=true
 export HMS_DOCS_API_TOOLS="${HMS_DOCS_API_TOOLS:-$(git rev-parse --show-toplevel)/scripts/docs-api}"
 
 out="${1:-_site}"
-base="${HMS_SITE_BASE:-https://writerslogic.github.io/holographic-memory}"
+base="${HMS_SITE_BASE:-https://docs.holographic-memory.com}"
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 case "$out" in /*) ;; *) out="$repo_root/$out" ;; esac

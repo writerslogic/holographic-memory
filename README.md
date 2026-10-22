@@ -1,28 +1,27 @@
-<h1 align="center">Holographic Memory System (HMS)</h1>
+# Holographic Memory System (HMS)
 
-<p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-white.svg"><img width="96" src="assets/logo.png" alt="Holographic Memory System logo"></picture>
-</p>
+<img width="96" src="assets/logo.png" alt="Holographic Memory System logo">
 
-<p align="center"><strong>Local memory for agents and apps: hybrid document search plus a vector-symbolic fact store, in one embeddable engine that never calls out.</strong></p>
+**Local memory for agents and apps: hybrid document search plus a vector-symbolic fact store, in one embeddable engine that never calls out.**
 
-<p align="center">
-  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI"></a>
-  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/docs.yml"><img alt="Docs" src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/docs.yml?branch=main&label=docs"></a>
-  <a href="https://crates.io/crates/holographic-memory"><img alt="crates.io" src="https://img.shields.io/crates/v/holographic-memory.svg"></a>
-  <a href="https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img alt="OpenSSF Scorecard" src="https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory"></a>
-  <a href="#license"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
-</p>
+[![CI](https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/docs.yml?branch=main&label=docs)](https://github.com/writerslogic/holographic-memory/actions/workflows/docs.yml)
+[![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
+[![docs.rs](https://img.shields.io/docsrs/holographic-memory)](https://docs.rs/holographic-memory)
+[![PyPI](https://img.shields.io/pypi/v/holographic-vsa.svg?label=pypi)](https://pypi.org/project/holographic-vsa/)
+![MSRV 1.89](https://img.shields.io/badge/MSRV-1.89-informational.svg)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory)](https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13977/badge)](https://www.bestpractices.dev/projects/13977)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
 
-<p align="center">
-  <a href="https://writerslogic.github.io/holographic-memory/">Docs</a> &middot;
-  <a href="#get-started-in-60-seconds">Get started</a> &middot;
-  <a href="#why-is-it-called-holographic">Why "holographic"?</a> &middot;
-  <a href="#how-it-compares">Compare</a> &middot;
-  <a href="#what-ships-today">Capabilities</a> &middot;
-  <a href="#limits">Limits</a> &middot;
-  <a href="CONTRIBUTING.md">Contribute</a>
-</p>
+[Website](https://holographic-memory.com) ·
+[Docs](https://docs.holographic-memory.com/) ·
+[Get started](#get-started-in-60-seconds) ·
+[Why "holographic"?](#why-is-it-called-holographic) ·
+[Compare](#how-it-compares) ·
+[Capabilities](#what-ships-today) ·
+[Limits](#limits) ·
+[Contribute](CONTRIBUTING.md)
 
 **What it is.** A Rust library (with Node.js bindings, a Python client and an HTTP server) that
 stores text and facts on your machine and finds them again: stemmed BM25 fused with exact cosine
@@ -64,7 +63,7 @@ queries, Hopfield cleanup); the resonator network; the union-bundle membership t
 not read the hypervectors), the NSG/IVF graph and inverted-file ANN indexes, the CRC-checked
 append-only memory-mapped storage log, the HTTP server. HMS does not claim holographic behavior
 for these. The longer version, with the tested numbers, is in
-[Concepts](https://writerslogic.github.io/holographic-memory/latest/concepts/holographic/).
+[Concepts](https://docs.holographic-memory.com/latest/concepts/holographic/).
 
 ## Get started in 60 seconds
 
@@ -146,7 +145,7 @@ print(client.query([0.1] * 384, top_k=1)["matches"][0]["id"])
 ```
 
 Endpoints, flags, tenants and limits: [docs/SERVER.md](docs/SERVER.md) and the
-[server docs](https://writerslogic.github.io/holographic-memory/latest/server/).
+[server docs](https://docs.holographic-memory.com/latest/server/).
 A runnable Python quickstart with a toy embedder is in
 [`examples/quickstart/python`](examples/quickstart/python/quickstart.py).
 
@@ -156,11 +155,11 @@ A runnable Python quickstart with a toy embedder is in
 <summary><strong>MCP</strong></summary>
 
 No MCP server ships in this repository today. Integration guides, when published, appear under
-Integrations in the [docs](https://writerslogic.github.io/holographic-memory/).
+Integrations in the [docs](https://docs.holographic-memory.com/).
 
 </details>
 
-The [five-minute quickstart](https://writerslogic.github.io/holographic-memory/latest/quickstart/)
+The [five-minute quickstart](https://docs.holographic-memory.com/latest/quickstart/)
 walks through ingest, search, a SQLite FTS5 comparison and encryption in Rust, Python and Node,
 and CI runs that code on every pull request. For a whole agent memory with no embeddings and no
 network, run `cargo run --example demo-offline-agent`.
@@ -178,7 +177,7 @@ runs, not a substitute for testing your data.
 
 The SciFact and NFCorpus runs were recorded on a loaded machine, so quality is quoted and
 latency is not. More benchmarks, competitor tables and the loss reports are on the
-[benchmarks pages](https://writerslogic.github.io/holographic-memory/latest/benchmarks/).
+[benchmarks pages](https://docs.holographic-memory.com/latest/benchmarks/).
 
 <!-- BENCH:START -->
 
@@ -282,7 +281,7 @@ Module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **Document search is conventional.** It does not use the hypervectors; the holographic parts
   are the algebra and the meaning memory.
 - **Capacity numbers are points, not guarantees**, and are stated only over the tested range
-  ([capacity](https://writerslogic.github.io/holographic-memory/latest/concepts/capacity/)).
+  ([capacity](https://docs.holographic-memory.com/latest/concepts/capacity/)).
 - **Masking is obfuscation.** Client-side vector masking preserves every pairwise similarity.
 - A store is a directory and `HmsCore::new(.., None, ..)` uses the current directory.
 

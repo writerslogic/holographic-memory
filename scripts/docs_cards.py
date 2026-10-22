@@ -89,5 +89,5 @@ def render(path, fonts_dir, title, section, description):
     for line in _wrap(d, description, desc_font, 760, 2):
         d.text((72, y + 16), line, font=desc_font, fill=MUTED)
         y += 40
-    d.text((72, H - 64), "writerslogic.github.io/holographic-memory", font=_font(fonts_dir, 24, 500), fill=MUTED)
+    d.text((72, H - 64), "docs.holographic-memory.com", font=_font(fonts_dir, 24, 500), fill=MUTED)
     img.convert("RGB").quantize(colors=96, method=Image.Quantize.MEDIANCUT).save(path, optimize=True)
