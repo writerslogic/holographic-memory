@@ -217,16 +217,16 @@ uv run --no-project python -m unittest discover -s benchmarks/public -p 'test_lo
 
 ## Checked-in inputs and reports
 
-The [2026-09-14 reports](../benchmarks/review-2026-09-14) were produced locally on an Apple M4,
+The [2026-09-14 reports](../benchmarks/results/review-2026-09-14) were produced locally on an Apple M4,
 macOS arm64. The Node evaluation records Node version, model
 identity, preprocessing fingerprint, artifact revisions, dtype, and dataset SHA-256. Rust
 reports record engine version, dimensions, corpus size, architecture, and operating system.
 
 - [Operational relevance fixture](../tests/fixtures/relevance.json): 12 documents and 12 distinct labeled queries.
 - [Paraphrase fixture](../tests/fixtures/semantic-paraphrases.json): 10 documents and 10 queries with less direct lexical overlap.
-- [Paraphrase results](../benchmarks/review-2026-09-14/paraphrase-relevance.json): lexical, hybrid, optional reranked relevance and latency, plus projection fidelity.
-- Concurrent sparse query/update reports at [1,200](../benchmarks/review-2026-09-14/workload-1200.json)
-  and [10,000](../benchmarks/review-2026-09-14/workload-10000.json) stored vectors.
+- [Paraphrase results](../benchmarks/results/review-2026-09-14/paraphrase-relevance.json): lexical, hybrid, optional reranked relevance and latency, plus projection fidelity.
+- Concurrent sparse query/update reports at [1,200](../benchmarks/results/review-2026-09-14/workload-1200.json)
+  and [10,000](../benchmarks/results/review-2026-09-14/workload-10000.json) stored vectors.
 
 These are small curated regression datasets, not externally validated benchmark collections.
 The queries are distinct from the stored passages, but this is not a blind evaluation. Do not
