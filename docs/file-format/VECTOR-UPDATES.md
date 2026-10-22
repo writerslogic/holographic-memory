@@ -192,3 +192,11 @@ CARGO_TARGET_DIR="$HOME/codex-ann-update/target-after" RAYON_NUM_THREADS=10 \
   "$HOME/codex-ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8" \
   --bench --save-baseline release-final
 ```
+
+Final verification on ARM macOS with Rust 1.99.0 passed formatting, both
+all-target Clippy modes (default and all features), 566 default tests, 880
+all-features tests, and cargo-deny. Both test runs include doctests and leave five
+explicitly ignored tests. All 18 vector-update tests pass. The competitive adapter
+wiring checks pass (two tests). Linux CI with Rust 1.99.1 passed 889 all-features
+tests and two doctests; the MSRV 1.89 job also passed. The result artifact records
+the verified source revisions and command exit codes.

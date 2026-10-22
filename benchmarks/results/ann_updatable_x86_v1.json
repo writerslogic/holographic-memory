@@ -1992,7 +1992,8 @@
     "The final dimension-keyed scratch reuse fix is covered by Criterion and regression tests. SIFT serving/update measurements use the preceding commit; they involve only one dimension.",
     "Final source 3c4ca53 includes explicit ownership unlock, id-table checksums, bounded manifest reads, dense-id mapping bypass, single query validation, search_into, and delta routing reachability. The final Criterion section measures that source; initial and buffer-fix measurements are retained. The single SIFT comparison precedes these fixes.",
     "The final Criterion pair is 24.97 us immutable versus 24.85 us buffered clean search (-0.5%); the identical immutable binary ranged 23.66\u201324.97 us across runs, so no speedup is claimed.",
-    "After the measured query-path revision 3c4ca53, a4ec72f changes only header-version recognition and its tests: unknown versions are refused before fixed-size validation. No wire bytes or query algorithms change; this final header guard was not benchmarked."
+    "After the measured query-path revision 3c4ca53, a4ec72f changes only header-version recognition and its tests: unknown versions are refused before fixed-size validation. No wire bytes or query algorithms change; this final header guard was not benchmarked.",
+    "The final harness build saves only the updatable directory, avoiding a redundant standalone vertex file in reported index bytes. The recorded historical measurement commands intentionally retain both files for the before/after comparison."
   ],
   "invocation_commit_label": "a2a16d4189a56162b3782977d5e5bbcb1a063bc1",
   "source": {
@@ -2781,5 +2782,64 @@
       }
     }
   },
-  "final_source_commit": "a4ec72fad4db9b260b0c6a8735b56757307b744e"
+  "final_source_commit": "a481920900cd3b938665e97a19d81300b2759af3",
+  "final_rust_source_commit": "a4ec72fad4db9b260b0c6a8735b56757307b744e",
+  "verification": {
+    "source_commit": "a481920900cd3b938665e97a19d81300b2759af3",
+    "rust_toolchain": "1.99.0",
+    "platform": "aarch64-apple-darwin",
+    "environment": {
+      "CARGO_TARGET_DIR": "/Volumes/A/.codex-target-ann-update"
+    },
+    "commands": [
+      {
+        "command": "cargo fmt --check",
+        "exit_code": 0
+      },
+      {
+        "command": "cargo clippy --all-targets -- -D warnings",
+        "exit_code": 0
+      },
+      {
+        "command": "cargo clippy --all-targets --all-features -- -D warnings",
+        "exit_code": 0
+      },
+      {
+        "command": "cargo test",
+        "exit_code": 0
+      },
+      {
+        "command": "cargo test --all-features",
+        "exit_code": 0
+      },
+      {
+        "command": "cargo deny check",
+        "exit_code": 0
+      }
+    ],
+    "tests": {
+      "default": {
+        "passed": 566,
+        "ignored": 5,
+        "suites": 71,
+        "includes_doc_tests": true
+      },
+      "all_features": {
+        "passed": 880,
+        "ignored": 5,
+        "suites": 90,
+        "includes_doc_tests": true
+      }
+    },
+    "vector_update_tests": 18,
+    "competitive_adapter_tests": 2,
+    "linux_ci": {
+      "rust_toolchain": "1.99.1",
+      "all_feature_tests_passed": 889,
+      "doc_tests_passed": 2,
+      "ignored": 5,
+      "job": "https://github.com/writerslogic/holographic-memory/actions/runs/39727796175/job/119655632830"
+    },
+    "msrv_1_89_ci": "passed"
+  }
 }
