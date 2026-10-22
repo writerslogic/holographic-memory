@@ -506,7 +506,8 @@ def native_retrieve(work, binary, models, native_source_root=ROOT):
                        'model_root': str(Path(models).expanduser().resolve()),
                        'native_source_root': str(Path(native_source_root).expanduser().resolve()),
                        'native_source_artifacts': native_source_artifacts(native_source_root),
-                       'argv': [str(Path(binary).resolve()), '--models', str(Path(models).expanduser().resolve())]}
+                       'argv': [str(Path(binary).resolve()), '--models', str(Path(models).expanduser().resolve()),
+                                '--subquery-weight', '1']}
     identity_path = work / 'native_identity.json'
     if identity_path.exists():
         same(json.loads(identity_path.read_text()), native_identity, 'native identity changed after initial freeze')
