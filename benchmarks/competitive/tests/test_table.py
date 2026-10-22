@@ -6,6 +6,7 @@ committed COMPARISON.md equals a fresh generation."""
 
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -95,6 +96,26 @@ def test_cited_files_are_committed_and_table_is_current():
         assert (ROOT / file).exists()
         assert tracked(ROOT / file), f"{file} is cited but not committed"
     assert table.main(check=True) == 0, "run ./benchmarks/competitive/hms-bench table"
+
+
+@pytest.mark.skipif(not HAVE_RESULTS, reason="no committed competitive results yet")
+def test_published_tables_regenerate_byte_for_byte(tmp_path):
+    paths = subprocess.check_output(["git", "-C", str(ROOT), "ls-files", "--", "README.md", "docs/benchmarks",
+                                     "benchmarks/results/competitive", "benchmarks/competitive/README-block.md",
+                                     "benchmarks/competitive/GAPS.json"], text=True).splitlines()
+    expected = {path: (ROOT / path).read_bytes() for path in paths}
+    for path, content in expected.items():
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+    harness = Path("benchmarks/competitive")
+    shutil.copytree(ROOT / harness / "hmsbench", tmp_path / harness / "hmsbench", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copy2(ROOT / harness / "hms-bench", tmp_path / harness / "hms-bench")
+    generated = subprocess.run([sys.executable, str(tmp_path / harness / "hms-bench"), "table"], cwd=tmp_path,
+                               capture_output=True, text=True)
+    assert generated.returncode == 0, generated.stderr
+    for path, content in expected.items():
+        assert (tmp_path / path).read_bytes() == content, f"stale generated file: {path}"
 
 
 def fake_ann(hms_qps, other_qps, spread=0.01):
