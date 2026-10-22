@@ -163,7 +163,7 @@ impl Base {
             let graph = VGraph::open(&m.vertex_path(dir), Residency::Mapped)?;
             if graph.len() != rows.ids.len()
                 || graph.dim() != m.dim
-                || graph.metric() != m.build.metric
+                || graph.metric() != m.build.metric.into()
             {
                 return Err(UpdateError::CorruptBase(
                     "vertex/rows shape mismatch".into(),
@@ -411,7 +411,10 @@ impl UpdatableVGraph {
         graph: &Graph,
         vertex: &VGraph,
     ) -> Result<Self, UpdateError> {
-        if graph.n != vertex.len() || graph.dim != vertex.dim() || graph.metric != vertex.metric() {
+        if graph.n != vertex.len()
+            || graph.dim != vertex.dim()
+            || vertex.metric() != graph.metric.into()
+        {
             return Err(UpdateError::CorruptBase(
                 "graph and vertex encoding differ".into(),
             ));

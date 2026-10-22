@@ -1,0 +1,11 @@
+{
+  "ordered_ids_identical": true,
+  "queries": 256,
+  "settings": 3,
+  "repetitions": 3,
+  "raw": {
+    "path": "/home/davidcondrey/sol-qag/v2/runs/yi-layout-v2/raw.hdf5",
+    "sha256": "ab506988d9427f021ea8272c9c11a4706c4379679a03c99aef6eaea8bba96500",
+    "bytes": 3871624
+  }
+}
