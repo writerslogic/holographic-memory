@@ -11,7 +11,8 @@ use serde::Serialize;
 use super::mutation::{Mutation, TRANSACTION_MAGIC};
 use super::HmsCore;
 use crate::core::documents::{
-    chunk_spans, BatchTooLarge, DocumentInput, MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
+    chunk_spans_with, BatchTooLarge, DocumentInput, IngestOptions, MAX_BATCH_ITEMS as MAX_ITEMS,
+    MAX_DOCUMENT_BYTES,
 };
 
 const MAX_EMBEDDING_VALUES: usize = 1_048_576;
@@ -72,10 +73,11 @@ fn source_sizes(input: &DocumentInput) -> [usize; 4] {
 }
 
 /// Checks a batch against every limit and returns each input's chunk spans
-/// ([`chunk_spans`]), which preparation then reuses.
-pub(super) fn validate_inputs(
+/// ([`chunk_spans_with`]), which preparation then reuses.
+pub(super) fn validate_inputs_with(
     inputs: &[DocumentInput],
     inferred_dimensions: Option<usize>,
+    options: &IngestOptions,
 ) -> Result<Vec<Vec<(u32, u32)>>> {
     const ITEMS: &str = "document batch requires 1..=4096 items";
     ensure!(!inputs.is_empty(), ITEMS);
@@ -104,7 +106,7 @@ pub(super) fn validate_inputs(
                 .metadata
                 .as_ref()
                 .map(|metadata| serialized_size(metadata, MAX_DOCUMENT_BYTES));
-            (metadata, chunk_spans(input))
+            (metadata, chunk_spans_with(input, options))
         })
         .collect();
     let mut ids = HashSet::with_capacity(inputs.len());
@@ -165,6 +167,14 @@ pub(super) fn validate_inputs(
         spans.push(chunk_spans);
     }
     Ok(spans)
+}
+
+#[cfg(test)]
+fn validate_inputs(
+    inputs: &[DocumentInput],
+    inferred_dimensions: Option<usize>,
+) -> Result<Vec<Vec<(u32, u32)>>> {
+    validate_inputs_with(inputs, inferred_dimensions, &IngestOptions::default())
 }
 
 /// The journal payload of a prepared document batch in the store's format, serialized once

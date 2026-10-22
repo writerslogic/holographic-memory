@@ -91,7 +91,8 @@ impl HmsCore {
         #[cfg(feature = "local-embed")]
         let inferred_dimensions =
             inferred_dimensions.or_else(|| self.text_embedder().map(|e| e.dimensions()));
-        let spans = super::document_batch::validate_inputs(&inputs, inferred_dimensions)?;
+        let spans =
+            super::document_batch::validate_inputs_with(&inputs, inferred_dimensions, options)?;
         #[cfg(feature = "local-embed")]
         let inputs = {
             let mut inputs = inputs;

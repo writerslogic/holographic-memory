@@ -10,6 +10,7 @@ use super::packed_terms::StoredTerms;
 use super::{stemmer, MAX_DOCUMENT_BYTES};
 
 pub(super) const VERSION: u8 = 1;
+pub(super) const DOCUMENT_VERSION: u8 = 2;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -34,7 +35,12 @@ pub(super) fn tokens(text: &str, stem: bool) -> Vec<String> {
 }
 
 impl Positions {
-    pub(super) fn from_text(text: &str, stem: bool, terms: &StoredTerms) -> Self {
+    pub(super) fn from_text(
+        text: &str,
+        stem: bool,
+        terms: &StoredTerms,
+        whole_document: bool,
+    ) -> Self {
         let mut table = BTreeMap::<String, Vec<u32>>::new();
         for (position, token) in tokens(text, stem).into_iter().enumerate() {
             table.entry(token).or_default().push(position as u32);
@@ -51,7 +57,11 @@ impl Positions {
             offsets.push(u32::try_from(data.len()).expect("positions exceed u32"));
         }
         Self {
-            version: VERSION,
+            version: if whole_document {
+                DOCUMENT_VERSION
+            } else {
+                VERSION
+            },
             offsets: offsets.into_boxed_slice(),
             data: data.into_boxed_slice(),
         }
@@ -59,7 +69,7 @@ impl Positions {
 
     pub(super) fn validate(&self, terms: &StoredTerms) -> Result<()> {
         ensure!(
-            self.version == VERSION,
+            matches!(self.version, VERSION | DOCUMENT_VERSION),
             "positional postings version {} is newer than supported",
             self.version
         );

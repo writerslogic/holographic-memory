@@ -41,13 +41,12 @@ prohibited clauses do not. Nonfinite scores are rejected. Parameters and sizes a
 validated. Lucene/Tantivy norms, float width and duplicate-query rewrites differ;
 score/rank parity is claimed only for equivalent configurations.
 
-HMS's established chunk statistics and match unit are retained. The benchmark's
-18,538 split articles can therefore disagree with article-level Boolean/phrase
-semantics, including phrases crossing a boundary and exclusions in another chunk.
-Such mismatches must be reported, never attributed to an executor optimization.
-A whole-article ingest facility would require a separately scoped change to batch
-and mutation size invariants; it is an integration requirement, not a silent change
-to existing chunk limits.
+Ordinary ingest retains HMS's established chunk statistics and match unit. The
+benchmark enables opt-in `IngestOptions::whole_document`, requiring lexical encoding
+and positions, so each article is a single chunk up to the existing 8 MiB document
+limit. This preserves article-level conjunctions, exclusions and phrases across the
+old 4,096-word boundary. The larger chunk is accepted only with version-2 positional
+postings on one lexical chunk; ordinary 64 KiB chunk limits remain unchanged.
 
 ## Reference and incremental implementation
 
@@ -82,7 +81,8 @@ not promoted without repeatable measurements showing a benefit.
 `IngestOptions::positions` defaults off. Store delta-coded positions alongside packed
 terms, with a versioned optional positional payload. Existing non-positional JSON and
 binary records keep their bytes. Binary positional records set a previously reserved
-chunk flag and include a positional subformat version; old readers reject that flag.
+chunk flag and include a positional subformat version (1 for ordinary chunks,
+2 for whole lexical articles); old readers reject that flag.
 New readers reject unknown versions, truncated/overflowing positions, inconsistent
 term offsets and allocation sizes. JSON uses an explicit versioned envelope only for
 positional terms. Legacy chunks never acquire inferred positions: phrase queries on
@@ -104,5 +104,6 @@ three timed repetitions per type; report median and min/max, including regressio
 No performance run with failing CI and no claim of competitive success on missing
 or incompatible evidence. Main PR and upstream #99 remain draft; do not merge.
 
-The only approved cross-ownership integration is the small lexical API addition in
-`src/core/engine/document_api.rs`. Graph and Python code remain outside this change.
+Approved cross-ownership integration includes the lexical API additions in
+`src/core/engine/document_api.rs` and scoped whole-article validation in
+`src/core/engine/document_batch.rs` and `src/core/engine/mutation.rs`. Graph and Python code remain outside this change.

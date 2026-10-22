@@ -66,6 +66,12 @@ impl StoredTerms {
         }
     }
 
+    pub(crate) fn is_whole_document(&self) -> bool {
+        self.positions
+            .as_ref()
+            .is_some_and(|p| p.version == super::positions::DOCUMENT_VERSION)
+    }
+
     pub(super) fn index(&self, key: &str) -> Option<usize> {
         match self.terms.as_deref() {
             None => None,

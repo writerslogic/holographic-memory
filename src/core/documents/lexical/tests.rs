@@ -16,6 +16,7 @@ fn options(positions: bool, unstemmed: bool) -> IngestOptions {
         encode: EncodeMode::Lexical,
         positions,
         unstemmed,
+        ..Default::default()
     }
 }
 
@@ -320,4 +321,57 @@ proptest! {
         }
         check_model(&store, &texts, left, right);
     }
+}
+
+#[test]
+fn whole_articles_preserve_conjunction_exclusion_and_cross_boundary_phrases() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().display().to_string();
+    let core = HmsCore::new(64, Some(path.clone()), None).unwrap();
+    let mut article = vec!["filler"; 4095];
+    article.extend(["red", "blue", "fox"]);
+    let ingest = IngestOptions {
+        whole_document: true,
+        ..options(true, true)
+    };
+    core.memorize_documents_with(vec![input("article", &article.join(" "))], &ingest)
+        .unwrap();
+    for (query, expected) in [("+red +fox", 1), ("+red -fox", 0), ("\"red blue\"", 1)] {
+        assert_eq!(
+            core.count_lexical(&LexicalQuery::parse(query).unwrap())
+                .unwrap(),
+            expected
+        );
+    }
+    for length in [65_535, 65_536, 65_537] {
+        core.memorize_documents_with(
+            vec![input("wide", &format!("{} red blue", "x".repeat(length)))],
+            &ingest,
+        )
+        .unwrap();
+    }
+    core.flush().unwrap();
+    drop(core);
+    let core = HmsCore::new(64, Some(path), None).unwrap();
+    assert_eq!(
+        core.count_lexical(&LexicalQuery::parse("\"red blue\"").unwrap())
+            .unwrap(),
+        2
+    );
+    core.compact().unwrap();
+    core.delete_document("wide").unwrap();
+    assert_eq!(
+        core.count_lexical(&LexicalQuery::parse("+red -fox").unwrap())
+            .unwrap(),
+        0
+    );
+    assert!(core
+        .memorize_documents_with(
+            vec![input("bad", "red blue")],
+            &IngestOptions {
+                whole_document: true,
+                ..Default::default()
+            }
+        )
+        .is_err());
 }

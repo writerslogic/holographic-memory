@@ -461,7 +461,10 @@ pub(crate) fn read_document(
         if flags & CHUNK_POSITIONS != 0 {
             let version = reader.byte()?;
             ensure!(
-                version == super::positions::VERSION,
+                matches!(
+                    version,
+                    super::positions::VERSION | super::positions::DOCUMENT_VERSION
+                ),
                 "positional postings version {version} is newer than supported"
             );
             let count = reader.count(1)?;
@@ -520,6 +523,10 @@ mod positional_tests {
         env!("CARGO_MANIFEST_DIR"),
         "/tests/golden/lexical-postings-v1/positions-v1.bin"
     ));
+    const WHOLE: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/golden/lexical-postings-v1/whole-article-v2.bin"
+    ));
     const JSON: &[u8] = include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/golden/lexical-postings-v1/positions-v1.json"
@@ -535,7 +542,11 @@ mod positional_tests {
 
     #[test]
     fn positional_and_legacy_golden_bytes_round_trip() {
-        for (positions, bytes) in [(false, LEGACY), (true, POSITIONAL)] {
+        for (positions, whole_document, bytes) in [
+            (false, false, LEGACY),
+            (true, false, POSITIONAL),
+            (true, true, WHOLE),
+        ] {
             let input: DocumentInput = serde_json::from_value(serde_json::json!({
                 "id":"gold", "text":"red red fox", "storeText":false
             }))
@@ -550,6 +561,7 @@ mod positional_tests {
                     encode: EncodeMode::Lexical,
                     unstemmed: true,
                     positions,
+                    whole_document,
                 },
             )
             .unwrap();
@@ -572,7 +584,7 @@ mod positional_tests {
         assert_eq!(serde_json::to_vec(&terms).unwrap(), JSON);
         let mut future = POSITIONAL.to_vec();
         let version = future.len() - 9;
-        future[version] = 2;
+        future[version] = 3;
         assert!(decode(&future)
             .err()
             .unwrap()
@@ -584,7 +596,7 @@ mod positional_tests {
     fn malformed_positional_json_is_rejected() {
         let fixture: serde_json::Value = serde_json::from_slice(JSON).unwrap();
         for (key, value) in [
-            ("version", serde_json::json!(2)),
+            ("version", serde_json::json!(3)),
             ("offsets", serde_json::json!([0, 0, 3])),
             ("offsets", serde_json::json!([0, 1, 4])),
             ("offsets", serde_json::json!([0, 3, 1])),

@@ -311,13 +311,27 @@ impl MemoryDocumentStore {
                 chunk.start_byte <= chunk.end_byte,
                 "snapshot chunk has inverted byte offsets"
             );
+            ensure!(
+                !chunk.terms.is_whole_document()
+                    || (chunk.vector_state == super::VectorState::Lexical
+                        && document.chunks.len() == 1
+                        && chunk.start_byte == 0
+                        && chunk.end_byte as usize <= super::MAX_DOCUMENT_BYTES),
+                "snapshot whole-document postings require one bounded lexical chunk"
+            );
             let mut words = 0u64;
             for (_, &frequency) in &chunk.terms {
                 ensure!(frequency > 0, "snapshot term has a zero frequency");
                 words += u64::from(frequency);
             }
             ensure!(
-                words == chunk.word_count as u64 && words <= MAX_CHUNK_WORDS,
+                words == chunk.word_count as u64
+                    && words
+                        <= if chunk.terms.is_whole_document() {
+                            super::MAX_DOCUMENT_BYTES as u64
+                        } else {
+                            MAX_CHUNK_WORDS
+                        },
                 "snapshot chunk word count disagrees with its terms"
             );
             *total_words += words;
