@@ -805,7 +805,7 @@ impl UpdatableVGraph {
             }
         }
         drop(snapshot);
-        write_base(&self.dir, &manifest, &ids, rows)?;
+        write_base_with_checkpoints(&self.dir, &manifest, &ids, rows, &mut checkpoint)?;
         checkpoint(1)?;
         let base = Base::open(&self.dir, &manifest)?;
         let publication = (|| {
@@ -858,7 +858,19 @@ fn write_base(
     ids: &[u32],
     rows: Vec<f32>,
 ) -> Result<(), UpdateError> {
+    write_base_with_checkpoints(dir, manifest, ids, rows, |_| Ok(()))
+}
+
+fn write_base_with_checkpoints(
+    dir: &Path,
+    manifest: &Manifest,
+    ids: &[u32],
+    rows: Vec<f32>,
+    mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+) -> Result<(), UpdateError> {
+    checkpoint(6)?;
     BaseRows::write(&manifest.rows_path(dir), manifest, ids, &rows)?;
+    checkpoint(7)?;
     if !ids.is_empty() {
         let graph = Graph::build_owned(rows, manifest.dim, &manifest.build)?;
         let e = &manifest.encoding;
@@ -874,9 +886,12 @@ fn write_base(
         if e.block_bits != 0 {
             vertex = vertex.with_blocks(&graph, e.block_bits)?;
         }
+        checkpoint(8)?;
         vertex.save(&manifest.vertex_path(dir))?;
+        checkpoint(9)?;
     }
     sync_directory(dir)?;
+    checkpoint(10)?;
     Ok(())
 }
 

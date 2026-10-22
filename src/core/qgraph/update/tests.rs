@@ -556,7 +556,7 @@ fn killed_commit_and_consolidation_recover_complete_generations() {
     updated.insert(1, vec![9.; 4]);
     updated.remove(&2);
     updated.insert(100, vec![8.; 4]);
-    for (mode, points) in [("commit", 4), ("consolidate", 6)] {
+    for (mode, points) in [("commit", 4), ("consolidate", 11)] {
         for point in 0..points {
             let path = root.path().join(format!("{mode}-{point}"));
             copy_store(&source, &path);
