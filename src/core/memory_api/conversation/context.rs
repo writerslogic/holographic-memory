@@ -7,19 +7,54 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    invalid, label, sha256, source_id, ConversationEvidence, ConversationRole, ConversationSource,
-    Millis, MAX_CONVERSATION_BYTES, MAX_CONVERSATION_METADATA_BYTES, MAX_CONVERSATION_RECORDS,
+    aggregation_intent, invalid, label, query_words, round_index, sha256, source_id,
+    ConversationEvidence, ConversationMemory, ConversationRecallOptions, ConversationRole,
+    ConversationSource, Millis, MAX_CONVERSATION_BYTES, MAX_CONVERSATION_METADATA_BYTES,
+    MAX_CONVERSATION_RECORDS,
 };
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default, deny_unknown_fields)]
+pub struct ConversationContextLimits {
+    pub max_bytes: usize,
+    pub max_sources: usize,
+    /// Actual original rounds, including all returned premise sources.
+    pub max_rounds: usize,
+}
+
+impl Default for ConversationContextLimits {
+    fn default() -> Self {
+        Self {
+            max_bytes: 64 * 1024,
+            max_sources: 64,
+            max_rounds: 50,
+        }
+    }
+}
+
+impl ConversationContextLimits {
+    fn validate(&self) -> Result<()> {
+        if !(2..=MAX_CONVERSATION_BYTES).contains(&self.max_bytes)
+            || !(1..=MAX_CONVERSATION_RECORDS).contains(&self.max_sources)
+            || !(1..=MAX_CONVERSATION_RECORDS).contains(&self.max_rounds)
+        {
+            return Err(invalid("invalid conversation expansion bounds"));
+        }
+        Ok(())
+    }
+}
 
 /// Lossless source context with shared session identities and ordinal premise references.
 ///
 /// Each turn is `[session, index, source ID, role, observation time, text, premises]`.
+/// A premise is a local ordinal or an unresolved original record ID.
 /// This is an optional context encoding, not a retrieval unit or a sufficiency claim.
 /// The digest checks the reconstructed sources; it does not authenticate their author.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ConversationContext {
     schema_version: u32,
+    sufficiency: ContextSufficiency,
     sources_sha256: String,
     sessions: Vec<(String, String)>,
     turns: Vec<ContextTurn>,
@@ -33,11 +68,195 @@ struct ContextTurn(
     ConversationRole,
     Millis,
     String,
-    Vec<usize>,
+    Vec<ContextPremise>,
 );
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+enum ContextPremise {
+    Local(usize),
+    Unresolved(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum ContextSufficiency {
+    Unverified,
+}
+
+fn premise_id(id: &str) -> bool {
+    id.strip_prefix("conversation:source:")
+        .is_some_and(|hash| hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit()))
+}
+
+impl ConversationMemory {
+    /// Opt-in candidate census; returned evidence keeps its original retrieval budget.
+    pub fn recall_with_aggregation_context(
+        &self,
+        query: &str,
+        options: &ConversationRecallOptions,
+        limits: &ConversationContextLimits,
+    ) -> Result<(ConversationEvidence, ConversationContext)> {
+        limits.validate()?;
+        let seed = self.recall(query, options)?;
+        let candidates = if aggregation_intent(&query_words(query)) {
+            self.recall(
+                query,
+                &ConversationRecallOptions {
+                    k: 128,
+                    candidate_limit: 1000,
+                    max_sources: MAX_CONVERSATION_RECORDS,
+                    max_bytes: MAX_CONVERSATION_BYTES,
+                    max_rounds: None,
+                    ..options.clone()
+                },
+            )?
+        } else {
+            seed.clone()
+        };
+        let context = self.expand_aggregation_context(query, &seed, &candidates, limits)?;
+        Ok((seed, context))
+    }
+
+    /// Experimental enumeration evidence expansion. Retains every seed source, then admits
+    /// whole candidate closures in score order within the compact byte and raw-round limits.
+    /// Candidate acquisition is caller-controlled. Neither exhausted candidates nor the
+    /// returned mention set establishes an exhaustive event count.
+    pub fn expand_aggregation_context(
+        &self,
+        query: &str,
+        seed: &ConversationEvidence,
+        candidates: &ConversationEvidence,
+        limits: &ConversationContextLimits,
+    ) -> Result<ConversationContext> {
+        limits.validate()?;
+        if query.trim().is_empty()
+            || query.len() > 8192
+            || candidates.anchors.len() > MAX_CONVERSATION_RECORDS
+            || candidates.sources.len() > MAX_CONVERSATION_RECORDS
+            || seed.sources.len() > limits.max_sources
+        {
+            return Err(invalid("invalid conversation expansion bounds"));
+        }
+        let mut current = seed.pack_context(limits.max_bytes)?;
+        let expand = aggregation_intent(&query_words(query));
+        if expand {
+            ConversationContext::from_sources(&candidates.sources, MAX_CONVERSATION_BYTES)?;
+        }
+        let mut available = BTreeMap::new();
+        for source in seed
+            .sources
+            .iter()
+            .chain(candidates.sources.iter().filter(|_| expand))
+        {
+            if let Some(previous) = available.insert(source.record_id.clone(), source) {
+                if previous != source {
+                    return Err(invalid("conflicting conversation expansion source"));
+                }
+            }
+        }
+        if available.len() > MAX_CONVERSATION_RECORDS {
+            return Err(invalid(
+                "conversation expansion source allocation exceeds limit",
+            ));
+        }
+        let mut ordered: Vec<_> = available.values().copied().collect();
+        ordered.sort_by(|a, b| {
+            (&a.session_id, &a.version, a.turn_index).cmp(&(
+                &b.session_id,
+                &b.version,
+                b.turn_index,
+            ))
+        });
+        let mut rounds = BTreeMap::new();
+        let mut manifest = None;
+        let mut source_bytes = 0usize;
+        for source in ordered {
+            source_bytes = source_bytes
+                .checked_add(source.text.len())
+                .filter(|size| *size <= MAX_CONVERSATION_BYTES)
+                .ok_or_else(|| invalid("conversation expansion source allocation exceeds limit"))?;
+            if manifest.as_ref().is_none_or(|m: &super::Manifest| {
+                m.session_id != source.session_id || m.version != source.version
+            }) {
+                manifest = Some(self.manifest(&source.session_id, &source.version)?);
+            }
+            let manifest = manifest.as_ref().expect("source manifest loaded");
+            if self.hydrate(&source.record_id, manifest)?.as_ref() != Some(source) {
+                return Err(invalid("conversation expansion source missing or changed"));
+            }
+            rounds.insert(
+                source.record_id.clone(),
+                (
+                    source.session_id.clone(),
+                    source.version.clone(),
+                    round_index(manifest, source.turn_index),
+                ),
+            );
+        }
+        let mut selected: BTreeMap<_, _> = seed
+            .sources
+            .iter()
+            .map(|source| (source.record_id.clone(), source.clone()))
+            .collect();
+        let mut selected_rounds: HashSet<_> =
+            selected.keys().map(|id| rounds[id].clone()).collect();
+        if selected_rounds.len() > limits.max_rounds {
+            return Err(invalid("conversation seed exceeds raw round budget"));
+        }
+        if !expand {
+            return Ok(current);
+        }
+        let mut anchors: Vec<_> = candidates.anchors.iter().enumerate().collect();
+        for (_, anchor) in &anchors {
+            let Some(source) = available.get(&anchor.record_id) else {
+                return Err(invalid("conversation expansion anchor source is missing"));
+            };
+            if !anchor.score.is_finite()
+                || anchor.score < 0.0
+                || anchor.source_id != source.source_id
+                || anchor.session_id != source.session_id
+                || anchor.version != source.version
+                || anchor.turn_index != source.turn_index
+            {
+                return Err(invalid("invalid conversation expansion anchor"));
+            }
+        }
+        anchors.sort_by(|(a, x), (b, y)| y.score.total_cmp(&x.score).then(a.cmp(b)));
+        for (_, anchor) in anchors {
+            if anchor.score == 0.0 || selected.contains_key(&anchor.record_id) {
+                continue;
+            }
+            let source = available[&anchor.record_id];
+            let mut trial = selected.clone();
+            let mut trial_rounds = selected_rounds.clone();
+            for id in std::iter::once(&source.record_id).chain(&source.premise_record_ids) {
+                let Some(source) = available.get(id) else {
+                    return Err(invalid("conversation expansion anchor premise is missing"));
+                };
+                trial.insert(id.clone(), (**source).clone());
+                trial_rounds.insert(rounds[id].clone());
+            }
+            if trial.len() > limits.max_sources || trial_rounds.len() > limits.max_rounds {
+                continue;
+            }
+            let context = ConversationContext::from_sources(
+                &trial.values().cloned().collect::<Vec<_>>(),
+                MAX_CONVERSATION_BYTES,
+            )?;
+            if serde_json::to_vec(&context)?.len() > limits.max_bytes {
+                continue;
+            }
+            current = context;
+            selected = trial;
+            selected_rounds = trial_rounds;
+        }
+        Ok(current)
+    }
+}
+
 impl ConversationEvidence {
-    /// Pack exactly the returned sources, including their complete premise closures.
+    /// Pack exactly the returned sources, preserving unresolved canonical premise links.
     /// Anchors, scores and drops remain in the evidence receipt, outside reader context.
     pub fn pack_context(&self, max_bytes: usize) -> Result<ConversationContext> {
         ConversationContext::from_sources(&self.sources, max_bytes)
@@ -63,10 +282,7 @@ impl ConversationContext {
                 || source.turn_index >= MAX_CONVERSATION_RECORDS
                 || source.text.len() > MAX_CONVERSATION_METADATA_BYTES
                 || source.premise_record_ids.len() > 4
-                || source
-                    .premise_record_ids
-                    .iter()
-                    .any(|id| id.len() != "conversation:source:".len() + 64)
+                || source.premise_record_ids.iter().any(|id| !premise_id(id))
             {
                 return Err(invalid("invalid conversation context source"));
             }
@@ -113,13 +329,11 @@ impl ConversationContext {
             let premises = source
                 .premise_record_ids
                 .iter()
-                .map(|id| {
-                    source_index
-                        .get(id.as_str())
-                        .copied()
-                        .ok_or_else(|| invalid("conversation context premise is missing"))
+                .map(|id| match source_index.get(id.as_str()) {
+                    Some(index) => ContextPremise::Local(*index),
+                    None => ContextPremise::Unresolved(id.clone()),
                 })
-                .collect::<Result<_>>()?;
+                .collect();
             turns.push(ContextTurn(
                 session_index[&(source.session_id.clone(), source.version.clone())],
                 source.turn_index,
@@ -132,6 +346,7 @@ impl ConversationContext {
         }
         let context = Self {
             schema_version: 1,
+            sufficiency: ContextSufficiency::Unverified,
             sources_sha256: sha256(&serde_json::to_vec(&ordered)?),
             sessions,
             turns,
@@ -152,6 +367,20 @@ impl ConversationContext {
             .map_err(|_| invalid("invalid conversation context frame"))?;
         context.sources()?;
         Ok(context)
+    }
+
+    /// Canonical links whose sources are absent from this context. No sources are invented.
+    pub fn unresolved_premise_ids(&self) -> Result<Vec<String>> {
+        let sources = self.sources()?;
+        let available: HashSet<_> = sources.iter().map(|source| &source.record_id).collect();
+        Ok(sources
+            .iter()
+            .flat_map(|source| &source.premise_record_ids)
+            .filter(|id| !available.contains(id))
+            .cloned()
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect())
     }
 
     /// Reconstruct immutable source records in canonical session/version/turn order.
@@ -198,22 +427,35 @@ impl ConversationContext {
             let mut premise_record_ids = Vec::with_capacity(premises.len());
             let mut last_premise = None;
             for premise in premises {
-                let Some(source) = sources.get(*premise) else {
-                    return Err(invalid(
-                        "conversation context premise is missing or forward",
-                    ));
-                };
-                if source.session_id != *session_id
-                    || source.version != *version
-                    || source.turn_index >= *index
-                    || last_premise.is_some_and(|position| position >= *premise)
-                {
-                    return Err(invalid(
-                        "conversation context premise scope or order differs",
-                    ));
+                match premise {
+                    ContextPremise::Unresolved(id) => {
+                        if !premise_id(id) {
+                            return Err(invalid("invalid unresolved conversation premise"));
+                        }
+                        premise_record_ids.push(id.clone());
+                    }
+                    ContextPremise::Local(premise) => {
+                        let Some(source) = sources.get(*premise) else {
+                            return Err(invalid(
+                                "conversation context premise is missing or forward",
+                            ));
+                        };
+                        if source.session_id != *session_id
+                            || source.version != *version
+                            || source.turn_index >= *index
+                            || last_premise.is_some_and(|position| position >= *premise)
+                        {
+                            return Err(invalid(
+                                "conversation context premise scope or order differs",
+                            ));
+                        }
+                        last_premise = Some(*premise);
+                        premise_record_ids.push(source.record_id.clone());
+                    }
                 }
-                last_premise = Some(*premise);
-                premise_record_ids.push(source.record_id.clone());
+            }
+            if premise_record_ids.iter().collect::<HashSet<_>>().len() != premise_record_ids.len() {
+                return Err(invalid("duplicate conversation context premise"));
             }
             sources.push(ConversationSource {
                 record_id: source_id(session_id, version, *index, id)?,
@@ -228,6 +470,14 @@ impl ConversationContext {
             });
             previous = Some((*session, *index));
             used_sessions.insert(*session);
+        }
+        let available: HashSet<_> = sources.iter().map(|source| &source.record_id).collect();
+        if self.turns.iter().any(|turn| {
+            turn.6.iter().any(|premise| {
+                matches!(premise, ContextPremise::Unresolved(id) if available.contains(id))
+            })
+        }) {
+            return Err(invalid("conversation premise must use its local ordinal"));
         }
         if used_sessions.len() != self.sessions.len()
             || sha256(&serde_json::to_vec(&sources)?) != self.sources_sha256

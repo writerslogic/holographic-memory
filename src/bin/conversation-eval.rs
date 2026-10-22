@@ -9,7 +9,8 @@ use std::time::Instant;
 
 use clap::Parser;
 use holographic_memory::core::memory_api::{
-    ConversationInput, ConversationMemory, ConversationRecallOptions, MemoryError,
+    ConversationContextLimits, ConversationInput, ConversationMemory, ConversationRecallOptions,
+    MemoryError,
 };
 use holographic_memory::core::HmsConfig;
 use holographic_memory::HmsCore;
@@ -56,6 +57,8 @@ enum Command {
         options: ConversationRecallOptions,
         #[serde(default, rename = "compactContext")]
         compact_context: bool,
+        #[serde(default, rename = "contextExpansion")]
+        context_expansion: Option<ConversationContextLimits>,
     },
     Reset {},
 }
@@ -394,6 +397,7 @@ impl Runtime {
                 query,
                 options,
                 compact_context,
+                context_expansion,
             } => {
                 let models = self
                     .backend
@@ -405,16 +409,30 @@ impl Runtime {
                     .recall_attempts
                     .checked_add(1)
                     .ok_or("count_overflow")?;
-                let searches = if models { options.roles.len() * 4 } else { 0 };
+                let searches = if models {
+                    options.roles.len() * 4 * if context_expansion.is_some() { 2 } else { 1 }
+                } else {
+                    0
+                };
                 let started = Instant::now();
-                let result = history.memory.recall(&query, &options);
+                let result = if let Some(limits) = &context_expansion {
+                    history
+                        .memory
+                        .recall_with_aggregation_context(&query, &options, limits)
+                        .map(|(evidence, context)| (evidence, Some(context)))
+                } else {
+                    history
+                        .memory
+                        .recall(&query, &options)
+                        .and_then(|evidence| {
+                            let context = compact_context
+                                .then(|| evidence.pack_context(options.max_bytes))
+                                .transpose()?;
+                            Ok((evidence, context))
+                        })
+                };
                 timings.query_seconds = started.elapsed().as_secs_f64();
-                let evidence = result.map_err(memory_error_code)?;
-                let context = compact_context
-                    .then(|| evidence.pack_context(options.max_bytes))
-                    .transpose()
-                    .map_err(memory_error_code)?;
-                timings.query_seconds = started.elapsed().as_secs_f64();
+                let (evidence, context) = result.map_err(memory_error_code)?;
                 let mut response = json!({"evidence": evidence, "recallOptions": options,
                           "modelUsageBounds": {"maxNativeSearches": searches, "maxQueryPlanCalls": searches,
                                                "maxQueryEmbeddingInputs": searches * 6,
@@ -675,6 +693,7 @@ mod tests {
             query: "Asterneedle".into(),
             options: profile_recall_options(),
             compact_context: true,
+            context_expansion: None,
         });
         assert_eq!(before["evidence"]["sources"].as_array().unwrap().len(), 1);
         let context: holographic_memory::core::memory_api::ConversationContext =
@@ -692,6 +711,7 @@ mod tests {
             query: "Asterneedle".into(),
             options: profile_recall_options(),
             compact_context: false,
+            context_expansion: None,
         });
         assert_eq!(after["epoch"], 2);
         assert!(after["evidence"]["sources"].as_array().unwrap().is_empty());
