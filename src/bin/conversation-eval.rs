@@ -9,7 +9,7 @@ use std::time::Instant;
 
 use clap::Parser;
 use holographic_memory::core::memory_api::{
-    ConversationInput, ConversationMemory, ConversationRecallOptions, ConversationRole, MemoryError,
+    ConversationInput, ConversationMemory, ConversationRecallOptions, MemoryError,
 };
 use holographic_memory::core::HmsConfig;
 use holographic_memory::HmsCore;
@@ -35,6 +35,9 @@ struct Args {
     /// Use lexical retrieval without loading any model.
     #[arg(long)]
     lexical: bool,
+    /// Total fused weight of generated subqueries; zero retains only the main query and rewrite.
+    #[arg(long, default_value_t = 0.0)]
+    subquery_weight: f64,
 }
 
 #[derive(Deserialize)]
@@ -67,13 +70,7 @@ impl Command {
 }
 
 fn profile_recall_options() -> ConversationRecallOptions {
-    ConversationRecallOptions {
-        roles: vec![ConversationRole::User, ConversationRole::Assistant],
-        k: 64,
-        candidate_limit: 256,
-        max_sources: 128,
-        max_bytes: 65536,
-    }
+    ConversationRecallOptions::default()
 }
 
 #[derive(Default, Clone, Serialize)]
@@ -129,12 +126,12 @@ impl Backend {
     }
 
     #[cfg(not(feature = "local-models"))]
-    fn models(_root: PathBuf) -> anyhow::Result<Self> {
+    fn models(_root: PathBuf, _subquery_weight: f64) -> anyhow::Result<Self> {
         anyhow::bail!("model stages are unavailable in this build")
     }
 
     #[cfg(feature = "local-models")]
-    fn models(root: PathBuf) -> anyhow::Result<Self> {
+    fn models(root: PathBuf, subquery_weight: f64) -> anyhow::Result<Self> {
         use holographic_memory::core::models::{
             default_device, Embedder, EmbeddingQueryTask, Generator, ModelSource, ModelStages,
             Reranker, StageParams, PINNED,
@@ -173,7 +170,7 @@ impl Backend {
         let params = StageParams {
             orig_weight: 1.0,
             rewrite_weight: 1.0,
-            subquery_weight: 1.0,
+            subquery_weight,
             ..StageParams::default()
         };
         params.validate()?;
@@ -310,6 +307,9 @@ impl Runtime {
                 if self.backend.is_some() {
                     return Err("already_initialized");
                 }
+                if !self.args.subquery_weight.is_finite() || self.args.subquery_weight < 0.0 {
+                    return Err("invalid_subquery_weight");
+                }
                 if self.args.lexical && model_root.is_some() {
                     return Err("conflicting_backend_options");
                 }
@@ -325,7 +325,7 @@ impl Runtime {
                 }
                 let started = Instant::now();
                 let backend = root
-                    .map(Backend::models)
+                    .map(|root| Backend::models(root, self.args.subquery_weight))
                     .unwrap_or_else(|| Ok(Backend::lexical()));
                 timings.model_load_seconds = started.elapsed().as_secs_f64();
                 let backend = backend.map_err(|_| "model_load_failed")?;
@@ -621,6 +621,7 @@ mod tests {
             Args {
                 lexical: true,
                 models: None,
+                subquery_weight: 0.0,
             },
             &mut Cursor::new(input),
             &mut output,
@@ -644,6 +645,7 @@ mod tests {
         let mut runtime = Runtime::new(Args {
             lexical: true,
             models: None,
+            subquery_weight: 0.0,
         });
         let initialized = runtime.reply(Command::Initialize { model_root: None });
         let input: ConversationInput = serde_json::from_value(json!({"sessionId": "synthetic", "version": "1", "turns": [
@@ -669,5 +671,20 @@ mod tests {
         });
         assert_eq!(after["epoch"], 2);
         assert!(after["evidence"]["sources"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn invalid_subquery_weights_fail_before_backend_initialization() {
+        for weight in [-f64::EPSILON, f64::NAN, f64::INFINITY] {
+            let mut runtime = Runtime::new(Args {
+                lexical: true,
+                models: None,
+                subquery_weight: weight,
+            });
+            let reply = runtime.reply(Command::Initialize { model_root: None });
+            assert_eq!(reply["error"]["code"], "invalid_subquery_weight");
+            assert_eq!(reply["epoch"], 0);
+            assert!(runtime.backend.is_none());
+        }
     }
 }
