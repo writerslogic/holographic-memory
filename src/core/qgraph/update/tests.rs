@@ -821,3 +821,56 @@ fn scratch_reuse_distinguishes_dimensions_with_equal_padding() {
         .unwrap();
     assert_eq!(narrow.search(&[1.; 31], 10, p).unwrap(), expected);
 }
+
+#[test]
+fn batch_insert_is_atomic_reachable_and_survives_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let dim = 16;
+    let n = 3000;
+    let rows = data(n, dim);
+    let index = UpdatableVGraph::create(&path, &[], dim, &params()).unwrap();
+    let ids: Vec<u32> = (0..n as u32).map(|i| i * 3).collect();
+    // A duplicate rejects the whole batch.
+    let mut bad = ids[..10].to_vec();
+    bad[9] = bad[0];
+    assert!(matches!(
+        index.insert_batch(&bad, &rows[..10 * dim]),
+        Err(UpdateError::DuplicateIdInBatch(_))
+    ));
+    assert_eq!(index.len(), 0);
+    for (chunk, rows) in ids.chunks(700).zip(rows.chunks(700 * dim)) {
+        index.insert_batch(chunk, rows).unwrap();
+        index.commit().unwrap();
+    }
+    for &id in ids.iter().step_by(3) {
+        index.delete(id).unwrap();
+    }
+    index.commit().unwrap();
+    let live: BTreeMap<u32, Vec<f32>> = ids
+        .iter()
+        .zip(rows.chunks_exact(dim))
+        .enumerate()
+        .filter(|(i, _)| i % 3 != 0)
+        .map(|(_, (&id, row))| (id, row.to_vec()))
+        .collect();
+    let check = |index: &UpdatableVGraph| {
+        let params = VSearchParams {
+            ef: 64,
+            rerank: 64,
+            ..Default::default()
+        };
+        let mut hits = 0;
+        for (&id, row) in &live {
+            let found = index.search(row, 10, params).unwrap();
+            assert_eq!(found[0], id, "live id {id} is not its own nearest");
+            let want = exact(&live, row, 10);
+            hits += found.iter().filter(|f| want.contains(f)).count();
+        }
+        let recall = hits as f64 / (live.len() * 10) as f64;
+        assert!(recall > 0.95, "recall@10 {recall}");
+    };
+    check(&index);
+    drop(index);
+    check(&UpdatableVGraph::open(&path).unwrap());
+}
