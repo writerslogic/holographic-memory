@@ -81,8 +81,8 @@ impl Default for ConversationRecallOptions {
             candidate_limit: 128,
             max_sources: 64,
             max_bytes: 64 * 1024,
-            max_rounds: None,
-            assistant_weight: 1.0,
+            max_rounds: Some(10),
+            assistant_weight: 0.96,
             session_diversity: 0.0,
         }
     }

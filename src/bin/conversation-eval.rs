@@ -9,7 +9,7 @@ use std::time::Instant;
 
 use clap::Parser;
 use holographic_memory::core::memory_api::{
-    ConversationInput, ConversationMemory, ConversationRecallOptions, ConversationRole, MemoryError,
+    ConversationInput, ConversationMemory, ConversationRecallOptions, MemoryError,
 };
 use holographic_memory::core::HmsConfig;
 use holographic_memory::HmsCore;
@@ -70,14 +70,7 @@ impl Command {
 }
 
 fn profile_recall_options() -> ConversationRecallOptions {
-    ConversationRecallOptions {
-        roles: vec![ConversationRole::User, ConversationRole::Assistant],
-        k: 64,
-        candidate_limit: 256,
-        max_sources: 128,
-        max_bytes: 65536,
-        ..ConversationRecallOptions::default()
-    }
+    ConversationRecallOptions::default()
 }
 
 #[derive(Default, Clone, Serialize)]
@@ -313,6 +306,9 @@ impl Runtime {
             Command::Initialize { model_root } => {
                 if self.backend.is_some() {
                     return Err("already_initialized");
+                }
+                if !self.args.subquery_weight.is_finite() || self.args.subquery_weight < 0.0 {
+                    return Err("invalid_subquery_weight");
                 }
                 if self.args.lexical && model_root.is_some() {
                     return Err("conflicting_backend_options");
@@ -675,5 +671,20 @@ mod tests {
         });
         assert_eq!(after["epoch"], 2);
         assert!(after["evidence"]["sources"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn invalid_subquery_weights_fail_before_backend_initialization() {
+        for weight in [-f64::EPSILON, f64::NAN, f64::INFINITY] {
+            let mut runtime = Runtime::new(Args {
+                lexical: true,
+                models: None,
+                subquery_weight: weight,
+            });
+            let reply = runtime.reply(Command::Initialize { model_root: None });
+            assert_eq!(reply["error"]["code"], "invalid_subquery_weight");
+            assert_eq!(reply["epoch"], 0);
+            assert!(runtime.backend.is_none());
+        }
     }
 }

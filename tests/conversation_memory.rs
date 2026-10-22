@@ -41,6 +41,7 @@ fn options(roles: Vec<ConversationRole>) -> ConversationRecallOptions {
         candidate_limit: 32,
         max_sources: 16,
         max_bytes: 128 * 1024,
+        max_rounds: None,
         ..ConversationRecallOptions::default()
     }
 }
@@ -821,8 +822,10 @@ fn round_budget_counts_complete_premise_closures_at_the_exact_boundary() {
         opts.max_rounds = Some(limit);
         assert!(memory.recall("roundbudgetneedle", &opts).is_err());
     }
-    opts.max_rounds = Some(4096);
-    assert!(memory.recall("roundbudgetneedle", &opts).is_ok());
+    for limit in [4095, 4096] {
+        opts.max_rounds = Some(limit);
+        assert!(memory.recall("roundbudgetneedle", &opts).is_ok());
+    }
 }
 
 #[test]
@@ -864,6 +867,10 @@ fn assistant_weight_preserves_explicit_assistant_queries_and_role_requests() {
         memory.recall("roleweightneedle", &opts).unwrap().sources[0].role,
         ConversationRole::Assistant
     );
+    for weight in [0.0, f64::EPSILON, 4.0 - f64::EPSILON * 4.0, 4.0] {
+        opts.assistant_weight = weight;
+        assert!(memory.recall("roleweightneedle", &opts).is_ok());
+    }
     for weight in [-0.01, 4.01, f64::NAN, f64::INFINITY] {
         opts.assistant_weight = weight;
         assert!(memory.recall("roleweightneedle", &opts).is_err());
@@ -912,6 +919,10 @@ fn aggregation_mmr_selects_another_session_before_a_repeated_session() {
         ordinary,
         memory.recall("diversityneedle visit", &opts).unwrap()
     );
+    for strength in [0.0, f64::EPSILON, 1.0 - f64::EPSILON, 1.0] {
+        opts.session_diversity = strength;
+        assert!(memory.recall("diversityneedle", &opts).is_ok());
+    }
     for strength in [-0.01, 1.01, f64::NAN, f64::INFINITY] {
         opts.session_diversity = strength;
         assert!(memory.recall("diversityneedle", &opts).is_err());

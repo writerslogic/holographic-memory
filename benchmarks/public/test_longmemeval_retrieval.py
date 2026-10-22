@@ -65,6 +65,25 @@ class RetrievalTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             R.native_groups(evidence, {"user": original}, raw)
 
+    def test_oracle_respects_premise_round_costs_and_missing_sessions(self):
+        groups, sources, anchors = [], [], []
+        for si in range(4):
+            premises = []
+            for ti in range(3):
+                identity = f"{si}:{ti}"
+                member = {**source(identity), "sessionId": str(si), "recordId": identity,
+                          "premiseRecordIds": list(premises)}
+                sources.append(member)
+                groups.append(group(identity, str(si), member))
+                premises.append(identity)
+            anchors.append({"recordId": identity})
+        result = R.budget_ceiling({"sources": sources, "anchors": anchors}, groups,
+                                  {"0", "1", "2", "3", "missing"}, {"3:2"})
+        self.assertEqual(result["candidate_session_recall"], 0.8)
+        self.assertEqual(result["candidate_turn_recall"], 1)
+        self.assertEqual(result["session_oracle@10"], 0.6)
+        self.assertEqual(result["session_oracle@20"], 0.8)
+
 
 if __name__ == "__main__":
     unittest.main()
