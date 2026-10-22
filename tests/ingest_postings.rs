@@ -340,6 +340,7 @@ fn reused_slots_replacements_and_deferred_catch_up_match_a_fresh_store() -> anyh
     // which re-installs every document with unchanged terms.
     let deferred_options = IngestOptions {
         encode: EncodeMode::Deferred,
+        ..Default::default()
     };
     deferred.memorize_documents_with(replaced.clone(), &deferred_options)?;
     assert_eq!(deferred.vector_count(), 0);

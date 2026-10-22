@@ -141,6 +141,10 @@ impl std::str::FromStr for EncodeMode {
 #[serde(rename_all = "camelCase", default)]
 pub struct IngestOptions {
     pub encode: EncodeMode,
+    /// Index each word lowercased but not stemmed, so a document matches only the query words
+    /// it contains as written. The default stems every word with the English Snowball stemmer.
+    /// Query terms are matched in both forms, so one store may hold documents of either kind.
+    pub unstemmed: bool,
 }
 
 /// Persisted state of a chunk's hypervector. Written only when not `Encoded`, so a store
@@ -649,6 +653,8 @@ struct Interner {
     counts: Vec<u32>,
     counted: Vec<u32>,
     lower: String,
+    /// Terms are the lowercased words themselves rather than their stems.
+    unstemmed: bool,
 }
 
 /// Word -> term id. A word of at most 16 bytes (nearly every word) is keyed by its bytes
@@ -705,7 +711,11 @@ impl Interner {
             // `str::to_lowercase`, not per-char mapping: it applies the final-sigma rule.
             self.lower.push_str(&word.to_lowercase());
         }
-        let stem = stemmer().stem(&self.lower);
+        let stem = if self.unstemmed {
+            std::borrow::Cow::Borrowed(self.lower.as_str())
+        } else {
+            stemmer().stem(&self.lower)
+        };
         let id = match self.ids.get(stem.as_ref()) {
             Some(&id) => id,
             None => {
@@ -776,9 +786,12 @@ impl Interner {
     /// The term table of `text` with its first line's terms counted `title_weight` times in
     /// total, and the weighted word count: what `terms(text, true)` plus the title weighting
     /// produce.
-    fn chunk_terms(&mut self, text: &str, title_weight: u32) -> (StoredTerms, usize) {
-        if self.words.len() >= STEM_MEMO_CAPACITY {
-            *self = Self::default();
+    fn chunk_terms(&mut self, text: &str, title_weight: u32, stem: bool) -> (StoredTerms, usize) {
+        if self.words.len() >= STEM_MEMO_CAPACITY || self.unstemmed == stem {
+            *self = Self {
+                unstemmed: !stem,
+                ..Self::default()
+            };
         }
         let mut words = self.count(text, 1);
         if title_weight > 1 {
@@ -897,10 +910,10 @@ impl Drop for PooledStemMemo<'_> {
 
 /// [`Interner::chunk_terms`] through the batch interner installed on this thread, or a
 /// one-off one.
-fn chunk_terms(text: &str, title_weight: u32) -> (StoredTerms, usize) {
+fn chunk_terms(text: &str, title_weight: u32, stem: bool) -> (StoredTerms, usize) {
     ACTIVE_STEM_MEMO.with(|active| match active.borrow_mut().as_mut() {
-        Some(interner) => interner.chunk_terms(text, title_weight),
-        None => Interner::default().chunk_terms(text, title_weight),
+        Some(interner) => interner.chunk_terms(text, title_weight, stem),
+        None => Interner::default().chunk_terms(text, title_weight, stem),
     })
 }
 
@@ -916,7 +929,7 @@ pub(crate) fn prepare(
         embedding_dimensions,
         None,
         encoder,
-        EncodeMode::Eager,
+        &IngestOptions::default(),
     )
 }
 
@@ -929,9 +942,9 @@ pub(crate) fn prepare_with_options(
     embedding_dimensions: Option<usize>,
     keys: Option<&[String]>,
     encoder: TextEncoder,
-    mode: EncodeMode,
+    options: &IngestOptions,
 ) -> Result<StoredDocument> {
-    check_mode(&input, encoder, mode)?;
+    check_mode(&input, encoder, options.encode)?;
     let spans = chunk_spans(&input)?;
     prepare_spans(
         input,
@@ -940,7 +953,7 @@ pub(crate) fn prepare_with_options(
         embedding_dimensions,
         keys,
         encoder,
-        mode,
+        options,
     )
 }
 
@@ -965,8 +978,9 @@ pub(crate) fn prepare_spans(
     embedding_dimensions: Option<usize>,
     keys: Option<&[String]>,
     encoder: TextEncoder,
-    mode: EncodeMode,
+    options: &IngestOptions,
 ) -> Result<StoredDocument> {
+    let mode = options.encode;
     check_mode(&input, encoder, mode)?;
     ensure!(
         keys.is_none_or(|k| k.len() == chunks.len()),
@@ -1010,7 +1024,11 @@ pub(crate) fn prepare_spans(
     for (i, &(start_byte, end_byte)) in chunks.iter().enumerate() {
         let text = &input.text[start_byte as usize..end_byte as usize];
         let source = keys.map_or(text, |k| k[i].as_str());
-        let (terms, word_count) = chunk_terms(source, if i == 0 { title_weight } else { 1 });
+        let (terms, word_count) = chunk_terms(
+            source,
+            if i == 0 { title_weight } else { 1 },
+            !options.unstemmed,
+        );
         let embedding = input
             .embeddings
             .as_ref()
@@ -1051,7 +1069,7 @@ pub(crate) fn prepare_spans(
             embedding,
             terms,
             word_count,
-            stemmed: true,
+            stemmed: !options.unstemmed,
         });
     }
     let mut document = StoredDocument {
@@ -1102,6 +1120,10 @@ pub(crate) fn capture_search(
     prepared: Vec<PreparedSearch>,
 ) -> CapturedSearch {
     search::capture_search(store, prepared)
+}
+
+pub(crate) fn count_matches(store: &DocumentStore, text: &str) -> Result<usize> {
+    search::count_matches(store, text)
 }
 
 pub(crate) fn execute_search(captured: &CapturedSearch, query: usize) -> Vec<DocumentResult> {

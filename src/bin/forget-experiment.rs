@@ -270,7 +270,13 @@ fn open(dir: &Path, ds: &Dataset) -> Result<HmsCore> {
 
 fn ingest(core: &HmsCore, ds: &Dataset, docs: &[Doc]) -> Result<()> {
     let inputs = docs.iter().map(input).collect::<Result<Vec<_>>>()?;
-    core.memorize_documents_with(inputs, &IngestOptions { encode: ds.encode })?;
+    core.memorize_documents_with(
+        inputs,
+        &IngestOptions {
+            encode: ds.encode,
+            ..Default::default()
+        },
+    )?;
     Ok(())
 }
 
