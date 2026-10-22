@@ -129,7 +129,7 @@ single host. Old official and stopped/inconclusive regression evidence remains
 frozen. No new official, competitor-superiority, hardware-counter, isolated-RSS,
 or in-distribution performance claim is established. No commit or push was made.
 
-The user subsequently authorized PR submission. The implementation was rebased
+The implementation was rebased
 onto main at 1cfb43f850fbdf11e823f9217010b22a364106f6, incorporating its streaming
 consolidation changes. Encoding now reuses main's VertexLayout validation and
 GraphView BFS interface; the streaming encoder and its byte-parity tests remain

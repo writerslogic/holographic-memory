@@ -2893,7 +2893,7 @@ mod serving_tests {
                 ] {
                     let mut a = index.searcher_with(knobs);
                     let mut b = index.searcher_with(knobs);
-                    for q in rows.chunks_exact(32).take(8) {
+                    for q in rows.as_chunks::<32>().0.iter().take(8) {
                         let mut out = Vec::new();
                         let p = VSearchParams {
                             ef: 12,

@@ -432,7 +432,7 @@ fn compare_serving(
                 };
                 for (i, (query, expected)) in queries
                     .chunks_exact(dim)
-                    .zip(truth.chunks_exact(100))
+                    .zip(truth.as_chunks::<100>().0)
                     .enumerate()
                 {
                     let transformed: Vec<_> = query
