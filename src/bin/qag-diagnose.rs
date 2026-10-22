@@ -256,7 +256,7 @@ fn main() -> Result<()> {
             let mut hits = 0;
             for (i, (query, expected)) in transformed
                 .chunks_exact(dim + 1)
-                .zip(truth.chunks_exact(100))
+                .zip(truth.as_chunks::<100>().0)
                 .enumerate()
             {
                 let profile = searcher.profile_search(query, 100, settings, &mut out)?;
