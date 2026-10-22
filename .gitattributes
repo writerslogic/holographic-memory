@@ -11,3 +11,6 @@ benchmarks/results/vibe_v1/**/*.log filter=lfs diff=lfs merge=lfs -text
 benchmarks/results/vibe_v1/native/*.json filter=lfs diff=lfs merge=lfs -text
 benchmarks/results/vibe_v1/diagnostic/laion-*.json filter=lfs diff=lfs merge=lfs -text
 benchmarks/results/vibe_v1/leaderboard.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/query_aware_graph_v1/llama-*.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/query_aware_graph_v1/yi-*.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/query_aware_graph_v1/*.hdf5 filter=lfs diff=lfs merge=lfs -text

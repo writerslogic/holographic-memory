@@ -8,6 +8,18 @@ use super::kernels::Rotation;
 use super::{invalid, Graph, Metric, VGraph, VSearchParams, VSearcher};
 use crate::core::error::HmsError;
 
+/// Original vertex IDs at each boundary of a diagnostic traversal.
+#[derive(Clone, Debug, Default)]
+pub struct TraversalDiagnostic {
+    pub results: Vec<u32>,
+    /// Unique vertices scored during descent or base-layer traversal.
+    pub evaluated: Vec<u32>,
+    /// Final beam in routing-score order, before residual reranking.
+    pub retained: Vec<u32>,
+    /// Retained vertices passed to residual reranking; empty when reranking is disabled.
+    pub rerank_candidates: Vec<u32>,
+}
+
 #[derive(Clone, Copy, Debug)]
 struct Candidate(f64, u32);
 
@@ -28,7 +40,7 @@ impl Ord for Candidate {
     }
 }
 
-/// Diagnostic control using uncompressed graph vectors and float64 cosine scoring.
+/// Diagnostic control using uncompressed graph vectors and float64 metric scoring.
 /// This keeps the production graph topology but does not model compact-index memory.
 pub struct ExactSearcher<'a> {
     graph: &'a Graph,
@@ -65,11 +77,11 @@ impl<'a> ExactSearcher<'a> {
     fn validate(&self, query: &[f32], k: usize) -> Result<(), HmsError> {
         if query.len() != self.graph.dim
             || query.iter().any(|v| !v.is_finite())
-            || query.iter().all(|&v| v == 0.0)
+            || (self.graph.metric == Metric::Angular && query.iter().all(|&v| v == 0.0))
             || k == 0
             || k > self.graph.n
         {
-            return Err(invalid("diagnostic search requires finite nonzero query of index dimension and 1 <= k <= n".into()));
+            return Err(invalid("diagnostic search requires a finite query of index dimension, nonzero for angular, and 1 <= k <= n".into()));
         }
         Ok(())
     }
@@ -77,6 +89,16 @@ impl<'a> ExactSearcher<'a> {
     fn score(&self, query: &[f32], id: u32) -> Candidate {
         let row =
             &self.graph.vectors[id as usize * self.graph.dim..(id as usize + 1) * self.graph.dim];
+        if self.graph.metric == Metric::Euclidean {
+            return Candidate(
+                query
+                    .iter()
+                    .zip(row)
+                    .map(|(&a, &b)| (f64::from(a) - f64::from(b)).powi(2))
+                    .sum(),
+                id,
+            );
+        }
         let norm = self.norms[id as usize];
         let similarity = if norm == 0.0 {
             0.0
@@ -357,6 +379,216 @@ impl RotationSearcher<'_> {
 mod tests {
     use super::*;
     use crate::core::qgraph::{BuildParams, VGraph, VSearchParams};
+
+    #[test]
+    fn diagnostic_coded_results_and_candidate_boundaries_match_production() {
+        let dim = 8;
+        let data: Vec<f32> = (0..1056 * dim)
+            .map(|i| ((i * 73 + 11) as f32).sin())
+            .collect();
+        let graph = Graph::build(
+            &data,
+            dim,
+            &BuildParams {
+                degree: 8,
+                build_ef: 32,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let mut index = VGraph::from_graph_with(&graph, 4, 8, true, true, 3, false).unwrap();
+        let query = &data[191 * dim..192 * dim];
+        let mut production = Vec::new();
+        for rerank in [0, 14, 15, 16, 100] {
+            let params = VSearchParams {
+                ef: 37,
+                rerank,
+                ..Default::default()
+            };
+            index
+                .searcher_with(super::super::SearchKnobs::OFF)
+                .search(query, 7, params, &mut production)
+                .unwrap();
+            let report = index
+                .diagnose(&graph, query, 7, params, None, false)
+                .unwrap();
+            assert_eq!(report.results, production);
+            assert!(report
+                .retained
+                .iter()
+                .all(|id| report.evaluated.contains(id)));
+            assert!(report
+                .rerank_candidates
+                .iter()
+                .all(|id| report.retained.contains(id)));
+            assert_eq!(
+                report.rerank_candidates.len(),
+                if rerank == 0 {
+                    0
+                } else {
+                    rerank.max(7).min(37)
+                }
+            );
+            for exact in [false, true] {
+                let oracle = index
+                    .diagnose(&graph, query, 7, params, Some(191), exact)
+                    .unwrap();
+                assert!(oracle.evaluated.contains(&191));
+                assert_eq!(
+                    index
+                        .diagnose(&graph, query, 7, params, None, false)
+                        .unwrap()
+                        .results,
+                    production
+                );
+            }
+        }
+        for oracle in [1055, 1056, 1057] {
+            assert_eq!(
+                index
+                    .diagnose(
+                        &graph,
+                        query,
+                        7,
+                        VSearchParams::default(),
+                        Some(oracle),
+                        false
+                    )
+                    .is_ok(),
+                oracle < 1056
+            );
+        }
+    }
+
+    #[test]
+    fn diagnostic_oracle_maps_original_ids_and_restores_serialized_bytes() {
+        let mut graph = Graph::build(
+            &[0., 0., 1., 0., 0., 2., 3., 3.],
+            2,
+            &BuildParams {
+                metric: Metric::Euclidean,
+                degree: 2,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        graph.entry = 3;
+        graph.adj = super::super::adjacency::Adjacency::new(4, 2);
+        let mut index = VGraph::from_graph_with(&graph, 4, 8, true, true, 3, false).unwrap();
+        let path =
+            std::env::temp_dir().join(format!("hms-navigation-diagnostic-{}", std::process::id()));
+        index.save(&path).unwrap();
+        let before = std::fs::read(&path).unwrap();
+        for id in 0..4 {
+            for exact in [false, true] {
+                let report = index
+                    .diagnose(
+                        &graph,
+                        &[0., 0.],
+                        1,
+                        VSearchParams {
+                            ef: 1,
+                            ..Default::default()
+                        },
+                        Some(id),
+                        exact,
+                    )
+                    .unwrap();
+                assert_eq!(report.evaluated, [id]);
+                assert_eq!(report.results, [id]);
+            }
+        }
+        index.save(&path).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn exact_euclidean_controls_match_brute_force_and_asymmetric_mips() {
+        for (data, dim, query) in [
+            (vec![0., 0., 1., 0., 0., 2., 3., 3.], 2, vec![0., 0.]),
+            (
+                vec![
+                    3.,
+                    0.,
+                    0.,
+                    0.,
+                    2.,
+                    5f32.sqrt(),
+                    1.,
+                    1.,
+                    7f32.sqrt(),
+                    -1.,
+                    0.,
+                    8f32.sqrt(),
+                    0.,
+                    0.,
+                    3.,
+                ],
+                3,
+                vec![1., 0.2, 0.],
+            ),
+        ] {
+            let n = data.len() / dim;
+            let mut graph = Graph::build(
+                &data,
+                dim,
+                &BuildParams {
+                    metric: Metric::Euclidean,
+                    degree: 4,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            graph.adj = super::super::adjacency::Adjacency::new(n, 4);
+            for id in 0..n {
+                graph.adj.set(
+                    id,
+                    &(0..n as u32)
+                        .filter(|&other| other != id as u32)
+                        .collect::<Vec<_>>(),
+                );
+            }
+            let mut expected: Vec<_> = data
+                .chunks_exact(dim)
+                .enumerate()
+                .map(|(id, row)| {
+                    (
+                        row.iter()
+                            .zip(&query)
+                            .map(|(&x, &q)| (f64::from(x) - f64::from(q)).powi(2))
+                            .sum::<f64>(),
+                        id as u32,
+                    )
+                })
+                .collect();
+            expected.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+            let expected: Vec<_> = expected.into_iter().map(|(_, id)| id).collect();
+            let mut flat = Vec::new();
+            ExactSearcher::new(&graph)
+                .flat(&query, n, &mut flat)
+                .unwrap();
+            assert_eq!(flat, expected);
+            if dim == 3 {
+                assert_eq!(flat, [0, 2, 1, 4, 3]);
+            }
+            let mut index = VGraph::from_graph_with(&graph, 4, 8, true, true, 3, false).unwrap();
+            let report = index
+                .diagnose(
+                    &graph,
+                    &query,
+                    n,
+                    VSearchParams {
+                        ef: n,
+                        ..Default::default()
+                    },
+                    None,
+                    true,
+                )
+                .unwrap();
+            assert_eq!(report.results, expected);
+        }
+    }
 
     #[test]
     fn rotation_control_preserves_ids_topology_and_query_boundaries() {

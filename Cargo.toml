@@ -293,6 +293,10 @@ name = "vibe-rotation"
 required-features = ["experimental"]
 
 [[bin]]
+name = "qag-diagnose"
+required-features = ["experimental"]
+
+[[bin]]
 name = "ann-ivf-bench"
 required-features = ["experimental"]
 

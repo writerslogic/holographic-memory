@@ -2157,6 +2157,229 @@ impl SearchScratch {
     }
 }
 
+#[cfg(feature = "experimental")]
+impl VGraph {
+    /// Runs an untimed traversal control against the graph used to encode this index.
+    /// `oracle` is an original row ID; `exact` replaces routing scores only. Residual
+    /// reranking, beam ordering and tie handling remain those of the compact index.
+    /// Screens, blocks and runtime search knobs are excluded from this control.
+    pub fn diagnose(
+        &mut self,
+        source: &Graph,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        oracle: Option<u32>,
+        exact: bool,
+    ) -> Result<super::diagnostics::TraversalDiagnostic, HmsError> {
+        if source.n != self.n
+            || source.dim != self.dim
+            || source.degree != self.degree
+            || (source.metric == Metric::Euclidean) != !self.half_norms.is_empty()
+        {
+            return Err(invalid(
+                "diagnostic source graph does not match index geometry and metric".into(),
+            ));
+        }
+        if self.has_screen() || self.has_blocks() {
+            return Err(invalid(
+                "diagnostic traversal does not support screens or blocks".into(),
+            ));
+        }
+        if query.len() != self.dim
+            || query.iter().any(|x| !x.is_finite())
+            || (source.metric == Metric::Angular && query.iter().all(|&x| x == 0.0))
+            || k == 0
+            || k > self.n
+        {
+            return Err(invalid(
+                "invalid diagnostic query dimension, coordinates or k".into(),
+            ));
+        }
+        let stored_oracle = match oracle {
+            Some(id) if id as usize >= self.n => {
+                return Err(invalid("diagnostic oracle ID outside index".into()));
+            }
+            Some(id) if self.ids.is_empty() => Some(id),
+            Some(id) => Some(
+                self.ids
+                    .iter()
+                    .position(|&original| original == id)
+                    .expect("encoded IDs are a permutation") as u32,
+            ),
+            None => None,
+        };
+        let saved_entry = self.entry;
+        let saved_layers = stored_oracle.map(|id| {
+            self.entry = id;
+            std::mem::take(&mut self.layers)
+        });
+        let result = if exact {
+            self.diagnose_exact(source, query, k, params)
+        } else {
+            self.diagnose_coded(query, k, params)
+        };
+        self.entry = saved_entry;
+        if let Some(layers) = saved_layers {
+            self.layers = layers;
+        }
+        result
+    }
+
+    fn diagnostic_entry(&self, mut score: impl FnMut(u32) -> f32, evaluated: &mut Vec<u32>) -> u32 {
+        if self.layers.is_empty() {
+            return self.entry;
+        }
+        let mut p = 0u32;
+        let mut best = score(self.upper_ids[0]);
+        evaluated.push(self.original(self.upper_ids[0]));
+        for layer in self.layers.iter().rev() {
+            loop {
+                let mut moved = false;
+                for &u in &layer[p as usize] {
+                    let id = self.upper_ids[u as usize];
+                    let candidate = score(id);
+                    evaluated.push(self.original(id));
+                    if candidate < best {
+                        best = candidate;
+                        p = u;
+                        moved = true;
+                    }
+                }
+                if !moved {
+                    break;
+                }
+            }
+        }
+        self.upper_ids[p as usize]
+    }
+
+    fn diagnose_coded(
+        &self,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+    ) -> Result<super::diagnostics::TraversalDiagnostic, HmsError> {
+        let mut report = super::diagnostics::TraversalDiagnostic::default();
+        let mut searcher = self.searcher_with(SearchKnobs::OFF);
+        searcher.search(query, k, params, &mut report.results)?;
+        let scratch = &mut searcher.scratch;
+        let sq = self.encode_query(
+            &scratch.qf,
+            &mut scratch.qc,
+            &mut scratch.qtmp,
+            &mut scratch.qrot,
+            &mut scratch.qs,
+        );
+        let w = if sq > 0.0 { 1.0 / sq } else { 1.0 };
+        // Descent does not set the base-layer marks; replay it after the production search.
+        self.diagnostic_entry(|id| self.est(&scratch.qc, id, w), &mut report.evaluated);
+        report.evaluated.extend(
+            (0..self.n as u32)
+                .filter(|&id| scratch.visited.seen(id))
+                .map(|id| self.original(id)),
+        );
+        report.evaluated.sort_unstable();
+        report.evaluated.dedup();
+        report.retained.extend(
+            scratch
+                .keys
+                .iter()
+                .map(|&candidate| self.original(key_id(candidate))),
+        );
+        if params.rerank > 0 {
+            let take = params.rerank.max(k).min(self.n).min(report.retained.len());
+            report
+                .rerank_candidates
+                .extend_from_slice(&report.retained[..take]);
+        }
+        Ok(report)
+    }
+
+    fn diagnose_exact(
+        &self,
+        source: &Graph,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+    ) -> Result<super::diagnostics::TraversalDiagnostic, HmsError> {
+        let mut report = super::diagnostics::TraversalDiagnostic::default();
+        let score = |id: u32| {
+            let original = self.original(id) as usize;
+            let row = &source.vectors[original * self.dim..(original + 1) * self.dim];
+            let ip: f64 = row
+                .iter()
+                .zip(query)
+                .map(|(&x, &q)| f64::from(x) * f64::from(q))
+                .sum();
+            let norm = if source.metric == Metric::Euclidean {
+                row.iter().map(|&x| f64::from(x).powi(2)).sum::<f64>() * 0.5
+            } else {
+                0.0
+            };
+            (norm - ip) as f32
+        };
+        let entry = self.diagnostic_entry(score, &mut report.evaluated);
+        let mut pool = Pool {
+            keys: Vec::new(),
+            expanded: Vec::new(),
+            cap: params.ef.max(k).max(1),
+            cursor: 0,
+        };
+        let mut seen = vec![false; self.n];
+        seen[entry as usize] = true;
+        report.evaluated.push(self.original(entry));
+        pool.insert(key(score(entry), entry));
+        let mut stale = 0usize;
+        while let Some(candidate) = pool.next() {
+            if params.patience > 0 && stale >= params.patience {
+                break;
+            }
+            stale += 1;
+            let mut count = 0usize;
+            self.for_each_neighbour(key_id(candidate) as usize, |id| {
+                count += 1;
+                if (params.neighbour_cap > 0 && count > params.neighbour_cap) || seen[id as usize] {
+                    return;
+                }
+                seen[id as usize] = true;
+                report.evaluated.push(self.original(id));
+                if let Some((pos, _)) = pool.insert(key(score(id), id)) {
+                    if params.patience > 0 && pos < k {
+                        stale = 0;
+                    }
+                }
+            });
+        }
+        report.evaluated.sort_unstable();
+        report.evaluated.dedup();
+        report
+            .retained
+            .extend(pool.keys.iter().map(|&c| self.original(key_id(c))));
+        let take = params.rerank.max(k).min(self.n).min(pool.keys.len());
+        if params.rerank > 0 {
+            report
+                .rerank_candidates
+                .extend_from_slice(&report.retained[..take]);
+            let mut qf = vec![0.0; self.padded];
+            qf[..self.dim].copy_from_slice(query);
+            let mut results: Vec<_> = pool.keys[..take]
+                .iter()
+                .map(|&c| (self.fine(&qf, key_id(c)), self.original(key_id(c))))
+                .collect();
+            results.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+            report
+                .results
+                .extend(results.iter().take(k).map(|&(_, id)| id));
+        } else {
+            report
+                .results
+                .extend_from_slice(&report.retained[..k.min(take)]);
+        }
+        Ok(report)
+    }
+}
+
 /// Format 02 adds the build parameters and a fingerprint of the vectors to the header, so a
 /// cache written for other data or parameters is rejected instead of silently reused; 03 the
 /// quantized-search flag; 04 the metric.
@@ -2229,6 +2452,12 @@ impl Graph {
     /// quantized_search, metric), the adjacency and the upper layers; the vectors are not
     /// stored.
     pub fn save(&self, path: &std::path::Path) -> std::io::Result<()> {
+        if self.degree != self.build.degree {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "query-trained graph cannot use an untrained graph cache key; encode and save VGraph instead",
+            ));
+        }
         let mut w = std::io::BufWriter::new(std::fs::File::create(path)?);
         use std::io::Write;
         w.write_all(CACHE_MAGIC)?;

@@ -25,6 +25,7 @@ mod adjacency;
 mod build_kernels;
 mod fastscan;
 pub(crate) mod kernels;
+mod projection;
 #[cfg(not(target_arch = "wasm32"))]
 mod update;
 mod vertex;
@@ -33,6 +34,9 @@ pub use update::{ConsolidationPolicy, UpdatableVGraph, UpdateError};
 
 #[cfg(feature = "experimental")]
 pub mod diagnostics;
+
+#[cfg(feature = "experimental")]
+pub mod projection_diagnostic;
 
 #[cfg(feature = "experimental")]
 pub mod ivf;
