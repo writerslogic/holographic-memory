@@ -96,13 +96,18 @@ impl Manifest {
             return Err(bad("manifest length"));
         }
         check(bytes, MANIFEST_MAGIC)?;
-        let h: Vec<_> = bytes[32..160].chunks_exact(8).map(word).collect();
+        let h: Vec<_> = bytes[32..160]
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|c| word(c))
+            .collect();
         if h[0] == 0
             || h[0] > MAX_DIM as u64
             || h[1] > 1
             || h[3] == 0
             || h[3] > 65536
-            || h[3] % 2 != 0
+            || !h[3].is_multiple_of(2)
             || h[4] == 0
             || h[4] > 1_048_576
             || h[5] > u32::MAX as u64
@@ -245,7 +250,13 @@ impl BaseRows {
         let mut ids = Vec::new();
         ids.try_reserve_exact(count)
             .map_err(|_| UpdateError::Capacity)?;
-        ids.extend(map[64..64 + count * 4].chunks_exact(4).map(small));
+        ids.extend(
+            map[64..64 + count * 4]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| small(c)),
+        );
         if ids.last() == Some(&u32::MAX) || ids.windows(2).any(|p| p[0] >= p[1]) {
             return Err(bad("rows ids not strictly ordered"));
         }
@@ -397,7 +408,9 @@ pub(super) fn replay(
                         .get(cursor..end)
                         .ok_or_else(|| corrupt(at, "short vector"))?;
                     let row: Vec<_> = bytes
-                        .chunks_exact(4)
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
                         .map(|c| f32::from_bits(small(c)))
                         .collect();
                     cursor = end;

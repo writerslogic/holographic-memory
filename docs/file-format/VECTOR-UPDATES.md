@@ -22,8 +22,9 @@ requires `commit`. Dropping without committing discards the pending batch.
 
 With no updates, search calls the existing vertex search unchanged, with reused
 per-thread scratch. With updates it widens the base beam and candidate count by
-the total number of base tombstones, preserving routing through deleted slots,
-filters deleted answers, searches the delta, and merges candidates using original
+the inverse live fraction, preserving routing through deleted slots,
+filters deleted answers, doubles the beam and retries when too few live candidates
+remain, searches the delta with the same compensation, and merges candidates using original
 full-precision distances with external-id tie breaking. Original rows stay mapped
 and are touched only for candidate reranking and consolidation. `k` is clamped
 to the live count before allocation. Empty indexes are represented without a

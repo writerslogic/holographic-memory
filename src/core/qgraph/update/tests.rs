@@ -273,7 +273,7 @@ proptest! {
     #[test]
     fn random_updates_match_exact_and_reopen(operations in prop::collection::vec((0u8..3, 0u32..32, prop::array::uniform4(-100i16..100)), 1..40)) {
         let dir = tempfile::tempdir().unwrap(); let path = dir.path().join("index"); let initial = data(16,4);
-        let mut live: BTreeMap<_,_> = initial.chunks_exact(4).enumerate().map(|(id,v)| (id as u32,v.to_vec())).collect();
+        let mut live: BTreeMap<_,_> = initial.as_chunks::<4>().0.iter().enumerate().map(|(id,v)| (id as u32,v.to_vec())).collect();
         let mut index = UpdatableVGraph::create(&path, &initial, 4, &params()).unwrap();
         for (tag,id,values) in operations {
             let row: Vec<_> = values.iter().map(|&v| f32::from(v) / 100.).collect();
@@ -331,7 +331,9 @@ fn consolidation_recall_on_50k_and_physical_deletion() {
         ..Default::default()
     };
     let before: Vec<_> = queries
-        .chunks_exact(16)
+        .as_chunks::<16>()
+        .0
+        .iter()
         .map(|q| index.search(q, 10, p).unwrap())
         .collect();
     let live: BTreeMap<_, _> = (500..50000u32)
@@ -345,14 +347,18 @@ fn consolidation_recall_on_50k_and_physical_deletion() {
         })
         .collect();
     let truth: Vec<_> = queries
-        .chunks_exact(16)
+        .as_chunks::<16>()
+        .0
+        .iter()
         .map(|q| exact(&live, q, 10))
         .collect();
     index.consolidate().unwrap();
     assert!(index.state.read().base.rows.ids.iter().all(|&id| id >= 500));
     assert_eq!(index.state.read().base.graph.as_ref().unwrap().len(), 49500);
     let after: Vec<_> = queries
-        .chunks_exact(16)
+        .as_chunks::<16>()
+        .0
+        .iter()
         .map(|q| index.search(q, 10, p).unwrap())
         .collect();
     let recall = |results: &[Vec<u32>]| {
@@ -371,7 +377,7 @@ fn consolidation_recall_on_50k_and_physical_deletion() {
     );
     drop(index);
     let reopened = UpdatableVGraph::open(&path).unwrap();
-    for (q, result) in queries.chunks_exact(16).zip(after) {
+    for (q, result) in queries.as_chunks::<16>().0.iter().zip(after) {
         assert_eq!(reopened.search(q, 10, p).unwrap(), result);
     }
 }
@@ -607,4 +613,41 @@ fn reordered_compressed_base_preserves_external_ids() {
     assert_eq!(all.len(), 64);
     assert!(!all.contains(&4));
     assert!(all.contains(&1000));
+}
+
+#[test]
+fn clustered_deletes_retry_without_global_tombstone_budget() {
+    assert_eq!(widened_width(64, 1_000_000, 990_000), 65);
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("index");
+    let rows = data(64, 4);
+    let index = UpdatableVGraph::create(&path, &rows, 4, &params()).unwrap();
+    let live: BTreeMap<_, _> = rows
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .enumerate()
+        .map(|(id, row)| (id as u32, row.to_vec()))
+        .collect();
+    let query = [0.4; 4];
+    let all = exact(&live, &query, 64);
+    for &id in &all[..32] {
+        index.delete(id).unwrap();
+    }
+    let p = VSearchParams {
+        ef: 4,
+        rerank: 4,
+        ..Default::default()
+    };
+    let result = index.search(&query, 5, p).unwrap();
+    assert_eq!(result, all[32..37]);
+    index.commit().unwrap();
+    drop(index);
+    assert_eq!(
+        UpdatableVGraph::open(&path)
+            .unwrap()
+            .search(&query, 5, p)
+            .unwrap(),
+        result
+    );
 }

@@ -323,6 +323,11 @@ fn distance(q: &[f32], row: &[f32], metric: Metric) -> f32 {
     }
 }
 
+fn widened_width(requested: usize, allocated: usize, live: usize) -> usize {
+    ((requested.min(allocated) as u128 * allocated as u128).div_ceil(live as u128))
+        .min(allocated as u128) as usize
+}
+
 impl UpdatableVGraph {
     /// Creates a new directory from row-major vectors with ids `0..n`.
     pub fn create(
@@ -560,26 +565,34 @@ impl UpdatableVGraph {
             .as_ref()
             .filter(|_| s.deleted < s.base.rows.ids.len())
         {
-            let mut widened = params;
-            let take = if clean {
+            let live = graph.len() - s.deleted;
+            let mut take = if clean {
                 k
             } else {
-                params
-                    .ef
-                    .max(params.rerank)
-                    .max(k)
-                    .saturating_add(s.deleted)
-                    .min(graph.len())
+                widened_width(params.ef.max(params.rerank).max(k), graph.len(), live)
             };
-            widened.ef = params.ef.max(k).saturating_add(s.deleted).min(graph.len());
-            if !clean {
-                widened.rerank = take;
-                widened.patience = 0;
+            loop {
+                let mut widened = params;
+                widened.ef = if clean {
+                    params.ef.max(k).min(graph.len())
+                } else {
+                    take
+                };
+                if !clean {
+                    widened.rerank = take;
+                    widened.patience = 0;
+                }
+                SCRATCH.with(|cache| {
+                    graph.search_reusing(&mut cache.borrow_mut(), query, take, widened, &mut out)
+                })?;
+                if clean
+                    || take == graph.len()
+                    || out.iter().filter(|&&slot| !s.dead(slot as usize)).count() >= k.min(live)
+                {
+                    break;
+                }
+                take = take.saturating_mul(2).min(graph.len());
             }
-            SCRATCH.with(|cache| {
-                let mut cache = cache.borrow_mut();
-                graph.search_reusing(&mut cache, query, take, widened, &mut out)
-            })?;
         }
         if clean {
             return Ok(out
@@ -599,13 +612,21 @@ impl UpdatableVGraph {
                 ));
             }
         }
-        let ef = params
-            .ef
-            .max(params.rerank)
-            .max(k)
-            .saturating_add(s.delta.len() - s.delta.live.len())
-            .min(s.delta.len());
-        candidates.extend(s.delta.search(query, ef, metric));
+        if !s.delta.live.is_empty() {
+            let mut ef = widened_width(
+                params.ef.max(params.rerank).max(k),
+                s.delta.len(),
+                s.delta.live.len(),
+            );
+            loop {
+                let found = s.delta.search(query, ef, metric);
+                if ef == s.delta.len() || found.len() >= k.min(s.delta.live.len()) {
+                    candidates.extend(found);
+                    break;
+                }
+                ef = ef.saturating_mul(2).min(s.delta.len());
+            }
+        }
         candidates.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         candidates.truncate(k);
         Ok(candidates.into_iter().map(|(_, id)| id).collect())
