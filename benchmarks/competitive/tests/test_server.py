@@ -10,7 +10,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from hmsbench import registry, server_proc, table  # noqa: E402
+from hmsbench import registry, server_proc, server_registry, server_runner, table  # noqa: E402
+
+
+def test_every_server_records_its_durability_class():
+    assert server_runner.PROTOCOL["durability"] == server_registry.DURABILITY
+    classes = server_runner.PROTOCOL["durability_class"]
+    assert set(classes) == set(server_registry.DURABILITY) == set(server_registry.SERVER_SYSTEMS)
+    assert set(classes.values()) == {"per-request-flush", "periodic", "undocumented"}
 
 
 def results_file(mode, reference, other, ref_qps, other_qps):

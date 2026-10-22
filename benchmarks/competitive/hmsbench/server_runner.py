@@ -19,7 +19,7 @@ from pathlib import Path
 from . import SCHEMA_VERSION, data, envs, registry, server_proc, servers, textdata
 from .common import CACHE, RESULTS, ROOT, commit, dir_bytes, hardware, log, run_measured, write_json
 from .runner import WORK, _parse_result, _quality, _rotate
-from .server_registry import DURABILITY, ENV, HMS_SERVER
+from .server_registry import DURABILITY, DURABILITY_CLASS, ENV, HMS_SERVER
 
 WORKER = Path(__file__).resolve().parent / "server_worker.py"
 
@@ -36,6 +36,7 @@ PROTOCOL = {
     "disk": "allocated bytes (du) of the server data directory after a clean stop (logs excluded)",
     "ops": "100 replacements then 100 deletions on a copy of the built data directory, one request each, each acknowledged per `durability`",
     "durability": DURABILITY,
+    "durability_class": DURABILITY_CLASS,
     "hms_server": "ANN: the graph snapshot lives in memory only, so every serving process rebuilds it (POST /api/v1/index/maintain) before "
                   "its first query; its cold start and serving peak RSS include that build. Text: documents enter through the memory API "
                   "(remember) and queries through recall with lexicalWeight 1 / semanticWeight 0, i.e. document search's BM25 ranking",
