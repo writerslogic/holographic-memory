@@ -545,8 +545,10 @@ class Postgres(ServerSystem):
                     "max_parallel_workers_per_gather": 0, "max_parallel_maintenance_workers": max(self.threads - 1, 0),
                     "maintenance_work_mem": os.environ.get("HMS_BENCH_PG_MAINTENANCE_WORK_MEM", "4GB"),
                     "log_min_messages": "warning"}
-        # wal_sync_method stays at its default: on macOS it does not flush the drive cache, and
-        # neither does hms-server's per-commit msync (F_FULLFSYNC runs only at store creation).
+        # hms-server ends each commit in F_FULLFSYNC on macOS; fsync_writethrough holds Postgres to
+        # the same drive-cache flush. Elsewhere the default wal_sync_method already matches msync.
+        if sys.platform == "darwin":
+            settings["wal_sync_method"] = "fsync_writethrough"
         if pg.get("pgvector_share"):
             settings["extension_control_path"] = f"$system:{pg['pgvector_share']}"
             settings["dynamic_library_path"] = f"$libdir:{pg['pgvector_lib']}"
