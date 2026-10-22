@@ -25,7 +25,7 @@ use super::kernels::{
     dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i4_inline_x4, dot_i8_inline, interleave_for_i4,
     prefetch, prefetch_bytes, raw_one, QueryCode, Rotation, SplitMix,
 };
-use super::{invalid, prepare_rows, upper_bytes, BuildParams, Graph, Metric, NONE};
+use super::{invalid, prepare_rows, upper_bytes, BuildParams, Graph, GraphView, Metric, NONE};
 use crate::core::error::HmsError;
 
 mod file;
@@ -552,7 +552,7 @@ pub(super) fn quantize4(x: &[f32], code: &mut [i8]) -> f32 {
 
 /// Breadth-first order of the bottom layer from the entry (unreached vertices follow in id
 /// order): neighbours get nearby positions, so a search touches fewer distinct pages and lines.
-fn bfs_order(g: &Graph) -> Vec<u32> {
+fn bfs_order(g: GraphView<'_>) -> Vec<u32> {
     let mut seen = vec![false; g.n];
     let mut order = Vec::with_capacity(g.n);
     for s in std::iter::once(g.entry as usize).chain(0..g.n) {
@@ -654,6 +654,56 @@ fn key_id(k: u64) -> u32 {
     k as u32
 }
 
+struct VertexLayout {
+    padded: usize,
+    cbytes: usize,
+    stride: usize,
+    res_stride: usize,
+}
+
+impl VertexLayout {
+    fn new(
+        n: usize,
+        dim: usize,
+        bits: u8,
+        residual_bits: u8,
+        align: bool,
+        id_bytes: u8,
+    ) -> Result<Self, HmsError> {
+        if !matches!(bits, 4 | 8) {
+            return Err(invalid(format!(
+                "vertex code bits must be 4 or 8, not {bits}"
+            )));
+        }
+        if !(id_bytes == 4 || id_bytes == 0 || (id_bytes == 3 && (n as u64) < u64::from(NONE3))) {
+            return Err(invalid(format!("id_bytes must be 4, 0 (delta varints), or 3 below 2^24 - 1 vertices (got {id_bytes} for {n} vertices)")));
+        }
+        if !matches!(residual_bits, 0 | 4 | 8) {
+            return Err(invalid(format!(
+                "residual code bits must be 0, 4 or 8, not {residual_bits}"
+            )));
+        }
+        let padded = dim.next_multiple_of(if bits == 4 { 32 } else { 16 });
+        let cbytes = if bits == 4 { padded / 2 } else { padded };
+        let stride = match (align, cbytes) {
+            (false, _) => cbytes,
+            (true, c) if c <= 64 => c.next_power_of_two(),
+            (true, c) => c.next_multiple_of(128),
+        };
+        let res_stride = match residual_bits {
+            8 => padded,
+            4 => padded / 2,
+            _ => 0,
+        };
+        Ok(Self {
+            padded,
+            cbytes,
+            stride,
+            res_stride,
+        })
+    }
+}
+
 impl VGraph {
     /// Encodes a built graph with the 8-bit residual code used by `rerank` (or none), unaligned
     /// rows and the build's vertex order.
@@ -678,39 +728,18 @@ impl VGraph {
         id_bytes: u8,
         screen: bool,
     ) -> Result<Self, HmsError> {
-        if !matches!(bits, 4 | 8) {
-            return Err(invalid(format!(
-                "vertex code bits must be 4 or 8, not {bits}"
-            )));
-        }
-        if !(id_bytes == 4 || id_bytes == 0 || (id_bytes == 3 && (g.n as u64) < u64::from(NONE3))) {
-            return Err(invalid(format!(
-                "id_bytes must be 4, 0 (delta varints), or 3 below 2^24 - 1 vertices (got {id_bytes} for {} vertices)",
-                g.n
-            )));
-        }
-        if !matches!(residual_bits, 0 | 4 | 8) {
-            return Err(invalid(format!(
-                "residual code bits must be 0, 4 or 8, not {residual_bits}"
-            )));
-        }
+        let layout = VertexLayout::new(g.n, g.dim, bits, residual_bits, align, id_bytes)?;
         let euclidean = g.metric == Metric::Euclidean;
         if euclidean && screen {
             return Err(invalid("the 1-bit screen is angular only".into()));
         }
         let (n, dim) = (g.n, g.dim);
-        let padded = dim.next_multiple_of(if bits == 4 { 32 } else { 16 });
-        let cbytes = if bits == 4 { padded / 2 } else { padded };
-        let stride = match (align, cbytes) {
-            (false, _) => cbytes,
-            (true, c) if c <= 64 => c.next_power_of_two(),
-            (true, c) => c.next_multiple_of(128),
-        };
-        let res_stride = match residual_bits {
-            8 => padded,
-            4 => padded / 2,
-            _ => 0,
-        };
+        let VertexLayout {
+            padded,
+            cbytes,
+            stride,
+            res_stride,
+        } = layout;
         let mut sum = vec![0f64; dim];
         for x in g.vectors.chunks_exact(dim) {
             sum.iter_mut().zip(x).for_each(|(s, &v)| *s += f64::from(v));
@@ -718,7 +747,11 @@ impl VGraph {
         let mut mean: Vec<f32> = sum.iter().map(|s| (s / n as f64) as f32).collect();
         mean.resize(padded, 0.0);
 
-        let ids = if reorder { bfs_order(g) } else { Vec::new() };
+        let ids = if reorder {
+            bfs_order(g.view())
+        } else {
+            Vec::new()
+        };
         let old = |v: usize| if reorder { ids[v] as usize } else { v };
         let mut new_id: Vec<u32> = Vec::new();
         if reorder {

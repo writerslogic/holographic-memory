@@ -1016,6 +1016,30 @@ fn reordered_compressed_base_preserves_external_ids() {
 }
 
 #[test]
+fn incomplete_streamed_rows_preserve_the_previous_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let index = UpdatableVGraph::create(&path, &data(3, 4), 4, &params()).unwrap();
+    let manifest = index.state.read().manifest.clone();
+    let rows_path = manifest.rows_path(&path);
+    let before = std::fs::read(&rows_path).unwrap();
+    for count in [2, 3, 4] {
+        let mut writer = BaseRowsWriter::new(&rows_path, &manifest, &[0, 1, 2]).unwrap();
+        let append = writer.append(&vec![1.; count * 4]);
+        if count == 4 {
+            assert!(append.is_err());
+        } else if count == 2 {
+            append.unwrap();
+            assert!(writer.finish().is_err());
+        } else {
+            append.unwrap();
+            drop(writer);
+        }
+        assert_eq!(std::fs::read(&rows_path).unwrap(), before);
+    }
+}
+
+#[test]
 fn clustered_deletes_retry_without_global_tombstone_budget() {
     assert_eq!(widened_width(64, 1_000_000, 990_000), 65);
     let root = tempfile::tempdir().unwrap();
