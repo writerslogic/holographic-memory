@@ -1,7 +1,7 @@
 {
  "by_model_usd": {
-  "gpt-4o-2024-08-06": 22.524102500000033,
-  "gpt-4o-mini-2024-07-18": 1.0022547000000013
+  "gpt-4o-2024-08-06": 22.519549999999978,
+  "gpt-4o-mini-2024-07-18": 0.9571609500000001
  },
  "by_run_usd": {
   "dev_gpt4o_k10:gpt-4o-2024-08-06": 1.7621924999999994,
@@ -22,7 +22,7 @@
   "dev_mini_k50:gpt-4o-mini-2024-07-18": 0.496847,
   "dev_mini_k5:gpt-4o-mini-2024-07-18": 0.15624855000000007
  },
- "calls": 2837,
+ "calls": 2799,
  "cap_usd": 60.0,
  "prices_usd_per_token": {
   "gpt-4o-2024-08-06": [
@@ -37,5 +37,6 @@
   ]
  },
  "schema_version": 1,
- "total_usd": 23.475561199999593
+ "settled_from": "call cache; by_run_usd is the live ledger and can differ by failed reservations",
+ "total_usd": 23.47671095
 }

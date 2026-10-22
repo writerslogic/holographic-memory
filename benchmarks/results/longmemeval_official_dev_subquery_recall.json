@@ -1,0 +1,273 @@
+{
+ "schema_version": 1,
+ "split": "dev",
+ "metric": "recall_all@k over scored dev questions",
+ "ks": [
+  5,
+  10,
+  30,
+  50
+ ],
+ "by_subquery_weight": {
+  "0.0": {
+   "knowledge-update": {
+    "n": 15,
+    "recall_all": [
+     0.9333,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "multi-session": {
+    "n": 24,
+    "recall_all": [
+     0.5833,
+     0.8333,
+     0.875,
+     0.9583
+    ]
+   },
+   "overall": {
+    "n": 84,
+    "recall_all": [
+     0.8095,
+     0.9286,
+     0.9643,
+     0.9881
+    ]
+   },
+   "single-session-assistant": {
+    "n": 1,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-preference": {
+    "n": 6,
+    "recall_all": [
+     0.8333,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-user": {
+    "n": 13,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "temporal-reasoning": {
+    "n": 25,
+    "recall_all": [
+     0.84,
+     0.92,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "0.5": {
+   "knowledge-update": {
+    "n": 15,
+    "recall_all": [
+     0.9333,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "multi-session": {
+    "n": 24,
+    "recall_all": [
+     0.625,
+     0.8333,
+     0.9167,
+     0.9167
+    ]
+   },
+   "overall": {
+    "n": 84,
+    "recall_all": [
+     0.8095,
+     0.9167,
+     0.9762,
+     0.9762
+    ]
+   },
+   "single-session-assistant": {
+    "n": 1,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-preference": {
+    "n": 6,
+    "recall_all": [
+     0.6667,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-user": {
+    "n": 13,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "temporal-reasoning": {
+    "n": 25,
+    "recall_all": [
+     0.84,
+     0.88,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "1.0": {
+   "knowledge-update": {
+    "n": 15,
+    "recall_all": [
+     0.8667,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "multi-session": {
+    "n": 24,
+    "recall_all": [
+     0.625,
+     0.7917,
+     0.875,
+     0.9167
+    ]
+   },
+   "overall": {
+    "n": 84,
+    "recall_all": [
+     0.7857,
+     0.9048,
+     0.9643,
+     0.9762
+    ]
+   },
+   "single-session-assistant": {
+    "n": 1,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-preference": {
+    "n": 6,
+    "recall_all": [
+     0.6667,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-user": {
+    "n": 13,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "temporal-reasoning": {
+    "n": 25,
+    "recall_all": [
+     0.8,
+     0.88,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "2.0": {
+   "knowledge-update": {
+    "n": 15,
+    "recall_all": [
+     0.8,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "multi-session": {
+    "n": 24,
+    "recall_all": [
+     0.5833,
+     0.7917,
+     0.875,
+     0.9167
+    ]
+   },
+   "overall": {
+    "n": 84,
+    "recall_all": [
+     0.7381,
+     0.8929,
+     0.9643,
+     0.9762
+    ]
+   },
+   "single-session-assistant": {
+    "n": 1,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-preference": {
+    "n": 6,
+    "recall_all": [
+     0.6667,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "single-session-user": {
+    "n": 13,
+    "recall_all": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "temporal-reasoning": {
+    "n": 25,
+    "recall_all": [
+     0.72,
+     0.84,
+     1.0,
+     1.0
+    ]
+   }
+  }
+ }
+}

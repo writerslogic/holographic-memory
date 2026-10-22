@@ -226,7 +226,7 @@ def write_summary() -> dict:
     """Pool the committed dev runs by (reader, topk, subquery weight) and settle spend from the call cache."""
     arms = {}
     for path in sorted((ROOT / "benchmarks/results").glob("longmemeval_official_dev_*.json")):
-        if path.name.endswith("_summary.json"):
+        if path.name.endswith(("_summary.json", "_subquery_recall.json")):
             continue
         run = json.loads(path.read_text())
         key = (f'{run["reader"]["model"]}|k{run["retrieval"]["topk_context"]}|sub{run["retrieval"]["subquery_weight"]}'
@@ -261,9 +261,46 @@ def write_summary() -> dict:
                    + "6 of 100 questions, so single runs are data points and arms are compared by their run ranges.",
                    "Replacing label-bearing tie-breaks with hashed ids leaves every top-10/15/50 set unchanged.",
                    "topk_context was chosen on dev; there is no held-out claim."]}
+    k10 = [json.loads(p.read_text())["rows"] for p in sorted((ROOT / "benchmarks/results").glob(
+        "longmemeval_official_dev_gpt4o_k10*.json"))]
+    passes = {}
+    for rows in k10:
+        for row in rows:
+            passes.setdefault(row["qid"], [row["qtype"], 0])[1] += row["correct"]
+    summary["gpt4o_k10_failures"] = {
+        "runs": len(k10),
+        "failed_every_run": sorted([q, t] for q, (t, n) in passes.items() if n == 0),
+        "failed_some_runs": sorted([q, t, n] for q, (t, n) in passes.items() if 0 < n < len(k10))}
     out = ROOT / "benchmarks/results/longmemeval_official_dev_summary.json"
     out.write_text(json.dumps(summary, indent=1) + "\n")
+    ledger = _ledger()
+    ledger.update(total_usd=spend["total_usd"], calls=spend["calls"], by_model_usd=spend["by_model_usd"],
+                  settled_from="call cache; by_run_usd is the live ledger and can differ by failed reservations")
+    LEDGER.write_text(json.dumps(ledger, indent=1, sort_keys=True) + "\n")
     return summary
+
+
+def write_subquery_recall() -> dict:
+    """Official recall_all@k of the reference ranking per subquery weight; labels used only for scoring."""
+    entries = load_dev()
+    types = {e["question_id"]: e["question_type"] for e in entries}
+    report = {"schema_version": 1, "split": "dev", "metric": "recall_all@k over scored dev questions",
+              "ks": [5, 10, 30, 50], "by_subquery_weight": {}}
+    for weight in (0.0, 0.5, 1.0, 2.0):
+        groups = {}
+        for qid, ranked in rankings(entries, weight).items():
+            gold = {t for t in ranked if t.startswith("answer_")}
+            if not gold or "_abs" in qid:
+                continue
+            hits = [float(gold <= set(ranked[:k])) for k in report["ks"]]
+            for group in ("overall", types[qid]):
+                groups.setdefault(group, []).append(hits)
+        report["by_subquery_weight"][str(weight)] = {
+            group: {"n": len(rows), "recall_all": [round(sum(col) / len(rows), 4) for col in zip(*rows)]}
+            for group, rows in sorted(groups.items())}
+    out = ROOT / "benchmarks/results/longmemeval_official_dev_subquery_recall.json"
+    out.write_text(json.dumps(report, indent=1) + "\n")
+    return report
 
 
 def main() -> None:
@@ -277,7 +314,12 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--repeat", type=int, default=0, help="fresh reader and judge samples of the same inputs")
     parser.add_argument("--summarize", action="store_true", help="pool committed runs and settle spend")
+    parser.add_argument("--subquery-recall", action="store_true", help="recall_all@k per subquery weight")
     args = parser.parse_args()
+    if args.subquery_recall:
+        report = write_subquery_recall()
+        print(json.dumps({w: v["overall"]["recall_all"] for w, v in report["by_subquery_weight"].items()}))
+        return
     if args.summarize:
         summary = write_summary()
         print(json.dumps({k: (v["mean_correct"], v["min_correct"], v["max_correct"], len(v["runs"]))
