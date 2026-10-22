@@ -216,8 +216,9 @@ separate experiment and must be identified as such.
 PAG's pinned release `ee34ed78b7a28225b2db6210ad942152e1cd540d`
 [requires its AVX-512 backend](https://github.com/KejingLu-810/PAG/blob/ee34ed78b7a28225b2db6210ad942152e1cd540d/cmake/PAGCompilerOptions.cmake).
 An AVX-512 host is required for an honest direct PAG comparison. The HMS Python
-adapter also lacks Euclidean support, so agnews-mxbai currently remains an
-explicit coverage gap even though the Rust vertex index supports that metric.
+adapter serves all four VIBE float distances: cosine and normalized by angle,
+euclidean directly, and ip through the exact inner-product-to-Euclidean reduction
+(one appended coordinate per row).
 
 Modal is not authorized for this work. Continue on `writerslogic-02`; PAG stays
 unmeasured unless the user supplies another authorized AVX-512 host.
@@ -260,9 +261,11 @@ retains its three explicitly ignored experiments.
 The [HMS adapter](../../benchmarks/vibe/hms/)
 follows VIBE's [new-method guide](https://github.com/vector-index-bench/vibe/blob/main/docs/NEW_METHOD.md):
 one-thread builds, unique original row IDs, separate build/query parameters,
-four build combinations and 33 query combinations, with a pinned implementation
+four build combinations and 33 query combinations (56 for ip), with a pinned implementation
 revision in `image.def`. It is the quantized graph algorithm, not the memory
-database service. Only cosine and normalized datasets are advertised.
+database service. It advertises cosine, normalized, euclidean and ip datasets;
+the ip grid searches deeper (ef up to 8000) because the reduction places every
+row on one sphere.
 
 Reproduce the published ranking and focused regression checks:
 
@@ -291,7 +294,9 @@ An upstream contribution also needs the HMS row in VIBE's algorithm table and
 a Linux image build through `./install.sh --algorithm hms`. The
 [prepared upstream patch](../../benchmarks/vibe/upstream.patch) includes the
 README row and all three adapter files; it passes the reverse-apply check on the
-pinned checkout. It has not been submitted. The
+pinned checkout (VIBE 7ac76c1). The image has not been built: this host has no Apptainer, so the
+same recipe was replayed in a micromamba copy of `base.sif` and `run.py --local` passed on a
+smoke subset of llama-128-ip. The
 [real adapter checks](../../benchmarks/results/vibe_v1/adapter_validation.json)
 cover both advertised metrics, dimensions 768/2048, original IDs, input
 immutability, result-count boundaries and VIBE's configuration loader. Local

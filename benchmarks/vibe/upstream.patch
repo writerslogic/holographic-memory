@@ -1,21 +1,21 @@
 diff --git a/README.md b/README.md
-index 1d6a663..ebe3eee 100644
+index 1d6a663..cb68777 100644
 --- a/README.md
 +++ b/README.md
 @@ -266,6 +266,7 @@ Deprecated datasets will remain available, but their benchmark results will not
  | [FlatNav](https://github.com/BlaiseMuhirwa/flatnav) | 0.1.2 |
  | [GGNN](https://github.com/cgtuebingen/ggnn) | 0.9 |
  | [Glass](https://github.com/zilliztech/pyglass) | git+d2296ec |
-+| [HMS (quantized graph)](https://github.com/writerslogic/holographic-memory/tree/28a0a5b1bc6e84037fed51fdba8c6b508f821502/src/core/qgraph) | git+28a0a5b |
++| [HMS](https://github.com/writerslogic/holographic-memory) | git+5c66a48 |
  | [HNSW-RaBitQ](https://github.com/VectorDB-NTU/RaBitQ-Library) | 0.3.7 |
  | [HNSW](https://github.com/nmslib/hnswlib) | 0.8.0 |
  | [IVF (Faiss)](https://github.com/facebookresearch/faiss) | 1.14.3 |
 diff --git a/vibe/algorithms/hms/config.yml b/vibe/algorithms/hms/config.yml
 new file mode 100644
-index 0000000..577ecb8
+index 0000000..1bb0654
 --- /dev/null
 +++ b/vibe/algorithms/hms/config.yml
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,61 @@
 +float:
 +  cosine:
 +  - name: hms
@@ -47,9 +47,39 @@ index 0000000..577ecb8
 +        query_args:
 +          ef: [100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000]
 +          rerank: [100, 200, 400]
++  euclidean:
++  - name: hms
++    module: vibe.algorithms.hms
++    constructor: HMS
++    singularity_image: hms
++    disabled: false
++    base_args: ['@metric']
++    run_groups:
++      base:
++        args:
++          degree: [32, 48, 64, 96]
++          build_ef: [500]
++        query_args:
++          ef: [100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000]
++          rerank: [100, 200, 400]
++  ip:
++  - name: hms
++    module: vibe.algorithms.hms
++    constructor: HMS
++    singularity_image: hms
++    disabled: false
++    base_args: ['@metric']
++    run_groups:
++      base:
++        args:
++          degree: [32, 48, 64, 96]
++          build_ef: [500]
++        query_args:
++          ef: [160, 200, 256, 320, 400, 512, 640, 800, 1000, 1500, 2000, 3000, 5000, 8000]
++          rerank: [100, 200, 400, 1000]
 diff --git a/vibe/algorithms/hms/image.def b/vibe/algorithms/hms/image.def
 new file mode 100644
-index 0000000..14738f8
+index 0000000..27892f1
 --- /dev/null
 +++ b/vibe/algorithms/hms/image.def
 @@ -0,0 +1,19 @@
@@ -57,7 +87,7 @@ index 0000000..14738f8
 +From: base.sif
 +
 +%post
-+  HMS_REV=28a0a5b1bc6e84037fed51fdba8c6b508f821502
++  HMS_REV=5c66a4815ef612f6afa36144d0ee2a98762ec2a2
 +
 +  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.96.0
 +  export PATH="$HOME/.cargo/bin:$PATH"
@@ -66,7 +96,7 @@ index 0000000..14738f8
 +  git clone https://github.com/writerslogic/holographic-memory.git /tmp/hms
 +  cd /tmp/hms
 +  git checkout "$HMS_REV"
-+  maturin build --release --locked --out /tmp/hms-dist
++  RUSTFLAGS="-C target-cpu=native" maturin build --release --locked --out /tmp/hms-dist
 +  pip install --no-cache-dir /tmp/hms-dist/*.whl
 +  cd /
 +  rm -rf /tmp/hms /tmp/hms-dist "$HOME/.cargo" "$HOME/.rustup"
@@ -74,30 +104,29 @@ index 0000000..14738f8
 +  python -c 'from holographic_memory import VectorIndex; print(VectorIndex())'
 diff --git a/vibe/algorithms/hms/module.py b/vibe/algorithms/hms/module.py
 new file mode 100644
-index 0000000..a77266a
+index 0000000..65cea14
 --- /dev/null
 +++ b/vibe/algorithms/hms/module.py
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,40 @@
 +"""VIBE wrapper for HMS (holographic-memory), the quantized graph index.
 +
-+Copy this directory to vibe/algorithms/hms/ in a VIBE checkout, build the image with
-+`./install.sh --algorithm hms`, and add HMS with its pinned revision to the README's
-+algorithm table.
-+
-+The index is a proximity graph over unit vectors whose traversal reads 4-bit codes of the
-+mean-centered rows; the `rerank` best candidates are re-scored with an 8-bit residual code.
-+It ranks by cosine, so it serves the `cosine` and `normalized` datasets.
++The index is a proximity graph whose traversal reads 4-bit codes of the mean-centered rows;
++the `rerank` best candidates are re-scored with an 8-bit residual code. Cosine and normalized
++data are searched by angle, euclidean data by Euclidean distance, and ip data by inner product
++(reduced to Euclidean search by appending one coordinate to each row).
 +"""
 +import numpy as np
 +from holographic_memory import VectorIndex
 +
 +from ..base.module import BaseANN
 +
++METRICS = {"cosine": "angular", "normalized": "angular", "euclidean": "euclidean", "ip": "ip"}
++
 +
 +class HMS(BaseANN):
 +    def __init__(self, metric, degree, build_ef):
-+        if metric not in ("cosine", "normalized"):
-+            raise NotImplementedError(f"hms supports cosine and normalized data, not {metric}")
++        if metric not in METRICS:
++            raise NotImplementedError(f"hms does not support the {metric} distance")
 +        self.metric = metric
 +        self.degree = degree
 +        self.build_ef = build_ef
@@ -106,7 +135,7 @@ index 0000000..a77266a
 +        self.index = None
 +
 +    def fit(self, X):
-+        self.index = VectorIndex("angular", degree=self.degree, build_ef=self.build_ef, threads=1)
++        self.index = VectorIndex(METRICS[self.metric], degree=self.degree, build_ef=self.build_ef, threads=1)
 +        self.index.fit(np.ascontiguousarray(X, dtype=np.float32))
 +
 +    def set_query_arguments(self, ef, rerank):

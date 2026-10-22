@@ -29,3 +29,33 @@ float:
         query_args:
           ef: [100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000]
           rerank: [100, 200, 400]
+  euclidean:
+  - name: hms
+    module: vibe.algorithms.hms
+    constructor: HMS
+    singularity_image: hms
+    disabled: false
+    base_args: ['@metric']
+    run_groups:
+      base:
+        args:
+          degree: [32, 48, 64, 96]
+          build_ef: [500]
+        query_args:
+          ef: [100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000]
+          rerank: [100, 200, 400]
+  ip:
+  - name: hms
+    module: vibe.algorithms.hms
+    constructor: HMS
+    singularity_image: hms
+    disabled: false
+    base_args: ['@metric']
+    run_groups:
+      base:
+        args:
+          degree: [32, 48, 64, 96]
+          build_ef: [500]
+        query_args:
+          ef: [160, 200, 256, 320, 400, 512, 640, 800, 1000, 1500, 2000, 3000, 5000, 8000]
+          rerank: [100, 200, 400, 1000]

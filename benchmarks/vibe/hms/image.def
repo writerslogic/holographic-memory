@@ -2,7 +2,7 @@ Bootstrap: localimage
 From: base.sif
 
 %post
-  HMS_REV=28a0a5b1bc6e84037fed51fdba8c6b508f821502
+  HMS_REV=5c66a4815ef612f6afa36144d0ee2a98762ec2a2
 
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.96.0
   export PATH="$HOME/.cargo/bin:$PATH"
@@ -11,7 +11,7 @@ From: base.sif
   git clone https://github.com/writerslogic/holographic-memory.git /tmp/hms
   cd /tmp/hms
   git checkout "$HMS_REV"
-  maturin build --release --locked --out /tmp/hms-dist
+  RUSTFLAGS="-C target-cpu=native" maturin build --release --locked --out /tmp/hms-dist
   pip install --no-cache-dir /tmp/hms-dist/*.whl
   cd /
   rm -rf /tmp/hms /tmp/hms-dist "$HOME/.cargo" "$HOME/.rustup"
