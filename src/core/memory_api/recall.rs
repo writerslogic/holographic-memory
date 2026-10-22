@@ -241,10 +241,10 @@ impl Memory {
     /// A fact's status is judged from the supersession index, so the index must describe the
     /// same store revision the search read. A commit landing between the two (this process's
     /// own `remember` before it settles the index, or a write through the core) would otherwise
-    /// show a fact next to an unindexed successor and report both as current. After a miss
-    /// the attempt repeats holding the writer lock, which excludes this `Memory`'s writers;
-    /// only writes through the core itself can still interleave, and after
-    /// `SNAPSHOT_ATTEMPTS` the last attempt is used as is.
+    /// show a fact next to an unindexed successor and report both as current. After a miss the
+    /// index is brought to the store's revision and the search repeats; it takes no writer lock,
+    /// so an observer callback running under one may still recall. After `SNAPSHOT_ATTEMPTS`
+    /// the last attempt is used as is.
     fn run(
         &self,
         query: &str,
@@ -253,7 +253,6 @@ impl Memory {
         k: u32,
         force_wide: bool,
     ) -> Result<Option<Run>> {
-        let mut serial = None;
         let mut attempt = 1;
         loop {
             let (run, consistent) = self.run_once(query, options, history, k, force_wide)?;
@@ -261,7 +260,6 @@ impl Memory {
                 return Ok(run);
             }
             attempt += 1;
-            serial.get_or_insert_with(|| self.writer.lock());
             self.ensure_fresh();
         }
     }
