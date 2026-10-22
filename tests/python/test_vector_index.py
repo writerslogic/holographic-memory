@@ -112,7 +112,8 @@ def test_inner_product_ranks_by_dot_product(data, queries):
     idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2)
     idx.fit(scaled)
     assert repr(idx).startswith("VectorIndex(metric='ip'")
-    idx.set_query_arguments(ef=128, rerank=64)
+    # The reduction puts every row on one sphere, a harder graph than the raw data: more effort.
+    idx.set_query_arguments(ef=500, rerank=500)
     found = [idx.query(q, K) for q in queries]
     assert recall(found, truth) >= 0.95
     batch = idx.batch_query(queries, K)
