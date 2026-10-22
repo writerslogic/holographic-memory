@@ -169,7 +169,7 @@ this prototype. These experiments change the benchmark harness, not the
 production memory engine's fact-update implementation; their measured results
 do not establish production retrieval quality.
 
-The separate opt-in [conversation memory API](memory-api/README.md#original-conversation-evidence-rust-opt-in)
+The separate opt-in [conversation memory API](memory-api/README.md)
 now stores immutable original user and assistant turns through `Memory::remember_many`
 and retrieves through `Memory::recall`. It preserves roles and scoped source identity,
 hydrates complete originals after chunk retrieval, and admits direct conversation
