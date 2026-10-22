@@ -1,23 +1,22 @@
 """VIBE wrapper for HMS (holographic-memory), the quantized graph index.
 
-Copy this directory to vibe/algorithms/hms/ in a VIBE checkout, build the image with
-`./install.sh --algorithm hms`, and add HMS with its pinned revision to the README's
-algorithm table.
-
-The index is a proximity graph over unit vectors whose traversal reads 4-bit codes of the
-mean-centered rows; the `rerank` best candidates are re-scored with an 8-bit residual code.
-It ranks by cosine, so it serves the `cosine` and `normalized` datasets.
+The index is a proximity graph whose traversal reads 4-bit codes of the mean-centered rows;
+the `rerank` best candidates are re-scored with an 8-bit residual code. Cosine and normalized
+data are searched by angle, euclidean data by Euclidean distance, and ip data by inner product
+(reduced to Euclidean search by appending one coordinate to each row).
 """
 import numpy as np
 from holographic_memory import VectorIndex
 
 from ..base.module import BaseANN
 
+METRICS = {"cosine": "angular", "normalized": "angular", "euclidean": "euclidean", "ip": "ip"}
+
 
 class HMS(BaseANN):
     def __init__(self, metric, degree, build_ef):
-        if metric not in ("cosine", "normalized"):
-            raise NotImplementedError(f"hms supports cosine and normalized data, not {metric}")
+        if metric not in METRICS:
+            raise NotImplementedError(f"hms does not support the {metric} distance")
         self.metric = metric
         self.degree = degree
         self.build_ef = build_ef
@@ -26,7 +25,7 @@ class HMS(BaseANN):
         self.index = None
 
     def fit(self, X):
-        self.index = VectorIndex("angular", degree=self.degree, build_ef=self.build_ef, threads=1)
+        self.index = VectorIndex(METRICS[self.metric], degree=self.degree, build_ef=self.build_ef, threads=1)
         self.index.fit(np.ascontiguousarray(X, dtype=np.float32))
 
     def set_query_arguments(self, ef, rerank):
