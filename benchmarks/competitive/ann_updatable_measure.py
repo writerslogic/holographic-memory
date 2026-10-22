@@ -65,7 +65,7 @@ def main(a):
                     try:
                         commands[-1]["smaps_rollup_last"] = Path(f"/proc/{process.pid}/smaps_rollup").read_text()
                     except (FileNotFoundError, PermissionError, ProcessLookupError):
-                        pass
+                        pass  # the process exited between polls; keep the last sample
                     try:
                         code = process.wait(timeout=1)
                         if code:
