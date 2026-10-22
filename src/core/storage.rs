@@ -186,7 +186,8 @@ impl PersistentArena {
         };
         // A reopened segment already has its durable length (growth syncs it); only a new or
         // resized file needs the length change and the full sync.
-        if file.metadata()?.len() != active_capacity as u64 {
+        let length = file.metadata()?.len();
+        if length != active_capacity as u64 {
             file.set_len(active_capacity as u64)?;
             file.sync_all()?;
         }
@@ -197,11 +198,15 @@ impl PersistentArena {
             .with_context(|| format!("arena segment {}", active_path.display()))?;
         // A partially written tail may contain bytes from an older frame. Persist the end
         // marker at the recovered boundary so future restarts never interpret stale tail
-        // bytes as a valid frame. (On macOS the next commit's full sync covers it.)
+        // bytes as a valid frame. (On macOS the next commit's full sync covers it.) A segment
+        // created empty just now has no tail: it reads back as zeros, which recover to the
+        // same empty log, and the first commit's flush range starts at the marker.
         if recovered_offset + HEADER_SIZE <= mut_map.len() {
             mut_map[recovered_offset..recovered_offset + HEADER_SIZE]
                 .copy_from_slice(&end_marker_bytes());
-            mut_map.flush_range(recovered_offset, HEADER_SIZE)?;
+            if length != 0 {
+                mut_map.flush_range(recovered_offset, HEADER_SIZE)?;
+            }
         }
         // `discover_offset` touched every written page and the zero tail up to the segment's
         // capacity; none of it needs to stay resident (replay copies each frame out).
