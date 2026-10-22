@@ -1,0 +1,27 @@
+{
+  "float": {
+    "ip": [
+      {
+        "name": "mlann-rf80-depth13",
+        "module": "vibe.algorithms.mlann_pair",
+        "constructor": "MLANNPair",
+        "singularity_image": "hms",
+        "disabled": false,
+        "ood": true,
+        "base_args": ["@metric"],
+        "run_groups": {
+          "fixed": {
+            "args": {"trees": [80], "depth": [13]},
+            "query_arg_groups": [
+              [
+                [4, 1, 0, 0], [4, 2, 0, 0], [4, 3, 0, 0],
+                [4, 3, 0, 1], [4, 2, 0, 1], [4, 1, 0, 1],
+                [4, 1, 0, 2], [4, 2, 0, 2], [4, 3, 0, 2]
+              ]
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

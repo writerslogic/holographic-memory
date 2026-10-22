@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-22T17:04:34.744675+00:00",
+  "source_sha": "e0c8096f7cad6c297eafdacc63b13057daf7852c",
+  "primary_vibe_sha": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
+  "selection": "fixed RF80/depth13 prior reference; supplemental CPU comparator, no new HMS intervention",
+  "constructor": {
+    "metric": "ip",
+    "trees": 80,
+    "depth": 13,
+    "construction_queries": 32768
+  },
+  "query_schedule": [
+    [
+      4,
+      1,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      1
+    ],
+    [
+      4,
+      2,
+      0,
+      1
+    ],
+    [
+      4,
+      1,
+      0,
+      1
+    ],
+    [
+      4,
+      1,
+      0,
+      2
+    ],
+    [
+      4,
+      2,
+      0,
+      2
+    ],
+    [
+      4,
+      3,
+      0,
+      2
+    ]
+  ],
+  "files": {
+    "mlann_pair/module.py": "08c51deb420b9e28d9b22aa1f96b0677657f14330dfda142334ac704e09c206e",
+    "mlann_pair/__init__.py": "6dc893c3aa5a661fdceba0dfaa655b3730c8124e04eec8c1060554c70045dab0",
+    "mlann_pair/config.yml": "4ab1459673d6a29bf9f314f1adbaa679633ce14eaac9c600a8df1c42e53dde4e",
+    "qag_mlann_execute.py": "1ae8a4768ff8e34dd9063b891fd8cfa810add980e8b59cc40f01953811a7829f",
+    "qag_mlann_execute.sh": "ccc75519568ad2f66c656831d86701d952725e19004407e76464c0ba174c6ade",
+    "qag_pair/module.py": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+    "qag_execute.py": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+    "qag_report.py": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a"
+  },
+  "local_checks": [
+    "Python AST parse",
+    "bash -n qag_mlann_execute.sh",
+    "controller imports existing helpers",
+    "primary VIBE get_definitions parses one build and exact nine nested query groups",
+    "primary VIBE build_result_filepath derives result path and groups"
+  ],
+  "native_execution": "unrun; queue after current official batch releases shared timing lock"
+}
