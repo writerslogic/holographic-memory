@@ -8,6 +8,8 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from hmsbench import registry, server_proc, server_registry, server_runner, table  # noqa: E402
@@ -18,6 +20,23 @@ def test_every_server_records_its_durability_class():
     classes = server_runner.PROTOCOL["durability_class"]
     assert set(classes) == set(server_registry.DURABILITY) == set(server_registry.SERVER_SYSTEMS)
     assert set(classes.values()) == {"per-request-flush", "periodic", "undocumented"}
+
+
+@pytest.mark.parametrize("system", ["pg-tsvector", "paradedb"])
+def test_postgres_text_replacement_accepts_the_same_nul_text_as_ingest(tmp_path, system):
+    psycopg = pytest.importorskip("psycopg")
+    from hmsbench.server_worker import TEXT
+
+    encoded = []
+
+    class Connection:
+        def execute(self, statement, args):
+            encoded.append([psycopg.sql.Literal(arg).as_string() for arg in args])
+
+    adapter = TEXT[system](tmp_path, 1, "ops")
+    adapter.db = Connection()
+    adapter.replace_doc({"id": "doc/α", "text": "before\x00after"}, 7)
+    assert encoded == [["'before after benchmarkrevision'", "'doc/α'"]]
 
 
 def results_file(mode, reference, other, ref_qps, other_qps):

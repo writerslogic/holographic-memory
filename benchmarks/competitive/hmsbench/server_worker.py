@@ -664,7 +664,7 @@ class PgTsvector(Postgres):
         return [(i, float(r)) for i, r in rows]
 
     def replace_doc(self, doc, n):
-        self.db.execute("UPDATE docs SET body = %s WHERE id = %s", (doc["text"] + " benchmarkrevision", doc["id"]))
+        self.db.execute("UPDATE docs SET body = %s WHERE id = %s", (doc["text"].replace("\x00", " ") + " benchmarkrevision", doc["id"]))
 
     def delete_doc(self, doc, n):
         self.db.execute("DELETE FROM docs WHERE id = %s", (doc["id"],))
