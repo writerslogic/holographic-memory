@@ -30,6 +30,8 @@ struct Planned {
     idempotent: bool,
     /// The stored fact this one overwrites under `IdConflict::Replace`.
     replaces: bool,
+    /// The overwritten fact's stamp, when the replaced document was a memory fact.
+    previous: Option<Stamp>,
     document: Option<DocumentInput>,
 }
 
@@ -113,46 +115,57 @@ impl Memory {
             .filter_map(|fact| fact.document.clone())
             .collect();
         let before = self.core.revision();
-        let mut stale = false;
         if !documents.is_empty() {
             self.core.memorize_documents(documents)?;
-            stale = planned.iter().any(|fact| fact.replaces);
         }
         let written: Vec<&Planned> = planned
             .iter()
             .filter(|fact| fact.document.is_some())
             .collect();
         if !written.is_empty() {
-            if stale {
-                self.index.write().revision = None;
-            } else {
-                self.settle(before, 1, |index| {
-                    let batch: HashMap<&str, (Millis, Millis)> = written
-                        .iter()
-                        .map(|f| (f.id.as_str(), (f.stamp.effective_from(), f.stamp.ingest)))
-                        .collect();
-                    for fact in &written {
-                        let lookup = |id: &str| {
-                            batch.get(id).copied().or_else(|| {
-                                fact.stamp
-                                    .subject
-                                    .as_deref()
-                                    .and_then(|subject| index.member(subject, id))
-                            })
-                        };
-                        // `lookup` borrows the index immutably, so resolve before inserting.
-                        let hints: Vec<(String, Millis, Millis)> = fact
-                            .stamp
-                            .superseded_by
-                            .iter()
-                            .filter_map(|id| lookup(id).map(|(e, i)| (id.clone(), e, i)))
-                            .collect();
-                        let known: HashMap<String, (Millis, Millis)> =
-                            hints.into_iter().map(|(id, e, i)| (id, (e, i))).collect();
-                        index.insert(&fact.id, &fact.stamp, &|id| known.get(id).copied());
-                    }
+            self.settle(before, 1, |index| {
+                // Other facts' stamps can name a replaced fact; when the index links it to
+                // anything, only a rebuild from the store reproduces those links. An
+                // unlinked one is updated in place: its old stamp out, the new one in.
+                let linked = written.iter().any(|fact| {
+                    fact.replaces
+                        && (!index.edges(&fact.id).is_empty()
+                            || !index.direct_predecessors(&fact.id).is_empty())
                 });
-            }
+                if linked {
+                    return false;
+                }
+                for fact in &written {
+                    if let Some(old) = &fact.previous {
+                        index.remove(&fact.id, old);
+                    }
+                }
+                let batch: HashMap<&str, (Millis, Millis)> = written
+                    .iter()
+                    .map(|f| (f.id.as_str(), (f.stamp.effective_from(), f.stamp.ingest)))
+                    .collect();
+                for fact in &written {
+                    let lookup = |id: &str| {
+                        batch.get(id).copied().or_else(|| {
+                            fact.stamp
+                                .subject
+                                .as_deref()
+                                .and_then(|subject| index.member(subject, id))
+                        })
+                    };
+                    // `lookup` borrows the index immutably, so resolve before inserting.
+                    let hints: Vec<(String, Millis, Millis)> = fact
+                        .stamp
+                        .superseded_by
+                        .iter()
+                        .filter_map(|id| lookup(id).map(|(e, i)| (id.clone(), e, i)))
+                        .collect();
+                    let known: HashMap<String, (Millis, Millis)> =
+                        hints.into_iter().map(|(id, e, i)| (id, (e, i))).collect();
+                    index.insert(&fact.id, &fact.stamp, &|id| known.get(id).copied());
+                }
+                true
+            });
         }
         let outcomes: Vec<Remembered> = planned
             .iter()
@@ -259,6 +272,7 @@ impl Memory {
         check!(!explicit.contains(&id), "a fact cannot supersede itself");
 
         let mut replaces = false;
+        let mut previous = None;
         let mut idempotent_stamp = None;
         if let Some((version, metadata, _)) = self.core.document_snapshot(&id) {
             match Stamp::from_parts(&version, &metadata) {
@@ -278,6 +292,7 @@ impl Memory {
                         "document {id:?} is not a memory fact and is superseded by others"
                     );
                     replaces = true;
+                    previous = existing;
                 }
             }
         }
@@ -288,6 +303,7 @@ impl Memory {
                 stamp,
                 idempotent: true,
                 replaces: false,
+                previous: None,
                 document: None,
             });
         }
@@ -409,6 +425,7 @@ impl Memory {
             stamp,
             idempotent: false,
             replaces,
+            previous,
             document: Some(document),
         })
     }
@@ -467,6 +484,7 @@ impl Memory {
                 for (id, stamp) in &stamps {
                     index.remove(id, stamp);
                 }
+                true
             });
         } else {
             self.index.write().revision = None;

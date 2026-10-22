@@ -43,6 +43,26 @@ pub(crate) struct Index {
 }
 
 impl Index {
+    /// Every entry, sorted: equal for two indexes that answer every lookup alike.
+    #[cfg(test)]
+    pub(crate) fn canonical(&self) -> Vec<String> {
+        let mut out = vec![format!("windowed {}", self.windowed)];
+        for (id, edges) in &self.superseded_by {
+            out.extend(edges.iter().map(|e| format!("by {id} {e:?}")));
+        }
+        for (id, olds) in &self.predecessors {
+            out.extend(olds.iter().map(|old| format!("old {id} {old}")));
+        }
+        for (subject, members) in &self.by_subject {
+            out.extend(members.iter().map(|m| format!("subject {subject} {m:?}")));
+        }
+        for (entity, ids) in &self.by_entity {
+            out.extend(ids.iter().map(|id| format!("entity {entity} {id}")));
+        }
+        out.sort();
+        out
+    }
+
     /// Whether any fact has a validity window or a supersession link, that is, whether
     /// recall must evaluate more than "everything is current".
     pub(crate) fn constrained(&self) -> bool {
