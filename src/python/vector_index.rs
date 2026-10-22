@@ -12,12 +12,12 @@ use std::sync::Arc;
 
 use numpy::{AllowTypeChange, IntoPyArray, PyArray1, PyArrayLike1, PyArrayLike2};
 use numpy::{PyReadonlyArray2, PyUntypedArrayMethods};
-use pyo3::exceptions::{PyNotImplementedError, PyRuntimeError, PyValueError};
+use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 
 use crate::core::error::HmsError;
-use crate::core::qgraph::{BuildParams, Graph, VGraph, VSearchParams, VSearcher};
+use crate::core::qgraph::{BuildParams, Graph, Metric, VGraph, VSearchParams, VSearcher};
 
 /// Traversal code bits per coordinate.
 const VERTEX_BITS: u8 = 4;
@@ -54,12 +54,14 @@ impl Built {
     }
 }
 
-/// Approximate nearest-neighbour index over float32 vectors (cosine similarity).
+/// Approximate nearest-neighbour index over float32 vectors (cosine similarity or Euclidean
+/// distance).
 ///
 /// `fit` builds it, `set_query_arguments` sets the search effort, `query` and `batch_query`
 /// return the ids (row numbers of the fitted matrix) of the `k` nearest rows, nearest first.
 #[pyclass(name = "VectorIndex")]
 struct PyVectorIndex {
+    metric: Metric,
     degree: usize,
     build_ef: usize,
     pool: Option<rayon::ThreadPool>,
@@ -113,25 +115,21 @@ fn ids_array<'py>(py: Python<'py>, ids: &[u32]) -> Bound<'py, PyArray1<i64>> {
 
 #[pymethods]
 impl PyVectorIndex {
-    /// `metric` is "angular" (cosine). `degree` is the out-degree of the graph (even),
+    /// `metric` is "angular" (cosine) or "euclidean". `degree` is the out-degree of the graph (even),
     /// `build_ef` the construction search width, `threads` the build and batch-query threads
     /// (0 = one per core).
     #[new]
     #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0))]
     fn new(metric: &str, degree: usize, build_ef: usize, threads: usize) -> PyResult<Self> {
-        match metric {
-            "angular" => {}
-            "euclidean" => {
-                return Err(PyNotImplementedError::new_err(
-                    "metric 'euclidean' is not supported yet; VectorIndex supports 'angular'",
-                ))
-            }
+        let metric = match metric {
+            "angular" => Metric::Angular,
+            "euclidean" => Metric::Euclidean,
             other => {
                 return Err(PyValueError::new_err(format!(
-                    "unknown metric {other:?}; VectorIndex supports 'angular'"
+                    "unknown metric {other:?}; VectorIndex supports 'angular' and 'euclidean'"
                 )))
             }
-        }
+        };
         if degree == 0 || !degree.is_multiple_of(2) {
             return Err(PyValueError::new_err(format!(
                 "degree must be positive and even, not {degree}"
@@ -150,6 +148,7 @@ impl PyVectorIndex {
             ),
         };
         Ok(Self {
+            metric,
             degree,
             build_ef,
             pool,
@@ -174,6 +173,7 @@ impl PyVectorIndex {
         // place and keeps it until the encoding is done.
         let data = row_major(&x);
         let params = BuildParams {
+            metric: self.metric,
             degree: self.degree,
             build_ef: self.build_ef,
             quantized_search: true,
@@ -310,7 +310,11 @@ impl PyVectorIndex {
 
     fn __repr__(&self) -> String {
         format!(
-            "VectorIndex(metric='angular', degree={}, build_ef={}, ef={}, rerank={}, n={})",
+            "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, n={})",
+            match self.metric {
+                Metric::Angular => "angular",
+                Metric::Euclidean => "euclidean",
+            },
             self.degree,
             self.build_ef,
             self.ef,

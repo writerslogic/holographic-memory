@@ -92,6 +92,19 @@ def test_input_conversion_gives_identical_results(index, data, queries):
     np.testing.assert_array_equal(fortran.query(q, K), expected)
 
 
+def test_euclidean_ranks_by_distance_not_angle(data, queries):
+    # Rows with very different norms: the angular order is not the Euclidean one.
+    scaled = data * np.random.default_rng(9).uniform(0.2, 5.0, (len(data), 1)).astype(np.float32)
+    d2 = ((queries.astype(np.float64)[:, None, :] - scaled.astype(np.float64)[None]) ** 2).sum(-1)
+    truth = np.argsort(d2, axis=1, kind="stable")[:, :K]
+    idx = hm.VectorIndex("euclidean", degree=32, build_ef=128, threads=2)
+    idx.fit(scaled)
+    assert repr(idx).startswith("VectorIndex(metric='euclidean'")
+    idx.set_query_arguments(ef=128, rerank=64)
+    assert recall([idx.query(q, K) for q in queries], truth) >= 0.95
+    assert recall([idx.query(q, K) for q in queries], exact_top_k(scaled, queries, K)) < 0.9
+
+
 def test_k_above_size_returns_every_row_once():
     small = clustered(12, 8, 3)
     idx = hm.VectorIndex(degree=4, build_ef=16)
@@ -101,8 +114,6 @@ def test_k_above_size_returns_every_row_once():
 
 
 def test_rejects_invalid_arguments(index):
-    with pytest.raises(NotImplementedError, match="euclidean"):
-        hm.VectorIndex("euclidean")
     with pytest.raises(ValueError, match="metric"):
         hm.VectorIndex("hamming")
     with pytest.raises(ValueError, match="even"):
