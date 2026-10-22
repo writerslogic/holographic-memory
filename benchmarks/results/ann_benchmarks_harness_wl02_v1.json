@@ -7,13 +7,13 @@
   "deviations": [
    "--local instead of docker (no docker on the host); each run.py process pinned to one logical CPU with taskset, OMP/MKL/OPENBLAS_NUM_THREADS=1. Upstream's docker runner pins each container to one CPU (cpuset), so build and queries are single-core in both cases.",
    "--runs 2 (CI uses 2, the default is 5; best of runs is kept).",
-   "Up to 9 runs in parallel on distinct WSL2 cores (upstream's April 2025 refresh ran 31 in parallel). WSL2 presents 11 cores x 2 threads; Windows schedules them on P/E cores, which cannot be pinned.",
+   "Up to 10 runs in parallel on distinct WSL2 cores (upstream's April 2025 refresh ran 31 in parallel). WSL2 presents 11 cores x 2 threads; Windows schedules them on P/E cores, which cannot be pinned.",
    "Competitor run_groups are subsets of upstream config.yml (values unchanged); see competitors.",
    "From about 01:35 to 01:55 host time, another benchmark's four worker processes ran on CPUs 0-6 with about 17 GB RSS (6 GB swap in use); later other sessions' builds ran on some of the same CPUs.",
    "Points come from two passes (00:39-01:32 and 01:35-03:07 host time). hnswlib M-16 (glove, sift) and scann on fashion-mnist are from the first pass; everything else, including all HMS points (commit below) and a forced re-run of scann on glove and sift, is from the second.",
    "glass caches its graph by (dim, R, L): the glove R-32 graph was built in the first pass (1,110 s) and loaded in the second, so its build_s here is the load time.",
    "faiss-ivfpqfs on sift was stopped at the cutoff; the points it finished are included.",
-   "glass and faiss here run their AVX2 paths (the host has no AVX-512), unlike the AVX-512 machine of the published ann-benchmarks results, so their published ranking does not carry over."
+   "The host has AVX2 and AVX-VNNI but no AVX-512, so glass, faiss and HMS (which has an AVX-512 VNNI kernel) all run their AVX2 paths, unlike the AVX-512 machine of the published ann-benchmarks results; published rankings do not carry over."
   ]
  },
  "host": {
@@ -37,14 +37,15 @@
   "glass": "pyglass tag v1.0 built from source with -march=native and pybind11 2.10.4 (the PyPI glassppy 1.0.5 wheel needs AVX-512 and dies with SIGILL here); R 32/64 on glove, R 32 on sift, all on fashion-mnist",
   "scann": "scann 1.4.2 (PyPI, as upstream Dockerfile); all upstream run_groups",
   "faiss-ivfpqfs": "faiss-cpu 1.15.1 (PyPI; upstream uses conda faiss-cpu with MKL)",
-  "not_run": "NGT/ONNG/QSG-NGT, diskann/vamana, other upstream algorithms"
+  "not_run": "NGT/ONNG/QSG-NGT, diskann/vamana, other upstream algorithms",
+  "hnswlib_glove_caveat": "Unvalidated: on glove-100-angular hnswlib reaches recall 0.9 only at M-36 with 419 QPS, about 7x below scann here, whereas the published April 2025 plot has hnswlib about 2x below scann. Do not use these glove points for HMS-vs-hnswlib claims."
  },
  "noise": {
   "method": "QPS ratio of HMS settings doing identical work (ef <= 64, rerank 64 vs 2000)",
   "pairs": 54,
   "median_ratio": 1.044,
   "max_ratio": 1.367,
-  "cross_run_drift": "same configurations measured in an earlier pass on the same host 0.5-1 h before: scann best QPS at recall 0.9 on sift 6,368 then vs 4,336 here; HMS degree 32 ef 80 rerank 64 on sift 3,733 then vs 2,819 here. Treat QPS ratios within about 1.3x as ties."
+  "note": "Only within-run noise is measured; variation between runs made at different times on this host was not measured from committed data. Treat QPS ratios within 1.37x as ties."
  },
  "standing": {
   "fashion-mnist-784-euclidean": {
