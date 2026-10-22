@@ -386,7 +386,7 @@ impl UpdatableVGraph {
         let mut vectors = data.to_vec();
         super::prepare_rows(&mut vectors, dim, params.metric);
         let ids: Vec<u32> = (0..(data.len() / dim) as u32).collect();
-        write_base(path, &manifest, &ids, &vectors)?;
+        write_base(path, &manifest, &ids, vectors)?;
         format::rotate(&path.join("updates.log"), &manifest)?;
         atomic_write(&path.join("CURRENT"), &manifest.encode())?;
         sync_directory(
@@ -733,7 +733,9 @@ impl UpdatableVGraph {
     ) -> Result<(), UpdateError> {
         let writer = self.writer()?;
         self.commit_with(&writer)?;
-        let snapshot = self.state.read().clone();
+        // The writer flag excludes every other mutation, so a read guard sees the same state
+        // a clone would, without copying the delta.
+        let snapshot = self.state.read();
         if snapshot.delta.len() == 0 && snapshot.deleted == 0 {
             return Ok(());
         }
@@ -770,7 +772,8 @@ impl UpdatableVGraph {
                 );
             }
         }
-        write_base(&self.dir, &manifest, &ids, &rows)?;
+        drop(snapshot);
+        write_base(&self.dir, &manifest, &ids, rows)?;
         checkpoint(1)?;
         let base = Base::open(&self.dir, &manifest)?;
         let publication = (|| {
@@ -810,14 +813,17 @@ fn cleanup_generations(dir: &Path, active: u64) -> Result<(), UpdateError> {
     Ok(())
 }
 
+/// Writes the rows file, then builds the graph from the same buffer (`rows` are already
+/// prepared, so the build's in-place preparation leaves them unchanged).
 fn write_base(
     dir: &Path,
     manifest: &Manifest,
     ids: &[u32],
-    rows: &[f32],
+    rows: Vec<f32>,
 ) -> Result<(), UpdateError> {
+    BaseRows::write(&manifest.rows_path(dir), manifest, ids, &rows)?;
     if !ids.is_empty() {
-        let graph = Graph::build(rows, manifest.dim, &manifest.build)?;
+        let graph = Graph::build_owned(rows, manifest.dim, &manifest.build)?;
         let e = &manifest.encoding;
         let mut vertex = VGraph::from_graph_with(
             &graph,
@@ -833,7 +839,6 @@ fn write_base(
         }
         vertex.save(&manifest.vertex_path(dir))?;
     }
-    BaseRows::write(&manifest.rows_path(dir), manifest, ids, rows)?;
     sync_directory(dir)?;
     Ok(())
 }
