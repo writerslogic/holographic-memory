@@ -224,7 +224,7 @@ fn main() -> Result<()> {
     let mut found = Vec::with_capacity(100);
     let mut load = Vec::new();
     for repetition in 0..args.repeats {
-        for group in rows.chunks_exact_mut(4) {
+        for group in rows.as_chunks_mut::<4>().0 {
             for offset in 0..4 {
                 let row = &mut group[(offset + repetition) % 4];
                 let search = &mut searchers[row.arm];
@@ -257,7 +257,7 @@ fn main() -> Result<()> {
                     let mut strict = 0;
                     for (qi, (query, ids)) in queries
                         .chunks_exact(dim)
-                        .zip(ids.chunks_exact(100))
+                        .zip(ids.as_chunks::<100>().0)
                         .enumerate()
                     {
                         for &id in ids {
