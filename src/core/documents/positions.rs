@@ -16,8 +16,64 @@ pub(super) const DOCUMENT_VERSION: u8 = 2;
 #[serde(deny_unknown_fields)]
 pub(super) struct Positions {
     pub(super) version: u8,
-    pub(super) offsets: Box<[u32]>,
+    pub(super) offsets: Offsets,
     pub(super) data: Box<[u8]>,
+}
+
+#[derive(Clone)]
+pub(super) enum Offsets {
+    Byte(Box<[u8]>),
+    Short(Box<[u16]>),
+    Word(Box<[u32]>),
+}
+
+impl From<Vec<u32>> for Offsets {
+    fn from(values: Vec<u32>) -> Self {
+        let maximum = values.iter().copied().max().unwrap_or(0);
+        if maximum <= u32::from(u8::MAX) {
+            Self::Byte(values.into_iter().map(|v| v as u8).collect())
+        } else if maximum <= u32::from(u16::MAX) {
+            Self::Short(values.into_iter().map(|v| v as u16).collect())
+        } else {
+            Self::Word(values.into_boxed_slice())
+        }
+    }
+}
+
+impl Offsets {
+    pub(super) fn len(&self) -> usize {
+        match self {
+            Self::Byte(v) => v.len(),
+            Self::Short(v) => v.len(),
+            Self::Word(v) => v.len(),
+        }
+    }
+    fn get(&self, index: usize) -> u32 {
+        match self {
+            Self::Byte(v) => u32::from(v[index]),
+            Self::Short(v) => u32::from(v[index]),
+            Self::Word(v) => v[index],
+        }
+    }
+    pub(super) fn iter(&self) -> impl ExactSizeIterator<Item = u32> + '_ {
+        (0..self.len()).map(|index| self.get(index))
+    }
+}
+
+impl Serialize for Offsets {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
+        serializer.collect_seq(self.iter())
+    }
+}
+impl<'de> Deserialize<'de> for Offsets {
+    fn deserialize<D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> std::result::Result<Self, D::Error> {
+        Ok(Vec::<u32>::deserialize(deserializer)?.into())
+    }
 }
 
 pub(super) fn tokens(text: &str, stem: bool) -> Vec<String> {
@@ -62,7 +118,7 @@ impl Positions {
             } else {
                 VERSION
             },
-            offsets: offsets.into_boxed_slice(),
+            offsets: offsets.into(),
             data: data.into_boxed_slice(),
         }
     }
@@ -75,9 +131,13 @@ impl Positions {
         );
         ensure!(
             self.offsets.len() == terms.keys().len() + 1
-                && self.offsets.first() == Some(&0)
-                && self.offsets.last().copied().map(|v| v as usize) == Some(self.data.len())
-                && self.offsets.windows(2).all(|p| p[0] < p[1])
+                && self.offsets.iter().next() == Some(0)
+                && self.offsets.iter().last().map(|v| v as usize) == Some(self.data.len())
+                && self
+                    .offsets
+                    .iter()
+                    .zip(self.offsets.iter().skip(1))
+                    .all(|(a, b)| a < b)
                 && self.data.len() <= MAX_DOCUMENT_BYTES,
             "invalid positional posting offsets or length"
         );
@@ -132,7 +192,7 @@ impl Positions {
     }
 
     fn bytes(&self, index: usize) -> &[u8] {
-        &self.data[self.offsets[index] as usize..self.offsets[index + 1] as usize]
+        &self.data[self.offsets.get(index) as usize..self.offsets.get(index + 1) as usize]
     }
 
     pub(super) fn iter(&self, index: usize) -> impl Iterator<Item = u32> + '_ {
@@ -146,5 +206,30 @@ impl Positions {
                 .expect("validated u32 position");
             Some(position)
         })
+    }
+}
+
+#[cfg(test)]
+mod offset_tests {
+    use super::*;
+
+    #[test]
+    fn offset_width_boundaries_keep_the_persisted_numbers() {
+        for limit in [255u32, 65_535] {
+            for maximum in [limit - 1, limit, limit + 1] {
+                let values = vec![0, 1, maximum];
+                let offsets = Offsets::from(values.clone());
+                assert_eq!(offsets.iter().collect::<Vec<_>>(), values);
+                assert_eq!(
+                    serde_json::to_vec(&offsets).unwrap(),
+                    serde_json::to_vec(&values).unwrap()
+                );
+                let restored: Offsets =
+                    serde_json::from_slice(&serde_json::to_vec(&offsets).unwrap()).unwrap();
+                assert_eq!(restored.iter().collect::<Vec<_>>(), values);
+                assert_eq!(matches!(restored, Offsets::Byte(_)), maximum <= 255);
+                assert_eq!(matches!(restored, Offsets::Word(_)), maximum > 65_535);
+            }
+        }
     }
 }

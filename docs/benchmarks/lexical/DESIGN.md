@@ -107,3 +107,53 @@ or incompatible evidence. Main PR and upstream #99 remain draft; do not merge.
 Approved cross-ownership integration includes the lexical API additions in
 `src/core/engine/document_api.rs` and scoped whole-article validation in
 `src/core/engine/document_batch.rs` and `src/core/engine/mutation.rs`. Graph and Python code remain outside this change.
+
+## Full-corpus memory experiment
+
+The first CI-passing release passed 5,826 real protocol answers against an independent
+count oracle and the exhaustive native evaluator. Full positional indexing then hit
+the 12 GiB cgroup limit at 3.2 million of 5,032,104 input articles. The last sampled
+native RSS was 12,539,396 KiB, almost entirely anonymous. No full-corpus latency can
+be inferred from this failed run.
+
+Retain one immutable term dictionary per ingest group or decoded journal frame,
+using bitpacked per-chunk dictionary IDs and the existing frequency-reference
+interface. This reuses the frame dictionary already encoded in HMS-TXN-3 and avoids
+copying each word into every article. Narrow positional offsets to u8/u16/u32 in
+memory. Serialization still emits the same term keys, frequencies and u32 offsets;
+existing and new golden bytes remain fixed. Groups and captured documents pin shared
+dictionary owners. Fresh whole-article ingest groups use 512 documents; legacy and
+non-positional ingest behavior is preserved. Binary replay shares the existing frame
+dictionary. The second release must remeasure both indexing and query memory.
+
+Shared term frequencies also narrow to u8/u16/u32. Small frequencies borrow immutable
+u32 values from a fixed table, preserving existing reference-returning term APIs.
+
+## Pruning experiment
+
+The first 600,000-article diagnostic run isolates scoring: union TOP_10 takes about
+18 ms while COUNT takes about 1.4 ms. These are subset diagnostics, not comparisons
+with the full-corpus baseline. Add runtime-selectable DAAT and block-max WAND paths
+in the second release so the same binary and index can measure the difference.
+The candidate Auto planner selects WAND for at most 16 clauses and k at most 1,000;
+other shapes use DAAT. Runtime overrides permit paired measurements without rebuilding.
+Promotion requires repeatable improvement; MaxScore is not implemented speculatively.
+
+WAND applies only to finite, nonnegative, optional term disjunctions. Global bounds
+choose a pivot; block bounds skip windows ending at the earliest active block end.
+Each block retains nondominated (frequency, length) pairs: every live posting has
+frequency no larger and length no smaller than some retained pair. Invalidated
+metadata uses (maximum frequency, zero length). Corpus IDF and average length are
+evaluated at query time. Deletes, replacements and legacy replay cannot narrow a bound.
+
+For normal arithmetic, the scorer has two rounded numerator multiplications, one
+rounded denominator addition and one rounded division. The ratio between two
+evaluations around the monotone exact function is at most
+`((1+u)/(1-u))^4`, where `u=2^-53`. Multiply each endpoint score by
+`1+16*EPSILON` and round upward. A preflight rejects overflow, underflow, nonfinite
+or negative inputs across all possible frequencies and lengths; rejected queries use
+DAAT. Upward sums with a further `1+2*clause_count*EPSILON` factor cover canonical
+score accumulation even when pivot order differs. Only strict inequality permits
+pruning, preserving score ties and document-ID order. Tests compare every retained
+block bound with every posting under varied live statistics and BM25 parameters,
+then compare WAND results with the full-scan evaluator through mutations and reopen.

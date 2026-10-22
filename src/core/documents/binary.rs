@@ -9,8 +9,9 @@
 
 use anyhow::{bail, ensure, Context, Result};
 use std::borrow::Cow;
+use std::sync::Arc;
 
-use super::packed_terms::StoredTerms;
+use super::packed_terms::{SharedDictionary, StoredTerms};
 use super::text::TextSegment;
 use super::{Embedding, StoredChunk, StoredDocument, VectorState};
 use crate::core::entangled::EntangledHVec;
@@ -165,6 +166,10 @@ impl<'a> FrameTerms<'a> {
     }
 
     /// Front-coded: per term, the bytes it shares with the previous one, then the rest.
+    pub(super) fn into_shared(self) -> (Arc<SharedDictionary>, Vec<u32>) {
+        (Arc::new(SharedDictionary::new(&self.sorted)), self.ids)
+    }
+
     pub(crate) fn write(&self, out: &mut Vec<u8>) {
         put_varint(out, self.sorted.len() as u64);
         let mut previous: &[u8] = &[];
@@ -190,9 +195,7 @@ impl<'a> FrameTerms<'a> {
 
 /// Reader side of a frame's term dictionary.
 pub(crate) struct DecodedTerms {
-    bytes: Vec<u8>,
-    /// `len + 1` offsets into `bytes`.
-    offsets: Vec<usize>,
+    dictionary: Arc<SharedDictionary>,
 }
 
 impl DecodedTerms {
@@ -231,17 +234,19 @@ impl DecodedTerms {
             );
             offsets.push(bytes.len());
         }
-        Ok(Self { bytes, offsets })
+        let text = String::from_utf8(bytes).context("binary dictionary is not UTF-8")?;
+        let starts = offsets[..count]
+            .iter()
+            .map(|&v| u32::try_from(v))
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .context("dictionary exceeds u32")?;
+        Ok(Self {
+            dictionary: Arc::new(SharedDictionary::from_parts(text, starts)),
+        })
     }
 
     fn len(&self) -> usize {
-        self.offsets.len() - 1
-    }
-
-    fn term(&self, id: usize) -> &str {
-        // Checked as UTF-8 when read.
-        std::str::from_utf8(&self.bytes[self.offsets[id]..self.offsets[id + 1]])
-            .expect("dictionary term checked at read")
+        self.dictionary.len()
     }
 }
 
@@ -343,7 +348,7 @@ pub(crate) fn write_document(
         if let Some(positions) = &chunk.terms.positions {
             out.push(positions.version);
             put_varint(out, positions.offsets.len() as u64);
-            for &offset in &positions.offsets {
+            for offset in positions.offsets.iter() {
                 put_varint(out, u64::from(offset));
             }
             put_bytes(out, &positions.data);
@@ -450,14 +455,12 @@ pub(crate) fn read_document(
         for _ in 0..term_count {
             frequencies.push(reader.number::<u32>("term frequency")?);
         }
-        let bytes = ids.iter().map(|&id| terms.term(id).len()).sum();
-        let mut table = StoredTerms::from_sorted_refs(
-            term_count,
-            bytes,
-            ids.iter()
-                .zip(frequencies)
-                .map(|(&id, f)| (terms.term(id), f)),
-        );
+        let ids: Vec<u32> = ids
+            .into_iter()
+            .map(|id| u32::try_from(id).expect("bounded dictionary id"))
+            .collect();
+        let mut table =
+            StoredTerms::from_dictionary(Arc::clone(&terms.dictionary), &ids, frequencies);
         if flags & CHUNK_POSITIONS != 0 {
             let version = reader.byte()?;
             ensure!(
@@ -480,7 +483,7 @@ pub(crate) fn read_document(
             );
             let positions = Box::new(super::positions::Positions {
                 version,
-                offsets: offsets.into_boxed_slice(),
+                offsets: offsets.into(),
                 data: data.into(),
             });
             positions.validate(&table)?;

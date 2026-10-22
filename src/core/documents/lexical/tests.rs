@@ -20,7 +20,13 @@ fn options(positions: bool, unstemmed: bool) -> IngestOptions {
     }
 }
 
-fn insert(store: &mut DocumentStore, id: &str, text: &str, positions: bool, unstemmed: bool) {
+pub(super) fn insert(
+    store: &mut DocumentStore,
+    id: &str,
+    text: &str,
+    positions: bool,
+    unstemmed: bool,
+) {
     let document = documents::prepare_with_options(
         input(id, text),
         64,
@@ -265,16 +271,6 @@ fn check_model(store: &DocumentStore, texts: &[(String, Vec<String>)], left: usi
         assert_eq!(run(store, &query, 10).count, Some(expected), "{query}");
         let parsed = LexicalQuery::parse(&query).unwrap();
         for k in [0, 1, 3, 10, 129, 1000] {
-            let auto = execute(
-                store,
-                &parsed,
-                &LexicalOptions {
-                    k,
-                    count: true,
-                    ..Default::default()
-                },
-            )
-            .unwrap();
             let reference = execute(
                 store,
                 &parsed,
@@ -286,7 +282,31 @@ fn check_model(store: &DocumentStore, texts: &[(String, Vec<String>)], left: usi
                 },
             )
             .unwrap();
-            assert_eq!(auto, reference, "{query}, k={k}");
+            for execution in [
+                LexicalExecution::Auto,
+                LexicalExecution::DocumentAtATime,
+                LexicalExecution::BlockMaxWand,
+            ] {
+                for count in [false, true] {
+                    let actual = execute(
+                        store,
+                        &parsed,
+                        &LexicalOptions {
+                            k,
+                            count,
+                            execution,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap();
+                    assert_eq!(actual.hits, reference.hits, "{query}, k={k}, {execution:?}");
+                    assert_eq!(
+                        actual.count,
+                        count.then_some(expected),
+                        "{query}, k={k}, {execution:?}"
+                    );
+                }
+            }
         }
     }
 }

@@ -331,7 +331,15 @@ impl DocumentStore {
     /// in that order, and a document that replaces a stored one (or repeats an id earlier in
     /// the batch) takes the replacement path at its turn. The maximal runs of new, distinct
     /// documents between those are indexed in bulk (`postings::index_chunks`).
-    pub(crate) fn insert_batch(&mut self, documents: Vec<Arc<StoredDocument>>) {
+    pub(crate) fn insert_batch(&mut self, mut documents: Vec<Arc<StoredDocument>>) {
+        for group in documents.chunks_mut(512) {
+            if group
+                .iter()
+                .all(|d| d.chunks.iter().all(|c| c.terms.is_whole_document()))
+            {
+                super::packed_terms::StoredTerms::share_documents(group);
+            }
+        }
         let documents: Vec<Arc<StoredDocument>> = documents
             .into_iter()
             .map(|document| self.stripped(document))

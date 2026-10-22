@@ -11,19 +11,22 @@ struct TermState<'a> {
     live_count: usize,
 }
 
-struct TopK {
+pub(super) struct TopK {
     values: Vec<(f64, usize)>,
     k: usize,
     floor: f64,
 }
 
 impl TopK {
-    fn new(k: usize) -> Self {
+    pub(super) fn new(k: usize) -> Self {
         Self {
             values: Vec::new(),
             k,
             floor: 0.0,
         }
+    }
+    pub(super) fn floor(&self) -> f64 {
+        self.floor
     }
     fn trim(&mut self, store: &DocumentStore) {
         super::super::top_ranked(&mut self.values, self.k, |a, b| {
@@ -34,7 +37,7 @@ impl TopK {
             self.floor = self.values.last().expect("nonempty top-k").0;
         }
     }
-    fn consider(&mut self, store: &DocumentStore, score: f64, slot: usize) {
+    pub(super) fn consider(&mut self, store: &DocumentStore, score: f64, slot: usize) {
         if self.k == 0 || score < self.floor {
             return;
         }
@@ -43,7 +46,7 @@ impl TopK {
             self.trim(store);
         }
     }
-    fn finish(mut self, store: &DocumentStore) -> Vec<LexicalHit> {
+    pub(super) fn finish(mut self, store: &DocumentStore) -> Vec<LexicalHit> {
         if self.k == 0 {
             return Vec::new();
         }
@@ -102,6 +105,8 @@ pub(super) fn document_at_a_time(
         Vec::new()
     };
     let average = (store.word_count as f64 / (store.chunk_count as f64).max(1.0)).max(1.0);
+    let need_document = query.clauses.iter().any(|c| c.phrase)
+        || (options.count && !store.multichunk_documents.is_empty());
     for form in 0..2 {
         let mut by_word = BTreeMap::new();
         let mut states = Vec::new();
@@ -156,18 +161,29 @@ pub(super) fn document_at_a_time(
         required.sort_unstable();
         required.dedup();
         required.sort_unstable_by_key(|&i| states[i].df);
-        // One posting per chunk, and exactly one chunk per parent: df is the live count.
+        let single_required_term = required.len() == 1
+            && query
+                .clauses
+                .iter()
+                .filter(|c| c.occur == Occur::Must)
+                .all(|c| !c.phrase)
+            && query.clauses.iter().all(|c| c.occur != Occur::MustNot);
         if options.k == 0
             && options.count
-            && query.clauses.len() == 1
-            && !query.clauses[0].phrase
-            && query.clauses[0].occur != Occur::MustNot
             && store.chunk_count == store.documents.len()
+            && (single_required_term
+                || (query.clauses.len() == 1
+                    && !query.clauses[0].phrase
+                    && query.clauses[0].occur != Occur::MustNot))
         {
-            count += positive
-                .iter()
-                .map(|&i| states[i].live_count)
-                .sum::<usize>();
+            count += if single_required_term {
+                states[required[0]].live_count
+            } else {
+                positive
+                    .iter()
+                    .map(|&i| states[i].live_count)
+                    .sum::<usize>()
+            };
             continue;
         }
         let mut frequencies = vec![0; query.clauses.len()];
@@ -183,11 +199,14 @@ pub(super) fn document_at_a_time(
             let Some(slot) = candidate else {
                 break;
             };
-            let (document, chunk_index) = store.borrowed_chunk(slot);
-            let chunk = &document.chunks[chunk_index];
+            let document_chunk = need_document.then(|| store.borrowed_chunk(slot));
             for ((clause, indices), frequency_value) in
                 query.clauses.iter().zip(&indices).zip(&mut frequencies)
             {
+                if options.k == 0 && !required.is_empty() && clause.occur == Occur::Should {
+                    *frequency_value = 0;
+                    continue;
+                }
                 if clause.phrase {
                     let possible = indices.iter().all(|&i| {
                         i.is_some_and(|i| {
@@ -198,7 +217,8 @@ pub(super) fn document_at_a_time(
                         })
                     });
                     *frequency_value = if possible {
-                        frequency(clause, chunk)
+                        let (document, chunk_index) = document_chunk.expect("phrase owner");
+                        frequency(clause, &document.chunks[chunk_index])
                     } else {
                         0
                     };
@@ -211,15 +231,16 @@ pub(super) fn document_at_a_time(
             }
             if matches(query, &frequencies) {
                 if options.count {
-                    if document.chunks.len() == 1 {
-                        count += 1;
-                    } else {
+                    if let Some((document, _)) = document_chunk.filter(|(d, _)| d.chunks.len() > 1)
+                    {
                         let first = store.slots[&document.id][0];
                         let bit = 1 << (first % 64);
                         if seen[first / 64] & bit == 0 {
                             count += 1;
                             seen[first / 64] |= bit;
                         }
+                    } else {
+                        count += 1;
                     }
                 }
                 if options.k > 0 {
@@ -230,7 +251,7 @@ pub(super) fn document_at_a_time(
                             &frequencies,
                             &idfs,
                             form,
-                            bm25.norm(chunk.word_count as f64, average),
+                            bm25.norm(f64::from(store.slot_word_count(slot)), average),
                             bm25,
                         )?,
                         slot,
@@ -269,11 +290,7 @@ pub(super) fn count_union(store: &DocumentStore, query: &LexicalQuery) -> usize 
         let words: BTreeSet<_> = query.clauses.iter().map(|c| &c.words[form][0]).collect();
         for word in words {
             if let Some(list) = store.postings[form].get(word) {
-                list.for_each(|slot, frequency| {
-                    if frequency > 0 {
-                        matched[slot / 64] |= 1 << (slot % 64);
-                    }
-                });
+                list.mark_slots(&mut matched);
             }
         }
     }

@@ -12,6 +12,10 @@ use super::{Bm25, DocumentStore, SearchOptions, StoredChunk, MAX_DOCUMENT_BYTES}
 pub enum LexicalExecution {
     #[default]
     Auto,
+    /// Unpruned posting-cursor execution.
+    DocumentAtATime,
+    /// Conservative block-max WAND for term disjunctions; other queries use cursors.
+    BlockMaxWand,
     /// Full scan and full sort, useful for verifying another execution strategy.
     Exhaustive,
 }
@@ -283,7 +287,17 @@ pub(crate) fn execute(
     }
     match options.execution {
         LexicalExecution::Exhaustive => exhaustive(store, query, options, bm25),
-        LexicalExecution::Auto => document_at_a_time(store, query, options, bm25),
+        LexicalExecution::Auto | LexicalExecution::BlockMaxWand
+            if options.k > 0
+                && (options.execution == LexicalExecution::BlockMaxWand
+                    || (query.clauses.len() <= 16 && options.k <= 1000)) =>
+        {
+            match wand::execute(store, query, options, bm25)? {
+                Some(result) => Ok(result),
+                None => document_at_a_time(store, query, options, bm25),
+            }
+        }
+        _ => document_at_a_time(store, query, options, bm25),
     }
 }
 
@@ -345,6 +359,7 @@ fn exhaustive(
 }
 
 mod execution;
+mod wand;
 use execution::document_at_a_time;
 
 #[cfg(test)]
