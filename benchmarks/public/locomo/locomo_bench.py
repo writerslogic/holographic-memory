@@ -142,7 +142,8 @@ class Server:
     def memory(self, tenant, op, body):
         req = urllib.request.Request(f'{self.base}/api/v1/memory/{op}', data=json.dumps(body).encode(), method='POST',
                                      headers={'Content-Type': 'application/json', 'X-Tenant-ID': tenant})
-        for attempt in range(8):
+        attempt = 0
+        while True:
             try:
                 with urllib.request.urlopen(req, timeout=120) as r:
                     return json.loads(r.read())
@@ -150,7 +151,8 @@ class Server:
                 detail = e.read()[:300]
                 if e.code not in (429, 503) or attempt == 7:
                     raise RuntimeError(f'{op} {tenant}: HTTP {e.code} {detail!r}') from e
-                time.sleep(0.2 * 2 ** attempt)
+            time.sleep(0.2 * 2 ** attempt)
+            attempt += 1
 
     def close(self):
         self.proc.terminate()
@@ -334,7 +336,7 @@ def main():
     for pkg in ('punkt', 'punkt_tab'):
         nltk.download(pkg, download_dir=nltk_dir, quiet=True)
 
-    data = json.load(open(args.data))
+    data = json.loads(Path(args.data).read_text())
     wanted = [s['sample_id'] for s in data] if args.convs == 'all' else args.convs.split(',')
     samples = [s for s in data if s['sample_id'] in wanted]
     assert len(samples) == len(wanted), 'unknown sample id'
@@ -388,7 +390,7 @@ def main():
         'arm': 'full-context' if args.full_context else 'hms-memory-api',
         'embedding_model': EMBED_MODEL if args.embed else None, 'k_per_speaker': args.k,
         'recall_options': json.loads(args.recall_options), 'token_budget': args.token_budget or None,
-        'memory_config': json.load(open(args.memory_config)) if args.memory_config else None,
+        'memory_config': json.loads(Path(args.memory_config).read_text()) if args.memory_config else None,
         'runs': 0 if args.retrieval_only else args.runs, 'conversations': sorted(ran), 'split': SPLIT, 'hms_sha': args.hms_sha,
         'new_api_tokens': {m: list(t) for m, t in usage.tokens.items()}, 'new_api_spend_usd': usage.usd(),
         'wall_seconds': round(time.time() - t0, 1),

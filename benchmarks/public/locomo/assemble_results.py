@@ -73,7 +73,9 @@ def main():
     arms = {}
     for name_runs, *files in args.arm:
         name, runs = name_runs.split(':')
-        rows = [json.loads(line) for f in files for line in open(f)]
+        rows = []
+        for f in files:
+            rows += [json.loads(line) for line in Path(f).read_text().splitlines()]
         arms[name] = groups(rows, int(runs), meta['split'])
         arms[name]['passes'] = int(runs)
     result = {
