@@ -590,7 +590,7 @@ class Ngt(Adapter):
 
 
 class Scann(Adapter):
-    """ScaNN: spherical k-means tree + anisotropic 4-bit-LUT scoring + exact reorder; the
+    """ScaNN: k-means tree (spherical for angular data) + anisotropic 4-bit-LUT scoring + exact reorder; the
     ann-benchmarks glove-100-angular scann1 and scann4 build arguments, with the leaf count scaled
     by sqrt(n) from its 2000 at 1.18M rows so subsets keep the same rows per leaf."""
     BUILDS = {"ab_scann1": {"leaf_scale": 1.84, "avq": 0.2, "dims": 2}, "ab_scann4": {"leaf_scale": 1.29, "avq": 0.15, "dims": 3}}
@@ -601,9 +601,10 @@ class Scann(Adapter):
     def build(self, train, params):
         import scann
         leaves = max(8, int(params["leaf_scale"] * len(train) ** 0.5))
-        searcher = (scann.scann_ops_pybind.builder(train, K, "dot_product")
+        metric = "dot_product" if self.angular else "squared_l2"
+        searcher = (scann.scann_ops_pybind.builder(train, K, metric)
                     .set_n_training_threads(self.threads)
-                    .tree(leaves, 1, training_sample_size=len(train), spherical=True, quantize_centroids=True)
+                    .tree(leaves, 1, training_sample_size=len(train), spherical=self.angular, quantize_centroids=True)
                     .score_ah(params["dims"], anisotropic_quantization_threshold=params["avq"])
                     .reorder(1).build())
         (self.workdir / "searcher").mkdir(parents=True, exist_ok=True)
