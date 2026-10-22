@@ -22,14 +22,22 @@ try {
   for (const line of lines) {
     const [query, expect] = line.split('|').map(s => s.trim())
     await page.keyboard.press('Escape')
-    await page.click('input.md-search__input')
-    await page.locator('input.md-search__input').fill('')
-    await page.locator('input.md-search__input').pressSequentially(query, { delay: 15 })
+    // The search worker answers every value the box has held, and the list shows each answer as it
+    // lands, so typing character by character and reading after a fixed delay can score the results
+    // of a prefix. Clear the box, wait for the empty state, then enter the whole query at once:
+    // the search reads the box on keyup, so exactly one query is in flight and the first non-empty
+    // result list is its answer.
+    const box = page.locator('input.md-search__input')
+    await box.click()
+    await box.fill('')
+    await box.press('End')
+    await page.waitForFunction(() => /Type to start searching/i.test(document.querySelector('.md-search-result__meta')?.textContent ?? ''), null, { timeout: 5000 })
+    await box.fill(query)
+    await box.press('End')
     await page.waitForFunction(() => {
       const meta = document.querySelector('.md-search-result__meta')
       return meta && !/Type to start searching/i.test(meta.textContent)
-    }, null, { timeout: 5000 }).catch(() => {})
-    await page.waitForTimeout(400)
+    }, null, { timeout: 10000 })
     const hits = await page.$$eval('.md-search-result__item > a, .md-search-result__item a.md-search-result__link', els => els.map(a => a.getAttribute('href')))
     const pages = [...new Set(hits.map(h => h.replace(/[?#].*$/, '')))].slice(0, 5)
     const ok = pages.some(h => expect.split(',').some(e => h.includes(e.trim())))

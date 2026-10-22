@@ -1,3 +1,8 @@
+---
+search:
+  boost: 1.6
+---
+
 # hms-server authentication and authorization
 
 ## Modes

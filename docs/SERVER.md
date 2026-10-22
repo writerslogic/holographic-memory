@@ -1,3 +1,8 @@
+---
+search:
+  boost: 1.6
+---
+
 # hms-server
 
 `hms-server` is the HTTP service for Holographic Memory. It implements the endpoints used by the `holographic-sdk` Python client (`bindings/python/holographic-sdk`) and any other HTTP client, wrapping one `HmsCore` store per tenant, and adds what a service needs: scoped per-tenant authentication, limits and backpressure, observability, TLS and unix sockets, snapshots, compaction and graceful shutdown.
