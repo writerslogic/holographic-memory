@@ -11,6 +11,9 @@ use std::sync::Arc;
 use super::{HistoryMode, IdConflict, Memory, MemoryError, Millis, RecallOptions, RememberInput};
 use crate::core::HmsCore;
 
+mod context;
+pub use context::{ConversationContext, ConversationContextLimits};
+
 pub const MAX_CONVERSATION_BYTES: usize = 2 * 1024 * 1024;
 pub const MAX_CONVERSATION_METADATA_BYTES: usize = 60 * 1024;
 pub const MAX_CONVERSATION_RECORDS: usize = 4096;
