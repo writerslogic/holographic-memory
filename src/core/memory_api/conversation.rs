@@ -65,6 +65,12 @@ pub struct ConversationRecallOptions {
     pub max_sources: usize,
     /// UTF8 bytes of the JSON sources array, including brackets and separators; not tokens.
     pub max_bytes: usize,
+    /// Distinct rounds, including required premises. None preserves the unbounded profile.
+    pub max_rounds: Option<usize>,
+    /// Assistant RRF weight for mixed-role queries that do not ask about an assistant reply.
+    pub assistant_weight: f64,
+    /// Session redundancy penalty in [0, 1], applied only to counting/aggregation queries.
+    pub session_diversity: f64,
 }
 
 impl Default for ConversationRecallOptions {
@@ -75,6 +81,9 @@ impl Default for ConversationRecallOptions {
             candidate_limit: 128,
             max_sources: 64,
             max_bytes: 64 * 1024,
+            max_rounds: None,
+            assistant_weight: 1.0,
+            session_diversity: 0.0,
         }
     }
 }
@@ -101,7 +110,7 @@ pub struct ConversationAnchor {
     pub session_id: String,
     pub version: String,
     pub turn_index: usize,
-    /// Equal-weight reciprocal rank fusion, with constant 60, over the requested roles.
+    /// Weighted reciprocal rank fusion, with constant 60, over the requested roles.
     pub score: f64,
 }
 
@@ -179,6 +188,43 @@ struct Candidate {
     text_sha256: String,
     score: f64,
     first_seen: usize,
+}
+
+fn query_words(query: &str) -> Vec<String> {
+    query
+        .split(|ch: char| !ch.is_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .map(str::to_lowercase)
+        .collect()
+}
+
+fn aggregation_intent(words: &[String]) -> bool {
+    words.iter().any(|word| word == "total")
+        || words.windows(2).any(|pair| {
+            matches!(
+                (pair[0].as_str(), pair[1].as_str()),
+                ("how", "many") | ("list", "all" | "every") | ("count" | "number", "of")
+            )
+        })
+}
+
+fn assistant_intent(words: &[String]) -> bool {
+    words
+        .iter()
+        .any(|word| matches!(word.as_str(), "you" | "your" | "assistant"))
+        && words.iter().any(|word| {
+            matches!(word.as_str(), "say" | "said" | "give" | "gave")
+                || ["suggest", "recommend", "mention", "provid"]
+                    .iter()
+                    .any(|prefix| word.starts_with(prefix))
+        })
+}
+
+fn round_index(manifest: &Manifest, turn: usize) -> usize {
+    manifest.sources[..=turn]
+        .iter()
+        .rposition(|entry| entry.role == ConversationRole::User)
+        .unwrap_or(0)
 }
 
 /// Owns the core so one memory writer controls this immutable source namespace. Share the
@@ -498,12 +544,36 @@ impl ConversationMemory {
             || options.roles.iter().copied().collect::<HashSet<_>>().len() != options.roles.len()
             || !(1..=MAX_CONVERSATION_RECORDS).contains(&options.max_sources)
             || !(2..=MAX_CONVERSATION_BYTES).contains(&options.max_bytes)
+            || options
+                .max_rounds
+                .is_some_and(|limit| !(1..=MAX_CONVERSATION_RECORDS).contains(&limit))
+            || !options.assistant_weight.is_finite()
+            || !(0.0..=4.0).contains(&options.assistant_weight)
+            || !options.session_diversity.is_finite()
+            || !(0.0..=1.0).contains(&options.session_diversity)
         {
             return Err(invalid("invalid conversation recall bounds"));
         }
         let mut candidates: BTreeMap<String, Candidate> = BTreeMap::new();
         let mut first_seen = 0;
+        let words = query_words(query);
+        let diversity = if aggregation_intent(&words) {
+            options.session_diversity
+        } else {
+            0.0
+        };
         for role in &options.roles {
+            let weight = if *role == ConversationRole::Assistant
+                && options.roles.len() > 1
+                && !assistant_intent(&words)
+            {
+                options.assistant_weight
+            } else {
+                1.0
+            };
+            if weight == 0.0 {
+                continue;
+            }
             // Model stages can widen their pool beyond the requested returned chunk count.
             let hits = self.memory.recall(query, &RecallOptions {
                 k: Some(options.candidate_limit), candidate_limit: None, history: Some(HistoryMode::All),
@@ -537,7 +607,7 @@ impl ConversationMemory {
                 if seen.len() > options.k as usize {
                     break;
                 }
-                let score = 1.0 / (60.0 + seen.len() as f64);
+                let score = weight / (60.0 + seen.len() as f64);
                 if let Some(candidate) = candidates.get_mut(&chunk.source_record_id) {
                     candidate.score += score;
                 } else {
@@ -563,6 +633,7 @@ impl ConversationMemory {
                 .total_cmp(&a.score)
                 .then(a.first_seen.cmp(&b.first_seen))
         });
+        let maximum_score = candidates.first().map_or(1.0, |candidate| candidate.score);
         let mut evidence = ConversationEvidence {
             sources: Vec::new(),
             anchors: Vec::new(),
@@ -570,7 +641,34 @@ impl ConversationMemory {
             serialized_bytes: 2,
         };
         let mut selected = HashSet::new();
-        for candidate in candidates {
+        let mut selected_rounds = HashSet::new();
+        let mut selected_sessions = HashSet::new();
+        while !candidates.is_empty() {
+            let position = if diversity > 0.0 {
+                candidates
+                    .iter()
+                    .enumerate()
+                    .max_by(|(_, a), (_, b)| {
+                        let score = |candidate: &Candidate| {
+                            candidate.score / maximum_score
+                                - if selected_sessions.contains(&(
+                                    candidate.chunk.session_id.clone(),
+                                    candidate.chunk.version.clone(),
+                                )) {
+                                    diversity
+                                } else {
+                                    0.0
+                                }
+                        };
+                        score(a)
+                            .total_cmp(&score(b))
+                            .then(b.first_seen.cmp(&a.first_seen))
+                    })
+                    .map_or(0, |(index, _)| index)
+            } else {
+                0
+            };
+            let candidate = candidates.remove(position);
             let chunk = &candidate.chunk;
             let manifest = self.manifest(&chunk.session_id, &chunk.version)?;
             let Some(source) = self.hydrate(&chunk.source_record_id, &manifest)? else {
@@ -616,6 +714,24 @@ impl ConversationMemory {
             group.push(source);
             group.sort_by_key(|source| source.turn_index);
             group.retain(|source| !selected.contains(&source.record_id));
+            let new_rounds: HashSet<_> = group
+                .iter()
+                .map(|source| {
+                    (
+                        source.session_id.clone(),
+                        source.version.clone(),
+                        round_index(&manifest, source.turn_index),
+                    )
+                })
+                .filter(|round| !selected_rounds.contains(round))
+                .collect();
+            if options
+                .max_rounds
+                .is_some_and(|limit| selected_rounds.len() + new_rounds.len() > limit)
+            {
+                evidence.dropped.push(drop_for(chunk, "max_rounds"));
+                continue;
+            }
             let source_count = evidence
                 .sources
                 .len()
@@ -639,6 +755,8 @@ impl ConversationMemory {
                 continue;
             }
             evidence.serialized_bytes = size;
+            selected_rounds.extend(new_rounds);
+            selected_sessions.insert((chunk.session_id.clone(), chunk.version.clone()));
             evidence.anchors.push(ConversationAnchor {
                 record_id: chunk.source_record_id.clone(),
                 source_id: chunk.source_id.clone(),

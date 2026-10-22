@@ -35,6 +35,9 @@ struct Args {
     /// Use lexical retrieval without loading any model.
     #[arg(long)]
     lexical: bool,
+    /// Total fused weight of generated subqueries; zero retains only the main query and rewrite.
+    #[arg(long, default_value_t = 0.0)]
+    subquery_weight: f64,
 }
 
 #[derive(Deserialize)]
@@ -73,6 +76,7 @@ fn profile_recall_options() -> ConversationRecallOptions {
         candidate_limit: 256,
         max_sources: 128,
         max_bytes: 65536,
+        ..ConversationRecallOptions::default()
     }
 }
 
@@ -129,12 +133,12 @@ impl Backend {
     }
 
     #[cfg(not(feature = "local-models"))]
-    fn models(_root: PathBuf) -> anyhow::Result<Self> {
+    fn models(_root: PathBuf, _subquery_weight: f64) -> anyhow::Result<Self> {
         anyhow::bail!("model stages are unavailable in this build")
     }
 
     #[cfg(feature = "local-models")]
-    fn models(root: PathBuf) -> anyhow::Result<Self> {
+    fn models(root: PathBuf, subquery_weight: f64) -> anyhow::Result<Self> {
         use holographic_memory::core::models::{
             default_device, Embedder, EmbeddingQueryTask, Generator, ModelSource, ModelStages,
             Reranker, StageParams, PINNED,
@@ -173,7 +177,7 @@ impl Backend {
         let params = StageParams {
             orig_weight: 1.0,
             rewrite_weight: 1.0,
-            subquery_weight: 1.0,
+            subquery_weight,
             ..StageParams::default()
         };
         params.validate()?;
@@ -325,7 +329,7 @@ impl Runtime {
                 }
                 let started = Instant::now();
                 let backend = root
-                    .map(Backend::models)
+                    .map(|root| Backend::models(root, self.args.subquery_weight))
                     .unwrap_or_else(|| Ok(Backend::lexical()));
                 timings.model_load_seconds = started.elapsed().as_secs_f64();
                 let backend = backend.map_err(|_| "model_load_failed")?;
@@ -621,6 +625,7 @@ mod tests {
             Args {
                 lexical: true,
                 models: None,
+                subquery_weight: 0.0,
             },
             &mut Cursor::new(input),
             &mut output,
@@ -644,6 +649,7 @@ mod tests {
         let mut runtime = Runtime::new(Args {
             lexical: true,
             models: None,
+            subquery_weight: 0.0,
         });
         let initialized = runtime.reply(Command::Initialize { model_root: None });
         let input: ConversationInput = serde_json::from_value(json!({"sessionId": "synthetic", "version": "1", "turns": [

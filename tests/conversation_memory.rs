@@ -41,6 +41,7 @@ fn options(roles: Vec<ConversationRole>) -> ConversationRecallOptions {
         candidate_limit: 32,
         max_sources: 16,
         max_bytes: 128 * 1024,
+        ..ConversationRecallOptions::default()
     }
 }
 
@@ -763,4 +764,156 @@ fn concurrent_conflicting_writes_choose_one_complete_immutable_session() {
         .unwrap();
     assert_eq!(reported.text, alternatives[winner]);
     assert!(!texts(&packet).contains(&alternatives[1 - winner]));
+}
+
+#[test]
+fn round_budget_counts_complete_premise_closures_at_the_exact_boundary() {
+    let dir = tempfile::tempdir().unwrap();
+    let memory = open(dir.path());
+    memory
+        .remember(session(
+            "round-budget",
+            "v1",
+            vec![
+                turn(
+                    "opening",
+                    ConversationRole::User,
+                    "The location is the harbor.",
+                ),
+                turn(
+                    "reply",
+                    ConversationRole::Assistant,
+                    "The location is recorded.",
+                ),
+                turn(
+                    "second",
+                    ConversationRole::User,
+                    "I selected the evening slot.",
+                ),
+                turn(
+                    "referent",
+                    ConversationRole::Assistant,
+                    "The booking uses that slot.",
+                ),
+                turn(
+                    "anchor",
+                    ConversationRole::User,
+                    "roundbudgetneedle confirms it.",
+                ),
+            ],
+        ))
+        .unwrap();
+    let mut opts = options(vec![ConversationRole::User]);
+    let complete = memory.recall("roundbudgetneedle", &opts).unwrap();
+    assert_eq!(complete.anchors[0].source_id, "anchor");
+    assert_eq!(complete.sources.len(), 4);
+    for limit in [2, 3, 4] {
+        opts.max_rounds = Some(limit);
+        let packet = memory.recall("roundbudgetneedle", &opts).unwrap();
+        if limit < 3 {
+            assert!(packet.sources.is_empty());
+            assert_eq!(packet.dropped[0].reason, "max_rounds");
+        } else {
+            assert_eq!(packet.sources, complete.sources);
+        }
+    }
+    for limit in [0, 4097] {
+        opts.max_rounds = Some(limit);
+        assert!(memory.recall("roundbudgetneedle", &opts).is_err());
+    }
+    opts.max_rounds = Some(4096);
+    assert!(memory.recall("roundbudgetneedle", &opts).is_ok());
+}
+
+#[test]
+fn assistant_weight_preserves_explicit_assistant_queries_and_role_requests() {
+    let dir = tempfile::tempdir().unwrap();
+    let memory = open(dir.path());
+    for (id, role, text) in [
+        (
+            "user",
+            ConversationRole::User,
+            "I asked about roleweightneedle.",
+        ),
+        (
+            "assistant",
+            ConversationRole::Assistant,
+            "I recommended roleweightneedle.",
+        ),
+    ] {
+        memory
+            .remember(session(id, "v1", vec![turn(id, role, text)]))
+            .unwrap();
+    }
+    let mut opts = options(vec![ConversationRole::User, ConversationRole::Assistant]);
+    opts.assistant_weight = 0.0;
+    let user = memory.recall("roleweightneedle", &opts).unwrap();
+    assert!(user
+        .sources
+        .iter()
+        .all(|source| source.role == ConversationRole::User));
+    let reply = memory
+        .recall("What did you recommend about roleweightneedle?", &opts)
+        .unwrap();
+    assert!(reply
+        .sources
+        .iter()
+        .any(|source| source.role == ConversationRole::Assistant));
+    opts.roles = vec![ConversationRole::Assistant];
+    assert_eq!(
+        memory.recall("roleweightneedle", &opts).unwrap().sources[0].role,
+        ConversationRole::Assistant
+    );
+    for weight in [-0.01, 4.01, f64::NAN, f64::INFINITY] {
+        opts.assistant_weight = weight;
+        assert!(memory.recall("roleweightneedle", &opts).is_err());
+    }
+}
+
+#[test]
+fn aggregation_mmr_selects_another_session_before_a_repeated_session() {
+    let dir = tempfile::tempdir().unwrap();
+    let memory = open(dir.path());
+    memory
+        .remember(session(
+            "repeated",
+            "v1",
+            vec![
+                turn("one", ConversationRole::User, "diversityneedle visit"),
+                turn("two", ConversationRole::User, "diversityneedle visit"),
+            ],
+        ))
+        .unwrap();
+    memory
+        .remember(session(
+            "distinct",
+            "v1",
+            vec![turn(
+                "three",
+                ConversationRole::User,
+                "diversityneedle visit plus additional details",
+            )],
+        ))
+        .unwrap();
+    let mut opts = options(vec![ConversationRole::User]);
+    opts.k = 3;
+    opts.session_diversity = 1.0;
+    let diversified = memory
+        .recall("How many diversityneedle visits?", &opts)
+        .unwrap();
+    assert_eq!(diversified.anchors.len(), 3);
+    assert_ne!(
+        diversified.anchors[0].session_id,
+        diversified.anchors[1].session_id
+    );
+    let ordinary = memory.recall("diversityneedle visit", &opts).unwrap();
+    opts.session_diversity = 0.0;
+    assert_eq!(
+        ordinary,
+        memory.recall("diversityneedle visit", &opts).unwrap()
+    );
+    for strength in [-0.01, 1.01, f64::NAN, f64::INFINITY] {
+        opts.session_diversity = strength;
+        assert!(memory.recall("diversityneedle", &opts).is_err());
+    }
 }
