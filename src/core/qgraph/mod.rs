@@ -59,6 +59,12 @@ const MIN_LAYER: usize = 64;
 /// skipped distance then saves a row of at least 512 bytes, which pays for the extra code
 /// access (the build measured 1.8x faster at 256 dimensions, and not faster at 100).
 const BUILD_CODES_MIN_DIM: usize = 128;
+/// Largest candidate list of the first construction pass. That pass only has to make the
+/// graph navigable for the second, whose search and prune set the final lists. At degree 64
+/// and `build_ef` 500 the cap cut the first pass's construction estimates 2.2x on SIFT-1M and
+/// 2.7x on glove-100, and searches needed within 1.1% of the estimates per query for recall
+/// 0.90 and 0.95 and 1.4-1.7% more for 0.99 (benchmarks/results/qgraph_build_schedule_wl02_v1.json).
+const FIRST_PASS_EF: usize = 200;
 
 /// Distance a graph is built and searched for.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -86,7 +92,8 @@ impl Metric {
 pub struct BuildParams {
     /// Distance the graph is built for.
     pub metric: Metric,
-    /// Candidate list size of the construction-time greedy search.
+    /// Candidate list size of the construction-time greedy search (the first of the two
+    /// insertion passes uses at most 200).
     pub build_ef: usize,
     /// Out-degree of the bottom layer (even).
     pub degree: usize,
@@ -1121,9 +1128,10 @@ impl Graph {
             order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
         }
         let mut graph: Vec<Vec<u32>> = vec![Vec::new(); n];
-        for alpha in [1.0, params.alpha] {
+        let first_ef = params.build_ef.min(FIRST_PASS_EF);
+        for (l, alpha) in [(first_ef, 1.0), (params.build_ef, params.alpha)] {
             let t = prof::start();
-            rows.insert_pass(&mut graph, &order, entry, params.build_ef, alpha, r);
+            rows.insert_pass(&mut graph, &order, entry, l, alpha, r);
             prof::report("pass", t);
         }
         let t = prof::start();
