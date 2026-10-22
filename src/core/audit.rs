@@ -105,26 +105,19 @@ impl AuditLog {
             .unwrap_or_default()
             .as_millis() as u64;
 
-        let id_hash = hash_id(id);
-
-        let mut signable = [0u8; 41];
-        signable[0..8].copy_from_slice(&timestamp_ms.to_le_bytes());
-        signable[8] = op as u8;
-        signable[9..41].copy_from_slice(&id_hash);
-
-        let signature = match sign_fn {
-            Some(f) => f(&signable),
-            None => [0u8; 64],
-        };
-
-        let entry = AuditEntry {
+        let mut bytes = AuditEntry {
             timestamp_ms,
             op,
-            id_hash,
-            signature,
-        };
+            id_hash: hash_id(id),
+            signature: [0u8; 64],
+        }
+        .to_bytes();
 
-        let bytes = entry.to_bytes();
+        if let Some(sign) = sign_fn {
+            let signature = sign(&bytes[..41]);
+            bytes[41..].copy_from_slice(&signature);
+        }
+
         let mut file = self.file.lock();
         file.write_all(&bytes)
             .map_err(|e| anyhow!("Audit write failed: {}", e))?;
