@@ -1,0 +1,30 @@
+{
+ "description": "Best QPS at recall@100 targets on VIBE llama-128-ip, VIBE run.py --local with its own per-core worker pinning; k=100; summary from export_results.py.",
+ "date": "2026-10-22",
+ "machine": "writerslogic-02, Intel Core Ultra 9 185H (WSL2, no AVX-512), single thread per worker",
+ "hms_commit": "5c66a4815ef612f6afa36144d0ee2a98762ec2a2",
+ "hms_grid": "degree 32/48/64/96, build_ef 500, ef 160..8000, rerank 100..1000",
+ "competitors_run": [
+  "roargraph (upstream VIBE config, unchanged)"
+ ],
+ "not_run": "mlann-rf, lorann and other datasets: run stopped at the night's time limit",
+ "note": "HMS does not reach the out-of-distribution inner-product frontier here: RoarGraph builds its graph from the training-query distribution; HMS does not.",
+ "results": {
+  "llama-128-ip": {
+   "hms": {
+    "max_recall": 0.9585,
+    "configs": 224,
+    "0.9": 700.8253394103064,
+    "0.95": 290.3855707947149,
+    "0.99": null
+   },
+   "roargraph": {
+    "max_recall": 0.9932700000000001,
+    "configs": 108,
+    "0.9": 5174.602867638178,
+    "0.95": 2947.0522964206903,
+    "0.99": 519.6949572300871
+   }
+  }
+ }
+}
