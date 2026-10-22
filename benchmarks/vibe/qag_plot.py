@@ -75,6 +75,8 @@ def main():
     fig.suptitle("Frozen v1: measured Pareto points (markers only; no interpolation)\nCore Ultra 9 185H · Linux/WSL2 · one thread · three paired blocks · saved fifth pass", fontsize=12)
     fig.legend(handles.values(), handles.keys(), loc="outside lower center", ncol=3, frameon=False)
     fig.savefig(root / "pareto.svg")
+    svg = root / "pareto.svg"
+    svg.write_text("\n".join(line.rstrip() for line in svg.read_text().splitlines()) + "\n")
     plt.close(fig)
     (root / "latency.json").write_text(json.dumps(latencies, indent=2, allow_nan=False) + "\n")
 

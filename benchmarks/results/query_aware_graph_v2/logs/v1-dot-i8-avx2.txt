@@ -63,7 +63,7 @@ Disassembly of section .text:
    ac07c:	74 2f                	je     ac0ad <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x13d>
    ac07e:	48 8d 71 10          	lea    0x10(%rcx),%rsi
    ac082:	66 66 66 66 66 2e 0f 	data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
-   ac089:	1f 84 00 00 00 00 00 
+   ac089:	1f 84 00 00 00 00 00
    ac090:	c4 e2 7d 20 0c 0f    	vpmovsxbw (%rdi,%rcx,1),%ymm1
    ac096:	c4 e2 7d 20 14 0a    	vpmovsxbw (%rdx,%rcx,1),%ymm2
    ac09c:	48 89 f1             	mov    %rsi,%rcx

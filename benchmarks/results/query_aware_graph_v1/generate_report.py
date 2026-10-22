@@ -466,6 +466,8 @@ def check_table(root, path):
             if not log_path.is_file():
                 raise ValueError("verification log is missing")
             evidence += " — " + link(log_path, root, "log")
+        if entry.get("source_commit"):
+            evidence += f"; source `{entry['source_commit']}`"
         lines.append(f"| {label} | {evidence} | {status} |")
         statuses[key] = status
     lines.append("| Additional Cargo suites | Clippy, default-feature suite, feature-matrix sweeps | unrun under the requested validation budget |")
@@ -522,7 +524,11 @@ def render(root, checks=None):
         outcome,
         f"Regression gate: **{overall_regression}**. Formatting: **{check_status['fmt']}**. Required Rust gate: **{check_status['cargo']}**.",
         "",
+        *(["The single Rust gate passed on frozen source `2d4967e`. Concurrent diagnostic/test-only maintenance was integrated afterward and was not retested under the one-test budget; formatting passed on the merged source. [Exact source delta and receipts](final-gate/post-gate-integration.patch) preserve this verification limit.", ""]
+          if checks and (load(checks) or {}).get("cargo", {}).get("post_gate_integration_tested") is False else []),
         "Baseline SHA: `08d37778a66b58709461456e5b9a7ab6a05b399f`. Source decisions, configurations, seeds and commands are retained in [ledger.md](ledger.md); dataset/runtime fingerprints are in [provenance.json](provenance.json).",
+        "",
+        "Published evidence contains reports and fingerprints. Raw HDF5 and copied VIBE source snapshots remain in the local worktree and on writerslogic-02 at the paths in their receipts; they are intentionally excluded from Git. Regenerating raw-latency exports requires retrieving those matching artifacts.",
         "",
         "B is ordinary entry with coded routing; O starts at the true nearest base vector; V is true-top100 coverage among all unique distance-evaluated vertices during B; E uses exact routing; OE combines oracle entry and exact routing. All diagnostic rows use 256 held-out learn queries, degree=64, build_ef=500, seed=24301, ef=2000, rerank=1000 and exact original-IP ground truth.",
         "",

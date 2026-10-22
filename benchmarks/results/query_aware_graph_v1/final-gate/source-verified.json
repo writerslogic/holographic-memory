@@ -6,5 +6,15 @@
   ],
   "shipping_rust_commit": "2d4967e711c00c51b6ab4b588b0869c06a772003",
   "scope": "Final-gate source/test/example/binding/asset/document files match local source; generated Python bytecode is excluded. Local src/Cargo/build.rs also have no diff from signed2d4967e",
-  "manifest": "../../query_aware_graph_v3/final-source.sha256"
+  "manifest": "../../query_aware_graph_v3/final-source.sha256",
+  "verification_time_scope": "Before concurrent diagnostic/test-only integration",
+  "integration_commit": "ec79af1dc69b4a668e21f17748ce32d1212262a2",
+  "final_head_tested": false,
+  "post_gate_delta": "post-gate-integration.patch",
+  "post_gate_paths": [
+    "src/bin/qag-diagnose.rs",
+    "src/core/qgraph/diagnostics.rs",
+    "src/core/qgraph/projection.rs"
+  ],
+  "production_search_changes": false
 }

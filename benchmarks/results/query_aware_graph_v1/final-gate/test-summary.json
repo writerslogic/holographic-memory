@@ -1,0 +1,9 @@
+{
+  "command": "cargo +1.89.0 test --all-features",
+  "exit_code": 0,
+  "attempts": 1,
+  "reported_suites": 99,
+  "passed": 947,
+  "ignored": 6,
+  "source_commit": "2d4967e711c00c51b6ab4b588b0869c06a772003"
+}

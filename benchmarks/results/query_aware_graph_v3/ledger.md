@@ -76,3 +76,15 @@ restored to signed2d4967e before the final Cargo gate; the exact experimental
 source remains kernel.patch and remote repo-v3. Yi still completes its frozen
 comparison; no rerun, retuning or additional intervention. The automatic final
 decision will also select the original v2 kernel regardless of yi's outcome.
+
+Yi completed at19:40UTC. All returned IDs match; median deltas are-2.1115%,
+-3.0538%,-0.1957%. The first two settings are slower in every observed paired
+block; the final setting is inconclusive. decision.json rejects all six points.
+The phase is closed, with no additional build/timing or zero-tail experiment.
+
+The selected frozen2d4967e source passed the sole Linux Rust1.89 all-features
+gate (947passed,6ignored,exit0,attempt1). See ../query_aware_graph_v1/checks.json.
+Three concurrent diagnostic/test-style maintenance commits were merged afterward
+and are not covered by that gate; merged-source Rust1.89 formatting passes. No
+second Rust test is authorized or run. Public evidence follows the concurrent
+hash-only policy; raw HDF5 and copied snapshots remain locally/on the timing host.

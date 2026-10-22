@@ -1,0 +1,110 @@
+diff --git a/src/bin/qag-diagnose.rs b/src/bin/qag-diagnose.rs
+index 16b267e..fcd36e1 100644
+--- a/src/bin/qag-diagnose.rs
++++ b/src/bin/qag-diagnose.rs
+@@ -43,8 +43,10 @@ fn floats(path: PathBuf, expected: usize) -> Result<Vec<f32>> {
+     );
+     let bytes = fs::read(path)?;
+     let values: Vec<_> = bytes
+-        .chunks_exact(4)
+-        .map(|v| f32::from_le_bytes(v.try_into().expect("four bytes")))
++        .as_chunks::<4>()
++        .0
++        .iter()
++        .map(|v| f32::from_le_bytes(*v))
+         .collect();
+     ensure!(values.iter().all(|v| v.is_finite()), "nonfinite matrix");
+     Ok(values)
+@@ -104,11 +106,13 @@ fn main() -> Result<()> {
+     let truth_bytes = fs::read(args.data.join("truth.u32"))?;
+     ensure!(truth_bytes.len() == nq * 100 * 4, "truth shape mismatch");
+     let truth: Vec<_> = truth_bytes
+-        .chunks_exact(4)
+-        .map(|v| u32::from_le_bytes(v.try_into().expect("four bytes")))
++        .as_chunks::<4>()
++        .0
++        .iter()
++        .map(|v| u32::from_le_bytes(*v))
+         .collect();
+     ensure!(truth.iter().all(|&v| (v as usize) < n), "invalid truth ID");
+-    for row in truth.chunks_exact(100) {
++    for row in truth.as_chunks::<100>().0 {
+         let mut unique = row.to_vec();
+         unique.sort_unstable();
+         unique.dedup();
+@@ -178,9 +182,11 @@ fn main() -> Result<()> {
+             "training neighbor shape mismatch"
+         );
+         let ids: Vec<_> = bytes
+-            .chunks_exact(4)
++            .as_chunks::<4>()
++            .0
++            .iter()
+             .take(args.training_count * 100)
+-            .map(|v| u32::from_le_bytes(v.try_into().expect("four bytes")))
++            .map(|v| u32::from_le_bytes(*v))
+             .collect();
+         if args.profile {
+             ensure!(
+@@ -300,7 +306,7 @@ fn main() -> Result<()> {
+     let mut rows = Vec::new();
+     for (i, (query, expected)) in queries
+         .chunks_exact(dim)
+-        .zip(truth.chunks_exact(100))
++        .zip(truth.as_chunks::<100>().0)
+         .enumerate()
+     {
+         let mut transformed = query.to_vec();
+diff --git a/src/core/qgraph/diagnostics.rs b/src/core/qgraph/diagnostics.rs
+index df305ca..00924e7 100644
+--- a/src/core/qgraph/diagnostics.rs
++++ b/src/core/qgraph/diagnostics.rs
+@@ -423,11 +423,7 @@ mod tests {
+                 .all(|id| report.retained.contains(id)));
+             assert_eq!(
+                 report.rerank_candidates.len(),
+-                if rerank == 0 {
+-                    0
+-                } else {
+-                    rerank.max(7).min(37)
+-                }
++                if rerank == 0 { 0 } else { rerank.clamp(7, 37) }
+             );
+             for exact in [false, true] {
+                 let oracle = index
+diff --git a/src/core/qgraph/projection.rs b/src/core/qgraph/projection.rs
+index 8a6ed45..50da9f7 100644
+--- a/src/core/qgraph/projection.rs
++++ b/src/core/qgraph/projection.rs
+@@ -475,7 +475,12 @@ mod tests {
+             dim: 2,
+             degree: 2,
+             metric: Metric::Euclidean,
+-            norms: vectors.chunks_exact(2).map(|row| row[0] * row[0]).collect(),
++            norms: vectors
++                .as_chunks::<2>()
++                .0
++                .iter()
++                .map(|row| row[0] * row[0])
++                .collect(),
+             vectors,
+             adj,
+             entry: 0,
+@@ -640,7 +645,7 @@ mod tests {
+         };
+         let graph = Graph::build(&augmented, 3, &params).unwrap();
+         let mut expected = Vec::new();
+-        for query in queries.chunks_exact(3) {
++        for query in queries.as_chunks::<3>().0 {
+             let mut ids: Vec<u32> = (0..5).collect();
+             let score = |id: u32| {
+                 original[id as usize]
+@@ -798,7 +803,7 @@ mod tests {
+             index.searcher_with(SearchKnobs::OFF),
+             opened.searcher_with(SearchKnobs::OFF),
+         );
+-        for query in queries.chunks_exact(2) {
++        for query in queries.as_chunks::<2>().0 {
+             let (mut a, mut b) = (Vec::new(), Vec::new());
+             let search = VSearchParams {
+                 ef: 6,

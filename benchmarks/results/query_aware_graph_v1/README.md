@@ -1,9 +1,13 @@
 # Query-aware graph evidence
 
 The required recall/throughput goals remain incomplete within the frozen measured configurations.
-Regression gate: **inconclusive**. Formatting: **unrun**. Required Rust gate: **unrun**.
+Regression gate: **inconclusive**. Formatting: **pass**. Required Rust gate: **pass**.
+
+The single Rust gate passed on frozen source `2d4967e`. Concurrent diagnostic/test-only maintenance was integrated afterward and was not retested under the one-test budget; formatting passed on the merged source. [Exact source delta and receipts](final-gate/post-gate-integration.patch) preserve this verification limit.
 
 Baseline SHA: `08d37778a66b58709461456e5b9a7ab6a05b399f`. Source decisions, configurations, seeds and commands are retained in [ledger.md](ledger.md); dataset/runtime fingerprints are in [provenance.json](provenance.json).
+
+Published evidence contains reports and fingerprints. Raw HDF5 and copied VIBE source snapshots remain in the local worktree and on writerslogic-02 at the paths in their receipts; they are intentionally excluded from Git. Regenerating raw-latency exports requires retrieving those matching artifacts.
 
 B is ordinary entry with coded routing; O starts at the true nearest base vector; V is true-top100 coverage among all unique distance-evaluated vertices during B; E uses exact routing; OE combines oracle entry and exact routing. All diagnostic rows use 256 held-out learn queries, degree=64, build_ef=500, seed=24301, ef=2000, rerank=1000 and exact original-IP ground truth.
 
@@ -115,8 +119,8 @@ The separately declared exact byte-VNNI intervention was rejected by its six-poi
 
 | Check | Exact command / evidence | Status |
 |---|---|---|
-| Formatting | `cargo fmt --check` | unrun |
-| Required Rust gate | `cargo +1.89.0 test --all-features` | unrun |
+| Formatting | `cargo fmt --check` — [log](final-gate/merged-fmt/fmt.txt); source `ec79af1dc69b4a668e21f17748ce32d1212262a2` | pass |
+| Required Rust gate | `cargo +1.89.0 test --all-features` — [log](final-gate/cargo.txt); source `2d4967e711c00c51b6ab4b588b0869c06a772003` | pass |
 | Native Python contracts | `uv run --no-project --python /home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python python - /home/davidcondrey/sol-qag/v2/candidate-holographic_memory.so /home/davidcondrey/sol-qag/repo-v2/tests/python/test_vector_index.py` — [log](logs/v2-native-python.txt) | pass |
 | Benchmark Python contracts | `uv run --no-project --with pytest python -m pytest -q benchmarks/vibe/test_qag_cost_report.py` — [log](logs/v2-cost-report-tests.txt) | pass |
 | Native benchmark wrapper | `uv run --no-project --python /home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python python /home/davidcondrey/sol-qag/v2/sources/qag_hms_smoke.py --vibe /home/davidcondrey/vibe-hms/vibe --extension /home/davidcondrey/sol-qag/v2/candidate-holographic_memory.so --wrapper /home/davidcondrey/sol-qag/v2/sources/hms_wrapper.py --baseline /home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so` — [log](logs/v2-wrapper-native.json) | pass |

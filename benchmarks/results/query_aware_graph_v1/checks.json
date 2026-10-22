@@ -1,13 +1,22 @@
 {
   "fmt": {
     "command": "cargo fmt --check",
-    "status": "unrun"
+    "status": "pass",
+    "exit_code": 0,
+    "log": "final-gate/merged-fmt/fmt.txt",
+    "source_commit": "ec79af1dc69b4a668e21f17748ce32d1212262a2",
+    "toolchain": "1.89.0",
+    "reason_for_additional_format_check": "Concurrent source maintenance integrated after the frozen one-shot test; no Rust test rerun"
   },
   "cargo": {
     "command": "cargo +1.89.0 test --all-features",
-    "status": "unrun",
-    "queued_flock_pid": 426458,
-    "gate_script": "../query_aware_graph_v3/final-gate.sh"
+    "status": "pass",
+    "exit_code": 0,
+    "log": "final-gate/cargo.txt",
+    "attempts": 1,
+    "source_commit": "2d4967e711c00c51b6ab4b588b0869c06a772003",
+    "post_gate_integration_tested": false,
+    "limitation": "Concurrent diagnostic/test-only maintenance commits were merged after the one-shot source freeze; no second Rust test is authorized."
   },
   "native_python": {
     "command": "uv run --no-project --python /home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python python - /home/davidcondrey/sol-qag/v2/candidate-holographic_memory.so /home/davidcondrey/sol-qag/repo-v2/tests/python/test_vector_index.py",
@@ -46,5 +55,13 @@
     "error": "ModuleNotFoundError: pytest",
     "log": "../query_aware_graph_v2/logs/native-python.log",
     "resumed_without_rebuild": true
+  },
+  "environment": {
+    "toolchain": "1.89.0",
+    "CARGO_BUILD_JOBS": "2",
+    "dev_test_opt_level": "1 (repository CI)",
+    "dev_test_debug": "0 (repository CI)",
+    "RUSTFLAGS": "unset",
+    "target": "/home/davidcondrey/sol-qag/target-final-189"
   }
 }

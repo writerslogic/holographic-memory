@@ -3,7 +3,7 @@
   "audit_date": "2026-10-22",
   "baseline_sha": "08d37778a66b58709461456e5b9a7ab6a05b399f",
   "worktree": "/Volumes/A/.sol-wt-qag",
-  "scope": "Historical v1 diagnostics and frozen full validation/official evaluations; completed SIFT is inconclusive, remaining default4 regression builds cancelled at user request. RF80 completed and recovered; subsequent optimization belongs to query_aware_graph_v2.",
+  "scope": "Frozen official/validation results plus completed RF80, inconclusive/cancelled ID regression, and separately bounded validation-only layout/kernel experiments. Overall superiority is not established.",
   "supplied_baseline": {
     "artifact": "benchmarks/results/vibe_v1/llama-128-ip-standing-wl02.json",
     "verified_from": "writerslogic-02:/home/davidcondrey/vibe-hms/export-final/summary.parquet",
@@ -771,8 +771,8 @@
   "unmeasured": [
     "Full in-distribution preservation: SIFT inconclusive, Glove cancelled and Yahoo unrun by user request",
     "Isolated per-index peak RSS and actual persisted-index file sizes for frozen v1 timing arms",
-    "Final cargo fmt --check and sole Linux cargo +1.89.0 test --all-features gate",
-    "Untouched replacement official test for any newly developed architecture"
+    "Untouched replacement official test for any newly developed architecture",
+    "Post-integration all-features execution of concurrent diagnostic/test-only edits; sole gate already consumed on2d4967e"
   ],
   "completed_source": {
     "core_commit": "85b0af081c26e65f6a5643722386137ca332e587",
@@ -2413,8 +2413,8 @@
       },
       "scope": "Synthetic ABI/default parity and Python correctness; native smoke used no candidate construction queries and is not full-dataset or throughput evidence"
     },
-    "cargo_fmt_check": "unrun",
-    "linux_cargo_1_89_all_features": "unrun",
+    "cargo_fmt_check": "pass on merged source ec79af1",
+    "linux_cargo_1_89_all_features": "pass once on2d4967e:947 passed,6 ignored; concurrent diagnostic/test-only integration not retested",
     "required_final_command": "cargo +1.89.0 test --all-features",
     "omitted_checks": [
       "Clippy",
@@ -2455,7 +2455,8 @@
         "sha256": "01c3f8c44743a0d6798e86e3292106e226a18a7e6a013fbb1e99afea866980bd"
       },
       "scope": "Synthetic native ABI/default parity plus38 Python tests; no projected performance claim"
-    }
+    },
+    "final_receipt": "benchmarks/results/query_aware_graph_v1/checks.json"
   },
   "frozen_validation_execution": {
     "status": "Prefix validation scope corrected without rerunning queries; full validation/official and RF80 recovered; remaining ID regressions cancelled at user request",
@@ -2495,11 +2496,11 @@
     ],
     "local_post_commit_adapter_change": "Optional candidate_code_bits=8 constructor accepts4/8 and labels selected precision; not uploaded to the already imported validation worker",
     "resource_scope": "All arms co-resident. Process peak RSS and VIBE index_size USS delta are aggregate; per-arm encoded-byte attributes are not isolated peak RSS or persisted file size.",
-    "known_scope_metadata_error": "Original prefix summary incorrectly sets official_test=true because exporter lacked qag_scope. Original source attribute and frozen receipt explicitly say validation only; original summary is preserved and full batch writes separate corrected v2 summary."
+    "known_scope_metadata_error": "Original prefix report remains frozen with incorrect official_test=true; separate projection-validation-summary-v2.json corrects scope with identical recalls/QPS."
   },
   "evidence_gaps": [
     "Initial diagnostic binary/source fingerprints retained; exact initial uncommitted source snapshots absent from canonical evidence. Current diagnostic source is committed.",
-    "Full in-distribution throughput preservation is unverified after user-requested cancellation; final Rust gate remains unconsumed"
+    "Full in-distribution throughput preservation is unverified after user-requested cancellation; the post-integration source was not retested after the sole permitted gate"
   ],
   "paired_prefix_validation": {
     "scope": "200k base prefix;256 reserved learn queries only; no official test",
@@ -2661,7 +2662,7 @@
       }
     ],
     "resource_scope": "All arms co-resident; process RSS and VIBE USS delta aggregate. No isolated per-index peak RSS claimed.",
-    "known_scope_metadata_error": "Original prefix summary incorrectly sets official_test=true because exporter lacked qag_scope. Original source attribute and frozen receipt explicitly say validation only; original summary is preserved and full batch writes separate corrected v2 summary.",
+    "known_scope_metadata_error": "Original prefix report remains frozen with incorrect official_test=true; separate projection-validation-summary-v2.json corrects scope with identical recalls/QPS.",
     "observations": "Projected8 matches diagnostic recall; prefix median throughput passes0.90 target and fails0.95 against Roar96 L120. Roar48 L100 below0.90; measured Roar96 L800 below0.99; measured MLANN points below0.90. Full-dataset parity not established."
   },
   "full_evaluation_batch": {
@@ -2839,5 +2840,23 @@
     "unchanged_recall_qps": true,
     "official_test": false,
     "original_preserved": true
+  },
+  "subsequent_validation": {
+    "layout_summary": "../query_aware_graph_v2/summary.json",
+    "kernel_summary": "../query_aware_graph_v3/summary.json",
+    "kernel_rejected": true,
+    "compact_default": false,
+    "consistent_speedup": false,
+    "test_count": 1,
+    "integration_rust_retested": false
+  },
+  "publication_policy": {
+    "policy": "Hashes and reports in Git; raw HDF5 and copied VIBE snapshots retained locally and on writerslogic-02, following concurrent8e3dabb",
+    "preserved_local_archive": ".qag-preserved/20261022-1948",
+    "origin_commits_preserved": [
+      "9931ae910d62e4301f61fe1cce2e00837fb9b85e",
+      "8e3dabbd044120c91731276773a6234846d9a290",
+      "429e57b98eef32eded06a202d744ef4f5b807d98"
+    ]
   }
 }
