@@ -191,8 +191,10 @@ the client receives `P·S` scores, not ten.
 `P(|E_i| ≥ Δ/2) ≤ 2·exp(-(Δ/2)² / (2σ²·‖M_i‖²))`. `DenseParams` takes a bound on `‖M_i‖²`, which
 `DenseServer::new` checks for every row, sets `p` to the smallest power of two above `2·d·Bx·Bu`
 (`Bx`, `Bu`: database and query entry bounds), and rejects parameters whose union bound over a
-probe's `S` scores exceeds 2^-40, SimplePIR's δ. Decoding is correct with that probability, not
-with certainty, unless `DenseParams::exact` reports that the truncated worst case
+probe's `S` scores exceeds 2^-40. SimplePIR's δ = 2^-40 is per query; here it is per probe, so a
+query of `P` probes fails with probability at most `P` times the bound (2^-83 or less for every
+configuration in the tables). Decoding is correct with that probability, not with certainty,
+unless `DenseParams::exact` reports that the truncated worst case
 `2·77·C·d·Bx < Δ` holds too (it does for the 1-bit rows below). Tests
 (`cargo test --features private-search clustered`) compare decoded scores with plaintext dot
 products for whole-database scoring, nine probes, entries at ±15 with the extreme scores
@@ -215,8 +217,9 @@ the exact f32 neighbours is also given; the 4:4 codes' own exhaustive ranking re
 Timing: writerslogic-02 (Intel Core Ultra 9 185H, Linux, AVX2, 22 rayon threads), release build,
 Rust 1.99.1, 2 warm-up and 30 timed queries per configuration, one run. Server time covers all
 `P` probes of one query, batched eight to a pass over the database; nothing is batched across
-queries. "Scored" is `P·S/N`, the share of the database whose scores the client receives; the
-server reads all of it for every probe.
+queries. "Scored" is `P·S/N`, an upper bound on the share of rows whose scores the client
+receives: `S` is the fullest cluster's size and smaller clusters are padded, so the mean share is
+close to `P/C`. The server reads the whole database for every probe.
 
 `N = 10^6`:
 
@@ -244,7 +247,9 @@ Offline per database version, besides the hint: the centroids (`C·d` floats, 25
 and the public matrix `A` (`C·d × n` words, 26 MB at `C = 64`, expanded from a 32-byte seed in
 4–10 ms on the test machine). Building the hint took 1.3 s at `N = 10^6` for `C ≥ 16` and 2.1 s at
 `C = 1`. Client prepare (fresh secrets and `A·s + e` for every probe) does not depend on the
-query and can run ahead; adding the query took under 0.01 ms. The sweep files cover `C` from 1 to
+query and can run ahead; adding the query took under 0.01 ms. Results are (cluster, slot)
+positions; unless records are addressed by position, the client also needs the position-to-record
+map, 4 bytes per row (4 MB at `N = 10^6`). The sweep files cover `C` from 1 to
 1,024 at `10^5` and 1 to 256 at `10^6`, `P` from 1 to 64, and widths 1:4, 2:4 and 4:4; 4:4 codes
 fail the 2^-40 bound from `C = 128` at `10^6` and `C = 256` at `10^5` (`params_valid: false`).
 
@@ -261,18 +266,22 @@ quality rather than recall against its own codes.
 
 **The claim at `N = 10^6`.** Targets: at most 100 ms of server time per query on one node, at
 most a few MB of online communication, the offline hint stated, and recall@10 of at least 0.9
-against the plaintext ranking of the same codes. On glove-100 quantized to 4-bit codes, `C = 64,
-P = 16` meets all four: 24.4 ms median server time (27.4 ms at p90), 1.66 MB online (410 KB up,
-1.25 MB down), an 80 MB hint per database version, recall 0.961; `C = 64, P = 8` gives 10.4 ms,
-0.83 MB and 0.902, and `C = 32, P = 8` gives 14.2 ms, 1.35 MB, a 160 MB hint and 0.935. Exact
+against the plaintext ranking of the same codes. Kill criterion: no configuration meets all four
+at `N = 10^6`. It did not fire. On glove-100 quantized to 4-bit codes, `C = 64, P = 16` meets all
+four: 24.4 ms median server time (27.4 ms at p90), 1.66 MB online (410 KB up, 1.25 MB down), an
+80 MB hint per database version, recall 0.961. `C = 32, P = 8` does too: 14.2 ms, 1.35 MB, a
+160 MB hint, recall 0.935. `C = 64, P = 8` (10.4 ms, 0.83 MB, 0.902) is within sampling error of
+the recall threshold over 1,000 queries and is not counted as a pass. Exact
 scoring of the whole database (`C = 1`) takes 4.1 ms of server time and 4 MB down but needs a
 4,096 MB hint and 53 ms of client decoding. Limits of the result: one dataset, one machine, one
-run, 30 timed queries per configuration; recall against the fraction of the database scored
-depends on how well the data clusters, and glove-100 needs 16–31% of rows scored to pass 0.9.
+run, 30 timed queries per configuration; recall against the share of the database scored
+depends on how well the data clusters, and on glove-100 the passing points score at most 31% of
+the rows (`P/C` = 25%).
 The security rests on SimplePIR's parameter set as stated above (128-bit by SimplePIR's
 estimate, 2^95 by the core-SVP estimate here). Raising σ to YPIR's 11 would multiply the
-failure-bound exponent by (6.4/11)² ≈ 0.34, which pushes the 4:4 rows at `C = 64` past 2^-40 and
-leaves the `C ≤ 32` rows and the 1-bit rows within it. Not implemented: dropping low bits of the
+failure-bound exponent by (6.4/11)² ≈ 0.34; by that scaling, not by measurement, the 4:4 rows at
+`C = 64` would exceed 2^-40 and the `C ≤ 32` rows and the 1-bit rows would not, so of the passing
+points only `C = 32, P = 8` would remain. Not implemented: dropping low bits of the
 answer words (16-bit plaintext in a 32-bit word), and removing the hint with Tiptoe's token or a
 hintless scheme such as YPIR [3].
 

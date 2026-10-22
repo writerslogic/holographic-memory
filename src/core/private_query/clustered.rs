@@ -521,6 +521,8 @@ impl DenseClient {
                 body[col] = word.wrapping_add(self.sampler.sample(rng));
             }
         }
+        // `A·s` without its error gives the secret by linear algebra.
+        products.zeroize();
         PreparedQuery {
             params,
             seed: self.matrix.seed,
