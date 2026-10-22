@@ -1313,6 +1313,38 @@ mod tests {
         Ok(())
     }
 
+    /// A store's first open skips flushing the end marker of its new, empty segment. A crash
+    /// before the first commit leaves that segment all zeros, header included (or without even
+    /// its length); recovery opens it as the same empty log and appends from offset 0.
+    #[test]
+    fn recovers_a_new_segment_whose_end_marker_never_reached_disk() -> Result<()> {
+        for keep_length in [true, false] {
+            let dir = tempdir()?;
+            drop(PersistentArena::new(dir.path())?);
+            let segment = dir.path().join("seg_0.bin");
+            let file = OpenOptions::new().write(true).open(&segment)?;
+            let length = file.metadata()?.len();
+            assert!(length >= HEADER_SIZE as u64);
+            file.set_len(0)?;
+            if keep_length {
+                file.set_len(length)?;
+            }
+            file.sync_all()?;
+            drop(file);
+
+            let second = {
+                let arena = PersistentArena::new(dir.path())?;
+                assert_eq!(arena.stats().used_bytes, 0, "keep_length {keep_length}");
+                assert_eq!(arena.write_slice(b"first after the crash")?, 0);
+                arena.write_slice(b"second")?
+            };
+            let arena = PersistentArena::new(dir.path())?;
+            assert_eq!(arena.read_frame(0)?.0, b"first after the crash");
+            assert_eq!(arena.read_frame(second)?.0, b"second");
+        }
+        Ok(())
+    }
+
     /// A flipped byte inside a committed frame is corruption, not a torn tail: committed data
     /// (the next frame, or the end marker after the last frame) follows it, so open fails
     /// instead of serving the log truncated at the damage.
