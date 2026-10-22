@@ -1,0 +1,13 @@
+start build bipartite index
+projection ep: 33
+
+
+
+start build bipartite index
+projection ep: 33
+
+
+
+{"native_arms": [{"arm": 0, "strict_recall": 1.0}, {"arm": 1, "strict_recall": 1.0}, {"arm": 2, "strict_recall": 1.0}, {"arm": 3, "strict_recall": 1.0}, {"arm": 4, "strict_recall": 1.0}], "default_parity_queries": 16, "resources": {"qag_arm": 4, "qag_repetition": 0, "qag_baseline_so": "/home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so", "qag_candidate_so": "/home/davidcondrey/sol-qag/artifacts/trained-holographic_memory.so", "qag_reserved_validation_queries": 0, "qag_construction_queries": 16384, "qag_candidate_training_queries": 0, "qag_resource_scope": "all built arms co-resident; VIBE index_size is aggregate USS delta, not per-arm peak RSS or serialized bytes", "qag_baseline4_build_seconds": 0.006503768992843106, "qag_baseline4_index_bytes": 45728, "qag_candidate8_build_seconds": 0.0033408589952159673, "qag_candidate8_index_bytes": 60000, "qag_roargraph48_build_seconds": 1.0848590899986448, "qag_roargraph96_build_seconds": 3.7547453279985348, "qag_mlann_rf10_depth14_build_seconds": 0.4872896769957151, "qag_mlann_seed": "uncontrolled std::random_device; one forest reused across repetitions", "qag_mlann_query_copy": "32-byte aligned float32 buffer copy included in query timing", "qag_mlann_construction": "RF, n_trees=10, depth=14; same reserved-query exclusion as RoarGraph", "qag_mlann_voting_threshold": 5e-06, "qag_process_peak_rss_kib": 145328}}
+................................                                         [100%]
+32 passed in 1.23s

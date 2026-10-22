@@ -1,0 +1,786 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-22T16:57:46.113618+00:00",
+  "phase": "validation",
+  "dataset": "yi-128-ip",
+  "source": {
+    "path": "/home/davidcondrey/vibe-hms/vibe/data/yi-128-ip.hdf5",
+    "sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+    "bytes": 268704624
+  },
+  "native": "/home/davidcondrey/sol-qag/data/yi-full",
+  "training": "/home/davidcondrey/sol-qag/data/yi-full-training",
+  "vibe": "/home/davidcondrey/vibe-hms/vibe",
+  "bench": "/home/davidcondrey/vibe-hms/bench.sh",
+  "definitions": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/definitions",
+  "algorithm": "qag-final-candidates-v1",
+  "extensions": {
+    "baseline": {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/baseline-holographic_memory.so",
+      "sha256": "91beaaf58f5bced0060e6337052edad5aa1dd8c6733fece137b927c9d0788b7e",
+      "bytes": 1908632,
+      "original_path": "/home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so"
+    },
+    "candidate": {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/candidate-holographic_memory.so",
+      "sha256": "31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26",
+      "bytes": 1989928,
+      "original_path": "/home/davidcondrey/sol-qag/artifacts/patience-holographic_memory.so"
+    }
+  },
+  "schedule": [
+    [
+      0,
+      1000,
+      1000,
+      0
+    ],
+    [
+      1,
+      100,
+      100,
+      0
+    ],
+    [
+      2,
+      100,
+      0,
+      0
+    ],
+    [
+      4,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      2000,
+      1000,
+      0
+    ],
+    [
+      1,
+      160,
+      200,
+      0,
+      8
+    ],
+    [
+      3,
+      120,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      0,
+      0
+    ],
+    [
+      1,
+      160,
+      200,
+      0,
+      20
+    ],
+    [
+      1,
+      160,
+      200,
+      0,
+      24
+    ],
+    [
+      1,
+      256,
+      400,
+      0
+    ],
+    [
+      3,
+      800,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      0
+    ],
+    [
+      1,
+      512,
+      400,
+      0
+    ],
+    [
+      1,
+      512,
+      400,
+      1
+    ],
+    [
+      4,
+      3,
+      0,
+      1
+    ],
+    [
+      3,
+      800,
+      0,
+      1
+    ],
+    [
+      1,
+      256,
+      400,
+      1
+    ],
+    [
+      1,
+      160,
+      200,
+      1,
+      24
+    ],
+    [
+      1,
+      160,
+      200,
+      1,
+      20
+    ],
+    [
+      4,
+      2,
+      0,
+      1
+    ],
+    [
+      3,
+      120,
+      0,
+      1
+    ],
+    [
+      1,
+      160,
+      200,
+      1,
+      8
+    ],
+    [
+      0,
+      2000,
+      1000,
+      1
+    ],
+    [
+      4,
+      1,
+      0,
+      1
+    ],
+    [
+      2,
+      100,
+      0,
+      1
+    ],
+    [
+      1,
+      100,
+      100,
+      1
+    ],
+    [
+      0,
+      1000,
+      1000,
+      1
+    ],
+    [
+      0,
+      1000,
+      1000,
+      2
+    ],
+    [
+      1,
+      100,
+      100,
+      2
+    ],
+    [
+      2,
+      100,
+      0,
+      2
+    ],
+    [
+      4,
+      1,
+      0,
+      2
+    ],
+    [
+      0,
+      2000,
+      1000,
+      2
+    ],
+    [
+      1,
+      160,
+      200,
+      2,
+      8
+    ],
+    [
+      3,
+      120,
+      0,
+      2
+    ],
+    [
+      4,
+      2,
+      0,
+      2
+    ],
+    [
+      1,
+      160,
+      200,
+      2,
+      20
+    ],
+    [
+      1,
+      160,
+      200,
+      2,
+      24
+    ],
+    [
+      1,
+      256,
+      400,
+      2
+    ],
+    [
+      3,
+      800,
+      0,
+      2
+    ],
+    [
+      4,
+      3,
+      0,
+      2
+    ],
+    [
+      1,
+      512,
+      400,
+      2
+    ]
+  ],
+  "inputs": [
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/data/yi-128-ip.hdf5",
+      "sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+      "bytes": 268704624
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full/meta.json",
+      "sha256": "20758bdf8b57580d31e1900a41cfe406d54741d6559f8a1ce67d4413cf3ea314",
+      "bytes": 1943
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full/base.f32",
+      "sha256": "01ff881e759dcd7de691c84533afd741f12320489915286c369829bbafa15c75",
+      "bytes": 96175616
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full/construction_ids.u32",
+      "sha256": "a0a08e9c1276a0e679a0e3d76a43f191b08d9febe50e8b7fedd13ff72ed670f7",
+      "bytes": 746348
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full/scores.f64",
+      "sha256": "7bab21ef304623276784a7829cc35e4bd562e8437e0a8b07be9aa669c36ab09e",
+      "bytes": 204800
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full/truth.u32",
+      "sha256": "bf75529824e1553e29afc37c8f3af579d5d5fee66a913d1b0e0164b9bf10dc7b",
+      "bytes": 102400
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full/validation.f32",
+      "sha256": "ad6bdb0b6bda693106a21e3faec678bdf3b7e0dd7d1e1af761ef32082474b0bb",
+      "bytes": 131072
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full/validation_ids.u32",
+      "sha256": "c04e3962a849a3db120e19a6ba8a3703d7156c0eb9e052fdbb2df42439369e1e",
+      "bytes": 1024
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full-training/meta.json",
+      "sha256": "06c89ee901458c272290a4f3730a87ca7233f31e5d5447cd54ed339c90442d30",
+      "bytes": 1204
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full-training/learn_ids.u32",
+      "sha256": "8d97968a2a58d3e971b4ab90a031686569be711b17ba127e3c9e049e01289b03",
+      "bytes": 131072
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full-training/neighbors.u32",
+      "sha256": "86fd92b26b0090af62b63396a3dc8a6ac828bd4cedd631c9ffbe1890b21b79cd",
+      "bytes": 13107200
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+      "sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+      "bytes": 16777216
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/definitions/qag_pair/config.yml",
+      "sha256": "0aa5dc6339a434ee3fbad834b4695c6943c28bd48b07f2a0b5ebdeae2bbd06f3",
+      "bytes": 5986
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/baseline-holographic_memory.so",
+      "sha256": "91beaaf58f5bced0060e6337052edad5aa1dd8c6733fece137b927c9d0788b7e",
+      "bytes": 1908632
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/candidate-holographic_memory.so",
+      "sha256": "31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26",
+      "bytes": 1989928
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+      "bytes": 1056
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/run.py",
+      "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+      "bytes": 149
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+      "bytes": 12096
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+      "bytes": 12642
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py",
+      "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+      "bytes": 5447
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/datasets.py",
+      "sha256": "6bc7e81058245c378a9aba7d76f7c816c3fa15acc2ec0254ee3aa068fa9edd83",
+      "bytes": 52710
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py",
+      "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+      "bytes": 14310
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py",
+      "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+      "bytes": 17463
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/roargraph/module.py",
+      "sha256": "e5aa00f86d34da05c5ada20622177f236ac7d2609cd4c21bbd97e3cbe8bb2d41",
+      "bytes": 1538
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_execute.py",
+      "sha256": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+      "bytes": 18311
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_execute.sh",
+      "sha256": "5c88f0d722de26dca0d5c57d691ed99b050c6148afab1bd583cf2f784bc37543",
+      "bytes": 492
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_hdf5.py",
+      "sha256": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92",
+      "bytes": 3275
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_prepare.py",
+      "sha256": "49c08b7d581435fcb7c947680a2235ca343ef7a22966d45cf6eef15a1f311d44",
+      "bytes": 5334
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_report.py",
+      "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+      "bytes": 14116
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/RoarGraph.cpython-311-x86_64-linux-gnu.so",
+      "sha256": "a88f6ef19e468c2cae230b0318866058a345d4167e9b61930a8d92f1439ca483",
+      "bytes": 8313088
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/mlann.py",
+      "sha256": "5b2378fe17acb78d4e9824155beb67cc00d513397279646053c973bfcb84f83a",
+      "bytes": 4899
+    }
+  ],
+  "source_snapshots": [
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-00-bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+      "bytes": 1056,
+      "original_path": "/home/davidcondrey/vibe-hms/bench.sh"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-01-run.py",
+      "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+      "bytes": 149,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/run.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-02-main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+      "bytes": 12096,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-03-runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+      "bytes": 12642,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-04-results.py",
+      "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+      "bytes": 5447,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-05-datasets.py",
+      "sha256": "6bc7e81058245c378a9aba7d76f7c816c3fa15acc2ec0254ee3aa068fa9edd83",
+      "bytes": 52710,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/datasets.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-06-definitions.py",
+      "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+      "bytes": 14310,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-07-module.py",
+      "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+      "bytes": 17463,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-08-module.py",
+      "sha256": "e5aa00f86d34da05c5ada20622177f236ac7d2609cd4c21bbd97e3cbe8bb2d41",
+      "bytes": 1538,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/roargraph/module.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-09-qag_execute.py",
+      "sha256": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+      "bytes": 18311,
+      "original_path": "/home/davidcondrey/sol-qag/qag_execute.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-10-qag_execute.sh",
+      "sha256": "5c88f0d722de26dca0d5c57d691ed99b050c6148afab1bd583cf2f784bc37543",
+      "bytes": 492,
+      "original_path": "/home/davidcondrey/sol-qag/qag_execute.sh"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-11-qag_hdf5.py",
+      "sha256": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92",
+      "bytes": 3275,
+      "original_path": "/home/davidcondrey/sol-qag/qag_hdf5.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-12-qag_prepare.py",
+      "sha256": "49c08b7d581435fcb7c947680a2235ca343ef7a22966d45cf6eef15a1f311d44",
+      "bytes": 5334,
+      "original_path": "/home/davidcondrey/sol-qag/qag_prepare.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/source-13-qag_report.py",
+      "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+      "bytes": 14116,
+      "original_path": "/home/davidcondrey/sol-qag/qag_report.py"
+    }
+  ],
+  "competitor_modules": [
+    {
+      "module": "RoarGraph",
+      "path": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/RoarGraph.cpython-311-x86_64-linux-gnu.so",
+      "sha256": "a88f6ef19e468c2cae230b0318866058a345d4167e9b61930a8d92f1439ca483",
+      "bytes": 8313088
+    },
+    {
+      "module": "mlann",
+      "path": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/mlann.py",
+      "sha256": "5b2378fe17acb78d4e9824155beb67cc00d513397279646053c973bfcb84f83a",
+      "bytes": 4899
+    }
+  ],
+  "host": {
+    "hostname": "writerslogic-02",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "lscpu": {
+      "lscpu": [
+        {
+          "field": "Architecture:",
+          "data": "x86_64"
+        },
+        {
+          "field": "CPU op-mode(s):",
+          "data": "32-bit, 64-bit"
+        },
+        {
+          "field": "Address sizes:",
+          "data": "46 bits physical, 48 bits virtual"
+        },
+        {
+          "field": "Byte Order:",
+          "data": "Little Endian"
+        },
+        {
+          "field": "CPU(s):",
+          "data": "22"
+        },
+        {
+          "field": "On-line CPU(s) list:",
+          "data": "0-21"
+        },
+        {
+          "field": "Vendor ID:",
+          "data": "GenuineIntel"
+        },
+        {
+          "field": "Model name:",
+          "data": "Intel(R) Core(TM) Ultra 9 185H"
+        },
+        {
+          "field": "CPU family:",
+          "data": "6"
+        },
+        {
+          "field": "Model:",
+          "data": "170"
+        },
+        {
+          "field": "Thread(s) per core:",
+          "data": "2"
+        },
+        {
+          "field": "Core(s) per socket:",
+          "data": "11"
+        },
+        {
+          "field": "Socket(s):",
+          "data": "1"
+        },
+        {
+          "field": "Stepping:",
+          "data": "4"
+        },
+        {
+          "field": "Microcode version:",
+          "data": "0xffffffff"
+        },
+        {
+          "field": "BogoMIPS:",
+          "data": "6143.99"
+        },
+        {
+          "field": "Flags:",
+          "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves avx_vnni vnmi umip waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize ibt flush_l1d arch_capabilities"
+        },
+        {
+          "field": "Virtualization:",
+          "data": "VT-x"
+        },
+        {
+          "field": "Hypervisor vendor:",
+          "data": "Microsoft"
+        },
+        {
+          "field": "Virtualization type:",
+          "data": "full"
+        },
+        {
+          "field": "L1d cache:",
+          "data": "528 KiB (11 instances)"
+        },
+        {
+          "field": "L1i cache:",
+          "data": "704 KiB (11 instances)"
+        },
+        {
+          "field": "L2 cache:",
+          "data": "22 MiB (11 instances)"
+        },
+        {
+          "field": "L3 cache:",
+          "data": "24 MiB (1 instance)"
+        },
+        {
+          "field": "NUMA node(s):",
+          "data": "1"
+        },
+        {
+          "field": "NUMA node0 CPU(s):",
+          "data": "0-21"
+        },
+        {
+          "field": "Vulnerability Gather data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Ghostwrite:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Indirect target selection:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Itlb multihit:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability L1tf:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Meltdown:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mmio stale data:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Old microcode:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Reg file data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Retbleed:",
+          "data": "Mitigation; Enhanced IBRS"
+        },
+        {
+          "field": "Vulnerability Spec rstack overflow:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Spec store bypass:",
+          "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+        },
+        {
+          "field": "Vulnerability Spectre v1:",
+          "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+        },
+        {
+          "field": "Vulnerability Spectre v2:",
+          "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI BHI_DIS_S"
+        },
+        {
+          "field": "Vulnerability Srbds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsa:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsx async abort:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Vmscape:",
+          "data": "Not affected"
+        }
+      ]
+    },
+    "python": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python"
+  },
+  "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+  "vibe_sha": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
+  "validation_report": null,
+  "policy": {
+    "construction_queries": 32768,
+    "reserved_ids": "empty: learn already excludes reserved validation",
+    "threads": {
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1"
+    },
+    "parallelism": 1,
+    "cache": "same resident indexes, five passes per group, report saved fifth pass",
+    "repetitions": [
+      0,
+      1,
+      2
+    ],
+    "competitors": "best among frozen measured 32768-query configurations"
+  }
+}

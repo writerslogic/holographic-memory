@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/davidcondrey/sol-qag/qag_training.py", line 9, in <module>
+    import faiss
+ModuleNotFoundError: No module named 'faiss'

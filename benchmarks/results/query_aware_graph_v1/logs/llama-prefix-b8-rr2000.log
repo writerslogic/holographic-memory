@@ -1,0 +1,24 @@
+{"B":{"evaluated_coverage":0.9933203125000003,"evaluated_unique":34894.5078125,"exact_all_retained_recall":0.9933203125000003,"exact_rerank_recall":0.9933203125000003,"recall":0.9933203125000003,"rerank_candidate_coverage":0.9933203125000003,"retained_coverage":0.9933203125000003},"E":{"evaluated_coverage":0.9931640625000001,"evaluated_unique":34865.25390625,"exact_all_retained_recall":0.9931640625000001,"exact_rerank_recall":0.9931640625000001,"recall":0.9931640625000001,"rerank_candidate_coverage":0.9931640625000001,"retained_coverage":0.9931640625000001},"O":{"evaluated_coverage":0.9935937500000003,"evaluated_unique":34859.125,"exact_all_retained_recall":0.9935937500000003,"exact_rerank_recall":0.9935937500000003,"recall":0.9935937500000003,"rerank_candidate_coverage":0.9935937500000003,"retained_coverage":0.9935937500000003},"OE":{"evaluated_coverage":0.9934375000000002,"evaluated_unique":34829.796875,"exact_all_retained_recall":0.9934375000000002,"exact_rerank_recall":0.9934375000000002,"recall":0.9934375000000002,"rerank_candidate_coverage":0.9934375000000002,"retained_coverage":0.9934375000000002}}
+	Command being timed: "/home/davidcondrey/sol-qag/target/release/qag-diagnose --data /home/davidcondrey/sol-qag/data/llama-prefix --graph /home/davidcondrey/sol-qag/data/llama-prefix.graph --out /home/davidcondrey/sol-qag/results/llama-prefix-b8-rr2000.json --bits 8 --rerank 2000"
+	User time (seconds): 10.42
+	System time (seconds): 0.20
+	Percent of CPU this job got: 103%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:10.30
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 489100
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 172153
+	Voluntary context switches: 7
+	Involuntary context switches: 68
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 3784
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

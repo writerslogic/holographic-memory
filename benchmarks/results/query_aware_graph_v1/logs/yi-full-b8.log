@@ -1,0 +1,24 @@
+{"B":{"evaluated_coverage":0.9840625000000001,"evaluated_unique":26266.11328125,"exact_all_retained_recall":0.9840625000000001,"exact_rerank_recall":0.9840625000000001,"recall":0.9840234375000001,"rerank_candidate_coverage":0.9840625000000001,"retained_coverage":0.9840625000000001},"E":{"evaluated_coverage":0.9842578125000003,"evaluated_unique":26279.12109375,"exact_all_retained_recall":0.9842578125000003,"exact_rerank_recall":0.9842578125000003,"recall":0.9842187500000004,"rerank_candidate_coverage":0.9842578125000003,"retained_coverage":0.9842578125000003},"O":{"evaluated_coverage":0.9841796875,"evaluated_unique":26193.9140625,"exact_all_retained_recall":0.9841796875,"exact_rerank_recall":0.9841796875,"recall":0.984140625,"rerank_candidate_coverage":0.9841796875,"retained_coverage":0.9841796875},"OE":{"evaluated_coverage":0.9843750000000003,"evaluated_unique":26205.65234375,"exact_all_retained_recall":0.9843750000000003,"exact_rerank_recall":0.9843750000000003,"recall":0.9843359375000004,"rerank_candidate_coverage":0.9843750000000003,"retained_coverage":0.9843750000000003}}
+	Command being timed: "/home/davidcondrey/sol-qag/target/release/qag-diagnose --data /home/davidcondrey/sol-qag/data/yi-full --graph /home/davidcondrey/sol-qag/data/yi-full.graph --out /home/davidcondrey/sol-qag/results/yi-full-b8.json --bits 8"
+	User time (seconds): 7.70
+	System time (seconds): 0.22
+	Percent of CPU this job got: 90%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.80
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 459868
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 161578
+	Voluntary context switches: 7
+	Involuntary context switches: 55
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 3680
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

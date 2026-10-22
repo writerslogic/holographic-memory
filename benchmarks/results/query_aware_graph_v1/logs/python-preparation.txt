@@ -1,0 +1,5 @@
+Downloading h5py (2.9MiB)
+ Downloaded h5py
+Installed 7 packages in 30ms
+...........................................                              [100%]
+43 passed in 0.41s

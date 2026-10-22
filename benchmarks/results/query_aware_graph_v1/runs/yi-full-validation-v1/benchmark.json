@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-22T16:57:46.641473+00:00",
+  "phase": "validation",
+  "freeze": {
+    "path": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/frozen.json",
+    "sha256": "0b9308079ed1373070e7eb87c5a89a93c6bec84d3f11bd942c24ccbdeea6dfd9",
+    "bytes": 20724
+  },
+  "host": {
+    "hostname": "writerslogic-02",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "lscpu": {
+      "lscpu": [
+        {
+          "field": "Architecture:",
+          "data": "x86_64"
+        },
+        {
+          "field": "CPU op-mode(s):",
+          "data": "32-bit, 64-bit"
+        },
+        {
+          "field": "Address sizes:",
+          "data": "46 bits physical, 48 bits virtual"
+        },
+        {
+          "field": "Byte Order:",
+          "data": "Little Endian"
+        },
+        {
+          "field": "CPU(s):",
+          "data": "22"
+        },
+        {
+          "field": "On-line CPU(s) list:",
+          "data": "0-21"
+        },
+        {
+          "field": "Vendor ID:",
+          "data": "GenuineIntel"
+        },
+        {
+          "field": "Model name:",
+          "data": "Intel(R) Core(TM) Ultra 9 185H"
+        },
+        {
+          "field": "CPU family:",
+          "data": "6"
+        },
+        {
+          "field": "Model:",
+          "data": "170"
+        },
+        {
+          "field": "Thread(s) per core:",
+          "data": "2"
+        },
+        {
+          "field": "Core(s) per socket:",
+          "data": "11"
+        },
+        {
+          "field": "Socket(s):",
+          "data": "1"
+        },
+        {
+          "field": "Stepping:",
+          "data": "4"
+        },
+        {
+          "field": "Microcode version:",
+          "data": "0xffffffff"
+        },
+        {
+          "field": "BogoMIPS:",
+          "data": "6143.99"
+        },
+        {
+          "field": "Flags:",
+          "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves avx_vnni vnmi umip waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize ibt flush_l1d arch_capabilities"
+        },
+        {
+          "field": "Virtualization:",
+          "data": "VT-x"
+        },
+        {
+          "field": "Hypervisor vendor:",
+          "data": "Microsoft"
+        },
+        {
+          "field": "Virtualization type:",
+          "data": "full"
+        },
+        {
+          "field": "L1d cache:",
+          "data": "528 KiB (11 instances)"
+        },
+        {
+          "field": "L1i cache:",
+          "data": "704 KiB (11 instances)"
+        },
+        {
+          "field": "L2 cache:",
+          "data": "22 MiB (11 instances)"
+        },
+        {
+          "field": "L3 cache:",
+          "data": "24 MiB (1 instance)"
+        },
+        {
+          "field": "NUMA node(s):",
+          "data": "1"
+        },
+        {
+          "field": "NUMA node0 CPU(s):",
+          "data": "0-21"
+        },
+        {
+          "field": "Vulnerability Gather data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Ghostwrite:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Indirect target selection:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Itlb multihit:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability L1tf:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Meltdown:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mmio stale data:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Old microcode:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Reg file data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Retbleed:",
+          "data": "Mitigation; Enhanced IBRS"
+        },
+        {
+          "field": "Vulnerability Spec rstack overflow:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Spec store bypass:",
+          "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+        },
+        {
+          "field": "Vulnerability Spectre v1:",
+          "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+        },
+        {
+          "field": "Vulnerability Spectre v2:",
+          "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI BHI_DIS_S"
+        },
+        {
+          "field": "Vulnerability Srbds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsa:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsx async abort:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Vmscape:",
+          "data": "Not affected"
+        }
+      ]
+    },
+    "python": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python"
+  },
+  "command": [
+    "/home/davidcondrey/vibe-hms/bench.sh",
+    "qag-validation-yi-full-validation-v1-128-ip",
+    "1",
+    "vibe",
+    "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/definitions",
+    "nolock"
+  ],
+  "outer_flock": "/home/davidcondrey/hms-timing.lock",
+  "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+  "dataset_view": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/evaluation.hdf5",
+    "sha256": "c14eae08ac058325ce4612216695bad151303f047b64af4ca22505632a25e446",
+    "bytes": 6144
+  },
+  "validation_export": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/validation-export.hdf5",
+    "sha256": "69131c6046b9e4b91b4d7a22d47ec82593ff47d3aedbc4c27b44d7686bb4982a",
+    "bytes": 126506496
+  },
+  "reserved_ids": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/reserved-validation-ids.u32",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1",
+    "HMS_QAG_BASELINE_SO": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/baseline-holographic_memory.so",
+    "HMS_QAG_CANDIDATE_SO": "/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/snapshots/candidate-holographic_memory.so",
+    "HMS_QAG_VALIDATION_IDS": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/reserved-validation-ids.u32",
+    "HMS_QAG_TRAINING_QUERIES": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+    "HMS_QAG_TRAINING_QUERIES_SHA256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d"
+  },
+  "completed_utc": "2026-10-22T17:06:32.472979+00:00",
+  "status": "benchmark_complete",
+  "before": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/before.json",
+    "sha256": "b9836c63c0f263ebb8fda950f8f0574aee1d7bc0b1858f425d08132ac0c3876b",
+    "bytes": 7689
+  },
+  "raw_results": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/raw.hdf5",
+    "sha256": "aca43ddd982cb70b87c7058c9f3aecfefdee9c7a08a0083da690f157746d60d1",
+    "bytes": 9036416
+  },
+  "vibe_raw_results": {
+    "path": "/home/davidcondrey/vibe-hms/vibe/results/qag-validation-yi-full-validation-v1-128-ip/100/qag-final-candidates-v1/ip_64_500.hdf5",
+    "sha256": "aca43ddd982cb70b87c7058c9f3aecfefdee9c7a08a0083da690f157746d60d1",
+    "bytes": 9036416
+  }
+}

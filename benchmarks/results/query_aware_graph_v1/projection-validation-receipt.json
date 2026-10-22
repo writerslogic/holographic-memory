@@ -1,0 +1,53 @@
+{
+  "baseline_commit": "08d37778a66b58709461456e5b9a7ab6a05b399f",
+  "candidate_core_commit": "85b0af081c26e65f6a5643722386137ca332e587",
+  "scope": "validation only; no official test",
+  "host": "writerslogic-02",
+  "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+  "files": {
+    "bench": {
+      "path": "/home/davidcondrey/vibe-hms/bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79"
+    },
+    "runner": {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a"
+    },
+    "main": {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d"
+    },
+    "adapter": {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py",
+      "sha256": "30e519088a56ced4d2dce0150d23955cdd5c8ac58f6bb9bc77bd0ef6661f1afc"
+    },
+    "definition": {
+      "path": "/home/davidcondrey/sol-qag/defs/projection-validation/qag_pair/config.yml",
+      "sha256": "fd58a97358b40462c251b7952204cab396e191045d2a1bc7ebdcea9813d1d3d9"
+    },
+    "baseline_extension": {
+      "path": "/home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so",
+      "sha256": "91beaaf58f5bced0060e6337052edad5aa1dd8c6733fece137b927c9d0788b7e"
+    },
+    "candidate_extension": {
+      "path": "/home/davidcondrey/sol-qag/artifacts/trained-holographic_memory.so",
+      "sha256": "dea7fcf03837364c55615fd1705f89f871f4f81443c64221a7f3657729086048"
+    },
+    "data": {
+      "path": "/home/davidcondrey/sol-qag/data/qag-llama-128-ip.hdf5",
+      "sha256": "ccfef65c3e5ba2f73f4cb766f58f01e57742ef697646f6ca6dedb0dd23a31305"
+    },
+    "training": {
+      "path": "/home/davidcondrey/sol-qag/data/llama-prefix-training/queries.f32",
+      "sha256": "6ac89a55c119173744004b605c75f1ab0d4b026241e12317536b6ba17a967ffd"
+    }
+  },
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1"
+  },
+  "protocol": "three alternating blocks; use saved fifth pass per block; ignore best_qps; warm four preceding passes"
+}

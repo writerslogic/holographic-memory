@@ -1,0 +1,24 @@
+{"B":{"evaluated_coverage":0.9918359375000004,"evaluated_unique":37757.70703125,"exact_all_retained_recall":0.9918359375000004,"exact_rerank_recall":0.9918359375000004,"recall":0.9916796875000005,"rerank_candidate_coverage":0.9918359375000004,"retained_coverage":0.9918359375000004},"E":{"evaluated_coverage":0.9921093750000006,"evaluated_unique":37743.01953125,"exact_all_retained_recall":0.9921093750000006,"exact_rerank_recall":0.9921093750000006,"recall":0.9919531250000005,"rerank_candidate_coverage":0.9921093750000006,"retained_coverage":0.9921093750000006},"O":{"evaluated_coverage":0.9917968750000005,"evaluated_unique":37724.359375,"exact_all_retained_recall":0.9917968750000005,"exact_rerank_recall":0.9917968750000005,"recall":0.9916406250000005,"rerank_candidate_coverage":0.9917968750000005,"retained_coverage":0.9917968750000005},"OE":{"evaluated_coverage":0.9921093750000006,"evaluated_unique":37710.7890625,"exact_all_retained_recall":0.9921093750000006,"exact_rerank_recall":0.9921093750000006,"recall":0.9919531250000005,"rerank_candidate_coverage":0.9921093750000006,"retained_coverage":0.9921093750000006}}
+	Command being timed: "/home/davidcondrey/sol-qag/target/release/qag-diagnose --data /home/davidcondrey/sol-qag/data/llama-full --graph /home/davidcondrey/sol-qag/data/llama-full.graph --out /home/davidcondrey/sol-qag/results/llama-full-b8.json --bits 8"
+	User time (seconds): 11.11
+	System time (seconds): 0.28
+	Percent of CPU this job got: 94%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.11
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 623772
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 220254
+	Voluntary context switches: 7
+	Involuntary context switches: 65
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 3808
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,4 @@
+a76aeb35be7e43da7db55858da4ea5778937490744b302ee7175d2695fccc224  /home/davidcondrey/sol-qag/artifacts/qag-diagnose-initial
+6a747983ad25e55ea7eddc5a17f39cd567737905de4178ab82b93e4580343a7f  /home/davidcondrey/sol-qag/repo/src/bin/qag-diagnose.rs
+83c3bbcec24b2f02b6a81180f96c4c91a5ecea08a1c978ec9fc0b5759718cf7d  /home/davidcondrey/sol-qag/repo/src/core/qgraph/vertex.rs
+83a4b2ab5d9a4cab49b8cdbb94880a1d4620c3e0cf33effca02d720ab7e9bc51  /home/davidcondrey/sol-qag/repo/src/core/qgraph/diagnostics.rs
