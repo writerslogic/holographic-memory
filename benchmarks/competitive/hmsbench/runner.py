@@ -252,7 +252,7 @@ def _hms_ann_command(directory, meta, out):
 
 
 def _hms_ann_build(directory, meta, threads, workdir):
-    """One `public-bench ann-qgraph --save-index` process: builds and encodes the index on
+    """One `public-bench ann-qgraph --save-updates` process: builds and encodes the index on
     `threads` threads and writes it to `workdir` (the index file and its build record), as each
     comparator's build process persists its index. Build time and build peak RSS come from here."""
     shutil.rmtree(workdir, ignore_errors=True)
@@ -260,7 +260,7 @@ def _hms_ann_build(directory, meta, threads, workdir):
     out = WORK / "hms-ann-build.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
-    cmd = [*_hms_ann_command(directory, meta, out), "--save-index", str(workdir / "index.vgraph"), "--save-updates", str(workdir / "index.updates")]
+    cmd = [*_hms_ann_command(directory, meta, out), "--save-updates", str(workdir / "index.updates")]
     stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
     raw = json.loads(out.read_text())
     out.unlink()
