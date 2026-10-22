@@ -467,6 +467,9 @@ pub struct SearchIn {
     pub include: Vec<String>,
 }
 
+/// Most chunks one text search asks the engine for (its `k` limit).
+const MAX_SEARCH_CHUNKS: u32 = 1000;
+
 /// Text ranking (BM25; the model stages when configured) of the tenant's documents by `query`: ids and scores, best first, one hit per
 /// document. The response is serialized from the engine's results without an intermediate
 /// JSON tree, and stored text or metadata is copied into it only when requested.
@@ -494,28 +497,35 @@ pub async fn search(State(state): State<Arc<AppState>>, req: Request) -> ApiResu
                 _ => return Err(ApiError::bad("include accepts \"text\" and \"metadata\"")),
             }
         }
-        let options = SearchOptions {
-            k: Some(top_k as u32),
-            candidate_limit: Some(top_k as u32),
-            lexical_weight: Some(1.0),
-            semantic_weight: Some(0.0),
-            ..SearchOptions::default()
+        // The engine ranks chunks and a document longer than one chunk can rank several, of
+        // which its best one stands. Ask for more chunks than documents and widen the request
+        // until `top_k` distinct documents are found or the ranking is exhausted.
+        let core = state.core(&tenant)?;
+        let mut chunks = (top_k as u32).saturating_mul(4).min(MAX_SEARCH_CHUNKS);
+        let mut results = loop {
+            let options = SearchOptions {
+                k: Some(chunks),
+                candidate_limit: Some(chunks),
+                lexical_weight: Some(1.0),
+                semantic_weight: Some(0.0),
+                ..SearchOptions::default()
+            };
+            let mut results = core
+                .search_documents(&q.query, &options)
+                .map_err(ApiError::internal)?;
+            let exhausted = results.len() < chunks as usize || chunks == MAX_SEARCH_CHUNKS;
+            let mut seen = std::collections::HashSet::with_capacity(results.len());
+            results.retain(|hit| seen.insert(hit.document_id.clone()));
+            if exhausted || results.len() >= top_k as usize {
+                break results;
+            }
+            chunks = chunks.saturating_mul(4).min(MAX_SEARCH_CHUNKS);
         };
-        let results = state
-            .core(&tenant)?
-            .search_documents(&q.query, &options)
-            .map_err(ApiError::internal)?;
-        // A document longer than one chunk can rank several chunks; its best one stands.
-        let mut seen = std::collections::HashSet::with_capacity(results.len());
-        let first: Vec<bool> = results
-            .iter()
-            .map(|hit| seen.insert(hit.document_id.as_str()))
-            .collect();
+        drop(core);
+        results.truncate(top_k as usize);
         let hits: Vec<SearchHit> = results
             .into_iter()
-            .zip(first)
-            .filter(|(_, first)| *first)
-            .map(|(hit, _)| SearchHit {
+            .map(|hit| SearchHit {
                 id: hit.document_id,
                 score: hit.score,
                 text: text.then(|| hit.text.unwrap_or_default()),

@@ -388,3 +388,66 @@ fn quiesced_tenants_turn_requests_away_immediately() {
     drop(held);
     assert!(state.core("t").is_ok());
 }
+
+/// Search ranks chunks but answers with documents: when every document spans several
+/// matching chunks, `top_k` distinct documents still come back while that many exist.
+#[tokio::test(flavor = "current_thread")]
+async fn search_returns_top_k_distinct_documents_from_multi_chunk_documents() {
+    let directory = tempfile::tempdir().unwrap();
+    let state = state(directory.path(), 2);
+    let chunks_per_document = 6;
+    for i in 0..8 {
+        let text = (0..chunks_per_document)
+            .map(|c| format!("quartz river d{i} c{c}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let document = DocumentInput {
+            id: format!("doc{i}"),
+            text,
+            source_uri: None,
+            version: None,
+            metadata: None,
+            chunk_words: Some(4),
+            overlap_words: Some(0),
+            store_text: None,
+            embeddings: Some(vec![vec![1.0, 0.0]; chunks_per_document]),
+            title_weight: None,
+        };
+        state
+            .core("default")
+            .unwrap()
+            .memorize_document(document)
+            .unwrap();
+    }
+    let (address, server) = serve(state).await;
+    for (top_k, expected) in [(1, 1), (3, 3), (5, 5), (8, 8), (20, 8)] {
+        let body = format!(r#"{{"query":"quartz","top_k":{top_k}}}"#);
+        let mut stream = tokio::net::TcpStream::connect(address).await.unwrap();
+        stream
+            .write_all(
+                format!(
+                    "POST /api/v1/search HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nAuthorization: Bearer test-key\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
+                    body.len()
+                )
+                .as_bytes(),
+            )
+            .await
+            .unwrap();
+        let mut bytes = Vec::new();
+        stream.read_to_end(&mut bytes).await.unwrap();
+        let response = String::from_utf8(bytes).unwrap();
+        let (headers, body) = response.split_once("\r\n\r\n").unwrap();
+        assert!(headers.starts_with("HTTP/1.1 200"), "{headers}");
+        let hits: Value = serde_json::from_str(body).unwrap();
+        let ids: Vec<&str> = hits["hits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|h| h["id"].as_str().unwrap())
+            .collect();
+        let distinct: std::collections::HashSet<&str> = ids.iter().copied().collect();
+        assert_eq!(ids.len(), expected, "top_k {top_k}: {ids:?}");
+        assert_eq!(distinct.len(), ids.len(), "top_k {top_k}: {ids:?}");
+    }
+    server.abort();
+}
