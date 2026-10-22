@@ -4,8 +4,10 @@
 
 import importlib.util
 import os
+import sqlite3
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -191,6 +193,37 @@ def test_milvus_mutations_flush_the_wal_before_returning(tmp_path, synced):
         rows = reopened.get_collection("c").get([0, 5, 7, 9])
         assert [row["id"] for row in rows] == [7]
         assert rows[0]["vector"] == [0.0, 10.0]
+
+
+def test_ann_ops_commit_each_mutation_before_starting_the_next(tmp_path):
+    from hmsbench import ann_worker as worker
+    train = np.random.default_rng(7).standard_normal((200, 16)).astype(np.float32)
+    train.tofile(tmp_path / "train.f32")
+    path = tmp_path / "control.db"
+    with sqlite3.connect(path) as db:
+        db.execute("CREATE TABLE v (rowid INTEGER PRIMARY KEY, embedding BLOB)")
+        db.executemany("INSERT INTO v VALUES (?, ?)", [(i, row.tobytes()) for i, row in enumerate(train)])
+
+    commits = []
+
+    class SqliteControl(worker.SqliteVec):
+        def open(self, params, n):
+            self.db = sqlite3.connect(path)
+            self.db.set_trace_callback(lambda sql: commits.append(sql) if sql == "COMMIT" else None)
+
+    adapter = SqliteControl(16, tmp_path, 1, "euclidean")
+    try:
+        result = worker.run_ops(SimpleNamespace(data=tmp_path, build="exact"), adapter,
+                                {"n_train": len(train), "dim": 16})
+    finally:
+        adapter.db.close()
+    assert len(commits) == 200
+    assert result["replace"]["supported"] and result["delete"]["supported"]
+    assert result["replace"]["operations_per_flush"] == result["delete"]["operations_per_flush"] == 1
+    with sqlite3.connect(path) as db:
+        rows = dict(db.execute("SELECT rowid, embedding FROM v"))
+    assert len(rows) == 100
+    assert all(vector != train[i].tobytes() for i, vector in rows.items())
 
 
 def test_every_ann_system_is_wired_end_to_end():

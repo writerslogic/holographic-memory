@@ -860,16 +860,19 @@ def run_ops(a, adapter, meta):
     adapter.open(adapter.BUILDS[a.build], n)
     adapter.configure(adapter.SWEEPS[a.build][len(adapter.SWEEPS[a.build]) // 2])
     out = {"count": count}
-    for name, fn in (("replace", lambda: adapter.replace(replace_ids, fresh)), ("delete", lambda: adapter.delete(delete_ids))):
+    for name, fn in (("replace", lambda i: adapter.replace(replace_ids[i:i + 1], fresh[i:i + 1])),
+                     ("delete", lambda i: adapter.delete(delete_ids[i:i + 1]))):
         try:
-            t = time.perf_counter()
-            fn()
-            apply_s = time.perf_counter() - t
-            t = time.perf_counter()
-            adapter.flush()
-            flush_s = time.perf_counter() - t
+            apply_s, flush_s = 0.0, 0.0
+            for i in range(count):
+                t = time.perf_counter()
+                fn(i)
+                apply_s += time.perf_counter() - t
+                t = time.perf_counter()
+                adapter.flush()
+                flush_s += time.perf_counter() - t
             out[name] = {"supported": True, "apply_s": apply_s, "flush_s": flush_s, "per_op_ms_durable": (apply_s + flush_s) / count * 1e3,
-                         "flush_required": adapter.PERSISTENT_FLUSH}
+                         "flush_required": adapter.PERSISTENT_FLUSH, "operations_per_flush": 1}
         except Unsupported as e:
             out[name] = {"supported": False, "reason": str(e)}
     return out
