@@ -324,10 +324,15 @@ impl VGraph {
         ];
         let mut table = Vec::with_capacity(sections.len());
         let mut at = PREFIX;
-        for s in &sections {
+        for (index, s) in sections.iter().enumerate() {
+            let len = if !self.adj_off.is_empty() && index == if id_bytes == 3 { 2 } else { 1 } {
+                self.n * self.degree * id_bytes as usize
+            } else {
+                s.len()
+            };
             at = at.next_multiple_of(ALIGN);
-            table.push((at as u64, s.len() as u64));
-            at += s.len();
+            table.push((at as u64, len as u64));
+            at += len;
         }
         let name = path
             .file_name()
@@ -347,10 +352,24 @@ impl VGraph {
             }
             let mut pos = PREFIX;
             let zeros = [0u8; ALIGN];
-            for (s, (off, _)) in sections.iter().zip(&table) {
+            for (index, (s, (off, len))) in sections.iter().zip(&table).enumerate() {
                 w.write_all(&zeros[..*off as usize - pos])?;
-                w.write_all(s)?;
-                pos = *off as usize + s.len();
+                if !self.adj_off.is_empty() && index == if id_bytes == 3 { 2 } else { 1 } {
+                    let width = id_bytes as usize;
+                    let mut row = vec![0xff; self.degree * width];
+                    for v in 0..self.n {
+                        row.fill(0xff);
+                        let mut at = 0;
+                        self.for_each_neighbour(v, |u| {
+                            row[at..at + width].copy_from_slice(&u.to_le_bytes()[..width]);
+                            at += width;
+                        });
+                        w.write_all(&row)?;
+                    }
+                } else {
+                    w.write_all(s)?;
+                }
+                pos = *off as usize + *len as usize;
             }
             let file = w.into_inner().map_err(|e| e.into_error())?;
             file.sync_all()?;
@@ -618,6 +637,7 @@ impl VGraph {
             half_norms: view!(0, f32),
             adj,
             adj3,
+            adj_off: Vec::new(),
             adjv,
             adjv_off,
             codes: Lines {

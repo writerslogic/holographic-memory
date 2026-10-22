@@ -29,6 +29,10 @@ struct Args {
     training_count: usize,
     #[arg(long, default_value_t = 16)]
     projected_degree: usize,
+    #[arg(long)]
+    profile: bool,
+    #[arg(long)]
+    persist_dir: Option<PathBuf>,
 }
 
 fn floats(path: PathBuf, expected: usize) -> Result<Vec<f32>> {
@@ -184,8 +188,17 @@ fn main() -> Result<()> {
             .take(args.training_count * 100)
             .map(|v| u32::from_le_bytes(*v))
             .collect();
-        projection = json!({"input": training_meta, "stats": graph.project_diagnostic(
-            Some(&transformed), &ids, 100, args.projected_degree)?});
+        if args.profile {
+            ensure!(
+                args.training_count == 32768 && args.projected_degree == 32,
+                "production profile requires frozen training settings"
+            );
+            graph.train_diagnostic(&transformed)?;
+            projection = json!({"input": training_meta, "routine": "production training_neighbors and projection"});
+        } else {
+            projection = json!({"input": training_meta, "stats": graph.project_diagnostic(
+                Some(&transformed), &ids, 100, args.projected_degree)?});
+        }
     }
     let projection_seconds = start.elapsed().as_secs_f64();
     let start = Instant::now();
@@ -197,6 +210,99 @@ fn main() -> Result<()> {
         patience: args.patience,
         ..Default::default()
     };
+    if args.profile {
+        let transformed: Vec<f32> = queries
+            .chunks_exact(dim)
+            .flat_map(|q| q.iter().copied().chain([0.0]))
+            .collect();
+        let mut reference = Vec::new();
+        let mut layouts = Vec::new();
+        let mut persisted = Vec::new();
+        if let Some(directory) = &args.persist_dir {
+            fs::create_dir(directory)?;
+        }
+        for compact in [false, true] {
+            let started = Instant::now();
+            if compact {
+                index.compact_adjacency()?;
+            }
+            let compaction_seconds = started.elapsed().as_secs_f64();
+            let mut saved = Value::Null;
+            if let Some(directory) = &args.persist_dir {
+                let file = directory.join(if compact { "compact.hms" } else { "fixed.hms" });
+                let started = Instant::now();
+                index.save(&file)?;
+                let save_seconds = started.elapsed().as_secs_f64();
+                let started = Instant::now();
+                let reopened = VGraph::open(
+                    &file,
+                    holographic_memory::core::qgraph::Residency::Prefaulted,
+                )?;
+                let open_seconds = started.elapsed().as_secs_f64();
+                drop(reopened);
+                saved = json!({"path": file, "bytes": fs::metadata(&file)?.len(), "save_seconds": save_seconds,
+                    "open_prefaulted_seconds": open_seconds});
+                persisted.push(file);
+            }
+            let mut searcher =
+                index.searcher_with(holographic_memory::core::qgraph::SearchKnobs::OFF);
+            let mut out = Vec::new();
+            for _ in 0..4 {
+                for query in transformed.chunks_exact(dim + 1) {
+                    searcher.search(query, 100, settings, &mut out)?;
+                }
+            }
+            let mut work = Vec::new();
+            let mut hits = 0;
+            for (i, (query, expected)) in transformed
+                .chunks_exact(dim + 1)
+                .zip(truth.chunks_exact(100))
+                .enumerate()
+            {
+                let profile = searcher.profile_search(query, 100, settings, &mut out)?;
+                hits += out.iter().filter(|id| expected.contains(id)).count();
+                if compact {
+                    ensure!(out == reference[i], "layout changed query {i}");
+                } else {
+                    reference.push(out.clone());
+                }
+                work.push(profile);
+            }
+            layouts.push(
+                json!({"compact": compact, "index_bytes": index.index_bytes(),
+                "compaction_seconds": compaction_seconds, "persisted": saved,
+                "recall": hits as f64 / (nq * 100) as f64, "queries": work}),
+            );
+        }
+        if persisted.len() == 2 {
+            use std::io::Read;
+            let mut a = fs::File::open(&persisted[0])?;
+            let mut b = fs::File::open(&persisted[1])?;
+            let (mut aa, mut bb) = ([0u8; 65536], [0u8; 65536]);
+            loop {
+                let (na, nb) = (a.read(&mut aa)?, b.read(&mut bb)?);
+                ensure!(
+                    na == nb && aa[..na] == bb[..nb],
+                    "compaction changed persisted bytes"
+                );
+                if na == 0 {
+                    break;
+                }
+            }
+        }
+        let report = json!({"schema_version": 1,
+            "scope": "validation-only instrumented production traversal; stage timers are not QPS evidence",
+            "input": meta, "projection": projection, "graph_hash": graph.structure_hash(),
+            "graph_cache_hit": cache_hit, "encoding_seconds": encoding_seconds,
+            "settings": {"bits": args.bits, "residual_bits": 8, "ef": args.ef,
+                "rerank": args.rerank, "patience": args.patience},
+            "persisted_bytes_identical": persisted.len() == 2, "returned_ids_identical": true,
+            "unavailable": ["cycles", "instructions", "cache misses", "bandwidth", "allocations",
+                "separate distance and queue time", "Python wrapper time"], "layouts": layouts});
+        fs::write(&args.out, serde_json::to_vec_pretty(&report)?)?;
+        println!("{}", args.out.display());
+        return Ok(());
+    }
     let mut rows = Vec::new();
     for (i, (query, expected)) in queries
         .chunks_exact(dim)

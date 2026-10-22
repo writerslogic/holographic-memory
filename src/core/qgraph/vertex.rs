@@ -16,6 +16,7 @@
 
 use std::collections::BinaryHeap;
 use std::sync::OnceLock;
+use std::time::Instant;
 
 use rayon::prelude::*;
 
@@ -31,6 +32,22 @@ use crate::core::error::HmsError;
 mod file;
 pub use file::Residency;
 use file::Slab;
+
+#[derive(Default, serde::Serialize)]
+pub struct QueryProfile {
+    pub query_encoding_ns: u64,
+    pub entry_ns: u64,
+    pub adjacency_visited_prefetch_ns: u64,
+    pub scoring_pool_ns: u64,
+    pub rerank_sort_ns: u64,
+    pub total_ns: u64,
+    pub expansions: usize,
+    pub neighbors_read: usize,
+    pub entry_evaluations: usize,
+    pub traversal_evaluations: usize,
+    pub rerank_evaluations: usize,
+    pub retained: usize,
+}
 
 /// Search parameters of a [`VGraph`].
 #[derive(Clone, Copy, Debug)]
@@ -253,6 +270,8 @@ pub struct VGraph {
     adj: Slab<u32>,
     /// The same as 3-byte little-endian ids (padded with `NONE3`); empty with `u32` ids.
     adj3: Slab<u8>,
+    /// In-memory exact-degree spans; empty for the persisted fixed-slot layout.
+    adj_off: Vec<u32>,
     /// Delta-coded lists (`id_bytes` 0): per vertex, the sorted neighbour ids as LEB128
     /// varints of the zigzag first difference to the vertex and the gaps less one after,
     /// with `adjv_off[v]..adjv_off[v + 1]` the byte span of vertex `v`; empty otherwise.
@@ -873,6 +892,7 @@ impl VGraph {
             half_norms: half_norms.into(),
             adj: adj.into(),
             adj3: adj3.into(),
+            adj_off: Vec::new(),
             adjv: adjv.into(),
             adjv_off: adjv_off.into(),
             codes,
@@ -1225,6 +1245,7 @@ impl VGraph {
     pub fn index_bytes(&self) -> usize {
         self.adj.len() * 4
             + self.adj3.len()
+            + self.adj_off.len() * 4
             + self.adjv.len()
             + self.adjv_off.len() * 4
             + self.n * self.stride
@@ -1252,19 +1273,19 @@ impl VGraph {
     /// Calls `f` on every neighbour of `v`, in list order.
     #[inline]
     fn for_each_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
-        let r = self.degree;
         if !self.adjv_off.is_empty() {
             return self.for_each_delta_neighbour(v, f);
         }
+        let (start, end) = self.adjacency_span(v);
         if self.adj3.is_empty() {
-            for &u in &self.adj[v * r..(v + 1) * r] {
+            for &u in &self.adj[start..end] {
                 if u == NONE {
                     break;
                 }
                 f(u);
             }
         } else {
-            for b in self.adj3[3 * v * r..3 * (v + 1) * r].as_chunks::<3>().0 {
+            for b in self.adj3[3 * start..3 * end].as_chunks::<3>().0 {
                 let u = u32::from_le_bytes([b[0], b[1], b[2], 0]);
                 if u == NONE3 {
                     break;
@@ -1272,6 +1293,66 @@ impl VGraph {
                 f(u);
             }
         }
+    }
+
+    #[inline]
+    fn adjacency_span(&self, v: usize) -> (usize, usize) {
+        if self.adj_off.is_empty() {
+            (v * self.degree, (v + 1) * self.degree)
+        } else {
+            (self.adj_off[v] as usize, self.adj_off[v + 1] as usize)
+        }
+    }
+
+    /// Removes unused adjacency slots without changing neighbors or their order.
+    /// Saving expands the lists into the original persisted format; reopening uses that
+    /// format until this method is called again. Delta-coded lists already have exact spans.
+    pub fn compact_adjacency(&mut self) -> Result<(), HmsError> {
+        if !self.adj_off.is_empty() || !self.adjv_off.is_empty() {
+            return Ok(());
+        }
+        let mut offsets = Vec::new();
+        offsets
+            .try_reserve_exact(self.n + 1)
+            .map_err(|_| invalid("cannot allocate adjacency offsets".into()))?;
+        offsets.push(0u32);
+        for v in 0..self.n {
+            let mut count = 0u32;
+            self.for_each_neighbour(v, |_| count += 1);
+            let end = offsets[v]
+                .checked_add(count)
+                .ok_or_else(|| invalid("compact adjacency exceeds u32 offsets".into()))?;
+            offsets.push(end);
+        }
+        let edges = offsets[self.n] as usize;
+        let width = if self.adj3.is_empty() { 4 } else { 3 };
+        if (self.n * self.degree - edges).saturating_mul(width) <= offsets.len() * 4 {
+            return Ok(());
+        }
+        if self.adj3.is_empty() {
+            let mut compact = Vec::new();
+            compact
+                .try_reserve_exact(edges)
+                .map_err(|_| invalid("cannot allocate compact adjacency".into()))?;
+            for v in 0..self.n {
+                self.for_each_neighbour(v, |u| compact.push(u));
+            }
+            self.adj = compact.into();
+        } else {
+            let bytes = edges
+                .checked_mul(3)
+                .ok_or_else(|| invalid("compact adjacency size overflows".into()))?;
+            let mut compact = Vec::new();
+            compact
+                .try_reserve_exact(bytes)
+                .map_err(|_| invalid("cannot allocate compact adjacency".into()))?;
+            for v in 0..self.n {
+                self.for_each_neighbour(v, |u| compact.extend_from_slice(&u.to_le_bytes()[..3]));
+            }
+            self.adj3 = compact.into();
+        }
+        self.adj_off = offsets;
+        Ok(())
     }
 
     /// [`VGraph::for_each_neighbour`] over a delta-coded list.
@@ -1298,13 +1379,13 @@ impl VGraph {
 
     #[inline]
     fn prefetch_neighbours(&self, v: usize) {
-        let r = self.degree;
+        let (start, end) = self.adjacency_span(v);
         if !self.adjv_off.is_empty() {
             prefetch_u8(&self.adjv[self.adjv_off[v] as usize..self.adjv_off[v + 1] as usize]);
         } else if self.adj3.is_empty() {
-            prefetch_ids(&self.adj[v * r..(v + 1) * r]);
+            prefetch_ids(&self.adj[start..end]);
         } else {
-            prefetch_u8(&self.adj3[3 * v * r..3 * (v + 1) * r]);
+            prefetch_u8(&self.adj3[3 * start..3 * end]);
         }
     }
 
@@ -1787,6 +1868,11 @@ impl SearchScratch {
         params: VSearchParams,
         out: &mut Vec<u32>,
     ) -> Result<usize, HmsError> {
+        Self::validate_query(g, query)?;
+        self.search_validated(g, query, k, params, out)
+    }
+
+    fn validate_query(g: &VGraph, query: &[f32]) -> Result<(), HmsError> {
         if query.len() != g.dim {
             return Err(invalid(format!(
                 "query has {} dimensions, the index has {}",
@@ -1802,7 +1888,7 @@ impl SearchScratch {
         if g.half_norms.is_empty() && query.iter().all(|&v| v == 0.0) {
             return Err(invalid("zero query: cosine similarity is undefined".into()));
         }
-        self.search_validated(g, query, k, params, out)
+        Ok(())
     }
 
     // The caller has checked dimension, finite coordinates, and nonzero angular norm.
@@ -1814,6 +1900,19 @@ impl SearchScratch {
         params: VSearchParams,
         out: &mut Vec<u32>,
     ) -> Result<usize, HmsError> {
+        self.search_inner::<false>(g, query, k, params, out, &mut QueryProfile::default())
+    }
+
+    fn search_inner<const PROFILE: bool>(
+        &mut self,
+        g: &VGraph,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        out: &mut Vec<u32>,
+        profile: &mut QueryProfile,
+    ) -> Result<usize, HmsError> {
+        let started = PROFILE.then(Instant::now);
         let ef = params.ef.max(k).max(1);
         // Only the order matters, so the query is used as given (no centring needed: the
         // `<q, mean>` term is common to all candidates) and its scale is dropped.
@@ -1828,6 +1927,9 @@ impl SearchScratch {
         // Weight of the Euclidean norm term in the estimate's units (unused for angular); a
         // zero query has every inner product zero, so the norms alone order it.
         let w = if sq > 0.0 { 1.0 / sq } else { 1.0 };
+        if let Some(started) = started {
+            profile.query_encoding_ns = started.elapsed().as_nanos() as u64;
+        }
         let qc = &self.qc[..];
         let blocks = g.has_blocks();
         if blocks {
@@ -1840,7 +1942,12 @@ impl SearchScratch {
         self.screened = 0;
 
         self.visited.next();
+        let entry_started = PROFILE.then(Instant::now);
         let (entry, mut evals) = g.descend(qc, w);
+        if let Some(started) = entry_started {
+            profile.entry_ns = started.elapsed().as_nanos() as u64;
+            profile.entry_evaluations = evals;
+        }
         self.visited.insert(entry);
         let fuse = blocks && params.fuse && !block_screen;
         if fuse {
@@ -1901,6 +2008,10 @@ impl SearchScratch {
                 t.expanded = true;
             }
             stale += 1;
+            if PROFILE {
+                profile.expansions += 1;
+            }
+            let adjacency_started = PROFILE.then(Instant::now);
             if let Some(next) = self.pool.peek_next() {
                 g.prefetch_neighbours(key_id(next) as usize);
                 if blocks {
@@ -2057,6 +2168,7 @@ impl SearchScratch {
             self.fresh.clear();
             let (visited, fresh) = (&mut self.visited, &mut self.fresh);
             let scale_too = knobs.prefetch >= 1;
+            let mut neighbors_read = 0;
             let admit = |u: u32, visited: &mut Marks, fresh: &mut Vec<u32>| {
                 if visited.insert(u) {
                     if screen {
@@ -2071,7 +2183,12 @@ impl SearchScratch {
                 }
             };
             if params.neighbour_cap == 0 {
-                g.for_each_neighbour(key_id(c) as usize, |u| admit(u, visited, fresh));
+                g.for_each_neighbour(key_id(c) as usize, |u| {
+                    if PROFILE {
+                        neighbors_read += 1;
+                    }
+                    admit(u, visited, fresh);
+                });
             } else {
                 let mut seen = 0usize;
                 g.for_each_neighbour(key_id(c) as usize, |u| {
@@ -2101,7 +2218,17 @@ impl SearchScratch {
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
             }
-            evals += self.score_fresh(g, k, patience, &mut stale, w);
+            if let Some(started) = adjacency_started {
+                profile.adjacency_visited_prefetch_ns += started.elapsed().as_nanos() as u64;
+                profile.neighbors_read += neighbors_read;
+            }
+            let scoring_started = PROFILE.then(Instant::now);
+            let count = self.score_fresh(g, k, patience, &mut stale, w);
+            evals += count;
+            if let Some(started) = scoring_started {
+                profile.scoring_pool_ns += started.elapsed().as_nanos() as u64;
+                profile.traversal_evaluations += count;
+            }
             if knobs.prefetch >= 3 {
                 // Lookahead: what the next expansion's admission touches for its unvisited
                 // neighbours, one expansion early (its list was prefetched above).
@@ -2121,6 +2248,11 @@ impl SearchScratch {
             }
         }
 
+        let rerank_started = PROFILE.then(Instant::now);
+        if PROFILE {
+            profile.retained = self.pool.keys.len();
+            profile.traversal_evaluations += 1;
+        }
         self.keys.clear();
         if blocks && !block_screen {
             self.keys.extend(self.expanded.drain());
@@ -2131,6 +2263,9 @@ impl SearchScratch {
         self.results.clear();
         let take = take.min(self.keys.len());
         if params.rerank > 0 {
+            if PROFILE {
+                profile.rerank_evaluations = take;
+            }
             if knobs.prefetch >= 1 {
                 for &c in &self.keys[..take] {
                     g.prefetch_rerank_rows(key_id(c));
@@ -2153,7 +2288,39 @@ impl SearchScratch {
         }
         out.clear();
         out.extend(self.results.iter().take(k).map(|r| r.1));
+        if let Some(started) = rerank_started {
+            profile.rerank_sort_ns = started.elapsed().as_nanos() as u64;
+        }
+        if let Some(started) = started {
+            profile.total_ns = started.elapsed().as_nanos() as u64;
+        }
         Ok(evals)
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl VSearcher<'_> {
+    /// Profiles the ordinary row-code path; timers perturb latency and are not QPS evidence.
+    pub fn profile_search(
+        &mut self,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        out: &mut Vec<u32>,
+    ) -> Result<QueryProfile, HmsError> {
+        let g = self.index;
+        if g.has_screen()
+            || g.has_blocks()
+            || self.knobs() != SearchKnobs::OFF
+            || params.neighbour_cap != 0
+        {
+            return Err(invalid("profiling requires the plain row-code path".into()));
+        }
+        SearchScratch::validate_query(g, query)?;
+        let mut profile = QueryProfile::default();
+        self.scratch
+            .search_inner::<true>(g, query, k, params, out, &mut profile)?;
+        Ok(profile)
     }
 }
 
@@ -2593,6 +2760,107 @@ mod tests {
     use super::super::kernels::SplitMix;
     use super::super::tests::{brute_force, clustered, gaussian};
     use super::*;
+
+    #[test]
+    fn compact_lists_preserve_order_search_and_persisted_bytes() {
+        let dim = 16;
+        let data = clustered(64, dim, 7);
+        let queries = clustered(8, dim, 8);
+        let mut graph = Graph::build(
+            &data,
+            dim,
+            &BuildParams {
+                degree: 16,
+                build_ef: 32,
+                ..BuildParams::default()
+            },
+        )
+        .unwrap();
+        for v in 0..graph.n {
+            let count = [0, 1, 15, 16][v % 4];
+            let ids: Vec<u32> = (1..=count).map(|j| ((v + j) % graph.n) as u32).collect();
+            graph.adj.set(v, &ids);
+        }
+        let directory = tempfile::tempdir().unwrap();
+        for bytes in [3, 4] {
+            for bits in [4, 8] {
+                let mut index =
+                    VGraph::from_graph_with(&graph, bits, 8, true, true, bytes, false).unwrap();
+                let lists: Vec<Vec<u32>> = (0..index.n)
+                    .map(|v| {
+                        let mut ids = Vec::new();
+                        index.for_each_neighbour(v, |u| ids.push(u));
+                        ids
+                    })
+                    .collect();
+                let before = directory.path().join("before");
+                let after = directory.path().join("after");
+                index.save(&before).unwrap();
+                let old_bytes = index.index_bytes();
+                let params = VSearchParams {
+                    ef: 32,
+                    rerank: 16,
+                    ..VSearchParams::default()
+                };
+                let expected: Vec<Vec<u32>> = {
+                    let mut searcher = index.searcher_with(SearchKnobs::OFF);
+                    queries
+                        .chunks_exact(dim)
+                        .map(|q| {
+                            let mut out = Vec::new();
+                            searcher.search(q, 10, params, &mut out).unwrap();
+                            out
+                        })
+                        .collect()
+                };
+                index.compact_adjacency().unwrap();
+                assert!(index.index_bytes() < old_bytes);
+                for (v, want) in lists.iter().enumerate() {
+                    let mut actual = Vec::new();
+                    index.for_each_neighbour(v, |u| actual.push(u));
+                    assert_eq!(&actual, want);
+                }
+                let compact_bytes = index.index_bytes();
+                index.compact_adjacency().unwrap();
+                assert_eq!(index.index_bytes(), compact_bytes);
+                index.save(&after).unwrap();
+                assert_eq!(
+                    std::fs::read(&before).unwrap(),
+                    std::fs::read(&after).unwrap()
+                );
+                for residency in [Residency::Mapped, Residency::Prefaulted, Residency::Heap] {
+                    let reopened = VGraph::open(&after, residency).unwrap();
+                    let (mut a, mut b) = (
+                        index.searcher_with(SearchKnobs::OFF),
+                        reopened.searcher_with(SearchKnobs::OFF),
+                    );
+                    for i in 0..260 {
+                        let qi = i % expected.len();
+                        let q = &queries[qi * dim..(qi + 1) * dim];
+                        let (mut x, mut y) = (Vec::new(), Vec::new());
+                        let evals = a.search(q, 10, params, &mut x).unwrap();
+                        b.search(q, 10, params, &mut y).unwrap();
+                        assert_eq!(x, expected[qi]);
+                        assert_eq!(x, y);
+                        #[cfg(feature = "experimental")]
+                        {
+                            let profile = a.profile_search(q, 10, params, &mut y).unwrap();
+                            assert_eq!(x, y);
+                            assert_eq!(
+                                evals,
+                                profile.entry_evaluations
+                                    + profile.traversal_evaluations
+                                    + profile.rerank_evaluations
+                            );
+                            assert!(profile.neighbors_read >= profile.traversal_evaluations - 1);
+                        }
+                        #[cfg(not(feature = "experimental"))]
+                        let _ = evals;
+                    }
+                }
+            }
+        }
+    }
 
     /// The cache round-trips the structure for the same data and parameters, and rejects a
     /// file written for other data or for any other build parameter.

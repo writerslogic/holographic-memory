@@ -52,6 +52,8 @@ use kernels::{
     as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, DotI8, QueryCode, Rotation,
     SplitMix,
 };
+#[cfg(feature = "experimental")]
+pub use vertex::QueryProfile;
 pub use vertex::{Residency, SearchKnobs, VGraph, VSearchParams, VSearcher};
 
 /// Default out-degree of every vertex; one batch of edge codes per expansion.

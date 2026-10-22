@@ -8,6 +8,12 @@ use crate::core::error::HmsError;
 pub use super::projection::ProjectionStats;
 
 impl Graph {
+    /// Applies the production training routine to a cached, untrained diagnostic graph.
+    pub fn train_diagnostic(&mut self, queries: &[f32]) -> Result<(), HmsError> {
+        super::projection::validate_queries(queries, self.dim, self.metric)?;
+        self.apply_training_queries(queries)
+    }
+
     /// Projects construction-only neighbor lists using the production primitive.
     /// Queries use graph coordinates; each neighbor row starts at its nearest base vector.
     pub fn project_diagnostic(
