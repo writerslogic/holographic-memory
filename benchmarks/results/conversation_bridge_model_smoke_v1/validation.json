@@ -1,0 +1,141 @@
+{
+  "passed": true,
+  "returncode": 0,
+  "responses": 6,
+  "elapsed_seconds": 268.2263417500071,
+  "binary_sha256": "938031f33cb234ef851b98bb6b05ff5e5ae58e1da349ca217d2712426da14524",
+  "request_sha256": "a96b6836e03db421bf6a6988768748ea89865d912f5eac7ebc74ad0152d9d70e",
+  "model_profile": {
+    "device": "Metal(MetalDevice(DeviceId(1)))",
+    "embeddingBatch": 4,
+    "embeddingQueryTask": "conversation",
+    "extractFacts": false,
+    "generatorBatch": 1,
+    "mode": "models",
+    "modelLoadIncludesFileFingerprinting": true,
+    "models": [
+      {
+        "files": [
+          {
+            "path": "Qwen3-Embedding-0.6B/.cache/huggingface/download/config.json.metadata",
+            "sha256": "4ab306311470c0521a0d942e3724420ce8a71405f6ee97eb9b2c19fb7ea26f6b",
+            "sizeBytes": 98
+          },
+          {
+            "path": "Qwen3-Embedding-0.6B/config.json",
+            "sha256": "b5bf1f51fc45be473a54718cef92448d90a1be001bf9b9a44b8c7f10a19feaa9",
+            "sizeBytes": 727
+          },
+          {
+            "path": "Qwen3-Embedding-0.6B/generation_config.json",
+            "sha256": "28396d421a2108acce96383f6a7de78008f7f1b17f807958f3c14c51dbfb65fb",
+            "sizeBytes": 117
+          },
+          {
+            "path": "Qwen3-Embedding-0.6B/model.safetensors",
+            "sha256": "0437e45c94563b09e13cb7a64478fc406947a93cb34a7e05870fc8dcd48e23fd",
+            "sizeBytes": 1191586416
+          },
+          {
+            "path": "Qwen3-Embedding-0.6B/tokenizer.json",
+            "sha256": "def76fb086971c7867b829c23a26261e38d9d74e02139253b38aeb9df8b4b50a",
+            "sizeBytes": 11423705
+          }
+        ],
+        "model": "Qwen/Qwen3-Embedding-0.6B",
+        "revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3"
+      },
+      {
+        "files": [
+          {
+            "path": "Qwen3-Reranker-0.6B/.cache/huggingface/download/config.json.metadata",
+            "sha256": "8516e8ca35bd58dc295a49a1a489d5a864e50f8b7586298af278a437f019fe52",
+            "sizeBytes": 101
+          },
+          {
+            "path": "Qwen3-Reranker-0.6B/config.json",
+            "sha256": "d479c427a9ca5295218063d4f9aca4f297ab4ac27487cca7af42c84643d51ef0",
+            "sizeBytes": 727
+          },
+          {
+            "path": "Qwen3-Reranker-0.6B/generation_config.json",
+            "sha256": "81051cd3f6e77013827148d0b8a6ead93f8ac390d5ab805f849199f0af6a08db",
+            "sizeBytes": 214
+          },
+          {
+            "path": "Qwen3-Reranker-0.6B/model.safetensors",
+            "sha256": "27cd75a405b9c1b46b59abfd88aaa209e6fed2a1972cde9b70e7659537c5e65b",
+            "sizeBytes": 1191588280
+          },
+          {
+            "path": "Qwen3-Reranker-0.6B/tokenizer.json",
+            "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+            "sizeBytes": 11422654
+          }
+        ],
+        "model": "Qwen/Qwen3-Reranker-0.6B",
+        "revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473"
+      },
+      {
+        "files": [
+          {
+            "path": "Qwen3-4B-Instruct-2507/.cache/huggingface/download/config.json.metadata",
+            "sha256": "ae1fce54527581fbf5f8d5aef601959094eefdc3963838fe079b94d086d68e90",
+            "sizeBytes": 101
+          },
+          {
+            "path": "Qwen3-4B-Instruct-2507/config.json",
+            "sha256": "5beea1a4a34c62782bfb2f911c606741a3bab8f92d80a118fa053c28af12e8ba",
+            "sizeBytes": 727
+          },
+          {
+            "path": "Qwen3-4B-Instruct-2507/generation_config.json",
+            "sha256": "835fffe355c9438e7a25be099b3fccaa98350b83451f9fd2d99512e74f1ade48",
+            "sizeBytes": 238
+          },
+          {
+            "path": "Qwen3-4B-Instruct-2507/model-00001-of-00003.safetensors",
+            "sha256": "75311d91bb08cf0b882913da464a1e722a31fb44db35208663487efb7a3d8ed6",
+            "sizeBytes": 3957900840
+          },
+          {
+            "path": "Qwen3-4B-Instruct-2507/model-00002-of-00003.safetensors",
+            "sha256": "0b48adbb1f60e901153d91907ba11ce63bd4b8b584482e730f48808d055dfba1",
+            "sizeBytes": 3987450520
+          },
+          {
+            "path": "Qwen3-4B-Instruct-2507/model-00003-of-00003.safetensors",
+            "sha256": "7dd39ccca5e4de123c74c14af44c9bf2eb75df33b4614382af0134528e060d5d",
+            "sizeBytes": 99630640
+          },
+          {
+            "path": "Qwen3-4B-Instruct-2507/tokenizer.json",
+            "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+            "sizeBytes": 11422654
+          }
+        ],
+        "model": "Qwen/Qwen3-4B-Instruct-2507",
+        "revision": "cdbee75f17c01a7cc42f958dc650907174af0554"
+      }
+    ],
+    "rerankBatch": 4,
+    "rewriteQueries": true,
+    "stageParams": {
+      "k0": 60.0,
+      "lexicalWeight": 0.5,
+      "origWeight": 1.0,
+      "rerankN": 20,
+      "rerankWeight": 8.0,
+      "rewriteWeight": 1.0,
+      "semanticWeight": 1.0,
+      "subqueryWeight": 1.0
+    }
+  },
+  "final_timings": {
+    "ingestSeconds": 10.506701750000001,
+    "modelLoadSeconds": 220.910895542,
+    "querySeconds": 36.456261917,
+    "resetSeconds": 0.088878418
+  },
+  "qa_benchmark_calls": 0
+}

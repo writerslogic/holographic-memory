@@ -19,7 +19,7 @@ use anyhow::{bail, ensure, Context, Result};
 use candle_core::{DType, Device};
 use candle_nn::VarBuilder;
 
-pub use embed::Embedder;
+pub use embed::{Embedder, EmbeddingQueryTask};
 pub use llm::{Completion, FactExtractor, Generator, QueryRewriter};
 pub use prompts::QueryPlan;
 pub use rerank::Reranker;

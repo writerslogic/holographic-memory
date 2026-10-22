@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "dev_only": true,
+  "heldout_run": false,
+  "corpus_read": false,
+  "new_model_or_judge_calls": 0,
+  "dev_questions_verified": 100,
+  "heldout_questions_untouched": 400,
+  "paid_calls_verified": 200,
+  "session_spend_usd": 33.18287850000005,
+  "summary": {
+    "n": 100,
+    "correct": 80,
+    "answer_accuracy": 0.8,
+    "answer_accuracy_ci95": [
+      0.7111708344068411,
+      0.8666330666689676
+    ],
+    "acceptance_correct": 100,
+    "acceptance_met": false,
+    "by_type": {
+      "multi-session": {
+        "n": 27,
+        "correct": 20
+      },
+      "knowledge-update": {
+        "n": 16,
+        "correct": 15
+      },
+      "single-session-user": {
+        "n": 14,
+        "correct": 14
+      },
+      "temporal-reasoning": {
+        "n": 26,
+        "correct": 23
+      },
+      "single-session-preference": {
+        "n": 6,
+        "correct": 3
+      },
+      "single-session-assistant": {
+        "n": 11,
+        "correct": 5
+      }
+    },
+    "reader_status": {
+      "ok": 100
+    },
+    "judge_status": {
+      "ok": 100
+    },
+    "coverage": {
+      "scored": 84,
+      "baseline_actual_complete": 77,
+      "actual_complete": 82
+    },
+    "abstentions": 19,
+    "exact_quote_claims": 194,
+    "total_claims": 195
+  },
+  "inputs": {
+    "answers_sha256": "bd67d0384f46dbb12e139f034a6796265c1b84188b22ef40426d452799b5f522",
+    "spend_sha256": "8ae75e874576a0b9bafb47b3c05c40486445cc23893f0086fe0c71e9424d6462",
+    "checker_sha256": "42b755786fb3a9b333eb862b59e3c0e02784f2b695e992f406d4d559351788c8",
+    "protocol_sha256": "ae6e7e21088013a90bfcefb9af6445dc9b79d242ddf8068eb7e8728e37029f50"
+  },
+  "historical_policy": {
+    "preregistered_protocol_sha256": "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d",
+    "reader_inputs_verified": 300,
+    "reader_requests_verified": 545,
+    "judge_requests_verified": 299
+  }
+}

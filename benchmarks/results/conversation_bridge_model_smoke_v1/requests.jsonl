@@ -1,0 +1,6 @@
+{"command":"initialize"}
+{"command":"ingest","conversation":{"sessionId":"novel-laboratory","version":"1","turns":[{"sourceId":"s1","role":"user","text":"Help me configure the laboratory beacon.","observationTime":1000},{"sourceId":"s2","role":"assistant","text":"Use a resonance frequency of 43 Hz for the laboratory beacon.","observationTime":1000},{"sourceId":"s3","role":"user","text":"I will use that setting.","observationTime":1000}]}}
+{"command":"ingest","conversation":{"sessionId":"novel-cooking","version":"1","turns":[{"sourceId":"s4","role":"user","text":"I prefer chickpeas in my salad.","observationTime":2000},{"sourceId":"s5","role":"assistant","text":"Add parsley and a little lemon juice.","observationTime":2000}]}}
+{"command":"recall","query":"Which frequency did the assistant specify for the laboratory beacon?"}
+{"command":"reset"}
+{"command":"recall","query":"Which frequency did the assistant specify for the laboratory beacon?"}

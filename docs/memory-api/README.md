@@ -330,3 +330,75 @@ sent through `remember` and `recall`.
   `candidate_limit` to fill `k` current results; at most 1000 candidates are examined.
 - The index is derived: the first memory call after open, and the first after any write made
   behind the `Memory`'s back (raw document writes, compaction), scans the documents once.
+
+## Original conversation evidence (Rust, opt-in)
+
+Build with `--features conversation-memory` for `ConversationMemory`. It owns an `HmsCore`
+by value; share the wrapper through `Arc` and configure the core before constructing it.
+This keeps one writer responsible for its immutable session/version namespace.
+
+```rust
+use holographic_memory::core::memory_api::{
+    ConversationInput, ConversationMemory, ConversationRecallOptions,
+    ConversationRole, ConversationTurn,
+};
+use holographic_memory::HmsCore;
+
+let core = HmsCore::new(4096, Some("./conversation-store".into()), None)?;
+let memory = ConversationMemory::new(core)?;
+memory.remember(ConversationInput {
+    session_id: "calibration-session".into(),
+    version: "v1".into(),
+    turns: vec![ConversationTurn {
+        source_id: "assistant-observation".into(),
+        role: ConversationRole::Assistant,
+        text: "The resonator calibration frequency is 37 hertz.".into(),
+        observation_time: 1_704_067_200_000,
+    }],
+})?;
+let evidence = memory.recall(
+    "What calibration frequency did the assistant report?",
+    &ConversationRecallOptions::default(),
+)?;
+```
+
+`remember` atomically stores a complete ordered session, its manifest, one exact original
+per turn, and bounded searchable chunks. Retrying identical input is idempotent; changing
+an existing session/version fails. A new version preserves the earlier observations.
+Roles, source IDs, turn positions, whitespace and observation timestamps survive hydration.
+Assistant statements remain assistant evidence and do not become user assertions. Observation
+time does not establish a fact's effective date or remove later-recorded observations.
+
+Recall searches the actual `Memory::recall` path separately for the requested roles. It
+oversamples chunks up to `candidate_limit`, collapses them to at most `k` distinct sources
+per role, and interleaves the roles with equal-weight reciprocal rank fusion. Each selected
+turn includes its opening user context and, for assistant turns, the nearest preceding user
+turn within the same session/version. The assistant reply immediately before that user is
+also retained, so confirmations can keep the recommendation they refer to. Required context
+and its anchor are admitted together;
+an oversized or incomplete group is reported in `dropped`. Returned originals are never
+clipped. These context links preserve source premises; they do not resolve every discourse
+reference or infer missing facts.
+
+`max_bytes` counts the exact serialized JSON `sources` array, including provenance; it is
+not a tokenizer or complete reader-request budget. Callers must count their final prompt
+with the reader's tokenizer. `max_sources` also applies to context turns. Sessions accept
+up to 2 MiB of raw text and 4096 stored records; each serialized source and session manifest
+must fit 60 KiB. Escaping and provenance count toward that metadata limit. Invalid or
+oversized input fails before any session record is written.
+Searchable chunks are bounded to 1024 UTF8 bytes and 256 words, reducing truncation by the
+local encoder's 2048-token window; hydration restores the complete original.
+
+With `local-models`, configure `extract_facts: false` and set the embedder's query task to
+`EmbeddingQueryTask::Conversation` before installing the stages. The constructor rejects
+user-only fact extraction and embedding instructions. `StageParams::subquery_weight` enables
+up to four distinct query-plan subqueries; its default is zero, preserving existing query
+behavior. The configured subquery weight is shared across the admitted queries, so emitting
+more queries does not multiply their total influence. Missing usable expansions fall back
+to the original query when no positive retrieval weight remains. Generated time ranges do
+not silently filter observation dates.
+
+This optional API is experimental and currently Rust-only. Its retrieval regressions use
+independently written conversations; no LongMemEval QA score has been established for this
+production path. Existing dev harness scores are documented separately in
+[evaluation.md](../evaluation.md).

@@ -1,0 +1,115 @@
+{
+  "research_date": "2026-10-21",
+  "scope": "Public primary-source documentation and code only. No paid model calls, benchmark execution, or local held-out records were accessed for this research.",
+  "interpretation_boundary": "A verified author statement is not an independently reproduced score. Repeated development-set success does not establish unseen-set generalization.",
+  "findings": [
+    {
+      "system": "MemPalace",
+      "status": "The project itself acknowledges targeted known-failure fixes and a retrieval-versus-QA comparison error.",
+      "verified": [
+        "The benchmark tracker says the final 99.4-to-100 step added three fixes developed by inspecting three specific failures and calls this teaching to the test.",
+        "The tracker says the same questions were used for tuning and measurement, so that result does not demonstrate clean generalization.",
+        "The April 14 correction acknowledges that retrieval R@5/R@10 had been compared with competitors' end-to-end QA accuracy and retracts the 100-percent headline.",
+        "The correction reports a 96.6-percent raw R@5 reproduction against v3.3.0, and separately claims 98.4-percent R@5 on a 450-question split. These are project claims, not reproductions performed here."
+      ],
+      "unverified": [
+        "Independence and correctness of the claimed raw reproduction were not audited here.",
+        "The claimed 450-question held-out result was not independently reproduced; the documents also describe inspecting failures on the full benchmark before introducing the split. A later split cannot undo earlier exposure."
+      ],
+      "sources": [
+        "https://github.com/MemPalace/mempalace/blob/develop/benchmarks/BENCHMARKS.md#benchmark-integrity--the-honest-accounting",
+        "https://github.com/MemPalace/mempalace/blob/develop/docs/HISTORY.md#2026-04-14--benchmark-table-rewrite-issue-875",
+        "https://raw.githubusercontent.com/MemPalace/mempalace/develop/benchmarks/longmemeval_bench.py"
+      ],
+      "version_context": {
+        "correction_date": "2026-04-14",
+        "raw_reproduction_tag_claim": "v3.3.0",
+        "latest_release_displayed": "v3.11.0, 2026-10-14",
+        "release_source": "https://github.com/MemPalace/mempalace/releases",
+        "caveat": "An old benchmark claim is not evidence that the latest product release has been evaluated."
+      }
+    },
+    {
+      "system": "OpenExp",
+      "status": "98.6 percent is a retrieval-only Recall@10 claim, not generated-answer accuracy.",
+      "verified": [
+        "The April 8 report explicitly says no LLM generates an answer. It reports R@5 of 96.4 percent and R@10 of 98.6 percent over 500 questions.",
+        "The report uses BAAI/bge-small-en-v1.5 with a fresh in-memory Qdrant collection for each question. Its benchmark excludes the product's Q-learning component.",
+        "The public runner scores recall_any: at least one labeled answer session appears among the top-k sessions. It builds session documents from user turns and does not generate or judge answers."
+      ],
+      "implications": [
+        "Finding one gold session does not prove that all multi-session evidence was retrieved or that a reader reasons correctly, updates facts, or abstains."
+      ],
+      "unverified": [
+        "No independent reproduction or untouched evaluation split was established by the inspected project sources.",
+        "The script accepts longmemeval_s_cleaned.json but the report does not pin the dataset hash, code commit, or an immutable per-question result artifact."
+      ],
+      "sources": [
+        "https://welabeldata.com/blog/openexp-memory-benchmark/",
+        "https://raw.githubusercontent.com/anthroos/openexp/main/benchmarks/longmemeval_bench.py"
+      ],
+      "version_context": {
+        "report_date": "2026-04-08",
+        "release_page_displayed": "v0.1.0, March 30; page crawl predates this research by five months, so current latest-release status is not established",
+        "release_source": "https://github.com/anthroos/openexp/releases"
+      }
+    },
+    {
+      "system": "OMEGA",
+      "status": "95.4 percent is the project's task-averaged headline; its reported raw numerator is 466/500, or 93.2 percent per-question accuracy.",
+      "verified": [
+        "The official benchmark page attributes the February 2026 result to a GPT-4.1 reader and bge-small embeddings.",
+        "It reports preferences 30/30, multi-session 111/133, knowledge updates 75/78, temporal reasoning 125/133, and combined single-session 125/126.",
+        "The author's February 13 account explicitly describes selecting the best prompt per category, then category-specific prompts and a change to task-averaged scoring.",
+        "The public repository's benchmark report still leads with an older 76.8-percent result; it does not supply an aligned reproduction of the current headline."
+      ],
+      "derived_arithmetic": {
+        "raw_micro_accuracy_percent": 93.2,
+        "multi_session_percent": 83.45864661654136,
+        "mean_of_five_displayed_category_fractions_percent": 94.56076087655035,
+        "interpretation": "The site and post alternate between five and six categories. The exact original six-category breakdown is needed to reconcile the 95.4-percent headline; these arithmetic checks do not prove the headline false."
+      },
+      "unverified": [
+        "No independent frozen-split reproduction was established in the inspected primary sources.",
+        "The exact judge snapshot, complete current harness and result provenance, whether dataset question-type labels route the prompts, and any oracle-versus-retrieved context distinction for the final run were not established. Do not infer these from third-party accusations."
+      ],
+      "sources": [
+        "https://omegamax.co/benchmarks",
+        "https://omegamax.co/blog/number-one-on-longmemeval",
+        "https://github.com/omega-memory/omega-memory/blob/main/docs/benchmark-report.md",
+        "https://github.com/omega-memory/omega-memory/blob/main/CITATION.cff"
+      ],
+      "version_context": {
+        "benchmark_date_claim": "February 2026",
+        "latest_release_displayed": "v1.5.20, 2026-10-08",
+        "release_source": "https://github.com/omega-memory/omega-memory/releases",
+        "caveat": "The release listing does not establish a fresh benchmark of the latest version."
+      }
+    },
+    {
+      "system": "Official LongMemEval / GPT-4o baseline",
+      "status": "The paper's 60.6-percent GPT-4o result is full-history LongMemEval_S QA without Chain-of-Note, not an empty-memory baseline or retrieval recall.",
+      "verified": [
+        "Paper v2, revised March 4, 2025, Figure 3(b) reports GPT-4o at 60.6 percent on approximately 115K-token full histories and 87.0 percent on evidence-only oracle contexts. With Chain-of-Note, those are 64.0 and 92.4 percent.",
+        "The official evaluator maps gpt-4o to gpt-4o-2024-08-06 and computes the mean of per-question judgments, with separate per-type reporting.",
+        "The repository distinguishes generated-answer evaluation from intermediate retrieval metrics, and says retrieval evaluation skips 30 abstention cases because they lack answer locations.",
+        "Using the oracle JSON as an answer-key file for the judge is normal and does not by itself establish that oracle context was supplied to the answer generator."
+      ],
+      "unverified": [
+        "No official private train/dev/test split or one-shot scoring rule was found in the inspected README. The user's one-shot held-out constraint is an additional local requirement, not something this research attributes to the official protocol."
+      ],
+      "sources": [
+        "https://arxiv.org/html/2410.10813v2#S3.F3",
+        "https://arxiv.org/abs/2410.10813",
+        "https://github.com/xiaowu0162/LongMemEval",
+        "https://raw.githubusercontent.com/xiaowu0162/LongMemEval/main/src/evaluation/evaluate_qa.py"
+      ]
+    }
+  ],
+  "local_evaluation_implications": [
+    "Report end-to-end per-question QA accuracy, retrieval-any recall, retrieval-all evidence support, and task-averaged QA separately, with explicit denominators and abstention handling.",
+    "Disclose every development run and human-informed prompt or retrieval change; development-set gains remain development results.",
+    "Freeze source, code, model, prompt, selection policy and evaluator before the single authorized held-out evaluation. Never route generation by reference answer, gold evidence, or dataset question type.",
+    "Do not select a winning old answer or prompt using gold results, per-case fixes, or repeated held-out retests. Question-only retrieval and citation-guided evidence selection still require an honest untouched-set test of the final fixed policy."
+  ]
+}

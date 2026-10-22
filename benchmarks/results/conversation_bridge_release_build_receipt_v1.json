@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "source_manifest_sha256": "bce7680ac113e4bbb5d69921e1dc5e049a7670c104781abe377c679b2936eda6",
+  "verified_source_files": 267,
+  "native_source_root": "/Volumes/A/.codex-wt-conversation-eval-native",
+  "binary": "/Users/davidcondrey/.cache/hms-conversation-eval-target/release/conversation-eval",
+  "binary_sha256": "938031f33cb234ef851b98bb6b05ff5e5ae58e1da349ca217d2712426da14524",
+  "build_policy": {
+    "profile": "release",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "features": [
+      "conversation-memory",
+      "local-models"
+    ],
+    "binary": "conversation-eval",
+    "CARGO_TARGET_DIR": "/Users/davidcondrey/.cache/hms-conversation-eval-target",
+    "CARGO_BUILD_JOBS": "4"
+  },
+  "build_succeeded": true,
+  "build_log_sha256": "60dbe10be293487d7d5cf9ce8eb0deebf23d637a0f617282126e6fb060a5bd63",
+  "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+  "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)"
+}

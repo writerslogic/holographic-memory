@@ -6,10 +6,11 @@ use std::collections::{hash_map::Entry, HashMap, HashSet};
 use anyhow::{ensure, Result};
 use serde::{Deserialize, Serialize};
 
-use super::{Embedder, FactExtractor, Generator, QueryRewriter, Reranker};
+use super::{Embedder, FactExtractor, Generator, QueryPlan, QueryRewriter, Reranker};
 use crate::core::documents::DocumentResult;
 
 const MAX_SEARCH_RESULTS: usize = 1000;
+const MAX_SUBQUERIES: usize = 4;
 
 /// Fusion parameters of the document API's model stages. Defaults are the tuned LongMemEval
 /// turn-level configuration (`benchmarks/public/longmemeval_config.json`): fact-expanded keys,
@@ -21,6 +22,8 @@ pub struct StageParams {
     pub k0: f64,
     pub orig_weight: f64,
     pub rewrite_weight: f64,
+    /// Total weight shared by at most four distinct subqueries; zero keeps them disabled.
+    pub subquery_weight: f64,
     pub lexical_weight: f64,
     pub semantic_weight: f64,
     pub rerank_weight: f64,
@@ -33,6 +36,7 @@ impl Default for StageParams {
             k0: 60.0,
             orig_weight: 1.0,
             rewrite_weight: 1.0,
+            subquery_weight: 0.0,
             lexical_weight: 0.5,
             semantic_weight: 1.0,
             rerank_weight: 8.0,
@@ -48,6 +52,7 @@ impl StageParams {
                 self.k0,
                 self.orig_weight,
                 self.rewrite_weight,
+                self.subquery_weight,
                 self.lexical_weight,
                 self.semantic_weight,
                 self.rerank_weight,
@@ -56,7 +61,7 @@ impl StageParams {
             .all(|value| value.is_finite() && *value >= 0.0),
             "model stage constants and weights must be finite and nonnegative"
         );
-        let query_weight = self.orig_weight + self.rewrite_weight;
+        let query_weight = self.orig_weight + self.rewrite_weight + self.subquery_weight;
         ensure!(
             query_weight.is_finite() && query_weight > 0.0,
             "model query weights require a finite positive sum"
@@ -98,13 +103,57 @@ impl ModelStages {
         Ok(Some(expand_with_facts(chunks, &facts)))
     }
 
-    /// The query variants searched: the original, then the LLM rewrite when enabled.
+    /// The original, the enabled rewrite, and opt-in subqueries sharing one total weight.
     pub fn query_variants(&self, question: &str, today: &str) -> Result<Vec<(String, f64)>> {
+        self.params.validate()?;
+        let plan = if let Some(generator) = self.generator.as_ref().filter(|_| self.rewrite_queries)
+        {
+            QueryRewriter(generator).rewrite(today, question)?.1
+        } else {
+            QueryPlan::default()
+        };
+        self.variants_for_plan(question, plan)
+    }
+
+    fn variants_for_plan(&self, question: &str, plan: QueryPlan) -> Result<Vec<(String, f64)>> {
+        self.params.validate()?;
         let mut out = vec![(question.to_string(), self.params.orig_weight)];
-        if let Some(generator) = self.generator.as_ref().filter(|_| self.rewrite_queries) {
-            if let Some(r) = QueryRewriter(generator).rewrite(today, question)?.1.rewrite {
-                out.push((r, self.params.rewrite_weight));
+        if let Some(rewrite) = plan.rewrite {
+            out.push((rewrite, self.params.rewrite_weight));
+        }
+        if self.params.subquery_weight > 0.0 {
+            let mut seen: HashSet<String> = out
+                .iter()
+                .filter(|(_, weight)| *weight > 0.0)
+                .map(|(text, _)| text.trim().to_owned())
+                .collect();
+            let subqueries: Vec<String> = plan
+                .subqueries
+                .into_iter()
+                .take(MAX_SUBQUERIES)
+                .map(|text| text.trim().to_owned())
+                .filter(|text| !text.is_empty() && seen.insert(text.clone()))
+                .collect();
+            if !subqueries.is_empty() {
+                let weight = self.params.subquery_weight / subqueries.len() as f64;
+                for text in subqueries {
+                    if let Some((_, existing_weight)) =
+                        out.iter_mut().find(|(existing, existing_weight)| {
+                            *existing_weight == 0.0 && existing.trim() == text
+                        })
+                    {
+                        *existing_weight += weight;
+                    } else {
+                        out.push((text, weight));
+                    }
+                }
             }
+        }
+        if !out.iter().any(|(_, weight)| *weight > 0.0) {
+            return Ok(vec![(
+                question.to_string(),
+                self.params.orig_weight + self.params.rewrite_weight + self.params.subquery_weight,
+            )]);
         }
         Ok(out)
     }
@@ -279,10 +328,11 @@ mod tests {
 
     #[test]
     fn stage_parameters_reject_invalid_constants_and_weight_sums() {
-        let setters: [fn(&mut StageParams, f64); 6] = [
+        let setters: [fn(&mut StageParams, f64); 7] = [
             |p, value| p.k0 = value,
             |p, value| p.orig_weight = value,
             |p, value| p.rewrite_weight = value,
+            |p, value| p.subquery_weight = value,
             |p, value| p.lexical_weight = value,
             |p, value| p.semantic_weight = value,
             |p, value| p.rerank_weight = value,
@@ -323,6 +373,333 @@ mod tests {
         }
         .validate()
         .unwrap();
+    }
+
+    #[test]
+    fn subqueries_are_opt_in_and_legacy_settings_deserialize_unchanged() {
+        let params: StageParams = serde_json::from_value(serde_json::json!({
+            "origWeight": 2.0, "rewriteWeight": 3.0
+        }))
+        .unwrap();
+        assert_eq!(params.subquery_weight, 0.0);
+        let stages = ModelStages {
+            params,
+            ..Default::default()
+        };
+        let plan = QueryPlan {
+            rewrite: Some("rewritten question".into()),
+            subqueries: vec!["first operand".into(), "second operand".into()],
+            ..Default::default()
+        };
+        assert_eq!(
+            stages.variants_for_plan("original question", plan).unwrap(),
+            vec![
+                ("original question".into(), 2.0),
+                ("rewritten question".into(), 3.0)
+            ]
+        );
+        assert_eq!(
+            stages
+                .variants_for_plan("original question", QueryPlan::default())
+                .unwrap(),
+            vec![("original question".into(), 2.0)]
+        );
+        let configured: StageParams =
+            serde_json::from_value(serde_json::json!({"subqueryWeight": 1.5})).unwrap();
+        assert_eq!(configured.subquery_weight, 1.5);
+        assert_eq!(
+            serde_json::to_value(configured).unwrap()["subqueryWeight"],
+            1.5
+        );
+    }
+
+    #[test]
+    fn subquery_count_boundaries_preserve_one_total_weight() {
+        let stages = ModelStages {
+            params: StageParams {
+                orig_weight: 2.0,
+                rewrite_weight: 3.0,
+                subquery_weight: 6.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        for count in [3, 4, 5] {
+            let plan = QueryPlan {
+                rewrite: Some("rewrite".into()),
+                subqueries: (0..count).map(|n| format!("operand {n}")).collect(),
+                ..Default::default()
+            };
+            let variants = stages.variants_for_plan("original", plan).unwrap();
+            let expected = count.min(4);
+            assert_eq!(variants.len(), expected + 2);
+            assert_eq!(variants[0], ("original".into(), 2.0));
+            assert_eq!(variants[1], ("rewrite".into(), 3.0));
+            for (n, (text, weight)) in variants[2..].iter().enumerate() {
+                assert_eq!(text, &format!("operand {n}"));
+                assert_eq!(*weight, 6.0 / expected as f64);
+            }
+            assert!(
+                (variants[2..].iter().map(|(_, weight)| weight).sum::<f64>() - 6.0).abs() < 1e-12
+            );
+            assert!((variants.iter().map(|(_, weight)| weight).sum::<f64>() - 11.0).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn subqueries_trim_deduplicate_and_exclude_original_and_rewrite() {
+        let stages = ModelStages {
+            params: StageParams {
+                subquery_weight: 2.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let plan = QueryPlan {
+            rewrite: Some(" rewrite ".into()),
+            subqueries: vec![
+                " original ".into(),
+                "rewrite".into(),
+                " operand ".into(),
+                "operand".into(),
+                "fifth".into(),
+            ],
+            ..Default::default()
+        };
+        assert_eq!(
+            stages.variants_for_plan(" original ", plan).unwrap(),
+            vec![
+                (" original ".into(), 1.0),
+                (" rewrite ".into(), 1.0),
+                ("operand".into(), 2.0)
+            ]
+        );
+        let plan = QueryPlan {
+            subqueries: vec![
+                "".into(),
+                " \n\t".into(),
+                " third ".into(),
+                "fourth".into(),
+                "fifth".into(),
+            ],
+            ..Default::default()
+        };
+        assert_eq!(
+            stages.variants_for_plan("original", plan).unwrap(),
+            vec![
+                ("original".into(), 1.0),
+                ("third".into(), 1.0),
+                ("fourth".into(), 1.0)
+            ]
+        );
+    }
+
+    #[test]
+    fn absent_rewrite_empty_subqueries_and_time_range_do_not_change_search_scope() {
+        let stages = ModelStages {
+            params: StageParams {
+                subquery_weight: 1.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let mut plan = QueryPlan {
+            subqueries: vec!["first operand".into(), "second operand".into()],
+            time_range: Some(((2024, 1, 1), (2024, 2, 1))),
+            ..Default::default()
+        };
+        let variants = stages.variants_for_plan("original", plan.clone()).unwrap();
+        assert_eq!(
+            variants,
+            vec![
+                ("original".into(), 1.0),
+                ("first operand".into(), 0.5),
+                ("second operand".into(), 0.5)
+            ]
+        );
+        plan.time_range = None;
+        assert_eq!(
+            stages.variants_for_plan("original", plan).unwrap(),
+            variants
+        );
+        assert_eq!(
+            stages
+                .variants_for_plan(
+                    "original",
+                    QueryPlan {
+                        subqueries: vec!["".into(), "original".into()],
+                        ..Default::default()
+                    }
+                )
+                .unwrap(),
+            vec![("original".into(), 1.0)]
+        );
+    }
+
+    #[test]
+    fn subquery_weight_must_not_overflow_the_total_query_weight() {
+        let stages = ModelStages {
+            params: StageParams {
+                orig_weight: f64::MAX,
+                rewrite_weight: 0.0,
+                subquery_weight: f64::MAX,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        assert!(stages
+            .variants_for_plan("original", QueryPlan::default())
+            .is_err());
+        StageParams {
+            orig_weight: 0.0,
+            rewrite_weight: 0.0,
+            subquery_weight: 1.0,
+            ..Default::default()
+        }
+        .validate()
+        .unwrap();
+    }
+
+    #[test]
+    fn missing_query_expansions_fall_back_to_the_original_with_the_total_weight() {
+        let mut stages = ModelStages {
+            params: StageParams {
+                orig_weight: 0.0,
+                rewrite_weight: 2.0,
+                subquery_weight: 3.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        for rewrite_queries in [false, true] {
+            stages.rewrite_queries = rewrite_queries;
+            assert_eq!(
+                stages.query_variants("original", "2024/01/01").unwrap(),
+                vec![("original".into(), 5.0)]
+            );
+        }
+        assert_eq!(
+            stages
+                .variants_for_plan("original", QueryPlan::default())
+                .unwrap(),
+            vec![("original".into(), 5.0)]
+        );
+        stages.params.subquery_weight = 0.0;
+        assert_eq!(
+            stages
+                .variants_for_plan("original", QueryPlan::default())
+                .unwrap(),
+            vec![("original".into(), 2.0)]
+        );
+    }
+
+    #[test]
+    fn blank_and_duplicate_subqueries_preserve_a_positive_original_fallback() {
+        let stages = ModelStages {
+            params: StageParams {
+                orig_weight: 0.0,
+                rewrite_weight: 0.0,
+                subquery_weight: 2.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        for subqueries in [
+            vec!["".into(), " \n\t".into()],
+            vec![" original ".into(), "original".into(), "".into()],
+        ] {
+            assert_eq!(
+                stages
+                    .variants_for_plan(
+                        "original",
+                        QueryPlan {
+                            subqueries,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap(),
+                vec![("original".into(), 2.0)]
+            );
+        }
+    }
+
+    #[test]
+    fn subqueries_matching_zero_weight_variants_receive_their_share_without_duplicates() {
+        for (original_weight, rewrite_weight) in [(0.0, 2.0), (2.0, 0.0)] {
+            let stages = ModelStages {
+                params: StageParams {
+                    orig_weight: original_weight,
+                    rewrite_weight,
+                    subquery_weight: 6.0,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let matching = if original_weight == 0.0 {
+                "original"
+            } else {
+                "rewrite"
+            };
+            let variants = stages
+                .variants_for_plan(
+                    " original ",
+                    QueryPlan {
+                        rewrite: Some(" rewrite ".into()),
+                        subqueries: vec![format!(" {matching} "), "operand".into()],
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+            assert_eq!(
+                variants,
+                vec![
+                    (
+                        " original ".into(),
+                        if original_weight == 0.0 {
+                            3.0
+                        } else {
+                            original_weight
+                        },
+                    ),
+                    (
+                        " rewrite ".into(),
+                        if rewrite_weight == 0.0 {
+                            3.0
+                        } else {
+                            rewrite_weight
+                        },
+                    ),
+                    ("operand".into(), 3.0)
+                ]
+            );
+        }
+    }
+
+    #[test]
+    fn underflowing_subquery_shares_fall_back_to_the_positive_total_weight() {
+        let smallest = f64::from_bits(1);
+        assert_eq!(smallest / 2.0, 0.0);
+        let stages = ModelStages {
+            params: StageParams {
+                orig_weight: 0.0,
+                rewrite_weight: 0.0,
+                subquery_weight: smallest,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        assert_eq!(
+            stages
+                .variants_for_plan(
+                    "original",
+                    QueryPlan {
+                        subqueries: vec!["first".into(), "second".into()],
+                        ..Default::default()
+                    },
+                )
+                .unwrap(),
+            vec![("original".into(), smallest)]
+        );
     }
 
     #[test]

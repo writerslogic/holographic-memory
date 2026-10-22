@@ -124,6 +124,7 @@ required-features = ["security", "server"]
 
 [features]
 default = []
+conversation-memory = ["sha2"]
 node-api = ["napi", "napi-derive", "tokio", "napi-build"]
 # Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
 # wheels with `maturin build --features python`; publishing is wired in
@@ -224,6 +225,11 @@ required-features = ["experimental"]
 [[bin]]
 name = "public-bench"
 path = "src/bin/public-bench.rs"
+
+[[bin]]
+name = "conversation-eval"
+path = "src/bin/conversation-eval.rs"
+required-features = ["conversation-memory"]
 
 [[bin]]
 name = "route-sweep"

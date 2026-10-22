@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "scope": "production source-preservation and retrieval regression validation; no new benchmark QA score",
+  "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+  "changes": [
+    "opt-in ConversationMemory through real Memory::remember_many and Memory::recall",
+    "immutable exact originals with user/assistant roles and qualified source identities",
+    "bounded direct user and assistant premise closure with whole-source admission",
+    "explicit conversation embedding task; rejects user-fact extraction",
+    "bounded opt-in query decomposition with fixed aggregate influence and original-query fallback"
+  ],
+  "tests": {
+    "rust_library_passed": 484,
+    "conversation_integration_passed": 13,
+    "model_guard_passed": 1,
+    "memory_api_passed": 28,
+    "live_pinned_embedding_passed": 1,
+    "python_benchmark_harness_passed": 261,
+    "total_passed": 788,
+    "existing_ignored_microbenchmarks": 4
+  },
+  "live_model": {
+    "model": "Qwen/Qwen3-Embedding-0.6B",
+    "revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+    "query_task": "Conversation",
+    "test": "conversation_embedding_retrieves_original_assistant_evidence",
+    "limits": "one independently authored synthetic retrieval fixture; no QA accuracy or broad semantic-quality claim"
+  },
+  "checks": {
+    "selected_clippy_warnings_denied": "passed",
+    "conversation_feature_without_local_models": "passed",
+    "touched_rust_format": "passed",
+    "git_diff_check": "passed",
+    "repository_wide_format": "passed"
+  },
+  "reproduce": [
+    "cargo test --locked --features conversation-memory,local-models --lib --test conversation_memory --test conversation_models --test memory_api",
+    "HMS_CONVERSATION_MODEL_DIR=/path/to/Qwen3-Embedding-0.6B cargo test --locked --features conversation-memory,local-models --test conversation_models conversation_embedding_retrieves_original_assistant_evidence -- --ignored --exact",
+    "cargo clippy --locked --features conversation-memory,local-models --lib --test conversation_memory --test conversation_models --test memory_api -- -D warnings",
+    "cargo check --locked --no-default-features --features conversation-memory --lib"
+  ],
+  "benchmark_status": {
+    "best_checked_reused_dev_correct": 93,
+    "dev_denominator": 100,
+    "best_result_is_production_path": false,
+    "complete_original_history_correct": 91,
+    "complete_history_reader_transport_failures": 1,
+    "new_production_qa_score": null,
+    "heldout_qa_runs": 0,
+    "heldout_questions": 400,
+    "heldout_authorized": false,
+    "four_prior_reader_ensemble": "unpromoted and unscored"
+  },
+  "sha256": {
+    "Cargo.toml": "f69f1283fbfdb85dc614ee65555ab76dd96f57b702e0efbbc46b2a9d61640562",
+    "Cargo.lock": "938728420a50fc53d06ddaf4bdfd70a3e98d6aac37b09cdd02ada91d0aeb3c87",
+    "src/core/memory_api/mod.rs": "81e024b10e595f37dc004bd671da13baba3d9409e20a56c7bea21aabecda55eb",
+    "src/core/memory_api/conversation.rs": "321e6600a07c227f15ed8ba12b147a5ef7ea6ec4ecf2b29d512ebfad5d10e17b",
+    "src/core/models/mod.rs": "37539b0d3717ea71215ace4524b7ff8ed1b40921888865cd558b8c87b2c6d113",
+    "src/core/models/embed.rs": "fb512deb00d2e7ddead528819c6cc46b36fb2c72090f15ebdffd5f1cd9afb9f8",
+    "src/core/models/prompts.rs": "e143343fc6ecd34f46a874d38a5ec273385317eb66b3d71f2c9d419e4b460d10",
+    "src/core/models/stages.rs": "433eef3043e6504ba1d749cfef0162ecb8dadbab69039f58f3ee09fc733f7063",
+    "tests/conversation_memory.rs": "dfbf75ab8ee15a9a3665267d8afa393e855d112ca526faf0545f7fbfa3adc1c5",
+    "tests/conversation_models.rs": "0ef5de95b10336c6d65afb233798d67f60a8e9bb67854aa7f358c23c2d510893",
+    "benchmarks/results/conversation_quality_tests.log": "42717eb5426329c2392c57bd7bd7fa9c7e77785abcecda73ff8587b1eced16da",
+    "benchmarks/results/conversation_local_model_test.log": "b4c5be4432d620e99bbaaa3452516bdc559f51af174c30f10a7140b55035cf52",
+    "benchmarks/results/longmemeval_quality_tests.log": "a1ffc6de9acce8c427259993e122c73d66862f1ab20b191a770367282dc13da6",
+    "benchmarks/results/conversation_quality_clippy.log": "703ceb5de60b5bc3908e26db35c576edb171fe67ec9f18814219cf555b9d366a",
+    "benchmarks/results/conversation_quality_no_models.log": "a953ded752c1cd48f976e4f4efc9900745c1fc4200c27ef7b7e2d387bf6dce08",
+    "benchmarks/results/conversation_quality_format_scoped.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "benchmarks/results/conversation_quality_format.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

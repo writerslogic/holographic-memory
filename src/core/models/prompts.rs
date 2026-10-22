@@ -3,7 +3,8 @@
 
 //! Prompts and output parsing of the tuned LongMemEval pipeline
 //! (`benchmarks/public/longmemeval_pipeline.py`). The text and the parsing rules are part of the
-//! tuned result and must stay byte-identical to the Python reference.
+//! tuned result and must stay byte-identical to the Python reference. The separately selected
+//! conversation embedding instruction includes both source roles.
 
 use serde_json::Value;
 
@@ -13,6 +14,7 @@ pub type Date = (i32, u32, u32);
 pub type Facts = Vec<(Option<usize>, String)>;
 
 pub const EMBED_TASK: &str = "Given a question a user asks about their earlier conversations with an AI assistant, retrieve the user messages that contain the information needed to answer it";
+pub const CONVERSATION_EMBED_TASK: &str = "Given a question about earlier conversations between a user and an AI assistant, retrieve the original user or assistant messages containing the information needed to answer it";
 pub const RERANK_TASK: &str = "Given a question a user asks about their earlier conversations with an AI assistant, judge whether the conversation excerpt contains information needed to answer it";
 
 pub const RERANK_PREFIX: &str = "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n";
@@ -62,6 +64,10 @@ pub fn query_prompt(today: &str, question: &str) -> String {
 
 pub fn embed_query(query: &str) -> String {
     format!("Instruct: {EMBED_TASK}\nQuery:{query}")
+}
+
+pub fn conversation_embed_query(query: &str) -> String {
+    format!("Instruct: {CONVERSATION_EMBED_TASK}\nQuery:{query}")
 }
 
 pub fn rerank_body(query: &str, document: &str) -> String {
@@ -230,6 +236,10 @@ mod tests {
         let f = fact_prompt(&["hi"]);
         assert!(f.contains("Answer with JSON only: {\"facts\": [{\"turn\": <message number>, \"fact\": \"<sentence>\"}]}. Use {\"facts\": []} if there are none.\n\n[1] hi"));
         assert_eq!(embed_query("q"), format!("Instruct: {EMBED_TASK}\nQuery:q"));
+        assert_eq!(
+            conversation_embed_query("q"),
+            format!("Instruct: {CONVERSATION_EMBED_TASK}\nQuery:q")
+        );
     }
 
     #[test]

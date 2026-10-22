@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-22T06:45:28.828353+00:00",
+  "scope": "Completed production conversation-source, native bridge and benchmark-harness validation; no new benchmark QA score",
+  "historical_proof": {
+    "path": "benchmarks/results/conversation_quality_validation_2026-10-21.json",
+    "sha256": "02794fed4a61dca2fa42a4b33b2c07cd24b36db72d8746ac8dadbf904d3d757f",
+    "preserved_unchanged": true
+  },
+  "tests": {
+    "historical_native_components_passed": {
+      "rust_library_passed": 484,
+      "conversation_integration_passed": 13,
+      "model_guard_passed": 1,
+      "memory_api_passed": 28,
+      "live_pinned_embedding_passed": 1
+    },
+    "historical_native_total_passed": 527,
+    "native_bridge_passed": 3,
+    "native_bridge_failed": 0,
+    "native_bridge_ignored": 0,
+    "native_bridge_test_seconds": 0.13,
+    "python_benchmark_harness_passed": 293,
+    "python_benchmark_harness_seconds": 39.784,
+    "total_passed": 823,
+    "existing_ignored_microbenchmarks": 4,
+    "counting_basis": "527 historical native passes plus 3 new bridge tests plus the current 293 Python tests. The previous 261 Python passes are replaced, not counted twice. The all-three-model smoke is separate proof and is not added to this test total."
+  },
+  "checks": {
+    "release_build": {
+      "status": "passed",
+      "verified_source_files": 267,
+      "receipt": "benchmarks/results/conversation_bridge_release_build_receipt_v1.json",
+      "log": "benchmarks/results/conversation_bridge_release_build.log"
+    },
+    "release_bridge_clippy_warnings_denied": {
+      "status": "passed",
+      "log": "benchmarks/results/conversation_bridge_release_clippy.log",
+      "root_verified_exit_code": 0
+    },
+    "bridge_unit_tests": {
+      "status": "passed",
+      "log": "benchmarks/results/conversation_bridge_tests.log"
+    },
+    "all_python_longmemeval_tests": {
+      "status": "passed",
+      "log": "benchmarks/results/longmemeval_quality_tests_production_v1.log"
+    },
+    "repository_format": {
+      "status": "passed",
+      "command": "cargo fmt -- --check",
+      "log": "benchmarks/results/conversation_production_format.log",
+      "root_verified_exit_code": 0
+    },
+    "git_diff_check": {
+      "status": "passed",
+      "command": "git diff --check",
+      "verification": "Root observed exit 0; no mutable repository status/diff snapshot is frozen."
+    }
+  },
+  "native_source_and_binary": {
+    "source_root": "/Volumes/A/.codex-wt-conversation-eval-native",
+    "source_base_commit": "28a0a5b1bc6e84037fed51fdba8c6b508f821502",
+    "overlay_verified": true,
+    "source_manifest": "benchmarks/results/conversation_production_source_snapshot_v1.json",
+    "source_manifest_sha256": "bce7680ac113e4bbb5d69921e1dc5e049a7670c104781abe377c679b2936eda6",
+    "source_file_count": 267,
+    "build_receipt": "benchmarks/results/conversation_bridge_release_build_receipt_v1.json",
+    "build_receipt_sha256": "7decf51ff73c0047c2d0f8f15b58598a2bbb83dd3db8f78dac69a6e9227ed02c",
+    "binary": "/Users/davidcondrey/.cache/hms-conversation-eval-target/release/conversation-eval",
+    "binary_sha256": "938031f33cb234ef851b98bb6b05ff5e5ae58e1da349ca217d2712426da14524",
+    "build_policy": {
+      "profile": "release",
+      "CARGO_PROFILE_RELEASE_LTO": "false",
+      "features": [
+        "conversation-memory",
+        "local-models"
+      ],
+      "binary": "conversation-eval",
+      "CARGO_TARGET_DIR": "/Users/davidcondrey/.cache/hms-conversation-eval-target",
+      "CARGO_BUILD_JOBS": "4"
+    },
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "key_source_sha256": {
+      "Cargo.toml": "976e9f772b4c02565fe0b156c222afda6400645ef9bd195b12bb163c08724654",
+      "Cargo.lock": "938728420a50fc53d06ddaf4bdfd70a3e98d6aac37b09cdd02ada91d0aeb3c87",
+      "build.rs": "1ec03774465b4a5624352478756abe0e99c898a51034919fd761abd19ea01872",
+      "src/bin/conversation-eval.rs": "a2081151de75133909b0f5b8e14a589ce2c755267b72bf1995a887502c3601c1",
+      "src/core/memory_api/conversation.rs": "321e6600a07c227f15ed8ba12b147a5ef7ea6ec4ecf2b29d512ebfad5d10e17b",
+      "src/core/memory_api/recall.rs": "e1a8beeca69eb15fa860c656c9603df149c4514f0c5c4cd8eb38977b98b7b298",
+      "src/core/models/mod.rs": "37539b0d3717ea71215ace4524b7ff8ed1b40921888865cd558b8c87b2c6d113",
+      "src/core/models/embed.rs": "fb512deb00d2e7ddead528819c6cc46b36fb2c72090f15ebdffd5f1cd9afb9f8",
+      "src/core/models/prompts.rs": "e143343fc6ecd34f46a874d38a5ec273385317eb66b3d71f2c9d419e4b460d10",
+      "src/core/models/stages.rs": "433eef3043e6504ba1d749cfef0162ecb8dadbab69039f58f3ee09fc733f7063",
+      "src/core/engine/document_api.rs": "cf4e99b543fa4e9802581f5ce5b04476d7b1434592fb0c956c5050bb39372c43"
+    }
+  },
+  "live_three_model_smoke": {
+    "status": "passed",
+    "validation": "benchmarks/results/conversation_bridge_model_smoke_v1/validation.json",
+    "requests": "benchmarks/results/conversation_bridge_model_smoke_v1/requests.jsonl",
+    "responses": "benchmarks/results/conversation_bridge_model_smoke_v1/responses.jsonl",
+    "request_response_count": 6,
+    "process_exit_code": 0,
+    "device": "Metal(MetalDevice(DeviceId(1)))",
+    "models": [
+      {
+        "model": "Qwen/Qwen3-Embedding-0.6B",
+        "revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3"
+      },
+      {
+        "model": "Qwen/Qwen3-Reranker-0.6B",
+        "revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473"
+      },
+      {
+        "model": "Qwen/Qwen3-4B-Instruct-2507",
+        "revision": "cdbee75f17c01a7cc42f958dc650907174af0554"
+      }
+    ],
+    "embedding_query_task": "conversation",
+    "extract_facts": false,
+    "stage_params": {
+      "k0": 60.0,
+      "lexicalWeight": 0.5,
+      "origWeight": 1.0,
+      "rerankN": 20,
+      "rerankWeight": 8.0,
+      "rewriteWeight": 1.0,
+      "semanticWeight": 1.0,
+      "subqueryWeight": 1.0
+    },
+    "embedding_batch": 4,
+    "rerank_batch": 4,
+    "generator_batch": 1,
+    "elapsed_seconds": 268.2263417500071,
+    "measured_operation_seconds": {
+      "ingestSeconds": 10.506701750000001,
+      "modelLoadSeconds": 220.910895542,
+      "querySeconds": 36.456261917,
+      "resetSeconds": 0.088878418
+    },
+    "model_load_includes_file_fingerprinting": true,
+    "model_load_measurement": "Initial all-three-model Metal process load, including model-file fingerprinting: 220.910895542 seconds; OS cache state was not controlled. This is not a steady-state search-latency measurement.",
+    "local_compute_usd": null,
+    "exact_model_token_and_pair_counters_available": false,
+    "qa_benchmark_calls": 0,
+    "counts_toward_823_test_total": false,
+    "interoperability_validation": {
+      "path": "benchmarks/results/conversation_bridge_model_smoke_v1/interoperability_validation.json",
+      "sha256": "c49478d827480481c2da568c864cb367aaf508940e52eb7b32078cd167943f89",
+      "passed": true,
+      "native_packet_sources": 5,
+      "scope": "cross-language canonical source identities, exact original text, roles, byte count and direct premise closure; novel synthetic only",
+      "counts_toward_823_test_total": false
+    }
+  },
+  "reproduce": [
+    {
+      "scope": "all Python LongMemEval harness tests",
+      "cwd": "/Volumes/A/holographic-memory",
+      "exact_executed_command_retained": true,
+      "command": "uv run --python 3.13 --no-project --with numpy==2.2.6 --with tiktoken==0.14.0 --with tokenizers==0.23.3 --with openai==3.27.0 --with python-dotenv==1.2.4 python -m unittest discover -s benchmarks/public -p 'test_*longmemeval*.py' > benchmarks/results/longmemeval_quality_tests_production_v1.log 2>&1"
+    },
+    {
+      "scope": "release native bridge clippy",
+      "cwd": "/Volumes/A/.codex-wt-conversation-eval-native",
+      "exact_executed_command_retained": true,
+      "command": "CARGO_TARGET_DIR=/Users/davidcondrey/.cache/hms-conversation-eval-target CARGO_BUILD_JOBS=4 CARGO_PROFILE_RELEASE_LTO=false cargo clippy --locked --release --features conversation-memory,local-models --bin conversation-eval -- -D warnings > /Volumes/A/holographic-memory/benchmarks/results/conversation_bridge_release_clippy.log 2>&1"
+    },
+    {
+      "scope": "three native bridge tests",
+      "cwd": "/Volumes/A/holographic-memory",
+      "exact_executed_environment_retained": false,
+      "command": "CARGO_TARGET_DIR=/Volumes/A/holographic-memory/target/conversation-quality cargo test --locked --features conversation-memory,local-models --bin conversation-eval",
+      "note": "Equivalent reproduction command; the completed log verifies the original debug test path and all 3 passes."
+    },
+    {
+      "scope": "historical native library, conversation, model guards and memory API",
+      "cwd": "/Volumes/A/holographic-memory",
+      "commands": [
+        "cargo test --locked --features conversation-memory,local-models --lib --test conversation_memory --test conversation_models --test memory_api",
+        "HMS_CONVERSATION_MODEL_DIR=/path/to/Qwen3-Embedding-0.6B cargo test --locked --features conversation-memory,local-models --test conversation_models conversation_embedding_retrieves_original_assistant_evidence -- --ignored --exact",
+        "cargo clippy --locked --features conversation-memory,local-models --lib --test conversation_memory --test conversation_models --test memory_api -- -D warnings",
+        "cargo check --locked --no-default-features --features conversation-memory --lib"
+      ],
+      "note": "Historical component reproductions, retained separately from the new bridge/release proof."
+    },
+    {
+      "scope": "all-three-model live smoke",
+      "exact_executed_driver_retained": false,
+      "procedure": [
+        "Use the release binary and local model files pinned by the build receipt and smoke model-profile file receipts.",
+        "Start the binary with --models pointing to the three pinned model directories, and stream requests.jsonl to its stdin using a stdlib Python Popen driver.",
+        "Preserve the six raw JSONL replies, close stdin, wait for normal exit, and verify status/command pairs, process epoch/reset isolation, exact original-source hydration and the empty post-reset recall.",
+        "Compare profile revisions/file hashes and stage parameters with validation.json. Record model-load fingerprinting, ingestion, query and reset wall time without assigning a zero dollar cost."
+      ]
+    }
+  ],
+  "benchmark_status_at_creation": {
+    "production_dev_questions": 100,
+    "production_status": "native_retrieval_running_unscored",
+    "production_qa_accuracy": null,
+    "production_qa_reader_or_judge_api_calls": 0,
+    "running_reports_or_logs_frozen_as_final_evidence": false,
+    "prior_cached_harness_correct": 93,
+    "prior_cached_harness_denominator": 100,
+    "prior_cached_harness_is_production_path": false,
+    "heldout_questions": 400,
+    "heldout_qa_runs": 0,
+    "heldout_authorized": false
+  },
+  "limitations": [
+    "Synthetic regressions and one all-three-model smoke establish source preservation, resource cleanup, transport and harness invariants; they do not measure benchmark QA accuracy or general memory quality.",
+    "The 100 development questions have been reused for tuning. Their pending production evaluation is not a held-out generalization measurement.",
+    "The prior 93/100 cached-harness result is a separate experiment and is not a production-path score.",
+    "Local model computation has unknown dollar cost. Recorded wall time includes model stages and streamed model-file fingerprinting; exact model token and pair counters are unavailable.",
+    "The running native dev report and progress logs are deliberately excluded from the completed evidence hashes.",
+    "All 400 held-out questions remain unevaluated and held-out evaluation is unauthorized."
+  ],
+  "completed_artifact_sha256": {
+    "benchmarks/results/conversation_quality_validation_2026-10-21.json": "02794fed4a61dca2fa42a4b33b2c07cd24b36db72d8746ac8dadbf904d3d757f",
+    "benchmarks/results/conversation_production_source_snapshot_v1.json": "bce7680ac113e4bbb5d69921e1dc5e049a7670c104781abe377c679b2936eda6",
+    "benchmarks/results/conversation_bridge_release_build_receipt_v1.json": "7decf51ff73c0047c2d0f8f15b58598a2bbb83dd3db8f78dac69a6e9227ed02c",
+    "benchmarks/results/longmemeval_quality_tests_production_v1.log": "c72289c17718540d5d99accb868564e53a312a9cf036eb2216900f5b03734ff1",
+    "benchmarks/results/conversation_bridge_tests.log": "50a976c42af152959226d24ab73f4b3b1402b4b8db81c6ee7fc3c51e5c6fb644",
+    "benchmarks/results/conversation_bridge_release_clippy.log": "07b0ad820e6a094b38edadefb39878a90666a071ad81a83cd568a13859bd5b20",
+    "benchmarks/results/conversation_production_format.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "benchmarks/results/conversation_quality_tests.log": "42717eb5426329c2392c57bd7bd7fa9c7e77785abcecda73ff8587b1eced16da",
+    "benchmarks/results/conversation_local_model_test.log": "b4c5be4432d620e99bbaaa3452516bdc559f51af174c30f10a7140b55035cf52",
+    "benchmarks/results/conversation_quality_clippy.log": "703ceb5de60b5bc3908e26db35c576edb171fe67ec9f18814219cf555b9d366a",
+    "benchmarks/results/conversation_quality_no_models.log": "a953ded752c1cd48f976e4f4efc9900745c1fc4200c27ef7b7e2d387bf6dce08",
+    "benchmarks/results/conversation_bridge_model_smoke_v1/validation.json": "c5412a8c06322be239bc479aca328b2563172f4164a1953133a2506cb375f4bd",
+    "benchmarks/results/conversation_bridge_model_smoke_v1/requests.jsonl": "a96b6836e03db421bf6a6988768748ea89865d912f5eac7ebc74ad0152d9d70e",
+    "benchmarks/results/conversation_bridge_model_smoke_v1/responses.jsonl": "56a7b99986dcbb4e6943e53dc43e84f454880374ca68f1542ad263af276f67c5",
+    "benchmarks/results/conversation_bridge_release_build.log": "60dbe10be293487d7d5cf9ce8eb0deebf23d637a0f617282126e6fb060a5bd63",
+    "benchmarks/results/conversation_bridge_model_smoke_v1/interoperability_validation.json": "c49478d827480481c2da568c864cb367aaf508940e52eb7b32078cd167943f89"
+  },
+  "python_source_sha256": {
+    "benchmarks/public/longmemeval_production.py": "88675234a1d7cb4f5b3544b6db86d77fa64456ab624793ed668b823b0ec8103f",
+    "benchmarks/public/test_longmemeval_production.py": "c968f97d94a7f9d990f8defcee774387aecb704cd56ac6b0bf656edee4d7c0f0",
+    "benchmarks/public/check_longmemeval_production.py": "5d49906bd63f67634bb0a281e295610fcc8325ec44fbd4220024a2755ec89f99",
+    "benchmarks/public/test_check_longmemeval_production.py": "5c4096a124f18554624c7e7cee4b39a92a587a8ed8e53e6c535043ad2bd9eaf1",
+    "benchmarks/public/longmemeval_dev_conversations.py": "a4d5f88573dcb9d8e93313a0b17f462d9e0e7f3e2d9a91842ee0609e11229e0f",
+    "benchmarks/public/longmemeval_verifier.py": "fc8f562763e60a499ccfd75b64ad2e233fe89a3087623e7824b0874b3fb96be5",
+    "benchmarks/public/longmemeval_reader_api.py": "49d632aecbda30aed1a847ee2c1a42817df69707441bf28ec3c8e722fb9c457d",
+    "benchmarks/public/longmemeval_answer_evidence.py": "3924de81533c3079805a56d4208b2de2f9ba228834106d95248cde268edd92c8"
+  }
+}
