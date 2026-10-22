@@ -532,6 +532,53 @@ impl UpdatableVGraph {
         s.pending.push(op);
         Ok(())
     }
+    /// Most operations one batch can stage before `commit` for vectors of this dimension.
+    pub fn batch_capacity(&self) -> usize {
+        MAX_OPS.min(MAX_PAYLOAD / (5 + 4 * self.dim()))
+    }
+    /// Stages new ids for row-major `vectors`, all or none, linking them into the delta in
+    /// parallel. Up to `batch_capacity` operations fit in one batch.
+    pub fn insert_batch(&self, ids: &[u32], vectors: &[f32]) -> Result<(), UpdateError> {
+        let _writer = self.writer()?;
+        let mut s = self.state.write();
+        let dim = s.manifest.dim;
+        if vectors.len() != ids.len() * dim {
+            return Err(UpdateError::DimensionMismatch {
+                expected: ids.len() * dim,
+                actual: vectors.len(),
+            });
+        }
+        let size = (5 + 4 * dim) * ids.len();
+        if s.pending.len() + ids.len() > MAX_OPS
+            || s.pending_bytes + size > MAX_PAYLOAD
+            || s.delta.len() + ids.len() >= (u32::MAX - 1) as usize
+        {
+            return Err(UpdateError::Capacity);
+        }
+        let mut batch = HashSet::with_capacity(ids.len());
+        for (&id, row) in ids.iter().zip(vectors.chunks_exact(dim)) {
+            if id == u32::MAX {
+                return Err(UpdateError::IdOutOfRange);
+            }
+            if s.touched.contains(&id) || !batch.insert(id) {
+                return Err(UpdateError::DuplicateIdInBatch(id));
+            }
+            if s.contains(id) {
+                return Err(UpdateError::AlreadyExists(id));
+            }
+            validate_vector(row, dim, s.manifest.build.metric)?;
+        }
+        let mut rows = vectors.to_vec();
+        super::prepare_rows(&mut rows, dim, s.manifest.build.metric);
+        let build = s.manifest.build.clone();
+        s.delta.insert_batch(ids, &rows, &build);
+        for (&id, row) in ids.iter().zip(vectors.chunks_exact(dim)) {
+            s.pending.push(Operation::Insert(id, row.to_vec()));
+            s.touched.insert(id);
+        }
+        s.pending_bytes += size;
+        Ok(())
+    }
     /// Appends the whole pending batch and completes its durable sync.
     pub fn commit(&self) -> Result<(), UpdateError> {
         let writer = self.writer()?;

@@ -1,12 +1,15 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 use super::super::{
     adjacency::Adjacency, kernels::dot, norms_opt, BuildParams, BuildVisited, Rows, NONE,
 };
 use super::Metric;
+
+thread_local! { static SEEN: RefCell<BuildVisited> = RefCell::new(BuildVisited::default()); }
 
 #[derive(Clone, Default)]
 pub(super) struct Delta {
@@ -73,6 +76,59 @@ impl Delta {
         self.live.insert(id, slot);
     }
 
+    /// Inserts prepared rows (row-major) under `ids`, in parallel: the build's batched
+    /// insertion pass, whose batches each search a frozen graph, so the graph does not depend
+    /// on thread scheduling.
+    pub fn insert_batch(&mut self, ids: &[u32], rows: &[f32], params: &BuildParams) {
+        let dim = rows.len() / ids.len().max(1);
+        let first = self.ids.len();
+        if ids.len() < 2 || dim == 0 {
+            for (&id, row) in ids.iter().zip(rows.chunks_exact(dim.max(1))) {
+                self.insert(id, row, params);
+            }
+            return;
+        }
+        self.ids.extend_from_slice(ids);
+        self.vectors.extend_from_slice(rows);
+        if params.metric == Metric::Euclidean {
+            self.norms.extend(rows.chunks_exact(dim).map(|r| dot(r, r)));
+        }
+        for _ in ids {
+            self.edges.push(&[], params.degree);
+            self.first_child.push(NONE);
+            self.next_sibling.push(NONE);
+        }
+        let order: Vec<u32> = (first as u32..self.ids.len() as u32).collect();
+        let rows = Rows {
+            data: &self.vectors,
+            dim,
+            norms: norms_opt(&self.norms),
+            codes: None,
+            quantized: false,
+        };
+        rows.insert_pass(
+            &mut self.edges,
+            &order,
+            0,
+            params.build_ef,
+            params.alpha,
+            params.degree,
+        );
+        for &slot in order.iter().filter(|&&s| s > 0) {
+            // A parent inserted earlier keeps the routing tree acyclic and rooted at slot 0.
+            let parent = self.edges[slot as usize]
+                .iter()
+                .copied()
+                .find(|&u| u < slot)
+                .unwrap_or(0) as usize;
+            self.next_sibling[slot as usize] = self.first_child[parent];
+            self.first_child[parent] = slot;
+        }
+        for (i, &id) in ids.iter().enumerate() {
+            self.live.insert(id, first + i);
+        }
+    }
+
     pub fn search(&self, query: &[f32], ef: usize, metric: Metric) -> Vec<(f32, u32)> {
         if self.ids.is_empty() {
             return Vec::new();
@@ -91,8 +147,18 @@ impl Delta {
             all.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
             return all;
         }
-        let mut seen = vec![false; self.len()];
-        seen[0] = true;
+        SEEN.with(|seen| self.search_with(&mut seen.borrow_mut(), query, ef, metric))
+    }
+
+    fn search_with(
+        &self,
+        seen: &mut BuildVisited,
+        query: &[f32],
+        ef: usize,
+        metric: Metric,
+    ) -> Vec<(f32, u32)> {
+        seen.reset(self.len());
+        seen.insert(0);
         let score = |slot: usize| super::distance(query, self.row(slot, query.len()), metric);
         let mut pool = vec![(score(0), 0usize, false)];
         while let Some(at) = pool.iter().position(|p| !p.2) {
@@ -105,10 +171,10 @@ impl Delta {
                 },
             );
             for u in self.edges[slot].iter().copied().chain(children) {
-                let u = u as usize;
-                if std::mem::replace(&mut seen[u], true) {
+                if !seen.insert(u) {
                     continue;
                 }
+                let u = u as usize;
                 let d = score(u);
                 let at = pool.partition_point(|p| p.0.total_cmp(&d).then(p.1.cmp(&u)).is_lt());
                 if at < ef {

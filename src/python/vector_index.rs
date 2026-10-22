@@ -10,14 +10,17 @@
 
 use std::sync::Arc;
 
-use numpy::{AllowTypeChange, IntoPyArray, PyArray1, PyArrayLike1, PyArrayLike2};
+use numpy::{AllowTypeChange, IntoPyArray, PyArray1, PyArray2, PyArrayLike1, PyArrayLike2};
 use numpy::{PyReadonlyArray2, PyUntypedArrayMethods};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 
 use crate::core::error::HmsError;
-use crate::core::qgraph::{BuildParams, Graph, Metric, VGraph, VSearchParams, VSearcher};
+use crate::core::qgraph::{
+    BuildParams, ConsolidationPolicy, Graph, Metric, UpdatableVGraph, UpdateError, VGraph,
+    VSearchParams, VSearcher,
+};
 
 /// Traversal code bits per coordinate.
 const VERTEX_BITS: u8 = 4;
@@ -400,6 +403,285 @@ impl PyVectorIndex {
     }
 }
 
+fn update_err(e: UpdateError) -> PyErr {
+    match e {
+        UpdateError::Io(_) | UpdateError::Persistence(_) | UpdateError::RecoveryRequired => {
+            PyRuntimeError::new_err(e.to_string())
+        }
+        _ => PyValueError::new_err(e.to_string()),
+    }
+}
+
+/// The ids of a 1-D array as u32, rejecting values outside 0..u32::MAX.
+fn u32_ids(ids: &PyArrayLike1<'_, i64, AllowTypeChange>) -> PyResult<Vec<u32>> {
+    ids.as_array()
+        .iter()
+        .map(|&i| {
+            u32::try_from(i)
+                .ok()
+                .filter(|&i| i != u32::MAX)
+                .ok_or_else(|| PyValueError::new_err(format!("id {i} is outside 0..2^32-1")))
+        })
+        .collect()
+}
+
+/// A durable index that takes inserts, deletes and replacements while it serves queries
+/// (`core::qgraph::UpdatableVGraph`): a memory-mapped base graph, an in-memory graph of the
+/// rows added since, a log that makes each `commit` durable, and `consolidate`, which rebuilds
+/// the base over the live rows. Ids are caller-chosen integers in 0..2^32-1.
+#[pyclass(name = "UpdatableIndex")]
+struct PyUpdatableIndex {
+    index: UpdatableVGraph,
+    pool: Option<rayon::ThreadPool>,
+    ef: usize,
+    rerank: usize,
+}
+
+impl PyUpdatableIndex {
+    fn run<R: Send>(&self, f: impl FnOnce() -> R + Send) -> R {
+        match &self.pool {
+            Some(pool) => pool.install(f),
+            None => f(),
+        }
+    }
+
+    fn rows(&self, x: &PyArrayLike2<'_, f32, AllowTypeChange>, n: usize) -> PyResult<Vec<f32>> {
+        let (rows, dim) = (x.shape()[0], x.shape()[1]);
+        if rows != n || dim != self.index.dim() {
+            return Err(PyValueError::new_err(format!(
+                "expected a ({n}, {}) matrix, got ({rows}, {dim})",
+                self.index.dim()
+            )));
+        }
+        Ok(row_major(x))
+    }
+}
+
+fn thread_pool(threads: usize) -> PyResult<Option<rayon::ThreadPool>> {
+    match threads {
+        0 => Ok(None),
+        n => rayon::ThreadPoolBuilder::new()
+            .num_threads(n)
+            .build()
+            .map(Some)
+            .map_err(|e| PyRuntimeError::new_err(format!("thread pool: {e}"))),
+    }
+}
+
+#[pymethods]
+impl PyUpdatableIndex {
+    /// Creates an empty index in the new directory `path`. `metric` is "angular" or
+    /// "euclidean"; `degree` (even) and `build_ef` shape the graph; `threads` bounds insert,
+    /// consolidation and batch-query parallelism (0 = one per core).
+    #[staticmethod]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (path, dim, metric="euclidean", degree=32, build_ef=100, alpha=1.2, threads=0))]
+    fn create(
+        py: Python<'_>,
+        path: std::path::PathBuf,
+        dim: usize,
+        metric: &str,
+        degree: usize,
+        build_ef: usize,
+        alpha: f32,
+        threads: usize,
+    ) -> PyResult<Self> {
+        let metric = match metric {
+            "angular" => Metric::Angular,
+            "euclidean" => Metric::Euclidean,
+            other => {
+                return Err(PyValueError::new_err(format!(
+                    "unknown metric {other:?}; UpdatableIndex supports 'angular' and 'euclidean'"
+                )))
+            }
+        };
+        if degree == 0 || !degree.is_multiple_of(2) || build_ef == 0 || dim == 0 {
+            return Err(PyValueError::new_err(
+                "dim and build_ef must be positive and degree positive and even",
+            ));
+        }
+        if !(alpha.is_finite() && alpha >= 1.0) {
+            return Err(PyValueError::new_err("alpha must be at least 1"));
+        }
+        let params = BuildParams {
+            metric,
+            degree,
+            build_ef,
+            alpha,
+            ..BuildParams::default()
+        };
+        let pool = thread_pool(threads)?;
+        let index = py
+            .detach(|| UpdatableVGraph::create(&path, &[], dim, &params))
+            .map_err(update_err)?;
+        Ok(Self {
+            index,
+            pool,
+            ef: 64,
+            rerank: 64,
+        })
+    }
+
+    /// Opens an existing index directory and replays its committed batches.
+    #[staticmethod]
+    #[pyo3(signature = (path, threads=0))]
+    fn open(py: Python<'_>, path: std::path::PathBuf, threads: usize) -> PyResult<Self> {
+        let pool = thread_pool(threads)?;
+        let index = py
+            .detach(|| UpdatableVGraph::open(&path))
+            .map_err(update_err)?;
+        Ok(Self {
+            index,
+            pool,
+            ef: 64,
+            rerank: 64,
+        })
+    }
+
+    /// Search effort, as for `VectorIndex`.
+    #[pyo3(signature = (ef, rerank=64))]
+    fn set_query_arguments(&mut self, ef: usize, rerank: usize) -> PyResult<()> {
+        if ef == 0 {
+            return Err(PyValueError::new_err("ef must be positive"));
+        }
+        self.ef = ef;
+        self.rerank = rerank;
+        Ok(())
+    }
+
+    /// Adds rows under new `ids` and commits. Ids must not be live.
+    fn insert(
+        &self,
+        py: Python<'_>,
+        x: PyArrayLike2<'_, f32, AllowTypeChange>,
+        ids: PyArrayLike1<'_, i64, AllowTypeChange>,
+    ) -> PyResult<()> {
+        let ids = u32_ids(&ids)?;
+        let rows = self.rows(&x, ids.len())?;
+        let dim = self.index.dim();
+        let step = self.index.batch_capacity();
+        py.detach(|| {
+            self.run(|| {
+                for (ids, rows) in ids.chunks(step).zip(rows.chunks(step * dim)) {
+                    self.index.insert_batch(ids, rows)?;
+                    self.index.commit()?;
+                }
+                Ok(())
+            })
+        })
+        .map_err(update_err)
+    }
+
+    /// Removes live `ids` and commits.
+    fn delete(&self, py: Python<'_>, ids: PyArrayLike1<'_, i64, AllowTypeChange>) -> PyResult<()> {
+        let ids = u32_ids(&ids)?;
+        let step = self.index.batch_capacity();
+        py.detach(|| {
+            for chunk in ids.chunks(step) {
+                for &id in chunk {
+                    self.index.delete(id)?;
+                }
+                self.index.commit()?;
+            }
+            Ok(())
+        })
+        .map_err(update_err)
+    }
+
+    /// Gives each live id in `ids` the matching row of `x` and commits.
+    fn replace(
+        &self,
+        py: Python<'_>,
+        x: PyArrayLike2<'_, f32, AllowTypeChange>,
+        ids: PyArrayLike1<'_, i64, AllowTypeChange>,
+    ) -> PyResult<()> {
+        let ids = u32_ids(&ids)?;
+        let rows = self.rows(&x, ids.len())?;
+        let dim = self.index.dim();
+        let step = self.index.batch_capacity();
+        py.detach(|| {
+            for (ids, rows) in ids.chunks(step).zip(rows.chunks(step * dim)) {
+                for (&id, row) in ids.iter().zip(rows.chunks_exact(dim)) {
+                    self.index.replace(id, row)?;
+                }
+                self.index.commit()?;
+            }
+            Ok(())
+        })
+        .map_err(update_err)
+    }
+
+    /// The `k` nearest live ids of every row of `x`, nearest first, as an (n, k) int64 array;
+    /// -1 pads rows when fewer than `k` ids are live.
+    fn search<'py>(
+        &self,
+        py: Python<'py>,
+        x: PyArrayLike2<'py, f32, AllowTypeChange>,
+        k: usize,
+    ) -> PyResult<Bound<'py, PyArray2<i64>>> {
+        PyVectorIndex::check_k(k)?;
+        let nq = x.shape()[0];
+        let queries = self.rows(&x, nq)?;
+        let dim = self.index.dim();
+        let params = VSearchParams {
+            ef: self.ef,
+            rerank: self.rerank,
+            ..VSearchParams::default()
+        };
+        let mut out = vec![-1i64; nq * k];
+        py.detach(|| {
+            self.run(|| {
+                out.par_chunks_mut(k)
+                    .zip(queries.par_chunks(dim))
+                    .try_for_each_init(Vec::new, |found, (row, q)| {
+                        self.index.search_into(q, k, params, found)?;
+                        for (slot, &id) in row.iter_mut().zip(found.iter()) {
+                            *slot = i64::from(id);
+                        }
+                        Ok::<_, UpdateError>(())
+                    })
+            })
+        })
+        .map_err(update_err)?;
+        numpy::ndarray::Array2::from_shape_vec((nq, k), out)
+            .map(|a| a.into_pyarray(py))
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))
+    }
+
+    /// Whether the delta or the deleted share has outgrown the given fractions of the base.
+    #[pyo3(signature = (delta_ratio=0.1, tombstone_ratio=0.2, min_delta=1024))]
+    fn needs_consolidation(
+        &self,
+        delta_ratio: f64,
+        tombstone_ratio: f64,
+        min_delta: usize,
+    ) -> PyResult<bool> {
+        self.index
+            .needs_consolidation(ConsolidationPolicy {
+                delta_ratio,
+                tombstone_ratio,
+                min_delta,
+            })
+            .map_err(update_err)
+    }
+
+    /// Rebuilds the base over the live rows; searches keep running meanwhile.
+    fn consolidate(&self, py: Python<'_>) -> PyResult<()> {
+        py.detach(|| self.run(|| self.index.consolidate()))
+            .map_err(update_err)
+    }
+
+    #[getter]
+    fn dim(&self) -> usize {
+        self.index.dim()
+    }
+
+    fn __len__(&self) -> usize {
+        self.index.len()
+    }
+}
+
 pub(super) fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyVectorIndex>()
+    m.add_class::<PyVectorIndex>()?;
+    m.add_class::<PyUpdatableIndex>()
 }
