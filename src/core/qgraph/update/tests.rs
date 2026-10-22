@@ -46,6 +46,96 @@ fn copy_store(from: &Path, to: &Path) {
 }
 
 #[test]
+fn streaming_diagnostics_preserve_search_and_measure_live_generations() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let mut index = UpdatableVGraph::create(&path, &[], 4, &params()).unwrap();
+    index.diagnostics.enabled = false;
+    assert!(index.streaming_diagnostics().is_none());
+    let rows = data(128, 4);
+    index
+        .insert_batch(&(0..128).collect::<Vec<_>>(), &rows)
+        .unwrap();
+    index.commit().unwrap();
+    index.delete(0).unwrap();
+    index.replace(1, &[2., 3., 4., 5.]).unwrap();
+    index.commit().unwrap();
+    let query = [0.31, -0.47, 0.63, 0.19];
+    let p = VSearchParams {
+        ef: 16,
+        rerank: 16,
+        ..Default::default()
+    };
+    let expected = index.search(&query, 10, p).unwrap();
+    index.diagnostics.enabled = true;
+    assert_eq!(index.search(&query, 10, p).unwrap(), expected);
+    let measured = index.streaming_diagnostics().unwrap();
+    assert_eq!(measured["delta_slots"], 129.);
+    assert_eq!(measured["delta_live"], 127.);
+    assert_eq!(measured["delta_entry_dead"], 1.);
+    assert_eq!(measured["delta_live_reachable_fraction"], 1.);
+    assert_eq!(measured["queries"], 1.);
+    assert!(measured["delta_visits"] > 0.);
+    assert!(!expected.contains(&0));
+    let state = index.state.read();
+    for ef in [1, 16, 128, 129, 130] {
+        assert_eq!(
+            state.delta.search(&query, ef, Metric::Euclidean),
+            state.delta.search_profiled(&query, ef, Metric::Euclidean).0
+        );
+    }
+}
+
+#[test]
+fn deterministic_streaming_model_survives_generations_and_replay_twice() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let mut index = UpdatableVGraph::create(&path, &[], 4, &params()).unwrap();
+    let mut live = BTreeMap::new();
+    let mut random = super::super::kernels::SplitMix(0x571e_a019);
+    let query = [0.31, -0.47, 0.63, 0.19];
+    for step in 0..120 {
+        let id = (random.next_u64() % 48) as u32;
+        let row: Vec<f32> = (0..4)
+            .map(|_| (random.next_u64() >> 40) as f32 / (1u32 << 24) as f32)
+            .collect();
+        if !live.contains_key(&id) {
+            index.insert(id, &row).unwrap();
+            live.insert(id, row);
+        } else if step % 3 == 0 {
+            index.delete(id).unwrap();
+            live.remove(&id);
+        } else {
+            index.replace(id, &row).unwrap();
+            live.insert(id, row);
+        }
+        index.commit().unwrap();
+        if step % 17 == 0 {
+            index.consolidate().unwrap();
+        }
+        let want = exact(&live, &query, 10);
+        assert_eq!(index.search(&query, 10, search_params()).unwrap(), want);
+        {
+            let state = index.state.read();
+            state.delta.assert_invariants(state.manifest.build.degree);
+            for (&id, row) in &live {
+                let actual = if let Some(&slot) = state.delta.live.get(&id) {
+                    state.delta.row(slot, 4)
+                } else {
+                    state.base.rows.row(state.base_slot(id).unwrap()).unwrap()
+                };
+                assert_eq!(actual, row);
+            }
+        }
+        for _ in 0..2 {
+            drop(index);
+            index = UpdatableVGraph::open(&path).unwrap();
+            assert_eq!(index.search(&query, 10, search_params()).unwrap(), want);
+        }
+    }
+}
+
+#[test]
 fn repeated_replacement_keeps_delta_vertices_reachable() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("index");
