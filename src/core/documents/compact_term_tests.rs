@@ -137,6 +137,89 @@ fn interned_chunk_terms_match_terms_with_title_weighting() {
     }
 }
 
+/// Words up to and past the 16-byte inline key, multibyte ones included, map back to their
+/// own ids and never to another word's.
+#[test]
+fn word_map_keys_words_across_the_inline_limit() {
+    let mut words: Vec<String> = (1..=34)
+        .flat_map(|len| {
+            [
+                "a".repeat(len),
+                format!("{}b", "a".repeat(len - 1)),
+                "é".repeat(len / 2 + 1),
+            ]
+        })
+        .collect();
+    words.sort();
+    words.dedup();
+    let mut map = super::WordMap::default();
+    for (id, word) in words.iter().enumerate() {
+        assert_eq!(map.get(word), None, "{word:?}");
+        map.insert(word, id as u32);
+    }
+    assert_eq!(map.len(), words.len());
+    for (id, word) in words.iter().enumerate() {
+        assert_eq!(map.get(word), Some(id as u32), "{word:?}");
+    }
+    assert_eq!(map.get(&"a".repeat(35)), None);
+}
+
+/// The interner a store keeps between batches, taken back warm and reset once it holds
+/// `STEM_MEMO_CAPACITY` words, counts every chunk as a fresh one does; of two interners
+/// returned together the pool keeps the one that has seen more words.
+#[test]
+fn pooled_interner_counts_later_batches_like_a_fresh_one() {
+    let texts = [
+        "Running runners RUN quickly;\nthe runner's running-shoes ran. Running",
+        "ΟΔΟΣ Οδός ΣΟΦΟΣ naïve\r\nCafé CAFÉ straße STRASSE 42 x2 İstanbul",
+        "abcdefghijklmnop abcdefghijklmnopq éééééééé ééééééééx Abcdefghijklmnopq",
+    ];
+    let table = |text: &str| {
+        let (terms, words) = super::chunk_terms(text, 2);
+        let pairs: Vec<(String, u32)> = (&terms)
+            .into_iter()
+            .map(|(k, &v)| (k.to_owned(), v))
+            .collect();
+        (pairs, words)
+    };
+    let fresh: Vec<_> = texts.iter().map(|text| table(text)).collect();
+    let pool = super::StemMemoPool::default();
+    for batch in 0..3 {
+        let mut memo = pool.take();
+        let _installed = memo.install();
+        if batch == 1 {
+            for start in (0..=super::STEM_MEMO_CAPACITY).step_by(1000) {
+                let chunk: String = (start..start + 1000).map(|i| format!("w{i} ")).collect();
+                super::chunk_terms(&chunk, 1);
+            }
+        }
+        for (text, expected) in texts.iter().zip(&fresh) {
+            assert_eq!(&table(text), expected, "batch {batch}");
+        }
+    }
+    let warm = pool.take();
+    drop(pool.take());
+    drop(warm);
+    assert!(pool
+        .kept
+        .lock()
+        .as_ref()
+        .is_some_and(|kept| kept.0.words.len() > 0));
+
+    // With keeping off, the kept interner is freed and returned ones are not kept.
+    pool.set_keep(false);
+    assert!(pool.kept.lock().is_none());
+    {
+        let mut memo = pool.take();
+        let _installed = memo.install();
+        assert_eq!(&table(texts[0]), &fresh[0]);
+    }
+    assert!(pool.kept.lock().is_none());
+    pool.set_keep(true);
+    drop(pool.take());
+    assert!(pool.kept.lock().is_some());
+}
+
 /// The byte scanner finds the same whitespace-separated words as `char::is_whitespace` on
 /// text mixing ASCII and Unicode separators (NBSP, NEL, em space, ideographic space).
 #[test]

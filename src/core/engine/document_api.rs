@@ -101,25 +101,28 @@ impl HmsCore {
         let mutations = inputs
             .into_par_iter()
             .zip(spans)
-            .map_init(documents::StemMemo::default, |memo, (input, spans)| {
-                let _memo = memo.install();
-                #[cfg(feature = "local-models")]
-                if let Some(stages) = stages.as_deref() {
-                    return self
-                        .prepare_document_with_models(input, stages, options.encode)
-                        .map(|document| Mutation::Document(Arc::new(document)));
-                }
-                documents::prepare_spans(
-                    input,
-                    spans,
-                    self.dimensions,
-                    self.config.embedding_space.as_ref().map(|s| s.dimensions),
-                    None,
-                    self.config.text_encoder,
-                    options.encode,
-                )
-                .map(|document| Mutation::Document(Arc::new(document)))
-            })
+            .map_init(
+                || self.stem_memos.take(),
+                |memo, (input, spans)| {
+                    let _memo = memo.install();
+                    #[cfg(feature = "local-models")]
+                    if let Some(stages) = stages.as_deref() {
+                        return self
+                            .prepare_document_with_models(input, stages, options.encode)
+                            .map(|document| Mutation::Document(Arc::new(document)));
+                    }
+                    documents::prepare_spans(
+                        input,
+                        spans,
+                        self.dimensions,
+                        self.config.embedding_space.as_ref().map(|s| s.dimensions),
+                        None,
+                        self.config.text_encoder,
+                        options.encode,
+                    )
+                    .map(|document| Mutation::Document(Arc::new(document)))
+                },
+            )
             .collect::<Result<Vec<_>>>()?;
         let payload = super::document_batch::serialize_transaction(self, &mutations)?;
         let counts = mutations
@@ -408,6 +411,15 @@ impl HmsCore {
     /// Whether a document with this id currently resolves in the opened store.
     pub fn has_document(&self, id: &str) -> bool {
         self.documents.read().contains_key(id)
+    }
+
+    /// Whether the word interner built while preparing a document batch is kept for the next
+    /// batch (the default). Keeping it saves re-stemming a corpus's vocabulary across batches at
+    /// a cost bounded by 2^18 distinct words (tens of MB at worst); a process holding many open
+    /// stores, such as a multi-tenant server, can turn it off to free each batch's interner
+    /// with the batch. Turning it off frees the kept interner now.
+    pub fn set_keep_ingest_interner(&self, keep: bool) {
+        self.stem_memos.set_keep(keep);
     }
 
     /// Number of stored documents.

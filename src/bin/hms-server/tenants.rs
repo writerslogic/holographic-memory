@@ -347,6 +347,8 @@ impl AppState {
             ..HmsConfig::default()
         };
         let core = HmsCore::new(self.cfg.dim, Some(dir.display().to_string()), Some(config))?;
+        // One interner per open tenant would add up to tens of MB each; free it per batch.
+        core.set_keep_ingest_interner(false);
         #[cfg(feature = "local-models")]
         core.set_model_stages(self.stages.clone())?;
         let core = Arc::new(core);

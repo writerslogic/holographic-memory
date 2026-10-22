@@ -186,7 +186,8 @@ impl PersistentArena {
         };
         // A reopened segment already has its durable length (growth syncs it); only a new or
         // resized file needs the length change and the full sync.
-        if file.metadata()?.len() != active_capacity as u64 {
+        let length = file.metadata()?.len();
+        if length != active_capacity as u64 {
             file.set_len(active_capacity as u64)?;
             file.sync_all()?;
         }
@@ -197,11 +198,15 @@ impl PersistentArena {
             .with_context(|| format!("arena segment {}", active_path.display()))?;
         // A partially written tail may contain bytes from an older frame. Persist the end
         // marker at the recovered boundary so future restarts never interpret stale tail
-        // bytes as a valid frame. (On macOS the next commit's full sync covers it.)
+        // bytes as a valid frame. (On macOS the next commit's full sync covers it.) A segment
+        // created empty just now has no tail: it reads back as zeros, which recover to the
+        // same empty log, and the first commit's flush range starts at the marker.
         if recovered_offset + HEADER_SIZE <= mut_map.len() {
             mut_map[recovered_offset..recovered_offset + HEADER_SIZE]
                 .copy_from_slice(&end_marker_bytes());
-            mut_map.flush_range(recovered_offset, HEADER_SIZE)?;
+            if length != 0 {
+                mut_map.flush_range(recovered_offset, HEADER_SIZE)?;
+            }
         }
         // `discover_offset` touched every written page and the zero tail up to the segment's
         // capacity; none of it needs to stay resident (replay copies each frame out).
@@ -1305,6 +1310,38 @@ mod tests {
         }
         let arena = PersistentArena::new(dir.path())?;
         assert_eq!(arena.read_frame(second_offset)?.0, b"replacement");
+        Ok(())
+    }
+
+    /// A store's first open skips flushing the end marker of its new, empty segment. A crash
+    /// before the first commit leaves that segment all zeros, header included (or without even
+    /// its length); recovery opens it as the same empty log and appends from offset 0.
+    #[test]
+    fn recovers_a_new_segment_whose_end_marker_never_reached_disk() -> Result<()> {
+        for keep_length in [true, false] {
+            let dir = tempdir()?;
+            drop(PersistentArena::new(dir.path())?);
+            let segment = dir.path().join("seg_0.bin");
+            let file = OpenOptions::new().write(true).open(&segment)?;
+            let length = file.metadata()?.len();
+            assert!(length >= HEADER_SIZE as u64);
+            file.set_len(0)?;
+            if keep_length {
+                file.set_len(length)?;
+            }
+            file.sync_all()?;
+            drop(file);
+
+            let second = {
+                let arena = PersistentArena::new(dir.path())?;
+                assert_eq!(arena.stats().used_bytes, 0, "keep_length {keep_length}");
+                assert_eq!(arena.write_slice(b"first after the crash")?, 0);
+                arena.write_slice(b"second")?
+            };
+            let arena = PersistentArena::new(dir.path())?;
+            assert_eq!(arena.read_frame(0)?.0, b"first after the crash");
+            assert_eq!(arena.read_frame(second)?.0, b"second");
+        }
         Ok(())
     }
 

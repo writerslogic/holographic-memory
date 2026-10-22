@@ -39,10 +39,11 @@ impl StoreLock {
             )
         })?;
 
+        // The pid is for a person inspecting the store; the lock is the `flock` above, which
+        // nothing on disk records, so the write is not synced.
         file.set_len(0)?;
         file.seek(SeekFrom::Start(0))?;
         writeln!(file, "pid={}", std::process::id())?;
-        file.sync_all()?;
 
         Ok(Self { file, path })
     }
