@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use super::super::{kernels::dot, norms_opt, BuildParams, BuildVisited, Rows};
+use super::super::{kernels::dot, norms_opt, BuildParams, BuildVisited, Rows, NONE};
 use super::Metric;
 
 #[derive(Clone, Default)]
@@ -11,6 +11,8 @@ pub(super) struct Delta {
     vectors: Vec<f32>,
     norms: Vec<f32>,
     edges: Vec<Vec<u32>>,
+    first_child: Vec<u32>,
+    next_sibling: Vec<u32>,
     ids: Vec<u32>,
     pub live: HashMap<u32, usize>,
 }
@@ -32,6 +34,8 @@ impl Delta {
             self.norms.push(dot(row, row));
         }
         self.edges.push(Vec::new());
+        self.first_child.push(NONE);
+        self.next_sibling.push(NONE);
         if slot > 0 {
             let rows = Rows {
                 data: &self.vectors,
@@ -48,6 +52,11 @@ impl Delta {
                 &mut BuildVisited::default(),
             );
             let neighbors = rows.prune(slot as u32, candidates, params.alpha, params.degree);
+            // A rooted routing tree keeps every slot reachable when reciprocal pruning
+            // removes its last incoming graph edge. Tree edges survive logical deletion.
+            let parent = neighbors[0] as usize;
+            self.next_sibling[slot] = self.first_child[parent];
+            self.first_child[parent] = slot as u32;
             for &u in &neighbors {
                 let mut candidates: Vec<_> = self.edges[u as usize]
                     .iter()
@@ -65,6 +74,20 @@ impl Delta {
         if self.ids.is_empty() {
             return Vec::new();
         }
+        if ef >= self.len() {
+            let mut all: Vec<_> = self
+                .live
+                .iter()
+                .map(|(&id, &slot)| {
+                    (
+                        super::distance(query, self.row(slot, query.len()), metric),
+                        id,
+                    )
+                })
+                .collect();
+            all.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+            return all;
+        }
         let mut seen = vec![false; self.len()];
         seen[0] = true;
         let score = |slot: usize| super::distance(query, self.row(slot, query.len()), metric);
@@ -72,7 +95,13 @@ impl Delta {
         while let Some(at) = pool.iter().position(|p| !p.2) {
             pool[at].2 = true;
             let slot = pool[at].1;
-            for &u in &self.edges[slot] {
+            let children = std::iter::successors(
+                (self.first_child[slot] != NONE).then_some(self.first_child[slot]),
+                |&v| {
+                    (self.next_sibling[v as usize] != NONE).then_some(self.next_sibling[v as usize])
+                },
+            );
+            for u in self.edges[slot].iter().copied().chain(children) {
                 let u = u as usize;
                 if std::mem::replace(&mut seen[u], true) {
                     continue;

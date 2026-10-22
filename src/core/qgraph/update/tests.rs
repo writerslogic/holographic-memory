@@ -46,6 +46,56 @@ fn copy_store(from: &Path, to: &Path) {
 }
 
 #[test]
+fn repeated_replacement_keeps_delta_vertices_reachable() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let index = UpdatableVGraph::create(&path, &data(16, 4), 4, &params()).unwrap();
+    index.replace(0, &[0.03, -0.08, 0.48, 0.78]).unwrap();
+    index.commit().unwrap();
+    index.insert(16, &[0.06, -0.59, -0.94, 0.84]).unwrap();
+    index.commit().unwrap();
+    index.replace(0, &[0.77, -0.83, -0.08, -0.21]).unwrap();
+    index.commit().unwrap();
+    let query = [0.31, -0.47, 0.63, 0.19];
+    let result = index.search(&query, 17, search_params()).unwrap();
+    assert_eq!(result.len(), 17);
+    assert!(result.contains(&0));
+    assert!(result.contains(&16));
+    assert_eq!(
+        index
+            .state
+            .read()
+            .delta
+            .search(&[0.77, -0.83, -0.08, -0.21], 1, Metric::Euclidean)
+            .iter()
+            .map(|x| x.1)
+            .collect::<Vec<_>>(),
+        [0]
+    );
+    let mut live: BTreeMap<_, _> = data(16, 4)
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .enumerate()
+        .map(|(id, row)| (id as u32, row.to_vec()))
+        .collect();
+    live.insert(0, vec![0.77, -0.83, -0.08, -0.21]);
+    live.insert(16, vec![0.06, -0.59, -0.94, 0.84]);
+    assert_eq!(
+        index.search(&query, 10, search_params()).unwrap(),
+        exact(&live, &query, 10)
+    );
+    drop(index);
+    assert_eq!(
+        UpdatableVGraph::open(&path)
+            .unwrap()
+            .search(&query, 17, search_params())
+            .unwrap(),
+        result
+    );
+}
+
+#[test]
 fn buffered_search_matches_owned_results_across_updates_and_consolidation() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("index");
