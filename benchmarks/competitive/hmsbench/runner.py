@@ -114,6 +114,7 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
                "protocol": {"k": 10, "rounds": spec["rounds"], "build_repeats": spec["build_repeats"], "build_threads": threads,
                             "search_threads": 1, "queries": meta["n_test"],
                             "timing": "one query at a time, single client thread, per-query perf_counter_ns inside the worker process",
+                            "ops": "100 replacements then 100 deletions; each mutation is acknowledged and explicitly flushed before the next",
                             "interleaving": "each round runs HMS and every comparator once, order rotated per round",
                             "query_caps": QUERY_CAPS if meta["n_train"] > 200_000 else {},
                             "recall_targets": [0.9, 0.95, 0.99], "selection": "pooled-median-QPS argmax over sweep rows with recall >= target"},
