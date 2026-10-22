@@ -25,7 +25,11 @@ mod adjacency;
 mod build_kernels;
 mod fastscan;
 pub(crate) mod kernels;
+#[cfg(not(target_arch = "wasm32"))]
+mod update;
 mod vertex;
+#[cfg(not(target_arch = "wasm32"))]
+pub use update::{ConsolidationPolicy, UpdatableVGraph, UpdateError};
 
 #[cfg(feature = "experimental")]
 pub mod diagnostics;

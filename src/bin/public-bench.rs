@@ -32,7 +32,8 @@ use std::time::Instant;
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
 use holographic_memory::core::qgraph::{
-    BuildParams, Graph, Metric, QGraph, Residency, SearchParams, VGraph, VSearchParams,
+    BuildParams, Graph, Metric, QGraph, Residency, SearchParams, UpdatableVGraph, VGraph,
+    VSearchParams,
 };
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
@@ -61,6 +62,28 @@ enum Mode {
         queries: Option<usize>,
         #[arg(long)]
         out: PathBuf,
+    },
+    AnnUpdates {
+        #[arg(long)]
+        index: PathBuf,
+        #[arg(long)]
+        data: Option<PathBuf>,
+        #[arg(long, value_parser = ["serve", "cold-start", "replace", "delete", "session"])]
+        action: String,
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(
+            long,
+            value_delimiter = ',',
+            default_value = "10,16,24,32,48,64,96,128,192,256"
+        )]
+        ef: Vec<usize>,
+        #[arg(long, value_delimiter = ',', default_value = "32,64")]
+        rerank: Vec<usize>,
+        #[arg(long, default_value_t = 2)]
+        repeats: usize,
+        #[arg(long)]
+        cold: bool,
     },
     AnnQgraph {
         #[arg(long)]
@@ -180,6 +203,8 @@ enum Mode {
         /// whose serving process passes `--load-index`.
         #[arg(long, conflicts_with = "load_index")]
         save_index: Option<PathBuf>,
+        #[arg(long, requires = "save_index")]
+        save_updates: Option<PathBuf>,
         /// Serve a vertex index written by `--save-index` instead of building one. The train
         /// vectors are not read; the build parameters and dataset must match the saved ones.
         #[arg(long)]
@@ -650,6 +675,7 @@ struct QgraphArgs {
     graph_cache: Option<PathBuf>,
     latency: bool,
     save_index: Option<PathBuf>,
+    save_updates: Option<PathBuf>,
     load_index: Option<PathBuf>,
     residency: String,
     cold: bool,
@@ -904,6 +930,9 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
                 v = v.with_blocks(&graph, a.block_bits)?;
             }
             phase(&mut phases, "encode");
+            if let Some(path) = &a.save_updates {
+                UpdatableVGraph::create_from_graph(path, &graph, &v)?;
+            }
             Built::Vertex(Box::new(v))
         }
     };
@@ -1566,6 +1595,180 @@ fn lme_scores(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+fn ann_updates(
+    index_path: &Path,
+    data: Option<&Path>,
+    action: &str,
+    out: Option<&Path>,
+    efs: &[usize],
+    reranks: &[usize],
+    repeats: usize,
+    cold: bool,
+) -> Result<()> {
+    if action == "session" {
+        return ann_update_session(index_path);
+    }
+    let data = data.context("--data is required outside session mode")?;
+    let metadata = meta(data)?;
+    let dim = usize::try_from(metadata["dim"].as_u64().context("meta.dim")?)?;
+    let mut test = read_f32(&data.join("test.f32"), dim)?;
+    ensure!(!test.is_empty(), "empty query set");
+    if metadata["metric"] == "angular" {
+        for q in &mut test {
+            normalize(q);
+        }
+    }
+    if cold {
+        for entry in fs::read_dir(index_path)? {
+            let path = entry?.path();
+            if path.is_file() {
+                evict(&path)?;
+            }
+        }
+    }
+    let start = Instant::now();
+    let index = UpdatableVGraph::open(index_path)?;
+    let open_s = start.elapsed().as_secs_f64();
+    let params = VSearchParams {
+        ef: *efs.first().context("empty ef sweep")?,
+        rerank: *reranks.first().context("empty rerank sweep")?,
+        ..Default::default()
+    };
+    let first = Instant::now();
+    std::hint::black_box(index.search(&test[0], 10, params)?);
+    let first_query_s = first.elapsed().as_secs_f64();
+    let cold_start_s = start.elapsed().as_secs_f64();
+    let first_query_unix_ns = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_nanos();
+    let rss_after_open = rss_bytes();
+    let report = match action {
+        "cold-start" => {
+            json!({"open_s": open_s, "first_query_s": first_query_s, "cold_start_s": cold_start_s, "page_cache_dropped": cold, "memory_phases": [{"phase": "first_query", "memory": memory()}]})
+        }
+        "replace" | "delete" => {
+            let train = read_f32_flat(&data.join("train.f32"), dim)?;
+            let count = (train.len() / dim / 100).max(1);
+            ensure!(
+                count * 3 <= train.len() / dim,
+                "dataset too small for update batch"
+            );
+            let begin = Instant::now();
+            for offset in 0..count {
+                if action == "replace" {
+                    index.replace(
+                        offset as u32,
+                        &train[(offset + 2 * count) * dim..(offset + 2 * count + 1) * dim],
+                    )?;
+                } else {
+                    index.delete((offset + count) as u32)?;
+                }
+            }
+            let apply_s = begin.elapsed().as_secs_f64();
+            let flush = Instant::now();
+            index.commit()?;
+            let flush_s = flush.elapsed().as_secs_f64();
+            json!({"operation": action, "count": count, "apply_s": apply_s, "flush_s": flush_s, "per_op_ms_durable": (apply_s+flush_s)*1000./count as f64, "memory_phases": [{"phase": "committed", "memory": memory()}]})
+        }
+        "serve" => {
+            ensure!(repeats > 0, "repeats must be positive");
+            let width = usize::try_from(
+                metadata["n_neighbors"]
+                    .as_u64()
+                    .context("meta.n_neighbors")?,
+            )?;
+            let truth = read_i32(&data.join("neighbors.i32"), width)?;
+            ensure!(
+                truth.len() >= test.len(),
+                "ground truth shorter than query set"
+            );
+            let mut configs = Vec::new();
+            for &rerank in reranks {
+                for &ef in efs {
+                    let p = VSearchParams {
+                        ef,
+                        rerank,
+                        ..Default::default()
+                    };
+                    let mut hits = 0;
+                    for (q, truth) in test.iter().zip(&truth) {
+                        hits += index
+                            .search(q, 10, p)?
+                            .iter()
+                            .filter(|&&id| truth[..10.min(truth.len())].contains(&(id as i32)))
+                            .count();
+                    }
+                    let mut timings = Vec::new();
+                    for _ in 0..repeats {
+                        let mut lat = Vec::with_capacity(test.len());
+                        for q in &test {
+                            let t = Instant::now();
+                            std::hint::black_box(index.search(q, 10, p)?);
+                            lat.push(t.elapsed().as_secs_f64() * 1e6);
+                        }
+                        let qps = test.len() as f64 / (lat.iter().sum::<f64>() * 1e-6);
+                        lat.sort_by(f64::total_cmp);
+                        timings.push(json!({"qps":qps, "p50_us":percentile(&lat,0.5), "p99_us":percentile(&lat,0.99)}));
+                    }
+                    configs.push(json!({"params":{"ef":ef,"rerank":rerank}, "recall_at_10":hits as f64/(test.len()*10) as f64, "repeats":timings, "load_1m":load_1m(), "load_gate_met":null}));
+                }
+            }
+            json!({"n":index.len(), "n_queries":test.len(), "configs":configs, "open_s":open_s, "cold_start_s":cold_start_s, "first_query_unix_ns":first_query_unix_ns, "rss_steady":rss_bytes(), "rss_after_open":rss_after_open, "memory_phases":[{"phase":"serve_end","memory":memory()}]})
+        }
+        _ => anyhow::bail!("unsupported update action {action}"),
+    };
+    let bytes = serde_json::to_string_pretty(&report)? + "\n";
+    if let Some(path) = out {
+        fs::write(path, bytes)?;
+    } else {
+        print!("{bytes}");
+    }
+    Ok(())
+}
+
+fn ann_update_session(path: &Path) -> Result<()> {
+    use std::io::{BufRead, Write};
+    let index = UpdatableVGraph::open(path)?;
+    let mut stdout = std::io::stdout().lock();
+    writeln!(stdout, "{{\"ready\":true}}")?;
+    stdout.flush()?;
+    for line in std::io::stdin().lock().lines() {
+        let request: Value = serde_json::from_str(&line?)?;
+        let result = (|| -> Result<Value> {
+            match request["op"].as_str().context("operation")? {
+                "commit" => index.commit()?,
+                "replace" | "delete" => {
+                    let ids = request["ids"].as_array().context("ids")?;
+                    for (at, id) in ids.iter().enumerate() {
+                        let id = u32::try_from(id.as_u64().context("id")?)?;
+                        if request["op"] == "delete" {
+                            index.delete(id)?;
+                        } else {
+                            let row = request["vectors"][at]
+                                .as_array()
+                                .context("vector")?
+                                .iter()
+                                .map(|v| v.as_f64().context("coordinate").map(|v| v as f32))
+                                .collect::<Result<Vec<_>>>()?;
+                            index.replace(id, &row)?;
+                        }
+                    }
+                }
+                _ => anyhow::bail!("unknown operation"),
+            }
+            Ok(json!({"ok":true}))
+        })();
+        let response = match result {
+            Ok(v) => v,
+            Err(e) => json!({"error":e.to_string()}),
+        };
+        writeln!(stdout, "{response}")?;
+        stdout.flush()?;
+    }
+    Ok(())
+}
+
 fn main() -> Result<()> {
     match Cli::parse().mode {
         Mode::Ann {
@@ -1574,6 +1777,25 @@ fn main() -> Result<()> {
             queries,
             out,
         } => ann(&data, dim, queries, &out),
+        Mode::AnnUpdates {
+            index,
+            data,
+            action,
+            out,
+            ef,
+            rerank,
+            repeats,
+            cold,
+        } => ann_updates(
+            &index,
+            data.as_deref(),
+            &action,
+            out.as_deref(),
+            &ef,
+            &rerank,
+            repeats,
+            cold,
+        ),
         Mode::AnnQgraph {
             data,
             out,
@@ -1609,6 +1831,7 @@ fn main() -> Result<()> {
             graph_cache,
             latency,
             save_index,
+            save_updates,
             load_index,
             residency,
             cold,
@@ -1647,6 +1870,7 @@ fn main() -> Result<()> {
             graph_cache,
             latency,
             save_index,
+            save_updates,
             load_index,
             residency,
             cold,

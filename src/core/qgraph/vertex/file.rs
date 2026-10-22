@@ -352,13 +352,17 @@ impl VGraph {
                 w.write_all(s)?;
                 pos = *off as usize + s.len();
             }
-            w.into_inner().map_err(|e| e.into_error())?.sync_all()
+            let file = w.into_inner().map_err(|e| e.into_error())?;
+            file.sync_all()?;
+            crate::core::durable_file::sync_mapped_file(&file)
         })();
         if let Err(e) = written {
             let _ = std::fs::remove_file(&tmp);
             return Err(e);
         }
-        std::fs::rename(&tmp, path)
+        std::fs::rename(&tmp, path)?;
+        crate::core::durable_file::sync_directory(path.parent().unwrap_or_else(|| Path::new(".")))
+            .map_err(std::io::Error::other)
     }
 
     /// Opens an index written by [`VGraph::save`] with its arrays where `residency` puts them.

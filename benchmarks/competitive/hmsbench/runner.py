@@ -11,6 +11,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -189,9 +190,6 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
     # --- ops, once per system on a copy of the first build
     seen = set()
     for (system, build_id), st in list(state.items()):
-        if system == registry.HMS:
-            st["ops"] = {"supported": False, "reason": "VGraph is a static graph index built once; the document store handles updates with an exact scan, not an ANN index"}
-            continue
         if system in seen:
             continue
         seen.add(system)
@@ -199,7 +197,12 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
         shutil.rmtree(copy, ignore_errors=True)
         shutil.copytree(st["workdir"], copy)
         try:
-            st["ops"] = _worker(system, ["ops", "--system", system, "--build", build_id, "--data", str(directory), "--workdir", str(copy)], env1)
+            if system == registry.HMS:
+                command = [sys.executable, str(WORKER_DIR / "ann_worker.py"), "ops", "--system", "hms", "--build", "persisted", "--data", str(directory), "--workdir", str(copy)]
+                stdout, _, _, _ = run_measured(command, env={**env1, "HMS_PUBLIC_BENCH": str(hms_binary("public-bench"))}, timeout=14400)
+                st["ops"] = _parse_result(stdout)
+            else:
+                st["ops"] = _worker(system, ["ops", "--system", system, "--build", build_id, "--data", str(directory), "--workdir", str(copy)], env1)
         except Exception as error:
             st["ops"] = {"error": str(error)[-300:]}
         shutil.rmtree(copy, ignore_errors=True)
@@ -257,7 +260,7 @@ def _hms_ann_build(directory, meta, threads, workdir):
     out = WORK / "hms-ann-build.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
-    cmd = [*_hms_ann_command(directory, meta, out), "--save-index", str(workdir / "index.vgraph")]
+    cmd = [*_hms_ann_command(directory, meta, out), "--save-index", str(workdir / "index.vgraph"), "--save-updates", str(workdir / "index.updates")]
     stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
     raw = json.loads(out.read_text())
     out.unlink()
@@ -267,26 +270,22 @@ def _hms_ann_build(directory, meta, threads, workdir):
 
 
 def _hms_ann_round(directory, meta, workdir):
-    """One serving process, single-threaded like every comparator's: `public-bench ann-qgraph
-    --load-index` opens the saved index (memory-mapped and prefaulted before the timer, so its
-    file-backed pages count in RSS) and runs the sweep. It never reads the train vectors."""
+    """One mapped updatable-index serving process; queries never load the train matrix."""
     out = WORK / "hms-ann-out.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
+    build = HMS_ANN_BUILDS[meta["metric"]]
+    cmd = [str(hms_binary("public-bench")), "ann-updates", "--action", "serve", "--index", str(workdir / "index.updates"),
+           "--data", str(directory), "--out", str(out), "--ef", build["ef"], "--rerank", build["rerank"], "--repeats", "2"]
     t0 = time.time_ns()
-    cmd = [*_hms_ann_command(directory, meta, out), "--repeats", "2", "--latency", "--load-index", str(workdir / "index.vgraph")]
     stdout, stderr, wall, peak = run_measured(cmd, env=SINGLE_THREAD, timeout=14400)
     raw = json.loads(out.read_text())
     out.unlink()
-    configs = [{"params": row["params"], "recall_at_10": row["recall_at_10"],
-                "repeats": [{"qps": q, **({"p50_us": row["latency_us"]["p50"], "p99_us": row["latency_us"]["p99"]} if row.get("latency_us") else {})}
-                            for q in row["qps_runs"]],
-                "load_1m": row["load_1m_before_runs"][0], "load_gate_met": None} for row in raw["sweep"]]
-    return {"index_bytes": raw["index_file"]["bytes"], "in_memory_index_bytes": raw["index_bytes"], "residual_bytes": raw["residual_bytes"],
-            "rss_after_open": raw["rss_bytes"]["after_build"], "rss_steady": raw["rss_bytes"]["end"], "peak_rss_bytes": peak,
-            "memory_phases": raw["memory_phases"], "graph_hash": raw["build"]["graph_hash"],
-            "wall_s": wall, "n_queries": raw["n_queries"], "n": meta["n_train"], "configs": configs,
-            "open_s": raw["index_file"]["open_secs"], "cold_start_s": (raw["first_query_unix_ns"] - t0) / 1e9}
+    raw["cold_start_s"] = (raw["first_query_unix_ns"] - t0) / 1e9
+    raw["wall_s"] = wall
+    raw["peak_rss_bytes"] = peak
+    raw["index_bytes"] = dir_bytes(workdir)
+    return raw
 
 
 def _adapter_class(system):

@@ -307,3 +307,7 @@ required-features = ["experimental"]
 # cargo-fuzz compiles with --cfg fuzzing (see src/bin/hms-server.rs and fuzz/).
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
+
+[[bench]]
+name = "vector_updates"
+harness = false

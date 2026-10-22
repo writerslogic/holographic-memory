@@ -20,6 +20,7 @@ polynomial (the `crc32fast` / zlib CRC).
 | [MUTATIONS.md](MUTATIONS.md) | frame payload: `HMS-TXN-2` and the JSON mutation records, limits, replay |
 | [ENCRYPTION.md](ENCRYPTION.md) | frame envelope, key derivation, text-segment AEAD, what is not encrypted |
 | [CACHES.md](CACHES.md) | `documents.text`, `indices.json`, NSG/IVF files, `shard_meta.json` |
+| [VECTOR-UPDATES.md](VECTOR-UPDATES.md) | persisted vector checkpoints, full-precision rows, update batches and consolidation |
 | [ANCILLARY.md](ANCILLARY.md) | `audit.bin`, keys, provenance files, standalone qgraph/IVF files, memory-API stamps |
 | [CRASH-CONSISTENCY.md](CRASH-CONSISTENCY.md) | what survives a crash, per file, and the test that shows it |
 | [ENCODERS.md](ENCODERS.md) | text encoder names, determinism contract, embedding spaces |
@@ -37,6 +38,7 @@ Each artefact has its own version; a store is the combination.
 | Store schema | `store.json` `version` | 2 | 2 |
 | Journal payload | magic `HMS-TXN-2\0` | 2 | 2 |
 | Text segment | `documents.text` header byte 4 | 2 | cache: any value is discarded and rebuilt |
+| Vector updates | `HMSVUP01`, `HMSVRW01`, `HMSVLG01` | 1 | 1 |
 | Memory stamp | `mem1:` / `_mem.v` | 1 | 1 |
 
 The same numbers are constants in `src/core/format/mod.rs`; `tests/format_golden.rs` fails if one

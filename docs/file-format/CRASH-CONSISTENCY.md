@@ -32,6 +32,8 @@ creation before any commit).
 | `indices.json` and caches | Cache files first, `indices.json` last, all atomic. No sidecar, so any crash leaves an openable store; stale or missing caches are rebuilt. | `tests/format_crash.rs::stale_indices_sidecar_is_ignored` |
 | Compaction | A crash before `CURRENT` is replaced leaves the old generation; after, the new one. Both complete. Leftover `gen-*` is garbage. | `storage::tests::interrupted_compaction_recovers_a_complete_generation`, `layout_tests::legacy_compaction_tail_survives_each_plain_and_encrypted_publication_interruption` |
 | `encryption.salt` | Atomic and fsynced before the first frame. | `tests/format_crash.rs::salt_is_written_atomically` |
+| Vector update batch | One CRC32 frame per durable batch; an incomplete final frame is truncated, a complete bad frame fails open. | `qgraph::update::tests::torn_last_batch_at_every_byte_and_checksum_corruption` |
+| Vector consolidation | A synced checkpoint publishes a complete generation; its sequence suppresses old log replay before rotation. | `qgraph::update::tests::consolidation_interruption_recovers_committed_state` |
 | `audit.bin` | Entry append is fsynced; a torn entry is cut on the next open. | `tests/format_crash.rs::audit_torn_entry_is_repaired` |
 | `documents.text` | Not durable; rebuilt on every open and rewritten by a purge through `documents.text.canonical` (a leftover is scrubbed at open). | `golden` tests |
 | Provenance files, `kel.json`, `shard_meta.json` | Plain or atomic single-file writes, no cross-file atomicity. **Not covered.** | |

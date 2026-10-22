@@ -1012,12 +1012,18 @@ impl VGraph {
         for _ in 0..nq {
             let qi = (rng.next_u64() % self.n as u64) as usize;
             let q = self.unit_row(g, qi).to_vec();
-            s.qf[..self.dim].copy_from_slice(&q);
-            let sq = self.encode_query(&s.qf, &mut s.qc, &mut s.qtmp, &mut s.qrot, &mut s.qs);
+            s.scratch.qf[..self.dim].copy_from_slice(&q);
+            let sq = self.encode_query(
+                &s.scratch.qf,
+                &mut s.scratch.qc,
+                &mut s.scratch.qtmp,
+                &mut s.scratch.qrot,
+                &mut s.scratch.qs,
+            );
             if sq == 0.0 {
                 continue;
             }
-            self.encode_block_query(&s.qf, sq, &mut s.bqrot, &mut s.bq);
+            self.encode_block_query(&s.scratch.qf, sq, &mut s.scratch.bqrot, &mut s.scratch.bq);
             let centred = |x: &[f32]| -> f32 {
                 q.iter()
                     .zip(x)
@@ -1035,14 +1041,14 @@ impl VGraph {
                 self.for_each_neighbour(v, |u| list.push(u));
                 for b in 0..self.blocks_per_vertex {
                     let (codes, scales, offsets) = self.block(v, b);
-                    scan32(codes, &s.bq.lut, self.block_m, &mut scan);
+                    scan32(codes, &s.scratch.bq.lut, self.block_m, &mut scan);
                     for (i, &sum) in scan.iter().enumerate() {
                         let Some(&u) = list.get(b * BLOCK + i) else {
                             break;
                         };
                         let sc = le_f32(scales, i);
                         let est = ip_v
-                            + sc * (s.bq.delta * sum as f32 + s.bq.min_sum)
+                            + sc * (s.scratch.bq.delta * sum as f32 + s.scratch.bq.min_sum)
                             + le_f32(offsets, i);
                         let exact = centred(self.unit_row(g, u as usize));
                         let err = f64::from(est - exact);
@@ -1424,34 +1430,81 @@ impl VGraph {
     /// A searcher with explicit [`SearchKnobs`].
     pub fn searcher_with(&self, knobs: SearchKnobs) -> VSearcher<'_> {
         VSearcher {
-            knobs,
             index: self,
-            visited: Marks {
-                marks: vec![0; self.n],
-                epoch: 0,
-                traces: vec![Trace::default(); if self.has_blocks() { self.n } else { 0 }],
-            },
-            qf: vec![0.0; self.padded],
-            qc: vec![0; self.padded],
-            qtmp: vec![0; self.padded],
-            qrot: vec![0.0; self.screen_words * 64],
-            qs: QueryCode::new(self.screen_words.max(1)),
-            bqrot: vec![0.0; self.block_dim],
-            bq: BlockQuery::new(self.block_m),
-            scan: [0; BLOCK],
-            fresh: Vec::with_capacity(self.degree),
-            survivors: Vec::with_capacity(self.degree),
-            screened: 0,
-            pool: Pool {
+            scratch: SearchScratch {
+                knobs,
+                visited: Marks {
+                    marks: vec![0; self.n],
+                    epoch: 0,
+                    traces: vec![Trace::default(); if self.has_blocks() { self.n } else { 0 }],
+                },
+                qf: vec![0.0; self.padded],
+                qc: vec![0; self.padded],
+                qtmp: vec![0; self.padded],
+                qrot: vec![0.0; self.screen_words * 64],
+                qs: QueryCode::new(self.screen_words.max(1)),
+                bqrot: vec![0.0; self.block_dim],
+                bq: BlockQuery::new(self.block_m),
+                scan: [0; BLOCK],
+                fresh: Vec::with_capacity(self.degree),
+                survivors: Vec::with_capacity(self.degree),
+                screened: 0,
+                pool: Pool {
+                    keys: Vec::new(),
+                    expanded: Vec::new(),
+                    cap: 1,
+                    cursor: 0,
+                },
+                expanded: BinaryHeap::new(),
                 keys: Vec::new(),
-                expanded: Vec::new(),
-                cap: 1,
-                cursor: 0,
+                results: Vec::new(),
             },
-            expanded: BinaryHeap::new(),
-            keys: Vec::new(),
-            results: Vec::new(),
         }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn update_encoding(&self) -> super::update::Encoding {
+        super::update::Encoding {
+            bits: self.bits,
+            residual_bits: self.res_bits,
+            align: self.stride != self.cbytes,
+            reorder: !self.ids.is_empty(),
+            id_bytes: if !self.adjv_off.is_empty() {
+                0
+            } else if !self.adj3.is_empty() {
+                3
+            } else {
+                4
+            },
+            screen: self.has_screen(),
+            block_bits: self.block_bits,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn search_reusing(
+        &self,
+        cache: &mut Option<SearchScratch>,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        out: &mut Vec<u32>,
+    ) -> Result<usize, HmsError> {
+        let compatible = cache.as_ref().is_some_and(|s| {
+            s.visited.marks.len() == self.n
+                && s.qf.len() == self.padded
+                && s.qrot.len() == self.screen_words * 64
+                && s.bqrot.len() == self.block_dim
+                && s.bq.table.len() == 16 * self.block_m
+                && s.visited.traces.len() == if self.has_blocks() { self.n } else { 0 }
+        });
+        if !compatible {
+            *cache = Some(self.searcher().scratch);
+        }
+        cache
+            .as_mut()
+            .expect("initialized search scratch")
+            .search(self, query, k, params, out)
     }
 }
 
@@ -1615,6 +1668,10 @@ impl Pool {
 /// Per-thread search state for one [`VGraph`].
 pub struct VSearcher<'a> {
     index: &'a VGraph,
+    scratch: SearchScratch,
+}
+
+pub(super) struct SearchScratch {
     visited: Marks,
     qf: Vec<f32>,
     /// Query code in the traversal kernel's layout.
@@ -1645,21 +1702,41 @@ pub struct VSearcher<'a> {
 impl VSearcher<'_> {
     /// Neighbours the screen skipped (no 8-bit estimate) in the last search.
     pub fn last_screened(&self) -> usize {
-        self.screened
+        self.scratch.screened
     }
 
     /// The knobs this searcher runs with.
     pub fn knobs(&self) -> SearchKnobs {
-        self.knobs
+        self.scratch.knobs
     }
 
+    /// Searches this index with the searcher's reusable buffers.
+    #[inline]
+    pub fn search(
+        &mut self,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        out: &mut Vec<u32>,
+    ) -> Result<usize, HmsError> {
+        self.scratch.search(self.index, query, k, params, out)
+    }
+}
+
+impl SearchScratch {
     /// Row estimates of the admitted neighbours in `fresh`, inserted into the pool in list
     /// order (four rows at a time with `batch_est`; the same values either way); returns the
     /// number of estimates. `stale` resets on an insert among the `k` best when `patience`
     /// is on.
     #[inline]
-    fn score_fresh(&mut self, k: usize, patience: usize, stale: &mut usize, w: f32) -> usize {
-        let g = self.index;
+    fn score_fresh(
+        &mut self,
+        g: &VGraph,
+        k: usize,
+        patience: usize,
+        stale: &mut usize,
+        w: f32,
+    ) -> usize {
         let qc = &self.qc[..];
         let n = self.fresh.len();
         let mut i = 0;
@@ -1697,14 +1774,14 @@ impl VSearcher<'_> {
     /// (descent, traversal and re-rank). A query of the wrong dimension, with a non-finite
     /// value, or all zero on an angular index (cosine is undefined) is an error; the pool and
     /// heaps are bounded by the vertex count whatever `ef` is.
-    pub fn search(
+    fn search(
         &mut self,
+        g: &VGraph,
         query: &[f32],
         k: usize,
         params: VSearchParams,
         out: &mut Vec<u32>,
     ) -> Result<usize, HmsError> {
-        let g = self.index;
         if query.len() != g.dim {
             return Err(invalid(format!(
                 "query has {} dimensions, the index has {}",
@@ -1868,7 +1945,7 @@ impl VSearcher<'_> {
                     }
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
-                evals += self.score_fresh(k, patience, &mut stale, w);
+                evals += self.score_fresh(g, k, patience, &mut stale, w);
                 continue;
             }
             if blocks {
@@ -2007,7 +2084,7 @@ impl VSearcher<'_> {
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
             }
-            evals += self.score_fresh(k, patience, &mut stale, w);
+            evals += self.score_fresh(g, k, patience, &mut stale, w);
             if knobs.prefetch >= 3 {
                 // Lookahead: what the next expansion's admission touches for its unvisited
                 // neighbours, one expansion early (its list was prefetched above).
@@ -2601,9 +2678,15 @@ mod tests {
                 .expect("blocks");
             let mut s = g.searcher();
             let q: Vec<f32> = unit[7 * d..8 * d].to_vec();
-            s.qf[..d].copy_from_slice(&q);
-            let sq = g.encode_query(&s.qf, &mut s.qc, &mut s.qtmp, &mut s.qrot, &mut s.qs);
-            g.encode_block_query(&s.qf, sq, &mut s.bqrot, &mut s.bq);
+            s.scratch.qf[..d].copy_from_slice(&q);
+            let sq = g.encode_query(
+                &s.scratch.qf,
+                &mut s.scratch.qc,
+                &mut s.scratch.qtmp,
+                &mut s.scratch.qrot,
+                &mut s.scratch.qs,
+            );
+            g.encode_block_query(&s.scratch.qf, sq, &mut s.scratch.bqrot, &mut s.scratch.bq);
             let centred =
                 |u: usize| -> f32 { (0..d).map(|j| q[j] * (unit[u * d + j] - g.mean[j])).sum() };
             let (mut xs, mut ys) = (Vec::new(), Vec::new());
@@ -2614,13 +2697,15 @@ mod tests {
                 g.for_each_neighbour(v, |u| list.push(u));
                 for b in 0..g.blocks_per_vertex {
                     let (codes, scales, offsets) = g.block(v, b);
-                    scan32(codes, &s.bq.lut, g.block_m, &mut s.scan);
+                    scan32(codes, &s.scratch.bq.lut, g.block_m, &mut s.scratch.scan);
                     for i in 0..BLOCK {
                         let Some(&u) = list.get(b * BLOCK + i) else {
                             break;
                         };
                         let ip = ip_v
-                            + le_f32(scales, i) * (s.bq.delta * s.scan[i] as f32 + s.bq.min_sum)
+                            + le_f32(scales, i)
+                                * (s.scratch.bq.delta * s.scratch.scan[i] as f32
+                                    + s.scratch.bq.min_sum)
                             + le_f32(offsets, i);
                         xs.push(f64::from(ip));
                         ys.push(f64::from(centred(u as usize)));

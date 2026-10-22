@@ -1,0 +1,747 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+//! Durable single-writer vector updates; binary contracts are in
+//! `docs/file-format/VECTOR-UPDATES.md`.
+
+use std::cell::RefCell;
+use std::collections::HashSet;
+use std::fs::{File, OpenOptions};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::Arc;
+
+use parking_lot::RwLock;
+
+use super::{
+    kernels::dot, vertex::SearchScratch, BuildParams, Graph, Metric, Residency, VGraph,
+    VSearchParams,
+};
+use crate::core::durable_file::{atomic_write, sync_directory, sync_mapped_file};
+use crate::core::error::HmsError;
+
+mod delta;
+mod format;
+use delta::Delta;
+use format::BaseRows;
+
+const MAX_DIM: usize = 1 << 20;
+const MAX_PAYLOAD: usize = 64 << 20;
+const MAX_OPS: usize = 65536;
+
+/// Failures at the update and persistence boundary.
+#[derive(Debug, thiserror::Error)]
+pub enum UpdateError {
+    #[error("unknown vector id {0}")]
+    UnknownId(u32),
+    #[error("vector id {0} already exists")]
+    AlreadyExists(u32),
+    #[error("id {0} occurs twice in one batch")]
+    DuplicateIdInBatch(u32),
+    #[error("expected dimension {expected}, got {actual}")]
+    DimensionMismatch { expected: usize, actual: usize },
+    #[error("invalid vector: {0}")]
+    InvalidVector(&'static str),
+    #[error("id u32::MAX is reserved")]
+    IdOutOfRange,
+    #[error("vector index allocation or batch limit exceeded")]
+    Capacity,
+    #[error("corrupt vector log at byte {offset}: {reason}")]
+    CorruptLog { offset: u64, reason: String },
+    #[error("corrupt vector base: {0}")]
+    CorruptBase(String),
+    #[error("unsupported vector format: {0}")]
+    UnsupportedFormat(&'static str),
+    #[error("another writer is active")]
+    WriterBusy,
+    #[error("index is already open by a writer")]
+    Locked,
+    #[error("write outcome uncertain; reopen the index before further writes")]
+    RecoveryRequired,
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Persistence(#[from] anyhow::Error),
+    #[error(transparent)]
+    Search(#[from] HmsError),
+}
+
+/// Advisory thresholds; callers schedule consolidation outside their commit latency.
+#[derive(Clone, Copy, Debug)]
+pub struct ConsolidationPolicy {
+    pub delta_ratio: f64,
+    pub tombstone_ratio: f64,
+    pub min_delta: usize,
+}
+impl Default for ConsolidationPolicy {
+    fn default() -> Self {
+        Self {
+            delta_ratio: 0.1,
+            tombstone_ratio: 0.2,
+            min_delta: 1024,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(super) struct Encoding {
+    pub(super) bits: u8,
+    pub(super) residual_bits: u8,
+    pub(super) align: bool,
+    pub(super) reorder: bool,
+    pub(super) id_bytes: u8,
+    pub(super) screen: bool,
+    pub(super) block_bits: u8,
+}
+impl Default for Encoding {
+    fn default() -> Self {
+        Self {
+            bits: 8,
+            residual_bits: 8,
+            align: true,
+            reorder: false,
+            id_bytes: 4,
+            screen: false,
+            block_bits: 0,
+        }
+    }
+}
+#[derive(Clone)]
+struct Manifest {
+    identity: [u8; 16],
+    dim: usize,
+    sequence: u64,
+    build: BuildParams,
+    encoding: Encoding,
+}
+impl Manifest {
+    fn vertex_path(&self, dir: &Path) -> PathBuf {
+        dir.join(format!("base-{}.vertex", self.sequence))
+    }
+    fn rows_path(&self, dir: &Path) -> PathBuf {
+        dir.join(format!("rows-{}.bin", self.sequence))
+    }
+}
+
+#[derive(Clone)]
+enum Operation {
+    Insert(u32, Vec<f32>),
+    Delete(u32),
+    Replace(u32, Vec<f32>),
+}
+impl Operation {
+    fn id(&self) -> u32 {
+        match self {
+            Self::Insert(id, _) | Self::Delete(id) | Self::Replace(id, _) => *id,
+        }
+    }
+    fn tag(&self) -> u8 {
+        match self {
+            Self::Insert(..) => 1,
+            Self::Delete(..) => 2,
+            Self::Replace(..) => 3,
+        }
+    }
+    fn vector(&self) -> Option<&[f32]> {
+        match self {
+            Self::Insert(_, v) | Self::Replace(_, v) => Some(v),
+            Self::Delete(_) => None,
+        }
+    }
+}
+struct Base {
+    graph: Option<VGraph>,
+    rows: BaseRows,
+}
+impl Base {
+    fn open(dir: &Path, m: &Manifest) -> Result<Self, UpdateError> {
+        let rows = BaseRows::open(&m.rows_path(dir), m)?;
+        let graph = if rows.ids.is_empty() {
+            None
+        } else {
+            let graph = VGraph::open(&m.vertex_path(dir), Residency::Mapped)?;
+            if graph.len() != rows.ids.len()
+                || graph.dim() != m.dim
+                || graph.metric() != m.build.metric
+            {
+                return Err(UpdateError::CorruptBase(
+                    "vertex/rows shape mismatch".into(),
+                ));
+            }
+            Some(graph)
+        };
+        Ok(Self { graph, rows })
+    }
+}
+#[derive(Clone)]
+struct State {
+    base: Arc<Base>,
+    tombstones: Vec<u64>,
+    deleted: usize,
+    delta: Delta,
+    pending: Vec<Operation>,
+    touched: HashSet<u32>,
+    pending_bytes: usize,
+    manifest: Manifest,
+    sequence: u64,
+    log_end: u64,
+}
+impl State {
+    fn new(base: Base, manifest: Manifest) -> Self {
+        Self {
+            tombstones: vec![0; base.rows.ids.len().div_ceil(64)],
+            base: Arc::new(base),
+            deleted: 0,
+            delta: Delta::default(),
+            pending: Vec::new(),
+            touched: HashSet::new(),
+            pending_bytes: 0,
+            sequence: manifest.sequence,
+            manifest,
+            log_end: format::LOG_HEADER,
+        }
+    }
+    fn dead(&self, slot: usize) -> bool {
+        self.tombstones[slot / 64] & (1 << (slot % 64)) != 0
+    }
+    fn base_slot(&self, id: u32) -> Option<usize> {
+        self.base
+            .rows
+            .ids
+            .binary_search(&id)
+            .ok()
+            .filter(|&s| !self.dead(s))
+    }
+    fn contains(&self, id: u32) -> bool {
+        self.delta.live.contains_key(&id) || self.base_slot(id).is_some()
+    }
+    fn len(&self) -> usize {
+        self.base.rows.ids.len() - self.deleted + self.delta.live.len()
+    }
+    fn validate_op(&self, op: &Operation) -> Result<(), UpdateError> {
+        if op.id() == u32::MAX {
+            return Err(UpdateError::IdOutOfRange);
+        }
+        if let Some(v) = op.vector() {
+            validate_vector(v, self.manifest.dim, self.manifest.build.metric)?;
+        }
+        match op {
+            Operation::Insert(id, _) if self.contains(*id) => Err(UpdateError::AlreadyExists(*id)),
+            Operation::Delete(id) | Operation::Replace(id, _) if !self.contains(*id) => {
+                Err(UpdateError::UnknownId(*id))
+            }
+            _ => Ok(()),
+        }
+    }
+    fn apply(&mut self, op: &Operation) {
+        let id = op.id();
+        if !matches!(op, Operation::Insert(..)) {
+            self.delta.live.remove(&id);
+            if let Some(slot) = self.base_slot(id) {
+                self.tombstones[slot / 64] |= 1 << (slot % 64);
+                self.deleted += 1;
+            }
+        }
+        if let Some(row) = op.vector() {
+            let mut row = row.to_vec();
+            super::prepare_rows(&mut row, self.manifest.dim, self.manifest.build.metric);
+            self.delta.insert(id, &row, &self.manifest.build);
+        }
+    }
+    fn replay(&mut self, ops: Vec<Operation>) -> Result<(), UpdateError> {
+        for op in &ops {
+            self.validate_op(op)?;
+        }
+        for op in &ops {
+            self.apply(op);
+        }
+        Ok(())
+    }
+}
+
+thread_local! { static SCRATCH: RefCell<Option<SearchScratch>> = const { RefCell::new(None) }; }
+
+/// A mapped base plus a mutable graph delta, with atomic durable batches.
+/// `insert`, `delete`, and `replace` publish immediately; `commit` makes the batch durable.
+/// Only one process may open a directory, while any number of threads may search it.
+pub struct UpdatableVGraph {
+    dir: PathBuf,
+    _lock: File,
+    writer: AtomicU8,
+    state: RwLock<State>,
+}
+struct Writer<'a>(&'a AtomicU8);
+impl Writer<'_> {
+    fn uncertain(&self) {
+        self.0.store(2, Ordering::Release);
+    }
+}
+impl Drop for Writer<'_> {
+    fn drop(&mut self) {
+        let _ = self
+            .0
+            .compare_exchange(1, 0, Ordering::Release, Ordering::Relaxed);
+    }
+}
+fn lock(dir: &Path) -> Result<File, UpdateError> {
+    let file = OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(dir.join(".lock"))?;
+    fs2::FileExt::try_lock_exclusive(&file).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::WouldBlock {
+            UpdateError::Locked
+        } else {
+            UpdateError::Io(e)
+        }
+    })?;
+    Ok(file)
+}
+fn validate_vector(row: &[f32], dim: usize, metric: Metric) -> Result<(), UpdateError> {
+    if row.len() != dim {
+        return Err(UpdateError::DimensionMismatch {
+            expected: dim,
+            actual: row.len(),
+        });
+    }
+    if row.iter().any(|v| !v.is_finite()) {
+        return Err(UpdateError::InvalidVector("non-finite coordinate"));
+    }
+    if !dot(row, row).is_finite() {
+        return Err(UpdateError::InvalidVector("squared norm overflows f32"));
+    }
+    if metric == Metric::Angular && row.iter().all(|&v| v == 0.0) {
+        return Err(UpdateError::InvalidVector("zero angular vector"));
+    }
+    Ok(())
+}
+fn distance(q: &[f32], row: &[f32], metric: Metric) -> f32 {
+    match metric {
+        Metric::Angular => -dot(q, row),
+        Metric::Euclidean => dot(row, row) * 0.5 - dot(q, row),
+    }
+}
+
+impl UpdatableVGraph {
+    /// Creates a new directory from row-major vectors with ids `0..n`.
+    pub fn create(
+        path: &Path,
+        data: &[f32],
+        dim: usize,
+        params: &BuildParams,
+    ) -> Result<Self, UpdateError> {
+        Self::create_with_encoding(path, data, dim, params, Encoding::default())
+    }
+    fn create_with_encoding(
+        path: &Path,
+        data: &[f32],
+        dim: usize,
+        params: &BuildParams,
+        encoding: Encoding,
+    ) -> Result<Self, UpdateError> {
+        if dim == 0
+            || dim > MAX_DIM
+            || !data.len().is_multiple_of(dim)
+            || data.len() / dim >= u32::MAX as usize
+        {
+            return Err(UpdateError::Capacity);
+        }
+        let manifest = Manifest {
+            dim,
+            identity: rand::random(),
+            sequence: 0,
+            build: params.clone(),
+            encoding,
+        };
+        Manifest::decode(&manifest.encode())?;
+        for row in data.chunks_exact(dim) {
+            validate_vector(row, dim, params.metric)?;
+        }
+        std::fs::create_dir(path)?;
+        let file = lock(path)?;
+        let mut vectors = data.to_vec();
+        super::prepare_rows(&mut vectors, dim, params.metric);
+        let ids: Vec<u32> = (0..(data.len() / dim) as u32).collect();
+        write_base(path, &manifest, &ids, &vectors)?;
+        format::rotate(&path.join("updates.log"), &manifest)?;
+        atomic_write(&path.join("CURRENT"), &manifest.encode())?;
+        sync_directory(
+            path.parent()
+                .filter(|p| !p.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new(".")),
+        )?;
+        let base = Base::open(path, &manifest)?;
+        Ok(Self {
+            dir: path.to_path_buf(),
+            _lock: file,
+            writer: AtomicU8::new(0),
+            state: RwLock::new(State::new(base, manifest)),
+        })
+    }
+    /// Saves a graph and its matching vertex encoding without rebuilding the graph.
+    pub fn create_from_graph(
+        path: &Path,
+        graph: &Graph,
+        vertex: &VGraph,
+    ) -> Result<Self, UpdateError> {
+        if graph.n != vertex.len() || graph.dim != vertex.dim() || graph.metric != vertex.metric() {
+            return Err(UpdateError::CorruptBase(
+                "graph and vertex encoding differ".into(),
+            ));
+        }
+        let manifest = Manifest {
+            identity: rand::random(),
+            dim: graph.dim,
+            sequence: 0,
+            build: graph.build.clone(),
+            encoding: vertex.update_encoding(),
+        };
+        Manifest::decode(&manifest.encode())?;
+        for row in graph.vectors.chunks_exact(graph.dim) {
+            validate_vector(row, graph.dim, graph.metric)?;
+        }
+        std::fs::create_dir(path)?;
+        let file = lock(path)?;
+        vertex.save(&manifest.vertex_path(path))?;
+        let ids: Vec<_> = (0..graph.n as u32).collect();
+        BaseRows::write(&manifest.rows_path(path), &manifest, &ids, &graph.vectors)?;
+        format::rotate(&path.join("updates.log"), &manifest)?;
+        atomic_write(&path.join("CURRENT"), &manifest.encode())?;
+        sync_directory(
+            path.parent()
+                .filter(|p| !p.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new(".")),
+        )?;
+        let base = Base::open(path, &manifest)?;
+        Ok(Self {
+            dir: path.to_path_buf(),
+            _lock: file,
+            writer: AtomicU8::new(0),
+            state: RwLock::new(State::new(base, manifest)),
+        })
+    }
+    /// Opens and replays committed batches; truncates only an incomplete final frame.
+    pub fn open(path: &Path) -> Result<Self, UpdateError> {
+        let file = lock(path)?;
+        let manifest = Manifest::decode(&std::fs::read(path.join("CURRENT"))?)?;
+        let base = Base::open(path, &manifest)?;
+        let mut state = State::new(base, manifest.clone());
+        let log = path.join("updates.log");
+        let (sequence, end) = format::replay(&log, &manifest, |ops| state.replay(ops))?;
+        let log_file = OpenOptions::new().write(true).open(&log)?;
+        if log_file.metadata()?.len() != end {
+            log_file.set_len(end)?;
+            log_file.sync_all()?;
+            sync_mapped_file(&log_file)?;
+        }
+        state.sequence = sequence;
+        state.log_end = end;
+        cleanup_generations(path, state.manifest.sequence)?;
+        Ok(Self {
+            dir: path.to_path_buf(),
+            _lock: file,
+            writer: AtomicU8::new(0),
+            state: RwLock::new(state),
+        })
+    }
+    fn writer(&self) -> Result<Writer<'_>, UpdateError> {
+        self.writer
+            .compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed)
+            .map_err(|v| {
+                if v == 2 {
+                    UpdateError::RecoveryRequired
+                } else {
+                    UpdateError::WriterBusy
+                }
+            })?;
+        Ok(Writer(&self.writer))
+    }
+    pub fn len(&self) -> usize {
+        self.state.read().len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn dim(&self) -> usize {
+        self.state.read().manifest.dim
+    }
+    /// Stages a new id in the current batch.
+    pub fn insert(&self, id: u32, vector: &[f32]) -> Result<(), UpdateError> {
+        self.stage(id, Some(vector), 1)
+    }
+    /// Stages deletion of an existing id.
+    pub fn delete(&self, id: u32) -> Result<(), UpdateError> {
+        self.stage(id, None, 2)
+    }
+    /// Atomically invalidates the previous vector and inserts the replacement.
+    pub fn replace(&self, id: u32, vector: &[f32]) -> Result<(), UpdateError> {
+        self.stage(id, Some(vector), 3)
+    }
+    fn stage(&self, id: u32, vector: Option<&[f32]>, tag: u8) -> Result<(), UpdateError> {
+        let _writer = self.writer()?;
+        let mut s = self.state.write();
+        if id == u32::MAX {
+            return Err(UpdateError::IdOutOfRange);
+        }
+        if s.touched.contains(&id) {
+            return Err(UpdateError::DuplicateIdInBatch(id));
+        }
+        if let Some(v) = vector {
+            validate_vector(v, s.manifest.dim, s.manifest.build.metric)?;
+        }
+        let size = 5 + vector.map_or(0, |v| v.len() * 4);
+        if s.pending.len() >= MAX_OPS
+            || s.pending_bytes + size > MAX_PAYLOAD
+            || s.delta.len() >= (u32::MAX - 1) as usize
+        {
+            return Err(UpdateError::Capacity);
+        }
+        let op = match tag {
+            1 => Operation::Insert(id, vector.expect("insert vector").to_vec()),
+            2 => Operation::Delete(id),
+            _ => Operation::Replace(id, vector.expect("replace vector").to_vec()),
+        };
+        s.validate_op(&op)?;
+        s.apply(&op);
+        s.touched.insert(id);
+        s.pending_bytes += size;
+        s.pending.push(op);
+        Ok(())
+    }
+    /// Appends the whole pending batch and completes its durable sync.
+    pub fn commit(&self) -> Result<(), UpdateError> {
+        let writer = self.writer()?;
+        self.commit_with(&writer)
+    }
+    fn commit_with(&self, writer: &Writer<'_>) -> Result<(), UpdateError> {
+        let (bytes, end, sequence) = {
+            let s = self.state.read();
+            if s.pending.is_empty() {
+                return Ok(());
+            }
+            let sequence = s.sequence.checked_add(1).ok_or(UpdateError::Capacity)?;
+            (
+                format::frame(&s.pending, sequence, s.manifest.dim)?,
+                s.log_end,
+                sequence,
+            )
+        };
+        if let Err(e) = format::append(&self.dir.join("updates.log"), end, &bytes) {
+            writer.uncertain();
+            return Err(e);
+        }
+        let mut s = self.state.write();
+        s.sequence = sequence;
+        s.log_end += bytes.len() as u64;
+        s.pending.clear();
+        s.touched.clear();
+        s.pending_bytes = 0;
+        Ok(())
+    }
+    /// Searches a consistent in-memory view. `k` is clamped to the live count.
+    pub fn search(
+        &self,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+    ) -> Result<Vec<u32>, UpdateError> {
+        let s = self.state.read();
+        validate_vector(query, s.manifest.dim, s.manifest.build.metric)?;
+        let k = k.min(s.len());
+        if k == 0 {
+            return Ok(Vec::new());
+        }
+        let clean = s.delta.len() == 0 && s.deleted == 0;
+        let mut out = Vec::new();
+        if let Some(graph) = s
+            .base
+            .graph
+            .as_ref()
+            .filter(|_| s.deleted < s.base.rows.ids.len())
+        {
+            let mut widened = params;
+            let take = if clean {
+                k
+            } else {
+                params
+                    .ef
+                    .max(params.rerank)
+                    .max(k)
+                    .saturating_add(s.deleted)
+                    .min(graph.len())
+            };
+            widened.ef = params.ef.max(k).saturating_add(s.deleted).min(graph.len());
+            if !clean {
+                widened.rerank = take;
+                widened.patience = 0;
+            }
+            SCRATCH.with(|cache| {
+                let mut cache = cache.borrow_mut();
+                graph.search_reusing(&mut cache, query, take, widened, &mut out)
+            })?;
+        }
+        if clean {
+            return Ok(out
+                .into_iter()
+                .map(|slot| s.base.rows.ids[slot as usize])
+                .collect());
+        }
+        let metric = s.manifest.build.metric;
+        let mut candidates =
+            Vec::with_capacity(out.len() + s.delta.live.len().min(params.ef.max(k)));
+        for slot in out {
+            let slot = slot as usize;
+            if !s.dead(slot) {
+                candidates.push((
+                    distance(query, s.base.rows.row(slot)?, metric),
+                    s.base.rows.ids[slot],
+                ));
+            }
+        }
+        let ef = params
+            .ef
+            .max(params.rerank)
+            .max(k)
+            .saturating_add(s.delta.len() - s.delta.live.len())
+            .min(s.delta.len());
+        candidates.extend(s.delta.search(query, ef, metric));
+        candidates.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        candidates.truncate(k);
+        Ok(candidates.into_iter().map(|(_, id)| id).collect())
+    }
+    pub fn needs_consolidation(&self, policy: ConsolidationPolicy) -> Result<bool, UpdateError> {
+        if !policy.delta_ratio.is_finite()
+            || !policy.tombstone_ratio.is_finite()
+            || !(0.0..=1.0).contains(&policy.delta_ratio)
+            || !(0.0..=1.0).contains(&policy.tombstone_ratio)
+        {
+            return Err(UpdateError::InvalidVector(
+                "consolidation ratios must be in 0..=1",
+            ));
+        }
+        let s = self.state.read();
+        let base = s.base.rows.ids.len().max(1) as f64;
+        Ok(
+            (s.delta.len() >= policy.min_delta
+                && s.delta.len() as f64 / base >= policy.delta_ratio)
+                || (s.deleted > 0 && s.deleted as f64 / base >= policy.tombstone_ratio),
+        )
+    }
+    /// Commits pending work and publishes a new immutable generation while readers run.
+    pub fn consolidate(&self) -> Result<(), UpdateError> {
+        self.consolidate_inner(|_| Ok(()))
+    }
+    fn consolidate_inner(
+        &self,
+        mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+    ) -> Result<(), UpdateError> {
+        let writer = self.writer()?;
+        self.commit_with(&writer)?;
+        let snapshot = self.state.read().clone();
+        if snapshot.delta.len() == 0 && snapshot.deleted == 0 {
+            return Ok(());
+        }
+        let mut manifest = snapshot.manifest.clone();
+        manifest.sequence = snapshot.sequence;
+        let mut rows = Vec::new();
+        rows.try_reserve_exact(
+            snapshot
+                .len()
+                .checked_mul(manifest.dim)
+                .ok_or(UpdateError::Capacity)?,
+        )
+        .map_err(|_| UpdateError::Capacity)?;
+        let mut ids: Vec<_> = snapshot
+            .base
+            .rows
+            .ids
+            .iter()
+            .enumerate()
+            .filter(|(slot, _)| !snapshot.dead(*slot))
+            .map(|(_, id)| *id)
+            .chain(snapshot.delta.live.keys().copied())
+            .collect();
+        ids.sort_unstable();
+        for &id in &ids {
+            if let Some(&slot) = snapshot.delta.live.get(&id) {
+                rows.extend_from_slice(snapshot.delta.row(slot, manifest.dim));
+            } else {
+                rows.extend_from_slice(
+                    snapshot
+                        .base
+                        .rows
+                        .row(snapshot.base_slot(id).expect("live base id"))?,
+                );
+            }
+        }
+        write_base(&self.dir, &manifest, &ids, &rows)?;
+        checkpoint(1)?;
+        let base = Base::open(&self.dir, &manifest)?;
+        let publication = (|| {
+            atomic_write(&self.dir.join("CURRENT"), &manifest.encode())?;
+            checkpoint(2)?;
+            checkpoint(3)?;
+            format::rotate(&self.dir.join("updates.log"), &manifest)?;
+            Ok::<_, UpdateError>(())
+        })();
+        if let Err(e) = publication {
+            writer.uncertain();
+            return Err(e);
+        }
+        *self.state.write() = State::new(base, manifest.clone());
+        cleanup_generations(&self.dir, manifest.sequence)?;
+        Ok(())
+    }
+}
+fn cleanup_generations(dir: &Path, active: u64) -> Result<(), UpdateError> {
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        let sequence = name
+            .strip_prefix("base-")
+            .and_then(|s| s.strip_suffix(".vertex"))
+            .or_else(|| {
+                name.strip_prefix("rows-")
+                    .and_then(|s| s.strip_suffix(".bin"))
+            })
+            .and_then(|s| s.parse::<u64>().ok());
+        if sequence.is_some_and(|s| s != active) {
+            std::fs::remove_file(entry.path())?;
+        }
+    }
+    sync_directory(dir)?;
+    Ok(())
+}
+
+fn write_base(
+    dir: &Path,
+    manifest: &Manifest,
+    ids: &[u32],
+    rows: &[f32],
+) -> Result<(), UpdateError> {
+    if !ids.is_empty() {
+        let graph = Graph::build(rows, manifest.dim, &manifest.build)?;
+        let e = &manifest.encoding;
+        let mut vertex = VGraph::from_graph_with(
+            &graph,
+            e.bits,
+            e.residual_bits,
+            e.align,
+            e.reorder,
+            e.id_bytes,
+            e.screen,
+        )?;
+        if e.block_bits != 0 {
+            vertex = vertex.with_blocks(&graph, e.block_bits)?;
+        }
+        vertex.save(&manifest.vertex_path(dir))?;
+    }
+    BaseRows::write(&manifest.rows_path(dir), manifest, ids, rows)?;
+    sync_directory(dir)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests;
