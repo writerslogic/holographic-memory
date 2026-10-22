@@ -38,9 +38,16 @@ Event log of the experimental connection graph. Unstable; no promise.
 
 ## Standalone files (not part of a store)
 
-`HMSGRF03` graph caches (`qgraph::Graph::save`) and `QuantizedIvf::to_bytes` blobs (magic, little-endian
+`HMSGRF04` graph caches (`qgraph::Graph::save`) and `QuantizedIvf::to_bytes` blobs (magic, little-endian
 header, CRC32 trailer) are benchmark caches. They are validated against their inputs when read
 and are never read from a store directory.
+
+`HMSVGR01` vertex index files (`qgraph::VGraph::save`, opened by `VGraph::open`): the magic, 19
+little-endian `u64` header words, an `(offset, bytes)` table of 15 sections, then each section on a
+4096-byte boundary so the file can be memory-mapped and used in place. Written to a temporary file,
+synced and renamed into place. Open recomputes every derived size from the header and checks every
+section length and stored id before use; a mismatch is an error. Little-endian targets only; outside
+the stability promise (a format change bumps the magic and needs a re-save).
 
 ## Memory-API stamps
 

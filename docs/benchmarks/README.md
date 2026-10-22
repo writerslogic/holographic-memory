@@ -99,8 +99,12 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
   client at a time.
 * Qdrant's embedded local mode is an exact scan (its documentation points to a server for indexed
   search); it is included because it is the only Qdrant that needs no service.
-* HMS has no persisted ANN index, so ANN cold start and ANN replace/delete are "n/m", and its ANN
-  serving RSS is that of the process that also built the index (an upper bound on serving memory).
+* HMS builds its ANN index in a build process that saves it (`public-bench ann-qgraph
+  --save-index`, the vertex index file of `VGraph::save`); each serve round is a fresh process that
+  opens that file (`--load-index`) memory-mapped and prefaulted before the timer, as every comparator
+  opens its persisted index in a fresh serve process. Build time and build peak RSS come from the
+  build processes, serving RSS from the serve processes; the index's file-backed pages count in RSS.
+  The VGraph is static, so ANN replace/delete are "n/m".
 * Above 200k vectors the slow exact-scan systems answer a prefix of the query file
   (`protocol.query_caps`); recall and QPS are over that prefix.
 

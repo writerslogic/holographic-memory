@@ -42,7 +42,7 @@ use kernels::{
     as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, prefetch_bytes, DotI8, QueryCode,
     Rotation, SplitMix,
 };
-pub use vertex::{SearchKnobs, VGraph, VSearchParams, VSearcher};
+pub use vertex::{Residency, SearchKnobs, VGraph, VSearchParams, VSearcher};
 
 /// Default out-degree of every vertex; one batch of edge codes per expansion.
 pub const DEFAULT_DEGREE: usize = 32;
