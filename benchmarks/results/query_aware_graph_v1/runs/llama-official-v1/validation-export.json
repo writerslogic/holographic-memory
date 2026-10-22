@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "scope": "VIBE validation-only export, no official test",
+  "native_manifest": "0490f853171092fe4d6bfc1cb766f32ccc4b188e7d981ea66241d443f2aee36b",
+  "construction_manifest": "22c42ba20f13d60fc7e0a0c94f1d13401b8e46a1cf882dbe7ab983b1713bc781",
+  "sha256": "3d43410e565ae8a50e05c29cefcb2b93910c3b666e93c53d97676247b000396c",
+  "base_rows": 256921,
+  "validation_queries": 256,
+  "construction_queries": 32768,
+  "dimension": 128,
+  "metric": "ip",
+  "exporter_sha256": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92"
+}

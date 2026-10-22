@@ -234,9 +234,8 @@ def performance(root, reports, supplements=None):
                     trees, depth = mlann_shape(comparator)
                     method += f" RF{trees}/d{depth}"
                 delta = f"{method}: {percent:+.2f}%"
-                if target in (0.90, 0.95):
-                    statuses.append(candidate["qps_median"] >= 0.9 * comparator["qps_median"])
-            elif target in (0.90, 0.95):
+                statuses.append(candidate["qps_min"] > comparator["qps_max"])
+            else:
                 statuses.append(None)
             lines.append(
                 f"| {dataset} | {target:.2f} | {cell(report, {0}, target)} | "
@@ -482,7 +481,7 @@ def render(root, checks=None):
     if not all(report is not None for report, _ in official.values()):
         outcome = "Official full-dataset performance remains unmeasured."
     elif recall_pass and all(value is True for value in throughput):
-        outcome = "Both full datasets reach strict recall@100 ≥0.99, and the measured medians at 0.90/0.95 reach 90% of the fastest measured frozen CPU comparator."
+        outcome = "Both full datasets reach strict recall@100 ≥0.99 and beat the measured frozen CPU comparators at every threshold, with separated observed QPS ranges."
     else:
         outcome = "The required recall/throughput goals remain incomplete within the frozen measured configurations."
     overall_regression = "fail" if "fail" in regression_status else "pass" if set(regression_status) == {"pass"} else "inconclusive"
@@ -509,6 +508,8 @@ def render(root, checks=None):
         "**Official full-dataset Pareto points.** Every measured QPS entry is the saved fifth pass from each of three alternating blocks: median [min–max], one thread, writerslogic-02, common VIBE harness/affinity/cache policy. Selection uses actual minimum strict ID recall across repetitions ≥target, with no interpolation. Config p is the stale-expansion patience; RoarGraph L is its query width.",
         "",
         *official_table, "",
+        "All measured points and per-method/global Pareto frontiers are exported in [pareto.json](pareto.json) and [pareto.csv](pareto.csv). A missing qualifying competitor at 0.99 establishes no speed victory. Overlapping observed timing ranges, including llama's small 0.90 median lead, remain inconclusive evidence of superiority.",
+        "",
         "Comparator deltas cover only the frozen measured RoarGraph M48/M96 and MLANN RF10 depth14 configurations, plus matching separate RF80 depth13 reports where available. " + mlann_scope + " These measurements establish neither the global best CPU competitor nor cross-machine parity. The frozen construction policy uses the same 32,768 query rows for all trained arms. MLANN has no exposed seed control; each run reuses one forest across repetitions.",
         "",
         "**Full-base validation only.** These 256 queries come from reserved learn rows and are excluded from construction; this table does not substitute for official-test results.",

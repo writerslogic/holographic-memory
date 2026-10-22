@@ -3,7 +3,7 @@
   "audit_date": "2026-10-22",
   "baseline_sha": "08d37778a66b58709461456e5b9a7ab6a05b399f",
   "worktree": "/Volumes/A/.sol-wt-qag",
-  "scope": "Source, dataset and execution provenance for completed untimed validation screens and native correctness checks; paired timing and official-test acceptance remain incomplete.",
+  "scope": "Historical v1 diagnostics and frozen full validation/official evaluations; default4 regression and RF80 batches still running. Subsequent optimization belongs to query_aware_graph_v2.",
   "supplied_baseline": {
     "artifact": "benchmarks/results/vibe_v1/llama-128-ip-standing-wl02.json",
     "verified_from": "writerslogic-02:/home/davidcondrey/vibe-hms/export-final/summary.parquet",
@@ -769,10 +769,10 @@
   },
   "blockers": [],
   "unmeasured": [
-    "Completed full llama/yi paired validation and official-test results from the frozen42-group schedule",
-    "Matched-recall QPS regression gates for sift-128-euclidean, glove-100-angular, yahoo-minilm-384-normalized",
-    "Isolated per-index peak RSS and actual persisted-index file sizes",
-    "Final cargo fmt --check and sole Linux cargo +1.89.0 test --all-features gate"
+    "Completed default4 regression gate and RF80 comparison (active/queued)",
+    "Isolated per-index peak RSS and actual persisted-index file sizes for frozen v1 timing arms",
+    "Final cargo fmt --check and sole Linux cargo +1.89.0 test --all-features gate",
+    "Untouched replacement official test for any newly developed architecture"
   ],
   "completed_source": {
     "core_commit": "85b0af081c26e65f6a5643722386137ca332e587",
@@ -2458,7 +2458,7 @@
     }
   },
   "frozen_validation_execution": {
-    "status": "Prefix36-group measurement completed; full42-group batch queued/running",
+    "status": "Prefix and both full validation reports completed; both frozen official reports completed and recovered; regression/RF80 still active.",
     "receipt": {
       "path": "benchmarks/results/query_aware_graph_v1/projection-validation-receipt.json",
       "sha256": "e6d1357ba32a070463dd48de10afccd5fff12a6f3973a45bfc5ea51563e4dc1d"
@@ -2500,7 +2500,7 @@
   "evidence_gaps": [
     "Initial diagnostic binary/source fingerprints retained; exact initial uncommitted source snapshots absent from canonical evidence. Current diagnostic source is committed.",
     "Original prefix report retains a known incorrect official-test flag; validation-only source marker and receipt establish scope, and a separate v2 report is scheduled.",
-    "Full-evaluation results, regression comparisons and final Rust gate remain incomplete."
+    "Both full validation and frozen official reports recovered; regressions, RF80 and final Rust gate remain active or unrun."
   ],
   "paired_prefix_validation": {
     "scope": "200k base prefix;256 reserved learn queries only; no official test",
@@ -2666,7 +2666,7 @@
     "observations": "Projected8 matches diagnostic recall; prefix median throughput passes0.90 target and fails0.95 against Roar96 L120. Roar48 L100 below0.90; measured Roar96 L800 below0.99; measured MLANN points below0.90. Full-dataset parity not established."
   },
   "full_evaluation_batch": {
-    "status": "queued/running under shared timing flock; no completed full result asserted",
+    "status": "Both validation and both official runs completed successfully; original default4 regression batch is active; RF80 queued.",
     "source_receipt": {
       "path": "benchmarks/results/query_aware_graph_v1/sources/patience-execution-source-receipt.json",
       "sha256": "0f9c6a7aba57a3c81d3757cc58d778b942b553b49f97864fc99b1eeb7ff6eb89"
@@ -2729,5 +2729,81 @@
       "prefix corrected v2 report"
     ],
     "log": "writerslogic-02:/home/davidcondrey/sol-qag/logs/full-evaluation-v1.log"
+  },
+  "official_evaluation_recovery": {
+    "date": "2026-10-22",
+    "signed_head_on_resume": "b6d82ef3195d7045afb46f2aa607a1d6ec8455da",
+    "candidate_source": "f73305b624305836211c8157975c4f1c37f10df9",
+    "official_read_policy": "Final evaluation only; no official outcome selects v2 settings. v2 uses permitted learn validation only.",
+    "reports": [
+      {
+        "dataset": "llama",
+        "frozen.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/frozen.json",
+          "sha256": "f10d3d09910929ede797370a8a19fea54c7978d297c34778855ddaa6da4bdfdb",
+          "bytes": 20879
+        },
+        "before.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/before.json",
+          "sha256": "989526a8cef8689d0feeffcefbddb79eb198970e9ba223a119c2181da2093279",
+          "bytes": 7652
+        },
+        "benchmark.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/benchmark.json",
+          "sha256": "d891e97f00ebae4bffb4dca99fc28c394b3fbc1d0206fe54f1facd4849f1ede8",
+          "bytes": 8409
+        },
+        "completion.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/completion.json",
+          "sha256": "d57d18fd5be0ac475ad336a8c0183f7b185655eb34cdb727a6b81151bf9d79ce",
+          "bytes": 487
+        },
+        "report.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/report.json",
+          "sha256": "c5b185f3db86d4644265a586dc548f7d2fc2f6d9f80591e0cc33acfde46eee2a",
+          "bytes": 125686
+        },
+        "raw.hdf5": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/llama-official-v1/raw.hdf5",
+          "sha256": "4e81c46d7a3f1adf68a0360e61e1ded232f0ab9e93de641c461ae81746c49854",
+          "bytes": 34159808
+        },
+        "max_hms_strict_recall": 0.99687
+      },
+      {
+        "dataset": "yi",
+        "frozen.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/frozen.json",
+          "sha256": "c6f2006c4e68a9a6fbcd4e77dc5ab8a30f93ff0f82a5943390295d9b31847101",
+          "bytes": 20766
+        },
+        "before.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/before.json",
+          "sha256": "0ce4d4b97cc31bac6a87ec79a8d2224a07dfbcb03f2ba1384d79b56a2d452149",
+          "bytes": 7622
+        },
+        "benchmark.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/benchmark.json",
+          "sha256": "d9078b9e25db6663ce5731928852ebe2afb11c36d9ea01733e6fe76481ef7f5a",
+          "bytes": 8370
+        },
+        "completion.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/completion.json",
+          "sha256": "a7c59c2a27e3d9af8374192c3ed8c940e54772db9d1e03eb65cb57506e86d98a",
+          "bytes": 481
+        },
+        "report.json": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/report.json",
+          "sha256": "ec88ed941d8acbbc563c068133566dbb59e590ecbd7b268a0012942fffbacab5",
+          "bytes": 125202
+        },
+        "raw.hdf5": {
+          "path": "benchmarks/results/query_aware_graph_v1/runs/yi-official-v1/raw.hdf5",
+          "sha256": "6f093d2c0deed0a22aafa1be232e4f7bdbc0c534448fc51e130bf16a9670c75e",
+          "bytes": 34159808
+        },
+        "max_hms_strict_recall": 0.98931
+      }
+    ]
   }
 }

@@ -1,6 +1,6 @@
 # Query-aware graph evidence
 
-Official full-dataset performance remains unmeasured.
+The required recall/throughput goals remain incomplete within the frozen measured configurations.
 Regression gate: **inconclusive**. Formatting: **unrun**. Required Rust gate: **unrun**.
 
 Baseline SHA: `08d37778a66b58709461456e5b9a7ab6a05b399f`. Source decisions, configurations, seeds and commands are retained in [ledger.md](ledger.md); dataset/runtime fingerprints are in [provenance.json](provenance.json).
@@ -28,12 +28,14 @@ At ef=100, evaluated top-100 coverage exceeds retained coverage and exact routin
 
 | Dataset | Recall target | Before: strict recall; QPS [min–max]; config | After: strict recall; QPS [min–max]; config | RoarGraph: strict recall; QPS [min–max]; config | MLANN: strict recall; QPS [min–max]; config | After vs best measured CPU |
 |---|---:|---|---|---|---|---|
-| llama-128-ip | 0.90 | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |
-| llama-128-ip | 0.95 | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |
-| llama-128-ip | 0.99 | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |
-| yi-128-ip | 0.90 | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |
-| yi-128-ip | 0.95 | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |
-| yi-128-ip | 0.99 | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |
+| [llama-128-ip](runs/llama-official-v1/report.json) | 0.90 | 0.92482; 913.37 [905.96–922.27]; ef=1000,rr=1000,p=0 | 0.9048; 6,399.41 [6,375.28–6,531.96]; ef=160,rr=200,p=8 | 0.95732; 6,363.46 [6,295.12–6,535.75]; M=96,L=120 | unreached (max 0.87973) | roargraph96: +0.56% |
+| [llama-128-ip](runs/llama-official-v1/report.json) | 0.95 | unreached (max 0.94969) | 0.95468; 4,800.27 [4,644.90–4,830.65]; ef=160,rr=200,p=20 | 0.95732; 6,363.46 [6,295.12–6,535.75]; M=96,L=120 | unreached (max 0.87973) | roargraph96: -24.57% |
+| [llama-128-ip](runs/llama-official-v1/report.json) | 0.99 | unreached (max 0.94969) | 0.99687; 1,456.59 [1,380.28–1,492.58]; ef=512,rr=400,p=0 | unreached (max 0.98028) | unreached (max 0.87973) | unmeasured |
+| [yi-128-ip](runs/yi-official-v1/report.json) | 0.90 | 0.9556; 1,108.56 [1,099.23–1,126.92]; ef=1000,rr=1000,p=0 | 0.90275; 6,629.73 [6,559.96–6,790.92]; ef=100,rr=100,p=0 | 0.91743; 4,083.15 [3,627.30–4,211.07]; M=96,L=120 | unreached (max 0.75827) | roargraph96: +62.37% |
+| [yi-128-ip](runs/yi-official-v1/report.json) | 0.95 | 0.9556; 1,108.56 [1,099.23–1,126.92]; ef=1000,rr=1000,p=0 | 0.97287; 3,214.45 [2,709.75–3,216.74]; ef=256,rr=400,p=0 | 0.96638; 969.85 [965.50–972.25]; M=96,L=800 | unreached (max 0.75827) | roargraph96: +231.44% |
+| [yi-128-ip](runs/yi-official-v1/report.json) | 0.99 | unreached (max 0.97939) | unreached (max 0.98931) | unreached (max 0.96638) | unreached (max 0.75827) | unmeasured |
+
+All measured points and per-method/global Pareto frontiers are exported in [pareto.json](pareto.json) and [pareto.csv](pareto.csv). A missing qualifying competitor at 0.99 establishes no speed victory. Overlapping observed timing ranges, including llama's small 0.90 median lead, remain inconclusive evidence of superiority.
 
 Comparator deltas cover only the frozen measured RoarGraph M48/M96 and MLANN RF10 depth14 configurations, plus matching separate RF80 depth13 reports where available. RF80 depth13 remains unrun in the saved evidence. These measurements establish neither the global best CPU competitor nor cross-machine parity. The frozen construction policy uses the same 32,768 query rows for all trained arms. MLANN has no exposed seed control; each run reuses one forest across repetitions.
 
@@ -60,23 +62,23 @@ Comparator deltas cover only the frozen measured RoarGraph M48/M96 and MLANN RF1
 
 | Dataset / phase | Arm | Build seconds (one build) | Encoded index bytes | Size delta vs baseline |
 |---|---|---:|---:|---:|
-| [llama-128-ip / validation](runs/llama-full-validation-v1/report.json) | baseline4 | 277.851 | 128,432,748 | +0.00% |
-| [llama-128-ip / validation](runs/llama-full-validation-v1/report.json) | candidate8 | 337.015 | 206,536,668 | +60.81% |
-| [llama-128-ip / validation](runs/llama-full-validation-v1/report.json) | roargraph48 | 97.338 | unmeasured | unmeasured |
-| [llama-128-ip / validation](runs/llama-full-validation-v1/report.json) | roargraph96 | 149.317 | unmeasured | unmeasured |
-| [llama-128-ip / validation](runs/llama-full-validation-v1/report.json) | mlann_rf10_depth14 | 7.988 | unmeasured | unmeasured |
-| [yi-128-ip / validation](runs/yi-full-validation-v1/report.json) | baseline4 | 117.947 | 93,802,528 | +0.00% |
-| [yi-128-ip / validation](runs/yi-full-validation-v1/report.json) | candidate8 | 171.510 | 150,906,736 | +60.88% |
-| [yi-128-ip / validation](runs/yi-full-validation-v1/report.json) | roargraph48 | 73.934 | unmeasured | unmeasured |
-| [yi-128-ip / validation](runs/yi-full-validation-v1/report.json) | roargraph96 | 108.263 | unmeasured | unmeasured |
-| [yi-128-ip / validation](runs/yi-full-validation-v1/report.json) | mlann_rf10_depth14 | 7.946 | unmeasured | unmeasured |
+| [llama-128-ip / official](runs/llama-official-v1/report.json) | baseline4 | 275.927 | 128,432,748 | +0.00% |
+| [llama-128-ip / official](runs/llama-official-v1/report.json) | candidate8 | 333.071 | 206,536,668 | +60.81% |
+| [llama-128-ip / official](runs/llama-official-v1/report.json) | roargraph48 | 97.002 | unmeasured | unmeasured |
+| [llama-128-ip / official](runs/llama-official-v1/report.json) | roargraph96 | 145.702 | unmeasured | unmeasured |
+| [llama-128-ip / official](runs/llama-official-v1/report.json) | mlann_rf10_depth14 | 8.220 | unmeasured | unmeasured |
+| [yi-128-ip / official](runs/yi-official-v1/report.json) | baseline4 | 118.276 | 93,802,528 | +0.00% |
+| [yi-128-ip / official](runs/yi-official-v1/report.json) | candidate8 | 170.819 | 150,906,736 | +60.88% |
+| [yi-128-ip / official](runs/yi-official-v1/report.json) | roargraph48 | 73.669 | unmeasured | unmeasured |
+| [yi-128-ip / official](runs/yi-official-v1/report.json) | roargraph96 | 106.099 | unmeasured | unmeasured |
+| [yi-128-ip / official](runs/yi-official-v1/report.json) | mlann_rf10_depth14 | 7.871 | unmeasured | unmeasured |
 
 Build times are single observations. Main-run process RSS and USS include all co-resident arms. Separate RF80 process measurements include its input buffers and runtime; isolated index-only peak RSS and competitor serialized sizes are unmeasured.
 
 | Dataset / phase | Process peak RSS KiB | VIBE USS delta KiB |
 |---|---:|---:|
-| [llama-128-ip / validation](runs/llama-full-validation-v1/report.json) | 2,357,024 | 2,021,088 |
-| [yi-128-ip / validation](runs/yi-full-validation-v1/report.json) | 1,883,088 | 1,581,436 |
+| [llama-128-ip / official](runs/llama-official-v1/report.json) | 2,387,984 | 2,023,844 |
+| [yi-128-ip / official](runs/yi-official-v1/report.json) | 1,900,372 | 1,570,208 |
 
 **Persisted formats and compatibility.**
 

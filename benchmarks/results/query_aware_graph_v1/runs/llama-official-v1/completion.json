@@ -1,0 +1,14 @@
+{
+  "status": "success",
+  "created_utc": "2026-10-22T17:23:21.455615+00:00",
+  "benchmark_receipt": {
+    "path": "/home/davidcondrey/sol-qag/runs/llama-official-v1/benchmark.json",
+    "sha256": "d891e97f00ebae4bffb4dca99fc28c394b3fbc1d0206fe54f1facd4849f1ede8",
+    "bytes": 8409
+  },
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/runs/llama-official-v1/report.json",
+    "sha256": "c5b185f3db86d4644265a586dc548f7d2fc2f6d9f80591e0cc33acfde46eee2a",
+    "bytes": 125686
+  }
+}
