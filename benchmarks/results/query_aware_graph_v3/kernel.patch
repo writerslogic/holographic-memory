@@ -1,0 +1,155 @@
+diff --git a/src/core/qgraph/kernels.rs b/src/core/qgraph/kernels.rs
+index 65f527f..58cf090 100644
+--- a/src/core/qgraph/kernels.rs
++++ b/src/core/qgraph/kernels.rs
+@@ -413,6 +413,7 @@ pub(crate) fn dot_i8_kernel() -> DotI8 {
+     #[cfg(target_arch = "x86_64")]
+     match tier::get() {
+         tier::VNNI => dot_i8_vnni_checked,
++        tier::AVX_VNNI => dot_i8_avxvnni_checked,
+         tier::AVX2 => dot_i8_avx2_checked,
+         _ => dot_i8_scalar,
+     }
+@@ -428,6 +429,13 @@ fn dot_i8_avx2_checked(a: &[i8], b: &[i8]) -> i32 {
+     unsafe { x86::dot_i8_avx2(a, b) }
+ }
+ 
++#[cfg(target_arch = "x86_64")]
++fn dot_i8_avxvnni_checked(a: &[i8], b: &[i8]) -> i32 {
++    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
++    // SAFETY: the dispatcher checked avxvnni and avx2; lengths are checked above.
++    unsafe { x86::dot_i8_avxvnni(a, b) }
++}
++
+ /// [`DotI8`] with AVX512-VNNI on 256-bit registers; handed out only by `dot_i8_kernel` after
+ /// detecting the features.
+ #[cfg(target_arch = "x86_64")]
+@@ -438,7 +446,7 @@ fn dot_i8_vnni_checked(a: &[i8], b: &[i8]) -> i32 {
+     unsafe { x86::dot_i8_vnni(a, b) }
+ }
+ 
+-/// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|vnni` (read once, at the
++/// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|avxvnni|vnni` (read once, at the
+ /// first distance call) pins a lower tier than the CPU supports, so every tier can be run and
+ /// compared on one machine; `auto` or unset takes the best detected tier, and a tier above
+ /// what the CPU supports falls back to the best detected one.
+@@ -448,7 +456,8 @@ mod tier {
+ 
+     pub(super) const SCALAR: u8 = 1;
+     pub(super) const AVX2: u8 = 2;
+-    pub(super) const VNNI: u8 = 3;
++    pub(super) const AVX_VNNI: u8 = 3;
++    pub(super) const VNNI: u8 = 4;
+     static TIER: AtomicU8 = AtomicU8::new(0);
+ 
+     #[inline(always)]
+@@ -461,11 +470,14 @@ mod tier {
+ 
+     #[cold]
+     fn detect() -> u8 {
++        let avx_vnni = is_x86_feature_detected!("avxvnni") && is_x86_feature_detected!("avx2");
+         let best = if is_x86_feature_detected!("avx512vnni")
+             && is_x86_feature_detected!("avx512vl")
+             && is_x86_feature_detected!("avx2")
+         {
+             VNNI
++        } else if avx_vnni {
++            AVX_VNNI
+         } else if is_x86_feature_detected!("avx2") {
+             AVX2
+         } else {
+@@ -474,10 +486,19 @@ mod tier {
+         let want = match std::env::var("HMS_QGRAPH_KERNEL").as_deref() {
+             Ok("scalar") => SCALAR,
+             Ok("avx2") => AVX2,
++            Ok("avxvnni") => {
++                if avx_vnni {
++                    AVX_VNNI
++                } else {
++                    best
++                }
++            }
+             Ok("vnni") => VNNI,
+             Ok("auto") | Err(_) => best,
+             Ok(other) => {
+-                eprintln!("HMS_QGRAPH_KERNEL={other:?} is not scalar|avx2|vnni|auto; using auto");
++                eprintln!(
++                    "HMS_QGRAPH_KERNEL={other:?} is not scalar|avx2|avxvnni|vnni|auto; using auto"
++                );
+                 best
+             }
+         };
+@@ -545,7 +566,7 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
+             // the slice lengths were checked above.
+             tier::VNNI => return unsafe { x86::dot_i4_vnni(q, packed) },
+             // SAFETY: the tier is AVX2 or above only after detecting `avx2`.
+-            tier::AVX2 => return unsafe { x86::dot_i4_avx2(q, packed) },
++            tier::AVX2 | tier::AVX_VNNI => return unsafe { x86::dot_i4_avx2(q, packed) },
+             _ => {}
+         }
+         #[cfg(not(target_arch = "aarch64"))]
+@@ -566,7 +587,7 @@ pub(crate) fn dot_i4_inline_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
+             && len.is_multiple_of(16)
+             && tier::get() >= tier::AVX2
+         {
+-            // SAFETY: the tier is AVX2 or VNNI only after detecting `avx2`; the lengths were
++            // SAFETY: every tier at AVX2 or above requires `avx2`; the lengths were
+             // checked above.
+             return unsafe { x86::dot_i4_avx2_x4(q, rows) };
+         }
+@@ -727,6 +748,31 @@ mod x86 {
+         horizontal_sum(acc)
+     }
+ 
++    #[target_feature(enable = "avxvnni,avx2")]
++    pub(super) unsafe fn dot_i8_avxvnni(a: &[i8], b: &[i8]) -> i32 {
++        let (flip, ones) = (_mm256_set1_epi8(-128), _mm256_set1_epi8(1));
++        let (mut acc, mut sum_b) = (_mm256_setzero_si256(), _mm256_setzero_si256());
++        let mut i = 0;
++        while i + 32 <= a.len() {
++            // SAFETY: both equal-length slices have at least 32 remaining bytes.
++            let (x, y) = unsafe {
++                (
++                    _mm256_xor_si256(_mm256_loadu_si256(a.as_ptr().add(i).cast()), flip),
++                    _mm256_loadu_si256(b.as_ptr().add(i).cast()),
++                )
++            };
++            acc = _mm256_dpbusd_avx_epi32(acc, x, y);
++            sum_b = _mm256_dpbusd_avx_epi32(sum_b, ones, y);
++            i += 32;
++        }
++        // Biasing signed a to unsigned a+128 requires subtracting 128 * sum(b).
++        let mut total = horizontal_sum(acc) - 128 * horizontal_sum(sum_b);
++        if i < a.len() {
++            total += dot_i8_avx2(&a[i..], &b[i..]);
++        }
++        total
++    }
++
+     /// [`super::dot_i4_inline`]: each 16 packed bytes become the 16 even and the 16 odd
+     /// coordinates of a 32-wide block, matched with the query laid out by
+     /// [`super::interleave_for_i4`].
+@@ -1180,6 +1226,14 @@ mod tests {
+                     Some(|q, p| unsafe { x86::dot_i4_vnni(q, p) }),
+                 ));
+             }
++            if is_x86_feature_detected!("avxvnni") && is_x86_feature_detected!("avx2") {
++                v.push((
++                    "avxvnni",
++                    // SAFETY: both required features are checked; test rows have valid lengths.
++                    Some(|a, b| unsafe { x86::dot_i8_avxvnni(a, b) }),
++                    None,
++                ));
++            }
+         }
+         v
+     }
+@@ -1204,7 +1258,7 @@ mod tests {
+     fn every_integer_kernel_matches_scalar() {
+         let mut rng = SplitMix(99);
+         for (name, i8k, i4k) in int_variants() {
+-            for len in (16..=512).step_by(16) {
++            for len in (16..=512).step_by(16).chain([0, 8176, 8192, 8208]) {
+                 for round in 0..24 {
+                     let mut a = random_i8(&mut rng, len);
+                     let mut b = random_i8(&mut rng, len);

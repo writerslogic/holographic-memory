@@ -1,0 +1,6 @@
+{
+  "created_utc": "2026-10-22T18:41:00.377676+00:00",
+  "status": "failed",
+  "error_type": "FileNotFoundError",
+  "error": "[Errno 2] Unable to synchronously open file (unable to open file: name = '/home/davidcondrey/vibe-hms/vibe/results/qagreg-run_default4_v1-glove-100-cosine/100/hms-qag-regression/cosine_64_500_4.hdf5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)"
+}

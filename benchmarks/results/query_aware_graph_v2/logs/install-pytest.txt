@@ -1,0 +1,7 @@
+Using Python 3.11.16 environment at: vibe-hms/mamba/envs/vibe
+Resolved 5 packages in 86ms
+Installed 4 packages in 9ms
+ + iniconfig==2.3.1
+ + pluggy==1.7.0
+ + pygments==2.21.0
+ + pytest==9.1.1

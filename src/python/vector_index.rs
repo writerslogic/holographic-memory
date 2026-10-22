@@ -123,6 +123,7 @@ struct PyVectorIndex {
     degree: usize,
     build_ef: usize,
     code_bits: u8,
+    compact_adjacency: bool,
     pool: Option<rayon::ThreadPool>,
     ef: usize,
     rerank: usize,
@@ -182,13 +183,14 @@ impl PyVectorIndex {
     /// (0 = one per core). `code_bits` selects 4-bit traversal codes (default) or 8-bit
     /// traversal codes for higher routing precision; residual reranking remains 8-bit.
     #[new]
-    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4))]
+    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4, compact_adjacency=false))]
     fn new(
         metric: &str,
         degree: usize,
         build_ef: usize,
         threads: usize,
         code_bits: u8,
+        compact_adjacency: bool,
     ) -> PyResult<Self> {
         let metric = match metric {
             "angular" => Distance::Angular,
@@ -227,6 +229,7 @@ impl PyVectorIndex {
             degree,
             build_ef,
             code_bits,
+            compact_adjacency,
             pool,
             ef: 64,
             rerank: 64,
@@ -291,6 +294,7 @@ impl PyVectorIndex {
         let id_bytes = if n < THREE_BYTE_IDS_BELOW { 3 } else { 4 };
         let metric = self.metric;
         let code_bits = self.code_bits;
+        let compact_adjacency = self.compact_adjacency;
         let graph = py
             .detach(|| {
                 self.run(|| {
@@ -309,7 +313,7 @@ impl PyVectorIndex {
                         training_data.as_deref(),
                     )?;
                     // The graph's float rows are dropped here; the index keeps only its codes.
-                    VGraph::from_graph_with(
+                    let mut index = VGraph::from_graph_with(
                         &g,
                         code_bits,
                         RESIDUAL_BITS,
@@ -317,7 +321,11 @@ impl PyVectorIndex {
                         true,
                         id_bytes,
                         false,
-                    )
+                    )?;
+                    if compact_adjacency {
+                        index.compact_adjacency()?;
+                    }
+                    Ok(index)
                 })
             })
             .map_err(err)?;

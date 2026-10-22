@@ -1,0 +1,92 @@
+
+/home/davidcondrey/sol-qag/artifacts/patience-holographic_memory.so:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000abf70 <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E>:
+   abf70:	40 f6 c6 0f          	test   $0xf,%sil
+   abf74:	0f 85 57 01 00 00    	jne    ac0d1 <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x161>
+   abf7a:	48 39 ce             	cmp    %rcx,%rsi
+   abf7d:	0f 85 4e 01 00 00    	jne    ac0d1 <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x161>
+   abf83:	c5 f9 ef c0          	vpxor  %xmm0,%xmm0,%xmm0
+   abf87:	48 83 fe 10          	cmp    $0x10,%rsi
+   abf8b:	0f 82 1c 01 00 00    	jb     ac0ad <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x13d>
+   abf91:	4c 8d 46 ff          	lea    -0x1(%rsi),%r8
+   abf95:	49 c1 e8 04          	shr    $0x4,%r8
+   abf99:	49 ff c0             	inc    %r8
+   abf9c:	44 89 c0             	mov    %r8d,%eax
+   abf9f:	83 e0 07             	and    $0x7,%eax
+   abfa2:	48 83 fe 71          	cmp    $0x71,%rsi
+   abfa6:	73 0c                	jae    abfb4 <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x44>
+   abfa8:	be 10 00 00 00       	mov    $0x10,%esi
+   abfad:	31 c9                	xor    %ecx,%ecx
+   abfaf:	e9 dc 00 00 00       	jmp    ac090 <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x120>
+   abfb4:	49 83 e0 f8          	and    $0xfffffffffffffff8,%r8
+   abfb8:	31 c9                	xor    %ecx,%ecx
+   abfba:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+   abfc0:	c4 e2 7d 20 0c 0f    	vpmovsxbw (%rdi,%rcx,1),%ymm1
+   abfc6:	c4 e2 7d 20 14 0a    	vpmovsxbw (%rdx,%rcx,1),%ymm2
+   abfcc:	c4 e2 75 52 c2       	{vex} vpdpwssd %ymm2,%ymm1,%ymm0
+   abfd1:	c4 e2 7d 20 4c 0f 10 	vpmovsxbw 0x10(%rdi,%rcx,1),%ymm1
+   abfd8:	c4 e2 7d 20 54 0a 10 	vpmovsxbw 0x10(%rdx,%rcx,1),%ymm2
+   abfdf:	c5 f5 f5 ca          	vpmaddwd %ymm2,%ymm1,%ymm1
+   abfe3:	c5 fd fe c1          	vpaddd %ymm1,%ymm0,%ymm0
+   abfe7:	c4 e2 7d 20 4c 0f 20 	vpmovsxbw 0x20(%rdi,%rcx,1),%ymm1
+   abfee:	c4 e2 7d 20 54 0a 20 	vpmovsxbw 0x20(%rdx,%rcx,1),%ymm2
+   abff5:	c5 f5 f5 ca          	vpmaddwd %ymm2,%ymm1,%ymm1
+   abff9:	c5 fd fe c1          	vpaddd %ymm1,%ymm0,%ymm0
+   abffd:	c4 e2 7d 20 4c 0f 30 	vpmovsxbw 0x30(%rdi,%rcx,1),%ymm1
+   ac004:	c4 e2 7d 20 54 0a 30 	vpmovsxbw 0x30(%rdx,%rcx,1),%ymm2
+   ac00b:	c5 f5 f5 ca          	vpmaddwd %ymm2,%ymm1,%ymm1
+   ac00f:	c5 fd fe c1          	vpaddd %ymm1,%ymm0,%ymm0
+   ac013:	c4 e2 7d 20 4c 0f 40 	vpmovsxbw 0x40(%rdi,%rcx,1),%ymm1
+   ac01a:	c4 e2 7d 20 54 0a 40 	vpmovsxbw 0x40(%rdx,%rcx,1),%ymm2
+   ac021:	c5 f5 f5 ca          	vpmaddwd %ymm2,%ymm1,%ymm1
+   ac025:	c5 fd fe c1          	vpaddd %ymm1,%ymm0,%ymm0
+   ac029:	c4 e2 7d 20 4c 0f 50 	vpmovsxbw 0x50(%rdi,%rcx,1),%ymm1
+   ac030:	c4 e2 7d 20 54 0a 50 	vpmovsxbw 0x50(%rdx,%rcx,1),%ymm2
+   ac037:	c5 f5 f5 ca          	vpmaddwd %ymm2,%ymm1,%ymm1
+   ac03b:	c5 fd fe c1          	vpaddd %ymm1,%ymm0,%ymm0
+   ac03f:	c4 e2 7d 20 4c 0f 60 	vpmovsxbw 0x60(%rdi,%rcx,1),%ymm1
+   ac046:	c4 e2 7d 20 54 0a 60 	vpmovsxbw 0x60(%rdx,%rcx,1),%ymm2
+   ac04d:	c5 f5 f5 ca          	vpmaddwd %ymm2,%ymm1,%ymm1
+   ac051:	c5 fd fe c1          	vpaddd %ymm1,%ymm0,%ymm0
+   ac055:	c4 e2 7d 20 4c 0f 70 	vpmovsxbw 0x70(%rdi,%rcx,1),%ymm1
+   ac05c:	c4 e2 7d 20 54 0a 70 	vpmovsxbw 0x70(%rdx,%rcx,1),%ymm2
+   ac063:	c5 f5 f5 ca          	vpmaddwd %ymm2,%ymm1,%ymm1
+   ac067:	c5 fd fe c1          	vpaddd %ymm1,%ymm0,%ymm0
+   ac06b:	48 83 e9 80          	sub    $0xffffffffffffff80,%rcx
+   ac06f:	49 83 c0 f8          	add    $0xfffffffffffffff8,%r8
+   ac073:	0f 85 47 ff ff ff    	jne    abfc0 <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x50>
+   ac079:	48 85 c0             	test   %rax,%rax
+   ac07c:	74 2f                	je     ac0ad <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x13d>
+   ac07e:	48 8d 71 10          	lea    0x10(%rcx),%rsi
+   ac082:	66 66 66 66 66 2e 0f 	data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   ac089:	1f 84 00 00 00 00 00
+   ac090:	c4 e2 7d 20 0c 0f    	vpmovsxbw (%rdi,%rcx,1),%ymm1
+   ac096:	c4 e2 7d 20 14 0a    	vpmovsxbw (%rdx,%rcx,1),%ymm2
+   ac09c:	48 89 f1             	mov    %rsi,%rcx
+   ac09f:	c4 e2 75 52 c2       	{vex} vpdpwssd %ymm2,%ymm1,%ymm0
+   ac0a4:	48 83 c6 10          	add    $0x10,%rsi
+   ac0a8:	48 ff c8             	dec    %rax
+   ac0ab:	75 e3                	jne    ac090 <_ZN18holographic_memory4core6qgraph7kernels19dot_i8_avx2_checked17hd7deb1710e0fc900E+0x120>
+   ac0ad:	c4 e3 7d 39 c1 01    	vextracti128 $0x1,%ymm0,%xmm1
+   ac0b3:	c5 f1 fe c0          	vpaddd %xmm0,%xmm1,%xmm0
+   ac0b7:	c5 f9 70 c8 4e       	vpshufd $0x4e,%xmm0,%xmm1
+   ac0bc:	c5 f1 fe c0          	vpaddd %xmm0,%xmm1,%xmm0
+   ac0c0:	c5 f9 70 c8 55       	vpshufd $0x55,%xmm0,%xmm1
+   ac0c5:	c5 f1 fe c0          	vpaddd %xmm0,%xmm1,%xmm0
+   ac0c9:	c5 f9 7e c0          	vmovd  %xmm0,%eax
+   ac0cd:	c5 f8 77             	vzeroupper
+   ac0d0:	c3                   	ret
+   ac0d1:	50                   	push   %rax
+   ac0d2:	48 8d 3d a5 43 f9 ff 	lea    -0x6bc5b(%rip),%rdi        # 4047e <GCC_except_table141+0x76f2>
+   ac0d9:	48 8d 15 98 36 0c 00 	lea    0xc3698(%rip),%rdx        # 16f778 <__frame_dummy_init_array_entry+0x1910>
+   ac0e0:	be 42 00 00 00       	mov    $0x42,%esi
+   ac0e5:	ff 15 fd 9b 0c 00    	call   *0xc9bfd(%rip)        # 175ce8 <_DYNAMIC+0x468>
+   ac0eb:	cc                   	int3
+   ac0ec:	cc                   	int3
+   ac0ed:	cc                   	int3
+   ac0ee:	cc                   	int3
+   ac0ef:	cc                   	int3

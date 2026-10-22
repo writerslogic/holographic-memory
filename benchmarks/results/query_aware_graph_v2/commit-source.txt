@@ -1,0 +1,7 @@
+[feat/query-aware-graph 2d4967e] feat: Add opt-in compact adjacency and diagnostic search profiling
+ 13 files changed, 790 insertions(+), 22 deletions(-)
+ create mode 100644 benchmarks/results/query_aware_graph_v2/layout-v2.sh
+ create mode 100644 benchmarks/results/query_aware_graph_v2/ledger.md
+ create mode 100644 benchmarks/results/query_aware_graph_v2/profile-v2.sh
+ create mode 100644 benchmarks/vibe/qag_layout_execute.py
+ create mode 100644 benchmarks/vibe/qag_layout_module.py

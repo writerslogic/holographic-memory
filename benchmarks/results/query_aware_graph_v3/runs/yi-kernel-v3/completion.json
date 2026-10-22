@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/v3/runs/yi-kernel-v3/report.json",
+    "sha256": "becd40c5cacc6e9a0b3d68da7d805919f576391c003846252e8d3afead062329",
+    "bytes": 60726
+  },
+  "gate": {
+    "path": "/home/davidcondrey/sol-qag/v3/runs/yi-kernel-v3/gate.json",
+    "sha256": "e49a75556ceceaec43b8a18c8f4770902d92421f82eba69d375ae0fcb802615d",
+    "bytes": 911
+  }
+}

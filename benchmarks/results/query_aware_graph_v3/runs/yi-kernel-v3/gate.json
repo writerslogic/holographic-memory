@@ -1,0 +1,39 @@
+{
+  "identical_returned_ids": true,
+  "points": [
+    {
+      "ef": 100,
+      "rerank": 100,
+      "recall": 0.9055078125,
+      "paired_delta_percent": [
+        -5.7606853953093395,
+        -1.3404652658252303,
+        -0.6685944864242344
+      ],
+      "median_delta_percent": -2.1113990806176486
+    },
+    {
+      "ef": 256,
+      "rerank": 400,
+      "recall": 0.97546875,
+      "paired_delta_percent": [
+        -8.652007618967183,
+        -4.075507254377964,
+        -0.4327707905152467
+      ],
+      "median_delta_percent": -3.052471345068175
+    },
+    {
+      "ef": 512,
+      "rerank": 400,
+      "recall": 0.9908984375,
+      "paired_delta_percent": [
+        -6.87124754181605,
+        1.0478912824338993,
+        -0.19567626102212632
+      ],
+      "median_delta_percent": -0.19567626102212632
+    }
+  ],
+  "timing_limits": "three observed paired blocks; ranges are not confidence intervals"
+}

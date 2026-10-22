@@ -1,0 +1,366 @@
+{
+  "scope": "Reserved learn validation only; no new official evaluation",
+  "profile_limits": "Unpinned instrumented aggregate stages; no production QPS, cache, allocation, bandwidth or instruction inference",
+  "timing_limits": "One harness-selected CPU, five passes, saved fifth pass, three alternating paired blocks; observed ranges are not confidence intervals",
+  "datasets": {
+    "llama": {
+      "settings": {
+        "bits": 8,
+        "ef": 256,
+        "patience": 0,
+        "rerank": 400,
+        "residual_bits": 8
+      },
+      "graph_hash": 4314091726643580909,
+      "identical_ids_bytes_work": true,
+      "encoded_saving_percent": 23.2639421683708,
+      "layouts": [
+        {
+          "layout": "fixed8",
+          "recall": 0.990703125,
+          "queries": 256,
+          "encoded_index_bytes": 206536668,
+          "compaction_seconds": 4.4e-08,
+          "persisted": {
+            "bytes": 206622512,
+            "open_prefaulted_seconds": 0.025208396,
+            "path": "/home/davidcondrey/sol-qag/v2/profiles/llama-persisted/fixed.hms",
+            "save_seconds": 0.133510507
+          },
+          "mean_instrumented_microseconds": 389.36559375,
+          "stage_percent_of_instrumented_total": {
+            "query_encoding_ns": 0.06572791204667143,
+            "entry_ns": 1.056133057467921,
+            "adjacency_visited_prefetch_ns": 47.346943333061255,
+            "scoring_pool_ns": 37.691546561437804,
+            "rerank_sort_ns": 11.076535637016592
+          },
+          "unattributed_percent": 2.7631134989697586,
+          "mean_operations": {
+            "expansions": 257.1875,
+            "neighbors_read": 23510.01953125,
+            "entry_evaluations": 59.03125,
+            "traversal_evaluations": 10410.796875,
+            "rerank_evaluations": 256.0,
+            "retained": 256.0
+          },
+          "edges_per_expansion": 91.4119835965978
+        },
+        {
+          "layout": "compact8",
+          "recall": 0.990703125,
+          "queries": 256,
+          "encoded_index_bytes": 158488097,
+          "compaction_seconds": 0.039228381,
+          "persisted": {
+            "bytes": 206622512,
+            "open_prefaulted_seconds": 0.026587117,
+            "path": "/home/davidcondrey/sol-qag/v2/profiles/llama-persisted/compact.hms",
+            "save_seconds": 0.146159648
+          },
+          "mean_instrumented_microseconds": 399.09287890625,
+          "stage_percent_of_instrumented_total": {
+            "query_encoding_ns": 0.06999173526110879,
+            "entry_ns": 1.01175833550729,
+            "adjacency_visited_prefetch_ns": 48.31029944010625,
+            "scoring_pool_ns": 37.094287565833994,
+            "rerank_sort_ns": 10.793084007299091
+          },
+          "unattributed_percent": 2.72057891599227,
+          "mean_operations": {
+            "expansions": 257.1875,
+            "neighbors_read": 23510.01953125,
+            "entry_evaluations": 59.03125,
+            "traversal_evaluations": 10410.796875,
+            "rerank_evaluations": 256.0,
+            "retained": 256.0
+          },
+          "edges_per_expansion": 91.4119835965978
+        }
+      ],
+      "source": {
+        "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/profiles/llama-high.json",
+        "sha256": "03572ccd20d9f58909e040762b99bd631d2aee40861476e890acb61f3aed63cd"
+      },
+      "timings": [
+        {
+          "ef": 100,
+          "rerank": 100,
+          "recall": 0.915234375,
+          "fixed_qps": [
+            5381.380199471186,
+            4620.488015798721,
+            5395.958840588818
+          ],
+          "compact_qps": [
+            5180.398772613726,
+            5147.434507973268,
+            5317.49186049486
+          ],
+          "median_delta_percent": -3.734756129611694,
+          "paired_delta_percent": [
+            -3.734756129611694,
+            15.085069852208054,
+            -4.605749227479839
+          ],
+          "status": "inconclusive"
+        },
+        {
+          "ef": 256,
+          "rerank": 400,
+          "recall": 0.990703125,
+          "fixed_qps": [
+            2514.0641005419507,
+            2498.6239951636057,
+            2523.0813452031543
+          ],
+          "compact_qps": [
+            2375.3926575626274,
+            2372.9116490974457,
+            2515.330005293248
+          ],
+          "median_delta_percent": -5.515827657275329,
+          "paired_delta_percent": [
+            -0.3072172018806607,
+            -4.931968068805381,
+            -5.614512828613916
+          ],
+          "status": "slower in all observed blocks"
+        },
+        {
+          "ef": 512,
+          "rerank": 400,
+          "recall": 0.997109375,
+          "fixed_qps": [
+            1455.115524813102,
+            1376.7151040302365,
+            1465.5545865396075
+          ],
+          "compact_qps": [
+            1377.0852912810321,
+            1253.2028003912676,
+            1395.3850967205599
+          ],
+          "median_delta_percent": -5.362476875648214,
+          "paired_delta_percent": [
+            -14.489517353955005,
+            -5.362476875648214,
+            1.356126088518117
+          ],
+          "status": "inconclusive"
+        }
+      ],
+      "timing_sources": [
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/llama-layout-v2/report.json",
+          "sha256": "0a106a910fcd4444b08dd316822c6d667a2e29b87398784e09ca517290af89f1"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/llama-layout-v2/gate.json",
+          "sha256": "40f15578b1356d0fbf8c1ede9b03b3b3832ba138196bf77d3704d0c74b80c44a"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/llama-layout-v2/benchmark.json",
+          "sha256": "1038defd74743b269ecf611d233578405295e3729914a1e5236f0cb6fbebe76c"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/llama-layout-v2/raw.hdf5",
+          "sha256": "9cee91f10b473477d3faf950ebf4b5146e16ec4c42707942aa4c3ec2c745a795"
+        }
+      ],
+      "paired_resources": {
+        "builds": [
+          {
+            "layout": "fixed8",
+            "seconds": 350.09236239000165
+          },
+          {
+            "layout": "compact8",
+            "seconds": 345.63477045399486
+          }
+        ],
+        "co_resident_process_peak_rss_kib": 1216140
+      }
+    },
+    "yi": {
+      "settings": {
+        "bits": 8,
+        "ef": 512,
+        "patience": 0,
+        "rerank": 400,
+        "residual_bits": 8
+      },
+      "graph_hash": 3182353186893347835,
+      "identical_ids_bytes_work": true,
+      "encoded_saving_percent": 23.240008981441363,
+      "layouts": [
+        {
+          "layout": "fixed8",
+          "recall": 0.9908984375,
+          "queries": 256,
+          "encoded_index_bytes": 150906736,
+          "compaction_seconds": 5.9e-08,
+          "persisted": {
+            "bytes": 150982476,
+            "open_prefaulted_seconds": 0.018974571,
+            "path": "/home/davidcondrey/sol-qag/v2/profiles/yi-persisted/fixed.hms",
+            "save_seconds": 0.092808169
+          },
+          "mean_instrumented_microseconds": 558.2368828125,
+          "stage_percent_of_instrumented_total": {
+            "query_encoding_ns": 0.04503646462472158,
+            "entry_ns": 0.8966385671763644,
+            "adjacency_visited_prefetch_ns": 45.48267136986719,
+            "scoring_pool_ns": 36.3694331375705,
+            "rerank_sort_ns": 13.454107275051987
+          },
+          "unattributed_percent": 3.752113185709231,
+          "mean_operations": {
+            "expansions": 513.3046875,
+            "neighbors_read": 41782.765625,
+            "entry_evaluations": 58.79296875,
+            "traversal_evaluations": 12063.31640625,
+            "rerank_evaluations": 400.0,
+            "retained": 512.0
+          },
+          "edges_per_expansion": 81.39954035584373
+        },
+        {
+          "layout": "compact8",
+          "recall": 0.9908984375,
+          "queries": 256,
+          "encoded_index_bytes": 115835997,
+          "compaction_seconds": 0.02949801,
+          "persisted": {
+            "bytes": 150982476,
+            "open_prefaulted_seconds": 0.019074586,
+            "path": "/home/davidcondrey/sol-qag/v2/profiles/yi-persisted/compact.hms",
+            "save_seconds": 0.111052697
+          },
+          "mean_instrumented_microseconds": 572.79640234375,
+          "stage_percent_of_instrumented_total": {
+            "query_encoding_ns": 0.0458762210577399,
+            "entry_ns": 0.8858411794292174,
+            "adjacency_visited_prefetch_ns": 46.76219249178436,
+            "scoring_pool_ns": 35.62067575562458,
+            "rerank_sort_ns": 13.005432319875819
+          },
+          "unattributed_percent": 3.679982032228279,
+          "mean_operations": {
+            "expansions": 513.3046875,
+            "neighbors_read": 41782.765625,
+            "entry_evaluations": 58.79296875,
+            "traversal_evaluations": 12063.31640625,
+            "rerank_evaluations": 400.0,
+            "retained": 512.0
+          },
+          "edges_per_expansion": 81.39954035584373
+        }
+      ],
+      "source": {
+        "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/profiles/yi-high.json",
+        "sha256": "3ebebed8b4f98087eee3f846e5d1a87fbc1c140b44225fae4950b698ba174c42"
+      },
+      "timings": [
+        {
+          "ef": 100,
+          "rerank": 100,
+          "recall": 0.9055078125,
+          "fixed_qps": [
+            6970.131646171274,
+            6913.687511773964,
+            6970.368144561992
+          ],
+          "compact_qps": [
+            6741.311373906754,
+            6728.030326953674,
+            6872.212398738082
+          ],
+          "median_delta_percent": -3.2828687301797554,
+          "paired_delta_percent": [
+            -3.286150256409903,
+            -2.6853569025808044,
+            -1.4048407175634825
+          ],
+          "status": "slower in all observed blocks"
+        },
+        {
+          "ef": 256,
+          "rerank": 400,
+          "recall": 0.97546875,
+          "fixed_qps": [
+            3078.234094683032,
+            3036.8034090427204,
+            3306.587444664632
+          ],
+          "compact_qps": [
+            3160.7674985055764,
+            3118.9038199585175,
+            3220.580472526061
+          ],
+          "median_delta_percent": 2.6811932193559596,
+          "paired_delta_percent": [
+            4.082058426756463,
+            1.321203132202764,
+            -2.601079619937119
+          ],
+          "status": "inconclusive"
+        },
+        {
+          "ef": 512,
+          "rerank": 400,
+          "recall": 0.9908984375,
+          "fixed_qps": [
+            1826.0539353208337,
+            1810.2882967472651,
+            1906.8577488754102
+          ],
+          "compact_qps": [
+            1802.3022764759273,
+            1594.0381766909863,
+            1844.948123844948
+          ],
+          "median_delta_percent": -1.3007096003839203,
+          "paired_delta_percent": [
+            -11.945617747451498,
+            -5.483129114436858,
+            1.0347004630394174
+          ],
+          "status": "inconclusive"
+        }
+      ],
+      "timing_sources": [
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/yi-layout-v2/report.json",
+          "sha256": "7ad62971aba2e2629299d1bfac2aacba31f00aadc9930b904e534b5578f48cf2"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/yi-layout-v2/gate.json",
+          "sha256": "3cdf0ab374c4541073910a8173e480627fa30c3619d8fdcce6f372b557b27919"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/yi-layout-v2/benchmark.json",
+          "sha256": "267e100f34df44df41aad3f0fd7d7e1f5aa57789abab2ef51e0da26fb204e844"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v2/runs/yi-layout-v2/raw.hdf5",
+          "sha256": "ab506988d9427f021ea8272c9c11a4706c4379679a03c99aef6eaea8bba96500"
+        }
+      ],
+      "paired_resources": {
+        "builds": [
+          {
+            "layout": "fixed8",
+            "seconds": 176.02953681298823
+          },
+          {
+            "layout": "compact8",
+            "seconds": 176.08502517899615
+          }
+        ],
+        "co_resident_process_peak_rss_kib": 956880
+      }
+    }
+  },
+  "repeatable_speedup_observed": false
+}

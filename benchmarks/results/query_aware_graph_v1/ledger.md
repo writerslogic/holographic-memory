@@ -165,7 +165,7 @@ versus Roar96/L1206363.46:24.57% deficit. At0.90 llama6399.41 versus6363.46
 Yi beats measured RoarGraph at0.90/0.95, pending the predeclared RF80 comparator.
 Neither frozen competitor qualifies at0.99; no matched high-recall victory claimed.
 
-The user's new objective is superiority at all three thresholds, replacing the
+The new objective is superiority at all three thresholds, replacing the
 old90%-of-competitor progress gate. The report now requires separated observed
 ranges for a positive superiority status; selection still uses actual recall
 and measured medians. Full points/frontiers are in pareto.json/pareto.csv.
@@ -174,3 +174,54 @@ The original three-intervention budget remains closed. Additional work is in
 
 Default4 regression is still running under the original outer lock; RF80 remains
 queued. The sole Rust1.89 all-features gate is unconsumed.
+
+## Regression cancellation, 2026-10-22 18:41 UTC
+
+The remaining long regression builds were stopped. Sent SIGTERM
+only to the verified Glove worker process group415969; the fail-fast main driver
+exited and released its lock. Yahoo never started. Preserved SIFT raw/results,
+partial Glove receipts/logs, and the driver's original failure receipt. See
+regression/default4-v1/cancellation.json for the intentional-cancellation context.
+The required full in-distribution throughput preservation is now unverified;
+SIFT remains inconclusive. No automatic restart or additional regression build.
+RF80 began immediately after release; profiling/layout jobs remain queued.
+The corrected-prefix report at the tail of the main batch was skipped when the
+regression driver exited and must be recovered separately without rerunning queries.
+
+RF80 completed on both official datasets after cancellation. Recovered raw HDF5,
+reports, receipts and15 source snapshots per dataset, verified their recorded
+SHA256, and regenerated README/Pareto/latency. Report generation accepted the
+same CPU/affinity/threads/harness/source/32768-pool/cache protocol. Llama RF80
+threshold5e-6 reaches0.99007 at3221.6976[2993.3524–3226.8472]QPS: HMS at0.99
+is54.79%behind with separated ranges. Yi's strongest qualifying0.95 comparator
+is now RF80 at0.96418/1952.6001[1951.8092–1973.4945]QPS, leaving HMS+64.62%.
+Yi0.90 still compares to Roar96/L120;0.99 remains unreached. Superiority remains
+NO. The stronger comparator does not select a new HMS configuration.
+
+## Final validation and integration, 2026-10-22
+
+Both bounded validation-only phases completed. Compact adjacency reduces live
+encoded bytes23.26%/23.24%but shows no repeatable speedup at any tested point;
+it remains explicit, default off. Byte-VNNI preserves all paired IDs but fails
+the predeclared criterion and is not in shipping code. Full results and resource
+costs are in the v2/v3 reports; zero-tail scoring remains unmeasured.
+
+The sole Linux cargo+1.89.0 test --all-features passed on frozen signed2d4967e:
+947passed,6ignored,99reported suites,exit0,attempt1. Cargo manifests were
+unchanged. Its source/test/asset manifest matched919local files, excluding one
+generated Python bytecode file. All44native Python contracts and the real-native
+wrapper smoke also passed for shipping v2 source. No Rust test is repeated.
+
+Concurrent signed commits9931ae9/8e3dabb/429e57b were preserved by signed merge
+ec79af1. They change diagnostic decoding/test style and remove raw HDF5/copied
+VIBE snapshots from Git. Production search is unchanged, but the post-freeze
+diagnostic/test source was not covered by the one-shot Rust gate. Rust1.89
+cargo fmt --check passed on merged ec79af1. The exact integration delta and both
+gate receipts are in final-gate/; checks.json states the validation limit.
+
+Raw files and source copies remain intact in the local worktree, the durable
+local .qag-preserved/20261022-1948 archive, and writerslogic-02. Follow the
+concurrent hash-only publication policy.
+All experiment budgets are closed. SIFT remains
+inconclusive; cancelled Glove and unrun Yahoo leave full ID preservation
+unverified. No new official evaluation or universal superiority is claimed.

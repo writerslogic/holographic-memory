@@ -88,7 +88,11 @@ fn select(
     Ok(selected)
 }
 
-fn validate_queries(queries: &[f32], dim: usize, metric: Metric) -> Result<(), HmsError> {
+pub(super) fn validate_queries(
+    queries: &[f32],
+    dim: usize,
+    metric: Metric,
+) -> Result<(), HmsError> {
     if dim == 0 || queries.is_empty() || !queries.len().is_multiple_of(dim) {
         return Err(invalid(
             "training queries must be nonempty rows of graph dimension".into(),
@@ -166,7 +170,7 @@ impl Graph {
         Ok(graph)
     }
 
-    fn apply_training_queries(&mut self, queries: &[f32]) -> Result<(), HmsError> {
+    pub(super) fn apply_training_queries(&mut self, queries: &[f32]) -> Result<(), HmsError> {
         if self.n == 1 {
             return Ok(());
         }

@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/v2/runs/yi-layout-v2/report.json",
+    "sha256": "7ad62971aba2e2629299d1bfac2aacba31f00aadc9930b904e534b5578f48cf2",
+    "bytes": 59993
+  },
+  "gate": {
+    "path": "/home/davidcondrey/sol-qag/v2/runs/yi-layout-v2/gate.json",
+    "sha256": "3cdf0ab374c4541073910a8173e480627fa30c3619d8fdcce6f372b557b27919",
+    "bytes": 906
+  }
+}

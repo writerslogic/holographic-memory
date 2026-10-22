@@ -1,0 +1,23 @@
+{
+  "fmt": {
+    "command": "cargo fmt --check",
+    "status": "pass",
+    "exit_code": 0,
+    "log": "final-gate/fmt.txt"
+  },
+  "cargo": {
+    "command": "cargo +1.89.0 test --all-features",
+    "status": "pass",
+    "exit_code": 0,
+    "log": "final-gate/cargo.txt",
+    "attempts": 1
+  },
+  "environment": {
+    "toolchain": "1.89.0",
+    "CARGO_BUILD_JOBS": "2",
+    "dev_test_opt_level": "1 (repository CI)",
+    "dev_test_debug": "0 (repository CI)",
+    "RUSTFLAGS": "unset",
+    "target": "/home/davidcondrey/sol-qag/target-final-189"
+  }
+}

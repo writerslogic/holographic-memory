@@ -1,0 +1,34 @@
+/home/davidcondrey/sol-qag/freezes/llama-full-validation-v1/frozen.json
+{"schema_version": 1, "scope": "VIBE validation-only export, no official test", "native_manifest": "0490f853171092fe4d6bfc1cb766f32ccc4b188e7d981ea66241d443f2aee36b", "construction_manifest": "22c42ba20f13d60fc7e0a0c94f1d13401b8e46a1cf882dbe7ab983b1713bc781", "sha256": "3d43410e565ae8a50e05c29cefcb2b93910c3b666e93c53d97676247b000396c", "base_rows": 256921, "validation_queries": 256, "construction_queries": 32768, "dimension": 128, "metric": "ip", "exporter_sha256": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92"}
+/home/davidcondrey/sol-qag/runs/llama-full-validation-v1/report.json
+/home/davidcondrey/sol-qag/freezes/yi-full-validation-v1/frozen.json
+{"schema_version": 1, "scope": "VIBE validation-only export, no official test", "native_manifest": "20758bdf8b57580d31e1900a41cfe406d54741d6559f8a1ce67d4413cf3ea314", "construction_manifest": "06c89ee901458c272290a4f3730a87ca7233f31e5d5447cd54ed339c90442d30", "sha256": "69131c6046b9e4b91b4d7a22d47ec82593ff47d3aedbc4c27b44d7686bb4982a", "base_rows": 187843, "validation_queries": 256, "construction_queries": 32768, "dimension": 128, "metric": "ip", "exporter_sha256": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92"}
+/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/report.json
+/home/davidcondrey/sol-qag/freezes/llama-official-v1/frozen.json
+{"schema_version": 1, "scope": "VIBE validation-only export, no official test", "native_manifest": "0490f853171092fe4d6bfc1cb766f32ccc4b188e7d981ea66241d443f2aee36b", "construction_manifest": "22c42ba20f13d60fc7e0a0c94f1d13401b8e46a1cf882dbe7ab983b1713bc781", "sha256": "3d43410e565ae8a50e05c29cefcb2b93910c3b666e93c53d97676247b000396c", "base_rows": 256921, "validation_queries": 256, "construction_queries": 32768, "dimension": 128, "metric": "ip", "exporter_sha256": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92"}
+/home/davidcondrey/sol-qag/runs/llama-official-v1/report.json
+/home/davidcondrey/sol-qag/freezes/yi-official-v1/frozen.json
+{"schema_version": 1, "scope": "VIBE validation-only export, no official test", "native_manifest": "20758bdf8b57580d31e1900a41cfe406d54741d6559f8a1ce67d4413cf3ea314", "construction_manifest": "06c89ee901458c272290a4f3730a87ca7233f31e5d5447cd54ed339c90442d30", "sha256": "69131c6046b9e4b91b4d7a22d47ec82593ff47d3aedbc4c27b44d7686bb4982a", "base_rows": 187843, "validation_queries": 256, "construction_queries": 32768, "dimension": 128, "metric": "ip", "exporter_sha256": "aa91e5bfb1441d310b94b1b05465501aa651ede9edbc862cd64bce73cbe84a92"}
+/home/davidcondrey/sol-qag/runs/yi-official-v1/report.json
+/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/report.json
+Traceback (most recent call last):
+  File "/home/davidcondrey/sol-qag/qag_regression.py", line 315, in <module>
+    main()
+  File "/home/davidcondrey/sol-qag/qag_regression.py", line 311, in main
+    run(args)
+  File "/home/davidcondrey/sol-qag/qag_regression.py", line 276, in run
+    results.append(run_dataset(dataset, frozen, root / dataset["name"]))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/davidcondrey/sol-qag/qag_regression.py", line 175, in run_dataset
+    with h5py.File(raw, "r") as handle:
+         ^^^^^^^^^^^^^^^^^^^
+  File "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/h5py/_hl/files.py", line 555, in __init__
+    fid = make_fid(name, mode, userblock_size, fapl, fcpl, swmr=swmr)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/h5py/_hl/files.py", line 232, in make_fid
+    fid = h5f.open(name, flags, fapl=fapl)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "h5py/_objects.pyx", line 54, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
+  File "h5py/h5f.pyx", line 104, in h5py.h5f.open
+FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = '/home/davidcondrey/vibe-hms/vibe/results/qagreg-run_default4_v1-glove-100-cosine/100/hms-qag-regression/cosine_64_500_4.hdf5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)

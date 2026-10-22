@@ -1,0 +1,11 @@
+2026-10-22 11:23:06,279 - vibe - INFO - Order: [Definition(algorithm='hms-qag-regression', constructor='QAGPair', module='vibe.algorithms.qag_pair', singularity_image='hms', arguments=['cosine', 64, 500, 4], query_argument_groups=[[[0, 100, 100, 0]], [[1, 100, 100, 0]], [[0, 300, 400, 0]], [[1, 300, 400, 0]], [[0, 1000, 1000, 0]], [[1, 1000, 1000, 0]], [[1, 100, 100, 1]], [[0, 100, 100, 1]], [[1, 300, 400, 1]], [[0, 300, 400, 1]], [[1, 1000, 1000, 1]], [[0, 1000, 1000, 1]], [[0, 100, 100, 2]], [[1, 100, 100, 2]], [[0, 300, 400, 2]], [[1, 300, 400, 2]], [[0, 1000, 1000, 2]], [[1, 1000, 1000, 2]]], disabled=False, ood=False, gpu=False)]
+2026-10-22 11:23:06,287 - vibe - INFO - Orchestrator: set scheduling policy to SCHED_BATCH.
+2026-10-22 11:23:06,291 - vibe - INFO - Orchestrator: IO priority set to idle (ionice -c3).
+2026-10-22 11:23:06,291 - vibe - INFO - Orchestrator: CPU niceness increased by +10.
+2026-10-22 11:23:06,361 - vibe.worker.0 - WARNING - numactl not found; falling back to taskset (no NUMA policy).
+2026-10-22 11:23:06,363 - vibe.worker.0 - INFO - Started process PID=415969
+2026-10-22 11:23:06,398 - vibe.worker.0 - INFO - ['cosine', 64, 500, 4]
+2026-10-22 11:23:06,400 - vibe.worker.0 - INFO - Trying to instantiate vibe.algorithms.qag_pair.QAGPair(['cosine', 64, 500, 4])
+2026-10-22 11:23:06,602 - vibe.worker.0 - INFO - Got a train set of size (1183514 * 100)
+2026-10-22 11:23:06,602 - vibe.worker.0 - INFO - Got 10000 queries
+2026-10-22 11:40:59,828 - vibe.worker.0 - INFO - Process completed with return code: -15

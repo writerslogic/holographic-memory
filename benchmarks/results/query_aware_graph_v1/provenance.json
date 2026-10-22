@@ -3,7 +3,7 @@
   "audit_date": "2026-10-22",
   "baseline_sha": "08d37778a66b58709461456e5b9a7ab6a05b399f",
   "worktree": "/Volumes/A/.sol-wt-qag",
-  "scope": "Historical v1 diagnostics and frozen full validation/official evaluations; default4 regression and RF80 batches still running. Subsequent optimization belongs to query_aware_graph_v2.",
+  "scope": "Frozen official/validation results plus completed RF80, inconclusive/cancelled ID regression, and separately bounded validation-only layout/kernel experiments. Overall superiority is not established.",
   "supplied_baseline": {
     "artifact": "benchmarks/results/vibe_v1/llama-128-ip-standing-wl02.json",
     "verified_from": "writerslogic-02:/home/davidcondrey/vibe-hms/export-final/summary.parquet",
@@ -769,10 +769,10 @@
   },
   "blockers": [],
   "unmeasured": [
-    "Completed default4 regression gate and RF80 comparison (active/queued)",
+    "Full in-distribution preservation: SIFT inconclusive, Glove cancelled and Yahoo unrun by user request",
     "Isolated per-index peak RSS and actual persisted-index file sizes for frozen v1 timing arms",
-    "Final cargo fmt --check and sole Linux cargo +1.89.0 test --all-features gate",
-    "Untouched replacement official test for any newly developed architecture"
+    "Untouched replacement official test for any newly developed architecture",
+    "Post-integration all-features execution of concurrent diagnostic/test-only edits; sole gate already consumed on2d4967e"
   ],
   "completed_source": {
     "core_commit": "85b0af081c26e65f6a5643722386137ca332e587",
@@ -2413,8 +2413,8 @@
       },
       "scope": "Synthetic ABI/default parity and Python correctness; native smoke used no candidate construction queries and is not full-dataset or throughput evidence"
     },
-    "cargo_fmt_check": "unrun",
-    "linux_cargo_1_89_all_features": "unrun",
+    "cargo_fmt_check": "pass on merged source ec79af1",
+    "linux_cargo_1_89_all_features": "pass once on2d4967e:947 passed,6 ignored; concurrent diagnostic/test-only integration not retested",
     "required_final_command": "cargo +1.89.0 test --all-features",
     "omitted_checks": [
       "Clippy",
@@ -2455,10 +2455,11 @@
         "sha256": "01c3f8c44743a0d6798e86e3292106e226a18a7e6a013fbb1e99afea866980bd"
       },
       "scope": "Synthetic native ABI/default parity plus38 Python tests; no projected performance claim"
-    }
+    },
+    "final_receipt": "benchmarks/results/query_aware_graph_v1/checks.json"
   },
   "frozen_validation_execution": {
-    "status": "Prefix and both full validation reports completed; both frozen official reports completed and recovered; regression/RF80 still active.",
+    "status": "Prefix validation scope corrected without rerunning queries; full validation/official and RF80 recovered; remaining ID regressions cancelled at user request",
     "receipt": {
       "path": "benchmarks/results/query_aware_graph_v1/projection-validation-receipt.json",
       "sha256": "e6d1357ba32a070463dd48de10afccd5fff12a6f3973a45bfc5ea51563e4dc1d"
@@ -2495,12 +2496,11 @@
     ],
     "local_post_commit_adapter_change": "Optional candidate_code_bits=8 constructor accepts4/8 and labels selected precision; not uploaded to the already imported validation worker",
     "resource_scope": "All arms co-resident. Process peak RSS and VIBE index_size USS delta are aggregate; per-arm encoded-byte attributes are not isolated peak RSS or persisted file size.",
-    "known_scope_metadata_error": "Original prefix summary incorrectly sets official_test=true because exporter lacked qag_scope. Original source attribute and frozen receipt explicitly say validation only; original summary is preserved and full batch writes separate corrected v2 summary."
+    "known_scope_metadata_error": "Original prefix report remains frozen with incorrect official_test=true; separate projection-validation-summary-v2.json corrects scope with identical recalls/QPS."
   },
   "evidence_gaps": [
     "Initial diagnostic binary/source fingerprints retained; exact initial uncommitted source snapshots absent from canonical evidence. Current diagnostic source is committed.",
-    "Original prefix report retains a known incorrect official-test flag; validation-only source marker and receipt establish scope, and a separate v2 report is scheduled.",
-    "Both full validation and frozen official reports recovered; regressions, RF80 and final Rust gate remain active or unrun."
+    "Full in-distribution throughput preservation is unverified after user-requested cancellation; the post-integration source was not retested after the sole permitted gate"
   ],
   "paired_prefix_validation": {
     "scope": "200k base prefix;256 reserved learn queries only; no official test",
@@ -2662,11 +2662,11 @@
       }
     ],
     "resource_scope": "All arms co-resident; process RSS and VIBE USS delta aggregate. No isolated per-index peak RSS claimed.",
-    "known_scope_metadata_error": "Original prefix summary incorrectly sets official_test=true because exporter lacked qag_scope. Original source attribute and frozen receipt explicitly say validation only; original summary is preserved and full batch writes separate corrected v2 summary.",
+    "known_scope_metadata_error": "Original prefix report remains frozen with incorrect official_test=true; separate projection-validation-summary-v2.json corrects scope with identical recalls/QPS.",
     "observations": "Projected8 matches diagnostic recall; prefix median throughput passes0.90 target and fails0.95 against Roar96 L120. Roar48 L100 below0.90; measured Roar96 L800 below0.99; measured MLANN points below0.90. Full-dataset parity not established."
   },
   "full_evaluation_batch": {
-    "status": "Both validation and both official runs completed successfully; original default4 regression batch is active; RF80 queued.",
+    "status": "Both validation and both official runs completed successfully; SIFT completed inconclusively. User cancelled Glove while building; Yahoo never started. Main driver exited, skipping corrected-prefix report. RF80 then completed on both official datasets; matching protocol validated by report generation.",
     "source_receipt": {
       "path": "benchmarks/results/query_aware_graph_v1/sources/patience-execution-source-receipt.json",
       "sha256": "0f9c6a7aba57a3c81d3757cc58d778b942b553b49f97864fc99b1eeb7ff6eb89"
@@ -2805,5 +2805,67 @@
         "max_hms_strict_recall": 0.98931
       }
     ]
+  },
+  "regression_cancellation": {
+    "receipt": {
+      "path": "benchmarks/results/query_aware_graph_v1/regression/default4-v1/cancellation.json",
+      "sha256": "7285f5b4e5b092f2e8c159aaa03c5a5a4a8aa624bd4547b292061db822b7795a"
+    },
+    "gate": "inconclusive",
+    "preservation_verified": false,
+    "no_restart": true
+  },
+  "rf80_recovery": {
+    "receipt": "benchmarks/results/query_aware_graph_v1/recovery-2026-10-22.json",
+    "llama": {
+      "recall": 0.99007,
+      "qps_median": 3221.6975819295903,
+      "qps_min": 2993.3523901029457,
+      "qps_max": 3226.8472194282563,
+      "configuration": "RF80/depth13/threshold5e-6"
+    },
+    "yi": {
+      "recall": 0.96418,
+      "qps_median": 1952.6001142318635,
+      "qps_min": 1951.8091993266344,
+      "qps_max": 1973.4945074875914,
+      "configuration": "RF80/depth13/threshold5e-6"
+    },
+    "selection": "predeclared before original official outcomes; no new HMS setting selected",
+    "verdict": "No overall superiority: llama .99 HMS54.79%behind RF80; yi .99 unreached"
+  },
+  "corrected_prefix_report": {
+    "path": "benchmarks/results/query_aware_graph_v1/projection-validation-summary-v2.json",
+    "sha256": "f4ed0d46ccb03981ae1ccea14098f925845b9974994149d8357ae4d4abbfcf11",
+    "unchanged_recall_qps": true,
+    "official_test": false,
+    "original_preserved": true
+  },
+  "subsequent_validation": {
+    "layout_summary": "../query_aware_graph_v2/summary.json",
+    "kernel_summary": "../query_aware_graph_v3/summary.json",
+    "kernel_rejected": true,
+    "compact_default": false,
+    "consistent_speedup": false,
+    "test_count": 1,
+    "integration_rust_retested": false
+  },
+  "publication_policy": {
+    "policy": "Hashes and reports in Git; raw HDF5 and copied VIBE snapshots retained locally and on writerslogic-02, following concurrent8e3dabb",
+    "preserved_local_archive": ".qag-preserved/20261022-1948",
+    "origin_commits_preserved": [
+      "9931ae910d62e4301f61fe1cce2e00837fb9b85e",
+      "8e3dabbd044120c91731276773a6234846d9a290",
+      "429e57b98eef32eded06a202d744ef4f5b807d98"
+    ],
+    "followup": {
+      "branch": "feat/query-aware-graph-costs",
+      "base_commit": "fbd465dd674989c2bc917c066535f48671bd9a6f",
+      "original_pushed_commit": "72a1315c141cab6156a32d6e346eeceb4cf89b94",
+      "prior_pr": 204,
+      "prior_pr_state": "merged",
+      "integration_receipt": "final-gate/followup-integration.json",
+      "rust_retested": false
+    }
   }
 }

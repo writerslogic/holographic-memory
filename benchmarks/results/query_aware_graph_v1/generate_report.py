@@ -320,11 +320,14 @@ def regression_tables(root):
         "|---|---|---|---|---|---:|---|",
     ]
     statuses = []
+    cancellation = load(root / "regression" / "default4-v1" / "cancellation.json") or {}
     for name in REGRESSIONS:
         directory = root / "regression" / "default4-v1" / name
         gate, report = load(directory / "gate.json"), load(directory / "report.json")
         if gate is None or report is None:
-            lines.append(f"| {name} | inconclusive | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |")
+            reason = ("cancelled" if name in cancellation.get("cancelled", [])
+                      else "not run" if name in cancellation.get("not_started", []) else "unmeasured")
+            lines.append(f"| {name} | inconclusive ({reason}) | unmeasured | unmeasured | unmeasured | unmeasured | unmeasured |")
             statuses.append("inconclusive")
             continue
         if gate.get("gate") not in ("pass", "fail", "inconclusive"):
@@ -463,10 +466,38 @@ def check_table(root, path):
             if not log_path.is_file():
                 raise ValueError("verification log is missing")
             evidence += " — " + link(log_path, root, "log")
+        if entry.get("source_commit"):
+            evidence += f"; source `{entry['source_commit']}`"
         lines.append(f"| {label} | {evidence} | {status} |")
         statuses[key] = status
     lines.append("| Additional Cargo suites | Clippy, default-feature suite, feature-matrix sweeps | unrun under the requested validation budget |")
     return lines, statuses
+
+
+def subsequent_validation(root):
+    layout = load(root.parent / "query_aware_graph_v2/summary.json")
+    kernel = load(root.parent / "query_aware_graph_v3/summary.json")
+    if layout is None:
+        return []
+    savings = [layout["datasets"][name]["encoded_saving_percent"] for name in ("llama", "yi")]
+    lines = ["**Subsequent validation-only optimization.** These experiments use the reserved learn queries; the frozen official results above are unchanged. New source has no new official evaluation.", "",
+             f"Compact adjacency saves {savings[0]:.2f}%/{savings[1]:.2f}% of live encoded bytes on llama/yi while preserving profiled ordered IDs, persisted bytes and search-work counts. "
+             "Persisted files remain 206,622,512/150,982,476 bytes. Plain production profiles attribute about 45–47% of instrumented time to adjacency/visited/prefetch and 36–38% to scoring/pool; the timers do not isolate arithmetic, cache misses or allocations.", ""]
+    if layout.get("repeatable_speedup_observed") is False:
+        deltas = {name: "/".join(f"{point['median_delta_percent']:+.2f}%" for point in layout["datasets"][name]["timings"])
+                  for name in ("llama", "yi")}
+        lines += ["No tested layout point shows a repeatable speedup with separated observed ranges. "
+                  f"Compact-minus-fixed median changes at ef100/256/512 are llama {deltas['llama']} and yi {deltas['yi']}; "
+                  "only the memory tradeoff is supported. Compaction remains explicit, default off.", ""]
+    if kernel is not None:
+        accepted = kernel.get("decision", {}).get("kernel_accepted")
+        lines += [("The separately declared exact byte-VNNI intervention passed its six-point validation timing criterion."
+                   if accepted else "The separately declared exact byte-VNNI intervention was rejected by its six-point validation timing criterion."
+                   if accepted is False else "The separately declared exact byte-VNNI intervention is reported without a final selection receipt."), ""]
+    lines += [("[Layout profiles, paired QPS and resource costs](../query_aware_graph_v2/README.md); "
+               "[exact-kernel comparison and selection](../query_aware_graph_v3/README.md); "
+               "[three ranked next experiments](../query_aware_graph_v2/ledger.md). Full in-distribution throughput preservation remains unverified after the regression cancellation."), ""]
+    return lines
 
 
 def render(root, checks=None):
@@ -493,7 +524,11 @@ def render(root, checks=None):
         outcome,
         f"Regression gate: **{overall_regression}**. Formatting: **{check_status['fmt']}**. Required Rust gate: **{check_status['cargo']}**.",
         "",
+        *(["The single Rust gate passed on frozen source `2d4967e`. Subsequent diagnostic/test maintenance and the follow-up's newer main base were not Rust-tested under the one-test budget. Rust 1.89 formatting passes on the follow-up source. [Integration scope](final-gate/followup-integration.json), [earlier source delta](final-gate/post-gate-integration.patch) and [check receipts](checks.json) preserve this verification limit.", ""]
+          if checks and (load(checks) or {}).get("cargo", {}).get("post_gate_integration_tested") is False else []),
         "Baseline SHA: `08d37778a66b58709461456e5b9a7ab6a05b399f`. Source decisions, configurations, seeds and commands are retained in [ledger.md](ledger.md); dataset/runtime fingerprints are in [provenance.json](provenance.json).",
+        "",
+        "Published evidence contains reports and fingerprints. Raw HDF5 and copied VIBE source snapshots remain in the local worktree and on writerslogic-02 at the paths in their receipts; they are intentionally excluded from Git. Regenerating raw-latency exports requires retrieving those matching artifacts.",
         "",
         "B is ordinary entry with coded routing; O starts at the true nearest base vector; V is true-top100 coverage among all unique distance-evaluated vertices during B; E uses exact routing; OE combines oracle entry and exact routing. All diagnostic rows use 256 held-out learn queries, degree=64, build_ef=500, seed=24301, ef=2000, rerank=1000 and exact original-IP ground truth.",
         "",
@@ -510,6 +545,9 @@ def render(root, checks=None):
         *official_table, "",
         "All measured points and per-method/global Pareto frontiers are exported in [pareto.json](pareto.json) and [pareto.csv](pareto.csv). A missing qualifying competitor at 0.99 establishes no speed victory. Overlapping observed timing ranges, including llama's small 0.90 median lead, remain inconclusive evidence of superiority.",
         "",
+        *(["![Measured official and validation recall/QPS points with observed ranges](pareto.svg)", "",
+           "[Saved-query latency percentiles](latency.json) retain p50/p90/p95/p99/max per repetition, with QPS checked against the raw saved times. The figure uses measured markers without interpolation.", ""]
+          if (root / "pareto.svg").is_file() else []),
         "Comparator deltas cover only the frozen measured RoarGraph M48/M96 and MLANN RF10 depth14 configurations, plus matching separate RF80 depth13 reports where available. " + mlann_scope + " These measurements establish neither the global best CPU competitor nor cross-machine parity. The frozen construction policy uses the same 32,768 query rows for all trained arms. MLANN has no exposed seed control; each run reuses one forest across repetitions.",
         "",
         "**Full-base validation only.** These 256 queries come from reserved learn rows and are excluded from construction; this table does not substitute for official-test results.",
@@ -518,8 +556,13 @@ def render(root, checks=None):
         "**In-distribution regression gate.** Both arms use the legacy 4-bit path with no training queries at frozen ef/rerank settings. The gate requires identical returned IDs and uses the three observed paired QPS ratios: all ≥0.97 pass, all <0.97 fail, mixed evidence is inconclusive. The observed paired range is not a statistical confidence interval. Glove's VIBE cosine alias preserves original angular coordinates and saved neighbor IDs.",
         "",
         *regressions, "",
+        *([("The remaining regression builds were cancelled to prioritize the comparator and profiling queue. "
+            "[Cancellation receipt](regression/default4-v1/cancellation.json) and the original failure/logs are preserved. "
+            "SIFT is inconclusive; Glove/Yahoo do not certify in-distribution preservation."), ""]
+          if (root / "regression/default4-v1/cancellation.json").is_file() else []),
         "**Resource observations.**", "",
         *resource_tables(root, official, validation, supplements), "",
+        *subsequent_validation(root),
         "**Persisted formats and compatibility.**", "",
         "| Format / contract | Change | Verification |",
         "|---|---|---|",

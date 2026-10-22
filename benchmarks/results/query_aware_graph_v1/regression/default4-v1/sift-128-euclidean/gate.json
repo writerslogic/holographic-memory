@@ -1,0 +1,76 @@
+{
+  "gate": "inconclusive",
+  "points": [
+    {
+      "ef": 100,
+      "rerank": 100,
+      "gate": "inconclusive",
+      "strict_recall": 0.722426,
+      "identical_returned_ids": true,
+      "baseline_qps_median": 4935.887698928513,
+      "baseline_qps_range": [
+        4695.743654392494,
+        5006.101318983806
+      ],
+      "candidate_qps_median": 4791.591043414139,
+      "candidate_qps_range": [
+        4765.566087524252,
+        4854.390287235034
+      ],
+      "median_qps_delta_percent": -2.923418528053179,
+      "paired_delta_percent": [
+        -1.6511196498893321,
+        2.041154630150799,
+        -4.804841455114229
+      ]
+    },
+    {
+      "ef": 300,
+      "rerank": 400,
+      "gate": "inconclusive",
+      "strict_recall": 0.967426,
+      "identical_returned_ids": true,
+      "baseline_qps_median": 2145.918219542924,
+      "baseline_qps_range": [
+        2141.883217030479,
+        2154.421870380757
+      ],
+      "candidate_qps_median": 2127.704545264792,
+      "candidate_qps_range": [
+        1988.4508045182336,
+        2135.083946236813
+      ],
+      "median_qps_delta_percent": -0.8487590119818811,
+      "paired_delta_percent": [
+        -0.8487590119818811,
+        -0.31744358140555207,
+        -7.703740300092243
+      ]
+    },
+    {
+      "ef": 1000,
+      "rerank": 1000,
+      "gate": "pass",
+      "strict_recall": 0.997692,
+      "identical_returned_ids": true,
+      "baseline_qps_median": 766.8279192253517,
+      "baseline_qps_range": [
+        754.3063709042174,
+        778.8367022529133
+      ],
+      "candidate_qps_median": 769.8494828750177,
+      "candidate_qps_range": [
+        765.1964673259062,
+        775.3184224841431
+      ],
+      "median_qps_delta_percent": 0.39403412081269185,
+      "paired_delta_percent": [
+        1.4437232458522686,
+        1.1072240649986353,
+        -1.1539285901522867
+      ]
+    }
+  ],
+  "rule": "identical returned IDs at each matched configuration; all three paired losses <=3% passes, all >3% fails, mixed evidence is inconclusive",
+  "limits": "paired min-max is an observed range, not a statistical confidence interval"
+}

@@ -1,0 +1,113 @@
+{
+  "branch": "feat/query-aware-graph-costs",
+  "base_commit": "fbd465dd674989c2bc917c066535f48671bd9a6f",
+  "source_commit": "e3c5c06916c3c78fa89e03463cadab51d891250e",
+  "original_pushed_commit": "72a1315c141cab6156a32d6e346eeceb4cf89b94",
+  "prior_pr": 204,
+  "prior_pr_state": "merged",
+  "prior_pr_head": "429e57b98eef32eded06a202d744ef4f5b807d98",
+  "cherry_picks": [
+    {
+      "original": "2d4967e711c00c51b6ab4b588b0869c06a772003",
+      "followup": "cde116b3edd937cdcf159120f18f819183a2577c"
+    },
+    {
+      "original": "60df9db63c63209e1e3904480067f841988e2596",
+      "followup": "6865e5bab4d691dc8018003cf2b5f72c984680e1"
+    },
+    {
+      "original": "72a1315c141cab6156a32d6e346eeceb4cf89b94",
+      "followup": "e3c5c06916c3c78fa89e03463cadab51d891250e"
+    }
+  ],
+  "rust_tests_repeated": false,
+  "rust_test_scope": "Only frozen signed 2d4967e; later diagnostic/test maintenance and the newer main base are not covered by that test receipt.",
+  "format_receipt": "followup-fmt/receipt.json",
+  "query_graph_files_matching_original_pushed_commit": [
+    {
+      "path": "src/bin/qag-diagnose.rs",
+      "sha256": "ee6491ea3c8f39258cc0df9e214f3aaeaea3eb9ae59a4bceec5f39efb1245289"
+    },
+    {
+      "path": "src/core/qgraph/adjacency.rs",
+      "sha256": "577fcbdc782f2b6aae75f2d578570f636c967bac6bf8ef816b4ebb3be155d599"
+    },
+    {
+      "path": "src/core/qgraph/build_kernels.rs",
+      "sha256": "88034fe0188754842cf2b9f4088244895838cc19b5a5a43c8929e4a161272e06"
+    },
+    {
+      "path": "src/core/qgraph/diagnostics.rs",
+      "sha256": "93cd2233021de9d50af4b645cb092127232a17fa75b661d58427130bb5eeba68"
+    },
+    {
+      "path": "src/core/qgraph/fastscan.rs",
+      "sha256": "2c9f337d7b4d3e748bee1beda254286469213c963f087f120ca106b0218eb7bb"
+    },
+    {
+      "path": "src/core/qgraph/ivf.rs",
+      "sha256": "8ff70efd603babe233ef10a6c90dfc37946452a8ce74ebdb7d96a3639e31d384"
+    },
+    {
+      "path": "src/core/qgraph/kernels.rs",
+      "sha256": "f6f8b1ca2c5a2c5d13261e46056e3d51fcfe2874af512200f6c97e1b61afaa4a"
+    },
+    {
+      "path": "src/core/qgraph/mod.rs",
+      "sha256": "f6004efbfc5a231d50a38507ec69c2cd636230f82b5044b699adce63291041db"
+    },
+    {
+      "path": "src/core/qgraph/projection.rs",
+      "sha256": "8ec3adb3238c84682ff21384ffc6ffe135a06927b5d6776f7f62e04461093cc1"
+    },
+    {
+      "path": "src/core/qgraph/projection_diagnostic.rs",
+      "sha256": "c3246838a65806719c82f95a90439366a1d77079bc93a71c13e33ddcc9fd3240"
+    },
+    {
+      "path": "src/core/qgraph/vertex.rs",
+      "sha256": "be98f5d9f4b562c87f840fa3cd0a5e37c739dd4d144b26abe5a7dd3c73a653ba"
+    },
+    {
+      "path": "src/core/qgraph/vertex/file.rs",
+      "sha256": "461a695ccdb68a951e111da092d99ba1d826a1146ce50df63a5323ac1261ea8a"
+    },
+    {
+      "path": "tests/python/test_vector_index.py",
+      "sha256": "6167217728123918e2d1ed214d1c117082c31d672dd2d5b73ed73e1d428611a4"
+    }
+  ],
+  "source_and_test_paths_different_from_original_pushed_commit": [
+    "src/bin/conversation-eval.rs",
+    "src/core/documents.rs",
+    "src/core/documents/binary.rs",
+    "src/core/documents/index.rs",
+    "src/core/documents/lexical.rs",
+    "src/core/documents/lexical/execution.rs",
+    "src/core/documents/lexical/tests.rs",
+    "src/core/documents/lexical/wand.rs",
+    "src/core/documents/memory.rs",
+    "src/core/documents/packed_terms.rs",
+    "src/core/documents/positions.rs",
+    "src/core/documents/postings.rs",
+    "src/core/engine/document_api.rs",
+    "src/core/engine/document_batch.rs",
+    "src/core/engine/mutation.rs",
+    "src/core/memory_api/conversation.rs",
+    "src/core/memory_api/conversation/context.rs",
+    "src/core/qgraph/update.rs",
+    "src/core/qgraph/update/delta.rs",
+    "src/core/qgraph/update/diagnostics.rs",
+    "src/core/qgraph/update/format.rs",
+    "src/core/qgraph/update/tests.rs",
+    "src/python/vector_index.rs",
+    "tests/conversation_context.rs",
+    "tests/conversation_memory.rs",
+    "tests/fixtures/conversation_context_v1.json",
+    "tests/golden/lexical-postings-v1/legacy.bin",
+    "tests/golden/lexical-postings-v1/positions-v1.bin",
+    "tests/golden/lexical-postings-v1/positions-v1.json",
+    "tests/golden/lexical-postings-v1/whole-article-v2.bin"
+  ],
+  "python_integration": "VectorIndex build/search/compaction matches the original pushed implementation; main adds the separate PyUpdatableIndex.streaming_diagnostics method."
+}

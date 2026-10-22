@@ -1,0 +1,25 @@
+{
+  "dataset": "sift-128-euclidean",
+  "status": "complete",
+  "gate": "inconclusive",
+  "report": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/report.json",
+    "sha256": "ed35d3456118ae75bc22dbc6d30ad2a0a422a79285197078ec72ff2f0f9cc598",
+    "bytes": 54514
+  },
+  "gate_report": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/gate.json",
+    "sha256": "6744c68134c6c94542d49b04de419cae1af4acbad22fc1137f95ecced9aef59c",
+    "bytes": 2121
+  },
+  "raw_results": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/raw.hdf5",
+    "sha256": "546a28cfbf2bef3734176952d9a82002c13ca9887ce1b368dac501e8e5d4e2f1",
+    "bytes": 144879064
+  },
+  "benchmark_receipt": {
+    "path": "/home/davidcondrey/sol-qag/regression-runs/default4-v1/sift-128-euclidean/benchmark.json",
+    "sha256": "fb659bbf2a683abd1088cb72901a6f6e20615ef1dd19d66c746380c8492beff6",
+    "bytes": 13988
+  }
+}

@@ -1,0 +1,285 @@
+{
+  "scope": "Reserved learn validation only; frozen v1 official results are unchanged",
+  "control": "Fixed adjacency, same 8-bit codes and 8-bit residuals, graph/search settings and construction rows; v2 versus v3 source",
+  "protocol": "writerslogic-02, Rust1.96.0/native, one VIBE-selected CPU, one thread, three alternating paired blocks, saved fifth pass after four warm passes",
+  "datasets": {
+    "llama": {
+      "points": [
+        {
+          "ef": 100,
+          "rerank": 100,
+          "recall": 0.915234375,
+          "median_delta_percent": 2.751349378729673,
+          "paired_delta_percent": [
+            3.3511742041485215,
+            -2.5846173502582226,
+            2.751349378729673
+          ],
+          "status": "inconclusive",
+          "reference_qps": [
+            5424.7742362293675,
+            5394.307560584678,
+            5692.844785469222
+          ],
+          "byte_vnni_qps": [
+            5574.028728475351,
+            5545.706531420714,
+            5575.0802040474255
+          ]
+        },
+        {
+          "ef": 256,
+          "rerank": 400,
+          "recall": 0.990703125,
+          "median_delta_percent": -0.15854056650074222,
+          "paired_delta_percent": [
+            -0.15854056650074222,
+            21.956382841926047,
+            1.6137233008963747
+          ],
+          "status": "inconclusive",
+          "reference_qps": [
+            2587.5118975829837,
+            1882.9575616771763,
+            2589.602450577297
+          ],
+          "byte_vnni_qps": [
+            2583.4096415622816,
+            2296.386932670013,
+            2631.3914687228466
+          ]
+        },
+        {
+          "ef": 512,
+          "rerank": 400,
+          "recall": 0.997109375,
+          "median_delta_percent": -5.733201625692741,
+          "paired_delta_percent": [
+            -6.020431507640566,
+            -12.03258446945571,
+            -4.393711216349505
+          ],
+          "status": "slower in all observed blocks",
+          "reference_qps": [
+            1526.2085476539253,
+            1491.419999500566,
+            1530.8731008967509
+          ],
+          "byte_vnni_qps": [
+            1438.7079343883688,
+            1311.9636282663046,
+            1459.15135151077
+          ]
+        }
+      ],
+      "resources": {
+        "reference": {
+          "encoded_index_bytes": 206536668,
+          "build_seconds": 333.9053512800019
+        },
+        "byte_vnni": {
+          "encoded_index_bytes": 206536668,
+          "build_seconds": 336.1997844130092
+        },
+        "co_resident_process_peak_rss_kib": 1194452
+      },
+      "sources": [
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/llama-kernel-v3/report.json",
+          "sha256": "512aa1c63a2ec64b2eb24108e74420547afff6542edeb39b929f2e6f3dddb5cd"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/llama-kernel-v3/gate.json",
+          "sha256": "02022b09cbcd5e314a09cce63eff0c78e0d69b1f0fe193ba01d96661cc101f5d"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/llama-kernel-v3/benchmark.json",
+          "sha256": "a79a05b52b967227b5c68c691e8b6f13191849ad06fa403f39c36e8e09625ee1"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/llama-kernel-v3/raw.hdf5",
+          "sha256": "c1846b4647da2e681286af4c9eeb3dab41ecda82b033e72dce5093655e117314"
+        }
+      ]
+    },
+    "yi": {
+      "points": [
+        {
+          "ef": 100,
+          "rerank": 100,
+          "recall": 0.9055078125,
+          "median_delta_percent": -2.1113990806176486,
+          "paired_delta_percent": [
+            -5.7606853953093395,
+            -1.3404652658252303,
+            -0.6685944864242344
+          ],
+          "status": "slower in all observed blocks",
+          "reference_qps": [
+            7153.206956693604,
+            7097.311202248969,
+            7156.38301996923
+          ],
+          "byte_vnni_qps": [
+            7002.174210775298,
+            6741.1332082431045,
+            7108.535837670316
+          ]
+        },
+        {
+          "ef": 256,
+          "rerank": 400,
+          "recall": 0.97546875,
+          "median_delta_percent": -3.052471345068175,
+          "paired_delta_percent": [
+            -8.652007618967183,
+            -4.075507254377964,
+            -0.4327707905152467
+          ],
+          "status": "slower in all observed blocks",
+          "reference_qps": [
+            3319.1899509642117,
+            3316.6732677826717,
+            3354.589153112315
+          ],
+          "byte_vnni_qps": [
+            3217.8726288226467,
+            3029.714443957867,
+            3304.825466374721
+          ]
+        },
+        {
+          "ef": 512,
+          "rerank": 400,
+          "recall": 0.9908984375,
+          "median_delta_percent": -0.19567626102212632,
+          "paired_delta_percent": [
+            -6.87124754181605,
+            1.0478912824338993,
+            -0.19567626102212632
+          ],
+          "status": "inconclusive",
+          "reference_qps": [
+            1837.9907268877998,
+            1823.6144680618504,
+            1842.3312364282058
+          ],
+          "byte_vnni_qps": [
+            1834.3942153554924,
+            1698.3094037529486,
+            1861.6368648482937
+          ]
+        }
+      ],
+      "resources": {
+        "reference": {
+          "encoded_index_bytes": 150906736,
+          "build_seconds": 169.41136833300698
+        },
+        "byte_vnni": {
+          "encoded_index_bytes": 150906736,
+          "build_seconds": 172.08851608200348
+        },
+        "co_resident_process_peak_rss_kib": 954668
+      },
+      "sources": [
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/yi-kernel-v3/report.json",
+          "sha256": "becd40c5cacc6e9a0b3d68da7d805919f576391c003846252e8d3afead062329"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/yi-kernel-v3/gate.json",
+          "sha256": "e49a75556ceceaec43b8a18c8f4770902d92421f82eba69d375ae0fcb802615d"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/yi-kernel-v3/benchmark.json",
+          "sha256": "1d03d3e4aeb347c3b6be8d57605fc678f95a9ef703369c1ecf5a1e5c761d46ea"
+        },
+        {
+          "path": "/Volumes/A/.sol-wt-qag/benchmarks/results/query_aware_graph_v3/runs/yi-kernel-v3/raw.hdf5",
+          "sha256": "aa28f563d59492f574700bd2a531ab61f67bc9b42fb7d873c4e8854af9952e22"
+        }
+      ]
+    }
+  },
+  "decision": {
+    "kernel_accepted": false,
+    "selected_kernel_source": "repo-v2",
+    "criterion": "All six predeclared validation points faster in every observed paired block with separated QPS ranges; no new official evaluation",
+    "kernel_sha256": "f6f8b1ca2c5a2c5d13261e46056e3d51fcfe2874af512200f6c97e1b61afaa4a",
+    "points": [
+      {
+        "dataset": "llama",
+        "ef": 100,
+        "rerank": 100,
+        "paired_ratios": [
+          1.0335117420414852,
+          0.9741538264974178,
+          1.0275134937872967
+        ],
+        "separated_ranges": false,
+        "accepted": false
+      },
+      {
+        "dataset": "llama",
+        "ef": 256,
+        "rerank": 400,
+        "paired_ratios": [
+          0.9984145943349926,
+          1.2195638284192605,
+          1.0161372330089637
+        ],
+        "separated_ranges": false,
+        "accepted": false
+      },
+      {
+        "dataset": "llama",
+        "ef": 512,
+        "rerank": 400,
+        "paired_ratios": [
+          0.9397956849235943,
+          0.8796741553054429,
+          0.956062887836505
+        ],
+        "separated_ranges": false,
+        "accepted": false
+      },
+      {
+        "dataset": "yi",
+        "ef": 100,
+        "rerank": 100,
+        "paired_ratios": [
+          0.9423931460469066,
+          0.9865953473417477,
+          0.9933140551357577
+        ],
+        "separated_ranges": false,
+        "accepted": false
+      },
+      {
+        "dataset": "yi",
+        "ef": 256,
+        "rerank": 400,
+        "paired_ratios": [
+          0.9134799238103282,
+          0.9592449274562204,
+          0.9956722920948475
+        ],
+        "separated_ranges": false,
+        "accepted": false
+      },
+      {
+        "dataset": "yi",
+        "ef": 512,
+        "rerank": 400,
+        "paired_ratios": [
+          0.9312875245818395,
+          1.010478912824339,
+          0.9980432373897787
+        ],
+        "separated_ranges": false,
+        "accepted": false
+      }
+    ]
+  }
+}

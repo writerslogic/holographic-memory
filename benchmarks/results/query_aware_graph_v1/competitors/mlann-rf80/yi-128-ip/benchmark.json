@@ -1,0 +1,539 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-22T18:42:15.627835+00:00",
+  "phase": "official_mlann_rf80",
+  "local_freeze": {
+    "path": "/home/davidcondrey/sol-qag/mlann_pair/frozen.json",
+    "sha256": "60197434c8bf73d48eaac14b5204daf1c16049a8283b747d040a141fd45f39b7",
+    "bytes": 2038
+  },
+  "host": {
+    "hostname": "writerslogic-02",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "lscpu": {
+      "lscpu": [
+        {
+          "field": "Architecture:",
+          "data": "x86_64"
+        },
+        {
+          "field": "CPU op-mode(s):",
+          "data": "32-bit, 64-bit"
+        },
+        {
+          "field": "Address sizes:",
+          "data": "46 bits physical, 48 bits virtual"
+        },
+        {
+          "field": "Byte Order:",
+          "data": "Little Endian"
+        },
+        {
+          "field": "CPU(s):",
+          "data": "22"
+        },
+        {
+          "field": "On-line CPU(s) list:",
+          "data": "0-21"
+        },
+        {
+          "field": "Vendor ID:",
+          "data": "GenuineIntel"
+        },
+        {
+          "field": "Model name:",
+          "data": "Intel(R) Core(TM) Ultra 9 185H"
+        },
+        {
+          "field": "CPU family:",
+          "data": "6"
+        },
+        {
+          "field": "Model:",
+          "data": "170"
+        },
+        {
+          "field": "Thread(s) per core:",
+          "data": "2"
+        },
+        {
+          "field": "Core(s) per socket:",
+          "data": "11"
+        },
+        {
+          "field": "Socket(s):",
+          "data": "1"
+        },
+        {
+          "field": "Stepping:",
+          "data": "4"
+        },
+        {
+          "field": "Microcode version:",
+          "data": "0xffffffff"
+        },
+        {
+          "field": "BogoMIPS:",
+          "data": "6143.99"
+        },
+        {
+          "field": "Flags:",
+          "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves avx_vnni vnmi umip waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize ibt flush_l1d arch_capabilities"
+        },
+        {
+          "field": "Virtualization:",
+          "data": "VT-x"
+        },
+        {
+          "field": "Hypervisor vendor:",
+          "data": "Microsoft"
+        },
+        {
+          "field": "Virtualization type:",
+          "data": "full"
+        },
+        {
+          "field": "L1d cache:",
+          "data": "528 KiB (11 instances)"
+        },
+        {
+          "field": "L1i cache:",
+          "data": "704 KiB (11 instances)"
+        },
+        {
+          "field": "L2 cache:",
+          "data": "22 MiB (11 instances)"
+        },
+        {
+          "field": "L3 cache:",
+          "data": "24 MiB (1 instance)"
+        },
+        {
+          "field": "NUMA node(s):",
+          "data": "1"
+        },
+        {
+          "field": "NUMA node0 CPU(s):",
+          "data": "0-21"
+        },
+        {
+          "field": "Vulnerability Gather data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Ghostwrite:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Indirect target selection:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Itlb multihit:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability L1tf:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Meltdown:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mmio stale data:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Old microcode:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Reg file data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Retbleed:",
+          "data": "Mitigation; Enhanced IBRS"
+        },
+        {
+          "field": "Vulnerability Spec rstack overflow:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Spec store bypass:",
+          "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+        },
+        {
+          "field": "Vulnerability Spectre v1:",
+          "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+        },
+        {
+          "field": "Vulnerability Spectre v2:",
+          "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI BHI_DIS_S"
+        },
+        {
+          "field": "Vulnerability Srbds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsa:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsx async abort:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Vmscape:",
+          "data": "Not affected"
+        }
+      ]
+    },
+    "python": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/bin/python"
+  },
+  "bench": {
+    "path": "/home/davidcondrey/vibe-hms/bench.sh",
+    "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+    "bytes": 1056
+  },
+  "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+  "command": [
+    "/home/davidcondrey/vibe-hms/bench.sh",
+    "qag-mlann-rf80-yi-rf80-v1-128-ip",
+    "1",
+    "vibe",
+    "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/definitions",
+    "nolock"
+  ],
+  "source": {
+    "path": "/home/davidcondrey/sol-qag/runs/yi-official-v1/evaluation.hdf5",
+    "sha256": "4a5687d630fb8926128f45fab8f632e2d170d082ace58618ad092ce31191c4bf",
+    "bytes": 6144
+  },
+  "original_source": {
+    "path": "/home/davidcondrey/vibe-hms/vibe/data/yi-128-ip.hdf5",
+    "sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+    "bytes": 268704624
+  },
+  "inputs": [
+    {
+      "path": "/home/davidcondrey/sol-qag/artifacts/patience-holographic_memory.so",
+      "sha256": "31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26",
+      "bytes": 1989928
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/runs/yi-official-v1/validation-export.hdf5",
+      "sha256": "69131c6046b9e4b91b4d7a22d47ec82593ff47d3aedbc4c27b44d7686bb4982a",
+      "bytes": 126506496
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_mlann_execute.sh",
+      "sha256": "ccc75519568ad2f66c656831d86701d952725e19004407e76464c0ba174c6ade",
+      "bytes": 503
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/mlann_pair/frozen.json",
+      "sha256": "60197434c8bf73d48eaac14b5204daf1c16049a8283b747d040a141fd45f39b7",
+      "bytes": 2038
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/mlann_pair/module.py",
+      "sha256": "08c51deb420b9e28d9b22aa1f96b0677657f14330dfda142334ac704e09c206e",
+      "bytes": 5434
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py",
+      "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+      "bytes": 14310
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_report.py",
+      "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+      "bytes": 14116
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/mamba/envs/vibe/lib/python3.11/site-packages/mlann.py",
+      "sha256": "5b2378fe17acb78d4e9824155beb67cc00d513397279646053c973bfcb84f83a",
+      "bytes": 4899
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/mlann_pair/__init__.py",
+      "sha256": "6dc893c3aa5a661fdceba0dfaa655b3730c8124e04eec8c1060554c70045dab0",
+      "bytes": 86
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+      "bytes": 12642
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/runs/yi-official-v1/evaluation.hdf5",
+      "sha256": "4a5687d630fb8926128f45fab8f632e2d170d082ace58618ad092ce31191c4bf",
+      "bytes": 6144
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/run.py",
+      "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+      "bytes": 149
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/data/yi-128-ip.hdf5",
+      "sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+      "bytes": 268704624
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+      "bytes": 12096
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+      "sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+      "bytes": 16777216
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/datasets.py",
+      "sha256": "6bc7e81058245c378a9aba7d76f7c816c3fa15acc2ec0254ee3aa068fa9edd83",
+      "bytes": 52710
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_mlann_execute.py",
+      "sha256": "1ae8a4768ff8e34dd9063b891fd8cfa810add980e8b59cc40f01953811a7829f",
+      "bytes": 11446
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so",
+      "sha256": "91beaaf58f5bced0060e6337052edad5aa1dd8c6733fece137b927c9d0788b7e",
+      "bytes": 1908632
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/qag_execute.py",
+      "sha256": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+      "bytes": 18311
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/mlann_pair/config.yml",
+      "sha256": "4ab1459673d6a29bf9f314f1adbaa679633ce14eaac9c600a8df1c42e53dde4e",
+      "bytes": 667
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+      "bytes": 1056
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py",
+      "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+      "bytes": 5447
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py",
+      "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+      "bytes": 17463
+    }
+  ],
+  "source_snapshots": [
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/00-module.py",
+      "sha256": "08c51deb420b9e28d9b22aa1f96b0677657f14330dfda142334ac704e09c206e",
+      "bytes": 5434,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/mlann_pair/module.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/01-__init__.py",
+      "sha256": "6dc893c3aa5a661fdceba0dfaa655b3730c8124e04eec8c1060554c70045dab0",
+      "bytes": 86,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/mlann_pair/__init__.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/02-config.yml",
+      "sha256": "4ab1459673d6a29bf9f314f1adbaa679633ce14eaac9c600a8df1c42e53dde4e",
+      "bytes": 667,
+      "original_path": "/home/davidcondrey/sol-qag/mlann_pair/config.yml"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/03-qag_mlann_execute.py",
+      "sha256": "1ae8a4768ff8e34dd9063b891fd8cfa810add980e8b59cc40f01953811a7829f",
+      "bytes": 11446,
+      "original_path": "/home/davidcondrey/sol-qag/qag_mlann_execute.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/04-qag_mlann_execute.sh",
+      "sha256": "ccc75519568ad2f66c656831d86701d952725e19004407e76464c0ba174c6ade",
+      "bytes": 503,
+      "original_path": "/home/davidcondrey/sol-qag/qag_mlann_execute.sh"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/05-module.py",
+      "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+      "bytes": 17463,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/06-qag_execute.py",
+      "sha256": "3ebcbce384cf72e7ab6ce637ed9b0f48d7fca2bbea2594af64c8cc6d339661b1",
+      "bytes": 18311,
+      "original_path": "/home/davidcondrey/sol-qag/qag_execute.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/07-qag_report.py",
+      "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+      "bytes": 14116,
+      "original_path": "/home/davidcondrey/sol-qag/qag_report.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/08-bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+      "bytes": 1056,
+      "original_path": "/home/davidcondrey/vibe-hms/bench.sh"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/09-run.py",
+      "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+      "bytes": 149,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/run.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/10-main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+      "bytes": 12096,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/11-runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+      "bytes": 12642,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/12-results.py",
+      "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+      "bytes": 5447,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/13-definitions.py",
+      "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+      "bytes": 14310,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py"
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/sources/14-datasets.py",
+      "sha256": "6bc7e81058245c378a9aba7d76f7c816c3fa15acc2ec0254ee3aa068fa9edd83",
+      "bytes": 52710,
+      "original_path": "/home/davidcondrey/vibe-hms/vibe/vibe/datasets.py"
+    }
+  ],
+  "query_schedule": [
+    [
+      4,
+      1,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      1
+    ],
+    [
+      4,
+      2,
+      0,
+      1
+    ],
+    [
+      4,
+      1,
+      0,
+      1
+    ],
+    [
+      4,
+      1,
+      0,
+      2
+    ],
+    [
+      4,
+      2,
+      0,
+      2
+    ],
+    [
+      4,
+      3,
+      0,
+      2
+    ]
+  ],
+  "outer_flock": "/home/davidcondrey/hms-timing.lock",
+  "construction_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1",
+    "HMS_QAG_BASELINE_SO": "/home/davidcondrey/sol-qag/artifacts/baseline-holographic_memory.so",
+    "HMS_QAG_CANDIDATE_SO": "/home/davidcondrey/sol-qag/artifacts/patience-holographic_memory.so",
+    "HMS_QAG_VALIDATION_IDS": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/reserved-validation-ids.u32",
+    "HMS_QAG_TRAINING_QUERIES": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+    "HMS_QAG_TRAINING_QUERIES_SHA256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d"
+  },
+  "policy": "same official view, construction pool, affinity policy and five-pass cache protocol; fixed RF80/depth13 comparator only",
+  "completed_utc": "2026-10-22T18:43:32.676112+00:00",
+  "status": "benchmark_complete",
+  "raw_results": {
+    "path": "/home/davidcondrey/sol-qag/competitors/mlann-rf80/yi-128-ip/raw.hdf5",
+    "sha256": "cbcd2bec2edc3f6086db6424c3a6ac740377201f49c2a08ca2fbf487a5e847a0",
+    "bytes": 7318792
+  },
+  "vibe_raw_results": {
+    "path": "/home/davidcondrey/vibe-hms/vibe/results/qag-mlann-rf80-yi-rf80-v1-128-ip/100/mlann-rf80-depth13/ip_80_13.hdf5",
+    "sha256": "cbcd2bec2edc3f6086db6424c3a6ac740377201f49c2a08ca2fbf487a5e847a0",
+    "bytes": 7318792
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "scope": "full original base and official test; regression only",
+  "dataset": "sift-128-euclidean",
+  "vibe_dataset": "qagreg-run_default4_v1-sift-128-euclidean",
+  "original_metric": "euclidean",
+  "metric": "euclidean",
+  "dimension": 128,
+  "rows": 1000000,
+  "queries": 10000,
+  "neighbors": 100,
+  "ground_truth": "saved full-dataset neighbor IDs, unchanged; only their original-metric distances recomputed in float64",
+  "ground_truth_limit": "saved IDs trusted from the recorded source; this export does not recompute full-corpus nearest neighbors",
+  "storage": "external native raw files at immutable absolute paths",
+  "inputs": {
+    "meta.json": {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/meta.json",
+      "sha256": "ed3b02ff55fe5f84356916480a31c2d7a82bce8b7840030fa0fce5821c5f71d9",
+      "bytes": 299
+    },
+    "train.f32": {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/train.f32",
+      "sha256": "ac8e11ed111b09e882bcf0ef1a77ebdd36c89f495bce8fd596603f69c35148e6",
+      "bytes": 512000000
+    },
+    "test.f32": {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/test.f32",
+      "sha256": "bf4c4c9db385017e63e7b0a9ccd8e3aab3744a02e053c135e000fa0b1dea2d6f",
+      "bytes": 5120000
+    },
+    "neighbors.i32": {
+      "path": "/home/davidcondrey/hms-bench-decisions/data/sift-128-euclidean/neighbors.i32",
+      "sha256": "4d880e63ec1ad02ea3a0827089f92bf2560bc59a74900c5feeb62903265bb870",
+      "bytes": 4000000
+    }
+  },
+  "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+  "source_sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+  "sha256": "675f0997382eb9094d6ec8ae7ddd7250339a4b97e841f60cf245daadf7b76adb",
+  "bytes": 8008192,
+  "exporter_sha256": "4ae4b9d92da962f396c5f7865566b9e3bf3903b26e9dbfd1f9f7a03b763b939c"
+}

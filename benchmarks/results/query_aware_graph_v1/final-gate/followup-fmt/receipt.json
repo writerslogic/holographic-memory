@@ -1,0 +1,8 @@
+{
+  "command": "cargo fmt --check",
+  "exit_code": 0,
+  "source_commit": "e3c5c06916c3c78fa89e03463cadab51d891250e",
+  "toolchain": "1.89.0",
+  "platform": "Darwin",
+  "rust_tests_repeated": false
+}

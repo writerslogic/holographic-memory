@@ -13,6 +13,23 @@ import holographic_memory as hm
 N, DIM, K = 4000, 48, 10
 
 
+@pytest.mark.parametrize("metric", ["angular", "euclidean", "ip"])
+@pytest.mark.parametrize("bits", [4, 8])
+def test_compact_adjacency_preserves_trained_results(metric, bits):
+    rng = np.random.default_rng(24301)
+    base = rng.normal(size=(128, 16)).astype(np.float32)
+    construction = rng.normal(size=(32, 16)).astype(np.float32)
+    queries = rng.normal(size=(8, 16)).astype(np.float32)
+    fixed = hm.VectorIndex(metric, degree=8, build_ef=32, threads=1, code_bits=bits)
+    compact = hm.VectorIndex(metric, degree=8, build_ef=32, threads=1,
+                             code_bits=bits, compact_adjacency=True)
+    for index in (fixed, compact):
+        index.fit(base, training_queries=construction)
+        index.set_query_arguments(64, 64)
+    assert compact.index_bytes < fixed.index_bytes
+    np.testing.assert_array_equal(fixed.batch_query(queries, 16), compact.batch_query(queries, 16))
+
+
 def clustered(n, dim, seed):
     rng = np.random.default_rng(seed)
     centres = rng.normal(size=(32, dim)).astype(np.float32)
