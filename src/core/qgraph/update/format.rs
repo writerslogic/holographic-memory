@@ -42,14 +42,21 @@ fn words(out: &mut Vec<u8>, xs: &[u64]) {
 fn seal(out: &mut Vec<u8>) {
     out.extend_from_slice(&crc32fast::hash(out).to_le_bytes());
 }
-fn check(bytes: &[u8], magic: &[u8; 8]) -> Result<(), UpdateError> {
-    if bytes.len() < 20 {
+fn known_magic(bytes: &[u8], magic: &[u8; 8]) -> Result<(), UpdateError> {
+    if bytes.len() < 8 {
         return Err(bad("short header"));
     }
     if &bytes[..8] != magic {
         return Err(UpdateError::UnsupportedFormat(
             "unknown magic or version newer than supported",
         ));
+    }
+    Ok(())
+}
+fn check(bytes: &[u8], magic: &[u8; 8]) -> Result<(), UpdateError> {
+    known_magic(bytes, magic)?;
+    if bytes.len() < 20 {
+        return Err(bad("short header"));
     }
     if cfg!(target_endian = "big") || word(&bytes[8..16]) != ORDER {
         return Err(UpdateError::UnsupportedFormat("byte order mismatch"));
@@ -63,11 +70,17 @@ fn check(bytes: &[u8], magic: &[u8; 8]) -> Result<(), UpdateError> {
 impl Manifest {
     pub fn read(path: &Path) -> Result<Self, UpdateError> {
         let mut file = File::open(path)?;
-        if file.metadata()?.len() != 164 {
+        let len = file.metadata()?.len();
+        if len < 8 {
             return Err(bad("manifest length"));
         }
         let mut bytes = [0u8; 164];
-        file.read_exact(&mut bytes)?;
+        file.read_exact(&mut bytes[..8])?;
+        known_magic(&bytes[..8], MANIFEST_MAGIC)?;
+        if len != 164 {
+            return Err(bad("manifest length"));
+        }
+        file.read_exact(&mut bytes[8..])?;
         Self::decode(&bytes)
     }
     pub fn encode(&self) -> Vec<u8> {
@@ -101,6 +114,7 @@ impl Manifest {
         out
     }
     pub fn decode(bytes: &[u8]) -> Result<Self, UpdateError> {
+        known_magic(bytes, MANIFEST_MAGIC)?;
         if bytes.len() != 164 {
             return Err(bad("manifest length"));
         }
@@ -231,8 +245,15 @@ impl BaseRows {
         Ok(())
     }
     pub fn open(path: &Path, manifest: &Manifest) -> Result<Self, UpdateError> {
-        let file = File::open(path)?;
-        if file.metadata()?.len() < 64 {
+        let mut file = File::open(path)?;
+        let len = file.metadata()?.len();
+        if len < 8 {
+            return Err(bad("short rows file"));
+        }
+        let mut magic = [0u8; 8];
+        file.read_exact(&mut magic)?;
+        known_magic(&magic, ROW_MAGIC)?;
+        if len < 64 {
             return Err(bad("short rows file"));
         }
         // SAFETY: immutable generation files are only replaced by rename, never modified or
@@ -356,11 +377,16 @@ pub(super) fn replay(
 ) -> Result<(u64, u64), UpdateError> {
     let mut file = File::open(path)?;
     let length = file.metadata()?.len();
-    if length < LOG_HEADER {
+    if length < 8 {
         return Err(corrupt(0, "short log header"));
     }
     let mut header = [0u8; LOG_HEADER as usize];
-    file.read_exact(&mut header)?;
+    file.read_exact(&mut header[..8])?;
+    known_magic(&header[..8], LOG_MAGIC)?;
+    if length < LOG_HEADER {
+        return Err(corrupt(0, "short log header"));
+    }
+    file.read_exact(&mut header[8..])?;
     check(&header, LOG_MAGIC).map_err(|e| match e {
         UpdateError::UnsupportedFormat(_) => e,
         _ => corrupt(0, e.to_string()),

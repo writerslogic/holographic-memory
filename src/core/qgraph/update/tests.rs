@@ -548,6 +548,21 @@ fn untrusted_headers_and_rows_are_rejected() {
     let index = UpdatableVGraph::create(&source, &[1., 2., 3., 4.], 2, &params()).unwrap();
     let manifest = index.state.read().manifest.clone();
     drop(index);
+    for name in ["CURRENT", "rows-0.bin", "updates.log"] {
+        let original = std::fs::read(source.join(name)).unwrap();
+        for len in [8, original.len(), original.len() + 1] {
+            let copy = dir.path().join(format!("future-{name}-{len}"));
+            copy_store(&source, &copy);
+            let mut bytes = original.clone();
+            bytes[7] = b'2';
+            bytes.resize(len, 0);
+            std::fs::write(copy.join(name), bytes).unwrap();
+            assert!(matches!(
+                UpdatableVGraph::open(&copy),
+                Err(UpdateError::UnsupportedFormat(_))
+            ));
+        }
+    }
     for (name, at) in [
         ("CURRENT", 32usize),
         ("rows-0.bin", 64),
@@ -591,6 +606,22 @@ fn log_and_dimension_limit_boundaries() {
             .set_len(len)
             .unwrap();
         assert_eq!(UpdatableVGraph::open(&path).is_ok(), len == 164);
+    }
+    for len in [8, 164, 165] {
+        let path = root.path().join(format!("future-manifest-{len}"));
+        copy_store(&source, &path);
+        let mut bytes = manifest.encode();
+        bytes[7] = b'2';
+        bytes.resize(len, 0);
+        assert!(matches!(
+            Manifest::decode(&bytes),
+            Err(UpdateError::UnsupportedFormat(_))
+        ));
+        std::fs::write(path.join("CURRENT"), bytes).unwrap();
+        assert!(matches!(
+            UpdatableVGraph::open(&path),
+            Err(UpdateError::UnsupportedFormat(_))
+        ));
     }
     for dim in [MAX_DIM - 1, MAX_DIM, MAX_DIM + 1] {
         let mut manifest = manifest.clone();
