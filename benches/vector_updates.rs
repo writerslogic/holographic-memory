@@ -52,6 +52,15 @@ fn search(c: &mut Criterion) {
     let updated =
         UpdatableVGraph::create_from_graph(&directory.path().join("index"), &graph, &index)
             .unwrap();
+    c.bench_function("updatable_10k_32d_buffered", |b| {
+        b.iter(|| {
+            q = (q + 1) % 256;
+            updated
+                .search_into(black_box(&data[q * 32..(q + 1) * 32]), 10, params, &mut out)
+                .unwrap();
+            black_box(&out);
+        })
+    });
     c.bench_function("updatable_10k_32d_clean", |b| {
         b.iter(|| {
             q = (q + 1) % 256;

@@ -61,6 +61,15 @@ fn check(bytes: &[u8], magic: &[u8; 8]) -> Result<(), UpdateError> {
 }
 
 impl Manifest {
+    pub fn read(path: &Path) -> Result<Self, UpdateError> {
+        let mut file = File::open(path)?;
+        if file.metadata()?.len() != 164 {
+            return Err(bad("manifest length"));
+        }
+        let mut bytes = [0u8; 164];
+        file.read_exact(&mut bytes)?;
+        Self::decode(&bytes)
+    }
     pub fn encode(&self) -> Vec<u8> {
         let mut out = MANIFEST_MAGIC.to_vec();
         words(&mut out, &[ORDER]);
@@ -164,6 +173,13 @@ pub(super) struct BaseRows {
     row_at: usize,
     metric: Metric,
 }
+fn row_offset(count: usize) -> Result<usize, UpdateError> {
+    count
+        .checked_mul(4)
+        .and_then(|n| n.checked_add(64))
+        .and_then(|n| n.checked_next_multiple_of(64))
+        .ok_or(UpdateError::Capacity)
+}
 impl BaseRows {
     pub fn write(
         path: &Path,
@@ -171,8 +187,7 @@ impl BaseRows {
         ids: &[u32],
         vectors: &[f32],
     ) -> Result<(), UpdateError> {
-        let row_at =
-            (64 + ids.len().checked_mul(4).ok_or(UpdateError::Capacity)?).next_multiple_of(64);
+        let row_at = row_offset(ids.len())?;
         let mut header = ROW_MAGIC.to_vec();
         words(
             &mut header,
@@ -186,7 +201,11 @@ impl BaseRows {
             ],
         );
         seal(&mut header);
-        header.extend_from_slice(&0u32.to_le_bytes());
+        let mut ids_crc = crc32fast::Hasher::new();
+        for id in ids {
+            ids_crc.update(&id.to_le_bytes());
+        }
+        header.extend_from_slice(&ids_crc.finalize().to_le_bytes());
         let parent = path.parent().ok_or(UpdateError::Capacity)?;
         let mut temp = tempfile::NamedTempFile::new_in(parent)?;
         let mut writer = std::io::BufWriter::new(temp.as_file_mut());
@@ -226,15 +245,11 @@ impl BaseRows {
             || count >= u32::MAX as u64
             || word(&map[32..40]) != manifest.build.metric.code()
             || word(&map[40..48]) != manifest.sequence
-            || small(&map[60..64]) != 0
         {
             return Err(bad("rows header mismatch"));
         }
         let count = usize::try_from(count).map_err(|_| UpdateError::Capacity)?;
-        let row_at = 64usize
-            .checked_add(count.checked_mul(4).ok_or(UpdateError::Capacity)?)
-            .ok_or(UpdateError::Capacity)?
-            .next_multiple_of(64);
+        let row_at = row_offset(count)?;
         let stride = manifest
             .dim
             .checked_mul(4)
@@ -246,6 +261,9 @@ impl BaseRows {
             .ok_or(UpdateError::Capacity)?;
         if word(&map[48..56]) != row_at as u64 || end != map.len() {
             return Err(bad("rows length mismatch"));
+        }
+        if crc32fast::hash(&map[64..64 + count * 4]) != small(&map[60..64]) {
+            return Err(bad("rows id checksum mismatch"));
         }
         let mut ids = Vec::new();
         ids.try_reserve_exact(count)

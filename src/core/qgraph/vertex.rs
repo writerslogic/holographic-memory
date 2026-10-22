@@ -1507,7 +1507,7 @@ impl VGraph {
         cache
             .as_mut()
             .expect("initialized search scratch")
-            .search(self, query, k, params, out)
+            .search_validated(self, query, k, params, out)
     }
 }
 
@@ -1802,6 +1802,18 @@ impl SearchScratch {
         if g.half_norms.is_empty() && query.iter().all(|&v| v == 0.0) {
             return Err(invalid("zero query: cosine similarity is undefined".into()));
         }
+        self.search_validated(g, query, k, params, out)
+    }
+
+    // The caller has checked dimension, finite coordinates, and nonzero angular norm.
+    fn search_validated(
+        &mut self,
+        g: &VGraph,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        out: &mut Vec<u32>,
+    ) -> Result<usize, HmsError> {
         let ef = params.ef.max(k).max(1);
         // Only the order matters, so the query is used as given (no centring needed: the
         // `<q, mean>` term is common to all candidates) and its scale is dropped.

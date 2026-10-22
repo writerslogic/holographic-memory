@@ -46,6 +46,58 @@ fn copy_store(from: &Path, to: &Path) {
 }
 
 #[test]
+fn buffered_search_matches_owned_results_across_updates_and_consolidation() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let rows = data(64, 4);
+    let index = UpdatableVGraph::create(&path, &rows, 4, &params()).unwrap();
+    let mut out = Vec::with_capacity(64);
+    let allocation = out.as_ptr();
+    for phase in 0..3 {
+        if phase == 1 {
+            index.delete(0).unwrap();
+            index.replace(1, &[1., 2., 3., 4.]).unwrap();
+            index.insert(80, &[4., 3., 2., 1.]).unwrap();
+        } else if phase == 2 {
+            index.consolidate().unwrap();
+        }
+        for query in rows.as_chunks::<4>().0 {
+            let expected = index.search(query, 10, search_params()).unwrap();
+            index
+                .search_into(query, 10, search_params(), &mut out)
+                .unwrap();
+            assert_eq!(out, expected);
+            assert_eq!(out.as_ptr(), allocation);
+        }
+        index
+            .search_into(&rows[..4], 0, search_params(), &mut out)
+            .unwrap();
+        assert!(out.is_empty());
+    }
+}
+
+#[test]
+fn close_unlocks_even_when_a_descriptor_is_inherited() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let index = UpdatableVGraph::create(&path, &[], 2, &params()).unwrap();
+    let inherited = index._lock.0.try_clone().unwrap();
+    assert!(matches!(
+        UpdatableVGraph::open(&path),
+        Err(UpdateError::Locked)
+    ));
+    drop(index);
+    let reopened = UpdatableVGraph::open(&path).unwrap();
+    drop(inherited);
+    assert!(matches!(
+        UpdatableVGraph::open(&path),
+        Err(UpdateError::Locked)
+    ));
+    drop(reopened);
+    UpdatableVGraph::open(&path).unwrap();
+}
+
+#[test]
 fn boundaries_and_atomic_replace() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("index");
@@ -449,13 +501,14 @@ fn untrusted_headers_and_rows_are_rejected() {
     for (name, at) in [
         ("CURRENT", 32usize),
         ("rows-0.bin", 64),
+        ("rows-0.bin", 68),
         ("updates.log", 16),
     ] {
-        let copy = dir.path().join(name.replace('.', "-"));
+        let copy = dir.path().join(format!("{}-{at}", name.replace('.', "-")));
         copy_store(&source, &copy);
         let file = copy.join(name);
         let mut bytes = std::fs::read(&file).unwrap();
-        bytes[at] ^= 0xFF;
+        bytes[at] ^= 2;
         std::fs::write(&file, bytes).unwrap();
         assert!(UpdatableVGraph::open(&copy).is_err());
     }
@@ -478,6 +531,17 @@ fn log_and_dimension_limit_boundaries() {
     let index = UpdatableVGraph::create(&source, &[], 2, &params()).unwrap();
     let manifest = index.state.read().manifest.clone();
     drop(index);
+    for len in [163, 164, 165, 1u64 << 32] {
+        let path = root.path().join(format!("manifest-length-{len}"));
+        copy_store(&source, &path);
+        OpenOptions::new()
+            .write(true)
+            .open(path.join("CURRENT"))
+            .unwrap()
+            .set_len(len)
+            .unwrap();
+        assert_eq!(UpdatableVGraph::open(&path).is_ok(), len == 164);
+    }
     for dim in [MAX_DIM - 1, MAX_DIM, MAX_DIM + 1] {
         let mut manifest = manifest.clone();
         manifest.dim = dim;

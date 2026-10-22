@@ -151,6 +151,7 @@ impl Operation {
 struct Base {
     graph: Option<VGraph>,
     rows: BaseRows,
+    dense_ids: bool,
 }
 impl Base {
     fn open(dir: &Path, m: &Manifest) -> Result<Self, UpdateError> {
@@ -169,7 +170,12 @@ impl Base {
             }
             Some(graph)
         };
-        Ok(Self { graph, rows })
+        let dense_ids = rows.ids.iter().enumerate().all(|(i, &id)| i == id as usize);
+        Ok(Self {
+            graph,
+            rows,
+            dense_ids,
+        })
     }
 }
 #[derive(Clone)]
@@ -265,7 +271,7 @@ thread_local! { static SCRATCH: RefCell<Option<SearchScratch>> = const { RefCell
 /// Only one process may open a directory, while any number of threads may search it.
 pub struct UpdatableVGraph {
     dir: PathBuf,
-    _lock: File,
+    _lock: IndexLock,
     writer: AtomicU8,
     state: RwLock<State>,
 }
@@ -282,7 +288,16 @@ impl Drop for Writer<'_> {
             .compare_exchange(1, 0, Ordering::Release, Ordering::Relaxed);
     }
 }
-fn lock(dir: &Path) -> Result<File, UpdateError> {
+struct IndexLock(File);
+impl Drop for IndexLock {
+    fn drop(&mut self) {
+        // Explicit unlock also releases descriptors inherited by a concurrent fork.
+        if let Err(error) = fs2::FileExt::unlock(&self.0) {
+            tracing::warn!(%error, "failed to release vector index lock");
+        }
+    }
+}
+fn lock(dir: &Path) -> Result<IndexLock, UpdateError> {
     let file = OpenOptions::new()
         .create(true)
         .truncate(false)
@@ -296,7 +311,7 @@ fn lock(dir: &Path) -> Result<File, UpdateError> {
             UpdateError::Io(e)
         }
     })?;
-    Ok(file)
+    Ok(IndexLock(file))
 }
 fn validate_vector(row: &[f32], dim: usize, metric: Metric) -> Result<(), UpdateError> {
     if row.len() != dim {
@@ -429,7 +444,7 @@ impl UpdatableVGraph {
     /// Opens and replays committed batches; truncates only an incomplete final frame.
     pub fn open(path: &Path) -> Result<Self, UpdateError> {
         let file = lock(path)?;
-        let manifest = Manifest::decode(&std::fs::read(path.join("CURRENT"))?)?;
+        let manifest = Manifest::read(&path.join("CURRENT"))?;
         let base = Base::open(path, &manifest)?;
         let mut state = State::new(base, manifest.clone());
         let log = path.join("updates.log");
@@ -551,14 +566,38 @@ impl UpdatableVGraph {
         k: usize,
         params: VSearchParams,
     ) -> Result<Vec<u32>, UpdateError> {
+        let mut out = Vec::new();
+        self.search_into(query, k, params, &mut out)?;
+        Ok(out)
+    }
+    /// Searches with a reusable result buffer, avoiding allocation on clean-base queries.
+    pub fn search_into(
+        &self,
+        query: &[f32],
+        k: usize,
+        params: VSearchParams,
+        out: &mut Vec<u32>,
+    ) -> Result<(), UpdateError> {
         let s = self.state.read();
         validate_vector(query, s.manifest.dim, s.manifest.build.metric)?;
         let k = k.min(s.len());
+        out.clear();
         if k == 0 {
-            return Ok(Vec::new());
+            return Ok(());
         }
-        let clean = s.delta.len() == 0 && s.deleted == 0;
-        let mut out = Vec::new();
+        if s.delta.len() == 0 && s.deleted == 0 {
+            if let Some(graph) = &s.base.graph {
+                SCRATCH.with(|cache| {
+                    graph.search_reusing(&mut cache.borrow_mut(), query, k, params, out)
+                })?;
+                if !s.base.dense_ids {
+                    for slot in out {
+                        *slot = s.base.rows.ids[*slot as usize];
+                    }
+                }
+            }
+            return Ok(());
+        }
         if let Some(graph) = s
             .base
             .graph
@@ -566,27 +605,16 @@ impl UpdatableVGraph {
             .filter(|_| s.deleted < s.base.rows.ids.len())
         {
             let live = graph.len() - s.deleted;
-            let mut take = if clean {
-                k
-            } else {
-                widened_width(params.ef.max(params.rerank).max(k), graph.len(), live)
-            };
+            let mut take = widened_width(params.ef.max(params.rerank).max(k), graph.len(), live);
             loop {
                 let mut widened = params;
-                widened.ef = if clean {
-                    params.ef.max(k).min(graph.len())
-                } else {
-                    take
-                };
-                if !clean {
-                    widened.rerank = take;
-                    widened.patience = 0;
-                }
+                widened.ef = take;
+                widened.rerank = take;
+                widened.patience = 0;
                 SCRATCH.with(|cache| {
-                    graph.search_reusing(&mut cache.borrow_mut(), query, take, widened, &mut out)
+                    graph.search_reusing(&mut cache.borrow_mut(), query, take, widened, out)
                 })?;
-                if clean
-                    || take == graph.len()
+                if take == graph.len()
                     || out.iter().filter(|&&slot| !s.dead(slot as usize)).count() >= k.min(live)
                 {
                     break;
@@ -594,16 +622,10 @@ impl UpdatableVGraph {
                 take = take.saturating_mul(2).min(graph.len());
             }
         }
-        if clean {
-            return Ok(out
-                .into_iter()
-                .map(|slot| s.base.rows.ids[slot as usize])
-                .collect());
-        }
         let metric = s.manifest.build.metric;
         let mut candidates =
             Vec::with_capacity(out.len() + s.delta.live.len().min(params.ef.max(k)));
-        for slot in out {
+        for &slot in out.iter() {
             let slot = slot as usize;
             if !s.dead(slot) {
                 candidates.push((
@@ -629,7 +651,9 @@ impl UpdatableVGraph {
         }
         candidates.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         candidates.truncate(k);
-        Ok(candidates.into_iter().map(|(_, id)| id).collect())
+        out.clear();
+        out.extend(candidates.into_iter().map(|(_, id)| id));
+        Ok(())
     }
     pub fn needs_consolidation(&self, policy: ConsolidationPolicy) -> Result<bool, UpdateError> {
         if !policy.delta_ratio.is_finite()

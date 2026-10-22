@@ -1684,6 +1684,7 @@ fn ann_updates(
                 "ground truth shorter than query set"
             );
             let mut configs = Vec::new();
+            let mut found = Vec::new();
             for &rerank in reranks {
                 for &ef in efs {
                     let p = VSearchParams {
@@ -1693,8 +1694,8 @@ fn ann_updates(
                     };
                     let mut hits = 0;
                     for (q, truth) in test.iter().zip(&truth) {
-                        hits += index
-                            .search(q, 10, p)?
+                        index.search_into(q, 10, p, &mut found)?;
+                        hits += found
                             .iter()
                             .filter(|&&id| truth[..10.min(truth.len())].contains(&(id as i32)))
                             .count();
@@ -1704,7 +1705,8 @@ fn ann_updates(
                         let mut lat = Vec::with_capacity(test.len());
                         for q in &test {
                             let t = Instant::now();
-                            std::hint::black_box(index.search(q, 10, p)?);
+                            index.search_into(q, 10, p, &mut found)?;
+                            std::hint::black_box(&found);
                             lat.push(t.elapsed().as_secs_f64() * 1e6);
                         }
                         let qps = test.len() as f64 / (lat.iter().sum::<f64>() * 1e-6);

@@ -44,6 +44,8 @@ slots; thresholds are configurable. Commit never hides a rebuild in its latency.
 ## Ownership and synchronization
 
 A directory lock excludes other writable opens, including other processes.
+Drop explicitly unlocks the file so a descriptor inherited during a concurrent
+process launch cannot retain ownership after the index closes.
 An atomic writer permit serializes insert/delete/replace/commit/consolidate;
 concurrent writers receive `WriterBusy`. A reader/writer lock protects only
 in-memory state. No lock guard is held during file I/O. Searches borrow one
@@ -88,10 +90,11 @@ squared norms that overflow f32 are rejected. Checked arithmetic bounds lengths.
   flag, vertex bits, residual bits, aligned flag, reordered flag, id bytes,
   screen flag, block bits, reserved zero.
 * `rows-<sequence>.bin`: `HMSVRW01`, order, dimension, count, metric, sequence,
-  row offset (all u64), header CRC32 (u32), reserved zero (u32): 64 bytes.
+  row offset (all u64), header CRC32 (u32), id-table CRC32 (u32): 64 bytes.
   Sorted external ids (`count` u32) follow. Rows start at the next 64-byte boundary;
   each is `dimension` f32 values followed by its CRC32. The header and id ordering
-  are validated at open; row checksums and finite values are validated on access.
+  and id-table checksum are validated at open; row checksums and finite values
+  are validated on access.
 * `updates.log`: `HMSVLG01`, order, identity (16 bytes), dimension, metric,
   origin sequence (u64), header CRC32: 60 bytes. The identity binds it to CURRENT.
 * Batch frame: payload length u32, its bitwise complement u32, sequence u64,
@@ -111,3 +114,55 @@ base, bytewise torn-tail recovery, checksum rejection, reopen equivalence,
 consolidation interruption points, 50k-vector recall comparison, and concurrent
 readers. Measurements and exact reproduction commands are recorded here as they
 are completed; SIFT-1M timing runs only on Linux under the shared timing lock.
+
+### Recorded evidence
+
+`benchmarks/results/ann_updatable_x86_v1.json` contains the source revisions,
+executable hashes, commands, dataset checksum and raw measurements from one
+SIFT-1M comparison on the Intel Core Ultra 9 185H. Each measured child held
+`~/hms-timing.lock`; compilation and graph construction used cores 12–21.
+No SIFT-1M measurements were run on macOS.
+
+Recall was identical at all 20 ef/rerank configurations. At target recalls
+0.90/0.95/0.99, immutable-base QPS was 27,752/20,769/10,485 and updatable-index
+QPS was 26,465/20,175/10,068. The base benchmark uses an aggregate timer; the
+update and hnswlib workers time individual queries. These single-run differences
+of 2.9–4.6% do not isolate synchronization cost from the timing boundary or noise.
+An identically timed, 50-sample Criterion comparison on 10k 32-dimensional vectors
+measured 24.24 microseconds before and 24.58 for the clean updatable index (+1.4%).
+The final dimension-keyed scratch fix is included in that Criterion result.
+
+Mapped serving RSS from `/proc/<pid>/smaps_rollup` was 468.0 MiB before and
+479.2 MiB after; hnswlib was 898.7 MiB. The page-cache-evicted open plus first
+query took 198.9 ms. Replacing 10,000 ids including commit took 1.291 seconds;
+deleting 10,000 ids including commit took 8.405 ms. The existing hnswlib adapter's
+save boundary took 1.311 ms per replacement and 0.02969 ms per deletion; its
+`save_index` boundary has different durability semantics from HMS's synced log.
+
+The update tests cover randomized insert/delete/replace sequences against exact
+kNN and a freshly built base; committed reopen equivalence; every byte offset of
+a torn final frame; corrupt checksums and headers; three consolidation publication
+interruptions; torn unpublished vertex files; concurrent readers during I/O;
+allocation limits; and dimension-safe scratch reuse. The 50k-vector test uses
+16 dimensions, 100 queries, 500 deletes and 500 replacements, and bounds the recall
+change after consolidation by 0.002. Golden-byte regeneration passes on ARM macOS
+and x86 Linux.
+
+Reproduce the full comparison on Linux, after preparing SIFT-1M with
+`benchmarks/competitive/hmsbench/h5_convert.py` and building the before and after
+`public-bench` binaries in separate target directories:
+
+```sh
+python benchmarks/competitive/ann_updatable_measure.py \
+  --data "$HOME/codex-ann-update/data" \
+  --work "$HOME/codex-ann-update/measurement" \
+  --before "$HOME/codex-ann-update/target-before/dist/public-bench" \
+  --after "$HOME/codex-ann-update/target-after/dist/public-bench" \
+  --python-hnsw "$HOME/codex-ann-update/hnsw-env/bin/python" \
+  --before-commit 6685568 --commit "$(git rev-parse HEAD)" \
+  --out "$HOME/codex-ann-update/ann_updatable_x86_v1.json"
+```
+
+The hnswlib environment uses Python 3.13, numpy 2.5.4 and hnswlib 0.8.0.
+The artifact records the exact original invocation and the measured executables'
+source provenance. Python and Node API bindings remain outside this change.
