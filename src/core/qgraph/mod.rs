@@ -39,8 +39,8 @@ use rayon::prelude::*;
 use crate::core::error::HmsError;
 
 use kernels::{
-    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, prefetch_bytes, DotI8, QueryCode,
-    Rotation, SplitMix,
+    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, DotI8, QueryCode, Rotation,
+    SplitMix,
 };
 pub use vertex::{Residency, SearchKnobs, VGraph, VSearchParams, VSearcher};
 
@@ -281,13 +281,23 @@ struct Rows<'a> {
 struct BuildCodes {
     width: usize,
     q: Vec<i8>,
-    scale: Vec<f32>,
-    err: Vec<f32>,
+    /// Per-row factors, side by side so that one cache line load serves a row.
+    meta: Vec<CodeMeta>,
     dot: DotI8,
-    /// Euclidean rows: per row the squared norm the exact distance uses and the norm.
-    norms: Option<Vec<(f32, f32)>>,
+    /// Euclidean rows: `meta` carries the squared norm the exact distance uses and the norm.
+    euclidean: bool,
     /// Euclidean rows: relative f32 rounding slack of the computed distance.
     rel_slack: f32,
+}
+
+/// The factors of one [`BuildCodes`] row; the norms are 0 for unit rows.
+#[derive(Clone, Copy, Default)]
+#[repr(C, align(16))]
+struct CodeMeta {
+    scale: f32,
+    err: f32,
+    n2: f32,
+    n: f32,
 }
 
 impl BuildCodes {
@@ -295,12 +305,12 @@ impl BuildCodes {
         let n = data.len() / dim;
         let width = dim.next_multiple_of(16);
         let mut q = vec![0i8; n * width];
-        let mut scale = vec![0f32; n];
-        let mut err = vec![0f32; n];
+        let mut meta = vec![CodeMeta::default(); n];
         q.par_chunks_mut(width)
-            .zip(scale.par_iter_mut().zip(err.par_iter_mut()))
+            .zip(meta.par_iter_mut())
             .zip(data.par_chunks(dim))
-            .for_each(|((q, (s, e)), x)| {
+            .for_each(|((q, m), x)| {
+                let (s, e) = (&mut m.scale, &mut m.err);
                 let max = x.iter().fold(0f32, |m, v| m.max(v.abs()));
                 *s = if max > 0.0 { max / 127.0 } else { 0.0 };
                 let mut e2 = 0f64;
@@ -317,13 +327,17 @@ impl BuildCodes {
                 // Rounded up so that `err` bounds the true residual norm.
                 *e = (e2.sqrt() * (1.0 + 1e-6)) as f32 + 1e-7;
             });
+        if let Some(norms) = norms {
+            for (m, &n2) in meta.iter_mut().zip(norms) {
+                (m.n2, m.n) = (n2, n2.sqrt());
+            }
+        }
         Self {
             width,
             q,
-            scale,
-            err,
+            meta,
             dot: dot_i8_kernel(),
-            norms: norms.map(|n| n.iter().map(|&n2| (n2, n2.sqrt())).collect()),
+            euclidean: norms.is_some(),
             // The computed dot product and squared norms are each within `dim * 2^-24` of the
             // magnitudes summed; twice that, and at least the unit-row slack, covers them.
             rel_slack: 1e-4f32.max((dim as f32 + 4.0) * 2.0 * f32::EPSILON),
@@ -333,6 +347,13 @@ impl BuildCodes {
     fn code(&self, i: u32) -> &[i8] {
         let i = i as usize;
         &self.q[i * self.width..(i + 1) * self.width]
+    }
+
+    /// Hint the cache to load the code and the factors of row `i`.
+    #[inline]
+    fn prefetch(&self, i: u32) {
+        build_kernels::prefetch_code(self.code(i));
+        build_kernels::prefetch_meta(&self.meta[i as usize]);
     }
 
     /// A lower bound on the computed `d2` of the unit rows `p` and `u`. With
@@ -349,10 +370,11 @@ impl BuildCodes {
     #[inline]
     fn d2_est(&self, p: u32, u: u32) -> f32 {
         let raw = (self.dot)(self.code(p), self.code(u)) as f32;
-        let (pi, ui) = (p as usize, u as usize);
-        match &self.norms {
-            None => (2.0 - 2.0 * self.scale[pi] * self.scale[ui] * raw).max(0.0),
-            Some(n) => (n[pi].0 + n[ui].0 - 2.0 * self.scale[pi] * self.scale[ui] * raw).max(0.0),
+        let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
+        if self.euclidean {
+            (mp.n2 + mu.n2 - 2.0 * mp.scale * mu.scale * raw).max(0.0)
+        } else {
+            (2.0 - 2.0 * mp.scale * mu.scale * raw).max(0.0)
         }
     }
 
@@ -361,16 +383,16 @@ impl BuildCodes {
     /// distance `|p|^2 + |u|^2 - 2 <p, u>` gets a slack relative to the magnitudes it sums.
     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
         const SLACK: f32 = 1e-4;
-        let (pi, ui) = (p as usize, u as usize);
+        let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
         let raw = (self.dot)(self.code(p), self.code(u)) as f32;
-        let ep = self.err[pi];
-        let est = self.scale[pi] * self.scale[ui] * raw;
-        let Some(n) = &self.norms else {
-            let margin = ep + (1.0 + ep) * self.err[ui] + SLACK;
+        let ep = mp.err;
+        let est = mp.scale * mu.scale * raw;
+        if !self.euclidean {
+            let margin = ep + (1.0 + ep) * mu.err + SLACK;
             return (2.0 - 2.0 * (est + margin), 2.0 - 2.0 * (est - margin));
-        };
-        let ((np2, np), (nu2, nu)) = (n[pi], n[ui]);
-        let margin = ep * nu + (np + ep) * self.err[ui];
+        }
+        let ((np2, np), (nu2, nu)) = ((mp.n2, mp.n), (mu.n2, mu.n));
+        let margin = ep * nu + (np + ep) * mu.err;
         let slack = self.rel_slack * (np2 + nu2 + 2.0 * np * nu);
         let base = np2 + nu2;
         (
@@ -384,6 +406,15 @@ impl Rows<'_> {
     fn row(&self, i: u32) -> &[f32] {
         let i = i as usize;
         &self.data[i * self.dim..(i + 1) * self.dim]
+    }
+
+    /// Hint the cache to load row `u` and, for Euclidean rows, its squared norm.
+    #[inline]
+    fn prefetch(&self, u: u32) {
+        build_kernels::prefetch_row(self.row(u));
+        if let Some(n) = self.norms {
+            build_kernels::prefetch_meta(&n[u as usize]);
+        }
     }
 
     /// Squared distance of rows `a` and `b` from their computed dot product: `2 - 2 dot` for
@@ -419,12 +450,12 @@ impl Rows<'_> {
         out.clear();
         let target = self.row(p);
         for &u in ids.iter().take(AHEAD) {
-            build_kernels::prefetch_row(self.row(u));
+            self.prefetch(u);
         }
         let (quads, rest) = ids.as_chunks::<4>();
         for (i, q) in quads.iter().enumerate() {
             for &u in ids.iter().skip(AHEAD + 4 * i).take(4) {
-                build_kernels::prefetch_row(self.row(u));
+                self.prefetch(u);
             }
             let d = build_kernels::dot4(target, q.map(|u| self.row(u)));
             out.extend(d.iter().zip(q).map(|(&x, &u)| self.dist(p, u, x)));
@@ -512,7 +543,7 @@ impl Rows<'_> {
                 Some(codes) if self.quantized => {
                     for &u in &graph[v as usize] {
                         if visited.insert(u) {
-                            prefetch_bytes(codes.code(u));
+                            codes.prefetch(u);
                             fresh.push(u);
                         }
                     }
@@ -521,7 +552,7 @@ impl Rows<'_> {
                 Some(codes) => {
                     for &u in &graph[v as usize] {
                         if visited.insert(u) {
-                            prefetch_bytes(codes.code(u));
+                            codes.prefetch(u);
                             fresh.push(u);
                         }
                     }
@@ -568,6 +599,8 @@ impl Rows<'_> {
                 );
                 pool.truncate(l);
                 best = best.min(pos);
+                // The list header of a pooled vertex is read when it is expanded.
+                build_kernels::prefetch_meta(&graph[u as usize]);
             }
             cur = best.min(cur + 1);
             while cur < pool.len() && pool[cur].done {
@@ -742,13 +775,33 @@ impl Rows<'_> {
                     .collect();
                 ids.sort_unstable();
                 ids.dedup();
-                ids.retain(|&u| u as usize != v && !have.contains(&u));
+                // `ids` is sorted, so one merge with the sorted list drops the ids in it.
+                let mut skip = have.clone();
+                skip.push(v as u32);
+                skip.sort_unstable();
+                let mut at = 0;
+                ids.retain(|&u| {
+                    while at < skip.len() && skip[at] < u {
+                        at += 1;
+                    }
+                    skip.get(at) != Some(&u)
+                });
                 let k = r - have.len();
                 if let Some(codes) = self.codes.filter(|_| ids.len() > k) {
                     // At least `k` ids score at most the k-th smallest upper bound, so an id
                     // whose lower bound exceeds it cannot be among the `k` nearest.
-                    let bounds: Vec<(f32, f32)> =
-                        ids.iter().map(|&u| codes.d2_bounds(v as u32, u)).collect();
+                    const AHEAD: usize = 8;
+                    ids.iter().take(AHEAD).for_each(|&u| codes.prefetch(u));
+                    let bounds: Vec<(f32, f32)> = ids
+                        .iter()
+                        .enumerate()
+                        .map(|(i, &u)| {
+                            if let Some(&w) = ids.get(i + AHEAD) {
+                                codes.prefetch(w);
+                            }
+                            codes.d2_bounds(v as u32, u)
+                        })
+                        .collect();
                     let mut upper: Vec<f32> = bounds.iter().map(|b| b.1).collect();
                     let cut = *upper.select_nth_unstable_by(k - 1, f32::total_cmp).1;
                     let mut b = bounds.iter();
