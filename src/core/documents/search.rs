@@ -241,7 +241,7 @@ fn capture_query(store: &DocumentStore, prepared: PreparedSearch) -> CapturedQue
             return capture_indexed_query(store, prepared, Arc::clone(index));
         }
     }
-    if prepared.lexical_only && store.slot_count <= DENSE_SLOT_LIMIT {
+    if prepared.lexical_only {
         return capture_ranked_lexical(store, prepared);
     }
     capture_postings(store, prepared)
@@ -397,8 +397,8 @@ struct NormKey {
 
 /// Per-thread working memory of [`capture_ranked_lexical`], reused across queries so a query
 /// neither allocates nor clears a table per store slot. It grows to the largest store a thread
-/// queries (20 bytes per slot plus 4 per posting of the longest query, at most
-/// [`DENSE_SLOT_LIMIT`] slots) and is not shrunk.
+/// queries (20 bytes per slot plus 4 per posting of the longest query: no more than the
+/// store's own owner and word-count tables per slot) and is not shrunk.
 #[derive(Default)]
 struct LexicalScratch {
     /// BM25 sum per slot; every entry is 0 between queries.
