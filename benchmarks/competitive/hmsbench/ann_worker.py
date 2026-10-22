@@ -568,25 +568,35 @@ class Ngt(Adapter):
     def open(self, params, n):
         import ngtpy
         self.index = ngtpy.Index(str(self.workdir / "onng"))
+        path = self.workdir / "ids.json"
+        self.object_ids = {int(k): v for k, v in json.loads(path.read_text()).items()} if path.exists() else {}
+        self.dataset_ids = {v: k for k, v in self.object_ids.items()}
 
     def configure(self, sp):
         self.eps = sp["epsilon"]
 
     def query(self, q):
-        return self.index.search(q[0], K, epsilon=self.eps, with_distance=False)
+        found = self.index.search(q[0], K, epsilon=self.eps, with_distance=False)
+        return [self.dataset_ids.get(i, i) for i in found] if self.dataset_ids else found
 
     def replace(self, ids, vectors):
-        for i in ids:
-            self.index.remove(int(i))
-        self.index.batch_insert(vectors, num_threads=1)
+        self.delete(ids)
+        for i, v in zip(ids, vectors):
+            # batch_insert returns None and appends new IDs; insert returns the allocated ID.
+            oid = self.index.insert(v)
+            self.object_ids[int(i)] = oid
+            self.dataset_ids[oid] = int(i)
         self.index.build_index(num_threads=1)
 
     def delete(self, ids):
         for i in ids:
-            self.index.remove(int(i))
+            oid = self.object_ids.pop(int(i), int(i))
+            self.index.remove(oid)
+            self.dataset_ids.pop(oid, None)
 
     def flush(self):
         self.index.save()
+        (self.workdir / "ids.json").write_text(json.dumps(self.object_ids))
 
 
 class Scann(Adapter):
