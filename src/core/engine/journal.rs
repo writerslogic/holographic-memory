@@ -197,7 +197,10 @@ mod tests {
                     Some(2),
                     None,
                     TextEncoder::default(),
-                    mode,
+                    &documents::IngestOptions {
+                        encode: mode,
+                        ..Default::default()
+                    },
                 )
                 .unwrap(),
             ))
@@ -208,7 +211,10 @@ mod tests {
             None,
             None,
             TextEncoder::default(),
-            EncodeMode::Lexical,
+            &documents::IngestOptions {
+                encode: EncodeMode::Lexical,
+                ..Default::default()
+            },
         )
         .unwrap();
         let chunk: &mut StoredChunk = &mut odd.chunks[0];

@@ -185,6 +185,39 @@ pub(super) fn prepare_search(
     })
 }
 
+/// The number of documents with at least one chunk containing a term of `text`, in either
+/// stored form: the documents an unfiltered lexical search scores above zero.
+pub(super) fn count_matches(store: &DocumentStore, text: &str) -> Result<usize> {
+    ensure!(text.len() <= MAX_DOCUMENT_BYTES, "query exceeds 8 MiB");
+    let mut matched = vec![0u64; store.slot_count.div_ceil(64)];
+    for (form, terms) in [terms(text, false), terms(text, true)].iter().enumerate() {
+        for word in terms.keys() {
+            if let Some(list) = store.postings[form].get(word) {
+                list.for_each(|slot, _| matched[slot / 64] |= 1 << (slot % 64));
+            }
+        }
+    }
+    let is_matched = |slot: usize| matched[slot / 64] & (1 << (slot % 64)) != 0;
+    let mut count = 0;
+    for (word, &bits) in matched.iter().enumerate() {
+        let mut bits = bits;
+        while bits != 0 {
+            let slot = word * 64 + bits.trailing_zeros() as usize;
+            bits &= bits - 1;
+            // A document counts once, at the first of its chunks that matches.
+            let (document, chunk) = store.slot_order(slot);
+            if chunk == 0
+                || !store.slots[document][..chunk]
+                    .iter()
+                    .any(|&s| is_matched(s))
+            {
+                count += 1;
+            }
+        }
+    }
+    Ok(count)
+}
+
 pub(super) fn capture_search(
     store: &DocumentStore,
     prepared: Vec<PreparedSearch>,

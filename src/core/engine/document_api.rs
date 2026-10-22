@@ -46,7 +46,7 @@ impl HmsCore {
     ) -> Result<u32> {
         #[cfg(feature = "local-models")]
         if let Some(stages) = self.model_stages() {
-            return self.memorize_document_with_models(input, &stages, options.encode);
+            return self.memorize_document_with_models(input, &stages, options);
         }
         #[cfg(feature = "local-embed")]
         let input = {
@@ -60,7 +60,7 @@ impl HmsCore {
             self.config.embedding_space.as_ref().map(|s| s.dimensions),
             None,
             self.config.text_encoder,
-            options.encode,
+            options,
         )?;
         let count = document.chunks.len() as u32;
         self.commit(&[Mutation::Document(Arc::new(document))])?;
@@ -108,7 +108,7 @@ impl HmsCore {
                     #[cfg(feature = "local-models")]
                     if let Some(stages) = stages.as_deref() {
                         return self
-                            .prepare_document_with_models(input, stages, options.encode)
+                            .prepare_document_with_models(input, stages, options)
                             .map(|document| Mutation::Document(Arc::new(document)));
                     }
                     documents::prepare_spans(
@@ -118,7 +118,7 @@ impl HmsCore {
                         self.config.embedding_space.as_ref().map(|s| s.dimensions),
                         None,
                         self.config.text_encoder,
-                        options.encode,
+                        options,
                     )
                     .map(|document| Mutation::Document(Arc::new(document)))
                 },
@@ -165,6 +165,14 @@ impl HmsCore {
             documents::capture_search(&self.documents.read(), vec![prepared])
         };
         Ok(documents::execute_search(&captured, 0))
+    }
+
+    /// The number of documents containing at least one word of `text`: every document an
+    /// unfiltered lexical [`Self::search_documents`] can return, counted exactly rather than
+    /// ranked.
+    pub fn count_documents(&self, text: &str) -> Result<usize> {
+        let _transaction = self.mutation_gate.read();
+        documents::count_matches(&self.documents.read(), text)
     }
 
     pub fn document_index_trained(&self) -> bool {
@@ -573,9 +581,9 @@ impl HmsCore {
         &self,
         input: DocumentInput,
         stages: &crate::core::models::ModelStages,
-        mode: documents::EncodeMode,
+        options: &IngestOptions,
     ) -> Result<u32> {
-        let document = self.prepare_document_with_models(input, stages, mode)?;
+        let document = self.prepare_document_with_models(input, stages, options)?;
         let count = document.chunks.len() as u32;
         self.commit(&[Mutation::Document(Arc::new(document))])?;
         Ok(count)
@@ -585,7 +593,7 @@ impl HmsCore {
         &self,
         mut input: DocumentInput,
         stages: &crate::core::models::ModelStages,
-        mode: documents::EncodeMode,
+        options: &IngestOptions,
     ) -> Result<documents::StoredDocument> {
         let chunks: Vec<String> = documents::chunk_document(&input)?
             .into_iter()
@@ -608,7 +616,7 @@ impl HmsCore {
             self.config.embedding_space.as_ref().map(|s| s.dimensions),
             keys.as_deref(),
             self.config.text_encoder,
-            mode,
+            options,
         )
     }
 

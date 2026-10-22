@@ -177,9 +177,11 @@ fn encode_modes_keep_lexical_results_and_defer_or_skip_vectors() -> anyhow::Resu
     let lexical = open(&dirs[2])?;
     let deferred_options = IngestOptions {
         encode: EncodeMode::Deferred,
+        ..Default::default()
     };
     let lexical_options = IngestOptions {
         encode: EncodeMode::Lexical,
+        ..Default::default()
     };
 
     let counts = eager.memorize_documents(inputs.clone())?;

@@ -104,7 +104,7 @@ fn interned_chunk_terms_match_terms_with_title_weighting() {
         (terms.into_iter().collect(), words)
     }
     fn actual(text: &str, title_weight: u32) -> (Vec<(String, u32)>, usize) {
-        let (terms, words) = super::chunk_terms(text, title_weight);
+        let (terms, words) = super::chunk_terms(text, title_weight, true);
         terms.assert_valid_storage();
         let pairs = (&terms)
             .into_iter()
@@ -175,7 +175,7 @@ fn pooled_interner_counts_later_batches_like_a_fresh_one() {
         "abcdefghijklmnop abcdefghijklmnopq éééééééé ééééééééx Abcdefghijklmnopq",
     ];
     let table = |text: &str| {
-        let (terms, words) = super::chunk_terms(text, 2);
+        let (terms, words) = super::chunk_terms(text, 2, true);
         let pairs: Vec<(String, u32)> = (&terms)
             .into_iter()
             .map(|(k, &v)| (k.to_owned(), v))
@@ -190,7 +190,7 @@ fn pooled_interner_counts_later_batches_like_a_fresh_one() {
         if batch == 1 {
             for start in (0..=super::STEM_MEMO_CAPACITY).step_by(1000) {
                 let chunk: String = (start..start + 1000).map(|i| format!("w{i} ")).collect();
-                super::chunk_terms(&chunk, 1);
+                super::chunk_terms(&chunk, 1, true);
             }
         }
         for (text, expected) in texts.iter().zip(&fresh) {
