@@ -1,0 +1,516 @@
+{
+  "schema_version": 1,
+  "scope": "100000-row prefixes, 256 original queries; exploratory, not an official VIBE result",
+  "quality": "VIBE distance-tolerant recall and strict neighbor-ID recall are distinct",
+  "timing": "descriptive only: non-interleaved runs, concurrent builds, different hardware from VIBE",
+  "laion_adapters": {
+    "glass-sq8": {
+      "source": "diagnostic/laion-glass-sq8.json",
+      "build": [
+        "normalized",
+        400,
+        64,
+        "SQ8U",
+        "SQ8U",
+        "FP32"
+      ],
+      "maximum_vibe_recall": 0.9991015625,
+      "maximum_strict_id_recall": 0.9859765625,
+      "targets": {
+        "0.73": {
+          "params": [
+            100
+          ],
+          "recall": 0.9494531250000001,
+          "strict_id_recall": 0.9028125,
+          "median_qps": 3605.909172387784
+        },
+        "0.77": {
+          "params": [
+            100
+          ],
+          "recall": 0.9494531250000001,
+          "strict_id_recall": 0.9028125,
+          "median_qps": 3605.909172387784
+        },
+        "0.9": {
+          "params": [
+            100
+          ],
+          "recall": 0.9494531250000001,
+          "strict_id_recall": 0.9028125,
+          "median_qps": 3605.909172387784
+        },
+        "0.94": {
+          "params": [
+            100
+          ],
+          "recall": 0.9494531250000001,
+          "strict_id_recall": 0.9028125,
+          "median_qps": 3605.909172387784
+        },
+        "0.95": {
+          "params": [
+            160
+          ],
+          "recall": 0.9535546875,
+          "strict_id_recall": 0.9078515625,
+          "median_qps": 3419.74777703704
+        },
+        "0.99": {
+          "params": [
+            400
+          ],
+          "recall": 0.9924999999999999,
+          "strict_id_recall": 0.9630859375,
+          "median_qps": 1651.4477584499614
+        },
+        "1.0": null
+      }
+    },
+    "glass": {
+      "source": "diagnostic/laion-glass.json",
+      "build": [
+        "normalized",
+        400,
+        64,
+        "SQ8U",
+        "SQ4U",
+        "FP32"
+      ],
+      "maximum_vibe_recall": 0.366328125,
+      "maximum_strict_id_recall": 0.3515625,
+      "targets": {
+        "0.73": null,
+        "0.77": null,
+        "0.9": null,
+        "0.94": null,
+        "0.95": null,
+        "0.99": null,
+        "1.0": null
+      }
+    },
+    "hms": {
+      "source": "diagnostic/laion-hms.json",
+      "build": [
+        "normalized",
+        64,
+        500
+      ],
+      "maximum_vibe_recall": 0.9316796875,
+      "maximum_strict_id_recall": 0.917265625,
+      "targets": {
+        "0.73": {
+          "params": [
+            128,
+            400
+          ],
+          "recall": 0.804921875,
+          "strict_id_recall": 0.7681640624999999,
+          "median_qps": 4427.769434007573
+        },
+        "0.77": {
+          "params": [
+            128,
+            400
+          ],
+          "recall": 0.804921875,
+          "strict_id_recall": 0.7681640624999999,
+          "median_qps": 4427.769434007573
+        },
+        "0.9": {
+          "params": [
+            256,
+            400
+          ],
+          "recall": 0.9136328125000001,
+          "strict_id_recall": 0.87796875,
+          "median_qps": 2338.9829517380103
+        },
+        "0.94": null,
+        "0.95": null,
+        "0.99": null,
+        "1.0": null
+      }
+    },
+    "hnswlib": {
+      "source": "diagnostic/laion-hnswlib.json",
+      "build": [
+        "normalized",
+        32,
+        500
+      ],
+      "maximum_vibe_recall": 0.9997265625,
+      "maximum_strict_id_recall": 0.9896875,
+      "targets": {
+        "0.73": {
+          "params": [
+            100
+          ],
+          "recall": 0.914375,
+          "strict_id_recall": 0.8653515625,
+          "median_qps": 1725.1064444585807
+        },
+        "0.77": {
+          "params": [
+            100
+          ],
+          "recall": 0.914375,
+          "strict_id_recall": 0.8653515625,
+          "median_qps": 1725.1064444585807
+        },
+        "0.9": {
+          "params": [
+            100
+          ],
+          "recall": 0.914375,
+          "strict_id_recall": 0.8653515625,
+          "median_qps": 1725.1064444585807
+        },
+        "0.94": {
+          "params": [
+            160
+          ],
+          "recall": 0.9575,
+          "strict_id_recall": 0.9125000000000001,
+          "median_qps": 1193.357512900859
+        },
+        "0.95": {
+          "params": [
+            160
+          ],
+          "recall": 0.9575,
+          "strict_id_recall": 0.9125000000000001,
+          "median_qps": 1193.357512900859
+        },
+        "0.99": {
+          "params": [
+            320
+          ],
+          "recall": 0.9909375,
+          "strict_id_recall": 0.9593359375000001,
+          "median_qps": 670.2739712129112
+        },
+        "1.0": null
+      }
+    },
+    "rabitq-hnsw": {
+      "source": "diagnostic/laion-rabitq-hnsw.json",
+      "build": [
+        "normalized",
+        32,
+        32,
+        400,
+        5,
+        false
+      ],
+      "maximum_vibe_recall": 0.96265625,
+      "maximum_strict_id_recall": 0.9312890625,
+      "targets": {
+        "0.73": {
+          "params": [
+            100
+          ],
+          "recall": 0.887109375,
+          "strict_id_recall": 0.8449609375,
+          "median_qps": 4062.315603996906
+        },
+        "0.77": {
+          "params": [
+            100
+          ],
+          "recall": 0.887109375,
+          "strict_id_recall": 0.8449609375,
+          "median_qps": 4062.315603996906
+        },
+        "0.9": {
+          "params": [
+            128
+          ],
+          "recall": 0.9073828125000001,
+          "strict_id_recall": 0.8666015625,
+          "median_qps": 3345.023187609271
+        },
+        "0.94": {
+          "params": [
+            256
+          ],
+          "recall": 0.942734375,
+          "strict_id_recall": 0.9060937499999999,
+          "median_qps": 1855.872102574051
+        },
+        "0.95": {
+          "params": [
+            400
+          ],
+          "recall": 0.9537500000000001,
+          "strict_id_recall": 0.9197656249999999,
+          "median_qps": 1259.1745870551697
+        },
+        "0.99": null,
+        "1.0": null
+      }
+    },
+    "symphonyqg": {
+      "source": "diagnostic/laion-symphonyqg.json",
+      "build": [
+        "normalized",
+        64,
+        400,
+        0
+      ],
+      "maximum_vibe_recall": 0.9560546875,
+      "maximum_strict_id_recall": 0.9083593750000001,
+      "targets": {
+        "0.73": {
+          "params": [
+            320
+          ],
+          "recall": 0.7676953125,
+          "strict_id_recall": 0.7289453124999999,
+          "median_qps": 4109.445645895457
+        },
+        "0.77": {
+          "params": [
+            400
+          ],
+          "recall": 0.81796875,
+          "strict_id_recall": 0.7738281250000001,
+          "median_qps": 3167.9283291854717
+        },
+        "0.9": {
+          "params": [
+            640
+          ],
+          "recall": 0.9043359375,
+          "strict_id_recall": 0.8532421875,
+          "median_qps": 2114.6782585178476
+        },
+        "0.94": {
+          "params": [
+            1000
+          ],
+          "recall": 0.9560546875,
+          "strict_id_recall": 0.9083593750000001,
+          "median_qps": 1372.4026341981937
+        },
+        "0.95": {
+          "params": [
+            1000
+          ],
+          "recall": 0.9560546875,
+          "strict_id_recall": 0.9083593750000001,
+          "median_qps": 1372.4026341981937
+        },
+        "0.99": null,
+        "1.0": null
+      }
+    }
+  },
+  "paired_native": {
+    "arxiv": {
+      "graph_hash": "e2016e73318cdd94",
+      "dimension": 768,
+      "rows": 100000,
+      "build_threads": 4,
+      "query_threads": 1,
+      "index_bytes": {
+        "4": 135983700,
+        "8": 174383700
+      },
+      "maximum_strict_recall": {
+        "4": 0.999609375,
+        "8": 0.9999609375
+      },
+      "same_configuration": [
+        {
+          "ef": 400,
+          "rerank": 400,
+          "strict_recall_4": 0.99953125,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 400,
+          "rerank": 1000,
+          "strict_recall_4": 0.99953125,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 400,
+          "rerank": 2000,
+          "strict_recall_4": 0.99953125,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 1000,
+          "rerank": 400,
+          "strict_recall_4": 0.999609375,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 1000,
+          "rerank": 1000,
+          "strict_recall_4": 0.999609375,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 1000,
+          "rerank": 2000,
+          "strict_recall_4": 0.999609375,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 2000,
+          "rerank": 400,
+          "strict_recall_4": 0.999609375,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 2000,
+          "rerank": 1000,
+          "strict_recall_4": 0.999609375,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 2000,
+          "rerank": 2000,
+          "strict_recall_4": 0.999609375,
+          "strict_recall_8": 0.9999609375
+        }
+      ],
+      "timing_gate": "native ablation predates Linux load reporting fix; unknown load, no timing verdict"
+    },
+    "laion": {
+      "graph_hash": "61e3740234dcea1f",
+      "dimension": 512,
+      "rows": 100000,
+      "build_threads": 1,
+      "query_threads": 1,
+      "index_bytes": {
+        "4": 97554980,
+        "8": 123154980
+      },
+      "maximum_strict_recall": {
+        "4": 0.9301953125,
+        "8": 0.978125
+      },
+      "same_configuration": [
+        {
+          "ef": 1000,
+          "rerank": 400,
+          "strict_recall_4": 0.917265625,
+          "strict_recall_8": 0.97359375
+        },
+        {
+          "ef": 1000,
+          "rerank": 1000,
+          "strict_recall_4": 0.925625,
+          "strict_recall_8": 0.97359375
+        },
+        {
+          "ef": 1000,
+          "rerank": 2000,
+          "strict_recall_4": 0.925625,
+          "strict_recall_8": 0.97359375
+        },
+        {
+          "ef": 2000,
+          "rerank": 400,
+          "strict_recall_4": 0.920625,
+          "strict_recall_8": 0.978125
+        },
+        {
+          "ef": 2000,
+          "rerank": 1000,
+          "strict_recall_4": 0.9296484375,
+          "strict_recall_8": 0.978125
+        },
+        {
+          "ef": 2000,
+          "rerank": 2000,
+          "strict_recall_4": 0.9301953125,
+          "strict_recall_8": 0.978125
+        }
+      ],
+      "timing_gate": "native ablation predates Linux load reporting fix; unknown load, no timing verdict"
+    },
+    "inaturalist": {
+      "graph_hash": "a23c1b05803c65a3",
+      "dimension": 2048,
+      "rows": 100000,
+      "build_threads": 4,
+      "query_threads": 1,
+      "index_bytes": {
+        "4": 327960732,
+        "8": 430360732
+      },
+      "maximum_strict_recall": {
+        "4": 0.998984375,
+        "8": 0.9999609375
+      },
+      "same_configuration": [
+        {
+          "ef": 400,
+          "rerank": 400,
+          "strict_recall_4": 0.995625,
+          "strict_recall_8": 0.9998828125
+        },
+        {
+          "ef": 400,
+          "rerank": 1000,
+          "strict_recall_4": 0.995625,
+          "strict_recall_8": 0.9998828125
+        },
+        {
+          "ef": 400,
+          "rerank": 2000,
+          "strict_recall_4": 0.995625,
+          "strict_recall_8": 0.9998828125
+        },
+        {
+          "ef": 1000,
+          "rerank": 400,
+          "strict_recall_4": 0.995703125,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 1000,
+          "rerank": 1000,
+          "strict_recall_4": 0.99890625,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 1000,
+          "rerank": 2000,
+          "strict_recall_4": 0.99890625,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 2000,
+          "rerank": 400,
+          "strict_recall_4": 0.995703125,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 2000,
+          "rerank": 1000,
+          "strict_recall_4": 0.99890625,
+          "strict_recall_8": 0.9999609375
+        },
+        {
+          "ef": 2000,
+          "rerank": 2000,
+          "strict_recall_4": 0.998984375,
+          "strict_recall_8": 0.9999609375
+        }
+      ],
+      "timing_gate": "native ablation predates Linux load reporting fix; unknown load, no timing verdict"
+    }
+  },
+  "unmeasured": {
+    "pag": "blocked: pinned backend requires AVX-512; host lacks it",
+    "ngt-qg": "not run: required native CLI and dependencies are not installed",
+    "lorann": "failed after build: shell exit 132 (SIGILL); cause not established",
+    "pynndescent": "failed validation: duplicate returned IDs; this trial does not validate or invalidate published ranks"
+  }
+}

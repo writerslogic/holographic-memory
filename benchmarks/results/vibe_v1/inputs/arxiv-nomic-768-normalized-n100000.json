@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source": "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/07b387891a221b7b073b83d2f752b76462e5fa03/arxiv-nomic-768-normalized.hdf5",
+  "source_revision": "07b387891a221b7b073b83d2f752b76462e5fa03",
+  "dataset": "arxiv-nomic-768-normalized",
+  "original_rows": 1344643,
+  "rows": 100000,
+  "queries": 256,
+  "dimension": 768,
+  "metric": "normalized",
+  "ood": false,
+  "corpus_selection": "prefix",
+  "query_selection": "original test prefix",
+  "truth": "recomputed exact float32 FAISS flat; no inherited full-corpus neighbor IDs",
+  "official_scale": false,
+  "sha256": "516d3e4ac650f467f655ec1df91335e1c45ebfa4dc2957570352c623f2552515",
+  "prepare_sha256": "d7868130a087aaa38a2bc0286318c4a9b938494dbf4273ee60ab9cb69dfe721b"
+}

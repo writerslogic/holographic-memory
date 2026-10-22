@@ -56,6 +56,11 @@ impl Rotation {
         self.padded
     }
 
+    #[cfg(feature = "experimental")]
+    pub(crate) fn index_bytes(&self) -> usize {
+        self.signs.len() * std::mem::size_of::<f32>()
+    }
+
     pub(crate) fn apply(&self, x: &[f32], out: &mut [f32]) {
         assert_eq!(x.len(), self.dim);
         assert_eq!(out.len(), self.padded);

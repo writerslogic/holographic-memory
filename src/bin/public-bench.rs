@@ -67,6 +67,9 @@ enum Mode {
         data: PathBuf,
         #[arg(long)]
         out: PathBuf,
+        /// Number of neighbors to return and score (VIBE uses 100).
+        #[arg(long, default_value = "10", value_parser = ["10", "100"])]
+        count: String,
         /// Distance: `angular` or `euclidean` (vertex index only). Defaults to the dataset's
         /// metric; a value that contradicts it is an error.
         #[arg(long, value_parser = ["angular", "euclidean"])]
@@ -578,6 +581,14 @@ fn ann(data: &Path, dim: u32, queries: Option<usize>, out: &Path) -> Result<()> 
 
 /// Truncate to the engine's single-chunk limits (4096 words, 64 KiB) on a char boundary.
 fn load_1m() -> Option<f64> {
+    if cfg!(target_os = "linux") {
+        return fs::read_to_string("/proc/loadavg")
+            .ok()?
+            .split_whitespace()
+            .next()?
+            .parse()
+            .ok();
+    }
     let out = std::process::Command::new("sysctl")
         .args(["-n", "vm.loadavg"])
         .output()
@@ -607,6 +618,7 @@ fn wait_for_idle(max: f64, deadline: Instant) -> (f64, bool) {
 struct QgraphArgs {
     data: PathBuf,
     out: PathBuf,
+    count: String,
     metric: Option<String>,
     ef: Vec<usize>,
     max_exact: Vec<usize>,
@@ -706,7 +718,14 @@ fn holdout_split(mut rows: Vec<Vec<f32>>, n: usize, k: usize, metric: Metric) ->
 }
 
 fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
-    const K: usize = 10;
+    match a.count.as_str() {
+        "10" => ann_qgraph_count::<10>(a),
+        "100" => ann_qgraph_count::<100>(a),
+        _ => anyhow::bail!("count must be 10 or 100"),
+    }
+}
+
+fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
     ensure!(a.repeats > 0, "repeats must be positive");
     let m = meta(&a.data)?;
     let data_metric = m["metric"].as_str().context("meta.metric")?;
@@ -726,6 +745,11 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
     );
     let d = m["dim"].as_u64().context("meta.dim")? as usize;
     let width = m["n_neighbors"].as_u64().context("meta.n_neighbors")? as usize;
+    ensure!(d > 0, "dimension must be positive");
+    ensure!(
+        a.holdout.is_some() || width >= K,
+        "ground truth has {width} neighbors, count is {K}"
+    );
     let load = a.load_index.as_deref();
     ensure!(
         load.is_none() || (a.holdout.is_none() && a.index == "vertex"),
@@ -766,6 +790,15 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         }
     };
     phase(&mut phases, "input");
+    ensure!(
+        load.is_some() || train.len() / d >= K,
+        "corpus must contain at least {K} indexed rows"
+    );
+    ensure!(!test.is_empty(), "at least one query is required");
+    ensure!(
+        truth.len() >= test.len(),
+        "ground truth has fewer rows than queries"
+    );
     // Angular queries are normalized outside the timer, as evaluate.py does for the other
     // systems; Euclidean ones are used as given.
     if metric == Metric::Angular {
@@ -826,6 +859,10 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
                 p.display(),
                 v.metric(),
                 v.dim()
+            );
+            ensure!(
+                v.len() >= K,
+                "corpus must contain at least {K} indexed rows"
             );
             index_file_bytes = Some(fs::metadata(p)?.len());
             phase(&mut phases, "open");
@@ -1063,7 +1100,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         rows.push(json!({
             "params": {"ef": ef, second_name: second, "patience": patience, "screen": a.screen && sigmas >= 0.0, "screen_sigmas": sigmas},
             "screened_per_query": screen_mean,
-            "recall_at_10": recall,
+            (format!("recall_at_{K}")): recall,
             "qps_single_thread": median,
             "qps_runs": qps,
             "latency_us": lat.map(|(p50, p99)| json!({"p50": p50, "p99": p99})),
@@ -1080,6 +1117,7 @@ fn ann_qgraph(a: &QgraphArgs) -> Result<()> {
         "dataset": m,
         "environment": environment(),
         "n_queries": test.len(),
+        "k": K,
         "build": {"params": {"index": a.index, "metric": metric_name, "degree": a.degree, "build_ef": a.build_ef, "quantized_search": a.quantized_search,
                              "alpha": a.alpha, "code_bits": a.code_bits, "seed": params.seed,
                              "residual": a.residual, "residual_bits": a.residual_bits,
@@ -1539,6 +1577,7 @@ fn main() -> Result<()> {
         Mode::AnnQgraph {
             data,
             out,
+            count,
             metric,
             ef,
             max_exact,
@@ -1576,6 +1615,7 @@ fn main() -> Result<()> {
         } => ann_qgraph(&QgraphArgs {
             data,
             out,
+            count,
             metric,
             ef,
             max_exact,

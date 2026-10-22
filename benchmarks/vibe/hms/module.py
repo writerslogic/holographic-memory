@@ -5,7 +5,7 @@ Copy this directory to vibe/algorithms/hms/ in a VIBE checkout, build the image 
 algorithm table.
 
 The index is a proximity graph over unit vectors whose traversal reads 4-bit codes of the
-randomly rotated rows; the `rerank` best candidates are re-scored with an 8-bit residual code.
+mean-centered rows; the `rerank` best candidates are re-scored with an 8-bit residual code.
 It ranks by cosine, so it serves the `cosine` and `normalized` datasets.
 """
 import numpy as np
@@ -18,6 +18,7 @@ class HMS(BaseANN):
     def __init__(self, metric, degree, build_ef):
         if metric not in ("cosine", "normalized"):
             raise NotImplementedError(f"hms supports cosine and normalized data, not {metric}")
+        self.metric = metric
         self.degree = degree
         self.build_ef = build_ef
         self.ef = None
@@ -37,4 +38,4 @@ class HMS(BaseANN):
         return self.index.query(v, n)
 
     def __str__(self):
-        return f"HMS(degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank})"
+        return f"HMS(metric={self.metric}, degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank})"

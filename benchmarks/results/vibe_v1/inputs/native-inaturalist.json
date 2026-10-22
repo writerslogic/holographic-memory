@@ -1,0 +1,32 @@
+{
+  "name": "inaturalist-resnet-2048-cosine",
+  "metric": "angular",
+  "source_metric": "cosine",
+  "dim": 2048,
+  "n_train": 100000,
+  "n_test": 256,
+  "n_neighbors": 100,
+  "input_manifest": {
+    "schema_version": 1,
+    "source": "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/07b387891a221b7b073b83d2f752b76462e5fa03/inaturalist-resnet-2048-cosine.hdf5",
+    "source_revision": "07b387891a221b7b073b83d2f752b76462e5fa03",
+    "dataset": "inaturalist-resnet-2048-cosine",
+    "original_rows": 499000,
+    "rows": 100000,
+    "queries": 256,
+    "dimension": 2048,
+    "metric": "cosine",
+    "ood": false,
+    "corpus_selection": "prefix",
+    "query_selection": "original test prefix",
+    "truth": "recomputed exact float32 FAISS flat; no inherited full-corpus neighbor IDs",
+    "official_scale": false,
+    "sha256": "b36c45e80e739988deb6e3e7bb83127094cf99ec7386f1a347eba12b66bb0f2d",
+    "prepare_sha256": "d7868130a087aaa38a2bc0286318c4a9b938494dbf4273ee60ab9cb69dfe721b"
+  },
+  "files": {
+    "train.f32": "0bdf51fd32e4038b695106e3043e12ef1b901e12face005391c998554668e2fa",
+    "test.f32": "d88191e7e299b53994f98d264a0acafb01e3fd64381ffd171056bf80a784d529",
+    "neighbors.i32": "64a8c031c8cc5d264ee99b84f59b0826148724f3b90db89a9d9532e8e60f08e0"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "file": "laion-glass-sq8.json",
+      "sha256": "9186ac2cc15572ebcc8b816836881e08957776e3660d98555cece647ea5d3133",
+      "passed": true,
+      "configurations": 11,
+      "oracle_spot_query_ids": [
+        0,
+        85,
+        170,
+        255
+      ],
+      "oracle_scope": "four queries against all original prefix vectors; every saved prediction and timing checked"
+    },
+    {
+      "file": "laion-glass.json",
+      "sha256": "f56715b215310a1b3c6369c4c499bdc107e1f6719709cc3c75413a84e8be2462",
+      "passed": true,
+      "configurations": 11,
+      "oracle_spot_query_ids": [
+        0,
+        85,
+        170,
+        255
+      ],
+      "oracle_scope": "four queries against all original prefix vectors; every saved prediction and timing checked"
+    },
+    {
+      "file": "laion-hms.json",
+      "sha256": "ea93b5fc2527702ab6f8dcadd8f98a4f556a672683bb850dbe50e5dafe271225",
+      "passed": true,
+      "configurations": 33,
+      "oracle_spot_query_ids": [
+        0,
+        85,
+        170,
+        255
+      ],
+      "oracle_scope": "four queries against all original prefix vectors; every saved prediction and timing checked"
+    },
+    {
+      "file": "laion-hnswlib.json",
+      "sha256": "2640d9ff185f03bb9544c35a2f18b61d480a1ad944a661e1633c3c0224d95367",
+      "passed": true,
+      "configurations": 11,
+      "oracle_spot_query_ids": [
+        0,
+        85,
+        170,
+        255
+      ],
+      "oracle_scope": "four queries against all original prefix vectors; every saved prediction and timing checked"
+    },
+    {
+      "file": "laion-rabitq-hnsw.json",
+      "sha256": "9f96aa605f93421869b6edcc22b8a0bc5fe1d38e01374b73396f05ee004aef88",
+      "passed": true,
+      "configurations": 11,
+      "oracle_spot_query_ids": [
+        0,
+        85,
+        170,
+        255
+      ],
+      "oracle_scope": "four queries against all original prefix vectors; every saved prediction and timing checked"
+    },
+    {
+      "file": "laion-symphonyqg.json",
+      "sha256": "db2c5c659b59f98103ab337250dc6cf0d551670dfd82a5afa5e94a9b38ff9539",
+      "passed": true,
+      "configurations": 11,
+      "oracle_spot_query_ids": [
+        0,
+        85,
+        170,
+        255
+      ],
+      "oracle_scope": "four queries against all original prefix vectors; every saved prediction and timing checked"
+    }
+  ]
+}

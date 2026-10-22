@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "dimension": 768,
+      "metric": "cosine",
+      "passed": true
+    },
+    {
+      "dimension": 768,
+      "metric": "normalized",
+      "passed": true
+    },
+    {
+      "dimension": 2048,
+      "metric": "cosine",
+      "passed": true
+    },
+    {
+      "dimension": 2048,
+      "metric": "normalized",
+      "passed": true
+    }
+  ],
+  "checker_sha256": "8830a11182e118f9ba1b617d2e188395b6e7496b6036362c05abf49bde02f247",
+  "adapter_sha256": "eecc3eb127d1e89ba7381d0c8a7495689834811f6501f72c0b47f7b9c3895841"
+}

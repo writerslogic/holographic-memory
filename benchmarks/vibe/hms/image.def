@@ -2,8 +2,7 @@ Bootstrap: localimage
 From: base.sif
 
 %post
-  # The holographic-memory revision to build; pin it to a release tag or commit.
-  HMS_REV=main
+  HMS_REV=28a0a5b1bc6e84037fed51fdba8c6b508f821502
 
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.96.0
   export PATH="$HOME/.cargo/bin:$PATH"

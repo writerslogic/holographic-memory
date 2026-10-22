@@ -1,0 +1,32 @@
+{
+  "name": "laion-clip-512-normalized",
+  "metric": "angular",
+  "source_metric": "normalized",
+  "dim": 512,
+  "n_train": 100000,
+  "n_test": 256,
+  "n_neighbors": 100,
+  "input_manifest": {
+    "schema_version": 1,
+    "source": "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/07b387891a221b7b073b83d2f752b76462e5fa03/laion-clip-512-normalized.hdf5",
+    "source_revision": "07b387891a221b7b073b83d2f752b76462e5fa03",
+    "dataset": "laion-clip-512-normalized",
+    "original_rows": 1000448,
+    "rows": 100000,
+    "queries": 256,
+    "dimension": 512,
+    "metric": "normalized",
+    "ood": true,
+    "corpus_selection": "prefix",
+    "query_selection": "original test prefix",
+    "truth": "recomputed exact float32 FAISS flat; no inherited full-corpus neighbor IDs",
+    "official_scale": false,
+    "sha256": "da1d119eae57118e419a9fa584a4d4d3c7ee8bd7da60d4fbc95ff7181bfc4785",
+    "prepare_sha256": "d7868130a087aaa38a2bc0286318c4a9b938494dbf4273ee60ab9cb69dfe721b"
+  },
+  "files": {
+    "train.f32": "020ade8964e86c108f85bc577d6e9872bf1f66cc34636d408bc3e349bfb430d7",
+    "test.f32": "97b689eadac035ff013305d4df1abce7db6cb86677fb236c936223a485fd0a72",
+    "neighbors.i32": "3cc148ff8a5f85e855a129e9fe547059a5be70e046c26e46ec53631d59b82228"
+  }
+}
