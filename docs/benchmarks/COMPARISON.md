@@ -79,7 +79,7 @@ Timing boundary (where each query is timed): hnswlib: CPython binding call per q
 | Peak RSS, build (MiB) | 2,968 | hnswlib 1,525 | 0.51x [0.51, 0.52] | **LOSS** |
 | RSS, serving (MiB) | 2,204 | hnswlib 1,019 | 0.46x [0.46, 0.81] | **LOSS** |
 | Index size (MiB) | 446.3 | hnswlib 873.8 | 1.96x (no CI) | **n/v** |
-| Cold start to first answer (s) | n/m (not measured: HMS has no persisted ANN index to reopen) | hnswlib 0.75 | n/m | **n/m** |
+| Cold start to first answer (s) | n/m (not measured) | hnswlib 0.75 | n/m | **n/m** |
 | Replace one vector (durable) (ms) | n/m (VGraph is a static graph index built once; the document store handles updates with an exact scan, not an ANN index) | hnswlib 6.010 | n/m | **n/m** |
 | Delete one vector (durable) (ms) | n/m (VGraph is a static graph index built once; the document store handles updates with an exact scan, not an ANN index) | hnswlib 3.314 | n/m | **n/m** |
 | Install size (MiB) | 3.4 | hnswlib 61.8 | 18.28x (no CI) | **WIN** |
@@ -98,7 +98,7 @@ Timing boundary (where each query is timed): hnswlib: CPython binding call per q
 | Peak RSS, build (MiB) | **1,525** | 2,968 |
 | RSS, serving (MiB) | **1,019** | 2,204 |
 | Index size (MiB) | 873.8 | **446.3** |
-| Cold start to first answer (s) | **0.75** | n/m (not measured: HMS has no persisted ANN index to reopen) |
+| Cold start to first answer (s) | **0.75** | n/m (not measured) |
 | Replace one vector (durable) (ms) | **6.010** | n/m (VGraph is a static graph index built once; the document store handles updates with an exact scan, not an ANN index) |
 | Delete one vector (durable) (ms) | **3.314** | n/m (VGraph is a static graph index built once; the document store handles updates with an exact scan, not an ANN index) |
 | Install size (MiB) | 61.8 | **3.4** |
