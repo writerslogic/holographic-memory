@@ -91,7 +91,8 @@ impl HmsCore {
         #[cfg(feature = "local-embed")]
         let inferred_dimensions =
             inferred_dimensions.or_else(|| self.text_embedder().map(|e| e.dimensions()));
-        let spans = super::document_batch::validate_inputs(&inputs, inferred_dimensions)?;
+        let spans =
+            super::document_batch::validate_inputs_with(&inputs, inferred_dimensions, options)?;
         #[cfg(feature = "local-embed")]
         let inputs = {
             let mut inputs = inputs;
@@ -173,6 +174,29 @@ impl HmsCore {
     pub fn count_documents(&self, text: &str) -> Result<usize> {
         let _transaction = self.mutation_gate.read();
         documents::count_matches(&self.documents.read(), text)
+    }
+
+    /// Executes an explicit Boolean/phrase query over one live document generation.
+    pub fn search_lexical(
+        &self,
+        query: &documents::LexicalQuery,
+        options: &documents::LexicalOptions,
+    ) -> Result<documents::LexicalResults> {
+        let _transaction = self.mutation_gate.read();
+        documents::execute_lexical(&self.documents.read(), query, options)
+    }
+
+    /// Counts matching live parent documents without scoring.
+    pub fn count_lexical(&self, query: &documents::LexicalQuery) -> Result<usize> {
+        let result = self.search_lexical(
+            query,
+            &documents::LexicalOptions {
+                k: 0,
+                count: true,
+                ..Default::default()
+            },
+        )?;
+        Ok(result.count.expect("count requested"))
     }
 
     pub fn document_index_trained(&self) -> bool {

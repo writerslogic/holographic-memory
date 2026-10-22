@@ -18,8 +18,10 @@ use packed_terms::StoredTerms;
 
 mod dense;
 mod index;
+mod lexical;
 mod listing;
 mod memory;
+mod positions;
 mod postings;
 mod search;
 mod text;
@@ -27,6 +29,8 @@ mod vector_index;
 pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
 pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
+pub(crate) use lexical::execute as execute_lexical;
+pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, LexicalResults};
 pub use listing::DocumentRecord;
 pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
@@ -145,6 +149,11 @@ pub struct IngestOptions {
     /// it contains as written. The default stems every word with the English Snowball stemmer.
     /// Query terms are matched in both forms, so one store may hold documents of either kind.
     pub unstemmed: bool,
+    /// Retain token positions for exact, ordered phrase queries. Off by default.
+    pub positions: bool,
+    /// Index one whole article as one lexical chunk (up to 8 MiB). Requires lexical
+    /// encoding and positions; chunkWords/overlapWords do not split the article.
+    pub whole_document: bool,
 }
 
 /// Persisted state of a chunk's hypervector. Written only when not `Encoded`, so a store
@@ -496,7 +505,30 @@ fn chunk_id(document: &str, index: usize) -> String {
 
 /// The byte span of every chunk [`chunk_document`] cuts `input` into, with the same checks and
 /// errors, without copying any text.
-pub(crate) fn chunk_spans(input: &DocumentInput) -> Result<Vec<(u32, u32)>> {
+pub(crate) fn chunk_spans_with(
+    input: &DocumentInput,
+    options: &IngestOptions,
+) -> Result<Vec<(u32, u32)>> {
+    if !options.whole_document {
+        return chunk_spans(input);
+    }
+    ensure!(
+        options.encode == EncodeMode::Lexical && options.positions,
+        "whole-document ingest requires lexical encoding and positions"
+    );
+    ensure!(
+        input.embeddings.is_none(),
+        "whole-document lexical ingest does not accept embeddings"
+    );
+    validate_document_source(input)?;
+    ensure!(
+        input.text.chars().any(|c| !c.is_whitespace()),
+        "document must contain text"
+    );
+    Ok(vec![(0, input.text.len() as u32)])
+}
+
+fn validate_document_source(input: &DocumentInput) -> Result<()> {
     ensure!(
         !input.id.is_empty() && input.id.len() <= 4096 && !input.id.contains('\0'),
         "document id must contain 1..=4096 bytes"
@@ -505,6 +537,11 @@ pub(crate) fn chunk_spans(input: &DocumentInput) -> Result<Vec<(u32, u32)>> {
         input.text.len() <= MAX_DOCUMENT_BYTES,
         "document exceeds 8 MiB"
     );
+    Ok(())
+}
+
+pub(crate) fn chunk_spans(input: &DocumentInput) -> Result<Vec<(u32, u32)>> {
+    validate_document_source(input)?;
     let size = input.chunk_words.unwrap_or(256) as usize;
     let overlap = input
         .overlap_words
@@ -945,7 +982,7 @@ pub(crate) fn prepare_with_options(
     options: &IngestOptions,
 ) -> Result<StoredDocument> {
     check_mode(&input, encoder, options.encode)?;
-    let spans = chunk_spans(&input)?;
+    let spans = chunk_spans_with(&input, options)?;
     prepare_spans(
         input,
         spans,
@@ -1024,11 +1061,23 @@ pub(crate) fn prepare_spans(
     for (i, &(start_byte, end_byte)) in chunks.iter().enumerate() {
         let text = &input.text[start_byte as usize..end_byte as usize];
         let source = keys.map_or(text, |k| k[i].as_str());
-        let (terms, word_count) = chunk_terms(
+        let (mut terms, word_count) = chunk_terms(
             source,
             if i == 0 { title_weight } else { 1 },
             !options.unstemmed,
         );
+        if options.positions {
+            ensure!(
+                keys.is_none(),
+                "positions require the original chunk text as the lexical key"
+            );
+            terms.positions = Some(Box::new(positions::Positions::from_text(
+                source,
+                !options.unstemmed,
+                &terms,
+                options.whole_document,
+            )));
+        }
         let embedding = input
             .embeddings
             .as_ref()

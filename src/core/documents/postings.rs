@@ -1,15 +1,13 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! Compact lexical postings: a two-level term dictionary and delta-varint posting lists.
+//! Compact lexical postings: a two-level term dictionary and independently bitpacked blocks.
 //!
 //! The dictionary keeps a sorted base of concatenated term bytes with one `u32` offset and
 //! one `u32` list id per term, and a small overlay map for terms added since the base was
 //! built; the overlay folds into the base when it outgrows a quarter of it. A posting list is
-//! one byte vector of LEB128 varints: the slot's delta to the previous posting, then the
-//! frequency; it also remembers the slot of its final posting, so a run of higher slots
-//! appends without decoding what is there. Against a `BTreeMap<String, Vec<{usize, u32}>>`
-//! this replaces 24 bytes of key header, 24 of vector header and 12 per posting with about 9
-//! bytes per term and 2 to 3 per posting.
+//! a sequence of blocks of at most 128 slots, with independent bit widths for gaps and
+//! frequencies, block endpoints, maximum frequency and a conservative minimum word count.
+//! Postings are rebuilt from journal term tables, so these bytes are never persisted.
 //!
 //! Bulk indexing ([`index_chunks`]) takes a batch of chunks in ascending slot order and
 //! builds every term's new postings once:
@@ -19,7 +17,7 @@
 //! 2. The maps of one bucket merge, in parallel across buckets, into one slot-ordered run per
 //!    term: ranges are ordered, so a later range's postings go after an earlier range's.
 //! 3. Each run is looked up once in the dictionary (parallel, read-only), then appended to
-//!    its list in one delta-varint pass; nothing stored is re-encoded unless the run starts
+//!    its list in one bitpacking pass; nothing stored is re-encoded unless the run starts
 //!    at or below the list's final slot (a slot reused after deletes), which merges that one
 //!    list once.
 //! 4. Terms new to the dictionary are merged into a fresh sorted base in one pass together
@@ -49,37 +47,6 @@ const PARALLEL_CHUNKS: usize = 64;
 const MIN_RANGE: usize = 32;
 /// Run counts below this look their terms up on the calling thread.
 const PARALLEL_LOOKUPS: usize = 256;
-
-fn put_varint(out: &mut Vec<u8>, mut value: u64) {
-    while value >= 0x80 {
-        out.push((value as u8) | 0x80);
-        value >>= 7;
-    }
-    out.push(value as u8);
-}
-
-/// Decodes one varint at `*at`, advancing it. Lists are written by this module, so a
-/// malformed byte string is a broken invariant.
-#[inline(always)]
-fn get_varint(bytes: &[u8], at: &mut usize) -> u64 {
-    let first = bytes[*at];
-    *at += 1;
-    if first < 0x80 {
-        return u64::from(first);
-    }
-    let mut value = u64::from(first & 0x7f);
-    let mut shift = 7;
-    loop {
-        let b = bytes[*at];
-        *at += 1;
-        value |= u64::from(b & 0x7f) << shift;
-        if b & 0x80 == 0 {
-            return value;
-        }
-        shift += 7;
-        assert!(shift < 64, "posting varint overflow");
-    }
-}
 
 /// Term dictionary: sorted base plus overlay, mapping a term to its list id.
 #[derive(Default)]
@@ -272,19 +239,33 @@ impl TermDictionary {
     }
 }
 
-/// One term's postings, sorted by slot, as varint slot deltas and frequencies.
+const BLOCK_LEN: usize = 128;
+
+#[derive(Clone, Debug)]
+struct Block {
+    offset: usize,
+    first: usize,
+    last: usize,
+    count: u16,
+    doc_bits: u8,
+    frequency_bits: u8,
+    max_frequency: u32,
+    min_words: u32,
+    frontier: Option<Box<[(u32, u32)]>>,
+}
+
 #[derive(Default)]
 pub(super) struct PostingList {
     data: Vec<u8>,
+    blocks: Vec<Block>,
     count: u32,
-    /// Slot of the final posting; meaningful while `count > 0`.
+    positive_count: u32,
     last: u64,
 }
 
-/// Two strictly slot-sorted runs merged into one; a shared slot is a broken invariant.
 fn merge_sorted(a: &[Posting], b: &[Posting]) -> Vec<Posting> {
     let mut merged = Vec::with_capacity(a.len() + b.len());
-    let (mut i, mut j) = (0usize, 0usize);
+    let (mut i, mut j) = (0, 0);
     while i < a.len() && j < b.len() {
         match a[i].0.cmp(&b[j].0) {
             std::cmp::Ordering::Less => {
@@ -303,87 +284,212 @@ fn merge_sorted(a: &[Posting], b: &[Posting]) -> Vec<Posting> {
     merged
 }
 
+pub(super) fn pack(out: &mut Vec<u8>, values: impl Iterator<Item = u64>, bits: u8) {
+    let (mut buffer, mut used) = (0u128, 0u32);
+    for value in values {
+        buffer |= u128::from(value) << used;
+        used += u32::from(bits);
+        while used >= 8 {
+            out.push(buffer as u8);
+            buffer >>= 8;
+            used -= 8;
+        }
+    }
+    if used > 0 {
+        out.push(buffer as u8);
+    }
+}
+
+pub(super) fn unpack(bytes: &[u8], index: usize, bits: u8) -> u64 {
+    if bits == 0 {
+        return 0;
+    }
+    let bit = index * usize::from(bits);
+    let start = bit / 8;
+    let shift = bit % 8;
+    let size = (shift + usize::from(bits)).div_ceil(8);
+    let mut buffer = [0u8; 16];
+    buffer[..size].copy_from_slice(&bytes[start..start + size]);
+    let value = u128::from_le_bytes(buffer) >> shift;
+    (value & ((1u128 << bits) - 1)) as u64
+}
+
+struct BitReader<'a> {
+    bytes: &'a [u8],
+    buffer: u128,
+    used: u8,
+    bits: u8,
+    mask: u128,
+}
+
+impl<'a> BitReader<'a> {
+    fn new(bytes: &'a [u8], bits: u8) -> Self {
+        Self {
+            bytes,
+            buffer: 0,
+            used: 0,
+            bits,
+            mask: (1u128 << bits) - 1,
+        }
+    }
+    fn next(&mut self) -> u64 {
+        while self.used < self.bits {
+            self.buffer |= u128::from(self.bytes[0]) << self.used;
+            self.bytes = &self.bytes[1..];
+            self.used += 8;
+        }
+        let value = (self.buffer & self.mask) as u64;
+        self.buffer >>= self.bits;
+        self.used -= self.bits;
+        value
+    }
+}
+
+fn frontier(points: impl Iterator<Item = (u32, u32)>) -> Option<Box<[(u32, u32)]>> {
+    let mut points: Vec<_> = points.filter(|p| p.0 > 0).collect();
+    points.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+    let mut shortest = u32::MAX;
+    let mut kept = Vec::new();
+    for point in points {
+        if kept.is_empty() || point.1 < shortest {
+            shortest = point.1;
+            kept.push(point);
+        }
+    }
+    (kept.len() > 1).then(|| kept.into_boxed_slice())
+}
+
 impl PostingList {
     pub(super) fn len(&self) -> usize {
         self.count as usize
+    }
+    pub(super) fn positive_len(&self) -> usize {
+        debug_assert!(self.positive_count == 0 || self.blocks.iter().any(|b| b.max_frequency > 0));
+        self.positive_count as usize
     }
 
     pub(super) fn is_empty(&self) -> bool {
         self.count == 0
     }
-
-    /// `(slot, frequency)` pairs in slot order.
-    pub(super) fn iter(&self) -> impl Iterator<Item = Posting> + '_ {
-        let mut at = 0usize;
-        let mut slot = 0u64;
-        (0..self.count).map(move |i| {
-            let delta = get_varint(&self.data, &mut at);
-            slot = if i == 0 { delta } else { slot + delta };
-            let frequency = get_varint(&self.data, &mut at);
-            (
-                usize::try_from(slot).expect("posting slot exceeds usize"),
-                u32::try_from(frequency).expect("posting frequency exceeds u32"),
-            )
-        })
+    pub(super) fn iter(&self) -> PostingCursor<'_> {
+        PostingCursor::new(self)
     }
-
-    /// Calls `f(slot, frequency)` for every posting in slot order; the loop form keeps the
-    /// decoder state in registers where the iterator cannot. Four postings whose eight varints
-    /// are one byte each (gaps and frequencies below 128, the common case in long lists)
-    /// decode from one 64-bit load.
     pub(super) fn for_each(&self, mut f: impl FnMut(usize, u32)) {
-        let bytes = &self.data[..];
-        let mut at = 0usize;
-        let mut slot = 0u64;
-        let mut left = self.count as usize;
-        while left > 0 {
-            if left >= 4 {
-                if let Some(word) = bytes.get(at..at + 8) {
-                    let word = u64::from_le_bytes(word.try_into().expect("eight bytes"));
-                    if word & 0x8080_8080_8080_8080 == 0 {
-                        for pair in 0..4 {
-                            slot += (word >> (16 * pair)) & 0xff;
-                            f(slot as usize, ((word >> (16 * pair + 8)) & 0xff) as u32);
-                        }
-                        at += 8;
-                        left -= 4;
-                        continue;
-                    }
-                }
-            }
-            slot += get_varint(bytes, &mut at);
-            let frequency = get_varint(bytes, &mut at);
-            debug_assert!(slot <= usize::MAX as u64 && frequency <= u64::from(u32::MAX));
-            f(slot as usize, frequency as u32);
-            left -= 1;
+        for (slot, frequency) in self.iter() {
+            f(slot, frequency);
         }
     }
-
+    pub(super) fn mark_slots(&self, matched: &mut [u64]) {
+        if self.positive_count != self.count {
+            self.for_each(|slot, frequency| {
+                if frequency > 0 {
+                    matched[slot / 64] |= 1 << (slot % 64);
+                }
+            });
+            return;
+        }
+        for block in &self.blocks {
+            let mut gaps = BitReader::new(&self.data[block.offset..], block.doc_bits);
+            let mut slot = block.first;
+            for _ in 0..block.count {
+                slot = slot
+                    .checked_add(gaps.next() as usize)
+                    .expect("posting gap overflow");
+                matched[slot / 64] |= 1 << (slot % 64);
+            }
+        }
+    }
     fn decode(&self) -> Vec<Posting> {
         self.iter().collect()
     }
 
+    fn decode_block(&self, index: usize, out: &mut [Posting; BLOCK_LEN]) {
+        self.decode_values(&self.blocks[index], out);
+    }
+
+    fn decode_values(&self, block: &Block, out: &mut [Posting; BLOCK_LEN]) {
+        let count = usize::from(block.count);
+        let bytes = &self.data[block.offset..];
+        let mut frequencies = BitReader::new(
+            &bytes[(count * usize::from(block.doc_bits)).div_ceil(8)..],
+            block.frequency_bits,
+        );
+        let mut gaps = BitReader::new(bytes, block.doc_bits);
+        let mut slot = block.first;
+        for posting in &mut out[..count] {
+            slot = slot
+                .checked_add(gaps.next() as usize)
+                .expect("posting gap overflow");
+            *posting = (slot, frequencies.next() as u32);
+        }
+    }
+
+    fn append_block(
+        &mut self,
+        postings: &[Posting],
+        min_words: u32,
+        frontier: Option<Box<[(u32, u32)]>>,
+    ) {
+        let mut gap = 0u64;
+        for pair in postings.windows(2) {
+            gap = gap.max((pair[1].0 - pair[0].0) as u64);
+        }
+        let max_frequency = postings.iter().map(|p| p.1).max().expect("nonempty block");
+        let doc_bits = (64 - gap.leading_zeros()) as u8;
+        let frequency_bits = (32 - max_frequency.leading_zeros()) as u8;
+        let offset = self.data.len();
+        let mut previous = postings[0].0;
+        pack(
+            &mut self.data,
+            postings.iter().map(|p| {
+                let delta = p.0 - previous;
+                previous = p.0;
+                delta as u64
+            }),
+            doc_bits,
+        );
+        pack(
+            &mut self.data,
+            postings.iter().map(|p| u64::from(p.1)),
+            frequency_bits,
+        );
+        self.blocks.push(Block {
+            offset,
+            first: postings[0].0,
+            last: postings.last().unwrap().0,
+            count: postings.len() as u16,
+            doc_bits,
+            frequency_bits,
+            max_frequency,
+            min_words,
+            frontier,
+        });
+    }
+
     fn encode(&mut self, postings: &[Posting]) {
         self.data.clear();
-        let mut previous = 0u64;
-        for (i, &(slot, frequency)) in postings.iter().enumerate() {
-            let slot = slot as u64;
-            put_varint(&mut self.data, if i == 0 { slot } else { slot - previous });
-            put_varint(&mut self.data, u64::from(frequency));
-            previous = slot;
+        self.blocks.clear();
+        for block in postings.chunks(BLOCK_LEN) {
+            self.append_block(block, 0, None);
         }
         self.data.shrink_to_fit();
         self.count = u32::try_from(postings.len()).expect("posting list over u32::MAX");
-        self.last = previous;
+        self.positive_count = postings.iter().filter(|p| p.1 > 0).count() as u32;
+        self.last = postings.last().map_or(0, |p| p.0 as u64);
     }
 
-    /// Adds `run`, strictly slot-sorted and disjoint from the list. A run above the list's
-    /// final slot is delta-encoded straight onto the list (through `scratch`, a buffer the
-    /// caller reuses across lists); one that starts at or below it merges the two in one
-    /// decode and encode.
     pub(super) fn append_run(&mut self, run: &[Posting], scratch: &mut Vec<u8>) {
+        self.append_run_with_lengths(run, scratch, |_| 0);
+    }
+
+    fn append_run_with_lengths(
+        &mut self,
+        run: &[Posting],
+        _scratch: &mut Vec<u8>,
+        words: impl Fn(usize) -> u32,
+    ) {
         debug_assert!(
-            run.windows(2).all(|pair| pair[0].0 < pair[1].0),
+            run.windows(2).all(|p| p[0].0 < p[1].0),
             "unsorted posting run"
         );
         let Some(&(first, _)) = run.first() else {
@@ -394,79 +500,145 @@ impl PostingList {
             self.encode(&merged);
             return;
         }
-        scratch.clear();
-        let mut previous = if self.count == 0 { 0 } else { self.last };
-        for &(slot, frequency) in run {
-            let slot = slot as u64;
-            put_varint(scratch, slot - previous);
-            put_varint(scratch, u64::from(frequency));
-            previous = slot;
+        let mut start = 0;
+        if let Some(block) = self.blocks.pop_if(|b| usize::from(b.count) < BLOCK_LEN) {
+            let mut decoded = [(0, 0); BLOCK_LEN];
+            self.decode_values(&block, &mut decoded);
+            self.data.truncate(block.offset);
+            let old_len = usize::from(block.count);
+            let take = (BLOCK_LEN - old_len).min(run.len());
+            decoded[old_len..old_len + take].copy_from_slice(&run[..take]);
+            let min_words = run[..take]
+                .iter()
+                .map(|p| words(p.0))
+                .min()
+                .unwrap_or(0)
+                .min(block.min_words);
+            let fallback = (block.max_frequency, block.min_words);
+            let old_points = block
+                .frontier
+                .as_deref()
+                .unwrap_or(std::slice::from_ref(&fallback));
+            let frontier = frontier(
+                old_points
+                    .iter()
+                    .copied()
+                    .chain(run[..take].iter().map(|p| (p.1, words(p.0)))),
+            );
+            self.append_block(&decoded[..old_len + take], min_words, frontier);
+            start = take;
         }
-        if self.count == 0 {
-            // A fresh list is sized exactly; a growing one amortizes its reallocations.
-            self.data = scratch.clone();
-        } else {
-            self.data.extend_from_slice(scratch);
+        for block in run[start..].chunks(BLOCK_LEN) {
+            self.append_block(
+                block,
+                block.iter().map(|p| words(p.0)).min().unwrap_or(0),
+                frontier(block.iter().map(|p| (p.1, words(p.0)))),
+            );
         }
-        self.count =
-            u32::try_from(self.count as usize + run.len()).expect("posting list over u32::MAX");
-        self.last = previous;
+        self.count = u32::try_from(self.len() + run.len()).expect("posting list over u32::MAX");
+        self.positive_count += run.iter().filter(|p| p.1 > 0).count() as u32;
+        self.last = run.last().unwrap().0 as u64;
     }
 
-    /// Byte ranges of the posting of `slot`: `(delta_start, frequency_start, end, previous)`,
-    /// where `previous` is the slot of the posting before it (0 for the first).
-    fn locate(&self, slot: usize) -> (usize, usize, usize, u64) {
-        let target = slot as u64;
-        let bytes = &self.data[..];
-        let (mut at, mut current, mut previous) = (0usize, 0u64, 0u64);
-        for _ in 0..self.count {
-            let start = at;
-            current += get_varint(bytes, &mut at);
-            let frequency = at;
-            get_varint(bytes, &mut at);
-            match current.cmp(&target) {
-                std::cmp::Ordering::Equal => return (start, frequency, at, previous),
-                std::cmp::Ordering::Greater => break,
-                std::cmp::Ordering::Less => previous = current,
-            }
-        }
-        panic!("document missing from posting");
-    }
-
-    /// Drops a slot present in the list. The bytes before it stay, the next posting's delta
-    /// absorbs the removed one, and the tail moves down once: no decode or re-encode.
     fn remove(&mut self, slot: usize) {
-        let (start, _, end, previous) = self.locate(slot);
-        let removed_delta = slot as u64 - previous;
-        if end == self.data.len() {
-            self.data.truncate(start);
-            self.last = previous;
-        } else {
-            let mut next = end;
-            let next_delta = get_varint(&self.data, &mut next);
-            let mut merged = Vec::with_capacity(10);
-            put_varint(&mut merged, removed_delta + next_delta);
-            self.data.splice(start..next, merged);
-        }
-        self.count -= 1;
-        if self.count == 0 {
-            self.data = Vec::new();
-            self.last = 0;
-        } else if self.data.capacity() > 2 * self.data.len() + 64 {
-            self.data.shrink_to_fit();
+        let mut decoded = self.decode();
+        let index = decoded
+            .binary_search_by_key(&slot, |p| p.0)
+            .expect("document missing from posting");
+        decoded.remove(index);
+        self.encode(&decoded);
+    }
+
+    fn set_frequency(&mut self, slot: usize, frequency: u32) {
+        let mut decoded = self.decode();
+        let index = decoded
+            .binary_search_by_key(&slot, |p| p.0)
+            .expect("document missing from posting");
+        decoded[index].1 = frequency;
+        self.encode(&decoded);
+    }
+
+    pub(super) fn invalidate_length(&mut self, slot: usize) {
+        let block = self.blocks.partition_point(|b| b.last < slot);
+        self.blocks[block].min_words = 0;
+        self.blocks[block].frontier = None;
+    }
+}
+
+pub(super) struct PostingCursor<'a> {
+    list: &'a PostingList,
+    block: usize,
+    index: usize,
+    decoded: [Posting; BLOCK_LEN],
+    length: usize,
+}
+
+impl<'a> PostingCursor<'a> {
+    fn new(list: &'a PostingList) -> Self {
+        let mut cursor = Self {
+            list,
+            block: 0,
+            index: 0,
+            decoded: [(0, 0); BLOCK_LEN],
+            length: 0,
+        };
+        cursor.load(0);
+        cursor
+    }
+
+    fn load(&mut self, block: usize) {
+        self.block = block;
+        self.index = 0;
+        self.length = self
+            .list
+            .blocks
+            .get(block)
+            .map_or(0, |b| usize::from(b.count));
+        if self.length > 0 {
+            self.list.decode_block(block, &mut self.decoded);
         }
     }
 
-    /// Rewrites one posting's frequency in place; only its own varint changes length.
-    fn set_frequency(&mut self, slot: usize, frequency: u32) {
-        let (_, start, end, _) = self.locate(slot);
-        let mut encoded = Vec::with_capacity(5);
-        put_varint(&mut encoded, u64::from(frequency));
-        if encoded.len() == end - start {
-            self.data[start..end].copy_from_slice(&encoded);
-        } else {
-            self.data.splice(start..end, encoded);
+    pub(super) fn peek(&self) -> Option<Posting> {
+        (self.index < self.length).then(|| self.decoded[self.index])
+    }
+
+    pub(super) fn block_end(&self) -> Option<usize> {
+        self.peek().map(|_| self.list.blocks[self.block].last)
+    }
+
+    pub(super) fn block_impacts(&self) -> &[(u32, u32)] {
+        let block = &self.list.blocks[self.block];
+        block.frontier.as_deref().unwrap_or(&[])
+    }
+
+    pub(super) fn block_maximum(&self) -> (u32, u32) {
+        let block = &self.list.blocks[self.block];
+        (block.max_frequency, block.min_words)
+    }
+
+    pub(super) fn advance(&mut self, target: usize) -> Option<Posting> {
+        if self.peek().is_none_or(|p| p.0 >= target) {
+            return self.peek();
         }
+        if self.list.blocks[self.block].last < target {
+            let block = self.list.blocks.partition_point(|b| b.last < target);
+            self.load(block);
+        }
+        self.index += self.decoded[self.index..self.length].partition_point(|p| p.0 < target);
+        self.peek()
+    }
+}
+
+impl Iterator for PostingCursor<'_> {
+    type Item = Posting;
+    fn next(&mut self) -> Option<Posting> {
+        let value = self.peek()?;
+        self.index += 1;
+        if self.index == self.length {
+            self.load(self.block + 1);
+        }
+        Some(value)
     }
 }
 
@@ -509,7 +681,12 @@ impl PostingLists {
     }
 
     /// Adds one run per distinct term, each absent from that term's list.
+    #[cfg(test)]
     pub(super) fn insert_runs(&mut self, runs: &[TermRun<'_>]) {
+        self.insert_runs_with_lengths(runs, &[]);
+    }
+
+    fn insert_runs_with_lengths(&mut self, runs: &[TermRun<'_>], word_counts: &[u32]) {
         if runs.is_empty() {
             return;
         }
@@ -529,7 +706,9 @@ impl PostingLists {
                 new_terms.push((run.term, id));
                 id
             });
-            self.lists[id as usize].append_run(&run.postings, &mut scratch);
+            self.lists[id as usize].append_run_with_lengths(&run.postings, &mut scratch, |slot| {
+                word_counts.get(slot).copied().unwrap_or(0)
+            });
         }
         self.dictionary.insert_many(new_terms);
     }
@@ -557,6 +736,14 @@ impl PostingLists {
             self.dictionary.remove(term);
             self.free.push(id);
         }
+    }
+
+    pub(super) fn invalidate_length(&mut self, term: &str, slot: usize) {
+        let id = self
+            .dictionary
+            .get(term)
+            .expect("document term missing posting");
+        self.lists[id as usize].invalidate_length(slot);
     }
 
     pub(super) fn set_frequency(&mut self, term: &str, slot: usize, frequency: u32) {
@@ -673,6 +860,7 @@ fn merge_bucket<'a>(maps: Vec<RunMap<'a>>) -> Vec<TermRun<'a>> {
 pub(super) fn index_chunks<'a>(
     postings: &mut [PostingLists; 2],
     chunks: &[(usize, &'a StoredChunk)],
+    word_counts: &[u32],
 ) {
     debug_assert!(
         chunks.windows(2).all(|pair| pair[0].0 < pair[1].0),
@@ -709,7 +897,7 @@ pub(super) fn index_chunks<'a>(
     let mut merged = merged.into_iter();
     for lists in postings.iter_mut() {
         let runs: Vec<TermRun<'a>> = merged.by_ref().take(buckets).flatten().collect();
-        lists.insert_runs(&runs);
+        lists.insert_runs_with_lengths(&runs, word_counts);
     }
 }
 
@@ -937,7 +1125,7 @@ mod tests {
     /// decodes, for lists of every length up to past two loads, with a multi-byte gap or
     /// frequency at every position.
     #[test]
-    fn for_each_matches_iter_across_varint_widths() {
+    fn for_each_matches_iter_across_packed_widths() {
         for length in 0..=13usize {
             for wide in 0..=length {
                 for wide_frequency in [false, true] {
@@ -966,25 +1154,54 @@ mod tests {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod cursor_tests {
+    use super::*;
 
     #[test]
-    fn varints_round_trip_at_the_boundaries() {
-        for &v in &[
-            0u64,
-            1,
-            127,
-            128,
-            16_383,
-            16_384,
-            u32::MAX as u64,
-            u64::MAX - 1,
-            u64::MAX,
-        ] {
-            let mut out = Vec::new();
-            put_varint(&mut out, v);
-            let mut at = 0;
-            assert_eq!(get_varint(&out, &mut at), v);
-            assert_eq!(at, out.len());
+    fn next_and_advance_match_sorted_runs_at_block_and_integer_limits() {
+        for length in [0, 1, 127, 128, 129, 255, 256, 257] {
+            for gap in [1usize, 127, 128, 16_384] {
+                let mut run: Vec<Posting> = (0..length)
+                    .map(|i| (i * gap, if i % 2 == 0 { 1 } else { u32::MAX }))
+                    .collect();
+                run.push((usize::MAX, 0));
+                let mut list = PostingList::default();
+                for batch in run.chunks(17) {
+                    list.append_run(batch, &mut Vec::new());
+                }
+                assert_eq!(list.iter().collect::<Vec<_>>(), run);
+                assert_eq!(list.positive_len(), length);
+                for target in [
+                    0,
+                    1,
+                    126 * gap,
+                    127 * gap,
+                    128 * gap,
+                    129 * gap,
+                    usize::MAX - 1,
+                    usize::MAX,
+                ] {
+                    let mut cursor = list.iter();
+                    let expected = run.iter().copied().find(|p| p.0 >= target);
+                    assert_eq!(cursor.advance(target), expected);
+                    assert_eq!(cursor.advance(target), expected);
+                    assert_eq!(cursor.next(), expected);
+                    assert_eq!(
+                        cursor.collect::<Vec<_>>(),
+                        run.iter()
+                            .copied()
+                            .filter(|p| p.0 > expected.unwrap().0)
+                            .collect::<Vec<_>>()
+                    );
+                }
+                let mut cursor = list.iter();
+                assert_eq!(cursor.advance(usize::MAX), Some((usize::MAX, 0)));
+                assert_eq!(cursor.next(), Some((usize::MAX, 0)));
+                assert_eq!(cursor.advance(usize::MAX), None);
+            }
         }
     }
 }

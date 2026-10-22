@@ -31,6 +31,8 @@ pub(crate) struct DocumentStore {
     pub(super) slot_count: usize,
     pub(super) chunk_count: usize,
     pub(super) word_count: usize,
+    pub(super) nonpositional_chunks: usize,
+    pub(super) multichunk_documents: BTreeSet<String>,
     pub(super) generation: u64,
     pub(super) dense_index: Option<Arc<DenseIndex>>,
     pub(super) embedded_documents: BTreeSet<String>,
@@ -173,6 +175,9 @@ fn replace_postings(
         if let Some(&frequency) = new.terms.get(term).filter(|_| old.stemmed == new.stemmed) {
             // Unchanged terms (a deferred encoding landing, a re-memorized document) leave
             // the list alone; rewriting it would decode and encode the whole list.
+            if new.word_count < old.word_count {
+                postings[usize::from(old.stemmed)].invalidate_length(term, slot);
+            }
             if frequency != old_frequency {
                 postings[usize::from(old.stemmed)].set_frequency(term, slot, frequency);
             }
@@ -326,7 +331,15 @@ impl DocumentStore {
     /// in that order, and a document that replaces a stored one (or repeats an id earlier in
     /// the batch) takes the replacement path at its turn. The maximal runs of new, distinct
     /// documents between those are indexed in bulk (`postings::index_chunks`).
-    pub(crate) fn insert_batch(&mut self, documents: Vec<Arc<StoredDocument>>) {
+    pub(crate) fn insert_batch(&mut self, mut documents: Vec<Arc<StoredDocument>>) {
+        for group in documents.chunks_mut(super::MAX_BATCH_ITEMS) {
+            if group
+                .iter()
+                .all(|d| d.chunks.iter().all(|c| c.terms.is_whole_document()))
+            {
+                super::packed_terms::StoredTerms::share_documents(group);
+            }
+        }
         let documents: Vec<Arc<StoredDocument>> = documents
             .into_iter()
             .map(|document| self.stripped(document))
@@ -360,6 +373,13 @@ impl DocumentStore {
             .as_ref()
             .expect("unoccupied document slot");
         (&document.id, *chunk)
+    }
+
+    pub(super) fn borrowed_chunk(&self, slot: usize) -> (&StoredDocument, usize) {
+        let (document, index) = self.owners[slot]
+            .as_ref()
+            .expect("unoccupied document slot");
+        (document.as_ref(), *index)
     }
 
     pub(super) fn owned_chunk(&self, slot: usize) -> (Arc<StoredDocument>, usize) {
@@ -447,6 +467,7 @@ impl DocumentStore {
             let mut slots = Vec::with_capacity(document.chunks.len());
             let mut embedded = false;
             for (chunk_index, chunk) in document.chunks.iter().enumerate() {
+                self.nonpositional_chunks += usize::from(chunk.terms.positions.is_none());
                 self.count_vector_state(chunk.vector_state, true);
                 if chunk.embedding.is_some() {
                     self.embedded_count = self
@@ -483,6 +504,9 @@ impl DocumentStore {
                 indexed.push((slot, chunk));
                 slots.push(slot);
             }
+            if document.chunks.len() > 1 {
+                self.multichunk_documents.insert(document.id.clone());
+            }
             self.slots.insert(document.id.clone(), slots);
             if embedded {
                 assert!(
@@ -492,7 +516,7 @@ impl DocumentStore {
             }
             self.insert_filters(document);
         }
-        super::postings::index_chunks(&mut self.postings, &indexed);
+        super::postings::index_chunks(&mut self.postings, &indexed, &self.word_counts);
         // One generation step per document, as single inserts take.
         self.generation = self
             .generation
@@ -570,6 +594,11 @@ impl DocumentStore {
             );
             assert_eq!(owner.1, index, "document slot chunk mismatch");
             *owner = (Arc::clone(&document), index);
+            self.nonpositional_chunks = self
+                .nonpositional_chunks
+                .checked_sub(usize::from(old.terms.positions.is_none()))
+                .and_then(|n| n.checked_add(usize::from(new.terms.positions.is_none())))
+                .expect("non-positional chunk count overflow");
             for (state, delta) in [(old.vector_state, -1), (new.vector_state, 1)] {
                 match state {
                     VectorState::Encoded => {}
@@ -700,6 +729,7 @@ impl DocumentStore {
 
     pub(crate) fn remove(&mut self, id: &str) -> Option<Arc<StoredDocument>> {
         let document = self.documents.remove(id)?;
+        self.multichunk_documents.remove(id);
         self.invalidate_dense_index();
         if document
             .chunks
@@ -719,6 +749,10 @@ impl DocumentStore {
             "document slot count mismatch"
         );
         for (index, (chunk, slot)) in document.chunks.iter().zip(slots).enumerate() {
+            self.nonpositional_chunks = self
+                .nonpositional_chunks
+                .checked_sub(usize::from(chunk.terms.positions.is_none()))
+                .expect("non-positional chunk count underflow");
             self.count_vector_state(chunk.vector_state, false);
             if chunk.embedding.is_some() {
                 self.embedded_count = self
