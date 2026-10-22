@@ -305,7 +305,10 @@ fn lock(dir: &Path) -> Result<IndexLock, UpdateError> {
         .write(true)
         .open(dir.join(".lock"))?;
     fs2::FileExt::try_lock_exclusive(&file).map_err(|e| {
-        if e.kind() == std::io::ErrorKind::WouldBlock {
+        // Windows reports a held lock as ERROR_LOCK_VIOLATION, not WouldBlock.
+        if e.kind() == std::io::ErrorKind::WouldBlock
+            || e.raw_os_error() == fs2::lock_contended_error().raw_os_error()
+        {
             UpdateError::Locked
         } else {
             UpdateError::Io(e)
