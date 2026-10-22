@@ -73,7 +73,8 @@ symlink. Without `CURRENT` the live segments are in `vectors_data.bin/` itself.
 2. open the arena: create or validate `format.json`, find the live generation, recover the
    active segment (JOURNAL.md), write the end marker at the recovered end, extend the active
    file to its allocation size
-3. truncate and recreate `documents.text`; replay the journal; load index caches if fresh
+3. zero and unlink a `documents.text.canonical` left by an interrupted purge; truncate and
+   recreate `documents.text`; replay the journal; load index caches if fresh
 
 So opening modifies: the lock file, `documents.text`, the end of the active segment, and the
 manifest/schema when missing. `tests/format_open.rs` pins this list; a refused open modifies

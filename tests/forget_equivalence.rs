@@ -226,6 +226,46 @@ fn open_scrubs_a_canonical_segment_left_by_an_interrupted_purge() -> Result<()> 
     Ok(())
 }
 
+/// The purge re-seals every surviving record at its new segment offset (the offset is the
+/// record's AAD); surviving text must read back in the same process and after a reopen.
+#[cfg(feature = "security")]
+#[test]
+fn encrypted_purge_keeps_surviving_text_readable() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let mut config = HmsConfig::default();
+    config.security.encryption_enabled = true;
+    config.security.encryption_passphrase = Some("forget-equivalence".into());
+    let open = || {
+        HmsCore::new(
+            256,
+            Some(dir.path().display().to_string()),
+            Some(config.clone()),
+        )
+    };
+    let text = |core: &HmsCore| -> Result<Option<String>> {
+        let options = SearchOptions {
+            k: Some(1),
+            ..Default::default()
+        };
+        Ok(core
+            .search_documents("survivor", &options)?
+            .into_iter()
+            .next()
+            .and_then(|hit| hit.text))
+    };
+    let core = open()?;
+    for (id, body) in [("gone", "purged text"), ("kept", "survivor text kept")] {
+        core.memorize_document(serde_json::from_value(json!({"id": id, "text": body}))?)?;
+    }
+    assert!(core.delete_document("gone")?);
+    core.compact_scrubbing()?;
+    assert_eq!(text(&core)?.as_deref(), Some("survivor text kept"));
+    drop(core);
+    let core = open()?;
+    assert_eq!(text(&core)?.as_deref(), Some("survivor text kept"));
+    Ok(())
+}
+
 #[test]
 fn compaction_output_does_not_depend_on_vector_arrival_order() -> Result<()> {
     let (forward, backward) = (tempfile::tempdir()?, tempfile::tempdir()?);
