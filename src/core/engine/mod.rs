@@ -303,8 +303,15 @@ impl HmsCore {
             _store_lock: store_lock,
         };
 
+        let text_path = core.storage_path.join("documents.text");
+        // A purge interrupted before renaming its canonical segment leaves a copy of the live
+        // text, which a later purge would not reach.
+        let staging = super::documents::canonical_staging_path(&text_path);
+        if staging.exists() {
+            super::durable_file::scrub_remove_file(&staging)?;
+        }
         core.documents.write().attach_text_segment(
-            &core.storage_path.join("documents.text"),
+            &text_path,
             #[cfg(feature = "security")]
             core.encryption.clone(),
         )?;

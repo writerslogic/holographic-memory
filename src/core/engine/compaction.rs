@@ -69,8 +69,7 @@ impl HmsCore {
     /// that never held them and was purged at the same point.
     pub fn compact_scrubbing(&self) -> Result<()> {
         self.sync_text_segment()?;
-        self.compact_impl(|| {}, || {}, true)?;
-        self.canonicalize_derived_state()
+        self.compact_impl(|| {}, || {}, true)
     }
 
     /// Rebuilds the state a delete leaves shaped by history rather than by the live set: the
@@ -192,6 +191,11 @@ impl HmsCore {
                 "",
                 self.sign_fn().as_deref(),
             )?;
+        }
+        if scrub {
+            // Still under the compaction lock: a concurrent compaction must not capture
+            // documents whose text offsets the canonical rebuild is replacing.
+            self.canonicalize_derived_state()?;
         }
         Ok(())
     }

@@ -190,7 +190,7 @@ the store directory, before reopen, after an abort in a child process, and after
 
 After a purge the store is indistinguishable from one that never held the forgotten facts and
 was purged at the same point: the same results, ranks and score bits in lexical, hybrid and
-vector search (exact and graph), the same listings and index status, and byte-identical files
+embedding search (exact and graph), the same listings and index status, and byte-identical files
 except the generation directory's name, which carries the compaction time. Lexical statistics
 (document frequencies, chunk and word counts) are integers and match after any delete; the
 purge rebuilds what a delete leaves shaped by history: the text segment and the slots (in id
@@ -209,7 +209,11 @@ paired-store experiment `forget-experiment` (feature `experimental`; results in
 - decisions taken while the fact was stored: a `max-facts` eviction it caused, a
   consolidation or supersession that used it, or a chain forget that re-linked survivors;
 - file timestamps, inode numbers and the generation name; encrypted bytes (same lengths,
-  fresh nonces); `audit.bin` and the provenance log under `security`, which record the delete.
+  fresh nonces); `audit.bin` and the provenance log under `security`, which record the delete;
+- retrieval over raw hypervectors (`query`, `query_vector`) and the shard IVF/NSG indexes: a
+  delete drops trained shard indexes and leaves a registry slot that later inserts reuse;
+- relations, atoms, composites, triples and rules, which compaction writes in their
+  containers' order (not checked).
 
 ## Guarantees
 

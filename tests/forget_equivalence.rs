@@ -189,6 +189,17 @@ fn purge_leaves_the_store_of_a_document_never_stored() -> Result<()> {
         differing_files(a_dir.path(), b_dir.path())?,
         Vec::<String>::new()
     );
+    // Later admissions in the same process land in the same slots and segment offsets.
+    for core in [&a, &b] {
+        core.memorize_documents((240..250).map(document).collect())?;
+        core.rebuild_vector_index(1)?;
+        core.train_document_index()?;
+    }
+    assert_eq!(observe(&a)?, observe(&b)?);
+    assert_eq!(
+        differing_files(a_dir.path(), b_dir.path())?,
+        Vec::<String>::new()
+    );
     drop((a, b));
     let (a, b) = (open(a_dir.path())?, open(b_dir.path())?);
     for core in [&a, &b] {
@@ -200,6 +211,18 @@ fn purge_leaves_the_store_of_a_document_never_stored() -> Result<()> {
         differing_files(a_dir.path(), b_dir.path())?,
         Vec::<String>::new()
     );
+    Ok(())
+}
+
+#[test]
+fn open_scrubs_a_canonical_segment_left_by_an_interrupted_purge() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    drop(build(dir.path(), None)?);
+    let staging = dir.path().join("documents.text.canonical");
+    std::fs::write(&staging, "zyxleftovermarker text of a purged document")?;
+    let core = open(dir.path())?;
+    assert!(!staging.exists());
+    assert_eq!(core.document_count(), 240);
     Ok(())
 }
 

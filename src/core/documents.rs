@@ -26,7 +26,7 @@ mod text;
 mod vector_index;
 pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
 pub(crate) use index::DocumentWithText;
-pub(crate) use index::{opaque_counter_start, DocumentStore};
+pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
 pub use listing::DocumentRecord;
 pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
