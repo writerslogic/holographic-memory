@@ -625,19 +625,19 @@ pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
 
 /// Words a batch interner maps before it starts over; bounds memory on corpora with
 /// unbounded vocabularies while keeping the common-word hit rate.
-const STEM_MEMO_CAPACITY: usize = 1 << 16;
+const STEM_MEMO_CAPACITY: usize = 1 << 18;
 
 /// Hash map keyed by caller text, so seeded per process.
 type SeededMap<K, V> = std::collections::HashMap<K, V, foldhash::fast::RandomState>;
 
-/// The lexical state of one ingest batch on one thread: every distinct word seen maps to the id
-/// of its term (lowercased, Snowball-stemmed), so a repeated word costs one hash lookup and no
-/// copy, stemming runs once per distinct word, and a chunk's counts accumulate in an array by
-/// term id.
+/// The lexical state of ingest on one thread, carried across a store's batches
+/// ([`StemMemoPool`]): every distinct word seen maps to the id of its term (lowercased,
+/// Snowball-stemmed), so a repeated word costs one hash lookup and no copy, stemming runs
+/// once per distinct word, and a chunk's counts accumulate in an array by term id.
 #[derive(Default)]
 struct Interner {
     /// Word exactly as it appears in the text -> term id.
-    words: SeededMap<Box<str>, u32>,
+    words: WordMap,
     /// Term -> id, so the words of one stem count as one term.
     ids: SeededMap<Box<str>, u32>,
     /// Term by id, and its first eight bytes big-endian (zero-padded): a term never contains
@@ -651,9 +651,50 @@ struct Interner {
     lower: String,
 }
 
+/// Word -> term id. A word of at most 16 bytes (nearly every word) is keyed by its bytes
+/// zero-padded into a `u128`, unambiguous because a word holds no NUL byte, so a lookup
+/// compares integers rather than following a pointer to compare strings.
+#[derive(Default)]
+struct WordMap {
+    short: SeededMap<u128, u32>,
+    long: SeededMap<Box<str>, u32>,
+}
+
+impl WordMap {
+    #[inline]
+    fn short_key(word: &str) -> Option<u128> {
+        debug_assert!(!word.contains('\0'));
+        let bytes = word.as_bytes();
+        (bytes.len() <= 16).then(|| {
+            let mut key = [0u8; 16];
+            key[..bytes.len()].copy_from_slice(bytes);
+            u128::from_le_bytes(key)
+        })
+    }
+
+    #[inline]
+    fn get(&self, word: &str) -> Option<u32> {
+        match Self::short_key(word) {
+            Some(key) => self.short.get(&key).copied(),
+            None => self.long.get(word).copied(),
+        }
+    }
+
+    fn insert(&mut self, word: &str, id: u32) {
+        match Self::short_key(word) {
+            Some(key) => self.short.insert(key, id),
+            None => self.long.insert(word.into(), id),
+        };
+    }
+
+    fn len(&self) -> usize {
+        self.short.len() + self.long.len()
+    }
+}
+
 impl Interner {
     fn term_id(&mut self, word: &str, ascii: bool) -> u32 {
-        if let Some(&id) = self.words.get(word) {
+        if let Some(id) = self.words.get(word) {
             return id;
         }
         self.lower.clear();
@@ -680,7 +721,7 @@ impl Interner {
                 id
             }
         };
-        self.words.insert(word.into(), id);
+        self.words.insert(word, id);
         id
     }
 
@@ -775,9 +816,9 @@ thread_local! {
         const { std::cell::RefCell::new(None) };
 }
 
-/// The word interner of one ingest batch. It is installed on a thread only while that thread
-/// prepares documents for the batch and is freed with the batch, so no thread keeps it and
-/// queries never use it.
+/// The word interner of an ingest batch. It is installed on a thread only while that thread
+/// prepares documents for the batch and is kept by the store between batches
+/// ([`StemMemoPool`]), so no thread keeps it and queries never use it.
 #[derive(Default)]
 pub(crate) struct StemMemo(Interner);
 
@@ -795,6 +836,45 @@ impl Drop for StemMemoGuard<'_> {
     fn drop(&mut self) {
         if let Some(table) = ACTIVE_STEM_MEMO.with(|active| active.borrow_mut().take()) {
             self.0 .0 = table;
+        }
+    }
+}
+
+/// The batch interner a store keeps between its document batches, so a corpus loaded in
+/// consecutive batches stems each distinct word once rather than once per batch and rayon
+/// split. One is kept, bounded by [`STEM_MEMO_CAPACITY`] words.
+#[derive(Default)]
+pub(crate) struct StemMemoPool(parking_lot::Mutex<Option<StemMemo>>);
+
+impl StemMemoPool {
+    /// The kept interner, or a new one; it goes back to the pool when the result drops.
+    pub(crate) fn take(&self) -> PooledStemMemo<'_> {
+        let memo = self.0.lock().take().unwrap_or_default();
+        PooledStemMemo { pool: self, memo }
+    }
+}
+
+pub(crate) struct PooledStemMemo<'a> {
+    pool: &'a StemMemoPool,
+    memo: StemMemo,
+}
+
+impl PooledStemMemo<'_> {
+    pub(crate) fn install(&mut self) -> StemMemoGuard<'_> {
+        self.memo.install()
+    }
+}
+
+impl Drop for PooledStemMemo<'_> {
+    fn drop(&mut self) {
+        let memo = std::mem::take(&mut self.memo);
+        let mut kept = self.pool.0.lock();
+        // Of the interners of concurrent splits, keep the one that has seen the most words.
+        if kept
+            .as_ref()
+            .is_none_or(|k| k.0.words.len() < memo.0.words.len())
+        {
+            *kept = Some(memo);
         }
     }
 }

@@ -101,25 +101,28 @@ impl HmsCore {
         let mutations = inputs
             .into_par_iter()
             .zip(spans)
-            .map_init(documents::StemMemo::default, |memo, (input, spans)| {
-                let _memo = memo.install();
-                #[cfg(feature = "local-models")]
-                if let Some(stages) = stages.as_deref() {
-                    return self
-                        .prepare_document_with_models(input, stages, options.encode)
-                        .map(|document| Mutation::Document(Arc::new(document)));
-                }
-                documents::prepare_spans(
-                    input,
-                    spans,
-                    self.dimensions,
-                    self.config.embedding_space.as_ref().map(|s| s.dimensions),
-                    None,
-                    self.config.text_encoder,
-                    options.encode,
-                )
-                .map(|document| Mutation::Document(Arc::new(document)))
-            })
+            .map_init(
+                || self.stem_memos.take(),
+                |memo, (input, spans)| {
+                    let _memo = memo.install();
+                    #[cfg(feature = "local-models")]
+                    if let Some(stages) = stages.as_deref() {
+                        return self
+                            .prepare_document_with_models(input, stages, options.encode)
+                            .map(|document| Mutation::Document(Arc::new(document)));
+                    }
+                    documents::prepare_spans(
+                        input,
+                        spans,
+                        self.dimensions,
+                        self.config.embedding_space.as_ref().map(|s| s.dimensions),
+                        None,
+                        self.config.text_encoder,
+                        options.encode,
+                    )
+                    .map(|document| Mutation::Document(Arc::new(document)))
+                },
+            )
             .collect::<Result<Vec<_>>>()?;
         let payload = super::document_batch::serialize_transaction(self, &mutations)?;
         let counts = mutations

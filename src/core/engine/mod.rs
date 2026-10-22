@@ -65,6 +65,8 @@ type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 pub struct HmsCore {
     config: HmsConfig,
     mutation_gate: mutation_gate::MutationGate,
+    /// Word interner carried from one document batch to the next.
+    stem_memos: crate::core::documents::StemMemoPool,
     compaction: parking_lot::Mutex<()>,
     /// The index metadata (`indices.json`) last written by this process: identical metadata
     /// means identical index files at the same checkpoint, so a repeated persist skips the
@@ -250,6 +252,7 @@ impl HmsCore {
         let core = Self {
             config: config.clone(),
             mutation_gate: mutation_gate::MutationGate::default(),
+            stem_memos: Default::default(),
             compaction: parking_lot::Mutex::new(()),
             persisted_indices: parking_lot::Mutex::new(Vec::new()),
             revision: std::sync::atomic::AtomicU64::new(0),
