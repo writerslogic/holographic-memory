@@ -96,6 +96,62 @@ fn boolean_truth_table_and_phrase_offsets() {
 }
 
 #[test]
+fn single_optional_phrases_filter_candidates_without_changing_counts() {
+    for boundary in [127, 128, 129] {
+        let mut store = DocumentStore::default();
+        for id in 0..boundary {
+            insert(
+                &mut store,
+                &format!("common{id:03}"),
+                "common common filler common",
+                true,
+                true,
+            );
+        }
+        for (id, text) in [
+            ("adjacent", "rare common rare common"),
+            ("reversed", "common rare"),
+            ("separated", "rare filler common rare"),
+        ] {
+            insert(&mut store, id, text, true, true);
+        }
+        for (text, expected) in [
+            ("\"rare common\"", 1),
+            ("\"common common\"", boundary),
+            ("\"rare rare\"", 0),
+            ("\"rare absent\"", 0),
+            ("+common \"rare rare\"", boundary + 3),
+            ("\"rare rare\" common", boundary + 3),
+        ] {
+            let query = LexicalQuery::parse(text).unwrap();
+            for k in [0, 1, 10, 1000] {
+                for count in [false, true] {
+                    let options = LexicalOptions {
+                        k,
+                        count,
+                        execution: LexicalExecution::DocumentAtATime,
+                        ..Default::default()
+                    };
+                    let actual = execute(&store, &query, &options).unwrap();
+                    assert_eq!(actual.count, count.then_some(expected), "{text}");
+                    assert_eq!(actual.hits.len(), expected.min(k), "{text}");
+                    let reference = execute(
+                        &store,
+                        &query,
+                        &LexicalOptions {
+                            execution: LexicalExecution::Exhaustive,
+                            ..options
+                        },
+                    )
+                    .unwrap();
+                    assert_eq!(actual, reference, "{text}, k={k}, count={count}");
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn parser_rejects_unsupported_syntax_and_limits() {
     for text in [
         "+",

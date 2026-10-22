@@ -1,0 +1,2122 @@
+{
+  "engine_sha": "46d20abeecece9d2e46686170d6ba4c12fae741a",
+  "adapter_revision": "0aef786",
+  "input_articles": 600000,
+  "indexed_articles": 548246,
+  "corpus_scope": "fixed first-600000 lines, not the full benchmark corpus",
+  "query_sha256": "a8e8f2c1a4bede53063de22fb13be83b585683da1c28208da4921de73ce254bd",
+  "count_receipts": [
+    "COUNT-0.json",
+    "COUNT-1.json",
+    "COUNT-2.json"
+  ],
+  "paired_phrases": 300,
+  "sum_union_candidates": 26290553,
+  "sum_conjunction_candidates": 242363,
+  "aggregate_candidate_ratio": 108.47593485804352,
+  "median_nonzero_candidate_ratio": 123.94047619047619,
+  "maximum_nonzero_candidate_ratio": 69760.57142857143,
+  "interpretation": "Measured match populations from saved count receipts. Source inspection identifies union enumeration in the old single optional phrase path. Restricting candidates to a term conjunction is exact. These ratios are not measured executor counters or predictions of elapsed speedup.",
+  "queries": [
+    {
+      "phrase": "\"griffith observatory\"",
+      "union_candidates": 2059,
+      "conjunction_candidates": 12,
+      "phrase_matches": 8,
+      "union_over_conjunction": 171.58333333333334
+    },
+    {
+      "phrase": "\"bowel obstruction\"",
+      "union_candidates": 624,
+      "conjunction_candidates": 24,
+      "phrase_matches": 10,
+      "union_over_conjunction": 26.0
+    },
+    {
+      "phrase": "\"vicenza italy\"",
+      "union_candidates": 13312,
+      "conjunction_candidates": 71,
+      "phrase_matches": 11,
+      "union_over_conjunction": 187.49295774647888
+    },
+    {
+      "phrase": "\"digital scanning\"",
+      "union_candidates": 7054,
+      "conjunction_candidates": 95,
+      "phrase_matches": 2,
+      "union_over_conjunction": 74.25263157894737
+    },
+    {
+      "phrase": "\"plus size clothing\"",
+      "union_candidates": 24525,
+      "conjunction_candidates": 45,
+      "phrase_matches": 1,
+      "union_over_conjunction": 545.0
+    },
+    {
+      "phrase": "\"borders books\"",
+      "union_candidates": 21991,
+      "conjunction_candidates": 302,
+      "phrase_matches": 0,
+      "union_over_conjunction": 72.81788079470199
+    },
+    {
+      "phrase": "\"american funds\"",
+      "union_candidates": 79495,
+      "conjunction_candidates": 1967,
+      "phrase_matches": 3,
+      "union_over_conjunction": 40.41433655312659
+    },
+    {
+      "phrase": "\"scottsdale az\"",
+      "union_candidates": 963,
+      "conjunction_candidates": 13,
+      "phrase_matches": 9,
+      "union_over_conjunction": 74.07692307692308
+    },
+    {
+      "phrase": "\"wisconsin attorney general\"",
+      "union_candidates": 53255,
+      "conjunction_candidates": 100,
+      "phrase_matches": 4,
+      "union_over_conjunction": 532.55
+    },
+    {
+      "phrase": "\"the english restoration\"",
+      "union_candidates": 497014,
+      "conjunction_candidates": 1084,
+      "phrase_matches": 25,
+      "union_over_conjunction": 458.5
+    },
+    {
+      "phrase": "\"freelance work\"",
+      "union_candidates": 60856,
+      "conjunction_candidates": 601,
+      "phrase_matches": 54,
+      "union_over_conjunction": 101.25790349417638
+    },
+    {
+      "phrase": "\"french culinary institute\"",
+      "union_candidates": 44564,
+      "conjunction_candidates": 28,
+      "phrase_matches": 9,
+      "union_over_conjunction": 1591.5714285714287
+    },
+    {
+      "phrase": "\"color combinations\"",
+      "union_candidates": 9005,
+      "conjunction_candidates": 164,
+      "phrase_matches": 32,
+      "union_over_conjunction": 54.90853658536585
+    },
+    {
+      "phrase": "\"italian translation\"",
+      "union_candidates": 19037,
+      "conjunction_candidates": 544,
+      "phrase_matches": 32,
+      "union_over_conjunction": 34.994485294117645
+    },
+    {
+      "phrase": "\"milwaukee newspaper\"",
+      "union_candidates": 11541,
+      "conjunction_candidates": 80,
+      "phrase_matches": 3,
+      "union_over_conjunction": 144.2625
+    },
+    {
+      "phrase": "\"robert green ingersoll\"",
+      "union_candidates": 33805,
+      "conjunction_candidates": 4,
+      "phrase_matches": 3,
+      "union_over_conjunction": 8451.25
+    },
+    {
+      "phrase": "\"omaha symphony\"",
+      "union_candidates": 2740,
+      "conjunction_candidates": 12,
+      "phrase_matches": 4,
+      "union_over_conjunction": 228.33333333333334
+    },
+    {
+      "phrase": "\"body painting\"",
+      "union_candidates": 27584,
+      "conjunction_candidates": 625,
+      "phrase_matches": 17,
+      "union_over_conjunction": 44.1344
+    },
+    {
+      "phrase": "\"who dares wins\"",
+      "union_candidates": 151848,
+      "conjunction_candidates": 23,
+      "phrase_matches": 14,
+      "union_over_conjunction": 6602.086956521739
+    },
+    {
+      "phrase": "\"west palm beach florida\"",
+      "union_candidates": 62040,
+      "conjunction_candidates": 173,
+      "phrase_matches": 72,
+      "union_over_conjunction": 358.6127167630058
+    },
+    {
+      "phrase": "\"stone mountain\"",
+      "union_candidates": 22094,
+      "conjunction_candidates": 1021,
+      "phrase_matches": 39,
+      "union_over_conjunction": 21.639569049951028
+    },
+    {
+      "phrase": "\"san francisco\"",
+      "union_candidates": 20350,
+      "conjunction_candidates": 6793,
+      "phrase_matches": 6204,
+      "union_over_conjunction": 2.995730899455322
+    },
+    {
+      "phrase": "\"ford modeling agency\"",
+      "union_candidates": 12412,
+      "conjunction_candidates": 21,
+      "phrase_matches": 12,
+      "union_over_conjunction": 591.047619047619
+    },
+    {
+      "phrase": "\"glass works\"",
+      "union_candidates": 34684,
+      "conjunction_candidates": 1045,
+      "phrase_matches": 29,
+      "union_over_conjunction": 33.19043062200957
+    },
+    {
+      "phrase": "\"personal loan\"",
+      "union_candidates": 29035,
+      "conjunction_candidates": 684,
+      "phrase_matches": 8,
+      "union_over_conjunction": 42.448830409356724
+    },
+    {
+      "phrase": "\"texas state legislature\"",
+      "union_candidates": 74163,
+      "conjunction_candidates": 248,
+      "phrase_matches": 15,
+      "union_over_conjunction": 299.0443548387097
+    },
+    {
+      "phrase": "\"spiritual warfare\"",
+      "union_candidates": 6773,
+      "conjunction_candidates": 89,
+      "phrase_matches": 4,
+      "union_over_conjunction": 76.10112359550561
+    },
+    {
+      "phrase": "\"georgia public broadcasting\"",
+      "union_candidates": 52377,
+      "conjunction_candidates": 60,
+      "phrase_matches": 4,
+      "union_over_conjunction": 872.95
+    },
+    {
+      "phrase": "\"graffiti art\"",
+      "union_candidates": 21547,
+      "conjunction_candidates": 167,
+      "phrase_matches": 17,
+      "union_over_conjunction": 129.0239520958084
+    },
+    {
+      "phrase": "\"texas death row\"",
+      "union_candidates": 54128,
+      "conjunction_candidates": 73,
+      "phrase_matches": 1,
+      "union_over_conjunction": 741.4794520547945
+    },
+    {
+      "phrase": "\"catholic answers\"",
+      "union_candidates": 13583,
+      "conjunction_candidates": 86,
+      "phrase_matches": 6,
+      "union_over_conjunction": 157.9418604651163
+    },
+    {
+      "phrase": "\"interest only\"",
+      "union_candidates": 114440,
+      "conjunction_candidates": 9425,
+      "phrase_matches": 28,
+      "union_over_conjunction": 12.142175066312998
+    },
+    {
+      "phrase": "\"region iv\"",
+      "union_candidates": 35679,
+      "conjunction_candidates": 921,
+      "phrase_matches": 37,
+      "union_over_conjunction": 38.73941368078176
+    },
+    {
+      "phrase": "\"army reserve\"",
+      "union_candidates": 30804,
+      "conjunction_candidates": 1912,
+      "phrase_matches": 260,
+      "union_over_conjunction": 16.110878661087867
+    },
+    {
+      "phrase": "\"chicken coop\"",
+      "union_candidates": 1369,
+      "conjunction_candidates": 51,
+      "phrase_matches": 43,
+      "union_over_conjunction": 26.84313725490196
+    },
+    {
+      "phrase": "\"people having sex\"",
+      "union_candidates": 91118,
+      "conjunction_candidates": 991,
+      "phrase_matches": 4,
+      "union_over_conjunction": 91.94550958627649
+    },
+    {
+      "phrase": "\"new york population\"",
+      "union_candidates": 152687,
+      "conjunction_candidates": 2073,
+      "phrase_matches": 2,
+      "union_over_conjunction": 73.65508924264351
+    },
+    {
+      "phrase": "\"most improved player\"",
+      "union_candidates": 123544,
+      "conjunction_candidates": 651,
+      "phrase_matches": 63,
+      "union_over_conjunction": 189.77572964669739
+    },
+    {
+      "phrase": "\"ear ache\"",
+      "union_candidates": 1650,
+      "conjunction_candidates": 6,
+      "phrase_matches": 3,
+      "union_over_conjunction": 275.0
+    },
+    {
+      "phrase": "\"mercury insurance\"",
+      "union_candidates": 4706,
+      "conjunction_candidates": 26,
+      "phrase_matches": 3,
+      "union_over_conjunction": 181.0
+    },
+    {
+      "phrase": "\"battle of the bulge\"",
+      "union_candidates": 506689,
+      "conjunction_candidates": 148,
+      "phrase_matches": 122,
+      "union_over_conjunction": 3423.574324324324
+    },
+    {
+      "phrase": "\"secretary of state\"",
+      "union_candidates": 461983,
+      "conjunction_candidates": 5786,
+      "phrase_matches": 2077,
+      "union_over_conjunction": 79.84497061873488
+    },
+    {
+      "phrase": "\"third trimester\"",
+      "union_candidates": 44555,
+      "conjunction_candidates": 43,
+      "phrase_matches": 23,
+      "union_over_conjunction": 1036.1627906976744
+    },
+    {
+      "phrase": "\"hempstead new york\"",
+      "union_candidates": 127923,
+      "conjunction_candidates": 63,
+      "phrase_matches": 14,
+      "union_over_conjunction": 2030.5238095238096
+    },
+    {
+      "phrase": "\"university of washington\"",
+      "union_candidates": 462362,
+      "conjunction_candidates": 6092,
+      "phrase_matches": 488,
+      "union_over_conjunction": 75.89658568614577
+    },
+    {
+      "phrase": "\"japan airlines\"",
+      "union_candidates": 17745,
+      "conjunction_candidates": 130,
+      "phrase_matches": 33,
+      "union_over_conjunction": 136.5
+    },
+    {
+      "phrase": "\"freedom tower\"",
+      "union_candidates": 14329,
+      "conjunction_candidates": 226,
+      "phrase_matches": 2,
+      "union_over_conjunction": 63.402654867256636
+    },
+    {
+      "phrase": "\"virginia usa\"",
+      "union_candidates": 18407,
+      "conjunction_candidates": 562,
+      "phrase_matches": 201,
+      "union_over_conjunction": 32.75266903914591
+    },
+    {
+      "phrase": "\"kasota stone\"",
+      "union_candidates": 11020,
+      "conjunction_candidates": 4,
+      "phrase_matches": 3,
+      "union_over_conjunction": 2755.0
+    },
+    {
+      "phrase": "\"intramuscular injections\"",
+      "union_candidates": 266,
+      "conjunction_candidates": 17,
+      "phrase_matches": 9,
+      "union_over_conjunction": 15.647058823529411
+    },
+    {
+      "phrase": "\"jesus as a child\"",
+      "union_candidates": 480535,
+      "conjunction_candidates": 534,
+      "phrase_matches": 3,
+      "union_over_conjunction": 899.8782771535581
+    },
+    {
+      "phrase": "\"montessori schools\"",
+      "union_candidates": 17078,
+      "conjunction_candidates": 55,
+      "phrase_matches": 5,
+      "union_over_conjunction": 310.5090909090909
+    },
+    {
+      "phrase": "\"oxford dictionary\"",
+      "union_candidates": 7061,
+      "conjunction_candidates": 437,
+      "phrase_matches": 130,
+      "union_over_conjunction": 16.157894736842106
+    },
+    {
+      "phrase": "\"state of louisiana\"",
+      "union_candidates": 462005,
+      "conjunction_candidates": 1284,
+      "phrase_matches": 90,
+      "union_over_conjunction": 359.81697819314644
+    },
+    {
+      "phrase": "\"penny stocks\"",
+      "union_candidates": 1700,
+      "conjunction_candidates": 14,
+      "phrase_matches": 5,
+      "union_over_conjunction": 121.42857142857143
+    },
+    {
+      "phrase": "\"cured of cancer\"",
+      "union_candidates": 461178,
+      "conjunction_candidates": 63,
+      "phrase_matches": 0,
+      "union_over_conjunction": 7320.285714285715
+    },
+    {
+      "phrase": "\"lord of the rings\"",
+      "union_candidates": 506713,
+      "conjunction_candidates": 263,
+      "phrase_matches": 185,
+      "union_over_conjunction": 1926.6653992395438
+    },
+    {
+      "phrase": "\"helen of troy\"",
+      "union_candidates": 461220,
+      "conjunction_candidates": 59,
+      "phrase_matches": 24,
+      "union_over_conjunction": 7817.28813559322
+    },
+    {
+      "phrase": "\"long legs\"",
+      "union_candidates": 55759,
+      "conjunction_candidates": 1975,
+      "phrase_matches": 125,
+      "union_over_conjunction": 28.23240506329114
+    },
+    {
+      "phrase": "\"sore muscles\"",
+      "union_candidates": 1332,
+      "conjunction_candidates": 14,
+      "phrase_matches": 4,
+      "union_over_conjunction": 95.14285714285714
+    },
+    {
+      "phrase": "\"connecticut post\"",
+      "union_candidates": 31405,
+      "conjunction_candidates": 493,
+      "phrase_matches": 4,
+      "union_over_conjunction": 63.70182555780933
+    },
+    {
+      "phrase": "\"danbury ct\"",
+      "union_candidates": 697,
+      "conjunction_candidates": 5,
+      "phrase_matches": 4,
+      "union_over_conjunction": 139.4
+    },
+    {
+      "phrase": "\"chicago bulls\"",
+      "union_candidates": 10844,
+      "conjunction_candidates": 316,
+      "phrase_matches": 245,
+      "union_over_conjunction": 34.31645569620253
+    },
+    {
+      "phrase": "\"child support\"",
+      "union_candidates": 41118,
+      "conjunction_candidates": 2781,
+      "phrase_matches": 73,
+      "union_over_conjunction": 14.785329018338727
+    },
+    {
+      "phrase": "\"iq scores\"",
+      "union_candidates": 2947,
+      "conjunction_candidates": 35,
+      "phrase_matches": 16,
+      "union_over_conjunction": 84.2
+    },
+    {
+      "phrase": "\"philadelphia phillies\"",
+      "union_candidates": 6063,
+      "conjunction_candidates": 537,
+      "phrase_matches": 524,
+      "union_over_conjunction": 11.29050279329609
+    },
+    {
+      "phrase": "\"trans siberian orchestra\"",
+      "union_candidates": 6285,
+      "conjunction_candidates": 13,
+      "phrase_matches": 11,
+      "union_over_conjunction": 483.46153846153845
+    },
+    {
+      "phrase": "\"naomi wallace\"",
+      "union_candidates": 1946,
+      "conjunction_candidates": 8,
+      "phrase_matches": 4,
+      "union_over_conjunction": 243.25
+    },
+    {
+      "phrase": "\"montgomery college\"",
+      "union_candidates": 39328,
+      "conjunction_candidates": 370,
+      "phrase_matches": 8,
+      "union_over_conjunction": 106.2918918918919
+    },
+    {
+      "phrase": "\"belcourt castle\"",
+      "union_candidates": 7498,
+      "conjunction_candidates": 2,
+      "phrase_matches": 2,
+      "union_over_conjunction": 3749.0
+    },
+    {
+      "phrase": "\"binghamton new york\"",
+      "union_candidates": 127903,
+      "conjunction_candidates": 180,
+      "phrase_matches": 63,
+      "union_over_conjunction": 710.5722222222222
+    },
+    {
+      "phrase": "\"tallest trees in the world\"",
+      "union_candidates": 509825,
+      "conjunction_candidates": 76,
+      "phrase_matches": 0,
+      "union_over_conjunction": 6708.223684210527
+    },
+    {
+      "phrase": "\"reading museum\"",
+      "union_candidates": 20538,
+      "conjunction_candidates": 520,
+      "phrase_matches": 3,
+      "union_over_conjunction": 39.496153846153845
+    },
+    {
+      "phrase": "\"merry christmas\"",
+      "union_candidates": 5037,
+      "conjunction_candidates": 126,
+      "phrase_matches": 73,
+      "union_over_conjunction": 39.976190476190474
+    },
+    {
+      "phrase": "\"flow meter\"",
+      "union_candidates": 7399,
+      "conjunction_candidates": 168,
+      "phrase_matches": 12,
+      "union_over_conjunction": 44.041666666666664
+    },
+    {
+      "phrase": "\"famous quotes\"",
+      "union_candidates": 21703,
+      "conjunction_candidates": 225,
+      "phrase_matches": 19,
+      "union_over_conjunction": 96.45777777777778
+    },
+    {
+      "phrase": "\"georgian architecture\"",
+      "union_candidates": 8507,
+      "conjunction_candidates": 158,
+      "phrase_matches": 31,
+      "union_over_conjunction": 53.84177215189873
+    },
+    {
+      "phrase": "\"prayer times\"",
+      "union_candidates": 42841,
+      "conjunction_candidates": 764,
+      "phrase_matches": 11,
+      "union_over_conjunction": 56.074607329842934
+    },
+    {
+      "phrase": "\"columbia university\"",
+      "union_candidates": 64894,
+      "conjunction_candidates": 3289,
+      "phrase_matches": 1594,
+      "union_over_conjunction": 19.73061720887808
+    },
+    {
+      "phrase": "\"fluid power\"",
+      "union_candidates": 28033,
+      "conjunction_candidates": 382,
+      "phrase_matches": 9,
+      "union_over_conjunction": 73.3848167539267
+    },
+    {
+      "phrase": "\"american south\"",
+      "union_candidates": 129680,
+      "conjunction_candidates": 12995,
+      "phrase_matches": 163,
+      "union_over_conjunction": 9.979222777991534
+    },
+    {
+      "phrase": "\"international baseball\"",
+      "union_candidates": 51279,
+      "conjunction_candidates": 820,
+      "phrase_matches": 20,
+      "union_over_conjunction": 62.53536585365854
+    },
+    {
+      "phrase": "\"ace frehley\"",
+      "union_candidates": 1227,
+      "conjunction_candidates": 23,
+      "phrase_matches": 23,
+      "union_over_conjunction": 53.34782608695652
+    },
+    {
+      "phrase": "\"the globe newspaper\"",
+      "union_candidates": 496597,
+      "conjunction_candidates": 294,
+      "phrase_matches": 2,
+      "union_over_conjunction": 1689.1054421768708
+    },
+    {
+      "phrase": "\"decorative windows\"",
+      "union_candidates": 6595,
+      "conjunction_candidates": 291,
+      "phrase_matches": 2,
+      "union_over_conjunction": 22.66323024054983
+    },
+    {
+      "phrase": "\"ancient egypt\"",
+      "union_candidates": 15724,
+      "conjunction_candidates": 923,
+      "phrase_matches": 273,
+      "union_over_conjunction": 17.03575297941495
+    },
+    {
+      "phrase": "\"american academy of child and adolescent psychiatry\"",
+      "union_candidates": 488324,
+      "conjunction_candidates": 7,
+      "phrase_matches": 5,
+      "union_over_conjunction": 69760.57142857143
+    },
+    {
+      "phrase": "\"york photo\"",
+      "union_candidates": 36217,
+      "conjunction_candidates": 617,
+      "phrase_matches": 0,
+      "union_over_conjunction": 58.69854132901135
+    },
+    {
+      "phrase": "\"good luck\"",
+      "union_candidates": 26956,
+      "conjunction_candidates": 713,
+      "phrase_matches": 292,
+      "union_over_conjunction": 37.806451612903224
+    },
+    {
+      "phrase": "\"world bank president\"",
+      "union_candidates": 109729,
+      "conjunction_candidates": 1095,
+      "phrase_matches": 8,
+      "union_over_conjunction": 100.20913242009132
+    },
+    {
+      "phrase": "\"jonathan daniel\"",
+      "union_candidates": 8670,
+      "conjunction_candidates": 213,
+      "phrase_matches": 4,
+      "union_over_conjunction": 40.70422535211268
+    },
+    {
+      "phrase": "\"clothing optional\"",
+      "union_candidates": 4423,
+      "conjunction_candidates": 51,
+      "phrase_matches": 15,
+      "union_over_conjunction": 86.72549019607843
+    },
+    {
+      "phrase": "\"xena warrior princess\"",
+      "union_candidates": 5461,
+      "conjunction_candidates": 1,
+      "phrase_matches": 1,
+      "union_over_conjunction": 5461.0
+    },
+    {
+      "phrase": "\"time for kids\"",
+      "union_candidates": 309275,
+      "conjunction_candidates": 1434,
+      "phrase_matches": 1,
+      "union_over_conjunction": 215.67294281729428
+    },
+    {
+      "phrase": "\"tom welling\"",
+      "union_candidates": 7880,
+      "conjunction_candidates": 6,
+      "phrase_matches": 6,
+      "union_over_conjunction": 1313.3333333333333
+    },
+    {
+      "phrase": "\"elliott smith\"",
+      "union_candidates": 9878,
+      "conjunction_candidates": 111,
+      "phrase_matches": 27,
+      "union_over_conjunction": 88.990990990991
+    },
+    {
+      "phrase": "\"heart disease\"",
+      "union_candidates": 17805,
+      "conjunction_candidates": 1141,
+      "phrase_matches": 439,
+      "union_over_conjunction": 15.604732690622262
+    },
+    {
+      "phrase": "\"st petersburg high school\"",
+      "union_candidates": 124847,
+      "conjunction_candidates": 177,
+      "phrase_matches": 1,
+      "union_over_conjunction": 705.3502824858757
+    },
+    {
+      "phrase": "\"fatherless children\"",
+      "union_candidates": 34674,
+      "conjunction_candidates": 9,
+      "phrase_matches": 2,
+      "union_over_conjunction": 3852.6666666666665
+    },
+    {
+      "phrase": "\"hotel del coronado\"",
+      "union_candidates": 13396,
+      "conjunction_candidates": 7,
+      "phrase_matches": 4,
+      "union_over_conjunction": 1913.7142857142858
+    },
+    {
+      "phrase": "\"law dictionary\"",
+      "union_candidates": 28761,
+      "conjunction_candidates": 267,
+      "phrase_matches": 12,
+      "union_over_conjunction": 107.71910112359551
+    },
+    {
+      "phrase": "\"anderson hospital\"",
+      "union_candidates": 14612,
+      "conjunction_candidates": 231,
+      "phrase_matches": 5,
+      "union_over_conjunction": 63.25541125541125
+    },
+    {
+      "phrase": "\"kenosha wisconsin\"",
+      "union_candidates": 4255,
+      "conjunction_candidates": 66,
+      "phrase_matches": 48,
+      "union_over_conjunction": 64.46969696969697
+    },
+    {
+      "phrase": "\"false prophets\"",
+      "union_candidates": 4170,
+      "conjunction_candidates": 50,
+      "phrase_matches": 8,
+      "union_over_conjunction": 83.4
+    },
+    {
+      "phrase": "\"cheap hotels\"",
+      "union_candidates": 3219,
+      "conjunction_candidates": 27,
+      "phrase_matches": 2,
+      "union_over_conjunction": 119.22222222222223
+    },
+    {
+      "phrase": "\"walk the line\"",
+      "union_candidates": 496671,
+      "conjunction_candidates": 1201,
+      "phrase_matches": 20,
+      "union_over_conjunction": 413.5478767693589
+    },
+    {
+      "phrase": "\"missy elliott\"",
+      "union_candidates": 1130,
+      "conjunction_candidates": 27,
+      "phrase_matches": 27,
+      "union_over_conjunction": 41.851851851851855
+    },
+    {
+      "phrase": "\"portrait studio\"",
+      "union_candidates": 17261,
+      "conjunction_candidates": 426,
+      "phrase_matches": 17,
+      "union_over_conjunction": 40.51877934272301
+    },
+    {
+      "phrase": "\"calvin klein\"",
+      "union_candidates": 1487,
+      "conjunction_candidates": 39,
+      "phrase_matches": 37,
+      "union_over_conjunction": 38.12820512820513
+    },
+    {
+      "phrase": "\"kitchen accessories\"",
+      "union_candidates": 2910,
+      "conjunction_candidates": 31,
+      "phrase_matches": 4,
+      "union_over_conjunction": 93.87096774193549
+    },
+    {
+      "phrase": "\"consumer affairs\"",
+      "union_candidates": 11852,
+      "conjunction_candidates": 237,
+      "phrase_matches": 78,
+      "union_over_conjunction": 50.0084388185654
+    },
+    {
+      "phrase": "\"adobe buildings\"",
+      "union_candidates": 13300,
+      "conjunction_candidates": 93,
+      "phrase_matches": 10,
+      "union_over_conjunction": 143.01075268817203
+    },
+    {
+      "phrase": "\"national book award\"",
+      "union_candidates": 116233,
+      "conjunction_candidates": 1911,
+      "phrase_matches": 135,
+      "union_over_conjunction": 60.82312925170068
+    },
+    {
+      "phrase": "\"back surgery\"",
+      "union_candidates": 51638,
+      "conjunction_candidates": 1202,
+      "phrase_matches": 43,
+      "union_over_conjunction": 42.96006655574043
+    },
+    {
+      "phrase": "\"mid continent airport\"",
+      "union_candidates": 28928,
+      "conjunction_candidates": 36,
+      "phrase_matches": 0,
+      "union_over_conjunction": 803.5555555555555
+    },
+    {
+      "phrase": "\"developmental delays\"",
+      "union_candidates": 2218,
+      "conjunction_candidates": 45,
+      "phrase_matches": 22,
+      "union_over_conjunction": 49.28888888888889
+    },
+    {
+      "phrase": "\"elise neal\"",
+      "union_candidates": 878,
+      "conjunction_candidates": 7,
+      "phrase_matches": 3,
+      "union_over_conjunction": 125.42857142857143
+    },
+    {
+      "phrase": "\"canadian real estate\"",
+      "union_candidates": 37099,
+      "conjunction_candidates": 190,
+      "phrase_matches": 6,
+      "union_over_conjunction": 195.2578947368421
+    },
+    {
+      "phrase": "\"barrett jackson\"",
+      "union_candidates": 5179,
+      "conjunction_candidates": 42,
+      "phrase_matches": 9,
+      "union_over_conjunction": 123.30952380952381
+    },
+    {
+      "phrase": "\"bmw engines\"",
+      "union_candidates": 3688,
+      "conjunction_candidates": 118,
+      "phrase_matches": 9,
+      "union_over_conjunction": 31.25423728813559
+    },
+    {
+      "phrase": "\"john donne\"",
+      "union_candidates": 45560,
+      "conjunction_candidates": 55,
+      "phrase_matches": 47,
+      "union_over_conjunction": 828.3636363636364
+    },
+    {
+      "phrase": "\"evening wear\"",
+      "union_candidates": 9631,
+      "conjunction_candidates": 314,
+      "phrase_matches": 29,
+      "union_over_conjunction": 30.671974522292995
+    },
+    {
+      "phrase": "\"toxic encephalopathy\"",
+      "union_candidates": 1547,
+      "conjunction_candidates": 11,
+      "phrase_matches": 2,
+      "union_over_conjunction": 140.63636363636363
+    },
+    {
+      "phrase": "\"critical care nurse\"",
+      "union_candidates": 22426,
+      "conjunction_candidates": 57,
+      "phrase_matches": 1,
+      "union_over_conjunction": 393.43859649122805
+    },
+    {
+      "phrase": "\"the breakfast club\"",
+      "union_candidates": 497109,
+      "conjunction_candidates": 207,
+      "phrase_matches": 19,
+      "union_over_conjunction": 2401.4927536231885
+    },
+    {
+      "phrase": "\"lost episode\"",
+      "union_candidates": 35345,
+      "conjunction_candidates": 1701,
+      "phrase_matches": 6,
+      "union_over_conjunction": 20.778953556731334
+    },
+    {
+      "phrase": "\"seal pictures\"",
+      "union_candidates": 7983,
+      "conjunction_candidates": 79,
+      "phrase_matches": 3,
+      "union_over_conjunction": 101.0506329113924
+    },
+    {
+      "phrase": "\"critical care medicine\"",
+      "union_candidates": 26283,
+      "conjunction_candidates": 139,
+      "phrase_matches": 3,
+      "union_over_conjunction": 189.0863309352518
+    },
+    {
+      "phrase": "\"hurricane wilma\"",
+      "union_candidates": 1662,
+      "conjunction_candidates": 29,
+      "phrase_matches": 20,
+      "union_over_conjunction": 57.310344827586206
+    },
+    {
+      "phrase": "\"john wilkes booth\"",
+      "union_candidates": 46434,
+      "conjunction_candidates": 41,
+      "phrase_matches": 38,
+      "union_over_conjunction": 1132.5365853658536
+    },
+    {
+      "phrase": "\"sesame street\"",
+      "union_candidates": 20770,
+      "conjunction_candidates": 174,
+      "phrase_matches": 149,
+      "union_over_conjunction": 119.36781609195403
+    },
+    {
+      "phrase": "\"ellen degeneres show\"",
+      "union_candidates": 32013,
+      "conjunction_candidates": 81,
+      "phrase_matches": 65,
+      "union_over_conjunction": 395.22222222222223
+    },
+    {
+      "phrase": "\"jaguar x type\"",
+      "union_candidates": 30120,
+      "conjunction_candidates": 10,
+      "phrase_matches": 1,
+      "union_over_conjunction": 3012.0
+    },
+    {
+      "phrase": "\"the movement\"",
+      "union_candidates": 496577,
+      "conjunction_candidates": 16398,
+      "phrase_matches": 3151,
+      "union_over_conjunction": 30.282778387608246
+    },
+    {
+      "phrase": "\"sarah fisher\"",
+      "union_candidates": 4406,
+      "conjunction_candidates": 38,
+      "phrase_matches": 4,
+      "union_over_conjunction": 115.94736842105263
+    },
+    {
+      "phrase": "\"dexter michigan\"",
+      "union_candidates": 5732,
+      "conjunction_candidates": 25,
+      "phrase_matches": 4,
+      "union_over_conjunction": 229.28
+    },
+    {
+      "phrase": "\"little brown jug\"",
+      "union_candidates": 38598,
+      "conjunction_candidates": 31,
+      "phrase_matches": 29,
+      "union_over_conjunction": 1245.0967741935483
+    },
+    {
+      "phrase": "\"books on cd\"",
+      "union_candidates": 299689,
+      "conjunction_candidates": 306,
+      "phrase_matches": 3,
+      "union_over_conjunction": 979.375816993464
+    },
+    {
+      "phrase": "\"carolyn jones\"",
+      "union_candidates": 6275,
+      "conjunction_candidates": 41,
+      "phrase_matches": 10,
+      "union_over_conjunction": 153.0487804878049
+    },
+    {
+      "phrase": "\"aishwarya rai\"",
+      "union_candidates": 662,
+      "conjunction_candidates": 30,
+      "phrase_matches": 29,
+      "union_over_conjunction": 22.066666666666666
+    },
+    {
+      "phrase": "\"trendy clothes\"",
+      "union_candidates": 2431,
+      "conjunction_candidates": 14,
+      "phrase_matches": 1,
+      "union_over_conjunction": 173.64285714285714
+    },
+    {
+      "phrase": "\"weather underground\"",
+      "union_candidates": 10569,
+      "conjunction_candidates": 249,
+      "phrase_matches": 17,
+      "union_over_conjunction": 42.44578313253012
+    },
+    {
+      "phrase": "\"mercedes benz\"",
+      "union_candidates": 820,
+      "conjunction_candidates": 301,
+      "phrase_matches": 294,
+      "union_over_conjunction": 2.7242524916943522
+    },
+    {
+      "phrase": "\"analog computer\"",
+      "union_candidates": 10475,
+      "conjunction_candidates": 261,
+      "phrase_matches": 16,
+      "union_over_conjunction": 40.13409961685824
+    },
+    {
+      "phrase": "\"pump it up\"",
+      "union_candidates": 294360,
+      "conjunction_candidates": 634,
+      "phrase_matches": 8,
+      "union_over_conjunction": 464.2902208201893
+    },
+    {
+      "phrase": "\"food carts\"",
+      "union_candidates": 13516,
+      "conjunction_candidates": 88,
+      "phrase_matches": 4,
+      "union_over_conjunction": 153.5909090909091
+    },
+    {
+      "phrase": "\"graduate management admission test\"",
+      "union_candidates": 30511,
+      "conjunction_candidates": 18,
+      "phrase_matches": 1,
+      "union_over_conjunction": 1695.0555555555557
+    },
+    {
+      "phrase": "\"big boss man\"",
+      "union_candidates": 44431,
+      "conjunction_candidates": 211,
+      "phrase_matches": 11,
+      "union_over_conjunction": 210.5734597156398
+    },
+    {
+      "phrase": "\"gun magazines\"",
+      "union_candidates": 9389,
+      "conjunction_candidates": 215,
+      "phrase_matches": 7,
+      "union_over_conjunction": 43.669767441860465
+    },
+    {
+      "phrase": "\"bankruptcy laws\"",
+      "union_candidates": 8819,
+      "conjunction_candidates": 122,
+      "phrase_matches": 14,
+      "union_over_conjunction": 72.28688524590164
+    },
+    {
+      "phrase": "\"antonio cromartie\"",
+      "union_candidates": 4481,
+      "conjunction_candidates": 5,
+      "phrase_matches": 5,
+      "union_over_conjunction": 896.2
+    },
+    {
+      "phrase": "\"sky news\"",
+      "union_candidates": 17979,
+      "conjunction_candidates": 511,
+      "phrase_matches": 95,
+      "union_over_conjunction": 35.183953033268104
+    },
+    {
+      "phrase": "\"phone cases\"",
+      "union_candidates": 15031,
+      "conjunction_candidates": 303,
+      "phrase_matches": 2,
+      "union_over_conjunction": 49.60726072607261
+    },
+    {
+      "phrase": "\"the incredibles\"",
+      "union_candidates": 496555,
+      "conjunction_candidates": 21,
+      "phrase_matches": 20,
+      "union_over_conjunction": 23645.47619047619
+    },
+    {
+      "phrase": "\"padre island\"",
+      "union_candidates": 22723,
+      "conjunction_candidates": 62,
+      "phrase_matches": 23,
+      "union_over_conjunction": 366.5
+    },
+    {
+      "phrase": "\"worcester state college\"",
+      "union_candidates": 93263,
+      "conjunction_candidates": 109,
+      "phrase_matches": 2,
+      "union_over_conjunction": 855.6238532110092
+    },
+    {
+      "phrase": "\"little cars\"",
+      "union_candidates": 31335,
+      "conjunction_candidates": 837,
+      "phrase_matches": 0,
+      "union_over_conjunction": 37.437275985663085
+    },
+    {
+      "phrase": "\"jefferson davis high school\"",
+      "union_candidates": 101590,
+      "conjunction_candidates": 36,
+      "phrase_matches": 2,
+      "union_over_conjunction": 2821.9444444444443
+    },
+    {
+      "phrase": "\"game downloads\"",
+      "union_candidates": 25361,
+      "conjunction_candidates": 65,
+      "phrase_matches": 0,
+      "union_over_conjunction": 390.16923076923075
+    },
+    {
+      "phrase": "\"chicken noodle soup\"",
+      "union_candidates": 1962,
+      "conjunction_candidates": 17,
+      "phrase_matches": 2,
+      "union_over_conjunction": 115.41176470588235
+    },
+    {
+      "phrase": "\"music stands\"",
+      "union_candidates": 40400,
+      "conjunction_candidates": 827,
+      "phrase_matches": 10,
+      "union_over_conjunction": 48.851269649334945
+    },
+    {
+      "phrase": "\"microsoft frontpage\"",
+      "union_candidates": 1903,
+      "conjunction_candidates": 7,
+      "phrase_matches": 4,
+      "union_over_conjunction": 271.85714285714283
+    },
+    {
+      "phrase": "\"camp claiborne\"",
+      "union_candidates": 9182,
+      "conjunction_candidates": 19,
+      "phrase_matches": 4,
+      "union_over_conjunction": 483.2631578947368
+    },
+    {
+      "phrase": "\"william wallace\"",
+      "union_candidates": 25424,
+      "conjunction_candidates": 409,
+      "phrase_matches": 79,
+      "union_over_conjunction": 62.16136919315404
+    },
+    {
+      "phrase": "\"home loan\"",
+      "union_candidates": 52266,
+      "conjunction_candidates": 1277,
+      "phrase_matches": 22,
+      "union_over_conjunction": 40.92873923257635
+    },
+    {
+      "phrase": "\"cherry blossom\"",
+      "union_candidates": 1544,
+      "conjunction_candidates": 78,
+      "phrase_matches": 66,
+      "union_over_conjunction": 19.794871794871796
+    },
+    {
+      "phrase": "\"miami dade college\"",
+      "union_candidates": 40272,
+      "conjunction_candidates": 64,
+      "phrase_matches": 18,
+      "union_over_conjunction": 629.25
+    },
+    {
+      "phrase": "\"time in denver\"",
+      "union_candidates": 475622,
+      "conjunction_candidates": 890,
+      "phrase_matches": 3,
+      "union_over_conjunction": 534.4067415730337
+    },
+    {
+      "phrase": "\"naked news\"",
+      "union_candidates": 16049,
+      "conjunction_candidates": 178,
+      "phrase_matches": 1,
+      "union_over_conjunction": 90.16292134831461
+    },
+    {
+      "phrase": "\"wildlife photography\"",
+      "union_candidates": 5876,
+      "conjunction_candidates": 71,
+      "phrase_matches": 13,
+      "union_over_conjunction": 82.7605633802817
+    },
+    {
+      "phrase": "\"david kim\"",
+      "union_candidates": 20888,
+      "conjunction_candidates": 291,
+      "phrase_matches": 4,
+      "union_over_conjunction": 71.78006872852234
+    },
+    {
+      "phrase": "\"printer ink\"",
+      "union_candidates": 1588,
+      "conjunction_candidates": 50,
+      "phrase_matches": 3,
+      "union_over_conjunction": 31.76
+    },
+    {
+      "phrase": "\"all funds\"",
+      "union_candidates": 120038,
+      "conjunction_candidates": 3487,
+      "phrase_matches": 33,
+      "union_over_conjunction": 34.424433610553486
+    },
+    {
+      "phrase": "\"zion national park\"",
+      "union_candidates": 94598,
+      "conjunction_candidates": 42,
+      "phrase_matches": 19,
+      "union_over_conjunction": 2252.3333333333335
+    },
+    {
+      "phrase": "\"john klein\"",
+      "union_candidates": 46077,
+      "conjunction_candidates": 189,
+      "phrase_matches": 3,
+      "union_over_conjunction": 243.79365079365078
+    },
+    {
+      "phrase": "\"edith wharton\"",
+      "union_candidates": 1052,
+      "conjunction_candidates": 34,
+      "phrase_matches": 32,
+      "union_over_conjunction": 30.941176470588236
+    },
+    {
+      "phrase": "\"times union\"",
+      "union_candidates": 60009,
+      "conjunction_candidates": 4379,
+      "phrase_matches": 36,
+      "union_over_conjunction": 13.703813656085865
+    },
+    {
+      "phrase": "\"milan tennessee\"",
+      "union_candidates": 6528,
+      "conjunction_candidates": 13,
+      "phrase_matches": 0,
+      "union_over_conjunction": 502.15384615384613
+    },
+    {
+      "phrase": "\"western herald\"",
+      "union_candidates": 34537,
+      "conjunction_candidates": 250,
+      "phrase_matches": 4,
+      "union_over_conjunction": 138.148
+    },
+    {
+      "phrase": "\"care a lot\"",
+      "union_candidates": 471956,
+      "conjunction_candidates": 719,
+      "phrase_matches": 4,
+      "union_over_conjunction": 656.4061196105703
+    },
+    {
+      "phrase": "\"costume designers\"",
+      "union_candidates": 2995,
+      "conjunction_candidates": 70,
+      "phrase_matches": 13,
+      "union_over_conjunction": 42.785714285714285
+    },
+    {
+      "phrase": "\"the actors studio\"",
+      "union_candidates": 496707,
+      "conjunction_candidates": 747,
+      "phrase_matches": 71,
+      "union_over_conjunction": 664.9357429718875
+    },
+    {
+      "phrase": "\"personal chef\"",
+      "union_candidates": 26424,
+      "conjunction_candidates": 158,
+      "phrase_matches": 8,
+      "union_over_conjunction": 167.2405063291139
+    },
+    {
+      "phrase": "\"david koresh\"",
+      "union_candidates": 19022,
+      "conjunction_candidates": 13,
+      "phrase_matches": 13,
+      "union_over_conjunction": 1463.2307692307693
+    },
+    {
+      "phrase": "\"bismarck state college\"",
+      "union_candidates": 92949,
+      "conjunction_candidates": 25,
+      "phrase_matches": 1,
+      "union_over_conjunction": 3717.96
+    },
+    {
+      "phrase": "\"the oregonian newspaper\"",
+      "union_candidates": 496593,
+      "conjunction_candidates": 21,
+      "phrase_matches": 3,
+      "union_over_conjunction": 23647.285714285714
+    },
+    {
+      "phrase": "\"justin timberlake\"",
+      "union_candidates": 1497,
+      "conjunction_candidates": 80,
+      "phrase_matches": 80,
+      "union_over_conjunction": 18.7125
+    },
+    {
+      "phrase": "\"hawk mountain\"",
+      "union_candidates": 13017,
+      "conjunction_candidates": 97,
+      "phrase_matches": 2,
+      "union_over_conjunction": 134.1958762886598
+    },
+    {
+      "phrase": "\"kristanna loken\"",
+      "union_candidates": 11,
+      "conjunction_candidates": 8,
+      "phrase_matches": 8,
+      "union_over_conjunction": 1.375
+    },
+    {
+      "phrase": "\"chicago teachers union\"",
+      "union_candidates": 36520,
+      "conjunction_candidates": 66,
+      "phrase_matches": 5,
+      "union_over_conjunction": 553.3333333333334
+    },
+    {
+      "phrase": "\"connecticut historical society\"",
+      "union_candidates": 38680,
+      "conjunction_candidates": 106,
+      "phrase_matches": 6,
+      "union_over_conjunction": 364.9056603773585
+    },
+    {
+      "phrase": "\"shih tzu\"",
+      "union_candidates": 187,
+      "conjunction_candidates": 8,
+      "phrase_matches": 3,
+      "union_over_conjunction": 23.375
+    },
+    {
+      "phrase": "\"robert fuller\"",
+      "union_candidates": 19523,
+      "conjunction_candidates": 162,
+      "phrase_matches": 19,
+      "union_over_conjunction": 120.51234567901234
+    },
+    {
+      "phrase": "\"zip code\"",
+      "union_candidates": 8499,
+      "conjunction_candidates": 528,
+      "phrase_matches": 499,
+      "union_over_conjunction": 16.09659090909091
+    },
+    {
+      "phrase": "\"bass fishing\"",
+      "union_candidates": 9331,
+      "conjunction_candidates": 248,
+      "phrase_matches": 32,
+      "union_over_conjunction": 37.625
+    },
+    {
+      "phrase": "\"ford parts\"",
+      "union_candidates": 24341,
+      "conjunction_candidates": 431,
+      "phrase_matches": 1,
+      "union_over_conjunction": 56.475638051044086
+    },
+    {
+      "phrase": "\"automatic writing\"",
+      "union_candidates": 19125,
+      "conjunction_candidates": 174,
+      "phrase_matches": 27,
+      "union_over_conjunction": 109.91379310344827
+    },
+    {
+      "phrase": "\"roundabout theatre\"",
+      "union_candidates": 10047,
+      "conjunction_candidates": 53,
+      "phrase_matches": 32,
+      "union_over_conjunction": 189.56603773584905
+    },
+    {
+      "phrase": "\"table lamps\"",
+      "union_candidates": 8550,
+      "conjunction_candidates": 46,
+      "phrase_matches": 2,
+      "union_over_conjunction": 185.8695652173913
+    },
+    {
+      "phrase": "\"the garden of eden\"",
+      "union_candidates": 506697,
+      "conjunction_candidates": 144,
+      "phrase_matches": 94,
+      "union_over_conjunction": 3518.7291666666665
+    },
+    {
+      "phrase": "\"immigration to mexico\"",
+      "union_candidates": 393251,
+      "conjunction_candidates": 209,
+      "phrase_matches": 5,
+      "union_over_conjunction": 1881.5837320574162
+    },
+    {
+      "phrase": "\"the daily breeze\"",
+      "union_candidates": 496599,
+      "conjunction_candidates": 23,
+      "phrase_matches": 4,
+      "union_over_conjunction": 21591.260869565216
+    },
+    {
+      "phrase": "\"debra jo rupp\"",
+      "union_candidates": 2168,
+      "conjunction_candidates": 2,
+      "phrase_matches": 2,
+      "union_over_conjunction": 1084.0
+    },
+    {
+      "phrase": "\"term life insurance\"",
+      "union_candidates": 88207,
+      "conjunction_candidates": 375,
+      "phrase_matches": 3,
+      "union_over_conjunction": 235.21866666666668
+    },
+    {
+      "phrase": "\"tennis elbow\"",
+      "union_candidates": 4622,
+      "conjunction_candidates": 21,
+      "phrase_matches": 7,
+      "union_over_conjunction": 220.0952380952381
+    },
+    {
+      "phrase": "\"kidney transplant\"",
+      "union_candidates": 1256,
+      "conjunction_candidates": 100,
+      "phrase_matches": 52,
+      "union_over_conjunction": 12.56
+    },
+    {
+      "phrase": "\"us coast guard\"",
+      "union_candidates": 45874,
+      "conjunction_candidates": 374,
+      "phrase_matches": 54,
+      "union_over_conjunction": 122.65775401069519
+    },
+    {
+      "phrase": "\"car stereo\"",
+      "union_candidates": 11877,
+      "conjunction_candidates": 76,
+      "phrase_matches": 6,
+      "union_over_conjunction": 156.27631578947367
+    },
+    {
+      "phrase": "\"playa del rey\"",
+      "union_candidates": 7020,
+      "conjunction_candidates": 15,
+      "phrase_matches": 13,
+      "union_over_conjunction": 468.0
+    },
+    {
+      "phrase": "\"domain names\"",
+      "union_candidates": 17573,
+      "conjunction_candidates": 376,
+      "phrase_matches": 71,
+      "union_over_conjunction": 46.736702127659576
+    },
+    {
+      "phrase": "\"premier wine\"",
+      "union_candidates": 9592,
+      "conjunction_candidates": 77,
+      "phrase_matches": 3,
+      "union_over_conjunction": 124.57142857142857
+    },
+    {
+      "phrase": "\"too faced\"",
+      "union_candidates": 24943,
+      "conjunction_candidates": 1462,
+      "phrase_matches": 5,
+      "union_over_conjunction": 17.060875512995896
+    },
+    {
+      "phrase": "\"avon school\"",
+      "union_candidates": 60338,
+      "conjunction_candidates": 177,
+      "phrase_matches": 0,
+      "union_over_conjunction": 340.8926553672316
+    },
+    {
+      "phrase": "\"jungle boy\"",
+      "union_candidates": 9412,
+      "conjunction_candidates": 125,
+      "phrase_matches": 12,
+      "union_over_conjunction": 75.296
+    },
+    {
+      "phrase": "\"ventura college\"",
+      "union_candidates": 38412,
+      "conjunction_candidates": 54,
+      "phrase_matches": 3,
+      "union_over_conjunction": 711.3333333333334
+    },
+    {
+      "phrase": "\"kansas city kings\"",
+      "union_candidates": 71160,
+      "conjunction_candidates": 59,
+      "phrase_matches": 23,
+      "union_over_conjunction": 1206.1016949152543
+    },
+    {
+      "phrase": "\"new haven\"",
+      "union_candidates": 126934,
+      "conjunction_candidates": 1461,
+      "phrase_matches": 612,
+      "union_over_conjunction": 86.88158795345653
+    },
+    {
+      "phrase": "\"ron keel\"",
+      "union_candidates": 3083,
+      "conjunction_candidates": 7,
+      "phrase_matches": 2,
+      "union_over_conjunction": 440.42857142857144
+    },
+    {
+      "phrase": "\"business consultants\"",
+      "union_candidates": 24233,
+      "conjunction_candidates": 162,
+      "phrase_matches": 7,
+      "union_over_conjunction": 149.58641975308643
+    },
+    {
+      "phrase": "\"open source software\"",
+      "union_candidates": 43386,
+      "conjunction_candidates": 864,
+      "phrase_matches": 269,
+      "union_over_conjunction": 50.21527777777778
+    },
+    {
+      "phrase": "\"ambassador of italy\"",
+      "union_candidates": 461489,
+      "conjunction_candidates": 418,
+      "phrase_matches": 1,
+      "union_over_conjunction": 1104.0406698564593
+    },
+    {
+      "phrase": "\"los angeles daily news\"",
+      "union_candidates": 34086,
+      "conjunction_candidates": 302,
+      "phrase_matches": 20,
+      "union_over_conjunction": 112.86754966887418
+    },
+    {
+      "phrase": "\"napa auto parts\"",
+      "union_candidates": 23049,
+      "conjunction_candidates": 13,
+      "phrase_matches": 10,
+      "union_over_conjunction": 1773.0
+    },
+    {
+      "phrase": "\"law school rankings\"",
+      "union_candidates": 79573,
+      "conjunction_candidates": 74,
+      "phrase_matches": 2,
+      "union_over_conjunction": 1075.3108108108108
+    },
+    {
+      "phrase": "\"hsbc bank\"",
+      "union_candidates": 11458,
+      "conjunction_candidates": 63,
+      "phrase_matches": 17,
+      "union_over_conjunction": 181.87301587301587
+    },
+    {
+      "phrase": "\"cognitive impairment\"",
+      "union_candidates": 1387,
+      "conjunction_candidates": 98,
+      "phrase_matches": 46,
+      "union_over_conjunction": 14.153061224489797
+    },
+    {
+      "phrase": "\"mushroom kingdom\"",
+      "union_candidates": 19210,
+      "conjunction_candidates": 55,
+      "phrase_matches": 4,
+      "union_over_conjunction": 349.27272727272725
+    },
+    {
+      "phrase": "\"the progressive\"",
+      "union_candidates": 496564,
+      "conjunction_candidates": 4263,
+      "phrase_matches": 1129,
+      "union_over_conjunction": 116.48228946751114
+    },
+    {
+      "phrase": "\"mood swings\"",
+      "union_candidates": 1623,
+      "conjunction_candidates": 52,
+      "phrase_matches": 48,
+      "union_over_conjunction": 31.21153846153846
+    },
+    {
+      "phrase": "\"ugly people\"",
+      "union_candidates": 61669,
+      "conjunction_candidates": 298,
+      "phrase_matches": 5,
+      "union_over_conjunction": 206.94295302013424
+    },
+    {
+      "phrase": "\"little shop of horrors\"",
+      "union_candidates": 461449,
+      "conjunction_candidates": 35,
+      "phrase_matches": 28,
+      "union_over_conjunction": 13184.257142857143
+    },
+    {
+      "phrase": "\"abilene tx\"",
+      "union_candidates": 469,
+      "conjunction_candidates": 6,
+      "phrase_matches": 2,
+      "union_over_conjunction": 78.16666666666667
+    },
+    {
+      "phrase": "\"internet fraud\"",
+      "union_candidates": 7619,
+      "conjunction_candidates": 131,
+      "phrase_matches": 2,
+      "union_over_conjunction": 58.16030534351145
+    },
+    {
+      "phrase": "\"tv party\"",
+      "union_candidates": 42625,
+      "conjunction_candidates": 1601,
+      "phrase_matches": 4,
+      "union_over_conjunction": 26.623985009369143
+    },
+    {
+      "phrase": "\"new jersey police\"",
+      "union_candidates": 133188,
+      "conjunction_candidates": 458,
+      "phrase_matches": 5,
+      "union_over_conjunction": 290.8034934497817
+    },
+    {
+      "phrase": "\"university of akron\"",
+      "union_candidates": 462140,
+      "conjunction_candidates": 163,
+      "phrase_matches": 62,
+      "union_over_conjunction": 2835.2147239263804
+    },
+    {
+      "phrase": "\"the news journal\"",
+      "union_candidates": 496653,
+      "conjunction_candidates": 1144,
+      "phrase_matches": 7,
+      "union_over_conjunction": 434.13723776223776
+    },
+    {
+      "phrase": "\"cartoon network\"",
+      "union_candidates": 16317,
+      "conjunction_candidates": 350,
+      "phrase_matches": 228,
+      "union_over_conjunction": 46.62
+    },
+    {
+      "phrase": "\"robert reed\"",
+      "union_candidates": 20367,
+      "conjunction_candidates": 244,
+      "phrase_matches": 8,
+      "union_over_conjunction": 83.47131147540983
+    },
+    {
+      "phrase": "\"interracial love\"",
+      "union_candidates": 16925,
+      "conjunction_candidates": 42,
+      "phrase_matches": 2,
+      "union_over_conjunction": 402.9761904761905
+    },
+    {
+      "phrase": "\"round table\"",
+      "union_candidates": 26683,
+      "conjunction_candidates": 1371,
+      "phrase_matches": 245,
+      "union_over_conjunction": 19.462436177972283
+    },
+    {
+      "phrase": "\"low estrogen\"",
+      "union_candidates": 20937,
+      "conjunction_candidates": 62,
+      "phrase_matches": 2,
+      "union_over_conjunction": 337.69354838709677
+    },
+    {
+      "phrase": "\"akron beacon\"",
+      "union_candidates": 977,
+      "conjunction_candidates": 17,
+      "phrase_matches": 15,
+      "union_over_conjunction": 57.470588235294116
+    },
+    {
+      "phrase": "\"john wellington\"",
+      "union_candidates": 46760,
+      "conjunction_candidates": 550,
+      "phrase_matches": 2,
+      "union_over_conjunction": 85.01818181818182
+    },
+    {
+      "phrase": "\"city in iran\"",
+      "union_candidates": 475794,
+      "conjunction_candidates": 889,
+      "phrase_matches": 3,
+      "union_over_conjunction": 535.201349831271
+    },
+    {
+      "phrase": "\"corpus christi tx\"",
+      "union_candidates": 1516,
+      "conjunction_candidates": 3,
+      "phrase_matches": 1,
+      "union_over_conjunction": 505.3333333333333
+    },
+    {
+      "phrase": "\"becoming a widow\"",
+      "union_candidates": 472010,
+      "conjunction_candidates": 416,
+      "phrase_matches": 5,
+      "union_over_conjunction": 1134.639423076923
+    },
+    {
+      "phrase": "\"king kalakaua\"",
+      "union_candidates": 24360,
+      "conjunction_candidates": 8,
+      "phrase_matches": 4,
+      "union_over_conjunction": 3045.0
+    },
+    {
+      "phrase": "\"centerville high school\"",
+      "union_candidates": 98223,
+      "conjunction_candidates": 11,
+      "phrase_matches": 3,
+      "union_over_conjunction": 8929.363636363636
+    },
+    {
+      "phrase": "\"foam mattress\"",
+      "union_candidates": 541,
+      "conjunction_candidates": 5,
+      "phrase_matches": 0,
+      "union_over_conjunction": 108.2
+    },
+    {
+      "phrase": "\"music videos\"",
+      "union_candidates": 35041,
+      "conjunction_candidates": 1912,
+      "phrase_matches": 1116,
+      "union_over_conjunction": 18.326882845188283
+    },
+    {
+      "phrase": "\"farmers almanac\"",
+      "union_candidates": 3812,
+      "conjunction_candidates": 11,
+      "phrase_matches": 2,
+      "union_over_conjunction": 346.54545454545456
+    },
+    {
+      "phrase": "\"civil war battlefields\"",
+      "union_candidates": 60931,
+      "conjunction_candidates": 63,
+      "phrase_matches": 2,
+      "union_over_conjunction": 967.1587301587301
+    },
+    {
+      "phrase": "\"national security cutter\"",
+      "union_candidates": 85905,
+      "conjunction_candidates": 16,
+      "phrase_matches": 2,
+      "union_over_conjunction": 5369.0625
+    },
+    {
+      "phrase": "\"eastern mennonite university\"",
+      "union_candidates": 80739,
+      "conjunction_candidates": 9,
+      "phrase_matches": 0,
+      "union_over_conjunction": 8971.0
+    },
+    {
+      "phrase": "\"new york times best sellers list\"",
+      "union_candidates": 185431,
+      "conjunction_candidates": 28,
+      "phrase_matches": 5,
+      "union_over_conjunction": 6622.535714285715
+    },
+    {
+      "phrase": "\"usb hub\"",
+      "union_candidates": 2251,
+      "conjunction_candidates": 16,
+      "phrase_matches": 6,
+      "union_over_conjunction": 140.6875
+    },
+    {
+      "phrase": "\"rob halford\"",
+      "union_candidates": 2275,
+      "conjunction_candidates": 29,
+      "phrase_matches": 28,
+      "union_over_conjunction": 78.44827586206897
+    },
+    {
+      "phrase": "\"new york towns\"",
+      "union_candidates": 132245,
+      "conjunction_candidates": 955,
+      "phrase_matches": 1,
+      "union_over_conjunction": 138.4764397905759
+    },
+    {
+      "phrase": "\"medal of honor\"",
+      "union_candidates": 462519,
+      "conjunction_candidates": 1288,
+      "phrase_matches": 589,
+      "union_over_conjunction": 359.09860248447205
+    },
+    {
+      "phrase": "\"hot springs south dakota\"",
+      "union_candidates": 76277,
+      "conjunction_candidates": 15,
+      "phrase_matches": 2,
+      "union_over_conjunction": 5085.133333333333
+    },
+    {
+      "phrase": "\"home business\"",
+      "union_candidates": 67518,
+      "conjunction_candidates": 6001,
+      "phrase_matches": 10,
+      "union_over_conjunction": 11.251124812531245
+    },
+    {
+      "phrase": "\"perfume bottles\"",
+      "union_candidates": 1028,
+      "conjunction_candidates": 13,
+      "phrase_matches": 7,
+      "union_over_conjunction": 79.07692307692308
+    },
+    {
+      "phrase": "\"old photos\"",
+      "union_candidates": 46735,
+      "conjunction_candidates": 546,
+      "phrase_matches": 12,
+      "union_over_conjunction": 85.5952380952381
+    },
+    {
+      "phrase": "\"edith head\"",
+      "union_candidates": 32913,
+      "conjunction_candidates": 111,
+      "phrase_matches": 18,
+      "union_over_conjunction": 296.5135135135135
+    },
+    {
+      "phrase": "\"danube river\"",
+      "union_candidates": 33570,
+      "conjunction_candidates": 388,
+      "phrase_matches": 115,
+      "union_over_conjunction": 86.52061855670104
+    },
+    {
+      "phrase": "\"bladder tumor\"",
+      "union_candidates": 1047,
+      "conjunction_candidates": 34,
+      "phrase_matches": 2,
+      "union_over_conjunction": 30.794117647058822
+    },
+    {
+      "phrase": "\"the british embassy\"",
+      "union_candidates": 497060,
+      "conjunction_candidates": 528,
+      "phrase_matches": 119,
+      "union_over_conjunction": 941.4015151515151
+    },
+    {
+      "phrase": "\"human trafficking\"",
+      "union_candidates": 19523,
+      "conjunction_candidates": 304,
+      "phrase_matches": 184,
+      "union_over_conjunction": 64.22039473684211
+    },
+    {
+      "phrase": "\"new england aquarium\"",
+      "union_candidates": 141537,
+      "conjunction_candidates": 19,
+      "phrase_matches": 2,
+      "union_over_conjunction": 7449.315789473684
+    },
+    {
+      "phrase": "\"the book of life\"",
+      "union_candidates": 506819,
+      "conjunction_candidates": 13274,
+      "phrase_matches": 17,
+      "union_over_conjunction": 38.18133192707548
+    },
+    {
+      "phrase": "\"rolex watches\"",
+      "union_candidates": 969,
+      "conjunction_candidates": 8,
+      "phrase_matches": 3,
+      "union_over_conjunction": 121.125
+    },
+    {
+      "phrase": "\"water filters\"",
+      "union_candidates": 27309,
+      "conjunction_candidates": 165,
+      "phrase_matches": 9,
+      "union_over_conjunction": 165.5090909090909
+    },
+    {
+      "phrase": "\"general motors\"",
+      "union_candidates": 48443,
+      "conjunction_candidates": 612,
+      "phrase_matches": 427,
+      "union_over_conjunction": 79.15522875816994
+    },
+    {
+      "phrase": "\"the preakness\"",
+      "union_candidates": 496555,
+      "conjunction_candidates": 125,
+      "phrase_matches": 98,
+      "union_over_conjunction": 3972.44
+    },
+    {
+      "phrase": "\"blue ridge parkway\"",
+      "union_candidates": 17594,
+      "conjunction_candidates": 33,
+      "phrase_matches": 27,
+      "union_over_conjunction": 533.1515151515151
+    },
+    {
+      "phrase": "\"elizabeth vargas\"",
+      "union_candidates": 7560,
+      "conjunction_candidates": 12,
+      "phrase_matches": 3,
+      "union_over_conjunction": 630.0
+    },
+    {
+      "phrase": "\"canon powershot\"",
+      "union_candidates": 1989,
+      "conjunction_candidates": 8,
+      "phrase_matches": 8,
+      "union_over_conjunction": 248.625
+    },
+    {
+      "phrase": "\"air mattress\"",
+      "union_candidates": 23959,
+      "conjunction_candidates": 27,
+      "phrase_matches": 3,
+      "union_over_conjunction": 887.3703703703703
+    },
+    {
+      "phrase": "\"pocket pc\"",
+      "union_candidates": 3748,
+      "conjunction_candidates": 54,
+      "phrase_matches": 25,
+      "union_over_conjunction": 69.4074074074074
+    },
+    {
+      "phrase": "\"chicago public schools\"",
+      "union_candidates": 61384,
+      "conjunction_candidates": 436,
+      "phrase_matches": 22,
+      "union_over_conjunction": 140.78899082568807
+    },
+    {
+      "phrase": "\"george r brown convention center\"",
+      "union_candidates": 83240,
+      "conjunction_candidates": 15,
+      "phrase_matches": 1,
+      "union_over_conjunction": 5549.333333333333
+    },
+    {
+      "phrase": "\"warren county\"",
+      "union_candidates": 47276,
+      "conjunction_candidates": 604,
+      "phrase_matches": 174,
+      "union_over_conjunction": 78.27152317880795
+    },
+    {
+      "phrase": "\"animal rights\"",
+      "union_candidates": 20106,
+      "conjunction_candidates": 557,
+      "phrase_matches": 229,
+      "union_over_conjunction": 36.09694793536804
+    },
+    {
+      "phrase": "\"david lee roth\"",
+      "union_candidates": 25132,
+      "conjunction_candidates": 39,
+      "phrase_matches": 31,
+      "union_over_conjunction": 644.4102564102565
+    },
+    {
+      "phrase": "\"central community college\"",
+      "union_candidates": 94702,
+      "conjunction_candidates": 1173,
+      "phrase_matches": 9,
+      "union_over_conjunction": 80.73486786018755
+    },
+    {
+      "phrase": "\"power rangers ninja storm\"",
+      "union_candidates": 31977,
+      "conjunction_candidates": 3,
+      "phrase_matches": 2,
+      "union_over_conjunction": 10659.0
+    },
+    {
+      "phrase": "\"movie theatres\"",
+      "union_candidates": 12421,
+      "conjunction_candidates": 291,
+      "phrase_matches": 41,
+      "union_over_conjunction": 42.68384879725086
+    },
+    {
+      "phrase": "\"canary bird\"",
+      "union_candidates": 10245,
+      "conjunction_candidates": 71,
+      "phrase_matches": 4,
+      "union_over_conjunction": 144.29577464788733
+    },
+    {
+      "phrase": "\"health literacy\"",
+      "union_candidates": 16617,
+      "conjunction_candidates": 221,
+      "phrase_matches": 6,
+      "union_over_conjunction": 75.19004524886878
+    },
+    {
+      "phrase": "\"david thornton\"",
+      "union_candidates": 19490,
+      "conjunction_candidates": 90,
+      "phrase_matches": 2,
+      "union_over_conjunction": 216.55555555555554
+    },
+    {
+      "phrase": "\"jamie murray\"",
+      "union_candidates": 3629,
+      "conjunction_candidates": 38,
+      "phrase_matches": 9,
+      "union_over_conjunction": 95.5
+    },
+    {
+      "phrase": "\"boulder city nevada\"",
+      "union_candidates": 68562,
+      "conjunction_candidates": 30,
+      "phrase_matches": 10,
+      "union_over_conjunction": 2285.4
+    },
+    {
+      "phrase": "\"united states constitution\"",
+      "union_candidates": 86512,
+      "conjunction_candidates": 2221,
+      "phrase_matches": 392,
+      "union_over_conjunction": 38.95182350292661
+    },
+    {
+      "phrase": "\"niceville high school\"",
+      "union_candidates": 98182,
+      "conjunction_candidates": 2,
+      "phrase_matches": 1,
+      "union_over_conjunction": 49091.0
+    },
+    {
+      "phrase": "\"sleep study\"",
+      "union_candidates": 21406,
+      "conjunction_candidates": 393,
+      "phrase_matches": 4,
+      "union_over_conjunction": 54.468193384223916
+    },
+    {
+      "phrase": "\"true religion\"",
+      "union_candidates": 18147,
+      "conjunction_candidates": 937,
+      "phrase_matches": 36,
+      "union_over_conjunction": 19.367129135538953
+    },
+    {
+      "phrase": "\"google satellite\"",
+      "union_candidates": 4617,
+      "conjunction_candidates": 49,
+      "phrase_matches": 3,
+      "union_over_conjunction": 94.22448979591837
+    },
+    {
+      "phrase": "\"laborers international union of north america\"",
+      "union_candidates": 464885,
+      "conjunction_candidates": 37,
+      "phrase_matches": 7,
+      "union_over_conjunction": 12564.45945945946
+    },
+    {
+      "phrase": "\"to be or not to be\"",
+      "union_candidates": 412921,
+      "conjunction_candidates": 61385,
+      "phrase_matches": 22,
+      "union_over_conjunction": 6.726741060519671
+    }
+  ]
+}

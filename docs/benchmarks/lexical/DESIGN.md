@@ -142,6 +142,23 @@ The candidate Auto planner selects WAND for at most 16 clauses and k at most 1,0
 other shapes use DAAT. Runtime overrides permit paired measurements without rebuilding.
 Promotion requires repeatable improvement; MaxScore is not implemented speculatively.
 
+The [saved first-600,000-article diagnostic](../../../benchmarks/results/lexical_phrase_candidates_600k_2026_10_22/analysis.json)
+has 26,290,553 union candidates versus
+242,363 conjunction candidates across the 300 single-phrase queries. These are
+matching-document counts derived from saved union/intersection receipts, not CPU
+counters or a predicted latency speedup. A single positive phrase now intersects
+all its terms before checking positions, using the existing rarest-term lead.
+Repeated-term phrases still verify adjacency and never use the single-term COUNT
+shortcut. Optional phrases alongside another positive clause retain the Boolean
+contract. The final release must measure this change as well as WAND.
+
+The pinned Lucene adapter uses BM25 0.9/0.4; HMS and Tantivy use 1.2/0.75.
+External rank identity is unclaimed. The pinned default roster also includes
+reordered Lucene 10.4.0, PISA 0.8.2 and IResearch 26.03.1. Their upstream timing
+receipts have unverified hardware for this comparison and cannot establish a
+same-host competitive speedup. The pinned web headline averages all ten samples;
+best-of-ten is a separately labelled derived statistic.
+
 WAND applies only to finite, nonnegative, optional term disjunctions. Global bounds
 choose a pivot; block bounds skip windows ending at the earliest active block end.
 Each block retains nondominated (frequency, length) pairs: every live posting has

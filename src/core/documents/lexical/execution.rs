@@ -107,6 +107,7 @@ pub(super) fn document_at_a_time(
     let average = (store.word_count as f64 / (store.chunk_count as f64).max(1.0)).max(1.0);
     let need_document = query.clauses.iter().any(|c| c.phrase)
         || (options.count && !store.multichunk_documents.is_empty());
+    let single_phrase = query.clauses.len() == 1 && query.clauses[0].phrase;
     for form in 0..2 {
         let mut by_word = BTreeMap::new();
         let mut states = Vec::new();
@@ -142,7 +143,7 @@ pub(super) fn document_at_a_time(
         let mut missing_required = false;
         for (clause, indices) in query.clauses.iter().zip(&indices) {
             for &index in indices {
-                if clause.occur == Occur::Must {
+                if clause.occur == Occur::Must || single_phrase {
                     match index {
                         Some(index) => required.push(index),
                         None => missing_required = true,
@@ -161,7 +162,8 @@ pub(super) fn document_at_a_time(
         required.sort_unstable();
         required.dedup();
         required.sort_unstable_by_key(|&i| states[i].df);
-        let single_required_term = required.len() == 1
+        let single_required_term = !single_phrase
+            && required.len() == 1
             && query
                 .clauses
                 .iter()
@@ -203,7 +205,11 @@ pub(super) fn document_at_a_time(
             for ((clause, indices), frequency_value) in
                 query.clauses.iter().zip(&indices).zip(&mut frequencies)
             {
-                if options.k == 0 && !required.is_empty() && clause.occur == Occur::Should {
+                if options.k == 0
+                    && !required.is_empty()
+                    && !single_phrase
+                    && clause.occur == Occur::Should
+                {
                     *frequency_value = 0;
                     continue;
                 }
