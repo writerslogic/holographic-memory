@@ -276,6 +276,7 @@ fn enumeration_keeps_seed_conflicts_and_source_identity_without_claiming_a_count
         max_bytes: MAX_CONVERSATION_BYTES,
         max_rounds: 3,
         max_sources: 3,
+        aggregation_only: true,
     };
     let context = memory
         .expand_aggregation_context(
@@ -313,6 +314,23 @@ fn enumeration_keeps_seed_conflicts_and_source_identity_without_claiming_a_count
             .unwrap(),
         seed.sources
     );
+    let general = ConversationContextLimits {
+        aggregation_only: false,
+        ..limits
+    };
+    let (_, context) = memory
+        .recall_with_aggregation_context(
+            "Where is cobaltneedle?",
+            &ConversationRecallOptions {
+                roles: vec![ConversationRole::User],
+                k: 1,
+                max_rounds: Some(1),
+                ..Default::default()
+            },
+            &general,
+        )
+        .unwrap();
+    assert_eq!(context.sources().unwrap(), broad.sources);
 }
 
 #[test]
@@ -322,6 +340,7 @@ fn enumeration_admits_whole_sources_at_byte_round_and_source_boundaries() {
         max_bytes: MAX_CONVERSATION_BYTES,
         max_rounds: 3,
         max_sources: 3,
+        aggregation_only: true,
     };
     let full = memory
         .expand_aggregation_context(

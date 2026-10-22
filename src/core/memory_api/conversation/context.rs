@@ -20,6 +20,8 @@ pub struct ConversationContextLimits {
     pub max_sources: usize,
     /// Actual original rounds, including all returned premise sources.
     pub max_rounds: usize,
+    /// Restrict expansion to counting/aggregation text. False permits any query.
+    pub aggregation_only: bool,
 }
 
 impl Default for ConversationContextLimits {
@@ -28,6 +30,7 @@ impl Default for ConversationContextLimits {
             max_bytes: 64 * 1024,
             max_sources: 64,
             max_rounds: 50,
+            aggregation_only: true,
         }
     }
 }
@@ -99,7 +102,7 @@ impl ConversationMemory {
     ) -> Result<(ConversationEvidence, ConversationContext)> {
         limits.validate()?;
         let seed = self.recall(query, options)?;
-        let candidates = if aggregation_intent(&query_words(query)) {
+        let candidates = if !limits.aggregation_only || aggregation_intent(&query_words(query)) {
             self.recall(
                 query,
                 &ConversationRecallOptions {
@@ -139,7 +142,7 @@ impl ConversationMemory {
             return Err(invalid("invalid conversation expansion bounds"));
         }
         let mut current = seed.pack_context(limits.max_bytes)?;
-        let expand = aggregation_intent(&query_words(query));
+        let expand = !limits.aggregation_only || aggregation_intent(&query_words(query));
         if expand {
             ConversationContext::from_sources(&candidates.sources, MAX_CONVERSATION_BYTES)?;
         }
