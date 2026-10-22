@@ -242,6 +242,10 @@ required-features = ["experimental"]
 name = "private-query-bench"
 required-features = ["private-search"]
 
+[[bin]]
+name = "private-rank-bench"
+required-features = ["private-search"]
+
 [profile.release]
 lto = true
 # One unit lets LLVM inline across the whole crate: about 2% faster single-thread ingest,

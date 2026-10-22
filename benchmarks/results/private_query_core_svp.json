@@ -1,0 +1,49 @@
+{
+  "method": "primal uSVP, 2016 estimate, core-SVP sieving cost; normal-form secret",
+  "rows": [
+    {
+      "n": 1024,
+      "log_q": 32,
+      "sigma": 6.4,
+      "parameter_source": "SimplePIR / this crate",
+      "samples_available": 4096,
+      "samples_used": 1113,
+      "block_size": 326,
+      "core_svp_classical_bits": 95.2,
+      "core_svp_quantum_bits": 86.4
+    },
+    {
+      "n": 1024,
+      "log_q": 32,
+      "sigma": 6.4,
+      "parameter_source": "SimplePIR / this crate",
+      "samples_available": 2097152,
+      "samples_used": 1113,
+      "block_size": 326,
+      "core_svp_classical_bits": 95.2,
+      "core_svp_quantum_bits": 86.4
+    },
+    {
+      "n": 1024,
+      "log_q": 32,
+      "sigma": 11.0,
+      "parameter_source": "YPIR, s = 11*sqrt(2*pi)",
+      "samples_available": 4096,
+      "samples_used": 1177,
+      "block_size": 351,
+      "core_svp_classical_bits": 102.5,
+      "core_svp_quantum_bits": 93.0
+    },
+    {
+      "n": 1024,
+      "log_q": 32,
+      "sigma": 11.0,
+      "parameter_source": "YPIR, s = 11*sqrt(2*pi)",
+      "samples_available": 2097152,
+      "samples_used": 1177,
+      "block_size": 351,
+      "core_svp_classical_bits": 102.5,
+      "core_svp_quantum_bits": 93.0
+    }
+  ]
+}

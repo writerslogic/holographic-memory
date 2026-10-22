@@ -227,7 +227,7 @@ impl DenseServer {
     ) -> Result<Self, PrivateQueryError> {
         let params = matrix.params;
         let (d, cols) = (params.dim, params.samples());
-        if codes.len() % d != 0 {
+        if !codes.len().is_multiple_of(d) {
             return Err(PrivateQueryError::Layout(
                 "code buffer is not a whole number of codes",
             ));
