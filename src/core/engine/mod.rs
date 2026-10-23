@@ -1341,40 +1341,10 @@ impl HmsCore {
 
     /// Train the IVF index on current vectors. Persists the index to disk.
     pub fn train_ivf(&self) -> Result<()> {
-        let (revision, snapshots) = {
-            let _transaction = self.mutation_gate.read();
-            let shards = self.shards.read();
-            let mut snapshots = Vec::new();
-            shards.for_each_shard(|shard| snapshots.push(shard.load_all_vectors()));
-            (
-                self.revision.load(std::sync::atomic::Ordering::Acquire),
-                snapshots,
-            )
-        };
-        let mut indices = Vec::with_capacity(snapshots.len());
-        for (ids, vectors) in snapshots {
-            indices.push(if ids.is_empty() {
-                None
-            } else {
-                Some(IVFIndex::train(
-                    &vectors,
-                    &ids,
-                    self.dimensions,
-                    &self.config.ivf,
-                )?)
-            });
-        }
-        let _transaction = self.mutation_gate.write();
-        anyhow::ensure!(
-            revision == self.revision.load(std::sync::atomic::Ordering::Acquire),
-            "store changed during training; retry maintenance"
-        );
-        let shards = self.shards.read();
-        shards.try_for_each_shard_indexed(|i, shard| {
-            *shard.ivf.write() = indices[i].take();
-            Ok(())
-        })?;
-        self.persist_indices(&shards)
+        self.train_shard_indices(
+            |vectors, ids| IVFIndex::train(vectors, ids, self.dimensions, &self.config.ivf),
+            |shard, index| *shard.ivf.write() = index,
+        )
     }
 
     /// Returns true if the NSG graph index has been trained.
@@ -1384,6 +1354,19 @@ impl HmsCore {
 
     /// Train the NSG graph index on current vectors. Persists the index to disk.
     pub fn train_nsg(&self) -> Result<()> {
+        self.train_shard_indices(
+            |vectors, ids| super::nsg::training::train(vectors, ids, &self.config.nsg),
+            |shard, index| *shard.nsg.write() = index,
+        )
+    }
+
+    /// Trains one index per shard from a snapshot taken under the read gate, without holding
+    /// the gate, then installs and persists them only if no mutation landed meanwhile.
+    fn train_shard_indices<I>(
+        &self,
+        train: impl Fn(&[EntangledHVec], &[String]) -> Result<I>,
+        install: impl Fn(&shard::Shard, Option<I>),
+    ) -> Result<()> {
         let (revision, snapshots) = {
             let _transaction = self.mutation_gate.read();
             let shards = self.shards.read();
@@ -1399,11 +1382,7 @@ impl HmsCore {
             indices.push(if ids.is_empty() {
                 None
             } else {
-                Some(super::nsg::training::train(
-                    &vectors,
-                    &ids,
-                    &self.config.nsg,
-                )?)
+                Some(train(&vectors, &ids)?)
             });
         }
         let _transaction = self.mutation_gate.write();
@@ -1413,7 +1392,7 @@ impl HmsCore {
         );
         let shards = self.shards.read();
         shards.try_for_each_shard_indexed(|i, shard| {
-            *shard.nsg.write() = indices[i].take();
+            install(shard, indices[i].take());
             Ok(())
         })?;
         self.persist_indices(&shards)
@@ -1452,7 +1431,12 @@ impl HmsCore {
         }
     }
 
-    // === Provenance API ===
+    #[cfg(feature = "provenance")]
+    fn provenance_manager(&self) -> Result<&super::provenance::ProvenanceManager> {
+        self.provenance
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))
+    }
 
     #[cfg(feature = "provenance")]
     pub fn provenance_enabled(&self) -> bool {
@@ -1466,10 +1450,7 @@ impl HmsCore {
         content: &[u8],
         source_uri: Option<&str>,
     ) -> Result<super::provenance::types::ProvenanceRecord> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.create_fact_provenance(fact_id, content, source_uri)
     }
 
@@ -1478,10 +1459,7 @@ impl HmsCore {
         &self,
         params: &super::provenance::TripleProvenanceParams<'_>,
     ) -> Result<super::provenance::types::ProvenanceRecord> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.create_triple_provenance(params)
     }
 
@@ -1494,10 +1472,7 @@ impl HmsCore {
         dimensions: u32,
         title: Option<&str>,
     ) -> Result<super::provenance::types::StoreManifest> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.create_store_manifest(store_id, store_data, fact_count, dimensions, title)
     }
 
@@ -1507,10 +1482,7 @@ impl HmsCore {
         record: &super::provenance::types::ProvenanceRecord,
         trust: &super::provenance::trust::TrustStore,
     ) -> Result<super::provenance::types::VerificationResult> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.verify_fact_provenance(record, trust)
     }
 
@@ -1528,10 +1500,7 @@ impl HmsCore {
         store_data: Option<&[u8]>,
         trust: &super::provenance::trust::TrustStore,
     ) -> Result<super::provenance::types::VerificationResult> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.verify_store_manifest(manifest, store_data, trust)
     }
 
@@ -1558,10 +1527,7 @@ impl HmsCore {
         &self,
         title: Option<&str>,
     ) -> Result<super::provenance::types::StoreManifest> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         let store_data =
             std::fs::read(self.storage_path.join("vectors_data.bin")).unwrap_or_default();
         let store_id = self
@@ -1580,10 +1546,7 @@ impl HmsCore {
 
     #[cfg(feature = "provenance")]
     pub fn revoke_credential(&self, status_index: u64) -> Result<()> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.revoke_credential(status_index)
     }
 
@@ -1596,10 +1559,7 @@ impl HmsCore {
 
     #[cfg(feature = "provenance")]
     pub fn verify_provenance_log(&self) -> Result<bool> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.verify_log_integrity()
     }
 
@@ -1608,10 +1568,7 @@ impl HmsCore {
         &self,
         items: &[(&str, &[u8], Option<&str>)],
     ) -> Result<Vec<super::provenance::types::ProvenanceRecord>> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.create_batch_provenance(items)
     }
 
@@ -1621,10 +1578,7 @@ impl HmsCore {
         content: &[u8],
         identity: Option<&str>,
     ) -> Result<super::provenance::sigstore::SigstoreBundle> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.create_sigstore_bundle(content, identity)
     }
 
@@ -1635,10 +1589,7 @@ impl HmsCore {
         content: &[u8],
         trusted_key: &ed25519_dalek::VerifyingKey,
     ) -> Result<()> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.verify_sigstore_bundle(bundle, content, trusted_key)
     }
 
@@ -1648,10 +1599,7 @@ impl HmsCore {
         referenced: &[(String, String, Vec<u8>)],
         display_name: &str,
     ) -> Result<serde_json::Value> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.create_cawg_assertion(referenced, display_name)
     }
 
@@ -1661,10 +1609,7 @@ impl HmsCore {
         assertion: &serde_json::Value,
         trust: &super::provenance::trust::TrustStore,
     ) -> Result<serde_json::Value> {
-        let mgr = self
-            .provenance
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("provenance not enabled"))?;
+        let mgr = self.provenance_manager()?;
         mgr.verify_cawg_assertion(assertion, trust)
     }
 

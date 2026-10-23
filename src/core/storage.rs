@@ -33,14 +33,20 @@ pub(crate) const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
 /// (stores written before the marker) still means end of log.
 pub(crate) const END_MARK: u32 = 0x454E_444C;
 
-/// True if the 16 bytes at `at` are an end-of-log marker or the legacy zero header.
+/// The header words `[crc, raw_len, comp_len, version]` of the frame at the start of `bytes`,
+/// or `None` if fewer than [`HEADER_SIZE`] bytes remain.
+#[inline]
+fn header_words(bytes: &[u8]) -> Option<[u32; 4]> {
+    let (words, _) = bytes.first_chunk::<HEADER_SIZE>()?.as_chunks::<4>();
+    Some(std::array::from_fn(|i| u32::from_le_bytes(words[i])))
+}
+
+/// True if `header` starts with an end-of-log marker or the legacy zero header.
 #[inline]
 pub(crate) fn is_log_end(header: &[u8]) -> bool {
-    let word = |i: usize| u32::from_le_bytes(header[i..i + 4].try_into().expect("4 bytes"));
-    header.len() >= HEADER_SIZE
-        && word(4) == 0
-        && word(8) == 0
-        && (header[..HEADER_SIZE].iter().all(|&b| b == 0) || (word(0) == 0 && word(12) == END_MARK))
+    header_words(header).is_some_and(|[crc, raw_len, comp_len, version]| {
+        crc == 0 && raw_len == 0 && comp_len == 0 && (version == 0 || version == END_MARK)
+    })
 }
 
 fn end_marker_bytes() -> [u8; HEADER_SIZE] {
@@ -328,24 +334,9 @@ impl PersistentArena {
                 None => Ok((offset, max_version)),
             }
         };
-        while offset + HEADER_SIZE <= data.len() {
-            // Unwraps are safe: the loop guard ensures at least HEADER_SIZE (16) bytes
-            // remain, so each 4-byte slice is within bounds.
-            let raw_len = u32::from_le_bytes(
-                data[offset + 4..offset + 8]
-                    .try_into()
-                    .expect("4-byte slice"),
-            ) as usize;
-            let comp_len = u32::from_le_bytes(
-                data[offset + 8..offset + 12]
-                    .try_into()
-                    .expect("4-byte slice"),
-            ) as usize;
-            let version = u32::from_le_bytes(
-                data[offset + 12..offset + 16]
-                    .try_into()
-                    .expect("4-byte slice"),
-            );
+        // `offset` never passes `data.len()`: it only advances past a frame that fits.
+        while let Some([_, raw_len, comp_len, version]) = header_words(&data[offset..]) {
+            let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
 
             // A zero header or the end marker means no more frames.
             if raw_len == 0 && comp_len == 0 {
@@ -378,15 +369,11 @@ impl PersistentArena {
 
     /// True if the frame at `offset` has plausible lengths, decompresses and matches its CRC32.
     fn frame_checks_out(data: &[u8], offset: usize) -> bool {
-        if offset + HEADER_SIZE > data.len() {
+        let Some([expected_crc, raw_len, comp_len, _]) = data.get(offset..).and_then(header_words)
+        else {
             return false;
-        }
-        let word = |at: usize| u32::from_le_bytes(data[at..at + 4].try_into().expect("4 bytes"));
-        let (expected_crc, raw_len, comp_len) = (
-            word(offset),
-            word(offset + 4) as usize,
-            word(offset + 8) as usize,
-        );
+        };
+        let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
         if comp_len == 0 || raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE || comp_len > raw_len {
             return false;
         }
@@ -456,16 +443,9 @@ impl PersistentArena {
 
     pub fn read_frame(&self, global_offset: usize) -> Result<(Vec<u8>, u32)> {
         let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
-        if header_bytes.len() < HEADER_SIZE {
-            return Err(anyhow!("Truncated header at offset {}", global_offset));
-        }
-
-        let expected_crc = u32::from_le_bytes(header_bytes[0..4].try_into().expect("4-byte slice"));
-        let raw_len =
-            u32::from_le_bytes(header_bytes[4..8].try_into().expect("4-byte slice")) as usize;
-        let comp_len =
-            u32::from_le_bytes(header_bytes[8..12].try_into().expect("4-byte slice")) as usize;
-        let version = u32::from_le_bytes(header_bytes[12..16].try_into().expect("4-byte slice"));
+        let [expected_crc, raw_len, comp_len, version] = header_words(&header_bytes)
+            .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
+        let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
 
         if raw_len == 0 {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
@@ -519,12 +499,9 @@ impl PersistentArena {
 
     pub fn next_offset(&self, global_offset: usize) -> Result<usize> {
         let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
-        if header_bytes.len() < HEADER_SIZE {
-            return Err(anyhow!("Truncated header at offset {}", global_offset));
-        }
-
-        let comp_len =
-            u32::from_le_bytes(header_bytes[8..12].try_into().expect("4-byte slice")) as usize;
+        let [_, _, comp_len, _] = header_words(&header_bytes)
+            .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
+        let comp_len = comp_len as usize;
         if comp_len == 0 {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
         }
@@ -783,8 +760,9 @@ impl PersistentArena {
                 *cursor = segment_end;
                 continue;
             }
-            let raw = u32::from_le_bytes(header[4..8].try_into()?) as usize;
-            let compressed = u32::from_le_bytes(header[8..12].try_into()?) as usize;
+            let [_, raw, compressed, _] =
+                header_words(&header).context("truncated compaction replay header")?;
+            let (raw, compressed) = (raw as usize, compressed as usize);
             ensure!(
                 (1..=MAX_RAW_FRAME_SIZE).contains(&raw) && (1..=raw).contains(&compressed),
                 "invalid compaction replay frame lengths"

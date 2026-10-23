@@ -305,7 +305,7 @@ struct ArenaState {
     replay: Option<Replay>,
 }
 
-fn list_segments(dir: &Path) -> Result<Vec<usize>> {
+pub(super) fn list_segments(dir: &Path) -> Result<Vec<usize>> {
     let mut ids = Vec::new();
     for entry in std::fs::read_dir(dir)? {
         let name = entry?.file_name();

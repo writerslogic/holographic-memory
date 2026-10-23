@@ -230,6 +230,21 @@ fn refuse_unupgradable(report: &Report) -> Result<()> {
     }
 }
 
+/// Creates the parent directory of `destination`, which must not exist yet, and returns it.
+fn prepare_destination(destination: &Path) -> Result<&Path> {
+    ensure!(
+        !destination.exists(),
+        "upgrade destination already exists: {}",
+        destination.display()
+    );
+    let parent = destination
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    std::fs::create_dir_all(parent)?;
+    Ok(parent)
+}
+
 /// Upgrades the store at `source` into a new directory `destination` (which must not exist).
 /// `dry_run` plans and verifies the source only. If the store is already current, nothing
 /// is written and the report says so.
@@ -247,17 +262,8 @@ pub fn upgrade_store(source: &Path, destination: &Path, dry_run: bool) -> Result
             verification: None,
         });
     }
-    ensure!(
-        !destination.exists(),
-        "upgrade destination already exists: {}",
-        destination.display()
-    );
     let source_canonical = source.canonicalize()?;
-    let parent = destination
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    std::fs::create_dir_all(parent)?;
+    let parent = prepare_destination(destination)?;
     ensure!(
         !parent.canonicalize()?.starts_with(&source_canonical),
         "upgrade destination cannot be inside the source store"
@@ -313,16 +319,7 @@ fn upgrade_data_dir(
             verification: None,
         });
     }
-    ensure!(
-        !destination.exists(),
-        "upgrade destination already exists: {}",
-        destination.display()
-    );
-    let parent = destination
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    std::fs::create_dir_all(parent)?;
+    let parent = prepare_destination(destination)?;
     let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
     let staging = parent.join(format!(".hms-upgrade-{}-{nonce}", std::process::id()));
     let result = (|| -> Result<usize> {
@@ -502,19 +499,7 @@ fn stage_store(source: &Path, staging: &Path) -> Result<Staged> {
 fn rewrite_arena(context: &mut StepContext<'_>) -> Result<()> {
     let base = context.source.join(ARENA_DIRECTORY);
     let generation = crate::core::durable_file::arena_generation(&base)?;
-    let mut ids = Vec::new();
-    for entry in std::fs::read_dir(&generation)? {
-        if let Some(id) = entry?
-            .file_name()
-            .to_string_lossy()
-            .strip_prefix("seg_")
-            .and_then(|v| v.strip_suffix(".bin"))
-            .and_then(|v| v.parse::<usize>().ok())
-        {
-            ids.push(id);
-        }
-    }
-    ids.sort_unstable();
+    let ids = super::verify::list_segments(&generation)?;
     ensure!(!ids.is_empty(), "the source arena has no segments");
     // Frames are staged without a sync each; `finish` makes the arena durable once.
     let directory = context.staging.join(ARENA_DIRECTORY);
