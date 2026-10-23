@@ -19,3 +19,19 @@ benchmarks/results/query_aware_graph_v4/diagnostics/*.json filter=lfs diff=lfs m
 benchmarks/results/query_aware_graph_v4/**/*.hdf5 filter=lfs diff=lfs merge=lfs -text
 benchmarks/results/longmemeval_dev_answers_*.json filter=lfs diff=lfs merge=lfs -text
 benchmarks/results/manifold_schema_synthetic.json.gz filter=lfs diff=lfs merge=lfs -text
+
+# Committed before the LFS rule above; kept as regular blobs so checkouts do not warn.
+benchmarks/results/longmemeval_dev_answers_local30b_v1.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_local30b_v1_spend.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_local30b_v1_summary.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v1.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v1_spend.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v1_summary.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v2_spend.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v2_summary.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v2b_spend.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v2b_summary.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v3.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v3_spend.json -filter -diff -merge text
+benchmarks/results/longmemeval_dev_answers_v3_summary.json -filter -diff -merge text
+benchmarks/results/manifold_schema_synthetic.json.gz -filter -diff -merge text
