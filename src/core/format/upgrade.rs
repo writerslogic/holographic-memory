@@ -273,6 +273,7 @@ pub fn upgrade_store(source: &Path, destination: &Path, dry_run: bool) -> Result
     let staging = parent.join(format!(".hms-upgrade-{}-{nonce}", std::process::id()));
     let outcome = stage_and_publish(source, &staging, destination, plan.clone());
     if outcome.is_err() && staging.exists() {
+        // The staging directory is unpublished; the upgrade's own error is the one to report.
         let _ = std::fs::remove_dir_all(&staging);
     }
     outcome
@@ -356,6 +357,7 @@ fn upgrade_data_dir(
             verification: Some(verify_path(destination, &VerifyOptions::default())?),
         }),
         Err(error) => {
+            // The staging directory is unpublished; the upgrade's own error is the one to report.
             let _ = std::fs::remove_dir_all(&staging);
             Err(error)
         }
@@ -477,6 +479,8 @@ fn stage_store(source: &Path, staging: &Path) -> Result<Staged> {
         if !path.exists() {
             break;
         }
+        // SAFETY: a read-only mapping of a segment no one writes while the upgrade runs;
+        // nothing borrowed from it outlives this iteration.
         let map = unsafe { Mmap::map(&File::open(&path)?)? };
         let scan = scan::scan_segment(&map, true, |f, _| scanned.push((f.raw_len, f.crc)));
         ensure!(
@@ -508,6 +512,8 @@ fn rewrite_arena(context: &mut StepContext<'_>) -> Result<()> {
     let mut failure: Option<anyhow::Error> = None;
     for (n, id) in ids.iter().enumerate() {
         let path = generation.join(format!("seg_{id}.bin"));
+        // SAFETY: a read-only mapping of a segment no one writes while the upgrade runs;
+        // nothing borrowed from it outlives this iteration.
         let map = unsafe { Mmap::map(&File::open(&path)?)? };
         let scan = scan::scan_segment(&map, n + 1 == ids.len(), |frame, payload| {
             if failure.is_none() {

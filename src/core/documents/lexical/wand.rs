@@ -129,15 +129,15 @@ pub(super) fn execute(
         loop {
             active.clear();
             active.extend((0..states.len()).filter(|&i| states[i].cursor.peek().is_some()));
-            active.sort_unstable_by_key(|&i| states[i].cursor.peek().unwrap().0);
+            active.sort_unstable_by_key(|&i| states[i].cursor.peek().expect("active cursor").0);
             let Some(&first) = active.first() else { break };
-            let minimum = states[first].cursor.peek().unwrap().0;
+            let minimum = states[first].cursor.peek().expect("active cursor").0;
             if window.is_none_or(|(end, _)| minimum > end) {
                 let end = active
                     .iter()
-                    .map(|&i| states[i].cursor.block_end().unwrap())
+                    .map(|&i| states[i].cursor.block_end().expect("active cursor"))
                     .min()
-                    .unwrap();
+                    .expect("at least one active cursor");
                 let mut bound = 0.0;
                 for state in &states {
                     if state.cursor.peek().is_some_and(|p| p.0 <= end) {
@@ -146,7 +146,7 @@ pub(super) fn execute(
                 }
                 window = Some((end, sum_bound(bound, query.clauses.len())));
             }
-            let (end, bound) = window.unwrap();
+            let (end, bound) = window.expect("window computed above");
             if bound < top.floor() {
                 let Some(target) = end.checked_add(1) else {
                     break;
@@ -163,7 +163,7 @@ pub(super) fn execute(
             let pivot = active.iter().find_map(|&i| {
                 bound = up(bound + states[i].bound.global);
                 (sum_bound(bound, query.clauses.len()) >= top.floor())
-                    .then(|| states[i].cursor.peek().unwrap().0)
+                    .then(|| states[i].cursor.peek().expect("active cursor").0)
             });
             let Some(pivot) = pivot else { break };
             if minimum < pivot {

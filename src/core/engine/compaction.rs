@@ -35,6 +35,8 @@ impl StagingDir {
 impl Drop for StagingDir {
     fn drop(&mut self) {
         if self.armed.get() {
+            // An abandoned generation is never published, and a leftover is scrubbed or ignored
+            // by the next compaction, so a failed removal only costs disk space.
             let _ = std::fs::remove_dir_all(&self.path);
         }
     }

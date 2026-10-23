@@ -345,7 +345,8 @@ impl HmsCore {
         base.join("shard_meta.json")
     }
 
-    /// Read the persisted shard count written by a prior auto-shard, if any.
+    /// Read the persisted shard count written by a prior auto-shard, if any. An unreadable or
+    /// malformed file reads as absent; `hms-admin verify` reports it as `shard-meta-invalid`.
     fn load_shard_meta(base: &Path) -> Option<usize> {
         let data = std::fs::read_to_string(Self::shard_meta_path(base)).ok()?;
         let value: serde_json::Value = serde_json::from_str(&data).ok()?;

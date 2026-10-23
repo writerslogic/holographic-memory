@@ -165,6 +165,8 @@ impl PersistentArena {
         for i in 0..active_id {
             let p = data_path.join(format!("seg_{}.bin", i));
             let file = File::open(&p)?;
+            // SAFETY: segments before the active one are sealed and never written again; the
+            // store lock keeps other engines out of the directory.
             let mmap = unsafe { Mmap::map(&file)? };
             segments.push(Arc::new(mmap));
         }
@@ -571,35 +573,14 @@ impl PersistentArena {
         self.write_offset
             .store(offset + total_frame_len, Ordering::Release);
 
-        // SAFETY: we hold the exclusive write lock, so no concurrent writers.
-        // Growth and rotation ensure offset + total_frame_len fits the guarded mapping.
-        // Each copy_nonoverlapping targets a distinct, non-overlapping range:
-        //   [offset..+4], [offset+4..+8], [offset+8..+12], [offset+12..+16], [offset+16..+16+comp_len]
+        // Growth and rotation made the guarded mapping hold the whole frame.
         debug_assert!(offset + total_frame_len <= self.segment_size);
-        debug_assert!(offset + total_frame_len <= active.map.len());
-        debug_assert!(total_frame_len == HEADER_SIZE + comp_len);
-        unsafe {
-            let ptr = active.map.as_ptr() as *mut u8;
-            let target = ptr.add(offset);
-            // CRC32 at +0
-            std::ptr::copy_nonoverlapping(crc.to_le_bytes().as_ptr(), target, 4);
-            // RawLen at +4
-            std::ptr::copy_nonoverlapping(
-                (raw_len as u32).to_le_bytes().as_ptr(),
-                target.add(4),
-                4,
-            );
-            // CompLen at +8
-            std::ptr::copy_nonoverlapping(
-                (comp_len as u32).to_le_bytes().as_ptr(),
-                target.add(8),
-                4,
-            );
-            // Version at +12
-            std::ptr::copy_nonoverlapping(version.to_le_bytes().as_ptr(), target.add(12), 4);
-            // Data at +HEADER_SIZE
-            std::ptr::copy_nonoverlapping(write_data.as_ptr(), target.add(HEADER_SIZE), comp_len);
-        }
+        let frame = &mut active.map[offset..offset + total_frame_len];
+        frame[0..4].copy_from_slice(&crc.to_le_bytes());
+        frame[4..8].copy_from_slice(&(raw_len as u32).to_le_bytes());
+        frame[8..12].copy_from_slice(&(comp_len as u32).to_le_bytes());
+        frame[12..HEADER_SIZE].copy_from_slice(&version.to_le_bytes());
+        frame[HEADER_SIZE..].copy_from_slice(&write_data);
         let frame_end = offset + total_frame_len;
         // The end marker rides in the frame's flush range: it records the committed end.
         let sentinel_len = if frame_end + HEADER_SIZE <= active.map.len() {
@@ -702,6 +683,7 @@ impl PersistentArena {
             .join(format!("seg_{}.bin", current_id));
         let file = File::open(&path)?;
         active.sync()?;
+        // SAFETY: the segment is sealed by this rotation and never written again.
         let mmap = unsafe { Mmap::map(&file)? };
         self.read_segments.write().push(Arc::new(mmap));
 
@@ -974,6 +956,8 @@ impl PersistentArena {
 
 impl Drop for PersistentArena {
     fn drop(&mut self) {
+        // Drop cannot report a failure, and nothing depends on this write-back: every
+        // acknowledged frame was already synced by its commit or by `flush`.
         let _ = self.active_segment.write().write_back();
     }
 }
