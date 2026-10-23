@@ -200,11 +200,15 @@ impl Visited {
     }
 }
 
-/// One bit per vertex; reset clears only words touched by the previous search.
+/// One bit per vertex; reset clears only words touched by the previous search. Also holds the
+/// construction search's candidate buffers, so a thread allocates them once.
 #[derive(Default)]
 struct BuildVisited {
     bits: Vec<u64>,
     touched: Vec<u32>,
+    pool: Vec<Candidate>,
+    fresh: Vec<u32>,
+    dists: Vec<f32>,
 }
 
 impl BuildVisited {
@@ -552,14 +556,17 @@ impl Rows<'_> {
         let (mut n_fresh, mut n_exact) = (0u64, 0u64);
         visited.reset(graph.len());
         visited.insert(start);
-        let mut pool = vec![Candidate {
+        // The thread's buffers, taken for this call and returned at its end.
+        let mut pool = std::mem::take(&mut visited.pool);
+        let mut fresh = std::mem::take(&mut visited.fresh);
+        let mut dists = std::mem::take(&mut visited.dists);
+        pool.clear();
+        pool.push(Candidate {
             dist: self.d2(p, start),
             id: start,
             done: false,
-        }];
+        });
         let mut expanded = Vec::new();
-        let mut fresh = Vec::new();
-        let mut dists = Vec::new();
         let mut cur = 0;
         while cur < pool.len() {
             pool[cur].done = true;
@@ -642,14 +649,15 @@ impl Rows<'_> {
         }
         if self.quantized {
             // Exact distances of the expanded set, which the prune scores exactly.
-            let ids: Vec<u32> = expanded.iter().map(|e| e.1).collect();
-            let mut d = Vec::with_capacity(ids.len());
-            self.d2_stream(p, &ids, &mut d);
-            n_exact += ids.len() as u64;
-            for (e, d) in expanded.iter_mut().zip(d) {
+            fresh.clear();
+            fresh.extend(expanded.iter().map(|e| e.1));
+            self.d2_stream(p, &fresh, &mut dists);
+            n_exact += fresh.len() as u64;
+            for (e, &d) in expanded.iter_mut().zip(&dists) {
                 e.0 = d;
             }
         }
+        (visited.pool, visited.fresh, visited.dists) = (pool, fresh, dists);
         prof::count(&prof::FRESH, n_fresh);
         prof::count(&prof::EXACT, n_exact);
         expanded
