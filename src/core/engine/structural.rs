@@ -117,6 +117,18 @@ fn algebraic_path(
     results
 }
 
+/// Confidence of a materialized match from its `overlap_scan` score. The score is an
+/// idf-weighted overlap count with no fixed upper bound (it grows with the query's active
+/// indices and their idf), so the scaled value is clamped to the [0, 1] a confidence means.
+fn overlap_confidence(score: f32) -> f64 {
+    let scaled = f64::from(score) / 128.0;
+    if scaled.is_nan() {
+        0.0
+    } else {
+        scaled.clamp(0.0, 1.0)
+    }
+}
+
 fn materialized_path(
     target_role: &str,
     triple_store: &TripleStore,
@@ -143,7 +155,7 @@ fn materialized_path(
             {
                 results.push(StructuralResult {
                     entity_id: entity.clone(),
-                    confidence: score as f64 / 128.0,
+                    confidence: overlap_confidence(score),
                     path: StructuralPath::Materialized,
                 });
             }
@@ -161,6 +173,15 @@ fn materialized_path(
 #[cfg(test)]
 pub(super) mod tests {
     use super::*;
+
+    #[test]
+    fn overlap_confidence_stays_a_probability() {
+        assert_eq!(overlap_confidence(64.0), 0.5);
+        assert_eq!(overlap_confidence(129.0), 1.0);
+        assert_eq!(overlap_confidence(1.0e6), 1.0);
+        assert_eq!(overlap_confidence(f32::INFINITY), 1.0);
+        assert_eq!(overlap_confidence(f32::NAN), 0.0);
+    }
 
     /// Empty meaning components with the engine's query parameters.
     pub(crate) struct Fixture {
