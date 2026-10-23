@@ -407,7 +407,7 @@ pub(super) struct PostingList {
     last: u64,
     /// For a list of at least [`SUMMARY_MIN_BLOCKS`] blocks, the frontier of each run of
     /// [`SUPER_LEN`] blocks, built by the first query that needs it after a change.
-    summary: Option<Box<OnceLock<Box<[Frontier]>>>>,
+    summary: Option<Box<Summary>>,
 }
 
 /// Undominated `(frequency, words)` points, by frequency descending.
@@ -423,6 +423,14 @@ thread_local! {
 #[cfg(test)]
 pub(super) fn frontiers_computed() -> usize {
     FRONTIERS.with(std::cell::Cell::get)
+}
+
+/// Facts about a long list's blocks, each built by the first query that needs it after a
+/// change: reading every block's metadata of a long list costs a query more than the result.
+#[derive(Default)]
+struct Summary {
+    maxima: OnceLock<(u32, u32)>,
+    runs: OnceLock<Box<[Frontier]>>,
 }
 
 /// Blocks per run that one summary frontier covers.
@@ -734,14 +742,20 @@ impl PostingList {
     /// The largest block frequency and least block length bound of the list, which bound
     /// every posting's weight.
     pub(super) fn maxima(&self) -> (u32, u32) {
-        self.blocks
-            .iter()
-            .fold((0, u32::MAX), |(frequency, words), block| {
-                (
-                    frequency.max(block.max_frequency),
-                    words.min(block.min_words),
-                )
-            })
+        let fold = || {
+            self.blocks
+                .iter()
+                .fold((0, u32::MAX), |(frequency, words), block| {
+                    (
+                        frequency.max(block.max_frequency),
+                        words.min(block.min_words),
+                    )
+                })
+        };
+        match self.summary.as_deref() {
+            Some(summary) => *summary.maxima.get_or_init(fold),
+            None => fold(),
+        }
     }
     fn decode(&self) -> Vec<Posting> {
         self.iter().collect()
@@ -1077,8 +1091,8 @@ impl PostingList {
         if self.blocks.len() < SUMMARY_MIN_BLOCKS {
             self.summary = None;
         } else if let Some(summary) = &mut self.summary {
-            if summary.get().is_some() {
-                **summary = OnceLock::new();
+            if summary.maxima.get().is_some() || summary.runs.get().is_some() {
+                **summary = Summary::default();
             }
         } else {
             self.summary = Some(Box::default());
@@ -1089,7 +1103,7 @@ impl PostingList {
     /// contributes its largest frequency at its least length), or `None` for a short list.
     pub(super) fn summary(&self) -> Option<&[Frontier]> {
         let summary = self.summary.as_deref()?;
-        Some(summary.get_or_init(|| {
+        Some(summary.runs.get_or_init(|| {
             self.blocks
                 .chunks(SUPER_LEN)
                 .map(|run| {
