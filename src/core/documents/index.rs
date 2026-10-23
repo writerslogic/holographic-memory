@@ -875,6 +875,7 @@ impl DocumentStore {
 
     /// Removes a document and zeroes its chunk text in the segment (see
     /// [`TextSegment::scrub`]); the caller syncs the segment once per transaction.
+    #[cfg(test)]
     pub(crate) fn remove_scrubbed(
         &mut self,
         id: &str,
@@ -884,7 +885,7 @@ impl DocumentStore {
     }
 
     /// Zeroes the segment text of `removed`, returning it.
-    fn scrub_removed(
+    pub(crate) fn scrub_removed(
         &self,
         removed: Option<Arc<StoredDocument>>,
     ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
@@ -954,8 +955,9 @@ impl DocumentStore {
         self.remove_with(id, true)
     }
 
-    /// [`Self::remove_scrubbed`] of a document `ServingImage::hydrate_excluding` installed
-    /// without postings: everything but the posting lists, which never held it.
+    /// Removes and scrubs (see [`Self::scrub_removed`]) a document
+    /// `ServingImage::hydrate_excluding` installed without postings: everything but the posting
+    /// lists, which never held it.
     pub(crate) fn remove_unindexed_scrubbed(
         &mut self,
         id: &str,
