@@ -727,7 +727,7 @@ class Runner:
                     proc.wait(timeout=HEARTBEAT_S)
                     break
                 except subprocess.TimeoutExpired:
-                    pass
+                    pass  # still running: fall through to the heartbeat
                 cpu = job_cpu_seconds()
                 seen_cpu |= cpu > 0
                 if cpu > last_cpu + 1:
@@ -896,8 +896,8 @@ def status_report(ns: str) -> None:
               f"failures={rec.get('failures', 0)} cpu={rec.get('cpu_model', '-')[:32]} {extra}")
     try:
         print("stop:", b"".join(VOL.read_file(f"{root}/stop.json")).decode())
-    except Exception:
-        pass
+    except Exception:  # no stop.json means nothing has stopped the run
+        print("stop: none recorded")
 
 
 @app.local_entrypoint()
