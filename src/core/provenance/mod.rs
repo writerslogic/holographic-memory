@@ -43,6 +43,14 @@ struct LogEntry {
     record: ProvenanceRecord,
 }
 
+/// [`LogEntry`] borrowing its record, serialized to the same bytes.
+#[derive(serde::Serialize)]
+struct LogEntryRef<'a> {
+    prev_hash: String,
+    fact_id: &'a str,
+    record: &'a ProvenanceRecord,
+}
+
 pub struct ProvenanceManager {
     signing_key: SigningKey,
     issuer_did: String,
@@ -136,54 +144,56 @@ impl ProvenanceManager {
         &self.issuer_did
     }
 
-    pub fn store_record(&self, fact_id: &str, record: ProvenanceRecord) {
+    /// Appends `record` to the log, when there is one, then makes it the live record for
+    /// `fact_id`. A failed append leaves both the log head and the live records unchanged.
+    pub fn store_record(&self, fact_id: &str, record: ProvenanceRecord) -> Result<()> {
         if let Some(ref path) = self.log_path {
-            self.append_chained(path, "provenance", |prev_hash| {
-                serde_json::to_string(&LogEntry {
+            self.append_chained(path, 1, |_, prev_hash| {
+                serde_json::to_string(&LogEntryRef {
                     prev_hash,
-                    fact_id: fact_id.to_string(),
-                    record: record.clone(),
+                    fact_id,
+                    record: &record,
                 })
-            });
+            })?;
         }
         self.records.write().insert(fact_id.to_string(), record);
+        Ok(())
     }
 
-    /// Appends the line `line_for` builds from the current head's hex to the hash-chained log
-    /// at `path`, then advances and re-signs the head. The head stays locked throughout so
-    /// concurrent writers cannot chain two lines to the same predecessor. A failed append is
-    /// logged rather than returned: the in-memory state stays authoritative and
-    /// `verify_log_integrity` reports the gap. A line that fails to serialize is skipped.
+    /// Appends `count` lines to the hash-chained log at `path`, line `i` built by `line_for`
+    /// from the hex of its predecessor's hash, then advances and re-signs the head once. The
+    /// head stays locked throughout so concurrent writers cannot chain two lines to the same
+    /// predecessor, and it advances only after the lines are written and synced: a failed
+    /// append returns the error with the head unchanged and no torn line left behind.
     fn append_chained(
         &self,
         path: &Path,
-        what: &str,
-        line_for: impl FnOnce(String) -> serde_json::Result<String>,
-    ) {
+        count: usize,
+        mut line_for: impl FnMut(usize, String) -> serde_json::Result<String>,
+    ) -> Result<()> {
         let mut head = self.chain_head.lock();
-        let Ok(line) = line_for(hex_encode(&*head)) else {
-            return;
-        };
-        let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
-        let mut buf = line;
-        buf.push('\n');
-        if let Err(e) = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(path)
-            .and_then(|mut f| f.write_all(buf.as_bytes()))
-        {
-            tracing::warn!("{what} log write failed: {e}");
+        let mut new_head = *head;
+        let mut buf = String::new();
+        for i in 0..count {
+            let line = line_for(i, hex_encode(&new_head))?;
+            new_head = Sha256::digest(line.as_bytes()).into();
+            buf.push_str(&line);
+            buf.push('\n');
         }
-        *head = new_hash;
-        self.write_signed_head(&new_hash, path);
+        append_synced(path, buf.as_bytes())
+            .map_err(|e| anyhow::anyhow!("provenance log write failed: {e}"))?;
+        // The lines are durable, so the head advances even if re-signing it fails below;
+        // `verify_log_integrity` reports a stale signed head until the next append.
+        *head = new_head;
+        self.write_signed_head(&new_head, path);
+        Ok(())
     }
 
     fn write_signed_head(&self, head: &[u8; 32], log_path: &Path) {
         let head_path = log_path.with_extension("head");
         match cose::sign_payload(&self.signing_key, head) {
             Ok(signed) => {
-                if let Err(e) = std::fs::write(head_path, signed) {
+                if let Err(e) = super::durable_file::atomic_write(&head_path, &signed) {
                     tracing::warn!("signed head write failed: {e}");
                 }
             }
@@ -230,18 +240,17 @@ impl ProvenanceManager {
             cose_envelope: Some(cose_envelope),
         };
 
-        self.records.write().remove(fact_id);
-
         if let Some(ref path) = self.log_path {
-            self.append_chained(path, "deletion", |prev_hash| {
+            self.append_chained(path, 1, |_, prev_hash| {
                 serde_json::to_string(&serde_json::json!({
                     "prev_hash": prev_hash,
                     "action": "delete",
                     "fact_id": fact_id,
                     "deletion": record,
                 }))
-            });
+            })?;
         }
+        self.records.write().remove(fact_id);
 
         Ok(record)
     }
@@ -272,7 +281,7 @@ impl ProvenanceManager {
         let rotation_envelope = cose::sign_payload(&self.signing_key, &rotation_payload)?;
 
         if let Some(ref path) = self.log_path {
-            self.append_chained(path, "key rotation", |prev_hash| {
+            self.append_chained(path, 1, |_, prev_hash| {
                 serde_json::to_string(&serde_json::json!({
                     "prev_hash": prev_hash,
                     "action": "key_rotation",
@@ -280,7 +289,7 @@ impl ProvenanceManager {
                     "new_did": new_did,
                     "cose_envelope": rotation_envelope,
                 }))
-            });
+            })?;
         }
 
         self.signing_key = new_signing_key;
@@ -400,9 +409,10 @@ impl ProvenanceManager {
             bits[byte_idx] |= 1 << bit_idx;
         }
         if let Some(ref path) = self.log_path {
-            let bitstring_path = path.with_extension("statuslist");
+            // Replaced atomically: a torn list would read back as shorter, un-revoking the
+            // credentials past the tear.
             let bits = self.revocation_bitstring.read();
-            std::fs::write(bitstring_path, &*bits)
+            super::durable_file::atomic_write(&path.with_extension("statuslist"), &bits)
                 .map_err(|e| anyhow::anyhow!("failed to persist revocation bitstring: {e}"))?;
         }
         Ok(())
@@ -425,7 +435,9 @@ impl ProvenanceManager {
         source_uri: Option<&str>,
     ) -> Result<ProvenanceRecord> {
         let content_hash: [u8; 32] = Sha256::digest(content).into();
-        let mut record = ProvenanceRecord::now().with_source(source_uri.unwrap_or(""), content);
+        let mut record = ProvenanceRecord::now();
+        record.source_uri = Some(source_uri.unwrap_or("").to_string());
+        record.source_hash = Some(content_hash);
         record.issuer_did = Some(self.issuer_did.clone());
         record.sequence = self.next_sequence();
 
@@ -466,7 +478,7 @@ impl ProvenanceManager {
             }
         }
 
-        self.store_record(fact_id, record.clone());
+        self.store_record(fact_id, record.clone())?;
         Ok(record)
     }
 
@@ -503,7 +515,7 @@ impl ProvenanceManager {
         let signed_vc = vc::sign_credential(&self.signing_key, credential)?;
         record.vc_json = Some(serde_json::to_string(&signed_vc)?);
 
-        self.store_record(params.fact_id, record.clone());
+        self.store_record(params.fact_id, record.clone())?;
         Ok(record)
     }
 
@@ -518,18 +530,20 @@ impl ProvenanceManager {
             .iter()
             .map(|(_, content, _)| Sha256::digest(content).into())
             .collect();
-        let merkle_root = Self::merkle_root(&leaf_hashes);
+        let levels = Self::merkle_levels(&leaf_hashes);
+        let merkle_root = levels[levels.len() - 1][0];
         let root_envelope = cose::sign_payload(&self.signing_key, &merkle_root)?;
 
         let mut records = Vec::with_capacity(items.len());
-        for (i, (fact_id, content, source_uri)) in items.iter().enumerate() {
+        for (i, (fact_id, _, source_uri)) in items.iter().enumerate() {
             let content_hash = leaf_hashes[i];
-            let proof = Self::merkle_proof(&leaf_hashes, i);
-            let mut record = ProvenanceRecord::now().with_source(source_uri.unwrap_or(""), content);
+            let mut record = ProvenanceRecord::now();
+            record.source_uri = Some(source_uri.unwrap_or("").to_string());
+            record.source_hash = Some(content_hash);
             record.issuer_did = Some(self.issuer_did.clone());
             record.sequence = self.next_sequence();
             record.cose_envelope = Some(root_envelope.clone());
-            record.merkle_proof = Some(proof);
+            record.merkle_proof = Some(Self::merkle_proof(&levels, i));
 
             let credential = vc::create_fact_credential(
                 &self.issuer_did,
@@ -542,22 +556,41 @@ impl ProvenanceManager {
             );
             let signed_vc = vc::sign_credential(&self.signing_key, credential)?;
             record.vc_json = Some(serde_json::to_string(&signed_vc)?);
-
-            self.store_record(fact_id, record.clone());
             records.push(record);
         }
+        // One append, sync and head signature for the whole batch.
+        if let Some(ref path) = self.log_path {
+            self.append_chained(path, records.len(), |i, prev_hash| {
+                serde_json::to_string(&LogEntryRef {
+                    prev_hash,
+                    fact_id: items[i].0,
+                    record: &records[i],
+                })
+            })?;
+        }
+        let mut live = self.records.write();
+        for ((fact_id, _, _), record) in items.iter().zip(&records) {
+            live.insert(fact_id.to_string(), record.clone());
+        }
+        drop(live);
         Ok(records)
     }
 
-    fn merkle_root(leaves: &[[u8; 32]]) -> [u8; 32] {
-        if leaves.is_empty() {
-            return [0u8; 32];
+    /// The Merkle tree's levels, leaves first and the root alone last.
+    fn merkle_levels(leaves: &[[u8; 32]]) -> Vec<Vec<[u8; 32]>> {
+        let mut levels = vec![if leaves.is_empty() {
+            vec![[0u8; 32]]
+        } else {
+            leaves.to_vec()
+        }];
+        loop {
+            let top = &levels[levels.len() - 1];
+            if top.len() <= 1 {
+                return levels;
+            }
+            let parents = Self::merkle_parents(top);
+            levels.push(parents);
         }
-        let mut level: Vec<[u8; 32]> = leaves.to_vec();
-        while level.len() > 1 {
-            level = Self::merkle_parents(&level);
-        }
-        level[0]
     }
 
     /// One Merkle level up: SHA-256 of each adjacent pair, an odd last node carried unhashed.
@@ -576,20 +609,15 @@ impl ProvenanceManager {
             .collect()
     }
 
-    fn merkle_proof(leaves: &[[u8; 32]], index: usize) -> Vec<(bool, [u8; 32])> {
-        let mut proof = Vec::new();
-        let mut level: Vec<[u8; 32]> = leaves.to_vec();
+    /// Leaf `index`'s inclusion proof, read from the levels of [`Self::merkle_levels`]: each
+    /// level's sibling, flagged when it sits to the left; an odd last node has none.
+    fn merkle_proof(levels: &[Vec<[u8; 32]>], index: usize) -> Vec<(bool, [u8; 32])> {
         let mut idx = index;
-        while level.len() > 1 {
-            let sibling_idx = if idx.is_multiple_of(2) {
-                idx + 1
-            } else {
-                idx - 1
-            };
-            if sibling_idx < level.len() {
-                proof.push((idx % 2 == 1, level[sibling_idx]));
+        let mut proof = Vec::new();
+        for level in &levels[..levels.len() - 1] {
+            if let Some(sibling) = level.get(idx ^ 1) {
+                proof.push((idx % 2 == 1, *sibling));
             }
-            level = Self::merkle_parents(&level);
             idx /= 2;
         }
         proof
@@ -1035,6 +1063,31 @@ fn unix_millis() -> u64 {
         .as_millis() as u64
 }
 
+/// Appends `bytes` to the file at `path` and syncs them to the drive. A failed write or sync
+/// truncates the file back to its prior length, so later lines never chain after a torn one.
+fn append_synced(path: &Path, bytes: &[u8]) -> Result<()> {
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)?;
+    let prior = file.metadata()?.len();
+    let written = file
+        .write_all(bytes)
+        .and_then(|()| file.sync_data())
+        .and_then(|()| super::durable_file::sync_mapped_file(&file));
+    if let Err(e) = written {
+        if let Err(truncate) = file.set_len(prior) {
+            tracing::warn!("could not drop a partial provenance log append: {truncate}");
+        }
+        return Err(e.into());
+    }
+    if prior == 0 {
+        // The file may be new: its directory entry must be durable too.
+        super::durable_file::sync_directory(path.parent().unwrap_or_else(|| Path::new(".")))?;
+    }
+    Ok(())
+}
+
 /// Lowercase hex, two digits per byte.
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
@@ -1317,6 +1370,116 @@ mod tests {
                 "{name}"
             );
         }
+    }
+
+    #[test]
+    fn failed_log_append_leaves_head_and_records_unchanged() {
+        let (dir, mgr) = manager();
+        mgr.create_fact_provenance("a", b"first", None).unwrap();
+        let log = dir.path().join("provenance_log.jsonl");
+        let head_file = log.with_extension("head");
+        let head = *mgr.chain_head.lock();
+        let signed = std::fs::read(&head_file).unwrap();
+
+        let aside = dir.path().join("aside.jsonl");
+        std::fs::rename(&log, &aside).unwrap();
+        std::fs::create_dir(&log).unwrap();
+        assert!(mgr.create_fact_provenance("b", b"second", None).is_err());
+        assert!(mgr.record_deletion("a", None).is_err());
+        assert_eq!(*mgr.chain_head.lock(), head);
+        assert_eq!(std::fs::read(&head_file).unwrap(), signed);
+        assert!(mgr.get_record("b").is_none());
+        assert!(mgr.get_record("a").is_some());
+
+        std::fs::remove_dir(&log).unwrap();
+        std::fs::rename(&aside, &log).unwrap();
+        mgr.create_fact_provenance("c", b"third", None).unwrap();
+        assert!(mgr.verify_log_integrity().unwrap());
+        drop(mgr);
+        let reopened =
+            ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        assert!(reopened.verify_log_integrity().unwrap());
+        assert!(reopened.get_record("a").is_some());
+        assert!(reopened.get_record("b").is_none());
+        assert!(reopened.get_record("c").is_some());
+    }
+
+    #[test]
+    fn batch_log_chains_and_reloads() {
+        let (dir, mgr) = manager();
+        mgr.create_fact_provenance("single", b"before", None)
+            .unwrap();
+        let items: Vec<(&str, &[u8], Option<&str>)> = vec![
+            ("x", b"one", None),
+            ("y", b"two", Some("u")),
+            ("z", b"three", None),
+        ];
+        mgr.create_batch_provenance(&items).unwrap();
+        assert!(mgr.verify_log_integrity().unwrap());
+        let log = std::fs::read_to_string(dir.path().join("provenance_log.jsonl")).unwrap();
+        assert_eq!(log.lines().count(), 4);
+        drop(mgr);
+        let reopened =
+            ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        assert!(reopened.verify_log_integrity().unwrap());
+        assert_eq!(reopened.record_count(), 4);
+        let two: [u8; 32] = Sha256::digest(b"two").into();
+        assert_eq!(reopened.get_record("y").unwrap().source_hash, Some(two));
+    }
+
+    /// The per-leaf tree rebuild the shared-levels proofs replaced.
+    fn reference_proof(leaves: &[[u8; 32]], index: usize) -> Vec<(bool, [u8; 32])> {
+        let mut proof = Vec::new();
+        let mut level: Vec<[u8; 32]> = leaves.to_vec();
+        let mut idx = index;
+        while level.len() > 1 {
+            let sibling_idx = if idx.is_multiple_of(2) {
+                idx + 1
+            } else {
+                idx - 1
+            };
+            if sibling_idx < level.len() {
+                proof.push((idx % 2 == 1, level[sibling_idx]));
+            }
+            level = ProvenanceManager::merkle_parents(&level);
+            idx /= 2;
+        }
+        proof
+    }
+
+    #[test]
+    fn merkle_proofs_match_per_leaf_rebuild() {
+        for n in 1..=65u32 {
+            let leaves: Vec<[u8; 32]> = (0..n)
+                .map(|i| Sha256::digest(i.to_le_bytes()).into())
+                .collect();
+            let levels = ProvenanceManager::merkle_levels(&leaves);
+            let mut root = leaves.clone();
+            while root.len() > 1 {
+                root = ProvenanceManager::merkle_parents(&root);
+            }
+            assert_eq!(levels[levels.len() - 1], root, "n={n}");
+            for index in 0..leaves.len() {
+                assert_eq!(
+                    ProvenanceManager::merkle_proof(&levels, index),
+                    reference_proof(&leaves, index),
+                    "n={n} index={index}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn revocation_survives_reopen() {
+        let dir = tempdir().unwrap();
+        let key = dir.path().join("test.key");
+        let mgr = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+        mgr.revoke_credential(13).unwrap();
+        drop(mgr);
+        let reopened = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+        assert!(reopened.is_revoked(13));
+        assert!(!reopened.is_revoked(12));
+        assert!(!reopened.is_revoked(14));
     }
 
     #[test]

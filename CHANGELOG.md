@@ -23,6 +23,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 
 ### Changed
 - Drop rejected intersection kernel candidates
+- Stores whose provenance status list or log cannot be read (any error other than not-found) now fail to open instead of treating credentials as unrevoked.
+- Creating, deleting or rotating provenance now returns an error when the provenance log cannot be written and synced, instead of logging it; `ProvenanceManager::store_record` returns `Result<()>`.
+
+### Fixed
+- The provenance chain head advances only after its log lines are written and synced, so a failed append no longer leaves a signed head over a missing line; a torn append is truncated.
+- The revocation status list and the signed log head are replaced atomically, so a crash cannot leave a short list that reads revoked credentials as valid.
 
 ### Documentation
 - Ideas tree for October 2026 with its 10-minute proxies
