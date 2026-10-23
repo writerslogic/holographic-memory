@@ -167,13 +167,13 @@ Reproduce the full comparison on Linux, after preparing SIFT-1M with
 
 ```sh
 python benchmarks/competitive/ann_updatable_measure.py \
-  --data "$HOME/codex-ann-update/data" \
-  --work "$HOME/codex-ann-update/measurement" \
-  --before "$HOME/codex-ann-update/target-before/dist/public-bench" \
-  --after "$HOME/codex-ann-update/target-after/dist/public-bench" \
-  --python-hnsw "$HOME/codex-ann-update/hnsw-env/bin/python" \
+  --data "$HMS_BENCH_DIR/ann-update/data" \
+  --work "$HMS_BENCH_DIR/ann-update/measurement" \
+  --before "$HMS_BENCH_DIR/ann-update/target-before/dist/public-bench" \
+  --after "$HMS_BENCH_DIR/ann-update/target-after/dist/public-bench" \
+  --python-hnsw "$HMS_BENCH_DIR/ann-update/hnsw-env/bin/python" \
   --before-commit 6685568 --commit "$(git rev-parse HEAD)" \
-  --out "$HOME/codex-ann-update/ann_updatable_x86_v1.json"
+  --out "$HMS_BENCH_DIR/ann-update/ann_updatable_x86_v1.json"
 ```
 
 The hnswlib environment uses Python 3.13, numpy 2.5.4 and hnswlib 0.8.0.
@@ -185,11 +185,11 @@ private target directory per checkout (the before checkout needs the static-only
 benchmark source embedded in the result artifact):
 
 ```sh
-CARGO_TARGET_DIR="$HOME/codex-ann-update/target-after" \
+CARGO_TARGET_DIR="$HMS_BENCH_DIR/ann-update/target-after" \
   taskset -c 12-21 cargo +1.96.0 bench --profile dist --bench vector_updates --no-run
-CARGO_TARGET_DIR="$HOME/codex-ann-update/target-after" RAYON_NUM_THREADS=10 \
+CARGO_TARGET_DIR="$HMS_BENCH_DIR/ann-update/target-after" RAYON_NUM_THREADS=10 \
   flock -F "$HOME/hms-timing.lock" taskset -c 2,3 \
-  "$HOME/codex-ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8" \
+  "$HMS_BENCH_DIR/ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8" \
   --bench --save-baseline release-final
 ```
 
