@@ -498,7 +498,7 @@ def kill_keys(keys: set[tuple[int, int]], grace_s: float = 30.0) -> list[int]:
         try:
             os.killpg(pgid, signal.SIGTERM)
         except (ProcessLookupError, PermissionError):
-            pass
+            pass  # the group already exited; leftovers get SIGKILL below
     deadline = now() + grace_s
     while alive() and now() < deadline:
         time.sleep(1)
@@ -506,7 +506,7 @@ def kill_keys(keys: set[tuple[int, int]], grace_s: float = 30.0) -> list[int]:
         try:
             os.kill(pid, signal.SIGKILL)
         except ProcessLookupError:
-            pass
+            pass  # exited between the check and the kill
     return [pid for pid, _ in targets]
 
 
