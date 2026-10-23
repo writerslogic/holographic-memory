@@ -192,8 +192,7 @@ impl Shard {
                 let mapped: Vec<RetrievalResult> = results
                     .into_iter()
                     .filter_map(|r| {
-                        let doc_id: u32 = r.id.parse().ok()?;
-                        let id_str = reg.get(doc_id as usize)?;
+                        let id_str = reg.get(r.slot as usize)?;
                         if vectors.contains_key(id_str) {
                             Some(RetrievalResult {
                                 id: id_str.clone(),
