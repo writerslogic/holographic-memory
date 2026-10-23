@@ -689,7 +689,7 @@ impl Rows<'_> {
         cands.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         let a2 = alpha * alpha;
         let mut out: Vec<u32> = Vec::with_capacity(r);
-        let mut open: Vec<u32> = Vec::new();
+        let mut open: Vec<u32> = Vec::with_capacity(r);
         for &(dc, c, was_kept) in &cands {
             if out.len() == r {
                 break;
