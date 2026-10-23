@@ -28,9 +28,6 @@ impl TopK {
             floor: 0.0,
         }
     }
-    pub(super) fn k(&self) -> usize {
-        self.k
-    }
     pub(super) fn floor(&self) -> f64 {
         self.floor
     }
@@ -342,7 +339,55 @@ pub(super) fn document_at_a_time(
         let mut frequencies = vec![0; query.clauses.len()];
         let mut pending: Vec<Option<u32>> = vec![None; query.clauses.len()];
         let mut ids = word_ids(query);
+        // Optional words not yet required of every ranked candidate, by clause.
+        let mut optional: Vec<(usize, usize)> = query
+            .clauses
+            .iter()
+            .zip(&indices)
+            .enumerate()
+            .filter_map(|(c, (clause, indices))| match indices[..] {
+                [Some(i)] if clause.occur == Occur::Should && !single_phrase => Some((c, i)),
+                _ => None,
+            })
+            .collect();
+        let mut checked_floor = 0.0;
         loop {
+            // Once the floor exceeds every clause's ceiling but one optional word's, a chunk
+            // without that word cannot rank: the word joins the conjunction (MaxScore's
+            // essential lists), entering at the lead's position so no candidate repeats.
+            if let (Some(pruning), Some(&lead), false) =
+                (pruning.as_ref(), required.first(), options.count)
+            {
+                let floor = top.floor();
+                if floor > checked_floor && !optional.is_empty() {
+                    checked_floor = floor;
+                    let mut promoted = false;
+                    optional.retain(|&(c, i)| {
+                        if required.contains(&i) {
+                            return false;
+                        }
+                        let others = pruning
+                            .clauses
+                            .iter()
+                            .enumerate()
+                            .filter(|&(other, _)| other != c)
+                            .filter_map(|(_, clause)| clause.as_ref())
+                            .fold(0.0, |sum, clause| up(sum + clause.ceiling));
+                        if sum_bound(others, query.clauses.len()) >= floor {
+                            return true;
+                        }
+                        if let Some((at, _)) = states[lead].cursor.peek() {
+                            states[i].cursor.advance(at);
+                        }
+                        required.push(i);
+                        promoted = true;
+                        false
+                    });
+                    if promoted {
+                        required.sort_unstable_by_key(|&i| states[i].df);
+                    }
+                }
+            }
             if let (Some(pruning), Some(&lead), false) =
                 (pruning.as_ref(), required.first(), options.count)
             {

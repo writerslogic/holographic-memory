@@ -34,6 +34,7 @@ use rayon::prelude::*;
 
 use super::binary::put_varint;
 use super::StoredChunk;
+use std::sync::OnceLock;
 
 const NONE: u32 = u32::MAX;
 
@@ -266,6 +267,8 @@ impl TermDictionary {
 }
 
 pub(super) const BLOCK_LEN: usize = 128;
+/// The fewest postings a block other than the last keeps after in-place removals.
+const MIN_BLOCK_LEN: usize = BLOCK_LEN / 4;
 
 #[derive(Clone, Debug)]
 struct Block {
@@ -363,13 +366,21 @@ impl Postings<'_> {
             if left >= 8 {
                 if let Some(word) = bytes.get(at..at + 8) {
                     let word = u64::from_le_bytes(word.try_into().expect("eight bytes"));
-                    if word & 0x8181_8181_8181_8181 == 0 {
-                        for byte in 0..8 {
-                            slot += (word >> (8 * byte + 1)) & 0x7f;
-                            f(slot as usize, 1);
-                        }
-                        at += 8;
-                        left -= 8;
+                    // Bytes before the first with a continuation or frequency flag are
+                    // whole postings of frequency 1; the slow path takes the rest.
+                    let flags = word & 0x8181_8181_8181_8181;
+                    let clean = if flags == 0 {
+                        8
+                    } else {
+                        flags.trailing_zeros() as usize / 8
+                    };
+                    for byte in 0..clean {
+                        slot += (word >> (8 * byte + 1)) & 0x7f;
+                        f(slot as usize, 1);
+                    }
+                    at += clean;
+                    left -= clean;
+                    if clean == 8 {
                         continue;
                     }
                 }
@@ -394,6 +405,30 @@ pub(super) struct PostingList {
     count: u32,
     positive_count: u32,
     last: u64,
+    /// For a list of at least [`SUMMARY_MIN_BLOCKS`] blocks, the frontier of each run of
+    /// [`SUPER_LEN`] blocks, built by the first query that needs it after a change.
+    summary: Option<Box<OnceLock<Box<[Frontier]>>>>,
+}
+
+/// Undominated `(frequency, words)` points, by frequency descending.
+pub(super) type Frontier = Box<[(u32, u32)]>;
+
+/// Blocks per run that one summary frontier covers.
+pub(super) const SUPER_LEN: usize = 32;
+/// The fewest blocks a list summarizes: shorter lists are scanned block by block.
+const SUMMARY_MIN_BLOCKS: usize = 2 * SUPER_LEN;
+
+/// The points of `points` no other point dominates (a larger frequency at no greater
+/// length), by frequency descending; never empty for a nonempty input.
+fn pareto(mut points: Vec<(u32, u32)>) -> Box<[(u32, u32)]> {
+    points.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+    let mut kept: Vec<(u32, u32)> = Vec::new();
+    for point in points {
+        if kept.last().is_none_or(|last| point.1 < last.1) {
+            kept.push(point);
+        }
+    }
+    kept.into_boxed_slice()
 }
 
 fn merge_sorted(a: &[Posting], b: &[Posting]) -> Vec<Posting> {
@@ -717,6 +752,7 @@ impl PostingList {
             min_words,
             frontier,
         });
+        self.touch();
     }
 
     /// Rewrites the list as `postings`, with each block's length bounds taken from `words`
@@ -724,6 +760,7 @@ impl PostingList {
     fn encode(&mut self, postings: &[Posting], words: impl Fn(usize) -> u32) {
         self.data.clear();
         self.blocks.clear();
+        self.touch();
         for block in postings.chunks(BLOCK_LEN) {
             self.append_block(
                 block,
@@ -798,22 +835,87 @@ impl PostingList {
         self.last = run.last().unwrap().0 as u64;
     }
 
+    /// The block holding `slot`, decoded into `out`, and its posting count.
+    fn block_of(&self, slot: usize, out: &mut [Posting; BLOCK_LEN]) -> (usize, usize) {
+        let block = self.blocks.partition_point(|b| b.last < slot);
+        assert!(block < self.blocks.len(), "document missing from posting");
+        (block, self.decode_block_into(block, out))
+    }
+
+    /// Re-encodes block `index` as `postings`, dropping it when they are empty. The later
+    /// blocks keep their encoding and bounds and only move, so a rewrite recomputes one
+    /// block's bounds rather than the list's; blocks other than the last may then hold fewer
+    /// than [`BLOCK_LEN`] postings.
+    fn rewrite_block(&mut self, index: usize, postings: &[Posting], words: impl Fn(usize) -> u32) {
+        let start = self.blocks[index].offset;
+        let end = self
+            .blocks
+            .get(index + 1)
+            .map_or(self.data.len(), |block| block.offset);
+        let mut scratch = PostingList::default();
+        if !postings.is_empty() {
+            scratch.append_block(
+                postings,
+                postings.iter().map(|p| words(p.0)).min().unwrap_or(0),
+                frontier(postings.iter().map(|p| (p.1, words(p.0)))),
+            );
+        }
+        let length = scratch.data.len();
+        self.data.splice(start..end, scratch.data);
+        for block in &mut self.blocks[index + 1..] {
+            block.offset = block.offset - (end - start) + length;
+        }
+        match scratch.blocks.pop() {
+            Some(mut block) => {
+                block.offset = start;
+                self.blocks[index] = block;
+            }
+            None => {
+                self.blocks.remove(index);
+            }
+        }
+        self.touch();
+    }
+
     fn remove(&mut self, slot: usize, words: impl Fn(usize) -> u32) {
-        let mut decoded = self.decode();
-        let index = decoded
+        let mut decoded = [(0, 0); BLOCK_LEN];
+        let (block, count) = self.block_of(slot, &mut decoded);
+        if count <= MIN_BLOCK_LEN && block + 1 < self.blocks.len() {
+            // A block this short re-packs the list rather than fragment it further.
+            let mut postings = self.decode();
+            let index = postings
+                .binary_search_by_key(&slot, |p| p.0)
+                .expect("document missing from posting");
+            postings.remove(index);
+            self.encode(&postings, words);
+            return;
+        }
+        let index = decoded[..count]
             .binary_search_by_key(&slot, |p| p.0)
             .expect("document missing from posting");
-        decoded.remove(index);
-        self.encode(&decoded, words);
+        let (_, frequency) = decoded[index];
+        decoded.copy_within(index + 1..count, index);
+        self.rewrite_block(block, &decoded[..count - 1], words);
+        self.count -= 1;
+        self.positive_count -= u32::from(frequency > 0);
+        self.last = self.blocks.last().map_or(0, |b| b.last as u64);
+        if self.count == 0 {
+            self.data = Vec::new();
+            self.blocks = Vec::new();
+            self.touch();
+        }
     }
 
     fn set_frequency(&mut self, slot: usize, frequency: u32, words: impl Fn(usize) -> u32) {
-        let mut decoded = self.decode();
-        let index = decoded
+        let mut decoded = [(0, 0); BLOCK_LEN];
+        let (block, count) = self.block_of(slot, &mut decoded);
+        let index = decoded[..count]
             .binary_search_by_key(&slot, |p| p.0)
             .expect("document missing from posting");
-        decoded[index].1 = frequency;
-        self.encode(&decoded, words);
+        let previous = std::mem::replace(&mut decoded[index].1, frequency);
+        self.positive_count =
+            self.positive_count - u32::from(previous > 0) + u32::from(frequency > 0);
+        self.rewrite_block(block, &decoded[..count], words);
     }
 
     /// Whether every block's bounds hold for its postings under the lengths `words`: the
@@ -854,6 +956,41 @@ impl PostingList {
         let block = self.blocks.partition_point(|b| b.last < slot);
         self.blocks[block].min_words = 0;
         self.blocks[block].frontier = None;
+        self.touch();
+    }
+
+    /// Drops the summary after a change to the blocks; a long list gets an empty one.
+    fn touch(&mut self) {
+        if self.blocks.len() < SUMMARY_MIN_BLOCKS {
+            self.summary = None;
+        } else if let Some(summary) = &mut self.summary {
+            if summary.get().is_some() {
+                **summary = OnceLock::new();
+            }
+        } else {
+            self.summary = Some(Box::default());
+        }
+    }
+
+    /// The frontier of each run of [`SUPER_LEN`] blocks (a block without a frontier
+    /// contributes its largest frequency at its least length), or `None` for a short list.
+    pub(super) fn summary(&self) -> Option<&[Frontier]> {
+        let summary = self.summary.as_deref()?;
+        Some(summary.get_or_init(|| {
+            self.blocks
+                .chunks(SUPER_LEN)
+                .map(|run| {
+                    let mut points = Vec::new();
+                    for block in run {
+                        match block.frontier.as_deref() {
+                            Some(frontier) => points.extend_from_slice(frontier),
+                            None => points.push((block.max_frequency, block.min_words)),
+                        }
+                    }
+                    pareto(points)
+                })
+                .collect()
+        }))
     }
 }
 
@@ -1229,10 +1366,12 @@ impl PostingLists {
             let slots: Vec<usize> = list.iter().map(|(slot, _)| slot).collect();
             assert!(slots.windows(2).all(|pair| pair[0] < pair[1]));
             assert_eq!(slots.last().copied(), Some(list.last as usize));
-            // In-place edits leave exactly the bytes a fresh encoding of the postings has.
-            let mut fresh = PostingList::default();
-            fresh.encode(&list.decode(), |_| 0);
-            assert_eq!(fresh.data, list.data, "posting bytes are not canonical");
+            // In-place edits keep every block but the last at least a quarter full.
+            let (last, earlier) = list.blocks.split_last().expect("nonempty list");
+            assert!(last.count > 0);
+            assert!(earlier
+                .iter()
+                .all(|b| usize::from(b.count) >= MIN_BLOCK_LEN));
         }
         for &id in &self.free {
             assert!(!live[id as usize] && self.lists[id as usize].is_empty());
@@ -1359,6 +1498,45 @@ pub(super) fn index_chunks<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The packed checkpoint decoder agrees with the checked one for every mix of one-byte
+    /// postings, wide gaps and frequencies at every position in the eight-byte window.
+    #[test]
+    fn checkpoint_fast_decoding_matches_checked_decoding() {
+        for pattern in 0u32..256 {
+            let mut postings = Vec::new();
+            let mut slot = 0usize;
+            for i in 0..67u32 {
+                let wide = (pattern >> (i % 8)) & 1 == 1;
+                slot += if wide {
+                    70 + (i as usize) * 31
+                } else {
+                    1 + (i as usize) % 60
+                };
+                let frequency = if i % 11 == 3 { 2 + i } else { 1 };
+                postings.push((slot, frequency));
+            }
+            let mut list = PostingList::default();
+            list.append_run(&postings);
+            let mut bytes = Vec::new();
+            pack_checkpoint(&list, &mut bytes);
+            let packed = Postings {
+                bytes: &bytes,
+                count: postings.len() as u32,
+            };
+            let mut fast = Vec::new();
+            packed.for_each(|slot, frequency| fast.push((slot, frequency)));
+            let mut checked = Vec::new();
+            packed
+                .try_for_each(|slot, frequency| {
+                    checked.push((slot, frequency));
+                    true
+                })
+                .unwrap();
+            assert_eq!(fast, postings, "pattern {pattern}");
+            assert_eq!(checked, postings, "pattern {pattern}");
+        }
+    }
 
     #[test]
     fn initial_block_capacity_matches_the_first_run() {

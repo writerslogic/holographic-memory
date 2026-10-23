@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::postings::{PostingList, Postings};
-use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
+use std::{
+    cell::RefCell,
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 use crate::core::hash::FastMap;
 use anyhow::{ensure, Result};
@@ -12,13 +16,14 @@ use super::dense::DenseIndex;
 use super::image::ServingImage;
 use super::overlay::Overlaid;
 use super::{
-    matches_document, normalize_embedding, terms, top_ranked, Bm25, DocumentResult, DocumentStore,
-    SearchOptions, StoredChunk, StoredDocument, MAX_DOCUMENT_BYTES,
+    matches_document, normalize_embedding, query_words, terms, top_ranked, Bm25, DocumentResult,
+    DocumentStore, SearchOptions, StoredChunk, StoredDocument, MAX_DOCUMENT_BYTES,
 };
 
 pub(crate) struct PreparedSearch {
     filters: SearchOptions,
-    query_terms: [BTreeMap<String, u32>; 2],
+    /// The query's distinct words per form; BM25 here ignores query term frequency.
+    query_terms: [BTreeSet<String>; 2],
     embedding: Option<Vec<f64>>,
     k: usize,
     limit: usize,
@@ -174,7 +179,7 @@ pub(crate) fn prepare_search(
             document_ids: options.document_ids.clone(),
             ..Default::default()
         },
-        query_terms: [terms(text, false), terms(text, true)],
+        query_terms: [query_words(text, false), query_words(text, true)],
         embedding,
         k,
         limit,
@@ -268,14 +273,14 @@ fn capture_postings(store: &DocumentStore, prepared: PreparedSearch) -> Captured
             .enumerate()
             .map(|(form, terms)| {
                 terms
-                    .keys()
+                    .iter()
                     .map(|word| store.postings[form].get(word).map_or(0, PostingList::len))
                     .sum::<usize>()
             })
             .sum();
         let scan_work = chunks
             .len()
-            .saturating_mul(prepared.query_terms.iter().map(BTreeMap::len).sum());
+            .saturating_mul(prepared.query_terms.iter().map(BTreeSet::len).sum());
         (
             chunks.len(),
             words,
@@ -285,7 +290,7 @@ fn capture_postings(store: &DocumentStore, prepared: PreparedSearch) -> Captured
     let mut postings: [BTreeMap<String, Vec<CapturedPosting>>; 2] = Default::default();
     if use_postings && (prepared.lexical_weight > 0.0 || !prepared.lexical_only) {
         for (form, terms) in prepared.query_terms.iter().enumerate() {
-            for word in terms.keys() {
+            for word in terms {
                 let Some(source) = store.postings[form].get(word) else {
                     continue;
                 };
@@ -607,7 +612,7 @@ impl LexicalScratch {
         let mut lists = Vec::new();
         let mut postings = 0usize;
         for (form, terms) in prepared.query_terms.iter().enumerate() {
-            for word in terms.keys() {
+            for word in terms {
                 if let Some(list) = store.postings(form, word) {
                     let df = list.len() as f64;
                     postings += list.len();
@@ -747,7 +752,7 @@ fn capture_indexed_query(
     let mut positions = SlotPositions::new(store.slot_count);
     let dfs = std::array::from_fn(|form| {
         prepared.query_terms[form]
-            .keys()
+            .iter()
             .map(|word| {
                 let source = store.postings[form].get(word);
                 if prepared.lexical_weight > 0.0 {
@@ -958,7 +963,11 @@ fn execute_chunks(captured: &CapturedQuery, chunks: &[CapturedChunk]) -> Vec<Ran
             contributions.push((i, weight * normalized));
         }
     }
-    contributions.sort_by_key(|&(i, _)| i);
+    // With one list contributing, each chunk appears once and the final selection orders
+    // them, so only a fusion of both lists needs grouping by chunk.
+    if !lexical.is_empty() && !semantic.is_empty() {
+        contributions.sort_by_key(|&(i, _)| i);
+    }
     let mut ranked: Vec<(usize, f64)> = Vec::with_capacity(contributions.len());
     for (i, contribution) in contributions {
         match ranked.last_mut() {
@@ -1007,7 +1016,7 @@ fn score_chunks(
     let average = (captured.words as f64 / n).max(1.0);
     let idf: [BTreeMap<&String, f64>; 2] = std::array::from_fn(|form| {
         prepared.query_terms[form]
-            .keys()
+            .iter()
             .map(|word| {
                 let df = if let Some(dfs) = &captured.dfs {
                     dfs[form][word]
@@ -1895,7 +1904,7 @@ mod latency_bench {
                         postings += (0..2)
                             .map(|form| {
                                 query.query_terms[form]
-                                    .keys()
+                                    .iter()
                                     .map(|word| {
                                         store.postings[form].get(word).map_or(0, PostingList::len)
                                     })

@@ -154,8 +154,16 @@ fn frequency(clause: &Clause, chunk: &StoredChunk, exact: bool, ids: &mut [Vec<W
     }
     let mut indices = Vec::with_capacity(words.len());
     let (mut lead, mut least) = (0, u32::MAX);
-    for (word, id) in words.iter().zip(&mut ids[form]) {
-        let Some(index) = chunk.terms.index_cached(word, id) else {
+    for (at, (word, id)) in words.iter().zip(&mut ids[form]).enumerate() {
+        // A repeated word of a short phrase reuses its earlier index.
+        let earlier = (words.len() <= 16)
+            .then(|| words[..at].iter().position(|w| w == word))
+            .flatten();
+        let found = match earlier {
+            Some(earlier) => Some(indices[earlier]),
+            None => chunk.terms.index_cached(word, id),
+        };
+        let Some(index) = found else {
             return 0;
         };
         let frequency = chunk.terms.frequency_at(index);

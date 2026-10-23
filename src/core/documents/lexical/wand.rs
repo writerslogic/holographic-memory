@@ -3,7 +3,7 @@
 
 use super::execution::TopK;
 use super::*;
-use crate::core::documents::postings::{PostingCursor, PostingList, BLOCK_LEN};
+use crate::core::documents::postings::{PostingCursor, PostingList, BLOCK_LEN, SUPER_LEN};
 
 pub(super) fn up(value: f64) -> f64 {
     if value == 0.0 {
@@ -110,9 +110,10 @@ fn frontier_bound(bound: Bound, loose: f64, points: &[(u32, u32)]) -> f64 {
     }
 }
 
-/// Top-k of one list, strongest blocks first. A block is decoded only while a bound of its
-/// weights reaches the floor, which the strongest blocks raise quickly; the rest are skipped
-/// by their metadata. Skipped blocks are below the floor, so the result is the exhaustive one.
+/// Top-k of one list, strongest runs of blocks first. A long list's runs are ordered by the
+/// bound of their summary frontier and visited until a run's bound is below the floor; within
+/// a run, a block is decoded only when its own bounds reach the floor. Everything skipped is
+/// below the floor, so the result is the exhaustive one.
 fn single_list(
     store: &DocumentStore,
     state: &State<'_>,
@@ -121,19 +122,11 @@ fn single_list(
     top: &mut TopK,
 ) -> Result<()> {
     let list = state.list;
-    let loose: Vec<f64> = (0..list.block_count())
-        .map(|index| {
-            let ((frequency, words), _) = list.block_bounds(index);
-            state.bound.at(frequency, words)
-        })
-        .collect();
     let mut decoded = [(0, 0); BLOCK_LEN];
     let mut visit = |index: usize, top: &mut TopK| -> Result<()> {
-        if loose[index] < top.floor() {
-            return Ok(());
-        }
-        let (_, points) = list.block_bounds(index);
-        if frontier_bound(state.bound, loose[index], points) < top.floor() {
+        let ((frequency, words), points) = list.block_bounds(index);
+        let loose = state.bound.at(frequency, words);
+        if loose < top.floor() || frontier_bound(state.bound, loose, points) < top.floor() {
             return Ok(());
         }
         let count = list.decode_block_into(index, &mut decoded);
@@ -151,24 +144,26 @@ fn single_list(
         }
         Ok(())
     };
-    // The strongest blocks by their loose bounds first, enough to hold k postings, then
-    // every block in order against the floor they set.
-    let mut order: Vec<usize> = (0..loose.len()).collect();
-    let seed = top
-        .k()
-        .div_ceil(BLOCK_LEN)
-        .saturating_mul(4)
-        .min(order.len());
-    if seed > 0 && seed < order.len() {
-        order.select_nth_unstable_by(seed, |&a, &b| loose[b].total_cmp(&loose[a]));
-    }
-    let mut seeded = vec![false; loose.len()];
-    for &index in &order[..seed] {
-        seeded[index] = true;
-        visit(index, top)?;
-    }
-    for (index, _) in seeded.iter().enumerate().filter(|(_, &done)| !done) {
-        visit(index, top)?;
+    let Some(summary) = list.summary() else {
+        for index in 0..list.block_count() {
+            visit(index, top)?;
+        }
+        return Ok(());
+    };
+    let mut runs: Vec<(f64, usize)> = summary
+        .iter()
+        .enumerate()
+        .map(|(run, points)| (frontier_bound(state.bound, 0.0, points), run))
+        .collect();
+    runs.sort_unstable_by(|a, b| b.0.total_cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+    for (bound, run) in runs {
+        if bound < top.floor() {
+            break;
+        }
+        let start = run * SUPER_LEN;
+        for index in start..(start + SUPER_LEN).min(list.block_count()) {
+            visit(index, top)?;
+        }
     }
     Ok(())
 }
@@ -358,6 +353,10 @@ pub(super) fn execute(
 #[cfg(test)]
 mod tests {
     use super::super::tests::insert;
+    use crate::core::documents::postings::SUPER_LEN;
+
+    /// Enough one-word documents for a list of two summary runs.
+    const SUMMARY_DOCUMENTS: usize = 2 * SUPER_LEN * BLOCK_LEN + 300;
     use super::*;
     use proptest::prelude::*;
 
@@ -613,6 +612,53 @@ mod tests {
                         true,
                         true,
                     );
+                }
+            }
+        }
+    }
+
+    /// A list long enough for run summaries, through deletes, length invalidations and
+    /// replacements: the single-list scan against exhaustive evaluation.
+    #[test]
+    fn summarized_single_lists_match_exhaustive_through_churn() {
+        let mut store = DocumentStore::default();
+        let text = |i: usize| {
+            let mut words = vec!["w"; 1 + (i * 7919) % 13];
+            words.extend(std::iter::repeat_n("pad", (i * 104_729) % 97));
+            words.join(" ")
+        };
+        let documents = SUMMARY_DOCUMENTS;
+        for i in 0..documents {
+            insert(&mut store, &format!("d{i:05}"), &text(i), false, true);
+        }
+        assert!(store.postings[0].get("w").unwrap().summary().is_some());
+        let query = LexicalQuery::parse("w").unwrap();
+        for stage in 0..3 {
+            for k in [1, 10, 100] {
+                let options = LexicalOptions {
+                    k,
+                    ..Default::default()
+                };
+                let reference = super::super::execute(
+                    &store,
+                    &query,
+                    &LexicalOptions {
+                        execution: LexicalExecution::Exhaustive,
+                        ..options.clone()
+                    },
+                )
+                .unwrap();
+                let actual = super::super::execute(&store, &query, &options).unwrap();
+                assert_eq!(actual, reference, "k={k}, stage={stage}");
+            }
+            if stage == 0 {
+                for i in (0..documents).step_by(5) {
+                    store.remove(&format!("d{i:05}"));
+                }
+            } else if stage == 1 {
+                // Replacements reuse slots with new lengths and the strongest postings.
+                for i in (0..documents).step_by(7) {
+                    insert(&mut store, &format!("d{i:05}"), "w w w w w w", false, true);
                 }
             }
         }

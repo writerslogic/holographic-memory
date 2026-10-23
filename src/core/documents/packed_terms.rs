@@ -160,7 +160,7 @@ impl SharedTerms {
             }
         };
         let id = u64::from(id?);
-        let (mut low, mut high) = (0, self.frequencies.len());
+        let (mut low, mut high) = self.bracket(id)?;
         while low < high {
             let middle = low + (high - low) / 2;
             match super::postings::unpack(&self.ids, middle, self.bits).cmp(&id) {
@@ -170,6 +170,55 @@ impl SharedTerms {
             }
         }
         None
+    }
+}
+
+impl SharedTerms {
+    /// A range of indices that holds `id` if any does, from a guess interpolated between the
+    /// first and last ids and widened by doubling steps: the probes of a search over a cold
+    /// table stay few.
+    fn bracket(&self, id: u64) -> Option<(usize, usize)> {
+        let count = self.frequencies.len();
+        let at = |index: usize| super::postings::unpack(&self.ids, index, self.bits);
+        let (first, last) = (at(0), at(count.checked_sub(1)?));
+        if id < first || id > last {
+            return None;
+        }
+        let guess = if last == first {
+            0
+        } else {
+            ((u128::from(id - first) * (count - 1) as u128) / u128::from(last - first)) as usize
+        };
+        let value = at(guess);
+        if value == id {
+            return Some((guess, guess + 1));
+        }
+        let mut step = 1;
+        if value < id {
+            let mut low = guess + 1;
+            loop {
+                let probe = guess + step;
+                if probe >= count {
+                    return Some((low, count));
+                }
+                if at(probe) >= id {
+                    return Some((low, probe + 1));
+                }
+                low = probe + 1;
+                step *= 2;
+            }
+        }
+        let mut high = guess;
+        loop {
+            let Some(probe) = guess.checked_sub(step) else {
+                return Some((0, high));
+            };
+            if at(probe) <= id {
+                return Some((probe, high));
+            }
+            high = probe;
+            step *= 2;
+        }
     }
 }
 
@@ -669,6 +718,48 @@ impl<'de> Deserialize<'de> for StoredTerms {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The id-based lookup finds exactly the words the string search finds, over subsets
+    /// with clustered, sparse and dense ids and every width.
+    #[test]
+    fn id_lookup_matches_string_lookup() {
+        let words: Vec<String> = (0..700).map(|i| format!("w{i:04}")).collect();
+        let refs: Vec<&str> = words.iter().map(String::as_str).collect();
+        let dictionary = Arc::new(SharedDictionary::new(&refs));
+        for seed in 0..60usize {
+            let ids: Vec<u32> = (0..700u32)
+                .filter(|&i| match seed % 4 {
+                    0 => (i as usize * 31 + seed) % (seed + 2) == 0,
+                    1 => i < 3 || i > 690 || (i as usize + seed) % 97 == 0,
+                    2 => (i as usize / 50 + seed) % 3 == 0,
+                    _ => i as usize == seed * 11 % 700,
+                })
+                .collect();
+            if ids.is_empty() {
+                continue;
+            }
+            let frequencies = ids.iter().map(|&i| i + 1).collect();
+            let terms = StoredTerms::from_dictionary(Arc::clone(&dictionary), &ids, frequencies);
+            for word in words
+                .iter()
+                .map(String::as_str)
+                .chain(["a", "w9999", "w0350x"])
+            {
+                // A cache belongs to one word; the second lookup reuses its id.
+                let mut cache = WordId::default();
+                assert_eq!(
+                    terms.index_cached(word, &mut cache),
+                    terms.index(word),
+                    "{word}"
+                );
+                assert_eq!(
+                    terms.index_cached(word, &mut cache),
+                    terms.index(word),
+                    "{word}"
+                );
+            }
+        }
+    }
 
     fn parity(map: BTreeMap<String, u32>) {
         let expected = serde_json::to_vec(&map).unwrap();
