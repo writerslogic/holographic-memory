@@ -1666,11 +1666,7 @@ impl VGraph {
                 #[cfg(not(target_arch = "wasm32"))]
                 dim: self.dim,
                 knobs,
-                visited: Marks {
-                    marks: vec![0; self.n],
-                    epoch: 0,
-                    traces: vec![Trace::default(); if self.has_blocks() { self.n } else { 0 }],
-                },
+                visited: Marks::new(self.n, self.has_blocks()),
                 qf: vec![0.0; self.padded],
                 qc: vec![0; self.padded],
                 qtmp: vec![0; self.padded],
@@ -1726,7 +1722,7 @@ impl VGraph {
     ) -> Result<usize, HmsError> {
         let compatible = cache.as_ref().is_some_and(|s| {
             s.dim == self.dim
-                && s.visited.marks.len() == self.n
+                && s.visited.n == self.n
                 && s.qf.len() == self.padded
                 && s.qrot.len() == self.screen_words * 64
                 && s.bqrot.len() == self.block_dim
@@ -1743,12 +1739,17 @@ impl VGraph {
     }
 }
 
-/// Visited marks with an 8-bit epoch: a quarter of the cache footprint of `u32` epochs, at the
-/// cost of clearing every 255 searches.
+/// Visited marks of one search: a bit per vertex, with an 8-bit epoch for the trace records of
+/// the neighbour-block search.
 struct Marks {
-    marks: Vec<u8>,
+    /// One bit per vertex. The words with a bit set since the last [`Marks::next`] are listed
+    /// in `touched` and cleared then, so a search's visited footprint is `n / 8` bytes (a
+    /// million vertices fit the second-level cache) and clearing costs the words it set.
+    words: Vec<u64>,
+    touched: Vec<u32>,
+    n: usize,
     epoch: u8,
-    /// With neighbour blocks, one record per vertex instead of the byte mark.
+    /// With neighbour blocks, one record per vertex instead of the bit.
     traces: Vec<Trace>,
 }
 
@@ -1766,10 +1767,24 @@ struct Trace {
 }
 
 impl Marks {
+    /// Marks for `n` vertices, with trace records when `traces` is set.
+    fn new(n: usize, traces: bool) -> Self {
+        Self {
+            words: vec![0; n.div_ceil(64)],
+            touched: Vec::new(),
+            n,
+            epoch: 0,
+            traces: vec![Trace::default(); if traces { n } else { 0 }],
+        }
+    }
+
     fn next(&mut self) {
+        for &w in &self.touched {
+            self.words[w as usize] = 0;
+        }
+        self.touched.clear();
         self.epoch = self.epoch.wrapping_add(1);
         if self.epoch == 0 {
-            self.marks.fill(0);
             self.traces.fill(Trace::default());
             self.epoch = 1;
         }
@@ -1790,19 +1805,25 @@ impl Marks {
         (fresh, t)
     }
 
-    /// True if `id` was visited in this epoch (no mark is set).
+    /// True if `id` was visited in this search (no mark is set).
     #[inline]
     fn seen(&self, id: u32) -> bool {
-        self.marks[id as usize] == self.epoch
+        self.words[(id >> 6) as usize] >> (id & 63) & 1 == 1
     }
 
-    /// True if `id` was not yet visited in this epoch.
+    /// True if `id` was not yet visited in this search.
     #[inline]
     fn insert(&mut self, id: u32) -> bool {
-        let m = &mut self.marks[id as usize];
-        let fresh = *m != self.epoch;
-        *m = self.epoch;
-        fresh
+        let w = &mut self.words[(id >> 6) as usize];
+        let bit = 1u64 << (id & 63);
+        if *w & bit != 0 {
+            return false;
+        }
+        if *w == 0 {
+            self.touched.push(id >> 6);
+        }
+        *w |= bit;
+        true
     }
 }
 
@@ -2863,7 +2884,7 @@ mod serving_tests {
         searcher.search(&[1.0, 0.0], 1, params, &mut out).unwrap();
         assert_eq!(out, [1]);
         let beam = searcher.scratch.pool.keys.clone();
-        let marks = searcher.scratch.visited.marks.clone();
+        let marks = searcher.scratch.visited.words.clone();
         for capacity in [1, 2, 3, usize::MAX] {
             let params = VSearchParams {
                 reservoir: capacity,
@@ -2871,13 +2892,7 @@ mod serving_tests {
             };
             searcher.search(&[1.0, 0.0], 1, params, &mut out).unwrap();
             assert_eq!(searcher.scratch.pool.keys, beam);
-            assert!(searcher
-                .scratch
-                .visited
-                .marks
-                .iter()
-                .zip(&marks)
-                .all(|(&a, &b)| (a > 0) == (b > 0)));
+            assert_eq!(searcher.scratch.visited.words, marks);
             assert_eq!(out, if capacity == 1 { vec![1] } else { vec![2] });
             assert_eq!(searcher.scratch.results.len(), capacity.min(3));
             #[cfg(feature = "experimental")]
@@ -2935,7 +2950,7 @@ mod serving_tests {
                             .unwrap();
                         assert_eq!(a.scratch.pool.keys, b.scratch.pool.keys);
                         assert_eq!(a.scratch.pool.expanded, b.scratch.pool.expanded);
-                        assert_eq!(a.scratch.visited.marks, b.scratch.visited.marks);
+                        assert_eq!(a.scratch.visited.words, b.scratch.visited.words);
                         assert_eq!(ea - a.scratch.results.len(), eb - b.scratch.results.len());
                     }
                 }
@@ -3272,6 +3287,31 @@ mod tests {
     use super::super::kernels::SplitMix;
     use super::super::tests::{brute_force, clustered, gaussian};
     use super::*;
+
+    #[test]
+    fn visited_bits_reset_between_searches() {
+        // Ids at word edges and the last vertex of a count that is not a multiple of 64.
+        let n = 64 * 5 + 3;
+        let mut marks = Marks::new(n, false);
+        let mut rng = SplitMix(5);
+        for search in 0..300 {
+            marks.next();
+            let mut set = std::collections::HashSet::new();
+            let fixed = [0, 63, 64, 127, n as u32 - 1];
+            for i in 0..40 {
+                let id = if i < fixed.len() && search % 2 == 0 {
+                    fixed[i]
+                } else {
+                    (rng.next_u64() % n as u64) as u32
+                };
+                assert_eq!(marks.seen(id), set.contains(&id));
+                assert_eq!(marks.insert(id), set.insert(id));
+                assert!(marks.seen(id));
+            }
+            let ones: u32 = marks.words.iter().map(|w| w.count_ones()).sum();
+            assert_eq!(ones as usize, set.len());
+        }
+    }
 
     #[test]
     fn compact_lists_preserve_order_search_and_persisted_bytes() {
