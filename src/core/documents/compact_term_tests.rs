@@ -240,3 +240,37 @@ fn chunk_boundaries_match_char_whitespace_on_mixed_text() {
         .collect();
     assert_eq!(chunks, reference);
 }
+
+/// Positions built from the interned term of each word are byte for byte the positions
+/// the reference analyzer builds, through the interner's word cache, title weighting,
+/// Unicode lowercasing and both stemming modes.
+#[test]
+fn interned_positions_match_the_reference_analyzer() {
+    let long = format!("{} tail", "Repeat repeats repeated ".repeat(400));
+    let texts = [
+        ("Running runs ran; the RUNNER ran\nand ran again", 3),
+        ("ÜBER über Σοφία ΣΟΦΊΑΣ naïve café CAFÉ 東京 東京", 1),
+        ("title line\nbody title body", 2),
+        ("", 1),
+        ("--- ...", 1),
+        (long.as_str(), 1),
+    ];
+    for stem in [true, false] {
+        let mut interner = super::Interner::default();
+        for whole_document in [false, true] {
+            for (text, title_weight) in texts {
+                let (terms, _) =
+                    interner.chunk_terms(text, title_weight, stem, Some(whole_document));
+                let reference =
+                    super::positions::Positions::from_text(text, stem, &terms, whole_document);
+                assert_eq!(
+                    serde_json::to_value(terms.positions.as_deref().unwrap()).unwrap(),
+                    serde_json::to_value(&reference).unwrap(),
+                    "{text:?} stem {stem}"
+                );
+                let (plain, _) = interner.chunk_terms(text, title_weight, stem, None);
+                assert!(plain.positions.is_none());
+            }
+        }
+    }
+}

@@ -3,7 +3,6 @@
 
 use anyhow::{ensure, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 
 use super::binary::{put_varint, Reader};
 use super::packed_terms::StoredTerms;
@@ -91,13 +90,57 @@ pub(super) fn tokens(text: &str, stem: bool) -> Vec<String> {
 }
 
 impl Positions {
+    /// The positions of a chunk's terms from the rank of each of its words' terms (the term's
+    /// index among the chunk's `terms` sorted terms), in text order.
+    pub(super) fn from_ranks(ranks: &[u32], terms: usize, whole_document: bool) -> Self {
+        // Counting sort of the word positions by term rank; each term's stay ascending.
+        let mut starts = vec![0u32; terms + 1];
+        for &rank in ranks {
+            starts[rank as usize + 1] += 1;
+        }
+        let mut total = 0;
+        for start in &mut starts {
+            total += *start;
+            *start = total;
+        }
+        let mut next = starts.clone();
+        let mut sorted = vec![0u32; ranks.len()];
+        for (position, &rank) in ranks.iter().enumerate() {
+            let at = &mut next[rank as usize];
+            sorted[*at as usize] = position as u32;
+            *at += 1;
+        }
+        let mut offsets = Vec::with_capacity(terms + 1);
+        let mut data = Vec::new();
+        offsets.push(0);
+        for term in starts.windows(2) {
+            let mut previous = 0;
+            for &position in &sorted[term[0] as usize..term[1] as usize] {
+                put_varint(&mut data, u64::from(position - previous));
+                previous = position;
+            }
+            offsets.push(u32::try_from(data.len()).expect("positions exceed u32"));
+        }
+        Self {
+            version: if whole_document {
+                DOCUMENT_VERSION
+            } else {
+                VERSION
+            },
+            offsets: offsets.into(),
+            data: data.into_boxed_slice(),
+        }
+    }
+
+    /// The reference analysis [`Self::from_ranks`] matches byte for byte.
+    #[cfg(test)]
     pub(super) fn from_text(
         text: &str,
         stem: bool,
         terms: &StoredTerms,
         whole_document: bool,
     ) -> Self {
-        let mut table = BTreeMap::<String, Vec<u32>>::new();
+        let mut table = std::collections::BTreeMap::<String, Vec<u32>>::new();
         for (position, token) in tokens(text, stem).into_iter().enumerate() {
             table.entry(token).or_default().push(position as u32);
         }

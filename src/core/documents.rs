@@ -682,6 +682,9 @@ struct Interner {
     /// empty between chunks.
     counts: Vec<u32>,
     counted: Vec<u32>,
+    /// The term id of each word of the chunk, in text order, while `record` is set.
+    sequence: Vec<u32>,
+    record: bool,
     lower: String,
     /// Terms are the lowercased words themselves rather than their stems.
     unstemmed: bool,
@@ -803,6 +806,9 @@ impl Interner {
                 }
             }
             let id = self.term_id(&text[start..at], ascii);
+            if self.record {
+                self.sequence.push(id);
+            }
             let count = &mut self.counts[id as usize];
             if *count == 0 {
                 self.counted.push(id);
@@ -816,14 +822,25 @@ impl Interner {
     /// The term table of `text` with its first line's terms counted `title_weight` times in
     /// total, and the weighted word count: what `terms(text, true)` plus the title weighting
     /// produce.
-    fn chunk_terms(&mut self, text: &str, title_weight: u32, stem: bool) -> (StoredTerms, usize) {
+    /// With `positions` (`Some(whole_document)`), the table also carries each term's word
+    /// positions, the bytes the reference analyzer (`Positions::from_text`) writes.
+    fn chunk_terms(
+        &mut self,
+        text: &str,
+        title_weight: u32,
+        stem: bool,
+        positions: Option<bool>,
+    ) -> (StoredTerms, usize) {
         if self.words.len() >= STEM_MEMO_CAPACITY || self.unstemmed == stem {
             *self = Self {
                 unstemmed: !stem,
                 ..Self::default()
             };
         }
+        self.sequence.clear();
+        self.record = positions.is_some();
         let mut words = self.count(text, 1);
+        self.record = false;
         if title_weight > 1 {
             words += self.count(text.lines().next().unwrap_or_default(), title_weight - 1);
         }
@@ -839,13 +856,29 @@ impl Interner {
             .iter()
             .map(|&id| terms[id as usize].len())
             .sum();
-        let table = StoredTerms::from_sorted_refs(
+        let mut table = StoredTerms::from_sorted_refs(
             self.counted.len(),
             bytes,
             self.counted
                 .iter()
                 .map(|&id| (&*terms[id as usize], counts[id as usize])),
         );
+        if let Some(whole_document) = positions {
+            // Each word's term as its rank among the chunk's sorted terms, through `counts`
+            // (cleared below).
+            for (rank, &id) in self.counted.iter().enumerate() {
+                counts[id as usize] = rank as u32;
+            }
+            for id in &mut self.sequence {
+                *id = counts[*id as usize];
+            }
+            table.positions = Some(Box::new(positions::Positions::from_ranks(
+                &self.sequence,
+                self.counted.len(),
+                whole_document,
+            )));
+            self.sequence.clear();
+        }
         for &id in &self.counted {
             counts[id as usize] = 0;
         }
@@ -940,10 +973,22 @@ impl Drop for PooledStemMemo<'_> {
 
 /// [`Interner::chunk_terms`] through the batch interner installed on this thread, or a
 /// one-off one.
+#[cfg(test)]
 fn chunk_terms(text: &str, title_weight: u32, stem: bool) -> (StoredTerms, usize) {
+    analyze_chunk(text, title_weight, stem, None)
+}
+
+/// A chunk's term table through the batch interner installed on this thread, or a one-off
+/// one, with each term's word positions when `positions` is `Some(whole_document)`.
+fn analyze_chunk(
+    text: &str,
+    title_weight: u32,
+    stem: bool,
+    positions: Option<bool>,
+) -> (StoredTerms, usize) {
     ACTIVE_STEM_MEMO.with(|active| match active.borrow_mut().as_mut() {
-        Some(interner) => interner.chunk_terms(text, title_weight, stem),
-        None => Interner::default().chunk_terms(text, title_weight, stem),
+        Some(interner) => interner.chunk_terms(text, title_weight, stem, positions),
+        None => Interner::default().chunk_terms(text, title_weight, stem, positions),
     })
 }
 
@@ -1054,23 +1099,16 @@ pub(crate) fn prepare_spans(
     for (i, &(start_byte, end_byte)) in chunks.iter().enumerate() {
         let text = &input.text[start_byte as usize..end_byte as usize];
         let source = keys.map_or(text, |k| k[i].as_str());
-        let (mut terms, word_count) = chunk_terms(
+        ensure!(
+            !options.positions || keys.is_none(),
+            "positions require the original chunk text as the lexical key"
+        );
+        let (terms, word_count) = analyze_chunk(
             source,
             if i == 0 { title_weight } else { 1 },
             !options.unstemmed,
+            options.positions.then_some(options.whole_document),
         );
-        if options.positions {
-            ensure!(
-                keys.is_none(),
-                "positions require the original chunk text as the lexical key"
-            );
-            terms.positions = Some(Box::new(positions::Positions::from_text(
-                source,
-                !options.unstemmed,
-                &terms,
-                options.whole_document,
-            )));
-        }
         let embedding = input
             .embeddings
             .as_ref()
