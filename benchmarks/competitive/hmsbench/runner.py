@@ -58,7 +58,7 @@ def hms_binary(name, example=False):
     path = target / HMS_PROFILE / ("examples" if example else "") / name
     if not path.exists():
         log(f"building {name}")
-        cmd = ["cargo", "build", "--profile", HMS_PROFILE, "--example" if example else "--bin", name]
+        cmd = ["cargo", "build", "--profile", HMS_PROFILE, "--features", "cli,mimalloc", "--example" if example else "--bin", name]
         subprocess.run(cmd, check=True, cwd=ROOT)
     return path
 

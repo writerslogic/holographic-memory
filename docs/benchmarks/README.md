@@ -20,7 +20,7 @@ uv run --no-project --python 3.13 --with pytest --with numpy==2.5.4 pytest bench
 ```
 
 `hms-bench run` builds nothing itself: it needs `public-bench` and the `competitive_text` example
-(`cargo build --profile dist --bin public-bench --example competitive_text`, with
+(`cargo build --profile dist --features cli,mimalloc --bin public-bench --example competitive_text`, with
 `CARGO_TARGET_DIR` if you use a private target directory; `dist` is the release build without the
 symbol table, the binary the install-size row measures), `uv`, a JVM (17+) for the Lucene row,
 and network access for the first run (datasets, pinned wheels, two Lucene jars with pinned sha256).

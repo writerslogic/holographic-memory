@@ -21,7 +21,7 @@ signing and provenance.
 
 The core crate compiles for `wasm32` by gating the file- and thread-bound modules
 (`engine`, `storage`, `admin`, `store_lock`, ...) with `cfg(not(target_arch = "wasm32"))` in
-`src/core/mod.rs`; `fs2` is a non-wasm dependency. A new module on the document path must stay
+`src/core/mod.rs`. A new module on the document path must stay
 wasm-clean: check with
 `cargo check --manifest-path bindings/wasm/Cargo.toml --target wasm32-unknown-unknown`.
 

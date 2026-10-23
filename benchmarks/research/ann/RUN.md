@@ -81,7 +81,7 @@ rerank 64, holdout 2000 train queries), with its ef sweep.
 
 ```sh
 BIN=target/release/public-bench
-cargo build --release --bin public-bench
+cargo build --release --features cli,mimalloc --bin public-bench
 DATA=~/.cache/hms-bench/glove-100-angular
 OUT=benchmarks/results/research/ann; mkdir -p $OUT
 CACHE=$OUT/glove-100.graph      # one graph for every arm: identical structure (graph_hash in each JSON)
@@ -207,7 +207,7 @@ is inherited (`run_measured` merges `os.environ`), so the knobs apply to the HMS
 
 ```sh
 ./benchmarks/competitive/hms-bench install hnswlib faiss-hnsw        # pinned envs under ~/.cache/hms-bench/competitive/envs
-cargo build --release --bin public-bench                              # the harness does not build
+cargo build --release --features cli,mimalloc --bin public-bench                              # the harness does not build
 # Full glove-100-angular (1,183,514 train, 10,000 test), 3 rounds, HMS + hnswlib + FAISS HNSW:
 ./benchmarks/competitive/hms-bench run --suite heavy --only ann --systems hnswlib faiss-hnsw --datasets glove-100-angular
 # The same with the knobs on the HMS row (one file per setting; name them in the readout):

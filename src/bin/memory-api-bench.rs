@@ -10,7 +10,7 @@
 //! warmed query, and per-query latency of the same queries through `search_documents` and
 //! through `Memory::recall` on the same store, interleaved so drift hits both alike.
 //!
-//! `cargo run --release --bin memory-api-bench -- --out benchmarks/results/memory_api_overhead.json`
+//! `cargo run --release --features cli --bin memory-api-bench -- --out benchmarks/results/memory_api_overhead.json`
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;

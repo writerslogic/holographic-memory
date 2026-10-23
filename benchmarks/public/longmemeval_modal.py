@@ -77,7 +77,7 @@ cpu_image = (
         copy=True,
         ignore=["target", "**/target", ".git", ".venv", "**/.venv", ".claude", "**/node_modules", "figures", "benchmarks/results"],
     )
-    .run_commands("cd /src && /root/.cargo/bin/cargo build --release --locked --bin public-bench")
+    .run_commands("cd /src && /root/.cargo/bin/cargo build --release --locked --features cli,mimalloc --bin public-bench")
     .env(HF)
     .add_local_python_source("longmemeval_pipeline")
 )
@@ -98,7 +98,7 @@ def _hms_image(cap: str) -> modal.Image:
                     "benchmarks/results"],
         )
         .env({"CUDA_COMPUTE_CAP": cap, "RUSTFLAGS": "--cfg hms_cuda"})
-        .run_commands("cd /src && /root/.cargo/bin/cargo build --release --locked --features local-models --bin public-bench")
+        .run_commands("cd /src && /root/.cargo/bin/cargo build --release --locked --features local-models,cli,mimalloc --bin public-bench")
         .env(HF)
         .add_local_python_source("longmemeval_pipeline")
     )

@@ -922,7 +922,7 @@ impl Drop for StemMemoGuard<'_> {
 /// ([`StemMemoPool::set_keep`]), when each batch's interner is freed with the batch.
 #[derive(Default)]
 pub(crate) struct StemMemoPool {
-    kept: parking_lot::Mutex<Option<StemMemo>>,
+    kept: crate::core::sync::Mutex<Option<StemMemo>>,
     release: std::sync::atomic::AtomicBool,
 }
 

@@ -1,7 +1,9 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use parking_lot::{Condvar, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{Condvar, PoisonError};
+
+use crate::core::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 #[derive(Default)]
 struct WriterState {
@@ -28,7 +30,10 @@ impl WriterQueue {
             .checked_add(1)
             .expect("writer reservation counter exhausted");
         while state.serving != ticket {
-            self.changed.wait(&mut state);
+            state = self
+                .changed
+                .wait(state)
+                .unwrap_or_else(PoisonError::into_inner);
         }
         WriterLease {
             queue: self,

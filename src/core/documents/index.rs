@@ -50,7 +50,7 @@ pub(crate) struct DocumentStore {
     /// Chunks memorized lexical-only (never in the vector index).
     lexical_chunks: usize,
     /// Serializes the store's lazy encoders, so a backlog is encoded once, not per caller.
-    encode_gate: Arc<parking_lot::Mutex<()>>,
+    encode_gate: Arc<crate::core::sync::Mutex<()>>,
 }
 
 #[cfg(test)]
@@ -301,7 +301,7 @@ impl DocumentStore {
     }
 
     /// The lock lazy encoders of this store take for the duration of a backlog.
-    pub(crate) fn encode_gate(&self) -> Arc<parking_lot::Mutex<()>> {
+    pub(crate) fn encode_gate(&self) -> Arc<crate::core::sync::Mutex<()>> {
         Arc::clone(&self.encode_gate)
     }
 

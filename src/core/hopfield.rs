@@ -260,8 +260,8 @@ fn weighted_reconstruct(
     use crate::core::entangled::DEFAULT_RHO_DENOM;
 
     let target = (dim / DEFAULT_RHO_DENOM).max(1);
-    let mut freq: fxhash::FxHashMap<u32, f64> =
-        fxhash::FxHashMap::with_capacity_and_hasher(target * 2, Default::default());
+    let mut freq: crate::core::hash::FastMap<u32, f64> =
+        crate::core::hash::FastMap::with_capacity_and_hasher(target * 2, Default::default());
 
     for (i, (_, pat)) in patterns.iter().enumerate() {
         let w = weights[i];

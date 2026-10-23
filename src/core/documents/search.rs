@@ -4,8 +4,8 @@
 use super::postings::PostingList;
 use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
+use crate::core::hash::FastMap;
 use anyhow::{ensure, Result};
-use fxhash::FxHashMap;
 use serde_json::Value;
 
 use super::dense::DenseIndex;
@@ -60,7 +60,7 @@ struct CapturedPosting {
 /// to fill per query, a hash map beyond.
 enum SlotPositions {
     Dense(Vec<u32>),
-    Sparse(FxHashMap<usize, u32>),
+    Sparse(FastMap<usize, u32>),
 }
 
 const DENSE_SLOT_LIMIT: usize = 1 << 19;
@@ -70,7 +70,7 @@ impl SlotPositions {
         if slot_count <= DENSE_SLOT_LIMIT {
             Self::Dense(vec![u32::MAX; slot_count])
         } else {
-            Self::Sparse(FxHashMap::default())
+            Self::Sparse(FastMap::default())
         }
     }
 
@@ -614,7 +614,7 @@ fn execute_query(captured: &CapturedQuery) -> Vec<DocumentResult> {
             .expect("indexed search lost its query embedding");
         let (hits, _) = index.search(query, captured.prepared.limit, captured.prepared.minimum);
         let mut chunks = captured.chunks.clone();
-        let mut positions: FxHashMap<_, _> = captured
+        let mut positions: FastMap<_, _> = captured
             .chunks
             .iter()
             .enumerate()
@@ -830,7 +830,7 @@ fn score_chunks(
 mod tests {
     use super::*;
     use crate::core::encoding::TextEncoder;
-    use parking_lot::RwLock;
+    use crate::core::sync::RwLock;
     use serde_json::json;
     use std::sync::Barrier;
 

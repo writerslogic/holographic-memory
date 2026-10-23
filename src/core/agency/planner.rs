@@ -13,7 +13,7 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
-use fxhash::FxHashSet;
+use crate::core::hash::FastSet;
 
 use crate::core::triple_store::TripleStore;
 
@@ -99,7 +99,7 @@ impl Planner {
         max_depth: usize,
     ) -> Plan {
         let mut actions = Vec::new();
-        let mut visited = FxHashSet::default();
+        let mut visited = FastSet::default();
         visited.insert(goal.to_string());
 
         // Best-first search using a min-heap on cost.

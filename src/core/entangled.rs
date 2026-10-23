@@ -529,7 +529,7 @@ fn backfill_collisions(indices: &mut Vec<u32>, active_count: usize, dim: usize, 
 
 /// Splitmix64-based mixer with full avalanche. Two inputs are combined via
 /// wrapping arithmetic then passed through the splitmix64 finalizer.
-/// Close seeds give unrelated outputs (FxHasher's avalanche is too weak for that).
+/// Close seeds give unrelated outputs (Fx hashing's avalanche is too weak for that).
 pub fn hash_u64(a: u64, b: u64) -> u64 {
     let mut z = a.wrapping_mul(0x9E3779B97F4A7C15).wrapping_add(b);
     z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);

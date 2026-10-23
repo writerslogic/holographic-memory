@@ -247,7 +247,7 @@ here. No ranking against the paper is implied.
 ```sh
 uv run --script benchmarks/public/prepare.py beir scifact
 uv run --script benchmarks/public/prepare.py ann glove-100-angular
-cargo build --release --bin public-bench
+cargo build --release --features cli,mimalloc --bin public-bench
 ./target/release/public-bench beir --data ~/.cache/hms-bench/scifact --dim 16384 --out scifact.json
 uv run --script benchmarks/public/evaluate.py beir scifact scifact.json
 ./target/release/public-bench ann --data ~/.cache/hms-bench/glove-100-angular --dim 16384 --out glove.json

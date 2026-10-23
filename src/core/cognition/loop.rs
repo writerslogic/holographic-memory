@@ -7,7 +7,7 @@
 //! and analogy detection on a configurable interval. Uses READ-ONLY locks on
 //! meaning memory stores. Discovered insights are collected in a separate Vec.
 
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;

@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::core::hash::FastMap;
 use anyhow::{anyhow, Result};
-use fxhash::FxHashMap;
 
 use super::entangled::EntangledHVec;
 
@@ -10,7 +10,7 @@ use super::entangled::EntangledHVec;
 /// (Note: This is strictly for Semantic VSA Roles, not Security Identity Access Control. For W3C DIDs and VCs, see `src/core/security.rs`).
 /// Fixes XOR commutativity: without shifts, S XOR R XOR O = O XOR R XOR S.
 pub struct RoleRegistry {
-    shifts: FxHashMap<String, usize>,
+    shifts: FastMap<String, usize>,
     #[allow(dead_code)]
     dim: usize,
 }
@@ -18,7 +18,7 @@ pub struct RoleRegistry {
 impl RoleRegistry {
     pub fn new(dim: usize) -> Self {
         let mut reg = Self {
-            shifts: FxHashMap::default(),
+            shifts: FastMap::default(),
             dim,
         };
         reg.shifts.insert("subject".to_string(), 0);

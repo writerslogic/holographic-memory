@@ -40,6 +40,9 @@ use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, 
 use rayon::prelude::*;
 use serde_json::{json, Value};
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[derive(Parser)]
 struct Cli {
     #[command(subcommand)]

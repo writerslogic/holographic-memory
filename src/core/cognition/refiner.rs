@@ -12,7 +12,7 @@
 //! The refinement step runs as part of the cognition loop or is called
 //! explicitly via the Governor. It requires write access to AtomMemory.
 
-use fxhash::FxHashMap;
+use crate::core::hash::FastMap;
 
 use crate::core::atom_memory::AtomMemory;
 use crate::core::entangled::EntangledHVec;
@@ -82,7 +82,7 @@ impl DistributionalRefiner {
         }
 
         // Build: atom -> set of relations it participates in (as subject)
-        let mut atom_relations: FxHashMap<String, Vec<String>> = FxHashMap::default();
+        let mut atom_relations: FastMap<String, Vec<String>> = FastMap::default();
         for t in &snapshot {
             atom_relations
                 .entry(t.subject_id.clone())
@@ -96,7 +96,7 @@ impl DistributionalRefiner {
         }
 
         // Build: relation -> list of subject atoms
-        let mut relation_subjects: FxHashMap<String, Vec<String>> = FxHashMap::default();
+        let mut relation_subjects: FastMap<String, Vec<String>> = FastMap::default();
         for t in &snapshot {
             relation_subjects
                 .entry(t.relation_id.clone())
@@ -124,7 +124,7 @@ impl DistributionalRefiner {
             };
 
             // Collect peer vectors across all relations this atom participates in
-            let mut peer_index_freq: FxHashMap<u32, f64> = FxHashMap::default();
+            let mut peer_index_freq: FastMap<u32, f64> = FastMap::default();
             let mut contributing_relations = 0usize;
 
             for rel in relations {
@@ -167,7 +167,8 @@ impl DistributionalRefiner {
             let orig_slots = target_count.saturating_sub(ctx_slots);
 
             // Top context indices by frequency (excluding those already in original)
-            let orig_set: fxhash::FxHashSet<u32> = original.indices().iter().copied().collect();
+            let orig_set: crate::core::hash::FastSet<u32> =
+                original.indices().iter().copied().collect();
             let mut ctx_scored: Vec<(u32, f64)> = peer_index_freq
                 .iter()
                 .filter(|(idx, _)| !orig_set.contains(idx))
