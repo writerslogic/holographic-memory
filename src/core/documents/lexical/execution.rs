@@ -183,29 +183,31 @@ impl Pruning {
     }
 
     /// A bound of the score of any chunk in the block `lead` stands on, from that block's
-    /// bounds and the other clauses' ceilings.
+    /// bounds and the bounds of the other lists' blocks over the same slots.
     fn over_lead_block(
         &self,
         states: &[TermState<'_>],
         indices: &[Vec<Option<usize>>],
         lead: usize,
     ) -> f64 {
-        let (frequency, words) = states[lead].cursor.block_maximum();
+        let cursor = &states[lead].cursor;
+        let (Some((first, _)), Some(last)) = (cursor.peek(), cursor.block_end()) else {
+            return 0.0;
+        };
+        let lead_maximum = cursor.block_maximum();
         let mut sum = 0.0;
         for (clause, indices) in self.clauses.iter().zip(indices) {
             let Some(clause) = clause else { continue };
-            let value = if indices.contains(&Some(lead)) {
-                let maxima = indices.iter().map(|index| match index {
-                    Some(i) if *i == lead => (frequency, words),
-                    Some(i) => states[*i].maxima,
-                    None => (0, u32::MAX),
-                });
-                let (frequency, words) = combine(maxima);
-                clause.bound.at(frequency, words)
-            } else {
-                clause.ceiling
-            };
-            sum = up(sum + value);
+            let maxima = indices.iter().map(|index| match index {
+                Some(i) if *i == lead => lead_maximum,
+                Some(i) => states[*i]
+                    .cursor
+                    .range_maximum(first, last)
+                    .unwrap_or((0, u32::MAX)),
+                None => (0, u32::MAX),
+            });
+            let (frequency, words) = combine(maxima);
+            sum = up(sum + clause.bound.at(frequency, words));
         }
         sum_bound(sum, self.clauses.len())
     }

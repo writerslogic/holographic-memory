@@ -791,6 +791,11 @@ impl PostingList {
             self.blocks.reserve_exact(run.len().div_ceil(BLOCK_LEN));
         }
         if self.count > 0 && first as u64 <= self.last {
+            if let [posting] = run {
+                // A replacement's posting returns to its slot: one block takes it.
+                self.insert(*posting, words);
+                return;
+            }
             let merged = merge_sorted(&self.decode(), run);
             self.encode(&merged, words);
             return;
@@ -842,10 +847,10 @@ impl PostingList {
         (block, self.decode_block_into(block, out))
     }
 
-    /// Re-encodes block `index` as `postings`, dropping it when they are empty. The later
-    /// blocks keep their encoding and bounds and only move, so a rewrite recomputes one
-    /// block's bounds rather than the list's; blocks other than the last may then hold fewer
-    /// than [`BLOCK_LEN`] postings.
+    /// Re-encodes block `index` as `postings`: no block when they are empty, two halves when
+    /// they overflow a block. The later blocks keep their encoding and bounds and only move,
+    /// so an edit recomputes one block's bounds rather than the list's; blocks other than the
+    /// last may then hold fewer than [`BLOCK_LEN`] postings.
     fn rewrite_block(&mut self, index: usize, postings: &[Posting], words: impl Fn(usize) -> u32) {
         let start = self.blocks[index].offset;
         let end = self
@@ -853,11 +858,16 @@ impl PostingList {
             .get(index + 1)
             .map_or(self.data.len(), |block| block.offset);
         let mut scratch = PostingList::default();
-        if !postings.is_empty() {
+        let size = if postings.len() > BLOCK_LEN {
+            postings.len().div_ceil(2)
+        } else {
+            BLOCK_LEN
+        };
+        for run in postings.chunks(size) {
             scratch.append_block(
-                postings,
-                postings.iter().map(|p| words(p.0)).min().unwrap_or(0),
-                frontier(postings.iter().map(|p| (p.1, words(p.0)))),
+                run,
+                run.iter().map(|p| words(p.0)).min().unwrap_or(0),
+                frontier(run.iter().map(|p| (p.1, words(p.0)))),
             );
         }
         let length = scratch.data.len();
@@ -865,16 +875,31 @@ impl PostingList {
         for block in &mut self.blocks[index + 1..] {
             block.offset = block.offset - (end - start) + length;
         }
-        match scratch.blocks.pop() {
-            Some(mut block) => {
-                block.offset = start;
-                self.blocks[index] = block;
-            }
-            None => {
-                self.blocks.remove(index);
-            }
+        for block in &mut scratch.blocks {
+            block.offset += start;
         }
+        self.blocks.splice(index..=index, scratch.blocks);
         self.touch();
+    }
+
+    /// Inserts one posting before the list's last into its block.
+    fn insert(&mut self, posting: Posting, words: impl Fn(usize) -> u32) {
+        let mut decoded = [(0, 0); BLOCK_LEN + 1];
+        let block = self.blocks.partition_point(|b| b.last < posting.0);
+        let count = {
+            let out: &mut [Posting; BLOCK_LEN] =
+                (&mut decoded[..BLOCK_LEN]).try_into().expect("block");
+            self.decode_block_into(block, out)
+        };
+        let at = match decoded[..count].binary_search_by_key(&posting.0, |p| p.0) {
+            Ok(_) => panic!("duplicate document slot in posting"),
+            Err(at) => at,
+        };
+        decoded.copy_within(at..count, at + 1);
+        decoded[at] = posting;
+        self.rewrite_block(block, &decoded[..count + 1], words);
+        self.count += 1;
+        self.positive_count += u32::from(posting.1 > 0);
     }
 
     fn remove(&mut self, slot: usize, words: impl Fn(usize) -> u32) {
@@ -1056,6 +1081,21 @@ impl<'a> PostingCursor<'a> {
             self.load(block);
         }
         self.length > 0
+    }
+
+    /// The largest frequency and least length over the blocks at or after the cursor's that
+    /// overlap slots `first..=last`, read without decoding; `None` when none overlaps.
+    pub(super) fn range_maximum(&self, first: usize, last: usize) -> Option<(u32, u32)> {
+        if self.index >= self.length {
+            return None;
+        }
+        let blocks = &self.list.blocks[self.block..];
+        let start = blocks.partition_point(|b| b.last < first);
+        blocks[start..]
+            .iter()
+            .take_while(|b| b.first <= last)
+            .map(|b| (b.max_frequency, b.min_words))
+            .reduce(|(f, w), (g, v)| (f.max(g), w.min(v)))
     }
 
     pub(super) fn block_end(&self) -> Option<usize> {

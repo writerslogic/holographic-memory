@@ -729,9 +729,9 @@ mod tests {
         for seed in 0..60usize {
             let ids: Vec<u32> = (0..700u32)
                 .filter(|&i| match seed % 4 {
-                    0 => (i as usize * 31 + seed) % (seed + 2) == 0,
-                    1 => i < 3 || i > 690 || (i as usize + seed) % 97 == 0,
-                    2 => (i as usize / 50 + seed) % 3 == 0,
+                    0 => (i as usize * 31 + seed).is_multiple_of(seed + 2),
+                    1 => !(3..=690).contains(&i) || (i as usize + seed).is_multiple_of(97),
+                    2 => (i as usize / 50 + seed).is_multiple_of(3),
                     _ => i as usize == seed * 11 % 700,
                 })
                 .collect();
