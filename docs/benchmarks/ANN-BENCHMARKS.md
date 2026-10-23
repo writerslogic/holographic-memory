@@ -30,3 +30,23 @@ Competitors that were not run include NGT/ONNG/QSG-NGT and DiskANN/Vamana. The h
 ![glove-100-angular](ann-benchmarks/glove-100-angular.png)
 ![sift-128-euclidean](ann-benchmarks/sift-128-euclidean.png)
 ![fashion-mnist-784-euclidean](ann-benchmarks/fashion-mnist-784-euclidean.png)
+
+## Single-thread search after `perf/single-thread-search` (v2, unlocked rounds)
+
+[`ann_benchmarks_single_thread_wl02_v2.json`](../../benchmarks/results/ann_benchmarks_single_thread_wl02_v2.json) pairs the code of the v1 standing (`791749b`, 4-bit traversal codes) against this branch on the same host and the same indexes: degree 32, build_ef 500, 8-bit residual, one pinned CPU, 2,000 test queries per configuration, two rounds interleaved before/after, median QPS. Three arms: the code before; the code after on the same 4-bit index, which returns the same ids for every configuration (the file carries the result hashes); and the code after with 8-bit traversal codes, now the wrapper's `code_bits` default. These rounds ran outside the host's timing lock, which another job held for the whole window, at a 1-minute load of 9 to 25: absolute QPS are below the v1 harness numbers and the before/after ratios are inflated where the old code waited on memory. A run of the same arms with 10,000 queries and three rounds under the lock is queued and replaces this table when it lands. The competitor column repeats the v1 standing; the v1 noise note (ratios within 1.37x are ties) applies. GloVe is degree 32 here, so its 0.95 and 0.99 points (degree 64 in v1) are not reached by the swept pool sizes.
+
+| Dataset | Recall | HMS before (4-bit) | HMS after (4-bit, same results) | HMS after (8-bit codes) | Fastest competitor (v1) | QPS |
+|---|---|---|---|---|---|---|
+| fashion-mnist-784-euclidean | 0.90 | 6772 | 9402 | 11302 | glass | 14180 |
+| fashion-mnist-784-euclidean | 0.95 | 5198 | 9362 | 11302 | glass | 14180 |
+| fashion-mnist-784-euclidean | 0.99 | 5040 | 7448 | 6774 | glass | 7809 |
+| sift-128-euclidean | 0.90 | 4314 | 6792 | 12676 | faiss-ivfpqfs | 5276 |
+| sift-128-euclidean | 0.95 | 4314 | 6792 | 7406 | faiss-ivfpqfs | 3787 |
+| sift-128-euclidean | 0.99 | 1174 | 2030 | 3679 | faiss-ivfpqfs | 1895 |
+| glove-100-angular | 0.90 | 538 | 1184 | 1874 | scann | 2985 |
+| glove-100-angular | 0.95 | - | - | - | scann | 1535 |
+| glove-100-angular | 0.99 | - | - | - | scann | 592 |
+
+GloVe 0.90, 0.95 and 0.99 remain losses to scann on these rounds (degree 32; v1 used degree 64 for 0.95 and 0.99, not rebuilt here). Fashion-MNIST 0.90 and 0.95 remain behind glass. Fashion-MNIST 0.99 and the three SIFT points are ahead of the v1 competitor numbers, but the two measurements were not made at the same time or under the same load, so a harness rerun decides them.
+
+What changed, from the profile in the results file (`profile_before`): on this host each row estimate waited on the scale (and, for Euclidean, the norm term) of the row, two random 4-byte reads that were not prefetched with the code row; the re-rank kernels were scalar; the entry descent read upper-layer rows one at a time. Prefetching those, and AVX2/NEON re-rank kernels that keep the scalar arithmetic, leave every result unchanged. On SIFT the 4-bit max-abs code is what forces the large pool: with 8-bit codes the same graph reaches 0.99 at ef 160 instead of 320 and 0.95 at ef 45 instead of 80. On GloVe the two code widths give the same recall at every ef (0.9170 vs 0.9165 at ef 320), so its pool size is a property of the graph, and GloVe keeps its losses.
