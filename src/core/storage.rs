@@ -15,7 +15,7 @@ pub(crate) use staging::StagedArena;
 
 pub(crate) const FORMAT_MANIFEST: &str = "format.json";
 pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
-pub const STORAGE_FORMAT_VERSION: u32 = 4;
+pub(crate) const STORAGE_FORMAT_VERSION: u32 = 4;
 
 pub(crate) const SEGMENT_SIZE: usize = 64 * 1024 * 1024;
 pub(crate) const LEGACY_SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
@@ -33,14 +33,22 @@ pub(crate) const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
 /// (stores written before the marker) still means end of log.
 pub(crate) const END_MARK: u32 = 0x454E_444C;
 
-/// True if the 16 bytes at `at` are an end-of-log marker or the legacy zero header.
+/// The header words `[crc, raw_len, comp_len, version]` of the frame at the start of `bytes`,
+/// or `None` if fewer than [`HEADER_SIZE`] bytes remain.
 #[inline]
+#[must_use]
+fn header_words(bytes: &[u8]) -> Option<[u32; 4]> {
+    let (words, _) = bytes.first_chunk::<HEADER_SIZE>()?.as_chunks::<4>();
+    Some(std::array::from_fn(|i| u32::from_le_bytes(words[i])))
+}
+
+/// True if `header` starts with an end-of-log marker or the legacy zero header.
+#[inline]
+#[must_use]
 pub(crate) fn is_log_end(header: &[u8]) -> bool {
-    let word = |i: usize| u32::from_le_bytes(header[i..i + 4].try_into().expect("4 bytes"));
-    header.len() >= HEADER_SIZE
-        && word(4) == 0
-        && word(8) == 0
-        && (header[..HEADER_SIZE].iter().all(|&b| b == 0) || (word(0) == 0 && word(12) == END_MARK))
+    header_words(header).is_some_and(|[crc, raw_len, comp_len, version]| {
+        crc == 0 && raw_len == 0 && comp_len == 0 && (version == 0 || version == END_MARK)
+    })
 }
 
 fn end_marker_bytes() -> [u8; HEADER_SIZE] {
@@ -51,17 +59,17 @@ fn end_marker_bytes() -> [u8; HEADER_SIZE] {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub(crate) struct FormatManifest {
-    pub magic: String,
-    pub version: u32,
-    pub segment_size: usize,
+    pub(crate) magic: String,
+    pub(crate) version: u32,
+    pub(crate) segment_size: usize,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct ArenaStats {
-    pub format_version: u32,
-    pub segment_count: usize,
-    pub used_bytes: usize,
-    pub capacity_bytes: usize,
+pub(crate) struct ArenaStats {
+    pub(crate) format_version: u32,
+    pub(crate) segment_count: usize,
+    pub(crate) used_bytes: usize,
+    pub(crate) capacity_bytes: usize,
 }
 
 /// The writable segment: its mapping and the open file behind it, replaced together, so a
@@ -102,16 +110,14 @@ impl ActiveSegment {
 }
 
 /// RwLock-guarded segmented mmap arena with LZ4 compression and CRC32 framing.
-/// Writers acquire a write lock; readers acquire a read lock.
-/// Note: `version_counter` resets to 0 on restart (no WAL recovery).
 /// Every entry is framed: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32][Data: bytes]
-pub struct PersistentArena {
+pub(crate) struct PersistentArena {
     segment_size: usize,
     format_version: u32,
     base_path: PathBuf,
     data_path: RwLock<PathBuf>,
     read_segments: RwLock<Vec<Arc<Mmap>>>,
-    active_segment: Arc<RwLock<ActiveSegment>>,
+    active_segment: RwLock<ActiveSegment>,
     active_id: AtomicUsize,
     write_offset: AtomicUsize,
     active_capacity: AtomicUsize,
@@ -135,7 +141,7 @@ impl PreparedCompaction {
 }
 
 impl PersistentArena {
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub(crate) fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
         let manifest = Self::validate_or_create_manifest(&base)?;
@@ -159,6 +165,8 @@ impl PersistentArena {
         for i in 0..active_id {
             let p = data_path.join(format!("seg_{}.bin", i));
             let file = File::open(&p)?;
+            // SAFETY: segments before the active one are sealed and never written again; the
+            // store lock keeps other engines out of the directory.
             let mmap = unsafe { Mmap::map(&file)? };
             segments.push(Arc::new(mmap));
         }
@@ -220,7 +228,7 @@ impl PersistentArena {
             base_path: base,
             data_path: RwLock::new(data_path),
             read_segments: RwLock::new(segments),
-            active_segment: Arc::new(RwLock::new(active)),
+            active_segment: RwLock::new(active),
             active_id: AtomicUsize::new(active_id),
             write_offset: AtomicUsize::new(recovered_offset),
             active_capacity: AtomicUsize::new(active_capacity),
@@ -286,7 +294,7 @@ impl PersistentArena {
         Ok(manifest)
     }
 
-    pub fn stats(&self) -> ArenaStats {
+    pub(crate) fn stats(&self) -> ArenaStats {
         let segment_count = self.active_id.load(Ordering::Acquire) + 1;
         let used_bytes = self.active_id.load(Ordering::Acquire) * self.segment_size
             + self.write_offset.load(Ordering::Acquire);
@@ -300,7 +308,7 @@ impl PersistentArena {
     }
 
     /// Durably flush all pending writes in the active segment.
-    pub fn flush(&self) -> Result<()> {
+    pub(crate) fn flush(&self) -> Result<()> {
         self.active_segment.write().sync()
     }
 
@@ -328,24 +336,9 @@ impl PersistentArena {
                 None => Ok((offset, max_version)),
             }
         };
-        while offset + HEADER_SIZE <= data.len() {
-            // Unwraps are safe: the loop guard ensures at least HEADER_SIZE (16) bytes
-            // remain, so each 4-byte slice is within bounds.
-            let raw_len = u32::from_le_bytes(
-                data[offset + 4..offset + 8]
-                    .try_into()
-                    .expect("4-byte slice"),
-            ) as usize;
-            let comp_len = u32::from_le_bytes(
-                data[offset + 8..offset + 12]
-                    .try_into()
-                    .expect("4-byte slice"),
-            ) as usize;
-            let version = u32::from_le_bytes(
-                data[offset + 12..offset + 16]
-                    .try_into()
-                    .expect("4-byte slice"),
-            );
+        // `offset` never passes `data.len()`: it only advances past a frame that fits.
+        while let Some([_, raw_len, comp_len, version]) = header_words(&data[offset..]) {
+            let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
 
             // A zero header or the end marker means no more frames.
             if raw_len == 0 && comp_len == 0 {
@@ -378,15 +371,11 @@ impl PersistentArena {
 
     /// True if the frame at `offset` has plausible lengths, decompresses and matches its CRC32.
     fn frame_checks_out(data: &[u8], offset: usize) -> bool {
-        if offset + HEADER_SIZE > data.len() {
+        let Some([expected_crc, raw_len, comp_len, _]) = data.get(offset..).and_then(header_words)
+        else {
             return false;
-        }
-        let word = |at: usize| u32::from_le_bytes(data[at..at + 4].try_into().expect("4 bytes"));
-        let (expected_crc, raw_len, comp_len) = (
-            word(offset),
-            word(offset + 4) as usize,
-            word(offset + 8) as usize,
-        );
+        };
+        let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
         if comp_len == 0 || raw_len == 0 || raw_len > MAX_RAW_FRAME_SIZE || comp_len > raw_len {
             return false;
         }
@@ -421,7 +410,7 @@ impl PersistentArena {
         })
     }
 
-    pub fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
+    pub(crate) fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
         // Rotation and publication take active before segments; retain both to select one mapping.
         let active = self.active_segment.read();
         let reader = self.read_segments.read();
@@ -454,18 +443,11 @@ impl PersistentArena {
         }
     }
 
-    pub fn read_frame(&self, global_offset: usize) -> Result<(Vec<u8>, u32)> {
+    pub(crate) fn read_frame(&self, global_offset: usize) -> Result<(Vec<u8>, u32)> {
         let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
-        if header_bytes.len() < HEADER_SIZE {
-            return Err(anyhow!("Truncated header at offset {}", global_offset));
-        }
-
-        let expected_crc = u32::from_le_bytes(header_bytes[0..4].try_into().expect("4-byte slice"));
-        let raw_len =
-            u32::from_le_bytes(header_bytes[4..8].try_into().expect("4-byte slice")) as usize;
-        let comp_len =
-            u32::from_le_bytes(header_bytes[8..12].try_into().expect("4-byte slice")) as usize;
-        let version = u32::from_le_bytes(header_bytes[12..16].try_into().expect("4-byte slice"));
+        let [expected_crc, raw_len, comp_len, version] = header_words(&header_bytes)
+            .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
+        let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
 
         if raw_len == 0 {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
@@ -517,14 +499,11 @@ impl PersistentArena {
         Ok((data, version))
     }
 
-    pub fn next_offset(&self, global_offset: usize) -> Result<usize> {
+    pub(crate) fn next_offset(&self, global_offset: usize) -> Result<usize> {
         let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
-        if header_bytes.len() < HEADER_SIZE {
-            return Err(anyhow!("Truncated header at offset {}", global_offset));
-        }
-
-        let comp_len =
-            u32::from_le_bytes(header_bytes[8..12].try_into().expect("4-byte slice")) as usize;
+        let [_, _, comp_len, _] = header_words(&header_bytes)
+            .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
+        let comp_len = comp_len as usize;
         if comp_len == 0 {
             return Err(anyhow!("Empty frame at offset {}", global_offset));
         }
@@ -542,7 +521,7 @@ impl PersistentArena {
         Ok(next)
     }
 
-    pub fn write_slice(&self, data: &[u8]) -> Result<usize> {
+    pub(crate) fn write_slice(&self, data: &[u8]) -> Result<usize> {
         self.write_frame(data, true)
     }
 
@@ -569,8 +548,7 @@ impl PersistentArena {
 
         let total_frame_len = HEADER_SIZE + comp_len;
 
-        // Guard against raw_len truncation when cast to u32 in the header.
-        // This is defensive; MAX_RAW_FRAME_SIZE (50 MB) << u32::MAX (4 GB).
+        // The header stores both lengths as u32.
         if raw_len > u32::MAX as usize || comp_len > u32::MAX as usize {
             return Err(anyhow!(
                 "Frame payload exceeds u32 header capacity: raw={}, comp={}",
@@ -579,9 +557,8 @@ impl PersistentArena {
             ));
         }
 
-        // Acquire write lock for the entire reserve+write sequence.
-        // This prevents data races from concurrent writers sharing the
-        // same mmap and eliminates the TOCTOU race on segment rotation.
+        // One write guard spans reserve and write, so concurrent writers cannot share a range
+        // and rotation cannot interleave between the check and the copy.
         let mut active = self.active_segment.write();
 
         // Check-then-reserve under write lock to avoid wasting space at segment boundaries.
@@ -596,35 +573,14 @@ impl PersistentArena {
         self.write_offset
             .store(offset + total_frame_len, Ordering::Release);
 
-        // SAFETY: we hold the exclusive write lock, so no concurrent writers.
-        // Growth and rotation ensure offset + total_frame_len fits the guarded mapping.
-        // Each copy_nonoverlapping targets a distinct, non-overlapping range:
-        //   [offset..+4], [offset+4..+8], [offset+8..+12], [offset+12..+16], [offset+16..+16+comp_len]
+        // Growth and rotation made the guarded mapping hold the whole frame.
         debug_assert!(offset + total_frame_len <= self.segment_size);
-        debug_assert!(offset + total_frame_len <= active.map.len());
-        debug_assert!(total_frame_len == HEADER_SIZE + comp_len);
-        unsafe {
-            let ptr = active.map.as_ptr() as *mut u8;
-            let target = ptr.add(offset);
-            // CRC32 at +0
-            std::ptr::copy_nonoverlapping(crc.to_le_bytes().as_ptr(), target, 4);
-            // RawLen at +4
-            std::ptr::copy_nonoverlapping(
-                (raw_len as u32).to_le_bytes().as_ptr(),
-                target.add(4),
-                4,
-            );
-            // CompLen at +8
-            std::ptr::copy_nonoverlapping(
-                (comp_len as u32).to_le_bytes().as_ptr(),
-                target.add(8),
-                4,
-            );
-            // Version at +12
-            std::ptr::copy_nonoverlapping(version.to_le_bytes().as_ptr(), target.add(12), 4);
-            // Data at +HEADER_SIZE
-            std::ptr::copy_nonoverlapping(write_data.as_ptr(), target.add(HEADER_SIZE), comp_len);
-        }
+        let frame = &mut active.map[offset..offset + total_frame_len];
+        frame[0..4].copy_from_slice(&crc.to_le_bytes());
+        frame[4..8].copy_from_slice(&(raw_len as u32).to_le_bytes());
+        frame[8..12].copy_from_slice(&(comp_len as u32).to_le_bytes());
+        frame[12..HEADER_SIZE].copy_from_slice(&version.to_le_bytes());
+        frame[HEADER_SIZE..].copy_from_slice(&write_data);
         let frame_end = offset + total_frame_len;
         // The end marker rides in the frame's flush range: it records the committed end.
         let sentinel_len = if frame_end + HEADER_SIZE <= active.map.len() {
@@ -727,6 +683,7 @@ impl PersistentArena {
             .join(format!("seg_{}.bin", current_id));
         let file = File::open(&path)?;
         active.sync()?;
+        // SAFETY: the segment is sealed by this rotation and never written again.
         let mmap = unsafe { Mmap::map(&file)? };
         self.read_segments.write().push(Arc::new(mmap));
 
@@ -783,8 +740,9 @@ impl PersistentArena {
                 *cursor = segment_end;
                 continue;
             }
-            let raw = u32::from_le_bytes(header[4..8].try_into()?) as usize;
-            let compressed = u32::from_le_bytes(header[8..12].try_into()?) as usize;
+            let [_, raw, compressed, _] =
+                header_words(&header).context("truncated compaction replay header")?;
+            let (raw, compressed) = (raw as usize, compressed as usize);
             ensure!(
                 (1..=MAX_RAW_FRAME_SIZE).contains(&raw) && (1..=raw).contains(&compressed),
                 "invalid compaction replay frame lengths"
@@ -846,21 +804,15 @@ impl PersistentArena {
         Ok(path)
     }
 
-    pub(crate) fn replace_with_compacted(&self, prepared: PreparedCompaction) -> Result<()> {
-        self.replace_compacted(prepared, false)
-    }
-
-    /// Like [`Self::replace_with_compacted`], but overwrites the replaced generation with
-    /// zeros and syncs it before unlinking, then does the same for every unreferenced
-    /// generation or legacy segment left by an interrupted compaction.
-    pub(crate) fn replace_with_compacted_scrubbing(
+    /// Publishes the compacted generation in `prepared` and removes the replaced one. With
+    /// `scrub`, the replaced generation is overwritten with zeros and synced before unlinking,
+    /// and so is every unreferenced generation or legacy segment left by an interrupted
+    /// compaction.
+    pub(crate) fn replace_with_compacted(
         &self,
         prepared: PreparedCompaction,
+        scrub: bool,
     ) -> Result<()> {
-        self.replace_compacted(prepared, true)
-    }
-
-    fn replace_compacted(&self, prepared: PreparedCompaction, scrub: bool) -> Result<()> {
         let staged = prepared.arena;
         ensure!(
             staged.segment_size == self.segment_size
@@ -1004,6 +956,8 @@ impl PersistentArena {
 
 impl Drop for PersistentArena {
     fn drop(&mut self) {
+        // Drop cannot report a failure, and nothing depends on this write-back: every
+        // acknowledged frame was already synced by its commit or by `flush`.
         let _ = self.active_segment.write().write_back();
     }
 }
@@ -1066,7 +1020,7 @@ mod tests {
         arena.write_slice(b"old generation")?;
         let staged = PersistentArena::new(arena.new_generation_dir()?)?;
         staged.write_slice(b"new generation")?;
-        arena.replace_with_compacted(staged.prepare_compacted()?)?;
+        arena.replace_with_compacted(staged.prepare_compacted()?, false)?;
         Ok(())
     }
 
@@ -1088,7 +1042,7 @@ mod tests {
         let mut prepared = staged.prepare_compacted()?;
         arena.replay_compaction_tail(&mut prepared, &mut cursor, end)?;
         assert_eq!(cursor, end);
-        arena.replace_with_compacted(prepared)?;
+        arena.replace_with_compacted(prepared, false)?;
         drop(arena);
         let restored = PersistentArena::new(root.path().join("live"))?;
         let mut offset = 0;
@@ -1214,7 +1168,7 @@ mod tests {
                 }
                 assert!(staged
                     .prepare_compacted()
-                    .and_then(|prepared| arena.replace_with_compacted(prepared))
+                    .and_then(|prepared| arena.replace_with_compacted(prepared, false))
                     .is_err());
                 assert_eq!(arena.read_frame(0)?.0, b"acknowledged generation");
                 drop(arena);

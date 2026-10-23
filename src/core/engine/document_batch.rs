@@ -197,18 +197,24 @@ mod tests {
         serde_json::from_value(json!({"id": id, "text": "needle"})).unwrap()
     }
 
+    /// Accepted when `within`; otherwise rejected as a retryable size limit
+    /// ([`BatchTooLarge`]), not as an invalid batch.
+    fn assert_limit<T>(result: Result<T>, within: bool, case: &str) {
+        match result {
+            Ok(_) => assert!(within, "{case}: accepted beyond the limit"),
+            Err(error) => assert!(!within && error.is::<BatchTooLarge>(), "{case}: {error:#}"),
+        }
+    }
+
     #[test]
     fn batch_item_and_chunk_boundaries_are_independent() {
         for count in [4095, 4096, 4097] {
             let inputs: Vec<_> = (0..count).map(|id| input(&id.to_string())).collect();
-            let result = validate_inputs(&inputs, None);
-            assert_eq!(result.is_ok(), count <= MAX_ITEMS);
-            if let Err(error) = result {
-                assert!(
-                    error.is::<BatchTooLarge>(),
-                    "an oversized batch is retryable"
-                );
-            }
+            assert_limit(
+                validate_inputs(&inputs, None),
+                count <= MAX_ITEMS,
+                &format!("{count} items"),
+            );
         }
         let empty = validate_inputs(&[], None).unwrap_err();
         assert!(
@@ -222,7 +228,11 @@ mod tests {
             last.overlap_words = Some(0);
             last.text = "two chunks".into();
             inputs.push(last);
-            assert_eq!(validate_inputs(&inputs, None).is_ok(), count <= MAX_ITEMS);
+            assert_limit(
+                validate_inputs(&inputs, None),
+                count <= MAX_ITEMS,
+                &format!("{count} chunks"),
+            );
         }
     }
 
@@ -249,7 +259,11 @@ mod tests {
         assert!(remaining < 8192);
         for count in [remaining - 1, remaining, remaining + 1] {
             sources.last_mut().unwrap().source_uri = Some("s".repeat(count));
-            assert_eq!(validate_inputs(&sources, None).is_ok(), count <= remaining);
+            assert_limit(
+                validate_inputs(&sources, None),
+                count <= remaining,
+                &format!("source {count}"),
+            );
         }
         let mut metadata: Vec<_> = (0..129)
             .map(|id| {
@@ -271,26 +285,20 @@ mod tests {
         assert!(remaining < 65030);
         for count in [remaining - 1, remaining, remaining + 1] {
             metadata.last_mut().unwrap().metadata = Some(json!({"x": "m".repeat(count)}));
-            assert_eq!(validate_inputs(&metadata, None).is_ok(), count <= remaining);
+            assert_limit(
+                validate_inputs(&metadata, None),
+                count <= remaining,
+                &format!("metadata {count}"),
+            );
         }
     }
 
     #[test]
     fn document_batch_is_one_recoverable_transaction_and_invalid_updates_are_atomic() -> Result<()>
     {
-        use crate::core::{EmbeddingSpace, HmsConfig};
         let directory = tempfile::tempdir()?;
         let path = directory.path().display().to_string();
-        let config = HmsConfig {
-            embedding_space: Some(EmbeddingSpace {
-                model: "fixture".into(),
-                revision: "1".into(),
-                dimensions: 3,
-                normalization: "l2".into(),
-                metric: "cosine".into(),
-            }),
-            ..Default::default()
-        };
+        let config = super::super::fixture_config(3);
         let core = super::super::HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
         let mut first = input("a");
         first.embeddings = Some(vec![vec![1.0, 0.0, 0.0]]);
@@ -386,17 +394,30 @@ mod tests {
         ] {
             let mut document = input("a");
             document.embeddings = Some(vec![vec![1.0; count]]);
-            assert_eq!(
-                validate_inputs(&[document], None).is_ok(),
-                count <= MAX_EMBEDDING_VALUES
+            assert_limit(
+                validate_inputs(&[document], None),
+                count <= MAX_EMBEDDING_VALUES,
+                &format!("{count} embedding values"),
             );
         }
-        assert!(validate_inputs(&[input("same"), input("same")], None).is_err());
+        let duplicate = validate_inputs(&[input("same"), input("same")], None).unwrap_err();
+        assert!(
+            !duplicate.is::<BatchTooLarge>(),
+            "a duplicate id is not a size limit"
+        );
         for count in [1023, 1024, 1025] {
             let inputs: Vec<_> = (0..count).map(|id| input(&id.to_string())).collect();
-            assert_eq!(validate_inputs(&inputs, Some(1024)).is_ok(), count <= 1024);
+            assert_limit(
+                validate_inputs(&inputs, Some(1024)),
+                count <= 1024,
+                &format!("{count} inferred embeddings"),
+            );
         }
-        assert!(validate_inputs(&[input("large")], Some(usize::MAX)).is_err());
+        assert_limit(
+            validate_inputs(&[input("large")], Some(usize::MAX)),
+            false,
+            "usize::MAX dimensions",
+        );
     }
 
     #[test]
@@ -407,6 +428,10 @@ mod tests {
             assert_eq!(serialized_size(&value, limit).is_ok(), limit >= size);
         }
         let mut total = usize::MAX;
-        assert!(add_size(&mut total, 1, usize::MAX, "overflow").is_err());
+        assert_limit(
+            add_size(&mut total, 1, usize::MAX, "overflow"),
+            false,
+            "overflow",
+        );
     }
 }

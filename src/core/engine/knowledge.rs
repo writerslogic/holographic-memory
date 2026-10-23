@@ -30,13 +30,7 @@ impl HmsCore {
         if sequence.is_empty() {
             return Ok(());
         }
-        let mut vecs = Vec::new();
-        for (i, item) in sequence.iter().enumerate() {
-            let v = self.encode_text(item).permute(i);
-            vecs.push(v);
-        }
-        let trajectory = self.bundle(&vecs);
-        self.memorize(id, trajectory)
+        self.memorize(id, self.encode_sequence(sequence))
     }
 
     /// Query for tails matching `head XOR relation`.
@@ -61,12 +55,16 @@ impl HmsCore {
         if partial.is_empty() {
             return Ok(vec![]);
         }
-        let vecs: Vec<EntangledHVec> = partial
+        Ok(self.query(&self.encode_sequence(partial), k))
+    }
+
+    /// Bundles `items`, each permuted by its position.
+    fn encode_sequence(&self, items: &[String]) -> EntangledHVec {
+        let vecs: Vec<EntangledHVec> = items
             .iter()
             .enumerate()
             .map(|(i, item)| self.encode_text(item).permute(i))
             .collect();
-        let query_vec = self.bundle(&vecs);
-        Ok(self.query(&query_vec, k))
+        self.bundle(&vecs)
     }
 }

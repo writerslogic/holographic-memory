@@ -7,20 +7,20 @@ use std::fs::{File, OpenOptions};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
-pub const LOCK_FILE: &str = ".hms.lock";
+pub(crate) const LOCK_FILE: &str = ".hms.lock";
 
 /// Process-scoped exclusive ownership of a writable HMS store.
 ///
 /// HMS does not currently expose a read-only mode, so every engine instance is
 /// a potential writer. Holding this lock for the engine lifetime prevents two
 /// processes (or two instances in one process) from mutating the same store.
-pub struct StoreLock {
+pub(crate) struct StoreLock {
     file: File,
     path: PathBuf,
 }
 
 impl StoreLock {
-    pub fn acquire(store_path: &Path) -> Result<Self> {
+    pub(crate) fn acquire(store_path: &Path) -> Result<Self> {
         std::fs::create_dir_all(store_path)
             .with_context(|| format!("failed to create store {}", store_path.display()))?;
         let path = store_path.join(LOCK_FILE);

@@ -55,9 +55,8 @@ pub fn multi_hop_query(
 }
 
 fn single_hop(start_entity: &str, relation: &str, ctx: &MeaningContext<'_>) -> Vec<MultiHopResult> {
-    let s_vec = match ctx.atom_memory.get(start_entity) {
-        Some(v) => v,
-        None => return Vec::new(),
+    let Some(s_vec) = ctx.atom_memory.get(start_entity) else {
+        return Vec::new();
     };
     let (_, r_vec) = ctx.atom_memory.get_or_insert(relation);
 
@@ -86,9 +85,8 @@ fn rule_rewrite(
     rule_name: &str,
     ctx: &MeaningContext<'_>,
 ) -> Vec<MultiHopResult> {
-    let s_vec = match ctx.atom_memory.get(start_entity) {
-        Some(v) => v,
-        None => return Vec::new(),
+    let Some(s_vec) = ctx.atom_memory.get(start_entity) else {
+        return Vec::new();
     };
     let (_, r_vec) = ctx.atom_memory.get_or_insert(output_relation);
 
@@ -178,7 +176,6 @@ fn chained_lookup(
         })
         .collect();
 
-    // Rank by confidence descending
     results.sort_by(|a, b| {
         b.confidence
             .partial_cmp(&a.confidence)
@@ -190,86 +187,50 @@ fn chained_lookup(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::admission::AdmissionControl;
-    use crate::core::composite_memory::CompositeMemory;
-    use crate::core::engine::structural::MeaningContext;
-    use crate::core::role::RoleRegistry;
+    use crate::core::engine::structural::tests::Fixture;
     use crate::core::rules::CompositionRule;
 
-    fn make_ctx<'a>(
-        atom_mem: &'a AtomMemory,
-        comp_mem: &'a CompositeMemory,
-        triple_store: &'a TripleStore,
-        roles: &'a RoleRegistry,
-        admission: &'a AdmissionControl,
-    ) -> MeaningContext<'a> {
-        MeaningContext {
-            atom_memory: atom_mem,
-            composite_memory: comp_mem,
-            triple_store,
-            roles,
-            admission,
-            beta: 24.0,
-            k: 64,
-            max_iter: 3,
-        }
-    }
-
     #[test]
-    fn test_multi_hop_chained() {
-        let dim = 16384;
-        let atom_mem = AtomMemory::new(dim, 3.0);
-        let comp_mem = CompositeMemory::new(dim, 3.0);
-        let triple_store = TripleStore::new();
-        let roles = RoleRegistry::new(dim);
-        let rule_store = RuleStore::new();
-        let admission = AdmissionControl::new(40);
+    fn chained_lookup_follows_each_hop() {
+        let fixture = Fixture::new();
+        for atom in ["john", "mark", "bob", "father"] {
+            fixture.atoms.get_or_insert(atom);
+        }
+        fixture.triples.add("john", "father", "mark", "c1");
+        fixture.triples.add("mark", "father", "bob", "c2");
 
-        atom_mem.get_or_insert("john");
-        atom_mem.get_or_insert("mark");
-        atom_mem.get_or_insert("bob");
-        atom_mem.get_or_insert("father");
+        let results = multi_hop_query(
+            "john",
+            &["father", "father"],
+            &fixture.context(),
+            &RuleStore::new(),
+            10,
+        );
 
-        triple_store.add("john", "father", "mark", "c1");
-        triple_store.add("mark", "father", "bob", "c2");
-
-        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
-        let results = multi_hop_query("john", &["father", "father"], &ctx, &rule_store, 10);
-
-        assert!(!results.is_empty());
         assert_eq!(results[0].entity_id, "bob");
         assert!(matches!(results[0].method, MultiHopMethod::ChainedLookup));
         assert_eq!(results[0].hops.len(), 2);
     }
 
     #[test]
-    fn test_multi_hop_rule_rewrite() {
-        let dim = 16384;
-        let atom_mem = AtomMemory::new(dim, 3.0);
-        let comp_mem = CompositeMemory::new(dim, 3.0);
-        let triple_store = TripleStore::new();
-        let roles = RoleRegistry::new(dim);
+    fn composition_rule_rewrites_two_hops_into_one_relation() {
+        let fixture = Fixture::new();
         let rule_store = RuleStore::new();
-        let admission = AdmissionControl::new(40);
-
-        let (_, s_vec) = atom_mem.get_or_insert("john");
-        let (_, r_vec) = atom_mem.get_or_insert("grandfather");
-        let (_, o_vec) = atom_mem.get_or_insert("bob");
-
         rule_store.add_rule(CompositionRule {
             name: "grandfather_rule".to_string(),
             input_relations: vec!["father".to_string(), "father".to_string()],
             output_relation: "grandfather".to_string(),
         });
+        fixture.bind("john", "grandfather", "bob", "grandfather_triple");
 
-        let composite = roles.compose_triple(&s_vec, &r_vec, &o_vec);
-        comp_mem.insert("grandfather_triple".to_string(), composite);
-        triple_store.add("john", "grandfather", "bob", "grandfather_triple");
+        let results = multi_hop_query(
+            "john",
+            &["father", "father"],
+            &fixture.context(),
+            &rule_store,
+            10,
+        );
 
-        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
-        let results = multi_hop_query("john", &["father", "father"], &ctx, &rule_store, 10);
-
-        assert!(!results.is_empty());
         assert_eq!(results[0].entity_id, "bob");
         assert!(matches!(
             results[0].method,
@@ -278,74 +239,57 @@ mod tests {
     }
 
     #[test]
-    fn test_evidence_weighted_confidence() {
-        let dim = 16384;
-        let atom_mem = AtomMemory::new(dim, 3.0);
-        let comp_mem = CompositeMemory::new(dim, 3.0);
-        let triple_store = TripleStore::new();
-        let roles = RoleRegistry::new(dim);
+    fn fan_out_at_a_hop_lowers_chain_confidence() {
+        let fixture = Fixture::new();
         let rule_store = RuleStore::new();
-        let admission = AdmissionControl::new(40);
+        for atom in ["a", "b", "c", "d"] {
+            fixture.atoms.get_or_insert(atom);
+        }
+        fixture.triples.add("a", "r", "b", "c1");
+        fixture.triples.add("b", "r", "c", "c2");
+        let unique = multi_hop_query("a", &["r", "r"], &fixture.context(), &rule_store, 10);
+        let unique_confidence = unique[0].confidence;
 
-        atom_mem.get_or_insert("a");
-        atom_mem.get_or_insert("b");
-        atom_mem.get_or_insert("c");
-        atom_mem.get_or_insert("d");
-
-        // Unique chain: a -> b (only match) -> c (only match)
-        triple_store.add("a", "r", "b", "c1");
-        triple_store.add("b", "r", "c", "c2");
-
-        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
-        let unique = multi_hop_query("a", &["r", "r"], &ctx, &rule_store, 10);
-        assert!(!unique.is_empty());
-        let unique_conf = unique[0].confidence;
-
-        // Ambiguous chain: a -> {b, d} (2 matches)
-        triple_store.add("a", "r", "d", "c3");
-        let ambig = multi_hop_query("a", &["r", "r"], &ctx, &rule_store, 10);
-        // The path through b should now have lower confidence (fan-out=2 at first hop)
-        let b_path = ambig.iter().find(|r| r.entity_id == "c");
-        assert!(b_path.is_some());
+        fixture.triples.add("a", "r", "d", "c3");
+        let ambiguous = multi_hop_query("a", &["r", "r"], &fixture.context(), &rule_store, 10);
+        let through_b = ambiguous
+            .iter()
+            .find(|r| r.entity_id == "c")
+            .expect("the path through b still reaches c");
         assert!(
-            b_path.unwrap().confidence < unique_conf,
-            "Ambiguous path should have lower confidence: ambig={:.4}, unique={:.4}",
-            b_path.unwrap().confidence,
-            unique_conf
+            through_b.confidence < unique_confidence,
+            "ambiguous {:.4} >= unique {unique_confidence:.4}",
+            through_b.confidence
         );
     }
 
     #[test]
-    fn test_multi_hop_ranked_by_confidence() {
-        let dim = 16384;
-        let atom_mem = AtomMemory::new(dim, 3.0);
-        let comp_mem = CompositeMemory::new(dim, 3.0);
-        let triple_store = TripleStore::new();
-        let roles = RoleRegistry::new(dim);
-        let rule_store = RuleStore::new();
-        let admission = AdmissionControl::new(40);
-
-        atom_mem.get_or_insert("start");
-        // Two paths: start -> a -> end, start -> b -> end
-        // Path through a: unique at both hops
-        // Path through b: b has 3 outgoing "r2" relations (lower confidence)
-        triple_store.add("start", "r1", "a", "c1");
-        triple_store.add("start", "r1", "b", "c2");
-        triple_store.add("a", "r2", "end", "c3");
-        triple_store.add("b", "r2", "end", "c4");
-        triple_store.add("b", "r2", "noise1", "c5");
-        triple_store.add("b", "r2", "noise2", "c6");
-
-        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
-        let results = multi_hop_query("start", &["r1", "r2"], &ctx, &rule_store, 10);
-
-        // "end" should appear, reached via both paths
-        let ends: Vec<_> = results.iter().filter(|r| r.entity_id == "end").collect();
-        assert!(!ends.is_empty());
-
-        // Results should be sorted by confidence (highest first)
-        for w in results.windows(2) {
-            assert!(w[0].confidence >= w[1].confidence);
+    fn results_rank_by_confidence() {
+        let fixture = Fixture::new();
+        fixture.atoms.get_or_insert("start");
+        // start -> a -> end is unique at both hops; b also reaches end, among three objects.
+        for (subject, relation, object, id) in [
+            ("start", "r1", "a", "c1"),
+            ("start", "r1", "b", "c2"),
+            ("a", "r2", "end", "c3"),
+            ("b", "r2", "end", "c4"),
+            ("b", "r2", "noise1", "c5"),
+            ("b", "r2", "noise2", "c6"),
+        ] {
+            fixture.triples.add(subject, relation, object, id);
         }
+
+        let results = multi_hop_query(
+            "start",
+            &["r1", "r2"],
+            &fixture.context(),
+            &RuleStore::new(),
+            10,
+        );
+
+        assert!(results.iter().any(|r| r.entity_id == "end"));
+        assert!(results
+            .windows(2)
+            .all(|w| w[0].confidence >= w[1].confidence));
     }
 }

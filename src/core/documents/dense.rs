@@ -128,7 +128,7 @@ impl Ord for Candidate {
     }
 }
 
-pub(super) fn capture_dense_index(
+pub(crate) fn capture_dense_index(
     store: &DocumentStore,
     dimensions: usize,
 ) -> Result<Option<DenseIndexSnapshot>> {
@@ -162,7 +162,7 @@ pub(super) fn capture_dense_index(
     }))
 }
 
-pub(super) fn build_dense_index(snapshot: DenseIndexSnapshot) -> Result<Option<TrainedDenseIndex>> {
+pub(crate) fn build_dense_index(snapshot: DenseIndexSnapshot) -> Result<Option<TrainedDenseIndex>> {
     let dimensions = snapshot.dimensions;
     let count = snapshot.embedded_count;
     if !(1..=MAX_DIMENSIONS).contains(&dimensions) || count < MIN_ROWS {
@@ -245,7 +245,7 @@ pub(super) fn build_dense_index(snapshot: DenseIndexSnapshot) -> Result<Option<T
     }))
 }
 
-pub(super) fn publish_dense_index(store: &mut DocumentStore, trained: &TrainedDenseIndex) -> bool {
+pub(crate) fn publish_dense_index(store: &mut DocumentStore, trained: &TrainedDenseIndex) -> bool {
     if store.generation != trained.generation {
         return false;
     }

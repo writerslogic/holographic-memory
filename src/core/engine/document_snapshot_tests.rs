@@ -9,7 +9,6 @@ use serde_json::json;
 
 use super::HmsCore;
 use crate::core::documents::{self, DocumentInput, SearchOptions};
-use crate::core::{EmbeddingSpace, HmsConfig};
 
 fn input(id: &str, version: &str, text: &str, group: &str) -> Result<DocumentInput> {
     Ok(serde_json::from_value(json!({
@@ -23,16 +22,7 @@ fn input(id: &str, version: &str, text: &str, group: &str) -> Result<DocumentInp
 fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
-    let config = HmsConfig {
-        embedding_space: Some(EmbeddingSpace {
-            model: "fixture".into(),
-            revision: "1".into(),
-            dimensions: 2,
-            normalization: "l2".into(),
-            metric: "cosine".into(),
-        }),
-        ..Default::default()
-    };
+    let config = super::fixture_config(2);
     let core = Arc::new(HmsCore::new(
         1024,
         Some(path.clone()),
@@ -100,16 +90,7 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
 #[test]
 fn stale_document_training_cannot_publish_after_a_durable_replacement() -> Result<()> {
     let directory = tempfile::tempdir()?;
-    let config = HmsConfig {
-        embedding_space: Some(EmbeddingSpace {
-            model: "fixture".into(),
-            revision: "1".into(),
-            dimensions: 2,
-            normalization: "l2".into(),
-            metric: "cosine".into(),
-        }),
-        ..Default::default()
-    };
+    let config = super::fixture_config(2);
     let core = HmsCore::new(
         1024,
         Some(directory.path().display().to_string()),

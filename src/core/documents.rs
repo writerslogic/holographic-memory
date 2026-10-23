@@ -28,7 +28,7 @@ mod postings;
 mod search;
 mod text;
 mod vector_index;
-pub(crate) use dense::{DenseIndexSnapshot, TrainedDenseIndex};
+pub(crate) use dense::{build_dense_index, capture_dense_index, publish_dense_index};
 pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
 pub(crate) use lexical::execute as execute_lexical;
@@ -36,7 +36,7 @@ pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, Le
 pub use listing::DocumentRecord;
 pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
-pub(crate) use search::{CapturedSearch, PreparedSearch};
+pub(crate) use search::{capture_search, count_matches, execute_search, prepare_search};
 pub(crate) use text::TextSegment;
 pub(crate) use vector_index::{
     build_vector_snapshot, capture_vector_rows, search_vector_snapshot, vector_index_status,
@@ -66,21 +66,6 @@ impl std::error::Error for BatchTooLarge {}
 pub(crate) const MAX_DOCUMENT_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const MAX_CHUNK_BYTES: usize = 64 * 1024;
 pub(crate) const CHUNK_PREFIX: &str = "hms:chunk:";
-
-pub(crate) fn capture_dense_index(
-    store: &DocumentStore,
-    dimensions: usize,
-) -> Result<Option<DenseIndexSnapshot>> {
-    dense::capture_dense_index(store, dimensions)
-}
-
-pub(crate) fn build_dense_index(snapshot: DenseIndexSnapshot) -> Result<Option<TrainedDenseIndex>> {
-    dense::build_dense_index(snapshot)
-}
-
-pub(crate) fn publish_dense_index(store: &mut DocumentStore, trained: &TrainedDenseIndex) -> bool {
-    dense::publish_dense_index(store, trained)
-}
 
 #[cfg_attr(feature = "node-api", napi_derive::napi(object))]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1158,29 +1143,6 @@ pub(crate) fn document_fingerprint(
     Some(h)
 }
 
-pub(crate) fn prepare_search(
-    text: &str,
-    options: &SearchOptions,
-    embedding_dimensions: Option<usize>,
-) -> Result<PreparedSearch> {
-    search::prepare_search(text, options, embedding_dimensions)
-}
-
-pub(crate) fn capture_search(
-    store: &DocumentStore,
-    prepared: Vec<PreparedSearch>,
-) -> CapturedSearch {
-    search::capture_search(store, prepared)
-}
-
-pub(crate) fn count_matches(store: &DocumentStore, text: &str) -> Result<usize> {
-    search::count_matches(store, text)
-}
-
-pub(crate) fn execute_search(captured: &CapturedSearch, query: usize) -> Vec<DocumentResult> {
-    search::execute_search(captured, query)
-}
-
 #[cfg(test)]
 pub(crate) fn search(
     store: &DocumentStore,
@@ -1188,8 +1150,8 @@ pub(crate) fn search(
     options: &SearchOptions,
     embedding_dimensions: Option<usize>,
 ) -> Result<Vec<DocumentResult>> {
-    let prepared: PreparedSearch = prepare_search(text, options, embedding_dimensions)?;
-    let captured: CapturedSearch = capture_search(store, vec![prepared]);
+    let prepared = prepare_search(text, options, embedding_dimensions)?;
+    let captured = capture_search(store, vec![prepared]);
     Ok(execute_search(&captured, 0))
 }
 
