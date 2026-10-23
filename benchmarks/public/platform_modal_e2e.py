@@ -62,7 +62,7 @@ image = (
     .add_local_file(str(REPO / "benchmarks/public/platform_paired.py"), "/opt/platform_paired.py", copy=True)
     .run_commands(
         "mkdir -p /work /opt && tar xf /src.tar -C /work",
-        "cd /work && /root/.cargo/bin/cargo build --release --bin public-bench && cp target/release/public-bench /opt/public-bench",
+        "cd /work && /root/.cargo/bin/cargo build --release --features cli,mimalloc --bin public-bench && cp target/release/public-bench /opt/public-bench",
         "cd /work && /root/.cargo/bin/cargo test --release --lib --no-run --message-format=json 2>/dev/null"
         " | grep -o '\"executable\":\"[^\"]*\"' | head -1 | cut -d'\"' -f4 > /opt/bin.path",
         "cp $(cat /opt/bin.path) /opt/kbench && /opt/kbench --list | tail -1",

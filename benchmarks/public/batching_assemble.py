@@ -123,7 +123,7 @@ doc = {
         "os": sh("sw_vers", "-productVersion"),
         "rustc": sh("rustc", "+1.98.0", "--version"),
         "device": "Metal", "dtypes": "encoders f32, LLM bf16",
-        "build": "cargo +1.98.0 build --release --features local-models --bin public-bench",
+        "build": "cargo +1.98.0 build --release --features local-models,cli,mimalloc --bin public-bench",
         "shared_machine": "other sessions ran benchmarks and builds concurrently; see per-run load averages",
     },
     "models": {
