@@ -248,6 +248,16 @@ pub(super) fn text_of(chunk: &StoredChunk, segment: Option<&TextSegment>) -> Opt
     }
 }
 
+/// Whether the segment record holding a chunk's text was scrubbed (its document replaced or
+/// deleted since the chunk was captured).
+pub(super) fn text_scrubbed(chunk: &StoredChunk, segment: Option<&TextSegment>) -> bool {
+    chunk.text.is_none()
+        && chunk
+            .text_at
+            .zip(segment)
+            .is_some_and(|((at, len), segment)| segment.is_scrubbed(at, len))
+}
+
 fn remove_secondary<K: Ord>(map: &mut BTreeMap<K, BTreeSet<String>>, key: &K, id: &str) {
     let posting = map.get_mut(key).expect("missing document filter posting");
     assert!(posting.remove(id), "missing document from filter posting");

@@ -51,7 +51,7 @@ use crate::core::sync::{Mutex, MutexGuard, RwLock};
 use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
 
-use super::index::text_of;
+use super::index::{text_of, text_scrubbed};
 use super::{DocumentResult, DocumentStore, Embedding, StoredDocument, TextSegment};
 use crate::core::qgraph::{BuildParams, Graph, VGraph, VSearchParams};
 
@@ -589,7 +589,8 @@ fn to_result(hit: &Hit, segment: Option<&TextSegment>) -> DocumentResult {
 
 /// Answers an unfiltered vector query from the snapshot. `query` is l2-normalised. `None`
 /// means the snapshot is too stale to answer this query (fewer than `k` hits survived
-/// validation); the caller takes the generic exact path.
+/// validation, or a hit's text was scrubbed before it was read); the caller takes the
+/// generic exact path.
 pub(crate) fn search_vector_snapshot(
     snapshot: &VectorSnapshot,
     store: &RwLock<DocumentStore>,
@@ -598,6 +599,46 @@ pub(crate) fn search_vector_snapshot(
     k: usize,
     options: &VectorQueryOptions,
 ) -> Result<Option<Vec<DocumentResult>>> {
+    let Some(ranked) = rank_vector_snapshot(snapshot, store, query, exact_query, k, options)?
+    else {
+        return Ok(None);
+    };
+    Ok(read_vector_hits(ranked, &store.read()))
+}
+
+/// The top hits of [`search_vector_snapshot`], ranked with no lock held across the scan;
+/// [`read_vector_hits`] reads their text.
+pub(crate) struct RankedVectorHits {
+    hits: Vec<Hit>,
+    segment: Option<Arc<TextSegment>>,
+}
+
+/// The hits with their text, or `None` when the text of one was scrubbed since the ranking
+/// (its document replaced or deleted). `_store` is the store's read guard: a scrub happens
+/// under its write lock, so a read never overlaps one.
+pub(crate) fn read_vector_hits(
+    ranked: RankedVectorHits,
+    _store: &DocumentStore,
+) -> Option<Vec<DocumentResult>> {
+    let segment = ranked.segment.as_deref();
+    ranked
+        .hits
+        .iter()
+        .map(|hit| {
+            let scrubbed = text_scrubbed(&hit.document.chunks[hit.chunk as usize], segment);
+            (!scrubbed).then(|| to_result(hit, segment))
+        })
+        .collect()
+}
+
+pub(crate) fn rank_vector_snapshot(
+    snapshot: &VectorSnapshot,
+    store: &RwLock<DocumentStore>,
+    query: &[f32],
+    exact_query: &[f64],
+    k: usize,
+    options: &VectorQueryOptions,
+) -> Result<Option<RankedVectorHits>> {
     ensure!(
         query.len() == snapshot.dim,
         "query has {} dimensions, the index {}",
@@ -688,13 +729,12 @@ pub(crate) fn search_vector_snapshot(
             .then_with(|| a.document.id.cmp(&b.document.id))
             .then(a.chunk.cmp(&b.chunk))
     });
-    let results = found
-        .iter()
-        .filter(|hit| hit.score >= options.min_score)
-        .take(k)
-        .map(|hit| to_result(hit, segment.as_deref()))
-        .collect();
-    Ok(Some(results))
+    found.retain(|hit| hit.score >= options.min_score);
+    found.truncate(k);
+    Ok(Some(RankedVectorHits {
+        hits: found,
+        segment,
+    }))
 }
 
 /// The engine's published snapshot and the build lock.

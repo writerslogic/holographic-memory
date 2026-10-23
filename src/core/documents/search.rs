@@ -655,12 +655,7 @@ pub(crate) fn read_ranked(
     let segment = captured.queries[query].text.as_deref();
     hits.into_iter()
         .map(|hit| {
-            let chunk = &hit.document.chunks[hit.chunk];
-            let scrubbed = chunk.text.is_none()
-                && chunk
-                    .text_at
-                    .zip(segment)
-                    .is_some_and(|((at, len), segment)| segment.is_scrubbed(at, len));
+            let scrubbed = super::index::text_scrubbed(&hit.document.chunks[hit.chunk], segment);
             (!scrubbed).then(|| hit.read(segment))
         })
         .collect()
