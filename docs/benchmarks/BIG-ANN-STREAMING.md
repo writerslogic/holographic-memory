@@ -182,6 +182,6 @@ without merging, run in the same hour, since step sums vary by about a third bet
 A merge searches again for about four to six rows per changed row, so it beats a rebuild only
 while the churn per consolidation is a fraction of the live set: merging at a quarter of the
 base spends more on inserts than rebuilding at doubling. The configured point merges at the
-rebuild thresholds (1.0 / 0.3), where the merges replace the tombstone-triggered rebuilds.
+rebuild thresholds (1.0 / 0.3): by construction a delta-triggered consolidation there usually falls back to a rebuild (the delta is then at least as large as the surviving base), so the merges replace the tombstone-triggered rebuilds.
 
-FINAL_RUNBOOK_MERGE
+Final runbook (msturing-30M-clustered), ef 256: no recall was recorded. With the image of 9b26418 at ef 256, merging at the rebuild thresholds (1.0 / 0.3) reached step 672 of 1,280 in 1,926 s of runbook steps (searches averaged about 1.0 s; the #238 run at ef 512 needed 3,599 s for its first 541 steps), then the launcher's 8 GiB guard on the summed benchmark and parent RSS stopped it at 8.60 GB during the step-673 consolidation (a merge after deletes, 8.42M live rows; the same step at which earlier rebuild-based candidates ran out of time or memory). Merging at 0.25 / 0.15 reached step 638 in 2,838 s before the same guard (8.61 GB). The ef 512 run at 0.25 / 0.15 was stopped at step 214 (1,461 s of steps against the #238 run's 976 s for the same steps) once it could not finish. The merge read the previous base's adjacency back into memory and kept those pages through the insertion passes; 50017d4 drops them as soon as the last list is read.
