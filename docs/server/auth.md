@@ -67,7 +67,7 @@ An invalid file is refused at startup. On reload, an invalid file is rejected an
 |---|---|
 | `read` | Query, list, stats, compaction status. |
 | `write` | Add, replace and delete documents (single, batch, stream), index maintenance. |
-| `admin` | Everything `read` and `write` allow, plus snapshots, restore, compaction runs, and `/metrics` (unless `--metrics-public`). Key reload and tenant listing additionally need a key valid for every tenant. |
+| `admin` | Everything `read` and `write` allow, plus snapshots, restore, compaction runs, and `/metrics` (unless `--metrics-public`; a key limited to some tenants sees only their per-tenant series). Key reload and tenant listing additionally need a key valid for every tenant. |
 
 `write` does not include `read`; give a service that ingests and queries both. The required scope of every operation is in the OpenAPI document as its `security` requirement, and a test checks the server against it.
 

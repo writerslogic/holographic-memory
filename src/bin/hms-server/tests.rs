@@ -473,3 +473,60 @@ fn only_canonical_hex_names_decode_to_tenants() {
         assert_eq!(tenant_from_hex(name).as_deref(), expected, "{name:?}");
     }
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_dropped_request_leaves_the_in_flight_gauge() {
+    use axum::middleware::from_fn_with_state;
+    use tower_service::Service;
+    let directory = tempfile::tempdir().unwrap();
+    let state = state(directory.path(), 1);
+    let mut app = axum::Router::new()
+        .route(
+            "/hang",
+            axum::routing::get(std::future::pending::<&'static str>),
+        )
+        .layer(from_fn_with_state(
+            state.clone(),
+            crate::middleware::observe,
+        ));
+    let request = axum::http::Request::builder()
+        .uri("/hang")
+        .body(axum::body::Body::empty())
+        .unwrap();
+    let call = app.call(request);
+    assert!(tokio::time::timeout(Duration::from_millis(50), call)
+        .await
+        .is_err());
+    assert_eq!(state.metrics.in_flight.load(Ordering::Relaxed), 0);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_abandoned_restore_upload_leaves_no_archive_behind() {
+    let directory = tempfile::tempdir().unwrap();
+    let state = state(directory.path(), 1);
+    let chunks = futures_util::StreamExt::chain(
+        futures_util::stream::once(async {
+            Ok::<_, std::io::Error>(bytes::Bytes::from_static(&[0; 1024]))
+        }),
+        futures_util::stream::pending(),
+    );
+    let mut request = axum::http::Request::builder()
+        .method("PUT")
+        .uri("/api/v1/restore")
+        .body(axum::body::Body::from_stream(chunks))
+        .unwrap();
+    request.extensions_mut().insert(Arc::new(auth::Principal {
+        key_id: "test".into(),
+        tenants: auth::TenantAccess::Any,
+        scopes: auth::ScopeSet::ALL,
+    }));
+    let upload = crate::admin::restore_upload(axum::extract::State(state.clone()), request);
+    assert!(tokio::time::timeout(Duration::from_millis(200), upload)
+        .await
+        .is_err());
+    let left: Vec<_> = std::fs::read_dir(state.staging_root())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    assert!(left.is_empty(), "staging still holds {left:?}");
+}

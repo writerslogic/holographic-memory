@@ -785,3 +785,34 @@ fn a_snapshot_pauses_only_its_own_tenant_and_never_hangs_requests() {
         200
     );
 }
+
+#[test]
+fn metrics_for_a_tenant_limited_key_cover_only_its_tenants() {
+    let scratch = tempfile::tempdir().unwrap();
+    let keys = scratch.path().join("keys.json");
+    let root = keygen(&keys, "root", "*", "admin");
+    let acme = keygen(&keys, "acme-ops", "acme", "admin");
+    let s = Server::start(&["--keys-file", keys.to_str().unwrap()], &[]);
+    for tenant in ["acme", "globex"] {
+        let r = s
+            .req("POST", "/api/v1/documents")
+            .bearer(&root)
+            .tenant(tenant)
+            .json(&doc("a", 1))
+            .send();
+        assert_eq!(r.status, 200, "{}", r.text());
+    }
+    let all = s.req("GET", "/metrics").bearer(&root).send().text();
+    assert!(
+        all.contains("hms_tenant_documents{tenant=\"globex\"} 1"),
+        "{all}"
+    );
+    let scraped = s.req("GET", "/metrics").bearer(&acme).send();
+    assert_eq!(scraped.status, 200, "{}", scraped.text());
+    let text = scraped.text();
+    assert!(
+        text.contains("hms_tenant_documents{tenant=\"acme\"} 1"),
+        "{text}"
+    );
+    assert!(!text.contains("globex"), "{text}");
+}

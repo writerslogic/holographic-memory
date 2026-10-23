@@ -26,7 +26,7 @@ One replica per data directory: a tenant store is owned by a single process thro
 
 ## Metrics
 
-`GET /metrics` (admin scope, or public with `--metrics-public`) is Prometheus text format 0.0.4:
+`GET /metrics` (admin scope, or public with `--metrics-public`) is Prometheus text format 0.0.4. For a key limited to some tenants, the per-tenant series and `hms_tenants_open` cover only those tenants:
 
 | Series | Meaning |
 |---|---|

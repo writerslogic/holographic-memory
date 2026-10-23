@@ -10,7 +10,7 @@ use axum::extract::{Request, State};
 use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::IntoResponse;
 
-use crate::auth::Scope;
+use crate::auth::{Scope, TenantAccess};
 use crate::error::{ApiError, ApiResult};
 use crate::request::{json_response, principal};
 use crate::routes;
@@ -45,10 +45,19 @@ pub async fn readyz(State(state): State<Arc<AppState>>) -> ApiResult {
 }
 
 pub async fn metrics(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
-    if !state.cfg.metrics_public {
-        principal(&req)?.require(Scope::Admin)?;
+    let principal = if state.cfg.metrics_public {
+        None
+    } else {
+        let principal = principal(&req)?;
+        principal.require(Scope::Admin)?;
+        Some(principal)
+    };
+    let mut saturation = state.saturation();
+    // A key limited to some tenants must not learn the names or sizes of the others.
+    if let Some(TenantAccess::Only(allowed)) = principal.as_ref().map(|p| &p.tenants) {
+        saturation.tenants.retain(|t| allowed.contains(&t.name));
     }
-    let text = state.metrics.render(&state.saturation());
+    let text = state.metrics.render(&saturation);
     Ok((
         [(
             header::CONTENT_TYPE,
