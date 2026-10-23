@@ -116,8 +116,9 @@ numbers above stand, and every loss listed above remains.** The round spent no O
 - **Second gate.** Every candidate also had to not lower answer-session recall on the 100
   LongMemEval dev questions. That run used the memory API with the cached all-MiniLM-L6-v2 turn
   embeddings, retrieval only (`benchmarks/public/longmemeval_memory_recall.py`).
-- **Count.** Configurations tried: 8 on the LoCoMo tuning set, 3 held-out looks (the baseline and
-  two candidates), and 8 LongMemEval dev runs. Two of those dev runs were invalid: they mixed
+- **Count.** Configurations tried: 9 on the LoCoMo tuning set, 4 held-out looks (the baseline,
+  two candidates and the captions variant), and 8 LongMemEval dev runs. The LongMemEval gate does not
+  apply to captions, because that dataset has no images. Two of those dev runs were invalid: they mixed
   unembedded assistant turns into hybrid recall, and were discarded.
 
 ### Diagnosis (evidence recall at the 1,764-token cap)
@@ -129,7 +130,7 @@ passes. Those wrong answers were missing 498 evidence turns between them:
 | Within 2 turns of a retrieved turn, same session | 258 |
 | In a retrieved session, farther away | 152 |
 | Shares no content word with the question | 365 |
-| An image turn whose content is only in the caption (Mem0's protocol does not ingest captions) | 202 |
+| An image-sharing turn (the paper-era protocol does not ingest captions; see the captions variant below) | 202 |
 | Inside k=30 per speaker but cut by the token cap | 104 |
 
 The categories overlap, so the counts do not add up to 498.
@@ -194,6 +195,30 @@ reproduced bit-identically.
 On the order of events: the rule that promoted zipper was written after the A and B held-out looks.
 The rule takes the best tuning configuration whose every part passes the second gate. Zipper was
 already in the pre-registered grid.
+
+### Variant: image captions ingested (not the matched protocol)
+The paper-era Mem0 harness ingests turn text only (`mem0ai/mem0` `evaluation/src/memzero/add.py` at 393a4fd5).
+Mem0's current harness appends an image tag to the turn text (`mem0ai/memory-benchmarks` at 4b61c5d,
+`benchmarks/locomo/run.py`, `session_to_chunks`): `[Sharing image - query: {query}. The image shows:
+{blip_caption}]`, or a query-only or caption-only form. `--captions` reproduces that text exactly. This was
+one pre-registered configuration, the primary arm plus captions, with everything else unchanged. Its rule
+was to run the reader and judge only if evidence recall rose on both tuning and held-out.
+
+Evidence recall at the 1,764-token cap, overall / id 1 / id 2 / id 3 / id 4:
+
+| | Tuning 3 | Held-out 7 (one look) | All 10 |
+|---|---|---|---|
+| Matched protocol (no captions) | .843 / .642 / .956 / .476 / .905 | .810 / .590 / .849 / .589 / .893 | .818 / .604 / .879 / .564 / .896 |
+| With captions (variant) | .849 / .641 / .978 / .643 / .890 | .802 / .578 / .844 / .579 / .886 | .814 / .594 / .881 / .593 / .887 |
+
+Held-out recall fell in every category, so the variant got no reader/judge run and no J row; it
+cost 0.0016 USD of embeddings.
+
+Captions do not pay off because of the cap. The tag lengthens image turns, so about 4 fewer
+memories fit (held-out: 36.7 to 32.9 per question). Most image evidence was already retrieved
+through the turn text: 508 of 719 held-out image evidence turns without captions, 510 with them.
+Meanwhile the text evidence turns in context fell from 793 to 776 of 1,123. Captions may still help
+without the cap, or under a larger one, but that was not pre-registered and was not run.
 
 ### What still loses, and why
 - **Multi-hop vs Mem0 (63.90 vs 67.13 J).** The cap is the binding limit: uncapped recall reaches

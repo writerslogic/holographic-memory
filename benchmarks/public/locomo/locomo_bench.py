@@ -203,13 +203,32 @@ def tenant(sample_id, side):
     return f'locomo-{sample_id}-{side}'
 
 
-def ingest(server, llm, sample, use_embed):
+def turn_text(turn, captions):
+    """The turn as ingested; with `captions`, the image tag mem0ai/memory-benchmarks@4b61c5d appends
+    (benchmarks/locomo/run.py session_to_chunks). The paper-era harness ingests the text alone."""
+    text = turn['text']
+    if captions:
+        blip, query = turn.get('blip_caption', ''), turn.get('query', '')
+        if query and blip:
+            tag = f'[Sharing image - query: {query}. The image shows: {blip}]'
+        elif query:
+            tag = f'[Sharing image - query for: {query}]'
+        elif blip:
+            tag = f'[Sharing image that shows: {blip}]'
+        else:
+            tag = ''
+        if tag:
+            text = f'{text} {tag}' if text else tag
+    return f"{turn['speaker']}: {text}"
+
+
+def ingest(server, llm, sample, use_embed, captions=False):
     conv = sample['conversation']
     sides = {conv['speaker_a']: 'a', conv['speaker_b']: 'b'}
     facts = {'a': [], 'b': []}
     for date, ms, turn in session_turns(conv):
         facts[sides[turn['speaker']]].append({
-            'id': turn['dia_id'], 'text': f"{turn['speaker']}: {turn['text']}", 'eventTime': ms,
+            'id': turn['dia_id'], 'text': turn_text(turn, captions), 'eventTime': ms,
             'metadata': {'timestamp': date, 'speaker': turn['speaker']}})
     for side, items in facts.items():
         if use_embed:
@@ -392,6 +411,8 @@ def main():
     ap.add_argument('--pack', choices=('round-robin', 'cosine', 'zipper'), default='round-robin',
                     help='how --token-budget fills the cap from both speakers: by rank alternately (as in #236), '
                          'by query cosine across both, or merging the ranked lists by query cosine')
+    ap.add_argument('--captions', action='store_true',
+                    help='append image captions to turn text as mem0ai/memory-benchmarks does (not the paper-era protocol)')
     ap.add_argument('--workers', type=int, default=16)
     ap.add_argument('--hms-sha', default='')
     ap.add_argument('--dry-run', action='store_true',
@@ -417,7 +438,7 @@ def main():
     rows, t0 = [], time.time()
     try:
         for sample in samples:
-            dates = None if args.full_context else ingest(server, llm, sample, args.embed)
+            dates = None if args.full_context else ingest(server, llm, sample, args.embed, args.captions)
             qas = [(i, qa) for i, qa in enumerate(sample['qa']) if int(qa['category']) != 5]
             with ThreadPoolExecutor(args.workers) as pool:
                 results = list(pool.map(lambda iq: answer_full_context(llm, sample, iq[1], args, enc) if args.full_context
@@ -465,7 +486,7 @@ def main():
         'arm': 'full-context' if args.full_context else 'hms-memory-api',
         'embedding_model': EMBED_MODEL if args.embed else None, 'k_per_speaker': args.k,
         'recall_options': json.loads(args.recall_options), 'token_budget': args.token_budget or None,
-        'pack': args.pack if args.token_budget else None,
+        'pack': args.pack if args.token_budget else None, 'captions': args.captions,
         'memory_config': json.loads(Path(args.memory_config).read_text()) if args.memory_config else None,
         'runs': 0 if args.retrieval_only else args.runs, 'conversations': sorted(ran), 'split': SPLIT, 'hms_sha': args.hms_sha,
         'new_api_tokens': {m: list(t) for m, t in usage.tokens.items()}, 'new_api_spend_usd': usage.usd(),

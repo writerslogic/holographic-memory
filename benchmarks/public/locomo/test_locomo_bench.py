@@ -76,3 +76,14 @@ def test_similarity_packing_token_boundary():
     assert lb.pack_by_similarity(lists, sims, enc, limit - 1, True) == {'a': [0], 'b': []}
     assert lb.pack_by_similarity(lists, sims, enc, limit, True) == {'a': [0], 'b': [0]}
     assert lb.pack_by_similarity(lists, sims, enc, limit + 1, True) == {'a': [0], 'b': [0]}
+
+
+def test_caption_tag_matches_memory_benchmarks_forms():
+    turn = {'speaker': 'Ann', 'text': 'Look!'}
+    assert lb.turn_text(turn, True) == lb.turn_text(turn, False) == 'Ann: Look!'
+    assert lb.turn_text({**turn, 'blip_caption': 'a dog', 'query': 'puppy'}, False) == 'Ann: Look!'
+    assert lb.turn_text({**turn, 'blip_caption': 'a dog', 'query': 'puppy'}, True) == \
+        'Ann: Look! [Sharing image - query: puppy. The image shows: a dog]'
+    assert lb.turn_text({**turn, 'query': 'puppy'}, True) == 'Ann: Look! [Sharing image - query for: puppy]'
+    assert lb.turn_text({'speaker': 'Ann', 'text': '', 'blip_caption': 'a dog'}, True) == \
+        'Ann: [Sharing image that shows: a dog]'
