@@ -681,7 +681,7 @@ impl UpdatableVGraph {
             loop {
                 let mut widened = params;
                 widened.ef = take;
-                widened.rerank = take;
+                widened.rerank = 0;
                 widened.patience = 0;
                 SCRATCH.with(|cache| {
                     graph.search_reusing(&mut cache.borrow_mut(), query, take, widened, out)

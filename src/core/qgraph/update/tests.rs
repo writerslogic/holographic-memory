@@ -1016,6 +1016,113 @@ fn reordered_compressed_base_preserves_external_ids() {
 }
 
 #[test]
+fn mixed_search_reproduces_pinned_results_and_encoded_generations() {
+    let root = tempfile::tempdir().unwrap();
+    let mut fingerprint = crc32fast::Hasher::new();
+    for metric in [Metric::Angular, Metric::Euclidean] {
+        let build = BuildParams { metric, ..params() };
+        let dim = 16;
+        let graph = Graph::build(&data(192, dim), dim, &build).unwrap();
+        let mut encodings = vec![
+            (8, 0, false, false, 4, false, 0),
+            (4, 4, true, true, 3, false, 0),
+            (4, 8, true, false, 0, false, 0),
+            (8, 8, true, true, 3, false, 0),
+        ];
+        if metric == Metric::Angular {
+            encodings.extend([
+                (8, 8, true, true, 3, true, 0),
+                (8, 8, true, true, 3, false, 4),
+                (8, 8, true, false, 4, false, 2),
+            ]);
+        }
+        for (case, (bits, residual, align, reorder, ids, screen, blocks)) in
+            encodings.into_iter().enumerate()
+        {
+            let mut vertex =
+                VGraph::from_graph_with(&graph, bits, residual, align, reorder, ids, screen)
+                    .unwrap();
+            if blocks != 0 {
+                vertex = vertex.with_blocks(&graph, blocks).unwrap();
+            }
+            let path = root.path().join(format!("{metric:?}-{case}"));
+            let mut index = UpdatableVGraph::create_from_graph(&path, &graph, &vertex).unwrap();
+            let mut live: BTreeMap<_, _> = graph
+                .vectors
+                .chunks_exact(dim)
+                .enumerate()
+                .map(|(id, row)| (id as u32, row.to_vec()))
+                .collect();
+            let mut queries = data(12, dim);
+            queries.extend_from_slice(&[0.5; 16]);
+            for phase in 0..4 {
+                if phase == 1 {
+                    for id in (0..192).step_by(3) {
+                        index.delete(id).unwrap();
+                        live.remove(&id);
+                    }
+                    let tie = [0.5; 16];
+                    index.replace(1, &tie).unwrap();
+                    index.insert(10_000, &tie).unwrap();
+                    index.insert(5_000, &tie).unwrap();
+                    let mut prepared = tie.to_vec();
+                    super::super::prepare_rows(&mut prepared, dim, metric);
+                    for id in [1, 10_000, 5_000] {
+                        live.insert(id, prepared.clone());
+                    }
+                    let ids: Vec<_> = (1_000..1_032).rev().collect();
+                    let mut rows = data(ids.len(), dim);
+                    index.insert_batch(&ids, &rows).unwrap();
+                    super::super::prepare_rows(&mut rows, dim, metric);
+                    live.extend(ids.into_iter().zip(rows.chunks_exact(dim).map(Vec::from)));
+                    index.commit().unwrap();
+                } else if phase == 2 {
+                    drop(index);
+                    index = UpdatableVGraph::open(&path).unwrap();
+                } else if phase == 3 {
+                    index.consolidate().unwrap();
+                }
+                if phase == 0 || phase == 3 {
+                    let state = index.state.read();
+                    fingerprint.update(&std::fs::read(state.manifest.vertex_path(&path)).unwrap());
+                }
+                for q in queries.chunks_exact(dim) {
+                    for ef in [7, 16, 63, 64, 65, 256] {
+                        for rerank in [0, ef * 2] {
+                            let p = VSearchParams {
+                                ef,
+                                rerank,
+                                patience: 5,
+                                fuse: blocks != 0,
+                                ..Default::default()
+                            };
+                            let found = index.search(q, 10, p).unwrap();
+                            for &id in &found {
+                                fingerprint.update(&id.to_le_bytes());
+                            }
+                            if (phase == 1 || phase == 2) && ef == 256 {
+                                let mut truth: Vec<_> = live
+                                    .iter()
+                                    .map(|(&id, row)| (distance(q, row, metric), id))
+                                    .collect();
+                                truth.sort_unstable_by(|a, b| {
+                                    a.0.total_cmp(&b.0).then(a.1.cmp(&b.1))
+                                });
+                                assert_eq!(
+                                    found,
+                                    truth.iter().take(10).map(|x| x.1).collect::<Vec<_>>()
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!(fingerprint.finalize(), 166_293_721);
+}
+
+#[test]
 fn incomplete_streamed_rows_preserve_the_previous_file() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("index");
