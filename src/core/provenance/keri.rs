@@ -78,7 +78,9 @@ impl KeyEventLog {
         if let Some(ref path) = self.path {
             let data = serde_json::to_vec_pretty(&self.events)
                 .map_err(|e| anyhow!("KEL serialization failed: {e}"))?;
-            std::fs::write(path, data).map_err(|e| anyhow!("KEL write failed: {e}"))?;
+            // Replaced atomically: a torn log would fail to parse on the next open.
+            crate::core::durable_file::atomic_write(path, &data)
+                .map_err(|e| anyhow!("KEL write failed: {e}"))?;
         }
         Ok(())
     }

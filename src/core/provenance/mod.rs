@@ -78,8 +78,9 @@ impl ProvenanceManager {
         let mut kel = match storage_path {
             Some(p) => match keri::KeyEventLog::with_path(&p.join("kel.json")) {
                 Ok(kel) => kel,
-                // `persist` is not atomic, so a crash can leave a torn file; refusing to open
-                // would turn that crash into an outage.
+                // `persist` replaces the file atomically, but versions before it did not, so a
+                // crash there can have left a torn file; refusing to open would turn that crash
+                // into an outage.
                 Err(e) => {
                     tracing::warn!("KEL unreadable, starting an in-memory log: {e}");
                     keri::KeyEventLog::default()
