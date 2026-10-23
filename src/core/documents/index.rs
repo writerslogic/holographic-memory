@@ -51,6 +51,9 @@ pub(crate) struct DocumentStore {
     lexical_chunks: usize,
     /// Serializes the store's lazy encoders, so a backlog is encoded once, not per caller.
     encode_gate: Arc<crate::core::sync::Mutex<()>>,
+    /// The checkpoint this store is served from, whose live documents count as the store's
+    /// (`overlay`): the store holds only documents written since.
+    pub(super) base: Option<super::overlay::Base>,
 }
 
 #[cfg(test)]
@@ -162,6 +165,12 @@ pub(crate) fn opaque_counter_start() -> u64 {
 pub(crate) fn canonical_staging_path(path: &std::path::Path) -> std::path::PathBuf {
     path.with_extension("text.canonical")
 }
+/// [`DocumentStore::overlay`]: a checkpoint, its dead document ids, the documents written since.
+pub(crate) type Overlay = (
+    Arc<super::ServingImage>,
+    Vec<String>,
+    Vec<Arc<StoredDocument>>,
+);
 
 /// A chunk's word count is bounded by the 8 MiB document limit, so it fits a `u32`.
 pub(super) fn slot_words(count: usize) -> u32 {
@@ -373,8 +382,57 @@ impl DocumentStore {
         text_of(chunk, self.text.as_deref())
     }
 
+    /// Whether document `id` is stored, here or live in the checkpoint under the store.
     pub(crate) fn contains_key(&self, id: &str) -> bool {
         self.documents.contains_key(id)
+            || self
+                .base
+                .as_ref()
+                .is_some_and(|base| base.live(id).is_some())
+    }
+
+    /// A store of no documents of its own over the checkpoint `base`.
+    pub(crate) fn over(base: super::overlay::Base) -> Self {
+        Self {
+            base: Some(base),
+            ..Self::opened()
+        }
+    }
+
+    /// Whether the store is served from a checkpoint (see [`Self::over`]).
+    pub(crate) fn has_base(&self) -> bool {
+        self.base.is_some()
+    }
+
+    /// For a store served from a checkpoint: the checkpoint, the ids of its dead documents, and
+    /// the documents written since, in id order.
+    pub(crate) fn overlay(&self) -> Option<Overlay> {
+        let base = self.base.as_ref()?;
+        let dead = base
+            .dead_ordinals()
+            .map(|ordinal| base.image.id(ordinal).to_owned())
+            .collect();
+        Some((
+            Arc::clone(&base.image),
+            dead,
+            self.documents.values().cloned().collect(),
+        ))
+    }
+
+    /// Marks checkpoint document `id` dead if it is live there; true if it was.
+    fn kill_base(&mut self, id: &str) -> bool {
+        let Some(base) = self.base.as_mut() else {
+            return false;
+        };
+        let Some(ordinal) = base.live(id) else {
+            return false;
+        };
+        base.kill(ordinal);
+        self.generation = self
+            .generation
+            .checked_add(1)
+            .expect("document generation overflow");
+        true
     }
 
     pub(crate) fn get(&self, id: &str) -> Option<&Arc<StoredDocument>> {
@@ -445,7 +503,10 @@ impl DocumentStore {
         }
         let documents: Vec<Arc<StoredDocument>> = documents
             .into_iter()
-            .map(|document| self.stripped(document))
+            .map(|document| {
+                self.kill_base(&document.id);
+                self.stripped(document)
+            })
             .collect();
         let mut group: Vec<Arc<StoredDocument>> = Vec::with_capacity(documents.len());
         let mut grouped: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -463,6 +524,51 @@ impl DocumentStore {
             }
         }
         self.install_new(group);
+    }
+
+    /// The store holding `documents` (id order, text already moved to `text` when attached),
+    /// each chunk in the slot its list gives, with `postings` already built for exactly those
+    /// chunks: the state a checkpoint records, holes and all. Slots no chunk occupies are free.
+    pub(super) fn restore(
+        documents: Vec<(Arc<StoredDocument>, Vec<usize>)>,
+        slot_count: usize,
+        postings: [PostingLists; 2],
+        text: Option<Arc<TextSegment>>,
+    ) -> Self {
+        let mut store = Self {
+            postings,
+            slot_count,
+            text,
+            owners: vec![None; slot_count],
+            word_counts: vec![0; slot_count],
+            ..Self::opened()
+        };
+        for (document, slots) in documents {
+            for (index, (chunk, &slot)) in document.chunks.iter().zip(&slots).enumerate() {
+                store.nonpositional_chunks += usize::from(chunk.terms.positions.is_none());
+                store.count_vector_state(chunk.vector_state, true);
+                assert!(
+                    store.owners[slot]
+                        .replace((Arc::clone(&document), index))
+                        .is_none(),
+                    "document slot already owned"
+                );
+                store.word_counts[slot] = slot_words(chunk.word_count);
+                store.chunk_count += 1;
+                store.word_count += chunk.word_count;
+            }
+            if document.chunks.len() > 1 {
+                store.multichunk_documents.insert(document.id.clone());
+            }
+            store.insert_filters(&document);
+            store.slots.insert(document.id.clone(), slots);
+            store.generation += 1;
+            store.documents.insert(document.id.clone(), document);
+        }
+        store.free = (0..slot_count)
+            .filter(|&slot| store.owners[slot].is_none())
+            .collect();
+        store
     }
 
     /// Word count of the chunk occupying `slot`.
@@ -769,11 +875,20 @@ impl DocumentStore {
 
     /// Removes a document and zeroes its chunk text in the segment (see
     /// [`TextSegment::scrub`]); the caller syncs the segment once per transaction.
+    #[cfg(test)]
     pub(crate) fn remove_scrubbed(
         &mut self,
         id: &str,
     ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
         let removed = self.remove(id);
+        self.scrub_removed(removed)
+    }
+
+    /// Zeroes the segment text of `removed`, returning it.
+    pub(crate) fn scrub_removed(
+        &self,
+        removed: Option<Arc<StoredDocument>>,
+    ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
         if let (Some(document), Some(segment)) = (&removed, self.text.as_deref()) {
             for (at, len) in document.chunks.iter().filter_map(|c| c.text_at) {
                 segment.scrub(at, len)?;
@@ -798,6 +913,10 @@ impl DocumentStore {
     /// holding the old segment keep reading the unlinked file; deleted records in it are
     /// already zero. No-op without a segment.
     pub(crate) fn rebuild_canonical(&mut self, path: &std::path::Path) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.base.is_none(),
+            "canonical rebuild of a store still served from its checkpoint"
+        );
         let Some(old) = self.text.clone() else {
             return Ok(());
         };
@@ -830,7 +949,28 @@ impl DocumentStore {
         Ok(())
     }
 
+    /// Removes document `id`, returning it when it was one of the store's own; a live
+    /// checkpoint document is marked dead instead (and `None` returned).
     pub(crate) fn remove(&mut self, id: &str) -> Option<Arc<StoredDocument>> {
+        self.remove_with(id, true)
+    }
+
+    /// Removes and scrubs (see [`Self::scrub_removed`]) a document
+    /// `ServingImage::hydrate_excluding` installed without postings: everything but the posting
+    /// lists, which never held it.
+    pub(crate) fn remove_unindexed_scrubbed(
+        &mut self,
+        id: &str,
+    ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
+        let removed = self.remove_with(id, false);
+        self.scrub_removed(removed)
+    }
+
+    fn remove_with(&mut self, id: &str, indexed: bool) -> Option<Arc<StoredDocument>> {
+        if !self.documents.contains_key(id) {
+            self.kill_base(id);
+            return None;
+        }
         let document = self.documents.remove(id)?;
         self.multichunk_documents.remove(id);
         self.invalidate_dense_index();
@@ -876,9 +1016,11 @@ impl DocumentStore {
                 .word_count
                 .checked_sub(chunk.word_count)
                 .expect("document word count underflow");
-            let postings = &mut self.postings[usize::from(chunk.stemmed)];
-            for term in chunk.terms.keys() {
-                postings.remove(term, slot, &self.word_counts);
+            if indexed {
+                let postings = &mut self.postings[usize::from(chunk.stemmed)];
+                for term in chunk.terms.keys() {
+                    postings.remove(term, slot, &self.word_counts);
+                }
             }
             assert!(self.free.insert(slot), "document slot already free");
         }

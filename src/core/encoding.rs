@@ -165,6 +165,10 @@ const NGRAM_ARENA_BUDGET: usize = 1 << 21;
 /// times the number of indices to count; sorting them is cheaper beyond that.
 const COUNTING_RATIO: usize = 8;
 
+/// Below this dimension a majority-vote level is always counted in a `dim`-slot histogram
+/// (at most 256 KiB per thread) visited only at the counted indices, instead of sorted.
+const SPARSE_COUNTING_MAX_DIM: usize = 1 << 16;
+
 pub fn encode_text_internal(text: &str, dim: usize) -> EntangledHVec {
     TextEncoder::MultiscaleWordsV1.encode(text, dim)
 }
@@ -278,6 +282,15 @@ impl EncodeState {
         span
     }
 
+    /// Sizes `counts` to `dim` zeroed slots; it is all-zero between calls already.
+    fn reset_counts(&mut self, dim: usize) {
+        if self.counts.len() != dim {
+            self.counts.clear();
+            self.counts.resize(dim, 0);
+        }
+        debug_assert!(self.counts.iter().all(|&c| c == 0));
+    }
+
     /// The bundle (`EntangledHVec::bundle`, or `bundle_bloom` for union encoders) of `count`
     /// vectors whose indices are concatenated in `self.flat`, in any order.
     fn bundle_flat(&mut self, count: usize, encoder: TextEncoder) -> EntangledHVec {
@@ -288,12 +301,26 @@ impl EncodeState {
         let union = encoder.bundles_by_union();
         let threshold = if union { 1 } else { (count as u32).div_ceil(2) };
         self.selected.clear();
-        if dim <= self.flat.len().saturating_mul(COUNTING_RATIO) {
-            if self.counts.len() != dim {
-                self.counts.clear();
-                self.counts.resize(dim, 0);
+        let dense = dim <= self.flat.len().saturating_mul(COUNTING_RATIO);
+        if !union && self.flat.len() < dim && (dense || dim <= SPARSE_COUNTING_MAX_DIM) {
+            // Majority voting keeps few indices: count every index, collect the ones that
+            // reach the threshold while zeroing each touched slot (so each index is collected
+            // once), then sort only those. Same (index, count) pairs in the same ascending
+            // order as the other two paths, at a cost linear in the multiset rather than in
+            // `dim` (the dense scan, cheaper once the multiset outgrows `dim`) or a full sort.
+            self.reset_counts(dim);
+            for &idx in &self.flat {
+                self.counts[idx as usize] += 1;
             }
-            debug_assert!(self.counts.iter().all(|&c| c == 0));
+            for &idx in &self.flat {
+                let n = std::mem::take(&mut self.counts[idx as usize]);
+                if n >= threshold {
+                    self.selected.push((idx, n));
+                }
+            }
+            self.selected.sort_unstable_by_key(|&(idx, _)| idx);
+        } else if dense {
+            self.reset_counts(dim);
             for &idx in &self.flat {
                 self.counts[idx as usize] += 1;
             }
@@ -727,7 +754,10 @@ mod tests {
             TextEncoder::MultiscaleWordsV1,
             TextEncoder::MultiscaleCappedUnionV1,
         ] {
-            for dim in [1usize, 2, 3, 255, 256, 257, 1024, 4096, 16384] {
+            // 65535..=65537 straddle SPARSE_COUNTING_MAX_DIM.
+            for dim in [
+                1usize, 2, 3, 255, 256, 257, 1024, 4096, 10_000, 16384, 65535, 65536, 65537,
+            ] {
                 for text in texts {
                     let reference = encoder.encode_reference(text, dim);
                     let cached = encoder.encode(text, dim);

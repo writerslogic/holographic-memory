@@ -284,6 +284,10 @@ name = "sparse_composition"
 required-features = ["experimental"]
 
 [[example]]
+name = "qgraph_build_profile"
+required-features = ["experimental"]
+
+[[example]]
 name = "encoder_version_probe"
 required-features = ["experimental", "cli"]
 
@@ -330,3 +334,7 @@ required-features = ["cli"]
 [[example]]
 name = "document_operations"
 required-features = ["cli"]
+
+[[bench]]
+name = "ingest_alloc"
+harness = false

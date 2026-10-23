@@ -54,14 +54,21 @@ impl HmsCore {
             self.embed_document_inputs(std::slice::from_mut(&mut input))?;
             input
         };
-        let document = documents::prepare_with_options(
-            input,
-            self.dimensions,
-            self.config.embedding_space.as_ref().map(|s| s.dimensions),
-            None,
-            self.config.text_encoder,
-            options,
-        )?;
+        // The store's kept interner, as batches use: a single write otherwise stems and copies
+        // every word of the document afresh. It is a pure cache; the terms do not depend on it.
+        let mut memo = self.stem_memos.take();
+        let document = {
+            let _memo = memo.install();
+            documents::prepare_with_options(
+                input,
+                self.dimensions,
+                self.config.embedding_space.as_ref().map(|s| s.dimensions),
+                None,
+                self.config.text_encoder,
+                options,
+            )?
+        };
+        drop(memo);
         let count = document.chunks.len() as u32;
         self.commit(&[Mutation::Document(Arc::new(document))])?;
         Ok(count)
@@ -161,17 +168,33 @@ impl HmsCore {
             options,
             self.config.embedding_space.as_ref().map(|s| s.dimensions),
         )?;
-        Ok(self.run_searches(vec![prepared]).pop().expect("one query"))
+        Ok(self.run_searches(vec![prepared])?.pop().expect("one query"))
     }
 
     /// Captures `prepared`, ranks each query with no lock held, then reads the hits' text under
     /// the mutation gate, which excludes the writes that scrub replaced or deleted text. If a
     /// hit's text was scrubbed since the capture, the queries run again with the gate held
-    /// throughout, so a result never pairs a version with empty or other text.
-    fn run_searches(&self, prepared: Vec<documents::PreparedSearch>) -> Vec<Vec<DocumentResult>> {
-        let captured = {
-            let _transaction = self.mutation_gate.read();
-            documents::capture_search(&self.documents.read(), prepared)
+    /// throughout, so a result never pairs a version with empty or other text. Queries a store
+    /// served from its checkpoint answers are captured from it without rebuilding the store.
+    fn run_searches(
+        &self,
+        prepared: Vec<documents::PreparedSearch>,
+    ) -> Result<Vec<Vec<DocumentResult>>> {
+        let mut prepared = Some(prepared);
+        let from_checkpoint = self.capture_from_checkpoint(|store| {
+            let queries = prepared.as_deref().expect("queries not taken yet");
+            documents::overlay_serves(store, queries).then(|| {
+                documents::capture_overlaid_search(store, prepared.take().expect("taken once"))
+            })
+        });
+        let captured = match from_checkpoint {
+            Some(captured) => captured?,
+            None => {
+                self.hydrate_documents()?;
+                let _transaction = self.mutation_gate.read();
+                let prepared = prepared.expect("queries not taken");
+                documents::capture_search(&self.documents.read(), prepared)
+            }
         };
         let ranked: Vec<_> = (0..captured.len())
             .map(|i| documents::rank_search(&captured, i))
@@ -184,20 +207,22 @@ impl HmsCore {
                 .map(|(i, hits)| documents::read_ranked(&captured, i, hits))
                 .collect();
             if let Some(results) = read {
-                return results;
+                return Ok(results);
             }
         }
+        self.hydrate_documents()?;
         let _transaction = self.mutation_gate.read();
         let captured = documents::capture_search(&self.documents.read(), captured.into_prepared());
-        (0..captured.len())
+        Ok((0..captured.len())
             .map(|i| documents::execute_search(&captured, i))
-            .collect()
+            .collect())
     }
 
     /// The number of documents containing at least one word of `text`: every document an
     /// unfiltered lexical [`Self::search_documents`] can return, counted exactly rather than
     /// ranked.
     pub fn count_documents(&self, text: &str) -> Result<usize> {
+        self.hydrate_documents()?;
         let _transaction = self.mutation_gate.read();
         documents::count_matches(&self.documents.read(), text)
     }
@@ -208,6 +233,7 @@ impl HmsCore {
         query: &documents::LexicalQuery,
         options: &documents::LexicalOptions,
     ) -> Result<documents::LexicalResults> {
+        self.hydrate_documents()?;
         let _transaction = self.mutation_gate.read();
         documents::execute_lexical(&self.documents.read(), query, options)
     }
@@ -226,11 +252,11 @@ impl HmsCore {
     }
 
     pub fn document_index_trained(&self) -> bool {
-        self.documents.read().dense_index_trained()
+        self.documents().dense_index_trained()
     }
 
     pub fn document_embedding_count(&self) -> usize {
-        self.documents.read().embedded_count()
+        self.documents().embedded_count()
     }
 
     /// Nearest embedded chunks to `embedding` by cosine, best first; `score` and
@@ -318,7 +344,7 @@ impl HmsCore {
 
     pub fn vector_index_status(&self) -> VectorIndexStatus {
         let snapshot = self.vector_index.get();
-        documents::vector_index_status(snapshot.as_deref(), &self.documents.read())
+        documents::vector_index_status(snapshot.as_deref(), &self.documents())
     }
 
     /// Captures the embedded chunks and publishes a fresh vector snapshot, with the graph
@@ -349,7 +375,7 @@ impl HmsCore {
         };
         let capture = {
             let _transaction = self.mutation_gate.read();
-            documents::capture_vector_rows(&self.documents.read(), space.dimensions)?
+            documents::capture_vector_rows(&self.documents(), space.dimensions)?
         };
         let Some(capture) = capture else {
             self.vector_index.clear();
@@ -383,7 +409,7 @@ impl HmsCore {
         };
         let snapshot = {
             let _transaction = self.mutation_gate.read();
-            documents::capture_dense_index(&self.documents.read(), space.dimensions)?
+            documents::capture_dense_index(&self.documents(), space.dimensions)?
         };
         let Some(snapshot) = snapshot else {
             return Ok(());
@@ -393,7 +419,7 @@ impl HmsCore {
         };
         let published = {
             let _transaction = self.mutation_gate.read();
-            documents::publish_dense_index(&mut self.documents.write(), &trained)
+            documents::publish_dense_index(&mut self.documents_mut(), &trained)
         };
         ensure!(
             published,
@@ -409,6 +435,8 @@ impl HmsCore {
     /// gate and the second one finds nothing left. A vector query runs this first, so pending
     /// documents are never silently missing from it.
     pub fn encode_pending_documents(&self) -> Result<usize> {
+        // A checkpoint holds no pending encodings, so a store served from one is read as it is
+        // (its pending documents are all among those written since).
         if self.documents.read().pending_vector_count() == 0 {
             return Ok(0);
         }
@@ -487,7 +515,7 @@ impl HmsCore {
 
     /// Whether a document with this id currently resolves in the opened store.
     pub fn has_document(&self, id: &str) -> bool {
-        self.documents.read().contains_key(id)
+        self.documents().contains_key(id)
     }
 
     /// Whether the word interner built while preparing a document batch is kept for the next
@@ -501,13 +529,13 @@ impl HmsCore {
 
     /// Number of stored documents.
     pub fn document_count(&self) -> usize {
-        documents::count(&self.documents.read())
+        documents::count(&self.documents())
     }
 
     /// One stored document with its text, metadata and version.
     pub fn get_document(&self, id: &str) -> Option<documents::DocumentRecord> {
         let _transaction = self.mutation_gate.read();
-        documents::get_record(&self.documents.read(), id)
+        documents::get_record(&self.documents(), id)
     }
 
     /// Up to `limit` stored documents with ids at or after `from`, in id order. Resume after id
@@ -518,11 +546,12 @@ impl HmsCore {
         limit: usize,
     ) -> Vec<documents::DocumentRecord> {
         let _transaction = self.mutation_gate.read();
-        documents::list_records(&self.documents.read(), from, limit)
+        documents::list_records(&self.documents(), from, limit)
     }
 
     pub fn delete_document(&self, id: &str) -> Result<bool> {
         validate_id(id)?;
+        // The store answers for a checkpoint it is served from without being rebuilt.
         let exists = self.documents.read().contains_key(id);
         self.commit(&[Mutation::DeleteDocument { id: id.into() }])?;
         Ok(exists)
@@ -532,17 +561,22 @@ impl HmsCore {
     /// journal frame that records the delete; `forget` and a scrubbing compaction call this so
     /// the zeros are on stable storage before they return.
     pub(crate) fn sync_text_segment(&self) -> Result<()> {
-        let segment = self.documents.read().text_segment();
+        let segment = self.documents().text_segment();
         segment.map_or(Ok(()), |segment| segment.sync())
     }
 
     pub(super) fn remove_document_from_memory(&self, id: &str, shards: &ShardSet) -> Result<()> {
-        if let Some(old) = self.documents.write().remove_scrubbed(id)? {
+        // A store served from a checkpoint marks a checkpoint document dead (its text leaves
+        // with the checkpoint at the next compaction) without being rebuilt.
+        // The chunk vectors leave with the document even when zeroing its text fails.
+        let mut store = self.documents.write();
+        let removed = store.remove(id);
+        if let Some(old) = &removed {
             for chunk in &old.chunks {
                 shards.remove(&chunk.id, self.dimensions)?;
             }
         }
-        Ok(())
+        store.scrub_removed(removed).map(drop)
     }
 
     /// One bounded transaction; either every item is logged or none is.
@@ -710,7 +744,7 @@ impl HmsCore {
         let lists = variants
             .iter()
             .map(|(_, weight)| *weight)
-            .zip(self.run_searches(prepared))
+            .zip(self.run_searches(prepared)?)
             .collect();
         stages.fuse(text, lists, k)
     }

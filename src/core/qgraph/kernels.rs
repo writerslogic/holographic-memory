@@ -84,6 +84,28 @@ where
     T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
 {
     let mut h = 1;
+    if x.len() >= 8 {
+        // Stages 1, 2 and 4 on each block of eight in registers: the same butterflies in the
+        // same order as the loop below, without its one-, two- and four-wide inner loops.
+        for b in x.as_chunks_mut::<8>().0 {
+            let [a0, a1, a2, a3, a4, a5, a6, a7] = *b;
+            let (b0, b1, b2, b3) = (a0 + a1, a0 - a1, a2 + a3, a2 - a3);
+            let (b4, b5, b6, b7) = (a4 + a5, a4 - a5, a6 + a7, a6 - a7);
+            let (c0, c2, c1, c3) = (b0 + b2, b0 - b2, b1 + b3, b1 - b3);
+            let (c4, c6, c5, c7) = (b4 + b6, b4 - b6, b5 + b7, b5 - b7);
+            *b = [
+                c0 + c4,
+                c1 + c5,
+                c2 + c6,
+                c3 + c7,
+                c0 - c4,
+                c1 - c5,
+                c2 - c6,
+                c3 - c7,
+            ];
+        }
+        h = 8;
+    }
     while h < x.len() {
         for chunk in x.chunks_exact_mut(2 * h) {
             let (a, b) = chunk.split_at_mut(h);
@@ -414,17 +436,20 @@ mod neon {
     }
 }
 
-/// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|vnni` (read once, at the
-/// first distance call) pins a lower tier than the CPU supports, so every tier can be run and
-/// compared on one machine; `auto` or unset takes the best detected tier, and a tier above
-/// what the CPU supports falls back to the best detected one.
+/// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|avxvnni|vnni` (read
+/// once, at the first distance call) pins a lower tier than the CPU supports, so every tier can
+/// be run and compared on one machine; `auto` or unset takes the best detected tier, and a tier
+/// the CPU does not support falls back to the best detected one below it. `avxvnni` is the
+/// VEX-encoded 256-bit `vpdpbusd` (client cores without AVX-512), `vnni` the AVX512-VNNI one;
+/// the per-query kernels ([`dot_i8_query`] and the 4-bit ones) use [`super::vnni`] on both.
 #[cfg(target_arch = "x86_64")]
 mod tier {
     use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
     pub(super) const SCALAR: u8 = 1;
     pub(super) const AVX2: u8 = 2;
-    pub(super) const VNNI: u8 = 3;
+    pub(super) const AVXVNNI: u8 = 3;
+    pub(super) const VNNI: u8 = 4;
     static TIER: AtomicU8 = AtomicU8::new(0);
     /// `popcnt` detected and the tier not pinned to `scalar`. Stored before [`TIER`]; a reader
     /// that sees the tier but not yet this flag takes the scalar popcount, which is exact too.
@@ -447,27 +472,40 @@ mod tier {
 
     #[cold]
     fn detect() -> u8 {
-        let best = if is_x86_feature_detected!("avx512vnni")
-            && is_x86_feature_detected!("avx512vl")
-            && is_x86_feature_detected!("avx2")
-        {
-            VNNI
-        } else if is_x86_feature_detected!("avx2") {
-            AVX2
-        } else {
-            SCALAR
+        let avx2 = is_x86_feature_detected!("avx2");
+        let vnni = avx2
+            && is_x86_feature_detected!("avx512f")
+            && is_x86_feature_detected!("avx512vnni")
+            && is_x86_feature_detected!("avx512vl");
+        let avxvnni = avx2 && is_x86_feature_detected!("avxvnni");
+        let supported = |t: u8| match t {
+            VNNI => vnni,
+            AVXVNNI => avxvnni,
+            AVX2 => avx2,
+            _ => true,
         };
+        let best = [VNNI, AVXVNNI, AVX2, SCALAR]
+            .into_iter()
+            .find(|&t| supported(t))
+            .unwrap_or(SCALAR);
         let want = match std::env::var("HMS_QGRAPH_KERNEL").as_deref() {
             Ok("scalar") => SCALAR,
             Ok("avx2") => AVX2,
+            Ok("avxvnni") => AVXVNNI,
             Ok("vnni") => VNNI,
             Ok("auto") | Err(_) => best,
             Ok(other) => {
-                eprintln!("HMS_QGRAPH_KERNEL={other:?} is not scalar|avx2|vnni|auto; using auto");
+                eprintln!(
+                    "HMS_QGRAPH_KERNEL={other:?} is not scalar|avx2|avxvnni|vnni|auto; using auto"
+                );
                 best
             }
         };
-        let tier = want.min(best);
+        // The highest supported tier at or below the one asked for.
+        let tier = (SCALAR..=want.min(VNNI))
+            .rev()
+            .find(|&t| supported(t))
+            .unwrap_or(SCALAR);
         POPCNT.store(
             want != SCALAR && is_x86_feature_detected!("popcnt"),
             Ordering::Relaxed,
@@ -505,8 +543,9 @@ pub(crate) fn dot_i8_inline(a: &[i8], b: &[i8]) -> i32 {
             // SAFETY: the tier is VNNI only after detecting `avx512vnni`, `avx512vl` and `avx2`;
             // the lengths are checked above.
             tier::VNNI => unsafe { x86::dot_i8_vnni(a, b) },
-            // SAFETY: the tier is AVX2 only after detecting `avx2`; the lengths are checked above.
-            tier::AVX2 => unsafe { x86::dot_i8_avx2(a, b) },
+            // SAFETY: the tier is AVX2 or AVXVNNI only after detecting `avx2`; the lengths are
+            // checked above.
+            tier::AVX2 | tier::AVXVNNI => unsafe { x86::dot_i8_avx2(a, b) },
             _ => dot_i8_scalar(a, b),
         }
         #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
@@ -558,8 +597,8 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
             // SAFETY: the tier is VNNI only after detecting `avx512vnni`, `avx512vl` and `avx2`;
             // the slice lengths were checked above.
             tier::VNNI => return unsafe { x86::dot_i4_vnni(q, packed) },
-            // SAFETY: the tier is AVX2 or above only after detecting `avx2`.
-            tier::AVX2 => return unsafe { x86::dot_i4_avx2(q, packed) },
+            // SAFETY: the tier is AVX2 or AVXVNNI only after detecting `avx2`.
+            tier::AVX2 | tier::AVXVNNI => return unsafe { x86::dot_i4_avx2(q, packed) },
             _ => {}
         }
         #[cfg(not(target_arch = "aarch64"))]
@@ -592,6 +631,68 @@ pub(crate) fn dot_i4_inline_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
         dot_i4_inline(q, rows[2]),
         dot_i4_inline(q, rows[3]),
     ]
+}
+
+/// [`dot_i8_inline`] for a traversal query `a` with `qsum == super::vnni::query_sum(a)`,
+/// computed once per query: the VNNI tiers then spend one `vpdpbusd` per 32 coordinates.
+/// The same integer as [`dot_i8_inline`] on every tier.
+#[must_use]
+#[inline(always)]
+pub(crate) fn dot_i8_query(a: &[i8], b: &[i8], qsum: i32) -> i32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
+        match tier::get() {
+            // SAFETY: the tier is AVXVNNI only after detecting `avx2` and `avxvnni`, VNNI only
+            // after `avx2`, `avx512f`, `avx512vl` and `avx512vnni`; the lengths are checked.
+            tier::AVXVNNI => return unsafe { super::vnni::avx::dot_i8(a, b, qsum) },
+            // SAFETY: as above.
+            tier::VNNI => return unsafe { super::vnni::evex::dot_i8(a, b, qsum) },
+            _ => {}
+        }
+    }
+    let _ = qsum;
+    dot_i8_inline(a, b)
+}
+
+/// [`dot_i4_inline`] with the query sum precomputed, as [`dot_i8_query`].
+#[must_use]
+#[inline(always)]
+pub(crate) fn dot_i4_query(q: &[i8], packed: &[i8], qsum: i32) -> i32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        assert!(q.len() == 2 * packed.len() && packed.len().is_multiple_of(16));
+        match tier::get() {
+            // SAFETY: as in `dot_i8_query`; the lengths are checked above.
+            tier::AVXVNNI => return unsafe { super::vnni::avx::dot_i4(q, packed, qsum) },
+            // SAFETY: as above.
+            tier::VNNI => return unsafe { super::vnni::evex::dot_i4(q, packed, qsum) },
+            _ => {}
+        }
+    }
+    let _ = qsum;
+    dot_i4_inline(q, packed)
+}
+
+/// [`dot_i4_inline_x4`] with the query sum precomputed, as [`dot_i8_query`].
+#[must_use]
+#[inline(always)]
+pub(crate) fn dot_i4_query_x4(q: &[i8], rows: [&[i8]; 4], qsum: i32) -> [i32; 4] {
+    #[cfg(target_arch = "x86_64")]
+    {
+        let len = rows[0].len();
+        if rows.iter().all(|r| r.len() == len) && q.len() == 2 * len && len.is_multiple_of(16) {
+            match tier::get() {
+                // SAFETY: as in `dot_i8_query`; the lengths were checked above.
+                tier::AVXVNNI => return unsafe { super::vnni::avx::dot_i4_x4(q, rows, qsum) },
+                // SAFETY: as above.
+                tier::VNNI => return unsafe { super::vnni::evex::dot_i4_x4(q, rows, qsum) },
+                _ => {}
+            }
+        }
+    }
+    let _ = qsum;
+    dot_i4_inline_x4(q, rows)
 }
 
 #[cfg(any(test, not(all(target_arch = "aarch64", target_feature = "dotprod"))))]
@@ -947,6 +1048,86 @@ pub(crate) fn as_u32_mut(w: &mut [u64]) -> &mut [u32] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The transform before its first three stages were fused.
+    fn fwht_reference(x: &mut [f32]) {
+        let mut h = 1;
+        while h < x.len() {
+            for chunk in x.chunks_exact_mut(2 * h) {
+                let (a, b) = chunk.split_at_mut(h);
+                for (u, v) in a.iter_mut().zip(b.iter_mut()) {
+                    let t = *u;
+                    *u = t + *v;
+                    *v = t - *v;
+                }
+            }
+            h *= 2;
+        }
+    }
+
+    #[test]
+    fn fused_fwht_returns_the_reference_bits_at_every_size() {
+        let mut rng = SplitMix(3);
+        for log in 0..=12 {
+            let n = 1usize << log;
+            for _ in 0..4 {
+                let x: Vec<f32> = (0..n).map(|_| rng.next_f32() * 2.0 - 1.0).collect();
+                let (mut a, mut b) = (x.clone(), x);
+                fwht(&mut a);
+                fwht_reference(&mut b);
+                let bits = |v: &[f32]| v.iter().map(|f| f.to_bits()).collect::<Vec<_>>();
+                assert_eq!(bits(&a), bits(&b), "n {n}");
+            }
+        }
+        // The integer instantiation too.
+        let mut a: Vec<i64> = (0..64).map(|i| i * 7 - 200).collect();
+        let mut b = a.clone();
+        fwht(&mut a);
+        let mut h = 1;
+        while h < b.len() {
+            for chunk in b.chunks_exact_mut(2 * h) {
+                let (l, r) = chunk.split_at_mut(h);
+                for (u, v) in l.iter_mut().zip(r.iter_mut()) {
+                    let t = *u;
+                    *u = t + *v;
+                    *v = t - *v;
+                }
+            }
+            h *= 2;
+        }
+        assert_eq!(a, b);
+    }
+
+    /// Development microbenchmark (`--ignored`): ns per transform, fused against reference.
+    #[test]
+    #[ignore]
+    fn microbench_fwht() {
+        use std::hint::black_box;
+        use std::time::Instant;
+        for n in [64usize, 128, 256, 1024] {
+            let mut x: Vec<f32> = (0..n).map(|i| (i as f32).sin()).collect();
+            let reps = 200_000_000 / (n * n.trailing_zeros() as usize);
+            let mut best = [f64::INFINITY; 2];
+            for _ in 0..5 {
+                for (k, b) in best.iter_mut().enumerate() {
+                    let t = Instant::now();
+                    for _ in 0..reps {
+                        if k == 0 {
+                            fwht(black_box(&mut x));
+                        } else {
+                            fwht_reference(black_box(&mut x));
+                        }
+                        x[0] = 0.5;
+                    }
+                    *b = b.min(t.elapsed().as_nanos() as f64 / reps as f64);
+                }
+            }
+            println!(
+                "{{\"n\": {n}, \"fused_ns\": {:.1}, \"reference_ns\": {:.1}}}",
+                best[0], best[1]
+            );
+        }
+    }
 
     #[test]
     fn popcount_kernels_match_scalar_at_every_width() {

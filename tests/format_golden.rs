@@ -63,6 +63,9 @@ struct Spec {
     text_v1: bool,
     /// Delete documents.text (formats written before it existed).
     no_text: bool,
+    /// Lexical-only documents and nothing else, closed into a journal checkpoint
+    /// (`documents.ckpt`) instead of the frames before it.
+    checkpoint: bool,
 }
 
 const BASE: Spec = Spec {
@@ -81,6 +84,7 @@ const BASE: Spec = Spec {
     audit: false,
     text_v1: false,
     no_text: false,
+    checkpoint: false,
 };
 
 fn specs() -> Vec<Spec> {
@@ -187,6 +191,23 @@ fn specs() -> Vec<Spec> {
             ..BASE
         },
         Spec {
+            name: "v4-schema4-plain",
+            description: "Schema 4: binary HMS-TXN-3 frames in a store that may hold document \
+                          checkpoints; the v4-plain corpus and operations (vectors and \
+                          relations, so no checkpoint is written).",
+            schema: 4,
+            ..BASE
+        },
+        Spec {
+            name: "v4-schema4-checkpoint",
+            description: "Schema 4 with a journal checkpoint: the v4-plain documents stored \
+                          lexical-only (one deleted), no vectors or relations, closed into \
+                          documents.ckpt in the journal generation in place of the frames.",
+            schema: 4,
+            checkpoint: true,
+            ..BASE
+        },
+        Spec {
             name: "v4-txn3-compacted",
             description: "Schema 3 after compaction: one binary frame per document in the new \
                           generation, then the journal tail.",
@@ -273,6 +294,9 @@ fn config_for(spec: &Spec) -> Result<HmsConfig> {
         config.security.encryption_passphrase = Some(PASSPHRASE.into());
     }
     config.security.audit_enabled = spec.audit;
+    if spec.checkpoint {
+        config.document_checkpoint.min_journal_bytes = 0;
+    }
     if spec.caches {
         config.ivf.n_clusters = 4;
         config.ivf.n_landmarks = 16;
@@ -399,6 +423,27 @@ fn build(spec: &Spec, store: &Path) -> Result<Value> {
     )?);
     let dim = DIM as usize;
     let mut expect = match spec.kind {
+        Kind::Text if spec.checkpoint => {
+            let lexical = holographic_memory::core::documents::IngestOptions {
+                encode: holographic_memory::core::documents::EncodeMode::Lexical,
+                ..Default::default()
+            };
+            for document in corpus("text.json")? {
+                core.memorize_document_with(document, &lexical)?;
+            }
+            core.delete_document("doc-obsolete")?;
+            json!({
+                "documents": expected_documents("text.json", &["doc-obsolete"])?,
+                "absentDocuments": ["doc-obsolete"],
+                "vectors": [],
+                "relations": 0,
+                "searches": [
+                    {"query": "harbor master ship dawn", "top": "doc-harbor"},
+                    {"query": "quarterly ledger invoice bank statement", "top": "doc-ledger"},
+                    {"query": "crème brûlée café 東京", "top": "doc-unicode"},
+                ],
+            })
+        }
         Kind::Text => {
             ops::populate(&core, corpus("text.json")?, dim, true)?;
             let mut documents = expected_documents("text.json", &["doc-obsolete"])?;
@@ -474,6 +519,13 @@ fn build(spec: &Spec, store: &Path) -> Result<Value> {
     }
     if spec.no_text {
         std::fs::remove_file(store.join("documents.text"))?;
+    }
+    if spec.checkpoint {
+        let generations = std::fs::read_dir(store.join("vectors_data.bin"))?
+            .filter_map(Result::ok)
+            .filter(|entry| entry.path().join("documents.ckpt").is_file())
+            .count();
+        ensure!(generations == 1, "closing wrote no document checkpoint");
     }
     Ok(expect)
 }
@@ -1001,7 +1053,9 @@ fn verify_agrees_with_every_golden() -> Result<()> {
 #[test]
 fn canonical_corpus_regenerates_the_current_goldens() -> Result<()> {
     for spec in specs() {
-        let deterministic = !spec.encrypted && !spec.compact && !spec.caches && !spec.shard;
+        // A checkpoint binds the random generation name.
+        let deterministic =
+            !spec.encrypted && !spec.compact && !spec.caches && !spec.shard && !spec.checkpoint;
         if !deterministic || spec.manifest.is_some() {
             continue;
         }

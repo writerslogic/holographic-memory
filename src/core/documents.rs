@@ -19,16 +19,24 @@ use packed_terms::StoredTerms;
 #[cfg(test)]
 mod census;
 mod dense;
+mod image;
 mod index;
 mod lexical;
 mod listing;
 mod memory;
+mod overlay;
 mod positions;
 mod postings;
 mod search;
 mod text;
 mod vector_index;
 pub(crate) use dense::{build_dense_index, capture_dense_index, publish_dense_index};
+pub(crate) use image::{
+    binding as checkpoint_binding, recorded_crc as checkpoint_crc,
+    representable as checkpoint_representable, Backing, ServingImage,
+    CRC_START as CHECKPOINT_CRC_START, HEADER_LEN as CHECKPOINT_HEADER_LEN,
+    MAGIC as CHECKPOINT_MAGIC,
+};
 pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
 pub(crate) use lexical::execute as execute_lexical;
@@ -36,9 +44,10 @@ pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, Le
 pub use listing::DocumentRecord;
 pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
+pub(crate) use overlay::Base as CheckpointBase;
 pub(crate) use search::{
     capture_search, count_matches, execute_search, prepare_search, rank_search, read_ranked,
-    PreparedSearch,
+    CapturedSearch, PreparedSearch,
 };
 pub(crate) use text::TextSegment;
 pub(crate) use vector_index::{
@@ -498,7 +507,89 @@ pub fn chunk_document(input: &DocumentInput) -> Result<Vec<DocumentChunk>> {
 }
 
 fn chunk_id(document: &str, index: usize) -> String {
-    format!("{CHUNK_PREFIX}{}:{document}:{index}", document.len())
+    let mut length = [0u8; 20];
+    let mut ordinal = [0u8; 20];
+    let (length, ordinal) = (
+        decimal(document.len(), &mut length),
+        decimal(index, &mut ordinal),
+    );
+    // Sized exactly: the id is stored as is, and a grown buffer would be reallocated to fit.
+    let mut id = String::with_capacity(
+        CHUNK_PREFIX.len() + length.len() + document.len() + ordinal.len() + 2,
+    );
+    for part in [CHUNK_PREFIX, length, ":", document, ":", ordinal] {
+        id.push_str(part);
+    }
+    id
+}
+
+/// Whether `id` is [`chunk_id`]`(document, index)`, without building it.
+fn is_chunk_id(id: &str, document: &str, index: usize) -> bool {
+    let mut length = [0u8; 20];
+    let mut ordinal = [0u8; 20];
+    let (length, ordinal) = (
+        decimal(document.len(), &mut length),
+        decimal(index, &mut ordinal),
+    );
+    let mut rest = id;
+    for part in [CHUNK_PREFIX, length, ":", document, ":", ordinal] {
+        match rest.strip_prefix(part) {
+            Some(after) => rest = after,
+            None => return false,
+        }
+    }
+    rest.is_empty()
+}
+
+/// `value` in decimal, written to the end of `buffer`.
+fn decimal(mut value: usize, buffer: &mut [u8; 20]) -> &str {
+    let mut at = buffer.len();
+    loop {
+        at -= 1;
+        buffer[at] = b'0' + (value % 10) as u8;
+        value /= 10;
+        if value == 0 {
+            break;
+        }
+    }
+    std::str::from_utf8(&buffer[at..]).expect("ASCII digits")
+}
+
+/// A JSON sink that counts bytes and fails once they pass `limit`, so a size check allocates
+/// nothing.
+struct SizeLimit {
+    bytes: usize,
+    limit: usize,
+}
+
+impl std::io::Write for SizeLimit {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        let next = self
+            .bytes
+            .checked_add(bytes.len())
+            .filter(|&n| n <= self.limit);
+        match next {
+            Some(next) => {
+                self.bytes = next;
+                Ok(bytes.len())
+            }
+            None => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "document batch size limit exceeded",
+            )),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+/// The length of `value` as JSON, or an error once it passes `limit` bytes.
+pub(crate) fn serialized_size(value: &impl serde::Serialize, limit: usize) -> Result<usize> {
+    let mut sink = SizeLimit { bytes: 0, limit };
+    serde_json::to_writer(&mut sink, value)?;
+    Ok(sink.bytes)
 }
 
 /// The byte span of every chunk [`chunk_document`] cuts `input` into, with the same checks and
@@ -1071,7 +1162,7 @@ pub(crate) fn prepare_spans(
         "metadata must be a JSON object"
     );
     ensure!(
-        serde_json::to_vec(&input.metadata)?.len() <= 64 * 1024,
+        serialized_size(&input.metadata, 64 * 1024).is_ok(),
         "metadata exceeds 64 KiB"
     );
     ensure!(
@@ -1192,6 +1283,32 @@ pub(crate) fn document_fingerprint(
     Some(h)
 }
 
+/// Whether every query in `prepared` ranks from the checkpoint under `store` and the store's
+/// own documents (see `search::overlay_serves`).
+pub(crate) fn overlay_serves(store: &DocumentStore, prepared: &[PreparedSearch]) -> bool {
+    prepared
+        .iter()
+        .all(|query| search::overlay_serves(query, store))
+}
+
+/// [`capture_search`] over the checkpoint under `store` and the store's own documents, for
+/// queries [`overlay_serves`] accepts.
+pub(crate) fn capture_overlaid_search(
+    store: &DocumentStore,
+    prepared: Vec<PreparedSearch>,
+) -> Result<CapturedSearch> {
+    search::capture_overlaid_search(store, prepared)
+}
+
+/// The checkpoint of `store` for the generation whose name has CRC32 `generation`; `None` when
+/// a chunk is not lexical-only or the store would not fit the layout.
+pub(crate) fn encode_checkpoint(
+    store: &DocumentStore,
+    generation: u32,
+    dimensions: usize,
+) -> Result<Option<Vec<u8>>> {
+    image::encode(store, generation, dimensions)
+}
 #[cfg(test)]
 pub(crate) fn search(
     store: &DocumentStore,
@@ -1491,6 +1608,34 @@ fn search_impl(
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// The chunk id keeps the journal's text form, and recognising it agrees with comparing
+    /// against it, near misses included.
+    #[test]
+    fn chunk_ids_match_their_text_form() {
+        for document in ["d", "a:b", "x:1:2", "ünï", ""] {
+            for index in [0, 9, 10, 99, 100, 4095, usize::MAX] {
+                let id = chunk_id(document, index);
+                let text = format!("{CHUNK_PREFIX}{}:{document}:{index}", document.len());
+                assert_eq!(id, text);
+                assert_eq!(id.capacity(), id.len());
+                assert!(is_chunk_id(&id, document, index));
+                for other in [
+                    format!("{id}0"),
+                    id[..id.len() - 1].to_owned(),
+                    chunk_id(document, index.wrapping_add(1)),
+                    chunk_id(&format!("{document}x"), index),
+                    id.replacen(CHUNK_PREFIX, "", 1),
+                ] {
+                    assert_eq!(
+                        is_chunk_id(&other, document, index),
+                        other == id,
+                        "{other:?}"
+                    );
+                }
+            }
+        }
+    }
 
     fn document(i: usize, revision: usize) -> StoredDocument {
         let input: DocumentInput = serde_json::from_value(json!({

@@ -9,8 +9,9 @@ memory-mapped base graph, an in-memory delta graph of the rows inserted since th
 consolidation, and a rebuild of the base over the live rows when the delta or the deleted
 share passes the adapter's thresholds (delta 1.0x the base, 30% deleted, 100k rows minimum).
 
-Every number below traces to `benchmarks/results/bigann_streaming_delete_runbook_v1.json`,
-which records the HMS commit, the harness commit (`89a3aba`), the machine and the parameters.
+Every number below traces to `benchmarks/results/bigann_streaming_delete_runbook_v1.json`
+or, from "Operating point" on, `benchmarks/results/bigann_streaming_delete_runbook_v2.json`;
+both record the HMS commit, the harness commit (`89a3aba`), the machine and the parameters.
 
 ## Where the recall went
 
@@ -43,8 +44,8 @@ stays flat across deletes and consolidations (at ef 1024 the 33 official checkpo
 * The remaining distance to the DiskANN baseline (R64, Ls 100: 0.924) is the degree: R64 L128
   gains another 12 points at ef 64 and 10 at ef 128 on the prefix, at 2x the build time per
   consolidation and about 128 more bytes per live row; R32 peaked at 7.47 GiB
-  (sampled summed RSS, Modal, ef 1024) and at 4.85 GiB (GNU time, writerslogic-02, ef 64 and 128), so
-  whether R64 fits the 8 GiB cap is unmeasured; it needs one official R64 run.
+  (sampled summed RSS, Modal, ef 1024) and at 4.85 GiB (GNU time, writerslogic-02, ef 64 and 128), and
+  the official R64 L64 run at ef 256 peaked at 5.57 GiB on Modal (see the official runs table).
 * Candidate retention (`reservoir`) changes nothing at any ef (0.7161 at 0, 256 and 512), so
   neither quantized estimates nor pool eviction is a loss mechanism here; the queries are
   simply far from the clustered rows (in-distribution queries reach 0.973 at ef 64 on the
@@ -71,8 +72,93 @@ Per search step of the official runbook (harness ground truth, same wheel, R32 L
 | cc5dede | R32 L64 alpha 1.2 | 1024 | 0.9301 | 36.0 min | 7.47 GiB | Modal 8 vCPU |
 | 791749b, alpha 1.0 passed explicitly | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
 | 791749b, alpha 1.0 passed explicitly | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
+| c80aa52 (main) | R32 L64 alpha 1.0 | 64 | 0.7623 | 14:24 (runbook steps 864 s) | 4.98 GiB | Modal cpu 8.0 |
+| 082766e | R32 L64 alpha 1.0 | 64 | 0.7623 | 13:32 (runbook steps 811 s) | 4.85 GiB | Modal cpu 8.0 |
+| 082766e | R32 L64 alpha 1.0 | 128 | 0.8401 | 18:53 (1,132 s) | 4.84 GiB | Modal cpu 8.0 |
+| 082766e | R32 L64 alpha 1.0 | 384 | 0.9226 | 20:51 (1,250 s) | 4.87 GiB | Modal cpu 8.0 |
+| 082766e | R32 L64 alpha 1.0 | **512** | **0.9371** | **15:41 (941 s)** | 4.84 GiB | Modal cpu 8.0 |
+| 082766e | R64 L64 alpha 1.0 | 256 | 0.9353 | 15:09 (908 s) | 5.57 GiB | Modal cpu 8.0 |
 
 The baseline the track README quotes is DiskANN at R64 L50 Ls100: 0.924 in about 23 minutes
 on the competition VM (Azure D8lds v5). The writerslogic-02 runs are recall runs at `nice 19`
 on a shared host (Core Ultra 9 185H, 8 of 22 threads, 8 GiB cgroup cap); their wall time is
 an upper bound, not a timing claim.
+
+The Modal runs at 082766e each replay the runbook once (one round per row), the R32 ones in
+four containers started together, under `/usr/bin/time -v` around `run.py`, with an 8 GiB hard
+memory limit and non-preemptible scheduling. `cpu=8.0` gives eight schedulable CPUs; Modal
+bills `cpu` in physical cores and hides the topology inside the container, so whether these are
+eight cores or eight hyperthreads is not known, and the compute is not matched to the
+competition VM's 8 vCPU (D8lds v5). Wall time spread between the containers is host noise as
+much as ef: the ef 512 replay finished before the ef 384 one, and the runbook-step sums differ
+by 33% in the direction opposite to the search work. The runbook-step sum is the harness's own
+per-step time; the wall includes start-up and the dataset range reads.
+
+## Operating point
+
+At R32 L64 alpha 1.0, **ef 512 scores 0.9371 against the track baseline's 0.924, at a 4.84 GiB
+peak, in a 15:41 replay (941 s of runbook steps)**; ef 384 falls just short (0.9226). Every one
+of the five Modal replays finished in 13:32-20:51 against the baseline's 23 minutes, one round
+each and on different hardware from the baseline's, so that is an observation, not a matched
+timing comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of e4df0b1 to
+the fourth digit, and main without the 3-byte ids scores the same 0.7623 on Modal, so the
+change leaves the results unchanged.
+
+The choice came from full-runbook replays on a shared Intel Core Ultra 9 185H (8 threads per
+replay, nice 19, load average 11-25; `replay.py`: the official runbook through `UpdatableIndex`
+with the adapter's policy, recall@10 against the harness ground truth at every checkpoint,
+several ef per pass). Mean recall@10 over the checkpoints each replay reached (rows marked
+partial were stopped early; their means cover the early checkpoints, which score higher than
+the late ones, so they are not comparable with full means):
+
+| build | checkpoints | ef 64 | ef 128 | ef 192 | ef 256 | ef 384 | ef 512 | ef 768 |
+|---|---|---|---|---|---|---|---|---|
+| R32 L64 | 33 of 33 | | | | 0.8971 | 0.9226 | 0.9371 | 0.9537 |
+| R64 L64 | 33 of 33 | 0.8281 | 0.8915 | 0.9195 | 0.9353 | | | |
+| R64 L48 | 11 of 33 (partial) | | 0.8563 | 0.8940 | 0.9160 | 0.9411 | | |
+| R64 L128 | 6 of 33 (partial) | 0.8533 | 0.9238 | 0.9524 | 0.9669 | | | |
+
+Each complete replay reproduced the official score to the fourth digit (R32 ef 384 0.9226, ef
+512 0.9371; R64 ef 256 0.9353), so a full replay is the official score without the harness.
+
+Degree 64 reaches the same recall at half the ef: R64 L64 at ef 256 scores 0.9353 (0.0018 below
+R32 L64 at ef 512) at 0.73 GiB more memory, and its 908 s of runbook steps are
+indistinguishable from R32's 941 s given the spread between containers. R32 ef 512 is the
+configured point. In both, the inserts and deletes, which run the four rebuilds of 1.9M to 3.8M
+live rows, are 80-87% of the step time. The R64 L128 and R64 L48 replays were stopped early.
+
+## Memory
+
+Peak RSS at R32 is 4.84-4.87 GiB for the benchmark process (4.97 GiB sampled with the Modal
+parent), reached near the end of the runbook, when the live count (5.2M) and the mapped base
+pages searches touch are largest; at R64 it is 5.57 GiB. The anonymous peak comes earlier, in
+the step-49 rebuild of 3.8M rows (old delta, new adjacency, Python): 2.1 GiB at R32 and 2.7 GiB
+at R64 in the replays. The 8 GiB limit is not binding at either point. The earlier 7.47-7.78 GB
+peaks were measured at ff70f3e and cc5dede, before #205 moved consolidation onto a mapped
+scratch matrix and a bounded encoder instead of an owned row copy plus a full owned graph and
+encoding; the drop is consistent with that change, which this one does not touch.
+
+This change narrows the consolidated base's neighbour ids from 4 to 3 bytes whenever the
+generation has fewer than 2^24 - 1 rows (4-byte ids above that; variable-width encodings are
+untouched), as the static `VectorIndex` already does: the base vertex file shrinks from 380 to
+348 bytes per row at R32 (508 to 444 at R64), about 166 MB at 5.2M rows. Measured on Modal at
+ef 64, one round each, run one after the other: main (c80aa52) peaks at 5,350,993,920 bytes
+(4.98 GiB) for the benchmark process and 5,572,100,096 sampled with the parent; this change at
+5,212,020,736 (4.85 GiB) and 5,432,266,752, 139 MB lower (2.6%), with the same score (0.7623).
+
+On the Core Ultra 9 host (no reclaim pressure, 12 GiB scope), the replays' RSS peaks split into
+anonymous memory (delta graph, build adjacency, Python) and mapped files (base, scratch rows,
+and the replay's own `numpy.memmap` of the source, which the official adapter does not hold):
+R32 L64 peaks at 4.55 GiB VmRSS (2.0 GiB anonymous, 2.5 GiB mapped) at step 73 with 5.2M live
+rows; R64 L64 at 6.04 GiB (2.0 anonymous, 4.1 mapped) at step 68 with 4.8M live rows.
+
+## Final runbook (msturing-30M-clustered): loss
+
+One run at the same setting (R32 L64 alpha 1.0, ef 512, 082766e, Modal cpu 8.0, 8 GiB) did not
+finish: the runner stopped `run.py` at its 3,600 s limit after 541 of 1,280 steps (4.3M live
+rows at that point), so no recall was recorded. Measured over those steps: 270 searches at 3.88 s
+each (1,049 s), 143 insert steps 1,089 s, 128 delete steps 1,461 s (deletes include the
+tombstone-triggered rebuilds); peak RSS 6.02 GiB for the benchmark process, 6.22 GiB summed with
+the parent, so memory was not the limit. Projection, not measured: the 640 searches alone need
+about 2,480 s at ef 512, so this runbook needs a lower ef and fewer or cheaper rebuilds to fit
+the hour.

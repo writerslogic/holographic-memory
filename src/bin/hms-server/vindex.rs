@@ -115,7 +115,7 @@ fn fsync_plain(file: &File) -> std::io::Result<()> {
     file.sync_data()
 }
 
-fn sync_dir(dir: &Path) -> std::io::Result<()> {
+pub fn sync_dir(dir: &Path) -> std::io::Result<()> {
     #[cfg(unix)]
     File::open(dir)?.sync_all()?;
     #[cfg(not(unix))]
@@ -516,7 +516,10 @@ impl VectorIndex {
             && state.live == core.document_embedding_count()
     }
 
-    fn append(&self, bytes: &[u8]) -> Result<()> {
+    /// Appends frames and returns the log still locked: the caller applies them to `state`
+    /// before releasing it, so `maintain`, which captures the log offset and the state under the
+    /// same lock, never sees a frame its captured state lacks.
+    fn append(&self, bytes: &[u8]) -> Result<parking_lot::MutexGuard<'_, Log>> {
         self.mark_dirty()?;
         let mut log = self.log.lock();
         let end = log.len;
@@ -524,7 +527,7 @@ impl VectorIndex {
         log.file.write_all(bytes)?;
         fsync_plain(&log.file)?;
         log.len += bytes.len() as u64;
-        Ok(())
+        Ok(log)
     }
 
     /// Records `docs` (id, version token, normalised vector) durably and makes them
@@ -544,7 +547,7 @@ impl VectorIndex {
             );
             push_frame(&mut bytes, UPSERT, id, *token, vector);
         }
-        self.append(&bytes)?;
+        let _log = self.append(&bytes)?;
         let mut state = self.state.write();
         for (id, token, vector) in docs {
             state.upsert(Arc::from(id.as_str()), *token, vector);
@@ -568,7 +571,7 @@ impl VectorIndex {
         for id in &known {
             push_frame(&mut bytes, DELETE, id, 0, &[]);
         }
-        self.append(&bytes)?;
+        let _log = self.append(&bytes)?;
         let mut state = self.state.write();
         for id in known {
             state.delete(id);

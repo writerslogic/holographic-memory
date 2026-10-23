@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{anyhow, Result};
+use base64::engine::{general_purpose::GeneralPurpose, DecodePaddingMode, GeneralPurposeConfig};
+use base64::{alphabet, Engine};
 use ed25519_dalek::{Signer, SigningKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -158,58 +160,45 @@ pub fn verify_bundle_with_key(
         .map_err(|e| anyhow!("signature verification failed: {e}"))
 }
 
+/// Standard-alphabet base64, written padded. Protobuf JSON (the bundle encoding) accepts
+/// padded and unpadded input, so both decode; non-canonical trailing bits and impossible
+/// lengths are errors.
+const B64: GeneralPurpose = GeneralPurpose::new(
+    &alphabet::STANDARD,
+    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+);
+
 fn base64_encode(bytes: &[u8]) -> String {
-    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut result = String::with_capacity(bytes.len().div_ceil(3) * 4);
-    for chunk in bytes.chunks(3) {
-        let b0 = chunk[0] as u32;
-        let b1 = if chunk.len() > 1 { chunk[1] as u32 } else { 0 };
-        let b2 = if chunk.len() > 2 { chunk[2] as u32 } else { 0 };
-        let triple = (b0 << 16) | (b1 << 8) | b2;
-        result.push(CHARS[((triple >> 18) & 0x3F) as usize] as char);
-        result.push(CHARS[((triple >> 12) & 0x3F) as usize] as char);
-        if chunk.len() > 1 {
-            result.push(CHARS[((triple >> 6) & 0x3F) as usize] as char);
-        } else {
-            result.push('=');
-        }
-        if chunk.len() > 2 {
-            result.push(CHARS[(triple & 0x3F) as usize] as char);
-        } else {
-            result.push('=');
-        }
-    }
-    result
+    B64.encode(bytes)
 }
 
 fn base64_decode(input: &str) -> Result<Vec<u8>> {
-    let input = input.trim_end_matches('=');
-    let mut result = Vec::with_capacity(input.len() * 3 / 4);
-    let mut buf = 0u32;
-    let mut bits = 0u32;
-    for c in input.chars() {
-        let val = match c {
-            'A'..='Z' => c as u32 - 'A' as u32,
-            'a'..='z' => c as u32 - 'a' as u32 + 26,
-            '0'..='9' => c as u32 - '0' as u32 + 52,
-            '+' => 62,
-            '/' => 63,
-            _ => return Err(anyhow!("invalid base64 character: {c}")),
-        };
-        buf = (buf << 6) | val;
-        bits += 6;
-        if bits >= 8 {
-            bits -= 8;
-            result.push((buf >> bits) as u8);
-            buf &= (1 << bits) - 1;
-        }
-    }
-    Ok(result)
+    B64.decode(input)
+        .map_err(|e| anyhow!("invalid base64: {e}"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn base64_decoding_is_strict_about_shape() {
+        let bytes: Vec<u8> = (0u8..=255).collect();
+        for len in 0..8 {
+            let encoded = base64_encode(&bytes[..len]);
+            assert_eq!(base64_decode(&encoded).unwrap(), &bytes[..len]);
+            assert_eq!(
+                base64_decode(encoded.trim_end_matches('=')).unwrap(),
+                &bytes[..len]
+            );
+        }
+        assert_eq!(base64_encode(b"hi"), "aGk=");
+        // One dangling character, non-zero trailing bits and padding mid-string were accepted
+        // by the hand-written decoder.
+        for bad in ["aGk=a", "aGl=", "aGj", "a", "aG=k", "aGk*"] {
+            assert!(base64_decode(bad).is_err(), "{bad:?} decoded");
+        }
+    }
 
     fn test_keypair() -> SigningKey {
         SigningKey::from_bytes(&rand::random())

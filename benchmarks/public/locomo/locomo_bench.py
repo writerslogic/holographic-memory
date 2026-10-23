@@ -44,8 +44,8 @@ READER_MODEL = 'gpt-4o-mini-2024-07-18'
 JUDGE_MODEL = 'gpt-4o-mini-2024-07-18'
 EMBED_MODEL = 'text-embedding-3-small'
 EMBED_DIM = 1536
-# USD per 1M tokens (OpenAI list price): input, output.
-PRICES = {READER_MODEL: (0.15, 0.60), EMBED_MODEL: (0.02, 0.0)}
+# USD per 1M tokens (OpenAI list price): input, cached input, output.
+PRICES = {READER_MODEL: (0.15, 0.075, 0.60), EMBED_MODEL: (0.02, 0.02, 0.0)}
 SPLIT = {
     'tuning': ['conv-26', 'conv-30', 'conv-41'],
     'heldout': ['conv-42', 'conv-43', 'conv-44', 'conv-47', 'conv-48', 'conv-49', 'conv-50'],
@@ -72,18 +72,31 @@ class Cache:
             self.db.commit()
 
 
+class SpendCap(RuntimeError):
+    pass
+
+
 class Usage:
-    def __init__(self):
+    """API token usage as reported by each response; prompt tokens include the cached ones."""
+
+    def __init__(self, prior_usd=0.0, max_usd=0.0):
         self.lock = threading.Lock()
         self.tokens = {}
+        self.prior_usd, self.max_usd = prior_usd, max_usd
 
-    def add(self, model, prompt, completion):
+    def add(self, model, prompt, completion, cached=0):
         with self.lock:
-            p, c = self.tokens.get(model, (0, 0))
-            self.tokens[model] = (p + prompt, c + completion)
+            p, c, k = self.tokens.get(model, (0, 0, 0))
+            self.tokens[model] = (p + prompt, c + completion, k + cached)
 
     def usd(self):
-        return round(sum(t[0] * PRICES[m][0] / 1e6 + t[1] * PRICES[m][1] / 1e6 for m, t in self.tokens.items()), 4)
+        with self.lock:
+            return round(sum(((t[0] - t[2]) * PRICES[m][0] + t[2] * PRICES[m][1] + t[1] * PRICES[m][2]) / 1e6
+                             for m, t in self.tokens.items()), 4)
+
+    def check(self):
+        if self.max_usd and self.prior_usd + self.usd() >= self.max_usd:
+            raise SpendCap(f'spend cap {self.max_usd} USD reached ({self.prior_usd} prior + {self.usd()} this run)')
 
 
 def digest(*parts):
@@ -91,17 +104,31 @@ def digest(*parts):
 
 
 class Llm:
-    def __init__(self, cache, usage):
+    def __init__(self, cache, usage, dry_run=False):
         self.client = OpenAI(max_retries=8, timeout=120)
-        self.cache, self.usage = cache, usage
+        self.cache, self.usage, self.dry_run = cache, usage, dry_run
+        self.enc = tiktoken.get_encoding('o200k_base')
+        self.lock = threading.Lock()
+        self.probe = {'hits': 0, 'misses': 0, 'miss_input_tokens': 0}
 
     def chat(self, model, messages, tag, **extra):
         key = digest('chat', model, tag, json.dumps(messages, sort_keys=True), json.dumps(extra, sort_keys=True))
         hit = self.cache.get(key)
+        if self.dry_run:
+            with self.lock:
+                if hit is None:
+                    self.probe['misses'] += 1
+                    self.probe['miss_input_tokens'] += sum(len(self.enc.encode(m['content'])) for m in messages)
+                else:
+                    self.probe['hits'] += 1
+            return hit if hit is not None else ''
         if hit is not None:
             return hit
+        self.usage.check()
         r = self.client.chat.completions.create(model=model, messages=messages, temperature=0.0, **extra)
-        self.usage.add(model, r.usage.prompt_tokens, r.usage.completion_tokens)
+        details = getattr(r.usage, 'prompt_tokens_details', None)
+        self.usage.add(model, r.usage.prompt_tokens, r.usage.completion_tokens,
+                       getattr(details, 'cached_tokens', 0) or 0)
         text = r.choices[0].message.content
         self.cache.put(key, text)
         return text
@@ -116,7 +143,8 @@ class Llm:
                 out[i] = hit
         for s in range(0, len(todo), 256):
             idx = todo[s:s + 256]
-            r = self.client.embeddings.create(model=EMBED_MODEL, input=[texts[i] for i in idx])
+            self.usage.check()
+            r =self.client.embeddings.create(model=EMBED_MODEL, input=[texts[i] for i in idx])
             self.usage.add(EMBED_MODEL, r.usage.prompt_tokens, 0)
             for i, d in zip(idx, r.data):
                 out[i] = d.embedding
@@ -175,13 +203,32 @@ def tenant(sample_id, side):
     return f'locomo-{sample_id}-{side}'
 
 
-def ingest(server, llm, sample, use_embed):
+def turn_text(turn, captions):
+    """The turn as ingested; with `captions`, the image tag mem0ai/memory-benchmarks@4b61c5d appends
+    (benchmarks/locomo/run.py session_to_chunks). The paper-era harness ingests the text alone."""
+    text = turn['text']
+    if captions:
+        blip, query = turn.get('blip_caption', ''), turn.get('query', '')
+        if query and blip:
+            tag = f'[Sharing image - query: {query}. The image shows: {blip}]'
+        elif query:
+            tag = f'[Sharing image - query for: {query}]'
+        elif blip:
+            tag = f'[Sharing image that shows: {blip}]'
+        else:
+            tag = ''
+        if tag:
+            text = f'{text} {tag}' if text else tag
+    return f"{turn['speaker']}: {text}"
+
+
+def ingest(server, llm, sample, use_embed, captions=False):
     conv = sample['conversation']
     sides = {conv['speaker_a']: 'a', conv['speaker_b']: 'b'}
     facts = {'a': [], 'b': []}
     for date, ms, turn in session_turns(conv):
         facts[sides[turn['speaker']]].append({
-            'id': turn['dia_id'], 'text': f"{turn['speaker']}: {turn['text']}", 'eventTime': ms,
+            'id': turn['dia_id'], 'text': turn_text(turn, captions), 'eventTime': ms,
             'metadata': {'timestamp': date, 'speaker': turn['speaker']}})
     for side, items in facts.items():
         if use_embed:
@@ -234,6 +281,32 @@ def cap_tokens(lists, enc, budget):
     return kept
 
 
+def pack_by_similarity(lists, sims, enc, budget, keep_rank_order):
+    """Fill the budget from both speakers' lists in order of query similarity.
+
+    The cosine is comparable across the two tenants; the blend score is min-max normalized per
+    tenant and is not. With `keep_rank_order` each list keeps its recall order and the next slot goes
+    to the speaker whose next memory is more similar (a merge of the two ranked lists); otherwise
+    all memories are ordered by similarity alone. A memory that does not fit ends its speaker's list.
+    """
+    if keep_rank_order:
+        queues = {side: list(range(len(items))) for side, items in lists.items()}
+    else:
+        queues = {side: sorted(range(len(items)), key=lambda i, s=side: (-sims[s][i], i)) for side, items in lists.items()}
+    kept = {side: [] for side in lists}
+    used = 0
+    while any(queues.values()):
+        side = max((s for s in queues if queues[s]), key=lambda s: (sims[s][queues[s][0]], s == 'a'))
+        i = queues[side].pop(0)
+        cost = len(enc.encode(json.dumps(lists[side][i]))) + 1
+        if used + cost > budget:
+            queues[side] = []
+            continue
+        kept[side].append(i)
+        used += cost
+    return kept
+
+
 FULL_CONTEXT_SYSTEM = ('You are a helpful assistant that can answer questions based on the provided context.'
                        'If the question involves timing, use the conversation date for reference.'
                        'Provide the shortest possible answer.'
@@ -259,14 +332,22 @@ def answer(server, llm, sample, dates, qa, args, enc):
     body = {'query': question, 'k': args.k, **json.loads(args.recall_options)}
     if use_embed:
         body['embedding'] = llm.embed([question])[0]
-    lists, ids = {}, {}
+    if args.pack != 'round-robin':
+        body['explain'] = True
+    lists, ids, sims = {}, {}, {}
     for side in ('a', 'b'):
         hits = server.memory(tenant(sample['sample_id'], side), 'recall', body)['results']
         ids[side] = [h['id'] for h in hits]
         lists[side] = [f"{dates[side][h['id']]}: {h['text']}" for h in hits]
-    if args.token_budget:
+        if args.pack != 'round-robin':
+            sims[side] = [h['explanation'].get('semanticScore') or 0.0 for h in hits]
+    if args.token_budget and args.pack == 'round-robin':
         lists = cap_tokens(lists, enc, args.token_budget)
         ids = {side: ids[side][:len(lists[side])] for side in ids}
+    elif args.token_budget:
+        kept = pack_by_similarity(lists, sims, enc, args.token_budget, args.pack == 'zipper')
+        lists = {side: [lists[side][i] for i in kept[side]] for side in lists}
+        ids = {side: [ids[side][i] for i in kept[side]] for side in ids}
     mem_a, mem_b = json.dumps(lists['a'], indent=4), json.dumps(lists['b'], indent=4)
     prompt = Template(ANSWER_PROMPT).render(
         speaker_1_user_id=conv['speaker_a'], speaker_2_user_id=conv['speaker_b'],
@@ -327,8 +408,17 @@ def main():
     ap.add_argument('--recall-options', default='{}', help='extra RecallOptions JSON, e.g. {"fusion": "rrf"}')
     ap.add_argument('--token-budget', type=int, default=0,
                     help='cap the rendered memories of both speakers at this many o200k tokens (0: k only)')
+    ap.add_argument('--pack', choices=('round-robin', 'cosine', 'zipper'), default='round-robin',
+                    help='how --token-budget fills the cap from both speakers: by rank alternately (as in #236), '
+                         'by query cosine across both, or merging the ranked lists by query cosine')
+    ap.add_argument('--captions', action='store_true',
+                    help='append image captions to turn text as mem0ai/memory-benchmarks does (not the paper-era protocol)')
     ap.add_argument('--workers', type=int, default=16)
     ap.add_argument('--hms-sha', default='')
+    ap.add_argument('--dry-run', action='store_true',
+                    help='make no chat calls: count reader cache hits/misses and miss input tokens, skip the judge')
+    ap.add_argument('--prior-spend', type=float, default=0.0, help='USD already spent by earlier runs of this campaign')
+    ap.add_argument('--max-spend', type=float, default=0.0, help='refuse new API calls once prior + this run reach it')
     args = ap.parse_args()
 
     nltk_dir = os.path.expanduser('~/.cache/hms-bench/nltk')
@@ -340,15 +430,15 @@ def main():
     wanted = [s['sample_id'] for s in data] if args.convs == 'all' else args.convs.split(',')
     samples = [s for s in data if s['sample_id'] in wanted]
     assert len(samples) == len(wanted), 'unknown sample id'
-    usage, cache = Usage(), Cache(args.cache)
-    llm, enc = Llm(cache, usage), tiktoken.get_encoding('o200k_base')
+    usage, cache = Usage(args.prior_spend, args.max_spend), Cache(args.cache)
+    llm, enc = Llm(cache, usage, args.dry_run), tiktoken.get_encoding('o200k_base')
     server = None if args.full_context else Server(args.server_bin, EMBED_DIM, args.memory_config)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     rows, t0 = [], time.time()
     try:
         for sample in samples:
-            dates = None if args.full_context else ingest(server, llm, sample, args.embed)
+            dates = None if args.full_context else ingest(server, llm, sample, args.embed, args.captions)
             qas = [(i, qa) for i, qa in enumerate(sample['qa']) if int(qa['category']) != 5]
             with ThreadPoolExecutor(args.workers) as pool:
                 results = list(pool.map(lambda iq: answer_full_context(llm, sample, iq[1], args, enc) if args.full_context
@@ -369,6 +459,12 @@ def main():
         if server:
             server.close()
     labels = [None] * len(rows)
+    if args.dry_run:
+        print('dry_run', json.dumps(llm.probe), 'embed_spend_usd', usage.usd())
+        return
+    expected = 0 if args.retrieval_only else args.runs
+    short = [(r['sample_id'], r['qa_index']) for r in rows if len(r['responses']) != expected]
+    assert not short, f'rows without {expected} reader responses: {short[:10]}'
     if not args.skip_judge:
         with ThreadPoolExecutor(args.workers) as pool:
             labels = list(pool.map(lambda r: [judge(llm, r['question'], r['answer'], x, run)
@@ -390,6 +486,7 @@ def main():
         'arm': 'full-context' if args.full_context else 'hms-memory-api',
         'embedding_model': EMBED_MODEL if args.embed else None, 'k_per_speaker': args.k,
         'recall_options': json.loads(args.recall_options), 'token_budget': args.token_budget or None,
+        'pack': args.pack if args.token_budget else None, 'captions': args.captions,
         'memory_config': json.loads(Path(args.memory_config).read_text()) if args.memory_config else None,
         'runs': 0 if args.retrieval_only else args.runs, 'conversations': sorted(ran), 'split': SPLIT, 'hms_sha': args.hms_sha,
         'new_api_tokens': {m: list(t) for m, t in usage.tokens.items()}, 'new_api_spend_usd': usage.usd(),

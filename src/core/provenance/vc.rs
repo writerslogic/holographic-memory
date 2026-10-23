@@ -102,7 +102,7 @@ pub fn create_fact_credential(
         status_type: "BitstringStatusListEntry".to_string(),
         status_purpose: "revocation".to_string(),
         status_list_index: status_index.to_string(),
-        status_list_credential: format!("{issuer_did}/status/1"),
+        status_list_credential: status_list_credential_url(issuer_did),
     };
 
     FactCredential {
@@ -121,6 +121,11 @@ pub fn create_fact_credential(
         credential_status: Some(status),
         proof: None,
     }
+}
+
+/// The status list credential that `issuer_did`'s fact credentials cite for revocation.
+pub(crate) fn status_list_credential_url(issuer_did: &str) -> String {
+    format!("{issuer_did}/status/1")
 }
 
 /// RFC 8785 JSON Canonicalization Scheme.

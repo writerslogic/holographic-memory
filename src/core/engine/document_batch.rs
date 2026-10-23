@@ -2,55 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::collections::HashSet;
-use std::io::{self, Write};
 
 use anyhow::{ensure, Result};
 use rayon::prelude::*;
-use serde::Serialize;
 
 use super::mutation::{Mutation, TRANSACTION_MAGIC};
 use super::HmsCore;
 use crate::core::documents::{
-    chunk_spans_with, BatchTooLarge, DocumentInput, IngestOptions, MAX_BATCH_ITEMS as MAX_ITEMS,
-    MAX_DOCUMENT_BYTES,
+    chunk_spans_with, serialized_size, BatchTooLarge, DocumentInput, IngestOptions,
+    MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
 };
 
 const MAX_EMBEDDING_VALUES: usize = 1_048_576;
 const MAX_TRANSACTION_BYTES: usize = 32 * 1024 * 1024;
-
-struct SizeLimit {
-    bytes: usize,
-    limit: usize,
-}
-
-impl Write for SizeLimit {
-    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        let next = self
-            .bytes
-            .checked_add(bytes.len())
-            .filter(|&n| n <= self.limit);
-        match next {
-            Some(next) => {
-                self.bytes = next;
-                Ok(bytes.len())
-            }
-            None => Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "document batch size limit exceeded",
-            )),
-        }
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-
-fn serialized_size(value: &impl Serialize, limit: usize) -> Result<usize> {
-    let mut sink = SizeLimit { bytes: 0, limit };
-    serde_json::to_writer(&mut sink, value)?;
-    Ok(sink.bytes)
-}
 
 fn add_size(total: &mut usize, size: usize, limit: usize, message: &'static str) -> Result<()> {
     *total = total

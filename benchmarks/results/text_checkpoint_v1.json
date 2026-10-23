@@ -1,0 +1,626 @@
+{
+ "schema": "text_checkpoint_v1",
+ "host": "Intel Core Ultra 9 185H (WSL2, 22 threads), taskset -c 2,3, RAYON_NUM_THREADS=2, flock ~/hms-timing.lock per step",
+ "method": "competitive_text build --encode lexical (one store per binary; only a store without vector state gets documents.ckpt), then 3 interleaved rounds over all four binaries per dataset: serve --passes 2 --t0-ns at spawn (open, cold start, VmHWM/Rss from procfs) and ops --ops 100 on a fresh copy of the built store (replace then delete, one durable commit each); medians, per-round values in *_all. disk = du -s --block-size=1 (allocated bytes). main and mainfix serve without memory fields (their example predates them).",
+ "runs": {
+  "default_replace": {
+   "note": "ops replacements through memorize_document, the API's default eager encode mode (the example ignores --encode in ops): the replacement gets chunk hypervectors over a lexical store. Headline configuration.",
+   "binaries": {
+    "main": "origin/main b0269e8",
+    "new": "perf/text-checkpoint c481581 (eager and deferred writes over the checkpoint without rebuilding it)"
+   },
+   "datasets": {
+    "nfcorpus-dev": {
+     "main": {
+      "disk_mib": 1.01,
+      "ingest_s": 0.195,
+      "open_ms": 76.289,
+      "cold_ms": 78.216,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 2.836,
+      "delete_ms": 1.641,
+      "replace_all": [
+       2.751,
+       2.91,
+       2.836
+      ],
+      "delete_all": [
+       1.632,
+       1.649,
+       1.641
+      ],
+      "cold_all": [
+       78.22,
+       78.74,
+       73.6
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "new": {
+      "disk_mib": 1.02,
+      "ingest_s": 0.187,
+      "open_ms": 0.989,
+      "cold_ms": 2.533,
+      "hwm_mib": 10.367,
+      "rss_mib": 10.367,
+      "replace_ms": 2.938,
+      "delete_ms": 1.498,
+      "replace_all": [
+       3.67,
+       2.938,
+       2.904
+      ],
+      "delete_all": [
+       1.498,
+       1.497,
+       1.562
+      ],
+      "cold_all": [
+       2.53,
+       2.5,
+       3.68
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "1006960 vectors_data.bin/gen-177475-1792648490992667542/documents.ckpt",
+       "72 vectors_data.bin/gen-177475-1792648490992667542/format.json",
+       "9 vectors_data.bin/gen-177475-1792648490992667542/format.json.crc32",
+       "67108864 vectors_data.bin/gen-177475-1792648490992667542/seg_0.bin"
+      ]
+     }
+    },
+    "scifact-train": {
+     "main": {
+      "disk_mib": 1.41,
+      "ingest_s": 0.254,
+      "open_ms": 107.629,
+      "cold_ms": 109.479,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 2.677,
+      "delete_ms": 1.663,
+      "replace_all": [
+       2.667,
+       2.764,
+       2.677
+      ],
+      "delete_all": [
+       1.778,
+       1.663,
+       1.616
+      ],
+      "cold_all": [
+       109.33,
+       115.14,
+       109.48
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "new": {
+      "disk_mib": 1.36,
+      "ingest_s": 0.256,
+      "open_ms": 1.365,
+      "cold_ms": 3.483,
+      "hwm_mib": 23.641,
+      "rss_mib": 23.641,
+      "replace_ms": 2.787,
+      "delete_ms": 1.465,
+      "replace_all": [
+       2.854,
+       2.787,
+       2.638
+      ],
+      "delete_all": [
+       1.515,
+       1.462,
+       1.465
+      ],
+      "cold_all": [
+       3.12,
+       4.16,
+       3.48
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "1370459 vectors_data.bin/gen-177657-1792648498881222722/documents.ckpt",
+       "72 vectors_data.bin/gen-177657-1792648498881222722/format.json",
+       "9 vectors_data.bin/gen-177657-1792648498881222722/format.json.crc32",
+       "67108864 vectors_data.bin/gen-177657-1792648498881222722/seg_0.bin"
+      ]
+     }
+    },
+    "memory-lme-dev": {
+     "main": {
+      "disk_mib": 3.96,
+      "ingest_s": 0.927,
+      "open_ms": 282.3,
+      "cold_ms": 284.078,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 5.903,
+      "delete_ms": 1.921,
+      "replace_all": [
+       5.903,
+       5.918,
+       5.848
+      ],
+      "delete_all": [
+       1.921,
+       1.95,
+       1.884
+      ],
+      "cold_all": [
+       278.13,
+       284.08,
+       292.47
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "new": {
+      "disk_mib": 3.59,
+      "ingest_s": 0.939,
+      "open_ms": 2.892,
+      "cold_ms": 4.64,
+      "hwm_mib": 10.387,
+      "rss_mib": 10.387,
+      "replace_ms": 6.048,
+      "delete_ms": 1.48,
+      "replace_all": [
+       6.048,
+       6.143,
+       5.876
+      ],
+      "delete_all": [
+       1.508,
+       1.467,
+       1.48
+      ],
+      "cold_all": [
+       4.64,
+       5.06,
+       4.01
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "3704934 vectors_data.bin/gen-177879-1792648510914876027/documents.ckpt",
+       "72 vectors_data.bin/gen-177879-1792648510914876027/format.json",
+       "9 vectors_data.bin/gen-177879-1792648510914876027/format.json.crc32",
+       "67108864 vectors_data.bin/gen-177879-1792648510914876027/seg_0.bin"
+      ]
+     }
+    },
+    "fiqa-dev": {
+     "main": {
+      "disk_mib": 10.28,
+      "ingest_s": 1.626,
+      "open_ms": 832.536,
+      "cold_ms": 835.156,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 2.215,
+      "delete_ms": 1.727,
+      "replace_all": [
+       2.106,
+       2.215,
+       2.252
+      ],
+      "delete_all": [
+       1.744,
+       1.706,
+       1.727
+      ],
+      "cold_all": [
+       835.16,
+       804.91,
+       859.63
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "new": {
+      "disk_mib": 9.76,
+      "ingest_s": 1.613,
+      "open_ms": 3.886,
+      "cold_ms": 7.146,
+      "hwm_mib": 26.332,
+      "rss_mib": 26.332,
+      "replace_ms": 2.302,
+      "delete_ms": 1.473,
+      "replace_all": [
+       2.232,
+       2.302,
+       2.351
+      ],
+      "delete_all": [
+       1.492,
+       1.466,
+       1.473
+      ],
+      "cold_all": [
+       7.03,
+       7.23,
+       7.15
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "10175708 vectors_data.bin/gen-178097-1792648532449870775/documents.ckpt",
+       "72 vectors_data.bin/gen-178097-1792648532449870775/format.json",
+       "9 vectors_data.bin/gen-178097-1792648532449870775/format.json.crc32",
+       "67108864 vectors_data.bin/gen-178097-1792648532449870775/seg_0.bin"
+      ]
+     }
+    }
+   }
+  },
+  "lexical_replace": {
+   "note": "ops replacements stored with --encode lexical (the example change of ffd32b8 applied to both trees as *fix); the like-for-like row against lexical comparators.",
+   "binaries": {
+    "mainfix": "origin/main b0269e8 + ops --encode change",
+    "newfix": "c481581 + ops --encode change"
+   },
+   "datasets": {
+    "nfcorpus-dev": {
+     "mainfix": {
+      "disk_mib": 1.01,
+      "ingest_s": 0.186,
+      "open_ms": 75.572,
+      "cold_ms": 77.401,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 2.082,
+      "delete_ms": 1.597,
+      "replace_all": [
+       2.09,
+       2.082,
+       2.046
+      ],
+      "delete_all": [
+       1.597,
+       1.605,
+       1.588
+      ],
+      "cold_all": [
+       79.66,
+       77.4,
+       75.87
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "newfix": {
+      "disk_mib": 1.02,
+      "ingest_s": 0.182,
+      "open_ms": 1.032,
+      "cold_ms": 3.097,
+      "hwm_mib": 10.371,
+      "rss_mib": 10.371,
+      "replace_ms": 2.093,
+      "delete_ms": 1.501,
+      "replace_all": [
+       2.093,
+       2.13,
+       2.09
+      ],
+      "delete_all": [
+       1.502,
+       1.497,
+       1.501
+      ],
+      "cold_all": [
+       3.48,
+       3.1,
+       2.77
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "1006960 vectors_data.bin/gen-177499-1792648491459348446/documents.ckpt",
+       "72 vectors_data.bin/gen-177499-1792648491459348446/format.json",
+       "9 vectors_data.bin/gen-177499-1792648491459348446/format.json.crc32",
+       "67108864 vectors_data.bin/gen-177499-1792648491459348446/seg_0.bin"
+      ]
+     }
+    },
+    "scifact-train": {
+     "mainfix": {
+      "disk_mib": 1.41,
+      "ingest_s": 0.258,
+      "open_ms": 107.217,
+      "cold_ms": 109.014,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 1.976,
+      "delete_ms": 1.644,
+      "replace_all": [
+       2.028,
+       1.976,
+       1.925
+      ],
+      "delete_all": [
+       1.677,
+       1.644,
+       1.597
+      ],
+      "cold_all": [
+       111.61,
+       105.5,
+       109.01
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "newfix": {
+      "disk_mib": 1.36,
+      "ingest_s": 0.257,
+      "open_ms": 1.301,
+      "cold_ms": 3.177,
+      "hwm_mib": 23.594,
+      "rss_mib": 23.594,
+      "replace_ms": 2.079,
+      "delete_ms": 1.499,
+      "replace_all": [
+       2.079,
+       2.082,
+       1.955
+      ],
+      "delete_all": [
+       1.499,
+       1.52,
+       1.476
+      ],
+      "cold_all": [
+       3.18,
+       3.41,
+       3.07
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "1370459 vectors_data.bin/gen-177681-1792648499508809438/documents.ckpt",
+       "72 vectors_data.bin/gen-177681-1792648499508809438/format.json",
+       "9 vectors_data.bin/gen-177681-1792648499508809438/format.json.crc32",
+       "67108864 vectors_data.bin/gen-177681-1792648499508809438/seg_0.bin"
+      ]
+     }
+    },
+    "memory-lme-dev": {
+     "mainfix": {
+      "disk_mib": 3.96,
+      "ingest_s": 0.958,
+      "open_ms": 273.503,
+      "cold_ms": 275.103,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 2.891,
+      "delete_ms": 1.924,
+      "replace_all": [
+       2.902,
+       2.891,
+       2.822
+      ],
+      "delete_all": [
+       1.924,
+       2.1,
+       1.885
+      ],
+      "cold_all": [
+       289.57,
+       275.1,
+       274.4
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "newfix": {
+      "disk_mib": 3.59,
+      "ingest_s": 0.977,
+      "open_ms": 2.53,
+      "cold_ms": 4.12,
+      "hwm_mib": 10.355,
+      "rss_mib": 10.355,
+      "replace_ms": 2.995,
+      "delete_ms": 1.532,
+      "replace_all": [
+       2.995,
+       3.015,
+       2.895
+      ],
+      "delete_all": [
+       1.532,
+       1.555,
+       1.47
+      ],
+      "cold_all": [
+       4.42,
+       4.1,
+       4.12
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "3704934 vectors_data.bin/gen-177936-1792648516644552923/documents.ckpt",
+       "72 vectors_data.bin/gen-177936-1792648516644552923/format.json",
+       "9 vectors_data.bin/gen-177936-1792648516644552923/format.json.crc32",
+       "67108864 vectors_data.bin/gen-177936-1792648516644552923/seg_0.bin"
+      ]
+     }
+    },
+    "fiqa-dev": {
+     "mainfix": {
+      "disk_mib": 10.28,
+      "ingest_s": 1.6,
+      "open_ms": 843.371,
+      "cold_ms": 845.606,
+      "hwm_mib": null,
+      "rss_mib": null,
+      "replace_ms": 1.79,
+      "delete_ms": 1.701,
+      "replace_all": [
+       1.784,
+       1.855,
+       1.79
+      ],
+      "delete_all": [
+       1.693,
+       1.711,
+       1.701
+      ],
+      "cold_all": [
+       845.61,
+       761.05,
+       867.47
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "225 store.json",
+       "9 store.json.crc32",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "67108864 vectors_data.bin/seg_0.bin"
+      ]
+     },
+     "newfix": {
+      "disk_mib": 9.76,
+      "ingest_s": 1.59,
+      "open_ms": 3.984,
+      "cold_ms": 7.482,
+      "hwm_mib": 26.375,
+      "rss_mib": 26.375,
+      "replace_ms": 1.847,
+      "delete_ms": 1.467,
+      "replace_all": [
+       1.847,
+       1.913,
+       1.84
+      ],
+      "delete_all": [
+       1.439,
+       1.467,
+       1.543
+      ],
+      "cold_all": [
+       7.48,
+       7.24,
+       8.37
+      ],
+      "files": [
+       "11 .hms.lock",
+       "8 documents.text",
+       "131 indices.json",
+       "225 store.json",
+       "9 store.json.crc32",
+       "30 vectors_data.bin/CURRENT",
+       "72 vectors_data.bin/format.json",
+       "9 vectors_data.bin/format.json.crc32",
+       "10175708 vectors_data.bin/gen-178122-1792648536110433486/documents.ckpt",
+       "72 vectors_data.bin/gen-178122-1792648536110433486/format.json",
+       "9 vectors_data.bin/gen-178122-1792648536110433486/format.json.crc32",
+       "67108864 vectors_data.bin/gen-178122-1792648536110433486/seg_0.bin"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "comparators_from": "benchmarks/results/text_open_rss_v1.json and Intel Core Ultra 9 185H results-B (Lucene disk 1.50/2.00/10.36/12.21 MiB; tantivy cold 25.3/25.3/24.2/29.8 ms)"
+}

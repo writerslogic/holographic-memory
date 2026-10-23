@@ -453,20 +453,61 @@ def cpu_info() -> dict:
             "flags_sha": hashlib.sha256(" ".join(sorted(flags)).encode()).hexdigest()[:12]}
 
 
-def job_cpu_seconds() -> float:
-    """CPU seconds of every process in the container except this supervisor. VIBE's workers leave the
-    job's session, so a session or parent filter misses the process doing the work; the container runs
-    one job at a time, so everything else is that job."""
-    total, tick, me = 0.0, os.sysconf("SC_CLK_TCK"), os.getpid()
+def proc_table() -> dict[tuple[int, int], dict]:
+    """Live processes keyed by (pid, start time), so a reused pid is a new process."""
+    table, tick = {}, os.sysconf("SC_CLK_TCK")
     for stat in Path("/proc").glob("[0-9]*/stat"):
-        if int(stat.parent.name) == me:
-            continue
         try:
-            fields = stat.read_text().rsplit(")", 1)[1].split()
+            f = stat.read_text().rsplit(")", 1)[1].split()
         except (OSError, IndexError):
             continue
-        total += (int(fields[11]) + int(fields[12])) / tick  # utime, stime (fields 14 and 15 of stat)
-    return total
+        # After the comm field: state ppid pgrp ... utime(11) stime(12) ... starttime(19)
+        if f[0] == "Z":
+            continue
+        table[(int(stat.parent.name), int(f[19]))] = {"ppid": int(f[1]), "pgid": int(f[2]),
+                                                      "cpu": (int(f[11]) + int(f[12])) / tick}
+    return table
+
+
+def descendants(table: dict[tuple[int, int], dict], root_pid: int) -> set[tuple[int, int]]:
+    """Keys of root_pid and every process below it in `table`."""
+    children: dict[int, list[tuple[int, int]]] = {}
+    for key, p in table.items():
+        children.setdefault(p["ppid"], []).append(key)
+    out = {k for k in table if k[0] == root_pid}
+    stack = [k[0] for k in out]
+    while stack:
+        for key in children.get(stack.pop(), []):
+            if key not in out:
+                out.add(key)
+                stack.append(key[0])
+    return out
+
+
+def cpu_progress(prev: dict[tuple[int, int], float], cur: dict[tuple[int, int], float]) -> float:
+    """CPU seconds the tracked processes gained since `prev`. Per process, so a process that exits does
+    not take its CPU out of the total (VIBE runs one process per index config), and a new one counts from 0."""
+    return sum(max(0.0, c - prev.get(k, 0.0)) for k, c in cur.items())
+
+
+def kill_keys(keys: set[tuple[int, int]], grace_s: float = 30.0) -> list[int]:
+    """SIGTERM the process groups of the live `keys`, then SIGKILL whatever is left. Returns killed pids."""
+    alive = lambda: [k for k in keys if k in proc_table()]
+    targets = alive()
+    for pgid in {p["pgid"] for k, p in proc_table().items() if k in targets}:
+        try:
+            os.killpg(pgid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass  # the group already exited; leftovers get SIGKILL below
+    deadline = now() + grace_s
+    while alive() and now() < deadline:
+        time.sleep(1)
+    for pid, _ in alive():
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass  # exited between the check and the kill
+    return [pid for pid, _ in targets]
 
 
 @app.function(image=plan_image, volumes={"/vol": VOL}, timeout=900)
@@ -551,8 +592,12 @@ def choose(leaders: dict, avx512: bool, named: list[str] = ()) -> tuple[list[str
 
 
 class Runner:
-    def __init__(self, ns: str, dataset: str, hms_rev: str, test: bool, cap: float, hard_cap: float):
+    def __init__(self, ns: str, dataset: str, hms_rev: str, test: bool, cap: float, hard_cap: float, hms_only: bool = False):
         self.ns, self.ds, self.rev, self.test, self.cap, self.hard_cap = ns, dataset, hms_rev, test, cap, hard_cap
+        # An --hms-only container takes its own lease so it can run next to a container still working
+        # through the dataset's competitors; run_job refuses a job another live container is running.
+        self.lease_key = f"{ns}:{dataset}" + (":hms-only" if hms_only else "")
+        self.baseline = set(proc_table())  # processes that belong to the container, not to a job
         self.root = Path("/vol/vibe") / ns
         self.cid = os.environ.get("MODAL_TASK_ID", f"local-{os.getpid()}")
         self.started = now()
@@ -578,7 +623,7 @@ class Runner:
             try:
                 SPEND[f"{self.ns}:{self.cid}"] = rec
                 if not self.released.is_set() and (self.long_phase or t - self.main_beat < STALE_S):
-                    LEASE[f"{self.ns}:{self.ds}"] = {"container": self.cid, "at": t}
+                    LEASE[self.lease_key] = {"container": self.cid, "at": t}
                 write_json(self.root / "spend" / f"{self.cid}.json", rec)
                 if spend_total(self.ns, None) >= self.hard_cap:
                     self.hard_stop.set()
@@ -588,21 +633,21 @@ class Runner:
 
     def release(self) -> None:
         self.released.set()
-        LEASE.pop(f"{self.ns}:{self.ds}", None)
+        LEASE.pop(self.lease_key, None)
 
     def acquire(self) -> bool:
         # A container lost mid-job stops renewing its lease; a Modal retry waits for it to go stale rather
         # than giving up, so recovery needs no manual --resume. A live holder keeps renewing and we leave.
         deadline = now() + STALE_S + 2 * HEARTBEAT_S
-        while (held := LEASE.get(f"{self.ns}:{self.ds}")) and held["container"] != self.cid \
+        while (held := LEASE.get(self.lease_key)) and held["container"] != self.cid \
                 and now() - held["at"] < STALE_S and now() < deadline:
             time.sleep(HEARTBEAT_S)
         if held and held["container"] != self.cid and now() - held["at"] < STALE_S:
             print(f"{self.ds}: container {held['container']} holds the lease ({now() - held['at']:.0f}s old); exiting", flush=True)
             return False
-        LEASE[f"{self.ns}:{self.ds}"] = {"container": self.cid, "at": now()}
+        LEASE[self.lease_key] = {"container": self.cid, "at": now()}
         time.sleep(3)
-        return LEASE.get(f"{self.ns}:{self.ds}", {}).get("container") == self.cid
+        return LEASE.get(self.lease_key, {}).get("container") == self.cid
 
     # ---- ledger ----
     def ledger_path(self, job: str) -> Path:
@@ -720,7 +765,21 @@ class Runner:
         if rec["state"] == "done":
             print(f"{self.ds}/{job}: done, skipped", flush=True)
             return "done"
+        if rec["state"] == "running" and rec.get("container_id") != self.cid and now() - rec.get("heartbeat", 0) < STALE_S:
+            print(f"{self.ds}/{job}: running in live container {rec.get('container_id')}, skipped", flush=True)
+            return "busy"
         if rec["state"] == "failed" and self.retry_failed:
+            rec |= {"state": "pending", "failures": 0}
+        if rec["state"] not in ("done", "failed") and not rec.get("orphan_reset") and any(
+                str(h.get("outcome", "")).startswith("hung") for h in rec["history"]):
+            # Runners before the per-process CPU check killed healthy jobs as hung and left VIBE's index
+            # process running beside the next attempt, so groups from those attempts may carry contended
+            # timings. Start such a job from zero, once.
+            shutil.rmtree(self.vol_results(job), ignore_errors=True)
+            shutil.rmtree(self.job_dir(job) / "results", ignore_errors=True)
+            (self.job_dir(job) / "results").mkdir()
+            rec["orphan_reset"] = {"at": iso(), "container": self.cid, "failures_before": rec["failures"],
+                                   "reason": "attempts killed as hung by the pre-fix stall check; results discarded"}
             rec |= {"state": "pending", "failures": 0}
         if rec["state"] == "failed":
             print(f"{self.ds}/{job}: failed earlier ({rec.get('error_tail', '')[-200:]!r}), skipped", flush=True)
@@ -798,10 +857,17 @@ class Runner:
         env.pop("OMP_PROC_BIND", None)
         self.phase_cores = CPU_REQ
         with log_vol.open("a") as fh:
+            # Nothing from an earlier attempt may run beside this one.
+            table = proc_table()
+            if strays := kill_keys(set(table) - self.baseline - descendants(table, os.getpid())):
+                fh.write(f"=== {iso()} killed processes left from an earlier attempt: {strays}\n")
             fh.write(f"\n=== {iso()} attempt {rec['attempts']} container {self.cid} cpu {self.cpu['cpu_model']}: {' '.join(cmd)}\n")
             fh.flush()
             proc = subprocess.Popen(cmd, cwd=jd, env=env, stdout=fh, stderr=subprocess.STDOUT, start_new_session=True)
-            last_cpu, last_change, seen_cpu = 0.0, now(), False
+            # VIBE starts each index config in its own session, so the job is tracked as every process ever
+            # seen below run.py; one that is orphaned stays tracked until it exits.
+            tracked: dict[tuple[int, int], float] = {}
+            total_cpu, last_change = 0.0, now()
             outcome = None
             while proc.poll() is None:
                 self.main_beat = now()
@@ -810,30 +876,34 @@ class Runner:
                     break
                 except subprocess.TimeoutExpired:
                     pass  # still running: fall through to the heartbeat
-                cpu = job_cpu_seconds()
-                seen_cpu |= cpu > 0
-                if cpu > last_cpu + 1:
-                    last_cpu, last_change = cpu, now()
+                table = proc_table()
+                cur = {k: table[k]["cpu"] for k in descendants(table, proc.pid) | (tracked.keys() & table.keys())}
+                gained = cpu_progress(tracked, cur)
+                tracked = cur
+                total_cpu += gained
+                if gained > 1:
+                    last_change = now()
                 rec["heartbeat"] = now()
-                rec["child_cpu_s"] = round(cpu, 1)
+                rec["child_cpu_s"] = round(total_cpu, 1)
                 self.sync(job)
                 write_json(self.ledger_path(job), rec)
-                write_json(self.root / "heartbeat" / f"{self.ds}.json", {"job": job, "at": iso(), "container": self.cid, "cpu_s": cpu})
+                write_json(self.root / "heartbeat" / f"{self.ds}.json",
+                           {"job": job, "at": iso(), "container": self.cid, "cpu_s": total_cpu})
                 VOL.commit()
-                if seen_cpu and now() - last_change > STALE_S:
+                if now() - last_change > STALE_S:
                     outcome = f"hung: no CPU progress for {STALE_S // 60} min"
                 elif self.hard_stop.is_set():
                     outcome = "stopped"
                 elif now() - self.started > CONTAINER_BUDGET_S:
                     outcome = "handover"
                 if outcome:
-                    os.killpg(proc.pid, signal.SIGTERM)
-                    try:
-                        proc.wait(timeout=60)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(proc.pid, signal.SIGKILL)
-                        proc.wait()
+                    table = proc_table()
+                    kill_keys(descendants(table, proc.pid) | (tracked.keys() & table.keys()), grace_s=60)
+                    proc.wait()
                     break
+            table = proc_table()
+            if left := kill_keys(tracked.keys() & table.keys()):
+                fh.write(f"=== {iso()} killed job processes still running after run.py: {left}\n")
             fh.write(f"=== {iso()} exit {proc.returncode} {outcome or ''}\n")
         return outcome or f"exit {proc.returncode}"
 
@@ -871,7 +941,7 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
     """All jobs of one dataset, HMS first. Memory is set per call through with_options."""
     ns = "test" if test else "run"
     VOL.reload()
-    r = Runner(ns, dataset, hms_rev, test, cap, hard_cap)
+    r = Runner(ns, dataset, hms_rev, test, cap, hard_cap, hms_only)
     r.mem_gib = meta.get("mem_gib", 8)
     r.retry_failed = bool(meta.get("retry_failed"))
     if not r.acquire():

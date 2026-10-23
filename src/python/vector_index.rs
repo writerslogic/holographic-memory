@@ -548,7 +548,13 @@ impl PyUpdatableIndex {
         }
     }
 
-    fn rows(&self, x: &PyArrayLike2<'_, f32, AllowTypeChange>, n: usize) -> PyResult<Vec<f32>> {
+    /// The caller's rows, borrowed when they are already a C-contiguous float32 matrix (the
+    /// streaming harness passes up to 757,735 x 100 rows per insert: a 303 MB copy otherwise).
+    fn rows<'a>(
+        &self,
+        x: &'a PyArrayLike2<'_, f32, AllowTypeChange>,
+        n: usize,
+    ) -> PyResult<std::borrow::Cow<'a, [f32]>> {
         let (rows, dim) = (x.shape()[0], x.shape()[1]);
         if rows != n || dim != self.index.dim() {
             return Err(PyValueError::new_err(format!(
@@ -556,7 +562,10 @@ impl PyUpdatableIndex {
                 self.index.dim()
             )));
         }
-        Ok(row_major(x))
+        Ok(match x.as_slice() {
+            Ok(rows) if x.is_c_contiguous() => std::borrow::Cow::Borrowed(rows),
+            _ => std::borrow::Cow::Owned(row_major(x)),
+        })
     }
 }
 

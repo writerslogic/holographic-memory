@@ -56,6 +56,11 @@ impl<'a> Reader<'a> {
         self.data.len() - self.at
     }
 
+    /// Offset of the next unread byte.
+    pub(crate) fn position(&self) -> usize {
+        self.at
+    }
+
     fn take(&mut self, len: usize) -> Result<&'a [u8]> {
         ensure!(
             len <= self.remaining(),
@@ -297,7 +302,7 @@ pub(crate) fn write_document(
             )),
             (None, None) => None,
         };
-        let explicit_id = chunk.id != super::chunk_id(&document.id, index);
+        let explicit_id = !super::is_chunk_id(&chunk.id, &document.id, index);
         let flags = (u8::from(explicit_id) * CHUNK_EXPLICIT_ID)
             | (u8::from(text.is_some()) * CHUNK_TEXT)
             | (u8::from(chunk.stemmed) * CHUNK_STEMMED)

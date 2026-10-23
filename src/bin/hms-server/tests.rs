@@ -21,7 +21,11 @@ use crate::request::blocking;
 use crate::tenants::{tenant_from_hex, tenant_hex, AppState};
 use crate::{auth, routes};
 
-fn state_with(directory: &std::path::Path, limit: usize, extra: &[&str]) -> Arc<AppState> {
+pub(crate) fn state_with(
+    directory: &std::path::Path,
+    limit: usize,
+    extra: &[&str],
+) -> Arc<AppState> {
     let mut args = vec![
         "hms-server".to_string(),
         "--data-dir".into(),
