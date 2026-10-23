@@ -199,9 +199,17 @@ impl Delta {
         let score = |slot: usize| self.score(query, slot, metric);
         let mut pool = vec![(score(0), 0usize, false)];
         let mut visits = usize::from(PROFILE);
-        while let Some(at) = pool.iter().position(|p| !p.2) {
-            pool[at].2 = true;
-            let slot = pool[at].1;
+        // Every entry before `cur` is expanded: an insert at or before it moves it back.
+        let mut cur = 0;
+        loop {
+            while cur < pool.len() && pool[cur].2 {
+                cur += 1;
+            }
+            if cur == pool.len() {
+                break;
+            }
+            pool[cur].2 = true;
+            let slot = pool[cur].1;
             let children = std::iter::successors(
                 (self.first_child[slot] != NONE).then_some(self.first_child[slot]),
                 |&v| {
@@ -221,6 +229,7 @@ impl Delta {
                 if at < ef {
                     pool.insert(at, (d, u, false));
                     pool.truncate(ef);
+                    cur = cur.min(at);
                 }
             }
         }
