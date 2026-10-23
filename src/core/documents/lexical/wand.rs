@@ -167,10 +167,8 @@ fn single_list(
         seeded[index] = true;
         visit(index, top)?;
     }
-    for index in 0..loose.len() {
-        if !seeded[index] {
-            visit(index, top)?;
-        }
+    for (index, _) in seeded.iter().enumerate().filter(|(_, &done)| !done) {
+        visit(index, top)?;
     }
     Ok(())
 }
@@ -552,16 +550,12 @@ mod tests {
             let mut words = Vec::new();
             for (w, word) in vocabulary.iter().enumerate() {
                 // Word w occurs in about one document of w + 1, more often in short ones.
-                if (i * 7 + w * 13) % (w + 1) == 0 {
-                    for _ in 0..1 + (i + w) % 4 {
-                        words.push(word.as_str());
-                    }
+                if (i * 7 + w * 13).is_multiple_of(w + 1) {
+                    words.extend(std::iter::repeat_n(word.as_str(), 1 + (i + w) % 4));
                 }
             }
             words.push("filler");
-            for _ in 0..i % 50 {
-                words.push("pad");
-            }
+            words.extend(std::iter::repeat_n("pad", i % 50));
             words.join(" ")
         };
         for i in 0..700 {

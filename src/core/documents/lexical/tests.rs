@@ -315,7 +315,7 @@ fn check_model(store: &DocumentStore, texts: &[(String, Vec<String>)], left: usi
     let words = ["red", "blue", "green", "gold", "absent"];
     let (a, b) = (words[left % words.len()], words[right % words.len()]);
     for query in [
-        format!("{a}"),
+        a.to_owned(),
         format!("+{a} -\"{a} {b}\""),
         format!("{a} {b}"),
         format!("+{a} +{b}"),

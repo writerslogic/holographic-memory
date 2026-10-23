@@ -397,10 +397,8 @@ fn frontier(points: impl Iterator<Item = (u32, u32)>) -> Option<Box<[(u32, u32)]
     let mut least = [u32::MAX; BLOCK_LEN + 1];
     let mut spill = [(0u32, 0u32); BLOCK_LEN];
     let mut spilled = 0;
-    let mut used = 0;
-    for (frequency, words) in points.filter(|p| p.0 > 0) {
+    for (used, (frequency, words)) in points.filter(|p| p.0 > 0).enumerate() {
         assert!(used < BLOCK_LEN, "frontier exceeds posting block length");
-        used += 1;
         if let Some(entry) = least.get_mut(frequency as usize) {
             *entry = (*entry).min(words);
         } else {
