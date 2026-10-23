@@ -23,9 +23,10 @@ use rayon::prelude::*;
 use super::adjacency::Adjacency;
 use super::fastscan::{pack32, scan32, BLOCK};
 use super::kernels::{
-    dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i4_inline_x4, dot_i8_inline, interleave_for_i4,
-    prefetch, prefetch_bytes, raw_one, QueryCode, Rotation, SplitMix,
+    dot_i4_inline, dot_i4_inline_x4, dot_i8_inline, interleave_for_i4, prefetch, prefetch_bytes,
+    raw_one, QueryCode, Rotation, SplitMix,
 };
+use super::rerank::{dot_f32_i4, dot_f32_i8};
 use super::{invalid, prepare_rows, upper_bytes, BuildParams, Graph, GraphView, Metric, NONE};
 use crate::core::error::HmsError;
 
@@ -128,8 +129,8 @@ impl Default for VSearchParams {
 ///
 /// Mechanisms, and what they may change:
 /// * `prefetch` (`HMS_QGRAPH_PREFETCH`, 0..=3, results never change): 0 prefetches the next
-///   candidate's neighbour list and the code row of every admitted neighbour; 1 adds the
-///   admitted neighbours' scales and the rows the re-rank reads; 2 adds the neighbour list of
+///   candidate's neighbour list, the code row and estimate terms (scale, Euclidean norm) of
+///   every admitted neighbour, and the rows the re-rank reads; 2 adds the neighbour list of
 ///   the second-nearest unexpanded candidate; 3 adds a lookahead that, after an expansion,
 ///   prefetches the code rows (or screen rows) of the next candidate's unvisited neighbours.
 /// * `batch_est` (`HMS_QGRAPH_BATCH_EST`, results never change): the admitted neighbours'
@@ -1523,10 +1524,14 @@ impl VGraph {
         }
     }
 
-    /// Prefetches the scale of `v` (its own array, one line per random vertex).
+    /// Prefetches the per-vertex terms of an estimate of `v`: its scale and, for Euclidean,
+    /// its norm term (each its own array, one line per random vertex).
     #[inline]
     fn prefetch_scale(&self, v: u32) {
         prefetch_f32(&self.scales[v as usize]);
+        if self.metric == VMetric::Euclidean {
+            prefetch_f32(&self.half_norms[v as usize]);
+        }
     }
 
     /// Prefetches what [`VGraph::fine`] reads for `v`.
@@ -1620,8 +1625,16 @@ impl VGraph {
         let mut evals = 1;
         for layer in self.layers.iter().rev() {
             loop {
+                // The list's rows are fetched together: each step's estimates are independent
+                // of one another and only the step's winner decides the next list.
+                let list = &layer[p as usize];
+                for &u in list {
+                    let id = self.upper_ids[u as usize];
+                    prefetch_bytes(self.code(id));
+                    self.prefetch_scale(id);
+                }
                 let mut moved = false;
-                for &u in &layer[p as usize] {
+                for &u in list {
                     let id = self.upper_ids[u as usize];
                     let d = self.est(qc, id, w);
                     reservoir.offer(key(d, id));
@@ -2250,9 +2263,7 @@ impl SearchScratch {
                             }
                         }
                         prefetch_bytes(g.code(u));
-                        if knobs.prefetch >= 1 {
-                            g.prefetch_scale(u);
-                        }
+                        g.prefetch_scale(u);
                         self.survivors.push(u);
                     }
                 }
@@ -2353,7 +2364,6 @@ impl SearchScratch {
             }
             self.fresh.clear();
             let (visited, fresh) = (&mut self.visited, &mut self.fresh);
-            let scale_too = knobs.prefetch >= 1;
             let mut neighbors_read = 0;
             let admit = |u: u32, visited: &mut Marks, fresh: &mut Vec<u32>| {
                 if visited.insert(u) {
@@ -2361,9 +2371,7 @@ impl SearchScratch {
                         g.prefetch_screen(u);
                     } else {
                         prefetch_bytes(g.code(u));
-                        if scale_too {
-                            g.prefetch_scale(u);
-                        }
+                        g.prefetch_scale(u);
                     }
                     fresh.push(u);
                 }
@@ -2397,9 +2405,7 @@ impl SearchScratch {
                         }
                     }
                     prefetch_bytes(g.code(u));
-                    if scale_too {
-                        g.prefetch_scale(u);
-                    }
+                    g.prefetch_scale(u);
                     self.survivors.push(u);
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
@@ -2457,10 +2463,8 @@ impl SearchScratch {
             if PROFILE {
                 profile.rerank_evaluations = take;
             }
-            if knobs.prefetch >= 1 {
-                for &c in &self.keys[..take] {
-                    g.prefetch_rerank_rows(key_id(c));
-                }
+            for &c in &self.keys[..take] {
+                g.prefetch_rerank_rows(key_id(c));
             }
             // Ties (duplicate vectors) break by the original id, independent of the layout.
             self.results.extend(self.keys[..take].iter().map(|&c| {
