@@ -11,7 +11,7 @@ search:
 |---|---|---|
 | Per-tenant keys | `--keys-file keys.json` (`HMS_KEYS_FILE`) | Production. Keys are bound to tenants and scopes, stored only as SHA-256 digests, expire and rotate without a restart. |
 | One shared key | `HMS_API_KEY` (environment only) | Small deployments and the original SDK setup. The key is valid for every tenant with every scope. May be combined with a key file. |
-| No authentication | `--no-auth` (`HMS_NO_AUTH`) | Local development. Every caller has every scope. Refused unless the listener is loopback or a unix socket, refused together with credentials, and logged as a warning at startup. |
+| No authentication | `--no-auth` (`HMS_NO_AUTH`) | Local development. Every caller has every scope. Refused unless the listener is loopback or a unix socket, refused together with credentials, and logged as a warning at startup. Requests from web pages are refused with 403 unless their `Origin` is in `--cors-origins`, and on TCP the `Host` must be a loopback name (`localhost`, `*.localhost`, a loopback address), which stops DNS rebinding. |
 
 With neither a key nor `--no-auth` the server does not start. There is no implicit open mode.
 
