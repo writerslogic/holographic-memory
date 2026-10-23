@@ -28,6 +28,8 @@ use format::{BaseRows, BaseRowsWriter};
 const MAX_DIM: usize = 1 << 20;
 const MAX_PAYLOAD: usize = 64 << 20;
 const MAX_OPS: usize = 65536;
+/// Row counts below this fit 3-byte neighbour ids (`0xFF_FFFF` is the padding id).
+const THREE_BYTE_IDS_BELOW: usize = (1 << 24) - 1;
 
 /// Failures at the update and persistence boundary.
 #[derive(Debug, thiserror::Error)]
@@ -334,6 +336,17 @@ fn distance(q: &[f32], row: &[f32], metric: Metric) -> f32 {
     match metric {
         Metric::Angular => -dot(q, row),
         Metric::Euclidean => dot(row, row) * 0.5 - dot(q, row),
+    }
+}
+
+/// Fixed-width (3- or 4-byte) neighbour ids take the narrowest width a generation of `rows`
+/// allows, as the static index does: 3 bytes save `degree` bytes per row below 2^24 - 1 rows.
+/// Variable-width ids (0) are kept.
+fn neighbour_id_bytes(configured: u8, rows: usize) -> u8 {
+    match configured {
+        3 | 4 if rows < THREE_BYTE_IDS_BELOW => 3,
+        3 | 4 => 4,
+        other => other,
     }
 }
 
@@ -781,6 +794,7 @@ impl UpdatableVGraph {
             .chain(snapshot.delta.live.keys().copied())
             .collect();
         ids.sort_unstable();
+        manifest.encoding.id_bytes = neighbour_id_bytes(manifest.encoding.id_bytes, ids.len());
         let base = Arc::clone(&snapshot.base);
         drop(snapshot);
         if !manifest.encoding.screen && manifest.encoding.block_bits == 0 {

@@ -758,8 +758,11 @@ fn vector_format_golden_and_drift_gate() {
     index.replace(1, &[3., 3.]).unwrap();
     index.delete(2).unwrap();
     index.commit().unwrap();
-    for phase in ["logged", "consolidated"] {
-        if phase == "consolidated" {
+    // `consolidated` holds a generation written with 4-byte neighbour ids, before
+    // consolidation chose 3-byte ids below 2^24 - 1 rows; it must still open and search the
+    // same. Consolidation now writes `consolidated-3-byte-ids`.
+    for phase in ["logged", "consolidated-3-byte-ids"] {
+        if phase != "logged" {
             index.consolidate().unwrap();
         }
         let golden = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -794,6 +797,16 @@ fn vector_format_golden_and_drift_gate() {
             [0, 3, 1, 8]
         );
     }
+    let golden =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden/vector-updates-v1/consolidated");
+    let copy = root.path().join("consolidated-4-byte-ids");
+    copy_store(&golden, &copy);
+    let reader = UpdatableVGraph::open(&copy).unwrap();
+    assert_eq!(reader.state.read().manifest.encoding.id_bytes, 4);
+    assert_eq!(
+        reader.search(&[0., 1.], 10, search_params()).unwrap(),
+        [0, 3, 1, 8]
+    );
 }
 
 #[test]
@@ -1119,7 +1132,7 @@ fn mixed_search_reproduces_pinned_results_and_encoded_generations() {
             }
         }
     }
-    assert_eq!(fingerprint.finalize(), 166_293_721);
+    assert_eq!(fingerprint.finalize(), 439_463_741);
 }
 
 #[test]
@@ -1301,4 +1314,16 @@ fn consolidated_base_matches_static_build_at_equal_params() {
         searcher.search(query, 10, search, &mut out).unwrap();
         assert_eq!(index.search(query, 10, search).unwrap(), out);
     }
+}
+
+#[test]
+fn consolidated_id_width_switches_at_the_three_byte_limit() {
+    let limit = (1 << 24) - 1;
+    for configured in [3, 4] {
+        assert_eq!(neighbour_id_bytes(configured, limit - 1), 3);
+        assert_eq!(neighbour_id_bytes(configured, limit), 4);
+        assert_eq!(neighbour_id_bytes(configured, limit + 1), 4);
+    }
+    assert_eq!(neighbour_id_bytes(0, 10), 0);
+    assert_eq!(neighbour_id_bytes(0, limit + 1), 0);
 }
