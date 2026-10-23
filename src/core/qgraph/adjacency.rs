@@ -84,26 +84,28 @@ impl Adjacency {
         (0..self.len()).map(|v| self.get(v))
     }
 
-    /// Sets lists `0..count` in parallel, list `i` to `f(i)`.
-    pub(crate) fn par_set(&mut self, count: usize, f: impl Fn(usize) -> Vec<u32> + Sync) {
+    /// Sets lists `0..count` in parallel, list `i` to what `f(i, list)` writes to the empty
+    /// `list`, a buffer reused across the lists a worker sets.
+    pub(crate) fn par_set(&mut self, count: usize, f: impl Fn(usize, &mut Vec<u32>) + Sync) {
         let r = self.degree;
         self.slots[..count * r]
             .par_chunks_mut(r)
             .zip(self.lens[..count].par_iter_mut())
             .enumerate()
-            .for_each(|(i, (dst, len))| {
-                let list = f(i);
+            .for_each_init(Vec::new, |list, (i, (dst, len))| {
+                list.clear();
+                f(i, list);
                 assert!(list.len() <= r, "list longer than the degree");
-                dst[..list.len()].copy_from_slice(&list);
+                dst[..list.len()].copy_from_slice(list);
                 *len = list.len() as u32;
             });
     }
 
-    /// Appends `extra[v]` to every list `v` in parallel, where `extra` sees the lists as they
-    /// were before any append. Work and scratch go in blocks of vertices so the scratch stays
+    /// Appends `extra[v]`, what `f(self, v, extra)` writes to the empty `extra`, to every list
+    /// `v` in parallel, where `f` sees the lists as they were before any append. Work and scratch go in blocks of vertices so the scratch stays
     /// bounded; the result equals computing every `extra` first and appending afterwards,
     /// since an append writes only past the old length, which `extra` never reads.
-    pub(crate) fn par_append(&mut self, f: impl Fn(&Self, usize) -> Vec<u32> + Sync) {
+    pub(crate) fn par_append(&mut self, f: impl Fn(&Self, usize, &mut Vec<u32>) + Sync) {
         const BLOCK: usize = 1 << 15;
         let (n, r) = (self.len(), self.degree);
         let mut new_lens = self.lens.clone();
@@ -116,11 +118,12 @@ impl Adjacency {
                 .par_chunks_mut(r)
                 .zip(counts[..size].par_iter_mut())
                 .enumerate()
-                .for_each(|(i, (dst, count))| {
-                    let extra = f(this, base + i);
+                .for_each_init(Vec::new, |extra, (i, (dst, count))| {
+                    extra.clear();
+                    f(this, base + i, extra);
                     let room = r - this.lens[base + i] as usize;
                     assert!(extra.len() <= room, "list longer than the degree");
-                    dst[..extra.len()].copy_from_slice(&extra);
+                    dst[..extra.len()].copy_from_slice(extra);
                     *count = extra.len() as u32;
                 });
             for i in 0..size {
@@ -217,7 +220,7 @@ mod tests {
         }
         // Every vertex appends its successor's list; a block that saw an earlier block's
         // appends would append two ids for some vertex.
-        a.par_append(|g, v| g.get((v + 1) % n).to_vec());
+        a.par_append(|g, v, out| out.extend_from_slice(g.get((v + 1) % n)));
         assert!((0..n).all(|v| a.get(v) == [((v + 1) % n) as u32, ((v + 2) % n) as u32]));
     }
 }
