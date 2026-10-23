@@ -3,56 +3,49 @@
 
 #![cfg(feature = "server")]
 
-use std::io::{BufRead, BufReader, Read, Write};
-use std::net::{SocketAddr, TcpStream};
-use std::process::{Child, Command, Stdio};
+use std::ops::{Deref, DerefMut};
+use std::process::Command;
 
 use serde_json::{json, Value};
 
-const DIM: usize = 16;
+mod server_support;
 
-struct Server {
-    child: Child,
-    addr: SocketAddr,
-    _dir: Option<tempfile::TempDir>,
+const DIM: usize = server_support::DIM;
+
+struct Server(server_support::Server);
+
+impl Deref for Server {
+    type Target = server_support::Server;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Server {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl Server {
     fn start(extra: &[&str], api_key: Option<&str>) -> Self {
-        let dir = tempfile::tempdir().unwrap();
-        let mut server = Self::start_in(dir.path(), extra, api_key);
-        server._dir = Some(dir);
-        server
+        Self(match api_key {
+            Some(key) => server_support::Server::with_key(key, extra),
+            None => server_support::Server::open(extra),
+        })
     }
 
     fn start_in(dir: &std::path::Path, extra: &[&str], api_key: Option<&str>) -> Self {
-        let mut cmd = Command::new(env!("CARGO_BIN_EXE_hms-server"));
-        cmd.args(["--bind", "127.0.0.1:0", "--input-dim", &DIM.to_string()])
-            .args(["--dim", "2048", "--data-dir"])
-            .arg(dir)
-            .args(extra)
-            .env_remove("HMS_API_KEY")
-            .stdout(Stdio::piped());
-        match api_key {
-            Some(key) => cmd.env("HMS_API_KEY", key),
-            None => cmd.arg("--no-auth"),
+        let mut args = extra.to_vec();
+        let envs: Vec<(&str, &str)> = match api_key {
+            Some(key) => vec![("HMS_API_KEY", key)],
+            None => {
+                args.push("--no-auth");
+                Vec::new()
+            }
         };
-        let mut child = cmd.spawn().unwrap();
-        let mut line = String::new();
-        BufReader::new(child.stdout.as_mut().unwrap())
-            .read_line(&mut line)
-            .unwrap();
-        let addr = line
-            .trim()
-            .rsplit(' ')
-            .next()
-            .and_then(|a| a.parse().ok())
-            .unwrap_or_else(|| panic!("no listen address in {line:?}"));
-        Self {
-            child,
-            addr,
-            _dir: None,
-        }
+        Self(server_support::Server::start_in(dir, &args, &envs))
     }
 
     /// Returns (status, parsed JSON body or Null).
@@ -63,28 +56,12 @@ impl Server {
         headers: &[(&str, &str)],
         body: &[u8],
     ) -> (u16, Value) {
-        let mut stream = TcpStream::connect(self.addr).unwrap();
-        let mut req = format!(
-            "{method} {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: {}\r\n",
-            body.len()
-        );
-        for (k, v) in headers {
-            req.push_str(&format!("{k}: {v}\r\n"));
+        let mut request = self.req(method, path).body(body);
+        for (name, value) in headers {
+            request = request.header(name, value);
         }
-        req.push_str("\r\n");
-        // The server may answer and close before reading an oversized body.
-        let _ = stream.write_all(req.as_bytes());
-        let _ = stream.write_all(body);
-        let mut raw = Vec::new();
-        let _ = stream.read_to_end(&mut raw);
-        let text = String::from_utf8_lossy(&raw);
-        let status = text
-            .split(' ')
-            .nth(1)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| panic!("no status in response {text:?}"));
-        let body = text.split("\r\n\r\n").nth(1).unwrap_or("");
-        (status, serde_json::from_str(body).unwrap_or(Value::Null))
+        let response = request.send();
+        (response.status, response.json())
     }
 
     fn json(&self, method: &str, path: &str, tenant: Option<&str>, body: &Value) -> (u16, Value) {
@@ -93,21 +70,6 @@ impl Server {
             headers.push(("X-Tenant-ID", t));
         }
         self.request(method, path, &headers, body.to_string().as_bytes())
-    }
-
-    fn stop(&mut self) -> bool {
-        Command::new("kill")
-            .args(["-TERM", &self.child.id().to_string()])
-            .status()
-            .unwrap();
-        self.child.wait().unwrap().success()
-    }
-}
-
-impl Drop for Server {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
     }
 }
 
@@ -208,7 +170,8 @@ fn cosine(a: &[f64], b: &[f64]) -> f64 {
 #[test]
 fn finite_f64_extremes_preserve_cosine_and_survive_restart() {
     let dir = tempfile::tempdir().unwrap();
-    let mut s = Server::start_in(dir.path(), &[], None);
+    let data = dir.path().join("data");
+    let mut s = Server::start_in(&data, &[], None);
     let axis = |index: usize, magnitude: f64| {
         let mut values = vec![0.0; DIM];
         values[index] = magnitude;
@@ -235,7 +198,7 @@ fn finite_f64_extremes_preserve_cosine_and_survive_restart() {
         }
     }
     assert!(s.stop());
-    let reopened = Server::start_in(dir.path(), &[], None);
+    let reopened = Server::start_in(&data, &[], None);
     for (query, response) in expected {
         assert_eq!(
             reopened.json("POST", "/api/v1/query", None, &query),
@@ -562,7 +525,7 @@ fn tenants_are_isolated_and_validated() {
             "{bad:?}"
         );
     }
-    let dirs = std::fs::read_dir(s._dir.as_ref().unwrap().path().join("tenants"))
+    let dirs = std::fs::read_dir(s.data_dir.join("tenants"))
         .unwrap()
         .count();
     assert_eq!(
@@ -574,7 +537,8 @@ fn tenants_are_isolated_and_validated() {
 #[test]
 fn graceful_shutdown_persists_data() {
     let dir = tempfile::tempdir().unwrap();
-    let mut s = Server::start_in(dir.path(), &[], None);
+    let data = dir.path().join("data");
+    let mut s = Server::start_in(&data, &[], None);
     s.json(
         "POST",
         "/api/v1/documents/batch",
@@ -584,7 +548,7 @@ fn graceful_shutdown_persists_data() {
     s.json("DELETE", "/api/v1/documents/drop", None, &json!(null));
     assert!(s.stop(), "server must exit cleanly on SIGTERM");
 
-    let s = Server::start_in(dir.path(), &[], None);
+    let s = Server::start_in(&data, &[], None);
     let (_, r) = s.json(
         "POST",
         "/api/v1/query",
@@ -625,7 +589,7 @@ fn concurrent_first_access_opens_one_store_and_preserves_all_writes() {
     assert_eq!(status, 200);
     assert_eq!(ids(&response).len(), 8);
     assert_eq!(
-        std::fs::read_dir(s._dir.as_ref().unwrap().path().join("tenants"))
+        std::fs::read_dir(s.data_dir.join("tenants"))
             .unwrap()
             .count(),
         1
@@ -663,7 +627,7 @@ fn concurrent_distinct_first_access_enforces_tenant_reservations_at_cap() {
     let rejected = results.iter().find(|(status, _)| *status == 503).unwrap();
     assert_eq!(rejected.1["error"]["code"], "tenant_limit");
     assert_eq!(
-        std::fs::read_dir(s._dir.as_ref().unwrap().path().join("tenants"))
+        std::fs::read_dir(s.data_dir.join("tenants"))
             .unwrap()
             .count(),
         3
@@ -673,10 +637,11 @@ fn concurrent_distinct_first_access_enforces_tenant_reservations_at_cap() {
 #[test]
 fn failed_tenant_initialization_releases_reservation_and_retries() {
     let directory = tempfile::tempdir().unwrap();
-    let tenant_path = directory.path().join("tenants").join("626c6f636b6564");
+    let data = directory.path().join("data");
+    let tenant_path = data.join("tenants").join("626c6f636b6564");
     std::fs::create_dir_all(tenant_path.parent().unwrap()).unwrap();
     std::fs::write(&tenant_path, "not a directory").unwrap();
-    let s = Server::start_in(directory.path(), &["--max-tenants", "1"], None);
+    let s = Server::start_in(&data, &["--max-tenants", "1"], None);
     let query = json!({"query_vector": embedding(0)});
     let (status, error) = s.json("POST", "/api/v1/query", Some("blocked"), &query);
     assert_eq!(status, 500);

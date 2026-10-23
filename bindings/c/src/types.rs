@@ -301,14 +301,9 @@ pub(crate) fn flagged(flags: u32, bit: u32, value: f64) -> Option<f64> {
     (flags & bit != 0).then_some(value)
 }
 
-/// Copy a caller struct whose first field is its own `struct_size` onto `defaults`, taking
-/// only the bytes the caller's struct covers so older callers get defaults for newer fields.
-pub(crate) fn overlay<T: Copy>(caller: *const T, defaults: T, what: &str) -> ApiResult<T> {
-    let caller = caller.cast::<u8>();
-    if caller.is_null() {
-        return Ok(defaults);
-    }
-    // SAFETY: the first field of every overlaid struct is a `u32` struct_size at offset 0.
+/// The `struct_size` a caller declared in the `u32` at offset 0 of its non-null struct.
+fn declared_size(caller: *const u8, what: &str) -> ApiResult<usize> {
+    // SAFETY: the first field of every caller struct is a `u32` struct_size at offset 0.
     let declared = unsafe { std::ptr::read_unaligned(caller.cast::<u32>()) } as usize;
     if declared < std::mem::size_of::<u32>() {
         return Err(ApiError::new(
@@ -316,6 +311,17 @@ pub(crate) fn overlay<T: Copy>(caller: *const T, defaults: T, what: &str) -> Api
             format!("{what}.struct_size {declared} is smaller than 4"),
         ));
     }
+    Ok(declared)
+}
+
+/// Copy a caller struct whose first field is its own `struct_size` onto `defaults`, taking
+/// only the bytes the caller's struct covers so older callers get defaults for newer fields.
+pub(crate) fn overlay<T: Copy>(caller: *const T, defaults: T, what: &str) -> ApiResult<T> {
+    let caller = caller.cast::<u8>();
+    if caller.is_null() {
+        return Ok(defaults);
+    }
+    let declared = declared_size(caller, what)?;
     let mut merged = defaults;
     let take = declared.min(std::mem::size_of::<T>());
     // SAFETY: `take` bytes are readable by the caller's struct_size contract and `merged` is
@@ -334,14 +340,7 @@ pub(crate) fn write_out<T: Copy>(out: *mut T, mut value: T, what: &str) -> ApiRe
             format!("{what} is NULL"),
         ));
     }
-    // SAFETY: struct_size is a u32 at offset 0 of the caller's struct.
-    let declared = unsafe { std::ptr::read_unaligned(out.cast::<u32>()) } as usize;
-    if declared < std::mem::size_of::<u32>() {
-        return Err(ApiError::new(
-            HMS_ERR_ABI_MISMATCH,
-            format!("{what}.struct_size {declared} is smaller than 4"),
-        ));
-    }
+    let declared = declared_size(out, what)?;
     let take = declared.min(std::mem::size_of::<T>());
     // SAFETY: the first field of `T` is the u32 struct_size; echo what the caller declared.
     unsafe { std::ptr::write_unaligned((&mut value as *mut T).cast::<u32>(), declared as u32) };

@@ -122,6 +122,29 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
     }
 }
 
+/// Reject a write that would take the tenant past `max_documents_per_tenant`; `fresh` counts
+/// the documents it would add and is only evaluated when a quota is set.
+pub fn enforce_quota(
+    state: &AppState,
+    core: &CoreGuard,
+    fresh: impl FnOnce() -> u64,
+) -> Result<(), ApiError> {
+    let quota = state.cfg.max_documents_per_tenant;
+    if quota > 0 && core.document_count() as u64 + fresh() > quota {
+        state
+            .metrics
+            .quota_rejections
+            .fetch_add(1, Ordering::Relaxed);
+        return Err(ApiError::new(
+            StatusCode::TOO_MANY_REQUESTS,
+            "quota_exceeded",
+            format!("tenant document quota of {quota} would be exceeded"),
+        )
+        .retry_after(60));
+    }
+    Ok(())
+}
+
 fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usize, ApiError> {
     let n = docs.len();
     let mut positions = HashMap::with_capacity(n);
@@ -134,22 +157,9 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
     }
     let inputs: Vec<DocumentInput> = final_docs.into_iter().flatten().map(|d| d.input).collect();
     let core = state.core(tenant)?;
-    let quota = state.cfg.max_documents_per_tenant;
-    if quota > 0 {
-        let fresh = inputs.iter().filter(|d| !core.has_document(&d.id)).count() as u64;
-        if core.document_count() as u64 + fresh > quota {
-            state
-                .metrics
-                .quota_rejections
-                .fetch_add(1, Ordering::Relaxed);
-            return Err(ApiError::new(
-                StatusCode::TOO_MANY_REQUESTS,
-                "quota_exceeded",
-                format!("tenant document quota of {quota} would be exceeded"),
-            )
-            .retry_after(60));
-        }
-    }
+    enforce_quota(state, &core, || {
+        inputs.iter().filter(|d| !core.has_document(&d.id)).count() as u64
+    })?;
     // Validated at startup (`Config::validate`); parsed per batch so the engine's error text
     // is the one reported should the two ever disagree.
     let options = IngestOptions {
@@ -775,6 +785,31 @@ fn with_etag(mut response: Response, etag: &str) -> Response {
     response
 }
 
+/// Serve a read of the tenant's store tagged with its generation: a matching `If-None-Match`
+/// answers 304 without calling `render`.
+async fn cached_read(
+    state: Arc<AppState>,
+    tenant: String,
+    headers: HeaderMap,
+    render: impl FnOnce(&CoreGuard) -> Value + Send + 'static,
+) -> ApiResult {
+    let permit = acquire(&state).await?;
+    let (page, tag) = blocking(permit, move || {
+        let core = state.core(&tenant)?;
+        let tag = etag(&state, &core);
+        if not_modified(&headers, &tag) {
+            return Ok((None, tag));
+        }
+        Ok((Some(render(&core)), tag))
+    })
+    .await?;
+    let response = match page {
+        Some(page) => json_response(StatusCode::OK, &page),
+        None => StatusCode::NOT_MODIFIED.into_response(),
+    };
+    Ok(with_etag(response, &tag))
+}
+
 /// `GET /api/v1/documents`: ids and metadata, paginated by id cursor, with the total count.
 pub async fn list_documents(
     State(state): State<Arc<AppState>>,
@@ -788,14 +823,7 @@ pub async fn list_documents(
         return Err(ApiError::bad("limit must be 1..=1000"));
     }
     let headers = req.headers().clone();
-    let permit = acquire(&state).await?;
-    let state2 = state.clone();
-    let (status, body, tag) = blocking(permit, move || {
-        let core = state2.core(&tenant)?;
-        let tag = etag(&state2, &core);
-        if not_modified(&headers, &tag) {
-            return Ok((StatusCode::NOT_MODIFIED, Value::Null, tag));
-        }
+    cached_read(state, tenant, headers, move |core| {
         let from = params.after.as_deref().map(|after| format!("{after}\0"));
         let mut page = core.list_documents(from.as_deref(), limit + 1);
         let more = page.len() > limit;
@@ -810,57 +838,31 @@ pub async fn list_documents(
                 metadata: record.metadata,
             })
             .collect();
-        Ok((
-            StatusCode::OK,
-            body(&DocumentPage {
-                documents,
-                next_cursor: next,
-                count: core.document_count(),
-            }),
-            tag,
-        ))
+        body(&DocumentPage {
+            documents,
+            next_cursor: next,
+            count: core.document_count(),
+        })
     })
-    .await?;
-    let response = if status == StatusCode::NOT_MODIFIED {
-        status.into_response()
-    } else {
-        json_response(status, &body)
-    };
-    Ok(with_etag(response, &tag))
+    .await
 }
 
 /// `GET /api/v1/stats`: document and vector counts and storage use for the tenant.
 pub async fn stats(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
     let (_, tenant) = admit(&state, &req, Scope::Read)?;
     let headers = req.headers().clone();
-    let permit = acquire(&state).await?;
-    let state2 = state.clone();
-    let (status, body, tag) = blocking(permit, move || {
-        let core = state2.core(&tenant)?;
-        let tag = etag(&state2, &core);
-        if not_modified(&headers, &tag) {
-            return Ok((StatusCode::NOT_MODIFIED, Value::Null, tag));
-        }
+    let name = tenant.clone();
+    cached_read(state, tenant, headers, move |core| {
         let health = core.storage_health();
-        Ok((
-            StatusCode::OK,
-            body(&Stats {
-                tenant,
-                documents: core.document_count(),
-                vectors: core.document_embedding_count(),
-                document_index_trained: core.document_index_trained(),
-                vector_index: VectorIndexBody::from(core.vector_index_status()),
-                used_bytes: health.used_bytes,
-                capacity_bytes: health.capacity_bytes,
-            }),
-            tag,
-        ))
+        body(&Stats {
+            tenant: name,
+            documents: core.document_count(),
+            vectors: core.document_embedding_count(),
+            document_index_trained: core.document_index_trained(),
+            vector_index: VectorIndexBody::from(core.vector_index_status()),
+            used_bytes: health.used_bytes,
+            capacity_bytes: health.capacity_bytes,
+        })
     })
-    .await?;
-    let response = if status == StatusCode::NOT_MODIFIED {
-        status.into_response()
-    } else {
-        json_response(status, &body)
-    };
-    Ok(with_etag(response, &tag))
+    .await
 }
