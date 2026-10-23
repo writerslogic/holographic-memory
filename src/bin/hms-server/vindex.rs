@@ -503,6 +503,7 @@ impl VectorIndex {
     }
 
     /// Indexed documents (snapshot rows plus those appended since, minus the deleted).
+    #[cfg(test)]
     pub fn live(&self) -> usize {
         self.state.read().live
     }
