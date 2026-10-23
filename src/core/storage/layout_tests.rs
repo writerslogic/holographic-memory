@@ -231,22 +231,13 @@ fn compacted_store_without_root_manifest_keeps_published_generation_geometry() -
 #[test]
 fn legacy_compaction_tail_survives_each_plain_and_encrypted_publication_interruption() -> Result<()>
 {
-    use crate::core::{documents::SearchOptions, EmbeddingSpace, HmsConfig, HmsCore};
+    use crate::core::{documents::SearchOptions, HmsCore};
     for version in [1, 2, 3] {
         for encrypted in [false, true]
             .into_iter()
             .filter(|value| !value || cfg!(feature = "security"))
         {
-            let mut config = HmsConfig {
-                embedding_space: Some(EmbeddingSpace {
-                    model: "fixture".into(),
-                    revision: "1".into(),
-                    dimensions: 2,
-                    normalization: "l2".into(),
-                    metric: "cosine".into(),
-                }),
-                ..Default::default()
-            };
+            let mut config = crate::core::engine::fixture_config(2);
             config.security.encryption_enabled = encrypted;
             if encrypted {
                 config.security.encryption_passphrase = Some("compaction-replay-fixture".into());

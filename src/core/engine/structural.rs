@@ -162,83 +162,86 @@ fn materialized_path(
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
 
-    fn make_ctx<'a>(
-        atom_mem: &'a AtomMemory,
-        comp_mem: &'a CompositeMemory,
-        triple_store: &'a TripleStore,
-        roles: &'a RoleRegistry,
-        admission: &'a AdmissionControl,
-    ) -> MeaningContext<'a> {
-        MeaningContext {
-            atom_memory: atom_mem,
-            composite_memory: comp_mem,
-            triple_store,
-            roles,
-            admission,
-            beta: 24.0,
-            k: 64,
-            max_iter: 3,
+    /// Empty meaning components with the engine's query parameters.
+    pub(crate) struct Fixture {
+        pub(crate) atoms: AtomMemory,
+        pub(crate) triples: TripleStore,
+        composites: CompositeMemory,
+        roles: RoleRegistry,
+        admission: AdmissionControl,
+    }
+
+    impl Fixture {
+        pub(crate) fn new() -> Self {
+            const DIM: usize = 16384;
+            Self {
+                atoms: AtomMemory::new(DIM, 3.0),
+                triples: TripleStore::new(),
+                composites: CompositeMemory::new(DIM, 3.0),
+                roles: RoleRegistry::new(DIM),
+                admission: AdmissionControl::new(40),
+            }
+        }
+
+        /// Stores `subject relation object` as a role-bound composite named `id` and as a
+        /// symbolic triple; returns the three atom vectors.
+        pub(crate) fn bind(
+            &self,
+            subject: &str,
+            relation: &str,
+            object: &str,
+            id: &str,
+        ) -> [EntangledHVec; 3] {
+            let [(_, s), (_, r), (_, o)] =
+                [subject, relation, object].map(|atom| self.atoms.get_or_insert(atom));
+            self.composites
+                .insert(id.to_string(), self.roles.compose_triple(&s, &r, &o));
+            self.triples.add(subject, relation, object, id);
+            [s, r, o]
+        }
+
+        pub(crate) fn context(&self) -> MeaningContext<'_> {
+            MeaningContext {
+                atom_memory: &self.atoms,
+                composite_memory: &self.composites,
+                triple_store: &self.triples,
+                roles: &self.roles,
+                admission: &self.admission,
+                beta: 24.0,
+                k: 64,
+                max_iter: 3,
+            }
         }
     }
 
     #[test]
-    fn test_structural_query_algebraic() {
-        let dim = 16384;
-        let atom_mem = AtomMemory::new(dim, 3.0);
-        let comp_mem = CompositeMemory::new(dim, 3.0);
-        let triple_store = TripleStore::new();
-        let roles = RoleRegistry::new(dim);
-        let admission = AdmissionControl::new(40);
-
-        let (_, s_vec) = atom_mem.get_or_insert("paris");
-        let (_, r_vec) = atom_mem.get_or_insert("capital_of");
-        let (_, o_vec) = atom_mem.get_or_insert("france");
-
-        let composite = roles.compose_triple(&s_vec, &r_vec, &o_vec);
-        let comp_id = "triple_0".to_string();
-        comp_mem.insert(comp_id.clone(), composite);
-        triple_store.add("paris", "capital_of", "france", &comp_id);
-
-        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
-        let results =
-            fuzzy_structural_query(&ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object");
-
-        assert!(!results.is_empty(), "Should find france");
-        assert_eq!(results[0].entity_id, "france");
-        assert_eq!(results[0].path, StructuralPath::Algebraic);
-    }
-
-    #[test]
-    fn test_structural_query_role_inversion() {
-        let dim = 16384;
-        let atom_mem = AtomMemory::new(dim, 3.0);
-        let comp_mem = CompositeMemory::new(dim, 3.0);
-        let triple_store = TripleStore::new();
-        let roles = RoleRegistry::new(dim);
-        let admission = AdmissionControl::new(40);
-
-        let (_, s_vec) = atom_mem.get_or_insert("john");
-        let (_, r_vec) = atom_mem.get_or_insert("loves");
-        let (_, o_vec) = atom_mem.get_or_insert("mary");
-
-        let composite = roles.compose_triple(&s_vec, &r_vec, &o_vec);
-        let comp_id = "triple_jlm".to_string();
-        comp_mem.insert(comp_id.clone(), composite);
-        triple_store.add("john", "loves", "mary", &comp_id);
-
-        let ctx = make_ctx(&atom_mem, &comp_mem, &triple_store, &roles, &admission);
-
-        let r1 =
-            fuzzy_structural_query(&ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object");
-        assert!(!r1.is_empty());
-        assert_eq!(r1[0].entity_id, "mary");
-
-        let r2 =
-            fuzzy_structural_query(&ctx, &[("relation", &r_vec), ("object", &o_vec)], "subject");
-        assert!(!r2.is_empty());
-        assert_eq!(r2[0].entity_id, "john");
+    fn algebraic_unbinding_recovers_either_unknown_role() {
+        let fixture = Fixture::new();
+        let [subject, relation, object] = fixture.bind("john", "loves", "mary", "triple_jlm");
+        let context = fixture.context();
+        for (target, known, expected) in [
+            (
+                "object",
+                [("subject", &subject), ("relation", &relation)],
+                "mary",
+            ),
+            (
+                "subject",
+                [("relation", &relation), ("object", &object)],
+                "john",
+            ),
+        ] {
+            let results = fuzzy_structural_query(&context, &known, target);
+            assert_eq!(
+                results
+                    .first()
+                    .map(|r| (r.entity_id.as_str(), r.path.clone())),
+                Some((expected, StructuralPath::Algebraic)),
+                "{target}"
+            );
+        }
     }
 }

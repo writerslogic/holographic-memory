@@ -560,7 +560,8 @@ mod tests {
         embedded.embeddings = Some(vec![vec![0.2, 0.5, 0.1]]);
         store.memorize(embedded).unwrap();
         let good = store.export().unwrap();
-        assert!(MemoryDocumentStore::import(&reseal(&good, |_| {})).is_ok());
+        let resealed = MemoryDocumentStore::import(&reseal(&good, |_| {})).unwrap();
+        assert_eq!(resealed.stats(), store.stats());
         type Edit = fn(&mut serde_json::Value);
         let cases: [(&str, Edit); 9] = [
             ("huge word count", |j| {

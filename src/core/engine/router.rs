@@ -153,74 +153,55 @@ impl QueryPlanner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::entangled::EntangledHVec;
 
     #[test]
-    fn plan_small_collection_uses_brute_force() {
-        let planner = QueryPlanner::new(true, true, true, 500, 1000);
-        let q = EntangledHVec::from_indices(vec![1, 2, 3], 1000);
-        let plan = planner.plan(&q, 10);
-        assert_eq!(plan.route, IndexRoute::BruteForce);
-    }
-
-    #[test]
-    fn plan_high_sparsity_uses_inverted() {
-        let planner = QueryPlanner::new(true, true, true, 5000, 1000);
-        let q = EntangledHVec::from_indices(vec![1, 2], 1000);
-        let plan = planner.plan(&q, 10);
-        assert_eq!(plan.route, IndexRoute::Inverted);
-    }
-
-    #[test]
-    fn plan_mid_collection_no_indices_uses_hopfield() {
-        let planner = QueryPlanner::new(false, false, false, 5000, 1000);
-        let q = EntangledHVec::from_indices((0..10).collect(), 1000);
-        let plan = planner.plan(&q, 10);
-        assert_eq!(plan.route, IndexRoute::Hopfield);
-    }
-
-    #[test]
-    fn plan_large_collection_no_indices_uses_brute_force() {
-        let planner = QueryPlanner::new(false, false, false, 20_000, 1000);
-        let q = EntangledHVec::from_indices((0..10).collect(), 1000);
-        let plan = planner.plan(&q, 10);
-        assert_eq!(plan.route, IndexRoute::BruteForce);
-    }
-
-    #[test]
-    fn plan_adjusts_ef_search_for_large_k() {
-        let planner = QueryPlanner::new(true, true, true, 5000, 1000);
-        let q = EntangledHVec::from_indices((0..40).collect(), 1000);
-        let plan = planner.plan(&q, 100);
-        assert!(plan.ef_search >= 100);
-        assert_eq!(plan.route, IndexRoute::NSG);
-    }
-
-    #[test]
-    fn plan_default_density_prefers_inverted_over_trained_indexes() {
-        // D/256 active indices, the density the sweep measured.
-        let q = EntangledHVec::from_indices((0..64).collect(), 16384);
-        for n in [1_000, 100_000, 1_000_000] {
-            let plan = QueryPlanner::new(true, true, true, n, 16384).plan(&q, 10);
-            assert_eq!(plan.route, IndexRoute::Inverted, "n = {n}");
+    fn plan_routes_at_each_threshold() {
+        use IndexRoute::*;
+        const ALL: [bool; 3] = [true; 3];
+        const NONE: [bool; 3] = [false; 3];
+        let (exact, hopfield) = (BRUTE_FORCE_THRESHOLD, HOPFIELD_MAX_PATTERNS);
+        let sparse = SPARSE_INDEX_THRESHOLD;
+        // (name, [nsg, inverted, ivf] available, vectors, dimensions, query indices, route).
+        // 64 active of 16384 is D/256, the density benchmarks/results/route_sweep.json
+        // measured; at D = 64 only the absolute sparsity threshold applies.
+        let cases = [
+            ("exact - 1", ALL, exact - 1, 16384, 64, BruteForce),
+            ("exact", ALL, exact, 16384, 64, Inverted),
+            ("exact + 1", ALL, exact + 1, 16384, 64, Inverted),
+            ("1e5 at D/256", ALL, 100_000, 16384, 64, Inverted),
+            ("1e6 at D/256", ALL, 1_000_000, 16384, 64, Inverted),
+            ("sparse - 1", ALL, 5000, 64, sparse - 1, Inverted),
+            ("sparse", ALL, 5000, 64, sparse, Inverted),
+            ("sparse + 1", ALL, 5000, 64, sparse + 1, NSG),
+            ("D/32 - 1", ALL, 5000, 1000, 1000 / 32 - 1, Inverted),
+            ("D/32", ALL, 5000, 1000, 1000 / 32, NSG),
+            ("no NSG", [false, true, true], 5000, 1000, 40, IVF),
+            ("no graph", [false, true, false], 5000, 1000, 40, Hopfield),
+            ("hopfield - 1", NONE, hopfield - 1, 1000, 10, Hopfield),
+            ("hopfield", NONE, hopfield, 1000, 10, Hopfield),
+            ("hopfield + 1", NONE, hopfield + 1, 1000, 10, BruteForce),
+        ];
+        for (name, [nsg, inverted, ivf], vectors, dimensions, active, route) in cases {
+            let query = EntangledHVec::from_indices((0..active as u32).collect(), dimensions);
+            let planner = QueryPlanner::new(nsg, inverted, ivf, vectors, dimensions);
+            assert_eq!(planner.plan(&query, 10).route, route, "{name}");
         }
     }
 
     #[test]
-    fn plan_dense_query_falls_back_to_trained_indexes() {
-        let q = EntangledHVec::from_indices((0..40).collect(), 1000);
-        let nsg = QueryPlanner::new(true, true, true, 5000, 1000).plan(&q, 10);
-        assert_eq!(nsg.route, IndexRoute::NSG);
-        let ivf = QueryPlanner::new(false, true, true, 5000, 1000).plan(&q, 10);
-        assert_eq!(ivf.route, IndexRoute::IVF);
-    }
-
-    #[test]
-    fn plan_brute_force_boundary() {
-        let q = EntangledHVec::from_indices((0..64).collect(), 16384);
-        let below = QueryPlanner::new(true, true, true, BRUTE_FORCE_THRESHOLD - 1, 16384);
-        assert_eq!(below.plan(&q, 10).route, IndexRoute::BruteForce);
-        let at = QueryPlanner::new(true, true, true, BRUTE_FORCE_THRESHOLD, 16384);
-        assert_eq!(at.plan(&q, 10).route, IndexRoute::Inverted);
+    fn graph_beam_covers_k_up_to_its_cap() {
+        let planner = QueryPlanner::new(true, true, true, 5000, 1000);
+        let query = EntangledHVec::from_indices((0..40).collect(), 1000);
+        let cap = EF_SEARCH_MAX as u32;
+        // 2k reaches EF_SEARCH_MIN at k = 64 and EF_SEARCH_MAX at k = 256.
+        for k in [1, 63, 64, 65, 255, 256, 257, cap, cap + 1] {
+            let plan = planner.plan(&query, k);
+            assert_eq!(plan.route, IndexRoute::NSG, "k = {k}");
+            assert!(
+                (k.min(cap) as usize..=EF_SEARCH_MAX).contains(&plan.ef_search),
+                "k = {k}: ef_search = {}",
+                plan.ef_search
+            );
+        }
     }
 }

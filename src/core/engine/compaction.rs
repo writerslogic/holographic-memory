@@ -303,20 +303,11 @@ mod tests {
     use std::time::Duration;
 
     use crate::core::documents::{DocumentInput, SearchOptions};
-    use crate::core::{EmbeddingSpace, HmsConfig};
+    use crate::core::HmsConfig;
     use serde_json::json;
 
     fn config() -> HmsConfig {
-        HmsConfig {
-            embedding_space: Some(EmbeddingSpace {
-                model: "fixture".into(),
-                revision: "1".into(),
-                dimensions: 2,
-                normalization: "l2".into(),
-                metric: "cosine".into(),
-            }),
-            ..Default::default()
-        }
+        super::super::fixture_config(2)
     }
 
     fn configurations() -> impl Iterator<Item = HmsConfig> {

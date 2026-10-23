@@ -63,6 +63,21 @@ use shard::{ShardManager, ShardSet};
 
 type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 
+/// A configuration whose store holds `dimensions`-wide fixture embeddings.
+#[cfg(test)]
+pub(crate) fn fixture_config(dimensions: usize) -> HmsConfig {
+    HmsConfig {
+        embedding_space: Some(super::EmbeddingSpace {
+            model: "fixture".into(),
+            revision: "1".into(),
+            dimensions,
+            normalization: "l2".into(),
+            metric: "cosine".into(),
+        }),
+        ..Default::default()
+    }
+}
+
 /// Persistent operations take mutation_gate before ShardSet and component locks.
 pub struct HmsCore {
     config: HmsConfig,
