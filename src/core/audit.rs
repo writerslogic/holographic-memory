@@ -132,7 +132,8 @@ impl AuditLog {
         file.seek(SeekFrom::Start(0))?;
 
         let metadata = file.metadata()?;
-        let file_len = metadata.len() as usize;
+        let file_len = usize::try_from(metadata.len())
+            .map_err(|_| anyhow!("audit log is too large to read into memory"))?;
         if file_len == 0 {
             return Ok(Vec::new());
         }

@@ -161,11 +161,12 @@ impl RelationStore {
         relation_type: Option<&str>,
         at_time: f64,
     ) -> Vec<Relation> {
+        // `relations` before any index, the order `add` takes them in.
+        let rels = self.relations.read();
         let index = index.read();
         let Some(indices) = index.get(node_id) else {
             return Vec::new();
         };
-        let rels = self.relations.read();
         indices
             .iter()
             .map(|&idx| &rels[idx])
@@ -219,9 +220,9 @@ impl RelationStore {
                 }
             } else {
                 // No type filter: check each incoming relation's type for symmetry
+                let rels = self.relations.read();
                 let incoming_indices = self.by_target.read();
                 if let Some(indices) = incoming_indices.get(&node_id) {
-                    let rels = self.relations.read();
                     for &idx in indices {
                         let r = &rels[idx];
                         if !r.is_valid_at(at_time) || r.deleted {

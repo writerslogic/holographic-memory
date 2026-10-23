@@ -16,7 +16,7 @@ pub mod vc;
 
 use anyhow::Result;
 use ed25519_dalek::SigningKey;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -47,7 +47,7 @@ pub struct ProvenanceManager {
     signing_key: SigningKey,
     issuer_did: String,
     records: RwLock<fxhash::FxHashMap<String, ProvenanceRecord>>,
-    chain_head: RwLock<[u8; 32]>,
+    chain_head: Mutex<[u8; 32]>,
     logical_clock: std::sync::atomic::AtomicU64,
     log_path: Option<PathBuf>,
     revocation_bitstring: RwLock<Vec<u8>>,
@@ -61,14 +61,22 @@ impl ProvenanceManager {
         let signing_key = super::security::SigningManager::new(key_path)?.into_signing_key();
         let issuer_did = did::did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
         let log_path = storage_path.map(|p| p.join("provenance_log.jsonl"));
-        let (records, chain_head) = Self::load_log(log_path.as_deref());
+        let (records, chain_head) = Self::load_log(log_path.as_deref())?;
         let clock_init = records
             .values()
             .map(|r| r.sequence)
             .max()
             .map_or(0, |max| max + 1);
         let mut kel = match storage_path {
-            Some(p) => keri::KeyEventLog::with_path(&p.join("kel.json")).unwrap_or_default(),
+            Some(p) => match keri::KeyEventLog::with_path(&p.join("kel.json")) {
+                Ok(kel) => kel,
+                // `persist` is not atomic, so a crash can leave a torn file; refusing to open
+                // would turn that crash into an outage.
+                Err(e) => {
+                    tracing::warn!("KEL unreadable, starting an in-memory log: {e}");
+                    keri::KeyEventLog::default()
+                }
+            },
             None => keri::KeyEventLog::new(),
         };
         if kel.events().is_empty() {
@@ -81,10 +89,12 @@ impl ProvenanceManager {
             signing_key,
             issuer_did,
             records: RwLock::new(records),
-            chain_head: RwLock::new(chain_head),
+            chain_head: Mutex::new(chain_head),
             logical_clock: std::sync::atomic::AtomicU64::new(clock_init),
             log_path: log_path.clone(),
-            revocation_bitstring: RwLock::new(Self::load_revocation_bitstring(log_path.as_deref())),
+            revocation_bitstring: RwLock::new(Self::load_revocation_bitstring(
+                log_path.as_deref(),
+            )?),
             kel: RwLock::new(kel),
             #[cfg(feature = "provenance-scitt")]
             scitt_endpoint: None,
@@ -94,12 +104,14 @@ impl ProvenanceManager {
     pub fn from_signing_key(signing_key: SigningKey) -> Self {
         let issuer_did = did::did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
         let mut kel = keri::KeyEventLog::new();
-        let _ = kel.inception(&signing_key, None);
+        if let Err(e) = kel.inception(&signing_key, None) {
+            tracing::warn!("KEL inception failed: {e}");
+        }
         Self {
             signing_key,
             issuer_did,
             records: RwLock::new(fxhash::FxHashMap::default()),
-            chain_head: RwLock::new([0u8; 32]),
+            chain_head: Mutex::new([0u8; 32]),
             logical_clock: std::sync::atomic::AtomicU64::new(0),
             log_path: None,
             revocation_bitstring: RwLock::new(Vec::new()),
@@ -126,23 +138,32 @@ impl ProvenanceManager {
 
     pub fn store_record(&self, fact_id: &str, record: ProvenanceRecord) {
         if let Some(ref path) = self.log_path {
-            let prev_hash = hex_encode(&*self.chain_head.read());
-            let entry = LogEntry {
-                prev_hash,
-                fact_id: fact_id.to_string(),
-                record: record.clone(),
-            };
-            if let Ok(line) = serde_json::to_string(&entry) {
-                self.append_chained(path, line, "provenance");
-            }
+            self.append_chained(path, "provenance", |prev_hash| {
+                serde_json::to_string(&LogEntry {
+                    prev_hash,
+                    fact_id: fact_id.to_string(),
+                    record: record.clone(),
+                })
+            });
         }
         self.records.write().insert(fact_id.to_string(), record);
     }
 
-    /// Appends `line` to the hash-chained log at `path`, then advances and re-signs the chain
-    /// head. A failed append is logged rather than returned: the in-memory state stays
-    /// authoritative and `verify_log_integrity` reports the gap.
-    fn append_chained(&self, path: &Path, line: String, what: &str) {
+    /// Appends the line `line_for` builds from the current head's hex to the hash-chained log
+    /// at `path`, then advances and re-signs the head. The head stays locked throughout so
+    /// concurrent writers cannot chain two lines to the same predecessor. A failed append is
+    /// logged rather than returned: the in-memory state stays authoritative and
+    /// `verify_log_integrity` reports the gap. A line that fails to serialize is skipped.
+    fn append_chained(
+        &self,
+        path: &Path,
+        what: &str,
+        line_for: impl FnOnce(String) -> serde_json::Result<String>,
+    ) {
+        let mut head = self.chain_head.lock();
+        let Ok(line) = line_for(hex_encode(&*head)) else {
+            return;
+        };
         let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
         let mut buf = line;
         buf.push('\n');
@@ -154,7 +175,7 @@ impl ProvenanceManager {
         {
             tracing::warn!("{what} log write failed: {e}");
         }
-        *self.chain_head.write() = new_hash;
+        *head = new_hash;
         self.write_signed_head(&new_hash, path);
     }
 
@@ -212,16 +233,14 @@ impl ProvenanceManager {
         self.records.write().remove(fact_id);
 
         if let Some(ref path) = self.log_path {
-            let prev_hash = hex_encode(&*self.chain_head.read());
-            let entry_json = serde_json::json!({
-                "prev_hash": prev_hash,
-                "action": "delete",
-                "fact_id": fact_id,
-                "deletion": record,
+            self.append_chained(path, "deletion", |prev_hash| {
+                serde_json::to_string(&serde_json::json!({
+                    "prev_hash": prev_hash,
+                    "action": "delete",
+                    "fact_id": fact_id,
+                    "deletion": record,
+                }))
             });
-            if let Ok(line) = serde_json::to_string(&entry_json) {
-                self.append_chained(path, line, "deletion");
-            }
         }
 
         Ok(record)
@@ -253,17 +272,15 @@ impl ProvenanceManager {
         let rotation_envelope = cose::sign_payload(&self.signing_key, &rotation_payload)?;
 
         if let Some(ref path) = self.log_path {
-            let prev_hash = hex_encode(&*self.chain_head.read());
-            let entry_json = serde_json::json!({
-                "prev_hash": prev_hash,
-                "action": "key_rotation",
-                "old_did": old_did,
-                "new_did": new_did,
-                "cose_envelope": rotation_envelope,
+            self.append_chained(path, "key rotation", |prev_hash| {
+                serde_json::to_string(&serde_json::json!({
+                    "prev_hash": prev_hash,
+                    "action": "key_rotation",
+                    "old_did": old_did,
+                    "new_did": new_did,
+                    "cose_envelope": rotation_envelope,
+                }))
             });
-            if let Ok(line) = serde_json::to_string(&entry_json) {
-                self.append_chained(path, line, "key rotation");
-            }
         }
 
         self.signing_key = new_signing_key;
@@ -314,17 +331,29 @@ impl ProvenanceManager {
         Ok(true)
     }
 
-    fn load_log(path: Option<&Path>) -> (fxhash::FxHashMap<String, ProvenanceRecord>, [u8; 32]) {
+    /// Replays the log into the live records and the chain head. A missing log is an empty
+    /// one; an unreadable one is an error, since chaining new entries onto a guessed head
+    /// would break the log.
+    fn load_log(
+        path: Option<&Path>,
+    ) -> Result<(fxhash::FxHashMap<String, ProvenanceRecord>, [u8; 32])> {
         let mut map = fxhash::FxHashMap::default();
         let mut head = [0u8; 32];
         let Some(path) = path else {
-            return (map, head);
+            return Ok((map, head));
         };
-        let Ok(file) = std::fs::File::open(path) else {
-            return (map, head);
+        let file = match std::fs::File::open(path) {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok((map, head)),
+            Err(e) => return Err(anyhow::anyhow!("failed to open provenance log: {e}")),
         };
         for line in std::io::BufReader::new(file).lines() {
-            let Ok(line) = line else { continue };
+            let line = match line {
+                Ok(line) => line,
+                // A crash can tear the last line mid-character; replay what precedes it.
+                Err(e) if e.kind() == std::io::ErrorKind::InvalidData => continue,
+                Err(e) => return Err(anyhow::anyhow!("log read error: {e}")),
+            };
             head = Sha256::digest(line.as_bytes()).into();
             if let Ok(entry) = serde_json::from_str::<LogEntry>(&line) {
                 map.insert(entry.fact_id, entry.record);
@@ -336,24 +365,37 @@ impl ProvenanceManager {
                 }
             }
         }
-        (map, head)
+        Ok((map, head))
     }
 
-    fn load_revocation_bitstring(log_path: Option<&Path>) -> Vec<u8> {
+    /// A missing status list means nothing is revoked. An unreadable one is an error rather
+    /// than an empty list, which would report every revoked credential as valid.
+    fn load_revocation_bitstring(log_path: Option<&Path>) -> Result<Vec<u8>> {
         let Some(path) = log_path else {
-            return Vec::new();
+            return Ok(Vec::new());
         };
-        let bitstring_path = path.with_extension("statuslist");
-        std::fs::read(bitstring_path).unwrap_or_default()
+        match std::fs::read(path.with_extension("statuslist")) {
+            Ok(bits) => Ok(bits),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+            Err(e) => Err(anyhow::anyhow!(
+                "failed to read revocation status list: {e}"
+            )),
+        }
     }
 
     pub fn revoke_credential(&self, status_index: u64) -> Result<()> {
-        let byte_idx = (status_index / 8) as usize;
+        // The index is caller-supplied: one past `usize` or past what can be allocated is an
+        // error, not an overflow or an allocation abort.
+        let out_of_range = || anyhow::anyhow!("status index {status_index} is out of range");
+        let byte_idx = usize::try_from(status_index / 8).map_err(|_| out_of_range())?;
+        let len = byte_idx.checked_add(1).ok_or_else(out_of_range)?;
         let bit_idx = (status_index % 8) as u8;
         {
             let mut bits = self.revocation_bitstring.write();
-            if bits.len() <= byte_idx {
-                bits.resize(byte_idx + 1, 0);
+            if bits.len() < len {
+                let additional = len - bits.len();
+                bits.try_reserve(additional).map_err(|_| out_of_range())?;
+                bits.resize(len, 0);
             }
             bits[byte_idx] |= 1 << bit_idx;
         }
@@ -367,10 +409,12 @@ impl ProvenanceManager {
     }
 
     pub fn is_revoked(&self, status_index: u64) -> bool {
-        let byte_idx = (status_index / 8) as usize;
         let bit_idx = (status_index % 8) as u8;
         let bits = self.revocation_bitstring.read();
-        byte_idx < bits.len() && (bits[byte_idx] & (1 << bit_idx)) != 0
+        usize::try_from(status_index / 8)
+            .ok()
+            .and_then(|byte_idx| bits.get(byte_idx))
+            .is_some_and(|byte| byte & (1 << bit_idx) != 0)
     }
 
     /// Create a full provenance record for a stored fact.
@@ -1261,6 +1305,28 @@ mod tests {
             .details
             .iter()
             .any(|d| d.check == "revocation_status" && !d.passed));
+    }
+
+    #[test]
+    fn unreadable_provenance_state_fails_to_open() {
+        for name in ["provenance_log.jsonl", "provenance_log.statuslist"] {
+            let dir = tempdir().unwrap();
+            std::fs::create_dir(dir.path().join(name)).unwrap();
+            assert!(
+                ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).is_err(),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    fn unallocatable_status_index_is_an_error() {
+        let (_dir, mgr) = manager();
+        assert!(mgr.revoke_credential(u64::MAX).is_err());
+        assert!(!mgr.is_revoked(u64::MAX));
+        mgr.revoke_credential(9).unwrap();
+        assert!(mgr.is_revoked(9));
+        assert!(!mgr.is_revoked(8));
     }
 
     #[test]

@@ -54,6 +54,7 @@ impl Generator {
         l.config.max_position_embeddings = l.config.max_position_embeddings.min(MAX_CONTEXT);
         let mut tokenizer = l.tokenizer;
         tokenizer.with_padding(None);
+        // Only invalid truncation parameters are rejected; disabling it cannot fail.
         let _ = tokenizer.with_truncation(None);
         let mut stop = vec![token_id(&tokenizer, "<|im_end|>")?];
         if let Ok(gen) = std::fs::read(source.dir.join("generation_config.json")) {

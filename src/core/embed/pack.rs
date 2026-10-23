@@ -262,6 +262,7 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes
         .iter()
         .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
+            // Writing to a String cannot fail.
             let _ = write!(s, "{b:02x}");
             s
         })
