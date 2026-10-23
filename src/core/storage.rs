@@ -7,7 +7,7 @@ use crc32fast::Hasher;
 use memmap2::{Mmap, MmapMut};
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 mod staging;
@@ -110,9 +110,7 @@ impl ActiveSegment {
             .flush_range(offset, len)
             .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
         #[cfg(test)]
-        if tests::FAIL_NEXT_SYNC.replace(false) {
-            return Err(anyhow!("injected segment sync failure"));
-        }
+        tests::fail_point("commit sync")?;
         super::durable_file::sync_mapped_file(&self.file).context("segment sync failed")
     }
 }
@@ -130,6 +128,10 @@ pub(crate) struct PersistentArena {
     write_offset: AtomicUsize,
     active_capacity: AtomicUsize,
     version_counter: AtomicUsize,
+    /// Set once a rotation has created the next segment's file and cleared when the rotation
+    /// completes: an open treats every segment but the last as sealed, so after a failed
+    /// rotation the next append must rotate rather than write into the current segment.
+    rotation_pending: AtomicBool,
 }
 
 pub(crate) struct PreparedCompaction {
@@ -247,6 +249,7 @@ impl PersistentArena {
             } else {
                 0
             }),
+            rotation_pending: AtomicBool::new(false),
         })
     }
 
@@ -602,7 +605,9 @@ impl PersistentArena {
 
         // Check-then-reserve under write lock to avoid wasting space at segment boundaries.
         let mut offset = self.write_offset.load(Ordering::Acquire);
-        if offset + total_frame_len > self.segment_size {
+        if offset + total_frame_len > self.segment_size
+            || self.rotation_pending.load(Ordering::Acquire)
+        {
             self.rotate_segment_locked(&mut active)?;
             offset = 0;
         }
@@ -638,6 +643,9 @@ impl PersistentArena {
                 active.map[offset..offset + HEADER_SIZE].copy_from_slice(&end_marker_bytes());
                 active.map[offset + HEADER_SIZE..frame_end + sentinel_len].fill(0);
                 self.write_offset.store(offset, Ordering::Release);
+                // Best effort: the original error is the one to report. If this sync fails
+                // too, a power loss before the next commit can still bring the frame back.
+                let _ = active.sync_range(offset, total_frame_len + sentinel_len);
                 return Err(error);
             }
             // The frame is on disk and applied in memory by the caller; its pages are only
@@ -737,12 +745,15 @@ impl PersistentArena {
 
         let next_id = current_id + 1;
         let next_path = self.data_path.read().join(format!("seg_{}.bin", next_id));
+        self.rotation_pending.store(true, Ordering::Release);
         let next_file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .truncate(false)
             .open(&next_path)?;
+        #[cfg(test)]
+        tests::fail_point("rotation after create")?;
         let capacity = if self.format_version >= 4 && INCREMENTAL_ALLOCATION {
             SEGMENT_SIZE
         } else {
@@ -759,6 +770,7 @@ impl PersistentArena {
         self.active_capacity.store(capacity, Ordering::Release);
         self.active_id.store(next_id, Ordering::SeqCst);
         self.write_offset.store(0, Ordering::SeqCst);
+        self.rotation_pending.store(false, Ordering::Release);
         Ok(())
     }
 
@@ -928,6 +940,10 @@ impl PersistentArena {
             replacement.version_counter.load(Ordering::Acquire),
             Ordering::Release,
         );
+        self.rotation_pending.store(
+            replacement.rotation_pending.load(Ordering::Acquire),
+            Ordering::Release,
+        );
         drop(replacement);
         #[cfg(test)]
         compaction_crash_point("mapped");
@@ -1027,9 +1043,63 @@ mod tests {
     use tempfile::tempdir;
 
     thread_local! {
-        /// Makes the calling thread's next [`ActiveSegment::sync_range`] fail after its bytes
-        /// were written back, as a failed `fsync` does.
-        pub(super) static FAIL_NEXT_SYNC: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+        /// The named point at which the calling thread's next pass fails, once.
+        static FAIL_AT: std::cell::Cell<Option<&'static str>> = const { std::cell::Cell::new(None) };
+    }
+
+    /// Fails if `point` is armed on this thread: "commit sync" fails a commit's sync after its
+    /// bytes were written back (as a failed `fsync` does); "rotation after create" fails a
+    /// rotation once the next segment's file exists.
+    pub(super) fn fail_point(point: &str) -> Result<()> {
+        if FAIL_AT.with(|armed| armed.get() == Some(point) && armed.take().is_some()) {
+            return Err(anyhow!("injected failure at {point}"));
+        }
+        Ok(())
+    }
+
+    /// Runs `body` with `point` armed, disarming it afterwards if `body` did not reach it.
+    fn failing_at<R>(point: &'static str, body: impl FnOnce() -> R) -> R {
+        FAIL_AT.set(Some(point));
+        let result = body();
+        FAIL_AT.set(None);
+        result
+    }
+
+    /// After a rotation fails once the next segment's file exists, an open would treat the
+    /// current segment as sealed and skip its torn-tail recovery: no later append may go into
+    /// it. Crash test: a torn append after the failed rotation still recovers.
+    #[test]
+    fn failed_rotation_after_creating_the_next_segment_seals_the_current_one() -> Result<()> {
+        let dir = tempdir()?;
+        {
+            let arena = PersistentArena::new(dir.path())?;
+            arena.write_slice(b"before the failed rotation")?;
+            assert!(failing_at("rotation after create", || {
+                arena.rotate_segment_locked(&mut arena.active_segment.write())
+            })
+            .is_err());
+            assert!(dir.path().join("seg_1.bin").exists());
+            let after = arena.write_slice(b"after the failed rotation")?;
+            assert_eq!(after, arena.segment_size);
+            // A torn append: header and part of the payload reached the file, nothing else.
+            let torn = arena.stats().used_bytes - arena.segment_size;
+            let mut active = arena.active_segment.write();
+            active.map[torn..torn + 4].copy_from_slice(&1u32.to_le_bytes());
+            active.map[torn + 4..torn + 8].copy_from_slice(&4096u32.to_le_bytes());
+            active.map[torn + 8..torn + 12].copy_from_slice(&4096u32.to_le_bytes());
+            active.map[torn + 12..torn + 16].copy_from_slice(&9u32.to_le_bytes());
+            active.map[torn + HEADER_SIZE..torn + HEADER_SIZE + 64].fill(0xa5);
+            active.sync()?;
+        }
+        let restored = PersistentArena::new(dir.path())?;
+        assert_eq!(
+            replayed(&restored)?,
+            [
+                b"before the failed rotation".to_vec(),
+                b"after the failed rotation".to_vec()
+            ]
+        );
+        Ok(())
     }
 
     /// The payloads of every frame in log order, as replay walks them.
@@ -1054,9 +1124,9 @@ mod tests {
                 let arena = PersistentArena::new(dir.path())?;
                 arena.write_slice(b"committed")?;
                 let checkpoint = arena.checkpoint();
-                FAIL_NEXT_SYNC.set(true);
-                let failed = arena.write_slice(b"commit whose sync failed");
-                FAIL_NEXT_SYNC.set(false);
+                let failed = failing_at("commit sync", || {
+                    arena.write_slice(b"commit whose sync failed")
+                });
                 assert!(failed.is_err());
                 assert_eq!(arena.checkpoint(), checkpoint);
                 if retry {
