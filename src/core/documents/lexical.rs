@@ -5,6 +5,7 @@ use anyhow::{ensure, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
+use super::packed_terms::WordId;
 use super::positions::tokens;
 use super::{Bm25, DocumentStore, SearchOptions, StoredChunk, MAX_DOCUMENT_BYTES};
 
@@ -14,7 +15,8 @@ pub enum LexicalExecution {
     Auto,
     /// Unpruned posting-cursor execution.
     DocumentAtATime,
-    /// Conservative block-max WAND for term disjunctions; other queries use cursors.
+    /// Dynamic pruning for term disjunctions (block-max MaxScore, or a strongest-blocks-first
+    /// scan of a single list); other queries use cursors.
     BlockMaxWand,
     /// Full scan and full sort, useful for verifying another execution strategy.
     Exhaustive,
@@ -142,15 +144,18 @@ impl LexicalQuery {
     }
 }
 
-fn frequency(clause: &Clause, chunk: &StoredChunk) -> u32 {
-    let words = &clause.words[usize::from(chunk.stemmed)];
+/// The clause's occurrences in `chunk`: a word's frequency, or a phrase's when `exact`,
+/// otherwise 1 at its first occurrence. `ids` holds one cache per phrase word and form.
+fn frequency(clause: &Clause, chunk: &StoredChunk, exact: bool, ids: &mut [Vec<WordId>; 2]) -> u32 {
+    let form = usize::from(chunk.stemmed);
+    let words = &clause.words[form];
     if !clause.phrase {
         return chunk.terms.get(&words[0]).copied().unwrap_or(0);
     }
     let mut indices = Vec::with_capacity(words.len());
     let (mut lead, mut least) = (0, u32::MAX);
-    for word in words {
-        let Some(index) = chunk.terms.index(word) else {
+    for (word, id) in words.iter().zip(&mut ids[form]) {
+        let Some(index) = chunk.terms.index_cached(word, id) else {
             return 0;
         };
         let frequency = chunk.terms.frequency_at(index);
@@ -187,8 +192,28 @@ fn frequency(clause: &Clause, chunk: &StoredChunk) -> u32 {
             iter.peek() == Some(&target)
         });
         count += u32::from(matched);
+        if matched && !exact {
+            break;
+        }
     }
     count
+}
+
+/// One dictionary-id cache per word and form of each clause: a dictionary may hold chunks
+/// of both forms, whose words differ.
+fn word_ids(query: &LexicalQuery) -> Vec<[Vec<WordId>; 2]> {
+    query
+        .clauses
+        .iter()
+        .map(|clause| {
+            std::array::from_fn(|form| {
+                clause.words[form]
+                    .iter()
+                    .map(|_| WordId::default())
+                    .collect()
+            })
+        })
+        .collect()
 }
 
 fn prepare(store: &DocumentStore, query: &LexicalQuery, options: &LexicalOptions) -> Result<Bm25> {
@@ -292,8 +317,7 @@ pub(crate) fn execute(
         LexicalExecution::Exhaustive => exhaustive(store, query, options, bm25),
         LexicalExecution::Auto | LexicalExecution::BlockMaxWand
             if options.k > 0
-                && (options.execution == LexicalExecution::BlockMaxWand
-                    || (query.clauses.len() <= 16 && options.k <= 1000)) =>
+                && (options.execution == LexicalExecution::BlockMaxWand || options.k <= 1000) =>
         {
             match wand::execute(store, query, options, bm25)? {
                 Some(result) => Ok(result),
@@ -324,12 +348,14 @@ fn exhaustive(
         Vec::new()
     };
     let average = (store.word_count as f64 / (store.chunk_count as f64).max(1.0)).max(1.0);
+    let mut ids = word_ids(query);
     for (id, document) in &store.documents {
         for (chunk_index, chunk) in document.chunks.iter().enumerate() {
             let frequencies: Vec<_> = query
                 .clauses
                 .iter()
-                .map(|clause| frequency(clause, chunk))
+                .zip(&mut ids)
+                .map(|(clause, ids)| frequency(clause, chunk, options.k > 0, ids))
                 .collect();
             if !matches(query, &frequencies) {
                 continue;

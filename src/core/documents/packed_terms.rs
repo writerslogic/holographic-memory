@@ -58,6 +58,21 @@ impl SharedDictionary {
             .map_or(self.text.len(), |&v| v as usize);
         &self.text[self.starts[index] as usize..end]
     }
+
+    /// The id of `key`; the terms are strictly ascending (built sorted, and decoding
+    /// rejects any other order).
+    fn find(&self, key: &str) -> Option<u32> {
+        let (mut low, mut high) = (0, self.starts.len());
+        while low < high {
+            let middle = low + (high - low) / 2;
+            match self.term(middle).cmp(key) {
+                Ordering::Less => low = middle + 1,
+                Ordering::Equal => return u32::try_from(middle).ok(),
+                Ordering::Greater => high = middle,
+            }
+        }
+        None
+    }
 }
 
 #[derive(Clone)]
@@ -132,6 +147,37 @@ impl SharedTerms {
         }
         None
     }
+
+    /// [`Self::index`] by the key's dictionary id: the ids ascend with the keys, so the
+    /// search compares integers.
+    fn index_cached(&self, key: &str, cache: &mut WordId) -> Option<usize> {
+        let id = match &cache.dictionary {
+            Some((dictionary, id)) if Arc::ptr_eq(dictionary, &self.dictionary) => *id,
+            _ => {
+                let id = self.dictionary.find(key);
+                cache.dictionary = Some((Arc::clone(&self.dictionary), id));
+                id
+            }
+        };
+        let id = u64::from(id?);
+        let (mut low, mut high) = (0, self.frequencies.len());
+        while low < high {
+            let middle = low + (high - low) / 2;
+            match super::postings::unpack(&self.ids, middle, self.bits).cmp(&id) {
+                Ordering::Less => low = middle + 1,
+                Ordering::Equal => return Some(middle),
+                Ordering::Greater => high = middle,
+            }
+        }
+        None
+    }
+}
+
+/// One word's id in the last shared dictionary a lookup met. The chunks of one ingest frame
+/// share a dictionary, so a scan over many chunks resolves the word about once per frame.
+#[derive(Default)]
+pub(super) struct WordId {
+    dictionary: Option<(Arc<SharedDictionary>, Option<u32>)>,
 }
 
 impl PackedTerms {
@@ -270,6 +316,14 @@ impl StoredTerms {
             }
             Some(TermData::Tree(table)) => table.keys().position(|k| k == key),
             Some(TermData::Shared(table)) => table.index(key),
+        }
+    }
+
+    /// [`Self::index`] for a word looked up in many chunks, with its dictionary id in `cache`.
+    pub(super) fn index_cached(&self, key: &str, cache: &mut WordId) -> Option<usize> {
+        match self.terms.as_deref() {
+            Some(TermData::Shared(table)) => table.index_cached(key, cache),
+            _ => self.index(key),
         }
     }
 

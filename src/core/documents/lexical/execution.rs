@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use super::wand::{sum_bound, up, Bound};
 use super::*;
 use crate::core::documents::postings::PostingCursor;
 use std::collections::BTreeMap;
@@ -9,6 +10,8 @@ struct TermState<'a> {
     cursor: PostingCursor<'a>,
     df: usize,
     live_count: usize,
+    /// The largest frequency and least length bound over the whole list.
+    maxima: (u32, u32),
 }
 
 pub(super) struct TopK {
@@ -24,6 +27,9 @@ impl TopK {
             k,
             floor: 0.0,
         }
+    }
+    pub(super) fn k(&self) -> usize {
+        self.k
     }
     pub(super) fn floor(&self) -> f64 {
         self.floor
@@ -80,6 +86,142 @@ fn conjunction(states: &mut [TermState<'_>], required: &[usize]) -> Option<usize
     }
 }
 
+/// The weight bounds of one positive clause of a form.
+struct ClauseBound {
+    bound: Bound,
+    /// A bound of the clause's weight in any chunk.
+    ceiling: f64,
+    /// The bound of the last block of a one-word clause, by block index.
+    cached: (usize, f64),
+}
+
+/// Bounds of the positive clauses, or `None` where a bound cannot be proven.
+struct Pruning {
+    clauses: Vec<Option<ClauseBound>>,
+}
+
+impl Pruning {
+    fn new(
+        query: &LexicalQuery,
+        states: &[TermState<'_>],
+        indices: &[Vec<Option<usize>>],
+        idfs: &[[f64; 2]],
+        form: usize,
+        average: f64,
+        bm25: Bm25,
+    ) -> Option<Self> {
+        let mut clauses = Vec::with_capacity(query.clauses.len());
+        let mut global = 0.0;
+        for ((clause, indices), idf) in query.clauses.iter().zip(indices).zip(idfs) {
+            if clause.occur == Occur::MustNot {
+                clauses.push(None);
+                continue;
+            }
+            let bound = Bound::new(idf[form], average, bm25)?;
+            let ceiling = match indices
+                .iter()
+                .map(|index| index.map(|i| states[i].maxima))
+                .collect::<Option<Vec<_>>>()
+            {
+                Some(maxima) => {
+                    let (frequency, words) = combine(maxima.into_iter());
+                    bound.at(frequency, words)
+                }
+                None => 0.0,
+            };
+            global = up(global + bound.global);
+            clauses.push(Some(ClauseBound {
+                bound,
+                ceiling,
+                cached: (usize::MAX, 0.0),
+            }));
+        }
+        sum_bound(global, query.clauses.len())
+            .is_finite()
+            .then_some(Self { clauses })
+    }
+
+    /// A bound of the score of the chunk in `slot`, from the blocks holding it.
+    fn at(
+        &mut self,
+        states: &mut [TermState<'_>],
+        indices: &[Vec<Option<usize>>],
+        slot: usize,
+    ) -> f64 {
+        let mut sum = 0.0;
+        for (clause, indices) in self.clauses.iter_mut().zip(indices) {
+            let Some(clause) = clause else { continue };
+            let value = if let [Some(i)] = indices[..] {
+                let state = &mut states[i];
+                if state.cursor.locate(slot) {
+                    let block = state.cursor.block_index();
+                    if clause.cached.0 != block {
+                        let (frequency, words) = state.cursor.block_maximum();
+                        clause.cached = (block, clause.bound.at(frequency, words));
+                    }
+                    clause.cached.1
+                } else {
+                    0.0
+                }
+            } else {
+                let mut maxima = Vec::with_capacity(indices.len());
+                for index in indices {
+                    match index {
+                        Some(i) if states[*i].cursor.locate(slot) => {
+                            maxima.push(states[*i].cursor.block_maximum());
+                        }
+                        _ => break,
+                    }
+                }
+                if maxima.len() == indices.len() {
+                    let (frequency, words) = combine(maxima.into_iter());
+                    clause.bound.at(frequency, words)
+                } else {
+                    0.0
+                }
+            };
+            sum = up(sum + value);
+        }
+        sum_bound(sum, self.clauses.len())
+    }
+
+    /// A bound of the score of any chunk in the block `lead` stands on, from that block's
+    /// bounds and the other clauses' ceilings.
+    fn over_lead_block(
+        &self,
+        states: &[TermState<'_>],
+        indices: &[Vec<Option<usize>>],
+        lead: usize,
+    ) -> f64 {
+        let (frequency, words) = states[lead].cursor.block_maximum();
+        let mut sum = 0.0;
+        for (clause, indices) in self.clauses.iter().zip(indices) {
+            let Some(clause) = clause else { continue };
+            let value = if indices.contains(&Some(lead)) {
+                let maxima = indices.iter().map(|index| match index {
+                    Some(i) if *i == lead => (frequency, words),
+                    Some(i) => states[*i].maxima,
+                    None => (0, u32::MAX),
+                });
+                let (frequency, words) = combine(maxima);
+                clause.bound.at(frequency, words)
+            } else {
+                clause.ceiling
+            };
+            sum = up(sum + value);
+        }
+        sum_bound(sum, self.clauses.len())
+    }
+}
+
+/// The frequency and length bounds a phrase of terms with the given bounds obeys: it occurs
+/// at most as often as its rarest term in a chunk at least as long as every term's bound.
+fn combine(maxima: impl Iterator<Item = (u32, u32)>) -> (u32, u32) {
+    maxima.fold((u32::MAX, 0), |(frequency, words), (f, w)| {
+        (frequency.min(f), words.max(w))
+    })
+}
+
 pub(super) fn document_at_a_time(
     store: &DocumentStore,
     query: &LexicalQuery,
@@ -122,6 +264,7 @@ pub(super) fn document_at_a_time(
                         cursor: list.iter(),
                         df: list.len(),
                         live_count: list.positive_len(),
+                        maxima: list.maxima(),
                     });
                     index
                 });
@@ -188,8 +331,30 @@ pub(super) fn document_at_a_time(
             };
             continue;
         }
+        // Ranked evaluation skips a chunk, or a whole block of the leading list, whose score
+        // bound is below the floor of the top-k; counting still visits every match.
+        let mut pruning = if options.k > 0 {
+            Pruning::new(query, &states, &indices, &idfs, form, average, bm25)
+        } else {
+            None
+        };
         let mut frequencies = vec![0; query.clauses.len()];
+        let mut pending: Vec<Option<u32>> = vec![None; query.clauses.len()];
+        let mut ids = word_ids(query);
         loop {
+            if let (Some(pruning), Some(&lead), false) =
+                (pruning.as_ref(), required.first(), options.count)
+            {
+                while states[lead].cursor.at_block_start()
+                    && pruning.over_lead_block(&states, &indices, lead) < top.floor()
+                {
+                    let end = states[lead].cursor.block_end().expect("block start");
+                    let Some(next) = end.checked_add(1) else {
+                        break;
+                    };
+                    states[lead].cursor.advance(next);
+                }
+            }
             let candidate = if required.is_empty() {
                 positive
                     .iter()
@@ -201,67 +366,133 @@ pub(super) fn document_at_a_time(
             let Some(slot) = candidate else {
                 break;
             };
-            let document_chunk = need_document.then(|| store.borrowed_chunk(slot));
-            for ((clause, indices), frequency_value) in
-                query.clauses.iter().zip(&indices).zip(&mut frequencies)
-            {
-                if options.k == 0
-                    && !required.is_empty()
-                    && !single_phrase
-                    && clause.occur == Occur::Should
+            let skip = match pruning.as_mut() {
+                Some(pruning) if !options.count && top.floor() > 0.0 => {
+                    pruning.at(&mut states, &indices, slot) < top.floor()
+                }
+                _ => false,
+            };
+            let mut scorable = true;
+            if !skip {
+                let document_chunk = need_document.then(|| store.borrowed_chunk(slot));
+                let mut phrases = false;
+                for (((clause, indices), frequency_value), pending) in query
+                    .clauses
+                    .iter()
+                    .zip(&indices)
+                    .zip(&mut frequencies)
+                    .zip(&mut pending)
                 {
-                    *frequency_value = 0;
-                    continue;
-                }
-                if clause.phrase {
-                    let possible = indices.iter().all(|&i| {
-                        i.is_some_and(|i| {
-                            states[i]
-                                .cursor
-                                .advance(slot)
-                                .is_some_and(|p| p.0 == slot && p.1 > 0)
-                        })
-                    });
-                    *frequency_value = if possible {
-                        let (document, chunk_index) = document_chunk.expect("phrase owner");
-                        frequency(clause, &document.chunks[chunk_index])
-                    } else {
-                        0
-                    };
-                } else {
-                    *frequency_value = indices[0]
-                        .and_then(|i| states[i].cursor.advance(slot))
-                        .filter(|p| p.0 == slot)
-                        .map_or(0, |p| p.1);
-                }
-            }
-            if matches(query, &frequencies) {
-                if options.count {
-                    if let Some((document, _)) = document_chunk.filter(|(d, _)| d.chunks.len() > 1)
+                    *pending = None;
+                    if options.k == 0
+                        && !required.is_empty()
+                        && !single_phrase
+                        && clause.occur == Occur::Should
                     {
-                        let first = store.slots[&document.id][0];
-                        let bit = 1 << (first % 64);
-                        if seen[first / 64] & bit == 0 {
-                            count += 1;
-                            seen[first / 64] |= bit;
+                        *frequency_value = 0;
+                        continue;
+                    }
+                    if clause.phrase {
+                        let mut least = u32::MAX;
+                        let possible = indices.iter().all(|&i| {
+                            i.is_some_and(|i| {
+                                states[i]
+                                    .cursor
+                                    .advance(slot)
+                                    .filter(|p| p.0 == slot && p.1 > 0)
+                                    .inspect(|p| least = least.min(p.1))
+                                    .is_some()
+                            })
+                        });
+                        *frequency_value = 0;
+                        if possible {
+                            *pending = Some(least);
+                            phrases = true;
                         }
                     } else {
-                        count += 1;
+                        *frequency_value = indices[0]
+                            .and_then(|i| states[i].cursor.advance(slot))
+                            .filter(|p| p.0 == slot)
+                            .map_or(0, |p| p.1);
                     }
                 }
-                if options.k > 0 {
-                    top.consider(
-                        store,
-                        score(
-                            query,
-                            &frequencies,
-                            &idfs,
-                            form,
-                            bm25.norm(f64::from(store.slot_word_count(slot)), average),
-                            bm25,
-                        )?,
-                        slot,
-                    );
+                if phrases {
+                    let (document, chunk_index) = document_chunk.expect("phrase owner");
+                    let chunk = &document.chunks[chunk_index];
+                    // The positions of a phrase are counted only where the count can
+                    // change the ranking; otherwise its first occurrence settles the match.
+                    let exact = options.k > 0
+                        && match pruning.as_ref() {
+                            Some(pruning) => {
+                                let words = store.slot_word_count(slot);
+                                let norm = bm25.norm(f64::from(words), average);
+                                let mut sum = 0.0;
+                                for ((&frequency, pending), bound) in
+                                    frequencies.iter().zip(&pending).zip(&pruning.clauses)
+                                {
+                                    let Some(bound) = bound else { continue };
+                                    let value = match pending {
+                                        Some(least) => bound.bound.at(*least, words),
+                                        None if frequency > 0 => {
+                                            bm25.weight(bound.bound.idf, f64::from(frequency), norm)
+                                        }
+                                        None => 0.0,
+                                    };
+                                    sum = up(sum + value);
+                                }
+                                sum_bound(sum, query.clauses.len()) >= top.floor()
+                            }
+                            None => true,
+                        };
+                    scorable = exact;
+                    // Below the floor and uncounted, the phrase's positions are not read.
+                    let needed = exact || options.count;
+                    for (((clause, frequency_value), pending), ids) in query
+                        .clauses
+                        .iter()
+                        .zip(&mut frequencies)
+                        .zip(&pending)
+                        .zip(&mut ids)
+                    {
+                        if pending.is_some() && needed {
+                            *frequency_value = frequency(
+                                clause,
+                                chunk,
+                                exact && clause.occur != Occur::MustNot,
+                                ids,
+                            );
+                        }
+                    }
+                }
+                if matches(query, &frequencies) {
+                    if options.count {
+                        if let Some((document, _)) =
+                            document_chunk.filter(|(d, _)| d.chunks.len() > 1)
+                        {
+                            let first = store.slots[&document.id][0];
+                            let bit = 1 << (first % 64);
+                            if seen[first / 64] & bit == 0 {
+                                count += 1;
+                                seen[first / 64] |= bit;
+                            }
+                        } else {
+                            count += 1;
+                        }
+                    }
+                    if options.k > 0 && scorable {
+                        top.consider(
+                            store,
+                            score(
+                                query,
+                                &frequencies,
+                                &idfs,
+                                form,
+                                bm25.norm(f64::from(store.slot_word_count(slot)), average),
+                                bm25,
+                            )?,
+                            slot,
+                        );
+                    }
                 }
             }
             if let Some(&lead) = required.first() {

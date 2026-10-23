@@ -90,9 +90,27 @@ fn boolean_truth_table_and_phrase_offsets() {
     }
     assert_eq!(run(&store, "red red", 100), run(&store, "red", 100));
     assert!(run(&store, "red", 0).hits.is_empty());
-    let clause = &LexicalQuery::parse("\"red red\"").unwrap().clauses[0];
+    let phrase = LexicalQuery::parse("\"red red\"").unwrap();
+    let clause = &phrase.clauses[0];
     insert(&mut store, "e", "red red red red", true, true);
-    assert_eq!(frequency(clause, &store.documents["e"].chunks[0]), 3);
+    assert_eq!(
+        frequency(
+            clause,
+            &store.documents["e"].chunks[0],
+            true,
+            &mut word_ids(&phrase)[0]
+        ),
+        3
+    );
+    assert_eq!(
+        frequency(
+            clause,
+            &store.documents["e"].chunks[0],
+            false,
+            &mut word_ids(&phrase)[0]
+        ),
+        1
+    );
 }
 
 #[test]
@@ -297,6 +315,8 @@ fn check_model(store: &DocumentStore, texts: &[(String, Vec<String>)], left: usi
     let words = ["red", "blue", "green", "gold", "absent"];
     let (a, b) = (words[left % words.len()], words[right % words.len()]);
     for query in [
+        format!("{a}"),
+        format!("+{a} -\"{a} {b}\""),
         format!("{a} {b}"),
         format!("+{a} +{b}"),
         format!("+{a} {b}"),
@@ -309,7 +329,11 @@ fn check_model(store: &DocumentStore, texts: &[(String, Vec<String>)], left: usi
             .filter(|(_, tokens)| {
                 let has_a = tokens.iter().any(|t| t == a);
                 let has_b = tokens.iter().any(|t| t == b);
-                if query.starts_with("+\"") {
+                if !query.contains(' ') {
+                    has_a
+                } else if query.contains("-\"") {
+                    has_a && !tokens.windows(2).any(|p| p == [a, b])
+                } else if query.starts_with("+\"") {
                     tokens.windows(2).any(|p| p == [a, b]) && tokens.iter().any(|t| t == "green")
                 } else if query.starts_with('"') {
                     tokens.windows(2).any(|p| p == [a, b])

@@ -3,9 +3,9 @@
 
 use super::execution::TopK;
 use super::*;
-use crate::core::documents::postings::{PostingCursor, PostingList};
+use crate::core::documents::postings::{PostingCursor, PostingList, BLOCK_LEN};
 
-fn up(value: f64) -> f64 {
+pub(super) fn up(value: f64) -> f64 {
     if value == 0.0 {
         0.0
     } else {
@@ -13,16 +13,17 @@ fn up(value: f64) -> f64 {
     }
 }
 
+/// Bounds of one clause's weights under its inverse document frequency.
 #[derive(Clone, Copy)]
-struct Bound {
-    idf: f64,
+pub(super) struct Bound {
+    pub(super) idf: f64,
     average: f64,
     bm25: Bm25,
-    global: f64,
+    pub(super) global: f64,
 }
 
 impl Bound {
-    fn new(idf: f64, average: f64, bm25: Bm25) -> Option<Self> {
+    pub(super) fn new(idf: f64, average: f64, bm25: Bm25) -> Option<Self> {
         if !idf.is_finite() || idf < 0.0 || !average.is_finite() || average < 1.0 {
             return None;
         }
@@ -47,7 +48,9 @@ impl Bound {
         bound.global.is_finite().then_some(bound)
     }
 
-    fn at(self, frequency: u32, words: u32) -> f64 {
+    /// A bound of the weight of any posting with at most `frequency` occurrences in a chunk
+    /// of at least `words` words.
+    pub(super) fn at(self, frequency: u32, words: u32) -> f64 {
         if frequency == 0 || self.idf == 0.0 {
             return 0.0;
         }
@@ -62,41 +65,117 @@ impl Bound {
 }
 
 /// One term's cursor with the bounds of its weights.
-struct State<'a> {
-    cursor: PostingCursor<'a>,
-    bound: Bound,
-    /// A bound of every weight of the list (the largest of its block bounds), for the pivot.
-    ceiling: f64,
+pub(super) struct State<'a> {
+    list: &'a PostingList,
+    pub(super) cursor: PostingCursor<'a>,
+    pub(super) bound: Bound,
+    /// A bound of every weight of the list (its largest frequency at its least length).
+    pub(super) ceiling: f64,
 }
 
 impl<'a> State<'a> {
-    fn new(list: &'a PostingList, bound: Bound) -> Self {
-        let ceiling = list
-            .block_maxima()
-            .map(|(frequency, words)| bound.at(frequency, words))
-            .fold(0.0, f64::max);
+    pub(super) fn new(list: &'a PostingList, bound: Bound) -> Self {
+        let (frequency, words) = list.maxima();
         Self {
+            list,
             cursor: list.iter(),
             bound,
-            ceiling,
+            ceiling: bound.at(frequency, words),
         }
     }
 
+    /// A bound of the weights in the cursor's block from its largest frequency and least
+    /// length: one evaluation, looser than the frontier's.
+    pub(super) fn loose_bound(&self) -> f64 {
+        let (frequency, words) = self.cursor.block_maximum();
+        self.bound.at(frequency, words)
+    }
+
+    /// The tightest bound of the weights in the cursor's block, from its frontier.
+    #[cfg(test)]
     fn block_bound(&self) -> f64 {
-        let points = self.cursor.block_impacts();
-        if points.is_empty() {
-            let (frequency, words) = self.cursor.block_maximum();
-            self.bound.at(frequency, words)
-        } else {
-            points
-                .iter()
-                .map(|&(frequency, words)| self.bound.at(frequency, words))
-                .fold(0.0, f64::max)
-        }
+        frontier_bound(self.bound, self.loose_bound(), self.cursor.block_impacts())
     }
 }
 
-fn sum_bound(sum: f64, clauses: usize) -> f64 {
+/// The tightest bound of a block's weights from its frontier, or `loose` without one.
+fn frontier_bound(bound: Bound, loose: f64, points: &[(u32, u32)]) -> f64 {
+    if points.is_empty() {
+        loose
+    } else {
+        points
+            .iter()
+            .map(|&(frequency, words)| bound.at(frequency, words))
+            .fold(0.0, f64::max)
+    }
+}
+
+/// Top-k of one list, strongest blocks first. A block is decoded only while a bound of its
+/// weights reaches the floor, which the strongest blocks raise quickly; the rest are skipped
+/// by their metadata. Skipped blocks are below the floor, so the result is the exhaustive one.
+fn single_list(
+    store: &DocumentStore,
+    state: &State<'_>,
+    average: f64,
+    bm25: Bm25,
+    top: &mut TopK,
+) -> Result<()> {
+    let list = state.list;
+    let loose: Vec<f64> = (0..list.block_count())
+        .map(|index| {
+            let ((frequency, words), _) = list.block_bounds(index);
+            state.bound.at(frequency, words)
+        })
+        .collect();
+    let mut decoded = [(0, 0); BLOCK_LEN];
+    let mut visit = |index: usize, top: &mut TopK| -> Result<()> {
+        if loose[index] < top.floor() {
+            return Ok(());
+        }
+        let (_, points) = list.block_bounds(index);
+        if frontier_bound(state.bound, loose[index], points) < top.floor() {
+            return Ok(());
+        }
+        let count = list.decode_block_into(index, &mut decoded);
+        for &(slot, frequency) in &decoded[..count] {
+            if frequency == 0 {
+                continue;
+            }
+            let norm = bm25.norm(f64::from(store.slot_word_count(slot)), average);
+            let score = bm25.weight(state.bound.idf, f64::from(frequency), norm);
+            ensure!(
+                score.is_finite(),
+                "lexical score is nonfinite; reduce BM25 parameters"
+            );
+            top.consider(store, score, slot);
+        }
+        Ok(())
+    };
+    // The strongest blocks by their loose bounds first, enough to hold k postings, then
+    // every block in order against the floor they set.
+    let mut order: Vec<usize> = (0..loose.len()).collect();
+    let seed = top
+        .k()
+        .div_ceil(BLOCK_LEN)
+        .saturating_mul(4)
+        .min(order.len());
+    if seed > 0 && seed < order.len() {
+        order.select_nth_unstable_by(seed, |&a, &b| loose[b].total_cmp(&loose[a]));
+    }
+    let mut seeded = vec![false; loose.len()];
+    for &index in &order[..seed] {
+        seeded[index] = true;
+        visit(index, top)?;
+    }
+    for index in 0..loose.len() {
+        if !seeded[index] {
+            visit(index, top)?;
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn sum_bound(sum: f64, clauses: usize) -> f64 {
     up(sum * (1.0 + 2.0 * clauses as f64 * f64::EPSILON))
 }
 
@@ -118,10 +197,13 @@ fn form_states<'a>(
     sum_bound(global_sum, clauses).is_finite().then_some(states)
 }
 
-/// Block-max WAND over the term states of one form into `top`. A candidate is skipped only
-/// when a bound of its score is below the floor of `top`, so every candidate scoring at least
-/// the final floor is considered with the score exhaustive evaluation computes.
-fn block_max_wand(
+/// Block-max MaxScore over the term states of one form into `top`. Lists whose ceilings
+/// together stay below the floor are non-essential: only the other lists propose candidates,
+/// and a candidate reads the non-essential lists (strongest first) only while a bound from
+/// their blocks at it can still reach the floor. A candidate is skipped only when a bound of
+/// its score is below the floor of `top`, and a scored one gets the sum in clause order that
+/// exhaustive evaluation computes, so the result is the exhaustive one.
+fn max_score(
     store: &DocumentStore,
     states: &mut [State<'_>],
     average: f64,
@@ -129,86 +211,95 @@ fn block_max_wand(
     clauses: usize,
     top: &mut TopK,
 ) -> Result<()> {
-    let mut active: Vec<usize> = (0..states.len()).collect();
-    let mut window: Option<(usize, f64)> = None;
+    // Weakest ceiling first; `ceilings[i]` bounds the sum of the weights of lists `..=i`.
+    let mut order: Vec<usize> = (0..states.len()).collect();
+    order.sort_by(|&a, &b| states[a].ceiling.total_cmp(&states[b].ceiling));
+    let mut ceilings = Vec::with_capacity(order.len());
+    let mut sum = 0.0;
+    for &i in &order {
+        sum = up(sum + states[i].ceiling);
+        ceilings.push(sum);
+    }
+    let mut weights = vec![None; states.len()];
+    let mut blocks = vec![0.0; order.len()];
     loop {
-        // Cursors only move forward and few move per step: drop the exhausted ones and
-        // restore slot order by insertion.
-        active.retain(|&i| states[i].cursor.peek().is_some());
-        for sorted in 1..active.len() {
-            let mut at = sorted;
-            while at > 0 && peek_slot(states, active[at - 1]) > peek_slot(states, active[at]) {
-                active.swap(at - 1, at);
-                at -= 1;
-            }
-        }
-        let Some(&first) = active.first() else { break };
-        let minimum = peek_slot(states, first);
-        if window.is_none_or(|(end, _)| minimum > end) {
-            let end = active
-                .iter()
-                .map(|&i| states[i].cursor.block_end().expect("active cursor"))
-                .min()
-                .expect("at least one active cursor");
-            let mut bound = 0.0;
-            for state in states.iter() {
-                if state.cursor.peek().is_some_and(|p| p.0 <= end) {
-                    bound = up(bound + state.block_bound());
-                }
-            }
-            window = Some((end, sum_bound(bound, clauses)));
-        }
-        let (end, bound) = window.expect("window computed above");
-        if bound < top.floor() {
-            let Some(target) = end.checked_add(1) else {
-                break;
-            };
-            for state in states.iter_mut() {
-                if state.cursor.peek().is_some_and(|p| p.0 <= end) {
-                    state.cursor.advance(target);
-                }
-            }
-            window = None;
-            continue;
-        }
-        let mut bound = 0.0;
         let floor = top.floor();
-        let pivot = active.iter().find_map(|&i| {
-            bound = up(bound + states[i].ceiling);
-            (sum_bound(bound, clauses) >= floor).then(|| peek_slot(states, i))
-        });
-        let Some(pivot) = pivot else { break };
-        if minimum < pivot {
-            states[first].cursor.advance(pivot);
-            continue;
-        }
-        let norm = bm25.norm(f64::from(store.slot_word_count(minimum)), average);
-        let mut score = 0.0;
-        let mut matched = false;
-        for state in states.iter_mut() {
+        let Some(essential) = ceilings
+            .iter()
+            .position(|&ceiling| sum_bound(ceiling, clauses) >= floor)
+        else {
+            break;
+        };
+        let Some(candidate) = order[essential..]
+            .iter()
+            .filter_map(|&i| states[i].cursor.peek().map(|p| p.0))
+            .min()
+        else {
+            break;
+        };
+        let norm = bm25.norm(f64::from(store.slot_word_count(candidate)), average);
+        let mut partial = 0.0;
+        for &i in &order[essential..] {
+            let state = &mut states[i];
+            weights[i] = None;
             if let Some((slot, frequency)) = state.cursor.peek() {
-                if slot == minimum {
+                if slot == candidate {
                     if frequency > 0 {
-                        matched = true;
-                        score += bm25.weight(state.bound.idf, f64::from(frequency), norm);
+                        let weight = bm25.weight(state.bound.idf, f64::from(frequency), norm);
+                        partial = up(partial + weight);
+                        weights[i] = Some(weight);
                     }
                     state.cursor.next();
                 }
             }
+        }
+        // Block bounds of the non-essential lists at the candidate, read without decoding.
+        let mut rest = 0.0;
+        for (position, &i) in order[..essential].iter().enumerate() {
+            let state = &mut states[i];
+            weights[i] = None;
+            let bound = if state.cursor.locate(candidate) {
+                state.loose_bound()
+            } else {
+                0.0
+            };
+            rest = up(rest + bound);
+            blocks[position] = rest;
+        }
+        let mut complete = true;
+        for position in (0..essential).rev() {
+            if sum_bound(up(partial + blocks[position]), clauses) < floor {
+                complete = false;
+                break;
+            }
+            let i = order[position];
+            let state = &mut states[i];
+            if let Some((slot, frequency)) = state.cursor.advance(candidate) {
+                if slot == candidate && frequency > 0 {
+                    let weight = bm25.weight(state.bound.idf, f64::from(frequency), norm);
+                    partial = up(partial + weight);
+                    weights[i] = Some(weight);
+                }
+            }
+        }
+        if !complete || sum_bound(partial, clauses) < floor {
+            continue;
+        }
+        let mut score = 0.0;
+        let mut matched = false;
+        for weight in weights.iter().flatten() {
+            matched = true;
+            score += weight;
         }
         ensure!(
             score.is_finite(),
             "lexical score is nonfinite; reduce BM25 parameters"
         );
         if matched {
-            top.consider(store, score, minimum);
+            top.consider(store, score, candidate);
         }
     }
     Ok(())
-}
-
-fn peek_slot(states: &[State<'_>], index: usize) -> usize {
-    states[index].cursor.peek().expect("active cursor").0
 }
 
 pub(super) fn execute(
@@ -245,7 +336,11 @@ pub(super) fn execute(
     }
     let mut top = TopK::new(options.k);
     for mut states in forms {
-        block_max_wand(
+        if let [state] = &states[..] {
+            single_list(store, state, average, bm25, &mut top)?;
+            continue;
+        }
+        max_score(
             store,
             &mut states,
             average,
@@ -384,13 +479,21 @@ mod tests {
                 "red blue green",
                 "red absent blue",
                 "running runs red blue",
+                "\"red blue\"",
+                "\"blue green\" red",
+                "+red blue",
+                "+red -green",
+                "+\"red blue\" -\"blue blue\"",
             ] {
                 let query = LexicalQuery::parse(text).unwrap();
-                for k in [0, 1, 10, 127, 128, 129, 256, 1000] {
+                for (k, count) in [0, 1, 10, 127, 128, 129, 256, 1000]
+                    .into_iter()
+                    .flat_map(|k| [(k, true), (k, false)])
+                {
                     for (k1, b) in [(0.0, 0.0), (1.2, 0.75), (2.0, 1.0), (1e100, 0.5)] {
                         let options = LexicalOptions {
                             k,
-                            count: true,
+                            count,
                             bm25_k1: k1,
                             bm25_b: b,
                             execution: LexicalExecution::Exhaustive,
@@ -434,6 +537,88 @@ mod tests {
             } else if stage == 1 {
                 for i in (1..=513).step_by(11) {
                     insert(&mut store, &format!("d{i:04}"), "red blue", true, true);
+                }
+            }
+        }
+    }
+
+    /// Unions past sixteen terms of mixed rarity, before and after deletes and replacements,
+    /// ranked and counted: MaxScore and the single-list scan against exhaustive evaluation.
+    #[test]
+    fn many_term_unions_and_single_terms_match_exhaustive_through_churn() {
+        let vocabulary: Vec<String> = (0..24).map(|i| format!("w{i}")).collect();
+        let mut store = DocumentStore::default();
+        let text = |i: usize| {
+            let mut words = Vec::new();
+            for (w, word) in vocabulary.iter().enumerate() {
+                // Word w occurs in about one document of w + 1, more often in short ones.
+                if (i * 7 + w * 13) % (w + 1) == 0 {
+                    for _ in 0..1 + (i + w) % 4 {
+                        words.push(word.as_str());
+                    }
+                }
+            }
+            words.push("filler");
+            for _ in 0..i % 50 {
+                words.push("pad");
+            }
+            words.join(" ")
+        };
+        for i in 0..700 {
+            insert(&mut store, &format!("d{i:04}"), &text(i), true, true);
+        }
+        let all = vocabulary.join(" ");
+        let rare = vocabulary[12..].join(" ");
+        for stage in 0..3 {
+            for text in [all.as_str(), rare.as_str(), "w0", "w5", "w23", "w0 w1 w23"] {
+                let query = LexicalQuery::parse(text).unwrap();
+                for k in [1, 10, 100, 1000] {
+                    for count in [false, true] {
+                        let options = LexicalOptions {
+                            k,
+                            count,
+                            ..Default::default()
+                        };
+                        let reference = super::super::execute(
+                            &store,
+                            &query,
+                            &LexicalOptions {
+                                execution: LexicalExecution::Exhaustive,
+                                ..options.clone()
+                            },
+                        )
+                        .unwrap();
+                        for execution in [LexicalExecution::Auto, LexicalExecution::BlockMaxWand] {
+                            let actual = super::super::execute(
+                                &store,
+                                &query,
+                                &LexicalOptions {
+                                    execution,
+                                    ..options.clone()
+                                },
+                            )
+                            .unwrap();
+                            assert_eq!(
+                                actual, reference,
+                                "{text}, k={k}, count={count}, stage={stage}"
+                            );
+                        }
+                    }
+                }
+            }
+            if stage == 0 {
+                for i in (0..700).step_by(3) {
+                    store.remove(&format!("d{i:04}"));
+                }
+            } else if stage == 1 {
+                for i in (0..700).step_by(5) {
+                    insert(
+                        &mut store,
+                        &format!("d{i:04}"),
+                        &text(i * 3 + 1),
+                        true,
+                        true,
+                    );
                 }
             }
         }

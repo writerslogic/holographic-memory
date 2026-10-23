@@ -239,7 +239,7 @@ impl TermDictionary {
     }
 }
 
-const BLOCK_LEN: usize = 128;
+pub(super) const BLOCK_LEN: usize = 128;
 
 #[derive(Clone, Debug)]
 struct Block {
@@ -284,19 +284,57 @@ fn merge_sorted(a: &[Posting], b: &[Posting]) -> Vec<Posting> {
     merged
 }
 
+/// Appends `values`, each below `2^bits`, as a contiguous little-endian bit string.
 pub(super) fn pack(out: &mut Vec<u8>, values: impl Iterator<Item = u64>, bits: u8) {
-    let (mut buffer, mut used) = (0u128, 0u32);
+    let bits = u32::from(bits);
+    let (mut buffer, mut used) = (0u64, 0u32);
     for value in values {
-        buffer |= u128::from(value) << used;
-        used += u32::from(bits);
-        while used >= 8 {
-            out.push(buffer as u8);
-            buffer >>= 8;
-            used -= 8;
+        buffer |= value << used;
+        let total = used + bits;
+        if total >= 64 {
+            out.extend_from_slice(&buffer.to_le_bytes());
+            buffer = if used == 0 { 0 } else { value >> (64 - used) };
+            used = total - 64;
+        } else {
+            used = total;
         }
     }
-    if used > 0 {
-        out.push(buffer as u8);
+    out.extend_from_slice(&buffer.to_le_bytes()[..used.div_ceil(8) as usize]);
+}
+
+/// Widths that one unaligned 64-bit load holds together with its byte shift.
+const DIRECT_BITS: u8 = 56;
+
+/// Calls `emit(index, value)` for the `count` values of `bits` bits at the start of `bytes`.
+fn unpack_into(bytes: &[u8], count: usize, bits: u8, mut emit: impl FnMut(usize, u64)) {
+    if bits == 0 {
+        for index in 0..count {
+            emit(index, 0);
+        }
+        return;
+    }
+    if bits > DIRECT_BITS {
+        let mut reader = BitReader::new(bytes, bits);
+        for index in 0..count {
+            emit(index, reader.next());
+        }
+        return;
+    }
+    let mask = (1u64 << bits) - 1;
+    let mut bit = 0usize;
+    for index in 0..count {
+        let byte = bit >> 3;
+        let word = match bytes.get(byte..byte + 8) {
+            Some(window) => u64::from_le_bytes(window.try_into().expect("eight bytes")),
+            None => {
+                let mut window = [0u8; 8];
+                let tail = &bytes[byte..];
+                window[..tail.len()].copy_from_slice(tail);
+                u64::from_le_bytes(window)
+            }
+        };
+        emit(index, (word >> (bit & 7)) & mask);
+        bit += usize::from(bits);
     }
 }
 
@@ -307,6 +345,12 @@ pub(super) fn unpack(bytes: &[u8], index: usize, bits: u8) -> u64 {
     let bit = index * usize::from(bits);
     let start = bit / 8;
     let shift = bit % 8;
+    if bits <= DIRECT_BITS {
+        if let Some(window) = bytes.get(start..start + 8) {
+            let word = u64::from_le_bytes(window.try_into().expect("eight bytes"));
+            return (word >> shift) & ((1u64 << bits) - 1);
+        }
+    }
     let size = (shift + usize::from(bits)).div_ceil(8);
     let mut buffer = [0u8; 16];
     buffer[..size].copy_from_slice(&bytes[start..start + size]);
@@ -345,27 +389,42 @@ impl<'a> BitReader<'a> {
     }
 }
 
+/// The `(frequency, words)` points of a block no other point dominates (a larger frequency
+/// at no greater length), by frequency descending, when there are at least two.
 fn frontier(points: impl Iterator<Item = (u32, u32)>) -> Option<Box<[(u32, u32)]>> {
-    let mut scratch = [(0, 0); BLOCK_LEN];
+    // The least length per frequency: a table for the frequencies a block usually holds and
+    // a short sorted spill for the rest.
+    let mut least = [u32::MAX; BLOCK_LEN + 1];
+    let mut spill = [(0u32, 0u32); BLOCK_LEN];
+    let mut spilled = 0;
     let mut used = 0;
-    for point in points.filter(|p| p.0 > 0) {
+    for (frequency, words) in points.filter(|p| p.0 > 0) {
         assert!(used < BLOCK_LEN, "frontier exceeds posting block length");
-        scratch[used] = point;
         used += 1;
-    }
-    let points = &mut scratch[..used];
-    points.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
-    let mut shortest = u32::MAX;
-    let mut kept = 0;
-    for index in 0..points.len() {
-        let point = points[index];
-        if kept == 0 || point.1 < shortest {
-            shortest = point.1;
-            points[kept] = point;
-            kept += 1;
+        if let Some(entry) = least.get_mut(frequency as usize) {
+            *entry = (*entry).min(words);
+        } else {
+            spill[spilled] = (frequency, words);
+            spilled += 1;
         }
     }
-    (kept > 1).then(|| points[..kept].into())
+    let spill = &mut spill[..spilled];
+    spill.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+    let table = (1..=BLOCK_LEN)
+        .rev()
+        .filter(|&frequency| least[frequency] != u32::MAX)
+        .map(|frequency| (frequency as u32, least[frequency]));
+    let mut kept = [(0u32, 0u32); BLOCK_LEN];
+    let mut count = 0;
+    let mut shortest = u32::MAX;
+    for point in spill.iter().copied().chain(table) {
+        if count == 0 || point.1 < shortest {
+            shortest = point.1;
+            kept[count] = point;
+            count += 1;
+        }
+    }
+    (count > 1).then(|| kept[..count].into())
 }
 
 impl PostingList {
@@ -384,8 +443,12 @@ impl PostingList {
         PostingCursor::new(self)
     }
     pub(super) fn for_each(&self, mut f: impl FnMut(usize, u32)) {
-        for (slot, frequency) in self.iter() {
-            f(slot, frequency);
+        let mut decoded = [(0, 0); BLOCK_LEN];
+        for block in &self.blocks {
+            self.decode_values(block, &mut decoded);
+            for &(slot, frequency) in &decoded[..usize::from(block.count)] {
+                f(slot, frequency);
+            }
         }
     }
     pub(super) fn mark_slots(&self, matched: &mut [u64]) {
@@ -398,23 +461,66 @@ impl PostingList {
             return;
         }
         for block in &self.blocks {
-            let mut gaps = BitReader::new(&self.data[block.offset..], block.doc_bits);
             let mut slot = block.first;
-            for _ in 0..block.count {
-                slot = slot
-                    .checked_add(gaps.next() as usize)
-                    .expect("posting gap overflow");
-                matched[slot / 64] |= 1 << (slot % 64);
-            }
+            unpack_into(
+                &self.data[block.offset..],
+                usize::from(block.count),
+                block.doc_bits,
+                |_, gap| {
+                    slot = slot
+                        .checked_add(gap as usize)
+                        .expect("posting gap overflow");
+                    matched[slot / 64] |= 1 << (slot % 64);
+                },
+            );
         }
+    }
+
+    /// The frequency of a block's first posting, read without decoding the block.
+    fn first_frequency(&self, block: &Block) -> u32 {
+        let gap_bytes = (usize::from(block.count) * usize::from(block.doc_bits)).div_ceil(8);
+        unpack(
+            &self.data[block.offset + gap_bytes..],
+            0,
+            block.frequency_bits,
+        ) as u32
+    }
+
+    /// The largest block frequency and least block length bound of the list, which bound
+    /// every posting's weight.
+    pub(super) fn maxima(&self) -> (u32, u32) {
+        self.blocks
+            .iter()
+            .fold((0, u32::MAX), |(frequency, words), block| {
+                (
+                    frequency.max(block.max_frequency),
+                    words.min(block.min_words),
+                )
+            })
     }
     fn decode(&self) -> Vec<Posting> {
         self.iter().collect()
     }
 
-    /// Each block's largest frequency and least length, which bound its postings' weights.
-    pub(super) fn block_maxima(&self) -> impl Iterator<Item = (u32, u32)> + '_ {
-        self.blocks.iter().map(|b| (b.max_frequency, b.min_words))
+    /// The number of blocks.
+    pub(super) fn block_count(&self) -> usize {
+        self.blocks.len()
+    }
+
+    /// Block `index`'s largest frequency, least length and frontier, which bound its
+    /// postings' weights.
+    pub(super) fn block_bounds(&self, index: usize) -> ((u32, u32), &[(u32, u32)]) {
+        let block = &self.blocks[index];
+        (
+            (block.max_frequency, block.min_words),
+            block.frontier.as_deref().unwrap_or(&[]),
+        )
+    }
+
+    /// Decodes block `index` into `out` and returns its posting count.
+    pub(super) fn decode_block_into(&self, index: usize, out: &mut [Posting; BLOCK_LEN]) -> usize {
+        self.decode_block(index, out);
+        usize::from(self.blocks[index].count)
     }
 
     fn decode_block(&self, index: usize, out: &mut [Posting; BLOCK_LEN]) {
@@ -424,18 +530,20 @@ impl PostingList {
     fn decode_values(&self, block: &Block, out: &mut [Posting; BLOCK_LEN]) {
         let count = usize::from(block.count);
         let bytes = &self.data[block.offset..];
-        let mut frequencies = BitReader::new(
-            &bytes[(count * usize::from(block.doc_bits)).div_ceil(8)..],
-            block.frequency_bits,
-        );
-        let mut gaps = BitReader::new(bytes, block.doc_bits);
+        let gap_bytes = (count * usize::from(block.doc_bits)).div_ceil(8);
         let mut slot = block.first;
-        for posting in &mut out[..count] {
+        unpack_into(bytes, count, block.doc_bits, |index, gap| {
             slot = slot
-                .checked_add(gaps.next() as usize)
+                .checked_add(gap as usize)
                 .expect("posting gap overflow");
-            *posting = (slot, frequencies.next() as u32);
-        }
+            out[index].0 = slot;
+        });
+        unpack_into(
+            &bytes[gap_bytes..],
+            count,
+            block.frequency_bits,
+            |index, frequency| out[index].1 = frequency as u32,
+        );
     }
 
     fn append_block(
@@ -618,12 +726,15 @@ impl PostingList {
     }
 }
 
+/// A forward cursor over a list. A block is decoded only when the cursor needs a posting
+/// after its first, so skipping over blocks by their bounds costs their metadata alone.
 pub(super) struct PostingCursor<'a> {
     list: &'a PostingList,
     block: usize,
     index: usize,
     decoded: [Posting; BLOCK_LEN],
     length: usize,
+    filled: bool,
 }
 
 impl<'a> PostingCursor<'a> {
@@ -634,6 +745,7 @@ impl<'a> PostingCursor<'a> {
             index: 0,
             decoded: [(0, 0); BLOCK_LEN],
             length: 0,
+            filled: false,
         };
         cursor.load(0);
         cursor
@@ -642,13 +754,20 @@ impl<'a> PostingCursor<'a> {
     fn load(&mut self, block: usize) {
         self.block = block;
         self.index = 0;
-        self.length = self
-            .list
-            .blocks
-            .get(block)
-            .map_or(0, |b| usize::from(b.count));
-        if self.length > 0 {
-            self.list.decode_block(block, &mut self.decoded);
+        self.filled = false;
+        match self.list.blocks.get(block) {
+            Some(b) => {
+                self.length = usize::from(b.count);
+                self.decoded[0] = (b.first, self.list.first_frequency(b));
+            }
+            None => self.length = 0,
+        }
+    }
+
+    fn fill(&mut self) {
+        if !self.filled {
+            self.list.decode_block(self.block, &mut self.decoded);
+            self.filled = true;
         }
     }
 
@@ -656,10 +775,36 @@ impl<'a> PostingCursor<'a> {
         (self.index < self.length).then(|| self.decoded[self.index])
     }
 
+    /// Moves to the first block that can hold `target` without decoding it, so the block's
+    /// bounds can be read first; `false` once no block can. The cursor's posting may then
+    /// still precede `target` until [`Self::advance`].
+    pub(super) fn locate(&mut self, target: usize) -> bool {
+        if self.index >= self.length {
+            return false;
+        }
+        if self.list.blocks[self.block].last < target {
+            let after = self.block + 1;
+            let block = after + self.list.blocks[after..].partition_point(|b| b.last < target);
+            self.load(block);
+        }
+        self.length > 0
+    }
+
     pub(super) fn block_end(&self) -> Option<usize> {
         self.peek().map(|_| self.list.blocks[self.block].last)
     }
 
+    /// The index of the cursor's block, which changes only when the cursor leaves it.
+    pub(super) fn block_index(&self) -> usize {
+        self.block
+    }
+
+    /// Whether the cursor stands on a block it has not decoded.
+    pub(super) fn at_block_start(&self) -> bool {
+        self.index == 0 && !self.filled && self.length > 0
+    }
+
+    #[cfg(test)]
     pub(super) fn block_impacts(&self) -> &[(u32, u32)] {
         let block = &self.list.blocks[self.block];
         block.frontier.as_deref().unwrap_or(&[])
@@ -674,12 +819,11 @@ impl<'a> PostingCursor<'a> {
         if self.peek().is_none_or(|p| p.0 >= target) {
             return self.peek();
         }
-        if self.list.blocks[self.block].last < target {
-            // Blocks before the current one end below it; search only those after.
-            let after = self.block + 1;
-            let block = after + self.list.blocks[after..].partition_point(|b| b.last < target);
-            self.load(block);
+        // Blocks before the current one end below the target; only those after are searched.
+        if !self.locate(target) || self.decoded[0].0 >= target && self.index == 0 {
+            return self.peek();
         }
+        self.fill();
         self.index += self.decoded[self.index..self.length].partition_point(|p| p.0 < target);
         self.peek()
     }
@@ -692,6 +836,8 @@ impl Iterator for PostingCursor<'_> {
         self.index += 1;
         if self.index == self.length {
             self.load(self.block + 1);
+        } else {
+            self.fill();
         }
         Some(value)
     }
