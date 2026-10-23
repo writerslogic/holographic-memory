@@ -19,6 +19,7 @@ can change in any release.
 | `local-embed-download` | First-use download of the pinned model pack into the cache; implies `local-embed` | stable | yes, the one download | [Embeddings](../embeddings/README.md) |
 | `local-models` | On-device embedding, re-ranking, fact extraction and query rewriting (candle, Qwen3); weights load from local directories only | experimental | no | [Embeddings](../embeddings/README.md) |
 | `conversation-memory` | Immutable original conversation turns, role-aware recall and bounded source premises | experimental | no | [Conversation evidence](../memory-api/README.md) |
+| `cli` | `clap` argument parsing for the command-line binaries and examples (`hms-admin`, `hms-format`, `public-bench`, the benchmark drivers); implied by `server` and `mcp` | stable | no | [Evaluation](../evaluation.md) |
 | `node-api` | The Node.js bindings published to npm | stable | no | [Node API](../api/node/index.md) |
 | `python` | The `holographic-vsa` Python wheel (quantized-phase substrate) | experimental | no | [Python API](../api/python/vsa.md) |
 | `private-search` | Query-private similarity scoring over an index held by someone else (LWE, SimplePIR-style): the index holder ranks an encrypted query and learns nothing about it | experimental, research | no (you transport the messages) | [Private search](../PRIVATE-SEARCH.md) |

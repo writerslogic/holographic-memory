@@ -3,13 +3,16 @@
 
 #[cfg(feature = "node-api")]
 use napi_derive::napi;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct TextMetrics {
     pub word_count: u32,
@@ -21,8 +24,13 @@ pub struct TextMetrics {
 }
 
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Serialize, Deserialize, Debug, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 pub struct RetrievalResult {
     pub id: String,
     pub similarity: f64,
@@ -30,8 +38,13 @@ pub struct RetrievalResult {
 
 /// Explains which retrieval strategy HMS would use for a query.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct QueryExplanation {
     pub route: String,
@@ -47,8 +60,13 @@ pub struct QueryExplanation {
 
 /// Current index lifecycle state and the next recommended maintenance action.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct IndexStatus {
     pub vector_count: u32,
@@ -61,8 +79,13 @@ pub struct IndexStatus {
 
 /// Persistence health information suitable for diagnostics and monitoring.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct StorageHealth {
     pub format_version: u32,
@@ -73,8 +96,13 @@ pub struct StorageHealth {
 
 /// Runtime CPU capabilities relevant to future dense and sparse kernels.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct HardwareCapabilities {
     pub architecture: String,
@@ -125,8 +153,13 @@ impl Ord for RetrievalResult {
 }
 
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct ConceptCandidate {
     pub centroid_id: String,
@@ -139,8 +172,13 @@ pub struct ConceptCandidate {
 
 /// Input item for batch memorization — a single id/text pair.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 pub struct MemorizeBatchItem {
     pub id: String,
     pub text: String,
@@ -148,8 +186,13 @@ pub struct MemorizeBatchItem {
 
 /// An explicit directed relation between two entities.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Relation {
     pub source_id: String,
@@ -164,8 +207,13 @@ pub struct Relation {
 
 /// Declares a relation type with inference semantics.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct RelationType {
     pub name: String,
@@ -177,8 +225,13 @@ pub struct RelationType {
 
 /// A single hop in a graph traversal path.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PathHop {
     pub node_id: String,
@@ -188,8 +241,13 @@ pub struct PathHop {
 
 /// Result of a graph traversal or path query.
 #[cfg_attr(feature = "node-api", napi(object))]
-#[derive(Clone, Debug, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GraphPath {
     pub hops: Vec<PathHop>,

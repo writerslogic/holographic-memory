@@ -23,8 +23,8 @@ pyo3 = { version = "0.30", features = ["extension-module", "abi3-py39"], optiona
 numpy = { version = "0.30", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
 serde = { version = "1.0", features = ["derive", "rc"] }
-ts-rs = { version = "12", features = ["serde-compat"] }
-schemars = { version = "1.2", features = ["derive"] }
+ts-rs = { version = "12", features = ["serde-compat"], optional = true }
+schemars = { version = "1.2", features = ["derive"], optional = true }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 bincode = { version = "2.0", features = ["serde"] }
 rand = "0.10"
@@ -36,7 +36,7 @@ memmap2 = "0.9"
 anyhow = "1.0"
 thiserror = "2.0"
 tracing = "0.1"
-clap = { version = "4.4", features = ["derive", "env"] }
+clap = { version = "4.4", features = ["derive", "env"], optional = true }
 foldhash = "0.2"
 nalgebra = { version = "0.35", features = ["serde-serialize"] }
 ed25519-dalek = { version = "3", features = ["rand_core"], optional = true }
@@ -116,8 +116,10 @@ required-features = ["security", "server"]
 
 [features]
 default = []
+# Command-line parsing (clap) for the binaries and examples that take arguments.
+cli = ["dep:clap"]
 conversation-memory = ["sha2"]
-node-api = ["napi", "napi-derive", "tokio", "napi-build"]
+node-api = ["napi", "napi-derive", "tokio", "napi-build", "dep:ts-rs"]
 # Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
 # wheels with `maturin build --features python`; publishing is wired in
 # .github/workflows/publish-pypi.yml and dormant until a `py-v*` tag is pushed.
@@ -144,20 +146,20 @@ local-embed-download = ["local-embed", "ureq"]
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
 # HTTP service for the holographic-sdk Python client (`hms-server` binary).
-server = ["tokio", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:libc", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
+server = ["tokio", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:libc", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
 # MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.
-mcp = ["dep:rmcp", "dep:tokio-util", "tokio", "axum", "subtle"]
+mcp = ["dep:rmcp", "dep:tokio-util", "tokio", "cli", "axum", "subtle"]
 
 [[bin]]
 name = "hms-embed"
 path = "src/bin/hms-embed.rs"
-required-features = ["local-embed"]
+required-features = ["local-embed", "cli"]
 
 [[bin]]
 name = "embed-store-bench"
 path = "benchmarks/embedding/embed_store_bench.rs"
-required-features = ["local-embed"]
+required-features = ["local-embed", "cli"]
 
 [[bin]]
 name = "hms-eval"
@@ -166,10 +168,12 @@ path = "src/bin/hms-eval.rs"
 [[bin]]
 name = "hms-admin"
 path = "src/bin/hms-admin.rs"
+required-features = ["cli"]
 
 [[bin]]
 name = "hms-format"
 path = "src/bin/hms-format.rs"
+required-features = ["cli"]
 
 [[bin]]
 name = "hms-server"
@@ -199,11 +203,12 @@ required-features = ["experimental"]
 [[bin]]
 name = "public-bench"
 path = "src/bin/public-bench.rs"
+required-features = ["cli"]
 
 [[bin]]
 name = "conversation-eval"
 path = "src/bin/conversation-eval.rs"
-required-features = ["conversation-memory"]
+required-features = ["conversation-memory", "cli"]
 
 [[bin]]
 name = "route-sweep"
@@ -216,7 +221,7 @@ required-features = ["experimental"]
 
 [[bin]]
 name = "algebraic-codebook-bench"
-required-features = ["experimental"]
+required-features = ["experimental", "cli"]
 
 [[bin]]
 name = "private-query-bench"
@@ -224,7 +229,7 @@ required-features = ["private-search"]
 
 [[bin]]
 name = "private-rank-bench"
-required-features = ["private-search"]
+required-features = ["private-search", "cli"]
 
 [profile.release]
 lto = true
@@ -260,15 +265,15 @@ required-features = ["experimental"]
 
 [[bin]]
 name = "ann-failure-map"
-required-features = ["experimental"]
+required-features = ["experimental", "cli"]
 
 [[bin]]
 name = "vibe-rotation"
-required-features = ["experimental"]
+required-features = ["experimental", "cli"]
 
 [[bin]]
 name = "qag-diagnose"
-required-features = ["experimental"]
+required-features = ["experimental", "cli"]
 
 [[example]]
 name = "sparse_composition"
@@ -276,7 +281,7 @@ required-features = ["experimental"]
 
 [[example]]
 name = "encoder_version_probe"
-required-features = ["experimental"]
+required-features = ["experimental", "cli"]
 
 # cargo-fuzz compiles with --cfg fuzzing (see src/bin/hms-server.rs and fuzz/).
 [lints.rust]
@@ -285,3 +290,39 @@ unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
 [[bench]]
 name = "vector_updates"
 harness = false
+
+[[bin]]
+name = "sparse-bench"
+required-features = ["cli"]
+
+[[bin]]
+name = "memory-api-lme"
+required-features = ["cli"]
+
+[[bin]]
+name = "memory-api-bench"
+required-features = ["cli"]
+
+[[bin]]
+name = "hms-workload"
+required-features = ["cli"]
+
+[[bin]]
+name = "durability-driver"
+required-features = ["cli"]
+
+[[bin]]
+name = "document-search-bench"
+required-features = ["cli"]
+
+[[example]]
+name = "compaction_updates"
+required-features = ["cli"]
+
+[[example]]
+name = "document_competition"
+required-features = ["cli"]
+
+[[example]]
+name = "document_operations"
+required-features = ["cli"]

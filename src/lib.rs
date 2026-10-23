@@ -3192,12 +3192,13 @@ mod meaning_tests {
 #[cfg(test)]
 mod lib_proptest;
 
-#[cfg(test)]
+#[cfg(all(test, any(feature = "node-api", feature = "server")))]
 mod ts_export_tests {
-    use ts_rs::TS;
-
+    #[cfg(feature = "node-api")]
     #[test]
     fn export_ts_bindings() {
+        use ts_rs::TS;
+
         let cfg = ts_rs::Config::default();
         crate::RetrievalResult::export_all(&cfg).unwrap();
         crate::ConceptCandidate::export_all(&cfg).unwrap();
@@ -3210,6 +3211,7 @@ mod ts_export_tests {
         crate::HmsError::export_all(&cfg).unwrap();
     }
 
+    #[cfg(feature = "server")]
     #[test]
     fn export_json_schemas() {
         use schemars::schema_for;

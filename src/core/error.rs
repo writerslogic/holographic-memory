@@ -1,13 +1,16 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use ts_rs::TS;
 
-#[derive(Debug, Error, Clone, Serialize, Deserialize, TS, JsonSchema)]
-#[ts(export, export_to = "bindings/")]
+#[derive(Debug, Error, Clone, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "node-api",
+    derive(ts_rs::TS),
+    ts(export, export_to = "bindings/")
+)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(tag = "type", content = "message")]
 pub enum HmsError {
     #[error("Invalid parameter: {details}")]
