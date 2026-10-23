@@ -27,14 +27,18 @@ pub fn ed25519_from_did_key(did: &str) -> Result<[u8; 32]> {
     let multibase_part = did
         .strip_prefix("did:key:")
         .ok_or_else(|| anyhow!("not a did:key URI"))?;
-    let (_, decoded) =
-        multibase::decode(multibase_part).map_err(|e| anyhow!("multibase decode failed: {e}"))?;
-    ed25519_multicodec_key(&decoded)
-        .ok_or_else(|| anyhow!("not an Ed25519 did:key (wrong prefix or length)"))
+    ed25519_multikey(multibase_part)
+        .ok_or_else(|| anyhow!("not an Ed25519 did:key (wrong encoding, prefix or length)"))
 }
 
-/// The key inside an Ed25519 multicodec value: the 2-byte prefix followed by exactly 32 bytes.
-fn ed25519_multicodec_key(decoded: &[u8]) -> Option<[u8; 32]> {
+/// The key inside an Ed25519 Multikey value: base58btc (`z`) of the 2-byte multicodec prefix
+/// followed by exactly 32 bytes. Other multibase encodings of the same key are rejected, so a
+/// key has one DID: registries keyed by the DID string cannot hold it under two names.
+fn ed25519_multikey(encoded: &str) -> Option<[u8; 32]> {
+    let (base, decoded) = multibase::decode(encoded).ok()?;
+    if base != multibase::Base::Base58Btc {
+        return None;
+    }
     decoded
         .strip_prefix(ED25519_MULTICODEC.as_slice())?
         .try_into()
@@ -115,6 +119,33 @@ pub fn did_web_to_url(did: &str) -> Result<String> {
         .strip_prefix("did:web:")
         .ok_or_else(|| anyhow!("not a did:web URI"))?;
     let parts: Vec<&str> = domain_path.split(':').collect();
+    // The URL is fetched, so its authority must be exactly the DID's host (and port): an
+    // `@`, `/` or `?` there would send the request to another host, and a `..` segment
+    // would climb out of the DID's path.
+    let (host, port) = match parts[0].split_once("%3A") {
+        Some((host, port)) => (host, Some(port)),
+        None => (parts[0], None),
+    };
+    let host_ok = !host.is_empty()
+        && host
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-');
+    let port_ok = port.is_none_or(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()));
+    if !host_ok || !port_ok {
+        return Err(anyhow!(
+            "did:web host is not a domain name with an optional port"
+        ));
+    }
+    if parts[1..].iter().any(|segment| {
+        segment.is_empty()
+            || *segment == "."
+            || *segment == ".."
+            || segment.contains(['/', '\\', '?', '#', '@'])
+    }) {
+        return Err(anyhow!(
+            "did:web path segment is empty or not a plain segment"
+        ));
+    }
     let domain = parts[0].replace("%3A", ":");
     if parts.len() == 1 {
         Ok(format!("https://{domain}/.well-known/did.json"))
@@ -165,10 +196,8 @@ pub fn ed25519_from_did_document(doc: &serde_json::Value) -> Result<[u8; 32]> {
         .get("publicKeyMultibase")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("no publicKeyMultibase in verification method"))?;
-    let (_, decoded) =
-        multibase::decode(multibase_key).map_err(|e| anyhow!("multibase decode failed: {e}"))?;
-    ed25519_multicodec_key(&decoded)
-        .ok_or_else(|| anyhow!("not an Ed25519 key (wrong multicodec prefix)"))
+    ed25519_multikey(multibase_key)
+        .ok_or_else(|| anyhow!("not an Ed25519 Multikey (wrong encoding, prefix or length)"))
 }
 
 #[cfg(test)]
@@ -208,6 +237,16 @@ mod tests {
                 valid,
                 "prefix {prefix:?}, key length {len}"
             );
+        }
+    }
+
+    #[test]
+    fn did_key_accepts_only_base58btc() {
+        let mut bytes = ED25519_MULTICODEC.to_vec();
+        bytes.extend([0xAB; 32]);
+        for base in [multibase::Base::Base16Lower, multibase::Base::Base64Url] {
+            let alias = format!("did:key:{}", multibase::encode(base, &bytes));
+            assert!(ed25519_from_did_key(&alias).is_err(), "{alias}");
         }
     }
 
@@ -254,6 +293,23 @@ mod tests {
         ] {
             assert_eq!(did_web_from_domain(domain, path), did);
             assert_eq!(did_web_to_url(did).unwrap(), url, "{did}");
+        }
+    }
+
+    #[test]
+    fn did_web_url_stays_on_the_named_host_and_path() {
+        for did in [
+            "did:web:",
+            "did:web:victim.example@attacker.example",
+            "did:web:victim.example%2F@attacker.example",
+            "did:web:attacker.example/x",
+            "did:web:example.com%3A",
+            "did:web:example.com%3A80x",
+            "did:web:example.com:..:admin",
+            "did:web:example.com:users:",
+            "did:web:example.com:a?b",
+        ] {
+            assert!(did_web_to_url(did).is_err(), "{did}");
         }
     }
 

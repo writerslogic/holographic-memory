@@ -314,7 +314,23 @@ pub fn verify_agent_provenance_manifest(
         .find(|a| a.label == "cawg.identity")
         .ok_or_else(|| anyhow!("manifest has no cawg.identity assertion"))?;
     let embedded = cawg::ica_embedded_bytes(&agent.data)?;
-    cawg::verify_cawg_ica(&embedded)?;
+    let (_, referenced) = cawg::verify_cawg_ica_references(&embedded)?;
+    // The identity assertion must sign this manifest's hard binding, as creation does;
+    // otherwise an agent's assertion lifted from another manifest would verify here.
+    let hard = manifest
+        .assertions
+        .iter()
+        .find(|a| a.label == "c2pa.hash.data")
+        .ok_or_else(|| anyhow!("manifest missing hard binding"))?;
+    let hard_hash: [u8; 32] = Sha256::digest(serde_json::to_vec(&hard.data)?).into();
+    if !referenced
+        .iter()
+        .any(|r| r.label() == "c2pa.hash.data" && r.hash == hard_hash)
+    {
+        return Err(anyhow!(
+            "agent identity assertion does not reference this manifest's hard binding"
+        ));
+    }
 
     // If an attestation is present, confirm it binds to the partial claim.
     if let Some(att) = manifest
@@ -423,6 +439,38 @@ mod tests {
         }
         let bad = sign_manifest(&claim_key, &tampered).unwrap();
         assert!(verify_agent_provenance_manifest(&claim_key.verifying_key(), &bad).is_err());
+    }
+
+    /// An agent's identity assertion signs one asset's hard binding; carried into a manifest
+    /// for another asset it no longer verifies.
+    #[test]
+    fn agent_identity_assertion_does_not_transplant_to_another_asset() {
+        let (agent_key, claim_key) = (test_keypair(), test_keypair());
+        let vc = serde_json::json!({ "type": ["VerifiableCredential"] });
+        let params = |asset| AgentProvenanceParams {
+            asset,
+            agent_credential: &vc,
+            memory_provenance: b"memory",
+            process_proof: None,
+            attestation: None,
+            training_policy: None,
+        };
+        let (genuine, _) =
+            create_agent_provenance_manifest(&claim_key, &agent_key, &params(b"genuine")).unwrap();
+        let (mut other, _) =
+            create_agent_provenance_manifest(&claim_key, &test_keypair(), &params(b"other"))
+                .unwrap();
+        let identity = |m: &HmsManifest| {
+            m.assertions
+                .iter()
+                .position(|a| a.label == "cawg.identity")
+                .unwrap()
+        };
+        let lifted = genuine.assertions[identity(&genuine)].clone();
+        let slot = identity(&other);
+        other.assertions[slot] = lifted;
+        let signed = sign_manifest(&claim_key, &other).unwrap();
+        assert!(verify_agent_provenance_manifest(&claim_key.verifying_key(), &signed).is_err());
     }
 
     #[test]

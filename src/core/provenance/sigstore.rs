@@ -56,7 +56,16 @@ pub struct CertificateEntry {
 pub struct MessageSignature {
     pub message_digest: MessageDigest,
     pub signature: String,
+    /// What the signature covers. [`SIGNING_CONTEXT`]: the context string followed by the
+    /// SHA-256 digest of the content. Absent (bundles written before it): the raw content,
+    /// which let a bundle request sign any bytes, including another format's signed
+    /// structure, with the store key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signing_context: Option<String>,
 }
+
+/// The signing context of bundles this crate writes.
+pub const SIGNING_CONTEXT: &str = "hms.sigstore.message.v1";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -87,7 +96,7 @@ pub fn create_local_bundle(
     let digest = Sha256::digest(content);
     let digest_hex = super::hex_encode(&digest);
 
-    let signature = signing_key.sign(content);
+    let signature = signing_key.sign(&context_message(SIGNING_CONTEXT, &digest));
     let sig_base64 = base64_encode(&signature.to_bytes());
 
     let pk_bytes = signing_key.verifying_key().to_bytes();
@@ -109,6 +118,7 @@ pub fn create_local_bundle(
                 digest: digest_hex,
             },
             signature: sig_base64,
+            signing_context: Some(SIGNING_CONTEXT.to_string()),
         },
         tlog_entries: None,
     })
@@ -132,12 +142,7 @@ pub fn verify_bundle(bundle: &SigstoreBundle, content: &[u8]) -> Result<()> {
     let verifying_key = ed25519_dalek::VerifyingKey::from_bytes(&pk_arr)
         .map_err(|e| anyhow!("invalid public key: {e}"))?;
 
-    let sig_bytes = base64_decode(&bundle.message_signature.signature)?;
-    let signature = ed25519_dalek::Signature::from_slice(&sig_bytes)
-        .map_err(|e| anyhow!("invalid signature: {e}"))?;
-
-    ed25519_dalek::Verifier::verify(&verifying_key, content, &signature)
-        .map_err(|e| anyhow!("signature verification failed: {e}"))
+    verify_message_signature(bundle, content, &digest, &verifying_key)
 }
 
 /// Verify a bundle against a specific verifying key (ignores embedded key).
@@ -152,11 +157,31 @@ pub fn verify_bundle_with_key(
         return Err(anyhow!("content digest mismatch"));
     }
 
+    verify_message_signature(bundle, content, &digest, verifying_key)
+}
+
+/// The bytes a bundle with signing context `context` signs: the context, a zero byte, and
+/// the content digest.
+fn context_message(context: &str, digest: &[u8]) -> Vec<u8> {
+    [context.as_bytes(), &[0], digest].concat()
+}
+
+fn verify_message_signature(
+    bundle: &SigstoreBundle,
+    content: &[u8],
+    digest: &[u8],
+    verifying_key: &ed25519_dalek::VerifyingKey,
+) -> Result<()> {
     let sig_bytes = base64_decode(&bundle.message_signature.signature)?;
     let signature = ed25519_dalek::Signature::from_slice(&sig_bytes)
         .map_err(|e| anyhow!("invalid signature: {e}"))?;
-
-    ed25519_dalek::Verifier::verify(verifying_key, content, &signature)
+    let message = match bundle.message_signature.signing_context.as_deref() {
+        Some(SIGNING_CONTEXT) => context_message(SIGNING_CONTEXT, digest),
+        Some(other) => return Err(anyhow!("unknown signing context {other:?}")),
+        None => content.to_vec(),
+    };
+    verifying_key
+        .verify_strict(&message, &signature)
         .map_err(|e| anyhow!("signature verification failed: {e}"))
 }
 
@@ -228,6 +253,26 @@ mod tests {
         let key = test_keypair();
         let bundle = create_local_bundle(&key, b"original", None).unwrap();
         assert!(verify_bundle(&bundle, b"tampered").is_err());
+    }
+
+    /// A bundle written before the signing context signed the raw content and still
+    /// verifies; a current bundle with its context removed does not.
+    #[test]
+    fn bundles_with_and_without_signing_context_verify_what_they_signed() {
+        let key = test_keypair();
+        let content = b"store snapshot";
+        let mut legacy = create_local_bundle(&key, content, None).unwrap();
+        legacy.message_signature.signing_context = None;
+        legacy.message_signature.signature = base64_encode(&key.sign(content).to_bytes());
+        verify_bundle(&legacy, content).unwrap();
+        verify_bundle_with_key(&legacy, content, &key.verifying_key()).unwrap();
+
+        let mut stripped = create_local_bundle(&key, content, None).unwrap();
+        verify_bundle_with_key(&stripped, content, &key.verifying_key()).unwrap();
+        stripped.message_signature.signing_context = None;
+        assert!(verify_bundle_with_key(&stripped, content, &key.verifying_key()).is_err());
+        stripped.message_signature.signing_context = Some("other".to_string());
+        assert!(verify_bundle(&stripped, content).is_err());
     }
 
     #[test]

@@ -109,6 +109,9 @@ struct Grant {
 pub struct AgentRegistry {
     issuers: TrustStore,
     grants: FastMap<String, Grant>,
+    /// When each revoked agent was last revoked (Unix seconds). A credential valid from
+    /// that second or earlier no longer admits the agent.
+    revoked: FastMap<String, u64>,
 }
 
 impl AgentRegistry {
@@ -116,6 +119,7 @@ impl AgentRegistry {
         Self {
             issuers,
             grants: FastMap::default(),
+            revoked: FastMap::default(),
         }
     }
 
@@ -155,9 +159,13 @@ impl AgentRegistry {
             "credential issuer is not trusted"
         );
 
+        let valid_from = vc::parse_iso8601_utc(&credential.valid_from)?;
+        ensure!(valid_from <= now, "credential is not yet valid");
         ensure!(
-            vc::parse_iso8601_utc(&credential.valid_from)? <= now,
-            "credential is not yet valid"
+            self.revoked
+                .get(&credential.credential_subject.id)
+                .is_none_or(|&revoked_at| valid_from > revoked_at),
+            "credential was issued before the agent's revocation"
         );
         let expires_at = credential
             .valid_until
@@ -176,8 +184,16 @@ impl AgentRegistry {
         Ok(())
     }
 
-    /// Remove an agent's grant. Returns whether one existed.
+    /// Remove an agent's grant and refuse every credential for it valid from this second or
+    /// earlier, so presenting the same credential again does not restore access; a credential
+    /// issued afterwards admits it again. Returns whether a grant existed.
     pub fn revoke(&mut self, agent_did: &str) -> bool {
+        self.revoke_at(agent_did, unix_now())
+    }
+
+    fn revoke_at(&mut self, agent_did: &str, now: u64) -> bool {
+        let revoked_at = self.revoked.entry(agent_did.to_string()).or_default();
+        *revoked_at = (*revoked_at).max(now);
         self.grants.remove(agent_did).is_some()
     }
 
@@ -242,6 +258,32 @@ mod tests {
 
         assert!(registry.revoke(&agent));
         assert!(registry.authorize(&agent, Permission::Read).is_err());
+    }
+
+    #[test]
+    fn revoked_agent_cannot_readmit_with_an_earlier_credential() {
+        let (issuer, agent) = (key(), did(&key()));
+        let mut registry = registry_trusting(&issuer);
+        let credential =
+            issue_access_credential(&issuer, &agent, &[Permission::Read], None).unwrap();
+        let issued = vc::parse_iso8601_utc(&credential.valid_from).unwrap();
+        registry.admit_at(&credential, issued).unwrap();
+
+        assert!(registry.revoke(&agent));
+        assert!(registry.admit_at(&credential, issued + 60).is_err());
+        assert!(registry
+            .authorize_at(&agent, Permission::Read, issued + 60)
+            .is_err());
+
+        let mut reissued = credential;
+        reissued.valid_from = "2100-01-01T00:00:00Z".to_string();
+        reissued.proof = None;
+        reissued.proof = Some(vc::sign_document(&issuer, &reissued).unwrap());
+        let later = vc::parse_iso8601_utc(&reissued.valid_from).unwrap();
+        registry.admit_at(&reissued, later).unwrap();
+        registry
+            .authorize_at(&agent, Permission::Read, later)
+            .unwrap();
     }
 
     #[test]

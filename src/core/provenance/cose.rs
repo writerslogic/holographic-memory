@@ -4,7 +4,7 @@
 use anyhow::{anyhow, Result};
 use coset::iana::Algorithm;
 use coset::{CborSerializable, CoseSign1, CoseSign1Builder, HeaderBuilder};
-use ed25519_dalek::{Signer, SigningKey, Verifier, VerifyingKey};
+use ed25519_dalek::{Signer, SigningKey, VerifyingKey};
 
 /// Create a COSE Sign1 envelope over arbitrary payload bytes.
 pub fn sign_payload(signing_key: &SigningKey, payload: &[u8]) -> Result<Vec<u8>> {
@@ -34,17 +34,30 @@ pub fn verify_and_extract(verifying_key: &VerifyingKey, cose_bytes: &[u8]) -> Re
         .as_ref()
         .ok_or_else(|| anyhow!("COSE envelope has no payload"))?;
 
-    sign1
-        .verify_signature(b"", |sig, data| {
-            let signature = ed25519_dalek::Signature::from_slice(sig)
-                .map_err(|e| anyhow!("invalid signature bytes: {e}"))?;
-            verifying_key
-                .verify(data, &signature)
-                .map_err(|e| anyhow!("signature verification failed: {e}"))
-        })
-        .map_err(|e| anyhow!("COSE verification failed: {e}"))?;
+    verify_ed25519(&sign1, verifying_key).map_err(|e| anyhow!("COSE verification failed: {e}"))?;
 
     Ok(payload.clone())
+}
+
+/// Verify a COSE_Sign1 signature (empty external AAD) under an Ed25519 key. The protected
+/// header must name EdDSA, the only algorithm this crate signs with, and the check is
+/// `verify_strict`, which rejects small-order keys and signature points: under a small-order
+/// key one signature verifies for every message.
+pub(crate) fn verify_ed25519(sign1: &CoseSign1, verifying_key: &VerifyingKey) -> Result<()> {
+    if sign1.protected.header.alg
+        != Some(coset::RegisteredLabelWithPrivate::Assigned(
+            Algorithm::EdDSA,
+        ))
+    {
+        return Err(anyhow!("protected header does not name EdDSA"));
+    }
+    sign1.verify_signature(b"", |sig, data| {
+        let signature = ed25519_dalek::Signature::from_slice(sig)
+            .map_err(|e| anyhow!("invalid signature bytes: {e}"))?;
+        verifying_key
+            .verify_strict(data, &signature)
+            .map_err(|e| anyhow!("signature verification failed: {e}"))
+    })
 }
 
 /// Extract the key ID (verifying key bytes) from a COSE Sign1 envelope without verifying.
@@ -125,6 +138,42 @@ mod tests {
         sign1.payload = Some(b"tampered".to_vec());
         let tampered = sign1.to_vec().unwrap();
         assert!(verify_and_extract(&key.verifying_key(), &tampered).is_err());
+    }
+
+    #[test]
+    fn envelope_naming_another_algorithm_is_rejected() {
+        let key = test_keypair();
+        let mut sign1 = CoseSign1::from_slice(&sign_payload(&key, b"data").unwrap()).unwrap();
+        let protected = HeaderBuilder::new()
+            .algorithm(Algorithm::ES256)
+            .key_id(key.verifying_key().to_bytes().to_vec())
+            .build();
+        let resigned = CoseSign1Builder::new()
+            .protected(protected)
+            .payload(sign1.payload.take().unwrap())
+            .create_signature(b"", |data| key.sign(data).to_bytes().to_vec())
+            .build()
+            .to_vec()
+            .unwrap();
+        assert!(verify_and_extract(&key.verifying_key(), &resigned).is_err());
+    }
+
+    /// Under the identity point as public key, the signature (R = identity, s = 0) satisfies
+    /// the plain verification equation for every message.
+    #[test]
+    fn small_order_key_signature_is_rejected() {
+        let mut identity = [0u8; 32];
+        identity[0] = 1;
+        let weak = VerifyingKey::from_bytes(&identity).unwrap();
+        let mut sign1 = CoseSign1Builder::new()
+            .protected(HeaderBuilder::new().algorithm(Algorithm::EdDSA).build())
+            .payload(b"any statement".to_vec())
+            .build();
+        let mut signature = vec![0u8; 64];
+        signature[0] = 1;
+        sign1.signature = signature;
+        let envelope = sign1.to_vec().unwrap();
+        assert!(verify_and_extract(&weak, &envelope).is_err());
     }
 
     #[test]

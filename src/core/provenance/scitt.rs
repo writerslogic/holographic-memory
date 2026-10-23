@@ -3,7 +3,7 @@
 
 use anyhow::{anyhow, Result};
 use coset::{CborSerializable, CoseSign1, CoseSign1Builder, HeaderBuilder};
-use ed25519_dalek::{Signer, SigningKey, Verifier};
+use ed25519_dalek::{Signer, SigningKey};
 use serde::{Deserialize, Serialize};
 
 const SCITT_CONTENT_TYPE: &str = "application/cbor";
@@ -89,15 +89,35 @@ pub fn create_signed_statement(
     Ok(SignedStatement { cose_bytes })
 }
 
+/// Bound on each request to the Transparency Service, so an unresponsive service fails the
+/// submission instead of blocking the caller (fact provenance creation) indefinitely.
+#[cfg(feature = "provenance-scitt")]
+const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// Submit a signed statement to a SCITT Transparency Service and get a receipt.
 #[cfg(feature = "provenance-scitt")]
 pub fn submit_statement(
     endpoint: &str,
     statement: &SignedStatement,
 ) -> Result<TransparencyReceipt> {
+    submit_statement_within(endpoint, statement, REQUEST_TIMEOUT)
+}
+
+#[cfg(feature = "provenance-scitt")]
+fn submit_statement_within(
+    endpoint: &str,
+    statement: &SignedStatement,
+    timeout: std::time::Duration,
+) -> Result<TransparencyReceipt> {
+    let agent = ureq::Agent::new_with_config(
+        ureq::Agent::config_builder()
+            .timeout_global(Some(timeout))
+            .build(),
+    );
     let url = format!("{}/entries", endpoint.trim_end_matches('/'));
 
-    let response = ureq::post(&url)
+    let response = agent
+        .post(&url)
         .header("Content-Type", SCITT_CONTENT_TYPE)
         .send(&statement.cose_bytes)
         .map_err(|e| anyhow!("SCITT submission failed: {e}"))?;
@@ -120,7 +140,7 @@ pub fn submit_statement(
         } else {
             format!("{}{}", endpoint.trim_end_matches('/'), location)
         };
-        return poll_for_receipt(endpoint, &operation_url);
+        return poll_for_receipt(&agent, endpoint, &operation_url);
     }
 
     let receipt_bytes = response
@@ -136,11 +156,16 @@ pub fn submit_statement(
 }
 
 #[cfg(feature = "provenance-scitt")]
-fn poll_for_receipt(endpoint: &str, operation_url: &str) -> Result<TransparencyReceipt> {
+fn poll_for_receipt(
+    agent: &ureq::Agent,
+    endpoint: &str,
+    operation_url: &str,
+) -> Result<TransparencyReceipt> {
     for _ in 0..30 {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        let resp = ureq::get(operation_url)
+        let resp = agent
+            .get(operation_url)
             .call()
             .map_err(|e| anyhow!("polling failed: {e}"))?;
 
@@ -159,12 +184,9 @@ fn poll_for_receipt(endpoint: &str, operation_url: &str) -> Result<TransparencyR
                     .unwrap_or("")
                     .to_string();
 
-                let receipt_url = format!(
-                    "{}/entries/{}/receipt",
-                    endpoint.trim_end_matches('/'),
-                    entry_id
-                );
-                let receipt_resp = ureq::get(&receipt_url)
+                let receipt_url = receipt_url(endpoint, &entry_id)?;
+                let receipt_resp = agent
+                    .get(&receipt_url)
                     .call()
                     .map_err(|e| anyhow!("receipt fetch failed: {e}"))?;
                 let receipt_bytes = receipt_resp
@@ -183,6 +205,28 @@ fn poll_for_receipt(endpoint: &str, operation_url: &str) -> Result<TransparencyR
     Err(anyhow!("SCITT receipt polling timed out after 30 seconds"))
 }
 
+/// The receipt URL of `entry_id` under `endpoint`. The id comes from the service's response
+/// and becomes one path segment, so it must be a non-empty run of URL-safe characters: a `/`,
+/// `..`, `?` or `#` in it would point the receipt request elsewhere.
+#[cfg(feature = "provenance-scitt")]
+fn receipt_url(endpoint: &str, entry_id: &str) -> Result<String> {
+    let segment_ok = !entry_id.is_empty()
+        && entry_id != "."
+        && entry_id != ".."
+        && entry_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-._~:".contains(&b));
+    if !segment_ok {
+        return Err(anyhow!(
+            "SCITT entry id {entry_id:?} is not a URL path segment"
+        ));
+    }
+    Ok(format!(
+        "{}/entries/{entry_id}/receipt",
+        endpoint.trim_end_matches('/')
+    ))
+}
+
 /// Verify a SCITT signed statement's COSE signature (local verification, no TS needed).
 pub fn verify_statement(
     verifying_key: &ed25519_dalek::VerifyingKey,
@@ -191,14 +235,7 @@ pub fn verify_statement(
     let sign1 = CoseSign1::from_slice(&statement.cose_bytes)
         .map_err(|e| anyhow!("COSE deserialization failed: {e}"))?;
 
-    sign1
-        .verify_signature(b"", |sig, data| {
-            let signature = ed25519_dalek::Signature::from_slice(sig)
-                .map_err(|e| anyhow!("invalid signature: {e}"))?;
-            verifying_key
-                .verify(data, &signature)
-                .map_err(|e| anyhow!("verification failed: {e}"))
-        })
+    super::cose::verify_ed25519(&sign1, verifying_key)
         .map_err(|e| anyhow!("SCITT statement verification failed: {e}"))?;
 
     let payload = sign1
@@ -280,6 +317,51 @@ mod tests {
         assert_eq!(recovered.content_hash, vec![0xAB; 32]);
         assert_eq!(recovered.timestamp_ms, 1719878400000);
         assert_eq!(recovered.source_uri.as_deref(), Some("https://example.com"));
+    }
+
+    #[cfg(feature = "provenance-scitt")]
+    #[test]
+    fn receipt_url_takes_the_entry_id_as_one_segment() {
+        assert_eq!(
+            receipt_url("https://ts.example/", "2.34").unwrap(),
+            "https://ts.example/entries/2.34/receipt"
+        );
+        for bad in ["", "..", "../admin", "a/b", "a?b", "a#b", "a b"] {
+            assert!(receipt_url("https://ts.example", bad).is_err(), "{bad:?}");
+        }
+    }
+
+    /// A service that accepts the connection and never answers fails the submission once
+    /// the request timeout passes.
+    #[cfg(feature = "provenance-scitt")]
+    #[test]
+    fn unresponsive_service_times_out() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let statement = create_signed_statement(
+            &test_keypair(),
+            &FactClaim {
+                fact_id: "f".to_string(),
+                content_hash: vec![0; 32],
+                timestamp_ms: 0,
+                source_uri: None,
+                store_id: None,
+            },
+        )
+        .unwrap();
+        let (done, outcome) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let result = submit_statement_within(
+                &endpoint,
+                &statement,
+                std::time::Duration::from_millis(300),
+            );
+            let _ = done.send(result.is_err());
+        });
+        let _held = listener.accept().unwrap();
+        assert!(outcome
+            .recv_timeout(std::time::Duration::from_secs(20))
+            .expect("submission still blocked"));
     }
 
     #[test]
