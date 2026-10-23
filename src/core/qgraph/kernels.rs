@@ -490,19 +490,41 @@ mod tier {
     }
 }
 
-/// [`DotI8`] resolved at compile time, so the search loop can inline it: SDOT when the build
-/// target enables `dotprod` (every Apple core), else the runtime-detected kernel.
+/// Integer dot product of two i8 rows whose length is a multiple of 16, dispatched inline so
+/// the search loop makes no indirect call: SDOT when the build target enables `dotprod`
+/// (every Apple core), else the kernel of the detected tier (one relaxed load, a plain move
+/// on x86).
 #[must_use]
 #[inline(always)]
 pub(crate) fn dot_i8_inline(a: &[i8], b: &[i8]) -> i32 {
+    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
     #[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
     {
-        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
         // SAFETY: `dotprod` is enabled for the whole build; the lengths are checked above.
         unsafe { neon::sdot(a, b) }
     }
     #[cfg(not(all(target_arch = "aarch64", target_feature = "dotprod")))]
-    dot_i8_kernel()(a, b)
+    {
+        #[cfg(target_arch = "aarch64")]
+        {
+            if std::arch::is_aarch64_feature_detected!("dotprod") {
+                // SAFETY: `dotprod` was detected at runtime; the lengths are checked above.
+                return unsafe { neon::sdot(a, b) };
+            }
+            neon::dot_i8(a, b)
+        }
+        #[cfg(target_arch = "x86_64")]
+        match tier::get() {
+            // SAFETY: the tier is VNNI only after detecting `avx512vnni`, `avx512vl` and `avx2`;
+            // the lengths are checked above.
+            tier::VNNI => unsafe { x86::dot_i8_vnni(a, b) },
+            // SAFETY: the tier is AVX2 only after detecting `avx2`; the lengths are checked above.
+            tier::AVX2 => unsafe { x86::dot_i8_avx2(a, b) },
+            _ => dot_i8_scalar(a, b),
+        }
+        #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+        dot_i8_scalar(a, b)
+    }
 }
 
 /// Lays out an i8 query code for [`dot_i4_inline`]: per 32-wide block, its 16 even then its
