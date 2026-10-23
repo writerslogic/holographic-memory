@@ -1146,18 +1146,18 @@ mod tests {
     type I8Kernel = fn(&[i8], &[i8]) -> i32;
 
     /// Every integer kernel this CPU can run, by name: `(name, i8 dot, i4 dot)`.
-    fn int_variants() -> Vec<(&'static str, Option<I8Kernel>, Option<I8Kernel>)> {
-        let mut v: Vec<(&'static str, Option<I8Kernel>, Option<I8Kernel>)> =
-            vec![("scalar", Some(dot_i8_scalar), Some(dot_i4_scalar))];
+    fn int_variants() -> Vec<(&'static str, I8Kernel, I8Kernel)> {
+        // SAFETY (every unsafe kernel below): its target features are detected before it is
+        // listed, and every caller passes rows of the lengths the kernel requires.
+        let mut v: Vec<(&'static str, I8Kernel, I8Kernel)> =
+            vec![("scalar", dot_i8_scalar, dot_i4_scalar)];
         #[cfg(target_arch = "aarch64")]
         {
-            v.push(("neon_widening", Some(neon::dot_i8), Some(neon::dot_i4)));
+            v.push(("neon_widening", neon::dot_i8, neon::dot_i4));
             if std::arch::is_aarch64_feature_detected!("dotprod") {
-                v.push((
-                    "sdot",
-                    Some(neon::dot_i8_sdot),
-                    Some(|q, p| unsafe { neon::sdot4(q, p) }),
-                ));
+                v.push(("sdot", neon::dot_i8_sdot, |q, p| unsafe {
+                    neon::sdot4(q, p)
+                }));
             }
         }
         #[cfg(target_arch = "x86_64")]
@@ -1165,15 +1165,15 @@ mod tests {
             if is_x86_feature_detected!("avx2") {
                 v.push((
                     "avx2",
-                    Some(|a, b| unsafe { x86::dot_i8_avx2(a, b) }),
-                    Some(|q, p| unsafe { x86::dot_i4_avx2(q, p) }),
+                    |a, b| unsafe { x86::dot_i8_avx2(a, b) },
+                    |q, p| unsafe { x86::dot_i4_avx2(q, p) },
                 ));
             }
             if is_x86_feature_detected!("avx512vnni") && is_x86_feature_detected!("avx512vl") {
                 v.push((
                     "vnni",
-                    Some(|a, b| unsafe { x86::dot_i8_vnni(a, b) }),
-                    Some(|q, p| unsafe { x86::dot_i4_vnni(q, p) }),
+                    |a, b| unsafe { x86::dot_i8_vnni(a, b) },
+                    |q, p| unsafe { x86::dot_i4_vnni(q, p) },
                 ));
             }
         }
@@ -1223,10 +1223,8 @@ mod tests {
                         }
                         _ => {}
                     }
-                    if let Some(k) = i8k {
-                        assert_eq!(k(&a, &b), dot_i8_scalar(&a, &b), "{name} i8 len {len}");
-                    }
-                    if let (Some(k), true) = (i4k, len % 32 == 0) {
+                    assert_eq!(i8k(&a, &b), dot_i8_scalar(&a, &b), "{name} i8 len {len}");
+                    if len % 32 == 0 {
                         let mut packed = pack_nibbles(&b);
                         if round == 1 {
                             packed.fill(-128); // both nibbles -8
@@ -1236,7 +1234,7 @@ mod tests {
                         let mut q = vec![0i8; len];
                         interleave_for_i4(&a, &mut q);
                         assert_eq!(
-                            k(&q, &packed),
+                            i4k(&q, &packed),
                             dot_i4_scalar(&q, &packed),
                             "{name} i4 len {len}"
                         );
@@ -1285,9 +1283,7 @@ mod tests {
                 let query: &[i8] = if kind == "i8" { &q } else { &qi };
                 let mut ref_sum = None;
                 for (name, i8k, i4k) in int_variants() {
-                    let Some(k) = (if kind == "i8" { i8k } else { i4k }) else {
-                        continue;
-                    };
+                    let k = if kind == "i8" { i8k } else { i4k };
                     let mut best = (f64::INFINITY, f64::INFINITY);
                     let mut sum = 0i64;
                     for _ in 0..7 {
