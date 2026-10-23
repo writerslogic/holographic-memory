@@ -521,6 +521,8 @@ fn block_table(q: &[f32], bits: u8, m: usize, t: &mut [f32]) {
 pub struct BlockQuery {
     table: Vec<f32>,
     lut: Vec<u8>,
+    /// Per group, the minimum of its table entries.
+    mins: Vec<f32>,
     delta: f32,
     min_sum: f32,
     /// `1 / s_q`, which puts the block estimate in [`VGraph::est`] units.
@@ -532,6 +534,7 @@ impl BlockQuery {
         Self {
             table: vec![0.0; 16 * m],
             lut: vec![0; 16 * m],
+            mins: vec![0.0; m],
             delta: 1.0,
             min_sum: 0.0,
             inv_sq: 1.0,
@@ -541,22 +544,24 @@ impl BlockQuery {
     /// Quantizes the float table to bytes: per group, entries are offset by the group's
     /// minimum; one step `delta` serves every group.
     fn quantize(&mut self, m: usize) {
+        debug_assert_eq!(self.lut.len(), 16 * m);
+        debug_assert_eq!(self.mins.len(), m);
         let mut range = 0f32;
         let mut min_sum = 0f32;
-        for g in self.table.as_chunks::<16>().0 {
-            let lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
+        let groups = self.table.as_chunks::<16>().0;
+        for (g, lo) in groups.iter().zip(self.mins.iter_mut()) {
+            *lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
             let hi = g.iter().fold(f32::NEG_INFINITY, |a, &v| a.max(v));
-            min_sum += lo;
-            range = range.max(hi - lo);
+            min_sum += *lo;
+            range = range.max(hi - *lo);
         }
         let delta = if range > 0.0 { range / 255.0 } else { 1.0 };
-        for (j, g) in self.table.as_chunks::<16>().0.iter().enumerate() {
-            let lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
-            for (v, &e) in g.iter().enumerate() {
-                self.lut[16 * j + v] = ((e - lo) / delta).round().clamp(0.0, 255.0) as u8;
+        let luts = self.lut.as_chunks_mut::<16>().0;
+        for ((g, &lo), lut) in groups.iter().zip(&self.mins).zip(luts) {
+            for (o, &e) in lut.iter_mut().zip(g) {
+                *o = ((e - lo) / delta).round().clamp(0.0, 255.0) as u8;
             }
         }
-        debug_assert_eq!(self.lut.len(), 16 * m);
         self.delta = delta;
         self.min_sum = min_sum;
     }
