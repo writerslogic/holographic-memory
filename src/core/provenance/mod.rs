@@ -943,11 +943,30 @@ impl ProvenanceManager {
                         message: None,
                     });
 
-                    if let Ok(hms_manifest) =
-                        serde_json::from_slice::<c2pa_manifest::HmsManifest>(&payload)
-                    {
+                    // The signature only proves the key signed *some* payload: it must be a
+                    // store manifest for this manifest's store hash, or an envelope signed for
+                    // a fact, a head or another store verifies when pasted in.
+                    let parsed = serde_json::from_slice::<c2pa_manifest::HmsManifest>(&payload)
+                        .map_err(|e| {
+                            anyhow::anyhow!("signed payload is not a store manifest: {e}")
+                        });
+                    let binding = parsed
+                        .as_ref()
+                        .map_err(|e| anyhow::anyhow!("{e}"))
+                        .and_then(|hms_manifest| {
+                            let signed = c2pa_manifest::signed_store_hash(hms_manifest)?;
+                            if signed == hex_encode(&manifest.store_hash) {
+                                Ok(())
+                            } else {
+                                Err(anyhow::anyhow!(
+                                    "signed store hash differs from the manifest's"
+                                ))
+                            }
+                        });
+                    details.push(outcome_detail("manifest_binding", &binding));
+                    if let Ok(ref hms_manifest) = parsed {
                         if let Some(data) = store_data {
-                            let hash_ok = c2pa_manifest::validate_store_hash(&hms_manifest, data)
+                            let hash_ok = c2pa_manifest::validate_store_hash(hms_manifest, data)
                                 .unwrap_or(false);
                             details.push(VerificationDetail {
                                 check: "store_hash".to_string(),
@@ -1904,6 +1923,53 @@ mod binding_tests {
         let mut forged = b.clone();
         forged.source_uri = Some("https://example.com/other".to_string());
         assert_rejected(&mgr, &forged, "a record whose source was changed");
+    }
+
+    #[test]
+    fn manifests_verify_only_with_their_own_signed_manifest() {
+        let (dir, mgr) = manager();
+        let trust = mgr.self_trust();
+        let manifest = mgr
+            .create_store_manifest("s1", b"store one", 1, 1024, None)
+            .unwrap();
+        let other = mgr
+            .create_store_manifest("s2", b"store two", 1, 1024, None)
+            .unwrap();
+        assert!(
+            mgr.verify_store_manifest(&manifest, None, &trust)
+                .unwrap()
+                .valid
+        );
+        assert!(
+            mgr.verify_store_manifest(&manifest, Some(b"store one"), &trust)
+                .unwrap()
+                .valid
+        );
+
+        let fact = mgr.create_fact_provenance("f", b"fact", None).unwrap();
+        let head = std::fs::read(dir.path().join("provenance_log.head")).unwrap();
+        let foreign = [
+            (
+                "another store's manifest envelope",
+                other.cose_envelope.clone().unwrap(),
+            ),
+            ("a fact envelope", fact.cose_envelope.unwrap()),
+            ("the signed log head", head),
+        ];
+        for (what, envelope) in foreign {
+            let mut forged = manifest.clone();
+            forged.cose_envelope = Some(envelope);
+            let result = mgr.verify_store_manifest(&forged, None, &trust).unwrap();
+            assert!(!result.valid, "accepted {what}: {:?}", result.details);
+        }
+
+        let mut forged = manifest.clone();
+        forged.store_hash = other.store_hash;
+        assert!(
+            !mgr.verify_store_manifest(&forged, None, &trust)
+                .unwrap()
+                .valid
+        );
     }
 
     #[test]

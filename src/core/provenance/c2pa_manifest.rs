@@ -175,22 +175,25 @@ pub fn verify_manifest(
 
 /// Validate that a manifest's store hash matches the actual store contents.
 pub fn validate_store_hash(manifest: &HmsManifest, store_data: &[u8]) -> Result<bool> {
+    let expected_hex = signed_store_hash(manifest)?;
+    let actual_hash = Sha256::digest(store_data);
+    let actual_hex = hex_encode(&actual_hash);
+
+    Ok(actual_hex == expected_hex)
+}
+
+/// The store hash, in hex, that the manifest's `c2pa.hash.data` assertion carries.
+pub(crate) fn signed_store_hash(manifest: &HmsManifest) -> Result<&str> {
     let hash_assertion = manifest
         .assertions
         .iter()
         .find(|a| a.label == "c2pa.hash.data")
         .ok_or_else(|| anyhow!("manifest has no hash assertion"))?;
-
-    let expected_hex = hash_assertion
+    hash_assertion
         .data
         .get("hash")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow!("hash assertion has no hash field"))?;
-
-    let actual_hash = Sha256::digest(store_data);
-    let actual_hex = hex_encode(&actual_hash);
-
-    Ok(actual_hex == expected_hex)
+        .ok_or_else(|| anyhow!("hash assertion has no hash field"))
 }
 
 /// Every provenance layer for an AI-agent-produced asset.
