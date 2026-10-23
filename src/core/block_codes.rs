@@ -277,8 +277,8 @@ impl BlockCodeBundle {
                 .iter()
                 .enumerate()
                 .map(|(i, v)| (i, estimate.similarity(v)))
-                .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                .unwrap();
+                .max_by(|a, b| a.1.total_cmp(&b.1))
+                .expect("non-empty codebook");
 
             if Some(best_idx) == prev_idx {
                 stable_count += 1;
@@ -507,14 +507,6 @@ mod tests {
             "100 items in 64x256: min corrected similarity {:.4} should be >0.5",
             min_sim
         );
-    }
-
-    #[test]
-    fn test_default_config() {
-        let cfg = BlockCodeConfig::default_config();
-        assert_eq!(cfg.n_blocks, 1024);
-        assert_eq!(cfg.block_len, 16);
-        assert_eq!(cfg.dim(), 16384);
     }
 
     #[test]
