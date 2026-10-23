@@ -241,10 +241,11 @@ pub(crate) fn verify_cawg_ica_references(
 
     // The outer signer_payload is not signed; the copy inside the VC is. Everything below
     // reads the signed copy, and the two must agree so a reader of either sees the same refs.
-    let c2pa_asset = vc
-        .get("credentialSubject")
-        .and_then(|s| s.get("c2paAsset"))
-        .ok_or_else(|| anyhow::anyhow!("VC has no credentialSubject.c2paAsset"))?;
+    let c2pa_asset = &normalize_hashes(
+        vc.get("credentialSubject")
+            .and_then(|s| s.get("c2paAsset"))
+            .ok_or_else(|| anyhow::anyhow!("VC has no credentialSubject.c2paAsset"))?,
+    )?;
     if *c2pa_asset != signer_payload {
         return Err(anyhow::anyhow!(
             "signer_payload differs from the signed c2paAsset"
@@ -284,6 +285,44 @@ pub(crate) fn verify_cawg_ica_references(
     }
 
     Ok((vc, referenced))
+}
+
+/// `asset` with each referenced assertion's hash as padded standard base64, the form
+/// [`cbor_to_json`] gives byte strings. Producers write the hash as base64 (cogmem, this
+/// crate) or as an array of byte values (c2pa-rs); both name the same bytes.
+fn normalize_hashes(asset: &serde_json::Value) -> Result<serde_json::Value> {
+    use base64::engine::{
+        general_purpose::GeneralPurpose, DecodePaddingMode, GeneralPurposeConfig,
+    };
+    const LENIENT: GeneralPurpose = GeneralPurpose::new(
+        &base64::alphabet::STANDARD,
+        GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+    );
+    let mut asset = asset.clone();
+    let refs = asset
+        .get_mut("referenced_assertions")
+        .and_then(|v| v.as_array_mut())
+        .ok_or_else(|| anyhow::anyhow!("missing referenced_assertions array"))?;
+    for item in refs {
+        let hash = item
+            .get_mut("hash")
+            .ok_or_else(|| anyhow::anyhow!("referenced assertion has no hash"))?;
+        let bytes = match &*hash {
+            serde_json::Value::String(b64) => LENIENT
+                .decode(b64)
+                .map_err(|e| anyhow::anyhow!("referenced assertion hash: {e}"))?,
+            serde_json::Value::Array(values) => values
+                .iter()
+                .map(|v| v.as_u64().and_then(|b| u8::try_from(b).ok()))
+                .collect::<Option<Vec<u8>>>()
+                .ok_or_else(|| anyhow::anyhow!("referenced assertion hash is not bytes"))?,
+            _ => return Err(anyhow::anyhow!("referenced assertion hash is not bytes")),
+        };
+        *hash = base64::engine::general_purpose::STANDARD
+            .encode(bytes)
+            .into();
+    }
+    Ok(asset)
 }
 
 /// A CBOR value as the JSON a VC carries it in: byte strings become standard base64.
@@ -446,6 +485,29 @@ mod tests {
             payload.push((Value::Text("roles".into()), Value::Array(Vec::new())));
         });
         assert!(verify_cawg_ica(&extended).is_err());
+    }
+
+    #[test]
+    fn c2pa_asset_hashes_compare_as_bytes() {
+        let asset = serde_json::json!({
+            "referenced_assertions": [
+                {"url": "a", "hash": "AAEC"},
+                {"url": "b", "hash": "AAE"},
+                {"url": "c", "hash": [0, 1]},
+            ],
+            "sig_type": CAWG_ICA_SIG_TYPE,
+        });
+        let normalized = normalize_hashes(&asset).unwrap();
+        let hashes: Vec<_> = normalized["referenced_assertions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["hash"].as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(hashes, ["AAEC", "AAE=", "AAE="]);
+        let mut bad = asset;
+        bad["referenced_assertions"][2]["hash"] = serde_json::json!([256]);
+        assert!(normalize_hashes(&bad).is_err());
     }
 
     #[test]

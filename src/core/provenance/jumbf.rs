@@ -276,8 +276,12 @@ fn decode_box_depth(data: &[u8], depth: usize) -> Result<(JumbfBox, usize)> {
                 }
                 description = Some(decode_description_box(inner_data)?);
             }
-            _ if inner_type != JUMBF_BOX_TYPE && content.is_some() => {
-                return Err(anyhow!("box has more than one content box"));
+            // Two JSON or CBOR boxes would leave the box's content ambiguous. (An embedded
+            // file box legitimately holds a description and a data box; the last is kept.)
+            JSON_BOX_TYPE | CBOR_BOX_TYPE
+                if matches!(content, Some(BoxContent::Json(_) | BoxContent::Cbor(_))) =>
+            {
+                return Err(anyhow!("box has more than one JSON or CBOR content box"));
             }
             JSON_BOX_TYPE => {
                 let val = serde_json::from_slice(inner_data)
@@ -450,6 +454,23 @@ mod tests {
         let len = u32::try_from(relabeled.len()).unwrap();
         relabeled[..4].copy_from_slice(&len.to_be_bytes());
         assert!(JumbfBox::decode(&relabeled).is_err());
+
+        // A second JSON box would make the content ambiguous; an embedded file's description
+        // and data boxes are two content boxes and stay readable.
+        let leaf = JumbfBox::json_box("leaf", serde_json::json!({"k": "v"}));
+        let encoded = leaf.encode().unwrap();
+        let json_box_start =
+            8 + usize::try_from(u32::from_be_bytes(encoded[8..12].try_into().unwrap())).unwrap();
+        for (extra, ok) in [
+            (encoded[json_box_start..].to_vec(), false),
+            ([&[0, 0, 0, 9][..], b"bfdb", &[0]].concat(), true),
+        ] {
+            let mut doubled = encoded.clone();
+            doubled.extend_from_slice(&extra);
+            let len = u32::try_from(doubled.len()).unwrap();
+            doubled[..4].copy_from_slice(&len.to_be_bytes());
+            assert_eq!(JumbfBox::decode(&doubled).is_ok(), ok);
+        }
     }
 
     #[test]

@@ -39,17 +39,24 @@ pub fn verify_and_extract(verifying_key: &VerifyingKey, cose_bytes: &[u8]) -> Re
     Ok(payload.clone())
 }
 
-/// Verify a COSE_Sign1 signature (empty external AAD) under an Ed25519 key. The protected
-/// header must name EdDSA, the only algorithm this crate signs with, and the check is
-/// `verify_strict`, which rejects small-order keys and signature points: under a small-order
-/// key one signature verifies for every message.
+/// Verify a COSE_Sign1 signature (empty external AAD) under an Ed25519 key. The headers must
+/// name EdDSA, the only algorithm this crate signs with (the protected header, or the
+/// unprotected one when the protected names none). The check is `verify_strict`, which
+/// rejects small-order keys and signature points: under a small-order key one signature
+/// verifies for every message.
 pub(crate) fn verify_ed25519(sign1: &CoseSign1, verifying_key: &VerifyingKey) -> Result<()> {
-    if sign1.protected.header.alg
-        != Some(coset::RegisteredLabelWithPrivate::Assigned(
+    let alg = sign1
+        .protected
+        .header
+        .alg
+        .as_ref()
+        .or(sign1.unprotected.alg.as_ref());
+    if alg
+        != Some(&coset::RegisteredLabelWithPrivate::Assigned(
             Algorithm::EdDSA,
         ))
     {
-        return Err(anyhow!("protected header does not name EdDSA"));
+        return Err(anyhow!("COSE header does not name EdDSA"));
     }
     sign1.verify_signature(b"", |sig, data| {
         let signature = ed25519_dalek::Signature::from_slice(sig)
