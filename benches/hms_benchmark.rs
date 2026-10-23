@@ -1,8 +1,11 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use holographic_memory::{EntangledHVec, HmsCore};
+use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion};
+use holographic_memory::core::documents::{
+    EncodeMode, IngestOptions, LexicalExecution, LexicalOptions, LexicalQuery,
+};
+use holographic_memory::{DocumentInput, EntangledHVec, HmsCore, SearchOptions};
 use std::hint::black_box;
 
 fn benchmark_entangled(c: &mut Criterion) {
@@ -130,11 +133,205 @@ fn benchmark_hms_scaling(c: &mut Criterion) {
     group.finish();
 }
 
+/// Deterministic xorshift stream for the text corpora.
+struct Stream(u64);
+
+impl Stream {
+    fn next(&mut self) -> u64 {
+        self.0 ^= self.0 << 13;
+        self.0 ^= self.0 >> 7;
+        self.0 ^= self.0 << 17;
+        self.0
+    }
+
+    /// A word of a 20 000-word vocabulary drawn log-uniformly (Zipf-like, rank `r` with
+    /// probability about 1/r).
+    fn zipf_word(&mut self) -> String {
+        let unit = (self.next() >> 11) as f64 / (1u64 << 53) as f64;
+        format!("w{}", (20_000f64.powf(unit)) as u32)
+    }
+}
+
+fn text_input(id: String, text: String, chunk_words: u32) -> DocumentInput {
+    serde_json::from_value(serde_json::json!({
+        "id": id, "text": text, "chunkWords": chunk_words, "overlapWords": 0, "storeText": false
+    }))
+    .unwrap()
+}
+
+fn zipf_corpus(seed: u64, documents: usize, words: usize, chunk_words: u32) -> Vec<DocumentInput> {
+    let mut stream = Stream(seed);
+    (0..documents)
+        .map(|i| {
+            let text: Vec<String> = (0..words).map(|_| stream.zipf_word()).collect();
+            text_input(format!("doc-{i:06}"), text.join(" "), chunk_words)
+        })
+        .collect()
+}
+
+fn lexical_ingest() -> IngestOptions {
+    IngestOptions {
+        encode: EncodeMode::Lexical,
+        ..Default::default()
+    }
+}
+
+/// A store in its own directory (an engine without a path opens the working directory).
+fn text_store() -> (tempfile::TempDir, HmsCore) {
+    let dir = tempfile::tempdir().unwrap();
+    let core = HmsCore::new(64, Some(dir.path().display().to_string()), None).unwrap();
+    (dir, core)
+}
+
+/// A store of `corpus` memorized `batch` documents at a time (a batch holds at most 4096 chunks).
+fn lexical_store(corpus: Vec<DocumentInput>, batch: usize) -> (tempfile::TempDir, HmsCore) {
+    let (dir, core) = text_store();
+    for batch in corpus.chunks(batch) {
+        core.memorize_documents_with(batch.to_vec(), &lexical_ingest())
+            .unwrap();
+    }
+    (dir, core)
+}
+
+/// Full-text engine paths: hybrid lexical ranking (fresh and churned), block-max WAND, match
+/// counts, positional ingest and journal frame writes.
+fn benchmark_text(c: &mut Criterion) {
+    const QUERIES: [&str; 3] = ["w1 w700 w9000", "w2 w40", "w3 w5 w12000 w150"];
+    let mut group = c.benchmark_group("text");
+    group.sample_size(30);
+
+    let (_store_dir, store) = lexical_store(zipf_corpus(7, 40_000, 60, 4096), 4_000);
+    let search = SearchOptions::default();
+    group.bench_function("hybrid_lexical_zipf", |b| {
+        b.iter(|| {
+            for query in QUERIES {
+                black_box(store.search_documents(black_box(query), &search).unwrap());
+            }
+        })
+    });
+    // Common terms only: little for pruning to skip.
+    group.bench_function("hybrid_lexical_common", |b| {
+        b.iter(|| {
+            for query in ["w1", "w1 w2"] {
+                black_box(store.search_documents(black_box(query), &search).unwrap());
+            }
+        })
+    });
+    let wand = LexicalOptions {
+        execution: LexicalExecution::BlockMaxWand,
+        ..Default::default()
+    };
+    let parsed: Vec<_> = QUERIES
+        .iter()
+        .map(|q| LexicalQuery::parse(q).unwrap())
+        .collect();
+    group.bench_function("wand_zipf", |b| {
+        b.iter(|| {
+            for query in &parsed {
+                black_box(store.search_lexical(query, &wand).unwrap());
+            }
+        })
+    });
+
+    // Churn: replace one document in ten and delete one in twenty.
+    let replacements = zipf_corpus(11, 40_000, 60, 4096);
+    for input in replacements.into_iter().step_by(10) {
+        store
+            .memorize_documents_with(vec![input], &lexical_ingest())
+            .unwrap();
+    }
+    for i in (5..40_000).step_by(20) {
+        store.delete_document(&format!("doc-{i:06}")).unwrap();
+    }
+    group.bench_function("hybrid_lexical_churned", |b| {
+        b.iter(|| {
+            for query in QUERIES {
+                black_box(store.search_documents(black_box(query), &search).unwrap());
+            }
+        })
+    });
+    group.bench_function("wand_churned", |b| {
+        b.iter(|| {
+            for query in &parsed {
+                black_box(store.search_lexical(query, &wand).unwrap());
+            }
+        })
+    });
+    let churn = zipf_corpus(13, 400, 60, 4096);
+    group.bench_function("replace_document", |b| {
+        let mut next = 0;
+        b.iter(|| {
+            let mut input = churn[next % churn.len()].clone();
+            input.id = format!("doc-{:06}", (next * 97) % 40_000);
+            next += 1;
+            store
+                .memorize_documents_with(vec![input], &lexical_ingest())
+                .unwrap()
+        })
+    });
+    drop(store);
+
+    let (_chunked_dir, chunked) = lexical_store(zipf_corpus(17, 8_000, 120, 20), 600);
+    group.bench_function("count_documents_multichunk", |b| {
+        b.iter(|| {
+            for query in QUERIES {
+                black_box(chunked.count_documents(black_box(query)).unwrap());
+            }
+        })
+    });
+    drop(chunked);
+
+    let positional = zipf_corpus(19, 2_000, 200, 4096);
+    let with_positions = IngestOptions {
+        positions: true,
+        ..lexical_ingest()
+    };
+    group.bench_function("ingest_positions", |b| {
+        b.iter_batched(
+            || (text_store(), positional.clone()),
+            |((dir, core), inputs)| {
+                core.memorize_documents_with(inputs, &with_positions)
+                    .unwrap();
+                (dir, core)
+            },
+            BatchSize::PerIteration,
+        )
+    });
+
+    // Incompressible text: LZ4 falls back to the raw payload on every frame.
+    let mut stream = Stream(23);
+    let noisy: Vec<DocumentInput> = (0..4)
+        .map(|i| {
+            let words: Vec<String> = (0..60_000)
+                .map(|_| format!("{:x}", stream.next() >> 24))
+                .collect();
+            text_input(format!("noisy-{i}"), words.join(" "), 4096)
+        })
+        .collect();
+    group.sample_size(20);
+    group.bench_function("ingest_persistent_incompressible", |b| {
+        b.iter_batched(
+            || {
+                let (dir, core) = text_store();
+                (dir, core, noisy.clone())
+            },
+            |(dir, core, inputs)| {
+                core.memorize_documents_with(inputs, &lexical_ingest())
+                    .unwrap();
+                (dir, core)
+            },
+            BatchSize::PerIteration,
+        )
+    });
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_entangled,
     benchmark_comparison,
     benchmark_hms,
     benchmark_hms_scaling,
+    benchmark_text,
 );
 criterion_main!(benches);
