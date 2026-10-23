@@ -63,37 +63,30 @@ Each HMS row also records the following from its manifest:
 - the audit counts, which must all be zero
 - CPU and load average
 
-## Cost (gpt-5 list price $1.25 / $10 per 1M tokens, to confirm against OpenAI pricing)
+## Cost and run plan
 
-There is no cache credit. The Batch API's 50% discount is **not available** because the harness makes
-synchronous `chat.completions` calls. Using it would mean our own batch implementation of the
-answer/judge step, which is a patch, so these figures are full price.
+Every HMS row is **token-matched**. `retrieval_config.json` caps the returned memory text at 7,000
+o200k tokens per question, matching Mem0's documented ~7k memory tokens. The cap is filled in rank
+order, it is one constant for the whole run, and it is recorded in the manifest. Recall is
+lexical (BM25) only. The literal top-200 (count-matched) variant is documented in the adapter
+README, but it is not scheduled.
 
-Spent so far: **$0.34** ($0.09 smoke, $0.24 LongMemEval calibration, $0.02 evaluate-only smoke).
+Prices are gpt-5 list price ($1.25 / $10 per 1M tokens, to confirm). The Batch API is not usable
+unpatched. Output is calibrated on 3 LoCoMo calls. Spent so far: **$0.34** ($0.09 smoke, $0.24
+LongMemEval calibration, $0.02 evaluate-only smoke). All prompt counts below are from retrieval-only
+runs at $0.
 
-| Run | Count-matched (top-200 raw) | Token-matched (`max_context_tokens: 7000`) | Basis |
+| Run (cap) | Answer prompt | Price | Basis |
 |---|---|---|---|
-| LoCoMo | **$46.6** | **$42.5** (161 memories, 10.2k-token prompt; measured on conv 0) | Prompts counted with `price.py` on conv 0 (152 q, scaled to 1,540). Output from 3 calibrated questions: answer 1,159 completion tokens incl. reasoning, judge 192. Output is ~$21 of the total either way |
-| LongMemEval-S | **$59.5** | ~$10 | 30 predicted questions (all single-session-user; the harness orders by type), 87.6k-token prompts, scaled to 500. Output from 2 calibrated questions |
-| BEAM 1M | ~$208 | ~$25 | Estimate: 200 x 1,081-token mean chunk = ~216k-token prompts, near the 272k input limit (to confirm; whether any prompt exceeds it is unmeasured). 3.45 nuggets/q, event-ordering extract/align calls. Output assumed like LoCoMo |
-| BEAM 10M | ~$59 | ~$7 | Same per-question estimate, 200 q, 3.1 nuggets/q |
+| 1. LoCoMo token-matched (cap $48) | 10.2k tokens, 162 memories | $42.6 | conv 0 measured, 152 q scaled to 1,540 |
+| 2. LongMemEval-S token-matched (cap $13) | ~7k memory plus template | ~$10 | estimate; the $0 retrieval-only step re-prices it before the paid step |
+| 3. BEAM-10M token-matched (cap $10) | ~7.2k | ~$7.2 | BEAM-1M per-question cost x 200 |
+| later: BEAM-1M token-matched | 7.2k tokens, 6.3 memories (max 7.3k) | $25.4 | conv 0 measured, 20 q scaled to 700 |
+| not run: count-matched | LoCoMo 12.3k, LongMemEval 87.6k, BEAM-1M 227k mean / 242k max | $46.6 / $59.5 / $218 | |
 
-Apart from LoCoMo token-matched, the token-matched and BEAM figures are estimates from the formulas above, not `price.py` runs on
-predict output. Before any paid BEAM run, rerun `price.py` on its `--predict-only` output, which
-costs $0. `price.py` has not yet run on BEAM output, and it is unchecked whether BEAM predict files carry `rubric`. A BEAM-1M conversation-0 predict-only run ($0) settles both.
-
-Uncertainty: on LoCoMo, output (reasoning included) is about 45% of the $47 estimate, and it rests on 3 calls of 597, 1,126 and 1,754 completion tokens. Set each run's `--max-spend` to its price plus a margin. Re-price LongMemEval and BEAM from LoCoMo's real proxy log before spending on them, since the $64 plan has only ~$11 of slack.
-
-### Proposed order within the ~$75 credit
-
-1. **LoCoMo, count-matched, $47.** This is the literal protocol. Its memory text is ~9.1k tokens,
-   1.3x Mem0's 6,956; the prompt template adds ~3.2k.
-2. **LongMemEval-S, token-matched, ~$10.** The count-matched version is near full context.
-3. **BEAM-10M, token-matched, ~$7.**
-4. Total about $64. **BEAM-1M (~$25 token-matched)** waits for more credit.
-
-If the founder wants count-matched LongMemEval ($60), it replaces steps 2 and 3, and LoCoMo plus
-LongMemEval then come to about $107, which exceeds the credit.
+BEAM's `--evaluate-only` only recomputes metrics, so BEAM's paid run is the combined run. Its
+retrieval hash is checked against the $0 retrieval-only run. Hybrid keyword+embedding recall is left
+out because the shipped local embedder does not serve the memory API (adapter README).
 
 ## Wall clock
 

@@ -15,11 +15,13 @@ memory-benchmarks run.py --backend oss --mem0-host http://127.0.0.1:<shim>
 | File | Role |
 |---|---|
 | `shim.py` | Mem0 OSS REST surface over the hms-server memory API |
-| `retrieval_config.json` | Frozen retrieval configuration. It is copied into the manifest with its sha256 |
+| `retrieval_config.json` | Frozen primary retrieval configuration (token-matched: `max_context_tokens: 7000`). It is copied into the manifest with its sha256 |
+| `retrieval_config_count_matched.json` | Documented alternative: literal top-200 with no token cap. Not scheduled |
 | `openai_proxy.py` | Pass-through proxy. It records model alias, parameters, resolved snapshot, usage and spend, and enforces a hard USD cap |
 | `run_mem0_protocol.py` | Starts server, shim and proxy, runs the harness with the protocol flags, writes `manifest.json` |
 | `price.py` | Prices a run from `--predict-only` output using the harness's own prompt builders |
 | `manifest_template.json` | Fields every run manifest carries |
+| `clear_failed.py` | Prepares a capped LoCoMo/LongMemEval run for re-scoring |
 | `test_shim.py` | Unit tests for tenant mapping, fact splitting and `created_at` parsing |
 
 Results table: [`docs/benchmarks/MEM0-PROTOCOL.md`](../../../docs/benchmarks/MEM0-PROTOCOL.md).
@@ -46,14 +48,15 @@ quote.
   `created_at` is returned as naive UTC ISO-8601 (`2023-05-08T13:56:00`), which the harness's
   `_to_human_date` parses and sorts. The Mem0 Platform uses the same timestamp semantics.
   Mem0's OSS docker server drops `timestamp`.
-- **Search.** `memory/recall` returns `k = limit` (200), lexical (BM25) only, default options, best
-  first. Results are `{"id", "memory", "score", "created_at"}`, the normalised shape `mem0_client`
+- **Search.** `memory/recall` with `k = limit` (200), lexical (BM25) only, default options, best
+  first, then the token budget. Results are `{"id", "memory", "score", "created_at"}`, the normalised shape `mem0_client`
   produces.
 - **Isolation.** There is one hms-server tenant per harness `user_id`: one per LoCoMo conversation,
   per LongMemEval question and per BEAM conversation.
-- **Optional, off by default:** `max_context_tokens` in the config caps the returned memory text at a
-  fixed o200k token budget, as a rank prefix. It is a run-level constant, never per question. See
-  "Decision needed".
+- **Token budget (primary).** `max_context_tokens: 7000` caps the returned memory text at 7,000
+  o200k tokens, matching Mem0's documented ~7k memory tokens per query. The budget is filled in rank
+  order, and a memory that would overflow it is skipped. It is one run-level constant, never set
+  per question. Every reported row is labelled **token-matched**.
 
 ### Anti-gaming
 
@@ -128,57 +131,162 @@ be true; this was checked on a 1-question LoCoMo evaluate-only smoke run ($0.02)
 
 ## Commands
 
+These are the exact commands. Paid runs start only with the final HMS SHA from the coordinator. Put
+`--data-dir` on a local SSD.
+
 ```sh
 # once
 git clone https://github.com/mem0ai/memory-benchmarks /path/memory-benchmarks
 git -C /path/memory-benchmarks checkout 4b61c5d31b9c668a12b4f5e78064248a02c82d2b
 uv venv /path/venv && VIRTUAL_ENV=/path/venv uv pip install -r /path/memory-benchmarks/requirements.txt \
-    datasets python-dateutil tiktoken          # BEAM imports datasets and dateutil; price.py uses tiktoken
+    datasets python-dateutil tiktoken          # BEAM imports datasets and dateutil; shim and price.py use tiktoken
+git -C /path/hms checkout <final SHA>
 CARGO_TARGET_DIR=/path/target cargo build --release --features server --bin hms-server
 export OPENAI_API_KEY=...                      # never written to any log or manifest
 PY=/path/venv/bin/python; H=benchmarks/public/mem0_protocol
-COMMON="--clone /path/memory-benchmarks --python $PY --hms-bin /path/target/release/hms-server"
+C="--clone /path/memory-benchmarks --python $PY --hms-bin /path/target/release/hms-server"
+LOCOMO=~/.cache/hms-bench/locomo/locomo10.json                      # sha256 79fa87e9...
+LME=~/.cache/hms-bench/downloads/longmemeval_s_cleaned.json
+BEAM=~/.cache/hms-bench/beam                                         # harness caches beam_<size>.json here
 
-# 1. retrieval only, $0: freeze it (data dir on a local SSD; see wall clock)
-$PY $H/run_mem0_protocol.py locomo $COMMON --work runs/locomo --data-dir /ssd/hms-locomo \
-    --dataset ~/.cache/hms-bench/locomo/locomo10.json --max-spend 0 -- --predict-only
-# 2. price it from the frozen retrieval
+# 1. LoCoMo, token-matched, cap $48: retrieval only ($0), price, then answer and judge that retrieval
+$PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
+    --max-spend 0 -- --predict-only
 $PY $H/price.py --clone /path/memory-benchmarks --benchmark locomo \
     --predict runs/locomo/harness-out/predicted_hms-locomo --calls runs/locomo-smoke/openai_calls.jsonl
-# 3. answer + judge exactly that retrieval (no memory calls)
-$PY $H/run_mem0_protocol.py locomo $COMMON --work runs/locomo --data-dir /ssd/hms-locomo \
-    --dataset ~/.cache/hms-bench/locomo/locomo10.json --max-spend 50 -- --evaluate-only
+$PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
+    --max-spend 48 -- --evaluate-only
 
-# LongMemEval-S: same with `longmemeval --dataset .../longmemeval_s_cleaned.json`
-# BEAM: `beam-1m` or `beam-10m --dataset /path/beam-cache` (the harness downloads Mohammadta/BEAM
-#       1M split, 66 MB parquet / 173 MB json; BEAM-10M, 344 MB parquet)
+# 2. LongMemEval-S, token-matched, cap $13 (same three steps)
+$PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
+    --max-spend 0 -- --predict-only
+$PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
+    --max-spend 13 -- --evaluate-only
+
+# 3. BEAM-10M, token-matched, cap $10. The BEAM runner's --evaluate-only only recomputes metrics,
+#    so the paid run is the combined one. Do the $0 retrieval-only run first, in its own work dir,
+#    for pricing and for the retrieval hash.
+$PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m-predict --data-dir /ssd/beam10m-predict \
+    --dataset $BEAM --max-spend 0 -- --predict-only
+$PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m --data-dir /ssd/beam10m --dataset $BEAM \
+    --max-spend 10 -- --run-id beam10m
+# The combined run's retrieval_after.sha256 must equal the predict run's.
+# BEAM-1M (waits for credit): the same with beam-1m.
 ```
 
-`--evaluate-only` exists in all three runners. Mem0 used it for its top-50 LongMemEval file
-(`"evaluate_only": true`). Smoke test (done, $0.09):
-`... locomo ... --max-spend 1 -- --conversations 0 --max-questions 3`.
+Each run writes `WORK/manifest-<predict|evaluate|full>-<UTC stamp>.json`. Before reporting, check:
+- `audit` counts are all zero (and `retrieval_unchanged: true` on evaluate);
+- `llm.blocked == 0`;
+- `llm.resolved_models` shows a single snapshot.
 
-## Decision needed before the real run
+### Salvage after the spend cap (402) or exhausted credit (429)
 
-Top-200 is a **count** of memories. A Mem0 memory is one extracted fact of about 35 tokens. Its
-docs give mean context per query of 6,956 tokens on LoCoMo and 6,787 on LongMemEval. An HMS memory
-is a raw turn, pair or chunk, so the same count carries far more text. Measured answer-prompt tokens
-per question:
+The harness has already written WRONG results with empty answers for the affected questions, and
+`audit.empty_generated_answers` lists them. A plain rerun does not fix them.
 
-| Benchmark | HMS top-200 (count-matched) | Mem0 top-200 | Note |
-|---|---|---|---|
-| LoCoMo | 12,285 mean (152 q of conv 0), of which ~9.1k is memory text | 6,956 memory tokens | 1.3x Mem0 |
-| LongMemEval-S | 87,577 mean (30 q) | ~6.8k | about 76% of a ~115k-token haystack, so near full context |
-| BEAM 1M | ~216k estimated (200 x 1,081-token mean chunk), not measured | n/a | Close to gpt-5's input limit (272k per OpenAI's model page, to confirm); whether any prompt exceeds it is unmeasured |
+**LoCoMo and LongMemEval.** `--evaluate-only` skips every file that already has `cutoff_results`,
+and it refuses to start while any file is missing. So:
+1. Run `$PY $H/clear_failed.py WORK`. For every question in the newest manifest's
+   `audit.empty_generated_answers`, it removes only the `cutoff_results` key.
+2. Raise `--max-spend`.
+3. Rerun `--evaluate-only`.
 
-The count-matched run is the literal protocol. On LongMemEval and BEAM it measures the reader's
-long-context ability more than memory retrieval, and BEAM-1M prompts sit near the context limit.
-`max_context_tokens: 7000` gives a token-matched variant. It is just as fixed, and stated next to
-the score. Pick one of these before any paid run:
+The BEAM runner has no `--rejudge`, and its skip logic is not checked. Each run writes
+`manifest-<predict|evaluate|full>-<UTC stamp>.json`. `retrieval_before` and `retrieval_after` hash
+only the question ids and returned memories. On `--evaluate-only`, `audit.retrieval_unchanged` must
+be true; this was checked on a 1-question LoCoMo evaluate-only smoke run ($0.02).
 
-- (a) count-matched everywhere;
-- (b) token-matched everywhere;
-- (c) count-matched LoCoMo plus token-matched LongMemEval and BEAM, each row labelled.
+## Commands
 
-The hybrid recall arm (text-embedding-3-small) is excluded by the "no model calls at ingest" rule.
-Allowing it is a separate decision.
+These are the exact commands. Paid runs start only with the final HMS SHA from the coordinator. Put
+`--data-dir` on a local SSD.
+
+```sh
+# once
+git clone https://github.com/mem0ai/memory-benchmarks /path/memory-benchmarks
+git -C /path/memory-benchmarks checkout 4b61c5d31b9c668a12b4f5e78064248a02c82d2b
+uv venv /path/venv && VIRTUAL_ENV=/path/venv uv pip install -r /path/memory-benchmarks/requirements.txt \
+    datasets python-dateutil tiktoken          # BEAM imports datasets and dateutil; shim and price.py use tiktoken
+git -C /path/hms checkout <final SHA>
+CARGO_TARGET_DIR=/path/target cargo build --release --features server --bin hms-server
+export OPENAI_API_KEY=...                      # never written to any log or manifest
+PY=/path/venv/bin/python; H=benchmarks/public/mem0_protocol
+C="--clone /path/memory-benchmarks --python $PY --hms-bin /path/target/release/hms-server"
+LOCOMO=~/.cache/hms-bench/locomo/locomo10.json                      # sha256 79fa87e9...
+LME=~/.cache/hms-bench/downloads/longmemeval_s_cleaned.json
+BEAM=~/.cache/hms-bench/beam                                         # harness caches beam_<size>.json here
+
+# 1. LoCoMo, token-matched, cap $48: retrieval only ($0), price, then answer and judge that retrieval
+$PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
+    --max-spend 0 -- --predict-only
+$PY $H/price.py --clone /path/memory-benchmarks --benchmark locomo \
+    --predict runs/locomo/harness-out/predicted_hms-locomo --calls runs/locomo-smoke/openai_calls.jsonl
+$PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
+    --max-spend 48 -- --evaluate-only
+
+# 2. LongMemEval-S, token-matched, cap $13 (same three steps)
+$PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
+    --max-spend 0 -- --predict-only
+$PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
+    --max-spend 13 -- --evaluate-only
+
+# 3. BEAM-10M, token-matched, cap $10. The BEAM runner's --evaluate-only only recomputes metrics,
+#    so the paid run is the combined one. Do the $0 retrieval-only run first, in its own work dir,
+#    for pricing and for the retrieval hash.
+$PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m-predict --data-dir /ssd/beam10m-predict \
+    --dataset $BEAM --max-spend 0 -- --predict-only
+$PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m --data-dir /ssd/beam10m --dataset $BEAM \
+    --max-spend 10 -- --run-id beam10m
+# The combined run's retrieval_after.sha256 must equal the predict run's.
+# BEAM-1M (waits for credit): the same with beam-1m.
+```
+
+Each run writes `WORK/manifest-<predict|evaluate|full>-<UTC stamp>.json`. Before reporting, check:
+- `audit` counts are all zero (and `retrieval_unchanged: true` on evaluate);
+- `llm.blocked == 0`;
+- `llm.resolved_models` shows a single snapshot.
+
+### Salvage after the spend cap (402) or exhausted credit (429)
+
+The harness has already written WRONG results with empty answers for the affected questions, and
+`audit.empty_generated_answers` lists them. A plain rerun does not fix them.
+
+**LoCoMo and LongMemEval.** `--evaluate-only` skips every file that already has `cutoff_results`,
+and it refuses to start while any file is missing. So:
+1. For each question id in `audit.empty_generated_answers`, delete only the `cutoff_results` key
+   from `WORK/harness-out/predicted_<project>/<question_id>.json`:
+   ```sh
+   $PY -c 'import json,sys; [ (lambda p,d: (d.pop("cutoff_results",None), open(p,"w").write(json.dumps(d,indent=2))))(p, json.load(open(p))) for p in sys.argv[1:]]' \
+       WORK/harness-out/predicted_<project>/<qid>.json ...
+   ```
+2. Raise `--max-spend` to cover only the remaining questions.
+3. Rerun the same `--evaluate-only` command.
+
+Do not use `--rejudge`: it re-scores every question.
+
+**BEAM.** There is no `--rejudge`, and `--evaluate-only` does not answer.
+1. Delete the per-question files of the affected questions.
+2. Rerun the combined command with the same `--work`, `--data-dir` and `--run-id`, adding `--resume`.
+
+The run then skips the questions already on disk and re-searches the deleted ones. Retrieval is
+deterministic and the stored memories persist in `--data-dir`, so these questions get the same
+retrieval.
+
+## Cost and prompt sizes (measured with price.py on retrieval-only output)
+
+| Benchmark | Token-matched (primary) | Count-matched (documented, not run) |
+|---|---|---|
+| LoCoMo | 10.2k-token answer prompt (162 memories), **$42.6** (conv 0, 152 q, scaled to 1,540) | 12.3k (~9.1k memory), $46.6 |
+| LongMemEval-S | ~7k memory plus template, **~$10** (estimate) | 87.6k, $59.5 |
+| BEAM 1M | 7.2k prompt (6.3 memories, max 7.3k), **$25.4** (conv 0, 20 q, scaled to 700) | 227k mean, 242k max, $218 |
+| BEAM 10M | **~$7.2** (BEAM-1M per-question cost x 200) | ~$62 |
+
+Prices are gpt-5 list price, with output calibrated on LoCoMo calls. A BEAM chunk averages about
+1.1k tokens, so 7,000 tokens hold about 6 memories.
+
+## Hybrid recall with a local embedder: left out
+
+The shipped on-device embedder (`--features local-models`, Qwen3-Embedding) serves only the
+documents/search path. The memory API's `remember` and `recall` take an embedding only from the
+client, so hybrid recall would need either an embedding model inside the adapter or a server change
+to embed memory facts. Neither is the shipped local embedder, so no hybrid variant is configured.

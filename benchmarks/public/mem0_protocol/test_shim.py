@@ -63,3 +63,12 @@ def test_config_rejects_unknown_keys(tmp_path):
         pass
     else:
         raise AssertionError("unknown key accepted")
+
+
+def test_budget_fills_in_rank_order_and_skips_overflow():
+    hits = ["a", "b", "c", "d"]
+    assert shim.fit_budget(hits, [3, 5, 2, 1], 6) == ["a", "c", "d"]
+    assert shim.fit_budget(hits, [3, 3, 1, 1], 6) == ["a", "b"]  # limit: exactly full
+    assert shim.fit_budget(hits, [3, 2, 1, 1], 6) == ["a", "b", "c"]  # limit - 1 leaves room for one
+    assert shim.fit_budget(hits, [7, 1, 1, 1], 6) == ["b", "c", "d"]  # oversized top hit is skipped
+    assert shim.fit_budget([], [], 6) == []

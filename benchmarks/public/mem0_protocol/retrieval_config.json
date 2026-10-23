@@ -1,4 +1,5 @@
 {
   "max_k": 200,
+  "max_context_tokens": 7000,
   "recall": {}
 }

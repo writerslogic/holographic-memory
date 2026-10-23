@@ -92,6 +92,16 @@ def iso_from_ms(ms: int | None) -> str | None:
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
 
+def fit_budget(hits: list, costs: list[int], budget: int) -> list:
+    """Hits in rank order whose token costs fit the budget; a hit that would overflow it is skipped."""
+    kept, used = [], 0
+    for hit, cost in zip(hits, costs):
+        if used + cost <= budget:
+            kept.append(hit)
+            used += cost
+    return kept
+
+
 def load_config(path: str) -> dict[str, Any]:
     with open(path, encoding="utf-8") as f:
         cfg = json.load(f)
@@ -109,8 +119,8 @@ class Shim:
         self.hms_url = hms_url.rstrip("/")
         self.recall_options = dict(config.get("recall", {}))
         self.max_k = int(config.get("max_k", 200))
-        # Optional fixed token budget on the returned memory texts (o200k_base), applied as a
-        # rank prefix: the same cap for every query, never chosen per question.
+        # Optional fixed token budget on the returned memory texts (o200k_base), filled in rank
+        # order (memories that would overflow it are skipped): the same cap for every query.
         self.max_context_tokens = config.get("max_context_tokens")
         self.enc = None
         if self.max_context_tokens is not None:
@@ -178,13 +188,11 @@ class Shim:
             raise web.HTTPBadRequest(text=f"limit must be 1..={self.max_k}")
         tenant = tenant_for(str(user_id))
         out = await self.hms("recall", tenant, {"query": query, "k": k, **self.recall_options})
+        hits = out.get("results", [])
+        if self.enc is not None:
+            hits = fit_budget(hits, [len(self.enc.encode(r.get("text") or "")) for r in hits], self.max_context_tokens)
         results = []
-        used = 0
-        for r in out.get("results", []):
-            if self.enc is not None:
-                used += len(self.enc.encode(r.get("text") or ""))
-                if used > self.max_context_tokens:
-                    break
+        for r in hits:
             entry: dict[str, Any] = {"id": r["id"], "memory": r.get("text") or "", "score": r.get("score", 0.0)}
             created = iso_from_ms(r.get("eventTime"))
             if created:
