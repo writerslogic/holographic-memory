@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fs::{File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use crate::core::sync::RwLock;
@@ -22,6 +22,7 @@ use crate::core::error::HmsError;
 mod delta;
 mod diagnostics;
 mod format;
+mod merge;
 use delta::Delta;
 use format::{BaseRows, BaseRowsWriter};
 
@@ -83,6 +84,29 @@ impl Default for ConsolidationPolicy {
             min_delta: 1024,
         }
     }
+}
+
+/// How [`UpdatableVGraph::consolidate_with`] publishes the next generation.
+#[derive(Clone, Copy, Debug)]
+pub enum ConsolidationMode {
+    /// Build the base graph again over every live row.
+    Rebuild,
+    /// Keep the previous base graph: splice deleted vertices out of the lists that pointed
+    /// at them and link the delta rows in with the build's insertion pass. Falls back to a
+    /// rebuild when there is no base graph to keep, when the base is renumbered or carries a
+    /// screen or blocks, when the delta outnumbers the surviving base rows, or when the rows
+    /// inserted and deleted since the last rebuild (counted in memory from open) would reach
+    /// `rebuild_after` times the live rows.
+    Merge { rebuild_after: f64 },
+}
+
+/// What a consolidation did.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Consolidation {
+    /// Nothing was pending.
+    Unchanged,
+    Merged,
+    Rebuilt,
 }
 
 #[derive(Clone)]
@@ -278,6 +302,8 @@ pub struct UpdatableVGraph {
     writer: AtomicU8,
     state: RwLock<State>,
     diagnostics: diagnostics::Diagnostics,
+    /// Rows inserted plus rows deleted by merges since the last rebuild (or open).
+    churn: AtomicUsize,
 }
 struct Writer<'a>(&'a AtomicU8);
 impl Writer<'_> {
@@ -410,6 +436,7 @@ impl UpdatableVGraph {
             writer: AtomicU8::new(0),
             state: RwLock::new(State::new(base, manifest)),
             diagnostics: diagnostics::Diagnostics::from_env(),
+            churn: AtomicUsize::new(0),
         })
     }
     /// Saves a graph and its matching vertex encoding without rebuilding the graph.
@@ -456,6 +483,7 @@ impl UpdatableVGraph {
             writer: AtomicU8::new(0),
             state: RwLock::new(State::new(base, manifest)),
             diagnostics: diagnostics::Diagnostics::from_env(),
+            churn: AtomicUsize::new(0),
         })
     }
     /// Opens and replays committed batches; truncates only an incomplete final frame.
@@ -481,6 +509,7 @@ impl UpdatableVGraph {
             writer: AtomicU8::new(0),
             state: RwLock::new(state),
             diagnostics: diagnostics::Diagnostics::from_env(),
+            churn: AtomicUsize::new(0),
         })
     }
     fn writer(&self) -> Result<Writer<'_>, UpdateError> {
@@ -768,10 +797,22 @@ impl UpdatableVGraph {
     pub fn consolidate(&self) -> Result<(), UpdateError> {
         self.consolidate_inner(|_| Ok(()))
     }
+    /// [`Self::consolidate`] with the graph merged or rebuilt as `mode` says.
+    pub fn consolidate_with(&self, mode: ConsolidationMode) -> Result<Consolidation, UpdateError> {
+        self.consolidate_mode(mode, |_| Ok(()))
+    }
     fn consolidate_inner(
         &self,
-        mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+        checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
     ) -> Result<(), UpdateError> {
+        self.consolidate_mode(ConsolidationMode::Rebuild, checkpoint)
+            .map(drop)
+    }
+    fn consolidate_mode(
+        &self,
+        mode: ConsolidationMode,
+        mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
+    ) -> Result<Consolidation, UpdateError> {
         let writer = self.writer()?;
         self.commit_with(&writer)?;
         checkpoint(0)?;
@@ -779,7 +820,7 @@ impl UpdatableVGraph {
         // a clone would, without copying the delta.
         let snapshot = self.state.read();
         if snapshot.delta.len() == 0 && snapshot.deleted == 0 {
-            return Ok(());
+            return Ok(Consolidation::Unchanged);
         }
         let mut manifest = snapshot.manifest.clone();
         manifest.sequence = snapshot.sequence;
@@ -796,9 +837,29 @@ impl UpdatableVGraph {
         ids.sort_unstable();
         manifest.encoding.id_bytes = neighbour_id_bytes(manifest.encoding.id_bytes, ids.len());
         let base = Arc::clone(&snapshot.base);
+        let live_base = base.rows.ids.len() - snapshot.deleted;
+        let changed = snapshot.delta.live.len() + snapshot.deleted;
+        let merge = match mode {
+            ConsolidationMode::Merge { rebuild_after } => {
+                let churn = self.churn.load(Ordering::Relaxed) + changed;
+                base.graph.is_some()
+                    && live_base > 0
+                    && snapshot.delta.live.len() <= live_base
+                    && !manifest.encoding.reorder
+                    && !manifest.encoding.screen
+                    && manifest.encoding.block_bits == 0
+                    && (churn as f64) < rebuild_after * ids.len() as f64
+            }
+            ConsolidationMode::Rebuild => false,
+        };
+        let plan = merge.then(|| {
+            let (new_to_old, old_to_new) =
+                merge::slot_maps(&base.rows.ids, |slot| !snapshot.dead(slot), &ids);
+            (new_to_old, old_to_new)
+        });
         drop(snapshot);
         if !manifest.encoding.screen && manifest.encoding.block_bits == 0 {
-            self.write_mapped_base(&manifest, &ids, &base, &mut checkpoint)?;
+            self.write_mapped_base(&manifest, &ids, &base, plan, &mut checkpoint)?;
         } else {
             let snapshot = self.state.read();
             let mut rows = Vec::new();
@@ -839,21 +900,32 @@ impl UpdatableVGraph {
             return Err(e);
         }
         *self.state.write() = State::new(base, manifest.clone());
+        if merge {
+            self.churn.fetch_add(changed, Ordering::Relaxed);
+        } else {
+            self.churn.store(0, Ordering::Relaxed);
+        }
         if let Err(error) = checkpoint(5) {
             writer.uncertain();
             return Err(error);
         }
         cleanup_generations(&self.dir, manifest.sequence)?;
-        Ok(())
+        Ok(if merge {
+            Consolidation::Merged
+        } else {
+            Consolidation::Rebuilt
+        })
     }
     fn write_mapped_base(
         &self,
         manifest: &Manifest,
         ids: &[u32],
         base: &Base,
+        plan: Option<(Vec<u32>, Vec<u32>)>,
         mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
     ) -> Result<(), UpdateError> {
         checkpoint(6)?;
+        let t = super::prof::start();
         let mut output = BaseRowsWriter::new(&manifest.rows_path(&self.dir), manifest, ids)?;
         let mut prepared = PreparedRows::new(ids.len(), manifest.dim)?;
         let chunk_rows = ((4 << 20) / 4 / manifest.dim).max(1);
@@ -887,13 +959,30 @@ impl UpdatableVGraph {
             base.rows.release_pages()?;
         }
         output.finish()?;
+        super::prof::report("rows", t);
         checkpoint(7)?;
         if let Some(graph) = &base.graph {
             graph.release_pages()?;
         }
         if !ids.is_empty() {
-            let graph = prepared.build(&manifest.build)?;
+            let graph = match (plan, &base.graph) {
+                (Some((new_to_old, old_to_new)), Some(old)) => {
+                    let plan = merge::MergePlan {
+                        old,
+                        new_to_old,
+                        old_to_new,
+                    };
+                    let (dim, build) = (manifest.dim, &manifest.build);
+                    let graph = prepared.build_with(build, |rows, norms| {
+                        merge::merge_structure(rows, norms, dim, build, &plan)
+                    })?;
+                    old.release_pages()?;
+                    graph
+                }
+                _ => prepared.build(&manifest.build)?,
+            };
             checkpoint(8)?;
+            let t = super::prof::start();
             let e = &manifest.encoding;
             VGraph::save_prepared(
                 &graph,
@@ -904,6 +993,7 @@ impl UpdatableVGraph {
                 e.reorder,
                 e.id_bytes,
             )?;
+            super::prof::report("encode", t);
             checkpoint(9)?;
         }
         sync_directory(&self.dir)?;

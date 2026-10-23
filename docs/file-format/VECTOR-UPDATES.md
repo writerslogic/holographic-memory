@@ -46,6 +46,19 @@ This is an engineering tradeoff, not a claim of MERIT-equivalent update costs.
 Consolidation removes routing tombstones. The default advisory policy recommends
 it at 10% allocated delta slots or 20% base tombstones, with a minimum 1024 delta
 slots; thresholds are configurable. Commit never hides a rebuild in its latency.
+A consolidation either rebuilds the base graph over every live row or, with
+`ConsolidationMode::Merge`, keeps the previous base graph: lists that pointed at
+a deleted row take that row's live out-neighbours as candidates and are pruned
+again (FreshDiskANN's delete consolidation), the delta rows are linked in by the
+build's first insertion pass, and the build's second pass then searches again for
+the delta rows, the base rows they link to and the rows that lost a deleted
+neighbour. Upper layers and the entry are recomputed. Merging writes the same
+generation files and publishes them the same way, so the on-disk format and
+recovery are unchanged. It falls back to a rebuild without a base graph, for a
+renumbered base or one with a screen or blocks, when the delta outnumbers the
+surviving base rows, or once the rows inserted and deleted by merges since the last
+rebuild (counted in memory from open) would reach the caller's `rebuild_after`
+multiple of the live rows.
 
 ## Ownership and synchronization
 

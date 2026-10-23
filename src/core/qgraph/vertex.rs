@@ -1496,6 +1496,16 @@ impl VGraph {
         &self.codes.bytes()[at..at + self.cbytes]
     }
 
+    /// Appends the bottom-layer neighbours of stored vertex `v`, in list order, to `out`.
+    pub(super) fn neighbours_into(&self, v: usize, out: &mut Vec<u32>) {
+        self.for_each_neighbour(v, |u| out.push(u));
+    }
+
+    /// The stored id of the bottom-layer entry vertex.
+    pub(super) fn entry_vertex(&self) -> u32 {
+        self.entry
+    }
+
     /// Calls `f` on every neighbour of `v`, in list order.
     #[inline]
     fn for_each_neighbour(&self, v: usize, mut f: impl FnMut(u32)) {
