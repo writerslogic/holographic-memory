@@ -575,10 +575,14 @@ fn thread_pool(threads: usize) -> PyResult<Option<rayon::ThreadPool>> {
 impl PyUpdatableIndex {
     /// Creates an empty index in the new directory `path`. `metric` is "angular" or
     /// "euclidean"; `degree` (even) and `build_ef` shape the graph; `threads` bounds insert,
-    /// consolidation and batch-query parallelism (0 = one per core).
+    /// consolidation and batch-query parallelism (0 = one per core). `alpha` is the pruning
+    /// parameter of the second construction pass, as for `VectorIndex` (1.0: keep only edges
+    /// not occluded by a nearer kept neighbour). At degree 32 on 100-d MS Turing, 1.2 keeps
+    /// nearer, shorter edges and costs 7-9 points of recall@10 at ef 64-128 on both the
+    /// consolidated base and the delta; raise it only with a measured gain at the degree used.
     #[staticmethod]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (path, dim, metric="euclidean", degree=32, build_ef=100, alpha=1.2, threads=0))]
+    #[pyo3(signature = (path, dim, metric="euclidean", degree=32, build_ef=100, alpha=1.0, threads=0))]
     fn create(
         py: Python<'_>,
         path: std::path::PathBuf,

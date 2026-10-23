@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::FxHashMap;
-use parking_lot::RwLock;
+use crate::core::hash::FastMap;
+use crate::core::sync::RwLock;
 
 use super::entangled::EntangledHVec;
 use super::idf::IdfWeights;
@@ -11,7 +11,7 @@ use super::tombstone::TombstoneMap;
 
 pub struct IndexedMemory {
     vectors: RwLock<Vec<(String, EntangledHVec)>>,
-    id_to_idx: RwLock<FxHashMap<String, usize>>,
+    id_to_idx: RwLock<FastMap<String, usize>>,
     postings: RwLock<PostingShard>,
     idf: RwLock<IdfWeights>,
     tombstones: RwLock<TombstoneMap>,
@@ -28,7 +28,7 @@ impl IndexedMemory {
     pub fn new(dim: usize, idf_clip_factor: f64) -> Self {
         Self {
             vectors: RwLock::new(Vec::new()),
-            id_to_idx: RwLock::new(FxHashMap::default()),
+            id_to_idx: RwLock::new(FastMap::default()),
             postings: RwLock::new(PostingShard::new(dim)),
             idf: RwLock::new(IdfWeights::new(dim, idf_clip_factor)),
             tombstones: RwLock::new(TombstoneMap::new()),
@@ -143,7 +143,9 @@ impl IndexedMemory {
         self.dim
     }
 
-    pub fn vectors_read(&self) -> parking_lot::RwLockReadGuard<'_, Vec<(String, EntangledHVec)>> {
+    pub fn vectors_read(
+        &self,
+    ) -> crate::core::sync::RwLockReadGuard<'_, Vec<(String, EntangledHVec)>> {
         self.vectors.read()
     }
 }
@@ -191,7 +193,7 @@ pub fn hopfield_cleanup(
         let attention = sparse_softmax(&overlaps, beta);
 
         let vecs = memory.vectors_read();
-        let mut dim_scores: FxHashMap<u32, f64> = FxHashMap::default();
+        let mut dim_scores: FastMap<u32, f64> = FastMap::default();
         for &(vec_id, weight) in &attention {
             if weight < 1e-10 {
                 continue;

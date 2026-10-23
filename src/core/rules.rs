@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::FxHashMap;
-use parking_lot::RwLock;
+use crate::core::hash::FastMap;
+use crate::core::sync::RwLock;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -14,14 +14,14 @@ pub struct CompositionRule {
 
 pub struct RuleStore {
     rules: RwLock<Vec<CompositionRule>>,
-    by_chain: RwLock<FxHashMap<(String, String), usize>>,
+    by_chain: RwLock<FastMap<(String, String), usize>>,
 }
 
 impl RuleStore {
     pub fn new() -> Self {
         Self {
             rules: RwLock::new(Vec::new()),
-            by_chain: RwLock::new(FxHashMap::default()),
+            by_chain: RwLock::new(FastMap::default()),
         }
     }
 

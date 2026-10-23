@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::FxHashMap;
+use crate::core::hash::FastMap;
 
 use super::tombstone::TombstoneMap;
 
@@ -68,7 +68,7 @@ impl PostingShard {
         dim_weights: &[f32],
         tombstones: &TombstoneMap,
     ) -> Vec<(u32, f32)> {
-        let mut scores: FxHashMap<u32, f32> = FxHashMap::default();
+        let mut scores: FastMap<u32, f32> = FastMap::default();
         for (i, &dim) in query_indices.iter().enumerate() {
             let w = dim_weights.get(i).copied().unwrap_or(1.0);
             for &vec_id in self.get_list(dim) {

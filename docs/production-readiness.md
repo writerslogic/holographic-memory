@@ -36,8 +36,8 @@ projections discarded information; a bit-level conversion cannot recover it. Kee
 and its original application version. Re-encode the original source documents into a new path:
 
 ```sh
-cargo run --release --bin hms-admin -- reencode sources.jsonl ./store-v2 --dimensions 16384
-cargo run --release --bin hms-admin -- verify ./store-v2
+cargo run --release --features cli --bin hms-admin -- reencode sources.jsonl ./store-v2 --dimensions 16384
+cargo run --release --features cli --bin hms-admin -- verify ./store-v2
 ```
 
 Each UTF-8 JSONL line is a `DocumentInput`, for example:
@@ -60,7 +60,7 @@ text feature level before applying the existing cross-level frequency cap. It re
 encoder. To evaluate it with original source documents in a separate store:
 
 ```sh
-cargo run --release --features experimental --bin hms-admin -- reencode sources.jsonl ./union-store --dimensions 16384 --text-encoder multiscale-capped-union-v1
+cargo run --release --features experimental,cli --bin hms-admin -- reencode sources.jsonl ./union-store --dimensions 16384 --text-encoder multiscale-capped-union-v1
 ```
 
 In Rust, select `HmsConfig.text_encoder = TextEncoder::MultiscaleCappedUnionV1`, importing
@@ -75,9 +75,9 @@ it does **not** change its text/vector encoding or upgrade an old embedding sche
 and verification understand legacy frames and the active `CURRENT` generation:
 
 ```sh
-cargo run --release --bin hms-admin -- inspect ./store-v2
-cargo run --release --bin hms-admin -- verify ./store-v2
-cargo run --release --bin hms-admin -- migrate ./store-v2 ./store-copy
+cargo run --release --features cli --bin hms-admin -- inspect ./store-v2
+cargo run --release --features cli --bin hms-admin -- verify ./store-v2
+cargo run --release --features cli --bin hms-admin -- migrate ./store-v2 ./store-copy
 ```
 
 ## Durability and concurrency
@@ -242,7 +242,7 @@ npm test
 npm run test:types
 npm run test:package
 cargo run --release --bin hms-eval -- --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
-cargo run --release --bin hms-workload -- --vectors 1200 --operations 300 --dimensions 4096
+cargo run --release --features cli --bin hms-workload -- --vectors 1200 --operations 300 --dimensions 4096
 ```
 
 `hms-eval` emits relevance, rank, and latency metrics; `hms-workload` measures concurrent query

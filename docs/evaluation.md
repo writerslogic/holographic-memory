@@ -284,8 +284,8 @@ relevance. Exact dense document retrieval avoids this sparse projection loss.
 ## Concurrent workload
 
 ```sh
-cargo run --release --bin hms-workload -- --vectors 1200 --operations 300 --dimensions 4096
-cargo run --release --bin hms-workload -- --vectors 10000 --operations 1000 --dimensions 4096
+cargo run --release --features cli --bin hms-workload -- --vectors 1200 --operations 300 --dimensions 4096
+cargo run --release --features cli --bin hms-workload -- --vectors 10000 --operations 1000 --dimensions 4096
 ```
 
 One writer replaces vectors and also deletes/reinserts every fifth ID while one reader queries

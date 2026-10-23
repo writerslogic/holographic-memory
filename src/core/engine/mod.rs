@@ -30,7 +30,7 @@ use anyhow::{Context, Result};
 
 /// Mutations decoded and applied together while replaying a journal frame.
 const REPLAY_CHUNK: usize = 512;
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -84,11 +84,11 @@ pub struct HmsCore {
     mutation_gate: mutation_gate::MutationGate,
     /// Word interner carried from one document batch to the next.
     stem_memos: crate::core::documents::StemMemoPool,
-    compaction: parking_lot::Mutex<()>,
+    compaction: crate::core::sync::Mutex<()>,
     /// The index metadata (`indices.json`) last written by this process: identical metadata
     /// means identical index files at the same checkpoint, so a repeated persist skips the
     /// writes.
-    persisted_indices: parking_lot::Mutex<Vec<u8>>,
+    persisted_indices: crate::core::sync::Mutex<Vec<u8>>,
     revision: std::sync::atomic::AtomicU64,
     /// The frame format this store is written in (its `store.json` schema); both are read.
     journal: journal::JournalFormat,
@@ -112,7 +112,7 @@ pub struct HmsCore {
     rule_store: Option<RuleStore>,
     decomposer: Option<Decomposer>,
     admission: Option<AdmissionControl>,
-    cognition_loop: parking_lot::Mutex<Option<CognitionLoop>>,
+    cognition_loop: crate::core::sync::Mutex<Option<CognitionLoop>>,
     goal_store: Option<GoalStore>,
     self_modifier: Option<SelfModifier>,
     audit: Option<AuditLog>,
@@ -121,15 +121,15 @@ pub struct HmsCore {
     #[cfg(feature = "security")]
     encryption: Option<std::sync::Arc<super::security::EncryptionManager>>,
     #[cfg(feature = "provenance")]
-    agents: RwLock<super::provenance::access::AgentRegistry>,
+    agents: parking_lot::RwLock<super::provenance::access::AgentRegistry>,
     #[cfg(feature = "provenance")]
     provenance: Option<super::provenance::ProvenanceManager>,
     /// Experimental opt-in plastic relation store (lazily created on first use).
     #[cfg(feature = "experimental")]
-    connection_graph: parking_lot::Mutex<Option<super::connection_graph::ConnectionGraph>>,
+    connection_graph: crate::core::sync::Mutex<Option<super::connection_graph::ConnectionGraph>>,
     /// Experimental opt-in phasor relational memory (lazily created on first use).
     #[cfg(feature = "experimental")]
-    phase_graph: parking_lot::Mutex<Option<super::phase_graph::PhaseGraph>>,
+    phase_graph: crate::core::sync::Mutex<Option<super::phase_graph::PhaseGraph>>,
     // Declared last so it is dropped after every mmap, index, and store
     // component. No subsequent instance can enter while teardown is flushing.
     _store_lock: StoreLock,
@@ -269,8 +269,8 @@ impl HmsCore {
             config: config.clone(),
             mutation_gate: mutation_gate::MutationGate::default(),
             stem_memos: Default::default(),
-            compaction: parking_lot::Mutex::new(()),
-            persisted_indices: parking_lot::Mutex::new(Vec::new()),
+            compaction: crate::core::sync::Mutex::new(()),
+            persisted_indices: crate::core::sync::Mutex::new(Vec::new()),
             revision: std::sync::atomic::AtomicU64::new(super::documents::opaque_counter_start()),
             journal: journal::JournalFormat::for_schema(schema),
             arena,
@@ -292,7 +292,7 @@ impl HmsCore {
             rule_store: rule_st,
             decomposer: decomp,
             admission: adm,
-            cognition_loop: parking_lot::Mutex::new(None),
+            cognition_loop: crate::core::sync::Mutex::new(None),
             goal_store: if config.meaning.enabled {
                 Some(GoalStore::new())
             } else {
@@ -309,13 +309,13 @@ impl HmsCore {
             #[cfg(feature = "security")]
             encryption,
             #[cfg(feature = "provenance")]
-            agents: RwLock::new(super::provenance::access::AgentRegistry::default()),
+            agents: parking_lot::RwLock::new(super::provenance::access::AgentRegistry::default()),
             #[cfg(feature = "provenance")]
             provenance,
             #[cfg(feature = "experimental")]
-            connection_graph: parking_lot::Mutex::new(None),
+            connection_graph: crate::core::sync::Mutex::new(None),
             #[cfg(feature = "experimental")]
-            phase_graph: parking_lot::Mutex::new(None),
+            phase_graph: crate::core::sync::Mutex::new(None),
             _store_lock: store_lock,
         };
 
@@ -971,8 +971,8 @@ impl HmsCore {
             })
             .collect();
 
-        let mut seen: fxhash::FxHashMap<String, f64> =
-            fxhash::FxHashMap::with_capacity_and_hasher(k * 2, Default::default());
+        let mut seen: crate::core::hash::FastMap<String, f64> =
+            crate::core::hash::FastMap::with_capacity_and_hasher(k * 2, Default::default());
 
         // BinaryHeap with RetrievalResult's Ord (min-heap by similarity):
         // pop() removes the lowest-similarity item, so we maintain top-k.
@@ -1637,7 +1637,7 @@ impl HmsCore {
     #[cfg(feature = "experimental")]
     fn connection_graph_lazy(
         &self,
-    ) -> parking_lot::MutexGuard<'_, Option<super::connection_graph::ConnectionGraph>> {
+    ) -> crate::core::sync::MutexGuard<'_, Option<super::connection_graph::ConnectionGraph>> {
         let mut guard = self.connection_graph.lock();
         if guard.is_none() {
             let path = self.storage_path.join("connection_graph.log");
@@ -1684,7 +1684,7 @@ impl HmsCore {
     #[cfg(feature = "experimental")]
     fn phase_graph_lazy(
         &self,
-    ) -> parking_lot::MutexGuard<'_, Option<super::phase_graph::PhaseGraph>> {
+    ) -> crate::core::sync::MutexGuard<'_, Option<super::phase_graph::PhaseGraph>> {
         let mut guard = self.phase_graph.lock();
         if guard.is_none() {
             *guard = Some(super::phase_graph::PhaseGraph::new(2048, 256));

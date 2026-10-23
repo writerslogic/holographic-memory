@@ -50,7 +50,7 @@ pub use crate::core::provenance::TripleProvenanceParams;
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
 pub struct HolographicMemorySystem {
     core: Arc<HmsCore>,
-    memory: parking_lot::RwLock<Arc<crate::core::memory_api::Memory>>,
+    memory: crate::core::sync::RwLock<Arc<crate::core::memory_api::Memory>>,
 }
 
 #[cfg(feature = "node-api")]
@@ -285,7 +285,7 @@ impl HolographicMemorySystem {
         let core = HmsCore::new(dimensions, storage_path, cfg).map_err(napi_err)?;
         let core = Arc::new(core);
         Ok(Self {
-            memory: parking_lot::RwLock::new(Arc::new(crate::core::memory_api::Memory::new(
+            memory: crate::core::sync::RwLock::new(Arc::new(crate::core::memory_api::Memory::new(
                 core.clone(),
             ))),
             core,
@@ -2534,13 +2534,9 @@ mod tests {
         );
 
         // Verify results come from at least 2 different shards
-        use fxhash::FxHasher;
-        use std::hash::Hasher;
         let mut shard_ids: std::collections::HashSet<usize> = std::collections::HashSet::new();
         for r in &results {
-            let mut hasher = FxHasher::default();
-            hasher.write(r.id.as_bytes());
-            shard_ids.insert((hasher.finish() as usize) % 4);
+            shard_ids.insert((crate::core::hash::fx64(r.id.as_bytes()) as usize) % 4);
         }
         assert!(
             shard_ids.len() >= 2,
@@ -3196,12 +3192,13 @@ mod meaning_tests {
 #[cfg(test)]
 mod lib_proptest;
 
-#[cfg(test)]
+#[cfg(all(test, any(feature = "node-api", feature = "server")))]
 mod ts_export_tests {
-    use ts_rs::TS;
-
+    #[cfg(feature = "node-api")]
     #[test]
     fn export_ts_bindings() {
+        use ts_rs::TS;
+
         let cfg = ts_rs::Config::default();
         crate::RetrievalResult::export_all(&cfg).unwrap();
         crate::ConceptCandidate::export_all(&cfg).unwrap();
@@ -3214,6 +3211,7 @@ mod ts_export_tests {
         crate::HmsError::export_all(&cfg).unwrap();
     }
 
+    #[cfg(feature = "server")]
     #[test]
     fn export_json_schemas() {
         use schemars::schema_for;

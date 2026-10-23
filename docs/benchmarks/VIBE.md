@@ -234,7 +234,7 @@ Production defaults remain unchanged. Its reproducible commands, after building
 the pinned graph cache and preparing the native data, are:
 
 ```sh
-cargo build --release --locked --features experimental --bin vibe-rotation
+cargo build --release --locked --features experimental,cli --bin vibe-rotation
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 RAYON_NUM_THREADS=1 \
   taskset -c 0 target/release/vibe-rotation --data /path/to/native-laion \
   --graph-cache /path/to/laion.graph --out /path/to/rotation-laion.json

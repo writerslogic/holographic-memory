@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::{FxHashMap, FxHashSet};
+use crate::core::hash::{FastMap, FastSet};
 
 #[derive(Clone, Debug)]
 pub struct MeaningUnit {
@@ -11,17 +11,17 @@ pub struct MeaningUnit {
 }
 
 pub struct Decomposer {
-    prepositions: FxHashSet<&'static str>,
-    irregular_verbs: FxHashMap<&'static str, &'static str>,
-    auxiliaries: FxHashSet<&'static str>,
-    determiners: FxHashSet<&'static str>,
-    coordinating_conj: FxHashSet<&'static str>,
-    adverbs: FxHashSet<&'static str>,
+    prepositions: FastSet<&'static str>,
+    irregular_verbs: FastMap<&'static str, &'static str>,
+    auxiliaries: FastSet<&'static str>,
+    determiners: FastSet<&'static str>,
+    coordinating_conj: FastSet<&'static str>,
+    adverbs: FastSet<&'static str>,
 }
 
 impl Decomposer {
     pub fn new() -> Self {
-        let prepositions: FxHashSet<&'static str> = [
+        let prepositions: FastSet<&'static str> = [
             "about",
             "above",
             "across",
@@ -87,7 +87,7 @@ impl Decomposer {
 
         // Irregular verbs: inflected form → lemma.
         // Covers the ~80 most common irregular English verbs.
-        let irregular_verbs: FxHashMap<&'static str, &'static str> = [
+        let irregular_verbs: FastMap<&'static str, &'static str> = [
             ("is", "be"),
             ("are", "be"),
             ("was", "be"),
@@ -344,24 +344,24 @@ impl Decomposer {
         .into_iter()
         .collect();
 
-        let auxiliaries: FxHashSet<&'static str> = [
+        let auxiliaries: FastSet<&'static str> = [
             "is", "are", "was", "were", "am", "has", "have", "had", "been", "being", "gets", "got",
             "gotten",
         ]
         .into_iter()
         .collect();
 
-        let determiners: FxHashSet<&'static str> = [
+        let determiners: FastSet<&'static str> = [
             "the", "a", "an", "this", "that", "these", "those", "my", "your", "his", "her", "its",
             "our", "their", "some", "any", "each", "every", "no",
         ]
         .into_iter()
         .collect();
 
-        let coordinating_conj: FxHashSet<&'static str> =
+        let coordinating_conj: FastSet<&'static str> =
             ["and", "or", "but", "nor"].into_iter().collect();
 
-        let adverbs: FxHashSet<&'static str> = [
+        let adverbs: FastSet<&'static str> = [
             "very",
             "really",
             "quite",

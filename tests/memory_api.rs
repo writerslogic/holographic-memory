@@ -1159,12 +1159,12 @@ fn custom_supersession_policy_is_validated() {
 /// A clock that runs one armed action the next time it is read. Recall reads the clock
 /// between its search and its index check, so the action lands a commit in that window.
 struct InterleavingClock {
-    armed: parking_lot::Mutex<Option<Box<dyn FnOnce() + Send>>>,
+    armed: std::sync::Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 
 impl Clock for InterleavingClock {
     fn now_millis(&self) -> Millis {
-        let action = self.armed.lock().take();
+        let action = self.armed.lock().unwrap().take();
         if let Some(action) = action {
             action();
         }
@@ -1176,7 +1176,7 @@ impl Clock for InterleavingClock {
 fn recall_judges_status_from_the_revision_it_searched() {
     let dir = tempfile::tempdir().unwrap();
     let clock = Arc::new(InterleavingClock {
-        armed: parking_lot::Mutex::new(None),
+        armed: std::sync::Mutex::new(None),
     });
     let config = MemoryConfig {
         supersession: SupersessionSpec::LatestBySubject,
@@ -1194,7 +1194,7 @@ fn recall_judges_status_from_the_revision_it_searched() {
     };
     memory.remember(version("v0", 1)).unwrap();
     let writer = Arc::downgrade(&memory);
-    *clock.armed.lock() = Some(Box::new(move || {
+    *clock.armed.lock().unwrap() = Some(Box::new(move || {
         writer
             .upgrade()
             .unwrap()
@@ -1205,7 +1205,7 @@ fn recall_judges_status_from_the_revision_it_searched() {
         .recall("worker reports", &RecallOptions::default())
         .unwrap();
     assert!(
-        clock.armed.lock().is_none(),
+        clock.armed.lock().unwrap().is_none(),
         "the commit did not interleave"
     );
     let current: Vec<&str> = got.iter().map(|r| r.id.as_str()).collect();

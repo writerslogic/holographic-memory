@@ -1091,11 +1091,7 @@ impl PreparedRows {
                 "prepared row count",
             ));
         }
-        // SAFETY: f32 has no padding; these are exactly the initialized bytes of `rows`.
-        let bytes = unsafe {
-            std::slice::from_raw_parts(rows.as_ptr().cast::<u8>(), std::mem::size_of_val(rows))
-        };
-        self.file.write_all(bytes)?;
+        self.file.write_all(bytemuck::cast_slice(rows))?;
         self.values = end.expect("checked row count");
         Ok(())
     }
@@ -1111,19 +1107,14 @@ impl PreparedRows {
         // SAFETY: the unlinked temporary file has no other handles or mappings, and remains
         // exclusively owned until this mutable mapping becomes read-only.
         let mut map = unsafe { memmap2::MmapMut::map_mut(&file) }.map_err(io)?;
-        // SAFETY: a page-aligned mapping of `expected * 4` initialized bytes holds f32 values.
-        let data = unsafe {
-            std::slice::from_raw_parts_mut(map.as_mut_ptr().cast::<f32>(), self.expected)
-        };
+        let data: &mut [f32] = bytemuck::cast_slice_mut(&mut map[..self.expected * 4]);
         validate_build(data, self.dim, params)?;
         let norms = prepare_rows(data, self.dim, params.metric);
         map.flush().map_err(io)?;
         let vectors = map.make_read_only().map_err(io)?;
         #[cfg(unix)]
         vectors.advise(memmap2::Advice::Random).map_err(io)?;
-        // SAFETY: the same aligned f32 matrix is now read-only and has unchanged geometry.
-        let data =
-            unsafe { std::slice::from_raw_parts(vectors.as_ptr().cast::<f32>(), self.expected) };
+        let data: &[f32] = bytemuck::cast_slice(&vectors[..self.expected * 4]);
         let structure = build_structure(data, &norms, self.dim, params)?;
         Ok(PreparedGraph {
             vectors,
@@ -1149,10 +1140,7 @@ pub(crate) struct PreparedGraph {
 #[cfg(not(target_arch = "wasm32"))]
 impl PreparedGraph {
     fn view(&self) -> GraphView<'_> {
-        // SAFETY: PreparedRows owns and validates the aligned immutable f32 mapping.
-        let vectors = unsafe {
-            std::slice::from_raw_parts(self.vectors.as_ptr().cast::<f32>(), self.vectors.len() / 4)
-        };
+        let vectors: &[f32] = bytemuck::cast_slice(&self.vectors[..]);
         GraphView {
             n: vectors.len() / self.dim,
             dim: self.dim,

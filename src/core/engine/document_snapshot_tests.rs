@@ -87,6 +87,75 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
     Ok(())
 }
 
+/// A replacement between a search's capture and its text read scrubs the captured text; the
+/// read must notice instead of pairing the old version with empty text.
+#[test]
+fn ranked_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let core = HmsCore::new(
+        1024,
+        Some(directory.path().display().to_string()),
+        Some(super::fixture_config(2)),
+    )?;
+    core.memorize_document(input("a", "1", "current revision1", "g")?)?;
+    let capture = || -> Result<_> {
+        let prepared = documents::prepare_search("current", &SearchOptions::default(), Some(2))?;
+        let _transaction = core.mutation_gate.read();
+        Ok(documents::capture_search(
+            &core.documents.read(),
+            vec![prepared],
+        ))
+    };
+    let captured = capture()?;
+    let ranked = documents::rank_search(&captured, 0);
+    let read = documents::read_ranked(&captured, 0, ranked).expect("nothing scrubbed");
+    assert_eq!(read[0].text.as_deref(), Some("current revision1"));
+    let ranked = documents::rank_search(&captured, 0);
+    core.memorize_document(input("a", "2", "current revision2", "g")?)?;
+    assert!(documents::read_ranked(&captured, 0, ranked).is_none());
+    let found = core.search_documents("current", &SearchOptions::default())?;
+    assert_eq!(found[0].version, "2");
+    assert_eq!(found[0].text.as_deref(), Some("current revision2"));
+    Ok(())
+}
+
+/// The vector snapshot path reads hit text the same way: a replacement between the ranking
+/// and the read is noticed, and the query falls back to a consistent answer.
+#[test]
+fn vector_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let core = HmsCore::new(
+        1024,
+        Some(directory.path().display().to_string()),
+        Some(super::fixture_config(2)),
+    )?;
+    core.memorize_document(input("a", "1", "current revision1", "g")?)?;
+    assert!(core.rebuild_vector_index(usize::MAX)?);
+    let snapshot = core.vector_index.get().expect("published snapshot");
+    let options = documents::VectorQueryOptions::default();
+    let rank = || {
+        documents::rank_vector_snapshot(
+            &snapshot,
+            &core.documents,
+            &[1.0, 0.0],
+            &[1.0, 0.0],
+            1,
+            &options,
+        )
+    };
+    let ranked = rank()?.expect("current snapshot");
+    let read =
+        documents::read_vector_hits(ranked, &core.documents.read()).expect("nothing scrubbed");
+    assert_eq!(read[0].text.as_deref(), Some("current revision1"));
+    let ranked = rank()?.expect("current snapshot");
+    core.memorize_document(input("a", "2", "current revision2", "g")?)?;
+    assert!(documents::read_vector_hits(ranked, &core.documents.read()).is_none());
+    let found = core.search_vectors(&[1.0, 0.0], 1, &options)?;
+    assert_eq!(found[0].version, "2");
+    assert_eq!(found[0].text.as_deref(), Some("current revision2"));
+    Ok(())
+}
+
 #[test]
 fn stale_document_training_cannot_publish_after_a_durable_replacement() -> Result<()> {
     let directory = tempfile::tempdir()?;

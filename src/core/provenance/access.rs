@@ -16,9 +16,9 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::core::hash::FastMap;
 use anyhow::{anyhow, ensure, Result};
 use ed25519_dalek::SigningKey;
-use fxhash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
 use super::did::{did_key_from_ed25519, ed25519_from_did_key};
@@ -108,14 +108,14 @@ struct Grant {
 #[derive(Default)]
 pub struct AgentRegistry {
     issuers: TrustStore,
-    grants: FxHashMap<String, Grant>,
+    grants: FastMap<String, Grant>,
 }
 
 impl AgentRegistry {
     pub fn new(issuers: TrustStore) -> Self {
         Self {
             issuers,
-            grants: FxHashMap::default(),
+            grants: FastMap::default(),
         }
     }
 

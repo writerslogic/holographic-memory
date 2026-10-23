@@ -306,9 +306,9 @@ impl BaseRows {
         if crc32fast::hash(bytes) != small(crc) {
             return Err(bad(format!("row {slot} checksum")));
         }
-        // SAFETY: `bytes` is `dim` f32s inside the mapping; mmap and row starts align to f32,
-        // all f32 bit patterns are valid, and check() rejects big-endian targets.
-        let row = unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<f32>(), self.dim) };
+        // Row starts align to f32 within the mapping, and check() rejects big-endian targets.
+        let row: &[f32] = bytemuck::try_cast_slice(bytes)
+            .map_err(|_| bad(format!("row {slot} is not f32 aligned")))?;
         validate_vector(row, self.dim, self.metric)?;
         Ok(row)
     }

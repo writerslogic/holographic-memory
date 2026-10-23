@@ -269,14 +269,10 @@ pub fn hash_id(id: &str) -> [u8; 32] {
     hasher.finalize().into()
 }
 
-/// Stub for non-security builds -- hash_id using the built-in FxHash (non-crypto, 8 bytes zero-padded).
+/// Stub for non-security builds -- hash_id using Fx hashing (non-crypto, 8 bytes zero-padded).
 #[cfg(not(feature = "security"))]
 pub fn hash_id(id: &str) -> [u8; 32] {
-    use fxhash::FxHasher;
-    use std::hash::Hasher;
-    let mut h = FxHasher::default();
-    h.write(id.as_bytes());
-    let hash = h.finish().to_le_bytes();
+    let hash = crate::core::hash::fx64(id.as_bytes()).to_le_bytes();
     let mut out = [0u8; 32];
     out[..8].copy_from_slice(&hash);
     out

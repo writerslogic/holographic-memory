@@ -1,8 +1,10 @@
 # Comparative benchmark (hms-bench)
 
 The modern embedding benchmark and upstream contribution work is tracked in
-[VIBE](VIBE.md), and single-core results on the ann-benchmarks runner in
-[ANN-BENCHMARKS](ANN-BENCHMARKS.md), separately from the SIFT/GloVe comparison below.
+[VIBE](VIBE.md), single-core results on the ann-benchmarks runner in
+[ANN-BENCHMARKS](ANN-BENCHMARKS.md), and the big-ann-benchmarks streaming track (inserts,
+deletes and searches under an 8 GiB cap) in [BIG-ANN-STREAMING](BIG-ANN-STREAMING.md),
+separately from the SIFT/GloVe comparison below.
 
 One command reproduces the HMS comparison against the vector, text and embedded-search systems
 people actually use. The generated results are in [COMPARISON.md](COMPARISON.md); the rule that
@@ -20,7 +22,7 @@ uv run --no-project --python 3.13 --with pytest --with numpy==2.5.4 pytest bench
 ```
 
 `hms-bench run` builds nothing itself: it needs `public-bench` and the `competitive_text` example
-(`cargo build --profile dist --bin public-bench --example competitive_text`, with
+(`cargo build --profile dist --features cli,mimalloc --bin public-bench --example competitive_text`, with
 `CARGO_TARGET_DIR` if you use a private target directory; `dist` is the release build without the
 symbol table, the binary the install-size row measures), `uv`, a JVM (17+) for the Lucene row,
 and network access for the first run (datasets, pinned wheels, two Lucene jars with pinned sha256).
@@ -165,8 +167,55 @@ their files carry `mode: "server"` and render under "Server mode results".
   semantics per system) is written into every results file under `protocol`.
 * `hms-server`'s text row ingests through the memory API (`remember`) and queries through
   `recall` with lexical weight 1 and semantic weight 0, the same document-search options as the
-  embedded `hms` row. Its graph index is held in memory only, so every serving process rebuilds it before the first
-  ANN query (counted into cold start and serving RSS).
+  embedded `hms` row. Its ANN graph is persisted with the tenant store and opened at start; the
+  harness still sends index maintenance after every restart (a no-op when nothing changed), so
+  cold start covers that check.
+
+### Server mode results (`benchmarks/results/server_v2.json`)
+
+Paired run on one Apple M4 (macOS, Darwin arm64): the `before` arm is `hms-server` at `791749b`
+(graph rebuilt by maintenance after every restart) with every comparator, the `after` arm is
+`hms-server` at `feae232` (persisted graph opened at start) alone, set against the comparator rows
+of the before arm. Comparators run the build matching HMS's build effort (m32e500 variants); one
+build, three interleaved serve rounds; verdicts are ratios of round medians with a 5% band, without
+bootstrap intervals. The host carried other work during the before arm (load recorded per round in
+the file); Qdrant's second-round cold start (8.9 s) is kept as measured. Server data directories
+lived on the internal SSD. Replace and delete are one durable request each (`protocol.durability`).
+
+Machine: Apple M4, Darwin arm64. Load (1 min) during the ANN serve rounds: before arm 6.0-8.6, after arm 3.0-3.5.
+
+ANN (glove-100-angular, 20,000 vectors, 600 queries, k=10; QPS and p50 at the sweep point with recall@10 >= 0.95; medians over 3 serve rounds):
+
+| System | Arm | Build s | Cold start s (rounds) | QPS @0.95 | p50 us | Recall | Replace ms/op | Delete ms/op | Serving RSS MB |
+|---|---|---|---|---|---|---|---|---|---|
+| hms-server (HTTP) (graph) | before | 2.0 | 1.32 (1.11, 1.48, 1.32) | 6826 | 128 | 0.955 | 3.20 | 9.22 | 52 |
+| Qdrant server (m32e500) | comparator | 21.7 | 0.35 (0.35, 8.89, 0.13) | 4445 | 206 | 0.964 | 1.41 | 1.25 | 103 |
+| Weaviate (m32e500) | comparator | 15.7 | 0.78 (0.85, 0.62, 0.78) | 1049 | 867 | 0.986 | 13.30 | 0.10 | 169 |
+| PostgreSQL + pgvector (hnsw_m32e500) | comparator | 12.9 | 0.15 (0.13, 0.15, 0.30) | 1382 | 686 | 0.950 | 17.82 | 4.10 | 27 |
+| Redis 8 query engine (hnsw_m32e500) | comparator | 7.5 | 3.47 (3.47, 3.67, 2.94) | 4654 | 200 | 0.975 | 4.93 | 4.33 | 47 |
+| hms-server (HTTP) (graph) | after | 2.4 | 0.07 (0.34, 0.07, 0.07) | 7762 | 128 | 0.954 | 3.83 | 3.95 | 50 |
+
+Text (BEIR nfcorpus, 3,633 documents, 323 queries, k=100, 3 passes per round; medians over 3 rounds):
+
+| System | Arm | Ingest s | Cold start s (rounds) | QPS | p50 us | nDCG@10 | Replace ms/op | Delete ms/op |
+|---|---|---|---|---|---|---|---|---|
+| hms-server (HTTP) | before | 1.45 | 0.13 (0.20, 0.13, 0.12) | 3300 | 380 | 0.292 | 6.04 | 9.10 |
+| Meilisearch | comparator | 1.80 | 0.33 (0.43, 0.23, 0.33) | 956 | 850 | 0.226 | 60.52 | 261.20 |
+| Typesense | comparator | 2.60 | 3.27 (3.28, 3.25, 3.27) | 166 | 3845 | 0.208 | 1.40 | 0.57 |
+| PostgreSQL tsvector (ts_rank) | comparator | 1.01 | 0.28 (1.15, 0.18, 0.28) | 1500 | 288 | 0.275 | 3.83 | 3.98 |
+| ParadeDB pg_search (BM25) | comparator | 2.56 | 0.44 (0.44, 0.32, 0.52) | 2616 | 237 | 0.290 | 3.20 | 3.99 |
+| hms-server (HTTP) | after | 1.32 | 0.13 (0.16, 0.13, 0.12) | 3412 | 372 | 0.292 | 5.97 | 9.16 |
+
+Verdicts, hms-server against each comparator (ratio of medians, 5% band), before -> after:
+
+- qdrant-server:m32e500: cold_start LOSS 3.80x -> WIN 4.80x; build WIN 10.61x -> WIN 9.09x; qps_at_0.95 WIN 1.54x -> WIN 1.75x; p50_at_0.95 WIN 1.61x -> WIN 1.62x; replace LOSS 2.27x -> LOSS 2.71x; delete LOSS 7.38x -> LOSS 3.16x; serve_rss WIN 1.99x -> WIN 2.07x
+- weaviate:m32e500: cold_start LOSS 1.69x -> WIN 10.77x; build WIN 7.68x -> WIN 6.58x; qps_at_0.95 WIN 6.50x -> WIN 7.40x; p50_at_0.95 WIN 6.78x -> WIN 6.79x; replace WIN 4.15x -> WIN 3.48x; delete LOSS 96.30x -> LOSS 41.25x; serve_rss WIN 3.29x -> WIN 3.42x
+- pgvector:hnsw_m32e500: cold_start LOSS 9.09x -> WIN 2.01x; build WIN 6.31x -> WIN 5.40x; qps_at_0.95 WIN 4.94x -> WIN 5.61x; p50_at_0.95 WIN 5.37x -> WIN 5.38x; replace WIN 5.56x -> WIN 4.66x; delete LOSS 2.25x -> TIE 1.04x; serve_rss LOSS 1.93x -> LOSS 1.85x
+- redis-vss:hnsw_m32e500: cold_start WIN 2.62x -> WIN 47.84x; build WIN 3.68x -> WIN 3.15x; qps_at_0.95 WIN 1.47x -> WIN 1.67x; p50_at_0.95 WIN 1.56x -> WIN 1.56x; replace WIN 1.54x -> WIN 1.29x; delete LOSS 2.13x -> WIN 1.10x; serve_rss LOSS 1.09x -> TIE 0.96x
+- meilisearch: cold_start WIN 2.56x -> WIN 2.57x; ingest WIN 1.24x -> WIN 1.36x; qps WIN 3.45x -> WIN 3.57x; p50 WIN 2.23x -> WIN 2.29x; replace WIN 10.02x -> WIN 10.14x; delete WIN 28.70x -> WIN 28.52x
+- typesense: cold_start WIN 25.02x -> WIN 25.11x; ingest WIN 1.79x -> WIN 1.97x; qps WIN 19.88x -> WIN 20.56x; p50 WIN 10.11x -> WIN 10.34x; replace LOSS 4.31x -> LOSS 4.26x; delete LOSS 15.97x -> LOSS 16.07x
+- pg-tsvector: cold_start WIN 2.16x -> WIN 2.17x; ingest LOSS 1.44x -> LOSS 1.31x; qps WIN 2.20x -> WIN 2.27x; p50 LOSS 1.32x -> LOSS 1.29x; replace LOSS 1.58x -> LOSS 1.56x; delete LOSS 2.29x -> LOSS 2.30x
+- paradedb: cold_start WIN 3.38x -> WIN 3.39x; ingest WIN 1.76x -> WIN 1.93x; qps WIN 1.26x -> WIN 1.30x; p50 LOSS 1.60x -> LOSS 1.57x; replace LOSS 1.89x -> LOSS 1.87x; delete LOSS 2.28x -> LOSS 2.30x
 
 ## Plugging in more systems
 

@@ -318,10 +318,10 @@ hintless scheme such as YPIR [3].
 Regenerate with:
 
 ```sh
-cargo run --release --features private-search --bin private-rank-bench -- \
+cargo run --release --features private-search,cli --bin private-rank-bench -- \
   sweep --data <glove-100-angular dir> --sizes 1000000 --clusters 1,16,32,64,128,256 \
   --out benchmarks/results/private_rank_sweep_1m.json
-cargo run --release --features private-search --bin private-rank-bench -- \
+cargo run --release --features private-search,cli --bin private-rank-bench -- \
   protocol --data <glove-100-angular dir> --sizes 1000000 --queries 64 --protocol-queries 30 \
   --configs 1:1:4:4,16:4:4:4,32:8:4:4,64:8:4:4,64:16:4:4,64:16:1:4 \
   --out benchmarks/results/private_rank_protocol_1m.json

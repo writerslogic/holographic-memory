@@ -1123,10 +1123,7 @@ impl VGraph {
                             scales[i] = s;
                             offsets[i] = dot_vr - s * dot_lv;
                         }
-                        // SAFETY-free reinterpretation: the record is plain bytes.
-                        let rec_u8 = unsafe {
-                            std::slice::from_raw_parts_mut(rec.as_mut_ptr().cast::<u8>(), rec.len())
-                        };
+                        let rec_u8: &mut [u8] = bytemuck::cast_slice_mut(rec);
                         pack32(nibbles, m, &mut rec_u8[..16 * m]);
                         for (i, (s, e)) in scales.iter().zip(&offsets).enumerate() {
                             let at = 16 * m + 4 * i;

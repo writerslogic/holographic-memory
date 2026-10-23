@@ -30,7 +30,7 @@
 //! Retrieval ranks over all known entities (`O(entities * dim)`); a production
 //! path would prune candidates with the ANN index. Experimental and opt-in.
 
-use fxhash::FxHashMap;
+use crate::core::hash::FastMap;
 
 use crate::core::entangled::hash_u64;
 
@@ -51,7 +51,7 @@ pub struct PhaseGraph {
     n_phases: u32,
     hist: Vec<u32>, // dim * n_phases, row-major: hist[d * n_phases + phase]
     entities: Vec<String>,
-    entity_set: FxHashMap<String, ()>,
+    entity_set: FastMap<String, ()>,
     events: Vec<Event>,
     chain: u64,
 }
@@ -68,7 +68,7 @@ impl PhaseGraph {
             n_phases,
             hist: vec![0u32; dim * n_phases as usize],
             entities: Vec::new(),
-            entity_set: FxHashMap::default(),
+            entity_set: FastMap::default(),
             events: Vec::new(),
             chain: 0,
         }

@@ -7,7 +7,7 @@
 //! missing relations. For example, if most cities have a `country` relation
 //! but city X does not, that is a gap.
 
-use fxhash::{FxHashMap, FxHashSet};
+use crate::core::hash::{FastMap, FastSet};
 
 use crate::core::triple_store::TripleStore;
 
@@ -41,7 +41,7 @@ impl GapDetector {
         let snapshot = triple_store.snapshot();
 
         // Build entity -> set of relations (as subject)
-        let mut entity_rels: FxHashMap<String, FxHashSet<String>> = FxHashMap::default();
+        let mut entity_rels: FastMap<String, FastSet<String>> = FastMap::default();
         for t in &snapshot {
             entity_rels
                 .entry(t.subject_id.clone())
@@ -50,7 +50,7 @@ impl GapDetector {
         }
 
         // Build relation -> set of subjects (for peer lookup)
-        let mut rel_subjects: FxHashMap<String, FxHashSet<String>> = FxHashMap::default();
+        let mut rel_subjects: FastMap<String, FastSet<String>> = FastMap::default();
         for t in &snapshot {
             rel_subjects
                 .entry(t.relation_id.clone())
@@ -62,7 +62,7 @@ impl GapDetector {
 
         for (entity, rels) in &entity_rels {
             // Find peers: other entities sharing >= min_shared_relations
-            let mut peer_candidates: FxHashMap<String, usize> = FxHashMap::default();
+            let mut peer_candidates: FastMap<String, usize> = FastMap::default();
             for rel in rels {
                 if let Some(subjects) = rel_subjects.get(rel) {
                     for peer in subjects {
@@ -84,7 +84,7 @@ impl GapDetector {
             }
 
             // Collect all relations that peers have (O(1) lookup via entity_rels)
-            let mut peer_rel_counts: FxHashMap<String, usize> = FxHashMap::default();
+            let mut peer_rel_counts: FastMap<String, usize> = FastMap::default();
             for peer in &peers {
                 if let Some(peer_rels) = entity_rels.get(peer) {
                     for rel in peer_rels {

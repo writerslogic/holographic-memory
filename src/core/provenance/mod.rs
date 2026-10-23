@@ -54,7 +54,7 @@ struct LogEntryRef<'a> {
 pub struct ProvenanceManager {
     signing_key: SigningKey,
     issuer_did: String,
-    records: RwLock<fxhash::FxHashMap<String, ProvenanceRecord>>,
+    records: RwLock<crate::core::hash::FastMap<String, ProvenanceRecord>>,
     chain_head: Mutex<[u8; 32]>,
     logical_clock: std::sync::atomic::AtomicU64,
     log_path: Option<PathBuf>,
@@ -118,7 +118,7 @@ impl ProvenanceManager {
         Self {
             signing_key,
             issuer_did,
-            records: RwLock::new(fxhash::FxHashMap::default()),
+            records: RwLock::new(crate::core::hash::FastMap::default()),
             chain_head: Mutex::new([0u8; 32]),
             logical_clock: std::sync::atomic::AtomicU64::new(0),
             log_path: None,
@@ -345,8 +345,11 @@ impl ProvenanceManager {
     /// would break the log.
     fn load_log(
         path: Option<&Path>,
-    ) -> Result<(fxhash::FxHashMap<String, ProvenanceRecord>, [u8; 32])> {
-        let mut map = fxhash::FxHashMap::default();
+    ) -> Result<(
+        crate::core::hash::FastMap<String, ProvenanceRecord>,
+        [u8; 32],
+    )> {
+        let mut map = crate::core::hash::FastMap::default();
         let mut head = [0u8; 32];
         let Some(path) = path else {
             return Ok((map, head));

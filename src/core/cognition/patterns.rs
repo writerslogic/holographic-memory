@@ -6,7 +6,7 @@
 //! Groups triples by relation, counts co-occurring subject/object atoms,
 //! and surfaces recurring structural regularities.
 
-use fxhash::FxHashMap;
+use crate::core::hash::FastMap;
 
 use crate::core::triple_store::TripleStore;
 
@@ -44,7 +44,7 @@ impl PatternScanner {
         let snapshot = triple_store.snapshot();
 
         // Group by relation
-        let mut by_relation: FxHashMap<String, (Vec<String>, Vec<String>)> = FxHashMap::default();
+        let mut by_relation: FastMap<String, (Vec<String>, Vec<String>)> = FastMap::default();
         for t in &snapshot {
             let entry = by_relation
                 .entry(t.relation_id.clone())
@@ -85,7 +85,7 @@ impl PatternScanner {
         let snapshot = triple_store.snapshot();
 
         // Build entity -> set of relations
-        let mut entity_relations: FxHashMap<String, Vec<String>> = FxHashMap::default();
+        let mut entity_relations: FastMap<String, Vec<String>> = FastMap::default();
         for t in &snapshot {
             entity_relations
                 .entry(t.subject_id.clone())

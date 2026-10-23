@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::FxHashMap;
-use parking_lot::RwLock;
+use crate::core::hash::FastMap;
+use crate::core::sync::RwLock;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TripleRecord {
@@ -15,20 +15,20 @@ pub struct TripleRecord {
 
 pub struct TripleStore {
     triples: RwLock<Vec<TripleRecord>>,
-    by_subject: RwLock<FxHashMap<String, Vec<usize>>>,
-    by_relation: RwLock<FxHashMap<String, Vec<usize>>>,
-    by_object: RwLock<FxHashMap<String, Vec<usize>>>,
-    by_composite: RwLock<FxHashMap<String, Vec<usize>>>,
+    by_subject: RwLock<FastMap<String, Vec<usize>>>,
+    by_relation: RwLock<FastMap<String, Vec<usize>>>,
+    by_object: RwLock<FastMap<String, Vec<usize>>>,
+    by_composite: RwLock<FastMap<String, Vec<usize>>>,
 }
 
 impl TripleStore {
     pub fn new() -> Self {
         Self {
             triples: RwLock::new(Vec::new()),
-            by_subject: RwLock::new(FxHashMap::default()),
-            by_relation: RwLock::new(FxHashMap::default()),
-            by_object: RwLock::new(FxHashMap::default()),
-            by_composite: RwLock::new(FxHashMap::default()),
+            by_subject: RwLock::new(FastMap::default()),
+            by_relation: RwLock::new(FastMap::default()),
+            by_object: RwLock::new(FastMap::default()),
+            by_composite: RwLock::new(FastMap::default()),
         }
     }
 
