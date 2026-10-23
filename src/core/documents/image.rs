@@ -707,7 +707,29 @@ impl ServingImage {
     /// The live store this checkpoint holds, chunk text moved to `text` when given: the same
     /// documents, slots (free ones included), posting bytes and counts, with each chunk's terms
     /// read back from the postings.
+    #[cfg(test)]
     pub(crate) fn hydrate(&self, text: Option<Arc<TextSegment>>) -> Result<DocumentStore> {
+        self.hydrate_excluding(text, &[])
+    }
+
+    /// [`Self::hydrate`] with the postings of the documents `dead` left out: those documents are
+    /// still installed, with no terms, for the caller to remove with
+    /// `DocumentStore::remove_unindexed`, which then leaves the store exactly as hydrating
+    /// everything and removing them would, without decoding and re-encoding every posting list
+    /// a dead document is in.
+    pub(crate) fn hydrate_excluding(
+        &self,
+        text: Option<Arc<TextSegment>>,
+        dead: &[String],
+    ) -> Result<DocumentStore> {
+        let dead: std::collections::HashSet<&str> = dead.iter().map(String::as_str).collect();
+        let dead_ordinal: Vec<bool> = if dead.is_empty() {
+            Vec::new()
+        } else {
+            (0..self.docs)
+                .map(|ordinal| dead.contains(self.id(ordinal)))
+                .collect()
+        };
         // Owner of every occupied slot, and each document's slots in chunk order.
         let mut document_slots: Vec<Vec<usize>> = vec![Vec::new(); self.docs];
         let mut form_of = vec![u8::MAX; self.slots];
@@ -722,6 +744,16 @@ impl ServingImage {
                 "checkpoint chunk slots out of order"
             );
             slots.push(slot);
+        }
+        let mut dead_slot = vec![false; if dead.is_empty() { 0 } else { self.slots }];
+        for (slots, _) in document_slots
+            .iter()
+            .zip(&dead_ordinal)
+            .filter(|(_, &dead)| dead)
+        {
+            for &slot in slots {
+                dead_slot[slot] = true;
+            }
         }
         let records = (0..self.docs)
             .map(|ordinal| self.record(ordinal))
@@ -752,7 +784,7 @@ impl ServingImage {
                 u32_at(blocks, 4) as usize
             };
             out.reserve_exact(dictionary.terms);
-            for index in 0..dictionary.terms {
+            for _ in 0..dictionary.terms {
                 let prefix = usize::try_from(reader.varint()?)?;
                 term.truncate(prefix);
                 term.extend_from_slice(reader.bytes()?);
@@ -764,6 +796,9 @@ impl ServingImage {
                 let mut seen = 0u32;
                 let mut failure = None;
                 let mut live = Vec::with_capacity(count as usize);
+                // The term's position among the lists kept: a list of dead documents only is
+                // left out, and no live slot refers to it.
+                let position = out.len() as u32;
                 Postings { bytes, count }.try_for_each(|slot, frequency| {
                     let fits = slot < self.slots
                         && form_of[slot] == form as u8
@@ -772,8 +807,10 @@ impl ServingImage {
                         failure = Some(slot);
                         return false;
                     }
-                    forward[slot].push((index as u32, frequency));
-                    live.push((slot, frequency));
+                    if dead_slot.get(slot) != Some(&true) {
+                        forward[slot].push((position, frequency));
+                        live.push((slot, frequency));
+                    }
                     last = slot;
                     seen += 1;
                     true
@@ -782,8 +819,10 @@ impl ServingImage {
                     failure.is_none() && seen == count,
                     "checkpoint posting list for a slot it cannot hold"
                 );
-                let term = String::from_utf8(term.clone()).context("checkpoint term")?;
-                out.push((term, live));
+                let term = std::str::from_utf8(&term).context("checkpoint term")?;
+                if !live.is_empty() {
+                    out.push((term.to_owned(), live));
+                }
             }
         }
         let terms: [Vec<&str>; 2] = [

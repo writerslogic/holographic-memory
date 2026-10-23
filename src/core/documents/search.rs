@@ -1608,6 +1608,69 @@ mod tests {
         }
     }
 
+    /// Rebuilding a checkpoint without the postings of its dead documents and then removing
+    /// them leaves the store byte for byte as rebuilding everything and removing them does,
+    /// before and after more writes, below and above the slot count at which a removal re-slots
+    /// the whole store.
+    #[test]
+    fn hydrating_without_dead_postings_matches_removing_them() {
+        for (documents, dead_every, keep_every) in [(300, 7, 1), (1500, 1, 3)] {
+            let mut state = 0x2545_f491_4f6c_dd1du64;
+            let mut store = DocumentStore::default();
+            for id in 0..documents {
+                let mut document = random_document(id, &mut state);
+                for chunk in &mut document.chunks {
+                    chunk.vector_state = super::super::VectorState::Lexical;
+                    chunk.vector =
+                        crate::core::entangled::EntangledHVec::from_indices(Vec::new(), 1024);
+                }
+                store.insert(document.id.clone(), document);
+            }
+            let bytes = super::super::image::encode(&store, 1, 1024)
+                .unwrap()
+                .unwrap();
+            let image = ServingImage::new(super::super::Backing::Owned(bytes)).unwrap();
+            // Every `dead_every`-th document, sparing every `keep_every`-th of those, in id order
+            // as the overlay lists them.
+            let dead: Vec<String> = (0..documents)
+                .step_by(dead_every)
+                .enumerate()
+                .filter(|(i, _)| keep_every == 1 || i % keep_every != 0)
+                .map(|(_, id)| format!("d{id:04}"))
+                .collect();
+            let mut removed = image.hydrate(None).unwrap();
+            for id in &dead {
+                removed.remove_scrubbed(id).unwrap();
+            }
+            let mut excluded = image.hydrate_excluding(None, &dead).unwrap();
+            for id in &dead {
+                excluded.remove_unindexed_scrubbed(id).unwrap();
+            }
+            let encode = |store: &DocumentStore| {
+                super::super::image::encode(store, 1, 1024)
+                    .unwrap()
+                    .expect("lexical-only store")
+            };
+            assert_eq!(encode(&excluded), encode(&removed));
+            for id in documents..documents + 40 {
+                let document = random_document(id, &mut state);
+                for store in [&mut removed, &mut excluded] {
+                    let mut document = document.clone();
+                    for chunk in &mut document.chunks {
+                        chunk.vector_state = super::super::VectorState::Lexical;
+                        chunk.vector =
+                            crate::core::entangled::EntangledHVec::from_indices(Vec::new(), 1024);
+                    }
+                    store.insert(document.id.clone(), document);
+                }
+            }
+            for postings in &excluded.postings {
+                postings.assert_valid();
+            }
+            assert_eq!(encode(&excluded), encode(&removed));
+        }
+    }
+
     /// Documents with a chunk holding a term of `text` at a positive frequency, read from the
     /// chunks themselves.
     fn matching_documents(store: &DocumentStore, text: &str) -> usize {
