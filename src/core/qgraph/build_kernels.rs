@@ -88,6 +88,7 @@ fn prefetch_lines(ptr: *const i8, bytes: usize) {
 /// `[dot(a, b[0]), .., dot(a, b[3])]`, bit-identical to [`super::kernels::dot`]: lane `j` of
 /// every accumulator sums the products of coordinates `j mod 16` in order, with a separate
 /// multiply and add, and the lanes and tail are reduced as `dot` reduces them.
+#[must_use]
 #[inline]
 pub(crate) fn dot4(a: &[f32], b: [&[f32]; 4]) -> [f32; 4] {
     for r in b {

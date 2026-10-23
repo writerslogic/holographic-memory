@@ -88,6 +88,7 @@ impl Manifest {
         file.read_exact(&mut bytes[8..])?;
         Self::decode(&bytes)
     }
+    #[must_use]
     pub fn encode(&self) -> Vec<u8> {
         let mut out = MANIFEST_MAGIC.to_vec();
         words(&mut out, &[ORDER]);
@@ -128,7 +129,7 @@ impl Manifest {
             .as_chunks::<8>()
             .0
             .iter()
-            .map(|c| word(c))
+            .map(|&c| u64::from_le_bytes(c))
             .collect();
         if h[0] == 0
             || h[0] > MAX_DIM as u64
@@ -280,7 +281,7 @@ impl BaseRows {
                 .as_chunks::<4>()
                 .0
                 .iter()
-                .map(|c| small(c)),
+                .map(|&c| u32::from_le_bytes(c)),
         );
         if ids.last() == Some(&u32::MAX) || ids.windows(2).any(|p| p[0] >= p[1]) {
             return Err(bad("rows ids not strictly ordered"));
@@ -383,6 +384,7 @@ impl BaseRowsWriter {
     }
 }
 
+#[must_use]
 pub(super) fn log_header(manifest: &Manifest) -> Vec<u8> {
     let mut out = LOG_MAGIC.to_vec();
     words(&mut out, &[ORDER]);
@@ -515,7 +517,7 @@ pub(super) fn replay(
                         .as_chunks::<4>()
                         .0
                         .iter()
-                        .map(|c| f32::from_bits(small(c)))
+                        .map(|&c| f32::from_le_bytes(c))
                         .collect();
                     cursor = end;
                     validate_vector(&row, manifest.dim, manifest.build.metric)

@@ -97,6 +97,7 @@ where
     }
 }
 
+#[must_use]
 pub(crate) fn dot(a: &[f32], b: &[f32]) -> f32 {
     debug_assert_eq!(a.len(), b.len());
     let mut acc = [0f32; 16];
@@ -180,6 +181,7 @@ pub(crate) fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut 
 
 /// [`raw_estimates`] for one code row: NEON AND + CNT over the bit planes for the row widths
 /// the index produces (16 planes x 64 words at most), scalar otherwise.
+#[must_use]
 #[inline]
 pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
     #[cfg(target_arch = "aarch64")]
@@ -490,6 +492,7 @@ mod tier {
 
 /// [`DotI8`] resolved at compile time, so the search loop can inline it: SDOT when the build
 /// target enables `dotprod` (every Apple core), else the runtime-detected kernel.
+#[must_use]
 #[inline(always)]
 pub(crate) fn dot_i8_inline(a: &[i8], b: &[i8]) -> i32 {
     #[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
@@ -521,6 +524,7 @@ pub(crate) fn interleave_for_i4(q: &[i8], out: &mut [i8]) {
 
 /// `sum_i q_i * c_i` for a query code laid out by [`interleave_for_i4`] and a row packed as
 /// [`dot_f32_i4`] reads it; `q.len() == 2 * packed.len()`, a multiple of 32.
+#[must_use]
 #[inline(always)]
 pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
     assert!(q.len() == 2 * packed.len() && packed.len().is_multiple_of(16));
@@ -557,6 +561,7 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
 /// [`dot_i4_inline`] of one query against four rows of equal length. On AVX2 the query's
 /// widened halves are loaded once per 16 packed bytes and the four row loads are in flight
 /// together; the sums are the same integers, so every result equals the single call's.
+#[must_use]
 #[inline(always)]
 pub(crate) fn dot_i4_inline_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
     #[cfg(target_arch = "x86_64")]
@@ -599,6 +604,7 @@ pub(crate) fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
 
 /// `sum_i a_i * c_i` where `c` is packed two signed 4-bit values per byte, element `2j` in the
 /// low nibble of byte `j` and `2j + 1` in the high nibble; `a.len() == 2 * packed.len()`.
+#[must_use]
 pub(crate) fn dot_f32_i4(a: &[f32], packed: &[i8]) -> f32 {
     debug_assert_eq!(a.len(), 2 * packed.len());
     let mut acc = [0f32; 16];
@@ -628,6 +634,7 @@ pub(crate) fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
 }
 
 /// `sum_i a_i * b_i` for a float row and an i8 row of the same length.
+#[must_use]
 pub(crate) fn dot_f32_i8(a: &[f32], b: &[i8]) -> f32 {
     debug_assert_eq!(a.len(), b.len());
     let mut acc = [0f32; 16];
