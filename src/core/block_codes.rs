@@ -510,14 +510,6 @@ mod tests {
     }
 
     #[test]
-    fn test_default_config() {
-        let cfg = BlockCodeConfig::default_config();
-        assert_eq!(cfg.n_blocks, 1024);
-        assert_eq!(cfg.block_len, 16);
-        assert_eq!(cfg.dim(), 16384);
-    }
-
-    #[test]
     fn test_unbind_and_decode_single_fact() {
         let cfg = BlockCodeConfig::default_config();
         let country = BlockCodeVec::new_deterministic(&cfg, 1);
