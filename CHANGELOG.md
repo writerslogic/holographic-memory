@@ -27,6 +27,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Creating, deleting or rotating provenance now returns an error when the provenance log cannot be written and synced, instead of logging it; `ProvenanceManager::store_record` returns `Result<()>`.
 
 ### Fixed
+- Provenance verification binds each signature to the record it is attached to: a fact-claim envelope must carry the record's content hash, timestamp and source; a batch record's content hash must hash up to its signed Merkle root through its inclusion proof; the credential must name the record's content hash, source and issuer and the envelope's signer. Envelopes signed for another fact, a deletion, a key rotation or the log head no longer verify when pasted into a record. Results carry a new `record_binding` detail.
+- `verify_record` reports revocation from status lists trusted with `TrustStore::trust_status_list` (`ProvenanceManager::self_trust` includes the manager's own list) and says when no list was available.
+- After `rotate_key`, the signed log head is signed by the new key, so `verify_log_integrity` passes right after rotation and after reopening with the new key.
+- Live provenance records are updated in log order under the chain head lock, so concurrent writes to one fact id leave the same record a log replay does.
 - The provenance chain head advances only after its log lines are written and synced, so a failed append no longer leaves a signed head over a missing line; a torn append is truncated.
 - The revocation status list and the signed log head are replaced atomically, so a crash cannot leave a short list that reads revoked credentials as valid.
 

@@ -10,7 +10,7 @@
 //! has decided to trust; verification is authentic only when the key that
 //! produced a signature is present in the store.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 use ed25519_dalek::VerifyingKey;
@@ -25,6 +25,17 @@ use super::did;
 #[derive(Default, Clone)]
 pub struct TrustStore {
     keys: HashSet<[u8; 32]>,
+    /// Revocation bitstrings, keyed by the status list credential URL that credentials cite.
+    status_lists: HashMap<String, Vec<u8>>,
+}
+
+/// Whether bit `index` of a revocation bitstring is set: byte `index / 8`, bit `index % 8`
+/// counted from the least significant bit. Indices past the end are not revoked.
+pub(crate) fn status_bit(bits: &[u8], index: u64) -> bool {
+    usize::try_from(index / 8)
+        .ok()
+        .and_then(|byte_idx| bits.get(byte_idx))
+        .is_some_and(|byte| byte & (1 << (index % 8)) != 0)
 }
 
 impl TrustStore {
@@ -73,6 +84,22 @@ impl TrustStore {
     /// Whether the given key is trusted.
     pub fn is_trusted(&self, key: &VerifyingKey) -> bool {
         self.keys.contains(&key.to_bytes())
+    }
+
+    /// Trust `bits` as the current revocation bitstring of the status list published at
+    /// `credential_url`, replacing any list trusted for that URL. Credentials citing that URL
+    /// then verify as revoked when their bit is set.
+    pub fn trust_status_list(&mut self, credential_url: &str, bits: Vec<u8>) -> &mut Self {
+        self.status_lists.insert(credential_url.to_string(), bits);
+        self
+    }
+
+    /// Whether the status list trusted for `credential_url` revokes `index`, or `None` when no
+    /// list is trusted for that URL.
+    pub fn is_revoked(&self, credential_url: &str, index: u64) -> Option<bool> {
+        self.status_lists
+            .get(credential_url)
+            .map(|bits| status_bit(bits, index))
     }
 
     /// Whether the store trusts nothing.
