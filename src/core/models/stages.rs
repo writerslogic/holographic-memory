@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::{hash_map::Entry, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 use anyhow::{ensure, Result};
 use serde::{Deserialize, Serialize};
@@ -172,8 +172,10 @@ impl ModelStages {
             (1..=MAX_SEARCH_RESULTS).contains(&k),
             "model fusion requires 1 <= k <= 1000"
         );
-        let mut fused: HashMap<String, (f64, usize, DocumentResult)> = HashMap::new();
-        for (weight, list) in lists {
+        // Per chunk: fused score, first-seen order, result, and the last list that ranked it,
+        // which is the current list exactly when the list repeats the chunk.
+        let mut fused: HashMap<String, (f64, usize, DocumentResult, usize)> = HashMap::new();
+        for (list_index, (weight, list)) in lists.into_iter().enumerate() {
             ensure!(
                 weight.is_finite() && weight >= 0.0,
                 "model ranked-list weights must be finite and nonnegative"
@@ -182,29 +184,29 @@ impl ModelStages {
                 list.len() <= MAX_SEARCH_RESULTS,
                 "model ranked lists must not exceed the native 1000-result search limit"
             );
-            let mut seen = HashSet::with_capacity(list.len());
             for (rank, r) in list.into_iter().enumerate() {
-                ensure!(
-                    seen.insert(r.id.clone()),
-                    "duplicate chunk identity in a model ranked list"
-                );
-                let next = fused.len();
-                match fused.entry(r.id.clone()) {
-                    Entry::Occupied(mut entry) => {
-                        let (score, _, source) = entry.get_mut();
-                        ensure!(
-                            same_source(source, &r),
-                            "conflicting source identity for a model-fused chunk"
-                        );
-                        *score = add_rank_score(*score, weight, p.k0, rank)?;
-                    }
-                    Entry::Vacant(entry) => {
-                        entry.insert((add_rank_score(0.0, weight, p.k0, rank)?, next, r));
-                    }
+                if let Some((score, _, source, last)) = fused.get_mut(&r.id) {
+                    ensure!(
+                        *last != list_index,
+                        "duplicate chunk identity in a model ranked list"
+                    );
+                    ensure!(
+                        same_source(source, &r),
+                        "conflicting source identity for a model-fused chunk"
+                    );
+                    *score = add_rank_score(*score, weight, p.k0, rank)?;
+                    *last = list_index;
+                } else {
+                    let next = fused.len();
+                    let score = add_rank_score(0.0, weight, p.k0, rank)?;
+                    fused.insert(r.id.clone(), (score, next, r, list_index));
                 }
             }
         }
-        let mut all: Vec<(f64, usize, DocumentResult)> = fused.into_values().collect();
+        let mut all: Vec<(f64, usize, DocumentResult)> = fused
+            .into_values()
+            .map(|(score, first, result, _)| (score, first, result))
+            .collect();
         let order = |a: &(f64, usize, DocumentResult), b: &(f64, usize, DocumentResult)| {
             b.0.total_cmp(&a.0).then(a.1.cmp(&b.1))
         };

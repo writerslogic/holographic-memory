@@ -218,12 +218,13 @@ impl Memory {
         let stamp = Stamp::from_parts(&version, &metadata);
         let edges = index.edges(id);
         let status = evaluate(stamp.as_ref(), edges, now, None).unwrap_or(FactStatus::Current);
-        let known = stamp.clone().unwrap_or_default();
+        let ingest_time = stamp.as_ref().map(|s| s.ingest);
+        let known = stamp.unwrap_or_default();
         Some(FactRecord {
             id: id.to_owned(),
             text,
             status,
-            ingest_time: stamp.as_ref().map(|s| s.ingest),
+            ingest_time,
             event_time: known.event,
             valid_from: known.valid_from,
             valid_to: known.valid_to,
@@ -326,6 +327,10 @@ impl Memory {
         let mut seen: HashSet<String> = HashSet::with_capacity(hits.len());
         let mut ranked = Vec::with_capacity(hits.len());
         for hit in hits {
+            // Without reordering the result is the first `k` kept hits in search order.
+            if !reorder && !force_wide && ranked.len() >= k as usize {
+                break;
+            }
             if !seen.insert(hit.document_id.clone()) {
                 continue;
             }
@@ -420,14 +425,15 @@ impl Memory {
             score,
             ..
         } = ranked;
-        let known = stamp.clone().unwrap_or_default();
+        let ingest_time = stamp.as_ref().map(|s| s.ingest);
+        let known = stamp.unwrap_or_default();
         Recalled {
             superseded_by: sorted_ids(index.edges(&hit.document_id)),
             id: hit.document_id,
             text: hit.text,
             score,
             status,
-            ingest_time: stamp.as_ref().map(|s| s.ingest),
+            ingest_time,
             event_time: known.event,
             valid_from: known.valid_from,
             valid_to: known.valid_to,
