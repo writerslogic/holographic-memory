@@ -1,0 +1,79 @@
+{
+  "benchmark": "big-ann-benchmarks NeurIPS'23 streaming track, delete_runbook.yaml on msturing-10M-clustered",
+  "harness_commit": "89a3aba",
+  "dataset": {
+    "name": "msturing-10M-clustered",
+    "dim": 100,
+    "metric": "euclidean",
+    "max_live_rows": 6000000,
+    "queries": "testQuery10K.fbin (public, 10000)",
+    "ground_truth": "data/MSTuring-10M-clustered/10000000/delete_runbook.yaml/step{N}.gt100 (benchmark.streaming.download_gt)"
+  },
+  "machine": {
+    "host": "writerslogic-02",
+    "cpu": "Intel Core Ultra 9 185H, 22 threads, runs pinned to cores 0-7 (probes on 8-15 and 16-21)",
+    "memory": "27 GiB shared host; each run under a systemd user scope with MemoryMax=8G (4G or 6G for the 1M probes), MemorySwapMax=0, nice 19",
+    "note": "recall runs on a shared host: wall times are upper bounds, not timing claims"
+  },
+  "parameters": {
+    "adapter": "neurips23/streaming/hms/hms.py: UpdatableIndex.create(degree=R, build_ef=L, alpha, threads=T); consolidate when delta >= 1.0 x base and >= 100k rows, or deleted >= 30% of base",
+    "R": 32,
+    "L": 64,
+    "T": 8,
+    "rerank": "equal to ef",
+    "python_wheel": "maturin build --release --features python at HMS 791749b (main), the commit this change is built on"
+  },
+  "probes_1m_prefix": {
+    "description": "first 1,000,000 rows of the dataset inserted in 100k batches; recall@10 of the first 1,000 public queries against float64 brute-force ground truth over the 1M rows; 'self' queries are 1,000 rows sampled from the data",
+    "hms_commit": "791749b (alpha 1.0 rows, reservoir rows, code-bit rows) and ff70f3e (the other rows)",
+    "rows": [
+      {"index": "VectorIndex static", "R": 32, "L": 64, "alpha": 1.0, "queries": "public", "recall10": {"ef64": 0.7161, "ef128": 0.8102}, "reservoir": {"0": 0.7161, "256": 0.7161, "512": 0.7161}, "code_bits": 8},
+      {"index": "VectorIndex static", "R": 32, "L": 64, "alpha": 1.0, "queries": "public", "recall10": {"ef64": 0.7086, "ef128": 0.8077, "ef256": 0.8832}, "code_bits": 4},
+      {"index": "VectorIndex static", "R": 32, "L": 64, "alpha": 1.0, "queries": "self", "recall10": {"ef64": 0.9732, "ef128": 0.9807, "ef256": 0.9872}},
+      {"index": "UpdatableIndex base after consolidate", "R": 32, "L": 64, "alpha": 1.2, "queries": "public", "recall10": {"ef64": 0.6306, "ef128": 0.7429, "ef256": 0.8263}},
+      {"index": "UpdatableIndex base after consolidate", "R": 32, "L": 64, "alpha": 1.2, "queries": "self", "recall10": {"ef64": 0.9736, "ef128": 0.981, "ef256": 0.9872}},
+      {"index": "UpdatableIndex delta before consolidate", "R": 32, "L": 64, "alpha": 1.2, "queries": "public", "recall10": {"ef64": 0.6193, "ef128": 0.7135, "ef256": 0.7984}},
+      {"index": "UpdatableIndex base after consolidate", "R": 32, "L": 64, "alpha": 1.0, "queries": "public", "recall10": {"ef64": 0.7162, "ef128": 0.8112, "ef256": 0.8875}},
+      {"index": "UpdatableIndex delta before consolidate", "R": 32, "L": 64, "alpha": 1.0, "queries": "public", "recall10": {"ef64": 0.6672, "ef128": 0.7633}},
+      {"index": "VectorIndex static", "R": 64, "L": 128, "alpha": 1.0, "queries": "public", "recall10": {"ef64": 0.836, "ef128": 0.912, "ef256": 0.9571}, "build_seconds": 90},
+      {"index": "UpdatableIndex base after consolidate", "R": 64, "L": 128, "alpha": 1.2, "queries": "public", "recall10": {"ef64": 0.7959, "ef128": 0.8867, "ef256": 0.9405}, "consolidate_seconds_under_contention": 267},
+      {"index": "UpdatableIndex delta before consolidate", "R": 64, "L": 128, "alpha": 1.2, "queries": "public", "recall10": {"ef64": 0.8066, "ef128": 0.8824, "ef256": 0.935}}
+    ],
+    "prior_session_1m_diagnostic": {
+      "hms_commit": "752f937",
+      "note": "insert 1M, delete ids 0..100k, consolidate; 256 queries; recall@10 at ef 64/128/256/512",
+      "after_insert": [0.6066, 0.7039, 0.7883, 0.8563],
+      "after_delete": [0.6098, 0.7070, 0.7852, 0.8563],
+      "after_consolidate": [0.5949, 0.7219, 0.8188, 0.8922],
+      "live_reachable_fraction_after_delete": 1.0
+    }
+  },
+  "per_step_replay_first_12_steps": {
+    "description": "official runbook steps 1-12 replayed through UpdatableIndex with the adapter's consolidation policy; recall@10 of all 10,000 public queries against the harness ground truth at each search step; one pass measures both ef values",
+    "hms_commit": "791749b",
+    "before": {"alpha": 1.2, "steps": [
+      {"step": 2, "live": 255771, "ef64": 0.70603, "ef128": 0.82488},
+      {"step": 4, "live": 491965, "ef64": 0.71158, "ef128": 0.81362},
+      {"step": 6, "live": 824781, "ef64": 0.58575, "ef128": 0.71007},
+      {"step": 8, "live": 724781, "ef64": 0.60466, "ef128": 0.72523},
+      {"step": 10, "live": 981209, "ef64": 0.65404, "ef128": 0.76077},
+      {"step": 12, "live": 1468760, "ef64": 0.64444, "ef128": 0.73792}
+    ], "mean": {"ef64": 0.65108, "ef128": 0.76208}},
+    "after": {"alpha": 1.0, "steps": [
+      {"step": 2, "live": 255771, "ef64": 0.7768, "ef128": 0.87538},
+      {"step": 4, "live": 491965, "ef64": 0.77084, "ef128": 0.86208},
+      {"step": 6, "live": 824781, "ef64": 0.69213, "ef128": 0.79581},
+      {"step": 8, "live": 724781, "ef64": 0.70478, "ef128": 0.80509},
+      {"step": 10, "live": 981209, "ef64": 0.73881, "ef128": 0.83034},
+      {"step": 12, "live": 1468760, "ef64": 0.72129, "ef128": 0.80704}
+    ], "mean": {"ef64": 0.73411, "ef128": 0.82929}, "peak_rss_kib": 1974948, "wall_seconds": 152.4}
+  },
+  "official_runs": [
+    {"hms_commit": "ff70f3e", "alpha": 1.2, "ef": 64, "recall10": 0.6814, "qps": 7501.7, "host": "Modal 8 vCPU, 8 GiB hard limit", "wall": "35:41 for the ef 64 and ef 128 replays together", "peak_rss_bytes": 7780836000},
+    {"hms_commit": "ff70f3e", "alpha": 1.2, "ef": 128, "recall10": 0.7755, "qps": 4919.8, "host": "Modal 8 vCPU, 8 GiB hard limit"},
+    {"hms_commit": "cc5dede", "alpha": 1.2, "ef": 1024, "recall10": 0.930141515151515, "qps": 635.0, "host": "Modal 8 vCPU, 8 GiB hard limit", "wall_seconds": 2158.36, "peak_rss_bytes": 8016285696, "per_checkpoint_recall_range": [0.91089, 0.97618]},
+    {"hms_commit": "e4df0b1", "alpha": 1.0, "ef": 64, "recall10": 0.7622993939393939, "host": "writerslogic-02, cores 0-7, nice 19, MemoryMax=8G, shared with other jobs", "result_file": "results/neurips23/streaming/delete_runbook.yaml/msturing-10M-clustered/10/hms/euclidean_L_64_R_32_T_8_alpha_1_0_ef_64.hdf5", "recall_source": "data_export.py --recompute", "wall": "59:40.46 for the ef 64 and ef 128 replays together (GNU time, not a timing claim)", "max_rss_kib_gnu_time_parent_and_children": 5088620},
+    {"hms_commit": "e4df0b1", "alpha": 1.0, "ef": 128, "recall10": 0.8400830303030303, "host": "writerslogic-02, cores 0-7, nice 19, MemoryMax=8G, shared with other jobs", "result_file": "results/neurips23/streaming/delete_runbook.yaml/msturing-10M-clustered/10/hms/euclidean_L_64_R_32_T_8_alpha_1_0_ef_128.hdf5", "recall_source": "data_export.py --recompute"}
+  ],
+  "baseline": {"system": "DiskANN", "build": "R64 L50", "search": "Ls100", "recall10": 0.924, "wall": "about 23 min on Azure D8lds v5", "source": "neurips23/streaming/README.md"}
+}
