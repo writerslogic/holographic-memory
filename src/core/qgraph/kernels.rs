@@ -144,11 +144,18 @@ impl QueryCode {
         let delta = if hi > lo { (hi - lo) / levels } else { 1.0 };
         self.planes.fill(0);
         let mut total = 0u32;
-        for (i, &v) in x.iter().enumerate() {
-            let q = ((v - lo) / delta).round().clamp(0.0, levels) as u32;
-            total += q;
-            for p in 0..QUERY_BITS {
-                self.planes[p * words + i / 64] |= u64::from((q >> p) & 1) << (i % 64);
+        // One word of every plane is built in registers per 64 coordinates, then stored once.
+        for (w, chunk) in x.chunks(64).enumerate() {
+            let mut bits = [0u64; QUERY_BITS];
+            for (j, &v) in chunk.iter().enumerate() {
+                let q = ((v - lo) / delta).round().clamp(0.0, levels) as u32;
+                total += q;
+                for (p, b) in bits.iter_mut().enumerate() {
+                    *b |= u64::from((q >> p) & 1) << j;
+                }
+            }
+            for (p, b) in bits.into_iter().enumerate() {
+                self.planes[p * words + w] = b;
             }
         }
         self.lo = lo;
