@@ -231,12 +231,11 @@ mod neon {
 
     use super::{scalar_word, QUERY_BITS};
 
-    /// [`super::DotI8`] with the SDOT instruction. Handed out only by `dot_i8_kernel` after
-    /// detecting `dotprod`.
-    #[cfg_attr(target_feature = "dotprod", allow(dead_code))]
+    /// [`sdot`] behind a length check, for the kernel tests (after detecting `dotprod`).
+    #[cfg(test)]
     pub(super) fn dot_i8_sdot(a: &[i8], b: &[i8]) -> i32 {
         assert!(a.len() == b.len() && a.len().is_multiple_of(16));
-        // SAFETY: the only caller path checked `dotprod` at runtime.
+        // SAFETY: the only caller detected `dotprod` at runtime; lengths checked above.
         unsafe { sdot(a, b) }
     }
 
@@ -336,7 +335,7 @@ mod neon {
         }
     }
 
-    /// [`super::DotI8`] with widening multiplies; for cores without `dotprod`.
+    /// [`super::dot_i8_inline`] with widening multiplies; for cores without `dotprod`.
     #[cfg_attr(target_feature = "dotprod", allow(dead_code))]
     pub(super) fn dot_i8(a: &[i8], b: &[i8]) -> i32 {
         assert!(a.len() == b.len() && a.len().is_multiple_of(16));
@@ -391,54 +390,6 @@ mod neon {
             *o = total;
         }
     }
-}
-
-/// Integer dot product of two i8 rows whose length is a multiple of 16.
-#[cfg_attr(
-    all(target_arch = "aarch64", target_feature = "dotprod"),
-    allow(dead_code)
-)]
-pub(crate) type DotI8 = fn(&[i8], &[i8]) -> i32;
-
-/// The fastest [`DotI8`] this CPU supports.
-#[cfg_attr(
-    all(target_arch = "aarch64", target_feature = "dotprod"),
-    allow(dead_code)
-)]
-pub(crate) fn dot_i8_kernel() -> DotI8 {
-    #[cfg(target_arch = "aarch64")]
-    {
-        if std::arch::is_aarch64_feature_detected!("dotprod") {
-            return neon::dot_i8_sdot;
-        }
-        neon::dot_i8
-    }
-    #[cfg(target_arch = "x86_64")]
-    match tier::get() {
-        tier::VNNI => dot_i8_vnni_checked,
-        tier::AVX2 => dot_i8_avx2_checked,
-        _ => dot_i8_scalar,
-    }
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    dot_i8_scalar
-}
-
-/// [`DotI8`] with AVX2; handed out only by `dot_i8_kernel` after detecting the feature.
-#[cfg(target_arch = "x86_64")]
-fn dot_i8_avx2_checked(a: &[i8], b: &[i8]) -> i32 {
-    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
-    // SAFETY: the only caller path checked `avx2` at runtime; lengths checked above.
-    unsafe { x86::dot_i8_avx2(a, b) }
-}
-
-/// [`DotI8`] with AVX512-VNNI on 256-bit registers; handed out only by `dot_i8_kernel` after
-/// detecting the features.
-#[cfg(target_arch = "x86_64")]
-fn dot_i8_vnni_checked(a: &[i8], b: &[i8]) -> i32 {
-    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
-    // SAFETY: the only caller path checked `avx512vnni`, `avx512vl` and `avx2` at runtime;
-    // lengths checked above.
-    unsafe { x86::dot_i8_vnni(a, b) }
 }
 
 /// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|vnni` (read once, at the

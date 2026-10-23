@@ -49,8 +49,7 @@ use crate::core::error::HmsError;
 use adjacency::Adjacency;
 
 use kernels::{
-    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, DotI8, QueryCode, Rotation,
-    SplitMix,
+    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_inline, QueryCode, Rotation, SplitMix,
 };
 #[cfg(feature = "experimental")]
 pub use vertex::QueryProfile;
@@ -311,7 +310,6 @@ struct BuildCodes {
     q: Vec<i8>,
     /// Per-row factors, side by side so that one cache line load serves a row.
     meta: Vec<CodeMeta>,
-    dot: DotI8,
     /// Euclidean rows: `meta` carries the squared norm the exact distance uses and the norm.
     euclidean: bool,
     /// Euclidean rows: relative f32 rounding slack of the computed distance.
@@ -364,7 +362,6 @@ impl BuildCodes {
             width,
             q,
             meta,
-            dot: dot_i8_kernel(),
             euclidean: norms.is_some(),
             // The computed dot product and squared norms are each within `dim * 2^-24` of the
             // magnitudes summed; twice that, and at least the unit-row slack, covers them.
@@ -397,7 +394,7 @@ impl BuildCodes {
     /// The 8-bit estimate of the computed `d2` of the unit rows `p` and `u`.
     #[inline]
     fn d2_est(&self, p: u32, u: u32) -> f32 {
-        let raw = (self.dot)(self.code(p), self.code(u)) as f32;
+        let raw = dot_i8_inline(self.code(p), self.code(u)) as f32;
         let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
         if self.euclidean {
             (mp.n2 + mu.n2 - 2.0 * mp.scale * mu.scale * raw).max(0.0)
@@ -412,7 +409,7 @@ impl BuildCodes {
     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
         const SLACK: f32 = 1e-4;
         let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
-        let raw = (self.dot)(self.code(p), self.code(u)) as f32;
+        let raw = dot_i8_inline(self.code(p), self.code(u)) as f32;
         let ep = mp.err;
         let est = mp.scale * mu.scale * raw;
         if !self.euclidean {
