@@ -256,11 +256,13 @@ fn remove_secondary<K: Ord>(map: &mut BTreeMap<K, BTreeSet<String>>, key: &K, id
     }
 }
 
+/// Moves `slot`'s postings from `old` to `new`; `words` already holds the new chunk's length.
 fn replace_postings(
     postings: &mut [PostingLists; 2],
     old: &StoredChunk,
     new: &StoredChunk,
     slot: usize,
+    words: &[u32],
 ) {
     for (term, &old_frequency) in &old.terms {
         if let Some(&frequency) = new.terms.get(term).filter(|_| old.stemmed == new.stemmed) {
@@ -270,15 +272,15 @@ fn replace_postings(
                 postings[usize::from(old.stemmed)].invalidate_length(term, slot);
             }
             if frequency != old_frequency {
-                postings[usize::from(old.stemmed)].set_frequency(term, slot, frequency);
+                postings[usize::from(old.stemmed)].set_frequency(term, slot, frequency, words);
             }
         } else {
-            postings[usize::from(old.stemmed)].remove(term, slot);
+            postings[usize::from(old.stemmed)].remove(term, slot, words);
         }
     }
     for (term, &frequency) in &new.terms {
         if old.stemmed != new.stemmed || !old.terms.contains_key(term) {
-            postings[usize::from(new.stemmed)].insert(term, slot, frequency);
+            postings[usize::from(new.stemmed)].insert(term, slot, frequency, words);
         }
     }
 }
@@ -710,7 +712,7 @@ impl DocumentStore {
                 .expect("document embedded count overflow");
             old_embedded |= old.embedding.is_some();
             new_embedded |= new.embedding.is_some();
-            replace_postings(&mut self.postings, old, new, slot);
+            replace_postings(&mut self.postings, old, new, slot, &self.word_counts);
         }
         self.shift_vector_states(pending_delta, lexical_delta);
         if old_embedded && !new_embedded {
@@ -866,7 +868,7 @@ impl DocumentStore {
                 .expect("document word count underflow");
             let postings = &mut self.postings[usize::from(chunk.stemmed)];
             for term in chunk.terms.keys() {
-                postings.remove(term, slot);
+                postings.remove(term, slot, &self.word_counts);
             }
             assert!(self.free.insert(slot), "document slot already free");
         }

@@ -3,7 +3,7 @@
 
 use super::execution::TopK;
 use super::*;
-use crate::core::documents::postings::PostingCursor;
+use crate::core::documents::postings::{PostingCursor, PostingList};
 
 fn up(value: f64) -> f64 {
     if value == 0.0 {
@@ -61,12 +61,27 @@ impl Bound {
     }
 }
 
+/// One term's cursor with the bounds of its weights.
 struct State<'a> {
     cursor: PostingCursor<'a>,
     bound: Bound,
+    /// A bound of every weight of the list (the largest of its block bounds), for the pivot.
+    ceiling: f64,
 }
 
-impl State<'_> {
+impl<'a> State<'a> {
+    fn new(list: &'a PostingList, bound: Bound) -> Self {
+        let ceiling = list
+            .block_maxima()
+            .map(|(frequency, words)| bound.at(frequency, words))
+            .fold(0.0, f64::max);
+        Self {
+            cursor: list.iter(),
+            bound,
+            ceiling,
+        }
+    }
+
     fn block_bound(&self) -> f64 {
         let points = self.cursor.block_impacts();
         if points.is_empty() {
@@ -83,6 +98,117 @@ impl State<'_> {
 
 fn sum_bound(sum: f64, clauses: usize) -> f64 {
     up(sum * (1.0 + 2.0 * clauses as f64 * f64::EPSILON))
+}
+
+/// The states of one form's terms with a finite bound of any sum of their weights, or `None`
+/// when a bound cannot be proven (the caller then evaluates exhaustively).
+fn form_states<'a>(
+    terms: impl Iterator<Item = (f64, &'a PostingList)>,
+    average: f64,
+    bm25: Bm25,
+    clauses: usize,
+) -> Option<Vec<State<'a>>> {
+    let mut states = Vec::new();
+    let mut global_sum = 0.0;
+    for (idf, list) in terms {
+        let bound = Bound::new(idf, average, bm25)?;
+        global_sum = up(global_sum + bound.global);
+        states.push(State::new(list, bound));
+    }
+    sum_bound(global_sum, clauses).is_finite().then_some(states)
+}
+
+/// Block-max WAND over the term states of one form into `top`. A candidate is skipped only
+/// when a bound of its score is below the floor of `top`, so every candidate scoring at least
+/// the final floor is considered with the score exhaustive evaluation computes.
+fn block_max_wand(
+    store: &DocumentStore,
+    states: &mut [State<'_>],
+    average: f64,
+    bm25: Bm25,
+    clauses: usize,
+    top: &mut TopK,
+) -> Result<()> {
+    let mut active: Vec<usize> = (0..states.len()).collect();
+    let mut window: Option<(usize, f64)> = None;
+    loop {
+        // Cursors only move forward and few move per step: drop the exhausted ones and
+        // restore slot order by insertion.
+        active.retain(|&i| states[i].cursor.peek().is_some());
+        for sorted in 1..active.len() {
+            let mut at = sorted;
+            while at > 0 && peek_slot(states, active[at - 1]) > peek_slot(states, active[at]) {
+                active.swap(at - 1, at);
+                at -= 1;
+            }
+        }
+        let Some(&first) = active.first() else { break };
+        let minimum = peek_slot(states, first);
+        if window.is_none_or(|(end, _)| minimum > end) {
+            let end = active
+                .iter()
+                .map(|&i| states[i].cursor.block_end().expect("active cursor"))
+                .min()
+                .expect("at least one active cursor");
+            let mut bound = 0.0;
+            for state in states.iter() {
+                if state.cursor.peek().is_some_and(|p| p.0 <= end) {
+                    bound = up(bound + state.block_bound());
+                }
+            }
+            window = Some((end, sum_bound(bound, clauses)));
+        }
+        let (end, bound) = window.expect("window computed above");
+        if bound < top.floor() {
+            let Some(target) = end.checked_add(1) else {
+                break;
+            };
+            for state in states.iter_mut() {
+                if state.cursor.peek().is_some_and(|p| p.0 <= end) {
+                    state.cursor.advance(target);
+                }
+            }
+            window = None;
+            continue;
+        }
+        let mut bound = 0.0;
+        let floor = top.floor();
+        let pivot = active.iter().find_map(|&i| {
+            bound = up(bound + states[i].ceiling);
+            (sum_bound(bound, clauses) >= floor).then(|| peek_slot(states, i))
+        });
+        let Some(pivot) = pivot else { break };
+        if minimum < pivot {
+            states[first].cursor.advance(pivot);
+            continue;
+        }
+        let norm = bm25.norm(f64::from(store.slot_word_count(minimum)), average);
+        let mut score = 0.0;
+        let mut matched = false;
+        for state in states.iter_mut() {
+            if let Some((slot, frequency)) = state.cursor.peek() {
+                if slot == minimum {
+                    if frequency > 0 {
+                        matched = true;
+                        score += bm25.weight(state.bound.idf, f64::from(frequency), norm);
+                    }
+                    state.cursor.next();
+                }
+            }
+        }
+        ensure!(
+            score.is_finite(),
+            "lexical score is nonfinite; reduce BM25 parameters"
+        );
+        if matched {
+            top.consider(store, score, minimum);
+        }
+    }
+    Ok(())
+}
+
+fn peek_slot(states: &[State<'_>], index: usize) -> usize {
+    states[index].cursor.peek().expect("active cursor").0
 }
 
 pub(super) fn execute(
@@ -103,95 +229,30 @@ pub(super) fn execute(
     let average = (store.word_count as f64 / (store.chunk_count as f64).max(1.0)).max(1.0);
     let mut forms = Vec::new();
     for form in 0..2 {
-        let mut states = Vec::new();
-        let mut global_sum = 0.0;
-        for (clause, idfs) in query.clauses.iter().zip(&idfs) {
-            if let Some(list) = store.postings[form].get(&clause.words[form][0]) {
-                let Some(bound) = Bound::new(idfs[form], average, bm25) else {
-                    return Ok(None);
-                };
-                global_sum = up(global_sum + bound.global);
-                states.push(State {
-                    cursor: list.iter(),
-                    bound,
-                });
-            }
-        }
-        if !sum_bound(global_sum, query.clauses.len()).is_finite() {
+        let terms = query
+            .clauses
+            .iter()
+            .zip(&idfs)
+            .filter_map(|(clause, idfs)| {
+                store.postings[form]
+                    .get(&clause.words[form][0])
+                    .map(|list| (idfs[form], list))
+            });
+        let Some(states) = form_states(terms, average, bm25, query.clauses.len()) else {
             return Ok(None);
-        }
+        };
         forms.push(states);
     }
     let mut top = TopK::new(options.k);
     for mut states in forms {
-        let mut active = Vec::with_capacity(states.len());
-        let mut window: Option<(usize, f64)> = None;
-        loop {
-            active.clear();
-            active.extend((0..states.len()).filter(|&i| states[i].cursor.peek().is_some()));
-            active.sort_unstable_by_key(|&i| states[i].cursor.peek().expect("active cursor").0);
-            let Some(&first) = active.first() else { break };
-            let minimum = states[first].cursor.peek().expect("active cursor").0;
-            if window.is_none_or(|(end, _)| minimum > end) {
-                let end = active
-                    .iter()
-                    .map(|&i| states[i].cursor.block_end().expect("active cursor"))
-                    .min()
-                    .expect("at least one active cursor");
-                let mut bound = 0.0;
-                for state in &states {
-                    if state.cursor.peek().is_some_and(|p| p.0 <= end) {
-                        bound = up(bound + state.block_bound());
-                    }
-                }
-                window = Some((end, sum_bound(bound, query.clauses.len())));
-            }
-            let (end, bound) = window.expect("window computed above");
-            if bound < top.floor() {
-                let Some(target) = end.checked_add(1) else {
-                    break;
-                };
-                for state in &mut states {
-                    if state.cursor.peek().is_some_and(|p| p.0 <= end) {
-                        state.cursor.advance(target);
-                    }
-                }
-                window = None;
-                continue;
-            }
-            let mut bound = 0.0;
-            let pivot = active.iter().find_map(|&i| {
-                bound = up(bound + states[i].bound.global);
-                (sum_bound(bound, query.clauses.len()) >= top.floor())
-                    .then(|| states[i].cursor.peek().expect("active cursor").0)
-            });
-            let Some(pivot) = pivot else { break };
-            if minimum < pivot {
-                states[first].cursor.advance(pivot);
-                continue;
-            }
-            let norm = bm25.norm(f64::from(store.slot_word_count(minimum)), average);
-            let mut score = 0.0;
-            let mut matched = false;
-            for state in &mut states {
-                if let Some((slot, frequency)) = state.cursor.peek() {
-                    if slot == minimum {
-                        if frequency > 0 {
-                            matched = true;
-                            score += bm25.weight(state.bound.idf, f64::from(frequency), norm);
-                        }
-                        state.cursor.next();
-                    }
-                }
-            }
-            ensure!(
-                score.is_finite(),
-                "lexical score is nonfinite; reduce BM25 parameters"
-            );
-            if matched {
-                top.consider(store, score, minimum);
-            }
-        }
+        block_max_wand(
+            store,
+            &mut states,
+            average,
+            bm25,
+            query.clauses.len(),
+            &mut top,
+        )?;
     }
     Ok(Some(LexicalResults {
         hits: top.finish(store),
@@ -244,10 +305,7 @@ mod tests {
         let average = store.word_count as f64 / store.chunk_count as f64;
         let idf = clause_idfs(&store, &query)[0][0];
         let list = store.postings[0].get("red").unwrap();
-        let mut state = State {
-            cursor: list.iter(),
-            bound: Bound::new(idf, average, Bm25::DEFAULT).unwrap(),
-        };
+        let mut state = State::new(list, Bound::new(idf, average, Bm25::DEFAULT).unwrap());
         state.cursor.advance(128).unwrap();
         assert!(state.block_bound() < reference.hits.last().unwrap().score);
         let actual = super::super::execute(
@@ -282,10 +340,7 @@ mod tests {
                         continue;
                     };
                     let bound = Bound::new(3.5, average, bm25).unwrap();
-                    let mut state = State {
-                        cursor: list.iter(),
-                        bound,
-                    };
+                    let mut state = State::new(list, bound);
                     while let Some((slot, frequency)) = state.cursor.peek() {
                         let score = bm25.weight(
                             3.5,
@@ -293,9 +348,10 @@ mod tests {
                             bm25.norm(f64::from(store.slot_word_count(slot)), average),
                         );
                         assert!(
-                            state.block_bound() >= score,
-                            "{slot}: {score} > {}",
-                            state.block_bound()
+                            state.block_bound() >= score && state.ceiling >= score,
+                            "{slot}: {score} > {} or {}",
+                            state.block_bound(),
+                            state.ceiling
                         );
                         state.cursor.next();
                     }
@@ -365,6 +421,15 @@ mod tests {
             if stage == 0 {
                 for i in (1..=513).step_by(7) {
                     store.remove(&format!("d{i:04}"));
+                }
+                // Deletes (all of unstemmed documents) rewrite those lists with the length
+                // bounds a fresh build gives them.
+                let words: Vec<u32> = (0..store.slot_count)
+                    .map(|slot| store.slot_word_count(slot))
+                    .collect();
+                for word in ["red", "blue", "green"] {
+                    let list = store.postings[0].get(word).unwrap();
+                    assert!(list.bounds_are_tight(&words), "{word} bounds loosened");
                 }
             } else if stage == 1 {
                 for i in (1..=513).step_by(11) {
