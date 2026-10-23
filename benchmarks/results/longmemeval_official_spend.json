@@ -1,9 +1,47 @@
 {
+ "batches": [
+  {
+   "batch": true,
+   "batch_id": "batch_6adb219010fc8190904de16e6298dd95",
+   "failed": 0,
+   "model": "gpt-4o-2024-08-06",
+   "rates_usd_per_token": [
+    1.25e-06,
+    1.25e-06,
+    5e-06
+   ],
+   "requests": 3,
+   "run": "batchcheck3_batch:gpt-4o-2024-08-06",
+   "stage": "reader",
+   "status": "completed",
+   "succeeded": 3,
+   "usd": 0.023353750000000003
+  },
+  {
+   "batch": true,
+   "batch_id": "batch_6adb21fc700081908f677d9503ba1fb1",
+   "failed": 0,
+   "model": "gpt-4o-2024-08-06",
+   "rates_usd_per_token": [
+    1.25e-06,
+    1.25e-06,
+    5e-06
+   ],
+   "requests": 3,
+   "run": "batchcheck3_batch:gpt-4o-2024-08-06",
+   "stage": "judge",
+   "status": "completed",
+   "succeeded": 3,
+   "usd": 0.0010175000000000002
+  }
+ ],
  "by_model_usd": {
-  "gpt-4o-2024-08-06": 22.519549999999978,
+  "gpt-4o-2024-08-06": 22.592091249999978,
   "gpt-4o-mini-2024-07-18": 0.9571609500000001
  },
  "by_run_usd": {
+  "batchcheck3_batch:gpt-4o-2024-08-06": 0.024371250000000004,
+  "batchcheck3_sync:gpt-4o-2024-08-06": 0.048170000000000004,
   "dev_gpt4o_k10:gpt-4o-2024-08-06": 1.7621924999999994,
   "dev_gpt4o_k10_r1:gpt-4o-2024-08-06": 1.2473250000000007,
   "dev_gpt4o_k10_r2:gpt-4o-2024-08-06": 1.1417375000000003,
@@ -22,7 +60,7 @@
   "dev_mini_k50:gpt-4o-mini-2024-07-18": 0.496847,
   "dev_mini_k5:gpt-4o-mini-2024-07-18": 0.15624855000000007
  },
- "calls": 2799,
+ "calls": 2811,
  "cap_usd": 60.0,
  "prices_usd_per_token": {
   "gpt-4o-2024-08-06": [
@@ -38,5 +76,5 @@
  },
  "schema_version": 1,
  "settled_from": "call cache; by_run_usd is the live ledger and can differ by failed reservations",
- "total_usd": 23.47671095
+ "total_usd": 23.549252200000005
 }

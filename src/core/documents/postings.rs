@@ -32,12 +32,38 @@ use std::collections::{hash_map::Entry, BTreeMap, HashMap};
 use foldhash::fast::FixedState;
 use rayon::prelude::*;
 
+use super::binary::put_varint;
 use super::StoredChunk;
 
 const NONE: u32 = u32::MAX;
 
 /// `(slot, frequency)`.
 pub(super) type Posting = (usize, u32);
+
+/// One restored list: its term and postings in slot order.
+pub(super) type RestoredList = (String, Vec<Posting>);
+
+/// Decodes one varint at `*at`, advancing it, from checkpoint postings the open checked.
+#[inline(always)]
+fn get_varint(bytes: &[u8], at: &mut usize) -> u64 {
+    let first = bytes[*at];
+    *at += 1;
+    if first < 0x80 {
+        return u64::from(first);
+    }
+    let mut value = u64::from(first & 0x7f);
+    let mut shift = 7;
+    loop {
+        let b = bytes[*at];
+        *at += 1;
+        value |= u64::from(b & 0x7f) << shift;
+        if b & 0x80 == 0 {
+            return value;
+        }
+        shift += 7;
+        assert!(shift < 64, "posting varint overflow");
+    }
+}
 
 /// Term-hash buckets the per-range maps are merged by; the parallelism of that merge.
 const MERGE_BUCKETS: usize = 16;
@@ -254,6 +280,113 @@ struct Block {
     frontier: Option<Box<[(u32, u32)]>>,
 }
 
+/// One term's postings in the checkpoint encoding, read from a mapped checkpoint: per posting
+/// one varint `gap << 1 | (frequency != 1)`, followed by the frequency as a varint only when
+/// it is not 1 (the first gap is the slot itself).
+#[derive(Clone, Copy)]
+pub(super) struct Postings<'a> {
+    pub(super) bytes: &'a [u8],
+    pub(super) count: u32,
+}
+
+/// Appends `list`'s postings to `out` in the checkpoint encoding.
+pub(super) fn pack_checkpoint(list: &PostingList, out: &mut Vec<u8>) {
+    let mut previous = 0usize;
+    let mut first = true;
+    list.for_each(|slot, frequency| {
+        let gap = if first { slot } else { slot - previous };
+        first = false;
+        previous = slot;
+        put_varint(out, (gap as u64) << 1 | u64::from(frequency != 1));
+        if frequency != 1 {
+            put_varint(out, u64::from(frequency));
+        }
+    });
+}
+
+/// [`get_varint`] for bytes read from a file: fails instead of panicking on a malformed varint.
+fn checked_varint(bytes: &[u8], at: &mut usize) -> anyhow::Result<u64> {
+    let mut value = 0u64;
+    for shift in (0..64).step_by(7) {
+        let byte = *bytes
+            .get(*at)
+            .ok_or_else(|| anyhow::anyhow!("posting list ends inside a varint"))?;
+        *at += 1;
+        value |= u64::from(byte & 0x7f) << shift;
+        if byte & 0x80 == 0 {
+            return Ok(value);
+        }
+    }
+    anyhow::bail!("posting varint overflow")
+}
+
+impl Postings<'_> {
+    pub(super) fn len(&self) -> usize {
+        self.count as usize
+    }
+
+    /// Calls `f(slot, frequency)` for every posting in slot order, checking every varint and
+    /// that the list ends exactly after `count` postings; `f` returning false stops early.
+    pub(super) fn try_for_each(&self, mut f: impl FnMut(usize, u32) -> bool) -> anyhow::Result<()> {
+        let (mut at, mut slot) = (0usize, 0u64);
+        for _ in 0..self.count {
+            let word = checked_varint(self.bytes, &mut at)?;
+            let frequency = if word & 1 == 0 {
+                1
+            } else {
+                let frequency = checked_varint(self.bytes, &mut at)?;
+                anyhow::ensure!(frequency != 1, "packed posting frequency");
+                frequency
+            };
+            slot = slot
+                .checked_add(word >> 1)
+                .ok_or_else(|| anyhow::anyhow!("posting slot overflow"))?;
+            let frequency = u32::try_from(frequency)?;
+            if !f(usize::try_from(slot)?, frequency) {
+                return Ok(());
+            }
+        }
+        anyhow::ensure!(at == self.bytes.len(), "posting list has trailing bytes");
+        Ok(())
+    }
+
+    /// Calls `f(slot, frequency)` for every posting in slot order; the loop form keeps the
+    /// decoder state in registers where the iterator cannot. Eight postings whose words are
+    /// one byte each with frequency 1 (gaps below 64, the common case in long lists) decode
+    /// from one 64-bit load.
+    pub(super) fn for_each(&self, mut f: impl FnMut(usize, u32)) {
+        let bytes = self.bytes;
+        let mut at = 0usize;
+        let mut slot = 0u64;
+        let mut left = self.count as usize;
+        while left > 0 {
+            if left >= 8 {
+                if let Some(word) = bytes.get(at..at + 8) {
+                    let word = u64::from_le_bytes(word.try_into().expect("eight bytes"));
+                    if word & 0x8181_8181_8181_8181 == 0 {
+                        for byte in 0..8 {
+                            slot += (word >> (8 * byte + 1)) & 0x7f;
+                            f(slot as usize, 1);
+                        }
+                        at += 8;
+                        left -= 8;
+                        continue;
+                    }
+                }
+            }
+            let word = get_varint(bytes, &mut at);
+            slot += word >> 1;
+            let frequency = if word & 1 == 0 {
+                1
+            } else {
+                get_varint(bytes, &mut at)
+            };
+            debug_assert!(slot <= usize::MAX as u64 && frequency <= u64::from(u32::MAX));
+            f(slot as usize, frequency as u32);
+            left -= 1;
+        }
+    }
+}
 #[derive(Default)]
 pub(super) struct PostingList {
     data: Vec<u8>,
@@ -928,8 +1061,56 @@ impl PostingLists {
         }
     }
 
+    /// Lists for `entries`: `(term, postings)` in strictly ascending term order, every list
+    /// non-empty and sorted by slot; `words` holds each slot's word count, which bounds the
+    /// blocks as a fresh build bounds them.
+    pub(super) fn from_sorted(entries: Vec<RestoredList>, words: &[u32]) -> Self {
+        let mut dictionary = TermDictionary::default();
+        let mut lists = Vec::with_capacity(entries.len());
+        dictionary.offsets.reserve_exact(entries.len() + 1);
+        dictionary.offsets.push(0);
+        for (id, (term, postings)) in entries.into_iter().enumerate() {
+            debug_assert!(!postings.is_empty(), "empty posting list");
+            dictionary.bytes.extend_from_slice(term.as_bytes());
+            dictionary
+                .offsets
+                .push(u32::try_from(dictionary.bytes.len()).expect("term dictionary over 4 GiB"));
+            dictionary
+                .base_ids
+                .push(u32::try_from(id).expect("term count over u32"));
+            let mut list = PostingList::default();
+            list.encode(&postings, |slot| words.get(slot).copied().unwrap_or(0));
+            lists.push(list);
+        }
+        debug_assert!(
+            (1..dictionary.base_ids.len())
+                .all(|i| dictionary.base_term(i - 1) < dictionary.base_term(i)),
+            "unsorted posting terms"
+        );
+        dictionary.bytes.shrink_to_fit();
+        Self {
+            dictionary,
+            lists,
+            free: Vec::new(),
+        }
+    }
+
     pub(super) fn get(&self, term: &str) -> Option<&PostingList> {
         self.dictionary.get(term).map(|id| &self.lists[id as usize])
+    }
+
+    /// Every term with postings in byte order (`offsets` delimit the terms in `bytes`) and
+    /// its list, as a serving image stores them.
+    pub(super) fn sorted_terms(&self) -> (Vec<u8>, Vec<u32>, Vec<&PostingList>) {
+        let overlay: Vec<(&[u8], u32)> = self
+            .dictionary
+            .overlay
+            .iter()
+            .map(|(term, &id)| (term.as_bytes(), id))
+            .collect();
+        let (bytes, offsets, ids) = self.dictionary.merged_base(&overlay);
+        let lists = ids.iter().map(|&id| &self.lists[id as usize]).collect();
+        (bytes, offsets, lists)
     }
 
     /// Number of terms with postings.

@@ -19,6 +19,7 @@ polynomial (the `crc32fast` / zlib CRC).
 | [JOURNAL.md](JOURNAL.md) | arena segments, frame header, LZ4, end marker, torn tail vs corruption, compaction generations |
 | [MUTATIONS.md](MUTATIONS.md) | frame payload: `HMS-TXN-2` and the JSON mutation records, limits, replay |
 | [ENCRYPTION.md](ENCRYPTION.md) | frame envelope, key derivation, text-segment AEAD, what is not encrypted |
+| [CHECKPOINT.md](CHECKPOINT.md) | `documents.ckpt`: the document store in place of the frames before it (schema 4) |
 | [CACHES.md](CACHES.md) | `documents.text`, `indices.json`, NSG/IVF files, `shard_meta.json` |
 | [VECTOR-UPDATES.md](VECTOR-UPDATES.md) | persisted vector checkpoints, full-precision rows, update batches and consolidation |
 | [ANCILLARY.md](ANCILLARY.md) | `audit.bin`, keys, provenance files, standalone qgraph/IVF files, memory-API stamps |
@@ -35,7 +36,8 @@ Each artefact has its own version; a store is the combination.
 | Artefact | Where | Current | Readable |
 |---|---|---|---|
 | Arena manifest | `vectors_data.bin/format.json` `version` | 4 | 2, 3, 4 (no manifest = 1, read as 2) |
-| Store schema | `store.json` `version` | 2 | 2 |
+| Store schema | `store.json` `version` | 4 | 2, 3, 4 |
+| Document checkpoint | `documents.ckpt` magic `HMSCKP\0\x01` (`HMSCKPE\x01` sealed) | 1 | 1, schema 4 only |
 | Journal payload | magic `HMS-TXN-2\0` | 2 | 2 |
 | Text segment | `documents.text` header byte 4 | 2 | cache: any value is discarded and rebuilt |
 | Vector updates | `HMSVUP01`, `HMSVRW01`, `HMSVLG01` | 1 | 1 |

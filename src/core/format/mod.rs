@@ -36,8 +36,11 @@ pub const STORAGE_FORMAT_CURRENT: u32 = super::storage::STORAGE_FORMAT_VERSION;
 pub const STORAGE_FORMAT_OLDEST: u32 = 2;
 /// `version` field of the `store.json` a new store gets. Schema 2 stores write
 /// [`TRANSACTION_MAGIC`] frames, schema 3 stores [`BINARY_TRANSACTION_MAGIC`] frames; a store
-/// keeps the schema it was created with.
-pub const STORE_SCHEMA_VERSION: u32 = 3;
+/// keeps the schema it was created with. Schema 4 stores also write binary frames and may hold
+/// a document checkpoint in place of the frames before it (`docs/file-format/CHECKPOINT.md`).
+pub const STORE_SCHEMA_VERSION: u32 = 4;
+/// First `store.json` schema whose journal generations may hold a document checkpoint.
+pub const CHECKPOINT_SCHEMA_VERSION: u32 = 4;
 /// Oldest `store.json` schema this build opens.
 pub const STORE_SCHEMA_OLDEST: u32 = 2;
 /// Prefix of a JSON journal frame payload (schema 2 stores); the digit is the journal format

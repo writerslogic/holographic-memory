@@ -4,7 +4,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use anyhow::{ensure, Result};
+use anyhow::{ensure, Context, Result};
 use serde::Serialize;
 
 use super::{mutation::Mutation, HmsCore};
@@ -49,6 +49,9 @@ struct Snapshot {
     /// The store's text segment at snapshot time: chunk text moved there is written back
     /// inline into the compaction frames.
     text: Option<Arc<crate::core::documents::TextSegment>>,
+    /// The document store as the new generation's checkpoint (sealed for an encrypted store),
+    /// in place of `documents` frames, when the store takes one (`image::encode_checkpoint`).
+    document_checkpoint: Option<Vec<u8>>,
 }
 
 #[derive(Serialize)]
@@ -79,12 +82,9 @@ impl HmsCore {
     /// id order as a reopen of the compacted journal lays them out; a published vector
     /// snapshot, whose graph still holds the deleted rows' vertices and the edges they shaped
     /// (rebuilt with the same graph choice); and the dense document index a delete dropped.
-    fn canonicalize_derived_state(&self) -> Result<()> {
-        {
-            let _transaction = self.mutation_gate.maintenance();
-            self.documents
-                .write()
-                .rebuild_canonical(&self.storage_path.join("documents.text"))?;
+    fn canonicalize_derived_state(&self, documents: bool) -> Result<()> {
+        if documents {
+            self.canonicalize_documents()?;
         }
         if let Some(snapshot) = self.vector_index.get() {
             let graph_min_rows = if snapshot.has_graph() { 0 } else { usize::MAX };
@@ -96,6 +96,15 @@ impl HmsCore {
         Ok(())
     }
 
+    /// The text segment and slots of [`Self::canonicalize_derived_state`].
+    fn canonicalize_documents(&self) -> Result<()> {
+        self.hydrate_documents()?;
+        let _transaction = self.mutation_gate.maintenance();
+        self.documents
+            .write()
+            .rebuild_canonical(&self.storage_path.join("documents.text"))
+    }
+
     fn compact_impl(
         &self,
         after_snapshot: impl FnOnce(),
@@ -103,11 +112,30 @@ impl HmsCore {
         scrub: bool,
     ) -> Result<()> {
         let _compaction = self.compaction.lock();
+        // A checkpoint records the slots as they are, so a scrubbing compaction that writes one
+        // lays them out canonically first: its checkpoint is then the one a store that never
+        // held the purged documents writes.
+        let canonical_first = scrub && self.takes_checkpoint();
+        if canonical_first {
+            self.canonicalize_documents()?;
+        }
         let staging = StagingDir::new(self.arena.new_generation_dir()?);
-        let snapshot = self.compaction_snapshot()?;
+        let staged_name = staging
+            .path()
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .context("staging generation has no name")?;
+        let snapshot = self.compaction_snapshot(&staged_name)?;
         let (generation, mut cursor) = snapshot.checkpoint;
         after_snapshot();
         let mut arena = StagedArena::new(staging.path(), Some(&self.arena))?;
+        if let Some(bytes) = &snapshot.document_checkpoint {
+            // Durable (file and directory synced) before the generation can be published.
+            crate::core::durable_file::atomic_write(
+                &staging.path().join(super::image::FILE),
+                bytes,
+            )?;
+        }
         for mutation in snapshot.mutations {
             self.write_compaction_frame(&mut arena, &[mutation])?;
         }
@@ -116,7 +144,7 @@ impl HmsCore {
             // A document deleted since the snapshot has had its text zeroed; the delete is in
             // the tail, which the replay below applies, so it is simply not carried over.
             {
-                let store = self.documents.read();
+                let store = self.documents();
                 if store.is_deleted(document) {
                     continue;
                 }
@@ -181,14 +209,18 @@ impl HmsCore {
         if scrub {
             // Still under the compaction lock: a concurrent compaction must not capture
             // documents whose text offsets the canonical rebuild is replacing.
-            self.canonicalize_derived_state()?;
+            self.canonicalize_derived_state(!canonical_first)?;
         }
         Ok(())
     }
 
-    fn compaction_snapshot(&self) -> Result<Snapshot> {
+    fn compaction_snapshot(&self, staged_name: &str) -> Result<Snapshot> {
+        // Built before any lock is held: the snapshot below reads the store under the shards
+        // guard, and a store still served from its checkpoint must not be rebuilt there.
+        self.hydrate_documents()?;
         let _transaction = self.mutation_gate.maintenance();
         let shards = self.shards.read();
+        let shard_vectors = shards.count();
         let mut vectors = Vec::new();
         let composite_ids: HashSet<_> = self
             .composite_memory
@@ -219,9 +251,19 @@ impl HmsCore {
             .into_iter()
             .map(|(id, vector)| Mutation::Vector { id, vector })
             .collect();
-        let (documents, text) = {
+        let (documents, text, document_checkpoint) = {
             let store = self.documents.read();
-            (store.shared_values().collect(), store.text_segment())
+            let checkpoint = if shard_vectors == 0 {
+                self.encode_checkpoint(&store, staged_name)?
+            } else {
+                None
+            };
+            let documents = if checkpoint.is_some() {
+                Vec::new()
+            } else {
+                store.shared_values().collect()
+            };
+            (documents, store.text_segment(), checkpoint)
         };
         mutations.extend(self.graph.snapshot().into_iter().map(Mutation::Relation));
         mutations.extend(
@@ -268,6 +310,7 @@ impl HmsCore {
             mutations,
             documents,
             text,
+            document_checkpoint,
         })
     }
 
@@ -442,7 +485,7 @@ mod tests {
             Some(config()),
         )?;
         core.memorize_document(document("replace", "old"))?;
-        let snapshot = core.compaction_snapshot()?;
+        let snapshot = core.compaction_snapshot("gen-test")?;
         let owner = core.documents.read().shared_values().next().unwrap();
         assert!(Arc::ptr_eq(&owner, &snapshot.documents[0]));
         let dense_pointer = owner.chunks[0].embedding.as_ref().unwrap().as_ptr();
@@ -499,6 +542,133 @@ mod tests {
                 assert_current(&core)?;
                 core.memorize_document(document("after-recovery", "recovered"))?;
                 core.compact()?;
+            }
+        }
+        Ok(())
+    }
+
+    fn lexical(id: &str, version: &str, text: &str) -> DocumentInput {
+        serde_json::from_value(json!({"id": id, "version": version, "text": text})).unwrap()
+    }
+
+    fn lexical_options() -> crate::core::documents::IngestOptions {
+        crate::core::documents::IngestOptions {
+            encode: crate::core::documents::EncodeMode::Lexical,
+            ..Default::default()
+        }
+    }
+
+    /// Hits of a few queries over every lexical fixture document, scores as bits.
+    fn lexical_answers(core: &HmsCore) -> Result<Vec<String>> {
+        let mut out = Vec::new();
+        for query in ["alpha", "beta gamma", "delta", "after"] {
+            for hit in core.search_documents(query, &SearchOptions::default())? {
+                out.push(format!(
+                    "{query}:{}:{}:{:x}",
+                    hit.document_id,
+                    hit.version,
+                    hit.score.to_bits()
+                ));
+            }
+        }
+        Ok(out)
+    }
+
+    #[test]
+    fn checkpoint_compaction_crash_child() -> Result<()> {
+        let Ok(root) = std::env::var("HMS_TEST_CHECKPOINT_ROOT") else {
+            return Ok(());
+        };
+        let encrypted = std::env::var("HMS_TEST_CHECKPOINT_ENCRYPTED").as_deref() == Ok("true");
+        let mut config = configurations()
+            .find(|config| config.security.encryption_enabled == encrypted)
+            .unwrap();
+        config.embedding_space = None;
+        // The parent wrote the first checkpoint; this compaction replaces it and is cut short.
+        let core = HmsCore::new(1024, Some(root), Some(config))?;
+        let options = lexical_options();
+        core.compact_impl(
+            || {
+                core.memorize_documents_with(vec![lexical("replace", "2", "beta beta")], &options)
+                    .unwrap();
+                core.delete_document("delete").unwrap();
+            },
+            || {},
+            false,
+        )
+    }
+
+    /// A checkpoint compaction interrupted at each publication step reopens to the state every
+    /// acknowledged write reached, exactly as a store without checkpoints replays it.
+    #[test]
+    fn checkpoint_compaction_survives_each_publication_interruption() -> Result<()> {
+        for config in configurations() {
+            let mut config = config;
+            config.embedding_space = None;
+            let reference = {
+                let directory = tempfile::tempdir()?;
+                let mut plain = config.clone();
+                plain.document_checkpoint.enabled = false;
+                let core = HmsCore::new(
+                    1024,
+                    Some(directory.path().display().to_string()),
+                    Some(plain),
+                )?;
+                let options = lexical_options();
+                core.memorize_documents_with(
+                    vec![
+                        lexical("keep", "1", "alpha beta gamma"),
+                        lexical("replace", "2", "beta beta"),
+                    ],
+                    &options,
+                )?;
+                lexical_answers(&core)?
+            };
+            for phase in ["staged", "published", "mapped"] {
+                let directory = tempfile::tempdir()?;
+                {
+                    let core = HmsCore::new(
+                        1024,
+                        Some(directory.path().display().to_string()),
+                        Some(config.clone()),
+                    )?;
+                    core.memorize_documents_with(
+                        vec![
+                            lexical("keep", "1", "alpha beta gamma"),
+                            lexical("replace", "1", "alpha delta"),
+                            lexical("delete", "1", "gamma delta delta"),
+                        ],
+                        &lexical_options(),
+                    )?;
+                    core.compact()?;
+                }
+                let output = std::process::Command::new(std::env::current_exe()?)
+                    .args([
+                        "--exact",
+                        "core::engine::compaction::tests::checkpoint_compaction_crash_child",
+                    ])
+                    .env("HMS_TEST_CHECKPOINT_ROOT", directory.path())
+                    .env(
+                        "HMS_TEST_CHECKPOINT_ENCRYPTED",
+                        config.security.encryption_enabled.to_string(),
+                    )
+                    .env("HMS_TEST_COMPACTION_PHASE", phase)
+                    .output()?;
+                assert_eq!(output.status.code(), Some(73), "{phase}: {output:?}");
+                let generation = crate::core::durable_file::arena_generation(
+                    &directory.path().join("vectors_data.bin"),
+                )?;
+                assert!(
+                    generation.join(super::super::image::FILE).exists(),
+                    "{phase}: the live generation holds a checkpoint"
+                );
+                let core = HmsCore::new(
+                    1024,
+                    Some(directory.path().display().to_string()),
+                    Some(config.clone()),
+                )?;
+                assert_eq!(lexical_answers(&core)?, reference, "{phase}");
+                assert!(!core.has_document("delete"), "{phase}");
             }
         }
         Ok(())
