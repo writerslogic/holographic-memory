@@ -165,8 +165,9 @@ their files carry `mode: "server"` and render under "Server mode results".
   semantics per system) is written into every results file under `protocol`.
 * `hms-server`'s text row ingests through the memory API (`remember`) and queries through
   `recall` with lexical weight 1 and semantic weight 0, the same document-search options as the
-  embedded `hms` row. Its graph index is held in memory only, so every serving process rebuilds it before the first
-  ANN query (counted into cold start and serving RSS).
+  embedded `hms` row. Its ANN graph is persisted with the tenant store and opened at start; the
+  harness still sends index maintenance after every restart (a no-op when nothing changed), so
+  cold start covers that check.
 
 ## Plugging in more systems
 

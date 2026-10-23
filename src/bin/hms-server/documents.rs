@@ -28,6 +28,7 @@ use crate::error::{ApiError, ApiResult};
 use crate::request::*;
 use crate::tenants::{AppState, CoreGuard};
 use crate::types::*;
+use crate::vindex;
 
 /// One document. `vector` has exactly `--input-dim` finite numbers (omit it only when the server
 /// embeds text on-device).
@@ -166,11 +167,34 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
         }
         final_docs.push(Some(doc));
     }
-    let inputs: Vec<DocumentInput> = final_docs.into_iter().flatten().map(|d| d.input).collect();
+    let mut inputs: Vec<DocumentInput> =
+        final_docs.into_iter().flatten().map(|d| d.input).collect();
     let core = state.core(tenant)?;
     enforce_quota(state, &core, || {
         inputs.iter().filter(|d| !core.has_document(&d.id)).count() as u64
     })?;
+    // Every document with a vector enters the persisted vector index first, stamped with the
+    // version the index records, so a stop between the two commits is detected at the next
+    // open; a failed engine commit takes the rows out again.
+    let mut staged: Vec<(String, u64, Vec<f32>)> = Vec::new();
+    if let Some(vectors) = core.vectors() {
+        for input in &mut inputs {
+            let Some(values) = input
+                .embeddings
+                .as_ref()
+                .and_then(|embeddings| (embeddings.len() == 1).then(|| &embeddings[0]))
+            else {
+                continue;
+            };
+            let token = vectors.next_token();
+            let row = vindex::normalize(values).map_err(|e| ApiError::bad(e.to_string()))?;
+            input.version = Some(vindex::version_stamp(token));
+            staged.push((input.id.clone(), token, row));
+        }
+        if !staged.is_empty() {
+            vectors.stage(&staged).map_err(ApiError::internal)?;
+        }
+    }
     // Validated at startup (`Config::validate`); parsed per batch so the engine's error text
     // is the one reported should the two ever disagree.
     let options = IngestOptions {
@@ -181,8 +205,15 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
             .map_err(ApiError::internal)?,
         ..Default::default()
     };
-    core.memorize_documents_with(inputs, &options)
-        .map_err(ApiError::internal)?;
+    if let Err(error) = core.memorize_documents_with(inputs, &options) {
+        if let Some(vectors) = core.vectors().filter(|_| !staged.is_empty()) {
+            let ids: Vec<&str> = staged.iter().map(|(id, _, _)| id.as_str()).collect();
+            if let Err(undo) = vectors.remove(&ids) {
+                crate::log_event!(Error, "vector_index_undo_failed", "tenant" => tenant, "detail" => format!("{undo:#}"));
+            }
+        }
+        return Err(ApiError::internal(error));
+    }
     core.bump();
     state
         .metrics
@@ -462,6 +493,9 @@ pub async fn delete_doc(
         }
         let core = state.core(&tenant)?;
         if core.delete_document(&id).map_err(ApiError::internal)? {
+            if let Some(vectors) = core.vectors() {
+                vectors.remove(&[id.as_str()]).map_err(ApiError::internal)?;
+            }
             if purge {
                 core.compact_scrubbing().map_err(ApiError::internal)?;
             }
@@ -654,13 +688,15 @@ pub async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
                     ..SearchOptions::default()
                 };
                 let stages = state.stages.as_ref().expect("guarded");
-                core.search_documents_with_models(
-                    &text,
-                    q.today.as_deref().unwrap_or(""),
-                    &options,
-                    stages,
+                to_matches(
+                    core.search_documents_with_models(
+                        &text,
+                        q.today.as_deref().unwrap_or(""),
+                        &options,
+                        stages,
+                    )
+                    .map_err(ApiError::internal)?,
                 )
-                .map_err(ApiError::internal)?
             }
             (_, Some(_)) => {
                 return Err(ApiError::bad(
@@ -669,33 +705,59 @@ pub async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
             }
             (None, None) => return Err(ApiError::bad("query_vector is required")),
         };
-        Ok(hits
-            .into_iter()
-            .map(|hit| Match {
-                id: hit.document_id,
-                text: hit.text.unwrap_or_default(),
-                metadata: hit.metadata,
-                score: hit.score,
-            })
-            .collect::<Vec<_>>())
+        Ok(hits)
     })
     .await?;
     Ok(json_response(StatusCode::OK, &body(&Matches { matches })))
 }
 
-/// An unfiltered query goes to the engine's vector dispatch (snapshot: graph or exact scan,
-/// generic exact path without one); a filtered query takes the generic path, which is the
-/// only one that applies metadata filters.
+fn to_matches(hits: Vec<holographic_memory::DocumentResult>) -> Vec<Match> {
+    hits.into_iter()
+        .map(|hit| Match {
+            id: hit.document_id,
+            text: hit.text.unwrap_or_default(),
+            metadata: hit.metadata,
+            score: hit.score,
+        })
+        .collect()
+}
+
+/// An unfiltered `auto` or `graph` query is answered from the persisted vector index while
+/// it covers the store (hits are read back from the engine, so a document deleted meanwhile
+/// drops out); otherwise, and for `exact`, it goes to the engine's vector dispatch. A
+/// filtered query takes the generic path, the only one that applies metadata filters.
 fn vector_search(
     core: &CoreGuard,
     query_vector: Vec<f64>,
     top_k: u32,
     filter: Option<serde_json::Map<String, Value>>,
     route: &VectorQueryOptions,
-) -> Result<Vec<holographic_memory::DocumentResult>, ApiError> {
+) -> Result<Vec<Match>, ApiError> {
     let Some(filter) = filter else {
+        if route.mode != VectorIndexMode::Exact {
+            if let Some(vectors) = core.vectors().filter(|vectors| vectors.covers(core)) {
+                let query =
+                    vindex::normalize(&query_vector).map_err(|e| ApiError::bad(e.to_string()))?;
+                let hits = vectors
+                    .search(&query, top_k as usize, route.ef)
+                    .map_err(ApiError::internal)?;
+                return Ok(hits
+                    .into_iter()
+                    .filter_map(|(id, score)| {
+                        let record = core.get_document(&id)?;
+                        Some(Match {
+                            id: record.id,
+                            text: record.text.unwrap_or_default(),
+                            metadata: record.metadata,
+                            score: f64::from(score),
+                        })
+                    })
+                    .collect());
+            }
+        }
         return core
             .search_vectors(&query_vector, top_k as usize, route)
+            .map(to_matches)
             .map_err(|e| {
                 if e.downcast_ref::<GraphUnavailable>().is_some() {
                     ApiError::new(StatusCode::CONFLICT, "index_unavailable", e.to_string())
@@ -725,11 +787,31 @@ fn vector_search(
     // The response score of a vector query is the cosine similarity.
     Ok(hits
         .into_iter()
-        .map(|mut hit| {
-            hit.score = hit.semantic_score.unwrap_or(0.0);
-            hit
+        .map(|hit| Match {
+            id: hit.document_id,
+            text: hit.text.unwrap_or_default(),
+            metadata: hit.metadata,
+            score: hit.semantic_score.unwrap_or(0.0),
         })
         .collect())
+}
+
+/// The vector index the stats and maintenance responses describe: the persisted graph while
+/// it covers the store, the engine's snapshot otherwise.
+pub fn vector_index_body(core: &CoreGuard) -> VectorIndexBody {
+    match core.vectors() {
+        Some(vectors) if vectors.covers(core) => {
+            let status = vectors.status();
+            VectorIndexBody {
+                rows: status.rows,
+                graph: status.graph,
+                current: status.mutations == 0,
+                stale_mutations: status.mutations as u64,
+                rebuild_recommended: status.mutations >= vindex::REBUILD_AFTER_MUTATIONS,
+            }
+        }
+        _ => VectorIndexBody::from(core.vector_index_status()),
+    }
 }
 
 pub async fn maintain_index(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
@@ -743,15 +825,12 @@ pub async fn maintain_index(State(state): State<Arc<AppState>>, req: Request) ->
             ));
         }
         let core = state.core(&tenant)?;
-        // The vector snapshot (graph index above --graph-min-rows) first, so the bounding-box
-        // index below sees it current and does not build it a second time.
-        core.rebuild_vector_index(state.cfg.graph_min_rows)
+        // The vector indexes (graph above --graph-min-rows) first, so the bounding-box index
+        // below sees the engine's snapshot current and does not build it a second time.
+        core.maintain_vector_indexes(state.cfg.graph_min_rows, true)
             .map_err(ApiError::internal)?;
         core.train_document_index().map_err(ApiError::internal)?;
-        Ok((
-            core.document_index_trained(),
-            VectorIndexBody::from(core.vector_index_status()),
-        ))
+        Ok((core.document_index_trained(), vector_index_body(&core)))
     })
     .await?;
     let (trained, vector_index) = trained;
@@ -873,7 +952,7 @@ pub async fn stats(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
             documents: core.document_count(),
             vectors: core.document_embedding_count(),
             document_index_trained: core.document_index_trained(),
-            vector_index: VectorIndexBody::from(core.vector_index_status()),
+            vector_index: vector_index_body(core),
             used_bytes: health.used_bytes,
             capacity_bytes: health.capacity_bytes,
         })

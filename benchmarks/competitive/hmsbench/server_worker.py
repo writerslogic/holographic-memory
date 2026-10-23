@@ -206,8 +206,8 @@ class HmsServer(ServerSystem):
             self.http.call("POST", "/api/v1/documents/batch", batch)
 
     def wait_queryable(self, params):
-        # The graph snapshot lives in memory only: maintenance builds it, at build and after
-        # every restart (counted into the serving process's cold start).
+        # Maintenance builds the persisted graph at build time; after a restart the server
+        # opens it and the call is a no-op, still sent so cold start covers the check.
         self.http.call("POST", "/api/v1/index/maintain", {})
 
     after_start = wait_queryable
