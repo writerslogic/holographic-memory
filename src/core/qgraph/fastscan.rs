@@ -56,7 +56,7 @@ fn scan32_u16(codes: &[u8], lut: &[u8], m: usize, out: &mut [u16; BLOCK]) {
 }
 
 #[cfg_attr(target_arch = "aarch64", allow(dead_code))]
-pub(crate) fn scan32_scalar(codes: &[u8], lut: &[u8], m: usize, out: &mut [u16; BLOCK]) {
+fn scan32_scalar(codes: &[u8], lut: &[u8], m: usize, out: &mut [u16; BLOCK]) {
     out.fill(0);
     for j in 0..m {
         add_group(&codes[16 * j..16 * j + 16], &lut[16 * j..16 * j + 16], out);

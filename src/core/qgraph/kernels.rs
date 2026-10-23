@@ -4,7 +4,7 @@
 //! popcount that turns 1-bit edge codes into inner-product estimates.
 
 /// Bits per query coordinate in the bit-plane estimator.
-pub(crate) const QUERY_BITS: usize = 4;
+const QUERY_BITS: usize = 4;
 const ROUNDS: usize = 3;
 
 /// SplitMix64: small, seedable and stable across platforms and crate versions.
@@ -171,7 +171,7 @@ pub(crate) fn raw_estimates(codes: &[u64], planes: &[u64], words: usize, out: &m
     raw_scalar(codes, planes, words, out)
 }
 
-pub(crate) fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
+fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
     assert_eq!(planes.len(), QUERY_BITS * words);
     assert_eq!(codes.len(), out.len() * words);
     for (code, o) in codes.chunks_exact(words).zip(out.iter_mut()) {
@@ -212,7 +212,7 @@ pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
 
 /// Scalar form of [`raw_one`] (the reference, and the microbenchmark's baseline).
 #[inline]
-pub(crate) fn raw_one_scalar(code: &[u64], planes: &[u64], words: usize) -> u32 {
+fn raw_one_scalar(code: &[u64], planes: &[u64], words: usize) -> u32 {
     code.iter()
         .enumerate()
         .map(|(w, &c)| scalar_word(c, planes, words, w))
@@ -586,7 +586,7 @@ pub(crate) fn dot_i4_inline_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
 }
 
 #[cfg(any(test, not(all(target_arch = "aarch64", target_feature = "dotprod"))))]
-pub(crate) fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
+fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
     let mut s = 0i32;
     for (qb, pb) in q
         .as_chunks::<32>()
@@ -625,7 +625,7 @@ pub(crate) fn dot_f32_i4(a: &[f32], packed: &[i8]) -> f32 {
 }
 
 #[cfg(any(test, not(target_arch = "aarch64")))]
-pub(crate) fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
+fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
     assert_eq!(a.len(), b.len());
     a.iter()
         .zip(b)

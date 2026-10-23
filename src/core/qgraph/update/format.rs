@@ -19,7 +19,7 @@ use crate::core::format::{
 pub(super) const LOG_HEADER: u64 = 60;
 const FRAME_HEADER: usize = 24;
 
-pub(super) fn corrupt(at: u64, reason: impl Into<String>) -> UpdateError {
+fn corrupt(at: u64, reason: impl Into<String>) -> UpdateError {
     UpdateError::CorruptLog {
         offset: at,
         reason: reason.into(),
@@ -73,7 +73,7 @@ fn check(bytes: &[u8], magic: &[u8; 8]) -> Result<(), UpdateError> {
 }
 
 impl Manifest {
-    pub fn read(path: &Path) -> Result<Self, UpdateError> {
+    pub(super) fn read(path: &Path) -> Result<Self, UpdateError> {
         let mut file = File::open(path)?;
         let len = file.metadata()?.len();
         if len < 8 {
@@ -89,7 +89,7 @@ impl Manifest {
         Self::decode(&bytes)
     }
     #[must_use]
-    pub fn encode(&self) -> Vec<u8> {
+    pub(super) fn encode(&self) -> Vec<u8> {
         let mut out = MANIFEST_MAGIC.to_vec();
         words(&mut out, &[ORDER]);
         out.extend_from_slice(&self.identity);
@@ -119,7 +119,7 @@ impl Manifest {
         seal(&mut out);
         out
     }
-    pub fn decode(bytes: &[u8]) -> Result<Self, UpdateError> {
+    pub(super) fn decode(bytes: &[u8]) -> Result<Self, UpdateError> {
         known_magic(bytes, MANIFEST_MAGIC)?;
         if bytes.len() != 164 {
             return Err(bad("manifest length"));
@@ -188,7 +188,7 @@ impl Manifest {
 
 pub(super) struct BaseRows {
     map: memmap2::Mmap,
-    pub ids: Vec<u32>,
+    pub(super) ids: Vec<u32>,
     dim: usize,
     row_at: usize,
     metric: Metric,
@@ -210,7 +210,7 @@ fn row_offset(count: usize) -> Result<usize, UpdateError> {
         .ok_or(UpdateError::Capacity)
 }
 impl BaseRows {
-    pub fn write(
+    pub(super) fn write(
         path: &Path,
         manifest: &Manifest,
         ids: &[u32],
@@ -221,7 +221,7 @@ impl BaseRows {
         writer.finish()
     }
 
-    pub fn release_pages(&self) -> Result<(), UpdateError> {
+    pub(super) fn release_pages(&self) -> Result<(), UpdateError> {
         #[cfg(target_os = "linux")]
         // SAFETY: this shared read-only generation never changes while a reader exists,
         // so discarding its pages cannot change any value observed by concurrent searches.
@@ -231,7 +231,7 @@ impl BaseRows {
         }
         Ok(())
     }
-    pub fn open(path: &Path, manifest: &Manifest) -> Result<Self, UpdateError> {
+    pub(super) fn open(path: &Path, manifest: &Manifest) -> Result<Self, UpdateError> {
         let mut file = File::open(path)?;
         let len = file.metadata()?.len();
         if len < 8 {
@@ -294,7 +294,7 @@ impl BaseRows {
             metric: manifest.build.metric,
         })
     }
-    pub fn row(&self, slot: usize) -> Result<&[f32], UpdateError> {
+    pub(super) fn row(&self, slot: usize) -> Result<&[f32], UpdateError> {
         let len = self.dim * 4;
         let at = self.row_at + slot * (len + 4);
         let (Some(bytes), Some(crc)) = (
@@ -315,7 +315,7 @@ impl BaseRows {
 }
 
 impl BaseRowsWriter {
-    pub fn new(path: &Path, manifest: &Manifest, ids: &[u32]) -> Result<Self, UpdateError> {
+    pub(super) fn new(path: &Path, manifest: &Manifest, ids: &[u32]) -> Result<Self, UpdateError> {
         if manifest.dim == 0 || manifest.dim > MAX_DIM || ids.len() >= u32::MAX as usize {
             return Err(UpdateError::Capacity);
         }
@@ -357,7 +357,7 @@ impl BaseRowsWriter {
         })
     }
 
-    pub fn append(&mut self, vectors: &[f32]) -> Result<(), UpdateError> {
+    pub(super) fn append(&mut self, vectors: &[f32]) -> Result<(), UpdateError> {
         if !vectors.len().is_multiple_of(self.dim)
             || self
                 .written
@@ -378,7 +378,7 @@ impl BaseRowsWriter {
         Ok(())
     }
 
-    pub fn finish(self) -> Result<(), UpdateError> {
+    pub(super) fn finish(self) -> Result<(), UpdateError> {
         if self.written != self.count {
             return Err(UpdateError::Capacity);
         }
