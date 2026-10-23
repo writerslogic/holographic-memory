@@ -516,13 +516,17 @@ impl VectorIndex {
             && state.live == core.document_embedding_count()
     }
 
-    fn append(&self, bytes: &[u8]) -> Result<()> {
+    /// Appends frames after making the `dirty` marker durable; `sync` also makes the frames
+    /// durable before returning.
+    fn append(&self, bytes: &[u8], sync: bool) -> Result<()> {
         self.mark_dirty()?;
         let mut log = self.log.lock();
         let end = log.len;
         log.file.seek(SeekFrom::Start(end))?;
         log.file.write_all(bytes)?;
-        fsync_plain(&log.file)?;
+        if sync {
+            fsync_plain(&log.file)?;
+        }
         log.len += bytes.len() as u64;
         Ok(())
     }
@@ -544,7 +548,7 @@ impl VectorIndex {
             );
             push_frame(&mut bytes, UPSERT, id, *token, vector);
         }
-        self.append(&bytes)?;
+        self.append(&bytes, true)?;
         let mut state = self.state.write();
         for (id, token, vector) in docs {
             state.upsert(Arc::from(id.as_str()), *token, vector);
@@ -554,6 +558,18 @@ impl VectorIndex {
 
     /// Drops `ids` from the index (unknown ids are ignored).
     pub fn remove(&self, ids: &[&str]) -> Result<()> {
+        self.remove_with(ids, true)
+    }
+
+    /// Drops `ids` whose deletion the engine has already committed, without syncing the log.
+    /// The `dirty` marker is durable before the frames are written, so a stop that loses them
+    /// is unclean, and the open after it drops every indexed id the engine lacks; a clean close
+    /// syncs the log first. Saves the per-request log sync of a document delete.
+    pub fn remove_committed(&self, ids: &[&str]) -> Result<()> {
+        self.remove_with(ids, false)
+    }
+
+    fn remove_with(&self, ids: &[&str], sync: bool) -> Result<()> {
         let known: Vec<&str> = {
             let state = self.state.read();
             ids.iter()
@@ -568,7 +584,7 @@ impl VectorIndex {
         for id in &known {
             push_frame(&mut bytes, DELETE, id, 0, &[]);
         }
-        self.append(&bytes)?;
+        self.append(&bytes, sync)?;
         let mut state = self.state.write();
         for id in known {
             state.delete(id);
@@ -1096,5 +1112,32 @@ mod tests {
             body.len() - LOG_HEADER as usize,
             "no torn frame remains"
         );
+    }
+
+    #[test]
+    fn an_unsynced_delete_lost_in_a_stop_is_reconciled_from_the_engine() {
+        let dim = 8;
+        let dir = tempfile::tempdir().unwrap();
+        let vdir = dir.path().join("vindex");
+        let core = core(dir.path(), dim);
+        let index = VectorIndex::open(&vdir, dim, &core).unwrap();
+        ingest(&index, &core, 0, 20, dim);
+        let log = vdir.join("rows.log");
+        let before = std::fs::read(&log).unwrap();
+        assert!(core.delete_document("d5").unwrap());
+        index.remove_committed(&["d5"]).unwrap();
+        assert_eq!(index.live(), 19);
+        assert!(top(&index, 5, dim).iter().all(|id| id != "d5"));
+        drop(index);
+        // The stop loses the delete frame the request did not sync.
+        std::fs::write(&log, &before).unwrap();
+        assert!(vdir.join("dirty").exists(), "unclean stop");
+
+        let reopened = VectorIndex::open(&vdir, dim, &core).unwrap();
+        assert!(!vdir.join("dirty").exists(), "reconciled");
+        assert_eq!(reopened.live(), 19, "d5 left the index");
+        assert_eq!(reopened.live(), core.document_embedding_count());
+        assert!(top(&reopened, 5, dim).iter().all(|id| id != "d5"));
+        assert_eq!(top(&reopened, 6, dim)[0], "d6");
     }
 }

@@ -494,7 +494,9 @@ pub async fn delete_doc(
         let core = state.core(&tenant)?;
         if core.delete_document(&id).map_err(ApiError::internal)? {
             if let Some(vectors) = core.vectors() {
-                vectors.remove(&[id.as_str()]).map_err(ApiError::internal)?;
+                vectors
+                    .remove_committed(&[id.as_str()])
+                    .map_err(ApiError::internal)?;
             }
             if purge {
                 core.compact_scrubbing().map_err(ApiError::internal)?;

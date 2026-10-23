@@ -129,7 +129,7 @@ Each tenant is one engine store. Documents (embedding, text and metadata) go thr
 
 The store records the embedding model, revision and input dimension (`--embedding-model`, `--embedding-revision`, `--input-dim`). Reopening a store with different values is refused, so vectors from different models are never mixed.
 
-`<tenant>/vindex/` holds the persisted graph index: `rows.log` (one checksummed frame per inserted, replaced or deleted vector, synced per request at the engine's durability class), the snapshot maintenance last published (`CURRENT`, `graph-<epoch>.vertex`, `rows-<epoch>.bin`, `ids-<epoch>.bin`, each written through a temporary file and a rename) and `dirty`, present between the first mutation after open and a clean close. Snapshots copy the directory with the store.
+`<tenant>/vindex/` holds the persisted graph index: `rows.log` (one checksummed frame per inserted, replaced or deleted vector; insert and replace frames are synced per request at the engine's durability class before the engine commits, and a document delete's frame is written after the engine's delete commit without a sync, because a stop that loses it leaves `dirty` behind and the next open drops every indexed id the engine no longer holds), the snapshot maintenance last published (`CURRENT`, `graph-<epoch>.vertex`, `rows-<epoch>.bin`, `ids-<epoch>.bin`, each written through a temporary file and a rename) and `dirty`, present between the first mutation after open and a clean close. Snapshots copy the directory with the store.
 
 Snapshots, compaction and restore are described in [`server/operations.md`](server/operations.md).
 
