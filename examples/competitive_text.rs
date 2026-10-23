@@ -15,7 +15,7 @@ use holographic_memory::core::documents::{
     BatchTooLarge, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
 };
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     path::PathBuf,
@@ -92,11 +92,54 @@ struct Input {
     queries: Vec<Query>,
 }
 
+/// One hit as the serve report lists it.
+#[derive(Serialize)]
+struct Hit {
+    #[serde(rename = "documentId")]
+    document_id: String,
+    #[serde(rename = "lexicalScore")]
+    lexical_score: f64,
+}
+
+#[derive(Serialize)]
+struct Row<'a> {
+    id: &'a str,
+    results: Vec<Hit>,
+}
+
+#[derive(Serialize)]
+struct ServeReport<'a> {
+    open_s: f64,
+    cold_start_s: f64,
+    rows: Vec<Row<'a>>,
+    passes_ns: Vec<Vec<u64>>,
+    memory: serde_json::Value,
+}
+
 #[derive(Deserialize)]
 struct Query {
     id: String,
     text: String,
     options: SearchOptions,
+}
+
+/// The serving process's peak and current resident memory in KiB (Linux procfs: `VmHWM` and
+/// `RssFile` from `status`, `Rss` and `Anonymous` from `smaps_rollup`); null elsewhere.
+fn process_memory() -> serde_json::Value {
+    #[cfg(target_os = "linux")]
+    {
+        let read = |path: &str| std::fs::read_to_string(path).unwrap_or_default();
+        let field = |text: &str, name: &str| -> Option<u64> {
+            text.lines()
+                .find_map(|line| line.strip_prefix(name))
+                .and_then(|rest| rest.trim().trim_end_matches("kB").trim().parse().ok())
+        };
+        let (status, rollup) = (read("/proc/self/status"), read("/proc/self/smaps_rollup"));
+        json!({"vm_hwm_kib": field(&status, "VmHWM:"), "rss_kib": field(&rollup, "Rss:"),
+            "anonymous_kib": field(&rollup, "Anonymous:"), "rss_file_kib": field(&status, "RssFile:")})
+    }
+    #[cfg(not(target_os = "linux"))]
+    serde_json::Value::Null
 }
 
 fn epoch_ns() -> u128 {
@@ -172,16 +215,33 @@ fn main() -> Result<()> {
                     ns.push(t.elapsed().as_nanos() as u64);
                     if pass == 0 {
                         // The same fields the Python workers keep: id and score per hit.
-                        let hits: Vec<_> = results
-                            .iter()
-                            .map(|r| json!({"documentId": r.document_id, "lexicalScore": r.score}))
+                        let results = results
+                            .into_iter()
+                            .map(|r| Hit {
+                                document_id: r.document_id,
+                                lexical_score: r.score,
+                            })
                             .collect();
-                        rows.push(json!({"id": query.id, "results": hits}));
+                        rows.push(Row {
+                            id: &query.id,
+                            results,
+                        });
                     }
                 }
                 passes.push(ns);
             }
-            json!({"open_s": open_s, "cold_start_s": cold_start_s, "rows": rows, "passes_ns": passes})
+            // Streamed to the file: the report is never held as a JSON value tree.
+            let report = ServeReport {
+                open_s,
+                cold_start_s,
+                rows,
+                passes_ns: passes,
+                memory: process_memory(),
+            };
+            let mut out = std::io::BufWriter::new(std::fs::File::create(&args.out)?);
+            serde_json::to_writer(&mut out, &report)?;
+            std::io::Write::flush(&mut out)?;
+            return Ok(());
         }
         "ops" => {
             ensure!(

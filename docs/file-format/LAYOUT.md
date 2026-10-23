@@ -13,7 +13,8 @@ A store is one directory. The engine creates it on first open.
     format.json  format.json.crc32
     seg_0.bin seg_1.bin ...  journal segments
     CURRENT                  only after a compaction: names the live generation directory
-    gen-<pid>-<nanos>/       the live generation after a compaction: seg_*.bin, format.json
+    gen-<pid>-<nanos>/       the live generation after a compaction: seg_*.bin, format.json,
+                             and in schema 4 stores documents.ckpt (CHECKPOINT.md)
   documents.text             cache (CACHES.md)
   indices.json               cache (CACHES.md); older stores also have indices.json.crc32, ignored
   nsg_index.bin ivf_index.bin  or nsg_index_<i>.bin ivf_index_<i>.bin    caches
@@ -46,7 +47,7 @@ sidecar first). Keys, in this order:
 | `embedding_space` | object or null | `{model, revision, dimensions, normalization, metric}` |
 
 On open the engine builds the same object from its configuration and requires equality. A
-different value is refused ("incompatible store schema"); a `version` above 2 is refused as
+different value is refused ("incompatible store schema"); a `version` above 4 is refused as
 newer than supported; a store with `vectors_data.bin` but no `store.json` is refused as legacy.
 The sidecar `store.json.crc32` is the CRC32 of the file bytes as 8 lowercase hex digits and a
 newline; absent on stores written before sidecars, and then unverified.
@@ -73,8 +74,12 @@ symlink. Without `CURRENT` the live segments are in `vectors_data.bin/` itself.
 2. open the arena: create or validate `format.json`, find the live generation, recover the
    active segment (JOURNAL.md), write the end marker at the recovered end, extend the active
    file to its allocation size
-3. zero and unlink a `documents.text.canonical` left by an interrupted purge; truncate and
-   recreate `documents.text`; replay the journal; load index caches if fresh
+3. zero and unlink a `documents.text.canonical` left by an interrupted purge; then, with a
+   checkpoint in the live generation and no frames after it, map it and leave
+   `documents.text` alone until the store is built from it; with frames after it, truncate and
+   recreate `documents.text`, build the store from the checkpoint and replay those frames
+   (CHECKPOINT.md); otherwise truncate and recreate `documents.text` and replay the journal;
+   load index caches if fresh
 
 So opening modifies: the lock file, `documents.text`, the end of the active segment, and the
 manifest/schema when missing. `open_changes_only_what_the_spec_lists` in `tests/format_layout.rs` pins this list; a refused open modifies

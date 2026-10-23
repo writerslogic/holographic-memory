@@ -7,6 +7,7 @@ mod document_api;
 mod document_batch;
 #[cfg(feature = "local-embed")]
 mod embed_api;
+mod image;
 pub(crate) mod journal;
 pub(crate) mod knowledge;
 pub(crate) mod memory_access;
@@ -92,12 +93,15 @@ pub struct HmsCore {
     revision: std::sync::atomic::AtomicU64,
     /// The frame format this store is written in (its `store.json` schema); both are read.
     journal: journal::JournalFormat,
+    /// `store.json` schema version of the open store.
+    schema: u32,
     pub(crate) arena: PersistentArena,
     pub(crate) dimensions: usize,
     pub(crate) storage_path: PathBuf,
     shards: RwLock<ShardSet>,
     graph: RelationStore,
     documents: RwLock<super::documents::DocumentStore>,
+    image: image::ImageState,
     /// Snapshot answering unfiltered vector queries (`search_vectors`); built by maintenance.
     vector_index: super::documents::VectorIndexSlot,
     #[cfg(feature = "local-models")]
@@ -273,12 +277,14 @@ impl HmsCore {
             persisted_indices: crate::core::sync::Mutex::new(Vec::new()),
             revision: std::sync::atomic::AtomicU64::new(super::documents::opaque_counter_start()),
             journal: journal::JournalFormat::for_schema(schema),
+            schema,
             arena,
             dimensions: dim,
             storage_path: base_path,
             shards: RwLock::new(shard_set),
             graph: RelationStore::new(),
             documents: RwLock::new(super::documents::DocumentStore::opened()),
+            image: image::ImageState::default(),
             vector_index: super::documents::VectorIndexSlot::default(),
             #[cfg(feature = "local-models")]
             model_stages: RwLock::new(None),
@@ -326,17 +332,25 @@ impl HmsCore {
         if staging.exists() {
             super::durable_file::scrub_remove_file(&staging)?;
         }
-        core.documents.write().attach_text_segment(
-            &text_path,
-            #[cfg(feature = "security")]
-            core.encryption.clone(),
-        )?;
-        core.load_from_log()?;
+        match core.open_checkpoint()? {
+            image::Opened::Served => {}
+            image::Opened::Overlaid => core.load_from_log()?,
+            image::Opened::Absent => {
+                core.documents.write().attach_text_segment(
+                    &text_path,
+                    #[cfg(feature = "security")]
+                    core.encryption.clone(),
+                )?;
+                core.load_from_log()?;
+            }
+        }
         core.load_indices()?;
         {
             let shards = core.shards.read();
             shards.try_for_each_shard(|s| s.rebuild_inverted_index(dim))?;
         }
+        // Only a completely opened engine may write an image when it closes.
+        core.mark_opened();
 
         Ok(core)
     }
@@ -601,6 +615,15 @@ impl HmsCore {
     /// Decodes one committed journal frame and applies it in order, `REPLAY_CHUNK` mutations
     /// at a time, so a frame written by one large batch is never held decoded in full. The
     /// frame passed its checksum; an invalid mutation still fails the open, as before.
+    /// Applies replayed mutations; ones a store served from a checkpoint cannot take
+    /// rebuild it first, as they would have when committed.
+    fn replay_mutations(&self, mutations: &[Mutation], shards: &ShardSet) -> Result<()> {
+        if !self.checkpoint_accepts(mutations) {
+            self.hydrate_documents()?;
+        }
+        self.apply_mutations(&self.prepare_mutations(mutations), shards)
+    }
+
     fn replay_frame(&self, json: &[u8], shards: &ShardSet) -> Result<()> {
         struct Chunked<'a, F> {
             apply: F,
@@ -642,7 +665,7 @@ impl HmsCore {
                     for mutation in chunk {
                         self.validate_mutation(mutation)?;
                     }
-                    self.apply_mutations(&self.prepare_mutations(chunk), shards)
+                    self.replay_mutations(chunk, shards)
                 },
                 failure: &mut failure,
             },
@@ -668,7 +691,7 @@ impl HmsCore {
                 for mutation in &chunk {
                     self.validate_mutation(mutation)?;
                 }
-                self.apply_mutations(&self.prepare_mutations(&chunk), shards)?;
+                self.replay_mutations(&chunk, shards)?;
                 chunk.clear();
             }
             if done {
@@ -1787,5 +1810,15 @@ mod connection_graph_tests {
                 .as_deref(),
             Some("berlin")
         );
+    }
+}
+
+impl Drop for HmsCore {
+    /// Closing writes a checkpoint when one is due (see `checkpoint_if_due`), so the next open
+    /// maps it instead of replaying the frames. A failure leaves the journal as it was.
+    fn drop(&mut self) {
+        if let Err(error) = self.checkpoint_if_due() {
+            tracing::warn!(%error, "document checkpoint not written at close");
+        }
     }
 }

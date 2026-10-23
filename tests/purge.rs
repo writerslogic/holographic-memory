@@ -223,3 +223,79 @@ fn encrypted_store_purges_and_keeps_survivors_readable() {
     assert!(memory.core().has_document("keep"));
     assert_clean(dir.path(), "after an encrypted restart");
 }
+
+/// A store served from its journal checkpoint (`documents.ckpt`) forgets through the memory API
+/// like one replaying its journal: a plain forget hides the document at once and a purge leaves
+/// no marker in any file, the old checkpoint included, while the survivor stays searchable.
+/// Checkpoints hold lexical-only documents, so the fixture stores those through the engine.
+#[test]
+fn forget_and_purge_work_on_a_store_served_from_its_checkpoint() -> anyhow::Result<()> {
+    use holographic_memory::core::HmsConfig;
+    let dir = tempfile::tempdir().unwrap();
+    let mut config = HmsConfig::default();
+    config.document_checkpoint.min_journal_bytes = 0;
+    let open = || {
+        let core = HmsCore::new(
+            DIM,
+            Some(dir.path().display().to_string()),
+            Some(config.clone()),
+        )
+        .unwrap();
+        Memory::new(Arc::new(core)).with_clock(Arc::new(ManualClock::new(1)))
+    };
+    {
+        let memory = open();
+        let lexical = holographic_memory::core::documents::IngestOptions {
+            encode: holographic_memory::core::documents::EncodeMode::Lexical,
+            ..Default::default()
+        };
+        let mut texts: Vec<(String, String)> = MARKERS
+            .iter()
+            .enumerate()
+            .map(|(i, marker)| (format!("d{i}"), format!("secret note {marker}")))
+            .collect();
+        texts.push(("keep".into(), "an unrelated survivor basalt".into()));
+        for (id, text) in texts {
+            memory.core().memorize_document_with(
+                serde_json::from_value(serde_json::json!({"id": id, "text": text}))?,
+                &lexical,
+            )?;
+        }
+    }
+    let mut all = Vec::new();
+    files(dir.path(), &mut all);
+    assert!(
+        all.iter().any(|path| path.ends_with("documents.ckpt")),
+        "closing writes a checkpoint: {all:?}"
+    );
+
+    let memory = open();
+    assert!(memory.core().serves_from_checkpoint());
+    memory
+        .forget(
+            &ForgetScope::Ids {
+                ids: vec!["d0".into()],
+            },
+            &ForgetOptions::default(),
+        )
+        .unwrap();
+    assert!(!memory.core().has_document("d0"));
+    assert!(memory.core().has_document("d1"));
+    // The purge's scrubbing compaction also drops the forgotten d0 from the checkpoint.
+    purge(&memory, &["d1", "d2"]);
+    assert_clean(dir.path(), "after purging a checkpoint-served store");
+    assert!(memory.core().has_document("keep"));
+    drop(memory);
+    let memory = open();
+    assert_clean(dir.path(), "after reopening");
+    assert!(!memory.core().has_document("d0"));
+    let hits = memory
+        .core()
+        .search_documents("survivor basalt", &Default::default())
+        .unwrap();
+    assert_eq!(
+        hits.first().map(|hit| hit.document_id.as_str()),
+        Some("keep")
+    );
+    Ok(())
+}

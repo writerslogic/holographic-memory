@@ -29,6 +29,16 @@ Consequence: a frame can be copied between positions of the same store undetecte
 Version 2 records are `[nonce:12][ciphertext||tag:16]` with the record's byte offset in the
 segment (u64 LE) as associated data, so a record cannot be moved. Header flag bit 0 marks it.
 
+## Document checkpoint
+
+`documents.ckpt` (CHECKPOINT.md) is `"HMSCKPE\x01"`, the plaintext checkpoint's CRC word zeroed
+and its two binding words in the clear (generation-name CRC32, vector dimensions), then
+`[nonce][ct||tag]` of the whole plaintext checkpoint with those 40 bytes as associated data. The
+plaintext buffer is zeroized after sealing; no plaintext checkpoint is written, and a plaintext
+one in an encrypted store fails the open. Opening decrypts it into anonymous memory, so a store
+serving from it holds its terms, ids and metadata in process memory (as a replayed store holds
+them in its heap), never in a file or the page cache.
+
 ## Index caches
 
 `nsg_index*.bin` / `ivf_index*.bin` are sealed with the same `[nonce][ct||tag]` envelope, no

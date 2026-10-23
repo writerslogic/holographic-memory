@@ -52,7 +52,7 @@ impl HmsCore {
     pub(crate) fn scan_documents(&self, mut visit: impl FnMut(DocumentView<'_>)) -> u64 {
         let _transaction = self.mutation_gate.read();
         let revision = self.revision();
-        let store = self.documents.read();
+        let store = self.documents();
         for document in store.shared_values() {
             let text = || {
                 document
@@ -78,7 +78,7 @@ impl HmsCore {
 
     pub(crate) fn document_parts(&self, id: &str) -> Option<DocumentParts> {
         let _transaction = self.mutation_gate.read();
-        let store = self.documents.read();
+        let store = self.documents();
         let document = store.get(id)?;
         let chunk = document.chunks.first();
         Some(DocumentParts {
@@ -98,6 +98,7 @@ impl HmsCore {
         let mut commits = 0;
         for batch in ids.chunks(DELETE_BATCH) {
             let mutations: Vec<Mutation> = {
+                // The store answers for a checkpoint it is served from without being rebuilt.
                 let store = self.documents.read();
                 batch
                     .iter()

@@ -183,6 +183,9 @@ pub(super) fn validate_public_id(id: &str) -> Result<()> {
 
 impl HmsCore {
     pub(super) fn commit(&self, mutations: &[Mutation]) -> Result<()> {
+        if !self.checkpoint_accepts(mutations) {
+            self.hydrate_documents()?;
+        }
         self.commit_with_append(mutations, |payload| self.arena_write(payload).map(|_| ()))
     }
 
@@ -191,6 +194,9 @@ impl HmsCore {
     /// size is checked).
     pub(super) fn commit_serialized(&self, mutations: &[Mutation], payload: &[u8]) -> Result<()> {
         debug_assert!(payload.starts_with(crate::core::format::TRANSACTION_MAGIC_PREFIX));
+        if !self.checkpoint_accepts(mutations) {
+            self.hydrate_documents()?;
+        }
         self.validate_transaction(mutations)?;
         self.commit_payload(mutations, payload, |payload| {
             self.arena_write(payload).map(|_| ())
@@ -474,6 +480,16 @@ impl HmsCore {
         let mut pending: Vec<Arc<StoredDocument>> = Vec::new();
         let mut pending_ids: HashSet<String> = HashSet::new();
         for (mutation, prepared) in batch.mutations.iter().zip(prepared) {
+            if !matches!(
+                mutation,
+                Mutation::Document(_)
+                    | Mutation::DeleteDocument { .. }
+                    | Mutation::EncodeDocument { .. }
+            ) {
+                self.image
+                    .other_state
+                    .store(true, std::sync::atomic::Ordering::Release);
+            }
             let is_document = matches!(
                 (mutation, &prepared),
                 (Mutation::Document(_), Prepared::Document { .. })
