@@ -239,6 +239,9 @@ impl MemoryDocumentStore {
         let length = usize::try_from(length)
             .ok()
             .filter(|&n| n <= MAX_SNAPSHOT_BYTES)
+            // An LZ4 block expands at most 255 times: a larger declared length cannot be the
+            // payload's, and decompressing would allocate it first.
+            .filter(|&n| n as u64 <= (bytes.len() - HEADER_BYTES) as u64 * 255)
             .context("snapshot payload length is out of range")?;
         let payload = lz4_flex::block::decompress(&bytes[HEADER_BYTES..], length)
             .map_err(|e| anyhow::anyhow!("snapshot payload is corrupt: {e}"))?;
@@ -524,6 +527,12 @@ mod tests {
         let mut huge = bytes.clone();
         huge[17..25].copy_from_slice(&u64::MAX.to_le_bytes());
         assert!(MemoryDocumentStore::import(&huge).is_err());
+        // A declared length within the snapshot limit but beyond what the payload can expand
+        // to is refused before decompression allocates it.
+        let mut inflated = bytes[..HEADER_BYTES + 1].to_vec();
+        inflated[17..25].copy_from_slice(&(1u64 << 30).to_le_bytes());
+        let error = MemoryDocumentStore::import(&inflated).err().unwrap();
+        assert!(error.to_string().contains("out of range"), "{error}");
         let mut wrong_magic = bytes;
         wrong_magic[0] = b'X';
         assert!(MemoryDocumentStore::import(&wrong_magic).is_err());

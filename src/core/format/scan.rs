@@ -131,6 +131,10 @@ fn decode_frame_into(
         }
         let written =
             lz4_flex::block::decompress_into(payload, &mut out[..raw_len]).map_err(|_| "lz4")?;
+        // The CRC covers the payload, not the header's lengths.
+        if written != raw_len {
+            return Err("raw-length");
+        }
         out.truncate(written);
     } else {
         out.clear();
@@ -180,6 +184,18 @@ pub fn scan_segment(
     while offset + FRAME_HEADER_LEN <= data.len() {
         if word(data, offset + 4) == 0 && word(data, offset + 8) == 0 {
             if is_log_end(data, offset) {
+                // The writer never leaves committed frames after the end of its log, so one
+                // that decodes there was hidden by damage to this header.
+                if let Some(at) = committed_after(data, offset + FRAME_HEADER_LEN) {
+                    return SegmentScan {
+                        frames,
+                        end_offset: offset,
+                        end: SegmentEnd::Corrupt {
+                            reason: "committed-after-end",
+                            committed_at: Some(at),
+                        },
+                    };
+                }
                 let end = if is_end_marker(data, offset) {
                     SegmentEnd::Marker
                 } else {
@@ -817,6 +833,39 @@ mod tests {
             scan_segment(&segment, true, |_, _| {}).end,
             SegmentEnd::ZeroHeader
         );
+    }
+
+    /// A zero header or end marker with a committed frame after it hides that frame, so it
+    /// is corruption, in the final segment and in sealed ones.
+    #[test]
+    fn a_log_end_before_committed_frames_is_corruption() {
+        for end in [[0u8; 16], marker()] {
+            let mut segment = frame(b"first", 0);
+            segment.extend(end);
+            let hidden = segment.len();
+            segment.extend(frame(b"second", 1));
+            segment.extend(marker());
+            segment.resize(4096, 0);
+            for is_final in [true, false] {
+                let scan = scan_segment(&segment, is_final, |_, _| {});
+                assert_eq!(scan.frames.len(), 1);
+                assert!(
+                    matches!(scan.end, SegmentEnd::Corrupt { committed_at: Some(at), .. } if at == hidden),
+                    "{:?}",
+                    scan.end
+                );
+            }
+        }
+    }
+
+    /// The CRC covers the payload only, so a frame whose payload decodes to fewer bytes than
+    /// its header declares is caught by the length check.
+    #[test]
+    fn a_frame_must_decode_to_its_declared_length() {
+        let mut segment = frame(&[b'a'; 1024], 0);
+        assert!(word(&segment, 8) < word(&segment, 4));
+        segment[4..8].copy_from_slice(&1025u32.to_le_bytes());
+        assert!(decode_frame(&segment, 0).is_err());
     }
 
     /// A damaged frame is a torn tail only when nothing committed follows it, and only in the

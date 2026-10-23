@@ -190,3 +190,27 @@ fn stale_document_training_cannot_publish_after_a_durable_replacement() -> Resul
     );
     Ok(())
 }
+
+/// A canonical rebuild whose rename fails leaves the store on its old text segment: the retry
+/// stages over the staging file, not over the segment the store still reads.
+#[test]
+fn failed_canonical_rebuild_keeps_the_live_text_segment() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let path = directory.path().display().to_string();
+    let core = HmsCore::new(1024, Some(path), Some(super::fixture_config(2)))?;
+    core.memorize_document(input("a", "v1", "kept alpha text", "g")?)?;
+    core.memorize_document(input("b", "v1", "purged beta text", "g")?)?;
+    core.delete_document("b")?;
+    let text = directory.path().join("documents.text");
+    let aside = directory.path().join("documents.text.aside");
+    std::fs::rename(&text, &aside)?;
+    std::fs::create_dir(&text)?;
+    std::fs::write(text.join("occupied"), b"x")?;
+    assert!(core.compact_scrubbing().is_err());
+    std::fs::remove_file(text.join("occupied"))?;
+    std::fs::remove_dir(&text)?;
+    core.compact_scrubbing()?;
+    let record = core.get_document("a").expect("document a");
+    assert_eq!(record.text.as_deref(), Some("kept alpha text"));
+    Ok(())
+}

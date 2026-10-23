@@ -935,14 +935,17 @@ impl DocumentStore {
                 Ok(Arc::new(owned))
             })
             .collect::<anyhow::Result<Vec<_>>>()?;
-        let generation = self.generation;
-        let encode_gate = Arc::clone(&self.encode_gate);
-        *self = Self::default();
-        self.generation = generation;
-        self.encode_gate = encode_gate;
-        self.text = Some(segment);
-        self.insert_batch(documents);
+        // Built aside and installed only once the staged segment holds `path`: a failed rename
+        // leaves the store reading its old segment, and a retry restages over the staging file.
+        let mut rebuilt = Self {
+            generation: self.generation,
+            encode_gate: Arc::clone(&self.encode_gate),
+            text: Some(segment),
+            ..Self::default()
+        };
+        rebuilt.insert_batch(documents);
         std::fs::rename(&staging, path)?;
+        *self = rebuilt;
         if let Some(parent) = path.parent() {
             crate::core::durable_file::sync_directory(parent)?;
         }
