@@ -34,4 +34,4 @@ benchmarks/results/longmemeval_dev_answers_v2b_summary.json -filter -diff -merge
 benchmarks/results/longmemeval_dev_answers_v3.json -filter -diff -merge text
 benchmarks/results/longmemeval_dev_answers_v3_spend.json -filter -diff -merge text
 benchmarks/results/longmemeval_dev_answers_v3_summary.json -filter -diff -merge text
-benchmarks/results/manifold_schema_synthetic.json.gz -filter -diff -merge text
+benchmarks/results/manifold_schema_synthetic.json.gz -filter -diff -merge -text
