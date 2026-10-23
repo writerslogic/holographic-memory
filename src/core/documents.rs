@@ -1012,29 +1012,62 @@ impl Drop for StemMemoGuard<'_> {
     }
 }
 
-/// The batch interner a store keeps between its document batches, so a corpus loaded in
+/// The batch interners a store keeps between its document batches, so a corpus loaded in
 /// consecutive batches stems each distinct word once rather than once per batch and rayon
-/// split. One is kept, bounded by [`STEM_MEMO_CAPACITY`] words, unless keeping is turned off
-/// ([`StemMemoPool::set_keep`]), when each batch's interner is freed with the batch.
+/// split. While a batch runs, each split takes an idle interner (the one that has seen the
+/// most words) and returns it when done, so a worker's later splits reuse what its earlier
+/// ones stemmed. When the batch ends ([`StemMemoPool::trim`]) only the largest is kept,
+/// bounded by [`STEM_MEMO_CAPACITY`] words. With keeping turned off
+/// ([`StemMemoPool::set_keep`]) each split's interner is freed with the split.
 #[derive(Default)]
 pub(crate) struct StemMemoPool {
-    kept: crate::core::sync::Mutex<Option<StemMemo>>,
+    idle: crate::core::sync::Mutex<Vec<StemMemo>>,
     release: std::sync::atomic::AtomicBool,
 }
 
 impl StemMemoPool {
-    /// The kept interner, or a new one; it goes back to the pool when the result drops.
+    /// The idle interner that has seen the most words, or a new one; it goes back to the pool
+    /// when the result drops.
     pub(crate) fn take(&self) -> PooledStemMemo<'_> {
-        let memo = self.kept.lock().take().unwrap_or_default();
-        PooledStemMemo { pool: self, memo }
+        let memo = {
+            let mut idle = self.idle.lock();
+            let largest = (0..idle.len()).max_by_key(|&i| idle[i].0.words.len());
+            largest.map(|i| idle.swap_remove(i))
+        };
+        PooledStemMemo {
+            pool: self,
+            memo: memo.unwrap_or_default(),
+        }
     }
 
-    /// Whether interners outlive their batch; turning it off frees the kept one now.
+    /// Keeps the idle interners that have seen the most words, together at most
+    /// [`STEM_MEMO_CAPACITY`] words (always the largest one); the others are freed.
+    pub(crate) fn trim(&self) {
+        let mut idle = std::mem::take(&mut *self.idle.lock());
+        idle.sort_unstable_by_key(|memo| std::cmp::Reverse(memo.0.words.len()));
+        let mut words = 0;
+        let keep = idle
+            .iter()
+            .position(|memo| {
+                words += memo.0.words.len();
+                words > STEM_MEMO_CAPACITY
+            })
+            .unwrap_or(idle.len())
+            .max(1)
+            .min(idle.len());
+        let freed = idle.split_off(keep);
+        self.idle.lock().append(&mut idle);
+        // The freed interners drop here, with the lock released.
+        drop(freed);
+    }
+
+    /// Whether interners outlive their batch; turning it off frees the idle ones now.
     pub(crate) fn set_keep(&self, keep: bool) {
         self.release
             .store(!keep, std::sync::atomic::Ordering::Relaxed);
         if !keep {
-            self.kept.lock().take();
+            let freed = std::mem::take(&mut *self.idle.lock());
+            drop(freed);
         }
     }
 }
@@ -1056,14 +1089,7 @@ impl Drop for PooledStemMemo<'_> {
         if self.pool.release.load(std::sync::atomic::Ordering::Relaxed) {
             return;
         }
-        let mut kept = self.pool.kept.lock();
-        // Of the interners of concurrent splits, keep the one that has seen the most words.
-        if kept
-            .as_ref()
-            .is_none_or(|k| k.0.words.len() < memo.0.words.len())
-        {
-            *kept = Some(memo);
-        }
+        self.pool.idle.lock().push(memo);
     }
 }
 

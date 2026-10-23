@@ -197,27 +197,56 @@ fn pooled_interner_counts_later_batches_like_a_fresh_one() {
             assert_eq!(&table(text), expected, "batch {batch}");
         }
     }
+    // A concurrent split gets a new interner; both return, and the next split gets the warm one.
     let warm = pool.take();
-    drop(pool.take());
+    let cold = pool.take();
+    assert!(warm.memo.0.words.len() > 0);
+    assert_eq!(cold.memo.0.words.len(), 0);
+    drop(cold);
     drop(warm);
-    assert!(pool
-        .kept
-        .lock()
-        .as_ref()
-        .is_some_and(|kept| kept.0.words.len() > 0));
+    assert_eq!(pool.idle.lock().len(), 2);
+    assert!(pool.take().memo.0.words.len() > 0);
 
-    // With keeping off, the kept interner is freed and returned ones are not kept.
+    // With keeping off, the idle interners are freed and returned ones are not kept.
     pool.set_keep(false);
-    assert!(pool.kept.lock().is_none());
+    assert!(pool.idle.lock().is_empty());
     {
         let mut memo = pool.take();
         let _installed = memo.install();
         assert_eq!(&table(texts[0]), &fresh[0]);
     }
-    assert!(pool.kept.lock().is_none());
+    assert!(pool.idle.lock().is_empty());
     pool.set_keep(true);
     drop(pool.take());
-    assert!(pool.kept.lock().is_some());
+    assert_eq!(pool.idle.lock().len(), 1);
+}
+
+/// After a batch the pool keeps its largest idle interners up to [`super::STEM_MEMO_CAPACITY`]
+/// words together, always the largest one, and frees the rest.
+#[test]
+fn trim_keeps_the_largest_interners_within_the_word_bound() {
+    let cap = super::STEM_MEMO_CAPACITY;
+    let memo = |words: usize| {
+        let mut memo = super::StemMemo::default();
+        for i in 0..words {
+            memo.0.words.insert(&format!("w{i}"), 0);
+        }
+        memo
+    };
+    for (sizes, kept) in [
+        (vec![], vec![]),
+        (vec![3, 7], vec![7, 3]),
+        (vec![cap + 5], vec![cap + 5]),
+        (vec![1, cap / 2, cap / 2], vec![cap / 2, cap / 2]),
+        (vec![cap / 2, 1, cap / 2 - 1], vec![cap / 2, cap / 2 - 1, 1]),
+        (vec![cap / 2 + 1, cap / 2, 10], vec![cap / 2 + 1]),
+    ] {
+        let pool = super::StemMemoPool::default();
+        pool.idle.lock().extend(sizes.iter().map(|&n| memo(n)));
+        pool.trim();
+        let left: Vec<usize> = pool.idle.lock().iter().map(|m| m.0.words.len()).collect();
+        assert_eq!(left, kept, "sizes {sizes:?}");
+    }
 }
 
 /// The byte scanner finds the same whitespace-separated words as `char::is_whitespace` on

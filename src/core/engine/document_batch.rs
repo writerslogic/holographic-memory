@@ -398,4 +398,87 @@ mod tests {
             "overflow",
         );
     }
+
+    /// The journal transaction of each batch is byte-identical whatever the thread count and
+    /// whether the store keeps its batch interners: they are pure caches, so neither which
+    /// split stems a word first nor what earlier batches left in the pool shows in the terms.
+    #[test]
+    fn batch_payloads_do_not_depend_on_threads_or_kept_interners() -> Result<()> {
+        let vocabulary = [
+            "running",
+            "runners",
+            "RUN",
+            "Quickly",
+            "the",
+            "ΟΔΟΣ",
+            "Οδός",
+            "naïve",
+            "Café",
+            "straße",
+            "İstanbul",
+            "x2",
+            "42",
+            "abcdefghijklmnopq",
+            "generalizations",
+            "relational",
+            "conditional",
+            "hopefulness",
+            "agreed",
+            "flies",
+        ];
+        let batches: Vec<Vec<DocumentInput>> = (0..3)
+            .map(|batch| {
+                (0..64)
+                    .map(|doc| {
+                        let text: Vec<String> = (0..90)
+                            .map(|w| {
+                                let i = (doc * 7 + w * 13 + batch * 3) % 41;
+                                match vocabulary.get(i) {
+                                    Some(word) => (*word).to_owned(),
+                                    None => format!("w{}x{}", batch * 1000 + doc, i),
+                                }
+                            })
+                            .collect();
+                        serde_json::from_value(json!({
+                            "id": format!("d{batch}-{doc}"),
+                            "text": text.join(" "),
+                            "chunkWords": 24,
+                            "overlapWords": 4,
+                        }))
+                        .unwrap()
+                    })
+                    .collect()
+            })
+            .collect();
+        let options = IngestOptions {
+            encode: crate::core::documents::EncodeMode::Lexical,
+            ..Default::default()
+        };
+        let payloads = |threads: usize, keep: bool| -> Result<Vec<Vec<u8>>> {
+            let directory = tempfile::tempdir()?;
+            let core = HmsCore::new(1024, Some(directory.path().display().to_string()), None)?;
+            core.set_keep_ingest_interner(keep);
+            let pool = rayon::ThreadPoolBuilder::new()
+                .num_threads(threads)
+                .build()?;
+            pool.install(|| {
+                batches
+                    .iter()
+                    .map(|batch| {
+                        let (mutations, payload) = core.prepare_batch(batch.clone(), &options)?;
+                        core.commit_serialized(&mutations, &payload)?;
+                        Ok(payload)
+                    })
+                    .collect()
+            })
+        };
+        let expected = payloads(1, true)?;
+        for (threads, keep) in [(1, false), (2, true), (8, true), (8, false)] {
+            assert!(
+                payloads(threads, keep)? == expected,
+                "threads {threads}, keep {keep}"
+            );
+        }
+        Ok(())
+    }
 }

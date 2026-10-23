@@ -86,6 +86,25 @@ impl HmsCore {
         inputs: Vec<DocumentInput>,
         options: &IngestOptions,
     ) -> Result<Vec<u32>> {
+        let (mutations, payload) = self.prepare_batch(inputs, options)?;
+        let counts = mutations
+            .iter()
+            .map(|mutation| match mutation {
+                Mutation::Document(document) => document.chunks.len() as u32,
+                _ => unreachable!("document preparation produced a non-document mutation"),
+            })
+            .collect();
+        self.commit_serialized(&mutations, &payload)?;
+        Ok(counts)
+    }
+
+    /// The prepared documents of a batch, in input order, and their serialized journal
+    /// transaction.
+    pub(super) fn prepare_batch(
+        &self,
+        inputs: Vec<DocumentInput>,
+        options: &IngestOptions,
+    ) -> Result<(Vec<Mutation>, Vec<u8>)> {
         #[cfg(feature = "local-models")]
         let stages = self.model_stages();
         #[cfg(feature = "local-models")]
@@ -131,17 +150,12 @@ impl HmsCore {
                     .map(|document| Mutation::Document(Arc::new(document)))
                 },
             )
-            .collect::<Result<Vec<_>>>()?;
+            .collect::<Result<Vec<_>>>();
+        // Every split has returned its interner; keep the warmest within the memory bound.
+        self.stem_memos.trim();
+        let mutations = mutations?;
         let payload = super::document_batch::serialize_transaction(self, &mutations)?;
-        let counts = mutations
-            .iter()
-            .map(|mutation| match mutation {
-                Mutation::Document(document) => document.chunks.len() as u32,
-                _ => unreachable!("document preparation produced a non-document mutation"),
-            })
-            .collect();
-        self.commit_serialized(&mutations, &payload)?;
-        Ok(counts)
+        Ok((mutations, payload))
     }
 
     pub fn search_documents(
