@@ -178,5 +178,7 @@
     "longmemeval_dev_runs": 8
   },
   "openai_spend_usd": 0.0,
-  "judge_accuracy": "unchanged from locomo_v1.json: no candidate passed the gates, so no reader/judge run"
+  "judge_accuracy": "unchanged from locomo_v1.json: no candidate passed the gates, so no reader/judge run",
+  "binary_note": "Runs used an hms-server built at 8fddc13f plus the (reverted) episode option; with the option absent or 0 the ranking path is the unchanged one. After the revert, round-robin and cosine tuning runs, the LongMemEval baseline and the two-tenant zipper run were repeated on a server built from this branch and reproduced bit-identically.",
+  "open_domain_note": "primary passes 46.9-51.0 J (sd 1.65), all below Mem0 51.15; of 49 wrong, 15 had all evidence in context, 21 had none"
 }

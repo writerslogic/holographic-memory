@@ -136,8 +136,9 @@ The categories overlap, so the counts do not add up to 498.
 
 Evidence sits in one speaker's memory for 232 of 282 multi-hop and 82 of 92 open-domain questions,
 yet round-robin packing gives each speaker about 18 of the ~36 slots. Many open-domain wrong answers
-(15 of 49) had every evidence turn in context. Uncapped recall scores lower on open-domain than
-capped (47.57 vs 48.96), so that category is limited by the reader, not by the cap.
+(15 of 49) had every evidence turn in context, but more (21 of 49) had none. Uncapped recall
+scores lower on open-domain than capped (47.57 vs 48.96), so the 1,764-token cap is not what
+limits this category.
 
 ### Levers and results
 Evidence recall, overall / id 1 / id 3:
@@ -181,6 +182,15 @@ Both held-out candidates raised evidence recall on LoCoMo. Both failed the LongM
   it was gated on a two-tenant split instead. There it drops at cuts 5 and 10, by 1 to 3 of 100
   questions; at a cut of 20 it scores .86 / .75 against .85 / .74.
 
+The gate's sensitivity is limited in two ways. Its cache embeds user turns only, which caps
+baseline any@30 at .86, against .99 when every turn is ingested. MiniLM is also a weaker model
+than the one LoCoMo uses.
+
+The runs used an hms-server built with the episode option compiled in. After the option was
+reverted, the server was rebuilt from this branch, and four runs were repeated on it: round-robin
+and cosine packing on the tuning set, the LongMemEval baseline, and two-tenant zipper. All four
+reproduced bit-identically.
+
 On the order of events: the rule that promoted zipper was written after the A and B held-out looks.
 The rule takes the best tuning configuration whose every part passes the second gate. Zipper was
 already in the pre-registered grid.
@@ -192,8 +202,9 @@ already in the pre-registered grid.
   (held-out evidence recall .590 to .650). Every packing rule tried so far lowered LongMemEval
   recall, so none ships.
 - **Open-domain vs Mem0 (48.96 vs 51.15).** Not bound by the cap: 15 of the 49 wrong answers had all
-  of their evidence in context, and 21 had none of it. Two questions out of 96 separate the two
-  systems, which is within pass-to-pass noise.
+  of their evidence in context, while 21 had none of it, so the largest class is evidence that was
+  never retrieved. The loss is consistent, not noise: the five primary passes scored 46.9 to 51.0
+  (sd 1.65), and every one of them is below Mem0's 51.15.
 - **Single-hop and overall vs full-context.** Full-context reads every turn. Evidence recall at the
   cap is .905 on single-hop (tuning) and .893 (held-out).
 
