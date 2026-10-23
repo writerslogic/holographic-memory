@@ -371,7 +371,11 @@ impl EntangledHVec {
     /// The bundle of the `(index, count)` pairs that reached the majority threshold, in
     /// ascending index order: the `target_count` most frequent, ties resolved by the position
     /// `select_nth_unstable_by` leaves them in, so the order of `selected` must not change.
-    fn from_selected(mut selected: Vec<(u32, u32)>, dim: usize, target_count: usize) -> Self {
+    pub(crate) fn from_selected(
+        mut selected: Vec<(u32, u32)>,
+        dim: usize,
+        target_count: usize,
+    ) -> Self {
         if selected.len() > target_count {
             selected.select_nth_unstable_by(target_count - 1, |a, b| b.1.cmp(&a.1));
             selected.truncate(target_count);

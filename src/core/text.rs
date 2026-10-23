@@ -33,7 +33,7 @@ impl TextProcessor {
     /// count is approximated by counting vowel groups.
     pub fn analyze(text: &str) -> TextMetrics {
         // Multi-threaded processing with UTF-8 safety: split only at char boundaries
-        let mut chunk_starts = Vec::new();
+        let mut chunk_starts = Vec::with_capacity(text.len().div_ceil(TEXT_CHUNK_SIZE) + 1);
         let mut pos = 0;
         while pos < text.len() {
             chunk_starts.push(pos);

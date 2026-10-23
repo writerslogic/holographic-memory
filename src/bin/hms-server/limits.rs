@@ -114,7 +114,13 @@ struct Bucket {
 pub struct RateLimiter {
     rate: f64,
     burst: f64,
-    buckets: Mutex<HashMap<String, Bucket>>,
+    buckets: Mutex<RateState>,
+}
+
+#[derive(Default)]
+struct RateState {
+    entries: HashMap<String, Bucket>,
+    next_sweep: Option<Instant>,
 }
 
 const MAX_BUCKETS: usize = 10_000;
@@ -129,7 +135,7 @@ impl RateLimiter {
             } else {
                 f64::from(burst)
             },
-            buckets: Mutex::new(HashMap::new()),
+            buckets: Mutex::new(RateState::default()),
         })
     }
 
@@ -140,15 +146,23 @@ impl RateLimiter {
 
     fn check_at(&self, tenant: &str, now: Instant) -> Result<(), u64> {
         let mut buckets = self.buckets.lock();
-        let known = buckets.contains_key(tenant);
-        if !known && buckets.len() >= MAX_BUCKETS {
+        let known = buckets.entries.contains_key(tenant);
+        if !known && buckets.entries.len() >= MAX_BUCKETS {
             // A bucket idle long enough to be full again is indistinguishable from a new one.
-            let refill = Duration::from_secs_f64(self.burst / self.rate);
-            buckets.retain(|_, b| now.duration_since(b.last) < refill);
+            if buckets.next_sweep.is_none_or(|next| now >= next) {
+                buckets.entries.retain(|_, b| {
+                    b.tokens + now.saturating_duration_since(b.last).as_secs_f64() * self.rate
+                        < self.burst
+                });
+                buckets.next_sweep = now.checked_add(Duration::from_secs(1));
+            }
+            if buckets.entries.len() >= MAX_BUCKETS {
+                return Err(1);
+            }
         }
         if !known {
             // The tenant name is copied only for a new bucket, not on every request.
-            buckets.insert(
+            buckets.entries.insert(
                 tenant.to_string(),
                 Bucket {
                     tokens: self.burst,
@@ -157,6 +171,7 @@ impl RateLimiter {
             );
         }
         let bucket = buckets
+            .entries
             .get_mut(tenant)
             .expect("the tenant's bucket exists or was just inserted");
         let elapsed = now.saturating_duration_since(bucket.last).as_secs_f64();
@@ -287,11 +302,29 @@ impl Idempotency {
             }
             inner.records.remove(&id);
         }
-        while inner.records.len() >= self.capacity {
+        let mut remaining = inner.order.len();
+        while inner.records.len() >= self.capacity && remaining > 0 {
+            remaining -= 1;
             let Some(oldest) = inner.order.pop_front() else {
                 break;
             };
-            inner.records.remove(&oldest);
+            if inner
+                .records
+                .get(&oldest)
+                .is_some_and(|r| matches!(r.state, State::Running))
+            {
+                inner.order.push_back(oldest);
+            } else {
+                inner.records.remove(&oldest);
+            }
+        }
+        if inner.records.len() >= self.capacity {
+            return Err(ApiError::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "server_busy",
+                "idempotency capacity is full; retry later",
+            )
+            .retry_after(1));
         }
         inner.order.push_back(id.clone());
         // Keep the order queue proportional to the live records.
@@ -318,6 +351,54 @@ impl Idempotency {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn rate_limit_bucket_cap_rejects_new_tenants_when_full() {
+        let limiter = RateLimiter::new(1.0, 1).unwrap();
+        let now = Instant::now();
+        let first = Instant::now();
+        for i in 0..MAX_BUCKETS {
+            limiter.check_at(&format!("tenant{i}"), now).unwrap();
+        }
+        let below = first.elapsed();
+        let start = Instant::now();
+        for i in MAX_BUCKETS..MAX_BUCKETS + 1000 {
+            assert!(limiter.check_at(&format!("tenant{i}"), now).is_err());
+        }
+        let above = start.elapsed();
+        let count = limiter.buckets.lock().entries.len();
+        eprintln!(
+            "rate: first_10000_us={} next_1000_us={} buckets={count}",
+            below.as_micros(),
+            above.as_micros()
+        );
+        assert!(
+            count <= MAX_BUCKETS,
+            "bucket map exceeds its intended bound"
+        );
+        assert!(limiter
+            .check_at("after-refill", now + Duration::from_secs(1))
+            .is_ok());
+    }
+
+    #[test]
+    fn idempotency_keeps_running_entries_at_capacity() {
+        let store = Idempotency::new(Duration::from_secs(60), 1);
+        let fp = fingerprint("POST", "/x", "t", b"body");
+        let Begin::Proceed(first) = store.begin("t", "first", fp).unwrap() else {
+            panic!()
+        };
+        assert!(store.begin("t", "second", fp).is_err());
+        let retry = store.begin("t", "first", fp);
+        assert!(
+            retry.is_err(),
+            "a retry is executing while its original request is still running"
+        );
+        drop(first);
+        assert!(matches!(
+            store.begin("t", "second", fp).unwrap(),
+            Begin::Proceed(_)
+        ));
+    }
 
     #[tokio::test]
     async fn queue_admits_up_to_its_bound_then_sheds() {

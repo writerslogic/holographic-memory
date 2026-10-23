@@ -76,32 +76,22 @@ impl DistributionalRefiner {
         triple_store: &TripleStore,
         config: &RefinerConfig,
     ) -> RefinementReport {
-        let snapshot = triple_store.snapshot();
-        if snapshot.is_empty() {
-            return RefinementReport::default();
-        }
-
-        // Build: atom -> set of relations it participates in (as subject)
         let mut atom_relations: FastMap<String, Vec<String>> = FastMap::default();
-        for t in &snapshot {
+        let mut relation_subjects: FastMap<String, Vec<String>> = FastMap::default();
+        triple_store.visit(None, None, None, |t| {
             atom_relations
                 .entry(t.subject_id.clone())
                 .or_default()
                 .push(t.relation_id.clone());
-        }
-        // Deduplicate
-        for rels in atom_relations.values_mut() {
-            rels.sort();
-            rels.dedup();
-        }
-
-        // Build: relation -> list of subject atoms
-        let mut relation_subjects: FastMap<String, Vec<String>> = FastMap::default();
-        for t in &snapshot {
             relation_subjects
                 .entry(t.relation_id.clone())
                 .or_default()
                 .push(t.subject_id.clone());
+            true
+        });
+        for rels in atom_relations.values_mut() {
+            rels.sort();
+            rels.dedup();
         }
         for subjects in relation_subjects.values_mut() {
             subjects.sort();
@@ -111,7 +101,6 @@ impl DistributionalRefiner {
         let mut report = RefinementReport::default();
         let mut total_context_depth: usize = 0;
 
-        // For each atom, compute its context vector and blend
         for (atom_id, relations) in &atom_relations {
             if relations.len() < config.min_context_relations {
                 report.atoms_skipped += 1;
@@ -181,10 +170,9 @@ impl DistributionalRefiner {
 
             // Keep top original indices (by posting frequency if available,
             // otherwise just first orig_slots)
-            let mut orig_indices: Vec<u32> = original.indices().to_vec();
-            orig_indices.truncate(orig_slots);
+            let orig_indices =
+                original.indices()[..orig_slots.min(original.indices().len())].to_vec();
 
-            // Merge
             let mut new_indices: Vec<u32> = orig_indices;
             new_indices.extend(ctx_scored.iter().map(|(idx, _)| *idx));
             new_indices.sort_unstable();

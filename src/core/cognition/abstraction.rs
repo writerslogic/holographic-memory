@@ -47,58 +47,38 @@ impl AbstractionEngine {
         atom_memory: &AtomMemory,
         min_members: usize,
     ) -> Vec<Abstraction> {
-        let snapshot = triple_store.snapshot();
-
-        // Group subjects by relation, objects by relation
-        let mut subjects_by_rel: FastMap<String, Vec<String>> = FastMap::default();
-        let mut objects_by_rel: FastMap<String, Vec<String>> = FastMap::default();
-
-        for t in &snapshot {
-            subjects_by_rel
-                .entry(t.relation_id.clone())
-                .or_default()
-                .push(t.subject_id.clone());
-            objects_by_rel
-                .entry(t.relation_id.clone())
-                .or_default()
-                .push(t.object_id.clone());
-        }
-
         let mut results = Vec::new();
-
-        // Subject-side abstractions
-        for (relation, mut members) in subjects_by_rel {
-            members.sort();
-            members.dedup();
-            if members.len() < min_members {
-                continue;
-            }
-            if let Some(proto) = Self::bundle_members(&members, atom_memory) {
-                results.push(Abstraction {
-                    name: format!("concept:{}:subject", relation),
-                    relation: relation.clone(),
-                    role: AbstractionRole::Subject,
-                    members,
-                    prototype: proto,
-                });
-            }
-        }
-
-        // Object-side abstractions
-        for (relation, mut members) in objects_by_rel {
-            members.sort();
-            members.dedup();
-            if members.len() < min_members {
-                continue;
-            }
-            if let Some(proto) = Self::bundle_members(&members, atom_memory) {
-                results.push(Abstraction {
-                    name: format!("concept:{}:object", relation),
-                    relation,
-                    role: AbstractionRole::Object,
-                    members,
-                    prototype: proto,
-                });
+        for relation in triple_store.relation_ids() {
+            let mut subjects = crate::core::hash::FastSet::default();
+            let mut objects = crate::core::hash::FastSet::default();
+            triple_store.visit(None, Some(&relation), None, |t| {
+                subjects.insert(t.subject_id.clone());
+                objects.insert(t.object_id.clone());
+                true
+            });
+            for (role, members) in [
+                (AbstractionRole::Subject, subjects),
+                (AbstractionRole::Object, objects),
+            ] {
+                if members.len() < min_members {
+                    continue;
+                }
+                let mut members: Vec<_> = members.into_iter().collect();
+                members.sort();
+                if let Some(prototype) = Self::bundle_members(&members, atom_memory) {
+                    let suffix = if role == AbstractionRole::Subject {
+                        "subject"
+                    } else {
+                        "object"
+                    };
+                    results.push(Abstraction {
+                        name: format!("concept:{relation}:{suffix}"),
+                        relation: relation.clone(),
+                        role,
+                        members,
+                        prototype,
+                    });
+                }
             }
         }
 
@@ -112,25 +92,38 @@ impl AbstractionEngine {
     /// selection, since majority-vote at high sparsity (64/16384) produces
     /// empty results when members are independent.
     fn bundle_members(members: &[String], atom_memory: &AtomMemory) -> Option<EntangledHVec> {
-        let vecs: Vec<EntangledHVec> = members.iter().filter_map(|m| atom_memory.get(m)).collect();
-        if vecs.is_empty() {
-            return None;
-        }
-        let dim = vecs[0].dim;
-        if vecs.len() >= 10 {
-            return Some(EntangledHVec::bundle(&vecs));
-        }
-        // Weighted frequency: count how many vectors contain each index
         let mut freq: FastMap<u32, u32> = FastMap::default();
-        for v in &vecs {
-            for &idx in v.indices() {
-                *freq.entry(idx).or_insert(0) += 1;
+        let mut dim = None;
+        let mut count = 0u32;
+        for member in members {
+            if let Some(vector) = atom_memory.get(member) {
+                dim.get_or_insert(vector.dim);
+                count += 1;
+                for &index in vector.indices() {
+                    *freq.entry(index).or_default() += 1;
+                }
             }
+        }
+        let dim = dim?;
+        if count >= 10 {
+            let mut selected: Vec<_> = freq
+                .into_iter()
+                .filter(|(_, n)| *n >= count.div_ceil(2))
+                .collect();
+            selected.sort_unstable_by_key(|&(index, _)| index);
+            return Some(EntangledHVec::from_selected(
+                selected,
+                dim,
+                (dim / 256).max(1),
+            ));
         }
         let target_count = (dim / 256).max(1);
         let mut scored: Vec<(u32, u32)> = freq.into_iter().collect();
-        scored.sort_unstable_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
-        scored.truncate(target_count);
+        if scored.len() > target_count {
+            scored
+                .select_nth_unstable_by(target_count - 1, |a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+            scored.truncate(target_count);
+        }
         let mut indices: Vec<u32> = scored.into_iter().map(|(idx, _)| idx).collect();
         indices.sort_unstable();
         Some(EntangledHVec::from_indices(indices, dim))
@@ -140,6 +133,26 @@ impl AbstractionEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn streamed_prototypes_preserve_majority_selection() {
+        let atoms = AtomMemory::new(256, 3.0);
+        let mut members = Vec::new();
+        for i in 0..11 {
+            let id = i.to_string();
+            atoms.insert_with_vec(&id, &EntangledHVec::from_indices(vec![1, 2, 3, 4 + i], 256));
+            members.push(id);
+            if members.len() >= 10 {
+                let vectors: Vec<_> = members.iter().map(|id| atoms.get(id).unwrap()).collect();
+                assert_eq!(
+                    AbstractionEngine::bundle_members(&members, &atoms)
+                        .unwrap()
+                        .indices(),
+                    EntangledHVec::bundle(&vectors).indices()
+                );
+            }
+        }
+    }
 
     #[test]
     fn test_discover_abstractions() {

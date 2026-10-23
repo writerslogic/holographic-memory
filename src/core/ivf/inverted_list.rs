@@ -3,7 +3,7 @@
 
 use crate::core::hash::FastMap;
 use crate::core::sync::RwLock;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::sync::Arc;
 
 const PQ_CODE_LEN: usize = 16;
@@ -26,32 +26,40 @@ impl InvertedLists {
 
     /// Append an entry to the inverted list for `cluster_id`.
     pub fn append(&self, cluster_id: usize, id: &str, pq_codes: &[u8; PQ_CODE_LEN]) -> Result<()> {
-        let mut lists = self.lists.write();
         let entry = InvertedListEntry {
             id: id.to_string(),
             pq_codes: *pq_codes,
         };
-        lists.entry(cluster_id as u32).or_default().push(entry);
+        self.lists
+            .write()
+            .entry(cluster_id as u32)
+            .or_default()
+            .push(entry);
         Ok(())
     }
 
-    /// Read all entries from the inverted list for `cluster_id`.
-    pub fn read(&self, cluster_id: usize) -> Result<Vec<InvertedListEntry>> {
-        let lists = self.lists.read();
-        if let Some(list) = lists.get(&(cluster_id as u32)) {
-            // Return a clone of the entries for safety, though it's less efficient than references.
-            // For 1M scale, we might want to return references or use a different structure.
-            let cloned = list
-                .iter()
-                .map(|e| InvertedListEntry {
-                    id: e.id.clone(),
-                    pq_codes: e.pq_codes,
-                })
-                .collect();
-            Ok(cloned)
-        } else {
-            Ok(Vec::new())
+    // Entries are append-only: freeze the prefix length, then release the read lock every
+    // 256 entries. The callback must not reenter these lists.
+    pub fn visit(&self, cluster_id: usize, mut visitor: impl FnMut(usize, &InvertedListEntry)) {
+        let key = cluster_id as u32;
+        let len = self.lists.read().get(&key).map_or(0, Vec::len);
+        for start in (0..len).step_by(256) {
+            let lists = self.lists.read();
+            let entries = lists.get(&key).expect("append-only list disappeared");
+            let end = start.saturating_add(256).min(len);
+            for (offset, entry) in entries[start..end].iter().enumerate() {
+                visitor(start + offset, entry);
+            }
         }
+    }
+
+    pub fn id_at(&self, cluster_id: usize, index: usize) -> Result<String> {
+        self.lists
+            .read()
+            .get(&(cluster_id as u32))
+            .and_then(|entries| entries.get(index))
+            .map(|entry| entry.id.clone())
+            .ok_or_else(|| anyhow!("append-only inverted-list entry disappeared"))
     }
 }
 
@@ -70,18 +78,36 @@ mod tests {
         lists.append(0, "vec_b", &codes2).unwrap();
         lists.append(1, "vec_c", &codes1).unwrap();
 
-        let entries0 = lists.read(0).unwrap();
-        assert_eq!(entries0.len(), 2);
-        assert_eq!(entries0[0].id, "vec_a");
-        assert_eq!(entries0[0].pq_codes, codes1);
-        assert_eq!(entries0[1].id, "vec_b");
-        assert_eq!(entries0[1].pq_codes, codes2);
+        let mut entries0 = Vec::new();
+        lists.visit(0, |index, entry| entries0.push((index, entry.pq_codes)));
+        assert_eq!(entries0, [(0, codes1), (1, codes2)]);
+        assert_eq!(lists.id_at(0, 0).unwrap(), "vec_a");
+        assert_eq!(lists.id_at(0, 1).unwrap(), "vec_b");
+        let mut entries1 = Vec::new();
+        lists.visit(1, |index, entry| entries1.push((index, entry.pq_codes)));
+        assert_eq!(entries1, [(0, codes1)]);
+        assert_eq!(lists.id_at(1, 0).unwrap(), "vec_c");
+        lists.visit(2, |_, _| panic!("absent cluster must be empty"));
+    }
 
-        let entries1 = lists.read(1).unwrap();
-        assert_eq!(entries1.len(), 1);
-        assert_eq!(entries1[0].id, "vec_c");
-
-        let entries2 = lists.read(2).unwrap();
-        assert!(entries2.is_empty());
+    #[test]
+    fn traversal_preserves_order_across_batch_boundaries() {
+        for len in [255, 256, 257] {
+            let lists = InvertedLists::new();
+            for index in 0..len {
+                lists
+                    .append(0, &index.to_string(), &[index as u8; 16])
+                    .unwrap();
+            }
+            let mut seen = Vec::new();
+            lists.visit(0, |index, entry| {
+                assert_eq!(entry.pq_codes, [index as u8; 16]);
+                seen.push(index);
+            });
+            assert_eq!(seen, (0..len).collect::<Vec<_>>());
+            for index in seen {
+                assert_eq!(lists.id_at(0, index).unwrap(), index.to_string());
+            }
+        }
     }
 }

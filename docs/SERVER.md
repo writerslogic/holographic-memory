@@ -133,6 +133,10 @@ The store records the embedding model, revision and input dimension (`--embeddin
 
 Snapshots, compaction and restore are described in [`server/operations.md`](server/operations.md).
 
+New vector snapshots record a checksum of `rows-<epoch>.bin` in `CURRENT`; a mismatch disables the snapshot so queries fall back to the engine. Older snapshots remain readable and gain the checksum on the next maintenance run.
+
+Admission limits preserve in-flight idempotency records: if all records are running at capacity, a new key receives 503 and can retry. The rate limiter holds at most 10,000 tenant buckets; when full, requests for a new tenant receive 429 until idle buckets can be reclaimed. Existing tenant buckets continue operating normally.
+
 ## What it does not provide
 
 - Single node: no replication, clustering or HA. A tenant store is owned by one process.

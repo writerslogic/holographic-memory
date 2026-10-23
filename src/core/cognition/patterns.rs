@@ -6,7 +6,7 @@
 //! Groups triples by relation, counts co-occurring subject/object atoms,
 //! and surfaces recurring structural regularities.
 
-use crate::core::hash::FastMap;
+use crate::core::hash::FastSet;
 
 use crate::core::triple_store::TripleStore;
 
@@ -41,37 +41,29 @@ impl PatternScanner {
         triple_store: &TripleStore,
         min_freq: usize,
     ) -> Vec<RelationPattern> {
-        let snapshot = triple_store.snapshot();
-
-        // Group by relation
-        let mut by_relation: FastMap<String, (Vec<String>, Vec<String>)> = FastMap::default();
-        for t in &snapshot {
-            let entry = by_relation
-                .entry(t.relation_id.clone())
-                .or_insert_with(|| (Vec::new(), Vec::new()));
-            entry.0.push(t.subject_id.clone());
-            entry.1.push(t.object_id.clone());
-        }
-
         let mut patterns = Vec::new();
-        for (relation, (subjects, objects)) in by_relation {
-            let freq = subjects.len();
-            if freq < min_freq {
+        for relation in triple_store.relation_ids() {
+            let mut subjects = FastSet::default();
+            let mut objects = FastSet::default();
+            let mut frequency = 0;
+            triple_store.visit(None, Some(&relation), None, |t| {
+                frequency += 1;
+                subjects.insert(t.subject_id.clone());
+                objects.insert(t.object_id.clone());
+                true
+            });
+            if frequency == 0 || frequency < min_freq {
                 continue;
             }
-            // Deduplicate
-            let mut unique_subjects = subjects;
-            unique_subjects.sort();
-            unique_subjects.dedup();
-            let mut unique_objects = objects;
-            unique_objects.sort();
-            unique_objects.dedup();
-
+            let mut subjects: Vec<_> = subjects.into_iter().collect();
+            let mut objects: Vec<_> = objects.into_iter().collect();
+            subjects.sort();
+            objects.sort();
             patterns.push(RelationPattern {
                 relation,
-                subjects: unique_subjects,
-                objects: unique_objects,
-                frequency: freq,
+                subjects,
+                objects,
+                frequency,
             });
         }
 
@@ -82,25 +74,20 @@ impl PatternScanner {
     /// Find entities that co-occur as subjects across multiple relations.
     /// Two subjects co-occur if they share at least `min_shared` relations.
     pub fn find_co_occurrences(triple_store: &TripleStore, min_shared: usize) -> Vec<CoOccurrence> {
-        let snapshot = triple_store.snapshot();
-
-        // Build entity -> set of relations
-        let mut entity_relations: FastMap<String, Vec<String>> = FastMap::default();
-        for t in &snapshot {
-            entity_relations
-                .entry(t.subject_id.clone())
-                .or_default()
-                .push(t.relation_id.clone());
+        let mut entities = Vec::new();
+        for entity in triple_store.subject_ids() {
+            let mut relations = FastSet::default();
+            triple_store.visit(Some(&entity), None, None, |t| {
+                relations.insert(t.relation_id.clone());
+                true
+            });
+            if relations.is_empty() {
+                continue;
+            }
+            let mut relations: Vec<_> = relations.into_iter().collect();
+            relations.sort();
+            entities.push((entity, relations));
         }
-
-        // Deduplicate relation lists
-        for rels in entity_relations.values_mut() {
-            rels.sort();
-            rels.dedup();
-        }
-
-        // Pairwise comparison
-        let entities: Vec<(String, Vec<String>)> = entity_relations.into_iter().collect();
         let mut results = Vec::new();
 
         for i in 0..entities.len() {

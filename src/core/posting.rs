@@ -27,6 +27,10 @@ impl PostingShard {
         for &idx in indices {
             if (idx as usize) < self.dim {
                 let list = &mut self.lists[idx as usize];
+                if list.last().is_none_or(|&last| last < vec_id) {
+                    list.push(vec_id);
+                    continue;
+                }
                 match list.binary_search(&vec_id) {
                     Ok(_) => {} // already present
                     Err(pos) => list.insert(pos, vec_id),

@@ -16,10 +16,8 @@ impl AtomMemory {
     }
 
     pub fn get_or_insert(&self, atom_str: &str) -> (u32, EntangledHVec) {
-        if let Some(idx) = self.inner.idx_for(atom_str) {
-            if let Some((_, vec)) = self.inner.get_by_idx(idx) {
-                return (idx, vec);
-            }
+        if let Some(entry) = self.inner.get_with_idx(atom_str) {
+            return entry;
         }
         let vec = super::encoding::encode_text_internal(atom_str, self.inner.dim());
         let idx = self.inner.insert(atom_str.to_string(), vec.clone());

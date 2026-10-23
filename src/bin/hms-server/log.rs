@@ -6,6 +6,7 @@
 //! Callers pass only identifiers, counts and timings. Request bodies, query text, vectors,
 //! metadata and credentials never reach a log line; handlers do not hand them to this module.
 
+use std::fmt::Write as _;
 use std::io::Write;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -88,12 +89,16 @@ pub fn emit(level: LogLevel, event: &str, fields: &[(&str, Value)]) {
         LogFormat::Text => {
             let mut line = format!("{ts} {} {event}", level_name(level));
             if let Some(id) = request_id() {
-                line.push_str(&format!(" request_id={id}"));
+                let _ = write!(line, " request_id={id}");
             }
             for (key, value) in fields {
                 match value {
-                    Value::String(s) => line.push_str(&format!(" {key}={s:?}")),
-                    other => line.push_str(&format!(" {key}={other}")),
+                    Value::String(s) => {
+                        let _ = write!(line, " {key}={s:?}");
+                    }
+                    other => {
+                        let _ = write!(line, " {key}={other}");
+                    }
                 }
             }
             line

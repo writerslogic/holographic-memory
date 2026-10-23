@@ -7,6 +7,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::index::text_of;
+use super::text::TextSegment;
 use super::{DocumentStore, StoredDocument};
 
 /// A stored document as the store holds it: first chunk's text, metadata and version.
@@ -23,8 +24,7 @@ pub struct DocumentRecord {
     pub chunk_count: usize,
 }
 
-fn record(store: &DocumentStore, document: &StoredDocument) -> DocumentRecord {
-    let segment = store.text_segment();
+fn record(document: &StoredDocument, segment: Option<&TextSegment>) -> DocumentRecord {
     DocumentRecord {
         id: document.id.clone(),
         source_uri: document.source_uri.clone(),
@@ -33,13 +33,16 @@ fn record(store: &DocumentStore, document: &StoredDocument) -> DocumentRecord {
         text: document
             .chunks
             .first()
-            .and_then(|chunk| text_of(chunk, segment.as_deref())),
+            .and_then(|chunk| text_of(chunk, segment)),
         chunk_count: document.chunks.len(),
     }
 }
 
 pub(crate) fn get_record(store: &DocumentStore, id: &str) -> Option<DocumentRecord> {
-    store.get(id).map(|document| record(store, document))
+    store.get(id).map(|document| {
+        let segment = store.text_segment();
+        record(document, segment.as_deref())
+    })
 }
 
 /// Up to `limit` documents with ids at or after `from`, in id order.
@@ -50,11 +53,12 @@ pub(crate) fn list_records(
 ) -> Vec<DocumentRecord> {
     use std::ops::Bound::{Included, Unbounded};
     let start = from.map_or(Unbounded, Included);
+    let segment = store.text_segment();
     store
         .documents
         .range::<str, _>((start, Unbounded))
         .take(limit)
-        .map(|(_, document)| record(store, document))
+        .map(|(_, document)| record(document, segment.as_deref()))
         .collect()
 }
 

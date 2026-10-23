@@ -12,7 +12,8 @@ use crate::core::ivf::pq::PQEncoder;
 use crate::core::types::RetrievalResult;
 
 struct ScoredEntry {
-    id: String,
+    cluster_id: usize,
+    entry_index: usize,
     distance: u32,
 }
 
@@ -57,17 +58,17 @@ impl IVFIndex {
             .ok_or_else(|| anyhow::anyhow!("Inverted lists database not connected"))?;
 
         for cluster_id in probe_clusters {
-            let entries = lists.read(cluster_id)?;
-            for entry in entries {
+            lists.visit(cluster_id, |entry_index, entry| {
                 let dist = PQEncoder::adc_distance(&adc_table, &entry.pq_codes);
                 heap.push(ScoredEntry {
-                    id: entry.id,
+                    cluster_id,
+                    entry_index,
                     distance: dist,
                 });
                 if heap.len() > k {
                     heap.pop();
                 }
-            }
+            });
         }
 
         // PQ distance = sum of symmetric-diff counts across 16 subvectors.
@@ -76,16 +77,15 @@ impl IVFIndex {
         let max_pq_dist = 2.0 * active_count;
 
         // into_sorted_vec() returns ascending distance = best (highest similarity) first
-        let results: Vec<RetrievalResult> = heap
-            .into_sorted_vec()
+        heap.into_sorted_vec()
             .into_iter()
-            .map(|e| RetrievalResult {
-                id: e.id,
-                similarity: (1.0 - (e.distance as f64 / max_pq_dist)).clamp(0.0, 1.0),
+            .map(|e| {
+                Ok(RetrievalResult {
+                    id: lists.id_at(e.cluster_id, e.entry_index)?,
+                    similarity: (1.0 - (e.distance as f64 / max_pq_dist)).clamp(0.0, 1.0),
+                })
             })
-            .collect();
-
-        Ok(results)
+            .collect()
     }
 }
 

@@ -36,47 +36,19 @@ impl AnalogyDetector {
     /// `min_shared_relations`: minimum number of shared relation types
     /// between two components to consider them analogous.
     pub fn detect(triple_store: &TripleStore, min_shared_relations: usize) -> Vec<Analogy> {
-        let snapshot = triple_store.snapshot();
-        if snapshot.is_empty() {
-            return Vec::new();
-        }
-
-        // Build adjacency list (undirected) for connected components
-        let mut adj: FastMap<String, FastSet<String>> = FastMap::default();
-        for t in &snapshot {
-            adj.entry(t.subject_id.clone())
-                .or_default()
-                .insert(t.object_id.clone());
-            adj.entry(t.object_id.clone())
-                .or_default()
-                .insert(t.subject_id.clone());
-        }
-
-        // Find connected components via BFS
-        let components = find_components(&adj);
-
-        // Pre-build subject -> relations map for O(1) lookup
-        let mut subject_relations: FastMap<String, FastSet<String>> = FastMap::default();
-        for t in &snapshot {
-            subject_relations
-                .entry(t.subject_id.clone())
-                .or_default()
-                .insert(t.relation_id.clone());
-        }
-
-        // For each component, compute its relation signature
-        let mut comp_signatures: Vec<(FastSet<String>, FastSet<String>)> = Vec::new();
-        for comp_entities in &components {
+        let components = find_components(triple_store);
+        let mut comp_signatures = Vec::new();
+        for entities in components {
             let mut relations = FastSet::default();
-            for entity in comp_entities {
-                if let Some(rels) = subject_relations.get(entity) {
-                    relations.extend(rels.iter().cloned());
-                }
+            for entity in &entities {
+                triple_store.visit(Some(entity), None, None, |t| {
+                    relations.insert(t.relation_id.clone());
+                    true
+                });
             }
-            comp_signatures.push((comp_entities.clone(), relations));
+            comp_signatures.push((entities, relations));
         }
 
-        // Compare pairs of components
         let mut analogies = Vec::new();
         for i in 0..comp_signatures.len() {
             for j in (i + 1)..comp_signatures.len() {
@@ -88,9 +60,7 @@ impl AnalogyDetector {
                     continue;
                 }
 
-                // Ranked matching: compute all pairwise similarities, then select
-                // best non-conflicting mapping in descending similarity order.
-                if let Some(analogy) = ranked_match(entities_a, entities_b, &shared, &snapshot) {
+                if let Some(analogy) = ranked_match(entities_a, entities_b, &shared, triple_store) {
                     if analogy.score > 0.0 {
                         analogies.push(analogy);
                     }
@@ -108,59 +78,50 @@ impl AnalogyDetector {
 }
 
 /// Find connected components via BFS.
-fn find_components(adj: &FastMap<String, FastSet<String>>) -> Vec<FastSet<String>> {
+fn find_components(store: &TripleStore) -> Vec<FastSet<String>> {
     let mut visited = FastSet::default();
     let mut components = Vec::new();
-
-    for start in adj.keys() {
-        if visited.contains(start) {
+    for start in store.subject_ids() {
+        if visited.contains(&start) || !store.has(Some(&start), None, None) {
             continue;
         }
+        visited.insert(start.clone());
         let mut component = FastSet::default();
-        let mut queue = vec![start.clone()];
+        let mut queue = vec![start];
         while let Some(node) = queue.pop() {
-            if !visited.insert(node.clone()) {
-                continue;
-            }
-            component.insert(node.clone());
-            if let Some(neighbors) = adj.get(&node) {
-                for n in neighbors {
-                    if !visited.contains(n) {
-                        queue.push(n.clone());
-                    }
+            store.visit(Some(&node), None, None, |t| {
+                if visited.insert(t.object_id.clone()) {
+                    queue.push(t.object_id.clone());
                 }
-            }
+                true
+            });
+            store.visit(None, None, Some(&node), |t| {
+                if visited.insert(t.subject_id.clone()) {
+                    queue.push(t.subject_id.clone());
+                }
+                true
+            });
+            component.insert(node);
         }
         components.push(component);
     }
-
     components
 }
 
-/// Build a relation profile for an entity: relation -> roles (subject/object).
 fn entity_profile(
     entity: &str,
-    triples: &[crate::core::triple_store::TripleRecord],
+    triples: &TripleStore,
     shared_relations: &[String],
-) -> FastMap<String, Vec<String>> {
-    let mut profile: FastMap<String, Vec<String>> = FastMap::default();
-    for t in triples {
-        if !shared_relations.contains(&t.relation_id) {
-            continue;
+) -> FastSet<String> {
+    let mut profile = FastSet::default();
+    let mut add = |t: &crate::core::triple_store::TripleRecord| {
+        if shared_relations.contains(&t.relation_id) {
+            profile.insert(t.relation_id.clone());
         }
-        if t.subject_id == entity {
-            profile
-                .entry(t.relation_id.clone())
-                .or_default()
-                .push("subject".to_string());
-        }
-        if t.object_id == entity {
-            profile
-                .entry(t.relation_id.clone())
-                .or_default()
-                .push("object".to_string());
-        }
-    }
+        true
+    };
+    triples.visit(Some(entity), None, None, &mut add);
+    triples.visit(None, None, Some(entity), add);
     profile
 }
 
@@ -171,14 +132,13 @@ fn ranked_match(
     entities_a: &FastSet<String>,
     entities_b: &FastSet<String>,
     shared_relations: &[String],
-    triples: &[crate::core::triple_store::TripleRecord],
+    triples: &TripleStore,
 ) -> Option<Analogy> {
-    // Build profiles for each entity in A and B
-    let profiles_a: Vec<(String, FastMap<String, Vec<String>>)> = entities_a
+    let profiles_a: Vec<(String, FastSet<String>)> = entities_a
         .iter()
         .map(|e| (e.clone(), entity_profile(e, triples, shared_relations)))
         .collect();
-    let profiles_b: Vec<(String, FastMap<String, Vec<String>>)> = entities_b
+    let profiles_b: Vec<(String, FastSet<String>)> = entities_b
         .iter()
         .map(|e| (e.clone(), entity_profile(e, triples, shared_relations)))
         .collect();
@@ -187,7 +147,6 @@ fn ranked_match(
         return None;
     }
 
-    // Compute all pairwise similarities
     let mut pairs: Vec<(f64, usize, usize)> =
         Vec::with_capacity(profiles_a.len() * profiles_b.len());
     for (i, (_ea, pa)) in profiles_a.iter().enumerate() {
@@ -199,10 +158,8 @@ fn ranked_match(
         }
     }
 
-    // Sort by descending similarity
     pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
-    // Greedily select best non-conflicting mapping
     let mut used_a = FastSet::default();
     let mut used_b = FastSet::default();
     let mut mapping = Vec::new();
@@ -224,7 +181,6 @@ fn ranked_match(
 
     let score = total_score / mapping.len() as f64;
 
-    // Compute edge-overlap scoring
     let mapping_quality = compute_edge_overlap(&mapping, shared_relations, triples);
 
     Some(Analogy {
@@ -243,9 +199,8 @@ fn ranked_match(
 fn compute_edge_overlap(
     mapping: &[(String, String)],
     shared_relations: &[String],
-    triples: &[crate::core::triple_store::TripleRecord],
+    triples: &TripleStore,
 ) -> f64 {
-    // Build forward and reverse mapping lookups
     let forward: FastMap<&str, &str> = mapping
         .iter()
         .map(|(a, b)| (a.as_str(), b.as_str()))
@@ -254,96 +209,46 @@ fn compute_edge_overlap(
         .iter()
         .map(|(a, b)| (b.as_str(), a.as_str()))
         .collect();
-
-    let mapped_entities_a: FastSet<&str> = mapping.iter().map(|(a, _)| a.as_str()).collect();
-    let mapped_entities_b: FastSet<&str> = mapping.iter().map(|(_, b)| b.as_str()).collect();
-
-    let shared_set: FastSet<&str> = shared_relations.iter().map(|s| s.as_str()).collect();
-
-    // Build a set of (subject, relation, object) triples in B for fast lookup
-    let triples_b: FastSet<(&str, &str, &str)> = triples
-        .iter()
-        .filter(|t| {
-            shared_set.contains(t.relation_id.as_str())
-                && mapped_entities_b.contains(t.subject_id.as_str())
-        })
-        .map(|t| {
-            (
-                t.subject_id.as_str(),
-                t.relation_id.as_str(),
-                t.object_id.as_str(),
-            )
-        })
-        .collect();
-
-    // Build a set of (subject, relation, object) triples in A for fast lookup
-    let triples_a: FastSet<(&str, &str, &str)> = triples
-        .iter()
-        .filter(|t| {
-            shared_set.contains(t.relation_id.as_str())
-                && mapped_entities_a.contains(t.subject_id.as_str())
-        })
-        .map(|t| {
-            (
-                t.subject_id.as_str(),
-                t.relation_id.as_str(),
-                t.object_id.as_str(),
-            )
-        })
-        .collect();
-
-    // Count how many A-triples map to existing B-triples
-    let mut matched_a = 0usize;
-    for &(subj, rel, obj) in &triples_a {
-        if let (Some(&mapped_subj), Some(&mapped_obj)) = (forward.get(subj), forward.get(obj)) {
-            if triples_b.contains(&(mapped_subj, rel, mapped_obj)) {
-                matched_a += 1;
+    let count = |map: &FastMap<&str, &str>| {
+        let mut total = 0;
+        let mut matched = 0;
+        for (&subject, &mapped_subject) in map {
+            let mut edges = FastSet::default();
+            triples.visit(Some(subject), None, None, |t| {
+                if shared_relations.contains(&t.relation_id) {
+                    edges.insert((t.relation_id.clone(), t.object_id.clone()));
+                }
+                true
+            });
+            total += edges.len();
+            for (relation, object) in edges {
+                if let Some(&mapped_object) = map.get(object.as_str()) {
+                    if triples.has(Some(mapped_subject), Some(&relation), Some(mapped_object)) {
+                        matched += 1;
+                    }
+                }
             }
         }
-    }
-
-    // Count how many B-triples map to existing A-triples
-    let mut matched_b = 0usize;
-    for &(subj, rel, obj) in &triples_b {
-        if let (Some(&mapped_subj), Some(&mapped_obj)) = (reverse.get(subj), reverse.get(obj)) {
-            if triples_a.contains(&(mapped_subj, rel, mapped_obj)) {
-                matched_b += 1;
-            }
-        }
-    }
-
-    // Use the smaller domain's edge count as the denominator
-    let count_a = triples_a.len();
-    let count_b = triples_b.len();
-
-    if count_a == 0 && count_b == 0 {
-        return 0.0;
-    }
-
-    // Fraction of edges in the smaller domain that map correctly
-    if count_a <= count_b {
-        if count_a == 0 {
-            0.0
-        } else {
-            matched_a as f64 / count_a as f64
-        }
-    } else if count_b == 0 {
+        (total, matched)
+    };
+    let a = count(&forward);
+    let b = count(&reverse);
+    let (total, matched) = if a.0 <= b.0 { a } else { b };
+    if total == 0 {
         0.0
     } else {
-        matched_b as f64 / count_b as f64
+        matched as f64 / total as f64
     }
 }
 
-/// Jaccard-like similarity between two entity profiles.
-fn profile_similarity(a: &FastMap<String, Vec<String>>, b: &FastMap<String, Vec<String>>) -> f64 {
-    let keys_a: FastSet<&String> = a.keys().collect();
-    let keys_b: FastSet<&String> = b.keys().collect();
-    let intersection = keys_a.intersection(&keys_b).count();
-    let union = keys_a.union(&keys_b).count();
+fn profile_similarity(a: &FastSet<String>, b: &FastSet<String>) -> f64 {
+    let intersection = a.intersection(b).count();
+    let union = a.len() + b.len() - intersection;
     if union == 0 {
-        return 0.0;
+        0.0
+    } else {
+        intersection as f64 / union as f64
     }
-    intersection as f64 / union as f64
 }
 
 #[cfg(test)]
@@ -387,21 +292,12 @@ mod tests {
 
     #[test]
     fn test_find_components() {
-        let mut adj: FastMap<String, FastSet<String>> = FastMap::default();
-        adj.entry("a".to_string())
-            .or_default()
-            .insert("b".to_string());
-        adj.entry("b".to_string())
-            .or_default()
-            .insert("a".to_string());
-        adj.entry("c".to_string())
-            .or_default()
-            .insert("d".to_string());
-        adj.entry("d".to_string())
-            .or_default()
-            .insert("c".to_string());
-
-        let components = find_components(&adj);
+        let store = TripleStore::new();
+        store.add("a", "r", "b", "c1");
+        store.add("c", "r", "d", "c2");
+        store.add("b", "r", "c", "deleted");
+        store.remove_composite("deleted");
+        let components = find_components(&store);
         assert_eq!(components.len(), 2);
     }
 

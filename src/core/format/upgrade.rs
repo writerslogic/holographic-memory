@@ -323,9 +323,10 @@ fn upgrade_data_dir(
     let parent = prepare_destination(destination)?;
     let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
     let staging = parent.join(format!(".hms-upgrade-{}-{nonce}", std::process::id()));
-    let result = (|| -> Result<usize> {
+    let result = (|| -> Result<(usize, Report)> {
         std::fs::create_dir_all(staging.join("tenants"))?;
         let mut frames = 0;
+        let mut copied_verdicts = crate::core::hash::FastMap::default();
         for tenant in &sniff.tenants {
             let name = tenant_dir(source, &tenant.name)?;
             let from = source.join("tenants").join(&name);
@@ -333,7 +334,8 @@ fn upgrade_data_dir(
             let _lock = StoreLock::acquire(&from)?;
             let tenant_plan = plan_from(&from, &tenant.report)?;
             if tenant_plan.up_to_date {
-                copy_store_files(&from, &to, &["documents.text"])?;
+                crate::core::admin::copy_tree(&from, &to)?;
+                copied_verdicts.insert(tenant.name.clone(), tenant.report.verdict);
                 frames += tenant.report.frames;
             } else {
                 let staged = stage_store(&from, &to)?;
@@ -346,15 +348,46 @@ fn upgrade_data_dir(
                 std::fs::copy(entry.path(), staging.join(entry.file_name()))?;
             }
         }
+        let mut verification = verify_path(&staging, &VerifyOptions::default())?;
+        for tenant in &verification.tenants {
+            let allowed = copied_verdicts
+                .get(&tenant.name)
+                .copied()
+                .unwrap_or(Verdict::Ok);
+            ensure!(
+                tenant.report.verdict == Verdict::Ok
+                    || (allowed == Verdict::Recoverable
+                        && tenant.report.verdict == Verdict::Recoverable),
+                "upgraded tenant {:?} verifies as {:?} (allowed {:?}): {:?}",
+                tenant.name,
+                tenant.report.verdict,
+                allowed,
+                tenant.report.findings
+            );
+        }
+        ensure!(
+            matches!(verification.verdict, Verdict::Ok | Verdict::Recoverable),
+            "upgraded data directory does not verify: {:?}; tenants: {:?}",
+            verification.findings,
+            verification.tenants
+        );
+        for tenant in &mut verification.tenants {
+            tenant.report.path = destination
+                .join(Path::new(&tenant.report.path).strip_prefix(&staging)?)
+                .display()
+                .to_string();
+        }
+        verification.path = destination.display().to_string();
         std::fs::rename(&staging, destination)?;
-        Ok(frames)
+        crate::core::durable_file::sync_directory(parent)?;
+        Ok((frames, verification))
     })();
     match result {
-        Ok(frames) => Ok(UpgradeReport {
+        Ok((frames, verification)) => Ok(UpgradeReport {
             plan,
             destination: Some(destination.display().to_string()),
             frames,
-            verification: Some(verify_path(destination, &VerifyOptions::default())?),
+            verification: Some(verification),
         }),
         Err(error) => {
             // The staging directory is unpublished; the upgrade's own error is the one to report.

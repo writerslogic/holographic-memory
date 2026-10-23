@@ -92,30 +92,54 @@ impl MemoryGovernor {
         }
     }
 
-    /// Find near-duplicate composites and remove the lower-indexed duplicate.
+    /// Find near-duplicate composites and remove the later duplicate.
     /// Returns the number of composites merged (deleted).
     pub fn consolidate_composites(
         composite_memory: &CompositeMemory,
         config: &GovernorConfig,
     ) -> usize {
-        let all = composite_memory.inner().all_vectors();
-        let scan_limit = all.len().min(config.max_scan_size);
+        if config.max_scan_size == 0
+            || config.duplicate_threshold.is_nan()
+            || config.duplicate_threshold > 1.0
+        {
+            return 0;
+        }
+        let all = composite_memory
+            .inner()
+            .vector_page(&mut 0, config.max_scan_size);
+        let positions: crate::core::hash::FastMap<_, _> = all
+            .iter()
+            .enumerate()
+            .map(|(i, (slot, _, _))| (*slot, i))
+            .collect();
+        let mut deleted = crate::core::hash::FastSet::default();
         let mut merged = 0;
-        let mut deleted: crate::core::hash::FastSet<String> = crate::core::hash::FastSet::default();
-
-        for i in 0..scan_limit {
-            let (_, ref id_i, ref vec_i) = all[i];
-            if deleted.contains(id_i) {
+        for (i, (slot, _, vector)) in all.iter().enumerate() {
+            if deleted.contains(slot) {
                 continue;
             }
-            for entry in all.iter().take(scan_limit).skip(i + 1) {
-                let (_, ref id_j, ref vec_j) = *entry;
-                if deleted.contains(id_j) {
-                    continue;
-                }
-                if vec_i.similarity(vec_j) >= config.duplicate_threshold {
-                    composite_memory.delete(id_j);
-                    deleted.insert(id_j.clone());
+            let candidates: Vec<usize> = if config.duplicate_threshold <= 0.0 {
+                (i + 1..all.len()).collect()
+            } else if vector.indices().is_empty() {
+                (i + 1..all.len())
+                    .filter(|&j| all[j].2.indices().is_empty())
+                    .collect()
+            } else {
+                composite_memory
+                    .inner()
+                    .overlapping_slots(vector, *slot, all.last().unwrap().0)
+                    .into_iter()
+                    .filter_map(|slot| positions.get(&slot).copied())
+                    .filter(|&j| j > i)
+                    .collect()
+            };
+            for j in candidates {
+                let (slot, id, other) = &all[j];
+                if !deleted.contains(slot)
+                    && vector.similarity(other) >= config.duplicate_threshold
+                    && composite_memory.delete(id)
+                {
+                    deleted.insert(*slot);
                     merged += 1;
                 }
             }
@@ -130,18 +154,9 @@ impl MemoryGovernor {
         composite_memory: &CompositeMemory,
         triple_store: &TripleStore,
     ) -> usize {
-        let all = composite_memory.inner().all_vectors();
-        let mut forgotten = 0;
-
-        for (_, id, _) in &all {
-            let triples = triple_store.by_composite_id(id);
-            if triples.is_empty() {
-                composite_memory.delete(id);
-                forgotten += 1;
-            }
-        }
-
-        forgotten
+        Self::forget_unreferenced(composite_memory.inner(), |id| {
+            triple_store.has_composite(id)
+        })
     }
 
     /// Remove atoms not referenced by any live triple.
@@ -150,24 +165,30 @@ impl MemoryGovernor {
         atom_memory: &AtomMemory,
         triple_store: &TripleStore,
     ) -> usize {
-        let snapshot = triple_store.snapshot();
-        let mut referenced = crate::core::hash::FastSet::default();
-        for t in &snapshot {
-            referenced.insert(t.subject_id.clone());
-            referenced.insert(t.relation_id.clone());
-            referenced.insert(t.object_id.clone());
-        }
+        Self::forget_unreferenced(atom_memory.inner(), |id| {
+            triple_store.has(Some(id), None, None)
+                || triple_store.has(None, Some(id), None)
+                || triple_store.has(None, None, Some(id))
+        })
+    }
 
-        let all_atoms = atom_memory.inner().all_vectors();
+    fn forget_unreferenced(
+        memory: &crate::core::indexed_memory::IndexedMemory,
+        referenced: impl Fn(&str) -> bool,
+    ) -> usize {
+        let mut cursor = 0;
         let mut forgotten = 0;
-
-        for (_, id, _) in &all_atoms {
-            if !referenced.contains(id) {
-                atom_memory.delete(id);
-                forgotten += 1;
+        loop {
+            let page = memory.id_page(&mut cursor, 256);
+            if page.is_empty() {
+                break;
+            }
+            for id in page {
+                if !referenced(&id) && memory.delete(&id) {
+                    forgotten += 1;
+                }
             }
         }
-
         forgotten
     }
 
@@ -182,6 +203,58 @@ impl MemoryGovernor {
 mod tests {
     use super::*;
     use crate::core::entangled::EntangledHVec;
+
+    #[test]
+    fn indexed_consolidation_matches_exhaustive_thresholds_and_scan_limits() {
+        let vectors: Vec<_> = [vec![], vec![], vec![1, 2], vec![1, 2], vec![2, 3], vec![9]]
+            .into_iter()
+            .map(|indices| EntangledHVec::from_indices(indices, 256))
+            .collect();
+        for threshold in [0.0, 0.3, 1.0, 1.1] {
+            for limit in [0, 3, 4, 5, 6, 7] {
+                let memory = CompositeMemory::new(256, 3.0);
+                memory.insert("deleted".into(), vectors[2].clone());
+                memory.delete("deleted");
+                for (i, vector) in vectors.iter().enumerate() {
+                    memory.insert(i.to_string(), vector.clone());
+                }
+                let mut deleted = vec![false; vectors.len()];
+                let scan = limit.min(vectors.len());
+                for i in 0..scan {
+                    if deleted[i] {
+                        continue;
+                    }
+                    for j in i + 1..scan {
+                        if !deleted[j] && vectors[i].similarity(&vectors[j]) >= threshold {
+                            deleted[j] = true;
+                        }
+                    }
+                }
+                let config = GovernorConfig {
+                    duplicate_threshold: threshold,
+                    max_scan_size: limit,
+                    ..Default::default()
+                };
+                assert_eq!(
+                    MemoryGovernor::consolidate_composites(&memory, &config),
+                    deleted.iter().filter(|&&d| d).count()
+                );
+                let remaining: Vec<_> = memory
+                    .inner()
+                    .all_vectors()
+                    .into_iter()
+                    .map(|(_, id, _)| id)
+                    .collect();
+                let expected: Vec<_> = deleted
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, d)| !**d)
+                    .map(|(i, _)| i.to_string())
+                    .collect();
+                assert_eq!(remaining, expected);
+            }
+        }
+    }
 
     #[test]
     fn test_consolidate_duplicates() {

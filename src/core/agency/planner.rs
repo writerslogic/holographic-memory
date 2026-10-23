@@ -13,7 +13,7 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
-use crate::core::hash::FastSet;
+use crate::core::hash::{FastMap, FastSet};
 
 use crate::core::triple_store::TripleStore;
 
@@ -98,11 +98,12 @@ impl Planner {
         causal_relations: &[&str],
         max_depth: usize,
     ) -> Plan {
-        let mut actions = Vec::new();
-        let mut visited = FastSet::default();
-        visited.insert(goal.to_string());
+        let mut actions: Vec<PlannedAction> = Vec::new();
+        let mut distances: FastMap<String, Vec<(usize, f64)>> = FastMap::default();
+        distances.insert(goal.to_string(), vec![(0, 0.0)]);
+        let mut expanded: FastMap<String, std::ops::Range<usize>> = FastMap::default();
+        let mut grounded = FastSet::default();
 
-        // Best-first search using a min-heap on cost.
         let mut heap = BinaryHeap::new();
         heap.push(Subgoal {
             target: goal.to_string(),
@@ -110,16 +111,13 @@ impl Planner {
             cost: 0.0,
         });
 
-        let mut all_complete = true;
-
         while let Some(subgoal) = heap.pop() {
-            if subgoal.depth >= max_depth {
-                // Could not expand further; mark as incomplete.
-                all_complete = false;
+            if !distances[&subgoal.target].contains(&(subgoal.depth, subgoal.cost))
+                || subgoal.depth >= max_depth
+            {
                 continue;
             }
 
-            // Find triples where object == target.
             let candidates = triple_store.query(None, None, Some(&subgoal.target));
             let filtered: Vec<_> = if causal_relations.is_empty() {
                 candidates
@@ -132,10 +130,8 @@ impl Planner {
 
             if filtered.is_empty() {
                 // No causal chain found; check if target is a known entity.
-                let as_subject = triple_store.query(Some(&subgoal.target), None, None);
-                if as_subject.is_empty() {
-                    // Leaf subgoal not grounded; plan is partial.
-                    all_complete = false;
+                if triple_store.has(Some(&subgoal.target), None, None) {
+                    grounded.insert(subgoal.target.clone());
                 }
                 continue;
             }
@@ -143,26 +139,41 @@ impl Planner {
             let evidence_count = filtered.len();
             let action_cost = 1.0 / (1.0 + evidence_count as f64);
 
-            for t in &filtered {
-                actions.push(PlannedAction {
+            if let Some(range) = expanded.get(&subgoal.target) {
+                for action in &mut actions[range.clone()] {
+                    action.depth = action.depth.min(subgoal.depth);
+                }
+            } else {
+                let start = actions.len();
+                actions.extend(filtered.iter().map(|t| PlannedAction {
                     subject: t.subject_id.clone(),
                     relation: t.relation_id.clone(),
                     object: t.object_id.clone(),
                     depth: subgoal.depth,
                     cost: action_cost,
-                });
-
-                // Enqueue the subject as a subgoal if not already visited.
-                if !visited.contains(&t.subject_id) {
-                    visited.insert(t.subject_id.clone());
-                    heap.push(Subgoal {
-                        target: t.subject_id.clone(),
-                        depth: subgoal.depth + 1,
-                        cost: subgoal.cost + action_cost,
-                    });
+                }));
+                expanded.insert(subgoal.target.clone(), start..actions.len());
+            }
+            for t in &filtered {
+                let depth = subgoal.depth + 1;
+                let cost = subgoal.cost + action_cost;
+                let frontier = distances.entry(t.subject_id.clone()).or_default();
+                // A cheaper but deeper route cannot dominate a shallower route under a depth limit.
+                if frontier.iter().any(|&(d, c)| d <= depth && c <= cost) {
+                    continue;
                 }
+                frontier.retain(|&(d, c)| !(depth <= d && cost <= c));
+                frontier.push((depth, cost));
+                heap.push(Subgoal {
+                    target: t.subject_id.clone(),
+                    depth,
+                    cost,
+                });
             }
         }
+        let all_complete = distances
+            .keys()
+            .all(|target| expanded.contains_key(target) || grounded.contains(target));
 
         // Sort actions by depth descending so leaf actions come first (execution order).
         actions.sort_by_key(|b| std::cmp::Reverse(b.depth));
@@ -181,6 +192,30 @@ impl Planner {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shallower_route_reopens_a_subgoal_at_the_depth_boundary() {
+        let store = TripleStore::new();
+        store.add("a", "causes", "goal", "g1");
+        store.add("b", "causes", "goal", "g2");
+        for i in 0..9 {
+            store.add("x", "causes", "a", &format!("a{i}"));
+            store.add("shared", "causes", "x", &format!("x{i}"));
+        }
+        store.add("shared", "causes", "b", "b1");
+        store.add("leaf", "causes", "shared", "leaf");
+        for limit in [3, 4, 5] {
+            let plan = Planner::backward_chain(&store, "goal", &["causes"], limit);
+            let leaf: Vec<_> = plan
+                .actions
+                .iter()
+                .filter(|a| a.subject == "leaf")
+                .collect();
+            assert_eq!(leaf.len(), 1);
+            assert_eq!(leaf[0].depth, 2);
+            assert_eq!(plan.complete, limit >= 4);
+        }
+    }
 
     #[test]
     fn test_simple_backward_chain() {

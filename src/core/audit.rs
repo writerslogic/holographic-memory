@@ -139,20 +139,27 @@ impl AuditLog {
         }
 
         let entry_count = file_len / ENTRY_SIZE;
-        let mut buf = vec![0u8; file_len];
-        file.read_exact(&mut buf)?;
-
+        let mut remaining = entry_count * ENTRY_SIZE;
+        let mut buf = vec![0u8; remaining.min((64 * 1024 / ENTRY_SIZE) * ENTRY_SIZE)];
         let mut entries = Vec::new();
-        for i in 0..entry_count {
-            let offset = i * ENTRY_SIZE;
-            let chunk: &[u8; ENTRY_SIZE] = buf[offset..offset + ENTRY_SIZE]
-                .try_into()
-                .map_err(|_| anyhow!("Audit entry read failed at offset {}", offset))?;
-            if let Some(entry) = AuditEntry::from_bytes(chunk) {
-                if entry.timestamp_ms >= since_ms {
-                    entries.push(entry);
+        while remaining > 0 {
+            let read = remaining.min(buf.len());
+            file.read_exact(&mut buf[..read]).map_err(|e| {
+                anyhow!(
+                    "Audit read failed at offset {}: {e}",
+                    entry_count * ENTRY_SIZE - remaining
+                )
+            })?;
+            for chunk in buf[..read].as_chunks::<ENTRY_SIZE>().0 {
+                let timestamp =
+                    u64::from_le_bytes(chunk[..8].try_into().expect("fixed entry size"));
+                if timestamp >= since_ms {
+                    if let Some(entry) = AuditEntry::from_bytes(chunk) {
+                        entries.push(entry);
+                    }
                 }
             }
+            remaining -= read;
         }
         Ok(entries)
     }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! The rmcp `ServerHandler`: tools, resources and prompts over an `HmsBackend`.
 
+use std::fmt::Write as _;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -108,7 +109,7 @@ fn percent_encode(id: &str) -> String {
         if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~') {
             out.push(char::from(b));
         } else {
-            out.push_str(&format!("%{b:02X}"));
+            let _ = write!(out, "%{b:02X}");
         }
     }
     out

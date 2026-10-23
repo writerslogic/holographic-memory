@@ -265,6 +265,9 @@ impl Shard {
         query_vec: &EntangledHVec,
         k: usize,
     ) -> Vec<RetrievalResult> {
+        if k == 0 || vectors.is_empty() {
+            return Vec::new();
+        }
         #[derive(PartialEq)]
         struct Candidate<'a> {
             similarity: f64,
@@ -286,7 +289,7 @@ impl Shard {
             }
         }
 
-        let mut heap: BinaryHeap<Candidate<'_>> = BinaryHeap::with_capacity(k + 1);
+        let mut heap: BinaryHeap<Candidate<'_>> = BinaryHeap::with_capacity(k.min(vectors.len()));
 
         for (id, vec) in vectors.iter() {
             let sim = query_vec.similarity(vec);
@@ -362,7 +365,12 @@ impl ShardManager {
             .map(|shard| shard.query(query_vec, k, dimensions))
             .collect();
 
-        let mut heap: BinaryHeap<RetrievalResult> = BinaryHeap::with_capacity(k as usize + 1);
+        let candidates = per_shard
+            .iter()
+            .map(Vec::len)
+            .fold(0usize, usize::saturating_add);
+        let mut heap: BinaryHeap<RetrievalResult> =
+            BinaryHeap::with_capacity((k as usize).saturating_add(1).min(candidates));
         for results in per_shard {
             for r in results {
                 heap.push(r);

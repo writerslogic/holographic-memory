@@ -22,6 +22,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Subset-union bundle experiment and capacity sweep
 
 ### Changed
+- Recovery now refuses a journal with CRC-valid frames after a log end. This includes legacy v0.6.1 stores left with a zero header followed by stale valid frames after earlier corruption; restore a known-good snapshot or re-encode the source data. A torn append with only a trailing end marker remains recoverable.
 - Drop rejected intersection kernel candidates
 - Stores whose provenance status list or log cannot be read (any error other than not-found) now fail to open instead of treating credentials as unrevoked.
 - Creating, deleting or rotating provenance now returns an error when the provenance log cannot be written and synced, instead of logging it; `ProvenanceManager::store_record` returns `Result<()>`.

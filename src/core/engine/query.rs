@@ -1,6 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::fmt::Write as _;
+
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::hopfield;
@@ -67,11 +69,12 @@ impl HmsCore {
             .map(|store| (store.pending_vector_count(), store.lexical_vector_count()))
             .unwrap_or((0, 0));
         if pending > 0 || lexical > 0 {
-            explanation.rationale.push_str(&format!(
+            let _ = write!(
+                explanation.rationale,
                 " {pending} document chunk(s) await deferred encoding (a query, \
                  encode_pending_documents or maintain_indices installs them); {lexical} \
                  lexical-only chunk(s) are outside vector search."
-            ));
+            );
         }
         explanation
     }

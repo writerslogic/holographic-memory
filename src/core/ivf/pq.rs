@@ -34,7 +34,7 @@ impl PQEncoder {
                 };
                 let sub_data: Vec<Vec<u32>> = samples
                     .iter()
-                    .map(|v| extract_sub_indices(&v.indices, range_start, range_end))
+                    .map(|v| extract_sub_indices(&v.indices, range_start, range_end).to_vec())
                     .collect();
                 train_sub_codebook(&sub_data, range_start, range_end)
             })
@@ -63,7 +63,7 @@ impl PQEncoder {
             let range_start = (sub_idx * self.sub_range) as u32;
             let sub_indices =
                 extract_sub_indices(&vec.indices, range_start, self.range_end(sub_idx));
-            *code = self.nearest_centroid(sub_idx, &sub_indices);
+            *code = self.nearest_centroid(sub_idx, sub_indices);
         }
         codes
     }
@@ -76,7 +76,7 @@ impl PQEncoder {
             let range_start = (sub_idx * self.sub_range) as u32;
             let q_sub = extract_sub_indices(&query.indices, range_start, self.range_end(sub_idx));
             for (c_idx, centroid) in self.codebooks[sub_idx].iter().enumerate() {
-                table_row[c_idx] = sub_index_distance(&q_sub, centroid);
+                table_row[c_idx] = sub_index_distance(q_sub, centroid);
             }
         }
         table
@@ -109,10 +109,10 @@ impl PQEncoder {
 }
 
 /// Extract indices within [range_start, range_end) from a sorted index list.
-fn extract_sub_indices(indices: &[u32], range_start: u32, range_end: u32) -> Vec<u32> {
+fn extract_sub_indices(indices: &[u32], range_start: u32, range_end: u32) -> &[u32] {
     let start = indices.partition_point(|&x| x < range_start);
     let end = indices.partition_point(|&x| x < range_end);
-    indices[start..end].to_vec()
+    &indices[start..end]
 }
 
 /// Distance between two sub-index sets = symmetric difference count.
