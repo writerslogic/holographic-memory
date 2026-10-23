@@ -83,11 +83,7 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
         Some(m @ Value::Object(_)) => m,
         Some(_) => return Err(ApiError::bad("metadata must be a JSON object")),
     };
-    if serde_json::to_vec(&metadata).map_or(true, |v| v.len() > MAX_METADATA_BYTES) {
-        return Err(ApiError::bad(format!(
-            "metadata exceeds {MAX_METADATA_BYTES} bytes"
-        )));
-    }
+    check_metadata_size(&metadata)?;
     // With an on-device embedder a document may omit its vector; the server embeds its text.
     let embeddings = match doc.vector {
         None if server_embeds && text.split_whitespace().next().is_some() => None,
@@ -120,6 +116,15 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
         ))),
         Err(e) => Err(ApiError::bad(format!("invalid document: {e}"))),
     }
+}
+
+pub fn check_metadata_size(metadata: &Value) -> Result<(), ApiError> {
+    if serde_json::to_vec(metadata).map_or(true, |v| v.len() > MAX_METADATA_BYTES) {
+        return Err(ApiError::bad(format!(
+            "metadata exceeds {MAX_METADATA_BYTES} bytes"
+        )));
+    }
+    Ok(())
 }
 
 /// Reject a write that would take the tenant past `max_documents_per_tenant`; `fresh` counts

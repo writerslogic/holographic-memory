@@ -13,8 +13,8 @@ use holographic_memory::core::memory_api::MemoryError;
 use serde_json::{json, Value};
 
 use crate::auth::Scope;
-use crate::config::{MAX_ID_BYTES, MAX_METADATA_BYTES, MAX_TEXT_BYTES};
-use crate::documents::{dense, enforce_quota};
+use crate::config::{MAX_ID_BYTES, MAX_TEXT_BYTES};
+use crate::documents::{check_metadata_size, dense, enforce_quota};
 use crate::error::{ApiError, ApiResult};
 use crate::request::{json_write, parse};
 use crate::tenants::AppState;
@@ -54,11 +54,7 @@ fn validate_memory_request(op: &str, request: &Value, state: &AppState) -> Resul
             }
         }
         if let Some(metadata) = map.get("metadata") {
-            if serde_json::to_vec(metadata).map_or(true, |v| v.len() > MAX_METADATA_BYTES) {
-                return Err(ApiError::bad(format!(
-                    "metadata exceeds {MAX_METADATA_BYTES} bytes"
-                )));
-            }
+            check_metadata_size(metadata)?;
         }
         map.get("embedding")
             .map_or(Ok(()), |v| vector(v, "embedding"))
