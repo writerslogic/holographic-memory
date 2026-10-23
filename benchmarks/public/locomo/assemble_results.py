@@ -46,7 +46,8 @@ def block(rows, runs):
            'f1_runs': [round(x, 4) for x in runwise('f1')]}
     if all('judge' in r and len(r['judge']) >= runs for r in rows):
         j = runwise('judge')
-        out.update({'j': round(statistics.fmean(j), 4), 'j_runs': [round(x, 4) for x in j]})
+        out.update({'j': round(statistics.fmean(j), 4), 'j_runs': [round(x, 4) for x in j],
+                    'j_std': round(statistics.stdev(j), 4) if runs > 1 else None})
     return out
 
 
@@ -68,6 +69,10 @@ def main():
                     help='arm name, passes to score, then predictions.jsonl files')
     ap.add_argument('--spend', type=float, required=True, help='OpenAI spend over all runs, USD (estimate when a run was interrupted)')
     ap.add_argument('--note', default='')
+    ap.add_argument('--date', default='')
+    ap.add_argument('--machine', default='', help='CPU, cores, server threads and load average')
+    ap.add_argument('--arm-spend', action='append', default=[], metavar='NAME=USD',
+                    help='per-arm spend from that run\'s summary.json new_api_spend_usd')
     args = ap.parse_args()
     meta = json.loads(Path(args.meta).read_text())
     arms = {}
@@ -90,10 +95,11 @@ def main():
         'split': meta['split'],
         'split_rule': 'first three conversations in file order are the tuning set, fixed before any run',
         'scores': 'fractions; f1/bleu1/j are means over independent reader passes',
-        'note': args.note,
+        'note': args.note, 'date': args.date, 'machine': args.machine,
         'arms': arms,
         'published': PUBLISHED,
-        'openai_spend_usd_estimate': args.spend,
+        'openai_spend_usd': args.spend,
+        'openai_spend_usd_by_arm': {k: float(v) for k, v in (a.split('=') for a in args.arm_spend)},
     }
     Path(args.out).write_text(json.dumps(result, indent=2) + '\n')
     for name, arm in arms.items():

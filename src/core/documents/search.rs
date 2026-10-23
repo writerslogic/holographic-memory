@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use super::postings::PostingList;
+use super::postings::{PostingList, Postings};
 use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
 use crate::core::hash::FastMap;
@@ -9,6 +9,8 @@ use anyhow::{ensure, Result};
 use serde_json::Value;
 
 use super::dense::DenseIndex;
+use super::image::ServingImage;
+use super::overlay::Overlaid;
 use super::{
     matches_document, normalize_embedding, terms, top_ranked, Bm25, DocumentResult, DocumentStore,
     SearchOptions, StoredChunk, StoredDocument, MAX_DOCUMENT_BYTES,
@@ -365,6 +367,184 @@ fn capture_ranked_lexical(store: &DocumentStore, prepared: PreparedSearch) -> Ca
     }
 }
 
+/// What [`LexicalScratch::rank`] reads: the live store, or a mapped checkpoint of one.
+pub(super) trait LexicalSource {
+    type List<'a>: PostingSet
+    where
+        Self: 'a;
+    fn slot_count(&self) -> usize;
+    fn chunk_count(&self) -> usize;
+    fn word_count(&self) -> usize;
+    /// The instance and generation cached norms are valid for.
+    fn state(&self) -> (super::index::StoreIdentity, u64);
+    fn postings(&self, form: usize, term: &str) -> Option<Self::List<'_>>;
+    fn slot_word_count(&self, slot: usize) -> u32;
+    /// `(document id, chunk index)` of the chunk in `slot`, the tie order of equal scores.
+    fn slot_order(&self, slot: usize) -> (&str, usize);
+}
+
+/// A term's postings as [`LexicalScratch::rank`] reads them.
+pub(super) trait PostingSet {
+    fn len(&self) -> usize;
+    fn for_each(&self, f: impl FnMut(usize, u32));
+}
+
+impl PostingSet for Postings<'_> {
+    fn len(&self) -> usize {
+        Postings::len(self)
+    }
+
+    fn for_each(&self, f: impl FnMut(usize, u32)) {
+        Postings::for_each(self, f);
+    }
+}
+
+impl PostingSet for &PostingList {
+    fn len(&self) -> usize {
+        PostingList::len(self)
+    }
+
+    fn for_each(&self, f: impl FnMut(usize, u32)) {
+        PostingList::for_each(self, f);
+    }
+}
+
+impl LexicalSource for DocumentStore {
+    type List<'a> = &'a PostingList;
+
+    fn slot_count(&self) -> usize {
+        self.slot_count
+    }
+
+    fn chunk_count(&self) -> usize {
+        self.chunk_count
+    }
+
+    fn word_count(&self) -> usize {
+        self.word_count
+    }
+
+    fn state(&self) -> (super::index::StoreIdentity, u64) {
+        (self.identity, self.generation)
+    }
+
+    fn postings(&self, form: usize, term: &str) -> Option<&PostingList> {
+        self.postings[form].get(term)
+    }
+
+    fn slot_word_count(&self, slot: usize) -> u32 {
+        DocumentStore::slot_word_count(self, slot)
+    }
+
+    fn slot_order(&self, slot: usize) -> (&str, usize) {
+        DocumentStore::slot_order(self, slot)
+    }
+}
+
+/// [`capture_ranked_lexical`] over a serving image, for queries [`overlay_serves`] accepts.
+fn capture_image(image: &ServingImage, prepared: PreparedSearch) -> anyhow::Result<CapturedQuery> {
+    let mut chunks = Vec::new();
+    let mut scores = Vec::new();
+    if prepared.lexical_weight > 0.0 {
+        let ranked = LEXICAL_SCRATCH.with(|scratch| scratch.borrow_mut().rank(image, &prepared));
+        chunks.reserve_exact(ranked.len());
+        scores.reserve_exact(ranked.len());
+        for (score, slot) in ranked {
+            let slot = slot as usize;
+            let (document, index) = image.chunk(slot)?;
+            chunks.push(CapturedChunk {
+                document,
+                index,
+                word_count: image.slot_word_count(slot),
+                semantic_cache: None,
+            });
+            scores.push(score);
+        }
+    }
+    Ok(CapturedQuery {
+        prepared,
+        chunks,
+        postings: Default::default(),
+        count: image.chunk_count(),
+        words: image.word_count(),
+        use_postings: true,
+        dense: None,
+        dfs: None,
+        text: None,
+        lexical_scores: Some(scores),
+    })
+}
+
+/// Whether `prepared` ranks from the checkpoint under `store` together with the store's own
+/// documents as [`capture_ranked_lexical`] would from the store rebuilt from them: unfiltered,
+/// lexical only, without a query embedding (so no chunk embedding is consulted), on a store
+/// small enough for the per-slot ranking.
+pub(super) fn overlay_serves(prepared: &PreparedSearch, store: &DocumentStore) -> bool {
+    store.base.as_ref().is_some_and(|base| {
+        prepared.lexical_only
+            && prepared.embedding.is_none()
+            && base.image.slot_total() + store.slot_count <= DENSE_SLOT_LIMIT
+    })
+}
+
+/// [`capture_image`] over the checkpoint under `store` and the store's own documents.
+fn capture_overlaid(
+    store: &DocumentStore,
+    prepared: PreparedSearch,
+) -> anyhow::Result<CapturedQuery> {
+    let base = store.base.as_ref().expect("checked by overlay_serves");
+    if base.intact() && store.documents.is_empty() {
+        return capture_image(&base.image, prepared);
+    }
+    let source = Overlaid { base, store };
+    let split = source.split();
+    let mut chunks = Vec::new();
+    let mut scores = Vec::new();
+    if prepared.lexical_weight > 0.0 {
+        let ranked = LEXICAL_SCRATCH.with(|scratch| scratch.borrow_mut().rank(&source, &prepared));
+        chunks.reserve_exact(ranked.len());
+        scores.reserve_exact(ranked.len());
+        for (score, slot) in ranked {
+            let slot = slot as usize;
+            let (document, index) = match slot.checked_sub(split) {
+                None => base.image.chunk(slot)?,
+                Some(own) => store.owned_chunk(own),
+            };
+            chunks.push(CapturedChunk {
+                document,
+                index,
+                word_count: source.slot_word_count(slot),
+                semantic_cache: None,
+            });
+            scores.push(score);
+        }
+    }
+    Ok(CapturedQuery {
+        prepared,
+        chunks,
+        postings: Default::default(),
+        count: source.chunk_count(),
+        words: source.word_count(),
+        use_postings: true,
+        dense: None,
+        dfs: None,
+        text: store.text_segment(),
+        lexical_scores: Some(scores),
+    })
+}
+
+pub(super) fn capture_overlaid_search(
+    store: &DocumentStore,
+    prepared: Vec<PreparedSearch>,
+) -> anyhow::Result<CapturedSearch> {
+    Ok(CapturedSearch {
+        queries: prepared
+            .into_iter()
+            .map(|prepared| capture_overlaid(store, prepared))
+            .collect::<anyhow::Result<_>>()?,
+    })
+}
+
 /// The store state and BM25 constants a thread's cached length normalizations belong to.
 #[derive(Clone, Copy, PartialEq)]
 struct NormKey {
@@ -409,8 +589,8 @@ impl LexicalScratch {
     /// score descending, then document id and chunk index ascending. Scores are the sums
     /// `execute_chunks` computes from captured postings: the same terms in the same order
     /// (form 0 terms, then form 1 terms, each sorted), the same expressions, from 0.
-    fn rank(&mut self, store: &DocumentStore, prepared: &PreparedSearch) -> Vec<(f64, u32)> {
-        let slots = store.slot_count;
+    fn rank<S: LexicalSource>(&mut self, store: &S, prepared: &PreparedSearch) -> Vec<(f64, u32)> {
+        let slots = store.slot_count();
         if self.dirty {
             self.scores.fill(0.0);
         }
@@ -421,26 +601,27 @@ impl LexicalScratch {
             self.complete = false;
         }
         self.dirty = true;
-        let n = store.chunk_count as f64;
-        let average = (store.word_count as f64 / n).max(1.0);
+        let n = store.chunk_count() as f64;
+        let average = (store.word_count() as f64 / n).max(1.0);
         let bm25 = prepared.bm25;
         let mut lists = Vec::new();
         let mut postings = 0usize;
         for (form, terms) in prepared.query_terms.iter().enumerate() {
             for word in terms.keys() {
-                if let Some(list) = store.postings[form].get(word) {
+                if let Some(list) = store.postings(form, word) {
                     let df = list.len() as f64;
-                    lists.push((Bm25::idf(n, df), list));
                     postings += list.len();
+                    lists.push((Bm25::idf(n, df), list));
                 }
             }
         }
         // A query whose postings cover a good part of the store reads every slot's norm and
         // score; a sparser one keeps its norms lazy and its selection to the slots it reached.
         let dense = postings >= slots / 2;
+        let (identity, generation) = store.state();
         let key = NormKey {
-            store: store.identity,
-            generation: store.generation,
+            store: identity,
+            generation,
             k1: bm25.k1.to_bits(),
             one_minus_b: bm25.one_minus_b.to_bits(),
             b: bm25.b.to_bits(),
@@ -469,7 +650,8 @@ impl LexicalScratch {
         self.touched.clear();
         if dense {
             let norms = &self.norms[..slots];
-            for &(idf, list) in &lists {
+            for (idf, list) in &lists {
+                let idf = *idf;
                 list.for_each(|slot, frequency| {
                     scores[slot] += bm25.weight(idf, f64::from(frequency), norms[slot]);
                 });
@@ -480,7 +662,8 @@ impl LexicalScratch {
                 (&mut self.norms, &mut self.norm_epochs, &mut self.touched);
             let (epoch, complete) = (self.epoch, self.complete);
             let mut reached = 0;
-            for &(idf, list) in &lists {
+            for (idf, list) in &lists {
+                let idf = *idf;
                 list.for_each(|slot, frequency| {
                     if !complete && norm_epochs[slot] != epoch {
                         norm_epochs[slot] = epoch;
@@ -1360,6 +1543,68 @@ mod tests {
                 store.insert(document.id.clone(), document);
             }
             check(&store);
+        }
+    }
+
+    /// A checkpoint of a store with zero-frequency terms, free slots and both posting forms
+    /// ranks from its mapping, and rebuilds into a store whose block bounds are a fresh
+    /// build's, exactly as the store that wrote it ranks.
+    #[test]
+    fn checkpoint_ranks_and_rebuilds_as_the_store_that_wrote_it() {
+        let mut state = 0x9e37_79b9_7f4a_7c15u64;
+        let mut store = DocumentStore::default();
+        for id in 0..300 {
+            let mut document = random_document(id, &mut state);
+            for chunk in &mut document.chunks {
+                chunk.vector_state = super::super::VectorState::Lexical;
+                chunk.vector =
+                    crate::core::entangled::EntangledHVec::from_indices(Vec::new(), 1024);
+            }
+            store.insert(document.id.clone(), document);
+        }
+        for id in (0..300).step_by(7) {
+            store.remove(&format!("d{id:04}"));
+        }
+        let bytes = super::super::image::encode(&store, 1, 1024)
+            .unwrap()
+            .unwrap();
+        let image = ServingImage::new(super::super::Backing::Owned(bytes)).unwrap();
+        let rebuilt = image.hydrate(None).unwrap();
+        let words: Vec<u32> = (0..rebuilt.slot_count)
+            .map(|slot| rebuilt.slot_word_count(slot))
+            .collect();
+        for postings in &rebuilt.postings {
+            postings.assert_valid();
+        }
+        for text in [
+            "gamma",
+            "alpha beta",
+            "ran shared ghost",
+            "running runs alpha delta",
+        ] {
+            for (form, terms) in [terms(text, false), terms(text, true)].iter().enumerate() {
+                for word in terms.keys() {
+                    if let Some(list) = rebuilt.postings[form].get(word) {
+                        assert!(list.bounds_are_tight(&words), "{word} bounds");
+                    }
+                }
+            }
+            let options = SearchOptions {
+                k: Some(10),
+                ..Default::default()
+            };
+            let expected = ranked_and_exhaustive(&store, text, &options).0;
+            assert_eq!(ranked_and_exhaustive(&rebuilt, text, &options).0, expected);
+            let mapped = CapturedSearch {
+                queries: vec![
+                    capture_image(&image, prepare_search(text, &options, None).unwrap()).unwrap(),
+                ],
+            };
+            assert_eq!(
+                serde_json::to_value(execute_search(&mapped, 0)).unwrap(),
+                expected,
+                "{text:?}"
+            );
         }
     }
 

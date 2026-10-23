@@ -209,7 +209,9 @@ impl PersistentArena {
         // bytes as a valid frame. (On macOS the next commit's full sync covers it.) A segment
         // created empty just now has no tail: it reads back as zeros, which recover to the
         // same empty log, and the first commit's flush range starts at the marker.
-        if recovered_offset + HEADER_SIZE <= mut_map.len() {
+        if recovered_offset + HEADER_SIZE <= mut_map.len()
+            && mut_map[recovered_offset..recovered_offset + HEADER_SIZE] != end_marker_bytes()
+        {
             mut_map[recovered_offset..recovered_offset + HEADER_SIZE]
                 .copy_from_slice(&end_marker_bytes());
             if length != 0 {
@@ -367,6 +369,11 @@ impl PersistentArena {
             offset += frame_size;
         }
         Ok((offset, max_version))
+    }
+
+    /// The directory of the live generation (the arena directory itself for a legacy layout).
+    pub(crate) fn data_dir(&self) -> PathBuf {
+        self.data_path.read().clone()
     }
 
     /// True if the frame at `offset` has plausible lengths, decompresses and matches its CRC32.
