@@ -438,6 +438,9 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
         } else if file_type.is_file() {
             std::fs::copy(entry.path(), &target)?;
             std::fs::set_permissions(&target, entry.metadata()?.permissions())?;
+            // Unix only, as `sync_directory`: Windows flushes need a writable handle, which a
+            // copied read-only file refuses.
+            #[cfg(unix)]
             std::fs::File::open(&target)?.sync_all()?;
         } else {
             bail!("migration refuses special file {}", entry.path().display());
