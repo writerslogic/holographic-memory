@@ -111,10 +111,6 @@ name = "verify_cogmem_sample"
 required-features = ["provenance"]
 
 [[example]]
-name = "story_memory"
-required-features = ["experimental"]
-
-[[example]]
 name = "zero_trust_demo"
 required-features = ["security"]
 
@@ -133,10 +129,12 @@ python = ["pyo3", "dep:numpy"]
 security = ["ed25519-dalek", "zeroize", "aes-gcm", "aes-gcm/zeroize", "argon2", "sha2"]
 provenance = ["security", "coset", "ciborium", "bs58", "multibase", "base64"]
 provenance-scitt = ["provenance", "ureq"]
-# Experimental VSA research modules (block_codes, bloom_memory, cls_memory,
-# algebra, ternary, compose, resonator, sparse_autoencoder) and the experiment
-# binaries that exercise them. Off by default so they are not part of the
-# published public API.
+# Experimental VSA research modules (algebraic_codebook, block_codes, bloom_memory,
+# bundle_subset, connection_graph, counting_bloom_memory, operand_retriever,
+# phase_graph), the connection and phase graph hooks on HmsCore, the qgraph
+# diagnostics, projection_diagnostic and quantized IVF modules, the capped-union
+# text encoder and the experiment binaries that exercise them. Off by default so
+# they are not part of the published public API.
 experimental = []
 # On-device embedding, re-ranking, fact extraction and query rewriting (candle, Qwen3).
 # Weights load from local directories only; the library never downloads.
@@ -199,27 +197,7 @@ name = "hms-scaling"
 required-features = ["experimental"]
 
 [[bin]]
-name = "cls-decay"
-required-features = ["experimental"]
-
-[[bin]]
-name = "cls-structured"
-required-features = ["experimental"]
-
-[[bin]]
-name = "codebook-recovery-test"
-required-features = ["experimental"]
-
-[[bin]]
 name = "block-recovery-test"
-required-features = ["experimental"]
-
-[[bin]]
-name = "diag-recovery"
-required-features = ["experimental"]
-
-[[bin]]
-name = "similarity-decay"
 required-features = ["experimental"]
 
 [[bin]]
@@ -294,10 +272,6 @@ required-features = ["experimental"]
 
 [[bin]]
 name = "qag-diagnose"
-required-features = ["experimental"]
-
-[[bin]]
-name = "ann-ivf-bench"
 required-features = ["experimental"]
 
 [[example]]

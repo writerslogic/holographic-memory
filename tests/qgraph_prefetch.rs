@@ -16,7 +16,7 @@ use holographic_memory::core::qgraph::{BuildParams, Graph, SearchKnobs, VGraph, 
 
 const DIM: usize = 100;
 const N: usize = if cfg!(debug_assertions) {
-    12_000
+    4_000
 } else {
     50_000
 };
@@ -86,7 +86,8 @@ struct Fixture {
     truth: Vec<Vec<u32>>,
 }
 
-/// One graph per test binary: the build dominates the test's time.
+/// One graph per test process (nextest runs each test in its own): the build dominates the
+/// test's time.
 fn fixture() -> &'static Fixture {
     static FIXTURE: OnceLock<Fixture> = OnceLock::new();
     FIXTURE.get_or_init(|| {
@@ -168,11 +169,7 @@ fn params(ef: usize, rerank: usize) -> VSearchParams {
     VSearchParams {
         ef,
         rerank,
-        patience: 0,
-        screen_sigmas: 1.0,
-        screen: true,
-        fuse: false,
-        neighbour_cap: 0,
+        ..VSearchParams::default()
     }
 }
 

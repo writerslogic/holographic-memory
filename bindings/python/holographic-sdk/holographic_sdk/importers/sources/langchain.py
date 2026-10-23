@@ -14,7 +14,7 @@ import io
 import json
 import os
 import pickle
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import Any, Dict, Iterator, Mapping
 
 from ..model import ImporterError, MissingDependency, Record
 from .base import Source

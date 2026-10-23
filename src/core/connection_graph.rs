@@ -3,11 +3,8 @@
 
 //! Living connection-graph: a plastic, event-sourced holographic relation store.
 //!
-//! This is the engine-level form of the mechanisms validated in the
-//! `plastic-graph` and `path-plasticity` experiment binaries (see
-//! `docs/PREREGISTRATION-binding-readout.md` §10-14 and the
-//! `living-connection-graph` design note). It is **experimental** and **opt-in**;
-//! it does not touch the sparse-binary `bind`/`similarity` core.
+//! It is **experimental** and **opt-in**; it does not touch the sparse-binary
+//! `bind`/`similarity` core.
 //!
 //! The unit of memory is the **relation** `(subject, relation, object)`, not the
 //! node. Each relation is a *compositional* edge — the union of a role-permuted

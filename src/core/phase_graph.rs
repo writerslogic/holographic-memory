@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Phasor relational memory: a holographic connection store on a quantized-phase
-//! substrate, validated in the `relation-algebra` and `holographic-retrieval`
-//! experiment binaries.
+//! substrate.
 //!
 //! Each entity is a `dim`-vector of phases in `Z_N`; a relation is a rotation
 //! `theta in Z_N`; binding is phase addition `(phi + theta) mod N`. This gives a

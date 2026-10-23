@@ -52,6 +52,12 @@ fn lists(count: usize) -> Result<Vec<Vec<u32>>, HmsError> {
     Ok(values)
 }
 
+fn add_edges(total: usize, edges: usize) -> Result<usize, HmsError> {
+    total
+        .checked_add(edges)
+        .ok_or_else(|| invalid("projection edge count overflows".into()))
+}
+
 fn select(
     rows: &Rows<'_>,
     vertex: u32,
@@ -278,8 +284,7 @@ impl Graph {
         let original_edges = self
             .adj
             .iter()
-            .try_fold(0usize, |sum, ids| sum.checked_add(ids.len()))
-            .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+            .try_fold(0usize, |sum, ids| add_edges(sum, ids.len()))?;
         let mut stats = ProjectionStats {
             original_edges,
             total_edges: original_edges,
@@ -368,10 +373,7 @@ impl Graph {
                 projected_degree,
                 self.build.alpha,
             )?;
-            stats.forward_edges = stats
-                .forward_edges
-                .checked_add(forward[vertex].len())
-                .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+            stats.forward_edges = add_edges(stats.forward_edges, forward[vertex].len())?;
             for &neighbor in &forward[vertex] {
                 let incoming = &mut reverse_candidates[neighbor as usize];
                 incoming
@@ -394,10 +396,7 @@ impl Graph {
                 projected_degree,
                 self.build.alpha,
             )?;
-            stats.reverse_edges = stats
-                .reverse_edges
-                .checked_add(reverse.len())
-                .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+            stats.reverse_edges = add_edges(stats.reverse_edges, reverse.len())?;
             combined.clear();
             combined.extend_from_slice(self.adj.get(vertex));
             combined.extend_from_slice(&forward[vertex]);
@@ -405,13 +404,8 @@ impl Graph {
             stats.max_degree = stats.max_degree.max(combined.len());
             replacement.set(vertex, &combined);
         }
-        stats.added_edges = stats
-            .forward_edges
-            .checked_add(stats.reverse_edges)
-            .ok_or_else(|| invalid("projection edge count overflows".into()))?;
-        stats.total_edges = original_edges
-            .checked_add(stats.added_edges)
-            .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+        stats.added_edges = add_edges(stats.forward_edges, stats.reverse_edges)?;
+        stats.total_edges = add_edges(original_edges, stats.added_edges)?;
         stats.training_queries = query_count;
         stats.neighbors_per_query = neighbors_per_query;
         stats.projected_degree = projected_degree;
@@ -494,6 +488,15 @@ mod tests {
         }
     }
 
+    fn build_params(metric: Metric) -> BuildParams {
+        BuildParams {
+            metric,
+            degree: 2,
+            build_ef: 8,
+            ..Default::default()
+        }
+    }
+
     #[test]
     fn absent_queries_preserve_serialized_bytes_even_with_unused_arguments() {
         let directory = tempfile::tempdir().unwrap();
@@ -558,51 +561,92 @@ mod tests {
         assert!(first.adj.iter().all(|ids| ids.len() <= 6));
     }
 
+    /// Projects with `ids`, asserting a rejection leaves the graph exactly as it was.
+    fn project(
+        graph: &mut Graph,
+        queries: &[f32],
+        ids: &[u32],
+        neighbors: usize,
+        degree: usize,
+    ) -> Result<ProjectionStats, HmsError> {
+        let (hash, before) = (graph.structure_hash(), graph.degree);
+        let result = graph.project_neighborhoods(Some(queries), ids, neighbors, degree);
+        if result.is_err() {
+            assert_eq!(
+                graph.structure_hash(),
+                hash,
+                "a rejection changed the edges"
+            );
+            assert_eq!(graph.degree, before, "a rejection changed the degree");
+        }
+        result
+    }
+
+    /// `(name, queries, neighbor ids, neighbors_per_query, projected_degree)`.
+    type Case = (&'static str, &'static [f32], &'static [u32], usize, usize);
+
     #[test]
     fn invalid_inputs_leave_the_graph_unchanged() {
-        let cases: &[(&[f32], &[u32], usize, usize)] = &[
-            (&[], &[], 3, 1),
-            (&[0.0], &[0, 3, 4], 3, 1),
-            (&[f32::NAN, 0.0], &[0, 3, 4], 3, 1),
-            (&[f32::INFINITY, 0.0], &[0, 3, 4], 3, 1),
-            (&[0.0, 0.0], &[0, 3], 3, 1),
-            (&[0.0, 0.0], &[0, 3, 6], 3, 1),
-            (&[0.0, 0.0], &[0, 3, 3], 3, 1),
-            (&[0.0, 0.0], &[0, 3, 4], 0, 1),
-            (&[0.0, 0.0], &[0], 1, 1),
-            (&[0.0, 0.0], &[0, 1, 2, 3, 4, 5, 6], 7, 1),
-            (&[0.0, 0.0], &[0, 3, 4], 3, 0),
-            (&[0.0, 0.0], &[0, 3, 4], 3, 6),
-            (&[0.0, 0.0], &[0, 3, 4], 3, usize::MAX),
+        let cases: &[Case] = &[
+            ("no queries", &[], &[], 3, 1),
+            ("query shorter than dim", &[0.0], &[0, 3, 4], 3, 1),
+            ("NaN query", &[f32::NAN, 0.0], &[0, 3, 4], 3, 1),
+            ("infinite query", &[f32::INFINITY, 0.0], &[0, 3, 4], 3, 1),
+            ("short neighbor row", &[0.0, 0.0], &[0, 3], 3, 1),
+            ("neighbor outside the graph", &[0.0, 0.0], &[0, 3, 6], 3, 1),
+            ("duplicate neighbor", &[0.0, 0.0], &[0, 3, 3], 3, 1),
+            ("zero neighbors", &[0.0, 0.0], &[0, 3, 4], 0, 1),
+            ("degree usize::MAX", &[0.0, 0.0], &[0, 3, 4], 3, usize::MAX),
         ];
-        for &(queries, ids, neighbors, degree) in cases {
-            let mut graph = graph();
-            let before = graph.structure_hash();
-            assert!(graph
-                .project_neighborhoods(Some(queries), ids, neighbors, degree)
-                .is_err());
-            assert_eq!(graph.structure_hash(), before);
-            assert_eq!(graph.degree, 2);
+        for &(name, queries, ids, neighbors, degree) in cases {
+            let result = project(&mut graph(), queries, ids, neighbors, degree);
+            assert!(
+                matches!(result, Err(HmsError::InvalidParam { .. })),
+                "{name}: {result:?}"
+            );
         }
     }
 
+    /// `n = 6`: `2 <= neighbors_per_query <= n` and `1 <= projected_degree < n`, each at
+    /// limit - 1, limit and limit + 1; an accepted projection widens the degree by twice the
+    /// projected degree.
     #[test]
-    fn neighbor_and_projected_degree_upper_boundaries_are_checked() {
-        for neighbors in [2, 5, 6] {
-            for degree in [4, 5] {
-                let mut graph = graph();
-                let ids: Vec<u32> = (0..neighbors as u32).collect();
-                graph
-                    .project_neighborhoods(Some(&[0.0, 0.0]), &ids, neighbors, degree)
-                    .unwrap();
-                assert_eq!(graph.degree, 2 + 2 * degree);
+    fn neighbor_count_and_projected_degree_bounds() {
+        for (name, neighbors, degree, accepted) in [
+            ("neighbors 1", 1, 1, false),
+            ("neighbors 2", 2, 1, true),
+            ("neighbors 3, degree 1", 3, 1, true),
+            ("neighbors n - 1", 5, 1, true),
+            ("neighbors n", 6, 1, true),
+            ("neighbors n + 1", 7, 1, false),
+            ("degree 0", 3, 0, false),
+            ("degree 2", 3, 2, true),
+            ("degree n - 2", 3, 4, true),
+            ("degree n - 1", 3, 5, true),
+            ("neighbors n, degree n - 1", 6, 5, true),
+            ("degree n", 3, 6, false),
+        ] {
+            let mut graph = graph();
+            let ids: Vec<u32> = (0..neighbors as u32).collect();
+            let result = project(&mut graph, &[0.0, 0.0], &ids, neighbors, degree);
+            if accepted {
+                let stats = result.unwrap_or_else(|e| panic!("{name}: {e}"));
+                assert_eq!(graph.degree, 2 + 2 * degree, "{name}");
+                assert_eq!(stats.degree_capacity, graph.degree, "{name}");
+            } else {
+                assert!(
+                    matches!(result, Err(HmsError::InvalidParam { .. })),
+                    "{name}: {result:?}"
+                );
             }
         }
         let mut graph = graph();
         graph.degree = usize::MAX - 1;
-        assert!(graph
-            .project_neighborhoods(Some(&[0.0, 0.0]), &[0, 3], 2, 1)
-            .is_err());
+        let result = graph.project_neighborhoods(Some(&[0.0, 0.0]), &[0, 3], 2, 1);
+        assert!(
+            matches!(result, Err(HmsError::InvalidParam { .. })),
+            "degree capacity overflow: {result:?}"
+        );
     }
 
     #[test]
@@ -613,12 +657,7 @@ mod tests {
             queries.extend_from_slice(&[i as f32 + 1.0, (i % 5) as f32 - 2.0]);
         }
         for metric in [Metric::Angular, Metric::Euclidean] {
-            let params = BuildParams {
-                metric,
-                degree: 2,
-                build_ef: 8,
-                ..Default::default()
-            };
+            let params = build_params(metric);
             let graph = Graph::build(&data, 2, &params).unwrap();
             for neighbors in [1, 4, 5] {
                 assert_eq!(
@@ -637,12 +676,7 @@ mod tests {
             3.0, 0.0, 4.0, 0.0, 4.0, 3.0, -3.0, 0.0, 4.0, 0.0, -4.0, 3.0, 0.0, 0.0, 5.0,
         ];
         let queries = [2.0, 1.0, 0.0, -1.0, 3.0, 0.0];
-        let params = BuildParams {
-            metric: Metric::Euclidean,
-            degree: 2,
-            build_ef: 8,
-            ..Default::default()
-        };
+        let params = build_params(Metric::Euclidean);
         let graph = Graph::build(&augmented, 3, &params).unwrap();
         let mut expected = Vec::new();
         for query in queries.as_chunks::<3>().0 {
@@ -663,12 +697,7 @@ mod tests {
     #[test]
     fn untrained_optional_builds_preserve_legacy_cache_bytes() {
         let data = graph().vectors;
-        let params = BuildParams {
-            metric: Metric::Euclidean,
-            degree: 2,
-            build_ef: 8,
-            ..Default::default()
-        };
+        let params = build_params(Metric::Euclidean);
         let legacy = Graph::build(&data, 2, &params).unwrap();
         let borrowed = Graph::build_with_training_queries(&data, 2, &params, None).unwrap();
         let owned =
@@ -695,12 +724,7 @@ mod tests {
     #[test]
     fn optional_training_matches_projection_of_independent_neighbors() {
         let data = graph().vectors;
-        let params = BuildParams {
-            metric: Metric::Euclidean,
-            degree: 2,
-            build_ef: 8,
-            ..Default::default()
-        };
+        let params = build_params(Metric::Euclidean);
         let queries = [0.0, 0.0, 8.0, 1.0];
         let mut expected = Graph::build(&data, 2, &params).unwrap();
         let ids = scalar_neighbors(&expected, &queries, 6);
@@ -725,36 +749,48 @@ mod tests {
     fn invalid_queries_are_rejected_before_build_including_unused_rows() {
         let data = graph().vectors;
         for metric in [Metric::Angular, Metric::Euclidean] {
-            let params = BuildParams {
-                metric,
-                degree: 2,
-                ..Default::default()
-            };
+            let params = build_params(metric);
             for queries in [
                 &[][..],
                 &[1.0][..],
                 &[f32::NAN, 1.0][..],
                 &[f32::INFINITY, 1.0][..],
             ] {
+                // The base set is empty, so only query validation names the training rows.
                 let error = Graph::build_with_training_queries(&[], 2, &params, Some(queries))
                     .err()
                     .expect("invalid training query");
-                assert!(error.to_string().contains("training"));
-                assert!(Graph::build_owned_with_training_queries(
+                assert!(
+                    matches!(error, HmsError::InvalidParam { .. })
+                        && error.to_string().contains("training"),
+                    "{metric:?} {queries:?}: {error}"
+                );
+                let owned = Graph::build_owned_with_training_queries(
                     data.clone(),
                     2,
                     &params,
-                    Some(queries)
+                    Some(queries),
                 )
-                .is_err());
+                .err();
+                assert!(
+                    matches!(owned, Some(HmsError::InvalidParam { .. })),
+                    "{metric:?} {queries:?}: {owned:?}"
+                );
             }
             let mut queries = vec![1.0; (TRAINING_LIMIT + 1) * 2];
             *queries.last_mut().unwrap() = f32::NAN;
-            assert!(Graph::build_with_training_queries(&data, 2, &params, Some(&queries)).is_err());
+            let unused_row =
+                Graph::build_with_training_queries(&data, 2, &params, Some(&queries)).err();
+            assert!(
+                matches!(unused_row, Some(HmsError::InvalidParam { .. })),
+                "{metric:?}: NaN past the training limit: {unused_row:?}"
+            );
             if metric == Metric::Angular {
+                let zero =
+                    Graph::build_with_training_queries(&data, 2, &params, Some(&[0.0, 0.0])).err();
                 assert!(
-                    Graph::build_with_training_queries(&data, 2, &params, Some(&[0.0, 0.0]))
-                        .is_err()
+                    matches!(zero, Some(HmsError::InvalidParam { .. })),
+                    "zero angular query: {zero:?}"
                 );
             }
         }
@@ -763,11 +799,7 @@ mod tests {
     #[test]
     fn singleton_training_is_valid_and_adds_no_edges() {
         for metric in [Metric::Angular, Metric::Euclidean] {
-            let params = BuildParams {
-                metric,
-                degree: 2,
-                ..Default::default()
-            };
+            let params = build_params(metric);
             let graph =
                 Graph::build_with_training_queries(&[3.0, 4.0], 2, &params, Some(&[1.0, 0.0]))
                     .unwrap();
@@ -779,12 +811,7 @@ mod tests {
     #[test]
     fn trained_graph_cache_is_rejected_and_encoded_index_round_trips() {
         let data = graph().vectors;
-        let params = BuildParams {
-            metric: Metric::Euclidean,
-            degree: 2,
-            build_ef: 8,
-            ..Default::default()
-        };
+        let params = build_params(Metric::Euclidean);
         let queries = [0.0, 0.0, 8.0, 1.0];
         let graph = Graph::build_with_training_queries(&data, 2, &params, Some(&queries)).unwrap();
         let directory = tempfile::tempdir().unwrap();

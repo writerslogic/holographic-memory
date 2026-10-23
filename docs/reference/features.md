@@ -22,7 +22,7 @@ can change in any release.
 | `node-api` | The Node.js bindings published to npm | stable | no | [Node API](../api/node/index.md) |
 | `python` | The `holographic-vsa` Python wheel (quantized-phase substrate) | experimental | no | [Python API](../api/python/vsa.md) |
 | `private-search` | Query-private similarity scoring over an index held by someone else (LWE, SimplePIR-style): the index holder ranks an encrypted query and learns nothing about it | experimental, research | no (you transport the messages) | [Private search](../PRIVATE-SEARCH.md) |
-| `experimental` | VSA research modules (block codes, Bloom and CLS memories, resonator, ternary and sparse-autoencoder encoders) and the experiment binaries | experimental, research | no | [Research](../RESEARCH.md) |
+| `experimental` | VSA research modules (block codes, Bloom memories, algebraic codebooks, operand retriever, connection and phase graphs) and the experiment binaries | experimental, research | no | [Research](../RESEARCH.md) |
 
 ## Which features need a server
 

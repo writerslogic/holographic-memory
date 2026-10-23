@@ -1,7 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! The memory model, request validation and the backend trait the tool handlers are written
-//! against. A richer memory API can implement `MemoryBackend` without touching the handlers.
+//! The memory model and request validation the tool handlers are written against.
 
 use serde::Serialize;
 use serde_json::{json, Map, Value};
@@ -145,15 +144,6 @@ pub struct ForgetReq {
 pub struct ForgetOut {
     pub deleted: usize,
     pub missing: Vec<String>,
-}
-
-pub trait MemoryBackend: Send + Sync + 'static {
-    fn remember(&self, namespace: &str, req: RememberReq) -> Res<RememberOut>;
-    fn get(&self, namespace: &str, id: &str) -> Res<Option<Memory>>;
-    fn search(&self, namespace: &str, req: SearchReq) -> Res<Vec<Hit>>;
-    fn list(&self, namespace: &str, req: ListReq) -> Res<Page>;
-    fn forget(&self, namespace: &str, req: ForgetReq) -> Res<ForgetOut>;
-    fn stats(&self, namespace: &str) -> Res<Value>;
 }
 
 pub fn validate_id(id: &str) -> Res<()> {
@@ -383,25 +373,22 @@ mod tests {
         );
     }
 
+    fn code(result: Res<()>) -> Option<&'static str> {
+        result.err().map(|e| e.code)
+    }
+
     #[test]
-    fn id_tag_and_metadata_bounds() {
+    fn remember_bounds() {
         let limits = test_limits();
         let with_id = |id: &str| RememberReq {
             id: Some(id.into()),
             ..remember("x")
         };
-        assert!(with_id(&"i".repeat(MAX_ID_BYTES)).validate(&limits).is_ok());
-        assert!(with_id(&"i".repeat(MAX_ID_BYTES + 1))
-            .validate(&limits)
-            .is_err());
-        assert!(with_id("hms:chunk:1").validate(&limits).is_err());
-        assert!(with_id("a\nb").validate(&limits).is_err());
         let tags = |n: usize| RememberReq {
             tags: (0..n).map(|i| format!("t{i}")).collect(),
             ..remember("x")
         };
-        assert!(tags(2).validate(&limits).is_ok());
-        assert!(tags(3).validate(&limits).is_err());
+        // {"k":"<v>"} is 8 bytes plus the value.
         let meta = |value: &str| {
             let mut m = Map::new();
             m.insert("k".into(), Value::String(value.into()));
@@ -410,19 +397,48 @@ mod tests {
                 ..remember("x")
             }
         };
-        // {"k":"<v>"} is 8 bytes plus the value.
-        assert!(meta(&"v".repeat(56)).validate(&limits).is_ok());
-        assert_eq!(
-            meta(&"v".repeat(57)).validate(&limits).unwrap_err().code,
-            "too_large"
-        );
-        let mut reserved = Map::new();
-        reserved.insert("hms.created".into(), Value::Null);
-        assert!(validate_metadata(&reserved, &limits).is_err());
+        let reserved_key = RememberReq {
+            metadata: Map::from_iter([("hms.created".to_string(), Value::Null)]),
+            ..remember("x")
+        };
+        for (name, request, expected) in [
+            ("id at limit", with_id(&"i".repeat(MAX_ID_BYTES)), None),
+            (
+                "id over limit",
+                with_id(&"i".repeat(MAX_ID_BYTES + 1)),
+                Some("invalid_argument"),
+            ),
+            ("empty id", with_id(""), Some("invalid_argument")),
+            (
+                "reserved id",
+                with_id("hms:chunk:1"),
+                Some("invalid_argument"),
+            ),
+            (
+                "control character in id",
+                with_id("a\nb"),
+                Some("invalid_argument"),
+            ),
+            ("tags at limit", tags(2), None),
+            ("tags over limit", tags(3), Some("invalid_argument")),
+            ("metadata at limit", meta(&"v".repeat(56)), None),
+            (
+                "metadata over limit",
+                meta(&"v".repeat(57)),
+                Some("too_large"),
+            ),
+            (
+                "reserved metadata key",
+                reserved_key,
+                Some("invalid_argument"),
+            ),
+        ] {
+            assert_eq!(code(request.validate(&limits)), expected, "{name}");
+        }
     }
 
     #[test]
-    fn search_and_list_bounds() {
+    fn search_list_and_forget_bounds() {
         let limits = test_limits();
         let search = |k: usize| SearchReq {
             query: "q".into(),
@@ -434,22 +450,51 @@ mod tests {
             semantic_weight: None,
             fusion: None,
         };
-        assert!(search(5).validate(&limits).is_ok());
-        assert!(search(6).validate(&limits).is_err());
-        assert!(search(0).validate(&limits).is_err());
         let list = |limit: usize| ListReq {
             limit,
             ..ListReq::default()
         };
-        assert!(list(10).validate(&limits).is_ok());
-        assert!(list(11).validate(&limits).is_err());
         let forget = |n: usize| ForgetReq {
             ids: (0..n).map(|i| format!("id{i}")).collect(),
             prefix: None,
         };
-        assert!(forget(3).validate(&limits).is_ok());
-        assert!(forget(4).validate(&limits).is_err());
-        assert!(forget(0).validate(&limits).is_err());
+        for (name, result, expected) in [
+            (
+                "search k below range",
+                search(0).validate(&limits),
+                Some("invalid_argument"),
+            ),
+            ("search k at limit", search(5).validate(&limits), None),
+            (
+                "search k over limit",
+                search(6).validate(&limits),
+                Some("invalid_argument"),
+            ),
+            (
+                "list limit below range",
+                list(0).validate(&limits),
+                Some("invalid_argument"),
+            ),
+            ("list limit at limit", list(10).validate(&limits), None),
+            (
+                "list limit over limit",
+                list(11).validate(&limits),
+                Some("invalid_argument"),
+            ),
+            (
+                "forget without ids or prefix",
+                forget(0).validate(&limits),
+                Some("invalid_argument"),
+            ),
+            ("forget ids at limit", forget(3).validate(&limits), None),
+            (
+                "forget ids over limit",
+                forget(4).validate(&limits),
+                Some("invalid_argument"),
+            ),
+        ] {
+            assert_eq!(code(result), expected, "{name}");
+        }
     }
 
     #[test]

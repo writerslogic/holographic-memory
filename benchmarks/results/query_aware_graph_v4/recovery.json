@@ -1,0 +1,86 @@
+{
+  "status": "pass",
+  "local_source_matches_tested_source": [
+    {
+      "path": "Cargo.toml",
+      "sha256": "c2c3c5b4a9aafff9678f09d8f7ac48b13e514d0d56e6ec55453cc511ce250d94"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "53dbdf0866afc4657923597aca95d323167d99e9a87e00a31bb80367b5b21cf2"
+    },
+    {
+      "path": "src/bin/qag-diagnose.rs",
+      "sha256": "f9812cf863570b9fe4ad9c3cdec82625319156050794f9025ce8cf42558493bc"
+    },
+    {
+      "path": "src/python/vector_index.rs",
+      "sha256": "76976f3126091c23c48440ca3ec9b7949859497218e1a37f87518680c988375b"
+    },
+    {
+      "path": "src/core/qgraph/mod.rs",
+      "sha256": "2dbd83a246ef8b786c6eb831e2b3c27c3fd8c7afaac1010a9e53b6c6eccdb6b7"
+    },
+    {
+      "path": "src/core/qgraph/vertex.rs",
+      "sha256": "ea78de51506f8258143a04c975c9e1f1fa4f760d5a71341cf5795c910490894a"
+    },
+    {
+      "path": "src/core/qgraph/vertex/file.rs",
+      "sha256": "a07a7cce7855ed3e4c77c0d44d19aab95fd5216926425aab144bf20fa55166f3"
+    },
+    {
+      "path": "src/core/qgraph/update.rs",
+      "sha256": "488b9d791ef9858d5916c7d9f99c8e3a6e641e43384547fff173885d7a7cc4a2"
+    },
+    {
+      "path": "src/core/qgraph/diagnostics.rs",
+      "sha256": "abc356f9e0d0619bebc05d3040f5d5bec1fb8b35b47319e161121fc227d70163"
+    },
+    {
+      "path": "src/core/qgraph/projection.rs",
+      "sha256": "8ec3adb3238c84682ff21384ffc6ffe135a06927b5d6776f7f62e04461093cc1"
+    },
+    {
+      "path": "src/core/qgraph/kernels.rs",
+      "sha256": "f6f8b1ca2c5a2c5d13261e46056e3d51fcfe2874af512200f6c97e1b61afaa4a"
+    },
+    {
+      "path": "src/bin/public-bench.rs",
+      "sha256": "f78efe6610d624897f7aa5bab85e47db0ab4ffc1f4ad936c1a1ec84aa16949cd"
+    },
+    {
+      "path": "tests/qgraph_prefetch.rs",
+      "sha256": "476a6395431523858adea55522d0bf347b3542eaa0be43e257351c4b968114ef"
+    }
+  ],
+  "runs": [
+    {
+      "dataset": "llama",
+      "report_sha256": "f1ffc1e97d413c14e76608447d86afad4197ffa3f1472c231d51fa94e09e2b15",
+      "raw_sha256": "c5d1c8e540e12b1ea799dc205af5f33a4e589a0d7e86f1ad380334c7dec71055",
+      "cpu_affinity": [
+        0
+      ],
+      "configurations": 12,
+      "repetitions": 3,
+      "native_diagnostic_ids_identical": true,
+      "frozen_default_ids_identical": true
+    },
+    {
+      "dataset": "yi",
+      "report_sha256": "3ac4bcebc27ff6c07d053455fee8bd9d6326e72c67c88c42a7e96dffddcf28ec",
+      "raw_sha256": "fd3dfc99b5e4a6465fc1419539595715382bfbac3a7a091cd6d8de0adeadd149",
+      "cpu_affinity": [
+        0
+      ],
+      "configurations": 12,
+      "repetitions": 3,
+      "native_diagnostic_ids_identical": true,
+      "frozen_default_ids_identical": true
+    }
+  ],
+  "binaries_preserved": "/home/davidcondrey/sol-qag/v4/; SHA256 receipts retained locally",
+  "branch": "feat/direct-ip-reservoir",
+  "base": "4d5168f7ce8253b15aefe2f7ce24f0e248de4deb"
+}

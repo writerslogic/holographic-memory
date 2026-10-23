@@ -16,7 +16,7 @@ pytest.importorskip("openai")
 
 from holographic_sdk.importers.sources.openai_vs import OpenAiVectorStoreSource
 
-from .conftest import assert_faithful, assert_resumable, vec
+from .conftest import assert_resumable, vec
 from .mockserver import ApiError, MockApi
 
 KEY = "sk-test-mock-key-123456"

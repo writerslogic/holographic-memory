@@ -33,6 +33,9 @@ struct Args {
     profile: bool,
     #[arg(long)]
     persist_dir: Option<PathBuf>,
+    /// Validation-only four-arm serving/retention comparison on one trained graph.
+    #[arg(long)]
+    compare_serving: bool,
 }
 
 fn floats(path: PathBuf, expected: usize) -> Result<Vec<f32>> {
@@ -75,6 +78,16 @@ fn exact_rerank(ids: &[u32], base: &[f32], query: &[f32], dim: usize) -> Vec<u32
 fn main() -> Result<()> {
     let args = Args::parse();
     ensure!(!args.out.exists(), "output exists");
+    if args.compare_serving {
+        ensure!(
+            args.training.is_some(),
+            "serving comparison requires frozen construction queries"
+        );
+        ensure!(
+            !args.profile && args.persist_dir.is_none(),
+            "serving comparison is a separate diagnostic mode"
+        );
+    }
     ensure!([4, 8].contains(&args.bits), "bits must be 4 or 8");
     ensure!(
         (100..=2000).contains(&args.rerank),
@@ -188,7 +201,7 @@ fn main() -> Result<()> {
             .take(args.training_count * 100)
             .map(|v| u32::from_le_bytes(*v))
             .collect();
-        if args.profile {
+        if args.profile || args.compare_serving {
             ensure!(
                 args.training_count == 32768 && args.projected_degree == 32,
                 "production profile requires frozen training settings"
@@ -201,6 +214,19 @@ fn main() -> Result<()> {
         }
     }
     let projection_seconds = start.elapsed().as_secs_f64();
+    if args.compare_serving {
+        return compare_serving(
+            &args,
+            &graph,
+            &base,
+            &queries,
+            &truth,
+            meta,
+            json!({"cache_hit": cache_hit, "base_hash": base_graph_hash,
+                "trained_hash": graph.structure_hash(), "graph_seconds": graph_seconds,
+                "projection_seconds": projection_seconds, "projection": projection}),
+        );
+    }
     let start = Instant::now();
     let mut index = VGraph::from_graph_with(&graph, args.bits, 8, true, true, 3, false)?;
     let encoding_seconds = start.elapsed().as_secs_f64();
@@ -366,4 +392,193 @@ fn main() -> Result<()> {
     fs::write(&args.out, serde_json::to_vec_pretty(&report)?)?;
     println!("{}", serde_json::to_string(&report["aggregate"])?);
     Ok(())
+}
+
+fn compare_serving(
+    args: &Args,
+    graph: &Graph,
+    base: &[f32],
+    queries: &[f32],
+    truth: &[u32],
+    input: Value,
+    construction: Value,
+) -> Result<()> {
+    ensure!(
+        !args.profile,
+        "comparison and layout profile are separate modes"
+    );
+    let dim = input["dimension"].as_u64().context("dimension")? as usize;
+    let lift = lift_scale_diagnostic(base, dim);
+    let mut encodings = Vec::new();
+    let mut rows = Vec::new();
+    for direct in [false, true] {
+        let started = Instant::now();
+        let mut index = if direct {
+            VGraph::from_lifted_ip_graph(graph, args.bits, 8, true, true, 3)?
+        } else {
+            VGraph::from_graph_with(graph, args.bits, 8, true, true, 3, false)?
+        };
+        let seconds = started.elapsed().as_secs_f64();
+        encodings.push(json!({"direct_ip": direct, "seconds": seconds,
+            "diagnostic": index.encoding_diagnostic(graph)?}));
+        for ef in [100, 256, 512] {
+            let mut reference = Vec::new();
+            for reservoir in [0, 400] {
+                let settings = VSearchParams {
+                    ef,
+                    rerank: 400,
+                    reservoir,
+                    ..Default::default()
+                };
+                for (i, (query, expected)) in queries
+                    .chunks_exact(dim)
+                    .zip(truth.as_chunks::<100>().0)
+                    .enumerate()
+                {
+                    let transformed: Vec<_> = query
+                        .iter()
+                        .copied()
+                        .chain((!direct).then_some(0.0))
+                        .collect();
+                    let found = index.diagnose(graph, &transformed, 100, settings, None, false)?;
+                    let mut out = Vec::new();
+                    let profile = index
+                        .searcher_with(holographic_memory::core::qgraph::SearchKnobs::OFF)
+                        .profile_search(&transformed, 100, settings, &mut out)?;
+                    ensure!(
+                        out == found.results,
+                        "diagnostic/production result mismatch"
+                    );
+                    if reservoir == 0 {
+                        reference.push((
+                            found.evaluated.clone(),
+                            found.beam.clone(),
+                            profile.expansions,
+                        ));
+                    } else {
+                        ensure!(
+                            reference[i]
+                                == (
+                                    found.evaluated.clone(),
+                                    found.beam.clone(),
+                                    profile.expansions
+                                ),
+                            "retention changed traversal for query {i}"
+                        );
+                    }
+                    rows.push(json!({"direct_ip": direct, "ef": ef, "reservoir": reservoir,
+                        "rerank": 400, "query": i, "ids": found.results,
+                        "recall": coverage(&found.results, expected),
+                        "evaluated_unique": found.evaluated.len(),
+                        "evaluated_coverage": coverage(&found.evaluated, expected),
+                        "beam_coverage": coverage(&found.beam, expected),
+                        "retained_coverage": coverage(&found.retained, expected),
+                        "rerank_candidate_coverage": coverage(&found.rerank_candidates, expected),
+                        "oracle_evaluated_recall": coverage(&exact_rerank(&found.evaluated, base, query, dim), expected),
+                        "oracle_beam_recall": coverage(&exact_rerank(&found.beam, base, query, dim), expected),
+                        "oracle_retained_recall": coverage(&exact_rerank(&found.retained, base, query, dim), expected),
+                        "oracle_rerank_recall": coverage(&exact_rerank(&found.rerank_candidates, base, query, dim), expected),
+                        "work": profile}));
+                }
+            }
+        }
+    }
+    let mut aggregate = Vec::new();
+    for direct in [false, true] {
+        for ef in [100, 256, 512] {
+            for reservoir in [0, 400] {
+                let selected: Vec<_> = rows
+                    .iter()
+                    .filter(|r| {
+                        r["direct_ip"] == direct && r["ef"] == ef && r["reservoir"] == reservoir
+                    })
+                    .collect();
+                let mut summary =
+                    json!({"direct_ip": direct, "ef": ef, "reservoir": reservoir, "rerank": 400});
+                for field in [
+                    "recall",
+                    "evaluated_unique",
+                    "evaluated_coverage",
+                    "beam_coverage",
+                    "retained_coverage",
+                    "rerank_candidate_coverage",
+                    "oracle_evaluated_recall",
+                    "oracle_beam_recall",
+                    "oracle_retained_recall",
+                    "oracle_rerank_recall",
+                ] {
+                    summary[field] = json!(
+                        selected
+                            .iter()
+                            .map(|r| r[field].as_f64().expect("number"))
+                            .sum::<f64>()
+                            / selected.len() as f64
+                    );
+                }
+                for field in [
+                    "expansions",
+                    "traversal_evaluations",
+                    "rerank_evaluations",
+                    "retained",
+                ] {
+                    summary[field] = json!(
+                        selected
+                            .iter()
+                            .map(|r| r["work"][field].as_f64().expect("number"))
+                            .sum::<f64>()
+                            / selected.len() as f64
+                    );
+                }
+                aggregate.push(summary);
+            }
+        }
+    }
+    let report = json!({"schema_version": 1, "scope": "untimed full-base reserved validation diagnosis; no official queries or production throughput claim",
+        "input": input, "construction": construction, "encodings": encodings,
+        "lift_scale_diagnostic": lift,
+        "retention_preserves_traversal": true, "aggregate": aggregate, "queries": rows});
+    fs::write(&args.out, serde_json::to_vec_pretty(&report)?)?;
+    println!("{}", serde_json::to_string(&report["aggregate"])?);
+    Ok(())
+}
+
+fn lift_scale_diagnostic(base: &[f32], dim: usize) -> Value {
+    let n = base.len() / dim;
+    let norms: Vec<f64> = base
+        .chunks_exact(dim)
+        .map(|r| r.iter().map(|&v| f64::from(v).powi(2)).sum())
+        .collect();
+    let max = norms.iter().copied().fold(0.0, f64::max);
+    let tails: Vec<f32> = norms
+        .iter()
+        .map(|v| (max - v).max(0.0).sqrt() as f32)
+        .collect();
+    let mut mean = vec![0f64; dim];
+    for row in base.chunks_exact(dim) {
+        for (m, &v) in mean.iter_mut().zip(row) {
+            *m += f64::from(v);
+        }
+    }
+    let mean: Vec<f32> = mean.into_iter().map(|v| (v / n as f64) as f32).collect();
+    let tail_mean = (tails.iter().map(|&v| f64::from(v)).sum::<f64>() / n as f64) as f32;
+    let (mut dominates, mut zero_original, mut ratio_sum, mut max_ratio) = (0, 0, 0f64, 1f64);
+    for (row, tail) in base.chunks_exact(dim).zip(tails) {
+        let original = row
+            .iter()
+            .zip(&mean)
+            .map(|(v, m)| (v - m).abs())
+            .fold(0f32, f32::max);
+        let added = (tail - tail_mean).abs();
+        dominates += usize::from(added > original);
+        if original == 0.0 {
+            zero_original += 1;
+            continue;
+        }
+        let ratio = f64::from(added.max(original)) / f64::from(original);
+        ratio_sum += ratio;
+        max_ratio = max_ratio.max(ratio);
+    }
+    json!({"rows": n, "tail_dominates_rows": dominates, "tail_dominates_fraction": dominates as f64 / n as f64,
+        "zero_original_centered_max_rows": zero_original, "max_scale_ratio": max_ratio,
+        "mean_scale_ratio_nonzero_original": (n > zero_original).then(|| ratio_sum / (n - zero_original) as f64)})
 }

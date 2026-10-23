@@ -1,0 +1,2004 @@
+{
+  "schema_version": 1,
+  "source": {
+    "metric": "ip",
+    "base_rows": 187843,
+    "queries": 256,
+    "dimension": 128,
+    "attributes": {
+      "dimension": 128,
+      "distance": "ip",
+      "point_type": "float",
+      "qag_construction_policy": "identical 32768 construction learn rows in both phases",
+      "qag_original_source_sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+      "qag_scope": "validation"
+    },
+    "scope": "validation",
+    "official_test": false
+  },
+  "provenance": {
+    "raw_results": "/home/davidcondrey/sol-qag/v4/runs/yi/raw.hdf5",
+    "raw_results_sha256": "fd3dfc99b5e4a6465fc1419539595715382bfbac3a7a091cd6d8de0adeadd149",
+    "source": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/evaluation.hdf5",
+    "source_sha256": "c14eae08ac058325ce4612216695bad151303f047b64af4ca22505632a25e446",
+    "extractor_sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+    "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+    "execution_receipt": {
+      "path": "/home/davidcondrey/sol-qag/v4/runs/yi/benchmark.json",
+      "sha256": "90c6677abbc4da9461ac82b3e9410e02bb139d76a496baa1d7384ffb510e3988",
+      "metadata": {
+        "scope": "reserved learn validation only; no untouched final test",
+        "host": "writerslogic-02",
+        "inputs": [
+          {
+            "path": "/home/davidcondrey/sol-qag/repo-v4/benchmarks/public/qag_serving_execute.py",
+            "sha256": "c0e427aac50183eccb64d61d1d3a89d0be0d413dde3f3b3eded6fc16a85fa744",
+            "bytes": 9801
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/repo-v4/benchmarks/public/qag_serving_module.py",
+            "sha256": "57b6d9804f9a08ef7cb52c6355e1a7e937f9087718f357866aa1c03506365a19",
+            "bytes": 4326
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/repo-v4/benchmarks/results/query_aware_graph_v1/sources/qag_report_full_evaluation_v1.py",
+            "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+            "bytes": 14116
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/v4/runs/yi/definitions/qag_serving/config.yml",
+            "sha256": "17108ba23ea2a318c1b05bf30005e47533d1f295c6bdb707db7e313126128296",
+            "bytes": 4996
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/bench.sh",
+            "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+            "bytes": 1056
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/run.py",
+            "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+            "bytes": 149
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_serving/module.py",
+            "sha256": "57b6d9804f9a08ef7cb52c6355e1a7e937f9087718f357866aa1c03506365a19",
+            "bytes": 4326
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py",
+            "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+            "bytes": 17463
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py",
+            "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+            "bytes": 12096
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py",
+            "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+            "bytes": 12642
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/workers.py",
+            "sha256": "dfe0ccdab5339ee03e077e7d3180081048ceabab04265a21dfd7a6fcbe146af7",
+            "bytes": 17579
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/numa.py",
+            "sha256": "34631c428ed5b00988362db5252ccdb8bd535a4c2e622d67e241b8d53fa543de",
+            "bytes": 11511
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py",
+            "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+            "bytes": 14310
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py",
+            "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+            "bytes": 5447
+          },
+          {
+            "path": "/home/davidcondrey/vibe-hms/vibe/vibe/distance.py",
+            "sha256": "b6cf2794de49fe05b025dd8d87c11655118244d9af5a4d2a10ba9e3159d4c9fe",
+            "bytes": 3321
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "bytes": 16777216
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/evaluation.hdf5",
+            "sha256": "c14eae08ac058325ce4612216695bad151303f047b64af4ca22505632a25e446",
+            "bytes": 6144
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/runs/yi-full-validation-v1/validation-export.hdf5",
+            "sha256": "69131c6046b9e4b91b4d7a22d47ec82593ff47d3aedbc4c27b44d7686bb4982a",
+            "bytes": 126506496
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/v2/runs/yi-layout-v2/raw.hdf5",
+            "sha256": "ab506988d9427f021ea8272c9c11a4706c4379679a03c99aef6eaea8bba96500",
+            "bytes": 3871624
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/v2/runs/yi-layout-v2/report.json",
+            "sha256": "7ad62971aba2e2629299d1bfac2aacba31f00aadc9930b904e534b5578f48cf2",
+            "bytes": 59993
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/v4/diagnostics/yi.json",
+            "sha256": "40ab6260f24aeaaa70ac08d525b59a882752d9416be5283812796d169c2d00dd",
+            "bytes": 7535599
+          },
+          {
+            "path": "/home/davidcondrey/sol-qag/v4/holographic_memory.so",
+            "sha256": "120cb2e15f923548cbebc8fa64de5c47135417a9f8b2f6823e7fc9f0843c78e2",
+            "bytes": 2057640
+          }
+        ],
+        "schedule": [
+          [
+            0,
+            100,
+            400,
+            0
+          ],
+          [
+            1,
+            100,
+            400,
+            0
+          ],
+          [
+            2,
+            100,
+            400,
+            0
+          ],
+          [
+            3,
+            100,
+            400,
+            0
+          ],
+          [
+            0,
+            256,
+            400,
+            0
+          ],
+          [
+            1,
+            256,
+            400,
+            0
+          ],
+          [
+            2,
+            256,
+            400,
+            0
+          ],
+          [
+            3,
+            256,
+            400,
+            0
+          ],
+          [
+            0,
+            512,
+            400,
+            0
+          ],
+          [
+            1,
+            512,
+            400,
+            0
+          ],
+          [
+            2,
+            512,
+            400,
+            0
+          ],
+          [
+            3,
+            512,
+            400,
+            0
+          ],
+          [
+            3,
+            100,
+            400,
+            1
+          ],
+          [
+            2,
+            100,
+            400,
+            1
+          ],
+          [
+            1,
+            100,
+            400,
+            1
+          ],
+          [
+            0,
+            100,
+            400,
+            1
+          ],
+          [
+            3,
+            256,
+            400,
+            1
+          ],
+          [
+            2,
+            256,
+            400,
+            1
+          ],
+          [
+            1,
+            256,
+            400,
+            1
+          ],
+          [
+            0,
+            256,
+            400,
+            1
+          ],
+          [
+            3,
+            512,
+            400,
+            1
+          ],
+          [
+            2,
+            512,
+            400,
+            1
+          ],
+          [
+            1,
+            512,
+            400,
+            1
+          ],
+          [
+            0,
+            512,
+            400,
+            1
+          ],
+          [
+            0,
+            100,
+            400,
+            2
+          ],
+          [
+            1,
+            100,
+            400,
+            2
+          ],
+          [
+            2,
+            100,
+            400,
+            2
+          ],
+          [
+            3,
+            100,
+            400,
+            2
+          ],
+          [
+            0,
+            256,
+            400,
+            2
+          ],
+          [
+            1,
+            256,
+            400,
+            2
+          ],
+          [
+            2,
+            256,
+            400,
+            2
+          ],
+          [
+            3,
+            256,
+            400,
+            2
+          ],
+          [
+            0,
+            512,
+            400,
+            2
+          ],
+          [
+            1,
+            512,
+            400,
+            2
+          ],
+          [
+            2,
+            512,
+            400,
+            2
+          ],
+          [
+            3,
+            512,
+            400,
+            2
+          ]
+        ],
+        "command": [
+          "/home/davidcondrey/vibe-hms/bench.sh",
+          "qag-serving-yi-v4-128-ip",
+          "1",
+          "vibe",
+          "/home/davidcondrey/sol-qag/v4/runs/yi/definitions",
+          "nolock"
+        ],
+        "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+        "environment": {
+          "MKL_NUM_THREADS": "1",
+          "NUMEXPR_NUM_THREADS": "1",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "RAYON_NUM_THREADS": "1",
+          "HMS_QAG_CANDIDATE_SO": "/home/davidcondrey/sol-qag/v4/holographic_memory.so",
+          "HMS_QAG_TRAINING_QUERIES": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+          "HMS_QAG_TRAINING_QUERIES_SHA256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d"
+        },
+        "raw_results": {
+          "path": "/home/davidcondrey/sol-qag/v4/runs/yi/raw.hdf5",
+          "sha256": "fd3dfc99b5e4a6465fc1419539595715382bfbac3a7a091cd6d8de0adeadd149",
+          "bytes": 7725880
+        },
+        "native_diagnostic_ids_identical": true
+      }
+    }
+  },
+  "protocol": {
+    "count": 100,
+    "repetitions": [
+      0,
+      1,
+      2
+    ],
+    "passes_per_repetition": 5,
+    "timed_pass": 5,
+    "qps": "query_count / sum(saved raw per-query fifth-pass times); best_qps ignored",
+    "selection": "fastest measured median with minimum strict ID recall across repetitions >= target; no interpolation or rounding",
+    "epsilon_recall": "float64 original-metric distance <= recomputed true kth distance + 0.001",
+    "resources": "per-arm build seconds/encoded bytes where recorded; process RSS and VIBE USS delta aggregate all co-resident arms"
+  },
+  "rows": [
+    {
+      "arm": 0,
+      "method": "lifted",
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9055078125,
+      "recall_epsilon_min": 0.9056640625,
+      "qps_median": 6666.845494953555,
+      "qps_min": 6619.117605574067,
+      "qps_max": 6877.98028024932,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "0_100_400_0",
+          "recall_ids": 0.9055078125,
+          "recall_epsilon": 0.9056640625,
+          "qps": 6619.117605574067,
+          "total_seconds": 0.038675850053550676,
+          "ids_sha256": "9eda70ed8ca9d7f149d4edde469a61385367d94bbc71fbc2dfd207d9144615dc",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "0_100_400_1",
+          "recall_ids": 0.9055078125,
+          "recall_epsilon": 0.9056640625,
+          "qps": 6877.98028024932,
+          "total_seconds": 0.03722022884176113,
+          "ids_sha256": "9eda70ed8ca9d7f149d4edde469a61385367d94bbc71fbc2dfd207d9144615dc",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "0_100_400_2",
+          "recall_ids": 0.9055078125,
+          "recall_epsilon": 0.9056640625,
+          "qps": 6666.845494953555,
+          "total_seconds": 0.03839896997669712,
+          "ids_sha256": "9eda70ed8ca9d7f149d4edde469a61385367d94bbc71fbc2dfd207d9144615dc",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 0,
+      "method": "lifted",
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.97546875,
+      "recall_epsilon_min": 0.9756640625,
+      "qps_median": 3200.4442995674535,
+      "qps_min": 3063.2066431991834,
+      "qps_max": 3215.7961969985795,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "0_256_400_0",
+          "recall_ids": 0.97546875,
+          "recall_epsilon": 0.9756640625,
+          "qps": 3200.4442995674535,
+          "total_seconds": 0.07998889405280352,
+          "ids_sha256": "c0326d63a7c662622ceab0703681cdfd47166f0a3de66c7dd157a858c78a5ff5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "0_256_400_1",
+          "recall_ids": 0.97546875,
+          "recall_epsilon": 0.9756640625,
+          "qps": 3063.2066431991834,
+          "total_seconds": 0.08357255315058865,
+          "ids_sha256": "c0326d63a7c662622ceab0703681cdfd47166f0a3de66c7dd157a858c78a5ff5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "0_256_400_2",
+          "recall_ids": 0.97546875,
+          "recall_epsilon": 0.9756640625,
+          "qps": 3215.7961969985795,
+          "total_seconds": 0.07960703487333376,
+          "ids_sha256": "c0326d63a7c662622ceab0703681cdfd47166f0a3de66c7dd157a858c78a5ff5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 0,
+      "method": "lifted",
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9908984375,
+      "recall_epsilon_min": 0.991015625,
+      "qps_median": 1766.8667096193929,
+      "qps_min": 1756.4566350486377,
+      "qps_max": 1843.3169033185598,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "0_512_400_0",
+          "recall_ids": 0.9908984375,
+          "recall_epsilon": 0.991015625,
+          "qps": 1843.3169033185598,
+          "total_seconds": 0.13888008054345846,
+          "ids_sha256": "2122b7081652ff65709236e94899c22b2ecf66c97d3e543bad29e2364e126716",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "0_512_400_1",
+          "recall_ids": 0.9908984375,
+          "recall_epsilon": 0.991015625,
+          "qps": 1766.8667096193929,
+          "total_seconds": 0.14488925429759547,
+          "ids_sha256": "2122b7081652ff65709236e94899c22b2ecf66c97d3e543bad29e2364e126716",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "0_512_400_2",
+          "recall_ids": 0.9908984375,
+          "recall_epsilon": 0.991015625,
+          "qps": 1756.4566350486377,
+          "total_seconds": 0.1457479762902949,
+          "ids_sha256": "2122b7081652ff65709236e94899c22b2ecf66c97d3e543bad29e2364e126716",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 0,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 1,
+      "method": "lifted+reservoir",
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.91796875,
+      "recall_epsilon_min": 0.918203125,
+      "qps_median": 4231.6592061524625,
+      "qps_min": 4226.912608818593,
+      "qps_max": 4280.888772836522,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "1_100_400_0",
+          "recall_ids": 0.91796875,
+          "recall_epsilon": 0.918203125,
+          "qps": 4226.912608818593,
+          "total_seconds": 0.06056429921591189,
+          "ids_sha256": "21305ec84ae682279c96585f603a67d051e221008407c8f03b79e2e4566e5827",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "1_100_400_1",
+          "recall_ids": 0.91796875,
+          "recall_epsilon": 0.918203125,
+          "qps": 4231.6592061524625,
+          "total_seconds": 0.06049636502575595,
+          "ids_sha256": "21305ec84ae682279c96585f603a67d051e221008407c8f03b79e2e4566e5827",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "1_100_400_2",
+          "recall_ids": 0.91796875,
+          "recall_epsilon": 0.918203125,
+          "qps": 4280.888772836522,
+          "total_seconds": 0.05980066607298795,
+          "ids_sha256": "21305ec84ae682279c96585f603a67d051e221008407c8f03b79e2e4566e5827",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 1,
+      "method": "lifted+reservoir",
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9755078125,
+      "recall_epsilon_min": 0.975703125,
+      "qps_median": 2531.4126350634547,
+      "qps_min": 2526.5806622289183,
+      "qps_max": 2558.198180368661,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "1_256_400_0",
+          "recall_ids": 0.9755078125,
+          "recall_epsilon": 0.975703125,
+          "qps": 2558.198180368661,
+          "total_seconds": 0.10007043315272313,
+          "ids_sha256": "ab70054ead3125e76f48f30fbc7ba173fc97e09c8638412d77ac6c7bdd8a5e96",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "1_256_400_1",
+          "recall_ids": 0.9755078125,
+          "recall_epsilon": 0.975703125,
+          "qps": 2531.4126350634547,
+          "total_seconds": 0.10112930482137017,
+          "ids_sha256": "ab70054ead3125e76f48f30fbc7ba173fc97e09c8638412d77ac6c7bdd8a5e96",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "1_256_400_2",
+          "recall_ids": 0.9755078125,
+          "recall_epsilon": 0.975703125,
+          "qps": 2526.5806622289183,
+          "total_seconds": 0.10132271010661498,
+          "ids_sha256": "ab70054ead3125e76f48f30fbc7ba173fc97e09c8638412d77ac6c7bdd8a5e96",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 1,
+      "method": "lifted+reservoir",
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9908984375,
+      "recall_epsilon_min": 0.991015625,
+      "qps_median": 1681.2457487559009,
+      "qps_min": 1670.632725149258,
+      "qps_max": 1718.9074309303633,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "1_512_400_0",
+          "recall_ids": 0.9908984375,
+          "recall_epsilon": 0.991015625,
+          "qps": 1681.2457487559009,
+          "total_seconds": 0.15226804302074015,
+          "ids_sha256": "2122b7081652ff65709236e94899c22b2ecf66c97d3e543bad29e2364e126716",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "1_512_400_1",
+          "recall_ids": 0.9908984375,
+          "recall_epsilon": 0.991015625,
+          "qps": 1718.9074309303633,
+          "total_seconds": 0.1489318129606545,
+          "ids_sha256": "2122b7081652ff65709236e94899c22b2ecf66c97d3e543bad29e2364e126716",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "1_512_400_2",
+          "recall_ids": 0.9908984375,
+          "recall_epsilon": 0.991015625,
+          "qps": 1670.632725149258,
+          "total_seconds": 0.15323535577044822,
+          "ids_sha256": "2122b7081652ff65709236e94899c22b2ecf66c97d3e543bad29e2364e126716",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 1,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "lifted+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 2,
+      "method": "direct",
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.90578125,
+      "recall_epsilon_min": 0.9059375,
+      "qps_median": 8475.126171174825,
+      "qps_min": 8106.17755181456,
+      "qps_max": 8492.366449039784,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "2_100_400_0",
+          "recall_ids": 0.90578125,
+          "recall_epsilon": 0.9059375,
+          "qps": 8492.366449039784,
+          "total_seconds": 0.030144718970404938,
+          "ids_sha256": "716e5f608c3479b4b2f9cfbd881b3db69ddda4435112503cc189ff8879b35e7b",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "2_100_400_1",
+          "recall_ids": 0.90578125,
+          "recall_epsilon": 0.9059375,
+          "qps": 8475.126171174825,
+          "total_seconds": 0.030206039984477684,
+          "ids_sha256": "716e5f608c3479b4b2f9cfbd881b3db69ddda4435112503cc189ff8879b35e7b",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "2_100_400_2",
+          "recall_ids": 0.90578125,
+          "recall_epsilon": 0.9059375,
+          "qps": 8106.17755181456,
+          "total_seconds": 0.03158085279574152,
+          "ids_sha256": "716e5f608c3479b4b2f9cfbd881b3db69ddda4435112503cc189ff8879b35e7b",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 2,
+      "method": "direct",
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9754296875,
+      "recall_epsilon_min": 0.975625,
+      "qps_median": 4159.6086670807235,
+      "qps_min": 4032.7818972093824,
+      "qps_max": 4163.5625499166035,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "2_256_400_0",
+          "recall_ids": 0.9754296875,
+          "recall_epsilon": 0.975625,
+          "qps": 4163.5625499166035,
+          "total_seconds": 0.06148580618901178,
+          "ids_sha256": "a0660c60cd159402098c94de510f4cd789aaf38d575b0aaf20f08464318924bf",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "2_256_400_1",
+          "recall_ids": 0.9754296875,
+          "recall_epsilon": 0.975625,
+          "qps": 4159.6086670807235,
+          "total_seconds": 0.06154425103159156,
+          "ids_sha256": "a0660c60cd159402098c94de510f4cd789aaf38d575b0aaf20f08464318924bf",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "2_256_400_2",
+          "recall_ids": 0.9754296875,
+          "recall_epsilon": 0.975625,
+          "qps": 4032.7818972093824,
+          "total_seconds": 0.06347975331300404,
+          "ids_sha256": "a0660c60cd159402098c94de510f4cd789aaf38d575b0aaf20f08464318924bf",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 2,
+      "method": "direct",
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.990859375,
+      "recall_epsilon_min": 0.9909765625,
+      "qps_median": 2295.3362042278704,
+      "qps_min": 2290.659046032256,
+      "qps_max": 2377.04807023087,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "2_512_400_0",
+          "recall_ids": 0.990859375,
+          "recall_epsilon": 0.9909765625,
+          "qps": 2295.3362042278704,
+          "total_seconds": 0.11153050238499418,
+          "ids_sha256": "ed89f32b3df04104cc2908d01cd81b0b53caf82b64c880c610c9adbdffcfeef5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "2_512_400_1",
+          "recall_ids": 0.990859375,
+          "recall_epsilon": 0.9909765625,
+          "qps": 2377.04807023087,
+          "total_seconds": 0.10769660201913211,
+          "ids_sha256": "ed89f32b3df04104cc2908d01cd81b0b53caf82b64c880c610c9adbdffcfeef5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "2_512_400_2",
+          "recall_ids": 0.990859375,
+          "recall_epsilon": 0.9909765625,
+          "qps": 2290.659046032256,
+          "total_seconds": 0.11175822977384087,
+          "ids_sha256": "ed89f32b3df04104cc2908d01cd81b0b53caf82b64c880c610c9adbdffcfeef5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 2,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 0,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 3,
+      "method": "direct+reservoir",
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9179296875,
+      "recall_epsilon_min": 0.9181640625,
+      "qps_median": 4976.6390412568035,
+      "qps_min": 4894.666299369509,
+      "qps_max": 5263.8149031259945,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "3_100_400_0",
+          "recall_ids": 0.9179296875,
+          "recall_epsilon": 0.9181640625,
+          "qps": 5263.8149031259945,
+          "total_seconds": 0.04863392894912977,
+          "ids_sha256": "c586e06724cc3364bcd689b3d83a760a4439b0e2641b7d53028a512cd27a07df",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "3_100_400_1",
+          "recall_ids": 0.9179296875,
+          "recall_epsilon": 0.9181640625,
+          "qps": 4894.666299369509,
+          "total_seconds": 0.05230182904051617,
+          "ids_sha256": "c586e06724cc3364bcd689b3d83a760a4439b0e2641b7d53028a512cd27a07df",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "3_100_400_2",
+          "recall_ids": 0.9179296875,
+          "recall_epsilon": 0.9181640625,
+          "qps": 4976.6390412568035,
+          "total_seconds": 0.05144033912802115,
+          "ids_sha256": "c586e06724cc3364bcd689b3d83a760a4439b0e2641b7d53028a512cd27a07df",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 3,
+      "method": "direct+reservoir",
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.97546875,
+      "recall_epsilon_min": 0.9756640625,
+      "qps_median": 3098.5057411917824,
+      "qps_min": 3083.6079826110736,
+      "qps_max": 3319.779993836733,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "3_256_400_0",
+          "recall_ids": 0.97546875,
+          "recall_epsilon": 0.9756640625,
+          "qps": 3319.779993836733,
+          "total_seconds": 0.07711354381171986,
+          "ids_sha256": "82d16da8db2359b38d2af13f183be03dfd5eeda493f39f719445e44c8e20c51f",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "3_256_400_1",
+          "recall_ids": 0.97546875,
+          "recall_epsilon": 0.9756640625,
+          "qps": 3083.6079826110736,
+          "total_seconds": 0.08301963201665785,
+          "ids_sha256": "82d16da8db2359b38d2af13f183be03dfd5eeda493f39f719445e44c8e20c51f",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "3_256_400_2",
+          "recall_ids": 0.97546875,
+          "recall_epsilon": 0.9756640625,
+          "qps": 3098.5057411917824,
+          "total_seconds": 0.08262046979507431,
+          "ids_sha256": "82d16da8db2359b38d2af13f183be03dfd5eeda493f39f719445e44c8e20c51f",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    },
+    {
+      "arm": 3,
+      "method": "direct+reservoir",
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.990859375,
+      "recall_epsilon_min": 0.9909765625,
+      "qps_median": 2119.3430704720217,
+      "qps_min": 2051.247366611481,
+      "qps_max": 2151.5989044851317,
+      "repetitions": [
+        {
+          "repetition": 0,
+          "raw_group": "3_512_400_0",
+          "recall_ids": 0.990859375,
+          "recall_epsilon": 0.9909765625,
+          "qps": 2051.247366611481,
+          "total_seconds": 0.12480211025103927,
+          "ids_sha256": "ed89f32b3df04104cc2908d01cd81b0b53caf82b64c880c610c9adbdffcfeef5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 0,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 1,
+          "raw_group": "3_512_400_1",
+          "recall_ids": 0.990859375,
+          "recall_epsilon": 0.9909765625,
+          "qps": 2119.3430704720217,
+          "total_seconds": 0.1207921471359441,
+          "ids_sha256": "ed89f32b3df04104cc2908d01cd81b0b53caf82b64c880c610c9adbdffcfeef5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 1,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        },
+        {
+          "repetition": 2,
+          "raw_group": "3_512_400_2",
+          "recall_ids": 0.990859375,
+          "recall_epsilon": 0.9909765625,
+          "qps": 2151.5989044851317,
+          "total_seconds": 0.11898128385655582,
+          "ids_sha256": "ed89f32b3df04104cc2908d01cd81b0b53caf82b64c880c610c9adbdffcfeef5",
+          "resource_attrs": {
+            "algo": "qag-serving-v4",
+            "build_time": 356.8254864215851,
+            "dataset": "qag-serving-yi-v4-128-ip",
+            "gpu_mode": false,
+            "index_size": 378800.0,
+            "qag_arm": 3,
+            "qag_candidate_code_bits": 8,
+            "qag_candidate_training_queries": 32768,
+            "qag_candidate_training_query_file": "/home/davidcondrey/sol-qag/data/yi-full-training/queries.f32",
+            "qag_candidate_training_query_sha256": "e8d11c03da5a22a97c7298a1d5a2ec405e684ac3bfda4c092d463a001ac9403d",
+            "qag_cpu_affinity": [
+              0
+            ],
+            "qag_direct_build_seconds": 168.8789437509986,
+            "qag_direct_index_bytes": 123105908,
+            "qag_lifted_build_seconds": 168.9334442459949,
+            "qag_lifted_index_bytes": 150906736,
+            "qag_patience": 0,
+            "qag_process_peak_rss_kib": 932500,
+            "qag_repetition": 2,
+            "qag_reservoir": 400,
+            "qag_resource_scope": "two representations co-resident; RSS/USS are aggregate, not per-index",
+            "qag_serving_method": "direct+reservoir",
+            "qag_thread_environment": "OMP_NUM_THREADS=1,MKL_NUM_THREADS=1,OPENBLAS_NUM_THREADS=1,NUMEXPR_NUM_THREADS=1,RAYON_NUM_THREADS=1"
+          }
+        }
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "arm": 0,
+      "method": "lifted",
+      "target": 0.9,
+      "reached": true,
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9055078125,
+      "recall_epsilon_min": 0.9056640625,
+      "qps_median": 6666.845494953555,
+      "qps_min": 6619.117605574067,
+      "qps_max": 6877.98028024932
+    },
+    {
+      "arm": 0,
+      "method": "lifted",
+      "target": 0.95,
+      "reached": true,
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.97546875,
+      "recall_epsilon_min": 0.9756640625,
+      "qps_median": 3200.4442995674535,
+      "qps_min": 3063.2066431991834,
+      "qps_max": 3215.7961969985795
+    },
+    {
+      "arm": 0,
+      "method": "lifted",
+      "target": 0.99,
+      "reached": true,
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9908984375,
+      "recall_epsilon_min": 0.991015625,
+      "qps_median": 1766.8667096193929,
+      "qps_min": 1756.4566350486377,
+      "qps_max": 1843.3169033185598
+    },
+    {
+      "arm": 1,
+      "method": "lifted+reservoir",
+      "target": 0.9,
+      "reached": true,
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.91796875,
+      "recall_epsilon_min": 0.918203125,
+      "qps_median": 4231.6592061524625,
+      "qps_min": 4226.912608818593,
+      "qps_max": 4280.888772836522
+    },
+    {
+      "arm": 1,
+      "method": "lifted+reservoir",
+      "target": 0.95,
+      "reached": true,
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9755078125,
+      "recall_epsilon_min": 0.975703125,
+      "qps_median": 2531.4126350634547,
+      "qps_min": 2526.5806622289183,
+      "qps_max": 2558.198180368661
+    },
+    {
+      "arm": 1,
+      "method": "lifted+reservoir",
+      "target": 0.99,
+      "reached": true,
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9908984375,
+      "recall_epsilon_min": 0.991015625,
+      "qps_median": 1681.2457487559009,
+      "qps_min": 1670.632725149258,
+      "qps_max": 1718.9074309303633
+    },
+    {
+      "arm": 2,
+      "method": "direct",
+      "target": 0.9,
+      "reached": true,
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.90578125,
+      "recall_epsilon_min": 0.9059375,
+      "qps_median": 8475.126171174825,
+      "qps_min": 8106.17755181456,
+      "qps_max": 8492.366449039784
+    },
+    {
+      "arm": 2,
+      "method": "direct",
+      "target": 0.95,
+      "reached": true,
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9754296875,
+      "recall_epsilon_min": 0.975625,
+      "qps_median": 4159.6086670807235,
+      "qps_min": 4032.7818972093824,
+      "qps_max": 4163.5625499166035
+    },
+    {
+      "arm": 2,
+      "method": "direct",
+      "target": 0.99,
+      "reached": true,
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.990859375,
+      "recall_epsilon_min": 0.9909765625,
+      "qps_median": 2295.3362042278704,
+      "qps_min": 2290.659046032256,
+      "qps_max": 2377.04807023087
+    },
+    {
+      "arm": 3,
+      "method": "direct+reservoir",
+      "target": 0.9,
+      "reached": true,
+      "ef": 100,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.9179296875,
+      "recall_epsilon_min": 0.9181640625,
+      "qps_median": 4976.6390412568035,
+      "qps_min": 4894.666299369509,
+      "qps_max": 5263.8149031259945
+    },
+    {
+      "arm": 3,
+      "method": "direct+reservoir",
+      "target": 0.95,
+      "reached": true,
+      "ef": 256,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.97546875,
+      "recall_epsilon_min": 0.9756640625,
+      "qps_median": 3098.5057411917824,
+      "qps_min": 3083.6079826110736,
+      "qps_max": 3319.779993836733
+    },
+    {
+      "arm": 3,
+      "method": "direct+reservoir",
+      "target": 0.99,
+      "reached": true,
+      "ef": 512,
+      "rerank": 400,
+      "patience": 0,
+      "recall_ids_min": 0.990859375,
+      "recall_epsilon_min": 0.9909765625,
+      "qps_median": 2119.3430704720217,
+      "qps_min": 2051.247366611481,
+      "qps_max": 2151.5989044851317
+    }
+  ]
+}

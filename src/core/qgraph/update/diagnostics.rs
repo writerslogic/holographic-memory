@@ -8,7 +8,7 @@ use super::State;
 
 #[derive(Default)]
 pub(super) struct Diagnostics {
-    pub enabled: bool,
+    pub(super) enabled: bool,
     queries: AtomicU64,
     delta_searches: AtomicU64,
     delta_visits: AtomicU64,
@@ -16,20 +16,20 @@ pub(super) struct Diagnostics {
 }
 
 impl Diagnostics {
-    pub fn from_env() -> Self {
+    pub(super) fn from_env() -> Self {
         Self {
             enabled: std::env::var_os("HMS_STREAM_DIAGNOSTICS").is_some_and(|v| v == "1"),
             ..Self::default()
         }
     }
 
-    pub fn query(&self) {
+    pub(super) fn query(&self) {
         if self.enabled {
             self.queries.fetch_add(1, Ordering::Relaxed);
         }
     }
 
-    pub fn delta_search(&self, visits: usize, candidates: usize) {
+    pub(super) fn delta_search(&self, visits: usize, candidates: usize) {
         self.delta_searches.fetch_add(1, Ordering::Relaxed);
         self.delta_visits
             .fetch_add(visits as u64, Ordering::Relaxed);
@@ -37,7 +37,7 @@ impl Diagnostics {
             .fetch_add(candidates as u64, Ordering::Relaxed);
     }
 
-    pub fn snapshot(&self, state: &State) -> Option<BTreeMap<String, f64>> {
+    pub(super) fn snapshot(&self, state: &State) -> Option<BTreeMap<String, f64>> {
         if !self.enabled {
             return None;
         }

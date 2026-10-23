@@ -1,17 +1,17 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 //! Tool definitions and handlers. Handlers parse strictly (unknown fields are errors), validate
-//! against `Limits`, and call only the `MemoryBackend` trait.
+//! against `Limits`, and call only the `HmsBackend` methods.
 
 use std::collections::BTreeSet;
-use std::sync::Arc;
 
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
 use crate::memory::{
-    preview, Fail, ForgetReq, Limits, ListReq, Memory, MemoryBackend, RememberReq, Res, SearchReq,
+    preview, Fail, ForgetReq, Limits, ListReq, Memory, RememberReq, Res, SearchReq,
 };
+use crate::store::HmsBackend;
 
 pub const ALL_TOOLS: [&str; 8] = [
     "remember", "recall", "search", "get", "forget", "list", "stats", "export",
@@ -329,7 +329,7 @@ pub fn memory_json(memory: &Memory) -> Value {
 
 /// Runs one tool call. Blocking: callers run it on a blocking thread.
 pub fn call(
-    backend: &Arc<dyn MemoryBackend>,
+    backend: &HmsBackend,
     exposure: &Exposure,
     limits: &Limits,
     name: &str,
@@ -484,12 +484,7 @@ pub fn call(
     }
 }
 
-fn export(
-    backend: &Arc<dyn MemoryBackend>,
-    limits: &Limits,
-    ns: &str,
-    a: ExportArgs,
-) -> Res<Output> {
+fn export(backend: &HmsBackend, limits: &Limits, ns: &str, a: ExportArgs) -> Res<Output> {
     let format = a.format.as_deref().unwrap_or("json");
     if !["json", "jsonl", "markdown"].contains(&format) {
         return Err(Fail::invalid("format must be json, jsonl or markdown"));

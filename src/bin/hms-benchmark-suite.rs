@@ -76,9 +76,7 @@ fn eprint_stage(label: &str, json: bool) {
     }
 }
 
-// ===========================================================================
 // 1. CAPACITY LOAD CURVES
-// ===========================================================================
 
 fn run_capacity_sweep(dim: usize, quick: bool) -> serde_json::Value {
     let trials = if quick { 20 } else { 50 };
@@ -178,9 +176,7 @@ fn run_capacity_sweep(dim: usize, quick: bool) -> serde_json::Value {
     })
 }
 
-// ===========================================================================
 // 2. BINDING FIDELITY
-// ===========================================================================
 
 fn run_binding_fidelity(dim: usize) -> serde_json::Value {
     let n_pairs = 500;
@@ -206,9 +202,7 @@ fn run_binding_fidelity(dim: usize) -> serde_json::Value {
     })
 }
 
-// ===========================================================================
 // 3. COMPOSITION DEPTH
-// ===========================================================================
 
 fn run_composition_depth(dim: usize, quick: bool) -> serde_json::Value {
     let max_depth = if quick { 10 } else { 20 };
@@ -241,9 +235,7 @@ fn run_composition_depth(dim: usize, quick: bool) -> serde_json::Value {
     serde_json::json!(results)
 }
 
-// ===========================================================================
 // 4. HOPFIELD BENCHMARKS
-// ===========================================================================
 
 fn run_hopfield_benchmarks(dim: usize, quick: bool) -> serde_json::Value {
     let pattern_counts: Vec<usize> = if quick {
@@ -332,9 +324,7 @@ fn run_hopfield_benchmarks(dim: usize, quick: bool) -> serde_json::Value {
     serde_json::json!({ "capacity": capacity, "noise_recovery": noise_recovery })
 }
 
-// ===========================================================================
 // 5. ENCODING QUALITY
-// ===========================================================================
 
 fn run_encoding_quality(dim: usize) -> serde_json::Value {
     let base_texts = [
@@ -365,9 +355,7 @@ fn run_encoding_quality(dim: usize) -> serde_json::Value {
     serde_json::json!({ "perturbation": perturbation })
 }
 
-// ===========================================================================
 // 6. PRE-REGISTERED: Sparse-binary vs dense-Gaussian Hopfield
-// ===========================================================================
 fn run_sparse_vs_dense_hopfield(dim: usize, quick: bool) -> serde_json::Value {
     let n_patterns = if quick { 50 } else { 100 };
     let trials = if quick { 20 } else { 50 };
@@ -529,13 +517,9 @@ fn run_sparse_vs_dense_hopfield(dim: usize, quick: bool) -> serde_json::Value {
     })
 }
 
-// ===========================================================================
 // 8. CLIFFORDVEC ABLATION
-// ===========================================================================
 
-// ===========================================================================
 // 7. HOLOGRAPHIC BLOOM MEMORY
-// ===========================================================================
 // Bloom-filter bundling with density-corrected containment similarity.
 // Members score 1.0 (exact containment). Non-members score ~0.0 after
 // subtracting the density floor. Capacity: hundreds of items at D=16384.
@@ -824,9 +808,7 @@ fn run_holographic_bloom_memory(dim: usize, quick: bool) -> serde_json::Value {
     })
 }
 
-// ===========================================================================
 // 10. COMPOSITIONAL TEXT ENCODING
-// ===========================================================================
 // Encode natural-language sentences as structured hypervectors using
 // role-as-permutation binding + Bloom bundling. Demonstrate retrieval of
 // role fillers (subject, verb, object) from sentence representations.
@@ -966,9 +948,7 @@ fn run_compositional_text(dim: usize) -> serde_json::Value {
     })
 }
 
-// ===========================================================================
 // Utilities
-// ===========================================================================
 
 fn corrupt_vector(v: &EntangledHVec, dim: usize, pct: f64, seed: u64) -> EntangledHVec {
     let indices = v.indices();
