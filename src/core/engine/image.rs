@@ -141,9 +141,11 @@ impl HmsCore {
         let (image, dead, written) = documents
             .overlay()
             .context("store served from a checkpoint without it")?;
-        let mut store = image.hydrate(Some(self.fresh_text_segment()?))?;
+        // The dead documents' postings are left out of the rebuilt lists rather than removed
+        // from them one document at a time (each removal re-encodes every list it touches).
+        let mut store = image.hydrate_excluding(Some(self.fresh_text_segment()?), &dead)?;
         for id in &dead {
-            store.remove_scrubbed(id)?;
+            store.remove_unindexed_scrubbed(id)?;
         }
         store.insert_batch(written);
         *documents = store;

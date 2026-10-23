@@ -880,6 +880,14 @@ impl DocumentStore {
         id: &str,
     ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
         let removed = self.remove(id);
+        self.scrub_removed(removed)
+    }
+
+    /// Zeroes the segment text of `removed`, returning it.
+    fn scrub_removed(
+        &self,
+        removed: Option<Arc<StoredDocument>>,
+    ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
         if let (Some(document), Some(segment)) = (&removed, self.text.as_deref()) {
             for (at, len) in document.chunks.iter().filter_map(|c| c.text_at) {
                 segment.scrub(at, len)?;
@@ -943,6 +951,20 @@ impl DocumentStore {
     /// Removes document `id`, returning it when it was one of the store's own; a live
     /// checkpoint document is marked dead instead (and `None` returned).
     pub(crate) fn remove(&mut self, id: &str) -> Option<Arc<StoredDocument>> {
+        self.remove_with(id, true)
+    }
+
+    /// [`Self::remove_scrubbed`] of a document `ServingImage::hydrate_excluding` installed
+    /// without postings: everything but the posting lists, which never held it.
+    pub(crate) fn remove_unindexed_scrubbed(
+        &mut self,
+        id: &str,
+    ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
+        let removed = self.remove_with(id, false);
+        self.scrub_removed(removed)
+    }
+
+    fn remove_with(&mut self, id: &str, indexed: bool) -> Option<Arc<StoredDocument>> {
         if !self.documents.contains_key(id) {
             self.kill_base(id);
             return None;
@@ -992,9 +1014,11 @@ impl DocumentStore {
                 .word_count
                 .checked_sub(chunk.word_count)
                 .expect("document word count underflow");
-            let postings = &mut self.postings[usize::from(chunk.stemmed)];
-            for term in chunk.terms.keys() {
-                postings.remove(term, slot, &self.word_counts);
+            if indexed {
+                let postings = &mut self.postings[usize::from(chunk.stemmed)];
+                for term in chunk.terms.keys() {
+                    postings.remove(term, slot, &self.word_counts);
+                }
             }
             assert!(self.free.insert(slot), "document slot already free");
         }
