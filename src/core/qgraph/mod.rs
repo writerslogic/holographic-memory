@@ -772,22 +772,25 @@ impl Rows<'_> {
                 .zip(closed_of)
                 .zip(&groups)
                 .collect();
-            jobs.into_par_iter()
-                .for_each(|(((row, len), closed), grp)| {
+            jobs.into_par_iter().for_each_init(
+                Vec::new,
+                |merged: &mut Vec<u32>, (((row, len), closed), grp)| {
                     let t = grp[0].0;
-                    let mut merged = row[..*len as usize].to_vec();
+                    merged.clear();
+                    merged.extend_from_slice(&row[..*len as usize]);
                     for &(_, s) in grp.iter() {
                         if !merged.contains(&s) {
                             merged.push(s);
                         }
                     }
                     if merged.len() > r {
-                        merged = self.prune_merged(t, &merged, *closed as usize, alpha, r);
+                        *merged = self.prune_merged(t, merged, *closed as usize, alpha, r);
                         *closed = merged.len() as u32;
                     }
-                    row[..merged.len()].copy_from_slice(&merged);
+                    row[..merged.len()].copy_from_slice(merged);
                     *len = merged.len() as u32;
-                });
+                },
+            );
             prof::add(&prof::REV, trev);
             start = end;
             size = (size * 2).min(max_batch);
