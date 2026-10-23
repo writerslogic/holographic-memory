@@ -42,8 +42,8 @@ import modal
 
 VIBE_REPO = "https://github.com/dcondrey/vibe.git"
 # dcondrey/vibe add-hms: upstream 7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c + vibe/algorithms/hms (with `ood: true`, so the
-# runner hands HMS the learn split on OOD datasets).
-VIBE_REV = "c4d237c00745c96737eb747f3ab3403501120b46"
+# runner hands HMS the learn split on OOD datasets, and the 54-point ip grid).
+VIBE_REV = "d39116bbe536ede0aded805b61742d68ba9c1e60"
 HMS_REPO = "https://github.com/writerslogic/holographic-memory.git"
 HF = "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/main/{}.hdf5"
 HF_TREE = "https://huggingface.co/api/datasets/vector-index-bench/vibe/tree/main"
