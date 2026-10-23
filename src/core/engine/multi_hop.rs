@@ -178,7 +178,6 @@ fn chained_lookup(
         })
         .collect();
 
-    // Rank by confidence descending
     results.sort_by(|a, b| {
         b.confidence
             .partial_cmp(&a.confidence)

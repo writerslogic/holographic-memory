@@ -6,8 +6,8 @@ use crate::core::entangled::EntangledHVec;
 const BRUTE_FORCE_THRESHOLD: usize = 1000;
 const HOPFIELD_MAX_PATTERNS: usize = 10_000;
 const SPARSE_INDEX_THRESHOLD: usize = 4;
-// A floor of 128 materially improves self-recall on the seeded quality corpus
-// 1,200-vector quality corpus while remaining bounded for interactive queries.
+// A floor of 128 materially improves self-recall on the seeded 1,200-vector quality corpus
+// while remaining bounded for interactive queries.
 const EF_SEARCH_MIN: usize = 128;
 const EF_SEARCH_MAX: usize = 512;
 const N_PROBE_MIN: usize = 4;
@@ -74,18 +74,13 @@ impl QueryPlanner {
     /// Select the best route and search parameters for a given query vector and requested k.
     pub fn plan(&self, query_vec: &EntangledHVec, k: u32) -> QueryPlan {
         let n = self.vector_count;
-        let s = query_vec.indices.len(); // Query sparsity
+        let s = query_vec.indices.len();
         let k_idx = k as usize;
 
-        // 1. Calculate dynamic parameters based on k and N
-        // For NSG, ef_search should generally be >= k. SOTA engines use ef_search = k * multiplier + additive_constant.
+        // A graph beam narrower than k cannot return k results.
         let ef_search = (k_idx * 2).clamp(EF_SEARCH_MIN, EF_SEARCH_MAX);
-        // For IVF, n_probe should increase with k and total collection size.
         let n_probe = (k_idx / 8).clamp(N_PROBE_MIN, N_PROBE_MAX);
 
-        // 2. Select Route
-
-        // Brute-force is almost always faster for very small collections
         if n < BRUTE_FORCE_THRESHOLD {
             return QueryPlan {
                 route: IndexRoute::BruteForce,

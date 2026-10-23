@@ -103,12 +103,11 @@ impl HmsCore {
             }
         }
 
-        // Centroid refinement: k-means-style reassignment (up to 3 iterations).
-        // Recompute centroids and reassign vectors to closest centroid.
+        // k-means-style centroid refinement, up to 3 iterations.
         if concepts.len() >= 2 {
             let cluster_indices: Vec<usize> = (0..n).filter(|&i| used[i]).collect();
 
-            // Build initial assignment: vector index -> concept index
+            // Vector index -> concept index.
             let mut assignment: FxHashMap<usize, usize> = FxHashMap::default();
             for (ci, concept) in concepts.iter().enumerate() {
                 for mid in &concept.member_ids {
@@ -154,7 +153,6 @@ impl HmsCore {
                     break;
                 }
                 stable = false;
-                // Recompute centroids after reassignment
                 for (ci, centroid) in centroids.iter_mut().enumerate() {
                     let members: Vec<&EntangledHVec> = cluster_indices
                         .iter()
@@ -167,7 +165,6 @@ impl HmsCore {
                 }
             }
 
-            // Rebuild concepts from refined assignments
             for (ci, concept) in concepts.iter_mut().enumerate() {
                 let members: Vec<usize> = cluster_indices
                     .iter()
@@ -195,7 +192,6 @@ impl HmsCore {
                 concept.stable = stable;
             }
 
-            // Remove empty concepts
             concepts.retain(|c| c.member_count > 0);
         } else {
             // Single or zero concepts: trivially stable

@@ -857,8 +857,6 @@ impl HmsCore {
         self.shards.read().count()
     }
 
-    // === Graph API ===
-
     pub fn add_relation(&self, rel: &Relation) -> Result<()> {
         self.commit(&[Mutation::Relation(rel.clone())])
     }
@@ -931,8 +929,6 @@ impl HmsCore {
         self.graph.count()
     }
 
-    // === Federated Query ===
-
     /// Query across local instance and remote peers in parallel.
     ///
     /// Improvements over naive collect-sort-truncate:
@@ -952,10 +948,8 @@ impl HmsCore {
 
         let k = k as usize;
 
-        // Query local instance
         let local_results = self.query(query_vec, k as u32);
 
-        // Query each peer in parallel; collect successes and log failures
         let peer_outcomes: Vec<(String, Result<Vec<super::types::RetrievalResult>>)> = peer_paths
             .par_iter()
             .map(|path| {
@@ -969,7 +963,6 @@ impl HmsCore {
             })
             .collect();
 
-        // Deduplicate by ID, keeping highest similarity per ID.
         let mut seen: fxhash::FxHashMap<String, f64> =
             fxhash::FxHashMap::with_capacity_and_hasher(k * 2, Default::default());
 
@@ -978,7 +971,6 @@ impl HmsCore {
         let mut heap: BinaryHeap<super::types::RetrievalResult> = BinaryHeap::with_capacity(k + 1);
 
         let mut insert = |r: super::types::RetrievalResult| {
-            // Dedup: skip if we already have this ID with equal-or-higher similarity
             let dominated = seen
                 .get(&r.id)
                 .is_some_and(|&prev_sim| prev_sim >= r.similarity);
@@ -1014,8 +1006,6 @@ impl HmsCore {
         // `RetrievalResult`'s reversed `Ord` makes ascending order highest-similarity first.
         Ok(heap.into_sorted_vec())
     }
-
-    // === Meaning Memory API ===
 
     /// Build the shared meaning-memory context, if all required subsystems are
     /// present. Returns `None` when meaning memory is not fully initialized.
@@ -1117,8 +1107,6 @@ impl HmsCore {
             Err(anyhow::anyhow!("meaning memory not enabled"))
         }
     }
-
-    // === Cognition API ===
 
     pub fn start_cognition(&self) -> Result<()> {
         if self.cognition_running() {
@@ -1223,8 +1211,6 @@ impl HmsCore {
     pub fn cognition_enabled(&self) -> bool {
         self.config.cognition.enabled
     }
-
-    // === Agency API ===
 
     pub fn add_goal(
         &self,

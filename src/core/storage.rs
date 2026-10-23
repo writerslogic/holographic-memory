@@ -108,8 +108,6 @@ impl ActiveSegment {
 }
 
 /// RwLock-guarded segmented mmap arena with LZ4 compression and CRC32 framing.
-/// Writers acquire a write lock; readers acquire a read lock.
-/// Note: `version_counter` resets to 0 on restart (no WAL recovery).
 /// Every entry is framed: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32][Data: bytes]
 pub struct PersistentArena {
     segment_size: usize,
@@ -546,8 +544,7 @@ impl PersistentArena {
 
         let total_frame_len = HEADER_SIZE + comp_len;
 
-        // Guard against raw_len truncation when cast to u32 in the header.
-        // This is defensive; MAX_RAW_FRAME_SIZE (50 MB) << u32::MAX (4 GB).
+        // The header stores both lengths as u32.
         if raw_len > u32::MAX as usize || comp_len > u32::MAX as usize {
             return Err(anyhow!(
                 "Frame payload exceeds u32 header capacity: raw={}, comp={}",
@@ -556,9 +553,8 @@ impl PersistentArena {
             ));
         }
 
-        // Acquire write lock for the entire reserve+write sequence.
-        // This prevents data races from concurrent writers sharing the
-        // same mmap and eliminates the TOCTOU race on segment rotation.
+        // One write guard spans reserve and write, so concurrent writers cannot share a range
+        // and rotation cannot interleave between the check and the copy.
         let mut active = self.active_segment.write();
 
         // Check-then-reserve under write lock to avoid wasting space at segment boundaries.

@@ -111,8 +111,7 @@ pub(crate) fn scrub_remove_dir(dir: &Path) -> Result<()> {
 /// written once; `indices.json`, which every flush rewrites, is not on the list: a crash
 /// between a rewrite's sidecar and its file would otherwise make an intact store refuse to
 /// open, and the file is a cache that already binds itself with a checkpoint and per-file
-/// checksums. Stores written before this change may carry an `indices.json.crc32`; it is
-/// ignored.
+/// checksums. Older stores may carry an `indices.json.crc32`; it is ignored.
 pub(crate) const CHECKSUMMED_MANIFESTS: [&str; 2] = ["store.json", "format.json"];
 
 fn sidecar(path: &Path) -> Option<PathBuf> {
