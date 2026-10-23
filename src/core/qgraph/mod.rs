@@ -39,6 +39,9 @@ pub mod diagnostics;
 pub mod projection_diagnostic;
 
 #[cfg(feature = "experimental")]
+pub mod order_diagnostic;
+
+#[cfg(feature = "experimental")]
 pub mod ivf;
 
 use std::cell::RefCell;
@@ -247,10 +250,14 @@ mod prof {
     pub(super) static REV: AtomicU64 = AtomicU64::new(0);
     pub(super) static FRESH: AtomicU64 = AtomicU64::new(0);
     pub(super) static EXACT: AtomicU64 = AtomicU64::new(0);
+    /// Called with each phase's name as it ends (see [`super::set_build_phase_hook`]).
+    pub(super) static HOOK: OnceLock<fn(&str)> = OnceLock::new();
 
     pub(super) fn on() -> bool {
         static ON: OnceLock<bool> = OnceLock::new();
-        *ON.get_or_init(|| std::env::var_os("HMS_QGRAPH_BUILD_PROFILE").is_some())
+        *ON.get_or_init(|| {
+            HOOK.get().is_some() || std::env::var_os("HMS_QGRAPH_BUILD_PROFILE").is_some()
+        })
     }
 
     pub(super) fn start() -> Option<Instant> {
@@ -271,6 +278,9 @@ mod prof {
 
     pub(super) fn report(phase: &str, t: Option<Instant>) {
         let Some(t) = t else { return };
+        if let Some(hook) = HOOK.get() {
+            hook(phase);
+        }
         let secs = |c: &AtomicU64| c.swap(0, Relaxed) as f64 * 1e-9;
         eprintln!(
             "PHASE {phase} wall={:.2}s greedy_cpu={:.1}s prune_cpu={:.1}s rev_wall={:.2}s fresh={} exact={}",
@@ -292,6 +302,16 @@ mod prof {
         }
     }
 }
+/// Profiling only: enables the construction profile and calls `hook` with each phase's name
+/// (`setup`, `pass`, `pass`, `fill`, `upper`) as the phase ends, so a profiler can attribute
+/// its own counters (allocations, peak bytes) to the phases. Set it before the first build; it
+/// can be set once.
+#[cfg(feature = "experimental")]
+#[doc(hidden)]
+pub fn set_build_phase_hook(hook: fn(&str)) -> bool {
+    prof::HOOK.set(hook).is_ok()
+}
+
 thread_local! {
     static BUILD_VISITED: RefCell<BuildVisited> = RefCell::new(BuildVisited::default());
 }
@@ -1310,6 +1330,7 @@ fn build_structure(
     dim: usize,
     params: &BuildParams,
 ) -> Result<GraphStructure, HmsError> {
+    let tsetup = prof::start();
     let n = vectors.len() / dim;
     let r = params.degree;
     let metric = params.metric;
@@ -1374,6 +1395,7 @@ fn build_structure(
         order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
     }
     let mut graph = Adjacency::new(n, r);
+    prof::report("setup", tsetup);
     let first_ef = params.build_ef.min(FIRST_PASS_EF);
     for (l, alpha) in [(first_ef, 1.0), (params.build_ef, params.alpha)] {
         let t = prof::start();

@@ -610,7 +610,7 @@ pub(super) fn quantize4(x: &[f32], code: &mut [i8]) -> f32 {
 
 /// Breadth-first order of the bottom layer from the entry (unreached vertices follow in id
 /// order): neighbours get nearby positions, so a search touches fewer distinct pages and lines.
-fn bfs_order(g: GraphView<'_>) -> Vec<u32> {
+pub(super) fn bfs_order(g: GraphView<'_>) -> Vec<u32> {
     let mut seen = vec![false; g.n];
     let mut order = Vec::with_capacity(g.n);
     for s in std::iter::once(g.entry as usize).chain(0..g.n) {
