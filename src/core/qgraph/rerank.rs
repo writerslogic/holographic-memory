@@ -12,7 +12,8 @@ use super::kernels;
 /// `sum_i a_i * b_i` for a float row and an i8 row of the same length.
 #[inline]
 pub(super) fn dot_f32_i8(a: &[f32], b: &[i8]) -> f32 {
-    debug_assert_eq!(a.len(), b.len());
+    // The SIMD paths load `a` at every offset they load `b` at.
+    assert_eq!(a.len(), b.len());
     #[cfg(target_arch = "x86_64")]
     if avx2() {
         // SAFETY: `avx2` was detected at runtime.
@@ -30,7 +31,9 @@ pub(super) fn dot_f32_i8(a: &[f32], b: &[i8]) -> f32 {
 /// even coordinate in the low nibble; `a.len() == 2 * packed.len()`.
 #[inline]
 pub(super) fn dot_f32_i4(a: &[f32], packed: &[i8]) -> f32 {
-    debug_assert_eq!(a.len(), 2 * packed.len());
+    // The SIMD paths load `a` at twice every offset they load `packed` at, eight bytes at a
+    // time with no tail.
+    assert!(a.len() == 2 * packed.len() && packed.len().is_multiple_of(8));
     #[cfg(target_arch = "x86_64")]
     if avx2() {
         // SAFETY: `avx2` was detected at runtime.
@@ -223,5 +226,23 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    #[should_panic]
+    fn i8_row_shorter_than_the_query_panics() {
+        let _ = super::dot_f32_i8(&[1.0; 16], &[1; 32]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn i4_row_not_half_the_query_panics() {
+        let _ = super::dot_f32_i4(&[1.0; 16], &[1; 16]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn i4_row_with_a_partial_block_panics() {
+        let _ = super::dot_f32_i4(&[1.0; 20], &[1; 10]);
     }
 }

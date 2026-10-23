@@ -252,6 +252,14 @@ fn decode_layers(words: &[u32], count: usize, top: usize) -> std::io::Result<Vec
     Ok(layers)
 }
 
+/// The directory a save into `path` writes its temporary file in and syncs: `.` for a bare
+/// file name, whose `parent()` is empty.
+fn parent_dir(path: &Path) -> &Path {
+    path.parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."))
+}
+
 /// `a * b`, or an error naming `what` when it overflows.
 fn mul(a: usize, b: usize, what: &str) -> std::io::Result<usize> {
     a.checked_mul(b)
@@ -390,14 +398,13 @@ impl VGraph {
             table.push((at as u64, len as u64));
             at += len;
         }
-        let name = path
-            .file_name()
-            .ok_or_else(|| bad(format!("{} names no file", path.display())))?;
-        let mut tmp_name = name.to_os_string();
-        tmp_name.push(".tmp");
-        let tmp = path.with_file_name(tmp_name);
-        let written = (|| {
-            let mut w = std::io::BufWriter::with_capacity(1 << 20, File::create(&tmp)?);
+        if path.file_name().is_none() {
+            return Err(bad(format!("{} names no file", path.display())));
+        }
+        let parent = parent_dir(path);
+        let mut temp = tempfile::NamedTempFile::new_in(parent)?;
+        {
+            let mut w = std::io::BufWriter::with_capacity(1 << 20, temp.as_file_mut());
             w.write_all(MAGIC)?;
             for x in header {
                 w.write_all(&x.to_le_bytes())?;
@@ -427,17 +434,12 @@ impl VGraph {
                 }
                 pos = *off as usize + *len as usize;
             }
-            let file = w.into_inner().map_err(|e| e.into_error())?;
-            file.sync_all()?;
-            crate::core::durable_file::sync_mapped_file(&file)
-        })();
-        if let Err(e) = written {
-            let _ = std::fs::remove_file(&tmp);
-            return Err(e);
+            w.flush()?;
         }
-        std::fs::rename(&tmp, path)?;
-        crate::core::durable_file::sync_directory(path.parent().unwrap_or_else(|| Path::new(".")))
-            .map_err(std::io::Error::other)
+        temp.as_file().sync_all()?;
+        crate::core::durable_file::sync_mapped_file(temp.as_file())?;
+        temp.persist(path).map_err(|e| e.error)?;
+        crate::core::durable_file::sync_directory(parent).map_err(std::io::Error::other)
     }
 
     /// Opens an index written by [`VGraph::save`] with its arrays where `residency` puts them.
@@ -494,6 +496,12 @@ impl VGraph {
 
     fn from_backing(backing: &Arc<Backing>) -> std::io::Result<Self> {
         let bytes = backing.bytes();
+        if bytes.len() < PREFIX {
+            return Err(bad(format!(
+                "{} bytes is shorter than the header",
+                bytes.len()
+            )));
+        }
         if &bytes[..8] != MAGIC {
             return Err(bad(
                 "bad magic (not an index file, or another format)".into()
@@ -868,10 +876,7 @@ fn save_graph(
             .filter(|&n| n <= isize::MAX as usize)
             .ok_or_else(capacity)?;
     }
-    let parent = path
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
+    let parent = parent_dir(path);
     let mut temp = tempfile::NamedTempFile::new_in(parent)?;
     temp.as_file().set_len(end as u64)?;
     let mut w = std::io::BufWriter::with_capacity(1 << 20, temp.as_file_mut());
@@ -1041,7 +1046,7 @@ fn delta_lists_ok(adjv: &[u8], off: &[u32], n: usize, degree: usize) -> bool {
     }
     for v in 0..n {
         let (a, b) = (off[v] as usize, off[v + 1] as usize);
-        if a > b {
+        if a > b || b > adjv.len() {
             return false;
         }
         let span = &adjv[a..b];
@@ -1058,7 +1063,8 @@ fn delta_lists_ok(adjv: &[u8], off: &[u32], n: usize, degree: usize) -> bool {
             } else {
                 i64::try_from(delta)
                     .ok()
-                    .and_then(|d| prev.checked_add(d + 1))
+                    .and_then(|d| d.checked_add(1))
+                    .and_then(|d| prev.checked_add(d))
             };
             match u {
                 Some(u) if (0..n as i64).contains(&u) => prev = u,
@@ -1281,5 +1287,60 @@ mod tests {
         let mut bytes = good;
         bytes[7] = b'9';
         assert!(open(&bytes).is_err(), "magic");
+    }
+
+    #[test]
+    fn damaged_delta_offsets_are_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let (name, index, _) = index_variants().swap_remove(2);
+        assert!(name.contains("i0"), "{name}");
+        let path = dir.path().join("a");
+        index.save(&path).unwrap();
+        let mut bytes = std::fs::read(&path).unwrap();
+        let t = 8 + 8 * HEADER_WORDS + 16 * 4;
+        let offsets = u64::from_le_bytes(bytes[t..t + 8].try_into().unwrap()) as usize;
+        // Vertex 0's list ends past the delta bytes; the last offset is still their length.
+        bytes[offsets + 4..offsets + 8].copy_from_slice(&u32::MAX.to_le_bytes());
+        let damaged = dir.path().join("b");
+        std::fs::write(&damaged, &bytes).unwrap();
+        for residency in [Residency::Mapped, Residency::Heap] {
+            let err = VGraph::open(&damaged, residency)
+                .err()
+                .expect("damaged offsets");
+            assert!(err.to_string().contains("neighbour id"), "{err}");
+        }
+
+        // A later delta of i64::MAX: the next id overflows instead of naming a vertex.
+        let mut adjv = vec![0x02];
+        adjv.extend([0xff; 9]);
+        adjv.push(0x00);
+        let end = adjv.len() as u32;
+        assert!(!delta_lists_ok(&adjv, &[0, end, end], 2, 2));
+        assert!(delta_lists_ok(&[0x02, 0x00], &[0, 2, 2, 2], 3, 2));
+    }
+
+    #[test]
+    fn a_backing_shorter_than_the_header_is_an_error() {
+        let mut line = Line([0; 128]);
+        for (dst, &src) in line.0.iter_mut().zip(MAGIC) {
+            *dst = src as i8;
+        }
+        let backing = Arc::new(Backing::Heap(vec![line], 100));
+        assert!(VGraph::from_backing(&backing).is_err());
+    }
+
+    #[test]
+    fn save_leaves_a_sibling_temp_name_alone() {
+        let dir = tempfile::tempdir().unwrap();
+        let (_, index, queries) = index_variants().swap_remove(0);
+        let path = dir.path().join("index");
+        let sibling = dir.path().join("index.tmp");
+        std::fs::write(&sibling, b"another writer's bytes").unwrap();
+        index.save(&path).unwrap();
+        assert_eq!(std::fs::read(&sibling).unwrap(), b"another writer's bytes");
+        let opened = VGraph::open(&path, Residency::Heap).unwrap();
+        same_results("saved beside a temp name", &index, &opened, &queries);
+        assert_eq!(parent_dir(Path::new("index")), Path::new("."));
+        assert_eq!(parent_dir(&path), dir.path());
     }
 }
