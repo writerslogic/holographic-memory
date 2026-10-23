@@ -45,6 +45,8 @@ pub(crate) use vector_index::{
     build_vector_snapshot, capture_vector_rows, search_vector_snapshot, vector_index_status,
     VectorIndexSlot,
 };
+#[cfg(test)]
+pub(crate) use vector_index::{rank_vector_snapshot, read_vector_hits};
 pub use vector_index::{
     GraphUnavailable, VectorIndex, VectorIndexKind, VectorIndexMode, VectorIndexStatus,
     VectorQueryOptions, DEFAULT_EF, DEFAULT_GRAPH_MIN_ROWS, MAX_EF, MAX_K, REBUILD_AFTER_MUTATIONS,
