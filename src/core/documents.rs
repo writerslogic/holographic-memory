@@ -715,6 +715,11 @@ fn stemmer() -> &'static rust_stemmers::Stemmer {
 
 /// Lowercased alphanumeric tokens and their counts; with `stem`, each token is reduced by
 /// the English Snowball (Porter 2) stemmer, which is what the published BM25 baselines do.
+/// The distinct words of a query in one form.
+pub(crate) fn query_words(text: &str, stem: bool) -> std::collections::BTreeSet<String> {
+    terms(text, stem).into_keys().collect()
+}
+
 pub(crate) fn terms(text: &str, stem: bool) -> BTreeMap<String, u32> {
     // Counted in a hash map keyed by borrowed text (one allocation per distinct term, not per
     // occurrence), then sorted once into the ordered map the postings expect.
@@ -1444,7 +1449,7 @@ fn search_impl(
         })
         .transpose()?;
     // Unstemmed and stemmed query forms: a chunk is scored with the form it was stored in.
-    let query_terms = [terms(text, false), terms(text, true)];
+    let query_terms = [query_words(text, false), query_words(text, true)];
     let candidates = if indexed {
         store.candidate_ids(options)
     } else {
@@ -1473,14 +1478,17 @@ fn search_impl(
         .enumerate()
         .map(|(form, terms)| {
             terms
-                .keys()
+                .iter()
                 .map(|word| store.postings[form].get(word).map_or(0, |p| p.len()))
                 .sum::<usize>()
         })
         .sum();
-    let scan_work = eligible
-        .len()
-        .saturating_mul(query_terms.iter().map(BTreeMap::len).sum());
+    let scan_work = eligible.len().saturating_mul(
+        query_terms
+            .iter()
+            .map(std::collections::BTreeSet::len)
+            .sum(),
+    );
     let use_postings = indexed && posting_work.saturating_add(store.slot_count) < scan_work;
     let mut positions = Vec::new();
     if use_postings {
@@ -1499,7 +1507,7 @@ fn search_impl(
     let idf: [BTreeMap<&String, f64>; 2] = std::array::from_fn(|form| {
         let stemmed = form == 1;
         query_terms[form]
-            .keys()
+            .iter()
             .map(|word| {
                 let df = if use_postings {
                     store.postings[form].get(word).map_or(0, |posting| {
@@ -1786,13 +1794,13 @@ mod tests {
             store.insert(doc.id.clone(), doc);
         }
         let query = "running rare3 missing absent unknown extra terms for selective postings";
-        let forms = [terms(query, false), terms(query, true)];
+        let forms = [query_words(query, false), query_words(query, true)];
         let posting_work: usize = forms
             .iter()
             .enumerate()
             .map(|(form, terms)| {
                 terms
-                    .keys()
+                    .iter()
                     .map(|word| store.postings[form].get(word).map_or(0, |p| p.len()))
                     .sum::<usize>()
             })
@@ -1804,7 +1812,11 @@ mod tests {
             .sum::<usize>();
         assert!(
             posting_work + store.slot_count
-                < eligible * forms.iter().map(BTreeMap::len).sum::<usize>()
+                < eligible
+                    * forms
+                        .iter()
+                        .map(std::collections::BTreeSet::len)
+                        .sum::<usize>()
         );
         assert_scan_parity(&store);
         for i in (0..40).step_by(2) {
