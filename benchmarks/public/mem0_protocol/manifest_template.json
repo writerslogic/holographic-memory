@@ -1,0 +1,82 @@
+{
+  "adapter": {
+    "created_at": "harness timestamp (session date) as naive UTC ISO-8601",
+    "ingest_unit": "one fact per harness add() call; text = '{role}: {content}' per message, newline-joined",
+    "model_calls_at_ingest": 0,
+    "shim_sha256": "<fill>",
+    "tenant": "one hms-server tenant per harness user_id"
+  },
+  "audit": {
+    "empty_generated_answers": [],
+    "empty_retrieval": [],
+    "failed_after_retries_lines": 0,
+    "questions_on_disk": 0,
+    "retry_warning_lines": 0
+  },
+  "benchmark": "<fill>",
+  "dataset": {
+    "path": "<fill>",
+    "sha256": "<fill>"
+  },
+  "finished_utc": "<fill>",
+  "harness": {
+    "command": [],
+    "commit": "4b61c5d31b9c668a12b4f5e78064248a02c82d2b",
+    "cwd": "<fill>",
+    "patches": [],
+    "repo": "https://github.com/mem0ai/memory-benchmarks"
+  },
+  "harness_exit_code": 0,
+  "hms": {
+    "commit": "<fill>",
+    "dirty": false,
+    "server_binary_sha256": "<fill>",
+    "server_command": []
+  },
+  "ingest": {
+    "facts": 0,
+    "tenants": 0
+  },
+  "llm": {
+    "blocked": 0,
+    "calls": 0,
+    "endpoint": "api.openai.com chat.completions (Mem0 published runs: Azure OpenAI)",
+    "errors": 0,
+    "finish_reasons": {
+      "stop": 0
+    },
+    "requested_params": {
+      "{\"max_completion_tokens\": 4096, \"model\": \"gpt-5\", \"response_format\": {\"type\": \"json_object\"}}": 0,
+      "{\"max_completion_tokens\": 4096, \"model\": \"gpt-5\"}": 0,
+      "{}": 0
+    },
+    "resolved_models": {
+      "gpt-5-2025-08-07": 0
+    },
+    "spend_usd": 0,
+    "usage": {
+      "cached_tokens": 0,
+      "completion_tokens": 0,
+      "prompt_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  },
+  "machine": {
+    "cpu": "<fill>",
+    "load_avg": [
+      0,
+      0,
+      0
+    ],
+    "os": "<fill>"
+  },
+  "predict_dirs_sha256": {
+    "predicted_hms-locomo-smoke": "<fill>"
+  },
+  "retrieval_config": {
+    "max_k": 200,
+    "recall": {}
+  },
+  "retrieval_config_sha256": "<fill>",
+  "started_utc": "<fill>"
+}
