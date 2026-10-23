@@ -19,7 +19,7 @@ use crate::core::format::{
 pub(super) const LOG_HEADER: u64 = 60;
 const FRAME_HEADER: usize = 24;
 
-pub(super) fn corrupt(at: u64, reason: impl Into<String>) -> UpdateError {
+fn corrupt(at: u64, reason: impl Into<String>) -> UpdateError {
     UpdateError::CorruptLog {
         offset: at,
         reason: reason.into(),
@@ -35,6 +35,11 @@ fn small(bytes: &[u8]) -> u32 {
     u32::from_le_bytes(bytes.try_into().expect("validated u32 span"))
 }
 fn words(out: &mut Vec<u8>, xs: &[u64]) {
+    for x in xs {
+        out.extend_from_slice(&x.to_le_bytes());
+    }
+}
+fn floats(out: &mut Vec<u8>, xs: &[f32]) {
     for x in xs {
         out.extend_from_slice(&x.to_le_bytes());
     }
@@ -68,7 +73,7 @@ fn check(bytes: &[u8], magic: &[u8; 8]) -> Result<(), UpdateError> {
 }
 
 impl Manifest {
-    pub fn read(path: &Path) -> Result<Self, UpdateError> {
+    pub(super) fn read(path: &Path) -> Result<Self, UpdateError> {
         let mut file = File::open(path)?;
         let len = file.metadata()?.len();
         if len < 8 {
@@ -83,7 +88,8 @@ impl Manifest {
         file.read_exact(&mut bytes[8..])?;
         Self::decode(&bytes)
     }
-    pub fn encode(&self) -> Vec<u8> {
+    #[must_use]
+    pub(super) fn encode(&self) -> Vec<u8> {
         let mut out = MANIFEST_MAGIC.to_vec();
         words(&mut out, &[ORDER]);
         out.extend_from_slice(&self.identity);
@@ -113,7 +119,7 @@ impl Manifest {
         seal(&mut out);
         out
     }
-    pub fn decode(bytes: &[u8]) -> Result<Self, UpdateError> {
+    pub(super) fn decode(bytes: &[u8]) -> Result<Self, UpdateError> {
         known_magic(bytes, MANIFEST_MAGIC)?;
         if bytes.len() != 164 {
             return Err(bad("manifest length"));
@@ -123,7 +129,7 @@ impl Manifest {
             .as_chunks::<8>()
             .0
             .iter()
-            .map(|c| word(c))
+            .map(|&c| u64::from_le_bytes(c))
             .collect();
         if h[0] == 0
             || h[0] > MAX_DIM as u64
@@ -182,7 +188,7 @@ impl Manifest {
 
 pub(super) struct BaseRows {
     map: memmap2::Mmap,
-    pub ids: Vec<u32>,
+    pub(super) ids: Vec<u32>,
     dim: usize,
     row_at: usize,
     metric: Metric,
@@ -204,7 +210,7 @@ fn row_offset(count: usize) -> Result<usize, UpdateError> {
         .ok_or(UpdateError::Capacity)
 }
 impl BaseRows {
-    pub fn write(
+    pub(super) fn write(
         path: &Path,
         manifest: &Manifest,
         ids: &[u32],
@@ -215,7 +221,7 @@ impl BaseRows {
         writer.finish()
     }
 
-    pub fn release_pages(&self) -> Result<(), UpdateError> {
+    pub(super) fn release_pages(&self) -> Result<(), UpdateError> {
         #[cfg(target_os = "linux")]
         // SAFETY: this shared read-only generation never changes while a reader exists,
         // so discarding its pages cannot change any value observed by concurrent searches.
@@ -225,7 +231,7 @@ impl BaseRows {
         }
         Ok(())
     }
-    pub fn open(path: &Path, manifest: &Manifest) -> Result<Self, UpdateError> {
+    pub(super) fn open(path: &Path, manifest: &Manifest) -> Result<Self, UpdateError> {
         let mut file = File::open(path)?;
         let len = file.metadata()?.len();
         if len < 8 {
@@ -275,7 +281,7 @@ impl BaseRows {
                 .as_chunks::<4>()
                 .0
                 .iter()
-                .map(|c| small(c)),
+                .map(|&c| u32::from_le_bytes(c)),
         );
         if ids.last() == Some(&u32::MAX) || ids.windows(2).any(|p| p[0] >= p[1]) {
             return Err(bad("rows ids not strictly ordered"));
@@ -288,13 +294,19 @@ impl BaseRows {
             metric: manifest.build.metric,
         })
     }
-    pub fn row(&self, slot: usize) -> Result<&[f32], UpdateError> {
-        let at = self.row_at + slot * (self.dim * 4 + 4);
-        let bytes = &self.map[at..at + self.dim * 4];
-        if crc32fast::hash(bytes) != small(&self.map[at + self.dim * 4..at + self.dim * 4 + 4]) {
+    pub(super) fn row(&self, slot: usize) -> Result<&[f32], UpdateError> {
+        let len = self.dim * 4;
+        let at = self.row_at + slot * (len + 4);
+        let (Some(bytes), Some(crc)) = (
+            self.map.get(at..at + len),
+            self.map.get(at + len..at + len + 4),
+        ) else {
+            return Err(bad(format!("row {slot} outside the rows file")));
+        };
+        if crc32fast::hash(bytes) != small(crc) {
             return Err(bad(format!("row {slot} checksum")));
         }
-        // SAFETY: checked file geometry bounds the span; mmap and row starts align to f32,
+        // SAFETY: `bytes` is `dim` f32s inside the mapping; mmap and row starts align to f32,
         // all f32 bit patterns are valid, and check() rejects big-endian targets.
         let row = unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<f32>(), self.dim) };
         validate_vector(row, self.dim, self.metric)?;
@@ -303,7 +315,7 @@ impl BaseRows {
 }
 
 impl BaseRowsWriter {
-    pub fn new(path: &Path, manifest: &Manifest, ids: &[u32]) -> Result<Self, UpdateError> {
+    pub(super) fn new(path: &Path, manifest: &Manifest, ids: &[u32]) -> Result<Self, UpdateError> {
         if manifest.dim == 0 || manifest.dim > MAX_DIM || ids.len() >= u32::MAX as usize {
             return Err(UpdateError::Capacity);
         }
@@ -345,7 +357,7 @@ impl BaseRowsWriter {
         })
     }
 
-    pub fn append(&mut self, vectors: &[f32]) -> Result<(), UpdateError> {
+    pub(super) fn append(&mut self, vectors: &[f32]) -> Result<(), UpdateError> {
         if !vectors.len().is_multiple_of(self.dim)
             || self
                 .written
@@ -357,9 +369,7 @@ impl BaseRowsWriter {
         for row in vectors.chunks_exact(self.dim) {
             validate_vector(row, self.dim, self.metric)?;
             self.bytes.clear();
-            for x in row {
-                self.bytes.extend_from_slice(&x.to_le_bytes());
-            }
+            floats(&mut self.bytes, row);
             self.writer.write_all(&self.bytes)?;
             self.writer
                 .write_all(&crc32fast::hash(&self.bytes).to_le_bytes())?;
@@ -368,7 +378,7 @@ impl BaseRowsWriter {
         Ok(())
     }
 
-    pub fn finish(self) -> Result<(), UpdateError> {
+    pub(super) fn finish(self) -> Result<(), UpdateError> {
         if self.written != self.count {
             return Err(UpdateError::Capacity);
         }
@@ -380,6 +390,7 @@ impl BaseRowsWriter {
     }
 }
 
+#[must_use]
 pub(super) fn log_header(manifest: &Manifest) -> Vec<u8> {
     let mut out = LOG_MAGIC.to_vec();
     words(&mut out, &[ORDER]);
@@ -407,6 +418,7 @@ pub(super) fn frame(ops: &[Operation], sequence: u64, dim: usize) -> Result<Vec<
     if len > MAX_PAYLOAD || ops.len() > MAX_OPS {
         return Err(UpdateError::Capacity);
     }
+    // Both casts are exact: MAX_PAYLOAD and MAX_OPS are below 2^32.
     let mut out = Vec::with_capacity(FRAME_HEADER + len);
     out.extend_from_slice(&(len as u32).to_le_bytes());
     out.extend_from_slice(&(!(len as u32)).to_le_bytes());
@@ -417,9 +429,7 @@ pub(super) fn frame(ops: &[Operation], sequence: u64, dim: usize) -> Result<Vec<
         out.push(op.tag());
         out.extend_from_slice(&op.id().to_le_bytes());
         if let Some(row) = op.vector() {
-            for v in row {
-                out.extend_from_slice(&v.to_le_bytes());
-            }
+            floats(&mut out, row);
         }
     }
     let mut crc = crc32fast::Hasher::new();
@@ -514,7 +524,7 @@ pub(super) fn replay(
                         .as_chunks::<4>()
                         .0
                         .iter()
-                        .map(|c| f32::from_bits(small(c)))
+                        .map(|&c| f32::from_le_bytes(c))
                         .collect();
                     cursor = end;
                     validate_vector(&row, manifest.dim, manifest.build.metric)
@@ -557,4 +567,38 @@ pub(super) fn append(
     sync_mapped_file(&file)?;
     checkpoint(2)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::qgraph::BuildParams;
+
+    #[test]
+    fn rows_past_the_last_slot_are_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("rows.bin");
+        let manifest = Manifest {
+            identity: [7; 16],
+            dim: 2,
+            sequence: 1,
+            build: BuildParams::default(),
+            encoding: Encoding::default(),
+        };
+        BaseRows::write(&path, &manifest, &[3, 5], &[1.0, 2.0, 3.0, 4.0]).unwrap();
+        let rows = BaseRows::open(&path, &manifest).unwrap();
+        assert_eq!(rows.ids, [3, 5]);
+        for (slot, want) in [
+            (0, Some(&[1.0f32, 2.0][..])),
+            (1, Some(&[3.0, 4.0][..])),
+            (2, None),
+            (3, None),
+        ] {
+            match (rows.row(slot), want) {
+                (Ok(row), Some(want)) => assert_eq!(row, want, "slot {slot}"),
+                (Err(UpdateError::CorruptBase(_)), None) => {}
+                (got, _) => panic!("slot {slot}: {got:?}"),
+            }
+        }
+    }
 }
