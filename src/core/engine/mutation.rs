@@ -271,16 +271,14 @@ impl HmsCore {
                 );
                 for chunk in &document.chunks {
                     validate_id(&chunk.id)?;
-                    let chunk_limit = if chunk.terms.is_whole_document() {
-                        ensure!(
-                            chunk.vector_state == crate::core::documents::VectorState::Lexical
-                                && document.chunks.len() == 1
-                                && chunk.start_byte == 0,
-                            "whole-document postings require one lexical chunk"
-                        );
-                        crate::core::documents::MAX_DOCUMENT_BYTES
-                    } else {
-                        crate::core::documents::MAX_CHUNK_BYTES
+                    let chunk_limit = crate::core::format::scan::chunk_byte_limit(
+                        chunk.terms.is_whole_document(),
+                        document.chunks.len(),
+                        u64::from(chunk.start_byte),
+                        chunk.vector_state == crate::core::documents::VectorState::Lexical,
+                    );
+                    let Some(chunk_limit) = chunk_limit else {
+                        anyhow::bail!("whole-document postings require one lexical chunk");
                     };
                     ensure!(
                         chunk.vector.dim == self.dimensions
@@ -293,7 +291,7 @@ impl HmsCore {
                             && chunk.start_byte < chunk.end_byte
                             && chunk.end_byte as usize
                                 <= crate::core::documents::MAX_DOCUMENT_BYTES
-                            && (chunk.end_byte - chunk.start_byte) as usize <= chunk_limit
+                            && u64::from(chunk.end_byte - chunk.start_byte) <= chunk_limit
                             && chunk
                                 .text
                                 .as_ref()

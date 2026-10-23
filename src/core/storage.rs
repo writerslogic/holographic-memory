@@ -384,16 +384,15 @@ impl PersistentArena {
             _ => return false,
         };
         let payload = &data[offset + HEADER_SIZE..end];
-        let decompressed = if comp_len < raw_len {
+        let mut hasher = Hasher::new();
+        if comp_len < raw_len {
             match lz4_flex::decompress(payload, raw_len) {
-                Ok(d) => d,
+                Ok(decompressed) => hasher.update(&decompressed),
                 Err(_) => return false,
             }
         } else {
-            payload.to_vec()
-        };
-        let mut hasher = Hasher::new();
-        hasher.update(&decompressed);
+            hasher.update(payload);
+        }
         hasher.finalize() == expected_crc
     }
 

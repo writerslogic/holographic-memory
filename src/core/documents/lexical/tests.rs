@@ -367,6 +367,20 @@ fn check_model(store: &DocumentStore, texts: &[(String, Vec<String>)], left: usi
     }
 }
 
+/// Whether every block bound of the test vocabulary's lists holds for the store's lengths.
+fn bounds_cover(store: &DocumentStore) -> bool {
+    let words: Vec<u32> = (0..store.slot_count)
+        .map(|slot| store.slot_word_count(slot))
+        .collect();
+    (0..2).all(|form| {
+        ["red", "blue", "green", "gold"].iter().all(|word| {
+            store.postings[form]
+                .get(word)
+                .is_none_or(|list| list.bounds_cover(&words))
+        })
+    })
+}
+
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(24))]
     #[test]
@@ -389,6 +403,7 @@ proptest! {
             store.remove(&id);
             texts.retain(|(key, _)| key != &id);
         }
+        prop_assert!(bounds_cover(&store));
         for i in (0..corpus.len()).step_by(11) {
             let id = format!("d{i:04}");
             insert(&mut store, &id, "gold red blue gold", true, true);
@@ -396,6 +411,7 @@ proptest! {
             texts.push((id, ["gold", "red", "blue", "gold"].map(str::to_owned).to_vec()));
         }
         check_model(&store, &texts, left, right);
+        prop_assert!(bounds_cover(&store));
     }
 }
 

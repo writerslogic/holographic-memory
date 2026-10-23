@@ -214,7 +214,7 @@ fn clause_idfs(store: &DocumentStore, query: &LexicalQuery) -> Vec<[f64; 2]> {
                     .iter()
                     .map(|word| {
                         let df = store.postings[form].get(word).map_or(0, |l| l.len()) as f64;
-                        (1.0 + (n - df + 0.5) / (df + 0.5)).ln()
+                        Bm25::idf(n, df)
                     })
                     .sum()
             })
@@ -361,7 +361,7 @@ fn exhaustive(
     })
 }
 
-mod execution;
+pub(super) mod execution;
 mod wand;
 use execution::document_at_a_time;
 

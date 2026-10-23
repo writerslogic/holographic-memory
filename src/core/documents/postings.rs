@@ -412,6 +412,11 @@ impl PostingList {
         self.iter().collect()
     }
 
+    /// Each block's largest frequency and least length, which bound its postings' weights.
+    pub(super) fn block_maxima(&self) -> impl Iterator<Item = (u32, u32)> + '_ {
+        self.blocks.iter().map(|b| (b.max_frequency, b.min_words))
+    }
+
     fn decode_block(&self, index: usize, out: &mut [Posting; BLOCK_LEN]) {
         self.decode_values(&self.blocks[index], out);
     }
@@ -475,11 +480,17 @@ impl PostingList {
         });
     }
 
-    fn encode(&mut self, postings: &[Posting]) {
+    /// Rewrites the list as `postings`, with each block's length bounds taken from `words`
+    /// as appends take them, so a rewrite keeps block-max pruning as tight as a fresh build.
+    fn encode(&mut self, postings: &[Posting], words: impl Fn(usize) -> u32) {
         self.data.clear();
         self.blocks.clear();
         for block in postings.chunks(BLOCK_LEN) {
-            self.append_block(block, 0, None);
+            self.append_block(
+                block,
+                block.iter().map(|p| words(p.0)).min().unwrap_or(0),
+                frontier(block.iter().map(|p| (p.1, words(p.0)))),
+            );
         }
         self.data.shrink_to_fit();
         self.count = u32::try_from(postings.len()).expect("posting list over u32::MAX");
@@ -487,16 +498,12 @@ impl PostingList {
         self.last = postings.last().map_or(0, |p| p.0 as u64);
     }
 
-    pub(super) fn append_run(&mut self, run: &[Posting], scratch: &mut Vec<u8>) {
-        self.append_run_with_lengths(run, scratch, |_| 0);
+    #[cfg(test)]
+    pub(super) fn append_run(&mut self, run: &[Posting]) {
+        self.append_run_with_lengths(run, |_| 0);
     }
 
-    fn append_run_with_lengths(
-        &mut self,
-        run: &[Posting],
-        _scratch: &mut Vec<u8>,
-        words: impl Fn(usize) -> u32,
-    ) {
+    fn append_run_with_lengths(&mut self, run: &[Posting], words: impl Fn(usize) -> u32) {
         debug_assert!(
             run.windows(2).all(|p| p[0].0 < p[1].0),
             "unsorted posting run"
@@ -509,7 +516,7 @@ impl PostingList {
         }
         if self.count > 0 && first as u64 <= self.last {
             let merged = merge_sorted(&self.decode(), run);
-            self.encode(&merged);
+            self.encode(&merged, words);
             return;
         }
         let mut start = 0;
@@ -552,22 +559,56 @@ impl PostingList {
         self.last = run.last().unwrap().0 as u64;
     }
 
-    fn remove(&mut self, slot: usize) {
+    fn remove(&mut self, slot: usize, words: impl Fn(usize) -> u32) {
         let mut decoded = self.decode();
         let index = decoded
             .binary_search_by_key(&slot, |p| p.0)
             .expect("document missing from posting");
         decoded.remove(index);
-        self.encode(&decoded);
+        self.encode(&decoded, words);
     }
 
-    fn set_frequency(&mut self, slot: usize, frequency: u32) {
+    fn set_frequency(&mut self, slot: usize, frequency: u32, words: impl Fn(usize) -> u32) {
         let mut decoded = self.decode();
         let index = decoded
             .binary_search_by_key(&slot, |p| p.0)
             .expect("document missing from posting");
         decoded[index].1 = frequency;
-        self.encode(&decoded);
+        self.encode(&decoded, words);
+    }
+
+    /// Whether every block's bounds hold for its postings under the lengths `words`: the
+    /// largest frequency, the least length, and a frontier point dominating each posting.
+    #[cfg(test)]
+    pub(super) fn bounds_cover(&self, words: &[u32]) -> bool {
+        self.blocks.iter().enumerate().all(|(index, block)| {
+            let mut postings = [(0, 0); BLOCK_LEN];
+            self.decode_block(index, &mut postings);
+            postings[..usize::from(block.count)]
+                .iter()
+                .all(|&(slot, frequency)| {
+                    let length = words[slot];
+                    frequency <= block.max_frequency
+                        && block.min_words <= length
+                        && (frequency == 0
+                            || block.frontier.as_deref().is_none_or(|points| {
+                                points.iter().any(|&(f, w)| frequency <= f && w <= length)
+                            }))
+                })
+        })
+    }
+
+    /// Whether every block's length bounds are exactly those a fresh build from `words`
+    /// gives: no rewrite loosened them.
+    #[cfg(test)]
+    pub(super) fn bounds_are_tight(&self, words: &[u32]) -> bool {
+        self.blocks.iter().enumerate().all(|(index, block)| {
+            let mut postings = [(0, 0); BLOCK_LEN];
+            self.decode_block(index, &mut postings);
+            let postings = &postings[..usize::from(block.count)];
+            block.min_words == postings.iter().map(|p| words[p.0]).min().unwrap_or(0)
+                && block.frontier == frontier(postings.iter().map(|p| (p.1, words[p.0])))
+        })
     }
 
     pub(super) fn invalidate_length(&mut self, slot: usize) {
@@ -634,7 +675,9 @@ impl<'a> PostingCursor<'a> {
             return self.peek();
         }
         if self.list.blocks[self.block].last < target {
-            let block = self.list.blocks.partition_point(|b| b.last < target);
+            // Blocks before the current one end below it; search only those after.
+            let after = self.block + 1;
+            let block = after + self.list.blocks[after..].partition_point(|b| b.last < target);
             self.load(block);
         }
         self.index += self.decoded[self.index..self.length].partition_point(|p| p.0 < target);
@@ -751,8 +794,8 @@ impl PostingLists {
         self.dictionary.len()
     }
 
-    /// Adds a `(term, slot)` posting absent from the lists.
-    pub(super) fn insert(&mut self, term: &str, slot: usize, frequency: u32) {
+    /// Adds a `(term, slot)` posting absent from the lists; `words` holds each slot's length.
+    pub(super) fn insert(&mut self, term: &str, slot: usize, frequency: u32, words: &[u32]) {
         let id = match self.dictionary.get(term) {
             Some(id) => id,
             None => {
@@ -761,7 +804,9 @@ impl PostingLists {
                 id
             }
         };
-        self.lists[id as usize].append_run(&[(slot, frequency)], &mut Vec::new());
+        self.lists[id as usize].append_run_with_lengths(&[(slot, frequency)], |slot| {
+            words.get(slot).copied().unwrap_or(0)
+        });
     }
 
     /// Adds one run per distinct term, each absent from that term's list.
@@ -783,14 +828,13 @@ impl PostingLists {
             runs.iter().map(|run| dictionary.get(run.term)).collect()
         };
         let mut new_terms = Vec::new();
-        let mut scratch = Vec::new();
         for (run, id) in runs.iter().zip(ids) {
             let id = id.unwrap_or_else(|| {
                 let id = self.allocate_list();
                 new_terms.push((run.term, id));
                 id
             });
-            self.lists[id as usize].append_run_with_lengths(&run.postings, &mut scratch, |slot| {
+            self.lists[id as usize].append_run_with_lengths(&run.postings, |slot| {
                 word_counts.get(slot).copied().unwrap_or(0)
             });
         }
@@ -808,13 +852,13 @@ impl PostingLists {
         }
     }
 
-    pub(super) fn remove(&mut self, term: &str, slot: usize) {
+    pub(super) fn remove(&mut self, term: &str, slot: usize, words: &[u32]) {
         let id = self
             .dictionary
             .get(term)
             .expect("document term missing posting");
         let list = &mut self.lists[id as usize];
-        list.remove(slot);
+        list.remove(slot, |slot| words.get(slot).copied().unwrap_or(0));
         if list.is_empty() {
             *list = PostingList::default();
             self.dictionary.remove(term);
@@ -830,12 +874,14 @@ impl PostingLists {
         self.lists[id as usize].invalidate_length(slot);
     }
 
-    pub(super) fn set_frequency(&mut self, term: &str, slot: usize, frequency: u32) {
+    pub(super) fn set_frequency(&mut self, term: &str, slot: usize, frequency: u32, words: &[u32]) {
         let id = self
             .dictionary
             .get(term)
             .expect("document term missing posting");
-        self.lists[id as usize].set_frequency(slot, frequency);
+        self.lists[id as usize].set_frequency(slot, frequency, |slot| {
+            words.get(slot).copied().unwrap_or(0)
+        });
     }
 
     /// Every live term has a non-empty, strictly slot-sorted list whose recorded final slot
@@ -860,7 +906,7 @@ impl PostingLists {
             assert_eq!(slots.last().copied(), Some(list.last as usize));
             // In-place edits leave exactly the bytes a fresh encoding of the postings has.
             let mut fresh = PostingList::default();
-            fresh.encode(&list.decode());
+            fresh.encode(&list.decode(), |_| 0);
             assert_eq!(fresh.data, list.data, "posting bytes are not canonical");
         }
         for &id in &self.free {
@@ -994,10 +1040,10 @@ mod tests {
         for length in [0, 1, 127, 128, 129, 255, 256, 257, 511, 512, 513] {
             let run: Vec<Posting> = (0..length).map(|slot| (slot, 1)).collect();
             let mut list = PostingList::default();
-            list.append_run(&run, &mut Vec::new());
+            list.append_run(&run);
             assert_eq!(list.blocks.capacity(), length.div_ceil(BLOCK_LEN));
             assert_eq!(list.decode(), run);
-            list.append_run(&[(length, 2)], &mut Vec::new());
+            list.append_run(&[(length, 2)]);
             assert_eq!(list.len(), length + 1);
             assert_eq!(list.iter().last(), Some((length, 2)));
         }
@@ -1061,9 +1107,7 @@ mod tests {
         let run: Vec<_> = (0..BLOCK_LEN).map(|i| (i, i as u32 + 1)).collect();
         let mut list = PostingList::default();
         for posting in &run {
-            list.append_run_with_lengths(std::slice::from_ref(posting), &mut Vec::new(), |slot| {
-                slot as u32 + 1
-            });
+            list.append_run_with_lengths(std::slice::from_ref(posting), |slot| slot as u32 + 1);
         }
         let expected: Vec<_> = run
             .iter()
@@ -1077,9 +1121,9 @@ mod tests {
         assert_eq!(list.decode(), run);
 
         let mut list = PostingList::default();
-        list.append_run_with_lengths(&[(0, 5)], &mut Vec::new(), |_| 10);
+        list.append_run_with_lengths(&[(0, 5)], |_| 10);
         list.invalidate_length(0);
-        list.append_run_with_lengths(&[(1, 6), (2, 0)], &mut Vec::new(), |_| 20);
+        list.append_run_with_lengths(&[(1, 6), (2, 0)], |_| 20);
         assert_eq!(
             list.blocks[0].frontier.as_deref(),
             Some([(6, 20), (5, 0)].as_slice())
@@ -1137,18 +1181,18 @@ mod tests {
             let entry = model.entry(term.clone()).or_default();
             match next() % 3 {
                 0 if entry.contains_key(&slot) => {
-                    lists.set_frequency(&term, slot, frequency);
+                    lists.set_frequency(&term, slot, frequency, &[]);
                     entry.insert(slot, frequency);
                 }
                 1 if entry.contains_key(&slot) => {
-                    lists.remove(&term, slot);
+                    lists.remove(&term, slot, &[]);
                     entry.remove(&slot);
                     if entry.is_empty() {
                         model.remove(&term);
                     }
                 }
                 _ if !entry.contains_key(&slot) => {
-                    lists.insert(&term, slot, frequency);
+                    lists.insert(&term, slot, frequency, &[]);
                     entry.insert(slot, frequency);
                 }
                 _ => {
@@ -1211,7 +1255,7 @@ mod tests {
             }
             for run in &runs {
                 for &(slot, frequency) in &run.postings {
-                    single.insert(run.term, slot, frequency);
+                    single.insert(run.term, slot, frequency, &[]);
                 }
             }
             bulk.insert_runs(&runs);
@@ -1221,8 +1265,8 @@ mod tests {
             for run in &runs {
                 for &(slot, _) in &run.postings {
                     if freed.contains(&slot) {
-                        bulk.remove(run.term, slot);
-                        single.remove(run.term, slot);
+                        bulk.remove(run.term, slot, &[]);
+                        single.remove(run.term, slot, &[]);
                     }
                 }
             }
@@ -1328,7 +1372,7 @@ mod tests {
                         run.push((slot, frequency));
                     }
                     let mut list = PostingList::default();
-                    list.append_run(&run, &mut Vec::new());
+                    list.append_run(&run);
                     let mut visited = Vec::new();
                     list.for_each(|slot, frequency| visited.push((slot, frequency)));
                     assert_eq!(visited, list.iter().collect::<Vec<_>>());
@@ -1353,7 +1397,7 @@ mod cursor_tests {
                 run.push((usize::MAX, 0));
                 let mut list = PostingList::default();
                 for batch in run.chunks(17) {
-                    list.append_run(batch, &mut Vec::new());
+                    list.append_run(batch);
                 }
                 assert_eq!(list.iter().collect::<Vec<_>>(), run);
                 assert_eq!(list.positive_len(), length);

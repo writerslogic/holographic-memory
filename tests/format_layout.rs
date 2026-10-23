@@ -387,3 +387,37 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
     .has_document("doc-harbor"));
     Ok(())
 }
+
+/// A whole-document record may cover up to the document limit in its one chunk: a store holding
+/// one over the 64 KiB chunk limit verifies clean and plans an upgrade.
+#[test]
+fn whole_document_record_over_the_chunk_limit_verifies() -> Result<()> {
+    use holographic_memory::core::documents::{EncodeMode, IngestOptions};
+    use holographic_memory::DocumentInput;
+    let dir = tempfile::tempdir()?;
+    let store = dir.path().join("store");
+    let core = HmsCore::new(64, Some(store.display().to_string()), None)?;
+    let text = "harbor lantern ".repeat(5000);
+    ensure!(text.len() > 64 * 1024);
+    let input: DocumentInput = serde_json::from_value(serde_json::json!({
+        "id": "article", "text": text, "chunkWords": 4096, "overlapWords": 0
+    }))?;
+    core.memorize_documents_with(
+        vec![input],
+        &IngestOptions {
+            encode: EncodeMode::Lexical,
+            positions: true,
+            whole_document: true,
+            ..Default::default()
+        },
+    )?;
+    drop(core);
+    let report = verify_path(&store, &VerifyOptions::default())?;
+    ensure!(
+        report.verdict == Verdict::Ok,
+        "whole-document store does not verify: {:?}",
+        report.findings
+    );
+    holographic_memory::core::format::plan_upgrade(&store)?;
+    Ok(())
+}

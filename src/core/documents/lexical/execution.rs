@@ -282,18 +282,38 @@ pub(super) fn document_at_a_time(
 }
 
 pub(super) fn count_union(store: &DocumentStore, query: &LexicalQuery) -> usize {
-    if query.clauses.len() == 1 && store.chunk_count == store.documents.len() {
+    count_terms(
+        store,
+        std::array::from_fn(|form| {
+            let words: BTreeSet<&str> = query
+                .clauses
+                .iter()
+                .map(|c| c.words[form][0].as_str())
+                .collect();
+            words.into_iter().collect()
+        }),
+    )
+}
+
+/// The number of documents with a chunk holding one of `words[form]` in that form's postings
+/// at a positive frequency: the documents an unfiltered disjunction of the words scores.
+pub(in crate::core::documents) fn count_terms(
+    store: &DocumentStore,
+    words: [Vec<&str>; 2],
+) -> usize {
+    if words.iter().all(|words| words.len() <= 1) && store.chunk_count == store.documents.len() {
+        // One chunk per document and at most one list per form, whose slots are disjoint.
         return (0..2)
             .map(|form| {
-                store.postings[form]
-                    .get(&query.clauses[0].words[form][0])
-                    .map_or(0, |l| l.positive_len())
+                words[form]
+                    .first()
+                    .and_then(|word| store.postings[form].get(word))
+                    .map_or(0, |list| list.positive_len())
             })
             .sum();
     }
     let mut matched = vec![0u64; store.slot_count.div_ceil(64)];
-    for form in 0..2 {
-        let words: BTreeSet<_> = query.clauses.iter().map(|c| &c.words[form][0]).collect();
+    for (form, words) in words.iter().enumerate() {
         for word in words {
             if let Some(list) = store.postings[form].get(word) {
                 list.mark_slots(&mut matched);
@@ -301,14 +321,20 @@ pub(super) fn count_union(store: &DocumentStore, query: &LexicalQuery) -> usize 
         }
     }
     let mut count: usize = matched.iter().map(|word| word.count_ones() as usize).sum();
-    for id in &store.multichunk_documents {
-        let chunks = store.slots[id]
-            .iter()
-            .filter(|&&slot| matched[slot / 64] & (1 << (slot % 64)) != 0)
-            .count();
-        count = count
-            .checked_sub(chunks.saturating_sub(1))
-            .expect("matching chunk count underflow");
+    if !store.multichunk_documents.is_empty() {
+        // A document counts once: each further matching chunk of one is taken back.
+        let mut seen = fxhash::FxHashSet::default();
+        for (index, &bits) in matched.iter().enumerate() {
+            let mut bits = bits;
+            while bits != 0 {
+                let slot = index * 64 + bits.trailing_zeros() as usize;
+                bits &= bits - 1;
+                let (document, _) = store.borrowed_chunk(slot);
+                if document.chunks.len() > 1 && !seen.insert(std::ptr::from_ref(document)) {
+                    count -= 1;
+                }
+            }
+        }
     }
     count
 }
