@@ -47,8 +47,8 @@
 use std::{cmp::Ordering, collections::BinaryHeap, sync::Arc};
 
 use crate::core::hash::FastSet;
+use crate::core::sync::{Mutex, MutexGuard, RwLock};
 use anyhow::{bail, ensure, Context, Result};
-use parking_lot::{Mutex, MutexGuard, RwLock};
 use serde::{Deserialize, Serialize};
 
 use super::index::text_of;

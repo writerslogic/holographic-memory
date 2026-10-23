@@ -56,8 +56,8 @@ mod stamp;
 mod types;
 mod write;
 
+use crate::core::sync::{Mutex, RwLock};
 use anyhow::Result;
-use parking_lot::{Mutex, RwLock};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 

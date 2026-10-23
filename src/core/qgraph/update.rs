@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 
 use super::{
     kernels::dot, vertex::SearchScratch, BuildParams, Graph, Metric, PreparedRows, Residency,

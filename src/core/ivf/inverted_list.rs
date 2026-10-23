@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::hash::FastMap;
+use crate::core::sync::RwLock;
 use anyhow::Result;
-use parking_lot::RwLock;
 use std::sync::Arc;
 
 const PQ_CODE_LEN: usize = 16;

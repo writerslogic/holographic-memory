@@ -1,10 +1,10 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::core::sync::RwLock;
 use anyhow::{anyhow, ensure, Context, Result};
 use crc32fast::Hasher;
 use memmap2::{Mmap, MmapMut};
-use parking_lot::RwLock;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -644,7 +644,7 @@ impl PersistentArena {
 
     fn grow_segment_locked(
         &self,
-        active: &mut parking_lot::RwLockWriteGuard<'_, ActiveSegment>,
+        active: &mut crate::core::sync::RwLockWriteGuard<'_, ActiveSegment>,
         required: usize,
     ) -> Result<()> {
         ensure!(
@@ -673,7 +673,7 @@ impl PersistentArena {
     /// and pass the guard so we can swap the mmap in place.
     fn rotate_segment_locked(
         &self,
-        active: &mut parking_lot::RwLockWriteGuard<'_, ActiveSegment>,
+        active: &mut crate::core::sync::RwLockWriteGuard<'_, ActiveSegment>,
     ) -> Result<()> {
         let current_id = self.active_id.load(Ordering::SeqCst);
         let path = self

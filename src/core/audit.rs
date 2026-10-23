@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::core::sync::Mutex;
 use anyhow::{anyhow, Result};
-use parking_lot::Mutex;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 

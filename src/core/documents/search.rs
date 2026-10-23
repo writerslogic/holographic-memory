@@ -830,7 +830,7 @@ fn score_chunks(
 mod tests {
     use super::*;
     use crate::core::encoding::TextEncoder;
-    use parking_lot::RwLock;
+    use crate::core::sync::RwLock;
     use serde_json::json;
     use std::sync::Barrier;
 

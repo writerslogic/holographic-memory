@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::hash::FastMap;
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 
 use super::entangled::EntangledHVec;
 use super::idf::IdfWeights;
@@ -143,7 +143,9 @@ impl IndexedMemory {
         self.dim
     }
 
-    pub fn vectors_read(&self) -> parking_lot::RwLockReadGuard<'_, Vec<(String, EntangledHVec)>> {
+    pub fn vectors_read(
+        &self,
+    ) -> crate::core::sync::RwLockReadGuard<'_, Vec<(String, EntangledHVec)>> {
         self.vectors.read()
     }
 }

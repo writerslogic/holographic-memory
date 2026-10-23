@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::hash::FastMap;
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TripleRecord {

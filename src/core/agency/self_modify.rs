@@ -7,7 +7,7 @@
 //! decomposition patterns. ALL proposals require explicit user approval
 //! before taking effect. Every proposal and its outcome is logged.
 
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 
 /// A proposed self-modification.
 #[derive(Clone, Debug)]

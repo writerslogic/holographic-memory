@@ -50,7 +50,7 @@ pub use crate::core::provenance::TripleProvenanceParams;
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
 pub struct HolographicMemorySystem {
     core: Arc<HmsCore>,
-    memory: parking_lot::RwLock<Arc<crate::core::memory_api::Memory>>,
+    memory: crate::core::sync::RwLock<Arc<crate::core::memory_api::Memory>>,
 }
 
 #[cfg(feature = "node-api")]
@@ -285,7 +285,7 @@ impl HolographicMemorySystem {
         let core = HmsCore::new(dimensions, storage_path, cfg).map_err(napi_err)?;
         let core = Arc::new(core);
         Ok(Self {
-            memory: parking_lot::RwLock::new(Arc::new(crate::core::memory_api::Memory::new(
+            memory: crate::core::sync::RwLock::new(Arc::new(crate::core::memory_api::Memory::new(
                 core.clone(),
             ))),
             core,

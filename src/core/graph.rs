@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::hash::FastMap;
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 

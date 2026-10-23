@@ -9,7 +9,7 @@
 //! knowledge atoms.
 
 use crate::core::hash::FastMap;
-use parking_lot::RwLock;
+use crate::core::sync::RwLock;
 
 use crate::core::entangled::EntangledHVec;
 

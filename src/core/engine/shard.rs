@@ -4,8 +4,8 @@
 use std::collections::BinaryHeap;
 use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
 
+use crate::core::sync::RwLock;
 use anyhow::Result;
-use parking_lot::RwLock;
 use rayon::prelude::*;
 
 use crate::core::entangled::EntangledHVec;
@@ -24,9 +24,9 @@ pub(crate) struct Shard {
     pub vectors: RwLock<FastMap<String, EntangledHVec>>,
     pub registry: RwLock<Vec<String>>,
     slots: RwLock<FastMap<String, u32>>,
-    free_slots: parking_lot::Mutex<Vec<u32>>,
+    free_slots: crate::core::sync::Mutex<Vec<u32>>,
     pub inverted: RwLock<SparseInvertedIndex>,
-    pub accumulator: parking_lot::Mutex<Accumulator>,
+    pub accumulator: crate::core::sync::Mutex<Accumulator>,
     pub nsg: RwLock<Option<NSGIndex>>,
     pub ivf: RwLock<Option<IVFIndex>>,
     pub vector_count: AtomicU64,
@@ -39,9 +39,9 @@ impl Shard {
             vectors: RwLock::new(FastMap::default()),
             registry: RwLock::new(Vec::new()),
             slots: RwLock::new(FastMap::default()),
-            free_slots: parking_lot::Mutex::new(Vec::new()),
+            free_slots: crate::core::sync::Mutex::new(Vec::new()),
             inverted: RwLock::new(SparseInvertedIndex::new(dimensions, m)),
-            accumulator: parking_lot::Mutex::new(Accumulator::new(1024)),
+            accumulator: crate::core::sync::Mutex::new(Accumulator::new(1024)),
             nsg: RwLock::new(None),
             ivf: RwLock::new(None),
             vector_count: AtomicU64::new(0),
