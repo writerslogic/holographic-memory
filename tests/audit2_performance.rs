@@ -93,7 +93,7 @@ fn audit_entries_match_across_read_buffer_boundaries() {
     let mut config = HmsConfig::default();
     config.security.audit_enabled = true;
     let core = HmsCore::new(256, Some(dir.path().display().to_string()), Some(config)).unwrap();
-    for count in [622u64, 623, 624] {
+    for count in [623u64, 624, 625] {
         let mut bytes = Vec::new();
         for timestamp in 0..count {
             let mut entry = [0u8; 105];
