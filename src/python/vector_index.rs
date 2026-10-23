@@ -18,8 +18,8 @@ use rayon::prelude::*;
 
 use crate::core::error::HmsError;
 use crate::core::qgraph::{
-    BuildParams, ConsolidationPolicy, Graph, Metric, UpdatableVGraph, UpdateError, VGraph,
-    VSearchParams, VSearcher,
+    BuildParams, Consolidation, ConsolidationMode, ConsolidationPolicy, Graph, Metric,
+    UpdatableVGraph, UpdateError, VGraph, VSearchParams, VSearcher,
 };
 
 /// Residual code bits per coordinate, read by the re-rank.
@@ -531,7 +531,8 @@ fn u32_ids(ids: &PyArrayLike1<'_, i64, AllowTypeChange>) -> PyResult<Vec<u32>> {
 /// A durable index that takes inserts, deletes and replacements while it serves queries
 /// (`core::qgraph::UpdatableVGraph`): a memory-mapped base graph, an in-memory graph of the
 /// rows added since, a log that makes each `commit` durable, and `consolidate`, which rebuilds
-/// the base over the live rows. Ids are caller-chosen integers in 0..2^32-1.
+/// the base over the live rows or merges the changes into it. Ids are caller-chosen integers
+/// in 0..2^32-1.
 #[pyclass(name = "UpdatableIndex")]
 struct PyUpdatableIndex {
     index: UpdatableVGraph,
@@ -781,10 +782,36 @@ impl PyUpdatableIndex {
             .map_err(update_err)
     }
 
-    /// Rebuilds the base over the live rows; searches keep running meanwhile.
-    fn consolidate(&self, py: Python<'_>) -> PyResult<()> {
-        py.detach(|| self.run(|| self.index.consolidate()))
-            .map_err(update_err)
+    /// Publishes the live rows as a new base; searches keep running meanwhile. By default the
+    /// base graph is rebuilt over every live row. With `merge=True` the previous base graph is
+    /// kept: deleted vertices are spliced out of the lists that pointed at them and the delta
+    /// rows are linked in, unless the rows inserted and deleted by merges since the last
+    /// rebuild (counted from open) would reach `rebuild_after` times the live rows, or another
+    /// condition of `ConsolidationMode::Merge` asks for a rebuild. Returns "merged",
+    /// "rebuilt" or "unchanged".
+    #[pyo3(signature = (merge=false, rebuild_after=1.0))]
+    fn consolidate(
+        &self,
+        py: Python<'_>,
+        merge: bool,
+        rebuild_after: f64,
+    ) -> PyResult<&'static str> {
+        if rebuild_after.is_nan() || rebuild_after < 0.0 {
+            return Err(PyValueError::new_err("rebuild_after must be non-negative"));
+        }
+        let mode = if merge {
+            ConsolidationMode::Merge { rebuild_after }
+        } else {
+            ConsolidationMode::Rebuild
+        };
+        let done = py
+            .detach(|| self.run(|| self.index.consolidate_with(mode)))
+            .map_err(update_err)?;
+        Ok(match done {
+            Consolidation::Unchanged => "unchanged",
+            Consolidation::Merged => "merged",
+            Consolidation::Rebuilt => "rebuilt",
+        })
     }
 
     /// Streaming diagnostics, enabled at open/create by HMS_STREAM_DIAGNOSTICS=1.

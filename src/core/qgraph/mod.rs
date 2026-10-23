@@ -32,7 +32,9 @@ mod update;
 mod vertex;
 mod vnni;
 #[cfg(not(target_arch = "wasm32"))]
-pub use update::{ConsolidationPolicy, UpdatableVGraph, UpdateError};
+pub use update::{
+    Consolidation, ConsolidationMode, ConsolidationPolicy, UpdatableVGraph, UpdateError,
+};
 
 #[cfg(feature = "experimental")]
 pub mod diagnostics;
@@ -1212,6 +1214,19 @@ impl PreparedRows {
     }
 
     pub(crate) fn build(self, params: &BuildParams) -> Result<PreparedGraph, HmsError> {
+        let dim = self.dim;
+        self.build_with(params, |data, norms| {
+            build_structure(data, norms, dim, params)
+        })
+    }
+
+    /// [`Self::build`] with the graph structure from `structure(rows, norms)` over the
+    /// prepared, mapped rows.
+    fn build_with(
+        self,
+        params: &BuildParams,
+        structure: impl FnOnce(&[f32], &[f32]) -> Result<GraphStructure, HmsError>,
+    ) -> Result<PreparedGraph, HmsError> {
         let io = |error: std::io::Error| HmsError::StorageFailure {
             context: format!("prepared graph rows: {error}"),
         };
@@ -1230,7 +1245,7 @@ impl PreparedRows {
         #[cfg(unix)]
         vectors.advise(memmap2::Advice::Random).map_err(io)?;
         let data: &[f32] = bytemuck::cast_slice(&vectors[..self.expected * 4]);
-        let structure = build_structure(data, &norms, self.dim, params)?;
+        let structure = structure(data, &norms)?;
         Ok(PreparedGraph {
             vectors,
             norms,
@@ -1443,11 +1458,47 @@ fn build_structure(
         quantized: params.quantized_search,
     };
 
+    let entry = medoid(&rows, n, metric);
+
+    let mut rng = SplitMix(params.seed ^ 0xA5A5_A5A5);
+    let mut order: Vec<u32> = (0..n as u32).collect();
+    for i in (1..n).rev() {
+        order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
+    }
+    let mut graph = Adjacency::new(n, r);
+    prof::report("setup", tsetup);
+    let first_ef = params.build_ef.min(FIRST_PASS_EF);
+    for (l, alpha) in [(first_ef, 1.0), (params.build_ef, params.alpha)] {
+        let t = prof::start();
+        rows.insert_pass(&mut graph, &order, entry, l, alpha, r);
+        prof::report("pass", t);
+    }
+    let t = prof::start();
+    rows.fill(&mut graph, r);
+    prof::report("fill", t);
+    let tup = prof::start();
+
+    let layers = upper_layers(&rows, &order, params);
+    prof::report("upper", tup);
+    prof::graph_hash((&graph, &layers, entry));
+    let upper_ids = order[..n / LAYER_RATIO].to_vec();
+    Ok(GraphStructure {
+        adj: graph,
+        entry,
+        upper_ids,
+        layers,
+    })
+}
+
+/// The row nearest the mean of the `n` rows (angular: of largest dot product with their sum),
+/// the entry vertex of a build.
+fn medoid(rows: &Rows<'_>, n: usize, metric: Metric) -> u32 {
+    let dim = rows.dim;
     let mut centroid = vec![0f32; dim];
-    for x in vectors.chunks_exact(dim) {
+    for x in rows.data.chunks_exact(dim) {
         centroid.iter_mut().zip(x).for_each(|(c, v)| *c += v);
     }
-    let entry = match metric {
+    match metric {
         Metric::Angular => {
             (0..n as u32)
                 .into_par_iter()
@@ -1470,7 +1521,13 @@ fn build_structure(
             centroid.iter_mut().for_each(|c| *c /= n as f32);
             (0..n as u32)
                 .into_par_iter()
-                .map(|i| (norms[i as usize] - 2.0 * dot(rows.row(i), &centroid), i))
+                .map(|i| {
+                    (
+                        rows.norms.expect("Euclidean rows carry norms")[i as usize]
+                            - 2.0 * dot(rows.row(i), &centroid),
+                        i,
+                    )
+                })
                 .reduce(
                     || (f32::INFINITY, NONE),
                     |a, b| {
@@ -1483,30 +1540,16 @@ fn build_structure(
                 )
                 .1
         }
-    };
-
-    let mut rng = SplitMix(params.seed ^ 0xA5A5_A5A5);
-    let mut order: Vec<u32> = (0..n as u32).collect();
-    for i in (1..n).rev() {
-        order.swap(i, (rng.next_u64() % (i as u64 + 1)) as usize);
     }
-    let mut graph = Adjacency::new(n, r);
-    prof::report("setup", tsetup);
-    let first_ef = params.build_ef.min(FIRST_PASS_EF);
-    for (l, alpha) in [(first_ef, 1.0), (params.build_ef, params.alpha)] {
-        let t = prof::start();
-        rows.insert_pass(&mut graph, &order, entry, l, alpha, r);
-        prof::report("pass", t);
-    }
-    let t = prof::start();
-    rows.fill(&mut graph, r);
-    prof::report("fill", t);
-    let tup = prof::start();
+}
 
-    // Upper layers (HNSW-like) give each query a nearby entry vertex: layer j holds the
-    // first n / 16^(j+1) vertices of `order`, so a vertex keeps its local id in every layer.
+/// Upper layers (HNSW-like) give each query a nearby entry vertex: layer j holds the first
+/// n / 16^(j+1) vertices of `order` (a permutation of the rows), so a vertex keeps its local
+/// id in every layer.
+fn upper_layers(rows: &Rows<'_>, order: &[u32], params: &BuildParams) -> Vec<Vec<Vec<u32>>> {
+    let dim = rows.dim;
     let mut layers = Vec::new();
-    let mut size = n / LAYER_RATIO;
+    let mut size = order.len() / LAYER_RATIO;
     while size >= MIN_LAYER {
         let sub: Vec<f32> = order[..size]
             .iter()
@@ -1538,15 +1581,7 @@ fn build_structure(
         layers.push(g.to_lists());
         size /= LAYER_RATIO;
     }
-    prof::report("upper", tup);
-    prof::graph_hash((&graph, &layers, entry));
-    let upper_ids = order[..n / LAYER_RATIO].to_vec();
-    Ok(GraphStructure {
-        adj: graph,
-        entry,
-        upper_ids,
-        layers,
-    })
+    layers
 }
 
 /// FNV-1a over 32-bit words: a stable fingerprint, not a cryptographic hash.

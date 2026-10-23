@@ -1327,3 +1327,141 @@ fn consolidated_id_width_switches_at_the_three_byte_limit() {
     assert_eq!(neighbour_id_bytes(0, 10), 0);
     assert_eq!(neighbour_id_bytes(0, limit + 1), 0);
 }
+
+#[test]
+fn merged_consolidation_tracks_rebuild_recall_across_churn() {
+    // The same delete/insert schedule consolidated by merging into the previous base and by
+    // rebuilding: the merged graph must hold the rebuilt graph's recall at a fixed search
+    // budget, serve only live ids, and persist.
+    let dim = 16;
+    let all = data(16_000, dim);
+    let (initial, rest) = all.split_at(8000 * dim);
+    let dir = tempfile::tempdir().unwrap();
+    let merged =
+        UpdatableVGraph::create(&dir.path().join("merged"), initial, dim, &params()).unwrap();
+    let rebuilt =
+        UpdatableVGraph::create(&dir.path().join("rebuilt"), initial, dim, &params()).unwrap();
+    let mut live: BTreeMap<u32, Vec<f32>> = initial
+        .chunks_exact(dim)
+        .enumerate()
+        .map(|(id, row)| (id as u32, row.to_vec()))
+        .collect();
+    let queries = data(200, dim + 1);
+    let budget = VSearchParams {
+        ef: 24,
+        rerank: 24,
+        ..Default::default()
+    };
+    let mut next = 8000u32;
+    for round in 0..4 {
+        let doomed: Vec<u32> = live.keys().copied().filter(|id| id % 7 == round).collect();
+        let fresh: Vec<u32> = (next..next + 1500).collect();
+        let rows = &rest[(next as usize - 8000) * dim..(next as usize - 8000 + 1500) * dim];
+        next += 1500;
+        for index in [&merged, &rebuilt] {
+            for &id in &doomed {
+                index.delete(id).unwrap();
+            }
+            index.commit().unwrap();
+            index.insert_batch(&fresh, rows).unwrap();
+            index.commit().unwrap();
+        }
+        for id in &doomed {
+            live.remove(id);
+        }
+        live.extend(
+            fresh
+                .iter()
+                .zip(rows.chunks_exact(dim))
+                .map(|(&id, r)| (id, r.to_vec())),
+        );
+        let mode = ConsolidationMode::Merge {
+            rebuild_after: f64::INFINITY,
+        };
+        assert_eq!(
+            merged.consolidate_with(mode).unwrap(),
+            Consolidation::Merged
+        );
+        rebuilt.consolidate().unwrap();
+        assert_eq!(merged.len(), live.len());
+        let mut hits = [0usize; 2];
+        for q in queries.chunks_exact(dim + 1).map(|q| &q[..dim]) {
+            let truth = exact(&live, q, 10);
+            for (hit, index) in hits.iter_mut().zip([&merged, &rebuilt]) {
+                let found = index.search(q, 10, budget).unwrap();
+                assert!(found.iter().all(|id| live.contains_key(id)));
+                *hit += found.iter().filter(|id| truth.contains(id)).count();
+            }
+        }
+        let [m, r] = hits.map(|h| h as f64 / 2000.0);
+        assert!(m >= r - 0.02, "round {round}: merged {m}, rebuilt {r}");
+    }
+    let before: Vec<_> = queries
+        .chunks_exact(dim + 1)
+        .map(|q| merged.search(&q[..dim], 10, budget).unwrap())
+        .collect();
+    drop(merged);
+    let reopened = UpdatableVGraph::open(&dir.path().join("merged")).unwrap();
+    for (q, found) in queries.chunks_exact(dim + 1).zip(before) {
+        assert_eq!(reopened.search(&q[..dim], 10, budget).unwrap(), found);
+    }
+    reopened.delete(next - 1).unwrap();
+    reopened.commit().unwrap();
+    let mode = ConsolidationMode::Merge { rebuild_after: 0.0 };
+    assert_eq!(
+        reopened.consolidate_with(mode).unwrap(),
+        Consolidation::Rebuilt
+    );
+}
+
+#[test]
+fn merged_consolidation_interruption_recovers_committed_state() {
+    let dim = 4;
+    let mode = ConsolidationMode::Merge {
+        rebuild_after: f64::INFINITY,
+    };
+    for stop in 0..=10 {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("index");
+        let index = UpdatableVGraph::create(&path, &data(600, dim), dim, &params()).unwrap();
+        index.replace(0, &[1., 2., 3., 4.]).unwrap();
+        for id in 1..40 {
+            index.delete(id).unwrap();
+        }
+        index.insert(1000, &[4., 3., 2., 1.]).unwrap();
+        index.commit().unwrap();
+        let before = index.search(&[1.; 4], 100, search_params()).unwrap();
+        assert!(index
+            .consolidate_mode(mode, |step| if step == stop {
+                Err(UpdateError::Io(std::io::Error::other("interruption")))
+            } else {
+                Ok(())
+            })
+            .is_err());
+        drop(index);
+        let reopened = UpdatableVGraph::open(&path).unwrap();
+        let found = reopened.search(&[1.; 4], 100, search_params()).unwrap();
+        let published = reopened.state.read().base.rows.ids.len() != 600;
+        if published {
+            // A published generation scores its base through codes: compare the sets.
+            assert!(found.iter().filter(|id| before.contains(id)).count() >= 95);
+        } else {
+            assert_eq!(found, before, "stop {stop}");
+        }
+        let expected = if published {
+            Consolidation::Unchanged
+        } else {
+            Consolidation::Merged
+        };
+        assert_eq!(
+            reopened.consolidate_with(mode).unwrap(),
+            expected,
+            "stop {stop}"
+        );
+        let after = reopened.search(&[1.; 4], 100, search_params()).unwrap();
+        let shared = after.iter().filter(|id| before.contains(id)).count();
+        assert!(shared >= 95, "stop {stop}: {shared} of 100");
+        drop(reopened);
+        assert_eq!(UpdatableVGraph::open(&path).unwrap().len(), 600 - 39 + 1);
+    }
+}

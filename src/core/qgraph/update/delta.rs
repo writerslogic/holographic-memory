@@ -5,7 +5,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use super::super::{
-    adjacency::Adjacency, kernels::dot, norms_opt, BuildParams, BuildVisited, Rows, NONE,
+    adjacency::Adjacency, build_kernels::prefetch_row, kernels::dot, norms_opt, BuildParams,
+    BuildVisited, Rows, NONE,
 };
 use super::Metric;
 
@@ -225,6 +226,7 @@ impl Delta {
         let score = |slot: usize| self.score(query, slot, metric);
         let mut pool = vec![(score(0), 0usize, false)];
         let mut visits = usize::from(PROFILE);
+        let mut fresh = std::mem::take(&mut seen.fresh);
         // Every entry before `cur` is expanded: an insert at or before it moves it back.
         let mut cur = 0;
         loop {
@@ -242,14 +244,19 @@ impl Delta {
                     (self.next_sibling[v as usize] != NONE).then_some(self.next_sibling[v as usize])
                 },
             );
+            // Mark and prefetch every new neighbour first so their rows load concurrently.
+            fresh.clear();
             for u in self.edges[slot].iter().copied().chain(children) {
-                if !seen.insert(u) {
-                    continue;
+                if seen.insert(u) {
+                    prefetch_row(self.row(u as usize, query.len()));
+                    fresh.push(u);
                 }
+            }
+            if PROFILE {
+                visits += fresh.len();
+            }
+            for &u in &fresh {
                 let u = u as usize;
-                if PROFILE {
-                    visits += 1;
-                }
                 let d = score(u);
                 let at = pool.partition_point(|p| p.0.total_cmp(&d).then(p.1.cmp(&u)).is_lt());
                 if at < ef {
@@ -259,6 +266,7 @@ impl Delta {
                 }
             }
         }
+        seen.fresh = fresh;
         let found = pool
             .into_iter()
             .filter_map(|(d, slot, _)| self.alive[slot].then_some((d, self.ids[slot])))
