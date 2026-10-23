@@ -56,6 +56,11 @@ impl<'a> Reader<'a> {
         self.data.len() - self.at
     }
 
+    /// Offset of the next unread byte.
+    pub(crate) fn position(&self) -> usize {
+        self.at
+    }
+
     fn take(&mut self, len: usize) -> Result<&'a [u8]> {
         ensure!(
             len <= self.remaining(),

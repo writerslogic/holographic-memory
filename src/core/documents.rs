@@ -19,16 +19,24 @@ use packed_terms::StoredTerms;
 #[cfg(test)]
 mod census;
 mod dense;
+mod image;
 mod index;
 mod lexical;
 mod listing;
 mod memory;
+mod overlay;
 mod positions;
 mod postings;
 mod search;
 mod text;
 mod vector_index;
 pub(crate) use dense::{build_dense_index, capture_dense_index, publish_dense_index};
+pub(crate) use image::{
+    binding as checkpoint_binding, recorded_crc as checkpoint_crc,
+    representable as checkpoint_representable, Backing, ServingImage,
+    CRC_START as CHECKPOINT_CRC_START, HEADER_LEN as CHECKPOINT_HEADER_LEN,
+    MAGIC as CHECKPOINT_MAGIC,
+};
 pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
 pub(crate) use lexical::execute as execute_lexical;
@@ -36,9 +44,10 @@ pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, Le
 pub use listing::DocumentRecord;
 pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
+pub(crate) use overlay::Base as CheckpointBase;
 pub(crate) use search::{
     capture_search, count_matches, execute_search, prepare_search, rank_search, read_ranked,
-    PreparedSearch,
+    CapturedSearch, PreparedSearch,
 };
 pub(crate) use text::TextSegment;
 pub(crate) use vector_index::{
@@ -1192,6 +1201,32 @@ pub(crate) fn document_fingerprint(
     Some(h)
 }
 
+/// Whether every query in `prepared` ranks from the checkpoint under `store` and the store's
+/// own documents (see `search::overlay_serves`).
+pub(crate) fn overlay_serves(store: &DocumentStore, prepared: &[PreparedSearch]) -> bool {
+    prepared
+        .iter()
+        .all(|query| search::overlay_serves(query, store))
+}
+
+/// [`capture_search`] over the checkpoint under `store` and the store's own documents, for
+/// queries [`overlay_serves`] accepts.
+pub(crate) fn capture_overlaid_search(
+    store: &DocumentStore,
+    prepared: Vec<PreparedSearch>,
+) -> Result<CapturedSearch> {
+    search::capture_overlaid_search(store, prepared)
+}
+
+/// The checkpoint of `store` for the generation whose name has CRC32 `generation`; `None` when
+/// a chunk is not lexical-only or the store would not fit the layout.
+pub(crate) fn encode_checkpoint(
+    store: &DocumentStore,
+    generation: u32,
+    dimensions: usize,
+) -> Result<Option<Vec<u8>>> {
+    image::encode(store, generation, dimensions)
+}
 #[cfg(test)]
 pub(crate) fn search(
     store: &DocumentStore,

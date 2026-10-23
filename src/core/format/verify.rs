@@ -1196,5 +1196,16 @@ fn deep_check(
         );
     }
     report.checks.push("engine open");
+    // A journal checkpoint (`documents.ckpt`) holds the documents of the frames it replaced,
+    // which the replay above never sees; the engine checked it whole when it opened.
+    let checkpointed = std::fs::read_dir(store.join(ARENA_DIRECTORY))
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .any(|entry| entry.path().join("documents.ckpt").is_file());
+    if checkpointed && report.live_documents.is_some() {
+        report.live_documents = Some(core.document_count());
+        report.checks.push("checkpoint");
+    }
     Ok(())
 }

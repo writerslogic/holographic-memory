@@ -67,5 +67,9 @@ atomically replaces `CURRENT`. Old generation directories are removed afterwards
 Frames written after a compaction go to the new generation. Compaction does not change the
 format version, nor the payload format (`HMS-TXN-2` or `HMS-TXN-3`, by `store.json` schema).
 
+In a schema 4 store a generation may begin with a document checkpoint (`documents.ckpt`,
+[CHECKPOINT.md](CHECKPOINT.md)) instead of document frames: the generation's journal is then the
+checkpoint followed by the frames in its segments, and replay starts from the checkpoint.
+
 Compaction frames contain document text inline (it is resolved from the text segment), so a
 compacted journal is self-contained.

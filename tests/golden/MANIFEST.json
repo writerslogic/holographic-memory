@@ -459,6 +459,90 @@
         "8ced5710"
       ]
     },
+    "v4-schema4-checkpoint": {
+      "documents.text": [
+        926,
+        "7ec875f8"
+      ],
+      "golden.json": [
+        3116,
+        "b5bc8eee"
+      ],
+      "indices.json": [
+        130,
+        "ede6341e"
+      ],
+      "store.json": [
+        225,
+        "6848b397"
+      ],
+      "store.json.crc32": [
+        9,
+        "030b05e8"
+      ],
+      "vectors_data.bin/CURRENT": [
+        29,
+        "e2ec862a"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-84142-1792642583904680000/documents.ckpt": [
+        2609,
+        "f538c2af"
+      ],
+      "vectors_data.bin/gen-84142-1792642583904680000/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/gen-84142-1792642583904680000/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-84142-1792642583904680000/seg_0.bin": [
+        16,
+        "22a65e58"
+      ]
+    },
+    "v4-schema4-plain": {
+      "documents.text": [
+        926,
+        "7ec875f8"
+      ],
+      "golden.json": [
+        3415,
+        "2b31eae1"
+      ],
+      "indices.json": [
+        120,
+        "a13c86f6"
+      ],
+      "store.json": [
+        225,
+        "6848b397"
+      ],
+      "store.json.crc32": [
+        9,
+        "030b05e8"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        2952,
+        "51c59725"
+      ]
+    },
     "v4-sharded": {
       "documents.text": [
         926,

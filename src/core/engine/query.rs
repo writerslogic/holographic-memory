@@ -130,7 +130,7 @@ impl HmsCore {
         if before.nsg_training_recommended {
             self.train_nsg()?;
         }
-        let document_training_recommended = self.documents.read().dense_index_recommended();
+        let document_training_recommended = self.documents().dense_index_recommended();
         if document_training_recommended {
             self.train_document_index()?;
         }
@@ -148,9 +148,12 @@ impl HmsCore {
 
     /// Flush persistent vector data to durable storage.
     pub fn flush(&self) -> anyhow::Result<()> {
-        let _transaction = self.mutation_gate.write();
-        self.arena.flush()?;
-        self.persist_indices(&self.shards.read())
+        {
+            let _transaction = self.mutation_gate.write();
+            self.arena.flush()?;
+            self.persist_indices(&self.shards.read())?;
+        }
+        self.checkpoint_if_due()
     }
 
     /// Energy-based associative retrieval using Hopfield-Fenchel-Young dynamics.
