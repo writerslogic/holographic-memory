@@ -1,7 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! The memory model, request validation and the backend trait the tool handlers are written
-//! against. A richer memory API can implement `MemoryBackend` without touching the handlers.
+//! The memory model and request validation the tool handlers are written against.
 
 use serde::Serialize;
 use serde_json::{json, Map, Value};
@@ -145,15 +144,6 @@ pub struct ForgetReq {
 pub struct ForgetOut {
     pub deleted: usize,
     pub missing: Vec<String>,
-}
-
-pub trait MemoryBackend: Send + Sync + 'static {
-    fn remember(&self, namespace: &str, req: RememberReq) -> Res<RememberOut>;
-    fn get(&self, namespace: &str, id: &str) -> Res<Option<Memory>>;
-    fn search(&self, namespace: &str, req: SearchReq) -> Res<Vec<Hit>>;
-    fn list(&self, namespace: &str, req: ListReq) -> Res<Page>;
-    fn forget(&self, namespace: &str, req: ForgetReq) -> Res<ForgetOut>;
-    fn stats(&self, namespace: &str) -> Res<Value>;
 }
 
 pub fn validate_id(id: &str) -> Res<()> {
