@@ -230,9 +230,10 @@ pub struct HugePageStatus {
     pub advised_bytes: u64,
     /// `madvise` calls that failed (each falls back to base pages; nothing else changes).
     pub failed_calls: u64,
-    /// `AnonHugePages` of the whole process from `/proc/self/smaps_rollup`: the huge pages the
-    /// kernel actually backs it with, whoever asked for them. `None` where the file is
-    /// unreadable (outside Linux, or a sandbox without it).
+    /// `AnonHugePages` of the whole process from `/proc/self/smaps_rollup`, whoever asked for
+    /// them (the allocator may hold huge pages of its own). `None` where the file is
+    /// unreadable (outside Linux, or a sandbox without it). [`VGraph::code_rows_huge_bytes`]
+    /// gives the figure for one index's code rows.
     pub anon_huge_bytes: Option<u64>,
 }
 
@@ -251,6 +252,32 @@ pub fn huge_page_status() -> HugePageStatus {
         failed_calls: HUGE_ADVICE_FAILED.load(Ordering::Relaxed),
         anon_huge_bytes,
     }
+}
+
+/// `AnonHugePages` of the mappings of `/proc/self/smaps` that overlap `[ptr, ptr + len)`;
+/// `None` where the file is unreadable. A mapping may hold other allocations too, so this
+/// bounds the huge pages behind the range from above.
+fn huge_bytes_behind(ptr: *const u8, len: usize) -> Option<u64> {
+    let text = std::fs::read_to_string("/proc/self/smaps").ok()?;
+    let (lo, hi) = (ptr as u64, ptr as u64 + len as u64);
+    let mut total = 0u64;
+    let mut inside = false;
+    for line in text.lines() {
+        let head = line.split_whitespace().next().unwrap_or("");
+        if let Some((a, b)) = head.split_once('-') {
+            if let (Ok(a), Ok(b)) = (u64::from_str_radix(a, 16), u64::from_str_radix(b, 16)) {
+                inside = a < hi && lo < b;
+                continue;
+            }
+        }
+        if inside {
+            if let Some(rest) = line.strip_prefix("AnonHugePages:") {
+                let kib: u64 = rest.split_whitespace().next()?.parse().ok()?;
+                total += kib * 1024;
+            }
+        }
+    }
+    Some(total)
 }
 
 /// Asks the kernel to back the 2 MiB-aligned interior of `[ptr, ptr + len)` with transparent
@@ -1426,6 +1453,13 @@ impl VGraph {
 
     pub fn is_empty(&self) -> bool {
         self.n == 0
+    }
+
+    /// Huge pages behind this index's code rows (an upper bound, see the `/proc/self/smaps`
+    /// note on [`huge_page_status`]); `None` where `/proc/self/smaps` is unreadable.
+    pub fn code_rows_huge_bytes(&self) -> Option<u64> {
+        let rows = self.codes.bytes();
+        huge_bytes_behind(rows.as_ptr().cast(), rows.len())
     }
 
     pub fn has_residual(&self) -> bool {
@@ -3334,7 +3368,7 @@ mod tests {
     #[test]
     fn refused_huge_page_advice_changes_nothing_but_the_counter() {
         // Large enough that the code rows span a 2 MiB-aligned interior.
-        let (n, dim) = (20_000, 128);
+        let (n, dim) = (40_000, 128);
         let data = clustered(n, dim, 3);
         let graph = Graph::build(
             &data,

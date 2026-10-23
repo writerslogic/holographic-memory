@@ -950,6 +950,10 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
         Built::Vertex(g) => (g.index_bytes(), g.residual_bytes()),
     };
     eprintln!("built in {build_secs:.1}s, {index_bytes} bytes");
+    let code_rows_huge_bytes = match &index {
+        Built::Vertex(g) => g.code_rows_huge_bytes(),
+        Built::Edge(_) => None,
+    };
     if let (Some(p), Built::Vertex(v)) = (&a.save_index, &index) {
         v.save(p)
             .with_context(|| format!("saving {}", p.display()))?;
@@ -1163,7 +1167,8 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
                   "load_1m_after_build": load_after_build, "load_gate_met": build_gate,
                   "threads": rayon::current_num_threads()},
         "index_bytes": index_bytes,
-        "huge_pages": holographic_memory::core::qgraph::huge_page_status(),
+        "huge_pages": {"process": holographic_memory::core::qgraph::huge_page_status(),
+                       "code_rows_huge_bytes": code_rows_huge_bytes},
         "residual_bytes": residual_bytes,
         "rss_bytes": {"after_build": rss_after_build, "end": rss_end},
         "memory_phases": phases,
