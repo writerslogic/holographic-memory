@@ -237,7 +237,7 @@ mod tests {
     /// `cargo test --release block_scan_microbenchmark -- --ignored --nocapture`; writes
     /// JSON to `$HMS_BLOCK_BENCH_OUT` when set.
     #[test]
-    #[ignore]
+    #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn block_scan_microbenchmark() {
         use super::super::kernels::{dot_i8_inline, prefetch_bytes};
         use std::time::Instant;

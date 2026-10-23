@@ -875,60 +875,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn optimized_popcount_matches_scalar() {
-        let mut rng = SplitMix(7);
+    fn popcount_kernels_match_scalar_at_every_width() {
+        let seed = 7;
+        let mut rng = SplitMix(seed);
         for words in 1..=17 {
             let codes: Vec<u64> = (0..32 * words).map(|_| rng.next_u64()).collect();
             let planes: Vec<u64> = (0..QUERY_BITS * words).map(|_| rng.next_u64()).collect();
             let (mut fast, mut slow) = ([0u32; 32], [0u32; 32]);
             raw_estimates(&codes, &planes, words, &mut fast);
             raw_scalar(&codes, &planes, words, &mut slow);
-            assert_eq!(fast, slow, "words = {words}");
+            assert_eq!(fast, slow, "raw_estimates, words {words}, seed {seed}");
+            for (row, (code, want)) in codes.chunks_exact(words).zip(slow).enumerate() {
+                assert_eq!(
+                    raw_one(code, &planes, words),
+                    want,
+                    "raw_one, row {row}, words {words}, seed {seed}"
+                );
+            }
         }
     }
 
+    /// The dispatched entry points and the float-by-integer dots, including the empty row;
+    /// the raw kernels are covered by `every_integer_kernel_matches_scalar`.
     #[test]
-    fn integer_dot_kernels_match_scalar() {
-        let mut rng = SplitMix(13);
-        let kernels: Vec<DotI8> = {
-            #[cfg(target_arch = "aarch64")]
-            {
-                let mut k: Vec<DotI8> = vec![neon::dot_i8];
-                if std::arch::is_aarch64_feature_detected!("dotprod") {
-                    k.push(neon::dot_i8_sdot);
-                }
-                k
-            }
-            #[cfg(not(target_arch = "aarch64"))]
-            vec![dot_i8_kernel()]
-        };
+    fn dispatched_and_float_dots_match_scalar() {
+        let seed = 13;
+        let mut rng = SplitMix(seed);
         for len in (0..=96).step_by(16) {
-            let a: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
-            let mut b: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
-            if len > 0 {
-                b[0] = -128;
+            let a = random_i8(&mut rng, len);
+            let mut b = random_i8(&mut rng, len);
+            if let Some(first) = b.first_mut() {
+                *first = -128;
             }
             let want = dot_i8_scalar(&a, &b);
-            for k in &kernels {
-                assert_eq!(k(&a, &b), want, "len = {len}");
-            }
-            assert_eq!(dot_i8_inline(&a, &b), want, "len = {len}");
+            assert_eq!(dot_i8_inline(&a, &b), want, "len {len}, seed {seed}");
             let af: Vec<f32> = a.iter().map(|&x| f32::from(x)).collect();
-            assert_eq!(dot_f32_i8(&af, &b), want as f32);
+            assert_eq!(dot_f32_i8(&af, &b), want as f32, "len {len}, seed {seed}");
             let nib: Vec<i8> = b.iter().map(|&x| x >> 4).collect();
-            let packed: Vec<i8> = nib
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|p| ((p[0] as u8 & 0x0F) | ((p[1] as u8) << 4)) as i8)
-                .collect();
-            assert_eq!(dot_f32_i4(&af, &packed), dot_i8_scalar(&a, &nib) as f32);
+            let packed = pack_nibbles(&b);
+            let want4 = dot_i8_scalar(&a, &nib);
+            assert_eq!(
+                dot_f32_i4(&af, &packed),
+                want4 as f32,
+                "len {len}, seed {seed}"
+            );
             if len % 32 == 0 {
                 let mut qi = vec![0i8; len];
                 interleave_for_i4(&a, &mut qi);
-                let want4 = dot_i8_scalar(&a, &nib);
-                assert_eq!(dot_i4_scalar(&qi, &packed), want4, "len = {len}");
-                assert_eq!(dot_i4_inline(&qi, &packed), want4, "len = {len}");
+                assert_eq!(dot_i4_scalar(&qi, &packed), want4, "len {len}, seed {seed}");
+                assert_eq!(dot_i4_inline(&qi, &packed), want4, "len {len}, seed {seed}");
             }
         }
     }
@@ -976,23 +971,6 @@ mod tests {
         assert!((approx - exact).abs() <= qc.delta / 2.0 * pop + 1e-4);
     }
 
-    #[test]
-    fn raw_one_matches_scalar_at_every_width() {
-        let mut rng = SplitMix(21);
-        for words in [1usize, 2, 3, 4, 8, 16] {
-            let x: Vec<f32> = (0..64 * words).map(|_| rng.next_f32() - 0.5).collect();
-            let mut qc = QueryCode::new(words);
-            qc.encode(&x);
-            for _ in 0..8 {
-                let code: Vec<u64> = (0..words).map(|_| rng.next_u64()).collect();
-                assert_eq!(
-                    raw_one(&code, &qc.planes, words),
-                    raw_one_scalar(&code, &qc.planes, words)
-                );
-            }
-        }
-    }
-
     /// Kill test for the 1-bit screen (experiment E2): per neighbour,
     /// the screen must cost < 25% of the 8-bit SDOT estimate on a nytimes-sized working set
     /// (300k rows, 256 dims: 256-byte code rows, 40-byte screen rows) with the search loop's
@@ -1000,7 +978,7 @@ mod tests {
     /// `cargo test --release raw_screen_microbenchmark -- --ignored --nocapture`; writes JSON
     /// to `$HMS_SCREEN_BENCH_OUT` when set.
     #[test]
-    #[ignore]
+    #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn raw_screen_microbenchmark() {
         use std::time::Instant;
         const N: usize = 300_000;
@@ -1251,7 +1229,7 @@ mod tests {
     /// `cargo test --release dot_kernel_microbench -- --ignored --nocapture`; writes JSON to
     /// `$HMS_PLATFORM_BENCH_OUT` when set.
     #[test]
-    #[ignore]
+    #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn dot_kernel_microbench() {
         use std::time::Instant;
         const COLD_ROWS: usize = 400_000;

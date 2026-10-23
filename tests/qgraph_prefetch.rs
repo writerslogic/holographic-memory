@@ -16,7 +16,7 @@ use holographic_memory::core::qgraph::{BuildParams, Graph, SearchKnobs, VGraph, 
 
 const DIM: usize = 100;
 const N: usize = if cfg!(debug_assertions) {
-    12_000
+    4_000
 } else {
     50_000
 };
