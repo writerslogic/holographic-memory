@@ -221,10 +221,8 @@ impl Shard {
                 }
             }
             router::IndexRoute::Hopfield => {
-                let patterns: Vec<(String, EntangledHVec)> = vectors
-                    .iter()
-                    .map(|(id, vec)| (id.clone(), vec.clone()))
-                    .collect();
+                let patterns: Vec<(&str, &EntangledHVec)> =
+                    vectors.iter().map(|(id, vec)| (id.as_str(), vec)).collect();
                 let config = HopfieldConfig::default();
                 let results = hopfield_query(query_vec, &patterns, &config, k as usize);
                 if !results.is_empty() {
@@ -496,6 +494,21 @@ impl ShardSet {
         patterns
     }
 
+    /// Calls `f` with every stored pattern borrowed in place, in `collect_all_patterns`
+    /// order (shard order, then each shard's map order), with every shard's vectors read
+    /// lock held for the call.
+    pub fn with_patterns<R>(&self, f: impl FnOnce(&[(&str, &EntangledHVec)]) -> R) -> R {
+        let guards: Vec<_> = match self {
+            ShardSet::Single(shard) => vec![shard.vectors.read()],
+            ShardSet::Multi(mgr) => mgr.shards.iter().map(|s| s.vectors.read()).collect(),
+        };
+        let mut patterns = Vec::with_capacity(guards.iter().map(|g| g.len()).sum());
+        for vectors in &guards {
+            patterns.extend(vectors.iter().map(|(id, vec)| (id.as_str(), vec)));
+        }
+        f(&patterns)
+    }
+
     pub fn try_for_each_shard<F: FnMut(&Shard) -> Result<()>>(&self, mut f: F) -> Result<()> {
         match self {
             ShardSet::Single(shard) => f(shard),
@@ -531,5 +544,66 @@ impl ShardSet {
                 Ok(())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fingerprint(results: &[RetrievalResult]) -> Vec<(String, u64)> {
+        results
+            .iter()
+            .map(|r| (r.id.clone(), r.similarity.to_bits()))
+            .collect()
+    }
+
+    /// Borrowing the stored patterns ranks exactly as the owned snapshot does, ties included:
+    /// same ids, same order, same weight bits, for every entmax family and the iterative rule.
+    #[test]
+    fn borrowed_patterns_rank_as_the_owned_snapshot() -> Result<()> {
+        let dim = 2048;
+        for set in [
+            ShardSet::Single(Box::new(Shard::new(dim))),
+            ShardSet::Multi(ShardManager::new(4, dim)),
+        ] {
+            for i in 0..300u64 {
+                // Every fifth pattern repeats an earlier vector under a new id, so weights tie.
+                let seed = if i % 5 == 4 { i - 4 } else { i };
+                set.insert(
+                    format!("p{i}"),
+                    EntangledHVec::new_deterministic(dim, seed),
+                    dim,
+                )?;
+            }
+            let owned = set.collect_all_patterns();
+            for (alpha, beta, max_iter) in [
+                (1.0, 40.0, 1),
+                (1.5, 60.0, 1),
+                (2.0, 100.0, 1),
+                (2.0, 100.0, 3),
+                (1.5, 30.0, 4),
+            ] {
+                let config = HopfieldConfig {
+                    beta,
+                    alpha,
+                    max_iter,
+                };
+                for seed in [0u64, 8, 9, 151, 9_999] {
+                    let query = EntangledHVec::new_deterministic(dim, seed);
+                    let expected = crate::core::hopfield::hopfield_query_iterative(
+                        &query, &owned, &config, 50,
+                    );
+                    let borrowed = set.with_patterns(|patterns| {
+                        crate::core::hopfield::hopfield_query_iterative(
+                            &query, patterns, &config, 50,
+                        )
+                    });
+                    assert!(!expected.is_empty());
+                    assert_eq!(fingerprint(&expected), fingerprint(&borrowed));
+                }
+            }
+        }
+        Ok(())
     }
 }
