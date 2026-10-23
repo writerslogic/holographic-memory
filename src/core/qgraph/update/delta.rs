@@ -95,13 +95,15 @@ impl Delta {
                 codes: None,
                 quantized: false,
             };
-            let candidates = rows.greedy(
-                &self.edges,
-                0,
-                slot as u32,
-                params.build_ef,
-                &mut BuildVisited::default(),
-            );
+            let candidates = SEEN.with(|seen| {
+                rows.greedy(
+                    &self.edges,
+                    0,
+                    slot as u32,
+                    params.build_ef,
+                    &mut seen.borrow_mut(),
+                )
+            });
             let neighbors = rows.prune(slot as u32, candidates, params.alpha, params.degree);
             // A rooted routing tree keeps every slot reachable when reciprocal pruning
             // removes its last incoming graph edge. Tree edges survive logical deletion.
