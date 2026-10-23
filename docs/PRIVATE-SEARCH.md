@@ -237,7 +237,7 @@ configuration (9.4 million scores at `N = 10^6, C = 64, P = 16`). For context, r
 the exact f32 neighbours is also given; the 4:4 codes' own exhaustive ranking reaches 0.738 at
 `N = 10^6`.
 
-Timing: writerslogic-02 (Intel Core Ultra 9 185H, Linux, AVX2, 22 rayon threads), release build,
+Timing: Intel Core Ultra 9 185H ( Linux, AVX2, 22 rayon threads), release build,
 Rust 1.99.1, 2 warm-up and 30 timed queries per configuration, one run. Server time covers all
 `P` probes of one query, batched eight to a pass over the database; nothing is batched across
 queries. The tables are the `n = 1280` runs. In the same locked session the `n = 1024` build of

@@ -212,7 +212,7 @@ construction. The default wrapper does **not** rotate traversal vectors; the
 earlier wrapper description was incorrect. A rotation or 8-bit ablation is a
 separate experiment and must be identified as such.
 
-`writerslogic-02` is an Intel Core Ultra 9 185H under WSL2 with AVX2 and no AVX-512.
+The benchmark host is an Intel Core Ultra 9 185H under WSL2 with AVX2 and no AVX-512.
 PAG's pinned release `ee34ed78b7a28225b2db6210ad942152e1cd540d`
 [requires its AVX-512 backend](https://github.com/KejingLu-810/PAG/blob/ee34ed78b7a28225b2db6210ad942152e1cd540d/cmake/PAGCompilerOptions.cmake).
 An AVX-512 host is required for an honest direct PAG comparison. The HMS Python
@@ -220,8 +220,7 @@ adapter serves all four VIBE float distances: cosine and normalized by angle,
 euclidean directly, and ip through the exact inner-product-to-Euclidean reduction
 (one appended coordinate per row).
 
-Modal is not authorized for this work. Continue on `writerslogic-02`; PAG stays
-unmeasured unless the user supplies another authorized AVX-512 host.
+PAG requires AVX-512, which this host lacks, so it stays unmeasured here.
 
 The completed local experiment uses encoding-only rotation on each cached graph,
 using the existing three-round signed Walsh-Hadamard transform with fixed seed

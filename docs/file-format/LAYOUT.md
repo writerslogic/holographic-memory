@@ -77,5 +77,5 @@ symlink. Without `CURRENT` the live segments are in `vectors_data.bin/` itself.
    recreate `documents.text`; replay the journal; load index caches if fresh
 
 So opening modifies: the lock file, `documents.text`, the end of the active segment, and the
-manifest/schema when missing. `tests/format_open.rs` pins this list; a refused open modifies
+manifest/schema when missing. `open_changes_only_what_the_spec_lists` in `tests/format_layout.rs` pins this list; a refused open modifies
 nothing but the lock file.

@@ -1,6 +1,6 @@
 # ann-benchmarks harness, single core
 
-These results come from running HMS and its competitors through the [ann-benchmarks](https://github.com/erikbern/ann-benchmarks) runner (commit `2e081ad`) on writerslogic-02, an Intel Core Ultra 9 185H under WSL2 with AVX2 and no AVX-512. Each run is pinned to one CPU, for the index build and for every query. HMS is commit `19f4371`, using the wrapper in [`benchmarks/ann-benchmarks/hms`](../../benchmarks/ann-benchmarks/hms). The results file [`ann_benchmarks_harness_wl02_v1.json`](../../benchmarks/results/ann_benchmarks_harness_wl02_v1.json) has every point, each competitor's version, and each deviation from upstream's docker runner. The main deviations are:
+These results come from running HMS and its competitors through the [ann-benchmarks](https://github.com/erikbern/ann-benchmarks) runner (commit `2e081ad`) on an Intel Core Ultra 9 185H under WSL2 with AVX2 and no AVX-512. Each run is pinned to one CPU, for the index build and for every query. HMS is commit `19f4371`, using the wrapper in [`benchmarks/ann-benchmarks/hms`](../../benchmarks/ann-benchmarks/hms). The results file [`ann_benchmarks_harness_wl02_v1.json`](../../benchmarks/results/ann_benchmarks_harness_wl02_v1.json) has every point, each competitor's version, and each deviation from upstream's docker runner. The main deviations are:
 
 - `--local` with `taskset` replaces docker;
 - `--runs 2`;
