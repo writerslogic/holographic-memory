@@ -1658,6 +1658,18 @@ mod tests {
                 );
             }
         }
+        // Counts agree: a zero-frequency posting is no match, through the multichunk bitmap
+        // and through the one-chunk-per-document shortcut.
+        assert_eq!(count_matches(&store, "ghost").unwrap(), 0);
+        assert_eq!(count_matches(&store, "ghost common").unwrap(), 1);
+        let mut single = DocumentStore::default();
+        // `document` names the moved local here; the helper is reached by path.
+        let mut document = self::document(1, 1);
+        document.chunks.truncate(1);
+        document.chunks[0].terms.insert("ghost".into(), 0);
+        single.insert(document.id.clone(), document);
+        assert_eq!(count_matches(&single, "ghost").unwrap(), 0);
+        assert_eq!(count_matches(&single, "ghost common").unwrap(), 1);
     }
 
     #[test]

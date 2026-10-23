@@ -361,7 +361,7 @@ fn exhaustive(
     })
 }
 
-mod execution;
+pub(super) mod execution;
 mod wand;
 use execution::document_at_a_time;
 

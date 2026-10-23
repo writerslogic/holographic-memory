@@ -185,37 +185,16 @@ pub(crate) fn prepare_search(
     })
 }
 
-/// The number of documents with at least one chunk containing a term of `text`, in either
-/// stored form: the documents an unfiltered lexical search scores above zero.
+/// The number of documents with at least one chunk containing a term of `text` at a positive
+/// frequency, in either stored form: the documents an unfiltered lexical search scores above
+/// zero.
 pub(crate) fn count_matches(store: &DocumentStore, text: &str) -> Result<usize> {
     ensure!(text.len() <= MAX_DOCUMENT_BYTES, "query exceeds 8 MiB");
-    let mut matched = vec![0u64; store.slot_count.div_ceil(64)];
-    for (form, terms) in [terms(text, false), terms(text, true)].iter().enumerate() {
-        for word in terms.keys() {
-            if let Some(list) = store.postings[form].get(word) {
-                list.for_each(|slot, _| matched[slot / 64] |= 1 << (slot % 64));
-            }
-        }
-    }
-    let is_matched = |slot: usize| matched[slot / 64] & (1 << (slot % 64)) != 0;
-    let mut count = 0;
-    for (word, &bits) in matched.iter().enumerate() {
-        let mut bits = bits;
-        while bits != 0 {
-            let slot = word * 64 + bits.trailing_zeros() as usize;
-            bits &= bits - 1;
-            // A document counts once, at the first of its chunks that matches.
-            let (document, chunk) = store.slot_order(slot);
-            if chunk == 0
-                || !store.slots[document][..chunk]
-                    .iter()
-                    .any(|&s| is_matched(s))
-            {
-                count += 1;
-            }
-        }
-    }
-    Ok(count)
+    let terms = [terms(text, false), terms(text, true)];
+    Ok(super::lexical::execution::count_terms(
+        store,
+        std::array::from_fn(|form| terms[form].keys().map(String::as_str).collect()),
+    ))
 }
 
 pub(crate) fn capture_search(
@@ -1175,7 +1154,7 @@ mod tests {
                 let (ranked, exhaustive) = ranked_and_exhaustive(store, text, &all);
                 assert_eq!(ranked, exhaustive, "{text:?} k1 {k1:?} b {b:?}");
                 let matched = exhaustive.as_array().unwrap().len() as u32;
-                for limit in [matched.saturating_sub(1), matched, matched + 1] {
+                for limit in [1, 2, 5, matched.saturating_sub(1), matched, matched + 1] {
                     let limit = limit.max(1);
                     for (k, fusion) in [(limit.min(1000), "blend"), (limit.min(3), "rrf")] {
                         let options = SearchOptions {
@@ -1274,6 +1253,71 @@ mod tests {
         }
         assert_ne!(large.identity, identity, "registry rebuilt");
         assert_ranked_matches_exhaustive(&large);
+    }
+
+    proptest::proptest! {
+        #![proptest_config(proptest::prelude::ProptestConfig::with_cases(32))]
+        /// The ranked capture returns what the exhaustive capture returns, bit for bit, and
+        /// counts agree with the chunks, at limits far below the posting count, before and
+        /// after deletes, replacements and slot reuse.
+        #[test]
+        fn ranking_and_counts_match_exhaustive_under_churn(
+            seed in proptest::prelude::any::<u64>(),
+            documents in 20usize..90,
+            limit in 1u32..9,
+            churn in 2usize..9,
+        ) {
+            let mut state = seed | 1;
+            let mut store = DocumentStore::default();
+            for id in 0..documents {
+                let document = random_document(id, &mut state);
+                store.insert(document.id.clone(), document);
+            }
+            let check = |store: &DocumentStore| {
+                for text in ["gamma", "alpha beta", "ran shared ghost", "running runs alpha delta"] {
+                    let options = SearchOptions {
+                        k: Some(limit.min(3)),
+                        candidate_limit: Some(limit),
+                        ..Default::default()
+                    };
+                    let (ranked, exhaustive) = ranked_and_exhaustive(store, text, &options);
+                    assert_eq!(ranked, exhaustive, "{text:?} limit {limit}");
+                    let matched = matching_documents(store, text);
+                    assert_eq!(count_matches(store, text).unwrap(), matched, "{text:?}");
+                }
+            };
+            check(&store);
+            for id in (0..documents).step_by(churn) {
+                store.remove(&format!("d{id:04}"));
+            }
+            check(&store);
+            for id in (1..documents).step_by(churn + 1) {
+                let mut document = random_document(id + documents, &mut state);
+                document.id = format!("d{id:04}");
+                for (index, chunk) in document.chunks.iter_mut().enumerate() {
+                    chunk.id = format!("{}{}:d{id:04}:{index}", super::super::CHUNK_PREFIX, 5);
+                }
+                store.insert(document.id.clone(), document);
+            }
+            check(&store);
+        }
+    }
+
+    /// Documents with a chunk holding a term of `text` at a positive frequency, read from the
+    /// chunks themselves.
+    fn matching_documents(store: &DocumentStore, text: &str) -> usize {
+        let terms = [terms(text, false), terms(text, true)];
+        store
+            .documents
+            .values()
+            .filter(|document| {
+                document.chunks.iter().any(|chunk| {
+                    terms[usize::from(chunk.stemmed)]
+                        .keys()
+                        .any(|word| chunk.terms.get(word).is_some_and(|&f| f > 0))
+                })
+            })
+            .count()
     }
 
     #[test]
