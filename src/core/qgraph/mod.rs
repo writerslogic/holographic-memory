@@ -168,9 +168,11 @@ struct Candidate {
     done: bool,
 }
 
+/// Visited marks with an 8-bit epoch, as the vertex index keeps them: a quarter of the cache
+/// footprint of `u32` epochs, at the cost of clearing every 255 searches.
 struct Visited {
-    marks: Vec<u32>,
-    epoch: u32,
+    marks: Vec<u8>,
+    epoch: u8,
 }
 
 impl Visited {
