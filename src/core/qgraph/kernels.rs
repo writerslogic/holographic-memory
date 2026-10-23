@@ -84,6 +84,28 @@ where
     T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
 {
     let mut h = 1;
+    if x.len() >= 8 {
+        // Stages 1, 2 and 4 on each block of eight in registers: the same butterflies in the
+        // same order as the loop below, without its one-, two- and four-wide inner loops.
+        for b in x.as_chunks_mut::<8>().0 {
+            let [a0, a1, a2, a3, a4, a5, a6, a7] = *b;
+            let (b0, b1, b2, b3) = (a0 + a1, a0 - a1, a2 + a3, a2 - a3);
+            let (b4, b5, b6, b7) = (a4 + a5, a4 - a5, a6 + a7, a6 - a7);
+            let (c0, c2, c1, c3) = (b0 + b2, b0 - b2, b1 + b3, b1 - b3);
+            let (c4, c6, c5, c7) = (b4 + b6, b4 - b6, b5 + b7, b5 - b7);
+            *b = [
+                c0 + c4,
+                c1 + c5,
+                c2 + c6,
+                c3 + c7,
+                c0 - c4,
+                c1 - c5,
+                c2 - c6,
+                c3 - c7,
+            ];
+        }
+        h = 8;
+    }
     while h < x.len() {
         for chunk in x.chunks_exact_mut(2 * h) {
             let (a, b) = chunk.split_at_mut(h);
@@ -1026,6 +1048,86 @@ pub(crate) fn as_u32_mut(w: &mut [u64]) -> &mut [u32] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The transform before its first three stages were fused.
+    fn fwht_reference(x: &mut [f32]) {
+        let mut h = 1;
+        while h < x.len() {
+            for chunk in x.chunks_exact_mut(2 * h) {
+                let (a, b) = chunk.split_at_mut(h);
+                for (u, v) in a.iter_mut().zip(b.iter_mut()) {
+                    let t = *u;
+                    *u = t + *v;
+                    *v = t - *v;
+                }
+            }
+            h *= 2;
+        }
+    }
+
+    #[test]
+    fn fused_fwht_returns_the_reference_bits_at_every_size() {
+        let mut rng = SplitMix(3);
+        for log in 0..=12 {
+            let n = 1usize << log;
+            for _ in 0..4 {
+                let x: Vec<f32> = (0..n).map(|_| rng.next_f32() * 2.0 - 1.0).collect();
+                let (mut a, mut b) = (x.clone(), x);
+                fwht(&mut a);
+                fwht_reference(&mut b);
+                let bits = |v: &[f32]| v.iter().map(|f| f.to_bits()).collect::<Vec<_>>();
+                assert_eq!(bits(&a), bits(&b), "n {n}");
+            }
+        }
+        // The integer instantiation too.
+        let mut a: Vec<i64> = (0..64).map(|i| i * 7 - 200).collect();
+        let mut b = a.clone();
+        fwht(&mut a);
+        let mut h = 1;
+        while h < b.len() {
+            for chunk in b.chunks_exact_mut(2 * h) {
+                let (l, r) = chunk.split_at_mut(h);
+                for (u, v) in l.iter_mut().zip(r.iter_mut()) {
+                    let t = *u;
+                    *u = t + *v;
+                    *v = t - *v;
+                }
+            }
+            h *= 2;
+        }
+        assert_eq!(a, b);
+    }
+
+    /// Development microbenchmark (`--ignored`): ns per transform, fused against reference.
+    #[test]
+    #[ignore]
+    fn microbench_fwht() {
+        use std::hint::black_box;
+        use std::time::Instant;
+        for n in [64usize, 128, 256, 1024] {
+            let mut x: Vec<f32> = (0..n).map(|i| (i as f32).sin()).collect();
+            let reps = 200_000_000 / (n * n.trailing_zeros() as usize);
+            let mut best = [f64::INFINITY; 2];
+            for _ in 0..5 {
+                for (k, b) in best.iter_mut().enumerate() {
+                    let t = Instant::now();
+                    for _ in 0..reps {
+                        if k == 0 {
+                            fwht(black_box(&mut x));
+                        } else {
+                            fwht_reference(black_box(&mut x));
+                        }
+                        x[0] = 0.5;
+                    }
+                    *b = b.min(t.elapsed().as_nanos() as f64 / reps as f64);
+                }
+            }
+            println!(
+                "{{\"n\": {n}, \"fused_ns\": {:.1}, \"reference_ns\": {:.1}}}",
+                best[0], best[1]
+            );
+        }
+    }
 
     #[test]
     fn popcount_kernels_match_scalar_at_every_width() {
