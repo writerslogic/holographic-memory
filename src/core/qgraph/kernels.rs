@@ -194,6 +194,10 @@ pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
     {
         let mut out = [0u32; 1];
         match words {
+            1 => {
+                neon::raw::<1>(code, planes, &mut out);
+                return out[0];
+            }
             2 => {
                 neon::raw::<2>(code, planes, &mut out);
                 return out[0];
