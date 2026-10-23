@@ -399,6 +399,8 @@ pub fn migrate_store(
     let result = (|| -> Result<StoreInspection> {
         copy_tree(source, &temp)?;
         let inspection = inspect_store(&temp, true)?;
+        // `copy_tree` synced every file and directory of the copy, so only the rename and
+        // the parent entry remain to be made durable.
         std::fs::rename(&temp, destination).with_context(|| {
             format!(
                 "failed to atomically publish migration {} -> {}",
@@ -406,6 +408,7 @@ pub fn migrate_store(
                 destination.display()
             )
         })?;
+        super::durable_file::sync_directory(parent)?;
         Ok(StoreInspection {
             store_path: destination.display().to_string(),
             ..inspection
@@ -435,11 +438,12 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
         } else if file_type.is_file() {
             std::fs::copy(entry.path(), &target)?;
             std::fs::set_permissions(&target, entry.metadata()?.permissions())?;
+            std::fs::File::open(&target)?.sync_all()?;
         } else {
             bail!("migration refuses special file {}", entry.path().display());
         }
     }
-    Ok(())
+    super::durable_file::sync_directory(destination)
 }
 
 /// Re-encode original JSONL source documents into a new, atomically published store.

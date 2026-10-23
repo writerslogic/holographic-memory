@@ -612,6 +612,9 @@ fn copy_tree(source: &Path, destination: &Path) -> ApiResult<()> {
             copy_tree(&entry.path(), &target)?;
         } else if kind.is_file() {
             std::fs::copy(entry.path(), &target).map_err(|e| io(e, &entry.path()))?;
+            std::fs::File::open(&target)
+                .and_then(|file| file.sync_all())
+                .map_err(|e| io(e, &target))?;
         } else {
             return Err(ApiError::new(
                 HMS_ERR_INVALID_ARGUMENT,
@@ -622,7 +625,9 @@ fn copy_tree(source: &Path, destination: &Path) -> ApiResult<()> {
             ));
         }
     }
-    Ok(())
+    std::fs::File::open(destination)
+        .and_then(|dir| dir.sync_all())
+        .map_err(|e| io(e, destination))
 }
 
 /// Write a verified point-in-time copy of the store to the new directory `destination`,
@@ -693,6 +698,7 @@ pub unsafe extern "C" fn hms1_store_snapshot(
                 ApiError::new(HMS_ERR_INVALID_ARGUMENT, "destination has no name")
             })?;
             std::fs::rename(&temporary, parent.join(name))
+                .and_then(|()| std::fs::File::open(&parent)?.sync_all())
                 .map_err(|e| ApiError::new(HMS_ERR_IO, format!("publishing snapshot: {e}")))
         })();
         if result.is_err() && temporary.exists() {
