@@ -1604,8 +1604,9 @@ impl VGraph {
             loop {
                 let mut moved = false;
                 for &u in &layer[p as usize] {
-                    let d = self.est(qc, self.upper_ids[u as usize], w);
-                    reservoir.offer(key(d, self.upper_ids[u as usize]));
+                    let id = self.upper_ids[u as usize];
+                    let d = self.est(qc, id, w);
+                    reservoir.offer(key(d, id));
                     evals += 1;
                     if d < best {
                         best = d;
