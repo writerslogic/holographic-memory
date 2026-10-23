@@ -22,7 +22,9 @@ use rayon::prelude::*;
 use super::{
     bfs_order, code_at, put_varint, quantize, quantize4, zigzag, Graph, GraphView, VertexLayout,
 };
-use super::{block_record_bytes, get_varint, unzigzag, Line, Lines, Metric, Rotation, VGraph};
+use super::{
+    block_record_bytes, get_varint, unzigzag, Line, Lines, Metric, Rotation, VGraph, VMetric,
+};
 use super::{BLOCK, BLOCK_SEED, NONE, NONE3, SCREEN_SEED};
 
 /// Element types an index array may hold.
@@ -316,12 +318,8 @@ impl VGraph {
     }
 
     /// The metric the index orders by.
-    pub fn metric(&self) -> Metric {
-        if self.half_norms.is_empty() {
-            Metric::Angular
-        } else {
-            Metric::Euclidean
-        }
+    pub fn metric(&self) -> VMetric {
+        self.metric
     }
 
     /// Writes the index for [`VGraph::open`]: to a temporary file next to `path`, synced, then
@@ -520,7 +518,13 @@ impl VGraph {
         let stride = small(6, 1 << 24, "row stride")?;
         let id_bytes = small(7, 4, "id width")?;
         let entry = small(8, u64::from(NONE), "entry")?;
-        let euclidean = small(9, 1, "metric")? == 1;
+        let metric = match small(9, 2, "metric")? {
+            0 => VMetric::Angular,
+            1 => VMetric::Euclidean,
+            2 => VMetric::InnerProduct,
+            _ => unreachable!(),
+        };
+        let euclidean = metric == VMetric::Euclidean;
         let screen_words = small(10, 1 << 20, "screen words")?;
         let screen_sigma = f32::from_bits(h[11] as u32);
         let block_bits = small(12, 4, "block bits")? as u8;
@@ -560,14 +564,14 @@ impl VGraph {
         };
         let screen_rot = (screen_words > 0).then(|| Rotation::new(dim, 0, SCREEN_SEED));
         if let Some(rot) = &screen_rot {
-            if euclidean || screen_words != rot.padded() / 64 {
+            if metric != VMetric::Angular || screen_words != rot.padded() / 64 {
                 return Err(bad("screen shape does not match the dimension".into()));
             }
         }
         let block_rot = (block_bits > 0).then(|| Rotation::new(dim, 0, BLOCK_SEED));
         let record = match &block_rot {
             Some(rot) => {
-                if euclidean
+                if metric != VMetric::Angular
                     || !matches!(block_bits, 1 | 2 | 4)
                     || block_dim != rot.padded()
                     || block_m != block_dim * usize::from(block_bits) / 4
@@ -686,6 +690,7 @@ impl VGraph {
         Ok(Self {
             n,
             dim,
+            metric,
             padded,
             bits,
             cbytes,
@@ -1072,7 +1077,7 @@ fn delta_lists_ok(adjv: &[u8], off: &[u32], n: usize, degree: usize) -> bool {
 mod tests {
     use super::*;
     use crate::core::qgraph::tests::clustered;
-    use crate::core::qgraph::{BuildParams, Graph, VSearchParams};
+    use crate::core::qgraph::{BuildParams, Graph, Metric, VSearchParams};
 
     /// Small indexes covering every array the file holds: both metrics, 4- and 8-bit codes,
     /// residuals 0/4/8, ids 4/3/delta, reordering, aligned rows, the screen and blocks.
@@ -1109,6 +1114,17 @@ mod tests {
                     .and_then(|v| v.with_blocks(&g, 2))
                     .expect("encode");
                 out.push(("angular blocks".into(), v, queries.clone()));
+            } else {
+                for (bits, id_bytes) in [(4, 0), (8, 3), (8, 4)] {
+                    let v = VGraph::from_lifted_ip_graph(&g, bits, 8, true, true, id_bytes)
+                        .expect("encode direct IP");
+                    let mut probes: Vec<f32> = queries
+                        .chunks_exact(d)
+                        .flat_map(|q| q[..d - 1].iter().copied())
+                        .collect();
+                    probes.extend(vec![0.0; d - 1]);
+                    out.push((format!("direct IP b{bits} i{id_bytes}"), v, probes));
+                }
             }
         }
         out
@@ -1118,10 +1134,14 @@ mod tests {
         let (mut sa, mut sb) = (a.searcher(), b.searcher());
         let (mut oa, mut ob) = (Vec::new(), Vec::new());
         for q in queries.chunks_exact(a.dim()) {
-            for (ef, rerank) in [(16, 0), (48, 20)] {
+            for (ef, rerank, reservoir) in [(16, 0, 0), (48, 20, 0), (16, 40, 40)] {
+                if reservoir > 0 && (a.has_screen() || a.has_blocks()) {
+                    continue;
+                }
                 let p = VSearchParams {
                     ef,
                     rerank,
+                    reservoir,
                     ..VSearchParams::default()
                 };
                 let ea = sa.search(q, 10, p, &mut oa).expect("search");

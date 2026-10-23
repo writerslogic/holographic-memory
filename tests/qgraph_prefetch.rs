@@ -168,11 +168,7 @@ fn params(ef: usize, rerank: usize) -> VSearchParams {
     VSearchParams {
         ef,
         rerank,
-        patience: 0,
-        screen_sigmas: 1.0,
-        screen: true,
-        fuse: false,
-        neighbour_cap: 0,
+        ..VSearchParams::default()
     }
 }
 

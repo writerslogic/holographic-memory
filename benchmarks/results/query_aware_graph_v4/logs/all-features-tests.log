@@ -1,0 +1,1833 @@
+    Finished `test` profile [optimized] target(s) in 0.27s
+     Running unittests src/lib.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/holographic_memory-84ffa46cfe0633fa)
+
+running 755 tests
+test core::admission::tests::test_admission_algebraic ... ok
+test core::admission::tests::test_admission_zero ... ok
+test core::admission::tests::test_admission_materialized ... ok
+test core::agency::goals::tests::test_empty_store ... ok
+test core::agency::goals::tests::test_prioritized_ordering ... ok
+test core::agency::goals::tests::test_add_get ... ok
+test core::agency::goals::tests::test_deactivate ... ok
+test core::agency::goals::tests::test_goal_relevance ... ok
+test core::agency::goals::tests::test_utility_scoring ... ok
+test core::agency::goals::tests::test_utility_clamps_cost ... ok
+test core::agency::planner::tests::test_all_relations ... ok
+test core::agency::planner::tests::test_best_first_ordering ... ok
+test core::agency::planner::tests::test_no_causal_chain ... ok
+test core::agency::planner::tests::test_depth_limit ... ok
+test core::agency::planner::tests::test_cycle_prevention ... ok
+test core::agency::planner::tests::test_empty_store ... ok
+test core::agency::planner::tests::test_cost_estimation ... ok
+test core::agency::planner::tests::test_simple_backward_chain ... ok
+test core::agency::self_modify::tests::test_cannot_apply_without_approval ... ok
+test core::agency::questions::tests::test_from_gaps ... ok
+test core::agency::self_modify::tests::test_multiple_proposals ... ok
+test core::agency::self_modify::tests::test_empty ... ok
+test core::agency::self_modify::tests::test_propose_approve_apply ... ok
+test core::agency::self_modify::tests::test_reject ... ok
+test core::algebraic_codebook::tests::packed_odd_rows_preserve_nibble_boundaries ... ok
+test core::algebra::tests::test_entangled_hvec_satisfies_contract ... ok
+test core::audit::tests::test_audit_entry_roundtrip ... ok
+test core::agency::questions::tests::test_prioritize ... ok
+test core::agency::self_modify::tests::test_audit_trail ... ok
+test core::algebraic_codebook::tests::stored_packed_and_regenerated_codes_have_identical_scores ... ok
+test core::agency::questions::tests::test_no_goals_zero_relevance ... ok
+test core::block_codes::tests::test_default_config ... ok
+test core::block_codes::tests::test_block_code_bind_unbind ... ok
+test core::block_codes::tests::test_block_code_bundle_small ... ok
+test core::block_codes::tests::test_block_code_random_similarity ... ok
+test core::agency::questions::tests::test_from_hypotheses ... ok
+test core::algebraic_codebook::tests::dimensions_labels_and_readout_are_bounded_before_allocation ... ok
+test core::block_codes::tests::test_block_code_self_similarity ... ok
+test core::block_codes::tests::test_block_code_bundle_capacity ... ok
+test core::atom_memory::tests::test_atom_get_or_insert ... ok
+test core::bloom_memory::tests::test_exact_member_retrieval ... ok
+test core::block_codes::tests::test_block_code_store_basic ... ok
+test core::bloom_memory::tests::test_non_member_discrimination ... ok
+test core::bundle_subset::tests::subset_size_clamps_at_item_size ... ok
+test core::bundle_subset::tests::selection_is_deterministic_and_a_subset ... ok
+test core::block_codes::tests::test_unbind_and_decode_single_fact ... ok
+test core::bloom_memory::tests::test_capacity_200_items ... ok
+test core::bloom_memory::tests::test_capacity_500_items ... ok
+test core::block_codes::tests::test_recovery_at_capacity ... ok
+test core::cognition::analogy::tests::test_ranked_matching_quality ... ok
+test core::block_codes::tests::test_recover_from_codebook ... ok
+test core::cls_memory::tests::test_cls_single_item ... ok
+test core::cognition::abstraction::tests::test_discover_empty_store ... ok
+test core::cls_memory::tests::test_cls_consolidation_runs ... ok
+test core::cognition::gaps::tests::test_detect_gaps ... ok
+test core::cognition::analogy::tests::test_detect_analogy ... ok
+test core::cognition::analogy::tests::test_no_analogy_empty ... ok
+test core::cognition::analogy::tests::test_no_analogy_single_component ... ok
+test core::cognition::gaps::tests::test_no_gaps_empty_store ... ok
+test core::cognition::gaps::tests::test_no_gaps_when_complete ... ok
+test core::cognition::abstraction::tests::test_discover_below_threshold ... ok
+test core::cognition::gaps::tests::test_high_coverage_threshold ... ok
+test core::cognition::hypothesis::tests::test_propose_empty_gaps ... ok
+test core::algebraic_codebook::tests::transform_scores_match_explicit_complex_inner_products ... ok
+test core::cognition::analogy::tests::test_find_components ... ok
+test core::cognition::abstraction::tests::test_discover_abstractions ... ok
+test core::bundle_subset::tests::every_inserted_member_tests_positive ... ok
+test core::cognition::governor::tests::test_consolidate_duplicates ... ok
+test core::cognition::governor::tests::test_full_govern_cycle ... ok
+test core::cognition::patterns::tests::test_co_occurrences ... ok
+test core::cognition::governor::tests::test_forget_stale_composites ... ok
+test core::atom_memory::tests::test_atom_cleanup ... ok
+test core::cognition::governor::tests::test_forget_unreferenced_atoms ... ok
+test core::cognition::patterns::tests::test_co_occurrences_empty ... ok
+test core::cognition::r#loop::tests::test_empty_store_no_panic ... ok
+test core::cognition::governor::tests::test_govern_empty ... ok
+test core::cognition::refiner::tests::test_refine_empty_store ... ok
+test core::cognition::patterns::tests::test_scan_below_threshold ... ok
+test core::cognition::refiner::tests::test_multiple_refinement_rounds ... ok
+test core::cognition::refiner::tests::test_refine_converges_cooccurring_atoms ... ok
+test core::cognition::r#loop::tests::test_run_once_finds_gaps ... ok
+test core::cognition::hypothesis::tests::test_propose_min_confidence_filter ... ok
+test core::cognition::patterns::tests::test_scan_relation_patterns ... ok
+test core::cognition::hypothesis::tests::test_propose_hypothesis ... ok
+test core::audit::tests::test_audit_persistence ... ok
+test core::cognition::r#loop::tests::test_run_once ... ok
+test core::cognition::refiner::tests::test_refine_skips_low_context_atoms ... ok
+test core::compose::tests::test_cleanup_beats_raw_at_depth ... ok
+test core::compose::tests::test_cleanup_preserves_identity ... ok
+test core::compose::tests::test_deep_roundtrip_with_cleanup ... ok
+test core::block_codes::tests::test_block_code_store_shared_symbols ... ok
+test core::connection_graph::tests::absent_query_does_not_confabulate ... ok
+test core::connection_graph::tests::persists_and_reloads_across_restart ... ok
+test core::counting_bloom_memory::tests::empty_query_is_zero ... ok
+test core::connection_graph::tests::stored_scores_above_absent ... ok
+test core::connection_graph::tests::corrupt_string_length_stops_replay_without_allocating ... ok
+test core::connection_graph::tests::generalizes_through_shared_substructure ... ok
+test core::connection_graph::tests::replay_is_bit_exact_and_tamper_evident ... ok
+test core::composite_memory::tests::test_composite_insert_scan ... ok
+test core::counting_bloom_memory::tests::single_member_scores_high_nonmember_near_zero ... ok
+test core::decompose::tests::test_conjunction_splitting ... ok
+test core::decompose::tests::test_decompose_is_a ... ok
+test core::decompose::tests::test_passive_voice ... ok
+test core::decompose::tests::test_decompose_multiple_sentences ... ok
+test core::decompose::tests::test_punctuation_handling ... ok
+test core::decompose::tests::test_regular_verb_morphology ... ok
+test core::decompose::tests::test_semicolon_sentence_split ... ok
+test core::decompose::tests::test_two_word_extraction ... ok
+test core::decompose::tests::test_decompose_empty ... ok
+test core::decompose::tests::test_decompose_verb_prep ... ok
+test core::cognition::refiner::tests::test_refine_preserves_vector_sparsity ... ok
+test core::diffusion::tests::langevin_step_reduces_distance ... ok
+test core::diffusion::tests::score_points_toward_codebook ... ok
+test core::documents::binary::positional_tests::positional_and_legacy_golden_bytes_round_trip ... ok
+test core::diffusion::tests::denoise_recovers_entry ... ok
+test core::diffusion::tests::noise_schedule_monotonic ... ok
+test core::connection_graph::tests::plasticity_holds_discrimination_under_load ... ok
+test core::documents::compact_term_tests::chunk_boundaries_match_char_whitespace_on_mixed_text ... ok
+test core::documents::binary::positional_tests::malformed_positional_json_is_rejected ... ok
+test core::documents::compact_term_tests::memoized_terms_match_the_reference_tokenizer ... ok
+test core::decompose::tests::test_verb_with_preposition ... ok
+test core::counting_bloom_memory::tests::discriminates_at_1000_items ... ok
+test core::diffusion::tests::factorize_basic ... ok
+test core::counting_bloom_memory::tests::still_discriminates_where_binary_is_dead ... ok
+test core::documents::compact_term_tests::word_map_keys_words_across_the_inline_limit ... ok
+test core::documents::lexical::tests::bm25_parameters_and_nonfinite_scores_are_explicit ... ok
+test core::documents::lexical::tests::boolean_truth_table_and_phrase_offsets ... ok
+test core::connection_graph::tests::forgetting_is_real ... ok
+test core::documents::lexical::tests::phrases_require_actual_positions_and_follow_ingest_analyzer ... ok
+test core::documents::compact_term_tests::rebuilt_terms_preserve_complete_document_bytes_and_legacy_frequencies ... ok
+test core::documents::lexical::tests::parser_rejects_unsupported_syntax_and_limits ... ok
+test core::audit::tests::test_audit_record_and_read ... ok
+test core::documents::dense::tests::same_generation_publication_is_idempotent_and_mutation_rejects_both_old_builds ... ok
+test core::documents::lexical::wand::tests::bounds_reject_unproven_arithmetic_and_cover_zero_scores ... ok
+test core::audit::tests::test_audit_since_filter ... ok
+test core::documents::lexical::wand::tests::scalar_bound_dominates_each_frequency_and_length ... ok
+test core::documents::lexical::tests::shared_whole_article_batches_preserve_pinned_owners_at_group_boundaries ... ok
+test core::documents::listing::tests::get_returns_text_metadata_and_version ... ok
+test core::documents::listing::tests::lists_in_id_order_and_resumes_after_a_cursor ... ok
+test core::documents::memory::tests::a_failing_batch_stores_nothing ... ok
+test core::documents::dense::tests::captured_index_survives_replacement_delete_and_slot_reuse_while_stale_build_is_rejected ... ok
+test core::documents::memory::tests::bm25_options_and_title_weight_change_scores ... ok
+test core::documents::memory::tests::export_import_round_trips_search_results_exactly ... ok
+test core::documents::memory::tests::import_rejects_tampered_and_truncated_snapshots ... ok
+test core::documents::memory::tests::forged_snapshots_with_valid_checksums_are_rejected_not_asserted ... ok
+test core::documents::memory::tests::search_ranks_filters_and_deletes ... ok
+test core::documents::packed_terms::shared_tests::compact_frequencies_keep_references_and_integer_boundaries ... ok
+test core::documents::packed_terms::shared_tests::shared_dictionary_ids_preserve_keys_frequencies_and_legacy_json ... ok
+test core::documents::packed_terms::tests::deserialize_matches_btreemap_for_any_key_order ... ok
+test core::documents::dense::tests::hybrid_fields_and_filtered_statistics_match_independent_scan_with_legacy_terms ... ok
+test core::documents::packed_terms::tests::legacy_duplicate_keys_frequency_limits_and_errors_stay_exact ... ok
+test core::documents::packed_terms::tests::offset_limit_and_budget_overflow_choose_the_full_range_fallback ... ok
+test core::documents::lexical::tests::single_optional_phrases_filter_candidates_without_changing_counts ... ok
+test core::documents::positions::offset_tests::offset_width_boundaries_keep_the_persisted_numbers ... ok
+test core::documents::packed_terms::tests::large_keys_retain_the_legacy_map_path_and_complete_bytes ... ok
+test core::documents::postings::tests::bulk_dictionary_merge_keeps_overlay_and_revives_tombstones ... ok
+test core::documents::postings::cursor_tests::next_and_advance_match_sorted_runs_at_block_and_integer_limits ... ok
+test core::documents::postings::tests::dictionary_lookups_survive_overlay_base_and_tombstones ... ok
+test core::documents::postings::tests::for_each_matches_iter_across_packed_widths ... ok
+test core::admin::tests::verification_rejects_corruption ... ok
+test core::documents::search::latency_bench::lexical_latency_microbench ... ignored
+test core::documents::dense::tests::invalid_shapes_and_bounded_auxiliary_allocations_fail_before_building ... ok
+test core::documents::postings::tests::posting_lists_round_trip_against_a_map_model ... ok
+test core::documents::dense::tests::exact_candidates_match_exhaustive_scores_at_rank_and_threshold_boundaries ... ok
+test core::documents::search::tests::captured_view_survives_replace_delete_slot_reuse_and_store_drop ... ok
+test core::documents::search::tests::combined_weight_boundary_is_finite_and_overflow_is_rejected ... ok
+test core::documents::dense::tests::separated_fixture_prunes_exact_dots_and_preserves_equal_boundary_ties ... ok
+test core::documents::dense::tests::outward_bounds_cover_cancellation_subnormals_signed_zero_and_large_legacy_values ... ok
+test core::documents::packed_terms::tests::packing_boundaries_preserve_legacy_bytes_lookups_and_clones ... ok
+test core::admin::tests::verify_cross_checks_logged_documents ... ok
+test core::documents::tests::embeddings_round_to_f32_and_read_legacy_f64_records ... ok
+test core::documents::search::tests::lexical_capture_holds_only_ranked_candidates_and_shares_embeddings ... ok
+test core::documents::lexical::wand::tests::weak_blocks_are_below_the_threshold_without_losing_ties ... ok
+test core::documents::tests::restored_zero_frequency_terms_do_not_become_lexical_candidates ... ok
+test core::documents::search::tests::trained_semantic_capture_pins_one_index_and_only_lexical_posting_owners ... ok
+test core::documents::text::tests::locations_round_trip_and_stay_inside_the_segment ... ok
+test core::documents::tests::bm25_options_change_scores_only_when_set ... ok
+test core::documents::vector_index::tests::dot_matches_the_scalar_sum_with_a_remainder ... ok
+test core::documents::vector_index::tests::exact_scan_orders_by_score_then_row_and_bounds_k ... ok
+test core::documents::text::tests::scrubbed_records_are_gone_from_the_file_and_read_as_empty ... ok
+test core::embed::kernels::tests::f16_round_trips_every_pattern ... ok
+test core::embed::kernels::tests::f16_rounds_to_nearest_even ... ok
+test core::embed::kernels::tests::gelu_matches_reference_values ... ok
+test core::embed::kernels::tests::linear_result_is_independent_of_batching ... ok
+test core::admin::tests::inspect_verify_and_migrate_roundtrip ... ok
+test core::documents::memory::tests::matches_the_engine_document_path ... ok
+test core::documents::vector_index::tests::snapshot_rows_share_the_store_embeddings ... ok
+test core::embed::tests::offline_mode_fails_with_actionable_error_and_never_downloads ... ok
+test core::embed::tests::hash_mismatch_is_rejected_before_use ... ok
+test core::documents::lexical::tests::ties_and_block_boundary_sizes ... ok
+test core::embed::tests::path_models_and_missing_files_report_the_path ... ok
+test core::embed::tests::registry_entries_are_pinned_and_unique ... ok
+test core::embed::tests::registry_model_from_directory_is_checked_against_its_pin ... ok
+test core::embed::tests::prefixes_truncation_and_huge_inputs ... ok
+test core::embed::tests::from_pack_rejects_corrupt_headers_without_panicking ... ok
+test core::documents::text::tests::encrypted_records_are_sealed_unique_and_bound_to_their_position ... ok
+test core::encoding::tests::rotation_matches_permute ... ok
+test core::encoding::tests::test_determinism ... ok
+test core::encoding::tests::test_empty_input ... ok
+test core::encoding::tests::test_morphological_similarity ... ok
+test core::encoding::tests::test_multi_scale_captures_short_text ... ok
+test core::encoding::tests::test_single_char ... ok
+test core::encoding::tests::test_word_identity_matters ... ok
+test core::encoding::tests::test_word_overlap_similarity ... ok
+test core::engine::compaction::tests::compaction_replay_crash_child ... ok
+test core::cognition::r#loop::tests::test_take_insights ... ok
+test core::cognition::r#loop::tests::test_background_loop_start_stop ... ok
+test core::embed::tests::token_budget_splits_batches_without_changing_results ... ok
+test core::embed::tests::round_trip_and_normalization_for_every_quantization ... ok
+test core::documents::lexical::tests::live_visibility_chunk_deduplication_and_reopen ... ok
+test core::documents::tests::postings_preserve_filtered_mixed_tokenization_scores_after_slot_reuse ... ok
+test core::embed::tests::int8_group_sets_the_scale_granularity ... ok
+test core::documents::lexical::tests::whole_articles_preserve_conjunction_exclusion_and_cross_boundary_phrases ... ok
+test core::documents::lexical::wand::tests::live_block_bounds_and_wand_survive_replacement_delete_and_slot_reuse ... ok
+test core::encoding::tests::memoized_path_matches_reference_at_density_boundaries ... ok
+test core::embed::tests::output_is_bit_identical_across_threads_and_batching ... ok
+test core::engine::document_batch::tests::aggregate_source_and_metadata_budget_boundaries ... ok
+test core::engine::compaction::tests::compaction_snapshot_shares_document_payloads_after_replacement ... ok
+test core::engine::document_batch::tests::embedding_budget_and_duplicate_identity_reject_before_preparation ... ok
+test core::engine::document_batch::tests::serialized_budget_handles_limit_neighbors_without_allocating_output ... ok
+test core::engine::document_batch::tests::batch_item_and_chunk_boundaries_are_independent ... ok
+test core::engine::connection_graph_tests::connection_graph_survives_restart ... ok
+test core::engine::connection_graph_tests::phase_graph_relate_and_retrieve ... ok
+test core::engine::connection_graph_tests::relate_and_query_through_engine ... ok
+test core::engine::journal::tests::binary_payload_round_trips_every_field ... ok
+test core::engine::journal::tests::truncated_or_corrupted_payloads_are_errors ... ok
+test core::engine::multi_hop::tests::test_evidence_weighted_confidence ... ok
+test core::documents::search::tests::captured_variants_remain_coherent_during_concurrent_publication ... ok
+test core::engine::multi_hop::tests::test_multi_hop_chained ... ok
+test core::engine::multi_hop::tests::test_multi_hop_ranked_by_confidence ... ok
+test core::engine::multi_hop::tests::test_multi_hop_rule_rewrite ... ok
+test core::documents::compact_term_tests::pooled_interner_counts_later_batches_like_a_fresh_one ... ok
+test core::documents::lexical::tests::differential_insert_replace_delete_sequences ... ok
+test core::engine::document_snapshot_tests::stale_document_training_cannot_publish_after_a_durable_replacement ... ok
+test core::engine::document_batch::tests::readers_observe_whole_document_batches ... ok
+test core::engine::document_stage_tests::direct_model_search_rejects_invalid_limits_before_preparing_variants ... ok
+test core::engine::document_stage_tests::invalid_stage_installation_preserves_the_active_search_pipeline ... ok
+test core::documents::dense::tests::registry_rebuild_preserves_epoch_lineage_and_embedding_owners ... ok
+test core::engine::mutation::tests::publication_exit_child ... ok
+test core::documents::postings::tests::bulk_runs_match_single_inserts ... ok
+test core::engine::mutation::tests::prepared_batch_rediffs_a_document_replaced_before_installation ... ok
+test core::engine::document_batch::tests::document_batch_is_one_recoverable_transaction_and_invalid_updates_are_atomic ... ok
+test core::engine::document_snapshot_tests::captured_queries_survive_durable_mutation_compaction_and_restart ... ok
+test core::engine::mutation_gate::tests::mutations_still_exclude_readers ... ok
+test core::engine::mutation_gate::tests::maintenance_allows_reads_but_excludes_mutations_and_other_maintenance ... ok
+test core::documents::search::tests::captured_view_survives_registry_rebuild_without_payload_copy ... ok
+test core::engine::mutation_gate::tests::reservation_counter_rejects_exhaustion_without_wrapping ... ok
+test core::engine::mutation::tests::shared_documents_preserve_legacy_wire_bytes_and_owner_lifetime ... ok
+test core::engine::mutation_gate::tests::reservations_preserve_queue_order_through_publication_waits ... ok
+test core::engine::router::tests::plan_adjusts_ef_search_for_large_k ... ok
+test core::engine::router::tests::plan_brute_force_boundary ... ok
+test core::engine::router::tests::plan_default_density_prefers_inverted_over_trained_indexes ... ok
+test core::engine::router::tests::plan_dense_query_falls_back_to_trained_indexes ... ok
+test core::engine::router::tests::plan_high_sparsity_uses_inverted ... ok
+test core::engine::router::tests::plan_large_collection_no_indices_uses_brute_force ... ok
+test core::engine::router::tests::plan_mid_collection_no_indices_uses_hopfield ... ok
+test core::engine::router::tests::plan_small_collection_uses_brute_force ... ok
+test core::engine::structural::tests::test_structural_query_algebraic ... ok
+test core::engine::structural::tests::test_structural_query_role_inversion ... ok
+test core::documents::tests::replacements_preserve_frequency_filters_embeddings_and_retained_views ... ok
+test core::entangled::tests::test_bind_ordered_invertible ... ok
+test core::entangled::tests::test_bind_ordered_non_commutative ... ok
+test core::entangled::tests::test_bloom_bundle_capacity ... ok
+test core::entangled::tests::test_bundle_dp_high_epsilon_matches_deterministic ... ok
+test core::engine::mutation::tests::transaction_limits_and_validation_precede_append ... ok
+test core::entangled::tests::test_bundle_dp_low_epsilon_adds_noise ... ok
+test core::entangled::tests::test_bundle_dp_produces_valid_output ... ok
+test core::entangled::tests::test_containment_self ... ok
+test core::entangled::tests::test_entangled_bind_involution ... ok
+test core::entangled::tests::test_entangled_bundle_majority ... ok
+test core::entangled::tests::test_entangled_random_pair_distance ... ok
+test core::entangled::tests::test_entangled_self_similarity ... ok
+test core::entangled::tests::test_from_scalar ... ok
+test core::entangled::tests::test_from_scalar_locality ... ok
+test core::engine::compaction::tests::concurrent_compactors_serialize_without_losing_intervening_mutations ... ok
+test core::format::scan::tests::classifies_journal_versions ... ok
+test core::format::scan::tests::probe_survives_garbage ... ok
+test core::format::scan::tests::rejects_hostile_lengths_without_allocating_them ... ok
+test core::format::scan::tests::rejects_what_replay_rejects ... ok
+test core::entangled::tests::test_from_dense_produces_sparse ... ok
+test core::format::scan::tests::replays_the_live_state ... ok
+test core::format::scan::tests::tells_a_torn_tail_from_corruption ... ok
+test core::format::scan::tests::walks_frames_and_classifies_the_end ... ok
+test core::format::tests::constants_match_the_writers ... ok
+test core::format::upgrade::tests::the_registry_is_consistent ... ok
+test core::graph::tests::test_add_and_query_outgoing ... ok
+test core::graph::tests::test_multi_hop_traversal ... ok
+test core::graph::tests::test_remove_relation ... ok
+test core::graph::tests::test_snapshot ... ok
+test core::graph::tests::test_symmetric_traversal ... ok
+test core::graph::tests::test_temporal_filter ... ok
+test core::graph::tests::test_transitive_inference ... ok
+test core::hopfield::tests::test_entmax_15_sparsity ... ok
+test core::hopfield::tests::test_hopfield_exact_retrieval ... ok
+test core::hopfield::tests::test_hopfield_iterative_convergence ... ok
+test core::hopfield::tests::test_hopfield_sparse_output ... ok
+test core::hopfield::tests::test_softmax_no_zeros ... ok
+test core::format::upgrade::tests::data_directory_paths_are_the_hex_of_the_name ... ok
+test core::hopfield::tests::test_sparsemax_single ... ok
+test core::hopfield::tests::test_sparsemax_sparsity ... ok
+test core::hopfield::tests::test_sparsemax_sums_to_one ... ok
+test core::hopfield::tests::test_sparsemax_uniform ... ok
+test core::idf::tests::test_idf_clip ... ok
+test core::idf::tests::test_idf_basic ... ok
+test core::idf::tests::test_idf_recompute ... ok
+test core::index::inverted::tests::test_inverted_index_basic ... ok
+test core::indexed_memory::tests::test_hopfield_cleanup_exact ... ok
+test core::indexed_memory::tests::test_hopfield_cleanup_noisy ... ok
+test core::indexed_memory::tests::test_indexed_memory_delete ... ok
+test core::indexed_memory::tests::test_indexed_memory_insert_get ... ok
+test core::indexed_memory::tests::test_overlap_scan ... ok
+test core::indexed_memory::tests::test_sparse_softmax ... ok
+test core::error::export_bindings_hmserror ... ok
+test core::intersection::tests::test_galloping_all_overlap ... ok
+test core::intersection::tests::test_galloping_no_overlap ... ok
+test core::intersection::tests::test_galloping_skewed ... ok
+test core::intersection::tests::test_identical ... ok
+test core::engine::mutation::tests::append_failure_preserves_live_state_and_allows_retry ... ok
+test core::intersection::tests::test_merge_balanced ... ok
+test core::intersection::tests::test_reversed_args ... ok
+test core::intersection::tests::test_sparse_intersection ... ok
+test core::intersection::tests::test_sparse_intersection_empty ... ok
+test core::ivf::inverted_list::tests::test_inverted_list_round_trip ... ok
+test core::ivf::kmeans::tests::test_cluster_assignment ... ok
+test core::ivf::kmeans::tests::test_kmeans_convergence ... ok
+test core::ivf::kmeans::tests::test_top_clusters ... ok
+test core::ivf::nystrom::tests::test_projection_batch ... ok
+test core::ivf::nystrom::tests::test_projection_dimensions ... ok
+test core::ivf::nystrom::tests::test_self_kernel_is_one ... ok
+test core::ivf::pq::tests::test_adc_table_dimensions ... ok
+test core::intersection::tests::kernels_match_on_edge_shapes_and_tails ... ok
+test core::ivf::pq::tests::test_encode_compression_ratio ... ok
+test core::documents::tests::deleting_low_slots_reclaims_postings_with_high_slot_survivors ... ok
+test core::ivf::training::tests::test_end_to_end_train ... ok
+test core::engine::compaction::tests::replay_rejects_partial_frames_and_accepts_exact_capture_boundaries ... ok
+test core::engine::mutation_gate::tests::released_lease_hands_the_queue_over_exactly_once ... ok
+test core::intersection::tests::all_kernels_match_naive_count ... ok
+test core::engine::query::tests::diagnostics_report_route_lifecycle_and_storage ... ok
+test core::mask::tests::forward_table_is_a_permutation ... ok
+test core::memory_api::index::tests::insert_and_remove_are_inverse_and_chains_are_transitive ... ok
+test core::memory_api::index::tests::superseded_by_hint_without_a_known_superseder_is_ignored ... ok
+test core::memory_api::stamp::tests::hash_is_stable_and_separates_part_boundaries ... ok
+test core::memory_api::stamp::tests::stamp_round_trips_and_tolerates_unknown_fields ... ok
+test core::mask::tests::round_trips_and_hides_original_coordinates ... ok
+test core::documents::search::tests::ranked_lexical_capture_matches_the_exhaustive_capture ... ok
+test core::models::prompts::tests::fact_input_cuts_by_characters ... ok
+test core::models::prompts::tests::facts_follow_session_facts_rules ... ok
+test core::models::prompts::tests::parse_date_matches_python_regex ... ok
+test core::models::prompts::tests::prompts_render_like_python_format ... ok
+test core::models::prompts::tests::query_plan_follows_query_variants_rules ... ok
+test core::models::stages::tests::absent_rewrite_empty_subqueries_and_time_range_do_not_change_search_scope ... ok
+test core::models::stages::tests::blank_and_duplicate_subqueries_preserve_a_positive_original_fallback ... ok
+test core::models::stages::tests::facts_expand_their_own_chunk_only ... ok
+test core::models::stages::tests::finite_weights_cannot_overflow_fused_scores ... ok
+test core::models::stages::tests::fusion_rejects_conflicting_source_identity_across_lists ... ok
+test core::models::stages::tests::fusion_rejects_invalid_list_weights_and_duplicate_chunks ... ok
+test core::models::stages::tests::missing_query_expansions_fall_back_to_the_original_with_the_total_weight ... ok
+test core::models::stages::tests::native_result_count_boundaries_apply_to_params_and_fusion ... ok
+test core::models::stages::tests::same_source_merges_despite_query_scores_and_ties_stay_deterministic ... ok
+test core::models::stages::tests::stage_parameters_reject_invalid_constants_and_weight_sums ... ok
+test core::models::stages::tests::subqueries_are_opt_in_and_legacy_settings_deserialize_unchanged ... ok
+test core::models::stages::tests::subqueries_matching_zero_weight_variants_receive_their_share_without_duplicates ... ok
+test core::models::stages::tests::subqueries_trim_deduplicate_and_exclude_original_and_rewrite ... ok
+test core::models::stages::tests::subquery_count_boundaries_preserve_one_total_weight ... ok
+test core::models::stages::tests::subquery_weight_must_not_overflow_the_total_query_weight ... ok
+test core::models::stages::tests::underflowing_subquery_shares_fall_back_to_the_positive_total_weight ... ok
+test core::models::stages::tests::variant_lists_merge_by_weighted_rrf ... ok
+test core::models::tests::batches_hold_one_length_within_budget ... ok
+test core::models::tests::padded_batches_respect_row_token_and_score_limits ... ok
+test core::models::tests::padded_encoder_rows_match_unpadded_rows ... ok
+test core::models::tests::revision_is_read_and_checked ... ok
+test core::nsg::graph::tests::knn_graph_structure ... ok
+test core::nsg::graph::tests::navigating_node_near_centroid ... ok
+test core::nsg::graph::tests::pruning_respects_max_degree ... ok
+test core::nsg::search::tests::greedy_search_finds_self ... ok
+test core::nsg::search::tests::greedy_search_ordering ... ok
+test core::engine::compaction::tests::compaction_writes_after_catchup_survive_publication_and_restart ... ok
+test core::nsg::search::tests::greedy_search_returns_k_results ... ok
+test core::nsg::training::tests::online_insert ... ok
+test core::nsg::training::tests::train_basic ... ok
+test core::operand_retriever::tests::binds_a_cooking_question_to_a_dated_baking_witness ... ok
+test core::operand_retriever::tests::covers_complementary_quantities_instead_of_repeated_turns ... ok
+test core::mask::tests::similarity_and_binding_are_preserved_exactly ... ok
+test core::operand_retriever::tests::parses_named_literals_and_keeps_inference_explicit ... ok
+test core::operand_retriever::tests::keeps_named_event_comparisons_within_the_requested_identities ... ok
+test core::operand_retriever::tests::preserves_complete_quotes_at_exact_byte_boundary ... ok
+test core::operand_retriever::tests::rejects_invalid_and_inconsistent_source_handles ... ok
+test core::operand_retriever::tests::resolves_a_quantity_through_its_source_premise ... ok
+test core::operand_retriever::tests::separates_quoted_event_dates_from_observation_alias_dates ... ok
+test core::operand_retriever::tests::retrieves_literal_operands_beyond_the_cached_prefix ... ok
+test core::phase_graph::tests::replay_is_bit_exact_and_tamper_evident ... ok
+test core::engine::mutation_gate::tests::queries_progress_while_compaction_waits_and_a_mutation_is_queued ... ok
+test core::phase_graph::tests::retrieves_object_and_subject ... ok
+test core::phase_graph::tests::sha256_digest_is_deterministic_and_tamper_evident ... ok
+test core::phase_graph::tests::stored_triple_scores_above_absent ... ok
+test core::phase_hvec::tests::bind_unbind_is_exact_roundtrip ... ok
+test core::phase_hvec::tests::binding_is_not_self_inverse ... ok
+test core::phase_hvec::tests::bundle_empty_is_zero_dim ... ok
+test core::phase_hvec::tests::bundle_is_deterministic_and_order_free ... ok
+test core::phase_hvec::tests::bundle_preserves_membership ... ok
+test core::phase_hvec::tests::bundle_single_element_is_identity ... ok
+test core::phase_hvec::tests::maximum_resolution_constructs ... ok
+test core::phase_hvec::tests::minimum_resolution_roundtrip ... ok
+test core::phase_hvec::tests::similarity_self_is_one_random_near_zero ... ok
+test core::phase_hvec::tests::zero_dim_similarity_is_one ... ok
+test core::phase_resonator::tests::empty_codebooks_yield_no_factors ... ok
+test core::os_memory::tests::releasing_a_mapping_keeps_its_bytes_readable ... ok
+test core::phase_resonator::tests::factors_at_minimum_phase_resolution ... ok
+test core::phase_resonator::tests::mismatched_resolution_panics - should panic ... ok
+test core::phase_resonator::tests::quantized_4bit_still_factors ... ok
+test core::phase_resonator::tests::recovers_two_factors ... ok
+test core::phase_resonator::tests::reusable_index_derives_resolution_from_codebooks ... ok
+test core::phase_resonator::tests::reusable_index_matches_free_function ... ok
+test core::phase_resonator::tests::single_factor_and_single_entry_boundaries ... ok
+test core::posting::tests::test_posting_dedup ... ok
+test core::posting::tests::test_posting_insert_and_overlap ... ok
+test core::posting::tests::test_posting_remove ... ok
+test core::posting::tests::test_posting_tombstone_filter ... ok
+test core::mask::tests::derivation_is_deterministic_and_key_and_salt_dependent ... ok
+test core::phase_graph::tests::retrieval_holds_under_load ... ok
+test core::private_query::clustered::tests::rejects_out_of_bound_inputs_and_parameters ... ok
+test core::phase_graph::tests::multi_hop_path_reasoning ... ok
+test core::engine::compaction::tests::compaction_replays_acknowledged_writes_and_preserves_batch_frames ... ok
+test core::memory_api::conversation::context::tests::source_capacity_accepts_both_sides_of_the_last_valid_ordinal ... ok
+test core::phase_resonator::tests::factors_above_greedy_capacity ... ok
+test core::private_query::tests::error_sampler_is_bounded_with_the_stated_deviation ... ok
+test core::ivf::pq::tests::test_encode_self_distance_low ... ok
+test core::documents::compact_term_tests::interned_chunk_terms_match_terms_with_title_weighting ... ok
+test core::memory_api::tests::replacing_a_fact_leaves_the_index_equal_to_a_rebuild ... ok
+test core::provenance::access::tests::tampered_or_unsigned_credential_is_rejected ... ok
+test core::provenance::access::tests::timestamps_round_trip_and_reject_malformed_input ... ok
+test core::provenance::access::tests::trusted_credential_grants_only_listed_permissions ... ok
+test core::provenance::access::tests::untrusted_or_self_issued_credential_is_rejected ... ok
+test core::provenance::access::tests::validity_window_is_enforced_at_its_boundaries ... ok
+test core::provenance::c2pa_manifest::tests::agent_provenance_manifest_roundtrip ... ok
+test core::provenance::c2pa_manifest::tests::create_and_sign_manifest ... ok
+test core::provenance::c2pa_manifest::tests::manifest_has_required_assertions ... ok
+test core::mask::tests::rejects_invalid_parameters ... ok
+test core::provenance::c2pa_manifest::tests::validate_hash_match ... ok
+test core::provenance::c2pa_manifest::tests::manifest_with_ingredients ... ok
+test core::provenance::c2pa_manifest::tests::wrong_key_rejects_manifest ... ok
+test core::provenance::cawg::tests::create_and_verify_ica_assertion ... ok
+test core::provenance::cawg::tests::cross_verifies_cogmem_ica_vector ... ok
+test core::provenance::cawg::tests::ica_assertion_requires_hard_binding ... ok
+test core::provenance::cawg::tests::ica_assertion_tamper_rejected ... ok
+test core::provenance::cose::tests::fact_claim_roundtrip ... ok
+test core::provenance::cose::tests::key_id_extraction ... ok
+test core::provenance::cose::tests::sign_verify_roundtrip ... ok
+test core::provenance::cose::tests::tampered_payload_rejected ... ok
+test core::provenance::cose::tests::verifies_cogmem_cross_conformance_vector ... ok
+test core::provenance::did::tests::did_document_roundtrip ... ok
+test core::provenance::did::tests::did_jwk_from_ed25519_roundtrips ... ok
+test core::provenance::did::tests::did_jwk_resolves_vector_issuer ... ok
+test core::provenance::did::tests::did_key_roundtrip ... ok
+test core::provenance::did::tests::did_web_simple ... ok
+test core::provenance::did::tests::did_web_with_path ... ok
+test core::provenance::did::tests::did_web_with_port ... ok
+test core::provenance::did::tests::reject_bad_prefix ... ok
+test core::provenance::jumbf::tests::binary_encode_valid_structure ... ok
+test core::provenance::jumbf::tests::c2pa_manifest_box_structure ... ok
+test core::provenance::jumbf::tests::encode_decode_roundtrip ... ok
+test core::provenance::jumbf::tests::nested_encode_decode ... ok
+test core::provenance::jumbf::tests::superbox_with_children ... ok
+test core::provenance::keri::tests::double_inception_rejected ... ok
+test core::provenance::keri::tests::inception_and_verify ... ok
+test core::provenance::keri::tests::interaction_anchors_data ... ok
+test core::provenance::keri::tests::multisig_threshold_rejected ... ok
+test core::provenance::keri::tests::full_lifecycle ... ok
+test core::provenance::keri::tests::rotation_and_verify ... ok
+test core::provenance::keri::tests::rotation_to_uncommitted_key_rejected ... ok
+test core::provenance::keri::tests::rotation_without_precommitment_rejected ... ok
+test core::provenance::keri::tests::tampered_event_rejected ... ok
+test core::provenance::scitt::tests::signed_statement_roundtrip ... ok
+test core::provenance::keri::tests::persistence_roundtrip ... ok
+test core::provenance::sigstore::tests::base64_roundtrip ... ok
+test core::provenance::scitt::tests::wrong_key_rejected ... ok
+test core::provenance::sigstore::tests::bundle_serialization ... ok
+test core::provenance::sigstore::tests::local_bundle_roundtrip ... ok
+test core::provenance::sigstore::tests::wrong_content_rejected ... ok
+test core::provenance::sigstore::tests::verify_with_explicit_key ... ok
+test core::provenance::tests::cawg_untrusted_issuer_rejected ... ok
+test core::provenance::tests::credential_revocation ... ok
+test core::provenance::tests::full_fact_provenance_flow ... ok
+test core::provenance::tests::batch_provenance_merkle ... ok
+test core::provenance::tests::full_triple_provenance_flow ... ok
+test core::provenance::tests::issuer_did_consistency ... ok
+test core::provenance::tests::hash_chain_integrity ... ok
+test core::provenance::tests::records_persist_to_disk ... ok
+test core::provenance::tests::key_rotation_preserves_old_records ... ok
+test core::provenance::tests::standalone_verify_without_manager ... ok
+test core::provenance::tests::store_manifest_flow ... ok
+test core::provenance::tests::tampered_log_detected ... ok
+test core::provenance::tests::untrusted_key_rejected ... ok
+test core::provenance::trust::tests::empty_trusts_nothing ... ok
+test core::provenance::tests::vc_only_record_requires_trust ... ok
+test core::provenance::trust::tests::trust_via_did_roundtrips ... ok
+test core::provenance::trust::tests::trusts_added_key_only ... ok
+test core::provenance::vc::tests::create_and_sign_vc ... ok
+test core::provenance::vc::tests::issuer_mismatch_rejected ... ok
+test core::provenance::vc::tests::tampered_vc_rejected ... ok
+test core::provenance::vc::tests::vc_json_structure ... ok
+test core::provenance::vc::tests::vc_with_triple ... ok
+test core::qgraph::adjacency::tests::rows_mut_reaches_exactly_the_listed_vertices ... ok
+test core::qgraph::build_kernels::tests::dot4_is_bit_identical_to_dot ... ok
+test core::engine::mutation::tests::complete_transaction_bytes_match_legacy_for_all_mutations ... ok
+test core::ivf::query::tests::test_top1_accuracy ... ok
+test core::engine::mutation::tests::durable_unpublished_batch_allows_old_queries_and_blocks_compaction ... ok
+test core::private_query::tests::secret_is_wiped ... ok
+test core::qgraph::diagnostics::tests::feedback_handles_extreme_finite_queries_and_rejects_invalid_inputs ... ok
+test core::private_query::tests::matrix_expansion_is_deterministic_and_seed_dependent ... ok
+test core::qgraph::adjacency::tests::par_append_reads_the_lists_from_before_any_append ... ok
+test core::engine::mutation::tests::pending_append_allows_coherent_queries_and_excludes_other_writers ... ok
+test core::qgraph::fastscan::tests::block_scan_microbenchmark ... ignored
+test core::qgraph::fastscan::tests::scan_matches_direct_sum_at_every_width ... ok
+test core::qgraph::ivf::tests::cache_budget_is_combined_and_disabled_cache_uses_the_reference_traversal ... ok
+test core::qgraph::ivf::tests::integer_envelopes_bound_native_dots_at_maximum_dimension ... ok
+test core::qgraph::ivf::tests::nonfinite_envelopes_fall_back_even_when_individual_scores_are_finite ... ok
+test core::qgraph::ivf::tests::packed_five_bit_residuals_preserve_signed_values_and_padding ... ok
+test core::qgraph::kernels::tests::dot_kernel_microbench ... ignored
+test core::qgraph::kernels::tests::dot_matches_naive ... ok
+test core::qgraph::kernels::tests::every_integer_kernel_matches_scalar ... ok
+test core::qgraph::kernels::tests::integer_dot_kernels_match_scalar ... ok
+test core::qgraph::kernels::tests::optimized_popcount_matches_scalar ... ok
+test core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok
+test core::qgraph::kernels::tests::raw_one_matches_scalar_at_every_width ... ok
+test core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored
+test core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok
+test core::qgraph::projection::tests::absent_queries_preserve_serialized_bytes_even_with_unused_arguments ... ok
+test core::private_query::tests::parameter_and_input_validation ... ok
+test core::private_query::tests::repeated_queries_for_one_code_are_unlinkable_by_equality ... ok
+test core::qgraph::projection::tests::invalid_inputs_leave_the_graph_unchanged ... ok
+test core::qgraph::projection::tests::invalid_queries_are_rejected_before_build_including_unused_rows ... ok
+test core::qgraph::projection::tests::neighbor_and_projected_degree_upper_boundaries_are_checked ... ok
+test core::private_query::tests::a_different_secret_does_not_recover_the_scores ... ok
+test core::qgraph::projection::tests::pooling_is_deterministic_and_independent_of_query_order ... ok
+test core::qgraph::projection::tests::query_neighbor_bridge_preserves_old_edges_and_upper_layers ... ok
+test core::qgraph::projection::tests::singleton_training_is_valid_and_adds_no_edges ... ok
+test core::private_query::tests::correct_at_maximum_row_weight_and_rejects_one_more ... ok
+test core::qgraph::diagnostics::tests::diagnostic_oracle_maps_original_ids_and_restores_serialized_bytes ... ok
+test core::private_query::clustered::tests::noise_has_the_deviation_the_failure_bound_assumes ... ok
+test core::qgraph::projection::tests::asymmetric_mips_neighbors_match_original_variable_norm_inner_products ... ok
+test core::qgraph::diagnostics::tests::full_beam_and_rerank_match_flat_with_duplicates_and_zero_rows ... ok
+test core::private_query::clustered::tests::decoded_scores_equal_plaintext_scores ... ok
+test core::qgraph::diagnostics::tests::exact_euclidean_controls_match_brute_force_and_asymmetric_mips ... ok
+test core::qgraph::diagnostics::tests::rotation_control_rejects_unsupported_metric_and_oversized_allocations ... ok
+test core::qgraph::tests::prune_merged_matches_prune ... ok
+test core::qgraph::projection::tests::trained_graph_cache_is_rejected_and_encoded_index_round_trips ... ok
+test core::qgraph::tests::edge_estimator_is_unbiased_over_rotations ... ok
+test core::engine::mutation::tests::replacement_chunk_transitions_remove_obsolete_vectors_and_replay_exactly ... ok
+test core::qgraph::projection::tests::block_matrix_neighbors_match_scalar_angular_and_euclidean_metrics ... ok
+test core::qgraph::update::tests::close_unlocks_even_when_a_descriptor_is_inherited ... ok
+test core::qgraph::diagnostics::tests::exporting_full_pool_preserves_production_prefix_without_patience ... ok
+test core::qgraph::update::tests::boundaries_and_atomic_replace ... ok
+test core::qgraph::projection::tests::untrained_optional_builds_preserve_legacy_cache_bytes ... ok
+test core::qgraph::projection::tests::optional_training_matches_projection_of_independent_neighbors ... ok
+test core::engine::compaction::tests::compaction_replayed_writes_survive_each_publication_interruption ... ok
+test core::engine::mutation::tests::journal_replay_keeps_length_sized_chunk_storage ... ok
+test core::qgraph::update::tests::log_and_dimension_limit_boundaries ... ok
+test core::qgraph::update::tests::clustered_deletes_retry_without_global_tombstone_budget ... ok
+test core::qgraph::update::tests::pending_batch_is_not_persisted_and_empty_base_accepts_inserts ... ok
+test core::qgraph::diagnostics::tests::rotation_control_preserves_ids_topology_and_query_boundaries ... ok
+test core::private_query::tests::decoded_scores_equal_plaintext_intersections_across_seeds ... ok
+test core::engine::mutation::tests::interrupted_append_and_publication_recover_whole_batches ... ok
+test core::qgraph::update::tests::streaming_crash_child ... ok
+test core::qgraph::update::tests::angular_updates_reopen_and_torn_unpublished_graph ... ok
+test core::qgraph::update::tests::buffered_search_matches_owned_results_across_updates_and_consolidation ... ok
+test core::qgraph::update::tests::repeated_replacement_keeps_delta_vertices_reachable ... ok
+test core::qgraph::update::tests::killed_commit_and_consolidation_recover_complete_generations ... ok
+test core::qgraph::update::tests::uncertain_append_requires_reopen_and_writer_is_exclusive ... ok
+test core::qgraph::update::tests::streaming_diagnostics_preserve_search_and_measure_live_generations ... ok
+test core::qgraph::diagnostics::tests::diagnostic_coded_results_and_candidate_boundaries_match_production ... ok
+test core::qgraph::update::tests::untrusted_headers_and_rows_are_rejected ... ok
+test core::qgraph::vertex::serving_tests::direct_ip_preserves_magnitudes_zero_queries_and_topology ... ok
+test core::qgraph::update::tests::vector_format_golden_and_drift_gate ... ok
+test core::qgraph::update::tests::readers_continue_while_consolidation_performs_io ... ok
+test core::qgraph::update::tests::reordered_compressed_base_preserves_external_ids ... ok
+test core::qgraph::vertex::serving_tests::reservoir_includes_upper_layer_scores_once ... ok
+test core::qgraph::vertex::serving_tests::reservoir_recovers_a_beam_rejection_without_changing_expansions ... ok
+test core::engine::mutation::tests::owned_document_buffers_stay_compact_through_publication_and_recovery ... ok
+test core::qgraph::update::tests::scratch_reuse_distinguishes_dimensions_with_equal_padding ... ok
+test core::qgraph::update::tests::torn_last_batch_at_every_byte_and_checksum_corruption ... ok
+test core::qgraph::update::tests::torn_batched_insert_frame_preserves_only_complete_commits ... ok
+test core::qgraph::vertex::serving_tests::direct_ip_removes_the_128_dimension_stride_cliff ... ok
+test core::qgraph::vertex::tests::compact_lists_preserve_order_search_and_persisted_bytes ... ok
+test core::qgraph::tests::exact_budget_caps_work ... ok
+test core::qgraph::update::tests::batch_insert_is_atomic_reachable_and_survives_reopen ... ok
+test core::qgraph::vertex::tests::quantization_error_is_bounded ... ok
+test core::qgraph::vertex::serving_tests::retention_preserves_traversal_with_stopping_and_batch_scoring ... ok
+test core::qgraph::vertex::tests::euclidean_index_limits ... ok
+test core::qgraph::vertex::tests::graph_cache_round_trips_and_rejects_mismatches ... ok
+test core::role::tests::test_commutativity_fix ... ok
+test core::role::tests::test_compose_unbind_roundtrip ... ok
+test core::role::tests::test_register_duplicate_different_shift ... ok
+test core::role::tests::test_register_duplicate_same_shift ... ok
+test core::role::tests::test_unknown_role_error ... ok
+test core::rules::tests::test_rule_add_find ... ok
+test core::qgraph::tests::recall_on_clustered_data ... ok
+test core::security::tests::test_encryption_roundtrip ... ok
+test core::security::tests::test_encryption_salt_persistence ... ok
+test core::security::tests::test_encryption_wrong_passphrase ... ok
+test core::security::tests::test_hash_id_deterministic ... ok
+test core::security::tests::test_signing_key_persistence ... ok
+test core::security::tests::test_signing_roundtrip ... ok
+test core::security::tests::test_signing_tamper_detection ... ok
+test core::simd_math::tests::matches_scalar_count_across_sizes_and_overlaps ... ok
+test core::sparse::tests::invalid_vectors_are_rejected ... ok
+test core::sparse::tests::postings_round_trip_and_block_maxima_bound_every_impact ... ok
+test core::qgraph::update::tests::deterministic_streaming_model_survives_generations_and_replay_twice ... ok
+test core::sparse_autoencoder::tests::test_different_inputs_produce_different_outputs ... ok
+test core::sparse_autoencoder::tests::test_random_projection_produces_correct_density ... ok
+test core::sparse_autoencoder::tests::test_similar_inputs_produce_similar_outputs ... ok
+test core::sparse::tests::top_k_matches_brute_force_over_quantized_impacts ... ok
+test core::qgraph::vertex::tests::invalid_inputs_are_errors_that_name_the_cause ... ok
+test core::storage::growth_tests::readers_wait_for_growth_and_resume_on_the_same_complete_frames ... ok
+test core::storage::growth_tests::failed_growth_preserves_complete_frames_and_allows_identical_payload_retry ... ok
+test core::storage::growth_tests::current_growth_preserves_complete_frames_at_mapping_boundaries ... ok
+test core::storage::growth_tests::unfinished_growth_keeps_the_acknowledged_prefix_and_capacity_is_bounded ... ok
+test core::qgraph::update::tests::consolidation_interruption_recovers_committed_state ... ok
+test core::storage::layout_tests::compacted_store_without_root_manifest_keeps_published_generation_geometry ... ok
+test core::storage::layout_tests::legacy_frames_geometry_and_compaction_survive_reopening ... ok
+test core::storage::layout_tests::manifest_geometry_boundaries_fail_before_segment_mutation ... ok
+test core::storage::layout_tests::oversized_read_only_mapping_cannot_extend_declared_segment_bounds ... ok
+test core::storage::layout_tests::mismatched_compaction_geometry_preserves_the_acknowledged_generation ... ok
+test core::storage::layout_tests::premanifest_store_retains_legacy_geometry_and_complete_frames ... ok
+test core::storage::staging::tests::staged_arena_cannot_open_an_existing_store ... ok
+test core::storage::staging::tests::staged_corrupt_frame_fails_open_like_a_live_frame ... ok
+test core::storage::staging::tests::staged_flush_byte_boundaries_preserve_individual_frames_after_restart ... ok
+test core::storage::tests::compaction_crash_child ... ok
+test core::storage::staging::tests::staged_flush_count_boundaries_preserve_individual_frames_after_restart ... ok
+test core::storage::tests::compaction_rejects_corrupt_or_shortened_staging_without_publishing ... ok
+test core::storage::tests::compaction_replay_enforces_raw_frame_limit_boundaries ... ok
+test core::storage::tests::compaction_tail_replay_crosses_rotated_padding_without_splitting_frames ... ok
+test core::storage::tests::compaction_replay_rejects_payload_length_mismatch_despite_valid_crc ... ok
+test core::storage::tests::manifest_checksum_mismatch_fails_open ... ok
+test core::storage::layout_tests::legacy_plain_and_encrypted_engine_recovery_preserves_queries_and_geometry ... ok
+test core::storage::tests::reads_remain_on_the_requested_segment_during_rotation ... ok
+test core::storage::tests::interrupted_compaction_recovers_a_complete_generation ... ok
+test core::storage::tests::recovers_a_new_segment_whose_end_marker_never_reached_disk ... ok
+test core::storage::tests::rejects_future_storage_format ... ok
+test core::storage::tests::open_fails_on_corruption_inside_committed_data ... ok
+test core::store_lock::tests::lock_is_exclusive_and_released_on_drop ... ok
+test core::ternary::tests::test_bind_involution ... ok
+test core::ternary::tests::test_bundle_majority ... ok
+test core::ternary::tests::test_contract ... ok
+test core::ternary::tests::test_random_pair_low_similarity ... ok
+test core::ternary::tests::test_self_similarity ... ok
+test core::ternary::tests::test_signed_discrimination ... ok
+test core::text::tests::empty_input_returns_zeros ... ok
+test core::text::tests::readability_complex_text ... ok
+test core::text::tests::readability_simple_text ... ok
+test core::text::tests::test_non_spacing_scripts ... ok
+test core::text::tests::test_syllable_counting ... ok
+test core::storage::tests::test_persistent_arena_persistence ... ok
+test core::text::tests::y_consonant_at_word_start ... ok
+test core::tombstone::tests::test_tombstone_basic ... ok
+test core::tombstone::tests::test_tombstone_clear ... ok
+test core::tombstone::tests::test_tombstone_multiple ... ok
+test core::triple_store::tests::test_triple_add_query ... ok
+test core::triple_store::tests::test_triple_remove ... ok
+test core::types::export_bindings_conceptcandidate ... ok
+test core::types::export_bindings_graphpath ... ok
+test core::types::export_bindings_hardwarecapabilities ... ok
+test core::storage::tests::recovers_from_a_torn_tail_and_reuses_its_offset ... ok
+test core::types::export_bindings_indexstatus ... ok
+test core::types::export_bindings_memorizebatchitem ... ok
+test core::types::export_bindings_pathhop ... ok
+test core::types::export_bindings_queryexplanation ... ok
+test core::types::export_bindings_relation ... ok
+test core::types::export_bindings_relationtype ... ok
+test core::types::export_bindings_retrievalresult ... ok
+test core::types::export_bindings_storagehealth ... ok
+test lib_proptest::test_bind_commutativity ... ok
+test core::types::export_bindings_textmetrics ... ok
+test meaning_tests::test_backward_compat_meaning_disabled ... ok
+test core::entangled::tests::from_dense_matches_reference ... ok
+test meaning_tests::test_fan_out_sweep ... ok
+test core::text::tests::word_count_across_chunk_boundary ... ok
+test meaning_tests::test_meaning_decompose_e2e ... ok
+test meaning_tests::test_multi_hop_chained ... ok
+test meaning_tests::test_poisoning_resistance ... ok
+test meaning_tests::test_role_inversion ... ok
+test meaning_tests::test_persistence_round_trip ... ok
+test meaning_tests::test_structural_query_e2e ... ok
+test security_integration_tests::test_encrypted_arena_roundtrip ... ok
+test core::qgraph::vertex::tests::block_estimates_track_exact_inner_products ... ok
+test security_integration_tests::test_signed_audit_entries ... ok
+test security_integration_tests::test_encrypted_compact_roundtrip ... ok
+test security_integration_tests::test_signed_compact_audit ... ok
+test tests::test_analyze_components ... ok
+test tests::test_adaptive_routing_e2e ... ok
+test tests::test_audit_disabled_returns_empty ... ok
+test tests::test_audit_compact_recorded ... ok
+test tests::test_audit_records_operations ... ok
+test tests::test_basic_persistence ... ok
+test tests::test_batch_memorize ... ok
+test tests::test_auto_shard_trigger ... ok
+test meaning_tests::test_concurrent_access ... ok
+test tests::test_compact_basic ... ok
+test tests::test_concept_refinement_stability ... ok
+test tests::test_compact_persistence ... ok
+test tests::test_compact_multi_shard ... ok
+test tests::test_concept_synthesis ... ok
+test tests::test_custom_concept_config ... ok
+test tests::test_delete_and_rememorize ... ok
+test tests::test_delete_existing ... ok
+test tests::test_delete_nonexistent ... ok
+test tests::test_delete_persistence ... ok
+test tests::test_determinism ... ok
+test tests::test_from_dense_produces_sparse ... ok
+test tests::test_factorize_returns_factors ... ok
+test tests::test_find_analogy ... ok
+test tests::test_graph_add_and_traverse ... ok
+test tests::test_federated_query ... ok
+test tests::test_graph_persistence ... ok
+test tests::test_graph_temporal_query ... ok
+test tests::test_graph_compact_preserves_relations ... ok
+test tests::test_graph_transitive_inference ... ok
+test tests::test_hopfield_query_e2e ... ok
+test tests::test_memorize_vector_through_core ... ok
+test core::qgraph::vertex::tests::delta_coded_adjacency_round_trips ... ok
+test tests::test_multi_shard_delete ... ok
+test tests::test_multi_shard_insert_query ... ok
+test tests::test_ivf_maintenance_at_threshold ... ok
+test tests::test_multi_shard_results_from_multiple_shards ... ok
+test tests::test_manual_ivf_train_and_query ... ok
+test tests::test_ivf_index_persistence ... ok
+test core::qgraph::vertex::tests::block_codes_keep_recall ... ok
+test tests::test_nsg_accuracy_matches_brute_force ... ok
+test tests::test_nsg_index_persistence ... ok
+test tests::test_query_batch ... ok
+test core::qgraph::tests::build_reproduces_the_pinned_graphs ... ok
+test tests::test_nsg_maintenance_at_threshold ... ok
+test ts_export_tests::export_json_schemas ... ok
+test ts_export_tests::export_ts_bindings ... ok
+test meaning_tests::test_basin_certification ... ok
+test tests::test_readability_through_core ... ok
+test tests::test_sequence_memorize_and_query ... ok
+test tests::test_store_rejects_concurrent_engines_and_reopens_after_drop ... ok
+test tests::test_triplet_memorize_and_query ... ok
+test tests::test_scalar_query_ordering ... ok
+test tests::test_nsg_train_and_query ... ok
+test core::qgraph::vertex::tests::reordered_aligned_index_returns_the_same_ids ... ok
+test core::qgraph::vertex::file::tests::damaged_files_are_errors ... ok
+test core::qgraph::vertex::tests::screen_is_transparent_at_a_wide_margin ... ok
+test core::security::tests::derived_key_leaves_the_heap_when_the_manager_drops ... ok
+test core::qgraph::tests::build_and_search_are_deterministic ... ok
+test core::qgraph::vertex::file::tests::saved_index_opens_with_identical_results_in_every_residency ... ok
+test core::qgraph::vertex::tests::recall_on_clustered_data ... ok
+test core::qgraph::vertex::tests::build_and_search_are_deterministic ... ok
+test core::storage::layout_tests::legacy_compaction_tail_survives_each_plain_and_encrypted_publication_interruption ... ok
+test core::qgraph::vertex::tests::euclidean_index_finds_euclidean_neighbours ... ok
+test core::qgraph::tests::build_codes_leave_the_graph_unchanged ... ok
+test core::models::llm::tests::batched_decode_matches_one_at_a_time ... ok
+test core::qgraph::update::tests::consolidation_recall_on_50k_and_physical_deletion ... ok
+test core::qgraph::update::tests::random_updates_match_exact_and_reopen ... ok
+
+test result: ok. 751 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 27.41s
+
+     Running unittests src/bin/algebraic-codebook-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/algebraic_codebook_bench-fe590179e05fcd84)
+
+running 3 tests
+test tests::fixtures_are_unique_and_cue_noise_is_prefix_coupled ... ok
+test tests::total_budget_pays_for_witnesses_and_workspace_and_uses_maximal_dimension ... ok
+test tests::one_fact_recall_and_deletion_preserve_the_additive_field ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/bin/amp-decode.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/amp_decode-d381438090b4dda9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/ann-failure-map.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/ann_failure_map-0edfbc4aae6c90ce)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/ann-ivf-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/ann_ivf_bench-6a818a70b7cb8a1c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/base-residual.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/base_residual-0cad13c6d03c3e9b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/bilinear-readout.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/bilinear_readout-0418ede5ee4b929f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/binding-baselines.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/binding_baselines-c6cdc74f5c066185)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/binding-discriminator.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/binding_discriminator-983dc4bc55a587a5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/block-recovery-test.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/block_recovery_test-77c4f9e2fa1aad35)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/bloom-wall.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/bloom_wall-dd819666b368b329)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/bundle-subset-sweep.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/bundle_subset_sweep-2310a31a7e57b4ad)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/capacity-campaign.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/capacity_campaign-8878a0763b78cf0e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/cls-decay.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/cls_decay-694334e7284e2595)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/cls-structured.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/cls_structured-68336fef12c5e7c5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/codebook-recovery-test.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/codebook_recovery_test-3894a6e07f488e80)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/conversation-eval.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/conversation_eval-aa37e7c3bbf6b3fa)
+
+running 4 tests
+test tests::invalid_subquery_weights_fail_before_backend_initialization ... ok
+test tests::oversized_lines_are_drained_without_losing_the_next_command ... ok
+test tests::malformed_and_unknown_fields_return_clean_errors_before_valid_commands ... ok
+test tests::reset_separates_histories_and_zeroes_counts_without_changing_profile ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running unittests src/bin/counting-experiments.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/counting_experiments-182f39039ede1b6f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/diag-recovery.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/diag_recovery-e7a60e4e3ee0f794)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/document-search-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/document_search_bench-07d0479f346af19f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/durability-driver.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/durability_driver-64e5c930f9df0f35)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests benchmarks/embedding/embed_store_bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/embed_store_bench-b7535d0fa2fa273c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/encoder-eval.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/encoder_eval-26045b9dbcb368ec)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/fixed-point-holographic.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/fixed_point_holographic-705f12588e61e0eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/forget-experiment.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/forget_experiment-df06d5444984a6cd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/fractional-encoding.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/fractional_encoding-d067691ea230ce62)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-admin.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_admin-bf0d94abd30e2209)
+
+running 1 test
+test tests::parses_every_subcommand ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-ann-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_ann_bench-23037c5b0680238a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-benchmark-suite.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_benchmark_suite-a5129a6eb4e2c2c0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-embed.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_embed-c3406b369e1ab707)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-eval.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_eval-ac46198ea3cd68ef)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-format.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_format-e0a2e94b8702e907)
+
+running 1 test
+test tests::parses_every_subcommand ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-mcp.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_mcp-8cef1135a9fa5ade)
+
+running 14 tests
+test memory::tests::preview_cuts_on_a_character_boundary ... ok
+test memory::tests::id_tag_and_metadata_bounds ... ok
+test memory::tests::text_limit_is_inclusive ... ok
+test memory::tests::search_and_list_bounds ... ok
+test tools::tests::definitions_follow_exposure_and_namespace_argument ... ok
+test tools::tests::exposure_defaults_read_only_and_unknown_names ... ok
+test tools::tests::namespace_resolution_is_strict ... ok
+test store::tests::compare_and_set_and_create_only ... ok
+test store::tests::replace_keeps_created_at_and_changes_version ... ok
+test store::tests::text_round_trips_exactly_including_whitespace_and_blank ... ok
+test store::tests::forget_by_ids_and_prefix_and_search_by_tag ... ok
+test store::tests::list_pages_by_prefix_and_tag_without_gaps ... ok
+test store::tests::data_survives_reopen ... ok
+test store::tests::locked_store_and_store_cap_are_structured_errors ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running unittests src/bin/hms-micro.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_micro-ac449fea9666c3c7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-research-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_research_bench-459b72b4f33916ff)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-scaling.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_scaling-cd57fb13062a7b77)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-server/main.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_server-2bec8dc9991d7635)
+
+running 25 tests
+test error::tests::code_table_is_unique_and_statuses_are_valid ... ok
+test error::tests::every_code_has_a_section_in_the_error_reference ... ok
+test log::tests::rfc3339_matches_known_instants ... ok
+test limits::tests::token_bucket_allows_burst_then_refills_at_rate ... ok
+test limits::tests::queue_admits_up_to_its_bound_then_sheds ... ok
+test metrics::tests::histogram_is_cumulative_and_counts_every_observation ... ok
+test metrics::tests::resident_memory_is_reported_on_supported_platforms ... ok
+test limits::tests::idempotency_capacity_is_bounded ... ok
+test limits::tests::idempotency_replays_rejects_mismatch_and_retries_after_failure ... ok
+test auth::tests::legacy_key_grants_everything_and_open_mode_needs_no_header ... ok
+test error::tests::problem_carries_rfc9457_members_and_the_legacy_error_object ... ok
+test tests::memory_operations_are_all_routed ... ok
+test tests::every_flag_has_an_environment_variable_and_a_documented_row ... ok
+test auth::tests::invalid_key_files_are_rejected ... ok
+test auth::tests::expiry_and_not_before_are_enforced ... ok
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":0.021906,"level":"warn","method":"POST","request_id":"b3895b174f77535c","route":"/api/v1/query","status":503,"tenant":null,"ts":"2026-10-22T20:59:41.647Z"}
+test auth::tests::keys_are_bound_to_tenants_and_scopes_and_stored_hashed ... ok
+test auth::tests::rotation_overlaps_then_old_key_stops_working_after_reload ... ok
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":0.045457000000000004,"level":"warn","method":"POST","request_id":"58840be8f36f3dc5","route":"/api/v1/query","status":503,"tenant":null,"ts":"2026-10-22T20:59:41.689Z"}
+{"bytes_in":22,"event":"request","key_id":null,"latency_ms":0.013311,"level":"warn","method":"POST","request_id":"39cdc52d2eb9e7cd","route":"/api/v1/query","status":401,"tenant":null,"ts":"2026-10-22T20:59:41.689Z"}
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":0.01334,"level":"warn","method":"POST","request_id":"cdb83c1400d03f1b","route":"unmatched","status":404,"tenant":null,"ts":"2026-10-22T20:59:41.689Z"}
+test limits::tests::zero_queue_rejects_immediately_and_timeout_sheds ... ok
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":49.652417,"level":"info","method":"POST","request_id":"5e4a26dcf466376b","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T20:59:41.695Z"}
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":0.021319,"level":"warn","method":"POST","request_id":"90780aac9b270bc2","route":"/api/v1/query","status":503,"tenant":null,"ts":"2026-10-22T20:59:41.698Z"}
+{"bytes_in":1024,"event":"request","key_id":"legacy","latency_ms":54.725061,"level":"warn","method":"POST","request_id":"0e68aaacfdf4bf25","route":"/api/v1/documents","status":413,"tenant":null,"ts":"2026-10-22T20:59:41.698Z"}
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":0.114024,"level":"info","method":"POST","request_id":"4378e53ec82e60cf","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T20:59:41.701Z"}
+{"bytes_in":1024,"event":"request","key_id":"legacy","latency_ms":5.075399,"level":"warn","method":"POST","request_id":"facdb970ef84d0c4","route":"/api/v1/documents","status":413,"tenant":null,"ts":"2026-10-22T20:59:41.701Z"}
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":0.018409,"level":"warn","method":"POST","request_id":"9697c5a97bff5923","route":"/api/v1/query","status":503,"tenant":null,"ts":"2026-10-22T20:59:41.711Z"}
+test tests::admission_caps_body_readers_at_limit_and_releases_disconnected_requests ... ok
+{"bytes_in":28,"event":"request","key_id":"legacy","latency_ms":0.260544,"level":"info","method":"POST","request_id":"317addc8180d42e4","route":"/api/v1/search","status":200,"tenant":null,"ts":"2026-10-22T20:59:41.717Z"}
+{"bytes_in":28,"event":"request","key_id":"legacy","latency_ms":0.125384,"level":"info","method":"POST","request_id":"21181bf68aa53b0d","route":"/api/v1/search","status":200,"tenant":null,"ts":"2026-10-22T20:59:41.717Z"}
+{"bytes_in":28,"event":"request","key_id":"legacy","latency_ms":0.090831,"level":"info","method":"POST","request_id":"928a8bcc018fcafc","route":"/api/v1/search","status":200,"tenant":null,"ts":"2026-10-22T20:59:41.717Z"}
+{"bytes_in":28,"event":"request","key_id":"legacy","latency_ms":0.096022,"level":"info","method":"POST","request_id":"69794cdd37db2716","route":"/api/v1/search","status":200,"tenant":null,"ts":"2026-10-22T20:59:41.717Z"}
+{"bytes_in":29,"event":"request","key_id":"legacy","latency_ms":0.099675,"level":"info","method":"POST","request_id":"0a604826e268de2e","route":"/api/v1/search","status":200,"tenant":null,"ts":"2026-10-22T20:59:41.718Z"}
+test tests::search_returns_top_k_distinct_documents_from_multi_chunk_documents ... ok
+test tests::cancellation_retains_work_capacity_and_shutdown_waits_for_actual_io ... ok
+test tests::quiesced_tenants_turn_requests_away_immediately ... ok
+{"bytes":67109452,"event":"snapshot_created","level":"info","snapshot":"20261022t205941696z-ee67","tenant":"t","ts":"2026-10-22T20:59:41.797Z"}
+{"event":"snapshot_restored","level":"info","previous_store":"pre-restore-20261022t205941861z","tenant":"t","ts":"2026-10-22T20:59:41.863Z"}
+{"detail":"expected ident at line 1 column 2","event":"internal_error","level":"error","ts":"2026-10-22T20:59:41.872Z"}
+test tests::snapshot_restore_round_trips_and_keeps_the_replaced_store ... ok
+{"bytes_in":1024,"event":"request","key_id":"legacy","latency_ms":1001.050898,"level":"warn","method":"POST","request_id":"1da5df0662ed8a85","route":"/api/v1/documents","status":408,"tenant":null,"ts":"2026-10-22T20:59:42.645Z"}
+{"bytes_in":22,"event":"request","key_id":"legacy","latency_ms":28.912207,"level":"info","method":"POST","request_id":"197dc951ac8f2e3a","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T20:59:42.675Z"}
+test tests::stalled_body_times_out_and_releases_admission_capacity ... ok
+{"event":"tenant_evicted","level":"info","tenant":"a","ts":"2026-10-22T20:59:42.905Z"}
+{"event":"tenant_evicted","level":"info","tenant":"b","ts":"2026-10-22T20:59:44.147Z"}
+test tests::idle_tenants_are_evicted_and_reopen_with_their_data ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.51s
+
+     Running unittests src/bin/hms-stress.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_stress-80c2bfb24860c0a2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/hms-workload.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/hms_workload-68c301531b8d3ee1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/holographic-retrieval.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/holographic_retrieval-5350d5958fa67e28)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/kernel-capacity-sweep.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/kernel_capacity_sweep-b54ee1572b6470f0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/kernel-load-curve.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/kernel_load_curve-f9e52d5a73b0a217)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/memory-api-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/memory_api_bench-03aa5108bd938736)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/memory-api-lme.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/memory_api_lme-6cb8188ef4197c89)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/multibundle-experiments.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/multibundle_experiments-083b71c8859ed5c2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/noisy-retrieval.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/noisy_retrieval-02e880913047d9b3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/nonlinear-experiments.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/nonlinear_experiments-4d56750441ff6618)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/operand-retriever.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/operand_retriever-0d8968af53c0cdc2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/path-plasticity.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/path_plasticity-2f16e93d0396a781)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/pinv-memory.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/pinv_memory-f9827d8e3a01b6a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/plastic-graph.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/plastic_graph-824e5370db7b65f0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/private-query-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/private_query_bench-f9387e10a5055621)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/private-rank-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/private_rank_bench-01da11570295226b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/public-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/public_bench-71833ca0f154a72f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/qag-diagnose.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/qag_diagnose-41bc0ffaf46863c0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/relation-algebra.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/relation_algebra-6990703f3050c0d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/resonator-bundle.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/resonator_bundle-8bdddce5167d9bd0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/resonator-cleanup.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/resonator_cleanup-9fb9e2ab9326d209)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/resonator-factorize.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/resonator_factorize-356eaf60e43eb8b0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/resonator-sweep.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/resonator_sweep-b5f5566523fed14c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/ridge-memory.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/ridge_memory-0906cb7c9ca5f48b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/route-sweep.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/route_sweep-62a5faef2b778fac)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/score-diag.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/score_diag-24418fd018e416e6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/security-probe.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/security_probe-8b57f4efeddbb144)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/similarity-decay.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/similarity_decay-462cc99e080dedbd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/sparse-bench.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/sparse_bench-ee290450e6894c84)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/vibe-rotation.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/vibe_rotation-840234947543fd5c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/window-experiments.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/window_experiments-ccb3c15b27a0abeb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/chunking_proptest.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/chunking_proptest-affb001e3f9d2140)
+
+running 3 tests
+test chunks_of_arbitrary_unicode_text ... ok
+test an_overlap_not_below_the_chunk_size_is_an_error ... ok
+test chunks_slice_the_text_and_cover_every_word ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/conversation_context.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/conversation_context-fd51a7339efa9c5c)
+
+running 10 tests
+test no_evidence_round_trips_without_inventing_a_source_or_a_count ... ok
+test python_golden_context_reconstructs_the_exact_canonical_rust_sources ... ok
+test altered_source_identity_text_role_or_time_fails_the_source_digest ... ok
+test context_round_trip_preserves_roles_times_conflicts_and_exact_unicode_sources ... ok
+test context_byte_budget_is_atomic_at_the_exact_serialized_boundary ... ok
+test enumeration_rejects_fabricated_sources_and_invalid_or_missing_anchors ... ok
+test enumeration_admits_whole_sources_at_byte_round_and_source_boundaries ... ok
+test missing_local_forward_duplicate_and_cross_version_premises_are_rejected ... ok
+test enumeration_keeps_seed_conflicts_and_source_identity_without_claiming_a_count ... ok
+test source_and_frame_allocation_bounds_cover_limit_minus_one_limit_and_plus_one ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/conversation_memory.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/conversation_memory-471fbdc1e3e02b83)
+
+running 16 tests
+test concurrent_conflicting_writes_choose_one_complete_immutable_session ... ok
+test future_observation_time_does_not_make_reported_memory_not_yet_valid ... ok
+test assistant_only_named_fact_is_searchable_without_becoming_a_user_assertion ... ok
+test byte_budget_admits_complete_original_sources_at_the_exact_serialized_boundary ... ok
+test invalid_query_role_and_capacity_options_leave_valid_recall_unchanged ... ok
+test round_budget_counts_complete_premise_closures_at_the_exact_boundary ... ok
+test aggregation_mmr_selects_another_session_before_a_repeated_session ... ok
+test default_model_stages_accept_one_native_candidate_and_one_retrieved_source ... ok
+test malformed_scope_source_and_allocation_inputs_never_partially_commit ... ok
+test source_count_budget_drops_a_followup_instead_of_detaching_its_premises ... ok
+test assistant_weight_preserves_explicit_assistant_queries_and_role_requests ... ok
+test immutable_retry_conflict_and_restart_preserve_one_complete_observation ... ok
+test a_keyword_beyond_the_first_document_chunk_hydrates_the_exact_entire_turn ... ok
+test a_user_confirmation_and_its_following_answer_retain_the_original_assistant_referent ... ok
+test followup_closes_over_opening_and_nearest_user_premises_in_its_own_session_version ... ok
+test opaque_id_renaming_preserves_unambiguous_retrieval_and_unrelated_growth_does_not_displace_it ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/conversation_models.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/conversation_models-c9b7c8c529979849)
+
+running 2 tests
+test conversation_embedding_retrieves_original_assistant_evidence ... ignored, requires pinned local weights in HMS_CONVERSATION_MODEL_DIR
+test conversation_sources_reject_user_only_fact_extraction ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/document_competition.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/document_competition-c45e29ed79308a81)
+
+running 1 test
+test lexical_top_candidates_preserve_ties_and_scores_through_slot_reuse_and_replay ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/document_dense.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/document_dense-83fc67121da9200f)
+
+running 3 tests
+test trained_document_backend_preserves_hybrid_fields_and_filtered_results ... ok
+test mutation_and_restart_rebuild_the_document_cache_without_stale_results ... ok
+test document_index_threshold_and_dimension_limits_have_exact_fallbacks ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running tests/documents.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/documents-f3b312f0a1f7d687)
+
+running 6 tests
+test bounded_document_inputs_fail_without_committing ... ok
+test semantic_candidates_use_cosine_and_filter_before_ranking ... ok
+test malformed_document_update_does_not_replace_existing_content ... ok
+test reencoding_is_atomic_and_preserves_original_sources ... ok
+test document_lifecycle_preserves_sources_filters_and_versions ... ok
+test document_readers_observe_atomic_versions_during_compaction ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests/embed_store.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/embed_store-81b210ba5bd622fd)
+
+running 4 tests
+test encoder_without_its_embedder_fails_at_open_not_at_query ... ok
+test a_store_rejects_a_different_model_pack ... ok
+test a_lexical_store_can_adopt_an_embedder_and_default_encoding_is_unchanged ... ok
+test corpus_round_trip_through_ingest_and_search ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/enc_text.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/enc_text-9e90fcd131e0f90d)
+
+running 3 tests
+test tampered_text_record_is_not_returned ... ok
+test unencrypted_store_still_opens_and_searches ... ok
+test encrypted_store_never_writes_document_text_in_the_clear ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests/encoder_versions.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/encoder_versions-58026c9244aeef22)
+
+running 6 tests
+test capped_union_requires_experimental_before_creating_a_store ... ok
+test abrupt_exit_child ... ok
+test new_encoder_recovers_acknowledged_writes_after_abrupt_exit ... ok
+test reencoding_changes_only_the_new_store_and_rejects_incomplete_input ... ok
+test encoders_match_prechange_vectors_at_density_boundaries ... ok
+test incompatible_encoders_preserve_schema_and_recover_after_compaction ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+     Running tests/forget_equivalence.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/forget_equivalence-620fb16598d0b0e6)
+
+running 6 tests
+test open_scrubs_a_canonical_segment_left_by_an_interrupted_purge ... ok
+test revision_counts_transactions_without_revealing_how_many ... ok
+test encrypted_purge_keeps_surviving_text_readable ... ok
+test compaction_output_does_not_depend_on_vector_arrival_order ... ok
+test purge_leaves_the_store_of_a_document_never_stored ... ok
+test truncation_after_a_purge_matches_the_never_stored_store ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.93s
+
+     Running tests/format_crash.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/format_crash-9a02247ca5c3869a)
+
+running 5 tests
+test stale_indices_sidecar_is_ignored ... ok
+test damaged_caches_are_discarded ... ok
+test audit_torn_entry_is_repaired ... ok
+test salt_is_created_whole_before_the_first_frame ... ok
+test torn_append_at_every_byte ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.46s
+
+     Running tests/format_golden.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/format_golden-b8b40bc46ac14910)
+
+running 7 tests
+test generate_goldens ... ignored, writes tests/golden; run deliberately
+test every_current_version_has_a_golden ... ok
+test golden_files_match_their_manifest ... ok
+test old_formats_stay_writable_in_place ... ok
+test canonical_corpus_regenerates_the_current_goldens ... ok
+test every_golden_opens_with_current_code ... ok
+test verify_agrees_with_every_golden ... ok
+
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 3.53s
+
+     Running tests/format_layout.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/format_layout-771ff99986e8941b)
+
+running 3 tests
+test future_versions_are_refused_cleanly ... ok
+test the_spec_alone_decodes_every_golden_journal ... ok
+test open_changes_only_what_the_spec_lists ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.76s
+
+     Running tests/ingest_encode.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/ingest_encode-af587c1e3d95511c)
+
+running 2 tests
+test encode_modes_keep_lexical_results_and_defer_or_skip_vectors ... ok
+test memoized_encoder_matches_reference_bit_for_bit ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+
+     Running tests/ingest_postings.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/ingest_postings-72a26a3193ca662c)
+
+running 2 tests
+test reused_slots_replacements_and_deferred_catch_up_match_a_fresh_store ... ok
+test batching_does_not_change_search_results_live_or_reopened ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s
+
+     Running tests/lexical_count.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/lexical_count-6b4bad4f42a0649b)
+
+running 2 tests
+test unstemmed_documents_match_only_their_own_words ... ok
+test count_matches_the_documents_a_lexical_search_returns ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/memory_api.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/memory_api-de08ee0d4d5157db)
+
+running 29 tests
+test crash_child ... ok
+test invalid_input_is_rejected_without_writing ... ok
+test default_history_is_tunable_per_config ... ok
+test custom_supersession_policy_is_validated ... ok
+test a_stamp_too_large_for_the_version_string_falls_back_to_metadata ... ok
+test explain_reports_scores_terms_validity_and_chain ... ok
+test entity_extractor_and_observer_are_optional_hooks ... ok
+test json_dispatch_carries_every_operation_and_classifies_errors ... ok
+test recall_judges_status_from_the_revision_it_searched ... ok
+test explain_reports_semantic_scores_with_an_embedding_space ... ok
+test late_arriving_older_fact_is_born_history ... ok
+test plain_documents_and_old_stores_work_unchanged ... ok
+test acknowledged_mutations_survive_an_abrupt_process_death ... ok
+test encrypted_stores_hold_facts_and_hide_text_on_disk ... ok
+test forgetting_a_middle_version_does_not_resurrect_an_older_one ... ok
+test forgetting_and_consolidation_defaults_do_nothing_and_policies_are_opt_in ... ok
+test recency_and_historical_weight_rescale_scores_deterministically ... ok
+test retries_are_idempotent_and_conflicts_are_refused ... ok
+test forget_is_complete_for_each_scope_and_idempotent ... ok
+test replace_conflict_mode_overwrites_and_reindexes ... ok
+test supersession_keeps_history_and_defaults_to_current_only ... ok
+test validity_windows_and_known_at_are_separate_axes ... ok
+test state_survives_restart ... ok
+test default_recall_is_document_search_when_nothing_is_constrained ... ok
+test destructive_consolidation_needs_an_explicit_opt_in ... ok
+test concurrent_writers_and_readers_stay_consistent_with_foreign_writes ... ok
+test forget_with_chain_removes_every_version_and_purge_rewrites_the_journal ... ok
+test identical_inputs_give_byte_identical_results_in_separate_stores ... ok
+test as_of_results_are_independent_of_arrival_order_and_match_the_timeline ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.18s
+
+     Running tests/memory_api_server.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/memory_api_server-3ff97933855f2a6a)
+
+running 3 tests
+{"address":"127.0.0.1:42915","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:19.224Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:19.224Z"}
+{"address":"127.0.0.1:45759","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:19.224Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:19.224Z"}
+test invalid_memory_config_stops_the_server_at_startup ... ok
+{"bytes_in":73,"event":"request","key_id":"anonymous","latency_ms":45.452916,"level":"info","method":"POST","request_id":"41aa295b5fed4390","route":"/api/v1/memory/remember","status":200,"tenant":"t","ts":"2026-10-22T21:00:19.270Z"}
+{"bytes_in":73,"event":"request","key_id":"anonymous","latency_ms":2.353604,"level":"info","method":"POST","request_id":"43a46ecee8ba9e86","route":"/api/v1/memory/remember","status":200,"tenant":"t","ts":"2026-10-22T21:00:19.273Z"}
+{"bytes_in":126,"event":"request","key_id":"anonymous","latency_ms":49.482673,"level":"info","method":"POST","request_id":"25c8fd4f357d85e6","route":"/api/v1/memory/remember","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.274Z"}
+{"bytes_in":73,"event":"request","key_id":"anonymous","latency_ms":2.3261559999999997,"level":"info","method":"POST","request_id":"9e6ca686c7a6c737","route":"/api/v1/memory/remember","status":200,"tenant":"t","ts":"2026-10-22T21:00:19.275Z"}
+{"delay_seconds":0,"event":"shutdown_signal","level":"info","ts":"2026-10-22T21:00:19.277Z"}
+{"bytes_in":136,"event":"request","key_id":"anonymous","latency_ms":2.311319,"level":"info","method":"POST","request_id":"c29b027fd2e16205","route":"/api/v1/memory/remember","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.277Z"}
+{"bytes_in":35,"event":"request","key_id":"anonymous","latency_ms":0.143896,"level":"info","method":"POST","request_id":"887f5616aabcbdeb","route":"/api/v1/memory/recall","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.277Z"}
+{"bytes_in":51,"event":"request","key_id":"anonymous","latency_ms":0.107855,"level":"info","method":"POST","request_id":"10b9970095bb22d8","route":"/api/v1/memory/recall","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.278Z"}
+{"event":"shutdown_started","level":"info","ts":"2026-10-22T21:00:19.278Z"}
+{"bytes_in":34,"event":"request","key_id":"anonymous","latency_ms":0.10494400000000001,"level":"info","method":"POST","request_id":"af109c6c16da3a92","route":"/api/v1/memory/recall","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.278Z"}
+{"bytes_in":129,"event":"request","key_id":"anonymous","latency_ms":0.156046,"level":"info","method":"POST","request_id":"88f64ddc7df7a80e","route":"/api/v1/memory/recall","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.278Z"}
+{"bytes_in":46,"event":"request","key_id":"anonymous","latency_ms":0.21651299999999998,"level":"info","method":"POST","request_id":"baed3364a15f33fb","route":"/api/v1/memory/explain","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.279Z"}
+{"bytes_in":11,"event":"request","key_id":"anonymous","latency_ms":0.115423,"level":"info","method":"POST","request_id":"b2960f3ee72cc090","route":"/api/v1/memory/get","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.279Z"}
+{"bytes_in":11,"event":"request","key_id":"anonymous","latency_ms":0.12495799999999999,"level":"info","method":"POST","request_id":"48309cb4cd7e77ea","route":"/api/v1/memory/history","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.280Z"}
+{"event":"shutdown_complete","level":"info","ts":"2026-10-22T21:00:19.288Z"}
+{"address":"127.0.0.1:40921","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:19.294Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:19.294Z"}
+{"bytes_in":37,"event":"request","key_id":"anonymous","latency_ms":2.657897,"level":"info","method":"POST","request_id":"7abb3fb19bce9440","route":"/api/v1/memory/recall","status":200,"tenant":"t","ts":"2026-10-22T21:00:19.297Z"}
+{"bytes_in":36,"event":"request","key_id":"anonymous","latency_ms":0.101978,"level":"info","method":"POST","request_id":"6c00fdd32ce17ac4","route":"/api/v1/memory/recall","status":200,"tenant":"t","ts":"2026-10-22T21:00:19.297Z"}
+{"bytes_in":11,"event":"request","key_id":"anonymous","latency_ms":0.102817,"level":"info","method":"POST","request_id":"5a5180e103c41a8d","route":"/api/v1/memory/history","status":200,"tenant":"t","ts":"2026-10-22T21:00:19.297Z"}
+test memory_state_and_configuration_survive_restart ... ok
+{"bytes_in":33,"event":"request","key_id":"anonymous","latency_ms":31.330403,"level":"info","method":"POST","request_id":"fc95f9cea16177bd","route":"/api/v1/memory/recall","status":200,"tenant":"b","ts":"2026-10-22T21:00:19.311Z"}
+{"bytes_in":2,"event":"request","key_id":"anonymous","latency_ms":0.017255,"level":"warn","method":"POST","request_id":"4246334ba5347043","route":"unmatched","status":404,"tenant":"a","ts":"2026-10-22T21:00:19.312Z"}
+{"bytes_in":16,"event":"request","key_id":"anonymous","latency_ms":0.11822,"level":"warn","method":"POST","request_id":"005b52dcf13f9aae","route":"/api/v1/memory/history","status":404,"tenant":"a","ts":"2026-10-22T21:00:19.312Z"}
+{"bytes_in":30,"event":"request","key_id":"anonymous","latency_ms":0.088339,"level":"warn","method":"POST","request_id":"e83c076e588ec330","route":"/api/v1/memory/remember","status":409,"tenant":"a","ts":"2026-10-22T21:00:19.312Z"}
+{"bytes_in":38,"event":"request","key_id":"anonymous","latency_ms":0.092503,"level":"warn","method":"POST","request_id":"22b7b9ffcad69f3d","route":"/api/v1/memory/remember","status":422,"tenant":"a","ts":"2026-10-22T21:00:19.312Z"}
+{"bytes_in":43,"event":"request","key_id":"anonymous","latency_ms":0.094728,"level":"warn","method":"POST","request_id":"05ca75e7f34b9467","route":"/api/v1/memory/remember","status":422,"tenant":"a","ts":"2026-10-22T21:00:19.313Z"}
+{"bytes_in":25,"event":"request","key_id":"anonymous","latency_ms":0.09222599999999999,"level":"warn","method":"POST","request_id":"0e34ef61578331a1","route":"/api/v1/memory/remember","status":422,"tenant":"a","ts":"2026-10-22T21:00:19.313Z"}
+{"bytes_in":46,"event":"request","key_id":"anonymous","latency_ms":0.103836,"level":"warn","method":"POST","request_id":"85378107cfe2318e","route":"/api/v1/memory/remember","status":422,"tenant":"a","ts":"2026-10-22T21:00:19.314Z"}
+{"bytes_in":12,"event":"request","key_id":"anonymous","latency_ms":0.035215,"level":"warn","method":"POST","request_id":"96a47b70e9fec595","route":"/api/v1/memory/remember","status":422,"tenant":"a","ts":"2026-10-22T21:00:19.314Z"}
+{"bytes_in":19,"event":"request","key_id":"anonymous","latency_ms":0.045156,"level":"warn","method":"POST","request_id":"87cc87d067cf5228","route":"/api/v1/memory/recall","status":422,"tenant":"a","ts":"2026-10-22T21:00:19.314Z"}
+{"bytes_in":7,"event":"request","key_id":"anonymous","latency_ms":0.081291,"level":"warn","method":"POST","request_id":"67f0b39fa15b1173","route":"/api/v1/memory/recall","status":422,"tenant":"a","ts":"2026-10-22T21:00:19.314Z"}
+{"bytes_in":126,"event":"request","key_id":"anonymous","latency_ms":0.082081,"level":"info","method":"POST","request_id":"2dbe04e7a03662bd","route":"/api/v1/memory/remember","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.315Z"}
+{"bytes_in":65,"event":"request","key_id":"anonymous","latency_ms":0.088542,"level":"info","method":"POST","request_id":"83906f958f9064ae","route":"/api/v1/memory/forget","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.315Z"}
+{"bytes_in":51,"event":"request","key_id":"anonymous","latency_ms":6.25679,"level":"info","method":"POST","request_id":"423ca7b0faac0d00","route":"/api/v1/memory/forget","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.321Z"}
+{"bytes_in":51,"event":"request","key_id":"anonymous","latency_ms":0.08196400000000001,"level":"info","method":"POST","request_id":"1fe78c6d7a4ad002","route":"/api/v1/memory/forget","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.322Z"}
+{"bytes_in":33,"event":"request","key_id":"anonymous","latency_ms":0.093884,"level":"info","method":"POST","request_id":"f38da33ca33033b1","route":"/api/v1/memory/recall","status":200,"tenant":"a","ts":"2026-10-22T21:00:19.322Z"}
+test memory_round_trip_over_http_with_history_errors_and_isolation ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/purge.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/purge-2e8991cac79ce04f)
+
+running 7 tests
+test purge_child ... ok
+test forget_without_purge_scrubs_the_text_segment_at_once ... ok
+test replaced_text_is_zeroed_in_the_segment_at_once ... ok
+test purge_erases_a_generation_left_by_an_interrupted_compaction ... ok
+test purged_text_stays_gone_after_an_abrupt_death_and_restart ... ok
+test encrypted_store_purges_and_keeps_survivors_readable ... ok
+test purge_leaves_no_marker_in_any_file_before_reopen ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.37s
+
+     Running tests/qgraph_prefetch.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/qgraph_prefetch-d2766400717e4e6e)
+
+running 3 tests
+test frontier_below_one_only_prunes ... ok
+test block_screen_with_an_infinite_margin_reproduces_the_plain_search ... ok
+test prefetch_and_batched_estimation_keep_results_identical ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.20s
+
+     Running tests/quantized_ivf.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/quantized_ivf-193f9f6235a91935)
+
+running 10 tests
+test centroid_scores_empty_lists_and_equal_vector_ties_are_consistent ... ok
+test malformed_serialized_indexes_fail_before_search ... ok
+test malformed_shapes_values_and_search_limits_are_rejected ... ok
+test packed_five_bit_residual_minimum_is_rejected_on_reload ... ok
+test equal_distances_signed_zero_and_later_lower_ids_remain_candidates ... ok
+test zero_database_rows_are_retained_and_zero_centroids_are_rejected ... ok
+test all_lists_retain_original_ids_across_padding_and_residual_widths ... ok
+test separated_blocks_reduce_evaluations_and_preserve_serialized_bytes ... ok
+test pruning_preserves_every_result_bit_across_padding_widths_seeds_and_limits ... ok
+test maximum_dimension_and_nonzero_loaded_padding_preserve_result_bits ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/reliability.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/reliability-b7d7ca3fb72da1ea)
+
+running 10 tests
+test opposite_embeddings_remain_distinct ... ok
+test invalid_batch_cannot_commit_a_prefix ... ok
+test incompatible_dimensions_are_rejected ... ok
+test documented_triplets_answer_structural_and_multihop_queries ... ok
+test relation_deletion_survives_restart ... ok
+test replacing_and_deleting_meaning_removes_owned_facts_after_compaction ... ok
+test concurrent_updates_and_compaction_replay_identically ... ok
+test corrupt_ann_cache_does_not_prevent_recovery_of_durable_data ... ok
+test every_query_route_returns_best_match_first ... ok
+test post_training_insert_survives_restart ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.80s
+
+     Running tests/rss_embeddings.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/rss_embeddings-664558914a27554b)
+
+running 3 tests
+test server_ingest_encode_lexical_serves_exact_vector_queries ... ok
+test f32_storage_scores_are_exact_for_the_stored_vector_and_within_1e6_of_f64 ... ok
+test lexical_ingest_skips_the_hypervector_channel_without_changing_vector_search ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/server.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/server-60f74958e37e6487)
+
+running 15 tests
+{"address":"127.0.0.1:42811","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.250Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.250Z"}
+{"address":"127.0.0.1:46393","auth":"keys","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.250Z","version":"0.6.1"}
+{"address":"127.0.0.1:34319","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.250Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.250Z"}
+{"bytes_in":339,"event":"request","key_id":null,"latency_ms":0.042772000000000004,"level":"warn","method":"POST","request_id":"1b69edd101dcbf0b","route":"/api/v1/query","status":401,"tenant":null,"ts":"2026-10-22T21:00:30.251Z"}
+{"address":"127.0.0.1:43959","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.252Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.252Z"}
+{"bytes_in":9,"event":"request","key_id":"anonymous","latency_ms":0.422213,"level":"warn","method":"POST","request_id":"14211a791ac99f59","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.253Z"}
+{"address":"127.0.0.1:43837","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.253Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.253Z"}
+{"bytes_in":339,"event":"request","key_id":null,"latency_ms":0.034278,"level":"warn","method":"POST","request_id":"f8053cf17d8d1554","route":"/api/v1/query","status":401,"tenant":null,"ts":"2026-10-22T21:00:30.253Z"}
+{"address":"127.0.0.1:44173","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.253Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.253Z"}
+{"address":"127.0.0.1:32857","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.253Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.253Z"}
+{"bytes_in":5,"event":"request","key_id":"anonymous","latency_ms":0.214751,"level":"warn","method":"POST","request_id":"be01ff6e86b0fa62","route":"/api/v1/documents","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.253Z"}
+{"address":"127.0.0.1:43853","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.253Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.253Z"}
+{"bytes_in":339,"event":"request","key_id":null,"latency_ms":0.057970999999999995,"level":"warn","method":"POST","request_id":"f6bd23be9ec3d09d","route":"/api/v1/query","status":401,"tenant":null,"ts":"2026-10-22T21:00:30.254Z"}
+{"bytes_in":6000,"event":"request","key_id":"anonymous","latency_ms":0.033306999999999996,"level":"warn","method":"POST","request_id":"9a7bca08a8755bd4","route":"/api/v1/documents/batch","status":413,"tenant":null,"ts":"2026-10-22T21:00:30.254Z"}
+{"address":"127.0.0.1:40495","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.254Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.254Z"}
+{"bytes_in":339,"event":"request","key_id":null,"latency_ms":0.027184,"level":"warn","method":"POST","request_id":"5d82923712a1efc7","route":"/api/v1/query","status":401,"tenant":null,"ts":"2026-10-22T21:00:30.254Z"}
+{"bytes_in":10,"event":"request","key_id":"anonymous","latency_ms":0.383162,"level":"warn","method":"POST","request_id":"6232dfe1b3286c54","route":"/api/v1/documents/batch","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.255Z"}
+test oversized_body_is_rejected ... ok
+{"bytes_in":339,"event":"request","key_id":null,"latency_ms":0.033176000000000004,"level":"warn","method":"POST","request_id":"0f31674ede96a84a","route":"/api/v1/query","status":401,"tenant":null,"ts":"2026-10-22T21:00:30.255Z"}
+{"bytes_in":334,"event":"request","key_id":"anonymous","latency_ms":0.462094,"level":"warn","method":"POST","request_id":"e37acfa80f25ec2b","route":"/api/v1/query","status":503,"tenant":"tenant-2","ts":"2026-10-22T21:00:30.256Z"}
+{"address":"127.0.0.1:39683","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.256Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.257Z"}
+{"bytes_in":0,"event":"request","key_id":"anonymous","latency_ms":0.153279,"level":"warn","method":"POST","request_id":"7dc660fb416bf849","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.257Z"}
+{"bytes_in":0,"event":"request","key_id":null,"latency_ms":0.022077,"level":"warn","method":"DELETE","request_id":"0cea05acf5930988","route":"/api/v1/documents/{id}","status":401,"tenant":null,"ts":"2026-10-22T21:00:30.257Z"}
+{"address":"127.0.0.1:39321","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.257Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.257Z"}
+{"bytes_in":62,"event":"request","key_id":"anonymous","latency_ms":0.36107,"level":"warn","method":"POST","request_id":"f8c28e64b58a6d63","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.258Z"}
+{"address":"127.0.0.1:33481","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.258Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.258Z"}
+{"address":"127.0.0.1:36717","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.258Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.258Z"}
+{"detail":"File exists (os error 17)","event":"internal_error","level":"error","ts":"2026-10-22T21:00:30.259Z"}
+{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":0.263019,"level":"error","method":"POST","request_id":"de50fcef0dcaf812","route":"/api/v1/query","status":500,"tenant":"blocked","ts":"2026-10-22T21:00:30.259Z"}
+{"address":"127.0.0.1:35471","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.260Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.260Z"}
+{"address":"127.0.0.1:36181","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.277Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.277Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":50.394403999999994,"level":"info","method":"POST","request_id":"a4f2fd962d8ce063","route":"/api/v1/query","status":200,"tenant":"tenant-1","ts":"2026-10-22T21:00:30.305Z"}
+{"bytes_in":334,"event":"request","key_id":"anonymous","latency_ms":55.406902,"level":"info","method":"POST","request_id":"faa4bd124cd1c493","route":"/api/v1/query","status":200,"tenant":"tenant-3","ts":"2026-10-22T21:00:30.310Z"}
+{"bytes_in":26,"event":"request","key_id":"anonymous","latency_ms":53.171431999999996,"level":"warn","method":"POST","request_id":"b06f44d82af30b29","route":"/api/v1/query","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.311Z"}{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":52.240601,"level":"info","method":"POST","request_id":"e80d87380730db27","route":"/api/v1/query","status":200,"tenant":"blocked","ts":"2026-10-22T21:00:30.311Z"}{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":56.896563,"level":"info","method":"POST","request_id":"14a835b2d6b625ee","route":"/api/v1/query","status":200,"tenant":"tenant-0","ts":"2026-10-22T21:00:30.311Z"}
+
+
+{"bytes_in":43,"event":"request","key_id":"anonymous","latency_ms":0.116013,"level":"warn","method":"POST","request_id":"93a45ff7cb5aff13","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.312Z"}
+{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":0.29404,"level":"warn","method":"POST","request_id":"beb32272be404ca0","route":"/api/v1/query","status":503,"tenant":"other","ts":"2026-10-22T21:00:30.313Z"}
+{"bytes_in":24,"event":"request","key_id":"anonymous","latency_ms":0.20408199999999999,"level":"warn","method":"POST","request_id":"f349b37f7f869b62","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.313Z"}
+{"bytes_in":82,"event":"request","key_id":"anonymous","latency_ms":0.127947,"level":"warn","method":"POST","request_id":"1e69b295cc3745d1","route":"/api/v1/query","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.314Z"}
+{"bytes_in":349,"event":"request","key_id":"anonymous","latency_ms":0.12454499999999999,"level":"warn","method":"POST","request_id":"4c4e8ce0fd045c9c","route":"/api/v1/query","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.314Z"}
+{"bytes_in":350,"event":"request","key_id":"anonymous","latency_ms":0.101247,"level":"warn","method":"POST","request_id":"26e5cbbe11ab87bd","route":"/api/v1/query","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.315Z"}
+{"bytes_in":351,"event":"request","key_id":"anonymous","latency_ms":0.15718000000000001,"level":"warn","method":"POST","request_id":"0c77376cc003986e","route":"/api/v1/query","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.315Z"}
+{"bytes_in":339,"event":"request","key_id":"legacy","latency_ms":57.90703,"level":"info","method":"POST","request_id":"b4191775a8aff87b","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.315Z"}
+{"bytes_in":351,"event":"request","key_id":"anonymous","latency_ms":0.193217,"level":"info","method":"POST","request_id":"050a18b2c91b4085","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.316Z"}
+test failed_tenant_initialization_releases_reservation_and_retries ... ok
+{"bytes_in":352,"event":"request","key_id":"anonymous","latency_ms":0.100405,"level":"warn","method":"POST","request_id":"ad46cb76eb84980e","route":"/api/v1/query","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.317Z"}
+{"bytes_in":631,"event":"request","key_id":"anonymous","latency_ms":0.096599,"level":"warn","method":"POST","request_id":"3219421cf03b7dd7","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.317Z"}
+test auth_is_enforced_when_key_is_set ... ok
+{"bytes_in":374,"event":"request","key_id":"anonymous","latency_ms":0.106976,"level":"warn","method":"POST","request_id":"ec78acf5c26f0e16","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.318Z"}
+{"bytes_in":385,"event":"request","key_id":"anonymous","latency_ms":0.043525,"level":"warn","method":"POST","request_id":"4002bde3e016c62d","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.318Z"}
+{"bytes_in":382,"event":"request","key_id":"anonymous","latency_ms":0.044539,"level":"warn","method":"POST","request_id":"b9bf9ec94aaa0455","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.318Z"}
+{"bytes_in":376,"event":"request","key_id":"anonymous","latency_ms":0.039109,"level":"warn","method":"POST","request_id":"a93670a926808250","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.318Z"}
+{"bytes_in":2,"event":"request","key_id":"anonymous","latency_ms":0.040517,"level":"warn","method":"POST","request_id":"8566a7168960c1ec","route":"/api/v1/documents/batch","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.318Z"}
+{"bytes_in":1119,"event":"request","key_id":"anonymous","latency_ms":0.081402,"level":"warn","method":"POST","request_id":"7895355bafb1b70f","route":"/api/v1/documents/batch","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.319Z"}
+test concurrent_distinct_first_access_enforces_tenant_reservations_at_cap ... ok
+{"bytes_in":446,"event":"request","key_id":"anonymous","latency_ms":0.090423,"level":"warn","method":"POST","request_id":"f0ad945b93c71085","route":"/api/v1/documents/batch","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.319Z"}
+{"bytes_in":767,"event":"request","key_id":"anonymous","latency_ms":61.020772,"level":"info","method":"POST","request_id":"7a22d3a68419e167","route":"/api/v1/documents/batch","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.319Z"}
+{"bytes_in":1113,"event":"request","key_id":"anonymous","latency_ms":60.909549,"level":"info","method":"POST","request_id":"91252737aca47685","route":"/api/v1/documents/batch","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.319Z"}
+{"bytes_in":203,"event":"request","key_id":"anonymous","latency_ms":58.999500000000005,"level":"info","method":"POST","request_id":"cad36252930c4a07","route":"/api/v1/documents/batch","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.319Z"}{"bytes_in":389,"event":"request","key_id":"anonymous","latency_ms":64.97747399999999,"level":"info","method":"POST","request_id":"ad9da4532ea0586f","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.319Z"}
+{"bytes_in":396,"event":"request","key_id":"anonymous","latency_ms":65.450423,"level":"info","method":"POST","request_id":"14e132e62672a39f","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.319Z"}
+
+{"bytes_in":393,"event":"request","key_id":"anonymous","latency_ms":62.269569,"level":"info","method":"POST","request_id":"9b8c3b6c3c3e373e","route":"/api/v1/documents","status":200,"tenant":"alpha","ts":"2026-10-22T21:00:30.319Z"}
+{"bytes_in":391,"event":"request","key_id":"anonymous","latency_ms":64.86842600000001,"level":"info","method":"POST","request_id":"557948eaf17a656e","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.319Z"}{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.087452,"level":"info","method":"POST","request_id":"ff2bc2692e7714f7","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.320Z"}
+
+{"bytes_in":376,"event":"request","key_id":"anonymous","latency_ms":67.042657,"level":"info","method":"POST","request_id":"938826dda38d8540","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.320Z"}
+{"bytes_in":0,"event":"request","key_id":"anonymous","latency_ms":0.016316999999999998,"level":"warn","method":"GET","request_id":"6ff90a384dbae0c8","route":"/api/v1/query","status":405,"tenant":null,"ts":"2026-10-22T21:00:30.320Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.12986599999999998,"level":"info","method":"POST","request_id":"14d6f95e327492a0","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.320Z"}
+{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":0.195749,"level":"info","method":"POST","request_id":"07ab3aff458c7ae5","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.321Z"}
+{"bytes_in":0,"event":"request","key_id":"anonymous","latency_ms":0.016331,"level":"warn","method":"GET","request_id":"bcea0d76f20fcf8e","route":"unmatched","status":404,"tenant":null,"ts":"2026-10-22T21:00:30.321Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.139627,"level":"info","method":"POST","request_id":"6d59aa191c7a54ff","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.321Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.09741999999999999,"level":"info","method":"POST","request_id":"c007f70fc26ec52c","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.322Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.07472999999999999,"level":"info","method":"POST","request_id":"a13b1a5e341011b9","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.322Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.075029,"level":"info","method":"POST","request_id":"16b3d8658d1bb214","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.322Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.094511,"level":"info","method":"POST","request_id":"9d3aa521d6c41334","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.323Z"}
+{"bytes_in":112,"event":"request","key_id":"anonymous","latency_ms":0.105635,"level":"info","method":"POST","request_id":"ce758eef44a6b689","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.323Z"}
+test malformed_and_invalid_requests_get_json_errors ... ok
+{"bytes_in":389,"event":"request","key_id":"anonymous","latency_ms":68.611459,"level":"info","method":"POST","request_id":"e7ad0c5c559f09c6","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.323Z"}
+{"bytes_in":112,"event":"request","key_id":"anonymous","latency_ms":0.07450599999999999,"level":"info","method":"POST","request_id":"8afb833624095ff8","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.323Z"}
+{"delay_seconds":0,"event":"shutdown_signal","level":"info","ts":"2026-10-22T21:00:30.324Z"}
+{"bytes_in":792,"event":"request","key_id":"anonymous","latency_ms":3.7179309999999997,"level":"info","method":"POST","request_id":"da7ff61b560b013e","route":"/api/v1/documents/batch","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.324Z"}
+{"bytes_in":484,"event":"request","key_id":"anonymous","latency_ms":0.092482,"level":"warn","method":"POST","request_id":"1124bafb4d653474","route":"/api/v1/documents/batch","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.325Z"}
+{"event":"shutdown_started","level":"info","ts":"2026-10-22T21:00:30.325Z"}
+{"bytes_in":340,"event":"request","key_id":"anonymous","latency_ms":5.105056,"level":"info","method":"POST","request_id":"9ae46231f5454c5f","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.326Z"}
+{"bytes_in":4,"event":"request","key_id":"anonymous","latency_ms":5.709079,"level":"info","method":"DELETE","request_id":"1d11700198579ac5","route":"/api/v1/documents/{id}","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.326Z"}
+{"bytes_in":1149,"event":"request","key_id":"anonymous","latency_ms":5.660172,"level":"info","method":"POST","request_id":"d54ccd76a41eb636","route":"/api/v1/documents/batch","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.326Z"}
+{"bytes_in":344,"event":"request","key_id":"anonymous","latency_ms":0.115675,"level":"info","method":"POST","request_id":"18a06a1a7cdc0eb7","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.326Z"}
+{"bytes_in":388,"event":"request","key_id":"anonymous","latency_ms":71.917467,"level":"info","method":"POST","request_id":"af7fd0cf35f3cee3","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.326Z"}
+{"bytes_in":349,"event":"request","key_id":"anonymous","latency_ms":0.387232,"level":"info","method":"POST","request_id":"380275df418609a5","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.327Z"}{"delay_seconds":0,"event":"shutdown_signal","level":"info","ts":"2026-10-22T21:00:30.327Z"}
+
+{"bytes_in":370,"event":"request","key_id":"anonymous","latency_ms":6.172791,"level":"info","method":"POST","request_id":"9b83a2ef82580f5f","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.327Z"}
+{"bytes_in":8542,"event":"request","key_id":"anonymous","latency_ms":0.17968800000000001,"level":"warn","method":"POST","request_id":"597ba169a87802b4","route":"/api/v1/documents","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.327Z"}
+{"bytes_in":345,"event":"request","key_id":"anonymous","latency_ms":0.12581499999999998,"level":"info","method":"POST","request_id":"de773ab8c2cc5431","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.327Z"}
+{"bytes_in":344,"event":"request","key_id":"anonymous","latency_ms":0.100752,"level":"info","method":"POST","request_id":"136632fcae9d28c9","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.328Z"}
+{"bytes_in":393,"event":"request","key_id":"anonymous","latency_ms":73.24192000000001,"level":"info","method":"POST","request_id":"5920c17f6e44654e","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.328Z"}
+{"event":"shutdown_started","level":"info","ts":"2026-10-22T21:00:30.328Z"}
+{"bytes_in":344,"event":"request","key_id":"anonymous","latency_ms":0.096124,"level":"info","method":"POST","request_id":"714b28a83f7c57bf","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.328Z"}
+{"bytes_in":343,"event":"request","key_id":"anonymous","latency_ms":0.097652,"level":"info","method":"POST","request_id":"99f90921243e7914","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.328Z"}
+{"bytes_in":366,"event":"request","key_id":"anonymous","latency_ms":0.119295,"level":"info","method":"POST","request_id":"da4a66be80583b2a","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.329Z"}
+test scores_are_exact_cosine_and_documents_must_fit_one_chunk ... ok
+test upsert_replaces_text_and_metadata ... ok
+{"bytes_in":4,"event":"request","key_id":"anonymous","latency_ms":3.456039,"level":"info","method":"DELETE","request_id":"4b7a74e3087ef231","route":"/api/v1/documents/{id}","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.333Z"}
+{"bytes_in":387,"event":"request","key_id":"anonymous","latency_ms":78.87878099999999,"level":"info","method":"POST","request_id":"dfa4031dd9a47797","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.334Z"}
+{"bytes_in":4,"event":"request","key_id":"anonymous","latency_ms":3.6635869999999997,"level":"warn","method":"DELETE","request_id":"fd97979bbc11a9c3","route":"/api/v1/documents/{id}","status":404,"tenant":null,"ts":"2026-10-22T21:00:30.337Z"}
+{"bytes_in":388,"event":"request","key_id":"anonymous","latency_ms":82.807811,"level":"info","method":"POST","request_id":"d72784de3e2d509d","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.337Z"}
+{"bytes_in":350,"event":"request","key_id":"anonymous","latency_ms":0.152612,"level":"info","method":"POST","request_id":"7f4d6a40b4d2cfad","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.338Z"}
+{"bytes_in":50884,"event":"request","key_id":"anonymous","latency_ms":83.020606,"level":"info","method":"POST","request_id":"3be81493f7974b86","route":"/api/v1/documents/batch","status":200,"tenant":"indexed","ts":"2026-10-22T21:00:30.338Z"}
+{"bytes_in":364,"event":"request","key_id":"anonymous","latency_ms":0.23832399999999998,"level":"info","method":"POST","request_id":"520a2e1afebc3a42","route":"/api/v1/query","status":200,"tenant":"indexed","ts":"2026-10-22T21:00:30.339Z"}
+{"bytes_in":2,"event":"request","key_id":"anonymous","latency_ms":0.169888,"level":"info","method":"POST","request_id":"6761422221208a72","route":"/api/v1/index/maintain","status":200,"tenant":"indexed","ts":"2026-10-22T21:00:30.339Z"}
+{"bytes_in":364,"event":"request","key_id":"anonymous","latency_ms":0.18567,"level":"info","method":"POST","request_id":"8785ea1371c40147","route":"/api/v1/query","status":200,"tenant":"indexed","ts":"2026-10-22T21:00:30.340Z"}
+test add_batch_query_filter_delete ... ok
+{"bytes_in":388,"event":"request","key_id":"anonymous","latency_ms":85.02981799999999,"level":"info","method":"POST","request_id":"cc0134eef6d6ced8","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.340Z"}
+{"bytes_in":396,"event":"request","key_id":"anonymous","latency_ms":89.101438,"level":"info","method":"POST","request_id":"282e81aed2887d7b","route":"/api/v1/documents","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.344Z"}
+{"bytes_in":353,"event":"request","key_id":"anonymous","latency_ms":0.168669,"level":"info","method":"POST","request_id":"663fefe2a879c93d","route":"/api/v1/query","status":200,"tenant":"first","ts":"2026-10-22T21:00:30.344Z"}
+{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":66.921718,"level":"info","method":"POST","request_id":"3c331322ea8b56b5","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.345Z"}
+test concurrent_first_access_opens_one_store_and_preserves_all_writes ... ok
+{"address":"127.0.0.1:44437","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.351Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.351Z"}
+{"event":"shutdown_complete","level":"info","ts":"2026-10-22T21:00:30.352Z"}
+{"event":"shutdown_complete","level":"info","ts":"2026-10-22T21:00:30.352Z"}
+{"bytes_in":8500873,"event":"request","key_id":"anonymous","latency_ms":19.190206,"level":"warn","method":"POST","request_id":"357a94e4b33a8d1c","route":"/api/v1/documents/batch","status":422,"tenant":null,"ts":"2026-10-22T21:00:30.357Z"}
+{"address":"127.0.0.1:46633","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.357Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.357Z"}
+{"address":"127.0.0.1:38991","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.357Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.357Z"}
+{"bytes_in":345,"event":"request","key_id":"anonymous","latency_ms":0.165629,"level":"info","method":"POST","request_id":"b2769785dab3a029","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.358Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":4.8053,"level":"info","method":"POST","request_id":"41b77f0e4eb6ea75","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.362Z"}
+{"bytes_in":349,"event":"request","key_id":"anonymous","latency_ms":4.8949370000000005,"level":"info","method":"POST","request_id":"585b952ad645ea76","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.362Z"}
+test batch_last_write_wins_and_aggregate_rejection_preserve_atomicity ... ok
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.125809,"level":"info","method":"POST","request_id":"b48e7d16d4f99e50","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.363Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.06883600000000001,"level":"info","method":"POST","request_id":"c4af4caa00990658","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.363Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.134033,"level":"info","method":"POST","request_id":"45216ec7c36d6950","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.363Z"}
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.070772,"level":"info","method":"POST","request_id":"54e850c8d4f0fe90","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.364Z"}
+test graceful_shutdown_persists_data ... ok
+{"bytes_in":95,"event":"request","key_id":"anonymous","latency_ms":0.08186099999999999,"level":"info","method":"POST","request_id":"42f9c8ae42c4c072","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.364Z"}
+{"bytes_in":112,"event":"request","key_id":"anonymous","latency_ms":0.068048,"level":"info","method":"POST","request_id":"6aa0510e3c545bff","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.364Z"}
+{"bytes_in":112,"event":"request","key_id":"anonymous","latency_ms":0.07829499999999999,"level":"info","method":"POST","request_id":"b3966862a73296b1","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.364Z"}
+test finite_f64_extremes_preserve_cosine_and_survive_restart ... ok
+{"bytes_in":392,"event":"request","key_id":"anonymous","latency_ms":71.349682,"level":"info","method":"POST","request_id":"cb5d3f1891995018","route":"/api/v1/documents","status":200,"tenant":"Alpha","ts":"2026-10-22T21:00:30.392Z"}
+{"bytes_in":350,"event":"request","key_id":"anonymous","latency_ms":0.162587,"level":"info","method":"POST","request_id":"a79f7601e617e3c1","route":"/api/v1/query","status":200,"tenant":"alpha","ts":"2026-10-22T21:00:30.392Z"}
+{"bytes_in":350,"event":"request","key_id":"anonymous","latency_ms":0.089694,"level":"info","method":"POST","request_id":"678396525ad6fec9","route":"/api/v1/query","status":200,"tenant":"Alpha","ts":"2026-10-22T21:00:30.393Z"}
+{"bytes_in":2,"event":"request","key_id":"anonymous","latency_ms":54.41835,"level":"info","method":"POST","request_id":"22fdc92066cf82cf","route":"/api/v1/index/maintain","status":200,"tenant":"other","ts":"2026-10-22T21:00:30.394Z"}
+{"bytes_in":20,"event":"request","key_id":"anonymous","latency_ms":0.114212,"level":"warn","method":"POST","request_id":"af4f2b3ef40ce59d","route":"/api/v1/index/maintain","status":422,"tenant":"indexed","ts":"2026-10-22T21:00:30.395Z"}
+{"address":"127.0.0.1:40281","auth":"keys","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.400Z","version":"0.6.1"}
+{"bytes_in":0,"event":"request","key_id":null,"latency_ms":0.025471,"level":"warn","method":"POST","request_id":"bc37cc5272af53f6","route":"/api/v1/index/maintain","status":401,"tenant":null,"ts":"2026-10-22T21:00:30.400Z"}
+{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":53.025597,"level":"info","method":"POST","request_id":"ef0cdfc146c474a7","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.405Z"}
+{"address":"127.0.0.1:36893","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.410Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.410Z"}
+{"bytes_in":350,"event":"request","key_id":"anonymous","latency_ms":45.718007,"level":"info","method":"POST","request_id":"6237ffe89ec0368d","route":"/api/v1/query","status":200,"tenant":"beta","ts":"2026-10-22T21:00:30.439Z"}
+{"bytes_in":0,"event":"request","key_id":"legacy","latency_ms":48.720355,"level":"info","method":"POST","request_id":"2997befd029d7d04","route":"/api/v1/index/maintain","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.449Z"}
+test explicit_index_maintenance_preserves_exact_queries_and_tenant_isolation ... ok
+{"bytes_in":384,"event":"request","key_id":"anonymous","latency_ms":54.948044,"level":"info","method":"POST","request_id":"fd49dea023705ea4","route":"/api/v1/documents/batch","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.465Z"}
+{"address":"127.0.0.1:46503","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.471Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.471Z"}
+{"bytes_in":350,"event":"request","key_id":"anonymous","latency_ms":48.126782,"level":"info","method":"POST","request_id":"8a4623b5c1aeb180","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.487Z"}
+{"bytes_in":4,"event":"request","key_id":"anonymous","latency_ms":4.682607,"level":"warn","method":"DELETE","request_id":"4d4a6fdf583fc1f3","route":"/api/v1/documents/{id}","status":404,"tenant":"beta","ts":"2026-10-22T21:00:30.493Z"}
+{"bytes_in":350,"event":"request","key_id":"anonymous","latency_ms":0.11151599999999999,"level":"info","method":"POST","request_id":"cc07fb530fac085b","route":"/api/v1/query","status":200,"tenant":"alpha","ts":"2026-10-22T21:00:30.493Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.017702000000000002,"level":"warn","method":"POST","request_id":"468704751b33bfa6","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.493Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.019896999999999998,"level":"warn","method":"POST","request_id":"c0986d9d13478cc9","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.494Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.019503,"level":"warn","method":"POST","request_id":"2059749dc9eb3975","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.494Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.014398,"level":"warn","method":"POST","request_id":"74163b8d68aab1e9","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.494Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.017453,"level":"warn","method":"POST","request_id":"b3f447b0a1e9643f","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.494Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.015286,"level":"warn","method":"POST","request_id":"8b560bf25b875840","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.495Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.020726,"level":"warn","method":"POST","request_id":"235482396f691be9","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.495Z"}
+{"bytes_in":339,"event":"request","key_id":"anonymous","latency_ms":0.024211,"level":"warn","method":"POST","request_id":"bcd91618f837d9b1","route":"/api/v1/query","status":400,"tenant":null,"ts":"2026-10-22T21:00:30.495Z"}
+test tenants_are_isolated_and_validated ... ok
+{"bytes_in":384,"event":"request","key_id":"anonymous","latency_ms":44.700315999999994,"level":"info","method":"POST","request_id":"d3352889c48492f4","route":"/api/v1/documents/batch","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.516Z"}
+{"address":"127.0.0.1:37461","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.522Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.522Z"}
+{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":27.748473,"level":"info","method":"POST","request_id":"ada737c7dce9d1a1","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.550Z"}
+{"address":"127.0.0.1:41821","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-22T21:00:30.557Z","version":"0.6.1"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-22T21:00:30.557Z"}
+{"bytes_in":342,"event":"request","key_id":"anonymous","latency_ms":27.606596,"level":"info","method":"POST","request_id":"2c06e6d8c7db22ab","route":"/api/v1/query","status":200,"tenant":null,"ts":"2026-10-22T21:00:30.585Z"}
+test configured_work_and_batch_limits_reject_native_limit_overflow_at_startup ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests/server_abuse.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/server_abuse-d4ecbfb368939b8a)
+
+running 3 tests
+test hostile_paths_methods_and_headers_never_reach_a_5xx ... ok
+test hostile_bodies_get_clean_client_errors_and_the_store_survives ... ok
+test abandoned_and_stalled_connections_do_not_leak_work_slots_or_memory ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.07s
+
+     Running tests/server_ann.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/server_ann-d8da75637e9be690)
+
+running 1 test
+test graph_and_exact_routes_agree_and_track_deletes_and_replaces ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+
+     Running tests/server_api.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/server_api-bb168e3449fc5d2f)
+
+running 13 tests
+test cors_is_off_by_default_and_exact_when_configured ... ok
+test refuses_to_start_without_credentials_or_explicit_dev_mode ... ok
+test errors_are_problem_json_with_request_ids_and_the_legacy_error_object ... ok
+test search_ranks_like_lexical_recall_and_returns_fields_only_on_request ... ok
+test openapi_matches_the_committed_file_and_documented_security_is_enforced ... ok
+test logs_are_structured_and_never_contain_secrets_or_content ... ok
+test health_readiness_and_metrics ... ok
+test idempotency_keys_replay_conflict_and_scope_to_the_tenant ... ok
+test list_stats_and_conditional_requests ... ok
+test ndjson_stream_commits_in_batches_and_reports_rejected_lines ... ok
+test keys_are_scoped_tenant_bound_and_rotate_without_restart ... ok
+test legacy_api_key_still_grants_everything ... ok
+test per_tenant_rate_limit_and_document_quota ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.31s
+
+     Running tests/server_ops.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/server_ops-ad13575fa16977a2)
+
+running 11 tests
+test unix_socket_serves_with_private_permissions_and_replaces_a_stale_socket ... ok
+test shutdown_drains_in_flight_requests_and_flushes_before_exiting ... ok
+test tls_serves_https_and_reloads_the_certificate_on_sighup ... ok
+test a_snapshot_pauses_only_its_own_tenant_and_never_hangs_requests ... ok
+test restore_rejects_hostile_or_damaged_archives_and_leaves_the_store_alone ... ok
+test snapshot_restore_and_off_box_backup_round_trip ... ok
+test slow_header_clients_are_dropped_and_the_connection_cap_holds ... ok
+test readiness_fails_during_the_shutdown_delay_while_requests_are_still_served ... ok
+test healthcheck_subcommand_reflects_readiness_for_containers_without_curl ... ok
+test compaction_runs_on_schedule_only_when_changed_and_on_demand ... ok
+test idle_tenants_close_and_reopen_over_http ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.05s
+
+     Running tests/store_lifecycle.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/store_lifecycle-2f9ba6e6b3685878)
+
+running 2 tests
+test large_single_batch_reopens_identically ... ok
+test compact_reopen_and_delete_with_live_readers ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running tests/wrong_passphrase.rs (/home/davidcondrey/sol-qag/target-v4/debug/deps/wrong_passphrase-81ab5322200037b1)
+
+running 1 test
+test wrong_passphrase_error_mentions_the_passphrase ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+   Doc-tests holographic_memory
+
+running 2 tests
+test src/core/embed/mod.rs - core::embed (line 13) - compile ... ok
+test src/core/phase_resonator.rs - core::phase_resonator::PhaseResonator (line 234) ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
