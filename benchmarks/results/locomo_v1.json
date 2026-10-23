@@ -9,7 +9,7 @@
   "k_per_speaker": 30,
   "token_budget": 1764,
   "recall_options": {},
-  "hms_sha": "",
+  "hms_sha": "c80aa52a785641094dbe16df6be020572a883957",
   "hms_surface": "hms-server memory API (POST /api/v1/memory/remember, recall)",
   "split": {
     "tuning": [
@@ -29,7 +29,9 @@
   },
   "split_rule": "first three conversations in file order are the tuning set, fixed before any run",
   "scores": "fractions; f1/bleu1/j are means over independent reader passes",
-  "note": "Incomplete: the OpenAI account ran out of credit during the final run, before any judge call. Held-out J was never computed; conv-49 and conv-50 were never read; conv-48 is excluded because two of its questions have no cached reader response. F1/BLEU-1 are scored offline from cached reader responses (passes 0-2), one rerun per conversation, on 7 conversations (tuning 3 + held-out 4). J exists only for the tuning set, one pass. openai_spend_usd_total is an estimate: 0.96 USD measured on tuning runs plus about 2.5 USD for the interrupted final run.",
+  "note": "Frozen config chosen on the tuning conversations at HMS ec2da79 (see split); final passes ran at the hms_sha commit. Arms: primary = hybrid recall (text-embedding-3-small, blend), k=30 per speaker, memories capped at 1764 o200k tokens (Mem0's reported context size); uncapped = same with k=30 only (count-matched to Mem0's top_k); lexical = no embeddings, capped at 1764; full_context = Mem0's full-context baseline (whole conversation, rag.py chunk_size -1 prompt), no memory system. Spend is from API usage at list price, cached input at the cached rate; reader responses cached by prompt hash from the interrupted 2026-10-22 run were reused where retrieval was unchanged (6892 of 7700 primary reader prompts).",
+  "date": "2026-10-23",
+  "machine": "Apple M-series, 10 cores; hms-server with 4 tokio worker threads and 4 concurrent work slots; harness 16 client workers; load average 3-20 (host shared with other harnesses; retrieval quality is load-independent)",
   "arms": {
     "primary": {
       "all_scored": {
@@ -40,67 +42,125 @@
           "conv-42",
           "conv-43",
           "conv-44",
-          "conv-47"
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
         ],
         "overall": {
-          "n": 1035,
-          "evidence_recall": 0.8152,
-          "context_tokens_mean": 1749.5,
-          "f1": 0.5239,
-          "bleu1": 0.4162,
+          "n": 1540,
+          "evidence_recall": 0.818,
+          "context_tokens_mean": 1749.3,
+          "f1": 0.5207,
+          "bleu1": 0.4128,
           "f1_runs": [
-            0.5232,
-            0.5245,
-            0.5239
-          ]
+            0.5214,
+            0.5196,
+            0.5209,
+            0.5215,
+            0.5202
+          ],
+          "j": 0.7365,
+          "j_runs": [
+            0.7429,
+            0.7338,
+            0.7344,
+            0.7377,
+            0.7338
+          ],
+          "j_std": 0.0039
         },
         "category_1": {
-          "n": 192,
-          "evidence_recall": 0.5785,
-          "context_tokens_mean": 1750.2,
-          "f1": 0.3779,
-          "bleu1": 0.2607,
+          "n": 282,
+          "evidence_recall": 0.6038,
+          "context_tokens_mean": 1749.9,
+          "f1": 0.3586,
+          "bleu1": 0.239,
           "f1_runs": [
-            0.3779,
-            0.3795,
-            0.3762
-          ]
+            0.362,
+            0.358,
+            0.3575,
+            0.3585,
+            0.3567
+          ],
+          "j": 0.639,
+          "j_runs": [
+            0.6489,
+            0.6312,
+            0.6312,
+            0.6489,
+            0.6348
+          ],
+          "j_std": 0.0092
         },
         "category_2": {
-          "n": 214,
-          "evidence_recall": 0.8847,
-          "context_tokens_mean": 1748.1,
-          "f1": 0.5942,
-          "bleu1": 0.4758,
+          "n": 321,
+          "evidence_recall": 0.879,
+          "context_tokens_mean": 1748.5,
+          "f1": 0.599,
+          "bleu1": 0.4877,
           "f1_runs": [
-            0.5926,
-            0.5907,
-            0.5992
-          ]
+            0.5977,
+            0.5971,
+            0.6032,
+            0.5949,
+            0.6023
+          ],
+          "j": 0.7159,
+          "j_runs": [
+            0.7196,
+            0.7103,
+            0.7227,
+            0.704,
+            0.7227
+          ],
+          "j_std": 0.0084
         },
         "category_3": {
-          "n": 66,
-          "evidence_recall": 0.5354,
-          "context_tokens_mean": 1745.5,
-          "f1": 0.22,
-          "bleu1": 0.1591,
+          "n": 96,
+          "evidence_recall": 0.5642,
+          "context_tokens_mean": 1747.4,
+          "f1": 0.274,
+          "bleu1": 0.2048,
           "f1_runs": [
-            0.2263,
-            0.2187,
-            0.215
-          ]
+            0.2817,
+            0.2765,
+            0.2656,
+            0.2739,
+            0.2721
+          ],
+          "j": 0.4896,
+          "j_runs": [
+            0.5104,
+            0.5,
+            0.4688,
+            0.4896,
+            0.4792
+          ],
+          "j_std": 0.0165
         },
         "category_4": {
-          "n": 563,
-          "evidence_recall": 0.9023,
-          "context_tokens_mean": 1750.3,
-          "f1": 0.5825,
-          "bleu1": 0.4768,
+          "n": 841,
+          "evidence_recall": 0.8956,
+          "context_tokens_mean": 1749.7,
+          "f1": 0.5734,
+          "bleu1": 0.4663,
           "f1_runs": [
-            0.5811,
-            0.5846,
-            0.582
-          ]
+            0.5732,
+            0.572,
+            0.5734,
+            0.5765,
+            0.572
+          ],
+          "j": 0.8052,
+          "j_runs": [
+            0.8098,
+            0.8038,
+            0.8038,
+            0.8086,
+            0.8002
+          ],
+          "j_std": 0.0039
         }
       },
       "tuning": {
@@ -113,61 +173,116 @@
           "n": 385,
           "evidence_recall": 0.8429,
           "context_tokens_mean": 1748.9,
-          "f1": 0.5442,
-          "bleu1": 0.4221,
+          "f1": 0.5436,
+          "bleu1": 0.422,
           "f1_runs": [
             0.542,
             0.5431,
-            0.5475
-          ]
+            0.5475,
+            0.5442,
+            0.541
+          ],
+          "j": 0.787,
+          "j_runs": [
+            0.7948,
+            0.7844,
+            0.7922,
+            0.7792,
+            0.7844
+          ],
+          "j_std": 0.0064
         },
         "category_1": {
           "n": 74,
           "evidence_recall": 0.6421,
           "context_tokens_mean": 1750.5,
-          "f1": 0.4174,
-          "bleu1": 0.2833,
+          "f1": 0.4167,
+          "bleu1": 0.2832,
           "f1_runs": [
             0.4078,
             0.4194,
-            0.425
-          ]
+            0.425,
+            0.4169,
+            0.4144
+          ],
+          "j": 0.6324,
+          "j_runs": [
+            0.6351,
+            0.6351,
+            0.6351,
+            0.6216,
+            0.6351
+          ],
+          "j_std": 0.006
         },
         "category_2": {
           "n": 90,
           "evidence_recall": 0.9556,
           "context_tokens_mean": 1748.1,
-          "f1": 0.6881,
-          "bleu1": 0.5469,
+          "f1": 0.6861,
+          "bleu1": 0.5447,
           "f1_runs": [
             0.6918,
             0.6789,
-            0.6936
-          ]
+            0.6936,
+            0.6744,
+            0.6918
+          ],
+          "j": 0.8467,
+          "j_runs": [
+            0.8667,
+            0.8333,
+            0.8667,
+            0.8111,
+            0.8556
+          ],
+          "j_std": 0.0241
         },
         "category_3": {
           "n": 21,
           "evidence_recall": 0.4762,
           "context_tokens_mean": 1741.5,
-          "f1": 0.1988,
-          "bleu1": 0.1639,
+          "f1": 0.2042,
+          "bleu1": 0.1695,
           "f1_runs": [
             0.2042,
             0.1961,
-            0.1961
-          ]
+            0.1961,
+            0.2148,
+            0.2095
+          ],
+          "j": 0.6667,
+          "j_runs": [
+            0.6667,
+            0.6667,
+            0.6667,
+            0.6667,
+            0.6667
+          ],
+          "j_std": 0.0
         },
         "category_4": {
           "n": 200,
           "evidence_recall": 0.905,
           "context_tokens_mean": 1749.5,
-          "f1": 0.5627,
-          "bleu1": 0.4445,
+          "f1": 0.562,
+          "bleu1": 0.4446,
           "f1_runs": [
             0.5598,
             0.5643,
-            0.5639
-          ]
+            0.5639,
+            0.5673,
+            0.5549
+          ],
+          "j": 0.83,
+          "j_runs": [
+            0.835,
+            0.83,
+            0.83,
+            0.835,
+            0.82
+          ],
+          "j_std": 0.0061
         }
       },
       "heldout": {
@@ -175,147 +290,237 @@
           "conv-42",
           "conv-43",
           "conv-44",
-          "conv-47"
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
         ],
         "overall": {
-          "n": 650,
-          "evidence_recall": 0.7988,
-          "context_tokens_mean": 1749.9,
-          "f1": 0.5118,
-          "bleu1": 0.4127,
+          "n": 1155,
+          "evidence_recall": 0.8097,
+          "context_tokens_mean": 1749.4,
+          "f1": 0.5131,
+          "bleu1": 0.4098,
           "f1_runs": [
+            0.5146,
+            0.5118,
             0.512,
-            0.5135,
-            0.51
-          ]
+            0.514,
+            0.5133
+          ],
+          "j": 0.7197,
+          "j_runs": [
+            0.7255,
+            0.7169,
+            0.7152,
+            0.7238,
+            0.7169
+          ],
+          "j_std": 0.0047
         },
         "category_1": {
-          "n": 118,
-          "evidence_recall": 0.5386,
-          "context_tokens_mean": 1750.0,
-          "f1": 0.3531,
-          "bleu1": 0.2465,
+          "n": 208,
+          "evidence_recall": 0.5901,
+          "context_tokens_mean": 1749.7,
+          "f1": 0.3379,
+          "bleu1": 0.2233,
           "f1_runs": [
-            0.3592,
-            0.3546,
-            0.3456
-          ]
+            0.3458,
+            0.3362,
+            0.3335,
+            0.3378,
+            0.3362
+          ],
+          "j": 0.6413,
+          "j_runs": [
+            0.6538,
+            0.6298,
+            0.6298,
+            0.6587,
+            0.6346
+          ],
+          "j_std": 0.0139
         },
         "category_2": {
-          "n": 124,
-          "evidence_recall": 0.8333,
-          "context_tokens_mean": 1748.0,
-          "f1": 0.526,
-          "bleu1": 0.4241,
+          "n": 231,
+          "evidence_recall": 0.8492,
+          "context_tokens_mean": 1748.6,
+          "f1": 0.5651,
+          "bleu1": 0.4655,
           "f1_runs": [
-            0.5207,
-            0.5267,
-            0.5306
-          ]
+            0.5611,
+            0.5652,
+            0.568,
+            0.5639,
+            0.5675
+          ],
+          "j": 0.6649,
+          "j_runs": [
+            0.6623,
+            0.6623,
+            0.6667,
+            0.6623,
+            0.671
+          ],
+          "j_std": 0.0039
         },
         "category_3": {
-          "n": 45,
-          "evidence_recall": 0.563,
-          "context_tokens_mean": 1747.4,
-          "f1": 0.2299,
-          "bleu1": 0.1569,
+          "n": 75,
+          "evidence_recall": 0.5888,
+          "context_tokens_mean": 1749.0,
+          "f1": 0.2935,
+          "bleu1": 0.2146,
           "f1_runs": [
-            0.2366,
-            0.2292,
-            0.2238
-          ]
+            0.3034,
+            0.299,
+            0.2851,
+            0.2905,
+            0.2896
+          ],
+          "j": 0.44,
+          "j_runs": [
+            0.4667,
+            0.4533,
+            0.4133,
+            0.44,
+            0.4267
+          ],
+          "j_std": 0.0211
         },
         "category_4": {
-          "n": 363,
-          "evidence_recall": 0.9008,
-          "context_tokens_mean": 1750.8,
-          "f1": 0.5935,
-          "bleu1": 0.4946,
+          "n": 641,
+          "evidence_recall": 0.8926,
+          "context_tokens_mean": 1749.7,
+          "f1": 0.577,
+          "bleu1": 0.4731,
           "f1_runs": [
-            0.5928,
-            0.5958,
-            0.5919
-          ]
+            0.5773,
+            0.5745,
+            0.5763,
+            0.5793,
+            0.5773
+          ],
+          "j": 0.7975,
+          "j_runs": [
+            0.8019,
+            0.7956,
+            0.7956,
+            0.8003,
+            0.7941
+          ],
+          "j_std": 0.0034
         }
       },
-      "passes": 3
+      "passes": 5
     },
-    "primary_judged_tuning": {
+    "uncapped": {
       "all_scored": {
         "conversations": [
           "conv-26",
           "conv-30",
-          "conv-41"
+          "conv-41",
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
         ],
         "overall": {
-          "n": 385,
-          "evidence_recall": 0.8429,
-          "context_tokens_mean": 1748.9,
-          "f1": 0.542,
-          "bleu1": 0.4213,
+          "n": 1540,
+          "evidence_recall": 0.865,
+          "context_tokens_mean": 2883.6,
+          "f1": 0.5233,
+          "bleu1": 0.415,
           "f1_runs": [
-            0.542
+            0.5231,
+            0.5235,
+            0.5232
           ],
-          "j": 0.7948,
+          "j": 0.7509,
           "j_runs": [
-            0.7948
-          ]
+            0.7519,
+            0.7519,
+            0.7487
+          ],
+          "j_std": 0.0019
         },
         "category_1": {
-          "n": 74,
-          "evidence_recall": 0.6421,
-          "context_tokens_mean": 1750.5,
-          "f1": 0.4078,
-          "bleu1": 0.279,
+          "n": 282,
+          "evidence_recall": 0.6962,
+          "context_tokens_mean": 2891.2,
+          "f1": 0.3733,
+          "bleu1": 0.2556,
           "f1_runs": [
-            0.4078
+            0.3714,
+            0.3768,
+            0.3717
           ],
-          "j": 0.6351,
+          "j": 0.6738,
           "j_runs": [
-            0.6351
-          ]
+            0.6738,
+            0.6667,
+            0.6809
+          ],
+          "j_std": 0.0071
         },
         "category_2": {
-          "n": 90,
-          "evidence_recall": 0.9556,
-          "context_tokens_mean": 1748.1,
-          "f1": 0.6918,
-          "bleu1": 0.5516,
+          "n": 321,
+          "evidence_recall": 0.8977,
+          "context_tokens_mean": 2888.4,
+          "f1": 0.5873,
+          "bleu1": 0.4814,
           "f1_runs": [
-            0.6918
+            0.586,
+            0.5811,
+            0.5948
           ],
-          "j": 0.8667,
+          "j": 0.7155,
           "j_runs": [
-            0.8667
-          ]
+            0.7134,
+            0.7165,
+            0.7165
+          ],
+          "j_std": 0.0018
         },
         "category_3": {
-          "n": 21,
-          "evidence_recall": 0.4762,
-          "context_tokens_mean": 1741.5,
-          "f1": 0.2042,
-          "bleu1": 0.173,
+          "n": 96,
+          "evidence_recall": 0.6482,
+          "context_tokens_mean": 2808.8,
+          "f1": 0.2687,
+          "bleu1": 0.1996,
           "f1_runs": [
-            0.2042
+            0.2763,
+            0.2713,
+            0.2584
           ],
-          "j": 0.6667,
+          "j": 0.4757,
           "j_runs": [
-            0.6667
-          ]
+            0.5,
+            0.4688,
+            0.4583
+          ],
+          "j_std": 0.0217
         },
         "category_4": {
-          "n": 200,
-          "evidence_recall": 0.905,
-          "context_tokens_mean": 1749.5,
-          "f1": 0.5598,
-          "bleu1": 0.4413,
+          "n": 841,
+          "evidence_recall": 0.9338,
+          "context_tokens_mean": 2887.7,
+          "f1": 0.5782,
+          "bleu1": 0.4677,
           "f1_runs": [
-            0.5598
+            0.5781,
+            0.5795,
+            0.5769
           ],
-          "j": 0.835,
+          "j": 0.8216,
           "j_runs": [
-            0.835
-          ]
+            0.8216,
+            0.8264,
+            0.8169
+          ],
+          "j_std": 0.0048
         }
       },
       "tuning": {
@@ -326,73 +531,784 @@
         ],
         "overall": {
           "n": 385,
-          "evidence_recall": 0.8429,
-          "context_tokens_mean": 1748.9,
-          "f1": 0.542,
-          "bleu1": 0.4213,
+          "evidence_recall": 0.8835,
+          "context_tokens_mean": 2903.4,
+          "f1": 0.5396,
+          "bleu1": 0.421,
           "f1_runs": [
-            0.542
+            0.5399,
+            0.5345,
+            0.5444
           ],
-          "j": 0.7948,
+          "j": 0.7991,
           "j_runs": [
-            0.7948
-          ]
+            0.8052,
+            0.7922,
+            0.8
+          ],
+          "j_std": 0.0065
         },
         "category_1": {
           "n": 74,
-          "evidence_recall": 0.6421,
-          "context_tokens_mean": 1750.5,
-          "f1": 0.4078,
-          "bleu1": 0.279,
+          "evidence_recall": 0.7315,
+          "context_tokens_mean": 2855.3,
+          "f1": 0.4309,
+          "bleu1": 0.3047,
           "f1_runs": [
-            0.4078
+            0.4366,
+            0.427,
+            0.429
           ],
-          "j": 0.6351,
+          "j": 0.6892,
           "j_runs": [
-            0.6351
-          ]
+            0.6892,
+            0.6757,
+            0.7027
+          ],
+          "j_std": 0.0135
         },
         "category_2": {
           "n": 90,
           "evidence_recall": 0.9556,
-          "context_tokens_mean": 1748.1,
-          "f1": 0.6918,
-          "bleu1": 0.5516,
+          "context_tokens_mean": 2926.0,
+          "f1": 0.6812,
+          "bleu1": 0.5478,
           "f1_runs": [
-            0.6918
+            0.6755,
+            0.6676,
+            0.7004
           ],
-          "j": 0.8667,
+          "j": 0.8333,
           "j_runs": [
-            0.8667
-          ]
+            0.8444,
+            0.8222,
+            0.8333
+          ],
+          "j_std": 0.0111
         },
         "category_3": {
           "n": 21,
-          "evidence_recall": 0.4762,
-          "context_tokens_mean": 1741.5,
-          "f1": 0.2042,
-          "bleu1": 0.173,
+          "evidence_recall": 0.6667,
+          "context_tokens_mean": 2822.7,
+          "f1": 0.1837,
+          "bleu1": 0.158,
           "f1_runs": [
-            0.2042
+            0.1983,
+            0.1789,
+            0.1737
+          ],
+          "j": 0.6349,
+          "j_runs": [
+            0.6667,
+            0.619,
+            0.619
+          ],
+          "j_std": 0.0275
+        },
+        "category_4": {
+          "n": 200,
+          "evidence_recall": 0.93,
+          "context_tokens_mean": 2919.5,
+          "f1": 0.5534,
+          "bleu1": 0.4346,
+          "f1_runs": [
+            0.5529,
+            0.5517,
+            0.5557
+          ],
+          "j": 0.8417,
+          "j_runs": [
+            0.845,
+            0.84,
+            0.84
+          ],
+          "j_std": 0.0029
+        }
+      },
+      "heldout": {
+        "conversations": [
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
+        ],
+        "overall": {
+          "n": 1155,
+          "evidence_recall": 0.8588,
+          "context_tokens_mean": 2877.0,
+          "f1": 0.5178,
+          "bleu1": 0.413,
+          "f1_runs": [
+            0.5175,
+            0.5199,
+            0.5161
+          ],
+          "j": 0.7348,
+          "j_runs": [
+            0.7342,
+            0.7385,
+            0.7316
+          ],
+          "j_std": 0.0035
+        },
+        "category_1": {
+          "n": 208,
+          "evidence_recall": 0.6837,
+          "context_tokens_mean": 2903.9,
+          "f1": 0.3528,
+          "bleu1": 0.2382,
+          "f1_runs": [
+            0.3482,
+            0.359,
+            0.3513
+          ],
+          "j": 0.6683,
+          "j_runs": [
+            0.6683,
+            0.6635,
+            0.6731
+          ],
+          "j_std": 0.0048
+        },
+        "category_2": {
+          "n": 231,
+          "evidence_recall": 0.8752,
+          "context_tokens_mean": 2873.7,
+          "f1": 0.5507,
+          "bleu1": 0.4555,
+          "f1_runs": [
+            0.5512,
+            0.5474,
+            0.5536
+          ],
+          "j": 0.6696,
+          "j_runs": [
+            0.6623,
+            0.6753,
+            0.671
+          ],
+          "j_std": 0.0066
+        },
+        "category_3": {
+          "n": 75,
+          "evidence_recall": 0.6431,
+          "context_tokens_mean": 2804.9,
+          "f1": 0.2925,
+          "bleu1": 0.2113,
+          "f1_runs": [
+            0.2981,
+            0.2971,
+            0.2821
+          ],
+          "j": 0.4311,
+          "j_runs": [
+            0.4533,
+            0.4267,
+            0.4133
+          ],
+          "j_std": 0.0204
+        },
+        "category_4": {
+          "n": 641,
+          "evidence_recall": 0.935,
+          "context_tokens_mean": 2877.8,
+          "f1": 0.5859,
+          "bleu1": 0.4781,
+          "f1_runs": [
+            0.586,
+            0.5882,
+            0.5835
+          ],
+          "j": 0.8154,
+          "j_runs": [
+            0.8144,
+            0.8222,
+            0.8097
+          ],
+          "j_std": 0.0063
+        }
+      },
+      "passes": 3
+    },
+    "lexical": {
+      "all_scored": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41",
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
+        ],
+        "overall": {
+          "n": 1540,
+          "evidence_recall": 0.6742,
+          "context_tokens_mean": 1749.2,
+          "f1": 0.4573,
+          "bleu1": 0.3632,
+          "f1_runs": [
+            0.4582,
+            0.4582,
+            0.4554
+          ],
+          "j": 0.6491,
+          "j_runs": [
+            0.6448,
+            0.6539,
+            0.6487
+          ],
+          "j_std": 0.0046
+        },
+        "category_1": {
+          "n": 282,
+          "evidence_recall": 0.4365,
+          "context_tokens_mean": 1749.8,
+          "f1": 0.2859,
+          "bleu1": 0.1815,
+          "f1_runs": [
+            0.2816,
+            0.2857,
+            0.2905
+          ],
+          "j": 0.5343,
+          "j_runs": [
+            0.5319,
+            0.5319,
+            0.539
+          ],
+          "j_std": 0.0041
+        },
+        "category_2": {
+          "n": 321,
+          "evidence_recall": 0.7477,
+          "context_tokens_mean": 1750.1,
+          "f1": 0.5431,
+          "bleu1": 0.4457,
+          "f1_runs": [
+            0.5419,
+            0.5485,
+            0.5389
+          ],
+          "j": 0.6397,
+          "j_runs": [
+            0.6262,
+            0.6511,
+            0.6417
+          ],
+          "j_std": 0.0126
+        },
+        "category_3": {
+          "n": 96,
+          "evidence_recall": 0.4105,
+          "context_tokens_mean": 1746.9,
+          "f1": 0.2379,
+          "bleu1": 0.1739,
+          "f1_runs": [
+            0.2352,
+            0.2449,
+            0.2335
+          ],
+          "j": 0.4132,
+          "j_runs": [
+            0.3958,
+            0.4375,
+            0.4062
+          ],
+          "j_std": 0.0217
+        },
+        "category_4": {
+          "n": 841,
+          "evidence_recall": 0.756,
+          "context_tokens_mean": 1748.8,
+          "f1": 0.507,
+          "bleu1": 0.4143,
+          "f1_runs": [
+            0.5109,
+            0.506,
+            0.5041
+          ],
+          "j": 0.7182,
+          "j_runs": [
+            0.7182,
+            0.7206,
+            0.7158
+          ],
+          "j_std": 0.0024
+        }
+      },
+      "tuning": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41"
+        ],
+        "overall": {
+          "n": 385,
+          "evidence_recall": 0.6885,
+          "context_tokens_mean": 1748.9,
+          "f1": 0.4756,
+          "bleu1": 0.3677,
+          "f1_runs": [
+            0.4741,
+            0.4728,
+            0.4798
+          ],
+          "j": 0.7013,
+          "j_runs": [
+            0.6987,
+            0.6961,
+            0.7091
+          ],
+          "j_std": 0.0069
+        },
+        "category_1": {
+          "n": 74,
+          "evidence_recall": 0.4876,
+          "context_tokens_mean": 1749.4,
+          "f1": 0.3727,
+          "bleu1": 0.2319,
+          "f1_runs": [
+            0.3674,
+            0.3703,
+            0.3804
+          ],
+          "j": 0.6081,
+          "j_runs": [
+            0.6081,
+            0.5946,
+            0.6216
+          ],
+          "j_std": 0.0135
+        },
+        "category_2": {
+          "n": 90,
+          "evidence_recall": 0.8778,
+          "context_tokens_mean": 1749.9,
+          "f1": 0.6324,
+          "bleu1": 0.503,
+          "f1_runs": [
+            0.6319,
+            0.626,
+            0.6393
+          ],
+          "j": 0.7741,
+          "j_runs": [
+            0.7667,
+            0.7556,
+            0.8
+          ],
+          "j_std": 0.0231
+        },
+        "category_3": {
+          "n": 21,
+          "evidence_recall": 0.381,
+          "context_tokens_mean": 1749.2,
+          "f1": 0.2048,
+          "bleu1": 0.1789,
+          "f1_runs": [
+            0.1987,
+            0.2077,
+            0.2082
+          ],
+          "j": 0.5556,
+          "j_runs": [
+            0.5238,
+            0.619,
+            0.5238
+          ],
+          "j_std": 0.055
+        },
+        "category_4": {
+          "n": 200,
+          "evidence_recall": 0.71,
+          "context_tokens_mean": 1748.3,
+          "f1": 0.4715,
+          "bleu1": 0.3769,
+          "f1_runs": [
+            0.4716,
+            0.4696,
+            0.4733
+          ],
+          "j": 0.7183,
+          "j_runs": [
+            0.72,
+            0.715,
+            0.72
+          ],
+          "j_std": 0.0029
+        }
+      },
+      "heldout": {
+        "conversations": [
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
+        ],
+        "overall": {
+          "n": 1155,
+          "evidence_recall": 0.6695,
+          "context_tokens_mean": 1749.2,
+          "f1": 0.4512,
+          "bleu1": 0.3617,
+          "f1_runs": [
+            0.4529,
+            0.4534,
+            0.4472
+          ],
+          "j": 0.6317,
+          "j_runs": [
+            0.6268,
+            0.6398,
+            0.6286
+          ],
+          "j_std": 0.0071
+        },
+        "category_1": {
+          "n": 208,
+          "evidence_recall": 0.4184,
+          "context_tokens_mean": 1750.0,
+          "f1": 0.255,
+          "bleu1": 0.1635,
+          "f1_runs": [
+            0.251,
+            0.2556,
+            0.2585
+          ],
+          "j": 0.508,
+          "j_runs": [
+            0.5048,
+            0.5096,
+            0.5096
+          ],
+          "j_std": 0.0028
+        },
+        "category_2": {
+          "n": 231,
+          "evidence_recall": 0.697,
+          "context_tokens_mean": 1750.2,
+          "f1": 0.5083,
+          "bleu1": 0.4234,
+          "f1_runs": [
+            0.5068,
+            0.5183,
+            0.4999
+          ],
+          "j": 0.5873,
+          "j_runs": [
+            0.5714,
+            0.6104,
+            0.5801
+          ],
+          "j_std": 0.0205
+        },
+        "category_3": {
+          "n": 75,
+          "evidence_recall": 0.4188,
+          "context_tokens_mean": 1746.3,
+          "f1": 0.2471,
+          "bleu1": 0.1725,
+          "f1_runs": [
+            0.2454,
+            0.2553,
+            0.2406
+          ],
+          "j": 0.3733,
+          "j_runs": [
+            0.36,
+            0.3867,
+            0.3733
+          ],
+          "j_std": 0.0133
+        },
+        "category_4": {
+          "n": 641,
+          "evidence_recall": 0.7704,
+          "context_tokens_mean": 1749.0,
+          "f1": 0.5181,
+          "bleu1": 0.4259,
+          "f1_runs": [
+            0.5232,
+            0.5173,
+            0.5137
+          ],
+          "j": 0.7181,
+          "j_runs": [
+            0.7176,
+            0.7223,
+            0.7145
+          ],
+          "j_std": 0.0039
+        }
+      },
+      "passes": 3
+    },
+    "full_context": {
+      "all_scored": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41",
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
+        ],
+        "overall": {
+          "n": 1540,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 25321.5,
+          "f1": 0.4063,
+          "bleu1": 0.2917,
+          "f1_runs": [
+            0.4063
+          ],
+          "j": 0.7344,
+          "j_runs": [
+            0.7344
+          ],
+          "j_std": null
+        },
+        "category_1": {
+          "n": 282,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 25221.5,
+          "f1": 0.3245,
+          "bleu1": 0.245,
+          "f1_runs": [
+            0.3245
+          ],
+          "j": 0.7092,
+          "j_runs": [
+            0.7092
+          ],
+          "j_std": null
+        },
+        "category_2": {
+          "n": 321,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 24758.4,
+          "f1": 0.3302,
+          "bleu1": 0.2473,
+          "f1_runs": [
+            0.3302
+          ],
+          "j": 0.4922,
+          "j_runs": [
+            0.4922
+          ],
+          "j_std": null
+        },
+        "category_3": {
+          "n": 96,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 25566.1,
+          "f1": 0.2346,
+          "bleu1": 0.1735,
+          "f1_runs": [
+            0.2346
+          ],
+          "j": 0.5938,
+          "j_runs": [
+            0.5938
+          ],
+          "j_std": null
+        },
+        "category_4": {
+          "n": 841,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 25542.0,
+          "f1": 0.4823,
+          "bleu1": 0.3378,
+          "f1_runs": [
+            0.4823
+          ],
+          "j": 0.8514,
+          "j_runs": [
+            0.8514
+          ],
+          "j_std": null
+        }
+      },
+      "tuning": {
+        "conversations": [
+          "conv-26",
+          "conv-30",
+          "conv-41"
+        ],
+        "overall": {
+          "n": 385,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 22156.5,
+          "f1": 0.3969,
+          "bleu1": 0.2831,
+          "f1_runs": [
+            0.3969
+          ],
+          "j": 0.7558,
+          "j_runs": [
+            0.7558
+          ],
+          "j_std": null
+        },
+        "category_1": {
+          "n": 74,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 22629.1,
+          "f1": 0.3457,
+          "bleu1": 0.2385,
+          "f1_runs": [
+            0.3457
+          ],
+          "j": 0.7432,
+          "j_runs": [
+            0.7432
+          ],
+          "j_std": null
+        },
+        "category_2": {
+          "n": 90,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 20891.2,
+          "f1": 0.3784,
+          "bleu1": 0.2676,
+          "f1_runs": [
+            0.3784
+          ],
+          "j": 0.5222,
+          "j_runs": [
+            0.5222
+          ],
+          "j_std": null
+        },
+        "category_3": {
+          "n": 21,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 22772.5,
+          "f1": 0.179,
+          "bleu1": 0.1544,
+          "f1_runs": [
+            0.179
           ],
           "j": 0.6667,
           "j_runs": [
             0.6667
-          ]
+          ],
+          "j_std": null
         },
         "category_4": {
           "n": 200,
-          "evidence_recall": 0.905,
-          "context_tokens_mean": 1749.5,
-          "f1": 0.5598,
-          "bleu1": 0.4413,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 22486.3,
+          "f1": 0.447,
+          "bleu1": 0.32,
           "f1_runs": [
-            0.5598
+            0.447
           ],
-          "j": 0.835,
+          "j": 0.875,
           "j_runs": [
-            0.835
-          ]
+            0.875
+          ],
+          "j_std": null
+        }
+      },
+      "heldout": {
+        "conversations": [
+          "conv-42",
+          "conv-43",
+          "conv-44",
+          "conv-47",
+          "conv-48",
+          "conv-49",
+          "conv-50"
+        ],
+        "overall": {
+          "n": 1155,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 26376.5,
+          "f1": 0.4094,
+          "bleu1": 0.2945,
+          "f1_runs": [
+            0.4094
+          ],
+          "j": 0.7273,
+          "j_runs": [
+            0.7273
+          ],
+          "j_std": null
+        },
+        "category_1": {
+          "n": 208,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 26143.8,
+          "f1": 0.3169,
+          "bleu1": 0.2473,
+          "f1_runs": [
+            0.3169
+          ],
+          "j": 0.6971,
+          "j_runs": [
+            0.6971
+          ],
+          "j_std": null
+        },
+        "category_2": {
+          "n": 231,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 26265.1,
+          "f1": 0.3113,
+          "bleu1": 0.2394,
+          "f1_runs": [
+            0.3113
+          ],
+          "j": 0.4805,
+          "j_runs": [
+            0.4805
+          ],
+          "j_std": null
+        },
+        "category_3": {
+          "n": 75,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 26348.2,
+          "f1": 0.2502,
+          "bleu1": 0.1788,
+          "f1_runs": [
+            0.2502
+          ],
+          "j": 0.5733,
+          "j_runs": [
+            0.5733
+          ],
+          "j_std": null
+        },
+        "category_4": {
+          "n": 641,
+          "evidence_recall": 1.0,
+          "context_tokens_mean": 26495.4,
+          "f1": 0.4933,
+          "bleu1": 0.3433,
+          "f1_runs": [
+            0.4933
+          ],
+          "j": 0.844,
+          "j_runs": [
+            0.844
+          ],
+          "j_std": null
         }
       },
       "passes": 1
@@ -504,5 +1420,38 @@
       "why_unmatched": "Zep's own reader prompt and retrieval template; Mem0 reran it with Mem0's prompt: 58.44 +- 0.20"
     }
   },
-  "openai_spend_usd_estimate": 3.5
+  "openai_spend_usd": 10.3708,
+  "openai_spend_usd_by_arm": {
+    "primary": 0.6862,
+    "full_context": 5.9376,
+    "lexical": 1.6207,
+    "uncapped": 2.1263
+  },
+  "config_frozen_at_hms_sha": "ec2da79",
+  "openai_spend_usd_prior_runs_estimate": 3.5,
+  "openai_spend_note": "openai_spend_usd is this run, measured from API usage. 6892 of 7700 primary reader answers were reused from the interrupted 2026-10-22 run (identical prompts, cache keyed by prompt hash), which cost about 3.5 USD (0.96 measured, about 2.5 estimated).",
+  "arm_config": {
+    "primary": {
+      "embedding_model": "text-embedding-3-small",
+      "k_per_speaker": 30,
+      "token_budget": 1764,
+      "fusion": "blend"
+    },
+    "uncapped": {
+      "embedding_model": "text-embedding-3-small",
+      "k_per_speaker": 30,
+      "token_budget": null,
+      "fusion": "blend"
+    },
+    "lexical": {
+      "embedding_model": null,
+      "k_per_speaker": 30,
+      "token_budget": 1764
+    },
+    "full_context": {
+      "memory_system": null,
+      "prompt": "mem0 evaluation/src/rag.py chunk_size -1"
+    }
+  },
+  "context_tokens_tokenizer": "o200k_base over the rendered memory lists"
 }

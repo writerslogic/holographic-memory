@@ -27,3 +27,17 @@ def test_scores_match_mem0_definitions():
     assert lb.f1_score('Sweden, last year!', 'sweden') == 0.5  # precision 1/3, recall 1
     assert lb.f1_score('', 'x') == 0.0
     assert lb.f1_score('Paris paris', 'paris') == 1.0
+
+
+def test_spend_cap_counts_prior_runs_and_cached_input():
+    usage = lb.Usage(prior_usd=0.9, max_usd=1.0)
+    # 1M prompt tokens of which 0.5M cached: 0.5 * 0.15 + 0.5 * 0.075 = 0.1125 USD.
+    usage.add(lb.READER_MODEL, 1_000_000, 0, cached=500_000)
+    assert usage.usd() == 0.1125
+    try:
+        usage.check()
+    except lb.SpendCap:
+        pass
+    else:
+        raise AssertionError('cap not enforced')
+    lb.Usage(prior_usd=0.9, max_usd=0.0).check()  # 0 disables the cap
