@@ -1,10 +1,16 @@
 """VIBE wrapper for HMS (holographic-memory), the quantized graph index.
 
-The index is a proximity graph whose traversal reads 4-bit (default) or 8-bit codes of the mean-centered rows;
+The index is a proximity graph whose traversal reads 8-bit (default) or 4-bit codes of the mean-centered rows;
 the `rerank` best candidates are re-scored with an 8-bit residual code. Cosine and normalized
 data are searched by angle, euclidean data by Euclidean distance, and ip data by inner product
 (reduced to Euclidean search by appending one coordinate to each row).
 """
+import os
+
+# Back the index arrays with transparent huge pages (a no-op where the kernel refuses them).
+# Set before the import so revisions where the advice is off by default take it too.
+os.environ.setdefault("HMS_QGRAPH_HUGEPAGES", "1")
+
 import numpy as np
 from holographic_memory import VectorIndex
 
@@ -14,7 +20,7 @@ METRICS = {"cosine": "angular", "normalized": "angular", "euclidean": "euclidean
 
 
 class HMS(BaseANN):
-    def __init__(self, metric, degree, build_ef, code_bits=4, query_aware=False):
+    def __init__(self, metric, degree, build_ef, code_bits=8, query_aware=True):
         if metric not in METRICS:
             raise NotImplementedError(f"hms does not support the {metric} distance")
         self.metric = metric
@@ -24,18 +30,22 @@ class HMS(BaseANN):
             raise ValueError("code_bits must be 4 or 8")
         self.code_bits = code_bits
         self.query_aware = bool(query_aware)
+        self.trained = False
         self.ef = None
         self.rerank = None
         self.patience = 0
         self.index = None
 
     def fit(self, X):
-        if self.query_aware:
-            raise ValueError("query-aware HMS requires the separate learn split through fit_ood")
+        # In-distribution sets have no learn split: the plain graph.
+        self.trained = False
         self._fit(X, None)
 
     def fit_ood(self, X, X_learn, X_learn_neighbors):
-        self._fit(X, X_learn if self.query_aware else None)
+        # Out-of-distribution sets: the dataset's official learn split routes the graph (never
+        # the test queries).
+        self.trained = self.query_aware and X_learn is not None and len(X_learn) > 0
+        self._fit(X, X_learn if self.trained else None)
 
     def _fit(self, X, queries):
         self.index = VectorIndex(METRICS[self.metric], degree=self.degree, build_ef=self.build_ef,
@@ -65,6 +75,6 @@ class HMS(BaseANN):
 
     def __str__(self):
         precision = "" if self.code_bits == 4 else f", code_bits={self.code_bits}"
-        training = ", query_aware=True" if self.query_aware else ""
+        training = ", query_aware=True" if self.trained else ""
         early_stop = f", patience={self.patience}" if self.patience > 0 else ""
         return f"HMS(metric={self.metric}, degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank}{precision}{training}{early_stop})"
