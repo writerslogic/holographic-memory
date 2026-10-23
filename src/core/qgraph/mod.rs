@@ -385,6 +385,7 @@ impl BuildCodes {
     /// `x = s_x q_x + e_x`: `<p, u> <= s_p s_u <q_p, q_u> + |e_p| + |s_p q_p| |e_u|`, and
     /// `|s_p q_p| <= 1 + |e_p|`. `SLACK` covers the f32 rounding of this bound and of the exact
     /// dot product (at most `dim * 2^-24` for unit vectors).
+    #[inline]
     fn d2_lower(&self, p: u32, u: u32) -> f32 {
         self.d2_bounds(p, u).0
     }
@@ -406,6 +407,8 @@ impl BuildCodes {
     /// For rows of any norm the same inequality reads
     /// `|<p, u> - s_p s_u <q_p, q_u>| <= |e_p| |u| + (|p| + |e_p|) |e_u|`, and the computed
     /// distance `|p|^2 + |u|^2 - 2 <p, u>` gets a slack relative to the magnitudes it sums.
+    /// Inlined so that [`Self::d2_lower`] drops the unused upper bound.
+    #[inline]
     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
         const SLACK: f32 = 1e-4;
         let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
