@@ -78,11 +78,6 @@ impl IdfWeights {
         self.weights.get(dim_index as usize).copied().unwrap_or(1.0)
     }
 
-    #[allow(dead_code)]
-    pub fn total_docs(&self) -> u32 {
-        self.total_docs
-    }
-
     pub fn weights_for(&self, indices: &[u32]) -> Vec<f32> {
         indices.iter().map(|&d| self.weight(d)).collect()
     }

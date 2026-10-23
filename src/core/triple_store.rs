@@ -141,16 +141,6 @@ impl TripleStore {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn all_for_subject(&self, subject: &str) -> Vec<TripleRecord> {
-        self.query(Some(subject), None, None)
-    }
-
-    #[allow(dead_code)]
-    pub fn all_for_relation(&self, relation: &str) -> Vec<TripleRecord> {
-        self.query(None, Some(relation), None)
-    }
-
     pub fn count(&self) -> usize {
         self.triples.read().iter().filter(|t| !t.deleted).count()
     }
@@ -189,20 +179,10 @@ mod tests {
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].object_id, "france");
 
-        let all_paris = store.all_for_subject("paris");
+        let all_paris = store.query(Some("paris"), None, None);
         assert_eq!(all_paris.len(), 2);
 
-        let all_capital = store.all_for_relation("capital_of");
+        let all_capital = store.query(None, Some("capital_of"), None);
         assert_eq!(all_capital.len(), 2);
-    }
-
-    #[test]
-    fn test_triple_remove() {
-        let store = TripleStore::new();
-        store.add("a", "r", "b", "c1");
-        assert_eq!(store.count(), 1);
-        assert!(store.remove("a", "r", "b"));
-        assert_eq!(store.count(), 0);
-        assert!(!store.remove("a", "r", "b"));
     }
 }

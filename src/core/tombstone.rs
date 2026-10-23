@@ -38,11 +38,6 @@ impl TombstoneMap {
     pub fn count(&self) -> usize {
         self.bits.iter().map(|w| w.count_ones() as usize).sum()
     }
-
-    #[allow(dead_code)]
-    pub fn clear(&mut self) {
-        self.bits.clear();
-    }
 }
 
 #[cfg(test)]
@@ -64,14 +59,5 @@ mod tests {
         assert!(t.is_deleted(64));
         assert!(t.is_deleted(1000));
         assert!(!t.is_deleted(1));
-    }
-
-    #[test]
-    fn test_tombstone_clear() {
-        let mut t = TombstoneMap::new();
-        t.mark_deleted(5);
-        t.clear();
-        assert!(!t.is_deleted(5));
-        assert_eq!(t.count(), 0);
     }
 }

@@ -34,11 +34,6 @@ impl AtomMemory {
         self.inner.get(id)
     }
 
-    #[allow(dead_code)]
-    pub fn get_by_idx(&self, idx: u32) -> Option<(String, EntangledHVec)> {
-        self.inner.get_by_idx(idx)
-    }
-
     pub fn cleanup(
         &self,
         noisy: &EntangledHVec,

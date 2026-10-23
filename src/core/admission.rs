@@ -27,11 +27,6 @@ impl AdmissionControl {
             AdmissionDecision::MaterializedLookup
         }
     }
-
-    #[allow(dead_code)]
-    pub fn fanout_limit(&self) -> usize {
-        self.fanout_limit
-    }
 }
 
 #[cfg(test)]

@@ -431,10 +431,9 @@ pub(crate) struct Source {
     pub(crate) matrix: bool,
 }
 
-fn quantize_i8(values: &[f32], rows: usize, group: usize) -> (Vec<u8>, Vec<f32>) {
+fn quantize_i8(values: &[f32], group: usize) -> (Vec<u8>, Vec<f32>) {
     let mut q = Vec::with_capacity(values.len());
     let mut scales = Vec::with_capacity(values.len() / group);
-    let _ = rows;
     for g in values.chunks_exact(group) {
         let max = g.iter().fold(0f32, |m, v| m.max(v.abs()));
         let scale = if max > 0.0 { max / 127.0 } else { 1.0 };
@@ -482,7 +481,7 @@ pub(crate) fn build(
                 } else {
                     cols
                 };
-                let (q, scales) = quantize_i8(&s.values, s.shape[0], group);
+                let (q, scales) = quantize_i8(&s.values, group);
                 let mut b = q;
                 for sc in scales {
                     b.extend_from_slice(&sc.to_le_bytes());

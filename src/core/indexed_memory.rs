@@ -21,11 +21,7 @@ pub struct IndexedMemory {
 pub struct CleanupResult {
     pub found: bool,
     pub id: String,
-    #[allow(dead_code)]
-    pub vector: EntangledHVec,
     pub confidence: f64,
-    #[allow(dead_code)]
-    pub iterations: usize,
 }
 
 impl IndexedMemory {
@@ -181,14 +177,12 @@ pub fn hopfield_cleanup(
     let empty = CleanupResult {
         found: false,
         id: String::new(),
-        vector: EntangledHVec::from_indices(vec![], probe.dim),
         confidence: 0.0,
-        iterations: 0,
     };
 
     let mut current = probe.clone();
 
-    for iter in 0..max_iter {
+    for _ in 0..max_iter {
         let overlaps = memory.overlap_scan(&current);
         if overlaps.is_empty() {
             return empty;
@@ -223,13 +217,11 @@ pub fn hopfield_cleanup(
 
         if sim > 0.999 {
             let best = &attention[0];
-            if let Some((id, vec)) = memory.get_by_idx(best.0) {
+            if let Some((id, _)) = memory.get_by_idx(best.0) {
                 return CleanupResult {
                     found: true,
                     id,
-                    vector: vec,
                     confidence: best.1,
-                    iterations: iter + 1,
                 };
             }
             return empty;
@@ -242,13 +234,11 @@ pub fn hopfield_cleanup(
     }
     let attention = sparse_softmax(&overlaps, beta);
     let best = &attention[0];
-    if let Some((id, vec)) = memory.get_by_idx(best.0) {
+    if let Some((id, _)) = memory.get_by_idx(best.0) {
         CleanupResult {
             found: true,
             id,
-            vector: vec,
             confidence: best.1,
-            iterations: max_iter,
         }
     } else {
         empty
