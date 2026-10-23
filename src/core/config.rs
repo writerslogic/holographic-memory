@@ -19,10 +19,32 @@ pub struct HmsConfig {
     pub cognition: CognitionConfig,
     pub hopfield: super::hopfield::HopfieldConfig,
     pub embedding_space: Option<super::schema::EmbeddingSpace>,
+    pub document_checkpoint: DocumentCheckpointConfig,
     /// Options of the local embedder `TextEncoder::LocalEmbedV1` loads (default options when
     /// absent). Ignored by the other encoders.
     #[cfg(feature = "local-embed")]
     pub local_embed: Option<super::embed::EmbedOptions>,
+}
+
+/// Journal checkpoints (`documents.ckpt`, see `docs/file-format/CHECKPOINT.md`): a compaction
+/// that writes the document store as one mapped file in place of the journal frames before it,
+/// so a store opens by mapping it and serves unfiltered lexical queries from the mapping.
+#[derive(Clone, Debug)]
+pub struct DocumentCheckpointConfig {
+    /// Write checkpoints. A store that has one opens from it either way: it is the store's data.
+    pub enabled: bool,
+    /// Journal bytes after the last checkpoint at or above which `flush` or closing the engine
+    /// writes a new one: below it, replaying the frames is about as fast.
+    pub min_journal_bytes: usize,
+}
+
+impl Default for DocumentCheckpointConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            min_journal_bytes: 256 << 10,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

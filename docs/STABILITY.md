@@ -36,6 +36,11 @@ and say so in the changelog.
    documents which. Exception, 0.7.0: new stores are created with `store.json` schema 3, whose
    journal frames are binary (`HMS-TXN-3`, [file-format/MUTATIONS.md](file-format/MUTATIONS.md));
    0.6.x refuses them. Schema 2 stores keep writing `HMS-TXN-2` JSON frames, and 0.7 reads both.
+   Stores created by 0.7.0 are schema 4: schema 3 plus document checkpoints, which replace the
+   journal frames before them ([file-format/CHECKPOINT.md](file-format/CHECKPOINT.md)); a
+   release that predates checkpoints refuses schema 4 rather than opening it without its
+   checkpointed documents. Schema 2 and 3 stores open, replay their frames and never get a
+   checkpoint.
 4. **Breaking the format** happens only in a major release, with the old format still readable
    or an `hms-format upgrade` step, and a golden store for each side.
 5. **Caches** (`documents.text`, `indices.json`, NSG/IVF files, `shard_meta.json` aside) may

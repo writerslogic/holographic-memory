@@ -177,7 +177,35 @@ fn the_spec_alone_decodes_every_golden_journal() -> Result<()> {
             last_end = end;
             let _ = last_end;
         }
-        ensure!(total > 0 && segments > 0, "{}", golden.name);
+        // CHECKPOINT.md: a checkpoint replaces the frames before it; its header is the magic
+        // (plain) and the CRC32 of every byte after the CRC word.
+        let checkpoint = live.join("documents.ckpt");
+        if let Ok(bytes) = std::fs::read(&checkpoint) {
+            if encrypted {
+                ensure!(
+                    bytes.starts_with(b"HMSCKPE\x01"),
+                    "{}: sealed magic",
+                    golden.name
+                );
+            } else {
+                ensure!(
+                    bytes.starts_with(b"HMSCKP\x00\x01"),
+                    "{}: magic",
+                    golden.name
+                );
+                let recorded = u64::from_le_bytes(bytes[8..16].try_into()?);
+                ensure!(
+                    recorded == u64::from(crc32fast::hash(&bytes[16..])),
+                    "{}: checkpoint CRC32",
+                    golden.name
+                );
+            }
+        }
+        ensure!(
+            (total > 0 && segments > 0) || checkpoint.is_file(),
+            "{}",
+            golden.name
+        );
         // LAYOUT.md: checksum sidecars are CRC32 as 8 hex digits and a newline.
         for (file, sidecar) in [
             ("store.json", "store.json.crc32"),
@@ -351,7 +379,7 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
     // Store schema.
     let (_k, store) = make()?;
     let schema = store.join("store.json");
-    let text = std::fs::read_to_string(&schema)?.replace("\"version\": 2", "\"version\": 4");
+    let text = std::fs::read_to_string(&schema)?.replace("\"version\": 2", "\"version\": 5");
     std::fs::write(&schema, &text)?;
     std::fs::write(
         store.join("store.json.crc32"),

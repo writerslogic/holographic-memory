@@ -11,7 +11,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
-use holographic_memory::core::documents::{VectorIndexMode, VectorQueryOptions};
+use holographic_memory::core::documents::{
+    EncodeMode, IngestOptions, VectorIndexMode, VectorQueryOptions,
+};
 use holographic_memory::core::memory_api::{
     ForgetOptions, ForgetScope, ManualClock, MaxFacts, Memory, RecallOptions, RememberInput,
 };
@@ -121,7 +123,8 @@ fn observe(core: &HmsCore) -> Result<Value> {
 }
 
 /// Every file's bytes by path, the lock left out and generation directory names masked in
-/// paths and in the small files that name them.
+/// paths and in the small files that name them. A document checkpoint's CRC and binding words
+/// (header bytes 8..24) cover the generation's name, so they are masked too.
 fn files(dir: &Path) -> Result<BTreeMap<String, Vec<u8>>> {
     fn walk(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> Result<()> {
         for entry in std::fs::read_dir(dir)? {
@@ -149,6 +152,12 @@ fn files(dir: &Path) -> Result<BTreeMap<String, Vec<u8>>> {
             continue;
         }
         let mut bytes = std::fs::read(&path)?;
+        if path
+            .file_name()
+            .is_some_and(|name| name == "documents.ckpt")
+        {
+            bytes[8..24].fill(0);
+        }
         for name in &names {
             key = key.replace(name.as_str(), "gen-*");
             if bytes.len() < 1 << 16 {
@@ -211,6 +220,78 @@ fn purge_leaves_the_store_of_a_document_never_stored() -> Result<()> {
         differing_files(a_dir.path(), b_dir.path())?,
         Vec::<String>::new()
     );
+    Ok(())
+}
+
+/// Documents 0..240 lexical-only in three transactions (no vectors, so compactions write a
+/// document checkpoint), with `extra` committed as its own transaction after the first.
+fn build_lexical(dir: &Path, extra: Option<usize>) -> Result<HmsCore> {
+    let core = HmsCore::new(256, Some(dir.display().to_string()), None)?;
+    let options = IngestOptions {
+        encode: EncodeMode::Lexical,
+        ..Default::default()
+    };
+    let lexical = |id: usize| -> DocumentInput {
+        serde_json::from_value(json!({
+            "id": format!("d{id:04}"),
+            "text": format!("common topic{} rare{id} shared words here", id % 7),
+            "metadata": {"group": id % 3},
+        }))
+        .unwrap()
+    };
+    for (n, range) in [0..80, 80..160, 160..240].into_iter().enumerate() {
+        core.memorize_documents_with(range.map(lexical).collect(), &options)?;
+        if let Some(x) = extra.filter(|_| n == 0) {
+            core.memorize_documents_with(vec![lexical(x)], &options)?;
+        }
+    }
+    Ok(core)
+}
+
+fn observe_lexical(core: &HmsCore) -> Result<Value> {
+    let mut out = Vec::new();
+    for text in ["rare999 common", "topic5 shared", "rare17", "words"] {
+        let options = SearchOptions {
+            k: Some(20),
+            ..Default::default()
+        };
+        out.push(serde_json::to_value(
+            core.search_documents(text, &options)?,
+        )?);
+        out.push(json!(core.count_documents(text)?));
+    }
+    out.push(serde_json::to_value(core.list_documents(None, 1000))?);
+    Ok(Value::Array(out))
+}
+
+fn has_checkpoint(dir: &Path) -> Result<bool> {
+    Ok(std::fs::read_dir(dir.join("vectors_data.bin"))?
+        .filter_map(|entry| entry.ok())
+        .any(|entry| entry.path().join("documents.ckpt").exists()))
+}
+
+/// The purge of a store that compacts to a document checkpoint leaves the checkpoint (and
+/// every other file) of a store that never held the document, before and after a reopen.
+#[test]
+fn purge_of_a_checkpointed_store_leaves_the_store_of_a_document_never_stored() -> Result<()> {
+    let (a_dir, b_dir) = (tempfile::tempdir()?, tempfile::tempdir()?);
+    let a = build_lexical(a_dir.path(), Some(TARGET))?;
+    let b = build_lexical(b_dir.path(), None)?;
+    assert_ne!(observe_lexical(&a)?, observe_lexical(&b)?);
+    assert!(a.delete_document(&format!("d{TARGET:04}"))?);
+    a.compact_scrubbing()?;
+    b.compact_scrubbing()?;
+    assert!(has_checkpoint(a_dir.path())? && has_checkpoint(b_dir.path())?);
+    assert_eq!(observe_lexical(&a)?, observe_lexical(&b)?);
+    assert_eq!(
+        differing_files(a_dir.path(), b_dir.path())?,
+        Vec::<String>::new()
+    );
+    drop((a, b));
+    let reopen = |dir: &Path| HmsCore::new(256, Some(dir.display().to_string()), None);
+    let (a, b) = (reopen(a_dir.path())?, reopen(b_dir.path())?);
+    assert!(a.serves_from_checkpoint() && b.serves_from_checkpoint());
+    assert_eq!(observe_lexical(&a)?, observe_lexical(&b)?);
     Ok(())
 }
 
