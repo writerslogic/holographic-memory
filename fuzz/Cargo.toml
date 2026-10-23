@@ -47,7 +47,8 @@ server = [
     "holographic-memory/server", "dep:anyhow", "dep:axum", "dep:bytes", "dep:clap", "dep:futures-util",
     "dep:http-body-util", "dep:hyper", "dep:hyper-util", "dep:libc", "dep:parking_lot", "dep:rand",
     "dep:rustls", "dep:schemars", "dep:serde", "dep:sha2", "dep:subtle", "dep:tar", "dep:tokio",
-    "dep:tokio-rustls", "dep:tower-service",, "dep:memmap2", "dep:crc32fast"]
+    "dep:tokio-rustls", "dep:tower-service", "dep:memmap2", "dep:crc32fast",
+]
 
 [[bin]]
 name = "wire_inputs"
