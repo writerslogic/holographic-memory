@@ -2316,13 +2316,12 @@ impl SearchScratch {
                         if old != u64::MAX {
                             self.pool.remove(old);
                         }
+                        // `t` borrows `visited` only, so it stays live across the pool update.
                         let Some((pos, evicted)) = self.pool.insert(kk) else {
-                            if old != u64::MAX {
-                                self.visited.trace(u).1.key = u64::MAX;
-                            }
+                            t.key = u64::MAX;
                             continue;
                         };
-                        self.visited.trace(u).1.key = kk;
+                        t.key = kk;
                         if let Some(e) = evicted {
                             self.visited.trace(key_id(e)).1.key = u64::MAX;
                         }
