@@ -1929,7 +1929,8 @@ impl Marks {
 /// and their results came back unsorted; the array is cache-resident at any practical `ef`.
 struct Pool {
     keys: Vec<u64>,
-    expanded: Vec<bool>,
+    /// Expanded flags, bit `i` for `keys[i]`, in words; bits at `keys.len()` and above are 0.
+    expanded: Vec<u64>,
     cap: usize,
     cursor: usize,
 }
@@ -1951,6 +1952,41 @@ impl Pool {
         self.is_full().then(|| self.keys[self.keys.len() - 1])
     }
 
+    #[cfg(test)]
+    fn is_expanded(&self, i: usize) -> bool {
+        self.expanded[i / 64] >> (i % 64) & 1 == 1
+    }
+
+    /// Opens an unexpanded flag at `pos` for `len` flags, shifting those at `pos..len` up one.
+    #[inline]
+    fn insert_flag(&mut self, pos: usize, len: usize) {
+        let words = (len + 1).div_ceil(64);
+        if self.expanded.len() < words {
+            self.expanded.resize(words, 0);
+        }
+        let w = pos / 64;
+        for i in (w + 1..words).rev() {
+            self.expanded[i] = self.expanded[i] << 1 | self.expanded[i - 1] >> 63;
+        }
+        let low = (1u64 << (pos % 64)) - 1;
+        let x = self.expanded[w];
+        self.expanded[w] = x & low | (x & !low) << 1;
+    }
+
+    /// Closes the flag at `pos` of `len` flags, shifting those above it down one.
+    #[inline]
+    fn remove_flag(&mut self, pos: usize, len: usize) {
+        let words = len.div_ceil(64);
+        let w = pos / 64;
+        let low = (1u64 << (pos % 64)) - 1;
+        let carry = |e: &[u64], i: usize| if i + 1 < words { e[i + 1] << 63 } else { 0 };
+        let x = self.expanded[w];
+        self.expanded[w] = x & low | (x >> 1) & !low | carry(&self.expanded, w);
+        for i in w + 1..words {
+            self.expanded[i] = self.expanded[i] >> 1 | carry(&self.expanded, i);
+        }
+    }
+
     /// Admits `key` unless the pool is full of better ones; returns its position and the
     /// key evicted to make room.
     #[inline]
@@ -1961,12 +1997,14 @@ impl Pool {
         }
         let pos = self.keys.partition_point(|&t| t < key);
         let mut evicted = None;
+        let mut len = n;
         if n >= self.cap {
             evicted = self.keys.pop();
-            self.expanded.pop();
+            len -= 1;
+            self.expanded[len / 64] &= !(1u64 << (len % 64));
         }
         self.keys.insert(pos, key);
-        self.expanded.insert(pos, false);
+        self.insert_flag(pos, len);
         if pos < self.cursor {
             self.cursor = pos;
         }
@@ -1977,25 +2015,53 @@ impl Pool {
     fn remove(&mut self, key: u64) {
         let pos = self.keys.partition_point(|&t| t < key);
         if pos < self.keys.len() && self.keys[pos] == key {
+            let len = self.keys.len();
             self.keys.remove(pos);
-            self.expanded.remove(pos);
+            self.remove_flag(pos, len);
             if pos < self.cursor {
                 self.cursor -= 1;
             }
         }
     }
 
+    /// Index of the `n`-th (from 0) unexpanded key at or after the cursor.
+    #[inline]
+    fn unexpanded(&self, mut n: usize) -> Option<usize> {
+        let len = self.keys.len();
+        let mut i = self.cursor;
+        while i < len {
+            let free = !self.expanded[i / 64] >> (i % 64);
+            if free == 0 {
+                i = (i / 64 + 1) * 64;
+                continue;
+            }
+            i += free.trailing_zeros() as usize;
+            if i >= len {
+                break;
+            }
+            if n == 0 {
+                return Some(i);
+            }
+            n -= 1;
+            i += 1;
+        }
+        None
+    }
+
     /// The nearest unexpanded key, now marked expanded.
     #[inline]
     fn next(&mut self) -> Option<u64> {
-        while self.cursor < self.keys.len() {
-            if !self.expanded[self.cursor] {
-                self.expanded[self.cursor] = true;
-                return Some(self.keys[self.cursor]);
+        match self.unexpanded(0) {
+            Some(i) => {
+                self.expanded[i / 64] |= 1u64 << (i % 64);
+                self.cursor = i;
+                Some(self.keys[i])
             }
-            self.cursor += 1;
+            None => {
+                self.cursor = self.keys.len();
+                None
+            }
         }
-        None
     }
 
     /// The key [`Pool::next`] would return.
@@ -2007,10 +2073,7 @@ impl Pool {
     /// The `n`-th (from 0) unexpanded key in pool order.
     #[inline]
     fn peek_unexpanded(&self, n: usize) -> Option<u64> {
-        (self.cursor..self.keys.len())
-            .filter(|&i| !self.expanded[i])
-            .nth(n)
-            .map(|i| self.keys[i])
+        self.unexpanded(n).map(|i| self.keys[i])
     }
 }
 
@@ -3458,6 +3521,175 @@ mod tests {
             }
             let ones: u32 = marks.words.iter().map(|w| w.count_ones()).sum();
             assert_eq!(ones as usize, set.len());
+        }
+    }
+
+    /// The pool before its flags became bits: one `bool` per key, moved with the keys.
+    struct ReferencePool {
+        keys: Vec<u64>,
+        expanded: Vec<bool>,
+        cap: usize,
+        cursor: usize,
+    }
+
+    impl ReferencePool {
+        fn insert(&mut self, key: u64) -> Option<(usize, Option<u64>)> {
+            let n = self.keys.len();
+            if n >= self.cap && key >= self.keys[n - 1] {
+                return None;
+            }
+            let pos = self.keys.partition_point(|&t| t < key);
+            let mut evicted = None;
+            if n >= self.cap {
+                evicted = self.keys.pop();
+                self.expanded.pop();
+            }
+            self.keys.insert(pos, key);
+            self.expanded.insert(pos, false);
+            if pos < self.cursor {
+                self.cursor = pos;
+            }
+            Some((pos, evicted))
+        }
+
+        fn remove(&mut self, key: u64) {
+            let pos = self.keys.partition_point(|&t| t < key);
+            if pos < self.keys.len() && self.keys[pos] == key {
+                self.keys.remove(pos);
+                self.expanded.remove(pos);
+                if pos < self.cursor {
+                    self.cursor -= 1;
+                }
+            }
+        }
+
+        fn next(&mut self) -> Option<u64> {
+            while self.cursor < self.keys.len() {
+                if !self.expanded[self.cursor] {
+                    self.expanded[self.cursor] = true;
+                    return Some(self.keys[self.cursor]);
+                }
+                self.cursor += 1;
+            }
+            None
+        }
+
+        fn peek_unexpanded(&self, n: usize) -> Option<u64> {
+            (self.cursor..self.keys.len())
+                .filter(|&i| !self.expanded[i])
+                .nth(n)
+                .map(|i| self.keys[i])
+        }
+    }
+
+    #[test]
+    fn pool_bits_follow_the_bool_pool() {
+        let mut rng = SplitMix(9);
+        let mut pool = Pool {
+            keys: Vec::new(),
+            expanded: Vec::new(),
+            cap: 1,
+            cursor: 0,
+        };
+        // Capacities on both sides of each word boundary, and one wider than any list here.
+        for cap in [1usize, 2, 10, 63, 64, 65, 127, 128, 129, 300, 10_000] {
+            for _ in 0..20 {
+                pool.reset(cap);
+                let mut model = ReferencePool {
+                    keys: Vec::new(),
+                    expanded: Vec::new(),
+                    cap,
+                    cursor: 0,
+                };
+                for _ in 0..600 {
+                    match rng.next_u64() % 8 {
+                        0 | 1 => assert_eq!(pool.next(), model.next()),
+                        2 if !model.keys.is_empty() => {
+                            let k = model.keys[(rng.next_u64() % model.keys.len() as u64) as usize];
+                            pool.remove(k);
+                            model.remove(k);
+                        }
+                        3 => {
+                            let n = (rng.next_u64() % 3) as usize;
+                            assert_eq!(pool.peek_unexpanded(n), model.peek_unexpanded(n));
+                        }
+                        _ => {
+                            let k = rng.next_u64() % 5000;
+                            assert_eq!(pool.insert(k), model.insert(k));
+                        }
+                    }
+                    assert_eq!(pool.keys, model.keys);
+                    assert_eq!(pool.cursor, model.cursor);
+                    let flags: Vec<bool> =
+                        (0..pool.keys.len()).map(|i| pool.is_expanded(i)).collect();
+                    assert_eq!(flags, model.expanded);
+                    let set: u32 = pool.expanded.iter().map(|w| w.count_ones()).sum();
+                    assert_eq!(set as usize, flags.iter().filter(|&&f| f).count());
+                }
+            }
+        }
+    }
+
+    /// Development microbenchmark (`--ignored`): a search-shaped stream (one expansion, then
+    /// 20 inserts of keys drawn near the pool's range) on the bit pool and the bool pool.
+    #[test]
+    #[ignore]
+    fn microbench_pool() {
+        use std::hint::black_box;
+        use std::time::Instant;
+        for cap in [10usize, 20, 40, 80, 160, 320] {
+            let stream: Vec<u64> = {
+                let mut rng = SplitMix(cap as u64);
+                (0..200_000).map(|_| rng.next_u64() % 100_000).collect()
+            };
+            let mut best = [f64::INFINITY; 2];
+            for _ in 0..7 {
+                for (which, b) in best.iter_mut().enumerate() {
+                    let t = Instant::now();
+                    let mut pool = Pool {
+                        keys: Vec::new(),
+                        expanded: Vec::new(),
+                        cap: 1,
+                        cursor: 0,
+                    };
+                    let mut model = ReferencePool {
+                        keys: Vec::new(),
+                        expanded: Vec::new(),
+                        cap,
+                        cursor: 0,
+                    };
+                    pool.reset(cap);
+                    let mut acc = 0u64;
+                    for (i, &k) in stream.iter().enumerate() {
+                        if which == 0 {
+                            if i % 21 == 0 {
+                                if pool.next().is_none() {
+                                    pool.reset(cap);
+                                }
+                            } else if let Some((p, _)) = pool.insert(black_box(k)) {
+                                acc += p as u64;
+                            }
+                        } else if i % 21 == 0 {
+                            if model.next().is_none() {
+                                model = ReferencePool {
+                                    keys: Vec::new(),
+                                    expanded: Vec::new(),
+                                    cap,
+                                    cursor: 0,
+                                };
+                            }
+                        } else if let Some((p, _)) = model.insert(black_box(k)) {
+                            acc += p as u64;
+                        }
+                    }
+                    black_box(acc);
+                    *b = b.min(t.elapsed().as_nanos() as f64 / stream.len() as f64);
+                }
+            }
+            println!(
+                "{{\"cap\": {cap}, \"bits_ns_per_op\": {:.2}, \"bools_ns_per_op\": {:.2}}}",
+                best[0], best[1]
+            );
         }
     }
 
