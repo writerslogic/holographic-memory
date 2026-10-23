@@ -1,8 +1,10 @@
 # Comparative benchmark (hms-bench)
 
 The modern embedding benchmark and upstream contribution work is tracked in
-[VIBE](VIBE.md), and single-core results on the ann-benchmarks runner in
-[ANN-BENCHMARKS](ANN-BENCHMARKS.md), separately from the SIFT/GloVe comparison below.
+[VIBE](VIBE.md), single-core results on the ann-benchmarks runner in
+[ANN-BENCHMARKS](ANN-BENCHMARKS.md), and the big-ann-benchmarks streaming track (inserts,
+deletes and searches under an 8 GiB cap) in [BIG-ANN-STREAMING](BIG-ANN-STREAMING.md),
+separately from the SIFT/GloVe comparison below.
 
 One command reproduces the HMS comparison against the vector, text and embedded-search systems
 people actually use. The generated results are in [COMPARISON.md](COMPARISON.md); the rule that
