@@ -339,6 +339,17 @@ fn distance(q: &[f32], row: &[f32], metric: Metric) -> f32 {
     }
 }
 
+/// Fixed-width (3- or 4-byte) neighbour ids take the narrowest width a generation of `rows`
+/// allows, as the static index does: 3 bytes save `degree` bytes per row below 2^24 - 1 rows.
+/// Variable-width ids (0) are kept.
+fn neighbour_id_bytes(configured: u8, rows: usize) -> u8 {
+    match configured {
+        3 | 4 if rows < THREE_BYTE_IDS_BELOW => 3,
+        3 | 4 => 4,
+        other => other,
+    }
+}
+
 fn widened_width(requested: usize, allocated: usize, live: usize) -> usize {
     ((requested.min(allocated) as u128 * allocated as u128).div_ceil(live as u128))
         .min(allocated as u128) as usize
@@ -783,15 +794,7 @@ impl UpdatableVGraph {
             .chain(snapshot.delta.live.keys().copied())
             .collect();
         ids.sort_unstable();
-        // Fixed-width neighbour ids take the narrowest width this generation's count allows,
-        // as the static index does: 3 bytes save `degree` bytes per row below 2^24 - 1 rows.
-        if matches!(manifest.encoding.id_bytes, 3 | 4) {
-            manifest.encoding.id_bytes = if ids.len() < THREE_BYTE_IDS_BELOW {
-                3
-            } else {
-                4
-            };
-        }
+        manifest.encoding.id_bytes = neighbour_id_bytes(manifest.encoding.id_bytes, ids.len());
         let base = Arc::clone(&snapshot.base);
         drop(snapshot);
         if !manifest.encoding.screen && manifest.encoding.block_bits == 0 {

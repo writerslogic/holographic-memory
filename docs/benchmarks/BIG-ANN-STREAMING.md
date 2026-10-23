@@ -71,29 +71,34 @@ Per search step of the official runbook (harness ground truth, same wheel, R32 L
 | cc5dede | R32 L64 alpha 1.2 | 1024 | 0.9301 | 36.0 min | 7.47 GiB | Modal 8 vCPU |
 | e4df0b1 | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
 | e4df0b1 | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
-| 082766e | R32 L64 alpha 1.0 | 64 | 0.7623 | 13:32 (runbook steps 811 s) | 4.85 GiB | Modal 8 vCPU |
-| 082766e | R32 L64 alpha 1.0 | 128 | 0.8401 | 18:53 (1,132 s) | 4.84 GiB | Modal 8 vCPU |
-| 082766e | R32 L64 alpha 1.0 | 384 | 0.9226 | 20:51 (1,250 s) | 4.87 GiB | Modal 8 vCPU |
-| 082766e | R32 L64 alpha 1.0 | **512** | **0.9371** | **15:41 (941 s)** | 4.84 GiB | Modal 8 vCPU |
-| 082766e | R64 L64 alpha 1.0 | 256 | 0.9353 | 15:09 (908 s) | 5.57 GiB | Modal 8 vCPU |
+| 082766e | R32 L64 alpha 1.0 | 64 | 0.7623 | 13:32 (runbook steps 811 s) | 4.85 GiB | Modal cpu 8.0 |
+| 082766e | R32 L64 alpha 1.0 | 128 | 0.8401 | 18:53 (1,132 s) | 4.84 GiB | Modal cpu 8.0 |
+| 082766e | R32 L64 alpha 1.0 | 384 | 0.9226 | 20:51 (1,250 s) | 4.87 GiB | Modal cpu 8.0 |
+| 082766e | R32 L64 alpha 1.0 | **512** | **0.9371** | **15:41 (941 s)** | 4.84 GiB | Modal cpu 8.0 |
+| 082766e | R64 L64 alpha 1.0 | 256 | 0.9353 | 15:09 (908 s) | 5.57 GiB | Modal cpu 8.0 |
 
 The baseline the track README quotes is DiskANN at R64 L50 Ls100: 0.924 in about 23 minutes
 on the competition VM (Azure D8lds v5). The writerslogic-02 runs are recall runs at `nice 19`
 on a shared host (Core Ultra 9 185H, 8 of 22 threads, 8 GiB cgroup cap); their wall time is
 an upper bound, not a timing claim.
 
-The Modal runs at 082766e each replay the runbook once, the R32 ones in four containers started
-together (cpu 8.0: eight schedulable CPUs, 8 GiB hard memory limit, non-preemptible,
-`/usr/bin/time -v` around `run.py`). Wall time spread between containers is host noise as much
-as ef: the ef 512 replay finished before the ef 384 one. The runbook-step sum (the harness's
-own per-step times) is the closer measure of index work; the wall includes start-up and the
-dataset range reads.
+The Modal runs at 082766e each replay the runbook once (one round per row), the R32 ones in
+four containers started together, under `/usr/bin/time -v` around `run.py`, with an 8 GiB hard
+memory limit and non-preemptible scheduling. `cpu=8.0` gives eight schedulable CPUs; Modal
+bills `cpu` in physical cores and hides the topology inside the container, so whether these are
+eight cores or eight hyperthreads is not known, and the compute is not matched to the
+competition VM's 8 vCPU (D8lds v5). Wall time spread between the containers is host noise as
+much as ef: the ef 512 replay finished before the ef 384 one, and the runbook-step sums differ
+by 33% in the direction opposite to the search work. The runbook-step sum is the harness's own
+per-step time; the wall includes start-up and the dataset range reads.
 
 ## Operating point
 
-At R32 L64 alpha 1.0, **ef 512 scores 0.9371 against the track baseline's 0.924, in a 15:41
-replay (941 s of runbook steps) against the baseline's 23 minutes, at a 4.84 GiB peak.** ef 384
-falls just short (0.9226). The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of
+At R32 L64 alpha 1.0, **ef 512 scores 0.9371 against the track baseline's 0.924, at a 4.84 GiB
+peak, in a 15:41 replay (941 s of runbook steps)**; ef 384 falls just short (0.9226). Every one of
+the five Modal replays finished in 13:32-20:51 against the baseline's 23 minutes, one round each
+and on different hardware from the baseline's, so that is an observation, not a matched timing
+comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of
 e4df0b1 to the fourth digit, so the 3-byte ids of this change leave the results unchanged.
 
 The choice came from full-runbook replays on a shared Intel Core Ultra 9 185H (8 threads per
@@ -113,13 +118,11 @@ the late ones, so they are not comparable with full means):
 Each complete replay reproduced the official score to the fourth digit (R32 ef 384 0.9226, ef
 512 0.9371; R64 ef 256 0.9353), so a full replay is the official score without the harness.
 
-Degree 64 reaches the same recall at half the ef (R64 L64 ef 256 against R32 L64 ef 512), and
-on Modal its four rebuilding steps took 619 s against 580 s at R32, so the two points are
-close to a tie: R64 finishes 33 s sooner (908 s of steps against 941 s; 121 s of searching
-against 191 s) and scores 0.0018 lower, at 0.73 GiB more memory. R32 ef 512 is the configured
-point. In both, the inserts and deletes (which run the four rebuilds, of 1.9M to 3.8M live
-rows) are 80-87% of the time. R64 L128 rebuilt the first 825k rows 2.7x slower than R64 L64
-on the shared host and was stopped; R64 L48 was stopped after 11 checkpoints to free cores.
+Degree 64 reaches the same recall at half the ef: R64 L64 at ef 256 scores 0.9353 (0.0018 below
+R32 L64 at ef 512) at 0.73 GiB more memory, and its 908 s of runbook steps are
+indistinguishable from R32's 941 s given the spread between containers. R32 ef 512 is the
+configured point. In both, the inserts and deletes, which run the four rebuilds of 1.9M to 3.8M
+live rows, are 80-87% of the step time. The R64 L128 and R64 L48 replays were stopped early.
 
 ## Memory
 

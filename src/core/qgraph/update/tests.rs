@@ -1302,3 +1302,15 @@ fn consolidated_base_matches_static_build_at_equal_params() {
         assert_eq!(index.search(query, 10, search).unwrap(), out);
     }
 }
+
+#[test]
+fn consolidated_id_width_switches_at_the_three_byte_limit() {
+    let limit = (1 << 24) - 1;
+    for configured in [3, 4] {
+        assert_eq!(neighbour_id_bytes(configured, limit - 1), 3);
+        assert_eq!(neighbour_id_bytes(configured, limit), 4);
+        assert_eq!(neighbour_id_bytes(configured, limit + 1), 4);
+    }
+    assert_eq!(neighbour_id_bytes(0, 10), 0);
+    assert_eq!(neighbour_id_bytes(0, limit + 1), 0);
+}

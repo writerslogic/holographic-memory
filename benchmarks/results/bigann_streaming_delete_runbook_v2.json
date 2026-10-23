@@ -35,7 +35,7 @@
     "returned_ids": 3300000,
     "all_returned_ids_live_and_unique": true
    },
-   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
    "modal_app": "ap-PGMSGvZCLeZ7Dp27nBVK70"
   },
   {
@@ -64,7 +64,7 @@
     "returned_ids": 3300000,
     "all_returned_ids_live_and_unique": true
    },
-   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
    "modal_app": "ap-7bsFgge1FHLWkEb9xM7IOe"
   },
   {
@@ -93,7 +93,7 @@
     "returned_ids": 3300000,
     "all_returned_ids_live_and_unique": true
    },
-   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
    "modal_app": "ap-Lx3gi1FOnVEay3B0LyA0Ii"
   },
   {
@@ -122,7 +122,7 @@
     "returned_ids": 3300000,
     "all_returned_ids_live_and_unique": true
    },
-   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
    "modal_app": "ap-9Be3mBpFRIvUqrUmCLcvDD"
   },
   {
@@ -151,13 +151,13 @@
     "returned_ids": 3300000,
     "all_returned_ids_live_and_unique": true
    },
-   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
    "modal_app": "ap-2EeMPwjBWmNjMnsiXrAb90"
   }
  ],
  "replays": {
   "description": "replay.py: the official runbook through UpdatableIndex with the adapter policy, recall@10 against the harness ground truth at every search step, several ef per pass; RSS sampled every 0.2 s (RssAnon, RssFile, VmRSS); the dataset is read through numpy.memmap, so RssFile includes source pages the official adapter does not hold",
-  "host": "Intel Core Ultra 9 185H, 22 threads, shared; each replay 8 threads on its own cores (0-7, 8-15 or 16-21), nice 19, systemd scope MemoryMax=12G MemorySwapMax=0; load average 11-25 from concurrent runs: elapsed and consolidation seconds are not timing claims",
+  "host": "Intel Core Ultra 9 185H, 22 threads, shared; each replay 8 threads on its own cores (0-7, 8-15 or 16-21), nice 19, systemd scope MemoryMax=12G MemorySwapMax=0; load average 11-25 from concurrent runs; timings omitted (unlocked, shared host)",
   "hms_commit": "c80aa52 (main; recall and graphs do not depend on the id width)",
   "note": "runs stopped early (R64 L128, R64 L48) cover only the first checkpoints; their means are not comparable with full-runbook means",
   "rows": [
@@ -175,8 +175,6 @@
      "ef512": 0.9371,
      "ef768": 0.9537
     },
-    "consolidation_seconds": 1764.5,
-    "elapsed_seconds": 3692.3,
     "peak_vmrss_mib": 4660,
     "peak_rss_anon_mib": 2100,
     "peak_rss_file_mib": 3111
@@ -195,8 +193,6 @@
      "ef192": 0.9195,
      "ef256": 0.9353
     },
-    "consolidation_seconds": 1900.1,
-    "elapsed_seconds": 3011.2,
     "peak_vmrss_mib": 6288,
     "peak_rss_anon_mib": 2808,
     "peak_rss_file_mib": 4203
@@ -215,8 +211,6 @@
      "ef256": 0.916,
      "ef384": 0.9411
     },
-    "consolidation_seconds": 364.7,
-    "elapsed_seconds": 839.0,
     "peak_vmrss_mib": 3671,
     "peak_rss_anon_mib": 1476,
     "peak_rss_file_mib": 2373
@@ -235,8 +229,6 @@
      "ef192": 0.9524,
      "ef256": 0.9669
     },
-    "consolidation_seconds": 212.3,
-    "elapsed_seconds": 407.2,
     "peak_vmrss_mib": 2076,
     "peak_rss_anon_mib": 807,
     "peak_rss_file_mib": 1274
