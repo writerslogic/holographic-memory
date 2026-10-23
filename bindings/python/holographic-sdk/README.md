@@ -45,6 +45,12 @@ pip install "holographic-sdk[langchain]"
 pip install "holographic-sdk[all]"
 ```
 
+The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
+
+```bash
+pip install "holographic-sdk[fast]"
+```
+
 Requires Python 3.10 or newer.
 
 ## Quick Start

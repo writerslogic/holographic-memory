@@ -1,9 +1,17 @@
 import hashlib
+import json
 import struct
 from urllib.parse import quote
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import httpx
+
+from ._transport import KeepAliveTransport, usable_for
+
+try:
+    import orjson
+except ImportError:  # optional: `pip install holographic-sdk[fast]`
+    orjson = None
 
 if TYPE_CHECKING:
     from .memory import AsyncMemoryClient, MemoryClient
@@ -37,6 +45,27 @@ def _check(res: httpx.Response) -> None:
         res.raise_for_status()
         return
     raise HolographicError(message, code, res)
+
+
+def _dumps(payload: Any) -> bytes:
+    """Encode a JSON body; rejects NaN and infinity with ``ValueError`` like httpx's ``json=``."""
+    if orjson is not None:
+        body = orjson.dumps(payload)
+        # orjson writes non-finite floats as null; re-encode those rare bodies with the stdlib
+        # so they raise as before.
+        if b"null" not in body:
+            return body
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+
+
+class _Routes:
+    """Parsed endpoint URLs, so a call does not re-parse the service URL."""
+
+    def __init__(self, base: str) -> None:
+        self.batch = httpx.URL(f"{base}/api/v1/documents/batch")
+        self.document = httpx.URL(f"{base}/api/v1/documents")
+        self.query = httpx.URL(f"{base}/api/v1/query")
+        self.maintain = httpx.URL(f"{base}/api/v1/index/maintain")
 
 
 def _get_headers(api_key: Optional[str], tenant_id: Optional[str]) -> Dict[str, str]:
@@ -118,6 +147,9 @@ class HolographicClient:
         self.url = url.rstrip('/')
         self._mask = _make_mask(zero_trust_key, mask_salt)
         headers = _get_headers(api_key, tenant_id)
+        self._routes = _Routes(self.url)
+        if transport is None and usable_for(self.url):
+            transport = KeepAliveTransport()
         self.client = httpx.Client(headers=headers, timeout=timeout, transport=transport)
 
     @property
@@ -148,10 +180,10 @@ class HolographicClient:
             return
             
         docs_to_send = _mask_documents(self._mask, documents)
-        res = self.client.post(f"{self.url}/api/v1/documents/batch", json=docs_to_send)
+        res = self.client.post(self._routes.batch, content=_dumps(docs_to_send))
         if res.status_code == 404: # Fallback for old API
             for doc in docs_to_send:
-                _check(self.client.post(f"{self.url}/api/v1/documents", json=doc))
+                _check(self.client.post(self._routes.document, content=_dumps(doc)))
         else:
             _check(res)
 
@@ -160,17 +192,17 @@ class HolographicClient:
         _check(res)
 
     def maintain_document_index(self) -> Dict[str, Any]:
-        res = self.client.post(f"{self.url}/api/v1/index/maintain", json={})
+        res = self.client.post(self._routes.maintain, content=b"{}")
         _check(res)
         return res.json()
 
     def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         encrypted_query = self.encrypt_vector(query_vector) if query_vector else []
-        payload = {"query_vector": encrypted_query, "top_k": top_k}
+        payload: Dict[str, Any] = {"query_vector": encrypted_query, "top_k": top_k}
         if filter:
             payload["filter"] = filter
             
-        res = self.client.post(f"{self.url}/api/v1/query", json=payload)
+        res = self.client.post(self._routes.query, content=_dumps(payload))
         _check(res)
         return res.json()
 
@@ -191,6 +223,7 @@ class AsyncHolographicClient:
         self.url = url.rstrip('/')
         self._mask = _make_mask(zero_trust_key, mask_salt)
         headers = _get_headers(api_key, tenant_id)
+        self._routes = _Routes(self.url)
         self.client = httpx.AsyncClient(headers=headers, timeout=timeout, transport=transport)
 
     @property
@@ -220,10 +253,10 @@ class AsyncHolographicClient:
             return
             
         docs_to_send = _mask_documents(self._mask, documents)
-        res = await self.client.post(f"{self.url}/api/v1/documents/batch", json=docs_to_send)
+        res = await self.client.post(self._routes.batch, content=_dumps(docs_to_send))
         if res.status_code == 404: # Fallback for old API
             for doc in docs_to_send:
-                res_single = await self.client.post(f"{self.url}/api/v1/documents", json=doc)
+                res_single = await self.client.post(self._routes.document, content=_dumps(doc))
                 _check(res_single)
         else:
             _check(res)
@@ -233,16 +266,16 @@ class AsyncHolographicClient:
         _check(res)
 
     async def maintain_document_index(self) -> Dict[str, Any]:
-        res = await self.client.post(f"{self.url}/api/v1/index/maintain", json={})
+        res = await self.client.post(self._routes.maintain, content=b"{}")
         _check(res)
         return res.json()
 
     async def query(self, query_vector: List[float], top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         encrypted_query = self.encrypt_vector(query_vector) if query_vector else []
-        payload = {"query_vector": encrypted_query, "top_k": top_k}
+        payload: Dict[str, Any] = {"query_vector": encrypted_query, "top_k": top_k}
         if filter:
             payload["filter"] = filter
             
-        res = await self.client.post(f"{self.url}/api/v1/query", json=payload)
+        res = await self.client.post(self._routes.query, content=_dumps(payload))
         _check(res)
         return res.json()

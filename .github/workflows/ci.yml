@@ -238,7 +238,9 @@ jobs:
         env:
           HMS_SERVER_BIN: ${{ github.workspace }}/target/debug/hms-server
           PYTHONPATH: .
-        run: uv run --no-project --with 'httpx>=0.27' --with pytest pytest -q -rs tests
+        run: |
+          uv run --no-project --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest pytest -q -rs tests
+          uv run --no-project --with 'httpx>=0.27' --with 'sniffio>=1.3' --with orjson --with pytest pytest -q -rs tests/test_client.py tests/test_transport.py tests/test_live_server.py
 
   node:
     name: node (${{ matrix.os }})
