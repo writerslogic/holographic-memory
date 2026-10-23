@@ -3285,8 +3285,17 @@ fn get_u32s(r: &mut impl std::io::Read, max: u64) -> std::io::Result<Vec<u32>> {
             "graph cache: list longer than the graph",
         ));
     }
-    let mut bytes = vec![0u8; len as usize * 4];
-    r.read_exact(&mut bytes)?;
+    // Read through `take`, so the buffer grows with the bytes the file holds rather than
+    // being allocated at the size its lengths claim.
+    let want = len.saturating_mul(4);
+    let mut bytes = Vec::new();
+    std::io::Read::read_to_end(&mut std::io::Read::take(&mut *r, want), &mut bytes)?;
+    if bytes.len() as u64 != want {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::UnexpectedEof,
+            "graph cache: list shorter than its lengths",
+        ));
+    }
     Ok(bytes
         .as_chunks::<4>()
         .0
@@ -3802,6 +3811,45 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// A cache whose list lengths claim more data than the file holds is refused by reading,
+    /// not by first allocating what the lengths claim.
+    #[test]
+    fn graph_cache_lengths_are_bounded_by_the_file() {
+        let d = 16;
+        let n = 64usize;
+        let data = clustered(n, d, 4);
+        let params = BuildParams {
+            build_ef: 16,
+            degree: 8,
+            seed: 3,
+            ..BuildParams::default()
+        };
+        let graph = Graph::build(&data, d, &params).expect("build");
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("graph.cache");
+        graph.save(&path).unwrap();
+        let mut bytes = std::fs::read(&path).unwrap();
+        // The adjacency lengths list starts with `n` as a u64, the second such word after
+        // the magic (the first is the header's own `n`).
+        let lens = (8..bytes.len() - 8)
+            .step_by(8)
+            .filter(|&at| u64::from_le_bytes(bytes[at..at + 8].try_into().unwrap()) == n as u64)
+            .nth(1)
+            .expect("lengths list");
+        for i in 0..n {
+            let at = lens + 8 + 4 * i;
+            bytes[at..at + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+        }
+        let flat = lens + 8 + 4 * n;
+        bytes[flat..flat + 8].copy_from_slice(&(n as u64 * u64::from(u32::MAX)).to_le_bytes());
+        std::fs::write(&path, &bytes).unwrap();
+        let error = Graph::load(&data, d, &path, &params)
+            .err()
+            .unwrap()
+            .to_string();
+        assert!(error.contains("shorter than its lengths"), "{error}");
     }
 
     /// The cache round-trips the structure for the same data and parameters, and rejects a

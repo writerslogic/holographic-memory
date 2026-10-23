@@ -1292,15 +1292,29 @@ impl PreparedGraph {
 fn prepare_rows(data: &mut [f32], dim: usize, metric: Metric) -> Vec<f32> {
     match metric {
         Metric::Angular => {
-            data.par_chunks_mut(dim).for_each(|x| {
-                let norm = dot(x, x).sqrt();
-                if norm > 0.0 {
-                    x.iter_mut().for_each(|o| *o /= norm);
-                }
-            });
+            data.par_chunks_mut(dim).for_each(normalize_row);
             Vec::new()
         }
         Metric::Euclidean => data.par_chunks(dim).map(|x| dot(x, x)).collect(),
+    }
+}
+
+/// Scales `x` to unit length; a zero row stays zero. A finite row whose squared norm
+/// overflows to infinity or falls below the normal range is first divided by its largest
+/// magnitude, so it normalizes instead of collapsing to zeros or staying unnormalized; other
+/// rows take the direct path and keep its exact values.
+fn normalize_row(x: &mut [f32]) {
+    let squared = dot(x, x);
+    if squared.is_finite() && squared >= f32::MIN_POSITIVE {
+        let norm = squared.sqrt();
+        x.iter_mut().for_each(|o| *o /= norm);
+        return;
+    }
+    let largest = x.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+    if largest > 0.0 && largest.is_finite() {
+        x.iter_mut().for_each(|o| *o /= largest);
+        let norm = dot(x, x).sqrt();
+        x.iter_mut().for_each(|o| *o /= norm);
     }
 }
 
@@ -1801,6 +1815,24 @@ fn push_top(top: &mut Vec<(f32, u32)>, k: usize, dist: f32, id: u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Angular rows normalize to unit length in direction for finite magnitudes whose squared
+    /// norm overflows or underflows f32.
+    #[test]
+    fn angular_rows_normalize_at_extreme_magnitudes() {
+        let mut rows = vec![
+            1e20f32, 1e20, 0.0, 0.0, 1e-30, 1e-30, 1e-30, 1e-30, 3.0, 4.0, 0.0, 0.0,
+        ];
+        prepare_rows(&mut rows, 4, Metric::Angular);
+        let half = std::f32::consts::FRAC_1_SQRT_2;
+        for (got, want) in rows[..8]
+            .iter()
+            .zip([half, half, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5])
+        {
+            assert!((got - want).abs() < 1e-6, "{rows:?}");
+        }
+        assert_eq!(&rows[8..], &[0.6, 0.8, 0.0, 0.0]);
+    }
     use kernels::raw_estimates;
 
     #[test]

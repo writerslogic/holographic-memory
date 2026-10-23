@@ -576,6 +576,59 @@ impl UpdatableVGraph {
         s.pending.push(op);
         Ok(())
     }
+    /// Stages deletion of every id in `ids`, all or none: an id that is not live, repeats,
+    /// or was already staged fails the call with nothing staged.
+    pub fn delete_batch(&self, ids: &[u32]) -> Result<(), UpdateError> {
+        self.stage_all(ids.iter().map(|&id| Operation::Delete(id)).collect())
+    }
+    /// Stages the replacement of each id in `ids` by the matching row of row-major `vectors`,
+    /// all or none, under the same rules as [`Self::delete_batch`].
+    pub fn replace_batch(&self, ids: &[u32], vectors: &[f32]) -> Result<(), UpdateError> {
+        let dim = self.dim();
+        if vectors.len() != ids.len() * dim {
+            return Err(UpdateError::DimensionMismatch {
+                expected: ids.len() * dim,
+                actual: vectors.len(),
+            });
+        }
+        self.stage_all(
+            ids.iter()
+                .zip(vectors.chunks_exact(dim.max(1)))
+                .map(|(&id, row)| Operation::Replace(id, row.to_vec()))
+                .collect(),
+        )
+    }
+    /// Validates every operation of `ops` against the state before any is applied, so a
+    /// rejected operation leaves the batch as it was.
+    fn stage_all(&self, ops: Vec<Operation>) -> Result<(), UpdateError> {
+        let _writer = self.writer()?;
+        let mut s = self.state.write();
+        let size: usize = ops
+            .iter()
+            .map(|op| 5 + op.vector().map_or(0, |v| v.len() * 4))
+            .sum();
+        if s.pending.len() + ops.len() > MAX_OPS
+            || s.pending_bytes + size > MAX_PAYLOAD
+            || s.delta.len() + ops.len() >= (u32::MAX - 1) as usize
+        {
+            return Err(UpdateError::Capacity);
+        }
+        let mut batch = HashSet::with_capacity(ops.len());
+        for op in &ops {
+            let id = op.id();
+            if s.touched.contains(&id) || !batch.insert(id) {
+                return Err(UpdateError::DuplicateIdInBatch(id));
+            }
+            s.validate_op(op)?;
+        }
+        for op in ops {
+            s.apply(&op);
+            s.touched.insert(op.id());
+            s.pending.push(op);
+        }
+        s.pending_bytes += size;
+        Ok(())
+    }
     /// Most operations one batch can stage before `commit` for vectors of this dimension.
     pub fn batch_capacity(&self) -> usize {
         MAX_OPS.min(MAX_PAYLOAD / (5 + 4 * self.dim()))
@@ -1079,3 +1132,46 @@ fn write_base_with_checkpoints(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod batch_tests {
+    use super::*;
+
+    /// A batch delete or replace with one bad operation stages none of them, so the index
+    /// still answers with every row and a corrected retry succeeds.
+    #[test]
+    fn rejected_batches_stage_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("index");
+        let params = BuildParams {
+            metric: Metric::Euclidean,
+            degree: 8,
+            build_ef: 16,
+            ..Default::default()
+        };
+        let index = UpdatableVGraph::create(&path, &[], 2, &params).unwrap();
+        let rows: Vec<f32> = (0..8).flat_map(|i| [i as f32, 0.0]).collect();
+        index
+            .insert_batch(&(0..8).collect::<Vec<_>>(), &rows)
+            .unwrap();
+        index.commit().unwrap();
+        let search = VSearchParams {
+            ef: 64,
+            rerank: 64,
+            ..Default::default()
+        };
+        assert!(index.delete_batch(&[1, 1]).is_err());
+        assert!(index.delete_batch(&[2, 99]).is_err());
+        assert!(index
+            .replace_batch(&[3, 4], &[3.0, 0.0, f32::NAN, 0.0])
+            .is_err());
+        assert_eq!(index.len(), 8);
+        assert_eq!(index.search(&[2.0, 0.0], 1, search).unwrap(), vec![2]);
+        assert_eq!(index.search(&[1.0, 0.0], 1, search).unwrap(), vec![1]);
+        index.delete_batch(&[1, 2]).unwrap();
+        index.replace_batch(&[3], &[100.0, 0.0]).unwrap();
+        index.commit().unwrap();
+        assert_eq!(index.len(), 6);
+        assert_eq!(index.search(&[100.0, 0.0], 1, search).unwrap(), vec![3]);
+    }
+}

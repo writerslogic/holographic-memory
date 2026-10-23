@@ -695,9 +695,7 @@ impl PyUpdatableIndex {
         let step = self.index.batch_capacity();
         py.detach(|| {
             for chunk in ids.chunks(step) {
-                for &id in chunk {
-                    self.index.delete(id)?;
-                }
+                self.index.delete_batch(chunk)?;
                 self.index.commit()?;
             }
             Ok(())
@@ -718,9 +716,7 @@ impl PyUpdatableIndex {
         let step = self.index.batch_capacity();
         py.detach(|| {
             for (ids, rows) in ids.chunks(step).zip(rows.chunks(step * dim)) {
-                for (&id, row) in ids.iter().zip(rows.chunks_exact(dim)) {
-                    self.index.replace(id, row)?;
-                }
+                self.index.replace_batch(ids, rows)?;
                 self.index.commit()?;
             }
             Ok(())
