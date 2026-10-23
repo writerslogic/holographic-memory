@@ -21,6 +21,7 @@ use anyhow::{ensure, Context, Result};
 pub(crate) struct TextSegment {
     file: File,
     len: AtomicU64,
+    scrubbed: crate::core::sync::RwLock<crate::core::hash::FastSet<(u64, u32)>>,
     #[cfg(feature = "security")]
     cipher: Option<std::sync::Arc<crate::core::security::EncryptionManager>>,
 }
@@ -63,6 +64,7 @@ impl TextSegment {
         Ok(Self {
             file,
             len: AtomicU64::new(HEADER_LEN),
+            scrubbed: Default::default(),
             #[cfg(feature = "security")]
             cipher,
         })
@@ -110,17 +112,15 @@ impl TextSegment {
                     .is_some_and(|end| end <= self.len.load(Ordering::Acquire)),
             "chunk text location outside the text segment"
         );
-        positioned_write(&self.file, &vec![0u8; len as usize], at).context("scrubbing chunk text")
+        positioned_write(&self.file, &vec![0u8; len as usize], at)
+            .context("scrubbing chunk text")?;
+        self.scrubbed.write().insert((at, len));
+        Ok(())
     }
 
-    /// Whether the record was scrubbed (see [`TextSegment::scrub`]). Looks at the first bytes
-    /// only: an encrypted record opens with a random nonce, a plaintext one with words.
+    /// Whether this segment scrubbed the record. The segment is recreated on every open.
     pub(crate) fn is_scrubbed(&self, at: u64, len: u32) -> bool {
-        let mut head = [0u8; 16];
-        let n = (len as usize).min(head.len());
-        n > 0
-            && positioned_read(&self.file, &mut head[..n], at).is_ok()
-            && head[..n].iter().all(|&b| b == 0)
+        self.scrubbed.read().contains(&(at, len))
     }
 
     /// Flushes scrubbed records to stable storage.
@@ -139,13 +139,11 @@ impl TextSegment {
             at >= HEADER_LEN,
             "chunk text location inside the segment header"
         );
-        let mut bytes = vec![0u8; len as usize];
-        positioned_read(&self.file, &mut bytes, at).context("reading chunk text")?;
-        // A scrubbed record is all zeros. A live one never is: an encrypted record starts with
-        // a random nonce, and a plaintext chunk is words, not NUL bytes.
-        if !bytes.is_empty() && bytes.iter().all(|&b| b == 0) {
+        if self.is_scrubbed(at, len) {
             return Ok(String::new());
         }
+        let mut bytes = vec![0u8; len as usize];
+        positioned_read(&self.file, &mut bytes, at).context("reading chunk text")?;
         #[cfg(feature = "security")]
         if let Some(cipher) = &self.cipher {
             bytes = cipher.decrypt_with_aad(&bytes, &at.to_le_bytes())?;
@@ -212,6 +210,7 @@ fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    include!("text_audit2.rs");
 
     fn create(path: &Path) -> TextSegment {
         TextSegment::create(

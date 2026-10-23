@@ -156,8 +156,20 @@ fn decode_frame_into(
 /// end marker. Mirrors the engine's rule for telling a torn append from corruption: the
 /// writer puts the end marker in the same flush as the frame, so anything valid after a bad
 /// frame was committed after it.
+pub(crate) fn last_nonzero(data: &[u8]) -> Option<usize> {
+    let (blocks, tail) = data.as_chunks::<4096>();
+    if let Some(at) = tail.iter().rposition(|&b| b != 0) {
+        return Some(blocks.len() * 4096 + at);
+    }
+    let block = blocks.iter().rposition(|bytes| bytes != &[0; 4096])?;
+    blocks[block]
+        .iter()
+        .rposition(|&b| b != 0)
+        .map(|at| block * 4096 + at)
+}
+
 fn committed_after(data: &[u8], from: usize) -> Option<usize> {
-    let last = data.iter().rposition(|&b| b != 0)?;
+    let last = last_nonzero(data)?;
     // One output buffer for every candidate offset of a damaged tail.
     let mut scratch = Vec::new();
     (from..=last.saturating_sub(FRAME_HEADER_LEN - 1)).find(|&at| {
@@ -175,6 +187,7 @@ pub fn scan_segment(
     mut visit: impl FnMut(&FrameRef, &[u8]),
 ) -> SegmentScan {
     let mut frames = Vec::new();
+    let mut payload = Vec::new();
     let mut offset = 0usize;
     let finish = |frames: Vec<FrameRef>, offset: usize, end: SegmentEnd| SegmentScan {
         frames,
@@ -205,8 +218,8 @@ pub fn scan_segment(
             }
             return fault(data, is_final, frames, offset, "invalid-end-header");
         }
-        match decode_frame(data, offset) {
-            Ok((frame, payload)) => {
+        match decode_frame_into(data, offset, &mut payload) {
+            Ok(frame) => {
                 visit(&frame, &payload);
                 offset = frame.end();
                 frames.push(frame);
@@ -592,6 +605,16 @@ fn check_mutation(
             valid_vector(body.get("vector"), dimensions)?;
         }
         "Document" => check_document(body, dimensions)?,
+        "StoredTriple" => {
+            for key in ["subject_id", "relation_id", "object_id", "composite_id"] {
+                if !valid_id(body.get(key)) {
+                    return Err(format!("stored triple {key} is not a valid id"));
+                }
+            }
+            if !body.get("deleted").is_some_and(Value::is_boolean) {
+                return Err("stored triple deleted is not a boolean".into());
+            }
+        }
         "EncodeDocument" => check_encode_document(body, dimensions)?,
         "Delete" | "DeleteDocument" => {
             if !valid_id(body.get("id")) {
@@ -793,6 +816,22 @@ pub fn probe(bytes: &[u8]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn last_nonzero_spans_padding_blocks() {
+        for len in [0, 1, 4095, 4096, 4097, 8191, 8192, 8193] {
+            let mut data = vec![0; len];
+            assert_eq!(last_nonzero(&data), None);
+            for at in [0, 4095, 4096, 8191, 8192]
+                .into_iter()
+                .filter(|&at| at < len)
+            {
+                data[at] = 1;
+                assert_eq!(last_nonzero(&data), Some(at));
+                data[at] = 0;
+            }
+        }
+    }
 
     fn frame(payload: &[u8], seq: u32) -> Vec<u8> {
         let compressed = lz4_flex::compress(payload);

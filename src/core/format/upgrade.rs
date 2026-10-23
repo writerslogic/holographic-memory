@@ -323,7 +323,7 @@ fn upgrade_data_dir(
     let parent = prepare_destination(destination)?;
     let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
     let staging = parent.join(format!(".hms-upgrade-{}-{nonce}", std::process::id()));
-    let result = (|| -> Result<usize> {
+    let result = (|| -> Result<(usize, Report)> {
         std::fs::create_dir_all(staging.join("tenants"))?;
         let mut frames = 0;
         for tenant in &sniff.tenants {
@@ -333,7 +333,7 @@ fn upgrade_data_dir(
             let _lock = StoreLock::acquire(&from)?;
             let tenant_plan = plan_from(&from, &tenant.report)?;
             if tenant_plan.up_to_date {
-                copy_store_files(&from, &to, &["documents.text"])?;
+                crate::core::admin::copy_tree(&from, &to)?;
                 frames += tenant.report.frames;
             } else {
                 let staged = stage_store(&from, &to)?;
@@ -346,15 +346,29 @@ fn upgrade_data_dir(
                 std::fs::copy(entry.path(), staging.join(entry.file_name()))?;
             }
         }
+        let mut verification = verify_path(&staging, &VerifyOptions::default())?;
+        ensure!(
+            verification.verdict == Verdict::Ok,
+            "upgraded data directory does not verify: {:?}",
+            verification.findings
+        );
+        for tenant in &mut verification.tenants {
+            tenant.report.path = destination
+                .join(Path::new(&tenant.report.path).strip_prefix(&staging)?)
+                .display()
+                .to_string();
+        }
+        verification.path = destination.display().to_string();
         std::fs::rename(&staging, destination)?;
-        Ok(frames)
+        crate::core::durable_file::sync_directory(parent)?;
+        Ok((frames, verification))
     })();
     match result {
-        Ok(frames) => Ok(UpgradeReport {
+        Ok((frames, verification)) => Ok(UpgradeReport {
             plan,
             destination: Some(destination.display().to_string()),
             frames,
-            verification: Some(verify_path(destination, &VerifyOptions::default())?),
+            verification: Some(verification),
         }),
         Err(error) => {
             // The staging directory is unpublished; the upgrade's own error is the one to report.

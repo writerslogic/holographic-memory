@@ -10,6 +10,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
+#[cfg(test)]
+#[path = "storage/audit_repros.rs"]
+mod audit_repros;
 mod staging;
 pub(crate) use staging::StagedArena;
 
@@ -357,6 +360,9 @@ impl PersistentArena {
             // A zero header or the end marker means no more frames.
             if raw_len == 0 && comp_len == 0 {
                 if is_log_end(&data[offset..offset + HEADER_SIZE]) {
+                    if version == 0 && Self::committed_after(data, offset + HEADER_SIZE).is_some() {
+                        return fail(offset, max_version);
+                    }
                     break;
                 }
                 return fail(offset, max_version);
@@ -413,7 +419,8 @@ impl PersistentArena {
                 scratch.resize(raw_len, 0);
             }
             match lz4_flex::block::decompress_into(payload, &mut scratch[..raw_len]) {
-                Ok(written) => hasher.update(&scratch[..written]),
+                Ok(written) if written == raw_len => hasher.update(&scratch[..written]),
+                Ok(_) => return false,
                 Err(_) => return false,
             }
         } else {
@@ -426,7 +433,7 @@ impl PersistentArena {
     /// marker, scanning every byte up to the last non-zero byte of the segment (bytes beyond
     /// the write frontier are zero).
     fn committed_after(data: &[u8], from: usize) -> Option<usize> {
-        let last = data.iter().rposition(|&b| b != 0)?;
+        let last = super::format::scan::last_nonzero(data)?;
         let mut scratch = Vec::new();
         (from..=last.saturating_sub(HEADER_SIZE - 1)).find(|&at| {
             at + HEADER_SIZE <= data.len()
@@ -501,7 +508,7 @@ impl PersistentArena {
                 ));
             }
             // Compressed data cannot exceed a full segment; reject to prevent OOM.
-            if comp_len > self.segment_size {
+            if comp_len == 0 || comp_len > raw_len {
                 return Err(anyhow!(
                     "Suspiciously large compressed frame length: {} at {}",
                     comp_len,
@@ -522,6 +529,10 @@ impl PersistentArena {
             } else {
                 payload.to_vec()
             };
+            ensure!(
+                data.len() == raw_len,
+                "frame payload length differs from its header"
+            );
             Ok((data, expected_crc, version))
         })?;
 

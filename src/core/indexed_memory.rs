@@ -48,16 +48,16 @@ impl IndexedMemory {
                 idf.update_remove(vectors[index].1.indices(), &postings);
             }
             tombstones.restore(index as u32);
-            vectors[index].1 = vec.clone();
+            vectors[index].1 = vec;
             index as u32
         } else {
             let index = vectors.len();
             ids.insert(id.clone(), index);
-            vectors.push((id, vec.clone()));
+            vectors.push((id, vec));
             index as u32
         };
-        postings.insert(index, vec.indices());
-        idf.update_insert(vec.indices(), &postings);
+        postings.insert(index, vectors[index as usize].1.indices());
+        idf.update_insert(vectors[index as usize].1.indices(), &postings);
         index
     }
 
@@ -110,6 +110,28 @@ impl IndexedMemory {
         postings.weighted_overlap(query.indices(), &weights, &tombstones)
     }
 
+    pub(crate) fn overlapping_slots(
+        &self,
+        query: &EntangledHVec,
+        after: u32,
+        through: u32,
+    ) -> Vec<u32> {
+        let postings = self.postings.read();
+        let tombstones = self.tombstones.read();
+        let mut candidates = crate::core::hash::FastSet::default();
+        for &dimension in query.indices() {
+            let list = postings.get_list(dimension);
+            let start = list.partition_point(|&id| id <= after);
+            let end = list.partition_point(|&id| id <= through);
+            for &id in &list[start..end] {
+                if !tombstones.is_deleted(id) {
+                    candidates.insert(id);
+                }
+            }
+        }
+        candidates.into_iter().collect()
+    }
+
     pub fn count(&self) -> usize {
         let vecs = self.vectors.read();
         let tombstones = self.tombstones.read();
@@ -137,6 +159,39 @@ impl IndexedMemory {
             .filter(|(i, _)| !tombstones.is_deleted(*i as u32))
             .map(|(i, (id, v))| (i as u32, id.clone(), v.clone()))
             .collect()
+    }
+
+    pub(crate) fn vector_page(
+        &self,
+        cursor: &mut usize,
+        limit: usize,
+    ) -> Vec<(u32, String, EntangledHVec)> {
+        let vectors = self.vectors.read();
+        let tombstones = self.tombstones.read();
+        let mut page = Vec::new();
+        while *cursor < vectors.len() && page.len() < limit {
+            let i = *cursor;
+            *cursor += 1;
+            if !tombstones.is_deleted(i as u32) {
+                let (id, vector) = &vectors[i];
+                page.push((i as u32, id.clone(), vector.clone()));
+            }
+        }
+        page
+    }
+
+    pub(crate) fn id_page(&self, cursor: &mut usize, limit: usize) -> Vec<String> {
+        let vectors = self.vectors.read();
+        let tombstones = self.tombstones.read();
+        let mut page = Vec::new();
+        while *cursor < vectors.len() && page.len() < limit {
+            let i = *cursor;
+            *cursor += 1;
+            if !tombstones.is_deleted(i as u32) {
+                page.push(vectors[i].0.clone());
+            }
+        }
+        page
     }
 
     pub fn dim(&self) -> usize {

@@ -63,18 +63,23 @@ pub fn version_stamp(token: u64) -> String {
 
 /// l2-normalises `values` the way the engine does before storing an embedding, as `f32`.
 pub fn normalize(values: &[f64]) -> Result<Vec<f32>> {
-    ensure!(
-        values.iter().all(|x| x.is_finite()),
-        "vector must be finite"
-    );
-    let scale = values.iter().map(|x| x.abs()).fold(0.0_f64, f64::max);
+    let mut scale = 0.0_f64;
+    for &value in values {
+        ensure!(value.is_finite(), "vector must be finite");
+        scale = scale.max(value.abs());
+    }
     ensure!(scale > 0.0, "vector must not be all zeros");
     let norm = values
         .iter()
         .map(|x| (x / scale) * (x / scale))
         .sum::<f64>()
         .sqrt();
-    Ok(values.iter().map(|x| (x / (scale * norm)) as f32).collect())
+    let magnitude = scale * norm;
+    if magnitude.is_normal() {
+        Ok(values.iter().map(|x| (x / magnitude) as f32).collect())
+    } else {
+        Ok(values.iter().map(|x| ((x / scale) / norm) as f32).collect())
+    }
 }
 
 /// Dot product with eight independent accumulators so the loop vectorises.
@@ -143,6 +148,8 @@ struct Manifest {
     covered: u64,
     rows: u64,
     dim: u64,
+    #[serde(default)]
+    rows_crc: Option<u32>,
 }
 
 /// The snapshot: the vertex graph over `n` rows and the mapped rows file.
@@ -516,12 +523,10 @@ impl VectorIndex {
             && state.live == core.document_embedding_count()
     }
 
-    /// Appends frames and returns the log still locked: the caller applies them to `state`
-    /// before releasing it, so `maintain`, which captures the log offset and the state under the
-    /// same lock, never sees a frame its captured state lacks.
+    /// Retain the returned guard through state publication so maintenance captures both together.
     fn append(&self, bytes: &[u8]) -> Result<parking_lot::MutexGuard<'_, Log>> {
-        self.mark_dirty()?;
         let mut log = self.log.lock();
+        self.mark_dirty()?;
         let end = log.len;
         log.file.seek(SeekFrom::Start(end))?;
         log.file.write_all(bytes)?;
@@ -598,12 +603,15 @@ impl VectorIndex {
                 n,
                 ..
             }) => {
-                let take = if state.base_dead > 0 {
+                let live = n - state.base_dead;
+                let mut take = if live == 0 {
+                    0
+                } else if state.base_dead > 0 {
                     k.saturating_mul(4).min(*n)
                 } else {
                     k.min(*n)
                 };
-                if take > 0 {
+                while take > 0 {
                     let ef = ef.max(take).min(MAX_EF.max(take));
                     let params = VSearchParams {
                         ef,
@@ -615,6 +623,15 @@ impl VectorIndex {
                         .searcher()
                         .search(query, take, params, &mut found)
                         .map_err(|e| anyhow::anyhow!("graph search: {e}"))?;
+                    let enough = found
+                        .iter()
+                        .filter(|&&v| state.ids.get(v as usize).is_some_and(Option::is_some))
+                        .count()
+                        >= k.min(live);
+                    if !enough && take < *n {
+                        take = take.saturating_mul(2).min(*n);
+                        continue;
+                    }
                     for vertex in found {
                         let slot = vertex as usize;
                         if slot < state.base_len && state.ids[slot].is_some() {
@@ -622,6 +639,7 @@ impl VectorIndex {
                             candidates.push((dot(query, &row), vertex));
                         }
                     }
+                    break;
                 }
             }
             Some(_) => {
@@ -659,13 +677,18 @@ impl VectorIndex {
         let Some(_build) = self.build.try_lock() else {
             return Ok(());
         };
+        let checksummed = self
+            .manifest
+            .lock()
+            .as_ref()
+            .is_some_and(|m| m.rows_crc.is_some());
         let (matrix, ids, tokens, covered, log_epoch) = {
             let log = self.log.lock();
             let state = self.state.read();
             if state.live < graph_min_rows.max(1) {
                 return Ok(());
             }
-            let has_graph = state.base.as_ref().is_some_and(|b| b.graph.is_some());
+            let has_graph = checksummed && state.base.as_ref().is_some_and(|b| b.graph.is_some());
             if has_graph
                 && (state.mutations == 0 || (!force && state.mutations < REBUILD_AFTER_MUTATIONS))
             {
@@ -702,6 +725,7 @@ impl VectorIndex {
             rows_bytes.extend_from_slice(&value.to_le_bytes());
         }
         write_atomic(&rows_path, &rows_bytes)?;
+        let rows_crc = Some(crc32fast::hash(&rows_bytes));
         drop(rows_bytes);
         let mut ids_bytes = Vec::with_capacity(16 + n * 24);
         ids_bytes.extend_from_slice(IDS_MAGIC);
@@ -732,6 +756,7 @@ impl VectorIndex {
             covered,
             rows: n as u64,
             dim: self.dim as u64,
+            rows_crc,
         };
         write_atomic(&self.dir.join("CURRENT"), &serde_json::to_vec(&manifest)?)?;
         sync_dir(&self.dir)?;
@@ -848,6 +873,12 @@ fn load_base(dir: &Path, m: &Manifest, dim: usize) -> Result<(Base, Vec<Arc<str>
     );
     // SAFETY: see `maintain`; the file is only ever replaced by rename.
     let rows = unsafe { memmap2::Mmap::map(&rows_file)? };
+    if let Some(expected) = m.rows_crc {
+        ensure!(
+            crc32fast::hash(&rows) == expected,
+            "rows file checksum mismatch"
+        );
+    }
     ensure!(
         &rows[..8] == ROWS_MAGIC
             && u64::from_le_bytes(rows[8..16].try_into().expect("eight bytes")) == n as u64
@@ -903,6 +934,7 @@ fn load_base(dir: &Path, m: &Manifest, dim: usize) -> Result<(Base, Vec<Arc<str>
 #[cfg(test)]
 mod tests {
     use super::*;
+    include!("vindex_audit_repros.rs");
 
     fn core(dir: &Path, dim: usize) -> Arc<HmsCore> {
         let config = holographic_memory::core::HmsConfig {

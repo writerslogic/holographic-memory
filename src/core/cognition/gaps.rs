@@ -38,80 +38,51 @@ impl GapDetector {
         min_shared_relations: usize,
         min_peer_coverage: f64,
     ) -> Vec<KnowledgeGap> {
-        let snapshot = triple_store.snapshot();
-
-        // Build entity -> set of relations (as subject)
-        let mut entity_rels: FastMap<String, FastSet<String>> = FastMap::default();
-        for t in &snapshot {
-            entity_rels
-                .entry(t.subject_id.clone())
-                .or_default()
-                .insert(t.relation_id.clone());
-        }
-
-        // Build relation -> set of subjects (for peer lookup)
-        let mut rel_subjects: FastMap<String, FastSet<String>> = FastMap::default();
-        for t in &snapshot {
-            rel_subjects
-                .entry(t.relation_id.clone())
-                .or_default()
-                .insert(t.subject_id.clone());
-        }
-
+        let relations = |entity: &str| {
+            let mut rels = FastSet::default();
+            triple_store.visit(Some(entity), None, None, |t| {
+                rels.insert(t.relation_id.clone());
+                true
+            });
+            rels
+        };
         let mut gaps = Vec::new();
-
-        for (entity, rels) in &entity_rels {
-            // Find peers: other entities sharing >= min_shared_relations
+        for entity in triple_store.subject_ids() {
+            let rels = relations(&entity);
             let mut peer_candidates: FastMap<String, usize> = FastMap::default();
-            for rel in rels {
-                if let Some(subjects) = rel_subjects.get(rel) {
-                    for peer in subjects {
-                        if peer != entity {
-                            *peer_candidates.entry(peer.clone()).or_insert(0) += 1;
-                        }
+            for rel in &rels {
+                let mut subjects = FastSet::default();
+                triple_store.visit(None, Some(rel), None, |t| {
+                    subjects.insert(t.subject_id.clone());
+                    true
+                });
+                for peer in subjects {
+                    if peer != entity {
+                        *peer_candidates.entry(peer).or_default() += 1;
                     }
                 }
             }
-
-            let peers: Vec<String> = peer_candidates
+            let peers: Vec<_> = peer_candidates
                 .into_iter()
-                .filter(|&(_, count)| count >= min_shared_relations)
-                .map(|(id, _)| id)
+                .filter(|(_, count)| *count >= min_shared_relations)
+                .map(|(peer, _)| peer)
                 .collect();
-
-            if peers.is_empty() {
-                continue;
-            }
-
-            // Collect all relations that peers have (O(1) lookup via entity_rels)
-            let mut peer_rel_counts: FastMap<String, usize> = FastMap::default();
+            let mut evidence: FastMap<String, Vec<String>> = FastMap::default();
             for peer in &peers {
-                if let Some(peer_rels) = entity_rels.get(peer) {
-                    for rel in peer_rels {
-                        *peer_rel_counts.entry(rel.clone()).or_insert(0) += 1;
+                for rel in relations(peer) {
+                    if !rels.contains(&rel) {
+                        evidence.entry(rel).or_default().push(peer.clone());
                     }
                 }
             }
-
-            // Check for gaps: relations the entity doesn't have but peers do
-            let peer_count = peers.len();
-            for (rel, count) in &peer_rel_counts {
-                if rels.contains(rel) {
-                    continue;
-                }
-                let coverage = *count as f64 / peer_count as f64;
-                if coverage >= min_peer_coverage {
-                    let peers_with: Vec<String> = peers
-                        .iter()
-                        .filter(|p| entity_rels.get(*p).is_some_and(|pr| pr.contains(rel)))
-                        .cloned()
-                        .collect();
-
+            for (missing_relation, peers_with_relation) in evidence {
+                let peer_coverage = peers_with_relation.len() as f64 / peers.len() as f64;
+                if peer_coverage >= min_peer_coverage {
                     gaps.push(KnowledgeGap {
                         entity: entity.clone(),
-                        missing_relation: rel.clone(),
-                        peers_with_relation: peers_with,
-                        peer_coverage: coverage,
+                        missing_relation,
+                        peers_with_relation,
+                        peer_coverage,
                     });
                 }
             }

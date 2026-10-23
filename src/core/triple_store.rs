@@ -98,33 +98,78 @@ impl TripleStore {
         relation: Option<&str>,
         object: Option<&str>,
     ) -> Vec<TripleRecord> {
+        let mut result = Vec::new();
+        self.visit(subject, relation, object, |t| {
+            result.push(t.clone());
+            true
+        });
+        result
+    }
+
+    // Callbacks run under read locks and must not reenter the store.
+    pub(crate) fn visit(
+        &self,
+        subject: Option<&str>,
+        relation: Option<&str>,
+        object: Option<&str>,
+        mut visitor: impl FnMut(&TripleRecord) -> bool,
+    ) {
         let triples = self.triples.read();
-
-        let candidate_indices: Option<Vec<usize>> = if let Some(s) = subject {
-            self.by_subject.read().get(s).cloned()
-        } else if let Some(r) = relation {
-            self.by_relation.read().get(r).cloned()
-        } else if let Some(o) = object {
-            self.by_object.read().get(o).cloned()
+        let mut accept = |t: &TripleRecord| {
+            t.deleted
+                || subject.is_some_and(|s| t.subject_id != s)
+                || relation.is_some_and(|r| t.relation_id != r)
+                || object.is_some_and(|o| t.object_id != o)
+                || visitor(t)
+        };
+        let indexed = subject
+            .map(|s| (&self.by_subject, s))
+            .or_else(|| relation.map(|r| (&self.by_relation, r)))
+            .or_else(|| object.map(|o| (&self.by_object, o)));
+        if let Some((index, key)) = indexed {
+            if let Some(indices) = index.read().get(key) {
+                for &i in indices {
+                    if !accept(&triples[i]) {
+                        break;
+                    }
+                }
+            }
         } else {
-            None
-        };
+            for t in triples.iter() {
+                if !accept(t) {
+                    break;
+                }
+            }
+        }
+    }
 
-        let candidates: Vec<&TripleRecord> = match candidate_indices {
-            Some(idxs) => idxs.iter().map(|&i| &triples[i]).collect(),
-            None => triples.iter().collect(),
-        };
+    pub(crate) fn has(
+        &self,
+        subject: Option<&str>,
+        relation: Option<&str>,
+        object: Option<&str>,
+    ) -> bool {
+        let mut found = false;
+        self.visit(subject, relation, object, |_| {
+            found = true;
+            false
+        });
+        found
+    }
 
-        candidates
-            .into_iter()
-            .filter(|t| {
-                !t.deleted
-                    && subject.is_none_or(|s| t.subject_id == s)
-                    && relation.is_none_or(|r| t.relation_id == r)
-                    && object.is_none_or(|o| t.object_id == o)
-            })
-            .cloned()
-            .collect()
+    pub(crate) fn has_composite(&self, id: &str) -> bool {
+        let triples = self.triples.read();
+        self.by_composite
+            .read()
+            .get(id)
+            .is_some_and(|indices| indices.iter().any(|&i| !triples[i].deleted))
+    }
+
+    pub(crate) fn subject_ids(&self) -> Vec<String> {
+        self.by_subject.read().keys().cloned().collect()
+    }
+    pub(crate) fn relation_ids(&self) -> Vec<String> {
+        self.by_relation.read().keys().cloned().collect()
     }
 
     pub fn by_composite_id(&self, composite_id: &str) -> Vec<TripleRecord> {
@@ -184,5 +229,14 @@ mod tests {
 
         let all_capital = store.query(None, Some("capital_of"), None);
         assert_eq!(all_capital.len(), 2);
+        store.remove_composite("c1");
+        assert!(!store.has(Some("paris"), Some("capital_of"), None));
+        assert!(!store.has(Some("missing"), None, None));
+        let mut seen = 0;
+        store.visit(None, None, None, |_| {
+            seen += 1;
+            false
+        });
+        assert_eq!(seen, 1);
     }
 }

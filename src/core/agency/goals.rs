@@ -105,11 +105,19 @@ impl GoalStore {
     /// Compute overlap between a vector and the highest-priority active goal.
     /// Returns 0.0 if no active goals.
     pub fn goal_relevance(&self, vec: &EntangledHVec) -> f64 {
-        let goals = self.prioritized();
-        if goals.is_empty() {
-            return 0.0;
-        }
-        goals[0].vector.similarity(vec)
+        let inner = self.inner.read();
+        let best = inner
+            .goals
+            .iter()
+            .filter(|g| g.active)
+            .fold(None::<&Goal>, |best, goal| {
+                if best.is_none_or(|b| goal.utility() > b.utility()) {
+                    Some(goal)
+                } else {
+                    best
+                }
+            });
+        best.map_or(0.0, |goal| goal.vector.similarity(vec))
     }
 
     pub fn count(&self) -> usize {
@@ -135,6 +143,28 @@ mod tests {
             cost,
             active: true,
         }
+    }
+
+    #[test]
+    fn relevance_preserves_first_tie_and_ignores_inactive_goals() {
+        let store = GoalStore::new();
+        let vector = EntangledHVec::new_deterministic(16384, 1);
+        assert_eq!(store.goal_relevance(&vector), 0.0);
+        for (name, seed, relevance) in [
+            ("low", 2, 0.1),
+            ("first", 1, 0.9),
+            ("tie", 3, 0.9),
+            ("inactive", 4, 1.0),
+        ] {
+            store.add(make_goal(name, seed, relevance, 1.0, 0.0));
+        }
+        store.deactivate("inactive");
+        assert_eq!(store.goal_relevance(&vector), 1.0);
+        store.deactivate("first");
+        assert_eq!(
+            store.goal_relevance(&vector),
+            store.prioritized()[0].vector.similarity(&vector)
+        );
     }
 
     #[test]
