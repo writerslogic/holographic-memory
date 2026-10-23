@@ -295,12 +295,18 @@ impl BaseRows {
         })
     }
     pub fn row(&self, slot: usize) -> Result<&[f32], UpdateError> {
-        let at = self.row_at + slot * (self.dim * 4 + 4);
-        let bytes = &self.map[at..at + self.dim * 4];
-        if crc32fast::hash(bytes) != small(&self.map[at + self.dim * 4..at + self.dim * 4 + 4]) {
+        let len = self.dim * 4;
+        let at = self.row_at + slot * (len + 4);
+        let (Some(bytes), Some(crc)) = (
+            self.map.get(at..at + len),
+            self.map.get(at + len..at + len + 4),
+        ) else {
+            return Err(bad(format!("row {slot} outside the rows file")));
+        };
+        if crc32fast::hash(bytes) != small(crc) {
             return Err(bad(format!("row {slot} checksum")));
         }
-        // SAFETY: checked file geometry bounds the span; mmap and row starts align to f32,
+        // SAFETY: `bytes` is `dim` f32s inside the mapping; mmap and row starts align to f32,
         // all f32 bit patterns are valid, and check() rejects big-endian targets.
         let row = unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<f32>(), self.dim) };
         validate_vector(row, self.dim, self.metric)?;
@@ -412,6 +418,7 @@ pub(super) fn frame(ops: &[Operation], sequence: u64, dim: usize) -> Result<Vec<
     if len > MAX_PAYLOAD || ops.len() > MAX_OPS {
         return Err(UpdateError::Capacity);
     }
+    // Both casts are exact: MAX_PAYLOAD and MAX_OPS are below 2^32.
     let mut out = Vec::with_capacity(FRAME_HEADER + len);
     out.extend_from_slice(&(len as u32).to_le_bytes());
     out.extend_from_slice(&(!(len as u32)).to_le_bytes());
@@ -560,4 +567,38 @@ pub(super) fn append(
     sync_mapped_file(&file)?;
     checkpoint(2)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::qgraph::BuildParams;
+
+    #[test]
+    fn rows_past_the_last_slot_are_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("rows.bin");
+        let manifest = Manifest {
+            identity: [7; 16],
+            dim: 2,
+            sequence: 1,
+            build: BuildParams::default(),
+            encoding: Encoding::default(),
+        };
+        BaseRows::write(&path, &manifest, &[3, 5], &[1.0, 2.0, 3.0, 4.0]).unwrap();
+        let rows = BaseRows::open(&path, &manifest).unwrap();
+        assert_eq!(rows.ids, [3, 5]);
+        for (slot, want) in [
+            (0, Some(&[1.0f32, 2.0][..])),
+            (1, Some(&[3.0, 4.0][..])),
+            (2, None),
+            (3, None),
+        ] {
+            match (rows.row(slot), want) {
+                (Ok(row), Some(want)) => assert_eq!(row, want, "slot {slot}"),
+                (Err(UpdateError::CorruptBase(_)), None) => {}
+                (got, _) => panic!("slot {slot}: {got:?}"),
+            }
+        }
+    }
 }
