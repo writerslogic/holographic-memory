@@ -124,13 +124,19 @@ impl SparseInvertedIndex {
                 1.0
             };
 
-            heap.push(SlotHit {
+            let hit = SlotHit {
                 slot: doc_id,
                 similarity,
-            });
-
-            if heap.len() > k {
-                heap.pop();
+            };
+            // `Ord` is total over distinct slots, so the k smallest hits (the k best) do not
+            // depend on the order the heap saw them: a hit no better than the worst kept one
+            // is skipped instead of pushed and popped straight back out.
+            if heap.len() < k {
+                heap.push(hit);
+            } else if let Some(mut worst) = heap.peek_mut() {
+                if hit < *worst {
+                    *worst = hit;
+                }
             }
         }
 
