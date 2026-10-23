@@ -509,7 +509,12 @@ class Runner:
         LEASE.pop(f"{self.ns}:{self.ds}", None)
 
     def acquire(self) -> bool:
-        held = LEASE.get(f"{self.ns}:{self.ds}")
+        # A container lost mid-job stops renewing its lease; a Modal retry waits for it to go stale rather
+        # than giving up, so recovery needs no manual --resume. A live holder keeps renewing and we leave.
+        deadline = now() + STALE_S + 2 * HEARTBEAT_S
+        while (held := LEASE.get(f"{self.ns}:{self.ds}")) and held["container"] != self.cid \
+                and now() - held["at"] < STALE_S and now() < deadline:
+            time.sleep(HEARTBEAT_S)
         if held and held["container"] != self.cid and now() - held["at"] < STALE_S:
             print(f"{self.ds}: container {held['container']} holds the lease ({now() - held['at']:.0f}s old); exiting", flush=True)
             return False
