@@ -34,6 +34,7 @@ rayon = "1.8"
 parking_lot = { version = "0.12", features = ["arc_lock"], optional = true }
 memmap2 = "0.9"
 bytemuck = "1"
+mimalloc = { version = "0.1", default-features = false, optional = true }
 anyhow = "1.0"
 thiserror = "2.0"
 tracing = "0.1"
@@ -119,6 +120,8 @@ required-features = ["security", "server"]
 default = []
 # Command-line parsing (clap) for the binaries and examples that take arguments.
 cli = ["dep:clap"]
+# Global allocator of the public-bench binary only; never linked into the library.
+mimalloc = ["dep:mimalloc"]
 conversation-memory = ["sha2"]
 node-api = ["napi", "napi-derive", "tokio", "tokio/rt", "napi-build", "dep:ts-rs"]
 # Python bindings (pyo3 + maturin). Exposes the quantized-phase substrate. Build
@@ -204,7 +207,7 @@ required-features = ["experimental"]
 [[bin]]
 name = "public-bench"
 path = "src/bin/public-bench.rs"
-required-features = ["cli"]
+required-features = ["cli", "mimalloc"]
 
 [[bin]]
 name = "conversation-eval"
