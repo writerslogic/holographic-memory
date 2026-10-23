@@ -1556,8 +1556,8 @@ impl Searcher<'_> {
             if params.max_exact > 0 && expanded >= params.max_exact {
                 break;
             }
-            let v = self.pool.remove(cur).id;
-            if let Some(next) = self.pool[cur..].iter().find(|c| !c.done) {
+            let v = self.pool[cur].id;
+            if let Some(next) = self.pool[cur + 1..].iter().find(|c| !c.done) {
                 kernels::prefetch(idx.block(next.id));
             }
             let b = idx.block(v);
@@ -1565,20 +1565,22 @@ impl Searcher<'_> {
             exact += 1;
             expanded += 1;
             push_top(&mut self.results, k, -ipv, v);
-            // The expanded vertex re-enters the pool with its exact distance, so an optimistic
-            // estimate cannot hold a pool slot and stall the search.
-            let pos = self.pool.partition_point(|c| c.dist <= -ipv);
-            if pos < ef {
-                self.pool.insert(
-                    pos,
-                    Candidate {
-                        dist: -ipv,
-                        id: v,
-                        done: true,
-                    },
-                );
-                self.pool.truncate(ef);
+            // The expanded vertex moves to the slot of its exact distance, so an optimistic
+            // estimate cannot hold a pool slot and stall the search. The pool is sorted and at
+            // most `ef` long, so the slot is the one a remove and re-insert would give, and
+            // one rotation of the span between the two slots moves it there.
+            let mut pos = self.pool.partition_point(|c| c.dist <= -ipv);
+            if pos > cur {
+                pos -= 1;
+                self.pool[cur..=pos].rotate_left(1);
+            } else {
+                self.pool[pos..=cur].rotate_right(1);
             }
+            self.pool[pos] = Candidate {
+                dist: -ipv,
+                id: v,
+                done: true,
+            };
 
             kernels::raw_estimates(
                 &b[idx.codes_off..idx.factors_off],
