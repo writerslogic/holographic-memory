@@ -223,7 +223,11 @@ mod tests {
     /// Signed nibble `j` of a row packed two per byte (even coordinate low).
     fn nibble(p: &[i8], j: usize) -> i32 {
         let byte = p[j / 2] as u8;
-        let n = if j % 2 == 0 { byte & 15 } else { byte >> 4 };
+        let n = if j.is_multiple_of(2) {
+            byte & 15
+        } else {
+            byte >> 4
+        };
         i32::from(((n ^ 8) as i8) - 8)
     }
 
@@ -311,7 +315,7 @@ mod tests {
             };
             let i8_plain = time(&|r| dot_i8_inline(&q, r), dim);
             let i8_query = time(&|r| dot_i8_query(&q, r, qs), dim);
-            let (i4_plain, i4_query) = if dim % 32 == 0 {
+            let (i4_plain, i4_query) = if dim.is_multiple_of(32) {
                 (
                     time(&|r| dot_i4_inline(&q, r), dim / 2),
                     time(&|r| dot_i4_query(&q, r, qs), dim / 2),
