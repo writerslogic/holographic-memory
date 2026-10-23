@@ -22,7 +22,7 @@ split and category, with per-pass J). Harness: [`benchmarks/public/locomo/`](../
 | Machine | Apple M-series, 10 cores. hms-server ran with 4 tokio workers and 4 concurrent work slots, on a shared host (load average 3 to 20). The run measured accuracy only; no timing was taken. |
 | Passes | Each pass is an independent reader and judge run over all 10 conversations: 5 for the primary arm, 3 for each secondary arm, 1 for full-context. Mem0 reports 10. |
 | Split | Rule fixed before any run: the first three conversations (conv-26, 30, 41) are the tuning set, and the other seven are held out. |
-| Date, spend | 2026-10-23. OpenAI spend was 10.37 USD, measured from API usage. |
+| Date, spend | 2026-10-23. This run's OpenAI spend was 10.37 USD, measured from API usage. It reused 6,892 of the 7,700 primary reader answers, cached by prompt hash from an interrupted run on 2026-10-22; their prompts were byte-identical, so the cache keys matched. That earlier run cost about 3.5 USD (0.96 measured, about 2.5 estimated), so the campaign total is about 13.9 USD. |
 
 ### Arms
 - **HMS primary.** Hybrid recall (lexical plus text-embedding-3-small, blend fusion), k=30 per
@@ -82,11 +82,13 @@ On the held-out conversations, HMS primary scores 71.97, which is 0.8 points bel
 ## Where HMS loses
 
 - **Multi-hop (id 1).** Mem0 is ahead on every metric: J 67.13 vs 63.90 (primary), F1 38.72 vs
-  35.86 and BLEU-1 27.13 vs 23.90. Mem0^g also leads on J (65.71). Evidence recall is the weakest
-  here, at 0.60 for primary: list questions need many turns, and the 1,764-token cap cuts them off.
-  Uncapped recall raises multi-hop J to 67.38, level with Mem0.
-- **Open-domain (id 3).** Mem0 is ahead on J (51.15 vs 48.96), F1 (28.64 vs 27.40) and BLEU-1
-  (21.58 vs 20.48). This category has only 96 questions, so one question moves J by about 1 point.
+  35.86 and BLEU-1 27.13 vs 23.90. Mem0^g is also ahead on every metric (65.71 J, 38.09 F1,
+  26.03 BLEU-1). Evidence recall is the weakest here, at 0.60 for primary: list questions need
+  many turns, and the 1,764-token cap cuts them off. Uncapped recall raises multi-hop J to 67.38,
+  level with Mem0. Uncapped still trails Mem0 and Mem0^g on multi-hop F1 (37.33) and BLEU-1 (25.56).
+- **Open-domain (id 3).** Mem0 is ahead of both primary and uncapped on J (51.15 vs 48.96 and
+  47.57), F1 (28.64 vs 27.40 and 26.87) and BLEU-1 (21.58 vs 20.48 and 19.96). This category has
+  only 96 questions, so one question moves J by about 1 point.
 - **Against full-context.** Full-context beats every HMS arm on J for multi-hop, open-domain and
   single-hop. HMS's overall lead over full-context on all 10 conversations comes from temporal
   questions (71.59 vs 49.22). On the held-out conversations, full-context leads HMS primary
@@ -116,6 +118,9 @@ and is not placed in the tables above. Mem0 reran Zep's code with Mem0's reader 
   in "Category ids" above.
 - **Ingest.** HMS stores raw turns and makes no LLM calls at ingest. Mem0 stores LLM-extracted
   facts. Both are read with the same reader prompt and memory rendering.
+- **Context tokens.** HMS context is the o200k token count of the two rendered memory lists. The
+  paper does not say which tokenizer produced its 1,764.
+- **Full-context passes.** Our full-context row is a single pass.
 - **Tuning overlap.** The all-10 rows include the three conversations used to choose the
   configuration. The held-out rows are the clean estimate.
 
@@ -135,4 +140,5 @@ $B --out final-fullctx  --full-context --runs 1
 Reader and judge calls are cached by prompt hash, so a rerun pays only for prompts that change.
 `--dry-run` counts cache misses and their input tokens without making any chat call.
 `assemble_results.py` writes the results JSON from the four `predictions.jsonl` files. A full run
-from an empty cache costs about 11 USD at list price, about 6 of it for full-context.
+from an empty cache costs about 13 USD at list price: about 6 for full-context, 3 for the primary
+arm, 2.1 for uncapped and 1.6 for lexical.

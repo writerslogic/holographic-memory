@@ -1427,5 +1427,31 @@
     "lexical": 1.6207,
     "uncapped": 2.1263
   },
-  "config_frozen_at_hms_sha": "ec2da79"
+  "config_frozen_at_hms_sha": "ec2da79",
+  "openai_spend_usd_prior_runs_estimate": 3.5,
+  "openai_spend_note": "openai_spend_usd is this run, measured from API usage. 6892 of 7700 primary reader answers were reused from the interrupted 2026-10-22 run (identical prompts, cache keyed by prompt hash), which cost about 3.5 USD (0.96 measured, about 2.5 estimated).",
+  "arm_config": {
+    "primary": {
+      "embedding_model": "text-embedding-3-small",
+      "k_per_speaker": 30,
+      "token_budget": 1764,
+      "fusion": "blend"
+    },
+    "uncapped": {
+      "embedding_model": "text-embedding-3-small",
+      "k_per_speaker": 30,
+      "token_budget": null,
+      "fusion": "blend"
+    },
+    "lexical": {
+      "embedding_model": null,
+      "k_per_speaker": 30,
+      "token_budget": 1764
+    },
+    "full_context": {
+      "memory_system": null,
+      "prompt": "mem0 evaluation/src/rag.py chunk_size -1"
+    }
+  },
+  "context_tokens_tokenizer": "o200k_base over the rendered memory lists"
 }
