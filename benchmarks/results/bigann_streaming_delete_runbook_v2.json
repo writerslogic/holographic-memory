@@ -36,7 +36,8 @@
     "all_returned_ids_live_and_unique": true
    },
    "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
-   "modal_app": "ap-PGMSGvZCLeZ7Dp27nBVK70"
+   "modal_app": "ap-PGMSGvZCLeZ7Dp27nBVK70",
+   "role": "this change"
   },
   {
    "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
@@ -65,7 +66,8 @@
     "all_returned_ids_live_and_unique": true
    },
    "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
-   "modal_app": "ap-7bsFgge1FHLWkEb9xM7IOe"
+   "modal_app": "ap-7bsFgge1FHLWkEb9xM7IOe",
+   "role": "this change"
   },
   {
    "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
@@ -94,7 +96,8 @@
     "all_returned_ids_live_and_unique": true
    },
    "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
-   "modal_app": "ap-Lx3gi1FOnVEay3B0LyA0Ii"
+   "modal_app": "ap-Lx3gi1FOnVEay3B0LyA0Ii",
+   "role": "this change"
   },
   {
    "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
@@ -123,7 +126,8 @@
     "all_returned_ids_live_and_unique": true
    },
    "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
-   "modal_app": "ap-9Be3mBpFRIvUqrUmCLcvDD"
+   "modal_app": "ap-9Be3mBpFRIvUqrUmCLcvDD",
+   "role": "this change"
   },
   {
    "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
@@ -152,7 +156,38 @@
     "all_returned_ids_live_and_unique": true
    },
    "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
-   "modal_app": "ap-2EeMPwjBWmNjMnsiXrAb90"
+   "modal_app": "ap-2EeMPwjBWmNjMnsiXrAb90",
+   "role": "this change"
+  },
+  {
+   "hms_commit": "c80aa52a785641094dbe16df6be020572a883957",
+   "R": 32,
+   "L": 64,
+   "alpha": 1.0,
+   "T": 8,
+   "ef": 64,
+   "rerank": 64,
+   "recall10": 0.7623,
+   "runbook_seconds": 863.5,
+   "seconds_by_operation": {
+    "search": 34.1,
+    "insert": 442.9,
+    "delete": 386.5,
+    "replace": 0.0
+   },
+   "run_py_wall": "14:24.09",
+   "cpu_percent": 709,
+   "max_rss_bytes_benchmark_process": 5350993920,
+   "peak_sampled_rss_bytes_all_processes": 5572100096,
+   "eligibility": {
+    "search_checkpoints": 33,
+    "queries": 330000,
+    "returned_ids": 3300000,
+    "all_returned_ids_live_and_unique": true
+   },
+   "host": "Modal cpu=8.0 (8 schedulable CPUs; topology hidden, billed as physical cores, not matched to 8 vCPU), 8 GiB memory hard limit, non-preemptible; one round per row",
+   "modal_app": "ap-7XoFjvZn8VaBgAWf0SqhAj",
+   "role": "footprint before: main without the 3-byte ids"
   }
  ],
  "replays": {
@@ -234,5 +269,41 @@
     "peak_rss_file_mib": 1274
    }
   ]
+ },
+ "final_runbook": {
+  "runbook": "final_runbook.yaml on msturing-30M-clustered",
+  "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
+  "R": 32,
+  "L": 64,
+  "alpha": 1.0,
+  "ef": 512,
+  "modal_app": "ap-ZJ72AAO1QU85KwrImVJdPX",
+  "status": "failed: run.py killed at the runner's 3600 s timeout; no recall recorded",
+  "measured": {
+   "steps_completed": 541,
+   "of_steps": 1280,
+   "live_rows_at_last_step": 4320915,
+   "seconds_by_operation": {
+    "search": {
+     "steps": 270,
+     "seconds": 1049,
+     "mean_seconds": 3.88
+    },
+    "insert": {
+     "steps": 143,
+     "seconds": 1089,
+     "mean_seconds": 7.61
+    },
+    "delete": {
+     "steps": 128,
+     "seconds": 1461,
+     "mean_seconds": 11.42
+    }
+   },
+   "search_checkpoints_total": 640,
+   "peak_sampled_rss_bytes_all_processes": 6680424448,
+   "peak_rss_bytes_benchmark_process": 6459932672
+  },
+  "projection": "640 searches x 3.88 s mean = about 2,480 s of searching alone at ef 512; with insert and delete steps at the observed rates the runbook needs well over an hour (projection, not measured)"
  }
 }

@@ -71,6 +71,7 @@ Per search step of the official runbook (harness ground truth, same wheel, R32 L
 | cc5dede | R32 L64 alpha 1.2 | 1024 | 0.9301 | 36.0 min | 7.47 GiB | Modal 8 vCPU |
 | e4df0b1 | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
 | e4df0b1 | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
+| c80aa52 (main) | R32 L64 alpha 1.0 | 64 | 0.7623 | 14:24 (runbook steps 864 s) | 4.98 GiB | Modal cpu 8.0 |
 | 082766e | R32 L64 alpha 1.0 | 64 | 0.7623 | 13:32 (runbook steps 811 s) | 4.85 GiB | Modal cpu 8.0 |
 | 082766e | R32 L64 alpha 1.0 | 128 | 0.8401 | 18:53 (1,132 s) | 4.84 GiB | Modal cpu 8.0 |
 | 082766e | R32 L64 alpha 1.0 | 384 | 0.9226 | 20:51 (1,250 s) | 4.87 GiB | Modal cpu 8.0 |
@@ -95,11 +96,12 @@ per-step time; the wall includes start-up and the dataset range reads.
 ## Operating point
 
 At R32 L64 alpha 1.0, **ef 512 scores 0.9371 against the track baseline's 0.924, at a 4.84 GiB
-peak, in a 15:41 replay (941 s of runbook steps)**; ef 384 falls just short (0.9226). Every one of
-the five Modal replays finished in 13:32-20:51 against the baseline's 23 minutes, one round each
-and on different hardware from the baseline's, so that is an observation, not a matched timing
-comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of
-e4df0b1 to the fourth digit, so the 3-byte ids of this change leave the results unchanged.
+peak, in a 15:41 replay (941 s of runbook steps)**; ef 384 falls just short (0.9226). Every one
+of the five Modal replays finished in 13:32-20:51 against the baseline's 23 minutes, one round
+each and on different hardware from the baseline's, so that is an observation, not a matched
+timing comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of e4df0b1 to
+the fourth digit, and main without the 3-byte ids scores the same 0.7623 on Modal, so the
+change leaves the results unchanged.
 
 The choice came from full-runbook replays on a shared Intel Core Ultra 9 185H (8 threads per
 replay, nice 19, load average 11-25; `replay.py`: the official runbook through `UpdatableIndex`
@@ -138,12 +140,24 @@ encoding; the drop is consistent with that change, which this one does not touch
 This change narrows the consolidated base's neighbour ids from 4 to 3 bytes whenever the
 generation has fewer than 2^24 - 1 rows (4-byte ids above that; variable-width encodings are
 untouched), as the static `VectorIndex` already does: the base vertex file shrinks from 380 to
-348 bytes per row at R32 (508 to 444 at R64), about 166 MB at 5.2M rows. The measured peak did
-not visibly move: 4.85 GiB at e4df0b1 (Core Ultra 9 host, 8 GiB cgroup) and 4.85 GiB at 082766e
-(Modal), on different hosts, so this is not a paired measurement.
+348 bytes per row at R32 (508 to 444 at R64), about 166 MB at 5.2M rows. Measured on Modal at
+ef 64, one round each, run one after the other: main (c80aa52) peaks at 5,350,993,920 bytes
+(4.98 GiB) for the benchmark process and 5,572,100,096 sampled with the parent; this change at
+5,212,020,736 (4.85 GiB) and 5,432,266,752, 139 MB lower (2.6%), with the same score (0.7623).
 
 On the Core Ultra 9 host (no reclaim pressure, 12 GiB scope), the replays' RSS peaks split into
 anonymous memory (delta graph, build adjacency, Python) and mapped files (base, scratch rows,
 and the replay's own `numpy.memmap` of the source, which the official adapter does not hold):
 R32 L64 peaks at 4.55 GiB VmRSS (2.0 GiB anonymous, 2.5 GiB mapped) at step 73 with 5.2M live
 rows; R64 L64 at 6.04 GiB (2.0 anonymous, 4.1 mapped) at step 68 with 4.8M live rows.
+
+## Final runbook (msturing-30M-clustered): loss
+
+One run at the same setting (R32 L64 alpha 1.0, ef 512, 082766e, Modal cpu 8.0, 8 GiB) did not
+finish: the runner stopped `run.py` at its 3,600 s limit after 541 of 1,280 steps (4.3M live
+rows at that point), so no recall was recorded. Measured over those steps: 270 searches at 3.88 s
+each (1,049 s), 143 insert steps 1,089 s, 128 delete steps 1,461 s (deletes include the
+tombstone-triggered rebuilds); peak RSS 6.02 GiB for the benchmark process, 6.22 GiB summed with
+the parent, so memory was not the limit. Projection, not measured: the 640 searches alone need
+about 2,480 s at ef 512, so this runbook needs a lower ef and fewer or cheaper rebuilds to fit
+the hour.
