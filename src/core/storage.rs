@@ -15,7 +15,7 @@ pub(crate) use staging::StagedArena;
 
 pub(crate) const FORMAT_MANIFEST: &str = "format.json";
 pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
-pub const STORAGE_FORMAT_VERSION: u32 = 4;
+pub(crate) const STORAGE_FORMAT_VERSION: u32 = 4;
 
 pub(crate) const SEGMENT_SIZE: usize = 64 * 1024 * 1024;
 pub(crate) const LEGACY_SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
@@ -59,17 +59,17 @@ fn end_marker_bytes() -> [u8; HEADER_SIZE] {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub(crate) struct FormatManifest {
-    pub magic: String,
-    pub version: u32,
-    pub segment_size: usize,
+    pub(crate) magic: String,
+    pub(crate) version: u32,
+    pub(crate) segment_size: usize,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct ArenaStats {
-    pub format_version: u32,
-    pub segment_count: usize,
-    pub used_bytes: usize,
-    pub capacity_bytes: usize,
+pub(crate) struct ArenaStats {
+    pub(crate) format_version: u32,
+    pub(crate) segment_count: usize,
+    pub(crate) used_bytes: usize,
+    pub(crate) capacity_bytes: usize,
 }
 
 /// The writable segment: its mapping and the open file behind it, replaced together, so a
@@ -111,7 +111,7 @@ impl ActiveSegment {
 
 /// RwLock-guarded segmented mmap arena with LZ4 compression and CRC32 framing.
 /// Every entry is framed: [CRC32: u32][RawLen: u32][CompLen: u32][Version: u32][Data: bytes]
-pub struct PersistentArena {
+pub(crate) struct PersistentArena {
     segment_size: usize,
     format_version: u32,
     base_path: PathBuf,
@@ -141,7 +141,7 @@ impl PreparedCompaction {
 }
 
 impl PersistentArena {
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub(crate) fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
         let manifest = Self::validate_or_create_manifest(&base)?;
@@ -294,7 +294,7 @@ impl PersistentArena {
         Ok(manifest)
     }
 
-    pub fn stats(&self) -> ArenaStats {
+    pub(crate) fn stats(&self) -> ArenaStats {
         let segment_count = self.active_id.load(Ordering::Acquire) + 1;
         let used_bytes = self.active_id.load(Ordering::Acquire) * self.segment_size
             + self.write_offset.load(Ordering::Acquire);
@@ -308,7 +308,7 @@ impl PersistentArena {
     }
 
     /// Durably flush all pending writes in the active segment.
-    pub fn flush(&self) -> Result<()> {
+    pub(crate) fn flush(&self) -> Result<()> {
         self.active_segment.write().sync()
     }
 
@@ -410,7 +410,7 @@ impl PersistentArena {
         })
     }
 
-    pub fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
+    pub(crate) fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
         // Rotation and publication take active before segments; retain both to select one mapping.
         let active = self.active_segment.read();
         let reader = self.read_segments.read();
@@ -443,7 +443,7 @@ impl PersistentArena {
         }
     }
 
-    pub fn read_frame(&self, global_offset: usize) -> Result<(Vec<u8>, u32)> {
+    pub(crate) fn read_frame(&self, global_offset: usize) -> Result<(Vec<u8>, u32)> {
         let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
         let [expected_crc, raw_len, comp_len, version] = header_words(&header_bytes)
             .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
@@ -499,7 +499,7 @@ impl PersistentArena {
         Ok((data, version))
     }
 
-    pub fn next_offset(&self, global_offset: usize) -> Result<usize> {
+    pub(crate) fn next_offset(&self, global_offset: usize) -> Result<usize> {
         let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
         let [_, _, comp_len, _] = header_words(&header_bytes)
             .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
@@ -521,7 +521,7 @@ impl PersistentArena {
         Ok(next)
     }
 
-    pub fn write_slice(&self, data: &[u8]) -> Result<usize> {
+    pub(crate) fn write_slice(&self, data: &[u8]) -> Result<usize> {
         self.write_frame(data, true)
     }
 

@@ -26,14 +26,14 @@ pub(crate) enum IndexRoute {
 
 /// A structured plan for executing a query, including dynamic parameters.
 pub(crate) struct QueryPlan {
-    pub route: IndexRoute,
-    pub ef_search: usize,
-    pub n_probe: usize,
-    pub rationale: &'static str,
+    pub(crate) route: IndexRoute,
+    pub(crate) ef_search: usize,
+    pub(crate) n_probe: usize,
+    pub(crate) rationale: &'static str,
 }
 
 impl IndexRoute {
-    pub fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::NSG => "nsg",
             Self::Inverted => "inverted",
@@ -47,15 +47,15 @@ impl IndexRoute {
 /// Adaptive Query Planner that selects the optimal retrieval strategy
 /// based on collection statistics and query complexity.
 pub(crate) struct QueryPlanner {
-    pub nsg_available: bool,
-    pub inverted_available: bool,
-    pub ivf_available: bool,
-    pub vector_count: usize,
-    pub dimensions: usize,
+    pub(crate) nsg_available: bool,
+    pub(crate) inverted_available: bool,
+    pub(crate) ivf_available: bool,
+    pub(crate) vector_count: usize,
+    pub(crate) dimensions: usize,
 }
 
 impl QueryPlanner {
-    pub fn new(
+    pub(crate) fn new(
         nsg_available: bool,
         inverted_available: bool,
         ivf_available: bool,
@@ -72,7 +72,7 @@ impl QueryPlanner {
     }
 
     /// Select the best route and search parameters for a given query vector and requested k.
-    pub fn plan(&self, query_vec: &EntangledHVec, k: u32) -> QueryPlan {
+    pub(crate) fn plan(&self, query_vec: &EntangledHVec, k: u32) -> QueryPlan {
         let n = self.vector_count;
         let s = query_vec.indices.len();
         let k_idx = k as usize;
