@@ -39,7 +39,7 @@ Compaction must preserve save/open semantics and exact returned-ID parity.
 
 Execution: profile-v2.sh is queued under flock (PID412272, local tool
 session3751); layout-v2.sh follows (PID414352, session81893). Both use the
-isolated remote source /home/davidcondrey/sol-qag/repo-v2. Rust sources were
+isolated remote source $HMS_BENCH_DIR/qag/repo-v2. Rust sources were
 formatted with Rust1.89 rustfmt and uploaded before queuing. No release build,
 profile, layout timing or new Rust test has executed yet. The layout driver
 requires identical diagnostic IDs/persisted bytes and at least10% encoded-byte

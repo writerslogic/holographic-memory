@@ -17,3 +17,5 @@ benchmarks/results/query_aware_graph_v1/*.hdf5 filter=lfs diff=lfs merge=lfs -te
 benchmarks/results/query_aware_graph_v1/**/*.hdf5 filter=lfs diff=lfs merge=lfs -text
 benchmarks/results/query_aware_graph_v4/diagnostics/*.json filter=lfs diff=lfs merge=lfs -text
 benchmarks/results/query_aware_graph_v4/**/*.hdf5 filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/longmemeval_dev_answers_*.json filter=lfs diff=lfs merge=lfs -text
+benchmarks/results/manifold_schema_synthetic.json.gz filter=lfs diff=lfs merge=lfs -text

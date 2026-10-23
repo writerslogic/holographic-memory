@@ -98,7 +98,7 @@ survive compaction, replacement and reopen. Snapshot queries observe one generat
 Use an isolated fork checkout and target directory, at most two release builds from
 CI-passing HMS commits, and the shared remote timing lock for all heavy work. Reuse
 baseline JSON receipts; baseline data, indexes and binaries are currently absent on
-writerslogic-02 and must be reacquired before comparable timings. Record dataset,
+<benchmark host> and must be reacquired before comparable timings. Record dataset,
 queries, analyzer, hardware, threads, cache policy, index time/size and RSS. At least
 three timed repetitions per type; report median and min/max, including regressions.
 No performance run with failing CI and no claim of competitive success on missing

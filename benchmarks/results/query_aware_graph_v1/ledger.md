@@ -3,7 +3,7 @@
 ## Revisions and reproducibility
 
 - Baseline `08d37778a66b58709461456e5b9a7ab6a05b399f`, fetched2026-10-22; branch `feat/query-aware-graph`.
-- Worktree `/Volumes/A/.sol-wt-qag`; Linux task root `/home/davidcondrey/sol-qag`; unrelated original-tree changes preserved.
+- Worktree `<repo>` worktree; Linux task root `$HMS_BENCH_DIR/qag`; unrelated original-tree changes preserved.
 - Projection/API `85b0af081c26e65f6a5643722386137ca332e587`; VIBE integration `3f285cebcbebffe8f2f32c430e738f0eb79ae9cc`.
 - Patience API `f73305b624305836211c8157975c4f1c37f10df9`; all three commits have valid signatures.
 - Exact fingerprints, execution receipts, scripts and test logs remain in `provenance.json`, `sources/`, `configs/`, and `logs/`.
@@ -21,7 +21,7 @@ MIPS appends `sqrt(max_norm²-row_norm²)` to base rows and zero to search/train
 
 Required: full llama/yi recall≥0.99; QPS at0.90/0.95≥90% of best comparable CPU competitor; improve0.99 QPS.
 Regression IDs: `sift-128-euclidean`, `glove-100-angular`, `yahoo-minilm-384-normalized`; ≤3% matched-recall QPS loss.
-Timings only on writerslogic-02 under `flock ~/hms-timing.lock`, using `~/vibe-hms/bench.sh ... nolock` and harness affinity; never taskset.
+Timings only on <benchmark host> under `flock ~/hms-timing.lock`, using `~/vibe-hms/bench.sh ... nolock` and harness affinity; never taskset.
 OMP/MKL/OPENBLAS/NUMEXPR/RAYON threads=1. Alternate three paired blocks; use saved fifth-pass totals after four warm passes, ignoring best-of-five attrs.
 Report median[min–max], actual minimum strict recall across repetitions, and fastest measured eligible config; no interpolation or rounding to targets.
 All arms co-resident: process peak RSS and VIBE USS delta are aggregate; encoded-byte attributes are not isolated RSS or persisted-file size.
@@ -220,7 +220,7 @@ cargo fmt --check passed on merged ec79af1. The exact integration delta and both
 gate receipts are in final-gate/; checks.json states the validation limit.
 
 Raw files and source copies remain intact in the local worktree, the durable
-local .qag-preserved/20261022-1948 archive, and writerslogic-02. Follow the
+local .qag-preserved/20261022-1948 archive, and <benchmark host>. Follow the
 concurrent hash-only publication policy.
 All experiment budgets are closed. SIFT remains
 inconclusive; cancelled Glove and unrun Yahoo leave full ID preservation
