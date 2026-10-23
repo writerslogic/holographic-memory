@@ -1,113 +1,69 @@
-# Host-layer and write-path costs (development measurements)
+# Host-layer and write-path costs
 
-These are the measurements used to decide which host-layer changes to keep: the memory API
-write side, the hms-server request path and the Python `VectorIndex` batch path. They are
-development measurements, not a standings run: HMS only, no comparators, on an Apple M4
-(10 cores, 32 GB, macOS) shared with other work (1-minute load average 9 to 34, recorded per
-row). All runs are at `origin/main` 8fddc13f.
+Load-independent counts used to decide which host-layer changes to keep. Latencies and profile
+shares from the same work were taken on a shared, loaded machine and are development
+measurements: they are in PR #245, not here. All counts are at `origin/main` 8fddc13f.
 
-## Memory API writes: `remember` and `forget`
+## Memory API writes: allocations per call
 
-`cargo run --release --example memory_write_bench -- 10000 1000 100 <vocabulary>` runs on a
-durable store of 4,096 dimensions:
+`cargo run --release --example memory_write_bench -- <remembers> <forgets> 100 <vocabulary>`
+runs on a durable store of 4,096 dimensions:
 
-- 10,000 single-fact `remember` calls;
-- 10,000 more facts through `remember_many` in batches of 100;
-- 1,000 single-id `forget` calls over the 20,000 facts.
+- `<remembers>` single-fact `remember` calls;
+- as many facts again through `remember_many` in batches of 100;
+- `<forgets>` single-id `forget` calls.
 
-Each fact is 24 words drawn with a skewed rank distribution from `vocabulary` pseudo-words.
-Allocation counts come from a counting global allocator local to the example. The run was
-single-threaded on the caller side, at load 28 to 34.
+Each fact is 24 words drawn with a skewed rank distribution from `<vocabulary>` pseudo-words.
+Counts come from a counting global allocator local to the example.
 
-| Operation | Vocabulary | p50 µs | p95 µs | Allocations / call | Bytes allocated / call |
-|---|---|---|---|---|---|
-| `remember` (1 fact) | 4,096 | 3,990 | 10,440 | 208 | 36 KB |
-| `remember_many` (100 facts) | 4,096 | 8,791 | — | 15,289 | 5.0 MB |
-| `forget` (1 id) | 4,096 | 7,307 | 9,070 | 212 | 359 KB |
-| `remember` (1 fact) | 24 | 3,974 | 10,112 | 175 | 28 KB |
-| `remember_many` (100 facts) | 24 | 5,242 | — | 9,041 | 1.4 MB |
-| `forget` (1 id) | 24 | 9,001 | 10,007 | 213 | 7.8 MB |
+| Facts stored | Vocabulary | `remember`: allocs / bytes per call | `remember_many` (100): allocs / bytes per call | `forget`: allocs / bytes per call |
+|---|---|---|---|---|
+| 20,000 | 4,096 | 208 / 36 KB | 15,289 / 5.0 MB | 212 / 359 KB |
+| 20,000 | 24 | 175 / 28 KB | 9,041 / 1.4 MB | 213 / 7.8 MB |
 
-A wall-clock profile (samply, 4 kHz) of the same workload shows where the time goes:
+How the bytes per `forget` grow with the store (300 forgets):
 
-- **`remember`**: the journal append and its `F_FULLFSYNC` take 72% of the time, 51% in the
-  flush alone. Planning, stamping and the index update in `memory_api/write.rs` take under 1%.
-  Write-side code in the memory API has no measurable cost to remove.
-- **`forget`**: 62% is `DocumentStore::remove` → `PostingLists::remove`, which decodes and
-  re-encodes the whole posting list of every term in the deleted document. The bytes allocated
-  per call grow with the store: 1.6 MB at 2,000 facts and 12.6 MB at 10,000 facts with the
-  24-word vocabulary. The other 32% is two drive-cache flushes per call: the delete commit's
-  `F_FULLFSYNC` and `sync_text_segment`, which makes the scrubbed text durable before `forget`
-  returns.
-- **Forget certificates**: the per-item cost was not measured. The certificate exists only in
-  the research crate `benchmarks/research/forget` (`DeletionCertificate` over a counter
-  bundle); `Memory::forget` issues none.
+| Facts stored | Vocabulary 4,096 | Vocabulary 24 |
+|---|---|---|
+| 2,000 | 46 KB | 678 KB |
+| 10,000 | 187 KB | 3.9 MB |
+| 20,000 | 359 KB | 7.8 MB |
 
-Both remaining `forget` costs sit in the engine and the document store
-(`src/core/documents/postings.rs`, the commit order in `src/core/engine`), not in the memory API:
+The bytes allocated per `forget` grow linearly with the number of stored facts that share the
+deleted fact's terms. The cause is `DocumentStore::remove` → `PostingLists::remove`, which
+decodes and re-encodes the whole posting list of every term in the deleted document.
 
-- A posting-list delete that does not rewrite the list (tombstone, or remove within a block)
-  would remove the O(list) work.
-- Zeroing the text before the journal flush would let one drive-cache flush cover both, but
-  that changes the crash-ordering argument. The second flush is what makes the forget
-  guarantee hold, so it stays until such a change is made and argued.
+The other fixed cost of `forget` is two drive-cache flushes per call:
 
-## hms-server request path
+1. the delete commit's journal flush;
+2. `sync_text_segment`, which makes the scrubbed text durable before `forget` returns.
 
-A profile of 20,000 sequential `POST /api/v1/query` requests (10,000 rows, dimension 100,
-`index: graph`, `ef: 64`, one keep-alive connection, load 9 to 12) splits server CPU samples
-like this:
+`remember` costs one journal flush. The memory API's own write code (planning, stamps, the
+supersession index) is a negligible share of either call.
 
-| Part | Share of samples |
-|---|---|
-| `vector_search` | 7.5% |
-| of which the graph search (`search_inner`) | 6.2% |
-| response as a `serde_json::Value` tree, then text | about 1% |
-| request JSON parse | 0.6% |
-| `get_document` per hit | 0.7% |
-| tokio, hyper and the blocking-pool hop | the rest of the active samples; idle workers dominate the total |
+Both remaining `forget` costs are in the document store and the engine, not the memory API:
 
-No single host-layer item is a large share. Two options were measured and not kept:
+- **Posting-list rewrite.** A posting-list delete that does not rewrite the list (a tombstone,
+  or removal inside one block) would remove the O(list) work.
+- **Second flush.** Zeroing the text before the journal flush would let one drive-cache flush
+  cover both. That changes the crash-ordering argument behind the forget guarantee, so it needs
+  that argument made first.
 
-- **Serializing `Matches` directly instead of through `Value`.** It would save about 1% of
-  samples, and it would also change the key order of the response body (`Value` maps are
-  sorted), so the response format would change.
-- **Reusing searchers across requests.** Cost: see below.
+The deletion certificates in `benchmarks/research/forget` (`DeletionCertificate` over a
+counter bundle) are research code that `Memory::forget` does not issue, so the certificate
+cost per item does not apply to this path.
 
-Per-request latency in an hms-only A/B (p50 µs, 3 rounds): query 111 to 115, replace 3,940
-to 3,980, delete 3,080 to 4,000, text search 69 to 122, memory `remember` 3,990 to 4,010,
-memory `forget` 7,020 to 7,990. Replace, delete, `remember` and `forget` are one or two
-`F_FULLFSYNC` each.
+## Host-layer changes considered and not kept
 
-## Searcher reuse (Python `batch_query`, hms-server `vindex::search`)
-
-`VGraph::searcher()` allocates visited marks of one word per vector. On the M4, minimum of
-2,000 repetitions:
-
-| n | create only | search, fresh searcher | search, reused searcher |
-|---|---|---|---|
-| 10,000 | 0.46 µs | 29.3 µs | 28.5 µs |
-| 100,000 | 1.38 µs | 37.0 µs | 34.8 µs |
-
-At 100,000 rows a fresh searcher adds at most 2.2 µs, about 6% of one query. Python
-`batch_query` makes four searchers per thread per call, which is under 0.1% of a
-10,000-query batch. Pooling them only pays for batches smaller than about four rows per
-thread, and the pooled searchers would hold n words each after the call.
-
-An interleaved A/B of a pooled-searcher `batch_query` (100,000 × 128, 4 threads) could not be
-read at load 18 to 36: each build won one round. It was not kept. The per-request searcher in
-`vindex::search` is about 2% of a 110 µs request and was left as is.
-
-Zero-copy numpy views in `batch_query` were not tried. The query copy is about 5 MB for
-10,000 × 128, about 1 ms against roughly 190 ms of search. `query` and `batch_query` copy
-under the GIL on purpose, so that another thread cannot change the array during the search.
-
-## Unmeasured until benchmark runs resume
-
-- Linux delete latency with the vector-log sync skipped after a committed delete (PR #244).
-- The re-measured server standing against Qdrant, Meilisearch and Typesense at N = 1k / 10k /
-  100k.
-
-Both use the server harness, for example
-`./benchmarks/competitive/hms-bench run --suite smoke --mode server --only ann --rounds 3`,
-with `HMS_BENCH_HMS_SERVER` naming the binary of each arm.
+- **Reusing searchers.** `VGraph::searcher()` allocates visited marks of one word per vector.
+  Reusing them in Python `batch_query` (four searchers per thread per call) or in hms-server
+  `vindex::search` (one per request) saves at most the first-touch page faults of those marks.
+  That is a few percent of one query at 100,000 rows, and well under 1% of a 10,000-query batch.
+  Pooled searchers would also keep n words each alive after the call.
+- **Serializing the `POST /api/v1/query` response directly instead of through
+  `serde_json::Value`.** `serde_json`'s `preserve_order` feature is not enabled in the server
+  build, so `Value` objects serialize with sorted keys. Direct serialization would emit
+  declaration order and change the response bytes.
+- **Zero-copy numpy views in `batch_query`.** `query` and `batch_query` copy the queries while
+  holding the GIL, so that another thread cannot change the array during the GIL-released
+  search. The copy is linear in the input and small next to the search.
