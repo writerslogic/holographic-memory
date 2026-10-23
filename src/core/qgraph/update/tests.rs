@@ -1119,7 +1119,7 @@ fn mixed_search_reproduces_pinned_results_and_encoded_generations() {
             }
         }
     }
-    assert_eq!(fingerprint.finalize(), 166_293_721);
+    assert_eq!(fingerprint.finalize(), 439_463_741);
 }
 
 #[test]

@@ -28,6 +28,8 @@ use format::{BaseRows, BaseRowsWriter};
 const MAX_DIM: usize = 1 << 20;
 const MAX_PAYLOAD: usize = 64 << 20;
 const MAX_OPS: usize = 65536;
+/// Row counts below this fit 3-byte neighbour ids (`0xFF_FFFF` is the padding id).
+const THREE_BYTE_IDS_BELOW: usize = (1 << 24) - 1;
 
 /// Failures at the update and persistence boundary.
 #[derive(Debug, thiserror::Error)]
@@ -781,6 +783,15 @@ impl UpdatableVGraph {
             .chain(snapshot.delta.live.keys().copied())
             .collect();
         ids.sort_unstable();
+        // Fixed-width neighbour ids take the narrowest width this generation's count allows,
+        // as the static index does: 3 bytes save `degree` bytes per row below 2^24 - 1 rows.
+        if matches!(manifest.encoding.id_bytes, 3 | 4) {
+            manifest.encoding.id_bytes = if ids.len() < THREE_BYTE_IDS_BELOW {
+                3
+            } else {
+                4
+            };
+        }
         let base = Arc::clone(&snapshot.base);
         drop(snapshot);
         if !manifest.encoding.screen && manifest.encoding.block_bits == 0 {
