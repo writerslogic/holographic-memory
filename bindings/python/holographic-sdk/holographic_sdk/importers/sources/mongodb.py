@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
-from ..common import redact_uri, secret_from, uri_secret
+from ..common import redact_uri, uri_secret
 from ..model import ImporterError, MissingDependency, Record
 from .base import Source, parse_cli_json
 

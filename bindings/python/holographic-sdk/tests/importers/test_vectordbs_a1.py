@@ -11,7 +11,6 @@ import sqlite3
 
 import pytest
 
-from holographic_sdk.importers import ImportOptions, run_import
 from holographic_sdk.importers.sources.base import ColumnMap
 
 from .conftest import DIM, assert_faithful, assert_resumable, vec

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 from phi.vectordb.base import VectorDb
 from phi.document import Document
 from holographic_sdk.client import HolographicClient

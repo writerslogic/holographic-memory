@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from holographic_sdk.importers import HmsSink, ImportOptions, ImporterError, run_import
+from holographic_sdk.importers import ImportOptions, ImporterError, run_import
 from holographic_sdk.importers import cli as cli_mod
 from holographic_sdk.importers.sources.base import ColumnMap, Source
 from holographic_sdk.importers.sources.files import CsvSource, JsonlSource
