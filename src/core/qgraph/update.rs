@@ -5,7 +5,7 @@
 
 use std::cell::RefCell;
 use std::collections::HashSet;
-use std::fs::{File, OpenOptions};
+use std::fs::{File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
@@ -294,7 +294,7 @@ struct IndexLock(File);
 impl Drop for IndexLock {
     fn drop(&mut self) {
         // Explicit unlock also releases descriptors inherited by a concurrent fork.
-        if let Err(error) = fs2::FileExt::unlock(&self.0) {
+        if let Err(error) = self.0.unlock() {
             tracing::warn!(%error, "failed to release vector index lock");
         }
     }
@@ -306,15 +306,9 @@ fn lock(dir: &Path) -> Result<IndexLock, UpdateError> {
         .read(true)
         .write(true)
         .open(dir.join(".lock"))?;
-    fs2::FileExt::try_lock_exclusive(&file).map_err(|e| {
-        // Windows reports a held lock as ERROR_LOCK_VIOLATION, not WouldBlock.
-        if e.kind() == std::io::ErrorKind::WouldBlock
-            || e.raw_os_error() == fs2::lock_contended_error().raw_os_error()
-        {
-            UpdateError::Locked
-        } else {
-            UpdateError::Io(e)
-        }
+    file.try_lock().map_err(|e| match e {
+        TryLockError::WouldBlock => UpdateError::Locked,
+        TryLockError::Error(e) => UpdateError::Io(e),
     })?;
     Ok(IndexLock(file))
 }

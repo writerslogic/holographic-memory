@@ -1,9 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use anyhow::{Context, Result};
-use fs2::FileExt;
-use std::fs::{File, OpenOptions};
+use anyhow::{bail, Context, Result};
+use std::fs::{File, OpenOptions, TryLockError};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
@@ -32,12 +31,17 @@ impl StoreLock {
             .open(&path)
             .with_context(|| format!("failed to open store lock {}", path.display()))?;
 
-        file.try_lock_exclusive().with_context(|| {
-            format!(
+        match file.try_lock() {
+            Ok(()) => {}
+            Err(TryLockError::WouldBlock) => bail!(
                 "HMS store {} is already open by another engine; concurrent writers are not supported",
                 store_path.display()
-            )
-        })?;
+            ),
+            Err(TryLockError::Error(error)) => {
+                return Err(error)
+                    .with_context(|| format!("failed to lock store {}", store_path.display()));
+            }
+        }
 
         // The pid is for a person inspecting the store; the lock is the `flock` above, which
         // nothing on disk records, so the write is not synced.

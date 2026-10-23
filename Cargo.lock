@@ -1961,7 +1961,6 @@ dependencies = [
  "criterion",
  "ed25519-dalek",
  "foldhash",
- "fs2",
  "futures-util",
  "fxhash",
  "http-body-util",
