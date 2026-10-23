@@ -75,19 +75,29 @@ fn sorted_ids(edges: &[Edge]) -> Vec<String> {
     edges.into_iter().map(|edge| edge.by.clone()).collect()
 }
 
-fn matched_terms(query: &str, text: &str) -> Vec<String> {
+/// The query's tokens, lowercased, each with its stem; computed once per query rather than
+/// once per explained result.
+fn query_terms(query: &str) -> Vec<(String, Option<String>)> {
+    query
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|token| !token.is_empty())
+        .map(|token| {
+            let lower = token.to_lowercase();
+            let stem = terms(&lower, true).into_keys().next();
+            (lower, stem)
+        })
+        .collect()
+}
+
+fn matched_terms(query: &[(String, Option<String>)], text: &str) -> Vec<String> {
     let stems = terms(text, true);
     let raw = terms(text, false);
     let mut matched: Vec<String> = Vec::new();
-    for token in query
-        .split(|c: char| !c.is_alphanumeric())
-        .filter(|token| !token.is_empty())
-    {
-        let lower = token.to_lowercase();
-        let stem = terms(&lower, true).into_keys().next();
-        let hit = raw.contains_key(&lower) || stem.is_some_and(|stem| stems.contains_key(&stem));
-        if hit && !matched.contains(&lower) {
-            matched.push(lower);
+    for (lower, stem) in query {
+        let hit =
+            raw.contains_key(lower) || stem.as_ref().is_some_and(|stem| stems.contains_key(stem));
+        if hit && !matched.contains(lower) {
+            matched.push(lower.clone());
         }
     }
     matched
@@ -108,14 +118,14 @@ impl Memory {
             return Ok(Vec::new());
         };
         let index = self.index.read();
-        let explain = options.explain;
+        let explained_terms = options.explain.then(|| query_terms(query));
         let ranked = std::mem::take(&mut run.ranked);
         Ok(ranked
             .into_iter()
             .enumerate()
             .map(|(position, ranked)| {
-                let explanation = explain.then(|| {
-                    self.explanation(&index, &run, query, options, &ranked, Some(position + 1))
+                let explanation = explained_terms.as_deref().map(|terms| {
+                    self.explanation(&index, &run, terms, options, &ranked, Some(position + 1))
                 });
                 self.recalled(&index, ranked, explanation)
             })
@@ -147,7 +157,7 @@ impl Memory {
                 return Ok(self.explanation(
                     &index,
                     run,
-                    query,
+                    &query_terms(query),
                     options,
                     ranked,
                     Some(position + 1),
@@ -169,7 +179,7 @@ impl Memory {
             fusion: options.fusion.clone().unwrap_or_else(|| "blend".into()),
             matched_terms: text
                 .as_deref()
-                .map(|text| matched_terms(query, text))
+                .map(|text| matched_terms(&query_terms(query), text))
                 .unwrap_or_default(),
             recency_factor: 1.0,
             historical_factor: 1.0,
@@ -218,12 +228,13 @@ impl Memory {
         let stamp = Stamp::from_parts(&version, &metadata);
         let edges = index.edges(id);
         let status = evaluate(stamp.as_ref(), edges, now, None).unwrap_or(FactStatus::Current);
-        let known = stamp.clone().unwrap_or_default();
+        let ingest_time = stamp.as_ref().map(|s| s.ingest);
+        let known = stamp.unwrap_or_default();
         Some(FactRecord {
             id: id.to_owned(),
             text,
             status,
-            ingest_time: stamp.as_ref().map(|s| s.ingest),
+            ingest_time,
             event_time: known.event,
             valid_from: known.valid_from,
             valid_to: known.valid_to,
@@ -326,6 +337,10 @@ impl Memory {
         let mut seen: HashSet<String> = HashSet::with_capacity(hits.len());
         let mut ranked = Vec::with_capacity(hits.len());
         for hit in hits {
+            // Without reordering the result is the first `k` kept hits in search order.
+            if !reorder && !force_wide && ranked.len() >= k as usize {
+                break;
+            }
             if !seen.insert(hit.document_id.clone()) {
                 continue;
             }
@@ -420,14 +435,15 @@ impl Memory {
             score,
             ..
         } = ranked;
-        let known = stamp.clone().unwrap_or_default();
+        let ingest_time = stamp.as_ref().map(|s| s.ingest);
+        let known = stamp.unwrap_or_default();
         Recalled {
             superseded_by: sorted_ids(index.edges(&hit.document_id)),
             id: hit.document_id,
             text: hit.text,
             score,
             status,
-            ingest_time: stamp.as_ref().map(|s| s.ingest),
+            ingest_time,
             event_time: known.event,
             valid_from: known.valid_from,
             valid_to: known.valid_to,
@@ -444,7 +460,7 @@ impl Memory {
         &self,
         index: &Index,
         run: &Run,
-        query: &str,
+        query: &[(String, Option<String>)],
         options: &RecallOptions,
         ranked: &Ranked,
         rank: Option<usize>,

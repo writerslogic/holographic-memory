@@ -5,7 +5,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 use super::{HistoryMode, IdConflict, Memory, MemoryError, Millis, RecallOptions, RememberInput};
@@ -191,6 +191,8 @@ struct Candidate {
     text_sha256: String,
     score: f64,
     first_seen: usize,
+    /// Ordinal of the candidate's `(session_id, version)` within one recall.
+    session: usize,
 }
 
 fn query_words(query: &str) -> Vec<String> {
@@ -263,11 +265,12 @@ fn source_id(session: &str, version: &str, index: usize, source: &str) -> Result
 }
 
 fn metadata(value: &impl Serialize) -> Result<Value> {
-    let bytes = serde_json::to_vec(value)?;
-    if bytes.len() > MAX_CONVERSATION_METADATA_BYTES {
+    // The tree serializes to the same length as `value`, so it is sized without a reparse.
+    let tree = serde_json::to_value(value)?;
+    if serde_json::to_vec(&tree)?.len() > MAX_CONVERSATION_METADATA_BYTES {
         return Err(invalid("conversation metadata exceeds 60 KiB"));
     }
-    Ok(serde_json::from_slice(&bytes)?)
+    Ok(tree)
 }
 
 fn fact(id: String, text: String, metadata: Value) -> RememberInput {
@@ -624,6 +627,7 @@ impl ConversationMemory {
                             text_sha256: sha256(text.as_bytes()),
                             score,
                             first_seen,
+                            session: 0,
                         },
                     );
                     first_seen += 1;
@@ -631,6 +635,27 @@ impl ConversationMemory {
             }
         }
         let mut candidates: Vec<_> = candidates.into_values().collect();
+        let (ordinals, session_count) = {
+            let mut sessions = HashMap::new();
+            let ordinals: Vec<usize> = candidates
+                .iter()
+                .map(|candidate| {
+                    let next = sessions.len();
+                    *sessions
+                        .entry((
+                            candidate.chunk.session_id.as_str(),
+                            candidate.chunk.version.as_str(),
+                        ))
+                        .or_insert(next)
+                })
+                .collect();
+            (ordinals, sessions.len())
+        };
+        for (candidate, session) in candidates.iter_mut().zip(ordinals) {
+            candidate.session = session;
+        }
+        // Each session's manifest is loaded and validated once per recall, not per candidate.
+        let mut manifests: Vec<Option<Manifest>> = (0..session_count).map(|_| None).collect();
         candidates.sort_by(|a, b| {
             b.score
                 .total_cmp(&a.score)
@@ -654,10 +679,7 @@ impl ConversationMemory {
                     .max_by(|(_, a), (_, b)| {
                         let score = |candidate: &Candidate| {
                             candidate.score / maximum_score
-                                - if selected_sessions.contains(&(
-                                    candidate.chunk.session_id.clone(),
-                                    candidate.chunk.version.clone(),
-                                )) {
+                                - if selected_sessions.contains(&candidate.session) {
                                     diversity
                                 } else {
                                     0.0
@@ -673,8 +695,12 @@ impl ConversationMemory {
             };
             let candidate = candidates.remove(position);
             let chunk = &candidate.chunk;
-            let manifest = self.manifest(&chunk.session_id, &chunk.version)?;
-            let Some(source) = self.hydrate(&chunk.source_record_id, &manifest)? else {
+            let slot = &mut manifests[candidate.session];
+            if slot.is_none() {
+                *slot = Some(self.manifest(&chunk.session_id, &chunk.version)?);
+            }
+            let manifest = slot.as_ref().expect("session manifest loaded");
+            let Some(source) = self.hydrate(&chunk.source_record_id, manifest)? else {
                 evidence.dropped.push(drop_for(chunk, "missing_source"));
                 continue;
             };
@@ -699,7 +725,7 @@ impl ConversationMemory {
             let mut group = Vec::new();
             let mut missing = false;
             for premise in &source.premise_record_ids {
-                let Some(premise) = self.hydrate(premise, &manifest)? else {
+                let Some(premise) = self.hydrate(premise, manifest)? else {
                     missing = true;
                     break;
                 };
@@ -723,7 +749,7 @@ impl ConversationMemory {
                     (
                         source.session_id.clone(),
                         source.version.clone(),
-                        round_index(&manifest, source.turn_index),
+                        round_index(manifest, source.turn_index),
                     )
                 })
                 .filter(|round| !selected_rounds.contains(round))
@@ -759,7 +785,7 @@ impl ConversationMemory {
             }
             evidence.serialized_bytes = size;
             selected_rounds.extend(new_rounds);
-            selected_sessions.insert((chunk.session_id.clone(), chunk.version.clone()));
+            selected_sessions.insert(candidate.session);
             evidence.anchors.push(ConversationAnchor {
                 record_id: chunk.source_record_id.clone(),
                 source_id: chunk.source_id.clone(),

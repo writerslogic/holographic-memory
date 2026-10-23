@@ -12,7 +12,6 @@ use axum::http::{header, HeaderName, HeaderValue, Method, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 
-use crate::auth::Principal;
 use crate::config::LogLevel;
 use crate::error::ApiError;
 use crate::log::REQUEST_ID;
@@ -181,7 +180,7 @@ pub async fn auth(State(state): State<Arc<AppState>>, mut req: Request, next: Ne
             let served = Served {
                 key_id: principal.key_id.clone(),
             };
-            req.extensions_mut().insert::<Principal>(principal);
+            req.extensions_mut().insert(Arc::new(principal));
             let mut response = next.run(req).await;
             response.extensions_mut().insert(served);
             response

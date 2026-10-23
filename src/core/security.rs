@@ -192,21 +192,8 @@ impl EncryptionManager {
 
     /// Encrypt data. Returns `[nonce:12][ciphertext+tag]`.
     pub fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>> {
-        let mut nonce_bytes = [0u8; 12];
-        use rand::Rng;
-        rand::rng().fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::try_from(nonce_bytes.as_slice())
-            .map_err(|_| anyhow!("AES-256-GCM nonce construction failed"))?;
-
-        let ciphertext = self
-            .cipher
-            .encrypt(&nonce, plaintext)
-            .map_err(|e| anyhow!("Encryption failed: {}", e))?;
-
-        let mut output = Vec::with_capacity(12 + ciphertext.len());
-        output.extend_from_slice(&nonce_bytes);
-        output.extend_from_slice(&ciphertext);
-        Ok(output)
+        // GCM with empty associated data is exactly GCM without it.
+        self.encrypt_with_aad(plaintext, b"")
     }
 
     /// Like [`encrypt`](Self::encrypt), binding `aad` into the authentication tag.
