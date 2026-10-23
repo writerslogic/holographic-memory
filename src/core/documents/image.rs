@@ -277,7 +277,7 @@ fn encode_document(
     put_bytes(out, &serde_json::to_vec(&document.metadata)?);
     put_varint(out, document.chunks.len() as u64);
     for (index, chunk) in document.chunks.iter().enumerate() {
-        let own_id = chunk.id != super::chunk_id(&document.id, index);
+        let own_id = !super::is_chunk_id(&chunk.id, &document.id, index);
         out.push(if own_id { OWN_ID } else { 0 } | if chunk.stemmed { STEMMED } else { 0 });
         if own_id {
             put_bytes(out, chunk.id.as_bytes());
