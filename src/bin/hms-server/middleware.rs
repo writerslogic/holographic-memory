@@ -43,6 +43,23 @@ fn method_label(m: &Method) -> &'static str {
     }
 }
 
+/// Counts a request in flight until dropped, so a request whose future is dropped (client gone,
+/// connection cut at the end of the shutdown grace) leaves the gauge.
+struct InFlight<'a>(&'a AppState);
+
+impl<'a> InFlight<'a> {
+    fn new(state: &'a AppState) -> Self {
+        state.metrics.in_flight.fetch_add(1, Ordering::Relaxed);
+        Self(state)
+    }
+}
+
+impl Drop for InFlight<'_> {
+    fn drop(&mut self) {
+        self.0.metrics.in_flight.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
 pub async fn observe(State(state): State<Arc<AppState>>, req: Request, next: Next) -> Response {
     let id = req
         .headers()
@@ -64,11 +81,11 @@ pub async fn observe(State(state): State<Arc<AppState>>, req: Request, next: Nex
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.parse::<u64>().ok());
     let started = Instant::now();
-    state.metrics.in_flight.fetch_add(1, Ordering::Relaxed);
+    let in_flight = InFlight::new(&state);
     let mut response = REQUEST_ID
         .scope(id.clone(), async { next.run(req).await })
         .await;
-    state.metrics.in_flight.fetch_sub(1, Ordering::Relaxed);
+    drop(in_flight);
     let elapsed = started.elapsed();
     let status = response.status().as_u16();
     state

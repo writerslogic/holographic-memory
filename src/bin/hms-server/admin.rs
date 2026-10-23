@@ -155,6 +155,37 @@ impl Drop for Staging {
     }
 }
 
+/// The spooled restore upload, removed on drop: a client that goes away mid-upload drops the
+/// handler, and the partial archive must not stay behind in the staging directory.
+struct Upload(PathBuf);
+
+impl Drop for Upload {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+/// Make every file and directory under `dir` durable, so the store renamed into place after a
+/// crash holds the unpacked bytes rather than whatever reached the disk.
+fn sync_tree(dir: &Path) -> std::io::Result<()> {
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let kind = entry.file_type()?;
+        if kind.is_dir() {
+            sync_tree(&entry.path())?;
+        } else if kind.is_file() {
+            // Unix fsyncs through any handle (an archive may unpack read-only files); Windows
+            // flushes file buffers only through a write handle.
+            std::fs::OpenOptions::new()
+                .read(cfg!(unix))
+                .write(!cfg!(unix))
+                .open(entry.path())?
+                .sync_all()?;
+        }
+    }
+    crate::vindex::sync_dir(dir)
+}
+
 /// Verify the staged store and swap it in for the tenant's; the staging directory is removed
 /// on failure. Returns the snapshot taken of the replaced store.
 fn install_staged(state: &AppState, tenant: &str, staging: Staging) -> Result<String, ApiError> {
@@ -233,16 +264,16 @@ pub async fn restore_upload(State(state): State<Arc<AppState>>, req: Request) ->
     let (_, tenant) = admit(&state, &req, Scope::Admin)?;
     let permit = acquire(&state).await?;
     let staging = Staging::new(&state)?;
-    let upload = staging.path().with_extension("tar");
+    let upload = Upload(staging.path().with_extension("tar"));
     let max = state.cfg.max_restore_bytes;
     let idle = Duration::from_secs(state.cfg.body_timeout_seconds);
     let spooled: Result<(), ApiError> = async {
-        if let Some(parent) = upload.parent() {
+        if let Some(parent) = upload.0.parent() {
             tokio::fs::create_dir_all(parent)
                 .await
                 .map_err(ApiError::internal)?;
         }
-        let mut file = tokio::fs::File::create(&upload)
+        let mut file = tokio::fs::File::create(&upload.0)
             .await
             .map_err(ApiError::internal)?;
         let mut body = req.into_body();
@@ -279,18 +310,15 @@ pub async fn restore_upload(State(state): State<Arc<AppState>>, req: Request) ->
         Ok(())
     }
     .await;
-    if let Err(error) = spooled {
-        let _ = std::fs::remove_file(&upload);
-        return Err(error);
-    }
+    spooled?;
+    // The blocking task owns the upload from here, so a client leaving mid-restore cannot
+    // remove the archive while it is being unpacked.
     let previous = blocking(permit, move || {
-        let result = (|| {
-            let file = std::fs::File::open(&upload).map_err(ApiError::internal)?;
-            unpack_archive(file, staging.path(), max)?;
-            install_staged(&state, &tenant, staging)
-        })();
-        let _ = std::fs::remove_file(&upload);
-        result
+        let file = std::fs::File::open(&upload.0).map_err(ApiError::internal)?;
+        unpack_archive(file, staging.path(), max)?;
+        drop(upload);
+        sync_tree(staging.path()).map_err(ApiError::internal)?;
+        install_staged(&state, &tenant, staging)
     })
     .await?;
     Ok(json_response(

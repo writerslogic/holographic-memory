@@ -173,11 +173,9 @@ fn cognition_thread(
     config: &CognitionConfig,
 ) {
     while !state.stop.load(Ordering::SeqCst) {
-        let new_insights = run_cycle(atom_memory, triple_store, config);
-
-        if !new_insights.is_empty() {
-            state.insights.write().extend(new_insights);
-        }
+        // Each cycle derives every insight from the whole store again, so the latest cycle's
+        // set supersedes the pending one; appending would repeat each insight every cycle.
+        *state.insights.write() = run_cycle(atom_memory, triple_store, config);
 
         state.cycle_count.fetch_add(1, Ordering::SeqCst);
 
@@ -357,6 +355,26 @@ mod tests {
         let remaining = cognition.state().take_insights();
         // This is fine - just checking take works
         let _ = remaining;
+    }
+
+    #[test]
+    fn pending_insights_do_not_grow_across_cycles_of_an_unchanged_store() {
+        let (atom_mem, triple_store) = make_test_data();
+        let config = CognitionConfig {
+            interval: Duration::from_millis(1),
+            ..Default::default()
+        };
+        let per_cycle = CognitionLoop::run_once(&atom_mem, &triple_store, &config).len();
+        assert!(per_cycle > 0);
+        let mut cognition =
+            CognitionLoop::start(Arc::new(atom_mem), Arc::new(triple_store), config);
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        while cognition.state().cycle_count() < 3 && std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        cognition.stop();
+        assert!(cognition.state().cycle_count() >= 3);
+        assert_eq!(cognition.state().insight_count(), per_cycle);
     }
 
     #[test]
