@@ -52,6 +52,12 @@ fn lists(count: usize) -> Result<Vec<Vec<u32>>, HmsError> {
     Ok(values)
 }
 
+fn add_edges(total: usize, edges: usize) -> Result<usize, HmsError> {
+    total
+        .checked_add(edges)
+        .ok_or_else(|| invalid("projection edge count overflows".into()))
+}
+
 fn select(
     rows: &Rows<'_>,
     vertex: u32,
@@ -278,8 +284,7 @@ impl Graph {
         let original_edges = self
             .adj
             .iter()
-            .try_fold(0usize, |sum, ids| sum.checked_add(ids.len()))
-            .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+            .try_fold(0usize, |sum, ids| add_edges(sum, ids.len()))?;
         let mut stats = ProjectionStats {
             original_edges,
             total_edges: original_edges,
@@ -368,10 +373,7 @@ impl Graph {
                 projected_degree,
                 self.build.alpha,
             )?;
-            stats.forward_edges = stats
-                .forward_edges
-                .checked_add(forward[vertex].len())
-                .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+            stats.forward_edges = add_edges(stats.forward_edges, forward[vertex].len())?;
             for &neighbor in &forward[vertex] {
                 let incoming = &mut reverse_candidates[neighbor as usize];
                 incoming
@@ -394,10 +396,7 @@ impl Graph {
                 projected_degree,
                 self.build.alpha,
             )?;
-            stats.reverse_edges = stats
-                .reverse_edges
-                .checked_add(reverse.len())
-                .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+            stats.reverse_edges = add_edges(stats.reverse_edges, reverse.len())?;
             combined.clear();
             combined.extend_from_slice(self.adj.get(vertex));
             combined.extend_from_slice(&forward[vertex]);
@@ -405,13 +404,8 @@ impl Graph {
             stats.max_degree = stats.max_degree.max(combined.len());
             replacement.set(vertex, &combined);
         }
-        stats.added_edges = stats
-            .forward_edges
-            .checked_add(stats.reverse_edges)
-            .ok_or_else(|| invalid("projection edge count overflows".into()))?;
-        stats.total_edges = original_edges
-            .checked_add(stats.added_edges)
-            .ok_or_else(|| invalid("projection edge count overflows".into()))?;
+        stats.added_edges = add_edges(stats.forward_edges, stats.reverse_edges)?;
+        stats.total_edges = add_edges(original_edges, stats.added_edges)?;
         stats.training_queries = query_count;
         stats.neighbors_per_query = neighbors_per_query;
         stats.projected_degree = projected_degree;

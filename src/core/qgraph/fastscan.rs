@@ -59,11 +59,16 @@ fn scan32_u16(codes: &[u8], lut: &[u8], m: usize, out: &mut [u16; BLOCK]) {
 pub(crate) fn scan32_scalar(codes: &[u8], lut: &[u8], m: usize, out: &mut [u16; BLOCK]) {
     out.fill(0);
     for j in 0..m {
-        let (c, l) = (&codes[16 * j..16 * j + 16], &lut[16 * j..16 * j + 16]);
-        for i in 0..16 {
-            out[i] += u16::from(l[(c[i] & 15) as usize]);
-            out[i + 16] += u16::from(l[(c[i] >> 4) as usize]);
-        }
+        add_group(&codes[16 * j..16 * j + 16], &lut[16 * j..16 * j + 16], out);
+    }
+}
+
+/// Adds the entries of one group (16 code bytes, 16 table bytes) to the 32 sums.
+#[inline]
+fn add_group(codes: &[u8], lut: &[u8], out: &mut [u16; BLOCK]) {
+    for i in 0..16 {
+        out[i] += u16::from(lut[(codes[i] & 15) as usize]);
+        out[i + 16] += u16::from(lut[(codes[i] >> 4) as usize]);
     }
 }
 
@@ -146,7 +151,7 @@ mod neon {
 mod avx2 {
     use std::arch::x86_64::*;
 
-    use super::BLOCK;
+    use super::{add_group, BLOCK};
 
     /// Two 16-byte groups per 256-bit register: lanes 0..16 score group `j`, lanes 16..32
     /// group `j + 1`, both with their own table half.
@@ -182,11 +187,7 @@ mod avx2 {
         _mm256_storeu_si256(o.cast(), lo);
         _mm256_storeu_si256(o.add(16).cast(), hi);
         if j < m {
-            let (c, l) = (&codes[16 * j..16 * j + 16], &lut[16 * j..16 * j + 16]);
-            for i in 0..16 {
-                out[i] += u16::from(l[(c[i] & 15) as usize]);
-                out[i + 16] += u16::from(l[(c[i] >> 4) as usize]);
-            }
+            add_group(&codes[16 * j..16 * j + 16], &lut[16 * j..16 * j + 16], out);
         }
     }
 }

@@ -174,11 +174,7 @@ pub(crate) fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut 
     assert_eq!(planes.len(), QUERY_BITS * words);
     assert_eq!(codes.len(), out.len() * words);
     for (code, o) in codes.chunks_exact(words).zip(out.iter_mut()) {
-        *o = code
-            .iter()
-            .enumerate()
-            .map(|(w, &c)| scalar_word(c, planes, words, w))
-            .sum();
+        *o = raw_one_scalar(code, planes, words);
     }
 }
 

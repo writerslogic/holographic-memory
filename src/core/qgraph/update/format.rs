@@ -39,6 +39,11 @@ fn words(out: &mut Vec<u8>, xs: &[u64]) {
         out.extend_from_slice(&x.to_le_bytes());
     }
 }
+fn floats(out: &mut Vec<u8>, xs: &[f32]) {
+    for x in xs {
+        out.extend_from_slice(&x.to_le_bytes());
+    }
+}
 fn seal(out: &mut Vec<u8>) {
     out.extend_from_slice(&crc32fast::hash(out).to_le_bytes());
 }
@@ -357,9 +362,7 @@ impl BaseRowsWriter {
         for row in vectors.chunks_exact(self.dim) {
             validate_vector(row, self.dim, self.metric)?;
             self.bytes.clear();
-            for x in row {
-                self.bytes.extend_from_slice(&x.to_le_bytes());
-            }
+            floats(&mut self.bytes, row);
             self.writer.write_all(&self.bytes)?;
             self.writer
                 .write_all(&crc32fast::hash(&self.bytes).to_le_bytes())?;
@@ -417,9 +420,7 @@ pub(super) fn frame(ops: &[Operation], sequence: u64, dim: usize) -> Result<Vec<
         out.push(op.tag());
         out.extend_from_slice(&op.id().to_le_bytes());
         if let Some(row) = op.vector() {
-            for v in row {
-                out.extend_from_slice(&v.to_le_bytes());
-            }
+            floats(&mut out, row);
         }
     }
     let mut crc = crc32fast::Hasher::new();
