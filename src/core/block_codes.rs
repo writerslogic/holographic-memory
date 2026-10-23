@@ -277,8 +277,8 @@ impl BlockCodeBundle {
                 .iter()
                 .enumerate()
                 .map(|(i, v)| (i, estimate.similarity(v)))
-                .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                .unwrap();
+                .max_by(|a, b| a.1.total_cmp(&b.1))
+                .expect("non-empty codebook");
 
             if Some(best_idx) == prev_idx {
                 stable_count += 1;
