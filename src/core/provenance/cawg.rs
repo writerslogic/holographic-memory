@@ -169,9 +169,33 @@ fn sign_cose_vc(signing_key: &SigningKey, payload: &[u8]) -> Result<Vec<u8>> {
 /// Verify a CAWG Identity Claims Aggregation (ICA) identity assertion from its raw CBOR
 /// bytes — the `cawg.identity` assertion box content `{signer_payload, signature, pad1}`.
 /// The signature is a tag-18 COSE_Sign1 (`application/vc`) over the W3C VC JSON, signed by
-/// the did:jwk issuer. Checks: sig_type is ICA, a hard binding is referenced, and the COSE
-/// signature is valid under the issuer DID. Returns the verified, parsed VC JSON.
+/// the did:jwk issuer. Checks: the COSE signature is valid under the issuer DID, the
+/// assertion's `signer_payload` equals the `c2paAsset` the signed VC carries, sig_type is
+/// ICA, and a hard binding is referenced. Returns the verified, parsed VC JSON.
 pub fn verify_cawg_ica(assertion_cbor: &[u8]) -> Result<serde_json::Value> {
+    verify_cawg_ica_references(assertion_cbor).map(|(vc, _)| vc)
+}
+
+/// An assertion an identity assertion signs over: its URL, hash algorithm and raw hash.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ReferencedAssertion {
+    pub url: String,
+    pub alg: Option<String>,
+    pub hash: Vec<u8>,
+}
+
+impl ReferencedAssertion {
+    /// The assertion label the URL ends in (`c2pa.hash.data` for
+    /// `self#jumbf=c2pa.assertions/c2pa.hash.data`).
+    pub fn label(&self) -> &str {
+        self.url.rsplit_once('/').map_or("", |(_, label)| label)
+    }
+}
+
+/// [`verify_cawg_ica`], also returning the signed referenced assertions.
+pub(crate) fn verify_cawg_ica_references(
+    assertion_cbor: &[u8],
+) -> Result<(serde_json::Value, Vec<ReferencedAssertion>)> {
     use ciborium::value::Value;
     use coset::{CoseSign1, TaggedCborSerializable};
 
@@ -188,42 +212,9 @@ pub fn verify_cawg_ica(assertion_cbor: &[u8]) -> Result<serde_json::Value> {
     };
 
     let signer_payload = match get("signer_payload") {
-        Some(Value::Map(entries)) => entries,
+        Some(payload @ Value::Map(_)) => cbor_to_json(payload)?,
         _ => return Err(anyhow::anyhow!("missing signer_payload map")),
     };
-    let sp_get = |key: &str| -> Option<&Value> {
-        signer_payload
-            .iter()
-            .find(|(k, _)| matches!(k, Value::Text(t) if t == key))
-            .map(|(_, v)| v)
-    };
-
-    match sp_get("sig_type") {
-        Some(Value::Text(t)) if t == "cawg.identity_claims_aggregation" => {}
-        _ => {
-            return Err(anyhow::anyhow!(
-                "sig_type is not cawg.identity_claims_aggregation"
-            ))
-        }
-    }
-
-    let referenced = match sp_get("referenced_assertions") {
-        Some(Value::Array(items)) => items,
-        _ => return Err(anyhow::anyhow!("missing referenced_assertions array")),
-    };
-    let has_hard_binding = referenced.iter().any(|item| {
-        if let Value::Map(entries) = item {
-            entries.iter().any(|(k, v)| {
-                matches!(k, Value::Text(t) if t == "url")
-                    && matches!(v, Value::Text(u) if u.contains("c2pa.hash."))
-            })
-        } else {
-            false
-        }
-    });
-    if !has_hard_binding {
-        return Err(anyhow::anyhow!("missing required hard binding"));
-    }
 
     let sig_bytes = match get("signature") {
         Some(Value::Bytes(b)) => b,
@@ -243,20 +234,138 @@ pub fn verify_cawg_ica(assertion_cbor: &[u8]) -> Result<serde_json::Value> {
         .get("issuer")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("VC has no issuer"))?;
-    let key = super::did::ed25519_from_did_jwk(issuer)?;
-
-    sign1
-        .verify_signature(b"", |sig, data| {
-            let vk = ed25519_dalek::VerifyingKey::from_bytes(&key)
-                .map_err(|e| anyhow::anyhow!("invalid issuer key: {e}"))?;
-            let s = ed25519_dalek::Signature::from_slice(sig)
-                .map_err(|e| anyhow::anyhow!("invalid signature bytes: {e}"))?;
-            ed25519_dalek::Verifier::verify(&vk, data, &s)
-                .map_err(|e| anyhow::anyhow!("signature verification failed: {e}"))
-        })
+    let key = ed25519_dalek::VerifyingKey::from_bytes(&super::did::ed25519_from_did_jwk(issuer)?)
+        .map_err(|e| anyhow::anyhow!("invalid issuer key: {e}"))?;
+    super::cose::verify_ed25519(&sign1, &key)
         .map_err(|e| anyhow::anyhow!("CAWG ICA verification failed: {e}"))?;
 
-    Ok(vc)
+    // The outer signer_payload is not signed; the copy inside the VC is. Everything below
+    // reads the signed copy, and the two must agree so a reader of either sees the same refs.
+    let c2pa_asset = &normalize_hashes(
+        vc.get("credentialSubject")
+            .and_then(|s| s.get("c2paAsset"))
+            .ok_or_else(|| anyhow::anyhow!("VC has no credentialSubject.c2paAsset"))?,
+    )?;
+    if *c2pa_asset != signer_payload {
+        return Err(anyhow::anyhow!(
+            "signer_payload differs from the signed c2paAsset"
+        ));
+    }
+
+    if c2pa_asset.get("sig_type").and_then(|v| v.as_str()) != Some(CAWG_ICA_SIG_TYPE) {
+        return Err(anyhow::anyhow!(
+            "sig_type is not cawg.identity_claims_aggregation"
+        ));
+    }
+    let referenced = c2pa_asset
+        .get("referenced_assertions")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| anyhow::anyhow!("missing referenced_assertions array"))?
+        .iter()
+        .map(|item| {
+            let field = |name: &str| item.get(name).and_then(|v| v.as_str());
+            let hash =
+                field("hash").ok_or_else(|| anyhow::anyhow!("referenced assertion has no hash"))?;
+            Ok(ReferencedAssertion {
+                url: field("url")
+                    .ok_or_else(|| anyhow::anyhow!("referenced assertion has no url"))?
+                    .to_string(),
+                alg: field("alg").map(str::to_string),
+                hash: base64::engine::general_purpose::STANDARD
+                    .decode(hash)
+                    .map_err(|e| anyhow::anyhow!("referenced assertion hash: {e}"))?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    if !referenced
+        .iter()
+        .any(|r| r.label().starts_with("c2pa.hash."))
+    {
+        return Err(anyhow::anyhow!("missing required hard binding"));
+    }
+
+    Ok((vc, referenced))
+}
+
+/// `asset` with each referenced assertion's hash as padded standard base64, the form
+/// [`cbor_to_json`] gives byte strings. Producers write the hash as base64 (cogmem, this
+/// crate) or as an array of byte values (c2pa-rs); both name the same bytes.
+fn normalize_hashes(asset: &serde_json::Value) -> Result<serde_json::Value> {
+    use base64::engine::{
+        general_purpose::GeneralPurpose, DecodePaddingMode, GeneralPurposeConfig,
+    };
+    const LENIENT: GeneralPurpose = GeneralPurpose::new(
+        &base64::alphabet::STANDARD,
+        GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+    );
+    let mut asset = asset.clone();
+    let refs = asset
+        .get_mut("referenced_assertions")
+        .and_then(|v| v.as_array_mut())
+        .ok_or_else(|| anyhow::anyhow!("missing referenced_assertions array"))?;
+    for item in refs {
+        let hash = item
+            .get_mut("hash")
+            .ok_or_else(|| anyhow::anyhow!("referenced assertion has no hash"))?;
+        let bytes = match &*hash {
+            serde_json::Value::String(b64) => LENIENT
+                .decode(b64)
+                .map_err(|e| anyhow::anyhow!("referenced assertion hash: {e}"))?,
+            serde_json::Value::Array(values) => values
+                .iter()
+                .map(|v| v.as_u64().and_then(|b| u8::try_from(b).ok()))
+                .collect::<Option<Vec<u8>>>()
+                .ok_or_else(|| anyhow::anyhow!("referenced assertion hash is not bytes"))?,
+            _ => return Err(anyhow::anyhow!("referenced assertion hash is not bytes")),
+        };
+        *hash = base64::engine::general_purpose::STANDARD
+            .encode(bytes)
+            .into();
+    }
+    Ok(asset)
+}
+
+/// A CBOR value as the JSON a VC carries it in: byte strings become standard base64.
+fn cbor_to_json(value: &ciborium::value::Value) -> Result<serde_json::Value> {
+    use ciborium::value::Value;
+    Ok(match value {
+        Value::Null => serde_json::Value::Null,
+        Value::Bool(b) => serde_json::Value::Bool(*b),
+        Value::Text(t) => serde_json::Value::String(t.clone()),
+        Value::Bytes(b) => {
+            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(b))
+        }
+        Value::Integer(i) => {
+            let i = i128::from(*i);
+            if let Ok(u) = u64::try_from(i) {
+                u.into()
+            } else {
+                i64::try_from(i)
+                    .map_err(|_| anyhow::anyhow!("signer_payload integer out of range"))?
+                    .into()
+            }
+        }
+        Value::Array(items) => {
+            serde_json::Value::Array(items.iter().map(cbor_to_json).collect::<Result<_>>()?)
+        }
+        Value::Map(entries) => {
+            let mut object = serde_json::Map::new();
+            for (k, v) in entries {
+                let Value::Text(k) = k else {
+                    return Err(anyhow::anyhow!("signer_payload has a non-text key"));
+                };
+                if object.insert(k.clone(), cbor_to_json(v)?).is_some() {
+                    return Err(anyhow::anyhow!("signer_payload repeats key {k:?}"));
+                }
+            }
+            serde_json::Value::Object(object)
+        }
+        _ => {
+            return Err(anyhow::anyhow!(
+                "signer_payload holds an unsupported CBOR value"
+            ))
+        }
+    })
 }
 
 #[cfg(test)]
@@ -322,6 +431,92 @@ mod tests {
             "self#jumbf=c2pa.assertions/cogmem.memory.provenance".to_string(),
             "sha256".to_string(),
             vec![0x33u8; 32],
+        )];
+        let assertion = create_identity_assertion_ica(&key, &refs, "cogmem agent").unwrap();
+        let embedded = ica_embedded_bytes(&assertion).unwrap();
+        assert!(verify_cawg_ica(&embedded).is_err());
+    }
+
+    /// Re-encodes an embedded identity assertion with `edit` applied to its outer
+    /// signer_payload, leaving the signature untouched.
+    fn with_signer_payload(
+        embedded: &[u8],
+        edit: impl FnOnce(&mut Vec<(ciborium::Value, ciborium::Value)>),
+    ) -> Vec<u8> {
+        use ciborium::Value;
+        let mut assertion: Value = ciborium::from_reader(embedded).unwrap();
+        let Value::Map(entries) = &mut assertion else {
+            panic!("not a map")
+        };
+        let (_, Value::Map(payload)) = entries
+            .iter_mut()
+            .find(|(k, _)| k == &Value::Text("signer_payload".into()))
+            .unwrap()
+        else {
+            panic!("no signer_payload")
+        };
+        edit(payload);
+        let mut out = Vec::new();
+        ciborium::into_writer(&assertion, &mut out).unwrap();
+        out
+    }
+
+    #[test]
+    fn unsigned_signer_payload_must_match_the_signed_one() {
+        use ciborium::Value;
+        let key = test_keypair();
+        let assertion = create_identity_assertion_ica(&key, &ica_refs(), "cogmem agent").unwrap();
+        let embedded = ica_embedded_bytes(&assertion).unwrap();
+
+        // Retargeted at another asset's hard binding: the signature still verifies, but the
+        // payload no longer says what was signed.
+        let retargeted = with_signer_payload(&embedded, |payload| {
+            let (_, Value::Array(refs)) = &mut payload[0] else {
+                panic!("no referenced_assertions")
+            };
+            let Value::Map(first) = &mut refs[0] else {
+                panic!("not a map")
+            };
+            first[2].1 = Value::Bytes(vec![0x99; 32]);
+        });
+        assert!(verify_cawg_ica(&retargeted).is_err());
+
+        let extended = with_signer_payload(&embedded, |payload| {
+            payload.push((Value::Text("roles".into()), Value::Array(Vec::new())));
+        });
+        assert!(verify_cawg_ica(&extended).is_err());
+    }
+
+    #[test]
+    fn c2pa_asset_hashes_compare_as_bytes() {
+        let asset = serde_json::json!({
+            "referenced_assertions": [
+                {"url": "a", "hash": "AAEC"},
+                {"url": "b", "hash": "AAE"},
+                {"url": "c", "hash": [0, 1]},
+            ],
+            "sig_type": CAWG_ICA_SIG_TYPE,
+        });
+        let normalized = normalize_hashes(&asset).unwrap();
+        let hashes: Vec<_> = normalized["referenced_assertions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["hash"].as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(hashes, ["AAEC", "AAE=", "AAE="]);
+        let mut bad = asset;
+        bad["referenced_assertions"][2]["hash"] = serde_json::json!([256]);
+        assert!(normalize_hashes(&bad).is_err());
+    }
+
+    #[test]
+    fn hard_binding_is_matched_by_label_not_substring() {
+        let key = test_keypair();
+        let refs = vec![(
+            "self#jumbf=c2pa.assertions/x?c2pa.hash.data".to_string(),
+            "sha256".to_string(),
+            vec![0x44u8; 32],
         )];
         let assertion = create_identity_assertion_ica(&key, &refs, "cogmem agent").unwrap();
         let embedded = ica_embedded_bytes(&assertion).unwrap();

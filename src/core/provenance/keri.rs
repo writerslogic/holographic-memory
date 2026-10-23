@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{anyhow, Result};
-use ed25519_dalek::{Signer, SigningKey, Verifier, VerifyingKey};
+use ed25519_dalek::{Signer, SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -194,7 +194,12 @@ impl KeyEventLog {
         event.digest = self_addressing_digest(&event)?;
         event.signature = sign_event(signer, &event)?;
         self.events.push(event);
-        self.persist()?;
+        // An event that did not reach the file is not part of the log: a caller retrying the
+        // failed call would otherwise append it twice.
+        if let Err(e) = self.persist() {
+            self.events.pop();
+            return Err(e);
+        }
         Ok(self.events.last().expect("an event was just pushed"))
     }
 
@@ -208,9 +213,22 @@ impl KeyEventLog {
             return Err(anyhow!("first event must be inception"));
         }
 
+        // The identifier is self-certifying: the did:key of the inception key, which it
+        // names for the life of the log. Without this a log could claim any identifier.
+        let inception = &self.events[0];
+        let identifier_key = did::ed25519_from_did_key(&inception.identifier)?;
+        if inception.keys.len() != 1
+            || did::ed25519_from_did_key(&inception.keys[0])? != identifier_key
+        {
+            return Err(anyhow!("identifier is not derived from the inception key"));
+        }
+
         let mut current_keys = Vec::new();
 
         for (i, event) in self.events.iter().enumerate() {
+            if event.identifier != inception.identifier {
+                return Err(anyhow!("identifier changes at event {i}"));
+            }
             if event.sequence != i as u64 {
                 return Err(anyhow!(
                     "sequence gap: expected {i}, got {}",
@@ -235,6 +253,23 @@ impl KeyEventLog {
 
             if i > 0 {
                 let prior = &self.events[i - 1];
+                // Only a rotation changes the key state, and only to keys the prior event
+                // committed to; an interaction (or a second inception) changing the keys or
+                // the next-key commitment would bypass pre-rotation.
+                match event.event_type {
+                    EventType::Inception => {
+                        return Err(anyhow!("inception event at position {i}"));
+                    }
+                    EventType::Interaction
+                        if event.keys != prior.keys
+                            || event.key_threshold != prior.key_threshold
+                            || event.next_threshold != prior.next_threshold
+                            || event.next_keys_digest != prior.next_keys_digest =>
+                    {
+                        return Err(anyhow!("interaction at event {i} changes the key state"));
+                    }
+                    _ => {}
+                }
                 if event
                     .prior_digest
                     .as_ref()
@@ -322,7 +357,7 @@ fn verify_event_signature(event: &KeyEvent, signer_keys: &[String]) -> Result<()
     for key_did in signer_keys {
         if let Ok(pk_bytes) = did::ed25519_from_did_key(key_did) {
             if let Ok(vk) = VerifyingKey::from_bytes(&pk_bytes) {
-                if vk.verify(&serialized, &signature).is_ok() {
+                if vk.verify_strict(&serialized, &signature).is_ok() {
                     return Ok(());
                 }
             }
@@ -436,6 +471,83 @@ mod tests {
         kel.events[0].key_threshold = 2;
 
         assert!(kel.verify().is_err());
+    }
+
+    /// Appends `event` signed by `signer` after recomputing its digest, bypassing the
+    /// builders' own key bookkeeping.
+    fn append_raw(kel: &mut KeyEventLog, mut event: KeyEvent, signer: &SigningKey) {
+        event.prior_digest = kel.events.last().map(|e| e.digest.clone());
+        event.sequence = kel.events.len() as u64;
+        kel.append_signed(event, signer).unwrap();
+    }
+
+    #[test]
+    fn interaction_cannot_change_keys_or_next_key_commitment() {
+        let (key1, key2, attacker) = (test_keypair(), test_keypair(), test_keypair());
+        let attacker_did = did::did_key_from_ed25519(&attacker.verifying_key().to_bytes());
+        let mut base = KeyEventLog::new();
+        base.inception(&key1, Some(&next_key_digest(&key2)))
+            .unwrap();
+        let template = base.interaction(&key1, Vec::new()).unwrap().clone();
+        base.events.pop();
+
+        let mut swapped_keys = template.clone();
+        swapped_keys.keys = vec![attacker_did];
+        let mut kel = KeyEventLog::new();
+        kel.events = base.events.clone();
+        append_raw(&mut kel, swapped_keys, &key1);
+        assert!(kel.verify().is_err());
+
+        // A new commitment in an interaction lets the next rotation install any key.
+        let mut recommitted = template.clone();
+        recommitted.next_keys_digest = Some(next_key_digest(&attacker));
+        let mut kel = KeyEventLog::new();
+        kel.events = base.events.clone();
+        append_raw(&mut kel, recommitted, &key1);
+        kel.rotation(&key1, &attacker, None).unwrap();
+        assert!(kel.verify().is_err());
+
+        let mut reincepted = template;
+        reincepted.event_type = EventType::Inception;
+        let mut kel = KeyEventLog::new();
+        kel.events = base.events.clone();
+        append_raw(&mut kel, reincepted, &key1);
+        assert!(kel.verify().is_err());
+
+        kel.events.pop();
+        kel.verify().unwrap();
+    }
+
+    #[test]
+    fn identifier_must_be_the_inception_key_and_stay_fixed() {
+        let (victim, attacker) = (test_keypair(), test_keypair());
+        let victim_did = did::did_key_from_ed25519(&victim.verifying_key().to_bytes());
+
+        let mut claimed = KeyEventLog::new();
+        claimed.inception(&attacker, None).unwrap();
+        let mut event = claimed.events.pop().unwrap();
+        event.identifier = victim_did.clone();
+        append_raw(&mut claimed, event, &attacker);
+        assert!(claimed.verify().is_err());
+
+        let mut renamed = KeyEventLog::new();
+        renamed.inception(&attacker, None).unwrap();
+        let mut event = renamed.interaction(&attacker, Vec::new()).unwrap().clone();
+        renamed.events.pop();
+        event.identifier = victim_did;
+        append_raw(&mut renamed, event, &attacker);
+        assert!(renamed.verify().is_err());
+    }
+
+    #[test]
+    fn event_that_fails_to_persist_is_not_appended() {
+        let dir = tempfile::tempdir().unwrap();
+        let blocker = dir.path().join("not-a-dir");
+        std::fs::write(&blocker, b"x").unwrap();
+        let key = test_keypair();
+        let mut kel = KeyEventLog::with_path(&blocker.join("kel.json")).unwrap();
+        assert!(kel.inception(&key, None).is_err());
+        assert!(kel.events().is_empty());
     }
 
     #[test]

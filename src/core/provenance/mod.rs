@@ -733,7 +733,7 @@ impl ProvenanceManager {
         record: &ProvenanceRecord,
         trust: &TrustStore,
     ) -> Result<VerificationResult> {
-        let mut result = self.verify_fact_provenance_self_consistency(record)?;
+        let mut result = self.verify_signatures(record, Some(trust))?;
         let fallback = self.signing_key.verifying_key();
         let key = Self::resolve_cose_verifying_key(record, &fallback);
         result
@@ -752,6 +752,20 @@ impl ProvenanceManager {
         &self,
         record: &ProvenanceRecord,
     ) -> Result<VerificationResult> {
+        self.verify_signatures(record, None)
+    }
+
+    /// The signature, revocation and binding checks of a record. A credential citing this
+    /// manager's status list is revoked when the live list or `trust`'s copy says so; one
+    /// citing another list is checked against `trust`'s copy of that list. Without one it
+    /// falls back to the live list (credentials issued before a key rotation cite the list
+    /// under the old DID), unless `trust` requires status lists.
+    fn verify_signatures(
+        &self,
+        record: &ProvenanceRecord,
+        trust: Option<&TrustStore>,
+    ) -> Result<VerificationResult> {
+        let own_status_list = vc::status_list_credential_url(&self.issuer_did);
         let mut details = Vec::new();
         let fallback = self.signing_key.verifying_key();
         let verifying_key = Self::resolve_cose_verifying_key(record, &fallback);
@@ -768,9 +782,22 @@ impl ProvenanceManager {
             match serde_json::from_str::<vc::FactCredential>(vc_json) {
                 Ok(parsed) => {
                     details.push(outcome_detail("vc_proof", &vc::verify_credential(&parsed)));
-                    details.push(revocation_detail(&parsed, true, |_, index| {
-                        Some(self.is_revoked(index))
-                    }));
+                    details.push(revocation_detail(
+                        &parsed,
+                        trust.is_some_and(TrustStore::requires_status_lists),
+                        |url, index| {
+                            let trusted = trust.and_then(|t| t.is_revoked(url, index));
+                            if url == own_status_list {
+                                Some(self.is_revoked(index) || trusted == Some(true))
+                            } else if trusted.is_some()
+                                || trust.is_some_and(TrustStore::requires_status_lists)
+                            {
+                                trusted
+                            } else {
+                                Some(self.is_revoked(index))
+                            }
+                        },
+                    ));
                     credential = Some(parsed);
                 }
                 Err(e) => details.push(VerificationDetail {
@@ -2443,5 +2470,104 @@ mod binding_tests {
         forged.vc_json = None;
         assert!(!verify_record(&forged, &trust).unwrap().valid);
         assert!(!mgr.verify_fact_provenance(&forged, &trust).unwrap().valid);
+    }
+
+    /// A Sigstore bundle over caller-chosen bytes must not be a signature a fact claim can
+    /// reuse: the bundle signs under its own domain, not the raw bytes.
+    #[test]
+    fn sigstore_bundle_signature_does_not_forge_a_fact_claim() {
+        use base64::Engine;
+        use coset::{CborSerializable, CoseSign1Builder, HeaderBuilder};
+
+        let (_dir, mgr) = manager();
+        let genuine = mgr.create_fact_provenance("f", b"genuine", None).unwrap();
+        let forged_hash: [u8; 32] = Sha256::digest(b"forged").into();
+        let claim = ciborium::Value::Map(vec![
+            ("id".into(), "f".into()),
+            (
+                "content_hash".into(),
+                ciborium::Value::Bytes(forged_hash.to_vec()),
+            ),
+            ("timestamp_ms".into(), genuine.timestamp_ms.into()),
+        ]);
+        let mut payload = Vec::new();
+        ciborium::into_writer(&claim, &mut payload).unwrap();
+        let mut sign1 = CoseSign1Builder::new()
+            .protected(
+                HeaderBuilder::new()
+                    .algorithm(coset::iana::Algorithm::EdDSA)
+                    .key_id(mgr.verifying_key().to_bytes().to_vec())
+                    .build(),
+            )
+            .payload(payload)
+            .build();
+        let bundle = mgr
+            .create_sigstore_bundle(&sign1.tbs_data(b""), None)
+            .unwrap();
+        sign1.signature = base64::engine::general_purpose::STANDARD
+            .decode(&bundle.message_signature.signature)
+            .unwrap();
+
+        let mut forged = genuine;
+        forged.source_hash = Some(forged_hash);
+        forged.vc_json = None;
+        forged.cose_envelope = Some(sign1.to_vec().unwrap());
+        assert_rejected(
+            &mgr,
+            &forged,
+            "a fact claim signed through a Sigstore bundle",
+        );
+    }
+
+    /// A credential from another trusted issuer is checked against that issuer's status list,
+    /// not this manager's own list.
+    #[test]
+    fn foreign_revoked_credential_fails_the_manager_check() {
+        let (_dir, issuer) = manager();
+        let (_dir2, verifier) = manager();
+        let record = issuer
+            .create_fact_provenance("x", b"foreign", None)
+            .unwrap();
+        let credential: vc::FactCredential =
+            serde_json::from_str(record.vc_json.as_deref().unwrap()).unwrap();
+        let index: u64 = credential
+            .credential_status
+            .as_ref()
+            .unwrap()
+            .status_list_index
+            .parse()
+            .unwrap();
+        issuer.revoke_credential(index).unwrap();
+
+        let trust = issuer.self_trust();
+        assert!(!verify_record(&record, &trust).unwrap().valid);
+        let result = verifier.verify_fact_provenance(&record, &trust).unwrap();
+        assert!(
+            result
+                .details
+                .iter()
+                .any(|d| d.check == "revocation_status" && !d.passed),
+            "{:?}",
+            result.details
+        );
+        assert!(!result.valid);
+
+        // The verifier's own list does not revoke a foreign credential either.
+        let other = issuer.create_fact_provenance("y", b"other", None).unwrap();
+        let other_index: u64 =
+            serde_json::from_str::<vc::FactCredential>(other.vc_json.as_deref().unwrap())
+                .unwrap()
+                .credential_status
+                .unwrap()
+                .status_list_index
+                .parse()
+                .unwrap();
+        verifier.revoke_credential(other_index).unwrap();
+        assert!(
+            verifier
+                .verify_fact_provenance(&other, &issuer.self_trust())
+                .unwrap()
+                .valid
+        );
     }
 }

@@ -151,20 +151,17 @@ fn encode_box(jbox: &JumbfBox, buf: &mut Vec<u8>) -> Result<()> {
         Some(BoxContent::Json(val)) => {
             let json_bytes =
                 serde_json::to_vec(val).map_err(|e| anyhow!("JSON serialization failed: {e}"))?;
-            let content_len = (8 + json_bytes.len()) as u32;
-            buf.extend_from_slice(&content_len.to_be_bytes());
+            buf.extend_from_slice(&box_len(json_bytes.len())?.to_be_bytes());
             buf.extend_from_slice(&JSON_BOX_TYPE);
             buf.extend_from_slice(&json_bytes);
         }
         Some(BoxContent::Cbor(data)) => {
-            let content_len = (8 + data.len()) as u32;
-            buf.extend_from_slice(&content_len.to_be_bytes());
+            buf.extend_from_slice(&box_len(data.len())?.to_be_bytes());
             buf.extend_from_slice(&CBOR_BOX_TYPE);
             buf.extend_from_slice(data);
         }
         Some(BoxContent::Binary(data)) => {
-            let content_len = (8 + data.len()) as u32;
-            buf.extend_from_slice(&content_len.to_be_bytes());
+            buf.extend_from_slice(&box_len(data.len())?.to_be_bytes());
             buf.extend_from_slice(&EMBEDDED_FILE_BOX_TYPE);
             buf.extend_from_slice(data);
         }
@@ -175,11 +172,23 @@ fn encode_box(jbox: &JumbfBox, buf: &mut Vec<u8>) -> Result<()> {
         encode_box(child, buf)?;
     }
 
-    let total_len = (buf.len() - start) as u32;
+    let total_len = box_len(buf.len() - start - 8)?;
     buf[start..start + 4].copy_from_slice(&total_len.to_be_bytes());
 
     Ok(())
 }
+
+/// The 32-bit length field of a box with an 8-byte header and `payload` bytes after it.
+fn box_len(payload: usize) -> Result<u32> {
+    payload
+        .checked_add(8)
+        .and_then(|len| u32::try_from(len).ok())
+        .ok_or_else(|| anyhow!("JUMBF box of {payload} bytes exceeds the 32-bit length field"))
+}
+
+/// Description box toggle bits (ISO 19566-5): requestable, and a label follows the toggles.
+const TOGGLE_REQUESTABLE: u8 = 0x01;
+const TOGGLE_LABEL: u8 = 0x02;
 
 fn encode_description_box(desc: &DescriptionBox, buf: &mut Vec<u8>) -> Result<()> {
     let start = buf.len();
@@ -187,17 +196,19 @@ fn encode_description_box(desc: &DescriptionBox, buf: &mut Vec<u8>) -> Result<()
     buf.extend_from_slice(&DESCRIPTION_BOX_TYPE);
     buf.extend_from_slice(&desc.uuid);
 
+    // The label is always written, so the label bit is always set: a reader that honors the
+    // toggles would otherwise take the label bytes for the optional fields after it.
     let toggle = if desc.requestable.unwrap_or(false) {
-        0x03
+        TOGGLE_LABEL | TOGGLE_REQUESTABLE
     } else {
-        0x00
+        TOGGLE_LABEL
     };
     buf.push(toggle);
 
     buf.extend_from_slice(desc.label.as_bytes());
     buf.push(0);
 
-    let total_len = (buf.len() - start) as u32;
+    let total_len = box_len(buf.len() - start - 8)?;
     buf[start..start + 4].copy_from_slice(&total_len.to_be_bytes());
 
     Ok(())
@@ -232,9 +243,12 @@ fn decode_box_depth(data: &[u8], depth: usize) -> Result<(JumbfBox, usize)> {
     let mut content = None;
     let mut children = Vec::new();
 
+    // Every byte of the box must belong to a well-formed inner box: a truncated or
+    // overlong inner header is an error, not the end of the box, so nothing after it can be
+    // silently dropped. A superbox has one description box, first, and one content box.
     while offset < box_data.len() {
         if box_data.len() - offset < 8 {
-            break;
+            return Err(anyhow!("truncated inner box header at offset {offset}"));
         }
         let inner_len = u32::from_be_bytes([
             box_data[offset],
@@ -242,8 +256,10 @@ fn decode_box_depth(data: &[u8], depth: usize) -> Result<(JumbfBox, usize)> {
             box_data[offset + 2],
             box_data[offset + 3],
         ]) as usize;
-        if inner_len < 8 || offset + inner_len > box_data.len() {
-            break;
+        if inner_len < 8 || inner_len > box_data.len() - offset {
+            return Err(anyhow!(
+                "invalid inner box length {inner_len} at offset {offset}"
+            ));
         }
         let inner_type: [u8; 4] = [
             box_data[offset + 4],
@@ -255,7 +271,17 @@ fn decode_box_depth(data: &[u8], depth: usize) -> Result<(JumbfBox, usize)> {
 
         match inner_type {
             DESCRIPTION_BOX_TYPE => {
+                if offset != 0 {
+                    return Err(anyhow!("description box is not the first box"));
+                }
                 description = Some(decode_description_box(inner_data)?);
+            }
+            // Two JSON or CBOR boxes would leave the box's content ambiguous. (An embedded
+            // file box legitimately holds a description and a data box; the last is kept.)
+            JSON_BOX_TYPE | CBOR_BOX_TYPE
+                if matches!(content, Some(BoxContent::Json(_) | BoxContent::Cbor(_))) =>
+            {
+                return Err(anyhow!("box has more than one JSON or CBOR content box"));
             }
             JSON_BOX_TYPE => {
                 let val = serde_json::from_slice(inner_data)
@@ -295,8 +321,16 @@ fn decode_description_box(data: &[u8]) -> Result<DescriptionBox> {
     let mut uuid = [0u8; 16];
     uuid.copy_from_slice(&data[..16]);
     let toggle = data[16];
-    let requestable = Some(toggle & 0x01 != 0);
+    let requestable = Some(toggle & TOGGLE_REQUESTABLE != 0);
 
+    // Writers before the label bit was set wrote toggles 0 followed by a label.
+    if toggle & TOGGLE_LABEL == 0 && (toggle != 0 || data.len() == 17) {
+        return Ok(DescriptionBox {
+            uuid,
+            label: String::new(),
+            requestable,
+        });
+    }
     let label_data = &data[17..];
     let label_end = label_data
         .iter()
@@ -395,6 +429,63 @@ mod tests {
         assert_eq!(decoded.children.len(), 1);
         assert!(decoded.find_by_label("test").is_some());
         assert!(decoded.find_by_label("nonexistent").is_none());
+    }
+
+    #[test]
+    fn malformed_or_ambiguous_inner_boxes_are_rejected() {
+        let mut parent = JumbfBox::superbox("parent", [0; 16]);
+        parent.add_child(JumbfBox::json_box("child", serde_json::json!({"k": "v"})));
+        let encoded = parent.encode().unwrap();
+
+        // Trailing bytes inside the outer box that do not form a box.
+        for tail in [&[0u8, 0, 0][..], &[0, 0, 0, 3, b'x', b'x', b'x', b'x'][..]] {
+            let mut bad = encoded.clone();
+            bad.extend_from_slice(tail);
+            let len = u32::try_from(bad.len()).unwrap();
+            bad[..4].copy_from_slice(&len.to_be_bytes());
+            assert!(JumbfBox::decode(&bad).is_err(), "{tail:?}");
+        }
+
+        // A second description box would relabel the superbox.
+        let mut relabeled = encoded.clone();
+        let jumd_len =
+            usize::try_from(u32::from_be_bytes(encoded[8..12].try_into().unwrap())).unwrap();
+        relabeled.extend_from_slice(&encoded[8..8 + jumd_len]);
+        let len = u32::try_from(relabeled.len()).unwrap();
+        relabeled[..4].copy_from_slice(&len.to_be_bytes());
+        assert!(JumbfBox::decode(&relabeled).is_err());
+
+        // A second JSON box would make the content ambiguous; an embedded file's description
+        // and data boxes are two content boxes and stay readable.
+        let leaf = JumbfBox::json_box("leaf", serde_json::json!({"k": "v"}));
+        let encoded = leaf.encode().unwrap();
+        let json_box_start =
+            8 + usize::try_from(u32::from_be_bytes(encoded[8..12].try_into().unwrap())).unwrap();
+        for (extra, ok) in [
+            (encoded[json_box_start..].to_vec(), false),
+            ([&[0, 0, 0, 9][..], b"bfdb", &[0]].concat(), true),
+        ] {
+            let mut doubled = encoded.clone();
+            doubled.extend_from_slice(&extra);
+            let len = u32::try_from(doubled.len()).unwrap();
+            doubled[..4].copy_from_slice(&len.to_be_bytes());
+            assert_eq!(JumbfBox::decode(&doubled).is_ok(), ok);
+        }
+    }
+
+    #[test]
+    fn description_box_flags_its_label() {
+        let encoded = JumbfBox::json_box("c2pa.claim", serde_json::json!({}))
+            .encode()
+            .unwrap();
+        // jumb header (8), jumd header (8), uuid (16), then the toggles.
+        assert_eq!(encoded[32] & 0x02, 0x02);
+
+        // Boxes written with toggles 0 and a label still read back with it.
+        let mut legacy = encoded.clone();
+        legacy[32] = 0;
+        let decoded = JumbfBox::decode(&legacy).unwrap();
+        assert_eq!(decoded.description.unwrap().label, "c2pa.claim");
     }
 
     #[test]
