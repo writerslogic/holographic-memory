@@ -17,7 +17,11 @@ pub(crate) const FORMAT_MANIFEST: &str = "format.json";
 pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
 pub(crate) const STORAGE_FORMAT_VERSION: u32 = 4;
 
+/// The fixed segment size of format 3, and the step by which a format-4 active segment's
+/// file grows toward its declared size.
 pub(crate) const SEGMENT_SIZE: usize = 64 * 1024 * 1024;
+/// The segment size formats 1, 2 and 4 declare in their manifest (format 4 allocates it in
+/// [`SEGMENT_SIZE`] steps); only format 3 declared [`SEGMENT_SIZE`].
 pub(crate) const LEGACY_SEGMENT_SIZE: usize = 1024 * 1024 * 1024;
 // Windows requires unmapping all views before extending a mapped file.
 const INCREMENTAL_ALLOCATION: bool = cfg!(unix);
@@ -327,6 +331,7 @@ impl PersistentArena {
     fn discover_offset(mmap: &MmapMut) -> Result<(usize, u32)> {
         let mut offset = 0;
         let mut max_version = 0;
+        let mut scratch = Vec::new();
         let data = &mmap[..];
         let fail = |offset: usize, max_version: u32| -> Result<(usize, u32)> {
             match Self::committed_after(data, offset + 1) {
@@ -359,7 +364,7 @@ impl PersistentArena {
                 return fail(offset, max_version);
             }
 
-            if !Self::frame_checks_out(data, offset) {
+            if !Self::frame_checks_out(data, offset, &mut scratch) {
                 return fail(offset, max_version);
             }
 
@@ -377,7 +382,10 @@ impl PersistentArena {
     }
 
     /// True if the frame at `offset` has plausible lengths, decompresses and matches its CRC32.
-    fn frame_checks_out(data: &[u8], offset: usize) -> bool {
+    /// Decompresses into `scratch`, which keeps its capacity for the next call: recovery tests
+    /// every offset of a damaged tail, and a fresh output buffer of up to
+    /// [`MAX_RAW_FRAME_SIZE`] bytes per candidate costs more than the test.
+    fn frame_checks_out(data: &[u8], offset: usize, scratch: &mut Vec<u8>) -> bool {
         let Some([expected_crc, raw_len, comp_len, _]) = data.get(offset..).and_then(header_words)
         else {
             return false;
@@ -393,8 +401,12 @@ impl PersistentArena {
         let payload = &data[offset + HEADER_SIZE..end];
         let mut hasher = Hasher::new();
         if comp_len < raw_len {
-            match lz4_flex::decompress(payload, raw_len) {
-                Ok(decompressed) => hasher.update(&decompressed),
+            // The output bound `decompress(payload, raw_len)` gives: `raw_len` bytes.
+            if scratch.len() < raw_len {
+                scratch.resize(raw_len, 0);
+            }
+            match lz4_flex::block::decompress_into(payload, &mut scratch[..raw_len]) {
+                Ok(written) => hasher.update(&scratch[..written]),
                 Err(_) => return false,
             }
         } else {
@@ -408,15 +420,42 @@ impl PersistentArena {
     /// the write frontier are zero).
     fn committed_after(data: &[u8], from: usize) -> Option<usize> {
         let last = data.iter().rposition(|&b| b != 0)?;
+        let mut scratch = Vec::new();
         (from..=last.saturating_sub(HEADER_SIZE - 1)).find(|&at| {
             at + HEADER_SIZE <= data.len()
-                && (Self::frame_checks_out(data, at)
+                && (Self::frame_checks_out(data, at, &mut scratch)
                     || (is_log_end(&data[at..at + HEADER_SIZE])
                         && data[at + 12..at + 16] == END_MARK.to_le_bytes()))
         })
     }
 
     pub(crate) fn read_slice(&self, global_offset: usize, len: usize) -> Result<Vec<u8>> {
+        self.with_slice(global_offset, len, <[u8]>::to_vec)
+    }
+
+    /// Runs `read` on the mapped bytes `[global_offset, global_offset + len)` under one
+    /// acquisition of the mapping locks.
+    fn with_slice<R>(
+        &self,
+        global_offset: usize,
+        len: usize,
+        read: impl FnOnce(&[u8]) -> R,
+    ) -> Result<R> {
+        self.with_mapping(global_offset, |rest| {
+            rest.get(..len)
+                .map(read)
+                .ok_or_else(|| anyhow!("Read out of bounds: offset {global_offset}, len {len}"))
+        })
+    }
+
+    /// Runs `read` on the mapped bytes of the segment holding `global_offset`, from that
+    /// offset to the end of the mapping (and never past the segment), under one acquisition
+    /// of the mapping locks.
+    fn with_mapping<R>(
+        &self,
+        global_offset: usize,
+        read: impl FnOnce(&[u8]) -> Result<R>,
+    ) -> Result<R> {
         // Rotation and publication take active before segments; retain both to select one mapping.
         let active = self.active_segment.read();
         let reader = self.read_segments.read();
@@ -425,69 +464,59 @@ impl PersistentArena {
             return Err(anyhow!("read beyond final arena segment"));
         }
         let local_offset = global_offset % self.segment_size;
-        let end = local_offset
-            .checked_add(len)
-            .ok_or_else(|| anyhow!("arena read length overflow"))?;
-        if end > self.segment_size {
-            return Err(anyhow!("read exceeds arena segment"));
-        }
-        if seg_idx < reader.len() {
-            let seg = &reader[seg_idx];
-            if end <= seg.len() {
-                return Ok(seg[local_offset..end].to_vec());
-            }
-            return Err(anyhow!("read exceeds arena segment"));
-        }
-        if end <= active.map.len() {
-            Ok(active.map[local_offset..end].to_vec())
+        let mapping: &[u8] = if seg_idx < reader.len() {
+            &reader[seg_idx]
         } else {
-            Err(anyhow!(
-                "Read out of bounds: offset {}, len {}",
-                global_offset,
-                len
-            ))
-        }
+            &active.map
+        };
+        let end = mapping.len().min(self.segment_size);
+        let rest = mapping
+            .get(local_offset..end)
+            .ok_or_else(|| anyhow!("read exceeds arena segment"))?;
+        read(rest)
     }
 
     pub(crate) fn read_frame(&self, global_offset: usize) -> Result<(Vec<u8>, u32)> {
-        let header_bytes = self.read_slice(global_offset, HEADER_SIZE)?;
-        let [expected_crc, raw_len, comp_len, version] = header_words(&header_bytes)
-            .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
-        let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
-
-        if raw_len == 0 {
-            return Err(anyhow!("Empty frame at offset {}", global_offset));
-        }
-        if raw_len > MAX_RAW_FRAME_SIZE {
-            return Err(anyhow!(
-                "Suspiciously large raw frame length: {} at {}",
-                raw_len,
-                global_offset
-            ));
-        }
-        // Compressed data cannot exceed a full segment; reject to prevent OOM.
-        if comp_len > self.segment_size {
-            return Err(anyhow!(
-                "Suspiciously large compressed frame length: {} at {}",
-                comp_len,
-                global_offset
-            ));
-        }
-
-        let payload = self.read_slice(global_offset + HEADER_SIZE, comp_len)?;
-        if payload.len() < comp_len {
-            return Err(anyhow!(
-                "Truncated payload at offset {}",
-                global_offset + HEADER_SIZE
-            ));
-        }
-
-        let data = if comp_len < raw_len {
-            lz4_flex::decompress(&payload, raw_len)
-                .map_err(|e| anyhow!("LZ4 decompression failed: {}", e))?
-        } else {
-            payload
-        };
+        // Header and payload come from one mapping under one lock acquisition; the payload is
+        // decompressed (or copied) straight from it.
+        let (data, expected_crc, version) = self.with_mapping(global_offset, |rest| {
+            let [expected_crc, raw_len, comp_len, version] = header_words(rest)
+                .ok_or_else(|| anyhow!("Truncated header at offset {}", global_offset))?;
+            let (raw_len, comp_len) = (raw_len as usize, comp_len as usize);
+            if raw_len == 0 {
+                return Err(anyhow!("Empty frame at offset {}", global_offset));
+            }
+            if raw_len > MAX_RAW_FRAME_SIZE {
+                return Err(anyhow!(
+                    "Suspiciously large raw frame length: {} at {}",
+                    raw_len,
+                    global_offset
+                ));
+            }
+            // Compressed data cannot exceed a full segment; reject to prevent OOM.
+            if comp_len > self.segment_size {
+                return Err(anyhow!(
+                    "Suspiciously large compressed frame length: {} at {}",
+                    comp_len,
+                    global_offset
+                ));
+            }
+            let payload = rest
+                .get(HEADER_SIZE..HEADER_SIZE + comp_len)
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Truncated payload at offset {}",
+                        global_offset + HEADER_SIZE
+                    )
+                })?;
+            let data = if comp_len < raw_len {
+                lz4_flex::decompress(payload, raw_len)
+                    .map_err(|e| anyhow!("LZ4 decompression failed: {}", e))?
+            } else {
+                payload.to_vec()
+            };
+            Ok((data, expected_crc, version))
+        })?;
 
         let mut hasher = Hasher::new();
         hasher.update(&data);

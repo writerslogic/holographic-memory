@@ -89,6 +89,18 @@ fn is_end_marker(data: &[u8], at: usize) -> bool {
 /// plus a ratio bound that keeps a hostile `raw_len` from forcing a large allocation: an LZ4
 /// block never expands by more than 255 times.
 pub fn decode_frame(data: &[u8], offset: usize) -> Result<(FrameRef, Vec<u8>), &'static str> {
+    let mut payload = Vec::new();
+    let frame = decode_frame_into(data, offset, &mut payload)?;
+    Ok((frame, payload))
+}
+
+/// [`decode_frame`] into `out`, which holds exactly the decoded payload on success (and
+/// anything on failure) and keeps its capacity for the next call.
+fn decode_frame_into(
+    data: &[u8],
+    offset: usize,
+    out: &mut Vec<u8>,
+) -> Result<FrameRef, &'static str> {
     let header_end = offset
         .checked_add(FRAME_HEADER_LEN)
         .filter(|&end| end <= data.len())
@@ -107,27 +119,33 @@ pub fn decode_frame(data: &[u8], offset: usize) -> Result<(FrameRef, Vec<u8>), &
         .filter(|&end| end <= data.len())
         .ok_or("truncated-payload")?;
     let payload = &data[header_end..end];
-    let decoded = if comp_len < raw_len {
+    if comp_len < raw_len {
         if u64::from(raw_len) > u64::from(comp_len) * 255 {
             return Err("implausible-ratio");
         }
-        lz4_flex::decompress(payload, raw_len as usize).map_err(|_| "lz4")?
+        // The output bound `lz4_flex::decompress(payload, raw_len)` gives; `out` is only
+        // zero-filled where it grows.
+        let raw_len = raw_len as usize;
+        if out.len() < raw_len {
+            out.resize(raw_len, 0);
+        }
+        let written =
+            lz4_flex::block::decompress_into(payload, &mut out[..raw_len]).map_err(|_| "lz4")?;
+        out.truncate(written);
     } else {
-        payload.to_vec()
-    };
-    if crc32fast::hash(&decoded) != crc {
+        out.clear();
+        out.extend_from_slice(payload);
+    }
+    if crc32fast::hash(out) != crc {
         return Err("crc32");
     }
-    Ok((
-        FrameRef {
-            offset,
-            raw_len,
-            comp_len,
-            seq,
-            crc,
-        },
-        decoded,
-    ))
+    Ok(FrameRef {
+        offset,
+        raw_len,
+        comp_len,
+        seq,
+        crc,
+    })
 }
 
 /// The first offset at or after `from` holding committed data: a frame that decodes, or an
@@ -136,9 +154,11 @@ pub fn decode_frame(data: &[u8], offset: usize) -> Result<(FrameRef, Vec<u8>), &
 /// frame was committed after it.
 fn committed_after(data: &[u8], from: usize) -> Option<usize> {
     let last = data.iter().rposition(|&b| b != 0)?;
+    // One output buffer for every candidate offset of a damaged tail.
+    let mut scratch = Vec::new();
     (from..=last.saturating_sub(FRAME_HEADER_LEN - 1)).find(|&at| {
         at + FRAME_HEADER_LEN <= data.len()
-            && (is_end_marker(data, at) || decode_frame(data, at).is_ok())
+            && (is_end_marker(data, at) || decode_frame_into(data, at, &mut scratch).is_ok())
     })
 }
 
