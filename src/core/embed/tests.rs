@@ -3,6 +3,7 @@
 
 use super::testing::*;
 use super::*;
+use std::sync::Arc;
 
 fn opts(threads: usize, batch: usize) -> EmbedOptions {
     EmbedOptions {
@@ -341,4 +342,54 @@ fn int8_group_sets_the_scale_granularity() {
     // The int8 pack grows with the number of scales.
     let size = |g| tiny_pack_bytes_with_group(Quantization::Int8, Pooling::Mean, g).len();
     assert!(size(8) > size(16) && size(16) > size(0));
+}
+
+#[test]
+fn index_save_leaves_files_named_like_its_temp_alone() {
+    let dir = tempfile::tempdir().unwrap();
+    let (pack, sha) = write_tiny(dir.path(), Quantization::F32, Pooling::Mean);
+    let embedder = Arc::new(Embedder::from_pack(&pack, Some(&sha), &opts(1, 4)).unwrap());
+    let mut index = SemanticIndex::new(Arc::clone(&embedder));
+    let texts = corpus();
+    let ids: Vec<String> = (0..texts.len()).map(|i| format!("d{i}")).collect();
+    index.add(&ids, &texts).unwrap();
+    // A file with the temp name a save would derive, and an index whose own name is that.
+    let sibling = dir.path().join("a.tmp");
+    std::fs::write(&sibling, b"someone else's file").unwrap();
+    index.save(&dir.path().join("a.idx")).unwrap();
+    assert_eq!(std::fs::read(&sibling).unwrap(), b"someone else's file");
+    let loaded = SemanticIndex::load(&dir.path().join("a.idx"), Arc::clone(&embedder)).unwrap();
+    assert_eq!(loaded.len(), index.len());
+    index.save(&sibling).unwrap();
+    assert_eq!(
+        SemanticIndex::load(&sibling, embedder).unwrap().len(),
+        index.len()
+    );
+}
+
+#[test]
+fn safetensors_offsets_and_shapes_that_overflow_are_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let write = |name: &str, header: &str| {
+        let mut bytes = (header.len() as u64).to_le_bytes().to_vec();
+        bytes.extend_from_slice(header.as_bytes());
+        let path = dir.path().join(name);
+        std::fs::write(&path, bytes).unwrap();
+        path
+    };
+    let ok = write(
+        "ok",
+        r#"{"t":{"dtype":"F32","shape":[0,5],"data_offsets":[0,0]}}"#,
+    );
+    assert!(pack::read_safetensors(&ok).is_ok());
+    let end = write(
+        "end",
+        r#"{"t":{"dtype":"F32","shape":[0],"data_offsets":[0,18446744073709551615]}}"#,
+    );
+    assert!(pack::read_safetensors(&end).is_err());
+    let shape = write(
+        "shape",
+        r#"{"t":{"dtype":"F32","shape":[4294967296,4294967296],"data_offsets":[0,0]}}"#,
+    );
+    assert!(pack::read_safetensors(&shape).is_err());
 }

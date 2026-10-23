@@ -566,7 +566,7 @@ pub(crate) fn read_safetensors(path: &Path) -> Result<NamedTensors> {
             off.get(1).and_then(|x| x.as_u64()).context("offset")? as usize,
         );
         ensure!(
-            a <= b && base + b <= bytes.len(),
+            a <= b && base.checked_add(b).is_some_and(|end| end <= bytes.len()),
             "tensor {name:?} lies outside the file"
         );
         let raw = &bytes[base + a..base + b];
@@ -581,7 +581,7 @@ pub(crate) fn read_safetensors(path: &Path) -> Result<NamedTensors> {
             other => bail!("tensor {name:?} has unsupported dtype {other}"),
         };
         ensure!(
-            values.len() == shape.iter().product::<usize>(),
+            shape.iter().try_fold(1usize, |n, &d| n.checked_mul(d)) == Some(values.len()),
             "tensor {name:?} size does not match its shape"
         );
         out.insert(name.clone(), (shape, values));

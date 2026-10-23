@@ -169,19 +169,25 @@ impl SemanticIndex {
             ids: self.ids.clone(),
             texts: self.texts.clone(),
         })?;
-        let tmp = path.with_extension("tmp");
-        {
-            let mut f =
-                std::fs::File::create(&tmp).with_context(|| format!("create {}", tmp.display()))?;
-            f.write_all(MAGIC)?;
-            f.write_all(&(header.len() as u64).to_le_bytes())?;
-            f.write_all(&header)?;
-            for x in &self.vectors {
-                f.write_all(&x.to_le_bytes())?;
-            }
-            f.sync_all()?;
+        let mut bytes = Vec::with_capacity(16 + header.len() + 4 * self.vectors.len());
+        bytes.extend_from_slice(MAGIC);
+        bytes.extend_from_slice(&(header.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(&header);
+        for x in &self.vectors {
+            bytes.extend_from_slice(&x.to_le_bytes());
         }
-        std::fs::rename(&tmp, path).with_context(|| format!("install {}", path.display()))
+        // A temporary file of its own, so no file of any name is truncated or consumed.
+        let parent = path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        let mut tmp = tempfile::NamedTempFile::new_in(parent)
+            .with_context(|| format!("create a temporary file in {}", parent.display()))?;
+        tmp.write_all(&bytes)?;
+        tmp.as_file().sync_all()?;
+        tmp.persist(path)
+            .with_context(|| format!("install {}", path.display()))?;
+        crate::core::durable_file::sync_directory(parent)
     }
 
     /// Loads an index written by [`save`](Self::save). It must have been built with the same

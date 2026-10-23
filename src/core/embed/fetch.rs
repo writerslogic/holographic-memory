@@ -49,6 +49,22 @@ fn download_file(url: &str, dest: &Path, want_sha: &str, max: u64) -> Result<()>
     Ok(())
 }
 
+/// Installs `bytes` as `cache/name`, staged in `work` (a directory of `cache`, so the rename
+/// stays on one filesystem) that the caller removes either way: a failed write or rename
+/// leaves nothing in the cache.
+fn install(work: &Path, cache: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf> {
+    let tmp = work.join(format!(".{name}.tmp"));
+    {
+        let mut f = std::fs::File::create(&tmp)?;
+        f.write_all(bytes)?;
+        f.sync_all()?;
+    }
+    let dest = cache.join(name);
+    std::fs::rename(&tmp, &dest).with_context(|| format!("install {}", dest.display()))?;
+    crate::core::durable_file::sync_directory(cache)?;
+    Ok(dest)
+}
+
 pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
     std::fs::create_dir_all(cache)
         .with_context(|| format!("create cache directory {}", cache.display()))?;
@@ -75,17 +91,36 @@ pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
                 spec.pack_sha256
             );
         }
-        let tmp = cache.join(format!(".{}.{}.tmp", spec.pack_name(), std::process::id()));
-        {
-            let mut f = std::fs::File::create(&tmp)?;
-            f.write_all(&bytes)?;
-            f.sync_all()?;
-        }
-        let dest = cache.join(spec.pack_name());
-        std::fs::rename(&tmp, &dest).with_context(|| format!("install {}", dest.display()))?;
-        Ok(dest)
+        install(&work, cache, &spec.pack_name(), &bytes)
     })();
     // Best effort: the fetch outcome matters more than removing its scratch directory.
     let _ = std::fs::remove_dir_all(&work);
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_failed_install_leaves_nothing_in_the_cache() {
+        let cache = tempfile::tempdir().unwrap();
+        let work = cache.path().join(".fetch-test");
+        std::fs::create_dir(&work).unwrap();
+        // A non-empty directory under the pack's name makes the rename fail.
+        std::fs::create_dir_all(cache.path().join("m.pack/x")).unwrap();
+        assert!(install(&work, cache.path(), "m.pack", b"pack").is_err());
+        std::fs::remove_dir_all(&work).unwrap();
+        let mut left: Vec<_> = std::fs::read_dir(cache.path())
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        left.sort();
+        assert_eq!(left, ["m.pack"]);
+
+        std::fs::remove_dir_all(cache.path().join("m.pack")).unwrap();
+        std::fs::create_dir(&work).unwrap();
+        let dest = install(&work, cache.path(), "m.pack", b"pack").unwrap();
+        assert_eq!(std::fs::read(dest).unwrap(), b"pack");
+    }
 }

@@ -414,7 +414,10 @@ impl ServingImage {
         ] {
             let (offsets, data) = (self.section(offsets), self.section(data));
             ensure!(
-                offsets.len() == (self.docs + 1) * 4,
+                self.docs
+                    .checked_add(1)
+                    .and_then(|entries| entries.checked_mul(4))
+                    == Some(offsets.len()),
                 "checkpoint document table size"
             );
             let mut previous = 0u32;
@@ -452,7 +455,7 @@ impl ServingImage {
     fn check_slots(&self) -> Result<()> {
         let table = self.section(Section::Slots);
         ensure!(
-            table.len() == self.slots * SLOT_BYTES,
+            self.slots.checked_mul(SLOT_BYTES) == Some(table.len()),
             "checkpoint slot table size"
         );
         let mut used = 0usize;
@@ -963,5 +966,41 @@ impl LexicalSource for ServingImage {
             return ("", index as usize);
         }
         (self.id(ordinal as usize), index as usize)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A checkpoint of header words `words` (index, value) and empty-but-sized sections.
+    fn checkpoint(words: &[(usize, u64)], lens: [usize; SECTIONS]) -> Backing {
+        let mut header = [0u64; HEADER_WORDS];
+        for &(index, value) in words {
+            header[index] = value;
+        }
+        let mut at = HEADER_LEN as u64;
+        for (i, &len) in lens.iter().enumerate() {
+            header[H_SECTIONS + 2 * i] = at;
+            header[H_SECTIONS + 2 * i + 1] = len as u64;
+            at += len as u64;
+        }
+        let mut bytes = MAGIC.to_vec();
+        header
+            .iter()
+            .for_each(|w| bytes.extend_from_slice(&w.to_le_bytes()));
+        bytes.resize(at as usize, 0);
+        Backing::Owned(bytes)
+    }
+
+    #[test]
+    fn table_sizes_that_overflow_are_errors() {
+        let mut lens = [0; SECTIONS];
+        lens[Section::IdOffsets as usize] = 4;
+        lens[Section::DocOffsets as usize] = 4;
+        assert!(ServingImage::new(checkpoint(&[], lens)).is_ok());
+        // (docs + 1) * 4 and slots * 12 wrap to the 4- and 0-byte tables.
+        assert!(ServingImage::new(checkpoint(&[(H_DOCS, 1 << 62)], lens)).is_err());
+        assert!(ServingImage::new(checkpoint(&[(H_SLOTS, 1 << 62)], lens)).is_err());
     }
 }
