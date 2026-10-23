@@ -200,13 +200,16 @@ fn env_knob<T: std::str::FromStr>(name: &str) -> Option<T> {
     }
 }
 
-/// `HMS_QGRAPH_HUGEPAGES` set to a non-zero value: the large arrays of an index built in this
-/// process (code rows, neighbour lists, scales, residual rows, neighbour blocks) are advised
-/// into transparent huge pages before they are first touched, so each random row fetch costs
-/// one TLB entry per 2 MiB instead of per 4 KiB. Linux only; a no-op elsewhere. Read once.
+/// On unless `HMS_QGRAPH_HUGEPAGES` is set to 0: the large arrays of an index built in this
+/// process or opened onto the heap (code rows, neighbour lists, scales, norm terms, residual
+/// rows, neighbour blocks) are advised into transparent huge pages before they are first
+/// touched, so the random row fetches of a search share one TLB entry per 2 MiB instead of
+/// needing one per 4 KiB (on x86 a page walk per fetch once the index outgrows the TLB's
+/// reach). Linux only; a no-op elsewhere, and where transparent huge pages are disabled.
+/// Read once.
 fn huge_pages() -> bool {
     static HUGE: OnceLock<bool> = OnceLock::new();
-    *HUGE.get_or_init(|| env_knob::<u8>("HMS_QGRAPH_HUGEPAGES").unwrap_or(0) != 0)
+    *HUGE.get_or_init(|| env_knob::<u8>("HMS_QGRAPH_HUGEPAGES").unwrap_or(1) != 0)
 }
 
 /// Asks the kernel to back the 2 MiB-aligned interior of `[ptr, ptr + len)` with transparent
@@ -869,7 +872,10 @@ impl VGraph {
         }
         let new = |o: u32| if reorder { new_id[o as usize] } else { o };
         let half_norms: Vec<f32> = if euclidean {
-            (0..n).map(|v| 0.5 * g.norms[old(v)]).collect()
+            let mut half_norms = Vec::with_capacity(n);
+            huge_capacity(half_norms.as_ptr(), n);
+            half_norms.extend((0..n).map(|v| 0.5 * g.norms[old(v)]));
+            half_norms
         } else {
             Vec::new()
         };
