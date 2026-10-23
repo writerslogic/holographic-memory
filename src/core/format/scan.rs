@@ -260,6 +260,24 @@ const MAX_ID_BYTES: usize = u16::MAX as usize;
 const MAX_DOCUMENT_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_CHUNK_BYTES: u64 = 64 * 1024;
 const MAX_CHUNKS: usize = 4096;
+/// The `$hms_positions` version of whole-document postings.
+const WHOLE_DOCUMENT_POSITIONS: u64 = 2;
+
+/// The longest byte range one stored chunk may cover. Whole-document postings cover the single
+/// lexical chunk of their document, from byte 0, up to the document limit; any other chunk is
+/// bounded by the chunk limit. `None` when whole-document postings break those conditions.
+/// Replay (`validate_mutation`) and this verifier both apply this rule.
+pub(crate) fn chunk_byte_limit(
+    whole_document: bool,
+    chunk_count: usize,
+    start_byte: u64,
+    lexical: bool,
+) -> Option<u64> {
+    if !whole_document {
+        return Some(MAX_CHUNK_BYTES);
+    }
+    (lexical && chunk_count == 1 && start_byte == 0).then_some(MAX_DOCUMENT_BYTES)
+}
 
 /// Live state implied by replaying transactions, computed without the engine. Used for the
 /// summary figures and for the deep cross-check against an opened store.
@@ -452,7 +470,17 @@ fn check_document(body: &Value, dimensions: Option<u64>) -> Result<(), String> {
         let (Some(start), Some(end)) = (start, end) else {
             return Err("chunk byte range is missing".into());
         };
-        if start >= end || end > MAX_DOCUMENT_BYTES || end - start > MAX_CHUNK_BYTES {
+        let whole_document = chunk
+            .get("terms")
+            .and_then(|terms| terms.get("$hms_positions"))
+            .and_then(|positions| positions.get("version"))
+            .and_then(Value::as_u64)
+            == Some(WHOLE_DOCUMENT_POSITIONS);
+        let lexical = chunk.get("vector_state").and_then(Value::as_str) == Some("lexical");
+        let Some(limit) = chunk_byte_limit(whole_document, chunks.len(), start, lexical) else {
+            return Err("whole-document postings require one lexical chunk from byte 0".into());
+        };
+        if start >= end || end > MAX_DOCUMENT_BYTES || end - start > limit {
             return Err("chunk byte range is empty or over the limits".into());
         }
         if let Some(text) = chunk.get("text").and_then(Value::as_str) {
@@ -880,6 +908,40 @@ mod tests {
         assert!(bad(r#"[{"Vector":{"id":"v","vector":{"dim":8,"indices":[8]}}}]"#).is_err());
         assert!(bad(r#"[{"Vector":{"id":"v","vector":{"dim":9,"indices":[1]}}}]"#).is_err());
         assert!(bad(r#"[{"Vector":{"id":"v","vector":{"dim":8,"indices":[7]}}}]"#).is_ok());
+    }
+
+    #[test]
+    fn whole_document_chunks_reach_the_document_limit() {
+        let document = |chunks: &str| {
+            format!(r#"[{{"Document":{{"id":"w","version":"1","chunks":[{chunks}]}}}}]"#)
+        };
+        let chunk = |start: u64, end: u64, state: &str, version: u8| {
+            format!(
+                r#"{{"id":"hms:chunk:w:{start}","start_byte":{start},"end_byte":{end},"vector":{{"dim":8,"indices":[]}},"vector_state":"{state}","terms":{{"$hms_positions":{{"version":{version},"offsets":[0,1],"data":[0]}},"red":1}}}}"#
+            )
+        };
+        let check = |json: String| {
+            check_transaction(json.as_bytes(), Some(8), &mut Replay::default()).is_ok()
+        };
+        let over = MAX_CHUNK_BYTES + 1;
+        assert!(check(document(&chunk(0, over, "lexical", 2))));
+        assert!(check(document(&chunk(0, MAX_DOCUMENT_BYTES, "lexical", 2))));
+        assert!(!check(document(&chunk(
+            0,
+            MAX_DOCUMENT_BYTES + 1,
+            "lexical",
+            2
+        ))));
+        assert!(!check(document(&chunk(1, over, "lexical", 2))));
+        assert!(!check(document(&chunk(0, over, "pending", 2))));
+        assert!(!check(document(&chunk(0, over, "lexical", 1))));
+        assert!(check(document(&chunk(0, MAX_CHUNK_BYTES, "lexical", 1))));
+        let pair = format!(
+            "{},{}",
+            chunk(0, 2, "lexical", 2),
+            chunk(2, 3, "lexical", 2)
+        );
+        assert!(!check(document(&pair)));
     }
 
     #[test]
