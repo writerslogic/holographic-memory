@@ -609,9 +609,8 @@ impl Decomposer {
                 continue;
             }
             let lower = token.to_lowercase();
-            let lemma = match self.lemmatize_verb(&lower) {
-                Some(l) => l,
-                None => continue,
+            let Some(lemma) = self.lemmatize_verb(&lower) else {
+                continue;
             };
 
             // Skip copulas (handled separately)

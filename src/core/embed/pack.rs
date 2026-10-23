@@ -533,8 +533,11 @@ pub(crate) fn build(
 /// Reads a safetensors file as f32 tensors by name (F32, F16 and BF16 are accepted).
 pub(crate) fn read_safetensors(path: &Path) -> Result<NamedTensors> {
     let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
-    ensure!(bytes.len() >= 8, "safetensors file is too short");
-    let hl = u64::from_le_bytes(bytes[..8].try_into().expect("8 bytes")) as usize;
+    let Some(header_len) = bytes.first_chunk::<8>() else {
+        bail!("safetensors file is too short");
+    };
+    // A length past `usize` fails the bound below instead of wrapping into it.
+    let hl = usize::try_from(u64::from_le_bytes(*header_len)).unwrap_or(usize::MAX);
     ensure!(
         hl <= bytes.len() - 8 && hl <= 100 << 20,
         "safetensors header length is invalid"

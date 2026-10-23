@@ -235,7 +235,7 @@ impl Memory {
             check!(valid_id(id), "supersedes holds an invalid fact id");
             push_unique(&mut explicit, id.clone());
         }
-        explicit.sort();
+        explicit.sort_unstable();
         check!(
             explicit.len() <= MAX_LINKS,
             "at most {MAX_LINKS} supersedes"
@@ -371,8 +371,8 @@ impl Memory {
                 for newer in resolution.superseded_by {
                     push_unique(&mut superseded_by, newer);
                 }
-                supersedes.sort();
-                superseded_by.sort();
+                supersedes.sort_unstable();
+                superseded_by.sort_unstable();
             }
         }
         for old in &supersedes {
@@ -544,7 +544,7 @@ impl Memory {
                 .cloned()
                 .collect();
             let mut current = stamp.supersedes.clone();
-            current.sort();
+            current.sort_unstable();
             if supersedes == current && hints == stamp.superseded_by {
                 continue;
             }

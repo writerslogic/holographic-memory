@@ -62,7 +62,7 @@ impl Memory {
             .into_iter()
             .filter(|id| known.contains(id.as_str()))
             .collect();
-        ids.sort();
+        ids.sort_unstable();
         ids.dedup();
         self.forget(&ForgetScope::Ids { ids }, options)
     }
@@ -89,7 +89,7 @@ impl Memory {
                 continue;
             }
             let mut sources = action.sources.clone();
-            sources.sort();
+            sources.sort_unstable();
             sources.dedup();
             let mut summary = action.summary;
             summary.supersedes = Some(sources.clone());
@@ -121,7 +121,7 @@ impl Memory {
                     ingest_time: now_for_plan,
                 })
                 .collect();
-            doomed.sort();
+            doomed.sort_unstable();
             doomed.dedup();
             return Ok(ConsolidationReport {
                 created,
