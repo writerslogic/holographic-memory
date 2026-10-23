@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::{FxHashMap, FxHashSet};
+use crate::core::hash::{FastMap, FastSet};
 
 use super::HmsCore;
 use crate::core::entangled::EntangledHVec;
@@ -35,14 +35,14 @@ impl HmsCore {
         // For large collections, use posting-list candidate generation
         // to avoid O(n²). For small collections, brute-force is fine.
         let use_postings = n > 500;
-        let neighbors: Vec<FxHashSet<usize>> = if use_postings {
-            let mut postings: FxHashMap<u32, Vec<usize>> = FxHashMap::default();
+        let neighbors: Vec<FastSet<usize>> = if use_postings {
+            let mut postings: FastMap<u32, Vec<usize>> = FastMap::default();
             for (i, vec) in all_vectors.iter().enumerate() {
                 for &idx in vec.indices() {
                     postings.entry(idx).or_default().push(i);
                 }
             }
-            let mut nbrs = vec![FxHashSet::default(); n];
+            let mut nbrs = vec![FastSet::default(); n];
             for list in postings.values() {
                 for (pos, &a) in list.iter().enumerate() {
                     for &b in &list[pos + 1..] {
@@ -108,7 +108,7 @@ impl HmsCore {
             let cluster_indices: Vec<usize> = (0..n).filter(|&i| used[i]).collect();
 
             // Vector index -> concept index.
-            let mut assignment: FxHashMap<usize, usize> = FxHashMap::default();
+            let mut assignment: FastMap<usize, usize> = FastMap::default();
             for (ci, concept) in concepts.iter().enumerate() {
                 for mid in &concept.member_ids {
                     if let Some(pos) = all_ids.iter().position(|id| id == mid) {

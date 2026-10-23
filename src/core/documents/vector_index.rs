@@ -46,8 +46,8 @@
 
 use std::{cmp::Ordering, collections::BinaryHeap, sync::Arc};
 
+use crate::core::hash::FastSet;
 use anyhow::{bail, ensure, Context, Result};
-use fxhash::FxHashSet;
 use parking_lot::{Mutex, MutexGuard, RwLock};
 use serde::{Deserialize, Serialize};
 
@@ -356,7 +356,7 @@ pub(crate) struct VectorSnapshot {
     generation: u64,
     dim: usize,
     rows: Vec<RowRef>,
-    members: FxHashSet<usize>,
+    members: FastSet<usize>,
     exact: ExactScan,
     graph: Option<GraphIndex>,
 }

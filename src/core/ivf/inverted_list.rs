@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::core::hash::FastMap;
 use anyhow::Result;
-use fxhash::FxHashMap;
 use parking_lot::RwLock;
 use std::sync::Arc;
 
@@ -14,13 +14,13 @@ pub(crate) struct InvertedListEntry {
 }
 
 pub(crate) struct InvertedLists {
-    lists: Arc<RwLock<FxHashMap<u32, Vec<InvertedListEntry>>>>,
+    lists: Arc<RwLock<FastMap<u32, Vec<InvertedListEntry>>>>,
 }
 
 impl InvertedLists {
     pub fn new() -> Self {
         Self {
-            lists: Arc::new(RwLock::new(FxHashMap::default())),
+            lists: Arc::new(RwLock::new(FastMap::default())),
         }
     }
 

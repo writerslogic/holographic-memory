@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use fxhash::FxHashMap;
+use crate::core::hash::FastMap;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
@@ -13,13 +13,13 @@ pub struct RelationStore {
     /// All relations, indexed by position.
     relations: RwLock<Vec<StoredRelation>>,
     /// source_id -> indices into relations vec.
-    by_source: RwLock<FxHashMap<String, Vec<usize>>>,
+    by_source: RwLock<FastMap<String, Vec<usize>>>,
     /// target_id -> indices into relations vec.
-    by_target: RwLock<FxHashMap<String, Vec<usize>>>,
+    by_target: RwLock<FastMap<String, Vec<usize>>>,
     /// relation_type -> indices into relations vec.
-    by_type: RwLock<FxHashMap<String, Vec<usize>>>,
+    by_type: RwLock<FastMap<String, Vec<usize>>>,
     /// Declared relation types with inference properties.
-    types: RwLock<FxHashMap<String, RelationType>>,
+    types: RwLock<FastMap<String, RelationType>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -62,10 +62,10 @@ impl RelationStore {
     pub fn new() -> Self {
         Self {
             relations: RwLock::new(Vec::new()),
-            by_source: RwLock::new(FxHashMap::default()),
-            by_target: RwLock::new(FxHashMap::default()),
-            by_type: RwLock::new(FxHashMap::default()),
-            types: RwLock::new(FxHashMap::default()),
+            by_source: RwLock::new(FastMap::default()),
+            by_target: RwLock::new(FastMap::default()),
+            by_type: RwLock::new(FastMap::default()),
+            types: RwLock::new(FastMap::default()),
         }
     }
 
@@ -156,7 +156,7 @@ impl RelationStore {
     /// Relations listed under `node_id` in `index` that are live at `at_time`.
     fn valid_relations(
         &self,
-        index: &RwLock<FxHashMap<String, Vec<usize>>>,
+        index: &RwLock<FastMap<String, Vec<usize>>>,
         node_id: &str,
         relation_type: Option<&str>,
         at_time: f64,
@@ -188,7 +188,7 @@ impl RelationStore {
         similarity_fn: &dyn Fn(&str, &str) -> f64,
     ) -> Vec<GraphPath> {
         let mut results = Vec::new();
-        let mut visited = FxHashMap::<String, u32>::default();
+        let mut visited = FastMap::<String, u32>::default();
         visited.insert(start_id.to_string(), 0);
 
         // BFS queue: (node_id, current_path, depth)

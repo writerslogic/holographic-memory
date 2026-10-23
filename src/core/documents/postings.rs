@@ -27,9 +27,9 @@
 //! through [`PostingLists::insert`], so one document at a time and one batch reach the same
 //! lists.
 
-use std::collections::{hash_map::Entry, BTreeMap};
+use std::collections::{hash_map::Entry, BTreeMap, HashMap};
 
-use fxhash::FxHashMap;
+use foldhash::fast::FixedState;
 use rayon::prelude::*;
 
 use super::StoredChunk;
@@ -920,9 +920,9 @@ impl PostingLists {
 }
 
 /// Per-range accumulator: a term's postings in the order its chunks were scanned.
-type RunMap<'a> = FxHashMap<&'a str, Vec<Posting>>;
+type RunMap<'a> = HashMap<&'a str, Vec<Posting>, FixedState>;
 
-/// Merge bucket of a term: FNV-1a over its bytes, deliberately not the maps' Fx hash, so the
+/// Merge bucket of a term: FNV-1a over its bytes, deliberately not the maps' hash, so the
 /// keys that share a bucket do not also share the low hash bits their map probes by.
 fn bucket_of(term: &str, buckets: usize) -> usize {
     let hash = term.bytes().fold(0xcbf2_9ce4_8422_2325u64, |hash, byte| {

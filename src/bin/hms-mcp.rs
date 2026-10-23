@@ -69,8 +69,30 @@ fn project_namespace(root: &Path) -> String {
     };
     format!(
         "{slug}-{:08x}",
-        fxhash::hash64(root.to_string_lossy().as_ref()) as u32
+        path_hash(root.to_string_lossy().as_bytes()) as u32
     )
+}
+
+/// 64-bit Fx hash of the path bytes followed by the 0xff terminator `str::hash` appends.
+/// Namespaces already on disk carry this value, so the algorithm must not change.
+fn path_hash(bytes: &[u8]) -> u64 {
+    const SEED: u64 = 0x517c_c1b7_2722_0a95;
+    let mix = |hash: u64, word: u64| (hash.rotate_left(5) ^ word).wrapping_mul(SEED);
+
+    let (words, rest) = bytes.as_chunks::<8>();
+    let mut hash = 0;
+    for word in words {
+        hash = mix(hash, u64::from_ne_bytes(*word));
+    }
+    let mut rest = rest;
+    if let Some((word, tail)) = rest.split_first_chunk::<4>() {
+        hash = mix(hash, u64::from(u32::from_ne_bytes(*word)));
+        rest = tail;
+    }
+    for &byte in rest {
+        hash = mix(hash, u64::from(byte));
+    }
+    mix(hash, 0xff)
 }
 
 fn default_namespace(cli: &Cli) -> Result<String> {
@@ -271,4 +293,18 @@ async fn main() -> Result<()> {
     // Every admitted request has finished (graceful shutdown), so flushing is safe.
     backend.flush_all();
     result
+}
+
+#[cfg(test)]
+mod namespace_tests {
+    use super::project_namespace;
+    use std::path::Path;
+
+    #[test]
+    fn project_namespace_keeps_existing_hash_suffix() {
+        assert_eq!(
+            project_namespace(Path::new("/Users/x/proj")),
+            "proj-3b82364d"
+        );
+    }
 }

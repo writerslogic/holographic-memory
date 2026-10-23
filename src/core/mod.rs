@@ -55,6 +55,7 @@ pub mod format;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod graph;
 pub mod hardware;
+pub(crate) mod hash;
 pub mod hopfield;
 pub(crate) mod idf;
 #[cfg(not(target_arch = "wasm32"))]

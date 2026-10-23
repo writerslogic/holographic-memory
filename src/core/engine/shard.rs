@@ -5,12 +5,11 @@ use std::collections::BinaryHeap;
 use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
 
 use anyhow::Result;
-use fxhash::{FxHashMap, FxHasher};
 use parking_lot::RwLock;
 use rayon::prelude::*;
-use std::hash::Hasher;
 
 use crate::core::entangled::EntangledHVec;
+use crate::core::hash::{fx64, FastMap};
 use crate::core::hopfield::{hopfield_query, HopfieldConfig};
 use crate::core::index::inverted::{Accumulator, SparseInvertedIndex};
 use crate::core::ivf::IVFIndex;
@@ -22,9 +21,9 @@ use super::router;
 /// Per-shard state: vectors, registry, and indices.
 /// Lock ordering within a shard: vectors -> ivf -> nsg.
 pub(crate) struct Shard {
-    pub vectors: RwLock<FxHashMap<String, EntangledHVec>>,
+    pub vectors: RwLock<FastMap<String, EntangledHVec>>,
     pub registry: RwLock<Vec<String>>,
-    slots: RwLock<FxHashMap<String, u32>>,
+    slots: RwLock<FastMap<String, u32>>,
     free_slots: parking_lot::Mutex<Vec<u32>>,
     pub inverted: RwLock<SparseInvertedIndex>,
     pub accumulator: parking_lot::Mutex<Accumulator>,
@@ -37,9 +36,9 @@ impl Shard {
     pub fn new(dimensions: usize) -> Self {
         let m = (dimensions / 256).max(1);
         Self {
-            vectors: RwLock::new(FxHashMap::default()),
+            vectors: RwLock::new(FastMap::default()),
             registry: RwLock::new(Vec::new()),
-            slots: RwLock::new(FxHashMap::default()),
+            slots: RwLock::new(FastMap::default()),
             free_slots: parking_lot::Mutex::new(Vec::new()),
             inverted: RwLock::new(SparseInvertedIndex::new(dimensions, m)),
             accumulator: parking_lot::Mutex::new(Accumulator::new(1024)),
@@ -241,7 +240,7 @@ impl Shard {
     }
 
     fn rerank_by_exact_similarity(
-        vectors: &FxHashMap<String, EntangledHVec>,
+        vectors: &FastMap<String, EntangledHVec>,
         query_vec: &EntangledHVec,
         candidates: &[RetrievalResult],
     ) -> Vec<RetrievalResult> {
@@ -265,7 +264,7 @@ impl Shard {
     }
 
     fn brute_force_scan(
-        vectors: &FxHashMap<String, EntangledHVec>,
+        vectors: &FastMap<String, EntangledHVec>,
         query_vec: &EntangledHVec,
         k: usize,
     ) -> Vec<RetrievalResult> {
@@ -347,9 +346,7 @@ impl ShardManager {
     }
 
     pub fn shard_for(&self, id: &str) -> usize {
-        let mut hasher = FxHasher::default();
-        hasher.write(id.as_bytes());
-        (hasher.finish() as usize) % self.shards.len()
+        (fx64(id.as_bytes()) as usize) % self.shards.len()
     }
 
     pub fn shard(&self, id: &str) -> &Shard {

@@ -8,7 +8,7 @@
 //! GoalStore is separate from AtomMemory to keep goal vectors distinct from
 //! knowledge atoms.
 
-use fxhash::FxHashMap;
+use crate::core::hash::FastMap;
 use parking_lot::RwLock;
 
 use crate::core::entangled::EntangledHVec;
@@ -33,7 +33,7 @@ impl Goal {
 
 struct GoalStoreInner {
     goals: Vec<Goal>,
-    by_name: FxHashMap<String, usize>,
+    by_name: FastMap<String, usize>,
 }
 
 /// Stores goals separately from the knowledge base.
@@ -52,7 +52,7 @@ impl GoalStore {
         Self {
             inner: RwLock::new(GoalStoreInner {
                 goals: Vec::new(),
-                by_name: FxHashMap::default(),
+                by_name: FastMap::default(),
             }),
         }
     }

@@ -101,7 +101,7 @@ impl MemoryGovernor {
         let all = composite_memory.inner().all_vectors();
         let scan_limit = all.len().min(config.max_scan_size);
         let mut merged = 0;
-        let mut deleted: fxhash::FxHashSet<String> = fxhash::FxHashSet::default();
+        let mut deleted: crate::core::hash::FastSet<String> = crate::core::hash::FastSet::default();
 
         for i in 0..scan_limit {
             let (_, ref id_i, ref vec_i) = all[i];
@@ -151,7 +151,7 @@ impl MemoryGovernor {
         triple_store: &TripleStore,
     ) -> usize {
         let snapshot = triple_store.snapshot();
-        let mut referenced = fxhash::FxHashSet::default();
+        let mut referenced = crate::core::hash::FastSet::default();
         for t in &snapshot {
             referenced.insert(t.subject_id.clone());
             referenced.insert(t.relation_id.clone());

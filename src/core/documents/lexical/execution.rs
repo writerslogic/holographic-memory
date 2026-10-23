@@ -323,7 +323,7 @@ pub(in crate::core::documents) fn count_terms(
     let mut count: usize = matched.iter().map(|word| word.count_ones() as usize).sum();
     if !store.multichunk_documents.is_empty() {
         // A document counts once: each further matching chunk of one is taken back.
-        let mut seen = fxhash::FxHashSet::default();
+        let mut seen = crate::core::hash::FastSet::default();
         for (index, &bits) in matched.iter().enumerate() {
             let mut bits = bits;
             while bits != 0 {

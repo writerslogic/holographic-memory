@@ -8,7 +8,7 @@
 //! bipartite matching by relation profile similarity, validated by
 //! edge-overlap scoring.
 
-use fxhash::{FxHashMap, FxHashSet};
+use crate::core::hash::{FastMap, FastSet};
 
 use crate::core::triple_store::TripleStore;
 
@@ -42,7 +42,7 @@ impl AnalogyDetector {
         }
 
         // Build adjacency list (undirected) for connected components
-        let mut adj: FxHashMap<String, FxHashSet<String>> = FxHashMap::default();
+        let mut adj: FastMap<String, FastSet<String>> = FastMap::default();
         for t in &snapshot {
             adj.entry(t.subject_id.clone())
                 .or_default()
@@ -56,7 +56,7 @@ impl AnalogyDetector {
         let components = find_components(&adj);
 
         // Pre-build subject -> relations map for O(1) lookup
-        let mut subject_relations: FxHashMap<String, FxHashSet<String>> = FxHashMap::default();
+        let mut subject_relations: FastMap<String, FastSet<String>> = FastMap::default();
         for t in &snapshot {
             subject_relations
                 .entry(t.subject_id.clone())
@@ -65,9 +65,9 @@ impl AnalogyDetector {
         }
 
         // For each component, compute its relation signature
-        let mut comp_signatures: Vec<(FxHashSet<String>, FxHashSet<String>)> = Vec::new();
+        let mut comp_signatures: Vec<(FastSet<String>, FastSet<String>)> = Vec::new();
         for comp_entities in &components {
-            let mut relations = FxHashSet::default();
+            let mut relations = FastSet::default();
             for entity in comp_entities {
                 if let Some(rels) = subject_relations.get(entity) {
                     relations.extend(rels.iter().cloned());
@@ -108,15 +108,15 @@ impl AnalogyDetector {
 }
 
 /// Find connected components via BFS.
-fn find_components(adj: &FxHashMap<String, FxHashSet<String>>) -> Vec<FxHashSet<String>> {
-    let mut visited = FxHashSet::default();
+fn find_components(adj: &FastMap<String, FastSet<String>>) -> Vec<FastSet<String>> {
+    let mut visited = FastSet::default();
     let mut components = Vec::new();
 
     for start in adj.keys() {
         if visited.contains(start) {
             continue;
         }
-        let mut component = FxHashSet::default();
+        let mut component = FastSet::default();
         let mut queue = vec![start.clone()];
         while let Some(node) = queue.pop() {
             if !visited.insert(node.clone()) {
@@ -142,8 +142,8 @@ fn entity_profile(
     entity: &str,
     triples: &[crate::core::triple_store::TripleRecord],
     shared_relations: &[String],
-) -> FxHashMap<String, Vec<String>> {
-    let mut profile: FxHashMap<String, Vec<String>> = FxHashMap::default();
+) -> FastMap<String, Vec<String>> {
+    let mut profile: FastMap<String, Vec<String>> = FastMap::default();
     for t in triples {
         if !shared_relations.contains(&t.relation_id) {
             continue;
@@ -168,17 +168,17 @@ fn entity_profile(
 /// sort by descending similarity, then greedily assign non-conflicting pairs.
 /// After mapping, compute edge-overlap scoring for structural validation.
 fn ranked_match(
-    entities_a: &FxHashSet<String>,
-    entities_b: &FxHashSet<String>,
+    entities_a: &FastSet<String>,
+    entities_b: &FastSet<String>,
     shared_relations: &[String],
     triples: &[crate::core::triple_store::TripleRecord],
 ) -> Option<Analogy> {
     // Build profiles for each entity in A and B
-    let profiles_a: Vec<(String, FxHashMap<String, Vec<String>>)> = entities_a
+    let profiles_a: Vec<(String, FastMap<String, Vec<String>>)> = entities_a
         .iter()
         .map(|e| (e.clone(), entity_profile(e, triples, shared_relations)))
         .collect();
-    let profiles_b: Vec<(String, FxHashMap<String, Vec<String>>)> = entities_b
+    let profiles_b: Vec<(String, FastMap<String, Vec<String>>)> = entities_b
         .iter()
         .map(|e| (e.clone(), entity_profile(e, triples, shared_relations)))
         .collect();
@@ -203,8 +203,8 @@ fn ranked_match(
     pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
     // Greedily select best non-conflicting mapping
-    let mut used_a = FxHashSet::default();
-    let mut used_b = FxHashSet::default();
+    let mut used_a = FastSet::default();
+    let mut used_b = FastSet::default();
     let mut mapping = Vec::new();
     let mut total_score = 0.0;
 
@@ -246,22 +246,22 @@ fn compute_edge_overlap(
     triples: &[crate::core::triple_store::TripleRecord],
 ) -> f64 {
     // Build forward and reverse mapping lookups
-    let forward: FxHashMap<&str, &str> = mapping
+    let forward: FastMap<&str, &str> = mapping
         .iter()
         .map(|(a, b)| (a.as_str(), b.as_str()))
         .collect();
-    let reverse: FxHashMap<&str, &str> = mapping
+    let reverse: FastMap<&str, &str> = mapping
         .iter()
         .map(|(a, b)| (b.as_str(), a.as_str()))
         .collect();
 
-    let mapped_entities_a: FxHashSet<&str> = mapping.iter().map(|(a, _)| a.as_str()).collect();
-    let mapped_entities_b: FxHashSet<&str> = mapping.iter().map(|(_, b)| b.as_str()).collect();
+    let mapped_entities_a: FastSet<&str> = mapping.iter().map(|(a, _)| a.as_str()).collect();
+    let mapped_entities_b: FastSet<&str> = mapping.iter().map(|(_, b)| b.as_str()).collect();
 
-    let shared_set: FxHashSet<&str> = shared_relations.iter().map(|s| s.as_str()).collect();
+    let shared_set: FastSet<&str> = shared_relations.iter().map(|s| s.as_str()).collect();
 
     // Build a set of (subject, relation, object) triples in B for fast lookup
-    let triples_b: FxHashSet<(&str, &str, &str)> = triples
+    let triples_b: FastSet<(&str, &str, &str)> = triples
         .iter()
         .filter(|t| {
             shared_set.contains(t.relation_id.as_str())
@@ -277,7 +277,7 @@ fn compute_edge_overlap(
         .collect();
 
     // Build a set of (subject, relation, object) triples in A for fast lookup
-    let triples_a: FxHashSet<(&str, &str, &str)> = triples
+    let triples_a: FastSet<(&str, &str, &str)> = triples
         .iter()
         .filter(|t| {
             shared_set.contains(t.relation_id.as_str())
@@ -335,12 +335,9 @@ fn compute_edge_overlap(
 }
 
 /// Jaccard-like similarity between two entity profiles.
-fn profile_similarity(
-    a: &FxHashMap<String, Vec<String>>,
-    b: &FxHashMap<String, Vec<String>>,
-) -> f64 {
-    let keys_a: FxHashSet<&String> = a.keys().collect();
-    let keys_b: FxHashSet<&String> = b.keys().collect();
+fn profile_similarity(a: &FastMap<String, Vec<String>>, b: &FastMap<String, Vec<String>>) -> f64 {
+    let keys_a: FastSet<&String> = a.keys().collect();
+    let keys_b: FastSet<&String> = b.keys().collect();
     let intersection = keys_a.intersection(&keys_b).count();
     let union = keys_a.union(&keys_b).count();
     if union == 0 {
@@ -390,7 +387,7 @@ mod tests {
 
     #[test]
     fn test_find_components() {
-        let mut adj: FxHashMap<String, FxHashSet<String>> = FxHashMap::default();
+        let mut adj: FastMap<String, FastSet<String>> = FastMap::default();
         adj.entry("a".to_string())
             .or_default()
             .insert("b".to_string());

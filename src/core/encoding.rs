@@ -201,11 +201,11 @@ struct NgramKey {
 struct EncodeState {
     dim: usize,
     /// seed -> sorted indices of `EntangledHVec::new_deterministic(dim, seed)`.
-    terms: fxhash::FxHashMap<u64, Span>,
+    terms: crate::core::hash::FastMap<u64, Span>,
     term_arena: Vec<u32>,
     /// n-gram -> sorted indices of its bound vector (reference lines: permute each character
     /// by its offset, bind left to right).
-    ngrams: fxhash::FxHashMap<NgramKey, Span>,
+    ngrams: crate::core::hash::FastMap<NgramKey, Span>,
     ngram_arena: Vec<u32>,
     chars: Vec<char>,
     /// The multiset of (already permuted) indices of every vector in the level being bundled.
@@ -343,7 +343,7 @@ impl EncodeState {
 /// Sorted indices of `EntangledHVec::new_deterministic(dim, seed)`, memoized in `arena`.
 /// The returned span is valid until the next call, which may clear the arena.
 fn term_span(
-    terms: &mut fxhash::FxHashMap<u64, Span>,
+    terms: &mut crate::core::hash::FastMap<u64, Span>,
     arena: &mut Vec<u32>,
     dim: usize,
     seed: u64,
@@ -587,8 +587,8 @@ fn encode_reference(text: &str, dim: usize, encoder: TextEncoder) -> EntangledHV
 /// different-length texts.
 fn combine_levels(level_bundles: &[EntangledHVec], dim: usize) -> EntangledHVec {
     let active_count = (dim / DEFAULT_RHO_DENOM).max(1);
-    let mut freq: fxhash::FxHashMap<u32, u32> =
-        fxhash::FxHashMap::with_capacity_and_hasher(active_count * 4, Default::default());
+    let mut freq: crate::core::hash::FastMap<u32, u32> =
+        crate::core::hash::FastMap::with_capacity_and_hasher(active_count * 4, Default::default());
     for bundle in level_bundles {
         for &idx in bundle.indices() {
             *freq.entry(idx).or_insert(0) += 1;

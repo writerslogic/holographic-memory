@@ -971,8 +971,8 @@ impl HmsCore {
             })
             .collect();
 
-        let mut seen: fxhash::FxHashMap<String, f64> =
-            fxhash::FxHashMap::with_capacity_and_hasher(k * 2, Default::default());
+        let mut seen: crate::core::hash::FastMap<String, f64> =
+            crate::core::hash::FastMap::with_capacity_and_hasher(k * 2, Default::default());
 
         // BinaryHeap with RetrievalResult's Ord (min-heap by similarity):
         // pop() removes the lowest-similarity item, so we maintain top-k.

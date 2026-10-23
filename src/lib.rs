@@ -2534,13 +2534,9 @@ mod tests {
         );
 
         // Verify results come from at least 2 different shards
-        use fxhash::FxHasher;
-        use std::hash::Hasher;
         let mut shard_ids: std::collections::HashSet<usize> = std::collections::HashSet::new();
         for r in &results {
-            let mut hasher = FxHasher::default();
-            hasher.write(r.id.as_bytes());
-            shard_ids.insert((hasher.finish() as usize) % 4);
+            shard_ids.insert((crate::core::hash::fx64(r.id.as_bytes()) as usize) % 4);
         }
         assert!(
             shard_ids.len() >= 2,

@@ -6,7 +6,7 @@
 //! When N entities share the same relation pattern, bundles their atom
 //! vectors (using `EntangledHVec::bundle`) to create a prototype/category atom.
 
-use fxhash::FxHashMap;
+use crate::core::hash::FastMap;
 
 use crate::core::atom_memory::AtomMemory;
 use crate::core::entangled::EntangledHVec;
@@ -50,8 +50,8 @@ impl AbstractionEngine {
         let snapshot = triple_store.snapshot();
 
         // Group subjects by relation, objects by relation
-        let mut subjects_by_rel: FxHashMap<String, Vec<String>> = FxHashMap::default();
-        let mut objects_by_rel: FxHashMap<String, Vec<String>> = FxHashMap::default();
+        let mut subjects_by_rel: FastMap<String, Vec<String>> = FastMap::default();
+        let mut objects_by_rel: FastMap<String, Vec<String>> = FastMap::default();
 
         for t in &snapshot {
             subjects_by_rel
@@ -121,7 +121,7 @@ impl AbstractionEngine {
             return Some(EntangledHVec::bundle(&vecs));
         }
         // Weighted frequency: count how many vectors contain each index
-        let mut freq: FxHashMap<u32, u32> = FxHashMap::default();
+        let mut freq: FastMap<u32, u32> = FastMap::default();
         for v in &vecs {
             for &idx in v.indices() {
                 *freq.entry(idx).or_insert(0) += 1;
