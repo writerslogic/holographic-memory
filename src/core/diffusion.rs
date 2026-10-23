@@ -276,7 +276,7 @@ mod tests {
         let entry = EntangledHVec::new_deterministic(dim, 0);
 
         let noise = EntangledHVec::new_deterministic(dim, 999);
-        let noisy = EntangledHVec::bundle(&[entry.clone(), noise]);
+        let noisy = EntangledHVec::bundle(&[&entry, &noise]);
 
         let config = DiffusionConfig {
             steps: 5,

@@ -80,7 +80,7 @@ mod tests {
         for (dim, seed) in [(2048usize, 1u64), (16384, 2), (65536, 3)] {
             let a = EntangledHVec::new_deterministic(dim, seed);
             let b = EntangledHVec::new_deterministic(dim, seed + 100);
-            let union = EntangledHVec::bundle(&[a.clone(), b.clone()]);
+            let union = EntangledHVec::bundle(&[&a, &b]);
             let dense = EntangledHVec::new_with_density(dim, 8, seed);
             for (x, y) in [
                 (&a, &b),

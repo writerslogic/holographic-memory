@@ -283,13 +283,13 @@ pub fn sha256_file(path: &Path) -> Result<String> {
 }
 
 /// Hashes everything it reads so the digest always covers exactly the bytes that were parsed.
-struct Tee<R: Read> {
-    inner: R,
+struct Tee {
+    inner: std::io::BufReader<std::fs::File>,
     hash: Sha256,
     read: u64,
 }
 
-impl<R: Read> Tee<R> {
+impl Tee {
     fn exact(&mut self, len: u64, what: &str) -> Result<Vec<u8>> {
         let len = usize::try_from(len).context("section too large")?;
         let mut v = vec![0u8; len];

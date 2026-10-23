@@ -33,7 +33,6 @@ pub mod testing;
 mod tests;
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -136,7 +135,7 @@ pub struct Embedder {
     passage_prefix: String,
     batch_size: usize,
     max_batch_tokens: usize,
-    pool: Arc<rayon::ThreadPool>,
+    pool: rayon::ThreadPool,
     source: PathBuf,
 }
 
@@ -235,7 +234,7 @@ impl Embedder {
             arch,
             encoder,
             tokenizer,
-            pool: Arc::new(pool),
+            pool,
             source: path.to_path_buf(),
         })
     }
