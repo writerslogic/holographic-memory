@@ -119,8 +119,8 @@ pub fn parse_facts(parsed: Option<&serde_json::Map<String, Value>>, n_turns: usi
                 _ => None,
             };
             let turn = i
-                .filter(|&i| i >= 0 && (i as usize) < n_turns)
-                .map(|i| i as usize);
+                .and_then(|i| usize::try_from(i).ok())
+                .filter(|&i| i < n_turns);
             Some((turn, fact.to_string()))
         })
         .collect()
@@ -261,6 +261,20 @@ mod tests {
         assert!(parse_facts(parse_json("no json").as_ref(), 2).is_empty());
         assert!(parse_json("} {").is_none());
         assert!(parse_json("[1] {").is_none());
+    }
+
+    #[test]
+    fn turns_past_the_address_space_are_out_of_range() {
+        // 2^64 + 1 and 2^64 + 2: one-based turns whose low 64 bits name turns 0 and 1.
+        let out = r#"{"facts": [{"turn": "18446744073709551617", "fact": "A"},
+            {"turn": "18446744073709551618", "fact": "B"}, {"turn": "2", "fact": "C"}]}"#;
+        let facts = parse_facts(parse_json(out).as_ref(), 2);
+        let want: Vec<(Option<usize>, String)> = vec![
+            (None, "A".into()),
+            (None, "B".into()),
+            (Some(1), "C".into()),
+        ];
+        assert_eq!(facts, want);
     }
 
     #[test]
