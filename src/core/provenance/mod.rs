@@ -17,6 +17,7 @@ pub mod vc;
 use anyhow::Result;
 use ed25519_dalek::SigningKey;
 use parking_lot::{Mutex, RwLock};
+use rayon::prelude::*;
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -543,30 +544,40 @@ impl ProvenanceManager {
             &batch_root_claim(&merkle_root, leaf_nodes.len())?,
         )?;
 
-        let mut records = Vec::with_capacity(items.len());
-        for (i, (fact_id, _, source_uri)) in items.iter().enumerate() {
-            let content_hash = leaf_hashes[i];
-            let mut record = ProvenanceRecord::now();
-            record.source_uri = Some(source_uri.unwrap_or("").to_string());
-            record.source_hash = Some(content_hash);
-            record.issuer_did = Some(self.issuer_did.clone());
-            record.sequence = self.next_sequence();
-            record.cose_envelope = Some(root_envelope.clone());
-            record.merkle_proof = Some(Self::merkle_proof(&levels, i));
+        // One contiguous block of sequence numbers, then the per-record credential signatures
+        // (most of a batch's cost) in parallel on the rayon pool, collected in item order.
+        let first_sequence = self
+            .logical_clock
+            .fetch_add(items.len() as u64, std::sync::atomic::Ordering::SeqCst);
+        let records = items
+            .par_iter()
+            .enumerate()
+            .map(
+                |(i, (fact_id, _, source_uri))| -> Result<ProvenanceRecord> {
+                    let content_hash = leaf_hashes[i];
+                    let mut record = ProvenanceRecord::now();
+                    record.source_uri = Some(source_uri.unwrap_or("").to_string());
+                    record.source_hash = Some(content_hash);
+                    record.issuer_did = Some(self.issuer_did.clone());
+                    record.sequence = first_sequence + i as u64;
+                    record.cose_envelope = Some(root_envelope.clone());
+                    record.merkle_proof = Some(Self::merkle_proof(&levels, i));
 
-            let credential = vc::create_fact_credential(
-                &self.issuer_did,
-                fact_id,
-                &content_hash,
-                0,
-                *source_uri,
-                None,
-                record.sequence,
-            );
-            let signed_vc = vc::sign_credential(&self.signing_key, credential)?;
-            record.vc_json = Some(serde_json::to_string(&signed_vc)?);
-            records.push(record);
-        }
+                    let credential = vc::create_fact_credential(
+                        &self.issuer_did,
+                        fact_id,
+                        &content_hash,
+                        0,
+                        *source_uri,
+                        None,
+                        record.sequence,
+                    );
+                    let signed_vc = vc::sign_credential(&self.signing_key, credential)?;
+                    record.vc_json = Some(serde_json::to_string(&signed_vc)?);
+                    Ok(record)
+                },
+            )
+            .collect::<Result<Vec<_>>>()?;
         // One append, sync and head signature for the whole batch.
         let _head = match self.log_path {
             Some(ref path) => Some(self.append_chained(
