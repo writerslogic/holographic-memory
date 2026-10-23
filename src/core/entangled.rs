@@ -326,6 +326,12 @@ impl EntangledHVec {
         }
         let dim = vectors[0].borrow().dim;
         let n = vectors.len();
+        let threshold = (n as u32).div_ceil(2);
+        let target_count = (dim / DEFAULT_RHO_DENOM).max(1);
+
+        if let Some(selected) = count_majority(vectors, dim, threshold) {
+            return Self::from_selected(selected, dim, target_count);
+        }
 
         let mut all_indices: Vec<u32> = vectors
             .iter()
@@ -341,7 +347,6 @@ impl EntangledHVec {
         }
 
         // Run-length count on sorted indices, filtering by threshold while counting.
-        let threshold = (n as u32).div_ceil(2);
         let mut selected: Vec<(u32, u32)> = Vec::new();
 
         let mut current = all_indices[0];
@@ -360,9 +365,13 @@ impl EntangledHVec {
         if count >= threshold {
             selected.push((current, count));
         }
+        Self::from_selected(selected, dim, target_count)
+    }
 
-        let target_count = (dim / DEFAULT_RHO_DENOM).max(1);
-
+    /// The bundle of the `(index, count)` pairs that reached the majority threshold, in
+    /// ascending index order: the `target_count` most frequent, ties resolved by the position
+    /// `select_nth_unstable_by` leaves them in, so the order of `selected` must not change.
+    fn from_selected(mut selected: Vec<(u32, u32)>, dim: usize, target_count: usize) -> Self {
         if selected.len() > target_count {
             selected.select_nth_unstable_by(target_count - 1, |a, b| b.1.cmp(&a.1));
             selected.truncate(target_count);
@@ -500,6 +509,74 @@ impl EntangledHVec {
         indices.sort_unstable();
         Self::from_indices(indices, dim)
     }
+}
+
+/// Above this dimension [`EntangledHVec::bundle`] sorts the concatenated indices instead of
+/// counting them in a per-thread histogram of `dim` slots (at most 256 KiB).
+const BUNDLE_COUNTING_MAX_DIM: usize = 1 << 16;
+
+thread_local! {
+    /// [`count_majority`]'s histogram: all-zero between calls.
+    static BUNDLE_COUNTS: std::cell::RefCell<Vec<u32>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// The `(index, count)` pairs of `vectors` whose count reaches `threshold`, in ascending index
+/// order (what the run-length count over the sorted multiset yields), counted in a histogram.
+/// `None` when `dim` is above [`BUNDLE_COUNTING_MAX_DIM`] or an index lies outside `[0, dim)`;
+/// the caller then sorts.
+fn count_majority<V: Borrow<EntangledHVec>>(
+    vectors: &[V],
+    dim: usize,
+    threshold: u32,
+) -> Option<Vec<(u32, u32)>> {
+    if dim > BUNDLE_COUNTING_MAX_DIM {
+        return None;
+    }
+    let mut total = 0usize;
+    for v in vectors {
+        let indices = &v.borrow().indices;
+        // Checked in full rather than by the last index: deserialized vectors need not be
+        // sorted, and an out-of-range index must fall back rather than panic.
+        if indices.iter().any(|&idx| idx as usize >= dim) {
+            return None;
+        }
+        total += indices.len();
+    }
+    BUNDLE_COUNTS.with(|counts| {
+        let mut counts = counts.borrow_mut();
+        if counts.len() < dim {
+            counts.resize(dim, 0);
+        }
+        let counts = &mut counts[..dim];
+        debug_assert!(counts.iter().all(|&c| c == 0));
+        for v in vectors {
+            for &idx in &v.borrow().indices {
+                counts[idx as usize] += 1;
+            }
+        }
+        let mut selected = Vec::new();
+        if total < dim {
+            // Visit only the counted slots, zeroing each so its index is taken once, then
+            // order the few that reached the threshold.
+            for v in vectors {
+                for &idx in &v.borrow().indices {
+                    let n = std::mem::take(&mut counts[idx as usize]);
+                    if n >= threshold {
+                        selected.push((idx, n));
+                    }
+                }
+            }
+            selected.sort_unstable_by_key(|&(idx, _)| idx);
+        } else {
+            for (idx, slot) in counts.iter_mut().enumerate() {
+                let n = std::mem::take(slot);
+                if n >= threshold {
+                    selected.push((idx as u32, n));
+                }
+            }
+        }
+        Some(selected)
+    })
 }
 
 /// Sample from Laplace(0, scale) using inverse CDF.
@@ -813,6 +890,66 @@ mod tests {
             dim: target_dim,
             indices,
         }
+    }
+
+    /// `EntangledHVec::bundle` as it was before the histogram: sort the multiset, count runs.
+    fn bundle_reference(vectors: &[EntangledHVec]) -> Vec<u32> {
+        let dim = vectors[0].dim;
+        let threshold = (vectors.len() as u32).div_ceil(2);
+        let mut all: Vec<u32> = vectors
+            .iter()
+            .flat_map(|v| v.indices.iter().copied())
+            .collect();
+        all.sort_unstable();
+        let mut selected: Vec<(u32, u32)> = Vec::new();
+        for run in all.chunk_by(|a, b| a == b) {
+            if run.len() as u32 >= threshold {
+                selected.push((run[0], run.len() as u32));
+            }
+        }
+        let target = (dim / DEFAULT_RHO_DENOM).max(1);
+        if selected.len() > target {
+            selected.select_nth_unstable_by(target - 1, |a, b| b.1.cmp(&a.1));
+            selected.truncate(target);
+        }
+        let mut indices: Vec<u32> = selected.into_iter().map(|(i, _)| i).collect();
+        indices.sort_unstable();
+        indices
+    }
+
+    #[test]
+    fn bundle_matches_sorting_reference() {
+        // 65535..=65537 straddle BUNDLE_COUNTING_MAX_DIM; small dims with many vectors make
+        // the multiset outgrow dim (dense scan) and force ties at the target count.
+        for dim in [1usize, 2, 255, 256, 257, 1024, 16384, 65535, 65536, 65537] {
+            for n in [1usize, 2, 3, 4, 7, 10, 64] {
+                for overlap in [0u64, 3] {
+                    let vectors: Vec<EntangledHVec> = (0..n as u64)
+                        .map(|i| {
+                            let seed = if overlap > 0 { i % overlap } else { i };
+                            EntangledHVec::new_with_density(dim, 16, seed * 7919 + dim as u64)
+                        })
+                        .collect();
+                    assert_eq!(
+                        EntangledHVec::bundle(&vectors).indices,
+                        bundle_reference(&vectors),
+                        "dim {dim} n {n} overlap {overlap}"
+                    );
+                }
+            }
+        }
+        // An index outside [0, dim) falls back to sorting instead of panicking.
+        let bad = vec![
+            EntangledHVec {
+                dim: 8,
+                indices: vec![1, 9],
+            },
+            EntangledHVec {
+                dim: 8,
+                indices: vec![1, 9],
+            },
+        ];
+        assert_eq!(EntangledHVec::bundle(&bad).indices, bundle_reference(&bad));
     }
 
     #[test]
