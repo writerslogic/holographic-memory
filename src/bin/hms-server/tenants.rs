@@ -614,8 +614,6 @@ impl AppState {
         Ok(status)
     }
 
-    // ---- snapshots -------------------------------------------------------------------------
-
     pub fn create_snapshot(&self, name: &str) -> Result<SnapshotInfo, ApiError> {
         let quiesced = self.quiesce(name)?;
         let tenant = quiesced.tenant.clone();
