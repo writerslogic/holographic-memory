@@ -568,12 +568,15 @@ impl HmsCore {
     pub(super) fn remove_document_from_memory(&self, id: &str, shards: &ShardSet) -> Result<()> {
         // A store served from a checkpoint marks a checkpoint document dead (its text leaves
         // with the checkpoint at the next compaction) without being rebuilt.
-        if let Some(old) = self.documents.write().remove_scrubbed(id)? {
+        // The chunk vectors leave with the document even when zeroing its text fails.
+        let mut store = self.documents.write();
+        let removed = store.remove(id);
+        if let Some(old) = &removed {
             for chunk in &old.chunks {
                 shards.remove(&chunk.id, self.dimensions)?;
             }
         }
-        Ok(())
+        store.scrub_removed(removed).map(drop)
     }
 
     /// One bounded transaction; either every item is logged or none is.

@@ -247,10 +247,12 @@ impl HmsCore {
         append(payload)?;
         let _transaction = transaction.publish();
         let shards = self.shards.write();
-        self.apply_mutations(mutations, &shards)?;
+        // The transaction is durable from here on, so the revision moves even when applying
+        // it reports a failure.
+        let applied = self.apply_mutations(mutations, &shards);
         self.revision
             .fetch_add(1, std::sync::atomic::Ordering::Release);
-        Ok(())
+        applied
     }
 
     pub(super) fn validate_mutation(&self, mutation: &Mutation) -> Result<()> {
@@ -260,12 +262,7 @@ impl HmsCore {
             | Mutation::Composite { id, vector } => {
                 validate_id(id)?;
                 ensure!(
-                    vector.dim == self.dimensions
-                        && vector
-                            .indices()
-                            .last()
-                            .is_none_or(|&i| (i as usize) < self.dimensions)
-                        && vector.indices().windows(2).all(|p| p[0] < p[1]),
+                    valid_vector(vector, self.dimensions),
                     "invalid vector dimensions or indices"
                 );
             }
@@ -287,13 +284,7 @@ impl HmsCore {
                         anyhow::bail!("whole-document postings require one lexical chunk");
                     };
                     ensure!(
-                        chunk.vector.dim == self.dimensions
-                            && chunk
-                                .vector
-                                .indices()
-                                .last()
-                                .is_none_or(|&i| (i as usize) < self.dimensions)
-                            && chunk.vector.indices().windows(2).all(|p| p[0] < p[1])
+                        valid_vector(&chunk.vector, self.dimensions)
                             && chunk.start_byte < chunk.end_byte
                             && chunk.end_byte as usize
                                 <= crate::core::documents::MAX_DOCUMENT_BYTES
@@ -479,6 +470,7 @@ impl HmsCore {
         );
         let mut pending: Vec<Arc<StoredDocument>> = Vec::new();
         let mut pending_ids: HashSet<String> = HashSet::new();
+        let mut failure = None;
         for (mutation, prepared) in batch.mutations.iter().zip(prepared) {
             if !matches!(
                 mutation,
@@ -498,166 +490,182 @@ impl HmsCore {
                 self.install_documents(&mut pending);
                 pending_ids.clear();
             }
-            match (mutation, prepared) {
-                (
-                    Mutation::Vector { id, vector },
-                    Prepared::Vector {
-                        id: key,
-                        vector: value,
-                    },
-                ) => {
-                    self.remove_derived_from_memory(id, shards)?;
-                    if let Some(composites) = &self.composite_memory {
-                        composites.delete(id);
-                    }
-                    if let Some(triples) = &self.triple_store {
-                        triples.remove_composite(id);
-                    }
-                    shards.insert(key, value, self.dimensions)?;
-                    if let Some(atoms) = &self.atom_memory {
-                        atoms.insert_with_vec(id, vector);
-                    }
-                }
-                (Mutation::Atom { id, vector }, _) => {
-                    if let Some(atoms) = &self.atom_memory {
-                        atoms.insert_with_vec(id, vector);
-                    }
-                }
-                (
-                    Mutation::Composite { id, vector },
-                    Prepared::Vector {
-                        id: key,
-                        vector: value,
-                    },
-                ) => {
-                    if let Some(composites) = &self.composite_memory {
-                        composites.insert(id.clone(), vector.clone());
-                    }
-                    shards.insert(key, value, self.dimensions)?;
-                }
-                (Mutation::StoredTriple(record), _) => {
-                    if let Some(triples) = &self.triple_store {
-                        triples.load_triple(record.clone());
-                    }
-                }
-                (
-                    Mutation::Document(_),
-                    Prepared::Document {
-                        document,
-                        previous,
-                        mut stale,
-                        chunks,
-                    },
-                ) => {
-                    if !pending_ids.insert(document.id.clone()) {
-                        self.install_documents(&mut pending);
-                        pending_ids.clear();
-                        pending_ids.insert(document.id.clone());
-                    }
-                    let current = self.documents.read().get(&document.id).cloned();
-                    let unchanged = match (&previous, &current) {
-                        (Some(a), Some(b)) => Arc::ptr_eq(a, b),
-                        (None, None) => true,
-                        _ => false,
-                    };
-                    if !unchanged {
-                        stale = stale_chunks(current.as_deref(), &document);
-                    }
-                    for chunk in &stale {
-                        shards.remove(chunk, self.dimensions)?;
-                    }
-                    for (chunk, vector) in chunks {
-                        shards.insert(chunk, vector, self.dimensions)?;
-                    }
-                    pending.push(document);
-                }
-                (
-                    Mutation::Vector { .. } | Mutation::Composite { .. } | Mutation::Document(_),
-                    _,
-                ) => {
-                    unreachable!("mutation prepared with the wrong variant")
-                }
-                (
-                    Mutation::EncodeDocument {
-                        id,
-                        version,
-                        fingerprint,
-                        vectors,
-                    },
-                    _,
-                ) => {
-                    self.install_deferred_encoding(id, version, *fingerprint, vectors, shards)?;
-                }
-                (Mutation::Derived { id, children }, _) => {
-                    self.derived.write().insert(id.clone(), children.clone());
-                }
-                (Mutation::DeleteDocument { id }, _) => {
-                    self.remove_document_from_memory(id, shards)?;
-                }
-                (Mutation::Delete { id }, _) => {
-                    self.remove_derived_from_memory(id, shards)?;
-                    self.remove_memory_id(id, shards)?;
-                }
-                (
-                    Mutation::Triplet {
-                        id,
-                        subject,
-                        relation,
-                        object,
-                    },
-                    _,
-                ) => {
-                    self.remove_derived_from_memory(id, shards)?;
-                    let atoms = self
-                        .atom_memory
-                        .as_ref()
-                        .expect("validated meaning configuration");
-                    let composites = self
-                        .composite_memory
-                        .as_ref()
-                        .expect("validated meaning configuration");
-                    let triples = self
-                        .triple_store
-                        .as_ref()
-                        .expect("validated meaning configuration");
-                    let roles = self
-                        .role_registry
-                        .as_ref()
-                        .expect("validated meaning configuration");
-                    let (_, s) = atoms.get_or_insert(subject);
-                    let (_, r) = atoms.get_or_insert(relation);
-                    let (_, o) = atoms.get_or_insert(object);
-                    let vector = roles.compose_triple(&s, &r, &o);
-                    composites.insert(id.clone(), vector.clone());
-                    triples.remove_composite(id);
-                    triples.add(subject, relation, object, id);
-                    shards.insert(id.clone(), vector, self.dimensions)?;
-                }
-                (Mutation::Relation(r), _) => {
-                    self.graph
-                        .remove(&r.source_id, &r.relation_type, &r.target_id);
-                    self.graph.add(r);
-                }
-                (
-                    Mutation::RemoveRelation {
-                        source,
-                        relation,
-                        target,
-                    },
-                    _,
-                ) => {
-                    self.graph.remove(source, relation, target);
-                }
-                (Mutation::RelationType(r), _) => self.graph.declare_type(r.clone()),
-                (Mutation::Rule(r), _) => {
-                    self.rule_store
-                        .as_ref()
-                        .expect("validated meaning configuration")
-                        .add_rule(r.clone());
-                }
+            if let Err(error) =
+                self.apply_mutation(mutation, prepared, shards, &mut pending, &mut pending_ids)
+            {
+                failure.get_or_insert(error);
             }
         }
         self.install_documents(&mut pending);
+        failure.map_or(Ok(()), Err)
+    }
+
+    /// Applies one mutation of a batch. The batch is already in the journal, so a failure
+    /// here must not stop the rest of it: [`Self::apply_mutations`] reports the first one
+    /// once every mutation has been applied.
+    fn apply_mutation(
+        &self,
+        mutation: &Mutation,
+        prepared: Prepared,
+        shards: &ShardSet,
+        pending: &mut Vec<Arc<StoredDocument>>,
+        pending_ids: &mut HashSet<String>,
+    ) -> Result<()> {
+        match (mutation, prepared) {
+            (
+                Mutation::Vector { id, vector },
+                Prepared::Vector {
+                    id: key,
+                    vector: value,
+                },
+            ) => {
+                self.remove_derived_from_memory(id, shards)?;
+                if let Some(composites) = &self.composite_memory {
+                    composites.delete(id);
+                }
+                if let Some(triples) = &self.triple_store {
+                    triples.remove_composite(id);
+                }
+                shards.insert(key, value, self.dimensions)?;
+                if let Some(atoms) = &self.atom_memory {
+                    atoms.insert_with_vec(id, vector);
+                }
+            }
+            (Mutation::Atom { id, vector }, _) => {
+                if let Some(atoms) = &self.atom_memory {
+                    atoms.insert_with_vec(id, vector);
+                }
+            }
+            (
+                Mutation::Composite { id, vector },
+                Prepared::Vector {
+                    id: key,
+                    vector: value,
+                },
+            ) => {
+                if let Some(composites) = &self.composite_memory {
+                    composites.insert(id.clone(), vector.clone());
+                }
+                shards.insert(key, value, self.dimensions)?;
+            }
+            (Mutation::StoredTriple(record), _) => {
+                if let Some(triples) = &self.triple_store {
+                    triples.load_triple(record.clone());
+                }
+            }
+            (
+                Mutation::Document(_),
+                Prepared::Document {
+                    document,
+                    previous,
+                    mut stale,
+                    chunks,
+                },
+            ) => {
+                if !pending_ids.insert(document.id.clone()) {
+                    self.install_documents(pending);
+                    pending_ids.clear();
+                    pending_ids.insert(document.id.clone());
+                }
+                let current = self.documents.read().get(&document.id).cloned();
+                let unchanged = match (&previous, &current) {
+                    (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+                    (None, None) => true,
+                    _ => false,
+                };
+                if !unchanged {
+                    stale = stale_chunks(current.as_deref(), &document);
+                }
+                for chunk in &stale {
+                    shards.remove(chunk, self.dimensions)?;
+                }
+                for (chunk, vector) in chunks {
+                    shards.insert(chunk, vector, self.dimensions)?;
+                }
+                pending.push(document);
+            }
+            (Mutation::Vector { .. } | Mutation::Composite { .. } | Mutation::Document(_), _) => {
+                unreachable!("mutation prepared with the wrong variant")
+            }
+            (
+                Mutation::EncodeDocument {
+                    id,
+                    version,
+                    fingerprint,
+                    vectors,
+                },
+                _,
+            ) => {
+                self.install_deferred_encoding(id, version, *fingerprint, vectors, shards)?;
+            }
+            (Mutation::Derived { id, children }, _) => {
+                self.derived.write().insert(id.clone(), children.clone());
+            }
+            (Mutation::DeleteDocument { id }, _) => {
+                self.remove_document_from_memory(id, shards)?;
+            }
+            (Mutation::Delete { id }, _) => {
+                self.remove_derived_from_memory(id, shards)?;
+                self.remove_memory_id(id, shards)?;
+            }
+            (
+                Mutation::Triplet {
+                    id,
+                    subject,
+                    relation,
+                    object,
+                },
+                _,
+            ) => {
+                self.remove_derived_from_memory(id, shards)?;
+                let atoms = self
+                    .atom_memory
+                    .as_ref()
+                    .expect("validated meaning configuration");
+                let composites = self
+                    .composite_memory
+                    .as_ref()
+                    .expect("validated meaning configuration");
+                let triples = self
+                    .triple_store
+                    .as_ref()
+                    .expect("validated meaning configuration");
+                let roles = self
+                    .role_registry
+                    .as_ref()
+                    .expect("validated meaning configuration");
+                let (_, s) = atoms.get_or_insert(subject);
+                let (_, r) = atoms.get_or_insert(relation);
+                let (_, o) = atoms.get_or_insert(object);
+                let vector = roles.compose_triple(&s, &r, &o);
+                composites.insert(id.clone(), vector.clone());
+                triples.remove_composite(id);
+                triples.add(subject, relation, object, id);
+                shards.insert(id.clone(), vector, self.dimensions)?;
+            }
+            (Mutation::Relation(r), _) => {
+                self.graph
+                    .remove(&r.source_id, &r.relation_type, &r.target_id);
+                self.graph.add(r);
+            }
+            (
+                Mutation::RemoveRelation {
+                    source,
+                    relation,
+                    target,
+                },
+                _,
+            ) => {
+                self.graph.remove(source, relation, target);
+            }
+            (Mutation::RelationType(r), _) => self.graph.declare_type(r.clone()),
+            (Mutation::Rule(r), _) => {
+                self.rule_store
+                    .as_ref()
+                    .expect("validated meaning configuration")
+                    .add_rule(r.clone());
+            }
+        }
         Ok(())
     }
 
@@ -825,6 +833,62 @@ mod tests {
         assert!(
             core.apply_mutations(&batch, &core.shards.read()).is_err(),
             "a batch installs once"
+        );
+        Ok(())
+    }
+
+    /// A delete whose text scrub fails after the transaction is journaled still has to reach
+    /// the journaled state: the document's chunk vectors go, the rest of the batch applies and
+    /// the revision moves, while the scrub failure is reported.
+    #[test]
+    fn failed_scrub_still_applies_the_journaled_batch() -> Result<()> {
+        let directory = tempfile::tempdir()?;
+        let core = HmsCore::new(
+            1024,
+            Some(directory.path().display().to_string()),
+            Some(config(false)),
+        )?;
+        core.memorize_documents(vec![document("a", "old"), document("b", "old")])?;
+        assert_eq!(core.shards.read().count(), 2);
+        {
+            // Point a's text past the end of the segment so scrubbing it fails.
+            let mut store = core.documents.write();
+            let mut broken = StoredDocument::clone(&store.get("a").cloned().expect("stored"));
+            assert!(
+                broken.chunks[0].text_at.is_some(),
+                "text kept in the segment"
+            );
+            broken.chunks[0].text_at = Some((u64::MAX / 2, 4));
+            store.insert("a".into(), broken);
+        }
+        let revision = core.revision.load(std::sync::atomic::Ordering::Acquire);
+        let deleted = core.commit(&[
+            Mutation::DeleteDocument { id: "a".into() },
+            Mutation::DeleteDocument { id: "b".into() },
+        ]);
+        assert!(deleted.is_err(), "the scrub failure is reported");
+        assert!(core.documents.read().get("a").is_none());
+        assert!(
+            core.documents.read().get("b").is_none(),
+            "the batch went on"
+        );
+        assert_eq!(core.shards.read().count(), 0, "no orphaned chunk vectors");
+        assert_eq!(
+            core.revision.load(std::sync::atomic::Ordering::Acquire),
+            revision + 1
+        );
+        drop(core);
+        let reopened = HmsCore::new(
+            1024,
+            Some(directory.path().display().to_string()),
+            Some(config(false)),
+        )?;
+        assert!(reopened.documents.read().get("a").is_none());
+        assert!(reopened.documents.read().get("b").is_none());
+        assert_eq!(
+            reopened.shards.read().count(),
+            0,
+            "replay reaches the same state"
         );
         Ok(())
     }
