@@ -360,10 +360,8 @@ impl PersistentArena {
             // A zero header or the end marker means no more frames.
             if raw_len == 0 && comp_len == 0 {
                 if is_log_end(&data[offset..offset + HEADER_SIZE]) {
-                    // A torn first append can persist its end marker without its header.
-                    if version == 0
-                        && Self::committed_after(data, offset + HEADER_SIZE, false).is_some()
-                    {
+                    // A torn append can persist its trailing marker without its header.
+                    if Self::committed_after(data, offset + HEADER_SIZE, false).is_some() {
                         return fail(offset, max_version);
                     }
                     break;

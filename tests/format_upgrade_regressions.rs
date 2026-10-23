@@ -102,3 +102,47 @@ fn verify_agrees_with_replay_on_missing_fields() -> anyhow::Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn recoverable_current_tenant_does_not_block_data_dir_upgrade() -> anyhow::Result<()> {
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("source");
+    let output = root.path().join("output");
+    let fixtures = goldens()?;
+    fixtures
+        .iter()
+        .find(|g| g.name == "v3-fixed64")
+        .unwrap()
+        .unpack(&source.join("tenants/6f6c64"))?;
+    let current = fixtures.iter().find(|g| g.name == "v4-plain").unwrap();
+    current.unpack(&source.join("tenants/6e6577"))?;
+    let segment = source.join("tenants/6e6577/vectors_data.bin/seg_0.bin");
+    let mut bytes = std::fs::read(&segment)?;
+    let mark = 0x454e444cu32.to_le_bytes();
+    let at = bytes
+        .windows(16)
+        .rposition(|header| header[..12].iter().all(|&b| b == 0) && header[12..] == mark)
+        .expect("end marker");
+    bytes[at..at + 16].fill(0xAB);
+    std::fs::write(&segment, &bytes)?;
+    let before = verify_path(&source, &VerifyOptions::default())?;
+    assert_eq!(before.verdict, Verdict::Recoverable);
+    let report = upgrade_store(&source, &output, false)?;
+    let verification = report.verification.unwrap();
+    assert_eq!(verification.verdict, Verdict::Recoverable);
+    assert_eq!(verification.frames, before.frames);
+    let tenant = output.join("tenants/6e6577");
+    assert!(tenant.join("vectors_data.bin/seg_0.bin").is_file());
+    let core = holographic_memory::HmsCore::new(
+        current.dimensions(),
+        Some(tenant.display().to_string()),
+        Some(current.config()?),
+    )?;
+    drop(core);
+    assert_eq!(
+        verify_path(&output, &VerifyOptions::default())?.verdict,
+        Verdict::Ok
+    );
+    assert_eq!(std::fs::read(segment)?, bytes);
+    Ok(())
+}
