@@ -19,7 +19,11 @@ pub(super) struct Delta {
     first_child: Vec<u32>,
     next_sibling: Vec<u32>,
     ids: Vec<u32>,
+    /// The slot of every live id. Changed only by `insert`, `insert_batch` and `remove`,
+    /// which keep `alive` in step.
     pub live: HashMap<u32, usize>,
+    /// Per slot: `live` maps its id to it, so a search checks liveness without a hash.
+    alive: Vec<bool>,
 }
 
 impl Delta {
@@ -37,6 +41,23 @@ impl Delta {
             .live
             .iter()
             .all(|(id, &slot)| self.ids.get(slot) == Some(id)));
+        assert_eq!(self.alive.len(), self.ids.len());
+        for (slot, (id, &alive)) in self.ids.iter().zip(&self.alive).enumerate() {
+            assert_eq!(alive, self.live.get(id) == Some(&slot), "slot {slot}");
+        }
+    }
+
+    /// Marks `id` deleted; its slot stays allocated.
+    pub fn remove(&mut self, id: u32) {
+        if let Some(slot) = self.live.remove(&id) {
+            self.alive[slot] = false;
+        }
+    }
+
+    fn set_live(&mut self, id: u32, slot: usize) {
+        if let Some(old) = self.live.insert(id, slot) {
+            self.alive[old] = false;
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -58,6 +79,7 @@ impl Delta {
     pub fn insert(&mut self, id: u32, row: &[f32], params: &BuildParams) {
         let slot = self.ids.len();
         self.ids.push(id);
+        self.alive.push(true);
         self.vectors.extend_from_slice(row);
         if params.metric == Metric::Euclidean {
             self.norms.push(dot(row, row));
@@ -97,7 +119,7 @@ impl Delta {
             }
             self.edges.set(slot, &neighbors);
         }
-        self.live.insert(id, slot);
+        self.set_live(id, slot);
     }
 
     /// Inserts prepared rows (row-major) under `ids`, in parallel: the build's batched
@@ -113,6 +135,7 @@ impl Delta {
             return;
         }
         self.ids.extend_from_slice(ids);
+        self.alive.resize(self.ids.len(), true);
         self.vectors.extend_from_slice(rows);
         if params.metric == Metric::Euclidean {
             self.norms.extend(rows.chunks_exact(dim).map(|r| dot(r, r)));
@@ -149,7 +172,7 @@ impl Delta {
             self.first_child[parent] = slot;
         }
         for (i, &id) in ids.iter().enumerate() {
-            self.live.insert(id, first + i);
+            self.set_live(id, first + i);
         }
     }
 
@@ -235,10 +258,7 @@ impl Delta {
         }
         let found = pool
             .into_iter()
-            .filter_map(|(d, slot, _)| {
-                let id = self.ids[slot];
-                (self.live.get(&id) == Some(&slot)).then_some((d, id))
-            })
+            .filter_map(|(d, slot, _)| self.alive[slot].then_some((d, self.ids[slot])))
             .collect();
         (found, visits)
     }
@@ -378,7 +398,7 @@ mod tests {
                 delta.insert_batch(&ids, &rows[..32 * dim], &params);
                 delta.insert(100, &rows[32 * dim..], &params);
                 delta.insert(0, &rows[..dim], &params);
-                delta.live.remove(&1);
+                delta.remove(1);
                 let zero = vec![0.0; dim];
                 let queries = rows
                     .chunks_exact(dim)

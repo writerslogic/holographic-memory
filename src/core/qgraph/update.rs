@@ -242,7 +242,7 @@ impl State {
     fn apply(&mut self, op: &Operation) {
         let id = op.id();
         if !matches!(op, Operation::Insert(..)) {
-            self.delta.live.remove(&id);
+            self.delta.remove(id);
             if let Some(slot) = self.base_slot(id) {
                 self.tombstones[slot / 64] |= 1 << (slot % 64);
                 self.deleted += 1;
