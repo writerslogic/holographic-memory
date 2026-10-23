@@ -18,7 +18,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::config::Cli;
 use crate::error::ApiError;
 use crate::request::blocking;
-use crate::tenants::AppState;
+use crate::tenants::{tenant_from_hex, tenant_hex, AppState};
 use crate::{auth, routes};
 
 fn state_with(directory: &std::path::Path, limit: usize, extra: &[&str]) -> Arc<AppState> {
@@ -450,4 +450,22 @@ async fn search_returns_top_k_distinct_documents_from_multi_chunk_documents() {
         assert_eq!(distinct.len(), ids.len(), "top_k {top_k}: {ids:?}");
     }
     server.abort();
+}
+
+#[test]
+fn only_canonical_hex_names_decode_to_tenants() {
+    let canonical = tenant_hex("Acme_1");
+    for (name, expected) in [
+        (canonical.as_str(), Some("Acme_1")),
+        ("41", Some("A")),
+        ("", None),
+        ("4a", Some("J")),
+        ("4A", None),
+        ("414", None),
+        ("4g", None),
+        ("2f", None),
+        ("1é", None),
+    ] {
+        assert_eq!(tenant_from_hex(name).as_deref(), expected, "{name:?}");
+    }
 }

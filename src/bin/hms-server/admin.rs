@@ -20,7 +20,7 @@ use tokio::io::AsyncWriteExt;
 use crate::auth::Scope;
 use crate::error::{ApiError, ApiResult};
 use crate::request::*;
-use crate::tenants::{copy_store, tenant_hex, valid_tenant, AppState};
+use crate::tenants::{copy_store, tenant_from_hex, AppState};
 use crate::types::*;
 
 pub async fn create_snapshot(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
@@ -369,14 +369,7 @@ pub async fn list_tenants(State(state): State<Arc<AppState>>, req: Request) -> A
     if let Ok(entries) = std::fs::read_dir(&root) {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().into_owned();
-            let bytes: Option<Vec<u8>> = (0..name.len() / 2)
-                .map(|i| u8::from_str_radix(&name[2 * i..2 * i + 2], 16).ok())
-                .collect();
-            if let Some(decoded) = bytes.and_then(|b| String::from_utf8(b).ok()) {
-                if valid_tenant(&decoded) && tenant_hex(&decoded) == name {
-                    tenants.push(decoded);
-                }
-            }
+            tenants.extend(tenant_from_hex(&name));
         }
     }
     tenants.sort();

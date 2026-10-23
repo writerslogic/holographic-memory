@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use axum::http::{header, HeaderMap, StatusCode};
 use clap::Args;
 use parking_lot::RwLock;
@@ -210,11 +210,21 @@ fn parse_digest(hash: &str) -> Result<[u8; 32]> {
         .strip_prefix("sha256:")
         .context("hash must start with \"sha256:\"")?;
     ensure!(hex.len() == 64, "hash must be 64 hex digits");
-    let mut out = [0u8; 32];
-    for (i, byte) in out.iter_mut().enumerate() {
-        *byte = u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).context("hash is not hex")?;
-    }
-    Ok(out)
+    let bytes = unhex(hex).context("hash is not hex")?;
+    bytes
+        .try_into()
+        .map_err(|_| anyhow!("hash must be 64 hex digits"))
+}
+
+/// Decode pairs of hex digits; `None` for any pair that is not two hex digits. A trailing odd
+/// digit is ignored.
+pub fn unhex(text: &str) -> Option<Vec<u8>> {
+    text.as_bytes()
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).ok()?, 16).ok())
+        .collect()
 }
 
 fn hex(bytes: &[u8]) -> String {
