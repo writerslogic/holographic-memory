@@ -835,8 +835,15 @@ impl Rows<'_> {
             let mut d = Vec::new();
             self.d2_stream(v as u32, &ids, &mut d);
             let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
-            c.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
-            c.into_iter().take(r - have.len()).map(|x| x.1).collect()
+            // The ids are distinct, so the order is total and the `k` nearest, sorted, are
+            // the first `k` of a full sort.
+            let order = |a: &(f32, u32), b: &(f32, u32)| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1));
+            if c.len() > k {
+                c.select_nth_unstable_by(k - 1, order);
+                c.truncate(k);
+            }
+            c.sort_by(order);
+            c.into_iter().map(|x| x.1).collect()
         });
     }
 }
