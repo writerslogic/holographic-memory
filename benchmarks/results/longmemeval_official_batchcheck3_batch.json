@@ -1,0 +1,86 @@
+{
+ "schema_version": 1,
+ "split": "dev",
+ "heldout_evaluated": 0,
+ "tag": "batchcheck3_batch",
+ "reader": {
+  "model": "gpt-4o-2024-08-06",
+  "snapshots_observed": [
+   "gpt-4o-2024-08-06"
+  ],
+  "protocol": "official run_generation.py flat-turn, json history, cot (con), temperature 0, max_tokens 800, topk_context 10"
+ },
+ "judge": {
+  "model": "gpt-4o-2024-08-06",
+  "snapshots_observed": [
+   "gpt-4o-2024-08-06"
+  ],
+  "protocol": "official evaluate_qa.py get_anscheck_prompt, temperature 0, max_tokens 10"
+ },
+ "retrieval": {
+  "ranking": "reference pipeline turn ranking over cached Qwen3 scores (longmemeval_config.json, the native StageParams defaults)",
+  "subquery_weight": 0.0,
+  "round_key_weight": 0.0,
+  "topk_context": 10
+ },
+ "repeat": 11,
+ "api": "batch",
+ "official_commit": "9e0b455f4ef0",
+ "evaluate_qa_sha256": "ecce9c4c79dc89d99534ac17b383a5cbb5b9f0c69ee98adaf0684742e3d95251",
+ "source_sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+ "summary": {
+  "n": 3,
+  "correct": 3,
+  "accuracy": 1.0,
+  "by_type": {
+   "knowledge-update": {
+    "n": 1,
+    "correct": 1
+   },
+   "multi-session": {
+    "n": 1,
+    "correct": 1
+   },
+   "single-session-user": {
+    "n": 1,
+    "correct": 1
+   }
+  },
+  "abstention": {
+   "n": 0,
+   "correct": 0
+  }
+ },
+ "rows": [
+  {
+   "qid": "0100672e",
+   "qtype": "multi-session",
+   "hypothesis": "To determine how much you spent on each coffee mug for your coworkers, we need to extract the relevant information from the chat history and then perform the necessary calculations.\n\n### Step 1: Extract Relevant Information\n1. In **Session 4**, you mentioned spending $60 on coffee mugs for your coworkers.\n2. In **Session 9**, you mentioned purchasing 5 coffee mugs with funny quotes related to your profession, one for each coworker.\n\n### Step 2: Calculate the Cost per Coffee Mug\n- You spent a total of $60 on 5 coffee mugs.\n- To find the cost per mug, divide the total cost by the number of mugs:\n\n\\[\n\\text{Cost per mug} = \\frac{\\text{Total cost}}{\\text{Number of mugs}} = \\frac{60}{5} = 12\n\\]\n\n### Conclusion\nYou spent $12 on each coffee mug for your coworkers.",
+   "reader_model": "gpt-4o-2024-08-06",
+   "reader_prompt_tokens": 5363,
+   "judge_model": "gpt-4o-2024-08-06",
+   "judge_reply": "Yes.",
+   "correct": true
+  },
+  {
+   "qid": "06db6396",
+   "qtype": "knowledge-update",
+   "hypothesis": "To determine how many projects you have completed since starting painting classes, let's extract the relevant information from the chat history:\n\n1. **Session 1**: You mentioned, \"I've completed 4 projects since starting painting classes.\"\n2. **Session 7**: You stated, \"I just finished my 5th project since starting painting classes.\"\n\nNow, let's reason over this information:\n\n- In Session 1, you had completed 4 projects.\n- By Session 7, you mentioned completing your 5th project.\n\nTherefore, as of the latest information provided in Session 7, you have completed a total of 5 projects since starting your painting classes.",
+   "reader_model": "gpt-4o-2024-08-06",
+   "reader_prompt_tokens": 6757,
+   "judge_model": "gpt-4o-2024-08-06",
+   "judge_reply": "Yes.",
+   "correct": true
+  },
+  {
+   "qid": "0862e8bf",
+   "qtype": "single-session-user",
+   "hypothesis": "To determine the name of your cat, I will extract the relevant information from the provided chat history and then reason over it to find the answer.\n\n1. **Extract Relevant Information:**\n   - In **Session 2**, you mentioned: \"By the way, my cat's name is Luna, and she's been such a sweetie throughout all the changes we've been making to her environment.\"\n\n2. **Reasoning:**\n   - From the extracted information in Session 2, it is clear that you explicitly stated your cat's name as \"Luna.\"\n\nTherefore, the name of your cat is Luna.",
+   "reader_model": "gpt-4o-2024-08-06",
+   "reader_prompt_tokens": 4787,
+   "judge_model": "gpt-4o-2024-08-06",
+   "judge_reply": "Yes.",
+   "correct": true
+  }
+ ]
+}

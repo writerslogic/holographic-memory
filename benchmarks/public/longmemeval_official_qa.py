@@ -19,6 +19,12 @@ with the tuned configuration that the native StageParams defaults mirror. Exact 
 by a hash of the turn id, never by the id text (official ids encode evidence labels). The source file
 is parsed once and filtered to the 100 frozen dev ids before any ranking or prompt is built; held-out
 questions never reach retrieval, the reader or the judge.
+
+`--batch` sends the same request bodies through the OpenAI Batch API (24h window, half price): the
+reader stage first, then the judge stage over the reader texts. Each stage persists its input file,
+batch id and custom-id to cache-key map before polling, so rerunning the same command resumes it;
+results land in the same prompt-hash call cache the synchronous path reads. Failed or missing lines
+are reported and stop the run unless `--sync-retry` sends them synchronously at the full rate.
 """
 
 import argparse
@@ -28,6 +34,7 @@ import importlib.util
 import json
 import sys
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -50,6 +57,12 @@ JUDGE_MODEL = "gpt-4o-2024-08-06"
 READERS = {"gpt-4o-2024-08-06", "gpt-4o-mini-2024-07-18"}
 # USD per token: input, cached input, output.
 PRICES = {"gpt-4o-2024-08-06": (2.5e-6, 1.25e-6, 10e-6), "gpt-4o-mini-2024-07-18": (0.15e-6, 0.075e-6, 0.6e-6)}
+# Batch API: half the input and output rates. Cached input tokens are billed here at the batch input
+# rate, an upper bound that does not depend on whether a batch discount stacks with prompt caching.
+BATCH_PRICES = {model: (pin / 2, pin / 2, pout / 2) for model, (pin, _, pout) in PRICES.items()}
+BATCH_STATE = Path.home() / ".cache/hms-bench/longmemeval_official_batches"
+BATCH_DONE = {"completed", "failed", "expired", "cancelled"}
+CHAT_URL = "/v1/chat/completions"
 GEN_LENGTH = 800
 MAX_RETRIEVAL_TOKENS = 128000 - GEN_LENGTH - 1000
 TEMPLATE = ("I will give you several history chats between you and a user. Please answer the question based on the "
@@ -164,22 +177,51 @@ def _ledger() -> dict:
             "total_usd": 0.0, "calls": 0, "by_model_usd": {}, "by_run_usd": {}}
 
 
-def call(client, run: str, model: str, prompt: str, max_tokens: int, repeat: int = 0) -> dict:
-    request = {"model": model, "messages": [{"role": "user", "content": prompt}], "n": 1,
-               "temperature": 0, "max_tokens": max_tokens}
+def request_body(model: str, prompt: str, max_tokens: int) -> dict:
+    """The chat completion request both the synchronous and the batch path send."""
+    return {"model": model, "messages": [{"role": "user", "content": prompt}], "n": 1,
+            "temperature": 0, "max_tokens": max_tokens}
+
+
+def cache_key(request: dict, repeat: int = 0) -> str:
     # A repeat index asks for a fresh sample of the same request (temperature 0 is not deterministic).
-    key = sha_bytes(json.dumps({**request, **({"repeat": repeat} if repeat else {})}, sort_keys=True).encode())
-    path = CACHE / f"{key}.json"
+    return sha_bytes(json.dumps({**request, **({"repeat": repeat} if repeat else {})}, sort_keys=True).encode())
+
+
+def _reserve(usd: float) -> None:
+    with LOCK:
+        ledger = _ledger()
+        if ledger["total_usd"] + usd > SPEND_CAP_USD:
+            raise RuntimeError("spend cap reached")
+        ledger["total_usd"] += usd
+        LEDGER.write_text(json.dumps(ledger, indent=1, sort_keys=True) + "\n")
+
+
+def _settle(run: str, model: str, reserve: float, cost: float, calls: int, batch: dict | None = None) -> None:
+    with LOCK:
+        ledger = _ledger()
+        ledger["total_usd"] += cost - reserve
+        ledger["calls"] += calls
+        ledger["by_model_usd"][model] = ledger["by_model_usd"].get(model, 0.0) + cost
+        ledger["by_run_usd"][run] = ledger["by_run_usd"].get(run, 0.0) + cost
+        if batch is not None:
+            ledger.setdefault("batches", []).append(batch)
+        LEDGER.write_text(json.dumps(ledger, indent=1, sort_keys=True) + "\n")
+
+
+def _worst_case(prices: dict, model: str, prompt: str, max_tokens: int) -> float:
+    price_in, _, price_out = prices[model]
+    return (len(ENC.encode(prompt)) + 16) * price_in + max_tokens * price_out
+
+
+def call(client, run: str, model: str, prompt: str, max_tokens: int, repeat: int = 0) -> dict:
+    request = request_body(model, prompt, max_tokens)
+    path = CACHE / f"{cache_key(request, repeat)}.json"
     if path.exists():
         return json.loads(path.read_text())
     price_in, price_cached, price_out = PRICES[model]
-    reserve = (len(ENC.encode(prompt)) + 16) * price_in + max_tokens * price_out
-    with LOCK:
-        ledger = _ledger()
-        if ledger["total_usd"] + reserve > SPEND_CAP_USD:
-            raise RuntimeError("spend cap reached")
-        ledger["total_usd"] += reserve
-        LEDGER.write_text(json.dumps(ledger, indent=1, sort_keys=True) + "\n")
+    reserve = _worst_case(PRICES, model, prompt, max_tokens)
+    _reserve(reserve)
     cost = reserve
     try:
         for attempt in range(4):
@@ -197,16 +239,144 @@ def call(client, run: str, model: str, prompt: str, max_tokens: int, repeat: int
                "prompt_tokens": usage.prompt_tokens, "cached_tokens": cached,
                "completion_tokens": usage.completion_tokens, "cost_usd": cost}
     finally:
-        with LOCK:
-            ledger = _ledger()
-            ledger["total_usd"] += cost - reserve
-            ledger["calls"] += 1
-            ledger["by_model_usd"][model] = ledger["by_model_usd"].get(model, 0.0) + cost
-            ledger["by_run_usd"][run] = ledger["by_run_usd"].get(run, 0.0) + cost
-            LEDGER.write_text(json.dumps(ledger, indent=1, sort_keys=True) + "\n")
+        _settle(run, model, reserve, cost, 1)
     CACHE.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out))
     return out
+
+
+def batch_lines(model: str, prompts: dict[str, str], max_tokens: int, repeat: int) -> tuple[list[str], dict[str, str]]:
+    """JSONL request lines for the uncached requests and their custom-id to cache-key map."""
+    pending = {}
+    for prompt in prompts.values():
+        key = cache_key(request_body(model, prompt, max_tokens), repeat)
+        if not (CACHE / f"{key}.json").exists():
+            pending[key] = prompt
+    ids = {f"r{i:04d}": key for i, key in enumerate(sorted(pending))}
+    lines = [json.dumps({"custom_id": cid, "method": "POST", "url": CHAT_URL,
+                         "body": request_body(model, pending[key], max_tokens)}) for cid, key in ids.items()]
+    return lines, ids
+
+
+def _write_state(path: Path, state: dict) -> None:
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, indent=1) + "\n")
+    tmp.replace(path)
+
+
+def _line_result(model: str, record: dict) -> tuple[dict | None, object]:
+    """(cache entry, None) for a successful output line, else (None, its error)."""
+    response = record.get("response") or {}
+    if record.get("error") or response.get("status_code") != 200:
+        return None, record.get("error") or (response.get("body") or {}).get("error") or response.get("status_code")
+    body = response["body"]
+    usage = body["usage"]
+    cached = (usage.get("prompt_tokens_details") or {}).get("cached_tokens", 0) or 0
+    price_in, price_cached, price_out = BATCH_PRICES[model]
+    cost = (usage["prompt_tokens"] - cached) * price_in + cached * price_cached + usage["completion_tokens"] * price_out
+    return {"text": body["choices"][0]["message"]["content"].strip(), "model": body["model"],
+            "prompt_tokens": usage["prompt_tokens"], "cached_tokens": cached,
+            "completion_tokens": usage["completion_tokens"], "cost_usd": cost, "batch": True}, None
+
+
+def _submit(client, state_path: Path, state: dict, data: bytes) -> dict:
+    """Upload the input file and create the batch, persisting each id as soon as it exists."""
+    if not state.get("input_file_id"):
+        upload = client.files.create(file=(state_path.stem + ".jsonl", data, "application/jsonl"), purpose="batch")
+        state["input_file_id"] = upload.id
+        _write_state(state_path, state)
+    batch = client.batches.create(input_file_id=state["input_file_id"], endpoint=CHAT_URL, completion_window="24h",
+                                  metadata={"run": state["run"], "stage": state["stage"]})
+    state["batch_id"] = batch.id
+    _write_state(state_path, state)
+    return state
+
+
+def _poll(client, batch_id: str, max_wait: float):
+    """Retrieve the batch with bounded backoff until it reaches a final status or the wait runs out."""
+    deadline, delay = time.monotonic() + max_wait, 15.0
+    while True:
+        batch = client.batches.retrieve(batch_id)
+        counts = batch.request_counts
+        print(json.dumps({"batch_id": batch_id, "status": batch.status,
+                          "completed": counts.completed if counts else None,
+                          "failed": counts.failed if counts else None,
+                          "total": counts.total if counts else None}), flush=True)
+        if batch.status in BATCH_DONE:
+            return batch
+        if time.monotonic() + delay > deadline:
+            raise SystemExit(f"batch {batch_id} is still {batch.status} after {max_wait:.0f}s; "
+                             "rerun the same command to resume it")
+        time.sleep(delay)
+        delay = min(delay * 2, 300.0)
+
+
+def batch_stage(client, run: str, stage: str, model: str, prompts: dict[str, str], max_tokens: int,
+                repeat: int, max_wait: float, sync_retry: bool) -> dict[str, dict]:
+    """Answer every prompt through one batch and the call cache; returns cache entries keyed like `prompts`."""
+    lines, ids = batch_lines(model, prompts, max_tokens, repeat)
+    if lines:
+        data = ("\n".join(lines) + "\n").encode()
+        BATCH_STATE.mkdir(parents=True, exist_ok=True)
+        state_path = BATCH_STATE / f"{stage}_{sha_bytes(data)[:20]}.json"
+        state = json.loads(state_path.read_text()) if state_path.exists() else None
+        if state is None:
+            state_path.with_suffix(".jsonl").write_bytes(data)
+            reserve = sum(_worst_case(BATCH_PRICES, model, json.loads(line)["body"]["messages"][0]["content"],
+                                      max_tokens) for line in lines)
+            _reserve(reserve)
+            state = {"run": run, "stage": stage, "model": model, "repeat": repeat, "custom_ids": ids,
+                     "reserve_usd": reserve, "input_sha256": sha_bytes(data), "settled": False}
+            _write_state(state_path, state)
+        if not state.get("batch_id"):
+            try:
+                state = _submit(client, state_path, state, data)
+            except Exception:
+                _settle(run, model, state["reserve_usd"], 0.0, 0)
+                state_path.unlink()
+                raise
+        print(json.dumps({"stage": stage, "batch_id": state["batch_id"], "requests": len(ids),
+                          "state": str(state_path)}), flush=True)
+        batch = _poll(client, state["batch_id"], max_wait)
+        results, failures = {}, {}
+        for file_id in (batch.output_file_id, batch.error_file_id):
+            if not file_id:
+                continue
+            for raw in client.files.content(file_id).text.splitlines():
+                if raw.strip():
+                    record = json.loads(raw)
+                    out, error = _line_result(model, record)
+                    if out is None:
+                        failures[record["custom_id"]] = error
+                    else:
+                        results[record["custom_id"]] = out
+        for cid in ids:
+            if cid not in results and cid not in failures:
+                failures[cid] = f"no output line (batch {batch.status})"
+        if batch.status == "failed" and batch.errors:
+            print(json.dumps({"batch_errors": [e.model_dump() for e in batch.errors.data or []]}), flush=True)
+        if not state["settled"]:
+            cost = sum(out["cost_usd"] for out in results.values())
+            _settle(run, model, state["reserve_usd"], cost, len(results),
+                    {"batch": True, "batch_id": state["batch_id"], "run": run, "stage": stage, "model": model,
+                     "status": batch.status, "requests": len(ids), "succeeded": len(results),
+                     "failed": len(failures), "usd": cost, "rates_usd_per_token": BATCH_PRICES[model]})
+            state["settled"] = True
+            _write_state(state_path, state)
+        CACHE.mkdir(parents=True, exist_ok=True)
+        for cid, out in results.items():
+            (CACHE / f"{ids[cid]}.json").write_text(json.dumps(out))
+        if failures:
+            print(json.dumps({"stage": stage, "batch_id": state["batch_id"], "failed": len(failures),
+                              "errors": {cid: str(err) for cid, err in sorted(failures.items())}}), flush=True)
+            if not sync_retry:
+                raise SystemExit(f"{len(failures)} {stage} requests failed in batch {state['batch_id']}; rerun to "
+                                 "resubmit them as a new batch, or add --sync-retry to send them synchronously")
+            by_key = {cache_key(request_body(model, p, max_tokens), repeat): p for p in prompts.values()}
+            for cid in sorted(failures):
+                call(client, run, model, by_key[ids[cid]], max_tokens, repeat)
+    return {qid: json.loads((CACHE / f"{cache_key(request_body(model, p, max_tokens), repeat)}.json").read_text())
+            for qid, p in prompts.items()}
 
 
 def summarize(rows: list[dict]) -> dict:
@@ -315,6 +485,10 @@ def main() -> None:
     parser.add_argument("--repeat", type=int, default=0, help="fresh reader and judge samples of the same inputs")
     parser.add_argument("--summarize", action="store_true", help="pool committed runs and settle spend")
     parser.add_argument("--subquery-recall", action="store_true", help="recall_all@k per subquery weight")
+    parser.add_argument("--qids", help="comma-separated dev question ids to run instead of all 100")
+    parser.add_argument("--batch", action="store_true", help="send reader and judge requests via the Batch API")
+    parser.add_argument("--max-wait", type=float, default=24 * 3600.0, help="seconds to poll one batch")
+    parser.add_argument("--sync-retry", action="store_true", help="resend failed batch lines synchronously")
     args = parser.parse_args()
     if args.subquery_recall:
         report = write_subquery_recall()
@@ -328,10 +502,16 @@ def main() -> None:
     if not args.reader or not args.tag:
         parser.error("--reader and --tag are required for a run")
     entries = load_dev()
+    if args.qids:
+        wanted = set(args.qids.split(","))
+        entries = [e for e in entries if e["question_id"] in wanted]
+        if len(entries) != len(wanted):
+            parser.error("--qids names a question outside the dev split")
     ranked = rankings(entries, args.sub, args.round)
     prompts = {e["question_id"]: official_prompt(e, ranked[e["question_id"]], args.topk) for e in entries}
     tokens = sum(len(ENC.encode(p)) for p in prompts.values())
-    estimate = tokens * PRICES[args.reader][0] + 100 * GEN_LENGTH * PRICES[args.reader][2]
+    rates = BATCH_PRICES if args.batch else PRICES
+    estimate = tokens * rates[args.reader][0] + len(entries) * GEN_LENGTH * rates[args.reader][2]
     print(json.dumps({"reader_input_tokens": tokens, "max_reader_cost_usd": round(estimate, 2)}), flush=True)
     if args.estimate:
         return
@@ -341,19 +521,31 @@ def main() -> None:
     judge_prompt = load_judge_prompt()
     run = f"{args.tag}:{args.reader}"
 
-    def answer(entry):
-        qid = entry["question_id"]
-        hyp = call(client, run, args.reader, prompts[qid], GEN_LENGTH, args.repeat)
-        prompt = judge_prompt(entry["question_type"], entry["question"], entry["answer"], hyp["text"],
-                              abstention="_abs" in qid)
-        verdict = call(client, run, JUDGE_MODEL, prompt, 10, args.repeat)
-        return {"qid": qid, "qtype": entry["question_type"], "hypothesis": hyp["text"],
+    def judge_input(entry, hyp):
+        return judge_prompt(entry["question_type"], entry["question"], entry["answer"], hyp["text"],
+                            abstention="_abs" in entry["question_id"])
+
+    def row(entry, hyp, verdict):
+        return {"qid": entry["question_id"], "qtype": entry["question_type"], "hypothesis": hyp["text"],
                 "reader_model": hyp["model"], "reader_prompt_tokens": hyp["prompt_tokens"],
                 "judge_model": verdict["model"], "judge_reply": verdict["text"],
                 "correct": "yes" in verdict["text"].lower()}
 
-    with ThreadPoolExecutor(args.workers) as pool:
-        rows = sorted(pool.map(answer, entries), key=lambda row: row["qid"])
+    if args.batch:
+        hyps = batch_stage(client, run, "reader", args.reader, prompts, GEN_LENGTH, args.repeat, args.max_wait,
+                           args.sync_retry)
+        judge_prompts = {e["question_id"]: judge_input(e, hyps[e["question_id"]]) for e in entries}
+        verdicts = batch_stage(client, run, "judge", JUDGE_MODEL, judge_prompts, 10, args.repeat, args.max_wait,
+                               args.sync_retry)
+        rows = sorted((row(e, hyps[e["question_id"]], verdicts[e["question_id"]]) for e in entries),
+                      key=lambda r: r["qid"])
+    else:
+        def answer(entry):
+            hyp = call(client, run, args.reader, prompts[entry["question_id"]], GEN_LENGTH, args.repeat)
+            return row(entry, hyp, call(client, run, JUDGE_MODEL, judge_input(entry, hyp), 10, args.repeat))
+
+        with ThreadPoolExecutor(args.workers) as pool:
+            rows = sorted(pool.map(answer, entries), key=lambda r: r["qid"])
     summary = summarize(rows)
     report = {"schema_version": 1, "split": "dev", "heldout_evaluated": 0, "tag": args.tag,
               "reader": {"model": args.reader, "snapshots_observed": sorted({r["reader_model"] for r in rows}),
@@ -365,7 +557,7 @@ def main() -> None:
                                        "(longmemeval_config.json, the native StageParams defaults)",
                             "subquery_weight": args.sub, "round_key_weight": args.round,
                             "topk_context": args.topk},
-              "repeat": args.repeat,
+              "repeat": args.repeat, "api": "batch" if args.batch else "sync",
               "official_commit": "9e0b455f4ef0",
               "evaluate_qa_sha256": sha_bytes(EVALUATE_QA.read_bytes()),
               "source_sha256": SOURCE_SHA256, "summary": summary, "rows": rows}
