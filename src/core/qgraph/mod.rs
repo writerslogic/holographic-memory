@@ -30,6 +30,7 @@ mod rerank;
 #[cfg(not(target_arch = "wasm32"))]
 mod update;
 mod vertex;
+mod vnni;
 #[cfg(not(target_arch = "wasm32"))]
 pub use update::{ConsolidationPolicy, UpdatableVGraph, UpdateError};
 
