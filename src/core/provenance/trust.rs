@@ -27,6 +27,9 @@ pub struct TrustStore {
     keys: HashSet<[u8; 32]>,
     /// Revocation bitstrings, keyed by the status list credential URL that credentials cite.
     status_lists: HashMap<String, Vec<u8>>,
+    /// Whether a credential citing a status list this store does not hold fails its
+    /// revocation check instead of passing unchecked.
+    require_status_lists: bool,
 }
 
 /// Whether bit `index` of a revocation bitstring is set: byte `index / 8`, bit `index % 8`
@@ -100,6 +103,19 @@ impl TrustStore {
         self.status_lists
             .get(credential_url)
             .map(|bits| status_bit(bits, index))
+    }
+
+    /// Makes a credential whose status list this store does not hold fail verification
+    /// (`revocation_status` not passed) instead of passing with "revocation not checked".
+    /// Off by default.
+    pub fn require_status_lists(&mut self, required: bool) -> &mut Self {
+        self.require_status_lists = required;
+        self
+    }
+
+    /// Whether [`Self::require_status_lists`] is on.
+    pub fn requires_status_lists(&self) -> bool {
+        self.require_status_lists
     }
 
     /// Whether the store trusts nothing.

@@ -410,22 +410,25 @@ impl ProvenanceManager {
         let byte_idx = usize::try_from(status_index / 8).map_err(|_| out_of_range())?;
         let len = byte_idx.checked_add(1).ok_or_else(out_of_range)?;
         let bit_idx = (status_index % 8) as u8;
-        {
-            let mut bits = self.revocation_bitstring.write();
-            if bits.len() < len {
-                let additional = len - bits.len();
-                bits.try_reserve(additional).map_err(|_| out_of_range())?;
-                bits.resize(len, 0);
-            }
-            bits[byte_idx] |= 1 << bit_idx;
+        // The write guard covers the update and its persistence: concurrent revocations
+        // reach the file in the order they change the list, so a later write never carries
+        // an older list, and a failed write leaves the live list as the file has it.
+        let mut bits = self.revocation_bitstring.write();
+        let mut next = Vec::new();
+        next.try_reserve(len.max(bits.len()))
+            .map_err(|_| out_of_range())?;
+        next.extend_from_slice(&bits);
+        if next.len() < len {
+            next.resize(len, 0);
         }
+        next[byte_idx] |= 1 << bit_idx;
         if let Some(ref path) = self.log_path {
             // Replaced atomically: a torn list would read back as shorter, un-revoking the
             // credentials past the tear.
-            let bits = self.revocation_bitstring.read();
-            super::durable_file::atomic_write(&path.with_extension("statuslist"), &bits)
+            super::durable_file::atomic_write(&path.with_extension("statuslist"), &next)
                 .map_err(|e| anyhow::anyhow!("failed to persist revocation bitstring: {e}"))?;
         }
+        *bits = next;
         Ok(())
     }
 
@@ -765,7 +768,7 @@ impl ProvenanceManager {
             match serde_json::from_str::<vc::FactCredential>(vc_json) {
                 Ok(parsed) => {
                     details.push(outcome_detail("vc_proof", &vc::verify_credential(&parsed)));
-                    details.push(revocation_detail(&parsed, |_, index| {
+                    details.push(revocation_detail(&parsed, true, |_, index| {
                         Some(self.is_revoked(index))
                     }));
                     credential = Some(parsed);
@@ -1041,9 +1044,11 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
         match serde_json::from_str::<vc::FactCredential>(vc_json) {
             Ok(parsed) => {
                 details.push(outcome_detail("vc_proof", &vc::verify_credential(&parsed)));
-                details.push(revocation_detail(&parsed, |url, index| {
-                    trust.is_revoked(url, index)
-                }));
+                details.push(revocation_detail(
+                    &parsed,
+                    trust.requires_status_lists(),
+                    |url, index| trust.is_revoked(url, index),
+                ));
                 credential = Some(parsed);
             }
             Err(e) => details.push(VerificationDetail {
@@ -1097,9 +1102,10 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
 
 /// The `revocation_status` detail of a credential. `lookup(status list URL, index)` answers
 /// whether the index is revoked, or `None` when no status list is known for that URL, which
-/// passes with a message saying revocation was not checked.
+/// passes with a message saying revocation was not checked, or fails when `require_list`.
 fn revocation_detail(
     credential: &vc::FactCredential,
+    require_list: bool,
     lookup: impl Fn(&str, u64) -> Option<bool>,
 ) -> VerificationDetail {
     let (passed, message) = match credential.credential_status {
@@ -1116,7 +1122,7 @@ fn revocation_detail(
                 Some(true) => (false, Some("credential has been revoked".to_string())),
                 Some(false) => (true, None),
                 None => (
-                    true,
+                    !require_list,
                     Some(format!(
                         "no trusted status list for {}; revocation not checked",
                         status.status_list_credential
@@ -1909,6 +1915,53 @@ mod tests {
         assert!(!reopened.is_revoked(14));
     }
 
+    /// A revocation that cannot be persisted is not applied, so the live list never claims
+    /// a revocation a restart would undo.
+    #[test]
+    fn failed_revocation_write_leaves_the_credential_live() {
+        let dir = tempdir().unwrap();
+        let key = dir.path().join("test.key");
+        let mgr = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+        mgr.revoke_credential(1).unwrap();
+        let list = std::fs::read_dir(dir.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .find(|path| path.extension().is_some_and(|e| e == "statuslist"))
+            .unwrap();
+        std::fs::remove_file(&list).unwrap();
+        std::fs::create_dir(&list).unwrap();
+        std::fs::write(list.join("occupied"), b"x").unwrap();
+        assert!(mgr.revoke_credential(13).is_err());
+        assert!(!mgr.is_revoked(13));
+        assert!(mgr.is_revoked(1));
+    }
+
+    /// Concurrent revocations all reach the persisted list: none is overwritten by a write of
+    /// an older list.
+    #[test]
+    fn concurrent_revocations_all_persist() {
+        let dir = tempdir().unwrap();
+        let key = dir.path().join("test.key");
+        let mgr = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+        std::thread::scope(|scope| {
+            for thread in 0..8u64 {
+                let mgr = &mgr;
+                scope.spawn(move || {
+                    for i in 0..32 {
+                        mgr.revoke_credential(thread * 1000 + i).unwrap();
+                    }
+                });
+            }
+        });
+        drop(mgr);
+        let reopened = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+        for thread in 0..8u64 {
+            for i in 0..32 {
+                assert!(reopened.is_revoked(thread * 1000 + i));
+            }
+        }
+    }
+
     #[test]
     fn unallocatable_status_index_is_an_error() {
         let (_dir, mgr) = manager();
@@ -2203,6 +2256,28 @@ mod binding_tests {
             .details
             .iter()
             .any(|d| d.check == "revocation_status" && !d.passed));
+    }
+
+    /// Without a trusted status list a credential passes its revocation check unchecked by
+    /// default, and fails it when the trust store requires status lists.
+    #[test]
+    fn strict_trust_store_fails_unknown_revocation_status() {
+        let (_dir, mgr) = manager();
+        let record = mgr.create_fact_provenance("r", b"strict", None).unwrap();
+        let mut trust = TrustStore::trusting_did(mgr.issuer_did()).unwrap();
+        assert!(verify_record(&record, &trust).unwrap().valid);
+        trust.require_status_lists(true);
+        let result = verify_record(&record, &trust).unwrap();
+        assert!(!result.valid);
+        assert!(result
+            .details
+            .iter()
+            .any(|d| d.check == "revocation_status" && !d.passed));
+        assert!(
+            verify_record(&record, mgr.self_trust().require_status_lists(true))
+                .unwrap()
+                .valid
+        );
     }
 
     #[test]
