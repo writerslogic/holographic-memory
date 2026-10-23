@@ -292,8 +292,37 @@ mod prof {
         }
     }
 }
+/// Candidates and list distances of one insertion, reused across a thread's insertions.
+#[derive(Default)]
+struct InsertScratch {
+    cands: Vec<(f32, u32)>,
+    d: Vec<f32>,
+}
+
+/// Buffers of [`Rows::prune_merged_into`], reused across the targets a worker merges.
+#[derive(Default)]
+struct MergeScratch {
+    d: Vec<f32>,
+    cands: Vec<(f32, u32, bool)>,
+    open: Vec<u32>,
+    out: Vec<u32>,
+}
+
+/// Buffers of [`Rows::fill_one`], reused across the vertices a thread fills.
+#[derive(Default)]
+struct FillScratch {
+    ids: Vec<u32>,
+    skip: Vec<u32>,
+    bounds: Vec<(f32, f32)>,
+    upper: Vec<f32>,
+    d: Vec<f32>,
+    near: Vec<(f32, u32)>,
+}
+
 thread_local! {
     static BUILD_VISITED: RefCell<BuildVisited> = RefCell::new(BuildVisited::default());
+    static INSERT_SCRATCH: RefCell<InsertScratch> = RefCell::default();
+    static FILL_SCRATCH: RefCell<FillScratch> = RefCell::default();
 }
 
 struct Rows<'a> {
@@ -553,6 +582,21 @@ impl Rows<'_> {
         l: usize,
         visited: &mut BuildVisited,
     ) -> Vec<(f32, u32)> {
+        let mut expanded = Vec::new();
+        self.greedy_into(graph, start, p, l, visited, &mut expanded);
+        expanded
+    }
+
+    /// [`Self::greedy`] into `expanded` (cleared first), so a caller reuses one buffer.
+    fn greedy_into(
+        &self,
+        graph: &Adjacency,
+        start: u32,
+        p: u32,
+        l: usize,
+        visited: &mut BuildVisited,
+        expanded: &mut Vec<(f32, u32)>,
+    ) {
         let (mut n_fresh, mut n_exact) = (0u64, 0u64);
         visited.reset(graph.len());
         visited.insert(start);
@@ -566,7 +610,7 @@ impl Rows<'_> {
             id: start,
             done: false,
         });
-        let mut expanded = Vec::new();
+        expanded.clear();
         let mut cur = 0;
         while cur < pool.len() {
             pool[cur].done = true;
@@ -660,56 +704,89 @@ impl Rows<'_> {
         (visited.pool, visited.fresh, visited.dists) = (pool, fresh, dists);
         prof::count(&prof::FRESH, n_fresh);
         prof::count(&prof::EXACT, n_exact);
-        expanded
     }
 
     /// Vamana robust prune: keep `c` unless an already kept `s` has `alpha^2 d2(s, c) <= d2(p, c)`.
     fn prune(&self, p: u32, mut cands: Vec<(f32, u32)>, alpha: f32, r: usize) -> Vec<u32> {
+        let mut out = Vec::with_capacity(r);
+        self.prune_into(p, &mut cands, alpha, r, &mut out);
+        out
+    }
+
+    /// [`Self::prune`] into `out` (cleared first); `cands` is sorted and deduplicated in place.
+    fn prune_into(
+        &self,
+        p: u32,
+        cands: &mut Vec<(f32, u32)>,
+        alpha: f32,
+        r: usize,
+        out: &mut Vec<u32>,
+    ) {
         cands.retain(|c| c.1 != p);
         cands.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         cands.dedup_by_key(|c| c.1);
         let a2 = alpha * alpha;
-        let mut out: Vec<u32> = Vec::with_capacity(r);
-        for &(dc, c) in &cands {
+        out.clear();
+        for &(dc, c) in cands.iter() {
             if out.len() == r {
                 break;
             }
-            if !self.occluded(c, &out, dc, a2) {
+            if !self.occluded(c, out, dc, a2) {
                 out.push(c);
             }
         }
-        out
     }
 
     /// `prune` of `list` (distinct ids, not `t`) when its first `closed` entries are an
     /// unchanged `prune` output for `t` under the same `alpha`. Such an entry was not occluded
     /// by the closed entries nearer than it, so it is checked only against kept entries from
     /// the rest of the list; the result equals `prune` of the whole list.
+    #[cfg(test)]
     fn prune_merged(&self, t: u32, list: &[u32], closed: usize, alpha: f32, r: usize) -> Vec<u32> {
-        let mut d = Vec::with_capacity(list.len());
-        self.d2_stream(t, list, &mut d);
-        let mut cands: Vec<(f32, u32, bool)> = d
-            .into_iter()
-            .zip(list)
-            .enumerate()
-            .map(|(i, (d, &u))| (d, u, i < closed))
-            .collect();
+        let mut scratch = MergeScratch::default();
+        self.prune_merged_into(t, list, closed, alpha, r, &mut scratch);
+        scratch.out
+    }
+
+    /// [`Self::prune_merged`] into `scratch.out`, reusing the scratch buffers.
+    fn prune_merged_into(
+        &self,
+        t: u32,
+        list: &[u32],
+        closed: usize,
+        alpha: f32,
+        r: usize,
+        scratch: &mut MergeScratch,
+    ) {
+        let MergeScratch {
+            d,
+            cands,
+            open,
+            out,
+        } = scratch;
+        self.d2_stream(t, list, d);
+        cands.clear();
+        cands.extend(
+            d.iter()
+                .zip(list)
+                .enumerate()
+                .map(|(i, (&d, &u))| (d, u, i < closed)),
+        );
         cands.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         let a2 = alpha * alpha;
-        let mut out: Vec<u32> = Vec::with_capacity(r);
-        let mut open: Vec<u32> = Vec::with_capacity(r);
-        for &(dc, c, was_kept) in &cands {
+        out.clear();
+        open.clear();
+        for &(dc, c, was_kept) in cands.iter() {
             if out.len() == r {
                 break;
             }
-            if !self.occluded(c, if was_kept { &open } else { &out }, dc, a2) {
+            if !self.occluded(c, if was_kept { open } else { out }, dc, a2) {
                 out.push(c);
                 if !was_kept {
                     open.push(c);
                 }
             }
         }
-        out
     }
 
     /// One insertion pass in batches of doubling size; each batch searches a frozen graph, so
@@ -734,22 +811,22 @@ impl Rows<'_> {
             let end = (start + size).min(order.len());
             let batch = &order[start..end];
             let g: &Adjacency = graph;
-            outs.par_set(batch.len(), |i| {
+            outs.par_set(batch.len(), |i, out| {
                 let p = batch[i];
-                let t0 = prof::start();
-                let mut cands = BUILD_VISITED.with(|cell| {
-                    let mut vis = cell.borrow_mut();
-                    self.greedy(g, entry, p, l, &mut vis)
+                INSERT_SCRATCH.with(|cell| {
+                    let InsertScratch { cands, d } = &mut *cell.borrow_mut();
+                    let t0 = prof::start();
+                    BUILD_VISITED.with(|vis| {
+                        self.greedy_into(g, entry, p, l, &mut vis.borrow_mut(), cands);
+                    });
+                    prof::add(&prof::GREEDY, t0);
+                    let t0 = prof::start();
+                    let adj = g.get(p as usize);
+                    self.d2_stream(p, adj, d);
+                    cands.extend(d.iter().copied().zip(adj.iter().copied()));
+                    self.prune_into(p, cands, alpha, r, out);
+                    prof::add(&prof::PRUNE, t0);
                 });
-                prof::add(&prof::GREEDY, t0);
-                let t0 = prof::start();
-                let adj = g.get(p as usize);
-                let mut d = Vec::with_capacity(adj.len());
-                self.d2_stream(p, adj, &mut d);
-                cands.extend(d.into_iter().zip(adj.iter().copied()));
-                let out = self.prune(p, cands, alpha, r);
-                prof::add(&prof::PRUNE, t0);
-                out
             });
             let trev = prof::start();
             let mut rev: Vec<(u32, u32)> = batch
@@ -773,8 +850,8 @@ impl Rows<'_> {
                 .zip(&groups)
                 .collect();
             jobs.into_par_iter().for_each_init(
-                Vec::new,
-                |merged: &mut Vec<u32>, (((row, len), closed), grp)| {
+                <(Vec<u32>, MergeScratch)>::default,
+                |(merged, scratch), (((row, len), closed), grp)| {
                     let t = grp[0].0;
                     merged.clear();
                     merged.extend_from_slice(&row[..*len as usize]);
@@ -783,12 +860,15 @@ impl Rows<'_> {
                             merged.push(s);
                         }
                     }
-                    if merged.len() > r {
-                        *merged = self.prune_merged(t, merged, *closed as usize, alpha, r);
-                        *closed = merged.len() as u32;
-                    }
-                    row[..merged.len()].copy_from_slice(merged);
-                    *len = merged.len() as u32;
+                    let list = if merged.len() > r {
+                        self.prune_merged_into(t, merged, *closed as usize, alpha, r, scratch);
+                        *closed = scratch.out.len() as u32;
+                        &scratch.out
+                    } else {
+                        &*merged
+                    };
+                    row[..list.len()].copy_from_slice(list);
+                    *len = list.len() as u32;
                 },
             );
             prof::add(&prof::REV, trev);
@@ -800,62 +880,73 @@ impl Rows<'_> {
     /// Fill every adjacency list up to `r` with the nearest two-hop neighbours; the
     /// search estimates a full batch per expansion anyway, so the extra edges are free.
     fn fill(&self, graph: &mut Adjacency, r: usize) {
-        graph.par_append(|g, v| {
+        graph.par_append(|g, v, out| {
             let have = g.get(v);
             if have.len() >= r {
-                return Vec::new();
+                return;
             }
-            let mut ids: Vec<u32> = have
-                .iter()
-                .flat_map(|&u| g.get(u as usize).iter().copied())
-                .collect();
-            ids.sort_unstable();
-            ids.dedup();
-            // `ids` is sorted, so one merge with the sorted list drops the ids in it.
-            let mut skip = have.to_vec();
-            skip.push(v as u32);
-            skip.sort_unstable();
-            let mut at = 0;
-            ids.retain(|&u| {
-                while at < skip.len() && skip[at] < u {
-                    at += 1;
-                }
-                skip.get(at) != Some(&u)
-            });
-            let k = r - have.len();
-            if let Some(codes) = self.codes.filter(|_| ids.len() > k) {
-                // At least `k` ids score at most the k-th smallest upper bound, so an id
-                // whose lower bound exceeds it cannot be among the `k` nearest.
-                const AHEAD: usize = 8;
-                ids.iter().take(AHEAD).for_each(|&u| codes.prefetch(u));
-                let bounds: Vec<(f32, f32)> = ids
-                    .iter()
-                    .enumerate()
-                    .map(|(i, &u)| {
-                        if let Some(&w) = ids.get(i + AHEAD) {
-                            codes.prefetch(w);
-                        }
-                        codes.d2_bounds(v as u32, u)
-                    })
-                    .collect();
-                let mut upper: Vec<f32> = bounds.iter().map(|b| b.1).collect();
-                let cut = *upper.select_nth_unstable_by(k - 1, f32::total_cmp).1;
-                let mut b = bounds.iter();
-                ids.retain(|_| b.next().is_some_and(|b| b.0 <= cut));
-            }
-            let mut d = Vec::new();
-            self.d2_stream(v as u32, &ids, &mut d);
-            let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
-            // The ids are distinct, so the order is total and the `k` nearest, sorted, are
-            // the first `k` of a full sort.
-            let order = |a: &(f32, u32), b: &(f32, u32)| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1));
-            if c.len() > k {
-                c.select_nth_unstable_by(k - 1, order);
-                c.truncate(k);
-            }
-            c.sort_by(order);
-            c.into_iter().map(|x| x.1).collect()
+            FILL_SCRATCH.with(|cell| self.fill_one(g, v, r, &mut cell.borrow_mut(), out));
         });
+    }
+
+    /// The fill of vertex `v` (whose list is shorter than `r`), appended to `out`.
+    fn fill_one(&self, g: &Adjacency, v: usize, r: usize, s: &mut FillScratch, out: &mut Vec<u32>) {
+        let FillScratch {
+            ids,
+            skip,
+            bounds,
+            upper,
+            d,
+            near,
+        } = s;
+        let have = g.get(v);
+        ids.clear();
+        ids.extend(have.iter().flat_map(|&u| g.get(u as usize).iter().copied()));
+        ids.sort_unstable();
+        ids.dedup();
+        // `ids` is sorted, so one merge with the sorted list drops the ids in it.
+        skip.clear();
+        skip.extend_from_slice(have);
+        skip.push(v as u32);
+        skip.sort_unstable();
+        let mut at = 0;
+        ids.retain(|&u| {
+            while at < skip.len() && skip[at] < u {
+                at += 1;
+            }
+            skip.get(at) != Some(&u)
+        });
+        let k = r - have.len();
+        if let Some(codes) = self.codes.filter(|_| ids.len() > k) {
+            // At least `k` ids score at most the k-th smallest upper bound, so an id
+            // whose lower bound exceeds it cannot be among the `k` nearest.
+            const AHEAD: usize = 8;
+            ids.iter().take(AHEAD).for_each(|&u| codes.prefetch(u));
+            bounds.clear();
+            bounds.extend(ids.iter().enumerate().map(|(i, &u)| {
+                if let Some(&w) = ids.get(i + AHEAD) {
+                    codes.prefetch(w);
+                }
+                codes.d2_bounds(v as u32, u)
+            }));
+            upper.clear();
+            upper.extend(bounds.iter().map(|b| b.1));
+            let cut = *upper.select_nth_unstable_by(k - 1, f32::total_cmp).1;
+            let mut b = bounds.iter();
+            ids.retain(|_| b.next().is_some_and(|b| b.0 <= cut));
+        }
+        self.d2_stream(v as u32, ids, d);
+        near.clear();
+        near.extend(d.iter().copied().zip(ids.iter().copied()));
+        // The ids are distinct, so the order is total and the `k` nearest, sorted, are
+        // the first `k` of a full sort.
+        let order = |a: &(f32, u32), b: &(f32, u32)| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1));
+        if near.len() > k {
+            near.select_nth_unstable_by(k - 1, order);
+            near.truncate(k);
+        }
+        near.sort_by(order);
+        out.extend(near.iter().map(|x| x.1));
     }
 }
 
