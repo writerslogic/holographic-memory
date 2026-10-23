@@ -1163,6 +1163,7 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
                   "load_1m_after_build": load_after_build, "load_gate_met": build_gate,
                   "threads": rayon::current_num_threads()},
         "index_bytes": index_bytes,
+        "huge_pages": holographic_memory::core::qgraph::huge_page_status(),
         "residual_bytes": residual_bytes,
         "rss_bytes": {"after_build": rss_after_build, "end": rss_end},
         "memory_phases": phases,

@@ -15,6 +15,7 @@
 //! index.
 
 use std::collections::BinaryHeap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::OnceLock;
 use std::time::Instant;
 
@@ -212,11 +213,52 @@ fn huge_pages() -> bool {
     *HUGE.get_or_init(|| env_knob::<u8>("HMS_QGRAPH_HUGEPAGES").unwrap_or(1) != 0)
 }
 
+/// Huge-page advice given by this process (see [`huge_page_status`]).
+static HUGE_ADVISED_BYTES: AtomicU64 = AtomicU64::new(0);
+static HUGE_ADVICE_FAILED: AtomicU64 = AtomicU64::new(0);
+/// Test hook: treat every `madvise` as failed, the result under THP `never`, a seccomp filter
+/// or a sandbox that rejects the call.
+#[cfg(test)]
+static FAIL_HUGE_ADVICE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// What the huge-page advice of this process achieved.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
+pub struct HugePageStatus {
+    /// The advice is on (`HMS_QGRAPH_HUGEPAGES` unset or non-zero).
+    pub enabled: bool,
+    /// Bytes for which `madvise(MADV_HUGEPAGE)` succeeded.
+    pub advised_bytes: u64,
+    /// `madvise` calls that failed (each falls back to base pages; nothing else changes).
+    pub failed_calls: u64,
+    /// `AnonHugePages` of the whole process from `/proc/self/smaps_rollup`: the huge pages the
+    /// kernel actually backs it with, whoever asked for them. `None` where the file is
+    /// unreadable (outside Linux, or a sandbox without it).
+    pub anon_huge_bytes: Option<u64>,
+}
+
+/// The huge-page advice given so far and the huge pages the process holds.
+pub fn huge_page_status() -> HugePageStatus {
+    let anon_huge_bytes = std::fs::read_to_string("/proc/self/smaps_rollup")
+        .ok()
+        .and_then(|text| {
+            let line = text.lines().find(|l| l.starts_with("AnonHugePages:"))?;
+            let kib: u64 = line.split_whitespace().nth(1)?.parse().ok()?;
+            Some(kib * 1024)
+        });
+    HugePageStatus {
+        enabled: huge_pages(),
+        advised_bytes: HUGE_ADVISED_BYTES.load(Ordering::Relaxed),
+        failed_calls: HUGE_ADVICE_FAILED.load(Ordering::Relaxed),
+        anon_huge_bytes,
+    }
+}
+
 /// Asks the kernel to back the 2 MiB-aligned interior of `[ptr, ptr + len)` with transparent
 /// huge pages (Linux `MADV_HUGEPAGE`). Must run before the pages are first touched, so the
 /// page-fault path allocates them huge where THP is `always` or `madvise`; afterwards only
-/// `khugepaged` could collapse them, slowly. A no-op outside Linux. Errors are ignored: the
-/// advice changes paging policy only, never the mapping or its contents.
+/// `khugepaged` could collapse them, slowly. A no-op outside Linux. A failure (THP `never`,
+/// a kernel without THP, a filtered syscall) is counted and otherwise ignored: the advice
+/// changes paging policy only, never the mapping or its contents.
 fn advise_huge_pages(ptr: *const u8, len: usize) {
     #[cfg(target_os = "linux")]
     {
@@ -228,10 +270,18 @@ fn advise_huge_pages(ptr: *const u8, len: usize) {
         let start = (ptr as usize).next_multiple_of(HUGE);
         let end = (ptr as usize + len) & !(HUGE - 1);
         if start < end {
+            #[cfg(test)]
+            if FAIL_HUGE_ADVICE.load(Ordering::Relaxed) {
+                HUGE_ADVICE_FAILED.fetch_add(1, Ordering::Relaxed);
+                return;
+            }
             // SAFETY: `[start, end)` lies inside the live allocation `[ptr, ptr + len)` and
             // `madvise` with `MADV_HUGEPAGE` reads or writes nothing in it.
-            unsafe {
-                madvise(start as *mut std::ffi::c_void, end - start, MADV_HUGEPAGE);
+            let rc = unsafe { madvise(start as *mut std::ffi::c_void, end - start, MADV_HUGEPAGE) };
+            if rc == 0 {
+                HUGE_ADVISED_BYTES.fetch_add((end - start) as u64, Ordering::Relaxed);
+            } else {
+                HUGE_ADVICE_FAILED.fetch_add(1, Ordering::Relaxed);
             }
         }
     }
@@ -3278,6 +3328,50 @@ mod tests {
     use super::super::kernels::SplitMix;
     use super::super::tests::{brute_force, clustered, gaussian};
     use super::*;
+
+    /// A refused huge-page advice falls back to base pages with identical arrays and results,
+    /// and is counted. Runs the build twice in one process: advice failing, then as configured.
+    #[test]
+    fn refused_huge_page_advice_changes_nothing_but_the_counter() {
+        // Large enough that the code rows span a 2 MiB-aligned interior.
+        let (n, dim) = (20_000, 128);
+        let data = clustered(n, dim, 3);
+        let graph = Graph::build(
+            &data,
+            dim,
+            &BuildParams {
+                degree: 8,
+                build_ef: 16,
+                metric: Metric::Euclidean,
+                ..BuildParams::default()
+            },
+        )
+        .unwrap();
+        let build = || VGraph::from_graph_with(&graph, 8, 8, true, true, 3, false).unwrap();
+        FAIL_HUGE_ADVICE.store(true, Ordering::Relaxed);
+        let failed_before = huge_page_status().failed_calls;
+        let refused = build();
+        FAIL_HUGE_ADVICE.store(false, Ordering::Relaxed);
+        let advised = build();
+        if cfg!(target_os = "linux") && huge_pages() {
+            assert!(huge_page_status().failed_calls > failed_before);
+        }
+        assert_eq!(refused.codes.bytes(), advised.codes.bytes());
+        assert_eq!(&refused.scales[..], &advised.scales[..]);
+        assert_eq!(&refused.half_norms[..], &advised.half_norms[..]);
+        let params = VSearchParams {
+            ef: 40,
+            rerank: 40,
+            ..VSearchParams::default()
+        };
+        let (mut a, mut b) = (refused.searcher(), advised.searcher());
+        let (mut ra, mut rb) = (Vec::new(), Vec::new());
+        for q in data.chunks_exact(dim).step_by(997) {
+            a.search(q, 10, params, &mut ra).unwrap();
+            b.search(q, 10, params, &mut rb).unwrap();
+            assert_eq!(ra, rb);
+        }
+    }
 
     #[test]
     fn compact_lists_preserve_order_search_and_persisted_bytes() {
