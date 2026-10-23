@@ -1273,13 +1273,14 @@ mod tests {
             .collect()
     }
 
-    /// The tail, odd-dimension and extreme-value cases every integer kernel must match the
-    /// scalar reference on, bit for bit (lengths are the multiples of 16 the index produces).
+    /// The empty-row, tail, odd-dimension and extreme-value cases every integer kernel must
+    /// match the scalar reference on, bit for bit (lengths are the multiples of 16 the index
+    /// produces).
     #[test]
     fn every_integer_kernel_matches_scalar() {
         let mut rng = SplitMix(99);
         for (name, i8k, i4k) in int_variants() {
-            for len in (16..=512).step_by(16) {
+            for len in (0..=512).step_by(16) {
                 for round in 0..24 {
                     let mut a = random_i8(&mut rng, len);
                     let mut b = random_i8(&mut rng, len);
