@@ -664,6 +664,24 @@ mod tests {
         }
     }
 
+    /// Replacing a document whose words have long lists recomputes a few block frontiers per
+    /// word, not one per block of each list.
+    #[test]
+    fn replacing_a_document_recomputes_few_frontiers() {
+        let mut store = DocumentStore::default();
+        for i in 0..SUMMARY_DOCUMENTS {
+            insert(&mut store, &format!("d{i:05}"), "w x y z", false, true);
+        }
+        let blocks: usize = ["w", "x", "y", "z"]
+            .iter()
+            .map(|word| store.postings[0].get(word).unwrap().block_count())
+            .sum();
+        let before = crate::core::documents::postings::frontiers_computed();
+        insert(&mut store, "d04000", "w x y z w", false, true);
+        let computed = crate::core::documents::postings::frontiers_computed() - before;
+        assert!(computed <= 3 * 4, "{computed} of {blocks} blocks");
+    }
+
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(256))]
         #[test]

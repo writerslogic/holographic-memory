@@ -413,6 +413,18 @@ pub(super) struct PostingList {
 /// Undominated `(frequency, words)` points, by frequency descending.
 pub(super) type Frontier = Box<[(u32, u32)]>;
 
+#[cfg(test)]
+thread_local! {
+    /// Block frontiers computed on this thread, for tests of what an edit recomputes.
+    static FRONTIERS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// Block frontiers computed on this thread so far.
+#[cfg(test)]
+pub(super) fn frontiers_computed() -> usize {
+    FRONTIERS.with(std::cell::Cell::get)
+}
+
 /// Blocks per run that one summary frontier covers.
 pub(super) const SUPER_LEN: usize = 32;
 /// The fewest blocks a list summarizes: shorter lists are scanned block by block.
@@ -506,6 +518,71 @@ fn unpack_into(bytes: &[u8], count: usize, bits: u8, mut emit: impl FnMut(usize,
     }
 }
 
+/// `count` values of `BITS` bits from the start of `bytes` into `out`. With the width a
+/// constant, the loop is straight-line loads, shifts and masks; values whose 8-byte window
+/// would pass the end of `bytes` read it zero-padded.
+#[inline(always)]
+fn unpack_fixed<const BITS: usize>(bytes: &[u8], count: usize, out: &mut [u64; BLOCK_LEN]) {
+    let mask = (1u64 << BITS) - 1;
+    let whole = match bytes.len().checked_sub(8) {
+        Some(spare) => ((spare * 8 + 7) / BITS + 1).min(count),
+        None => 0,
+    };
+    for (index, value) in out[..whole].iter_mut().enumerate() {
+        let bit = index * BITS;
+        let window: [u8; 8] = bytes[bit / 8..bit / 8 + 8].try_into().expect("eight bytes");
+        *value = (u64::from_le_bytes(window) >> (bit % 8)) & mask;
+    }
+    for (index, value) in out[..count].iter_mut().enumerate().skip(whole) {
+        let bit = index * BITS;
+        let mut window = [0u8; 8];
+        let tail = &bytes[bit / 8..(bit / 8 + 8).min(bytes.len())];
+        window[..tail.len()].copy_from_slice(tail);
+        *value = (u64::from_le_bytes(window) >> (bit % 8)) & mask;
+    }
+}
+
+/// `count` values of `bits` bits from the start of `bytes` into `out`: a constant-width
+/// loop for widths up to 32, the general window loop above that.
+fn unpack_values(bytes: &[u8], count: usize, bits: u8, out: &mut [u64; BLOCK_LEN]) {
+    match bits {
+        0 => out[..count].fill(0),
+        1 => unpack_fixed::<1>(bytes, count, out),
+        2 => unpack_fixed::<2>(bytes, count, out),
+        3 => unpack_fixed::<3>(bytes, count, out),
+        4 => unpack_fixed::<4>(bytes, count, out),
+        5 => unpack_fixed::<5>(bytes, count, out),
+        6 => unpack_fixed::<6>(bytes, count, out),
+        7 => unpack_fixed::<7>(bytes, count, out),
+        8 => unpack_fixed::<8>(bytes, count, out),
+        9 => unpack_fixed::<9>(bytes, count, out),
+        10 => unpack_fixed::<10>(bytes, count, out),
+        11 => unpack_fixed::<11>(bytes, count, out),
+        12 => unpack_fixed::<12>(bytes, count, out),
+        13 => unpack_fixed::<13>(bytes, count, out),
+        14 => unpack_fixed::<14>(bytes, count, out),
+        15 => unpack_fixed::<15>(bytes, count, out),
+        16 => unpack_fixed::<16>(bytes, count, out),
+        17 => unpack_fixed::<17>(bytes, count, out),
+        18 => unpack_fixed::<18>(bytes, count, out),
+        19 => unpack_fixed::<19>(bytes, count, out),
+        20 => unpack_fixed::<20>(bytes, count, out),
+        21 => unpack_fixed::<21>(bytes, count, out),
+        22 => unpack_fixed::<22>(bytes, count, out),
+        23 => unpack_fixed::<23>(bytes, count, out),
+        24 => unpack_fixed::<24>(bytes, count, out),
+        25 => unpack_fixed::<25>(bytes, count, out),
+        26 => unpack_fixed::<26>(bytes, count, out),
+        27 => unpack_fixed::<27>(bytes, count, out),
+        28 => unpack_fixed::<28>(bytes, count, out),
+        29 => unpack_fixed::<29>(bytes, count, out),
+        30 => unpack_fixed::<30>(bytes, count, out),
+        31 => unpack_fixed::<31>(bytes, count, out),
+        32 => unpack_fixed::<32>(bytes, count, out),
+        _ => unpack_into(bytes, count, bits, |index, value| out[index] = value),
+    }
+}
+
 pub(super) fn unpack(bytes: &[u8], index: usize, bits: u8) -> u64 {
     if bits == 0 {
         return 0;
@@ -560,6 +637,8 @@ impl<'a> BitReader<'a> {
 /// The `(frequency, words)` points of a block no other point dominates (a larger frequency
 /// at no greater length), by frequency descending, when there are at least two.
 fn frontier(points: impl Iterator<Item = (u32, u32)>) -> Option<Box<[(u32, u32)]>> {
+    #[cfg(test)]
+    FRONTIERS.with(|count| count.set(count.get() + 1));
     // The least length per frequency: a table for the frequencies a block usually holds and
     // a short sorted spill for the rest.
     let mut least = [u32::MAX; BLOCK_LEN + 1];
@@ -626,18 +705,18 @@ impl PostingList {
             });
             return;
         }
+        let mut gaps = [0u64; BLOCK_LEN];
         for block in &self.blocks {
-            let mut slot = block.first;
-            unpack_into(
-                &self.data[block.offset..],
-                usize::from(block.count),
-                block.doc_bits,
-                |_, gap| {
-                    slot = slot
-                        .checked_add(gap as usize)
-                        .expect("posting gap overflow");
-                    matched[slot / 64] |= 1 << (slot % 64);
-                },
+            let count = usize::from(block.count);
+            unpack_values(&self.data[block.offset..], count, block.doc_bits, &mut gaps);
+            let mut slot = block.first as u64;
+            for &gap in &gaps[..count] {
+                slot = slot.wrapping_add(gap);
+                matched[slot as usize / 64] |= 1 << (slot % 64);
+            }
+            assert_eq!(
+                slot, block.last as u64,
+                "posting gaps do not reach the block end"
             );
         }
     }
@@ -697,19 +776,28 @@ impl PostingList {
         let count = usize::from(block.count);
         let bytes = &self.data[block.offset..];
         let gap_bytes = (count * usize::from(block.doc_bits)).div_ceil(8);
-        let mut slot = block.first;
-        unpack_into(bytes, count, block.doc_bits, |index, gap| {
-            slot = slot
-                .checked_add(gap as usize)
-                .expect("posting gap overflow");
-            out[index].0 = slot;
-        });
-        unpack_into(
+        let mut values = [0u64; BLOCK_LEN];
+        unpack_values(bytes, count, block.doc_bits, &mut values);
+        // Gaps sum to at most the block's slot span, so the running sum cannot overflow for a
+        // valid block; the end check catches a corrupt one.
+        let mut slot = block.first as u64;
+        for (posting, &gap) in out[..count].iter_mut().zip(&values[..count]) {
+            slot = slot.wrapping_add(gap);
+            posting.0 = slot as usize;
+        }
+        assert_eq!(
+            slot, block.last as u64,
+            "posting gaps do not reach the block end"
+        );
+        unpack_values(
             &bytes[gap_bytes..],
             count,
             block.frequency_bits,
-            |index, frequency| out[index].1 = frequency as u32,
+            &mut values,
         );
+        for (posting, &frequency) in out[..count].iter_mut().zip(&values[..count]) {
+            posting.1 = frequency as u32;
+        }
     }
 
     fn append_block(
@@ -1019,6 +1107,19 @@ impl PostingList {
     }
 }
 
+/// [`slice::partition_point`] by exponential search from the front: a cursor's targets are
+/// usually near, so the probes stay in the cache lines it just read.
+fn gallop<T>(items: &[T], before: impl Fn(&T) -> bool) -> usize {
+    let mut low = 0;
+    let mut step = 1;
+    while low + step <= items.len() && before(&items[low + step - 1]) {
+        low += step;
+        step *= 2;
+    }
+    let high = (low + step).min(items.len());
+    low + items[low..high].partition_point(before)
+}
+
 /// A forward cursor over a list. A block is decoded only when the cursor needs a posting
 /// after its first, so skipping over blocks by their bounds costs their metadata alone.
 pub(super) struct PostingCursor<'a> {
@@ -1077,7 +1178,7 @@ impl<'a> PostingCursor<'a> {
         }
         if self.list.blocks[self.block].last < target {
             let after = self.block + 1;
-            let block = after + self.list.blocks[after..].partition_point(|b| b.last < target);
+            let block = after + gallop(&self.list.blocks[after..], |b| b.last < target);
             self.load(block);
         }
         self.length > 0
@@ -1132,7 +1233,7 @@ impl<'a> PostingCursor<'a> {
             return self.peek();
         }
         self.fill();
-        self.index += self.decoded[self.index..self.length].partition_point(|p| p.0 < target);
+        self.index += gallop(&self.decoded[self.index..self.length], |p| p.0 < target);
         self.peek()
     }
 }
@@ -1538,6 +1639,78 @@ pub(super) fn index_chunks<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// An edit of one posting in a long list recomputes one block's frontier (two when the
+    /// block splits), where re-encoding the list computes one per block.
+    #[test]
+    fn single_posting_edits_recompute_one_block_frontier() {
+        let blocks = 64;
+        let run: Vec<Posting> = (0..blocks * BLOCK_LEN)
+            .map(|i| (i * 2, 1 + (i % 7) as u32))
+            .collect();
+        let words = |slot: usize| 10 + (slot % 13) as u32;
+        let mut list = PostingList::default();
+        list.append_run_with_lengths(&run, words);
+        for name in ["remove", "insert", "reweight"] {
+            let before = frontiers_computed();
+            match name {
+                "remove" => list.remove(4000, words),
+                "insert" => list.append_run_with_lengths(&[(4000, 3)], words),
+                _ => list.set_frequency(4000, 9, words),
+            }
+            assert!(frontiers_computed() - before <= 2, "{name}");
+        }
+        let before = frontiers_computed();
+        list.encode(&list.decode(), words);
+        assert_eq!(frontiers_computed() - before, list.block_count());
+        assert!(list.block_count() >= blocks);
+    }
+
+    #[test]
+    fn gallop_matches_partition_point() {
+        for length in 0..70usize {
+            let items: Vec<usize> = (0..length).map(|i| i * 3).collect();
+            for target in 0..=length * 3 + 1 {
+                assert_eq!(
+                    gallop(&items, |&x| x < target),
+                    items.partition_point(|&x| x < target)
+                );
+            }
+        }
+    }
+
+    /// The constant-width and general unpackers agree with single-value reads at every
+    /// width, count and trailing slack.
+    #[test]
+    fn block_unpacking_matches_single_reads_at_every_width() {
+        for bits in 0..=64u8 {
+            for count in [1, 7, 8, 9, 63, BLOCK_LEN] {
+                let limit = if bits == 64 {
+                    u64::MAX
+                } else {
+                    (1u64 << bits) - 1
+                };
+                let values: Vec<u64> = (0..count as u64)
+                    .map(|i| i.wrapping_mul(0x9E37_79B9_7F4A_7C15) & limit)
+                    .collect();
+                for slack in [0usize, 3, 8] {
+                    let mut bytes = Vec::new();
+                    pack(&mut bytes, values.iter().copied(), bits);
+                    bytes.extend(std::iter::repeat_n(0xFF, slack));
+                    let mut out = [0u64; BLOCK_LEN];
+                    unpack_values(&bytes, count, bits, &mut out);
+                    assert_eq!(
+                        &out[..count],
+                        values.as_slice(),
+                        "bits={bits} count={count}"
+                    );
+                    for (index, &value) in values.iter().enumerate() {
+                        assert_eq!(unpack(&bytes, index, bits), value);
+                    }
+                }
+            }
+        }
+    }
 
     /// The packed checkpoint decoder agrees with the checked one for every mix of one-byte
     /// postings, wide gaps and frequencies at every position in the eight-byte window.

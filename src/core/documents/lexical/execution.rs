@@ -604,7 +604,11 @@ pub(in crate::core::documents) fn count_terms(
     let mut count: usize = matched.iter().map(|word| word.count_ones() as usize).sum();
     if !store.multichunk_documents.is_empty() {
         // A document counts once: each further matching chunk of one is taken back.
-        let mut seen = crate::core::hash::FastSet::default();
+        // Sized once: at most one entry per matched chunk of a multi-chunk document.
+        let mut seen = crate::core::hash::FastSet::with_capacity_and_hasher(
+            count.min(store.multichunk_documents.len()),
+            Default::default(),
+        );
         for (index, &bits) in matched.iter().enumerate() {
             let mut bits = bits;
             while bits != 0 {
