@@ -15,7 +15,7 @@ const N_PROBE_MAX: usize = 64;
 const INVERTED_SPARSITY_DENOM: usize = 32;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-#[allow(clippy::upper_case_acronyms)]
+#[expect(clippy::upper_case_acronyms, reason = "the index names")]
 pub(crate) enum IndexRoute {
     NSG,
     Inverted,

@@ -200,10 +200,10 @@ fn check_schema(store: &Path, report: &mut Report) -> Schema {
                 None,
                 format!("{error:#}"),
             );
-            match std::fs::read(&path) {
-                Ok(bytes) => bytes,
-                Err(_) => return schema,
-            }
+            let Ok(bytes) = std::fs::read(&path) else {
+                return schema;
+            };
+            bytes
         }
     };
     let value: Value = match serde_json::from_slice(&bytes) {
@@ -617,7 +617,7 @@ fn check_arena(
                 }
                 PayloadKind::OtherTransactionVersion(version) => {
                     payload_problems += 1;
-                    let newer = version.parse::<u32>().map_or(true, |v| v > 3);
+                    let newer = version.parse::<u32>().ok().is_none_or(|v| v > 3);
                     transaction_formats.insert(format!("HMS-TXN-{version}"));
                     report.add(
                         Severity::Unsupported,

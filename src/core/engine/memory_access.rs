@@ -97,19 +97,19 @@ impl HmsCore {
         let mut deleted = 0;
         let mut commits = 0;
         for batch in ids.chunks(DELETE_BATCH) {
-            let existing: Vec<&String> = {
+            let mutations: Vec<Mutation> = {
                 let store = self.documents.read();
-                batch.iter().filter(|id| store.contains_key(id)).collect()
+                batch
+                    .iter()
+                    .filter(|id| store.contains_key(id))
+                    .map(|id| Mutation::DeleteDocument { id: id.clone() })
+                    .collect()
             };
-            if existing.is_empty() {
+            if mutations.is_empty() {
                 continue;
             }
-            let mutations: Vec<Mutation> = existing
-                .iter()
-                .map(|id| Mutation::DeleteDocument { id: (*id).clone() })
-                .collect();
             self.commit(&mutations)?;
-            deleted += existing.len();
+            deleted += mutations.len();
             commits += 1;
         }
         Ok((deleted, commits))

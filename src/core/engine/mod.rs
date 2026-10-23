@@ -119,7 +119,6 @@ pub struct HmsCore {
     #[cfg(feature = "security")]
     signing: Option<super::security::SigningManager>,
     #[cfg(feature = "security")]
-    #[allow(dead_code)]
     encryption: Option<std::sync::Arc<super::security::EncryptionManager>>,
     #[cfg(feature = "provenance")]
     agents: RwLock<super::provenance::access::AgentRegistry>,
@@ -717,7 +716,11 @@ impl HmsCore {
     pub fn delete_with_reason(
         &self,
         id: &str,
-        #[allow(unused_variables)] reason: Option<&str>,
+        #[cfg_attr(
+            not(feature = "provenance"),
+            expect(unused_variables, reason = "recorded only by provenance")
+        )]
+        reason: Option<&str>,
     ) -> Result<bool> {
         mutation::validate_public_id(id)?;
         anyhow::ensure!(
@@ -746,7 +749,11 @@ impl HmsCore {
         &self,
         id: &str,
         text: &str,
-        #[allow(unused_variables)] source_uri: Option<&str>,
+        #[cfg_attr(
+            not(feature = "provenance"),
+            expect(unused_variables, reason = "recorded only by provenance")
+        )]
+        source_uri: Option<&str>,
     ) -> Result<()> {
         mutation::validate_public_id(id)?;
         let mut mutations = vec![Mutation::Vector {
@@ -1039,9 +1046,8 @@ impl HmsCore {
         target_role: &str,
     ) -> Vec<structural::StructuralResult> {
         let _transaction = self.mutation_gate.read();
-        let ctx = match self.meaning_ctx() {
-            Some(ctx) => ctx,
-            None => return Vec::new(),
+        let Some(ctx) = self.meaning_ctx() else {
+            return Vec::new();
         };
         structural::fuzzy_structural_query(&ctx, known, target_role)
     }

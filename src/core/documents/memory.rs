@@ -223,18 +223,18 @@ impl MemoryDocumentStore {
     /// Restores a store written by [`MemoryDocumentStore::export`]. The bytes are validated
     /// (magic, version, bounded length, checksum, per-document shape) before any is used.
     pub fn import(bytes: &[u8]) -> Result<Self> {
-        ensure!(bytes.len() >= HEADER_BYTES, "snapshot is truncated");
+        let header: &[u8; HEADER_BYTES] = bytes.first_chunk().context("snapshot is truncated")?;
         ensure!(&bytes[..4] == MAGIC, "not a holographic-memory snapshot");
         ensure!(
             bytes[4] == FORMAT_VERSION,
             "unsupported snapshot version {}",
             bytes[4]
         );
-        let word = |at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
+        let word = |at: usize| u32::from_le_bytes(*header[at..].first_chunk().expect("in header"));
         let dimensions = word(5) as usize;
         let embedding_dimensions = Some(word(9) as usize).filter(|&d| d != 0);
         let expected_documents = word(13) as usize;
-        let length = u64::from_le_bytes(bytes[17..25].try_into().unwrap());
+        let length = u64::from_le_bytes(*header[17..].first_chunk().expect("in header"));
         let checksum = word(25);
         let length = usize::try_from(length)
             .ok()

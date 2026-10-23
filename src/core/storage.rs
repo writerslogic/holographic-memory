@@ -36,6 +36,7 @@ pub(crate) const END_MARK: u32 = 0x454E_444C;
 /// The header words `[crc, raw_len, comp_len, version]` of the frame at the start of `bytes`,
 /// or `None` if fewer than [`HEADER_SIZE`] bytes remain.
 #[inline]
+#[must_use]
 fn header_words(bytes: &[u8]) -> Option<[u32; 4]> {
     let (words, _) = bytes.first_chunk::<HEADER_SIZE>()?.as_chunks::<4>();
     Some(std::array::from_fn(|i| u32::from_le_bytes(words[i])))
@@ -43,6 +44,7 @@ fn header_words(bytes: &[u8]) -> Option<[u32; 4]> {
 
 /// True if `header` starts with an end-of-log marker or the legacy zero header.
 #[inline]
+#[must_use]
 pub(crate) fn is_log_end(header: &[u8]) -> bool {
     header_words(header).is_some_and(|[crc, raw_len, comp_len, version]| {
         crc == 0 && raw_len == 0 && comp_len == 0 && (version == 0 || version == END_MARK)

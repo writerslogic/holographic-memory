@@ -55,9 +55,8 @@ pub fn multi_hop_query(
 }
 
 fn single_hop(start_entity: &str, relation: &str, ctx: &MeaningContext<'_>) -> Vec<MultiHopResult> {
-    let s_vec = match ctx.atom_memory.get(start_entity) {
-        Some(v) => v,
-        None => return Vec::new(),
+    let Some(s_vec) = ctx.atom_memory.get(start_entity) else {
+        return Vec::new();
     };
     let (_, r_vec) = ctx.atom_memory.get_or_insert(relation);
 
@@ -86,9 +85,8 @@ fn rule_rewrite(
     rule_name: &str,
     ctx: &MeaningContext<'_>,
 ) -> Vec<MultiHopResult> {
-    let s_vec = match ctx.atom_memory.get(start_entity) {
-        Some(v) => v,
-        None => return Vec::new(),
+    let Some(s_vec) = ctx.atom_memory.get(start_entity) else {
+        return Vec::new();
     };
     let (_, r_vec) = ctx.atom_memory.get_or_insert(output_relation);
 

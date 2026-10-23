@@ -38,9 +38,8 @@ pub fn fuzzy_structural_query(
     known: &[(&str, &EntangledHVec)],
     target_role: &str,
 ) -> Vec<StructuralResult> {
-    let query = match ctx.roles.compose(known) {
-        Ok(q) => q,
-        Err(_) => return Vec::new(),
+    let Ok(query) = ctx.roles.compose(known) else {
+        return Vec::new();
     };
 
     let matches = ctx.composite_memory.overlap_scan(&query);
@@ -76,9 +75,8 @@ fn algebraic_path(
     let mut results: Vec<StructuralResult> = Vec::new();
 
     for &(comp_idx, _) in matches {
-        let (_, composite_vec) = match ctx.composite_memory.get_by_idx(comp_idx) {
-            Some(v) => v,
-            None => continue,
+        let Some((_, composite_vec)) = ctx.composite_memory.get_by_idx(comp_idx) else {
+            continue;
         };
 
         let residual = composite_vec.bind(query);
@@ -128,9 +126,8 @@ fn materialized_path(
     let mut results = Vec::new();
 
     for &(comp_idx, score) in significant {
-        let (comp_id, _) = match composite_memory.get_by_idx(comp_idx) {
-            Some(v) => v,
-            None => continue,
+        let Some((comp_id, _)) = composite_memory.get_by_idx(comp_idx) else {
+            continue;
         };
 
         for t in triple_store.by_composite_id(&comp_id) {
