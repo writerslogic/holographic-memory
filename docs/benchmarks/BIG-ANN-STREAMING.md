@@ -100,7 +100,7 @@ At R32 L64 alpha 1.0, **ef 512 scores 0.9371 against the track baseline's 0.924,
 peak, in a 15:41 replay (941 s of runbook steps)**; ef 384 falls just short (0.9226). Every one
 of the five Modal replays finished in 13:32-20:51 against the baseline's 23 minutes, one round
 each and on different hardware from the baseline's, so that is an observation, not a matched
-timing comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of e4df0b1 to
+timing comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of the 791749b runs (alpha 1.0 passed explicitly) to
 the fourth digit, and main without the 3-byte ids scores the same 0.7623 on Modal, so the
 change leaves the results unchanged.
 
