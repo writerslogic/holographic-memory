@@ -238,6 +238,8 @@ mod neon {
         unsafe { sdot(a, b) }
     }
 
+    /// # Safety
+    /// The CPU supports `dotprod`; `a` and `b` have the same length, a multiple of 16.
     #[target_feature(enable = "dotprod")]
     #[inline]
     pub(super) unsafe fn sdot(a: &[i8], b: &[i8]) -> i32 {
@@ -274,6 +276,9 @@ mod neon {
     /// [`super::dot_i4_inline`] with SDOT: each 16 packed bytes become the 16 even and the 16 odd
     /// coordinates of a 32-wide block, matched with the query laid out by
     /// [`super::interleave_for_i4`].
+    ///
+    /// # Safety
+    /// The CPU supports `dotprod`; `q.len() == 2 * p.len()` and `p.len()` is a multiple of 16.
     #[target_feature(enable = "dotprod")]
     #[inline]
     pub(super) unsafe fn sdot4(q: &[i8], p: &[i8]) -> i32 {
@@ -709,6 +714,9 @@ mod x86 {
     /// Signed i8 dot product of two rows of equal length, a multiple of 16, exact over the
     /// whole i8 range: the bytes widen to i16 lanes (`vpmovsxbw`) and `vpmaddwd` sums pairs
     /// of products into i32 (the `maddubs` form would misread -128 after the sign trick).
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; `a` and `b` have the same length.
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn dot_i8_avx2(a: &[i8], b: &[i8]) -> i32 {
         let mut acc = _mm256_setzero_si256();
@@ -726,6 +734,9 @@ mod x86 {
     /// [`super::dot_i4_inline`]: each 16 packed bytes become the 16 even and the 16 odd
     /// coordinates of a 32-wide block, matched with the query laid out by
     /// [`super::interleave_for_i4`].
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; `q.len() == 2 * p.len()` and `p.len()` is a multiple of 16.
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn dot_i4_avx2(q: &[i8], p: &[i8]) -> i32 {
         let mask = _mm_set1_epi8(0x0f);
@@ -754,6 +765,10 @@ mod x86 {
     /// [`dot_i4_avx2`] of four rows against one query: the query's widened halves are loaded
     /// once per 16 packed bytes and each row keeps its own accumulator, so the four row loads
     /// are in flight together. Lane by lane the same integer sums as four single calls.
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; the rows have one length, a multiple of 16, and `q.len()` is
+    /// twice it.
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn dot_i4_avx2_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
         let mask = _mm_set1_epi8(0x0f);
@@ -790,6 +805,10 @@ mod x86 {
     /// by 128 into the unsigned operand, so `sum (a + 128) b = a.b + 128 sum b`, and a second
     /// `vpdpbusd` against ones yields `sum b` to subtract. Exact over the whole i8 range. The
     /// 512-bit forms measured no faster on 128 and 256-wide rows (kill test).
+    ///
+    /// # Safety
+    /// The CPU supports AVX512F, AVX512VL, AVX512-VNNI and AVX2; `a` and `b` have the same
+    /// length, a multiple of 16.
     #[target_feature(enable = "avx512f,avx512vl,avx512vnni,avx2")]
     pub(super) unsafe fn dot_i8_vnni(a: &[i8], b: &[i8]) -> i32 {
         let (flip, ones) = (_mm256_set1_epi8(-128), _mm256_set1_epi8(1));
@@ -813,6 +832,10 @@ mod x86 {
     /// [`dot_i4_avx2`] with `vpdpbusd`: the nibbles are the unsigned operand, offset so that
     /// `n ^ 8` is the signed nibble plus 8, in 0..=15; the query is the signed one. Then
     /// `sum c q = sum (c + 8) q - 8 sum q`, with `sum q` from `vpdpbusd` against ones.
+    ///
+    /// # Safety
+    /// The CPU supports AVX512F, AVX512VL, AVX512-VNNI and AVX2; `q.len() == 2 * p.len()` and
+    /// `p.len()` is a multiple of 16.
     #[target_feature(enable = "avx512f,avx512vl,avx512vnni,avx2")]
     pub(super) unsafe fn dot_i4_vnni(q: &[i8], p: &[i8]) -> i32 {
         let mask = _mm_set1_epi8(0x0f);
@@ -840,6 +863,8 @@ mod x86 {
         h(acc) - 8 * h(sum_q)
     }
 
+    /// # Safety
+    /// The CPU supports AVX2.
     #[target_feature(enable = "avx2")]
     unsafe fn horizontal_sum(v: __m256i) -> i32 {
         let s = _mm_add_epi32(_mm256_castsi256_si128(v), _mm256_extracti128_si256::<1>(v));

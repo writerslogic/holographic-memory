@@ -92,6 +92,8 @@ mod neon {
 
     use super::BLOCK;
 
+    /// # Safety
+    /// `codes` and `lut` hold at least `16 * m` bytes.
     #[inline]
     pub(super) unsafe fn scan32(codes: &[u8], lut: &[u8], m: usize, out: &mut [u16; BLOCK]) {
         let mask = vdupq_n_u8(0x0f);
@@ -155,6 +157,9 @@ mod avx2 {
 
     /// Two 16-byte groups per 256-bit register: lanes 0..16 score group `j`, lanes 16..32
     /// group `j + 1`, both with their own table half.
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; `codes` and `lut` hold at least `16 * m` bytes.
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn scan32(codes: &[u8], lut: &[u8], m: usize, out: &mut [u16; BLOCK]) {
         let mask = _mm256_set1_epi8(0x0f);
@@ -169,7 +174,6 @@ mod avx2 {
             let t = _mm256_loadu_si256(lp.add(16 * j).cast());
             let rlo = _mm256_shuffle_epi8(t, _mm256_and_si256(c, mask));
             let rhi = _mm256_shuffle_epi8(t, _mm256_and_si256(_mm256_srli_epi16::<4>(c), mask));
-            // Widen each 128-bit half's 16 bytes to 16-bit lanes and accumulate.
             let lo0 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(rlo));
             let lo1 = _mm256_cvtepu8_epi16(_mm256_extracti128_si256::<1>(rlo));
             let hi0 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(rhi));
@@ -295,7 +299,8 @@ mod tests {
                     let v = batch[0];
                     if let Some(next) = ids.as_chunks::<DEG>().0.get(e + 1) {
                         for line in block(next[0]).chunks(128) {
-                            // SAFETY-free hint: the prefetch helper takes i8 slices.
+                            // SAFETY: u8 and i8 have the same size and alignment, and every
+                            // byte is a valid i8; the view borrows `line`.
                             prefetch_bytes(unsafe {
                                 std::slice::from_raw_parts(line.as_ptr().cast::<i8>(), line.len())
                             });

@@ -86,7 +86,8 @@ struct Fixture {
     truth: Vec<Vec<u32>>,
 }
 
-/// One graph per test binary: the build dominates the test's time.
+/// One graph per test process (nextest runs each test in its own): the build dominates the
+/// test's time.
 fn fixture() -> &'static Fixture {
     static FIXTURE: OnceLock<Fixture> = OnceLock::new();
     FIXTURE.get_or_init(|| {
