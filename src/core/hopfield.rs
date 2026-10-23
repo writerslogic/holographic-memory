@@ -17,6 +17,8 @@
 //!   the number of relevant results (no fixed k needed).
 //! - **Exponential capacity**: O(ζ^(D/2)) patterns recoverable for dimension D.
 
+use std::borrow::Borrow;
+
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::RetrievalResult;
 
@@ -51,9 +53,9 @@ impl Default for HopfieldConfig {
 /// Returns patterns with non-zero entmax weights, sorted by weight descending.
 /// The number of results is determined by the sparsity of the entmax output,
 /// not by a fixed k — but at most `max_results` are returned.
-pub fn hopfield_query(
+pub fn hopfield_query<S: AsRef<str>, V: Borrow<EntangledHVec>>(
     query: &EntangledHVec,
-    patterns: &[(String, EntangledHVec)],
+    patterns: &[(S, V)],
     config: &HopfieldConfig,
     max_results: usize,
 ) -> Vec<RetrievalResult> {
@@ -65,7 +67,7 @@ pub fn hopfield_query(
     // density, and raw counts favour the denser ones.
     let scores: Vec<f64> = patterns
         .iter()
-        .map(|(_, pat)| config.beta * query.similarity(pat))
+        .map(|(_, pat)| config.beta * query.similarity(pat.borrow()))
         .collect();
 
     let weights = entmax(&scores, config.alpha);
@@ -75,7 +77,7 @@ pub fn hopfield_query(
         .enumerate()
         .filter(|(_, &w)| w > 1e-12)
         .map(|(i, &w)| RetrievalResult {
-            id: patterns[i].0.clone(),
+            id: patterns[i].0.as_ref().to_owned(),
             similarity: w,
         })
         .collect();
@@ -93,9 +95,9 @@ pub fn hopfield_query(
 ///
 /// Each iteration reconstructs the query as a weighted combination of patterns
 /// (via weighted bundle), then re-queries. Converges to an attractor basin.
-pub fn hopfield_query_iterative(
+pub fn hopfield_query_iterative<S: AsRef<str>, V: Borrow<EntangledHVec>>(
     query: &EntangledHVec,
-    patterns: &[(String, EntangledHVec)],
+    patterns: &[(S, V)],
     config: &HopfieldConfig,
     max_results: usize,
 ) -> Vec<RetrievalResult> {
@@ -108,7 +110,7 @@ pub fn hopfield_query_iterative(
     for _ in 0..config.max_iter - 1 {
         let scores: Vec<f64> = patterns
             .iter()
-            .map(|(_, pat)| config.beta * current_query.similarity(pat))
+            .map(|(_, pat)| config.beta * current_query.similarity(pat.borrow()))
             .collect();
 
         let weights = entmax(&scores, config.alpha);
@@ -252,8 +254,8 @@ fn softmax(scores: &[f64]) -> Vec<f64> {
 /// For sparse binary vectors: count weighted frequency of each index across
 /// patterns with non-zero weight, keep indices with highest weighted frequency
 /// up to the target active count.
-fn weighted_reconstruct(
-    patterns: &[(String, EntangledHVec)],
+fn weighted_reconstruct<S, V: Borrow<EntangledHVec>>(
+    patterns: &[(S, V)],
     weights: &[f64],
     dim: usize,
 ) -> EntangledHVec {
@@ -268,7 +270,7 @@ fn weighted_reconstruct(
         if w < 1e-12 {
             continue;
         }
-        for &idx in &pat.indices {
+        for &idx in &pat.borrow().indices {
             *freq.entry(idx).or_insert(0.0) += w;
         }
     }

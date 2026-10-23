@@ -338,3 +338,7 @@ required-features = ["cli"]
 [[bench]]
 name = "ingest_alloc"
 harness = false
+
+[[bench]]
+name = "query_alloc"
+harness = false

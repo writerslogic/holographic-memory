@@ -167,15 +167,19 @@ impl HmsCore {
         query_vec: &EntangledHVec,
         max_results: u32,
     ) -> Vec<RetrievalResult> {
-        let shards = self.shards.read();
-        let patterns = shards.collect_all_patterns();
         let config = &self.config.hopfield;
-
-        if config.max_iter > 1 {
-            hopfield::hopfield_query_iterative(query_vec, &patterns, config, max_results as usize)
-        } else {
-            hopfield::hopfield_query(query_vec, &patterns, config, max_results as usize)
-        }
+        self.shards.read().with_patterns(|patterns| {
+            if config.max_iter > 1 {
+                hopfield::hopfield_query_iterative(
+                    query_vec,
+                    patterns,
+                    config,
+                    max_results as usize,
+                )
+            } else {
+                hopfield::hopfield_query(query_vec, patterns, config, max_results as usize)
+            }
+        })
     }
 
     /// Process multiple queries in parallel using rayon.
