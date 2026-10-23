@@ -1,0 +1,182 @@
+{
+  "benchmark": "LoCoMo locomo10.json, categories 1-4: retrieval round 2 (evidence recall only, no reader/judge run)",
+  "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "hms_sha": "8fddc13f",
+  "hms_surface": "hms-server memory API, 4 tokio workers, 4 work slots",
+  "machine": "Apple M-series, 10 cores, shared host; accuracy only, no timing",
+  "date": "2026-10-23",
+  "metric": "evidence recall: share of a question's annotated evidence turns among the memories given to the reader under the 1764 o200k-token cap, k=30 hybrid recall per speaker (text-embedding-3-small, blend)",
+  "protocol": "Levers defined and grids written before measuring; chosen on the 3 tuning conversations; held-out 7 scored once per final candidate; each candidate also gated on LongMemEval dev (must not drop). Evidence annotations used only to score and to classify misses; no question text, answers or outcomes in any retrieval code or parameter.",
+  "levers": {
+    "episode": "memory-API recall option (not shipped): within the 100-candidate pool, score += weight * best score among the other candidates with the same event time, then re-sort",
+    "pack": "adapter packing under the same cap: round-robin by rank (#236); cosine = both speakers merged by raw query cosine; zipper = each speaker keeps recall order, the next slot goes to the speaker whose next memory has the higher cosine"
+  },
+  "tuning_grid": {
+    "1 round-robin, episode 0 (baseline, #236 primary)": {
+      "n": 385,
+      "overall": 0.8429,
+      "context_tokens_mean": 1748.9,
+      "category_1": 0.6421,
+      "category_2": 0.9556,
+      "category_3": 0.4762,
+      "category_4": 0.905
+    },
+    "2 round-robin, episode 0.25": {
+      "n": 385,
+      "overall": 0.8545,
+      "context_tokens_mean": 1750.7,
+      "category_1": 0.6482,
+      "category_2": 0.9667,
+      "category_3": 0.5238,
+      "category_4": 0.915
+    },
+    "3 round-robin, episode 0.5": {
+      "n": 385,
+      "overall": 0.8514,
+      "context_tokens_mean": 1749.2,
+      "category_1": 0.6392,
+      "category_2": 0.9667,
+      "category_3": 0.5476,
+      "category_4": 0.91
+    },
+    "4 round-robin, episode 1.0": {
+      "n": 385,
+      "overall": 0.827,
+      "context_tokens_mean": 1750.3,
+      "category_1": 0.5863,
+      "category_2": 0.9556,
+      "category_3": 0.5,
+      "category_4": 0.8925
+    },
+    "5 cosine, episode 0": {
+      "n": 385,
+      "overall": 0.8521,
+      "context_tokens_mean": 1749.4,
+      "category_1": 0.7101,
+      "category_2": 0.9333,
+      "category_3": 0.5952,
+      "category_4": 0.895
+    },
+    "6 zipper, episode 0": {
+      "n": 385,
+      "overall": 0.856,
+      "context_tokens_mean": 1748.1,
+      "category_1": 0.6764,
+      "category_2": 0.9444,
+      "category_3": 0.5952,
+      "category_4": 0.91
+    },
+    "7 cosine, episode 0.5": {
+      "n": 385,
+      "overall": 0.8566,
+      "context_tokens_mean": 1748.3,
+      "category_1": 0.7135,
+      "category_2": 0.9444,
+      "category_3": 0.5714,
+      "category_4": 0.9
+    },
+    "8 zipper, episode 0.5": {
+      "n": 385,
+      "overall": 0.8596,
+      "context_tokens_mean": 1747.0,
+      "category_1": 0.6748,
+      "category_2": 0.9556,
+      "category_3": 0.5238,
+      "category_4": 0.92
+    }
+  },
+  "heldout_once": {
+    "baseline (round-robin, episode 0)": {
+      "n": 1155,
+      "overall": 0.8097,
+      "context_tokens_mean": 1749.4,
+      "category_1": 0.5901,
+      "category_2": 0.8492,
+      "category_3": 0.5888,
+      "category_4": 0.8926
+    },
+    "A cosine packing, episode 0": {
+      "n": 1155,
+      "overall": 0.8341,
+      "context_tokens_mean": 1747.6,
+      "category_1": 0.6499,
+      "category_2": 0.8449,
+      "category_3": 0.5933,
+      "category_4": 0.9181
+    },
+    "B round-robin, episode 0.5": {
+      "n": 1155,
+      "overall": 0.8409,
+      "context_tokens_mean": 1749.5,
+      "category_1": 0.6199,
+      "category_2": 0.8662,
+      "category_3": 0.611,
+      "category_4": 0.9303
+    }
+  },
+  "longmemeval_dev_gate": {
+    "questions": "100 dev questions (longmemeval_sota_dev_v1/dev.json)",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2 (cached; user turns only)",
+    "metric": "answer-session recall any/all at k facts (single tenant: k = 5, 10, 30; two tenants: total cut 5, 10, 20)",
+    "runs": {
+      "single tenant, recall order (baseline)": {
+        "n": 100,
+        "any@5": 0.82,
+        "all@5": 0.69,
+        "any@10": 0.83,
+        "all@10": 0.73,
+        "any@30": 0.86,
+        "all@30": 0.75
+      },
+      "single tenant, episode 0.5": {
+        "n": 100,
+        "any@5": 0.72,
+        "all@5": 0.49,
+        "any@10": 0.78,
+        "all@10": 0.63,
+        "any@30": 0.82,
+        "all@30": 0.73
+      },
+      "single tenant, recall reordered by cosine (within-list part of A)": {
+        "n": 100,
+        "any@5": 0.75,
+        "all@5": 0.55,
+        "any@10": 0.78,
+        "all@10": 0.65,
+        "any@30": 0.86,
+        "all@30": 0.75
+      },
+      "two tenants by session parity, round-robin packing": {
+        "n": 100,
+        "any@5": 0.82,
+        "all@5": 0.66,
+        "any@10": 0.85,
+        "all@10": 0.73,
+        "any@20": 0.85,
+        "all@20": 0.74
+      },
+      "two tenants by session parity, zipper packing": {
+        "n": 100,
+        "any@5": 0.81,
+        "all@5": 0.63,
+        "any@10": 0.83,
+        "all@10": 0.73,
+        "any@20": 0.86,
+        "all@20": 0.75
+      }
+    },
+    "invalid_runs": "a first episode pair also ingested assistant turns without embeddings (any@5 .94->.87, all@5 .78->.64); discarded as mixed hybrid/lexical"
+  },
+  "decisions": {
+    "episode 0.5": "rejected: LongMemEval dev all@5 .69 -> .49",
+    "cosine packing": "rejected: within-list cosine reorder drops LongMemEval dev any@5 .82 -> .75",
+    "zipper packing": "rejected without a held-out look: two-tenant LongMemEval analog drops at cuts 5 and 10 (all@5 .66 -> .63)"
+  },
+  "configurations_tried": {
+    "locomo_tuning": 8,
+    "locomo_heldout_looks": 3,
+    "longmemeval_dev_runs": 8
+  },
+  "openai_spend_usd": 0.0,
+  "judge_accuracy": "unchanged from locomo_v1.json: no candidate passed the gates, so no reader/judge run"
+}
