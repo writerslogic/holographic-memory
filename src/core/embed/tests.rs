@@ -366,3 +366,30 @@ fn index_save_leaves_files_named_like_its_temp_alone() {
         index.len()
     );
 }
+
+#[test]
+fn safetensors_offsets_and_shapes_that_overflow_are_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let write = |name: &str, header: &str| {
+        let mut bytes = (header.len() as u64).to_le_bytes().to_vec();
+        bytes.extend_from_slice(header.as_bytes());
+        let path = dir.path().join(name);
+        std::fs::write(&path, bytes).unwrap();
+        path
+    };
+    let ok = write(
+        "ok",
+        r#"{"t":{"dtype":"F32","shape":[0,5],"data_offsets":[0,0]}}"#,
+    );
+    assert!(pack::read_safetensors(&ok).is_ok());
+    let end = write(
+        "end",
+        r#"{"t":{"dtype":"F32","shape":[0],"data_offsets":[0,18446744073709551615]}}"#,
+    );
+    assert!(pack::read_safetensors(&end).is_err());
+    let shape = write(
+        "shape",
+        r#"{"t":{"dtype":"F32","shape":[4294967296,4294967296],"data_offsets":[0,0]}}"#,
+    );
+    assert!(pack::read_safetensors(&shape).is_err());
+}
