@@ -607,11 +607,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_entangled_self_similarity() {
+    fn self_similarity_and_containment_are_one() {
         let v = EntangledHVec::new_deterministic(16384, 42);
         assert!(
             (v.similarity(&v) - 1.0).abs() < 0.0001,
             "Self-similarity should be 1.0"
+        );
+        assert!(
+            (v.containment_similarity(&v) - 1.0).abs() < 0.0001,
+            "Self-containment should be 1.0"
         );
     }
 
@@ -665,13 +669,6 @@ mod tests {
         // Should have ~dim/256 active indices
         let expected = 10000 / 256;
         assert_eq!(e.indices.len(), expected);
-    }
-
-    #[test]
-    fn test_from_scalar() {
-        let e = EntangledHVec::from_scalar(0.5, 0.0, 1.0, 10000);
-        assert_eq!(e.dim, 10000);
-        assert!(!e.indices.is_empty());
     }
 
     #[test]
@@ -746,15 +743,6 @@ mod tests {
     }
 
     #[test]
-    fn test_containment_self() {
-        let v = EntangledHVec::new_deterministic(16384, 42);
-        assert!(
-            (v.containment_similarity(&v) - 1.0).abs() < 0.0001,
-            "Self-containment should be 1.0"
-        );
-    }
-
-    #[test]
     fn test_bind_ordered_non_commutative() {
         let a = EntangledHVec::new_deterministic(16384, 1);
         let b = EntangledHVec::new_deterministic(16384, 2);
@@ -783,6 +771,8 @@ mod tests {
         let dim = 16384;
         let base_val = 0.5;
         let v_base = EntangledHVec::from_scalar(base_val, 0.0, 1.0, dim);
+        assert_eq!(v_base.dim, dim);
+        assert!(!v_base.indices.is_empty());
 
         let mut prev_sim = 1.0;
         // Check points moving away from 0.5

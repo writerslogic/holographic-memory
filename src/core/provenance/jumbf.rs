@@ -337,18 +337,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn superbox_with_children() {
-        let mut parent = JumbfBox::superbox("test-manifest", C2PA_MANIFEST_UUID);
-        parent.add_child(JumbfBox::json_box(
-            "assertion",
-            serde_json::json!({"type": "test"}),
-        ));
-        assert_eq!(parent.children.len(), 1);
-        assert!(parent.find_by_label("assertion").is_some());
-        assert!(parent.find_by_label("nonexistent").is_none());
-    }
-
-    #[test]
     fn encode_decode_roundtrip() {
         let mut manifest = JumbfBox::superbox("test-manifest", C2PA_MANIFEST_UUID);
         manifest.add_child(JumbfBox::json_box(
@@ -404,7 +392,9 @@ mod tests {
         assert_eq!(&encoded[4..8], &JUMBF_BOX_TYPE);
 
         let decoded = JumbfBox::decode(&encoded).unwrap();
+        assert_eq!(decoded.children.len(), 1);
         assert!(decoded.find_by_label("test").is_some());
+        assert!(decoded.find_by_label("nonexistent").is_none());
     }
 
     #[test]

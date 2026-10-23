@@ -183,16 +183,22 @@ mod tests {
         let dir = tempdir().unwrap();
         let log = AuditLog::new(dir.path()).unwrap();
 
+        let now_ms = || {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64
+        };
         log.record(AuditOp::Memorize, "a", None).unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        let cutoff = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() as u64;
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        let first = log.entries_since(0).unwrap()[0].timestamp_ms;
+        // The second entry must land in a later millisecond than the first.
+        while now_ms() <= first {
+            std::hint::spin_loop();
+        }
         log.record(AuditOp::Delete, "b", None).unwrap();
 
-        let entries = log.entries_since(cutoff).unwrap();
+        assert_eq!(log.entries_since(first).unwrap().len(), 2);
+        let entries = log.entries_since(first + 1).unwrap();
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].op, AuditOp::Delete);
     }
@@ -225,5 +231,7 @@ mod tests {
         let log = AuditLog::new(dir.path()).unwrap();
         let entries = log.entries_since(0).unwrap();
         assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].op, AuditOp::Memorize);
+        assert_eq!(entries[0].id_hash, hash_id("persist_test"));
     }
 }

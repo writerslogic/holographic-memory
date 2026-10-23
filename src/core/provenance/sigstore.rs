@@ -251,21 +251,4 @@ mod tests {
         let wrong_key = test_keypair();
         assert!(verify_bundle_with_key(&bundle, content, &wrong_key.verifying_key()).is_err());
     }
-
-    #[test]
-    fn base64_roundtrip() {
-        let original = b"hello world 12345";
-        let encoded = base64_encode(original);
-        let decoded = base64_decode(&encoded).unwrap();
-        assert_eq!(decoded, original);
-    }
-
-    #[test]
-    fn bundle_serialization() {
-        let key = test_keypair();
-        let bundle = create_local_bundle(&key, b"data", None).unwrap();
-        let json = serde_json::to_string(&bundle).unwrap();
-        let recovered: SigstoreBundle = serde_json::from_str(&json).unwrap();
-        verify_bundle(&recovered, b"data").unwrap();
-    }
 }

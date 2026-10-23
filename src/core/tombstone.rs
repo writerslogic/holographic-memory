@@ -50,20 +50,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_tombstone_basic() {
+    fn marks_only_the_deleted_slots_across_word_boundaries() {
         let mut t = TombstoneMap::new();
         assert!(!t.is_deleted(0));
         assert!(!t.is_deleted(1000));
-
-        t.mark_deleted(42);
-        assert!(t.is_deleted(42));
-        assert!(!t.is_deleted(41));
-        assert_eq!(t.count(), 1);
-    }
-
-    #[test]
-    fn test_tombstone_multiple() {
-        let mut t = TombstoneMap::new();
         t.mark_deleted(0);
         t.mark_deleted(63);
         t.mark_deleted(64);

@@ -39,23 +39,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_admission_algebraic() {
-        let ac = AdmissionControl::new(40);
-        assert_eq!(ac.check(1), AdmissionDecision::Algebraic);
-        assert_eq!(ac.check(40), AdmissionDecision::Algebraic);
-    }
-
-    #[test]
-    fn test_admission_materialized() {
-        let ac = AdmissionControl::new(40);
-        assert_eq!(ac.check(41), AdmissionDecision::MaterializedLookup);
-        assert_eq!(ac.check(1000), AdmissionDecision::MaterializedLookup);
-    }
-
-    #[test]
-    fn test_admission_zero() {
-        let ac = AdmissionControl::new(0);
-        assert_eq!(ac.check(0), AdmissionDecision::Algebraic);
-        assert_eq!(ac.check(1), AdmissionDecision::MaterializedLookup);
+    fn fan_out_above_the_limit_uses_materialized_lookup() {
+        use AdmissionDecision::{Algebraic, MaterializedLookup};
+        for (limit, fan_out, expected) in [
+            (40, 1, Algebraic),
+            (40, 39, Algebraic),
+            (40, 40, Algebraic),
+            (40, 41, MaterializedLookup),
+            (40, 1000, MaterializedLookup),
+            (0, 0, Algebraic),
+            (0, 1, MaterializedLookup),
+        ] {
+            assert_eq!(
+                AdmissionControl::new(limit).check(fan_out),
+                expected,
+                "limit {limit}, fan-out {fan_out}"
+            );
+        }
     }
 }

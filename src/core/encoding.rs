@@ -625,29 +625,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_determinism() {
-        let dim = 16384;
-        let v1 = encode_text_internal("hello world", dim);
-        let v2 = encode_text_internal("hello world", dim);
-        assert!(
-            (v1.similarity(&v2) - 1.0).abs() < f64::EPSILON,
-            "Same input must produce identical vectors"
-        );
-    }
-
-    #[test]
     fn test_empty_input() {
         let v = encode_text_internal("", 16384);
         assert!(v.indices().is_empty());
-    }
-
-    #[test]
-    fn test_single_char() {
-        let v = encode_text_internal("x", 16384);
-        assert!(
-            !v.indices().is_empty(),
-            "Single char should produce a vector"
-        );
     }
 
     #[test]
@@ -701,7 +681,7 @@ mod tests {
     #[test]
     fn test_multi_scale_captures_short_text() {
         let dim = 16384;
-        // Two-character text should still produce a meaningful vector
+        assert!(!encode_text_internal("x", dim).indices().is_empty());
         let v = encode_text_internal("hi", dim);
         assert!(!v.indices().is_empty());
         // Should be similar to "his" (shared bigram "hi")

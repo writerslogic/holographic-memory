@@ -915,46 +915,61 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_decompose_is_a() {
+    fn first_unit_extracts_subject_relation_and_object() {
         let d = Decomposer::new();
-        let units = d.decompose("Paris is the capital of France");
-        assert!(!units.is_empty());
-        assert_eq!(units[0].subject, "Paris");
-        assert_eq!(units[0].relation, "is_a");
+        for (sentence, subject, relation, object) in [
+            (
+                "Paris is the capital of France",
+                Some("Paris"),
+                Some("is_a"),
+                None,
+            ),
+            (
+                "The cat goes to the park",
+                Some("cat"),
+                Some("go_to"),
+                Some("park"),
+            ),
+            (
+                "The book was written by John",
+                Some("John"),
+                Some("write"),
+                Some("book"),
+            ),
+            ("Alice created the project", None, Some("create"), None),
+            ("John runs the company", None, Some("run"), None),
+            ("Birds fly over the ocean", None, Some("fly_over"), None),
+            ("Paris is a city, indeed!", Some("Paris"), None, None),
+        ] {
+            let units = d.decompose(sentence);
+            let Some(first) = units.first() else {
+                panic!("{sentence:?} produced no units");
+            };
+            if let Some(subject) = subject {
+                assert_eq!(first.subject, subject, "{sentence:?}");
+            }
+            if let Some(relation) = relation {
+                assert_eq!(first.relation, relation, "{sentence:?}");
+            }
+            if let Some(object) = object {
+                assert_eq!(first.object, object, "{sentence:?}");
+            }
+        }
     }
 
     #[test]
-    fn test_decompose_verb_prep() {
+    fn splits_sentences_and_skips_text_without_a_relation() {
         let d = Decomposer::new();
-        let units = d.decompose("The cat goes to the park");
-        assert!(!units.is_empty());
-        assert_eq!(units[0].relation, "go_to");
-        assert_eq!(units[0].subject, "cat");
-        assert_eq!(units[0].object, "park");
-    }
-
-    #[test]
-    fn test_decompose_empty() {
-        let d = Decomposer::new();
-        assert!(d.decompose("").is_empty());
-        assert!(d.decompose("hi").is_empty());
-    }
-
-    #[test]
-    fn test_decompose_multiple_sentences() {
-        let d = Decomposer::new();
-        let units = d.decompose("Paris is a city. Berlin is a city.");
-        assert_eq!(units.len(), 2);
-    }
-
-    #[test]
-    fn test_passive_voice() {
-        let d = Decomposer::new();
-        let units = d.decompose("The book was written by John");
-        assert!(!units.is_empty(), "Should extract passive voice");
-        assert_eq!(units[0].subject, "John");
-        assert_eq!(units[0].relation, "write");
-        assert_eq!(units[0].object, "book");
+        // "bark" carries no verb morphology, so the rule-based parser finds no relation.
+        for (text, units) in [
+            ("", 0),
+            ("hi", 0),
+            ("Dogs bark", 0),
+            ("Paris is a city. Berlin is a city.", 2),
+            ("Paris is a city; Berlin is a city", 2),
+        ] {
+            assert_eq!(d.decompose(text).len(), units, "{text:?}");
+        }
     }
 
     #[test]
@@ -964,54 +979,5 @@ mod tests {
         assert_eq!(units.len(), 2, "Should split conjunction into 2 triples");
         assert!(units.iter().any(|u| u.subject == "Dogs"));
         assert!(units.iter().any(|u| u.subject == "cats"));
-    }
-
-    #[test]
-    fn test_regular_verb_morphology() {
-        let d = Decomposer::new();
-        // -ed form
-        let units = d.decompose("Alice created the project");
-        assert!(!units.is_empty());
-        assert_eq!(units[0].relation, "create");
-        // -s form
-        let units = d.decompose("John runs the company");
-        assert!(!units.is_empty());
-        assert_eq!(units[0].relation, "run");
-    }
-
-    #[test]
-    fn test_verb_with_preposition() {
-        let d = Decomposer::new();
-        let units = d.decompose("Birds fly over the ocean");
-        assert!(!units.is_empty());
-        assert_eq!(units[0].relation, "fly_over");
-    }
-
-    #[test]
-    fn test_punctuation_handling() {
-        let d = Decomposer::new();
-        let units = d.decompose("Paris is a city, indeed!");
-        assert!(!units.is_empty());
-        assert_eq!(units[0].subject, "Paris");
-    }
-
-    #[test]
-    fn test_semicolon_sentence_split() {
-        let d = Decomposer::new();
-        let units = d.decompose("Paris is a city; Berlin is a city");
-        assert_eq!(units.len(), 2);
-    }
-
-    #[test]
-    fn test_two_word_extraction() {
-        let d = Decomposer::new();
-        // With morphological verb detection, "Dogs bark" should work
-        // "bark" → "bark" (removes trailing "s" → "bar" which isn't right)
-        // Actually "bark" doesn't end in s/ed/ing/es so it won't be recognized
-        // as a verb by morphological rules alone. This is expected behavior
-        // for the rule-based approach.
-        let units = d.decompose("Dogs bark");
-        // Two words with unrecognized verb → empty
-        assert!(units.is_empty());
     }
 }

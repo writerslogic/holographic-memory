@@ -299,66 +299,46 @@ mod tests {
         EntangledHVec::new_deterministic(dim, seed)
     }
 
-    #[test]
-    fn test_sparsemax_single() {
-        let result = sparsemax(&[5.0]);
-        assert_eq!(result.len(), 1);
-        assert!((result[0] - 1.0).abs() < 1e-10);
-    }
+    type Transform = fn(&[f64]) -> Vec<f64>;
+    const TRANSFORMS: [(&str, Transform); 3] = [
+        ("softmax", softmax),
+        ("entmax_15", entmax_15),
+        ("sparsemax", sparsemax),
+    ];
 
     #[test]
-    fn test_sparsemax_sparsity() {
-        // One dominant score should suppress others
-        let result = sparsemax(&[10.0, 1.0, 1.0, 1.0]);
-        assert!(result[0] > 0.9, "Dominant score should get most weight");
-        let nonzero = result.iter().filter(|&&w| w > 1e-10).count();
-        assert!(nonzero < 4, "Sparsemax should produce zeros");
-    }
-
-    #[test]
-    fn test_sparsemax_uniform() {
-        // Equal scores → equal weights
-        let result = sparsemax(&[3.0, 3.0, 3.0]);
-        for &w in &result {
-            assert!(
-                (w - 1.0 / 3.0).abs() < 1e-10,
-                "Equal scores should give uniform weights"
-            );
+    fn entmax_family_outputs_probability_distributions() {
+        let inputs: [&[f64]; 4] = [
+            &[5.0],
+            &[3.0, 3.0, 3.0],
+            &[10.0, 1.0, 1.0, 1.0],
+            &[5.0, 3.0, 1.0, 0.5, 0.1],
+        ];
+        for (name, transform) in TRANSFORMS {
+            for scores in inputs {
+                let weights = transform(scores);
+                assert_eq!(weights.len(), scores.len(), "{name} {scores:?}");
+                assert!(weights.iter().all(|&w| w >= 0.0), "{name} {scores:?}");
+                let sum: f64 = weights.iter().sum();
+                assert!((sum - 1.0).abs() < 1e-6, "{name} {scores:?} sums to {sum}");
+                if scores.windows(2).all(|pair| pair[0] == pair[1]) {
+                    let uniform = 1.0 / scores.len() as f64;
+                    assert!(
+                        weights.iter().all(|&w| (w - uniform).abs() < 1e-6),
+                        "{name} {scores:?} is not uniform: {weights:?}"
+                    );
+                }
+            }
         }
     }
 
     #[test]
-    fn test_sparsemax_sums_to_one() {
-        let result = sparsemax(&[5.0, 3.0, 1.0, 0.5, 0.1]);
-        let sum: f64 = result.iter().sum();
-        assert!(
-            (sum - 1.0).abs() < 1e-8,
-            "Sparsemax output should sum to 1, got {}",
-            sum
-        );
-    }
-
-    #[test]
-    fn test_entmax_15_sparsity() {
-        let result = entmax_15(&[10.0, 1.0, 1.0, 1.0]);
-        let nonzero = result.iter().filter(|&&w| w > 1e-10).count();
-        assert!(nonzero <= 3, "1.5-entmax should produce some zeros");
-        let sum: f64 = result.iter().sum();
-        assert!(
-            (sum - 1.0).abs() < 1e-6,
-            "1.5-entmax should sum to 1, got {}",
-            sum
-        );
-    }
-
-    #[test]
-    fn test_softmax_no_zeros() {
-        let result = softmax(&[10.0, 1.0, 1.0, 1.0]);
-        for &w in &result {
-            assert!(w > 0.0, "Softmax should never produce exact zeros");
+    fn only_softmax_keeps_dominated_scores_nonzero() {
+        let scores = [10.0, 1.0, 1.0, 1.0];
+        for ((name, transform), expected_support) in TRANSFORMS.into_iter().zip([4, 1, 1]) {
+            let support = transform(&scores).iter().filter(|&&w| w > 1e-10).count();
+            assert_eq!(support, expected_support, "{name}");
         }
-        let sum: f64 = result.iter().sum();
-        assert!((sum - 1.0).abs() < 1e-10);
     }
 
     #[test]
@@ -434,7 +414,6 @@ mod tests {
         };
 
         let results = hopfield_query_iterative(&noisy_query, &patterns, &config, 10);
-        // Should still be able to retrieve something
-        assert!(!results.is_empty(), "Iterative query should return results");
+        assert_eq!(results[0].id, "p1");
     }
 }

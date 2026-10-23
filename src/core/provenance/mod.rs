@@ -1014,12 +1014,18 @@ fn hex_decode(hex: &str) -> Result<[u8; 32]> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
+    use tempfile::{tempdir, TempDir};
+
+    /// A manager with a fresh key, logging under its own temporary directory.
+    fn manager() -> (TempDir, ProvenanceManager) {
+        let dir = tempdir().unwrap();
+        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        (dir, mgr)
+    }
 
     #[test]
     fn full_fact_provenance_flow() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let record = mgr
             .create_fact_provenance(
@@ -1046,8 +1052,7 @@ mod tests {
 
     #[test]
     fn full_triple_provenance_flow() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let record = mgr
             .create_triple_provenance(&TripleProvenanceParams {
@@ -1074,8 +1079,7 @@ mod tests {
 
     #[test]
     fn store_manifest_flow() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let store_data = b"serialized store contents here";
         let manifest = mgr
@@ -1100,29 +1104,22 @@ mod tests {
     }
 
     #[test]
-    fn issuer_did_consistency() {
-        let dir = tempdir().unwrap();
-        let key_path = dir.path().join("test.key");
-        let mgr1 = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
-        let mgr2 = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
-        assert_eq!(mgr1.issuer_did(), mgr2.issuer_did());
-    }
-
-    #[test]
     fn records_persist_to_disk() {
         let dir = tempdir().unwrap();
         let key_path = dir.path().join("test.key");
 
-        {
+        let issuer = {
             let mgr = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
             mgr.create_fact_provenance("f1", b"content one", None)
                 .unwrap();
             mgr.create_fact_provenance("f2", b"content two", None)
                 .unwrap();
             assert_eq!(mgr.record_count(), 2);
-        }
+            mgr.issuer_did().to_string()
+        };
 
         let mgr2 = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
+        assert_eq!(mgr2.issuer_did(), issuer);
         assert_eq!(mgr2.record_count(), 2);
         assert!(mgr2.get_record("f1").is_some());
         assert!(mgr2.get_record("f2").is_some());
@@ -1130,8 +1127,7 @@ mod tests {
 
     #[test]
     fn standalone_verify_without_manager() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
         let record = mgr
             .create_fact_provenance("standalone-001", b"verify without manager", None)
             .unwrap();
@@ -1145,21 +1141,11 @@ mod tests {
     }
 
     #[test]
-    fn hash_chain_integrity() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
-        mgr.create_fact_provenance("c1", b"first", None).unwrap();
-        mgr.create_fact_provenance("c2", b"second", None).unwrap();
-        mgr.create_fact_provenance("c3", b"third", None).unwrap();
-        assert!(mgr.verify_log_integrity().unwrap());
-    }
-
-    #[test]
     fn tampered_log_detected() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (dir, mgr) = manager();
         mgr.create_fact_provenance("t1", b"one", None).unwrap();
         mgr.create_fact_provenance("t2", b"two", None).unwrap();
+        assert!(mgr.verify_log_integrity().unwrap());
         drop(mgr);
 
         let log_path = dir.path().join("provenance_log.jsonl");
@@ -1208,8 +1194,7 @@ mod tests {
 
     #[test]
     fn batch_provenance_merkle() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let items: Vec<(&str, &[u8], Option<&str>)> = vec![
             ("b1", b"alpha", None),
@@ -1241,8 +1226,7 @@ mod tests {
 
     #[test]
     fn credential_revocation() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let record = mgr
             .create_fact_provenance("fact-rev", b"revocable content", None)
@@ -1281,8 +1265,7 @@ mod tests {
 
     #[test]
     fn untrusted_key_rejected() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
         let record = mgr
             .create_fact_provenance("fact-trust", b"authentic content", None)
             .unwrap();
@@ -1317,8 +1300,7 @@ mod tests {
         // A record carrying only a self-signed VC (no COSE envelope) must still
         // be trust-anchored via its issuer DID, not treated as authentic just
         // because the VC verifies against its own embedded issuer.
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
         let record = mgr
             .create_fact_provenance("vc-only", b"content", None)
             .unwrap();
@@ -1345,8 +1327,7 @@ mod tests {
 
     #[test]
     fn cawg_untrusted_issuer_rejected() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let referenced = vec![(
             "self#jumbf=c2pa.assertions/c2pa.hash.data".to_string(),

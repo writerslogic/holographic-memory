@@ -91,20 +91,6 @@ impl IdfWeights {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::tombstone::TombstoneMap;
-
-    #[test]
-    fn test_idf_basic() {
-        let mut postings = PostingShard::new(100);
-        let mut idf = IdfWeights::new(100, 3.0);
-
-        postings.insert(0, &[5, 10]);
-        postings.insert(1, &[5]);
-        idf.recompute(&postings, 2);
-
-        // dim 5: df=2, dim 10: df=1. Higher df = lower IDF.
-        assert!(idf.weight(5) < idf.weight(10));
-    }
 
     #[test]
     fn test_idf_clip() {
@@ -119,7 +105,6 @@ mod tests {
     #[test]
     fn test_idf_recompute() {
         let mut postings = PostingShard::new(20);
-        let tombstones = TombstoneMap::new();
         postings.insert(0, &[0, 1, 2]);
         postings.insert(1, &[0, 1]);
         postings.insert(2, &[0]);
@@ -130,6 +115,5 @@ mod tests {
         // dim 0: df=3, dim 1: df=2, dim 2: df=1
         assert!(idf.weight(0) < idf.weight(1));
         assert!(idf.weight(1) < idf.weight(2));
-        let _ = tombstones; // used by overlap_counts, not directly here
     }
 }

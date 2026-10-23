@@ -190,6 +190,28 @@ mod tests {
     }
 
     #[test]
+    fn did_key_accepts_only_a_32_byte_ed25519_multicodec_key() {
+        for (prefix, len, valid) in [
+            (ED25519_MULTICODEC, 31, false),
+            (ED25519_MULTICODEC, 32, true),
+            (ED25519_MULTICODEC, 33, false),
+            ([0xec, 0x01], 32, false),
+        ] {
+            let mut bytes = prefix.to_vec();
+            bytes.extend(std::iter::repeat_n(0xAB, len));
+            let did = format!(
+                "did:key:{}",
+                multibase::encode(multibase::Base::Base58Btc, &bytes)
+            );
+            assert_eq!(
+                ed25519_from_did_key(&did).is_ok(),
+                valid,
+                "prefix {prefix:?}, key length {len}"
+            );
+        }
+    }
+
+    #[test]
     fn did_jwk_from_ed25519_roundtrips() {
         let pk = [0x42u8; 32];
         let did = did_jwk_from_ed25519(&pk);
@@ -208,27 +230,31 @@ mod tests {
     }
 
     #[test]
-    fn did_web_simple() {
-        let did = did_web_from_domain("example.com", None);
-        assert_eq!(did, "did:web:example.com");
-        let url = did_web_to_url(&did).unwrap();
-        assert_eq!(url, "https://example.com/.well-known/did.json");
-    }
-
-    #[test]
-    fn did_web_with_path() {
-        let did = did_web_from_domain("example.com", Some(&["users", "alice"]));
-        assert_eq!(did, "did:web:example.com:users:alice");
-        let url = did_web_to_url(&did).unwrap();
-        assert_eq!(url, "https://example.com/users/alice/did.json");
-    }
-
-    #[test]
-    fn did_web_with_port() {
-        let did = did_web_from_domain("localhost%3A8080", None);
-        assert_eq!(did, "did:web:localhost%3A8080");
-        let url = did_web_to_url(&did).unwrap();
-        assert_eq!(url, "https://localhost:8080/.well-known/did.json");
+    fn did_web_maps_domain_path_and_port_to_its_document_url() {
+        let users_alice: &[&str] = &["users", "alice"];
+        for (domain, path, did, url) in [
+            (
+                "example.com",
+                None,
+                "did:web:example.com",
+                "https://example.com/.well-known/did.json",
+            ),
+            (
+                "example.com",
+                Some(users_alice),
+                "did:web:example.com:users:alice",
+                "https://example.com/users/alice/did.json",
+            ),
+            (
+                "localhost%3A8080",
+                None,
+                "did:web:localhost%3A8080",
+                "https://localhost:8080/.well-known/did.json",
+            ),
+        ] {
+            assert_eq!(did_web_from_domain(domain, path), did);
+            assert_eq!(did_web_to_url(did).unwrap(), url, "{did}");
+        }
     }
 
     #[test]
